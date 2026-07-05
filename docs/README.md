@@ -59,7 +59,8 @@ Example: `ARCH-001-vt-platform-architecture.md`, `ADR-0001-modular-monolith.md`.
 |--------|--------|-----------|
 | `ARCH` | Architecture | `docs/architecture/` |
 | `ADR`  | Architecture Decision Records | `docs/architecture/ADR/` |
-| `BUS`  | Business & domain | `docs/business/` |
+| `BUS`  | Business & domain narrative | `docs/business/` |
+| `DATA` | Business domain & data model | `docs/business/` |
 | `API`  | API design & contracts | `docs/api/` |
 | `BE`   | Backend engineering | `docs/backend/` |
 | `FE`   | Frontend engineering | `docs/frontend/` |
@@ -80,6 +81,7 @@ Example: `ARCH-001-vt-platform-architecture.md`, `ADR-0001-modular-monolith.md`.
 | ID | Title | Status | Location |
 |----|-------|--------|----------|
 | ARCH-001 | VT Platform Architecture v1.0 | Approved | [architecture/ARCH-001-vt-platform-architecture.md](architecture/ARCH-001-vt-platform-architecture.md) |
+| DATA-001 | Business Data Model v1.0 | Draft for review | [business/DATA-001-business-data-model.md](business/DATA-001-business-data-model.md) |
 
 > Additional documents are registered here as they are authored. Each README in a subdirectory maintains its own local index of that domain's documents.
 

@@ -6,20 +6,20 @@ Capture *what* the platform is for and *who* it serves: product vision, business
 
 ## Scope
 
-- **In scope:** vision, business goals & KPIs, stakeholder/actor definitions, ubiquitous language & glossary, business processes, monetization model, and compliance/regulatory context (e.g. 152-ФЗ).
+- **In scope:** vision, business goals & KPIs, stakeholder/actor definitions, ubiquitous language & glossary, the **business domain & data model**, business processes, monetization model, and compliance/regulatory context (e.g. 152-ФЗ).
 - **Out of scope:** technical architecture (see [../architecture](../architecture/README.md)) and API/engineering details.
 
 ## Prefix
 
-Documents in this domain use the `BUS-` prefix (e.g. `BUS-001-vision-and-goals.md`).
+Business narrative documents use the `BUS-` prefix (e.g. `BUS-001-vision-and-goals.md`). The business **data model** uses the dedicated `DATA-` prefix (e.g. `DATA-001-business-data-model.md`), as it is a distinct, cross-cutting reference artifact.
 
 ## Documents
 
 | ID | Title | Status |
 |----|-------|--------|
-| — | _No documents yet._ | — |
+| DATA-001 | [Business Data Model v1.0](DATA-001-business-data-model.md) | Draft for review |
 
-> The current vision and business goals are summarized in [ARCH-001 §1–§2](../architecture/ARCH-001-vt-platform-architecture.md#1-vision); standalone business documents will expand and own these.
+> The current vision and business goals are summarized in [ARCH-001 §1–§2](../architecture/ARCH-001-vt-platform-architecture.md#1-vision); standalone business documents will expand and own these. The business domain, objects, aggregates, and value objects are defined in **DATA-001**.
 
 ## Future Documents
 
