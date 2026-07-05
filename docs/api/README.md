@@ -17,14 +17,13 @@ Documents in this domain use the `API-` prefix (e.g. `API-001-design-guidelines.
 
 | ID | Title | Status |
 |----|-------|--------|
-| — | _No documents yet._ | — |
+| API-000 | [REST API Standards v1.0](API-000-rest-api-standards.md) | **Approved (normative)** |
 
-> API architecture principles are established in [ARCH-001 §10](../architecture/ARCH-001-vt-platform-architecture.md#10-api-architecture).
+> **API-000 is the official, normative REST API standard** — every current and future endpoint MUST comply. It refines the API architecture established in [ARCH-001 §10](../architecture/ARCH-001-vt-platform-architecture.md#10-api-architecture) and covers versioning, resource naming, methods, status codes, request/response/error formats (RFC 9457), pagination, filtering, auth (JWT/RBAC), idempotency, rate limiting, caching, UUID v7, lifecycle, OpenAPI conventions, security, and a per-endpoint design checklist.
 
 ## Future Documents
 
-- `API-001` — API design guidelines & conventions.
-- `API-002` — Versioning & deprecation policy.
-- `API-003` — Error handling (Problem Details) standard.
-- `API-004` — OpenAPI 3.1 contract (`openapi.yaml`) & schema governance.
-- `API-005` — Authentication & authorization for API consumers.
+- `API-001` — OpenAPI 3.1 contract (`openapi.yaml`) & schema governance (built to the API-000 standard).
+- `API-002` — Per-domain endpoint catalogues (Participants, Competitions, Judging, …).
+- `API-003` — Webhooks / outbound integration contracts.
+- `API-004` — Generated-client usage guidance.

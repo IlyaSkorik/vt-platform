@@ -86,6 +86,7 @@ Example: `ARCH-001-vt-platform-architecture.md`, `ADR-0001-modular-monolith.md`.
 | DATA-003 | Domain Event Catalog v1.0 | Draft for review | [business/DATA-003-domain-event-catalog.md](business/DATA-003-domain-event-catalog.md) |
 | DATA-004 | State Machine Catalog v1.0 | Draft for review | [business/DATA-004-state-machine-catalog.md](business/DATA-004-state-machine-catalog.md) |
 | DIA-001 | Entity Relationship Model v1.0 (Logical Data Model) | Draft for review | [diagrams/DIA-001-entity-relationship-model.md](diagrams/DIA-001-entity-relationship-model.md) |
+| API-000 | REST API Standards v1.0 | Approved (normative) | [api/API-000-rest-api-standards.md](api/API-000-rest-api-standards.md) |
 
 > Additional documents are registered here as they are authored. Each README in a subdirectory maintains its own local index of that domain's documents.
 
