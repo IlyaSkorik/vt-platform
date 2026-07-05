@@ -18,8 +18,9 @@ Business narrative documents use the `BUS-` prefix (e.g. `BUS-001-vision-and-goa
 | ID | Title | Status |
 |----|-------|--------|
 | DATA-001 | [Business Data Model v1.0](DATA-001-business-data-model.md) | Draft for review |
+| DATA-002 | [Business Rules Catalog v1.0](DATA-002-business-rules-catalog.md) | Draft for review |
 
-> The current vision and business goals are summarized in [ARCH-001 §1–§2](../architecture/ARCH-001-vt-platform-architecture.md#1-vision); standalone business documents will expand and own these. The business domain, objects, aggregates, and value objects are defined in **DATA-001**.
+> The current vision and business goals are summarized in [ARCH-001 §1–§2](../architecture/ARCH-001-vt-platform-architecture.md#1-vision); standalone business documents will expand and own these. The business domain, objects, aggregates, and value objects are defined in **DATA-001**; the complete catalogue of business rules (invariants, workflows, permissions, calculations, disclosures, compliance) is defined in **DATA-002**.
 
 ## Future Documents
 
