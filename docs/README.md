@@ -84,6 +84,7 @@ Example: `ARCH-001-vt-platform-architecture.md`, `ADR-0001-modular-monolith.md`.
 | DATA-001 | Business Data Model v1.0 | Draft for review | [business/DATA-001-business-data-model.md](business/DATA-001-business-data-model.md) |
 | DATA-002 | Business Rules Catalog v1.0 | Draft for review | [business/DATA-002-business-rules-catalog.md](business/DATA-002-business-rules-catalog.md) |
 | DATA-003 | Domain Event Catalog v1.0 | Draft for review | [business/DATA-003-domain-event-catalog.md](business/DATA-003-domain-event-catalog.md) |
+| DATA-004 | State Machine Catalog v1.0 | Draft for review | [business/DATA-004-state-machine-catalog.md](business/DATA-004-state-machine-catalog.md) |
 
 > Additional documents are registered here as they are authored. Each README in a subdirectory maintains its own local index of that domain's documents.
 
