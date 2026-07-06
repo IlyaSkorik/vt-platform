@@ -4,15 +4,18 @@ Immutable, identity-less concepts of the Identity domain (DATA-001 §8). Every
 value object here is a frozen, slotted dataclass: it validates its input on
 construction, is compared by value, and can never be mutated afterwards.
 
-This is **pure domain code** (ARCH-001 §4.1, §7.2): no Django, no DRF, no ORM,
-no I/O. Persistence, hashing, and transport live in outer layers and depend on
-these types — never the other way around.
+This is **pure domain code** (ARCH-001 §4.1, §7.2): standard library only — no
+Django, no DRF, no ORM, no Pydantic, no third-party validators. Persistence,
+hashing, and transport live in outer layers and depend on these types — never
+the other way around. Keeping these invariants in the domain means an invalid
+``Email`` or ``PhoneNumber`` simply cannot exist at runtime, so no outer layer
+has to re-check them.
 
 Value objects implemented here:
 
 * :class:`UserId`         — UUID v7 identity of a user account (API-000 §23).
 * :class:`Email`          — normalized, validated email address (DATA-001 §8).
-* :class:`PhoneNumber`    — E.164-normalized telephone number.
+* :class:`PhoneNumber`    — E.164 phone number for supported countries only.
 * :class:`FullName`       — given / family / optional middle (patronymic) name.
 * :class:`PasswordHash`   — stored password digest + algorithm metadata (abstraction only).
 * :class:`ConsentVersion` — comparable consent-text version (IDN-005, DATA-001 §4.1).
@@ -27,6 +30,7 @@ import re
 import time
 import uuid
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from functools import total_ordering
 from typing import ClassVar, Final
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -65,7 +69,9 @@ def _generate_uuid7() -> uuid.UUID:
     """Generate a UUID version 7 (time-ordered) per RFC 9562 §5.7.
 
     Implemented directly rather than via ``uuid.uuid7`` (added only in Python
-    3.14) so the domain works on any supported interpreter (>= 3.13). Layout:
+    3.14) so the domain works on any supported interpreter (>= 3.13). The
+    time-ordered layout keeps primary keys roughly monotonic, which avoids the
+    index-fragmentation that random UUID v4 keys cause at database scale. Layout:
     48-bit Unix-millisecond timestamp, 4-bit version, 12 random bits, 2-bit
     variant, 62 random bits.
     """
@@ -83,12 +89,13 @@ def _generate_uuid7() -> uuid.UUID:
     return uuid.UUID(int=value)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, repr=False)
 class UserId:
     """The globally unique identity of a user account (DATA-001 §9.2).
 
-    Wraps a time-ordered **UUID v7** (API-000 §23): globally unique,
-    non-enumerable, and index-friendly. Compared and hashed by value.
+    Wraps a time-ordered **UUID v7** (API-000 §23) so identifiers are globally
+    unique, non-enumerable (unlike sequential integers, they leak no counts), and
+    index-friendly. Compared and hashed by value.
     """
 
     value: uuid.UUID
@@ -121,8 +128,21 @@ class UserId:
             raise InvalidUserIdError(f"{value!r} is not a valid UUID string.") from exc
         return cls(parsed)
 
+    def json(self) -> str:
+        """The canonical string form for JSON payloads and API responses.
+
+        JSON has no native UUID type, so the identity crosses the wire as its
+        canonical hyphenated string (API-000 §23). This is the single method
+        transport/serialization code should call, decoupling it from the internal
+        :class:`uuid.UUID` representation.
+        """
+        return str(self.value)
+
     def __str__(self) -> str:
         return str(self.value)
+
+    def __repr__(self) -> str:
+        return f"UserId({str(self.value)!r})"
 
 
 # ---------------------------------------------------------------------------
@@ -138,6 +158,8 @@ _EMAIL_TLD_RE: Final = re.compile(r"^(?:[^\W\d_]{2,}|xn--[\w-]{2,})$", re.UNICOD
 _EMAIL_MAX_LOCAL: Final = 64
 _EMAIL_MAX_DOMAIN: Final = 255
 _EMAIL_MAX_LABEL: Final = 63
+#: Leading characters of the local part kept visible by :meth:`Email.masked`.
+_EMAIL_MASK_VISIBLE: Final = 3
 
 
 def _normalize_email(value: str) -> str:
@@ -175,8 +197,9 @@ class Email:
     """A normalized, validated email address (DATA-001 §8).
 
     Stored lowercase so equality is by normalized value: ``Foo@Bar.COM`` and
-    ``foo@bar.com`` are the same address. Unicode local parts and internationalized
-    domains are accepted.
+    ``foo@bar.com`` are the same address, which enforces the "one verified email
+    per active account" rule without a case-sensitivity loophole. Unicode local
+    parts and internationalized domains are accepted.
     """
 
     value: str
@@ -199,6 +222,23 @@ class Email:
         """The part after the ``@``."""
         return self.value.split("@", 1)[1]
 
+    def masked(self) -> str:
+        """A privacy-preserving rendering that keeps the domain but hides the local part.
+
+        Used wherever an address is shown for recognition without full disclosure
+        (support screens, audit trails, notification previews). At most the first
+        few characters of the local part survive, and a one-character local part
+        is hidden entirely, so the masked form never reveals the whole mailbox::
+
+            ivan.petrov@gmail.com -> iva***@gmail.com
+            alex@example.com      -> ale***@example.com
+            a@gmail.com           -> *@gmail.com
+        """
+        local = self.local_part
+        visible = min(_EMAIL_MASK_VISIBLE, len(local) - 1)
+        hidden = f"{local[:visible]}***" if visible > 0 else "*"
+        return f"{hidden}@{self.domain}"
+
     def __str__(self) -> str:
         return self.value
 
@@ -211,14 +251,73 @@ _PHONE_SEPARATORS_RE: Final = re.compile(r"[\s\-().]")
 _E164_RE: Final = re.compile(r"^\+[1-9]\d{6,14}$")  # '+' then 7-15 digits
 
 
+@dataclass(frozen=True, slots=True)
+class _PhoneFormatter:
+    """How to validate and pretty-print the national number for one country.
+
+    Formatting rules differ per country, so they live in data (a formatter per
+    calling code) instead of branching logic inside :class:`PhoneNumber`. Adding a
+    country is a single entry in :data:`SUPPORTED_PHONE_FORMATTERS` — the value
+    object itself never changes.
+    """
+
+    #: E.164 country calling code, including the leading ``+`` (e.g. ``+7``).
+    country_code: str
+    #: Exact number of national digits expected after the calling code.
+    national_length: int
+    #: Display groups as ``(size, separator-before-group)``; the first group's
+    #: separator is empty.
+    groups: tuple[tuple[int, str], ...]
+
+    def format(self, national_number: str) -> str:
+        """Render ``+<code> <grouped national number>``."""
+        chunks: list[str] = []
+        index = 0
+        for size, separator in self.groups:
+            chunks.append(separator)
+            chunks.append(national_number[index : index + size])
+            index += size
+        return f"{self.country_code} {''.join(chunks)}"
+
+
+#: Extensible registry of supported countries. Only Russia and Belarus are
+#: served today (ARCH-001 §8.6); other calling codes are rejected outright rather
+#: than stored in a shape the platform cannot format or dial.
+SUPPORTED_PHONE_FORMATTERS: Final[dict[str, _PhoneFormatter]] = {
+    "+7": _PhoneFormatter("+7", 10, ((3, ""), (3, " "), (2, "-"), (2, "-"))),
+    "+375": _PhoneFormatter("+375", 9, ((2, ""), (3, " "), (2, "-"), (2, "-"))),
+}
+# Match longer calling codes first so a prefix is never claimed by a shorter one.
+_PHONE_CODES_BY_LENGTH: Final = tuple(sorted(SUPPORTED_PHONE_FORMATTERS, key=len, reverse=True))
+
+
+def _match_formatter(e164: str, *, original: str) -> _PhoneFormatter:
+    """Resolve the formatter for an E.164 number, rejecting unsupported countries."""
+    for code in _PHONE_CODES_BY_LENGTH:
+        if e164.startswith(code):
+            formatter = SUPPORTED_PHONE_FORMATTERS[code]
+            national = e164[len(code) :]
+            if len(national) != formatter.national_length:
+                raise InvalidPhoneNumberError(
+                    f"A {code} number must have {formatter.national_length} national digits, "
+                    f"got {len(national)}: {original!r}."
+                )
+            return formatter
+    supported = ", ".join(sorted(SUPPORTED_PHONE_FORMATTERS))
+    raise InvalidPhoneNumberError(
+        f"Unsupported country calling code in {original!r}; supported codes are: {supported}."
+    )
+
+
 def _normalize_phone(value: str) -> str:
     cleaned = _PHONE_SEPARATORS_RE.sub("", value.strip())
     if not cleaned:
         raise InvalidPhoneNumberError("Phone number must not be empty.")
     if not _E164_RE.match(cleaned):
         raise InvalidPhoneNumberError(
-            f"Phone number must be in E.164 format (e.g. '+79000000000'), got {value!r}."
+            f"Phone number must be in E.164 format (e.g. '+79991234567'), got {value!r}."
         )
+    _match_formatter(cleaned, original=value)  # validate country + length
     return cleaned
 
 
@@ -226,8 +325,11 @@ def _normalize_phone(value: str) -> str:
 class PhoneNumber:
     """A telephone number stored in normalized **E.164** form (DATA-001 §8).
 
-    Input separators (spaces, dashes, parentheses, dots) are stripped; the result
-    must be a leading ``+`` followed by 7-15 digits. Compared by normalized value.
+    E.164 is the only representation kept internally, so equality and storage are
+    unambiguous regardless of how a user typed the number (spaces, dashes,
+    parentheses, and dots are stripped). Only calling codes the platform actually
+    serves are accepted — see :data:`SUPPORTED_PHONE_FORMATTERS`. Human-facing
+    grouping is produced on demand by :meth:`formatted`.
     """
 
     value: str
@@ -241,9 +343,23 @@ class PhoneNumber:
         return cls(value)
 
     @property
-    def country_calling_code_digits(self) -> str:
-        """The digits following ``+`` (full national+country number, no separators)."""
-        return self.value[1:]
+    def country_code(self) -> str:
+        """The E.164 country calling code including the ``+`` (e.g. ``+7``)."""
+        return _match_formatter(self.value, original=self.value).country_code
+
+    @property
+    def national_number(self) -> str:
+        """The subscriber digits after the country calling code."""
+        return self.value[len(self.country_code) :]
+
+    def formatted(self) -> str:
+        """A human-readable rendering using the country's grouping rules::
+
+        +79991234567  -> +7 999 123-45-67
+        +375291234567 -> +375 29 123-45-67
+        """
+        formatter = _match_formatter(self.value, original=self.value)
+        return formatter.format(self.national_number)
 
     def __str__(self) -> str:
         return self.value
@@ -253,7 +369,7 @@ class PhoneNumber:
 # FullName
 # ---------------------------------------------------------------------------
 
-_NAME_PART_RE: Final = re.compile(r"^[^\W\d_]+(?:[ ''\-][^\W\d_]+)*$", re.UNICODE)
+_NAME_PART_RE: Final = re.compile(r"^[^\W\d_]+(?:[ '\-][^\W\d_]+)*$", re.UNICODE)
 _NAME_MAX_LEN: Final = 100
 
 
@@ -279,9 +395,11 @@ def _validate_name_part(value: str, *, field: str) -> str:
 class FullName:
     """A person's name: given (first), family (last), and optional middle name.
 
-    ``middle_name`` carries the patronymic for ``ru-RU`` (DATA-001 §8 PersonName).
-    Whitespace is collapsed; names may contain letters, spaces, hyphens and
-    apostrophes only. Compared by normalized parts.
+    ``middle_name`` carries the patronymic for ``ru-RU`` (DATA-001 §8 PersonName),
+    which is why several display forms exist: Russian official contexts want the
+    surname first with initials, while Western contexts want ``First Last``.
+    Whitespace is collapsed on construction; names may contain letters, spaces,
+    hyphens and apostrophes only. Compared by normalized parts.
     """
 
     first_name: str
@@ -319,11 +437,26 @@ class FullName:
         parts = [self.last_name, self.first_name, self.middle_name]
         return " ".join(part for part in parts if part)
 
-    @property
     def initials(self) -> str:
-        """Initials in display order, e.g. ``I. S.`` or ``I. V. S.``."""
-        parts = [self.first_name, self.middle_name, self.last_name]
-        return " ".join(f"{part[0].upper()}." for part in parts if part)
+        """Surname plus given (and patronymic) initials, the ru-RU official short form.
+
+        Renders ``Last F.`` (or ``Last F.M.`` when a patronymic is present), e.g.
+        ``Ann Lee -> Lee A.``. This is the canonical way documents and certificates
+        address a person, so it is a method producing a formatted string rather
+        than raw initials.
+        """
+        letters = [self.first_name[0].upper()]
+        if self.middle_name:
+            letters.append(self.middle_name[0].upper())
+        return f"{self.last_name} " + "".join(f"{letter}." for letter in letters)
+
+    def short(self) -> str:
+        """Given and family name only, dropping the patronymic: ``Иван Петров``.
+
+        The friendly form for greetings and UI where the full patronymic would be
+        needlessly formal.
+        """
+        return f"{self.first_name} {self.last_name}"
 
     def __str__(self) -> str:
         return self.full
@@ -338,12 +471,14 @@ class FullName:
 class PasswordHash:
     """A stored password digest together with its algorithm metadata.
 
-    This value object is an **abstraction only** — it never stores or handles
-    plaintext, and it performs no hashing. Computing and checking digests is the
-    responsibility of a ``PasswordHasher`` gateway in the infrastructure layer
-    (ARCH-001 §11.2). ``PasswordHash`` merely carries an opaque, already-computed
-    ``encoded`` digest and the ``algorithm`` that produced it, which enables
-    transparent algorithm migration (:meth:`needs_migration`).
+    This value object is an **abstraction only**: it never stores plaintext,
+    performs no hashing, and — deliberately — cannot verify a password. Computing
+    and checking digests requires the concrete algorithm and belongs to a
+    ``PasswordHasher`` gateway in the infrastructure layer (ARCH-001 §11.2).
+    Keeping verification out of the domain prevents a hashing library from leaking
+    across the layer boundary. ``PasswordHash`` merely carries the opaque,
+    already-computed ``encoded_hash`` and the ``algorithm`` that produced it, which
+    is exactly what :meth:`needs_migration` needs to drive transparent rehashing.
     """
 
     #: Algorithms recognized for migration decisions (Argon2 preferred, ARCH-001 §11.2).
@@ -354,23 +489,24 @@ class PasswordHash:
     PREFERRED_ALGORITHM: ClassVar[str] = "argon2id"
 
     algorithm: str
-    encoded: str
+    encoded_hash: str
 
     def __post_init__(self) -> None:
         if not self.algorithm or not self.algorithm.strip():
             raise InvalidPasswordHashError("Password hash algorithm must not be empty.")
-        if not self.encoded or not self.encoded.strip():
+        if not self.encoded_hash or not self.encoded_hash.strip():
             raise InvalidPasswordHashError("Password hash must not be empty.")
-        if "$" not in self.encoded:
+        if "$" not in self.encoded_hash:
             # A real digest is always an encoded string (PHC/Django format). The
-            # absence of any structure strongly suggests plaintext leaked in.
+            # absence of any structure strongly suggests plaintext leaked in, so we
+            # refuse it rather than risk persisting a raw password.
             raise InvalidPasswordHashError(
                 "Password hash does not look like an encoded digest; refusing to store "
                 "a possible plaintext value."
             )
 
     @classmethod
-    def from_hash(cls, encoded: str, algorithm: str | None = None) -> PasswordHash:
+    def from_hash(cls, encoded_hash: str, algorithm: str | None = None) -> PasswordHash:
         """Wrap an already-computed digest.
 
         If ``algorithm`` is omitted it is derived from the encoded string, which is
@@ -378,48 +514,40 @@ class PasswordHash:
         No hashing is performed here.
         """
         resolved = (
-            algorithm.strip() if algorithm and algorithm.strip() else _parse_algorithm(encoded)
+            algorithm.strip() if algorithm and algorithm.strip() else _parse_algorithm(encoded_hash)
         )
-        return cls(algorithm=resolved, encoded=encoded)
-
-    def verify(self, plaintext: str) -> bool:
-        """Check a plaintext candidate against this hash.
-
-        Not implemented in the domain: verification requires the concrete hashing
-        algorithm, which lives behind a ``PasswordHasher`` gateway in the
-        infrastructure layer. This method defines the contract only.
-        """
-        raise NotImplementedError(
-            "Password verification is delegated to a PasswordHasher gateway in the "
-            "infrastructure layer; the domain provides no hashing implementation."
-        )
+        return cls(algorithm=resolved, encoded_hash=encoded_hash)
 
     def needs_migration(self, preferred_algorithm: str | None = None) -> bool:
-        """Whether this hash should be re-computed with a newer algorithm."""
+        """Whether this hash should be re-computed with a newer algorithm.
+
+        Lets the platform silently upgrade legacy digests to the current preferred
+        algorithm the next time a user authenticates.
+        """
         target = preferred_algorithm or self.PREFERRED_ALGORITHM
         return self.algorithm != target
 
     def __repr__(self) -> str:
         # Never expose the digest in logs/reprs.
-        return f"PasswordHash(algorithm={self.algorithm!r}, encoded=<redacted>)"
+        return f"PasswordHash(algorithm={self.algorithm!r}, encoded_hash=<redacted>)"
 
     def __str__(self) -> str:
         return f"<PasswordHash {self.algorithm}>"
 
 
-def _parse_algorithm(encoded: str) -> str:
+def _parse_algorithm(encoded_hash: str) -> str:
     """Derive the algorithm identifier from an encoded digest string."""
-    if encoded.startswith("$"):
-        parts = encoded.split("$")
+    if encoded_hash.startswith("$"):
+        parts = encoded_hash.split("$")
         if len(parts) >= 2 and parts[1]:
             return parts[1]
-    elif "$" in encoded:
-        head = encoded.split("$", 1)[0]
+    elif "$" in encoded_hash:
+        head = encoded_hash.split("$", 1)[0]
         if head:
             return head
     raise InvalidPasswordHashError(
         f"Cannot determine hashing algorithm from encoded value; pass 'algorithm' explicitly "
-        f"(got {encoded[:12]!r}…)."
+        f"(got {encoded_hash[:12]!r}…)."
     )
 
 
@@ -446,10 +574,11 @@ class ConsentVersion:
     """An immutable, comparable identifier of a consent-text version.
 
     Consent is versioned and the exact text in force is preserved immutably as
-    evidence (DATA-001 §4.1, IDN-005). Versions are dot- or dash-separated
-    integers (``2026-01``, ``1.2.0``) and support ordering so the platform can ask
-    "is this the current version?". Equality and ordering are by numeric
-    components, so ``2026-01`` and ``2026-1`` are equal.
+    legal evidence (DATA-001 §4.1, IDN-005). Ordering exists so the platform can
+    answer "has the user accepted the *current* version?" and re-prompt when a
+    newer one ships. Components are compared numerically, so ``1.10`` is newer than
+    ``1.9`` (not the reverse a string compare would give) and ``2026-01`` equals
+    ``2026-1``.
     """
 
     value: str
@@ -514,9 +643,11 @@ def _normalize_locale(value: str) -> str:
 class Locale:
     """A supported language/region tag (ARCH-001 §8.6).
 
-    The primary locale is ``ru-RU``; ``en-US`` is also supported. The supported
-    set is extensible via :attr:`SUPPORTED`. Tags are normalized to
-    ``language-REGION`` casing; unsupported locales are rejected.
+    The primary locale is ``ru-RU``; ``en-US`` is also supported. Rejecting
+    unsupported tags at construction guarantees any ``Locale`` in the system maps
+    to translations that actually exist. The supported set is extensible via
+    :attr:`SUPPORTED`, and tags are normalized to ``language-REGION`` casing so
+    ``ru_ru`` and ``RU-ru`` collapse to one value.
     """
 
     #: Extensible set of supported BCP-47-style tags.
@@ -563,6 +694,14 @@ class Locale:
         """The uppercase region subtag (e.g. ``RU``)."""
         return self.value.split("-", 1)[1]
 
+    def is_russian(self) -> bool:
+        """Whether this locale's language is Russian (region-independent)."""
+        return self.language == "ru"
+
+    def is_english(self) -> bool:
+        """Whether this locale's language is English (region-independent)."""
+        return self.language == "en"
+
     def __str__(self) -> str:
         return self.value
 
@@ -571,19 +710,22 @@ class Locale:
 # Timezone
 # ---------------------------------------------------------------------------
 
+_UTC_ZONE_KEY: Final = "UTC"
+
 
 @dataclass(frozen=True, slots=True)
 class Timezone:
     """A validated IANA timezone name (e.g. ``Europe/Moscow``, ``UTC``).
 
-    Validation is performed against the system/``tzdata`` zone database via
-    :class:`zoneinfo.ZoneInfo`. The platform stores and computes in UTC
-    (API-000 §22); this value object lets user-facing preferences reference a real
-    zone. Compared by name.
+    Validation goes through :class:`zoneinfo.ZoneInfo` against the system/``tzdata``
+    database, so only real zones can exist. The platform stores and computes in UTC
+    (API-000 §22); this value object exists so a *user-facing* preference can point
+    at a real zone and render local times without the domain hard-coding offsets
+    (which shift with DST and political changes). Compared by name.
     """
 
     #: The platform's canonical timezone (ARCH-001: timezone UTC).
-    DEFAULT: ClassVar[str] = "UTC"
+    DEFAULT: ClassVar[str] = _UTC_ZONE_KEY
 
     value: str
 
@@ -611,6 +753,28 @@ class Timezone:
     def zone_info(self) -> ZoneInfo:
         """The corresponding :class:`zoneinfo.ZoneInfo` instance."""
         return ZoneInfo(self.value)
+
+    def is_utc(self) -> bool:
+        """Whether this zone is UTC — the platform's canonical storage zone."""
+        return self.zone_info.key == _UTC_ZONE_KEY
+
+    def current_time(self) -> datetime:
+        """The current wall-clock time as a timezone-aware datetime in this zone.
+
+        Aware (never naive) so callers cannot accidentally mix it with UTC values.
+        """
+        return datetime.now(self.zone_info)
+
+    def offset(self) -> timedelta:
+        """The current offset from UTC, accounting for DST at this moment.
+
+        Returned as a :class:`~datetime.timedelta` because a fixed number would be
+        wrong half the year for zones that observe daylight saving time.
+        """
+        delta = self.current_time().utcoffset()
+        if delta is None:  # pragma: no cover - a real ZoneInfo always yields an offset
+            return timedelta(0)
+        return delta
 
     def __str__(self) -> str:
         return self.value

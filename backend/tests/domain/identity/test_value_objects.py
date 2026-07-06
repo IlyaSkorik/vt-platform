@@ -1,14 +1,15 @@
 """Unit tests for the Identity domain value objects.
 
 Framework-free, database-free (ARCH-001 §28.2). Covers, per value object:
-construction & validation, normalization, equality/hashing, invalid inputs, and
-(where applicable) comparison/ordering.
+construction & validation, normalization, equality/hashing, invalid inputs,
+formatting/display helpers, and (where applicable) comparison/ordering.
 """
 
 from __future__ import annotations
 
 import dataclasses
 import uuid
+from datetime import datetime, timedelta
 
 import pytest
 
@@ -25,6 +26,7 @@ from apps.identity.domain.exceptions import (
     ValueObjectValidationError,
 )
 from apps.identity.domain.value_objects import (
+    SUPPORTED_PHONE_FORMATTERS,
     ConsentVersion,
     Email,
     FullName,
@@ -81,6 +83,17 @@ class TestUserId:
         user_id = UserId.generate()
         assert str(user_id) == str(user_id.value)
 
+    def test_json_is_canonical_string(self) -> None:
+        user_id = UserId.generate()
+        assert user_id.json() == str(user_id.value)
+        # Round-trips through the JSON string form.
+        assert UserId.from_string(user_id.json()) == user_id
+
+    def test_repr_shows_wrapped_uuid(self) -> None:
+        user_id = UserId.generate()
+        assert repr(user_id) == f"UserId({str(user_id.value)!r})"
+        assert "UserId(" in repr(user_id)
+
     def test_rejects_non_v7_uuid(self) -> None:
         with pytest.raises(InvalidUserIdError):
             UserId(uuid.uuid4())
@@ -113,6 +126,16 @@ class TestEmail:
         email = Email("user@sub.example.com")
         assert email.local_part == "user"
         assert email.domain == "sub.example.com"
+
+    def test_masked_keeps_domain_and_hides_local(self) -> None:
+        assert Email("ivan.petrov@gmail.com").masked() == "iva***@gmail.com"
+        assert Email("alex@example.com").masked() == "ale***@example.com"
+        assert Email("a@gmail.com").masked() == "*@gmail.com"
+
+    def test_masked_never_reveals_whole_local_part(self) -> None:
+        # A short (but > 1 char) local part still keeps at least one char hidden.
+        assert Email("ab@gmail.com").masked() == "a***@gmail.com"
+        assert Email("abc@gmail.com").masked() == "ab***@gmail.com"
 
     def test_accepts_valid_addresses(self) -> None:
         valid = [
@@ -159,37 +182,67 @@ class TestEmail:
 
 class TestPhoneNumber:
     def test_normalizes_to_e164(self) -> None:
-        assert PhoneNumber("+7 900 000-00-00").value == "+79000000000"
-        assert PhoneNumber("+1 (415) 555-2671").value == "+14155552671"
+        assert PhoneNumber("+7 999 123-45-67").value == "+79991234567"
+        assert PhoneNumber("+375 (29) 123-45-67").value == "+375291234567"
 
     def test_equality_by_normalized_value(self) -> None:
-        assert PhoneNumber("+7 900 000 00 00") == PhoneNumber("+79000000000")
+        assert PhoneNumber("+7 999 123 45 67") == PhoneNumber("+79991234567")
 
-    def test_exposes_digits(self) -> None:
-        assert PhoneNumber("+79000000000").country_calling_code_digits == "79000000000"
+    def test_russian_country_code_and_national_number(self) -> None:
+        phone = PhoneNumber("+79991234567")
+        assert phone.country_code == "+7"
+        assert phone.national_number == "9991234567"
+
+    def test_belarusian_country_code_and_national_number(self) -> None:
+        phone = PhoneNumber("+375291234567")
+        assert phone.country_code == "+375"
+        assert phone.national_number == "291234567"
+
+    def test_russian_formatting(self) -> None:
+        assert PhoneNumber("+79991234567").formatted() == "+7 999 123-45-67"
+
+    def test_belarusian_formatting(self) -> None:
+        assert PhoneNumber("+375291234567").formatted() == "+375 29 123-45-67"
+
+    def test_formatter_registry_is_the_single_source_of_truth(self) -> None:
+        # Formatting is data-driven: each supported code has a formatter whose
+        # declared national length matches what it produces.
+        assert set(SUPPORTED_PHONE_FORMATTERS) == {"+7", "+375"}
+        for code, formatter in SUPPORTED_PHONE_FORMATTERS.items():
+            assert formatter.country_code == code
+            assert sum(size for size, _ in formatter.groups) == formatter.national_length
 
     def test_str(self) -> None:
-        assert str(PhoneNumber("+79000000000")) == "+79000000000"
+        assert str(PhoneNumber("+79991234567")) == "+79991234567"
+
+    def test_rejects_unsupported_country(self) -> None:
+        for value in ["+14155552671", "+441632960961", "+4915112345678"]:
+            with pytest.raises(InvalidPhoneNumberError):
+                PhoneNumber(value)
+
+    def test_rejects_supported_country_with_wrong_length(self) -> None:
+        for value in ["+7999123456", "+7999123456789", "+37529123456", "+3752912345678"]:
+            with pytest.raises(InvalidPhoneNumberError):
+                PhoneNumber(value)
 
     def test_rejects_invalid_numbers(self) -> None:
         invalid = [
             "",
             "   ",
-            "79000000000",  # no leading '+'
+            "79991234567",  # no leading '+'
             "+0900000000",  # cannot start with 0
             "+123",  # too short
-            "+1234567890123456",  # too long (16 digits)
             "phone",
-            "+7-900-ABC-00-00",  # letters
+            "+7-999-ABC-45-67",  # letters
         ]
         for value in invalid:
             with pytest.raises(InvalidPhoneNumberError):
                 PhoneNumber(value)
 
     def test_is_immutable(self) -> None:
-        phone = PhoneNumber("+79000000000")
+        phone = PhoneNumber("+79991234567")
         with pytest.raises(dataclasses.FrozenInstanceError):
-            phone.value = "+10000000000"  # type: ignore[misc]
+            phone.value = "+375291234567"  # type: ignore[misc]
 
 
 # ---------------------------------------------------------------------------
@@ -209,16 +262,18 @@ class TestFullName:
         assert FullName("Ann", "Lee", "   ").middle_name is None
 
     def test_display_formatting(self) -> None:
-        name = FullName("Ирина", "Смирнова", "Ивановна")
-        assert name.full == "Ирина Ивановна Смирнова"
-        assert name.formal == "Смирнова Ирина Ивановна"
-        assert name.initials == "И. И. С."  # noqa: RUF001 (intentional Cyrillic ES)
+        name = FullName("Иван", "Петров", "Сергеевич")
+        assert name.full == "Иван Сергеевич Петров"
+        assert name.formal == "Петров Иван Сергеевич"
+        assert name.initials() == "Петров И.С."  # noqa: RUF001 (intentional Cyrillic ES)
+        assert name.short() == "Иван Петров"
         assert str(name) == name.full
 
     def test_display_without_middle(self) -> None:
         name = FullName("Ann", "Lee")
         assert name.full == "Ann Lee"
-        assert name.initials == "A. L."
+        assert name.initials() == "Lee A."
+        assert name.short() == "Ann Lee"
 
     def test_accepts_compound_names(self) -> None:
         name = FullName("Anna-Maria", "O'Brien")
@@ -268,22 +323,30 @@ class TestPasswordHash:
         password_hash = PasswordHash.from_hash(_ARGON2, algorithm="argon2i")
         assert password_hash.algorithm == "argon2i"
 
+    def test_encoded_hash_is_preserved(self) -> None:
+        assert PasswordHash.from_hash(_ARGON2).encoded_hash == _ARGON2
+
+    def test_cannot_derive_algorithm_without_structure(self) -> None:
+        # Leading '$' but no algorithm token, and a lone trailing token.
+        with pytest.raises(InvalidPasswordHashError):
+            PasswordHash.from_hash("$$noalgo")
+
+    def test_has_no_verify_method(self) -> None:
+        # Verification is an infrastructure concern; the domain must not expose it.
+        assert not hasattr(PasswordHash, "verify")
+
     def test_never_stores_plaintext(self) -> None:
         # A bare plaintext-looking value has no algorithm structure and is refused.
         with pytest.raises(InvalidPasswordHashError):
             PasswordHash.from_hash("hunter2")
         with pytest.raises(InvalidPasswordHashError):
-            PasswordHash(algorithm="argon2id", encoded="hunter2")
+            PasswordHash(algorithm="argon2id", encoded_hash="hunter2")
 
     def test_empty_values_rejected(self) -> None:
         with pytest.raises(InvalidPasswordHashError):
-            PasswordHash(algorithm="", encoded=_ARGON2)
+            PasswordHash(algorithm="", encoded_hash=_ARGON2)
         with pytest.raises(InvalidPasswordHashError):
-            PasswordHash(algorithm="argon2id", encoded="  ")
-
-    def test_verify_is_not_implemented_in_domain(self) -> None:
-        with pytest.raises(NotImplementedError):
-            PasswordHash.from_hash(_ARGON2).verify("hunter2")
+            PasswordHash(algorithm="argon2id", encoded_hash="  ")
 
     def test_needs_migration(self) -> None:
         assert PasswordHash.from_hash(_PBKDF2).needs_migration() is True
@@ -294,7 +357,7 @@ class TestPasswordHash:
         password_hash = PasswordHash.from_hash(_ARGON2)
         assert "argon2id" in repr(password_hash)
         assert "aGFzaHZhbHVl" not in repr(password_hash)
-        assert password_hash.encoded not in str(password_hash)
+        assert password_hash.encoded_hash not in str(password_hash)
 
     def test_equality(self) -> None:
         assert PasswordHash.from_hash(_ARGON2) == PasswordHash.from_hash(_ARGON2)
@@ -368,6 +431,12 @@ class TestLocale:
         assert locale.language == "ru"
         assert locale.region == "RU"
 
+    def test_is_russian_and_is_english(self) -> None:
+        assert Locale("ru-RU").is_russian() is True
+        assert Locale("ru-RU").is_english() is False
+        assert Locale("en-US").is_english() is True
+        assert Locale("en-US").is_russian() is False
+
     def test_supported_locales(self) -> None:
         assert Locale("ru-RU").value == "ru-RU"
         assert Locale("en-US").value == "en-US"
@@ -412,6 +481,21 @@ class TestTimezone:
     def test_zone_info_property(self) -> None:
         assert str(Timezone("Europe/Moscow").zone_info) == "Europe/Moscow"
 
+    def test_is_utc(self) -> None:
+        assert Timezone.utc().is_utc() is True
+        assert Timezone("Europe/Moscow").is_utc() is False
+
+    def test_current_time_is_timezone_aware(self) -> None:
+        now = Timezone("Europe/Moscow").current_time()
+        assert isinstance(now, datetime)
+        assert now.tzinfo is not None
+        assert now.utcoffset() is not None
+
+    def test_offset(self) -> None:
+        # UTC is always +00:00; Moscow has been a fixed UTC+3 since 2014 (no DST).
+        assert Timezone.utc().offset() == timedelta(0)
+        assert Timezone("Europe/Moscow").offset() == timedelta(hours=3)
+
     def test_strips_whitespace(self) -> None:
         assert Timezone("  UTC ").value == "UTC"
 
@@ -430,7 +514,7 @@ class TestTimezone:
 
 
 # ---------------------------------------------------------------------------
-# Cross-cutting: exception hierarchy
+# Cross-cutting: factories and exception hierarchy
 # ---------------------------------------------------------------------------
 
 
@@ -439,7 +523,7 @@ class TestFactoryMethods:
 
     def test_from_string_factories(self) -> None:
         assert Email.from_string("A@B.COM") == Email("a@b.com")
-        assert PhoneNumber.from_string("+7 900 000-00-00").value == "+79000000000"
+        assert PhoneNumber.from_string("+7 999 123-45-67").value == "+79991234567"
         assert ConsentVersion.from_string("1.0") == ConsentVersion("1.0")
         assert Locale.from_string("ru_ru") == Locale("ru-RU")
         assert Timezone.from_string("UTC") == Timezone.utc()
@@ -449,7 +533,7 @@ class TestFactoryMethods:
 
     def test_string_representations(self) -> None:
         assert str(Email("a@b.com")) == "a@b.com"
-        assert str(PhoneNumber("+79000000000")) == "+79000000000"
+        assert str(PhoneNumber("+79991234567")) == "+79991234567"
         assert str(ConsentVersion("1.0")) == "1.0"
         assert str(Locale.default()) == "ru-RU"
         assert str(Timezone.utc()) == "UTC"
