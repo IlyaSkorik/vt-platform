@@ -7,15 +7,18 @@ presentation edge (ARCH-001 §7.6). No Django/DRF imports.
 The hierarchy is intentionally shallow:
 
     IdentityDomainError                     — base for every Identity domain error
-    └── ValueObjectValidationError          — a value object rejected its input
-        ├── InvalidUserIdError
-        ├── InvalidEmailError
-        ├── InvalidPhoneNumberError
-        ├── InvalidFullNameError
-        ├── InvalidPasswordHashError
-        ├── InvalidConsentVersionError
-        ├── UnsupportedLocaleError
-        └── InvalidTimezoneError
+    ├── ValueObjectValidationError          — a value object rejected its input
+    │   ├── InvalidUserIdError
+    │   ├── InvalidEmailError
+    │   ├── InvalidPhoneNumberError
+    │   ├── InvalidFullNameError
+    │   ├── InvalidPasswordHashError
+    │   ├── InvalidConsentVersionError
+    │   ├── UnsupportedLocaleError
+    │   └── InvalidTimezoneError
+    ├── PolicyConfigurationError            — a policy was injected invalid configuration
+    └── PolicyViolationError                — a business policy rejected an operation
+        └── WeakPasswordError
 """
 
 from __future__ import annotations
@@ -64,3 +67,40 @@ class UnsupportedLocaleError(ValueObjectValidationError):
 
 class InvalidTimezoneError(ValueObjectValidationError):
     """The provided value is not a valid IANA timezone name."""
+
+
+class PolicyConfigurationError(IdentityDomainError, ValueError):
+    """Raised when a business policy is constructed with invalid configuration.
+
+    Policies are configured by injection (never from globals or files), so a
+    nonsensical knob — a non-positive duration, a maximum below a minimum — is a
+    caller/composition bug, not a domain-runtime condition. Subclasses
+    :class:`ValueError` so it reads naturally at the composition root while still
+    being catchable as an Identity domain error.
+    """
+
+
+class PolicyViolationError(IdentityDomainError):
+    """Base class for a business policy rejecting an operation at runtime.
+
+    Distinct from :class:`ValueObjectValidationError` (a value that cannot exist)
+    and :class:`PolicyConfigurationError` (a misconfigured policy): the inputs are
+    individually valid, but a *business rule* forbids the operation. Mapped to RFC
+    9457 Problem Details at the presentation edge (ARCH-001 §7.6).
+    """
+
+
+class WeakPasswordError(PolicyViolationError):
+    """A proposed password does not satisfy the active :class:`PasswordPolicy`.
+
+    Carries the machine-readable ``violations`` (the string values of the policy's
+    ``PasswordViolation`` reasons) so the edge can render precise, localizable
+    guidance instead of a single opaque message. The type is kept free of any
+    ``policies`` import to avoid a domain-internal cycle; the tuple holds plain
+    strings, which the ``PasswordViolation`` string-enum members already are.
+    """
+
+    def __init__(self, violations: tuple[str, ...]) -> None:
+        self.violations: tuple[str, ...] = violations
+        detail = ", ".join(violations) if violations else "unspecified reason"
+        super().__init__(f"Password does not satisfy the policy: {detail}.")
