@@ -1,0 +1,35 @@
+# Ruff configuration — linting & formatting (ARCH-001 §26.1).
+line-length = 100
+target-version = "py313"
+
+extend-exclude = ["**/migrations/*"]
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "W",   # pycodestyle warnings
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "DJ",  # flake8-django
+    "SIM", # flake8-simplify
+    "RUF", # ruff-specific
+]
+ignore = [
+    "N999", # allow existing module naming
+]
+
+[lint.per-file-ignores]
+# Split settings intentionally use star-imports to compose environments.
+"config/settings/*.py" = ["F403", "F405"]
+"__init__.py" = ["F401"]
+
+[lint.isort]
+known-first-party = ["apps", "config", "shared"]
+
+[format]
+quote-style = "double"
+indent-style = "space"
