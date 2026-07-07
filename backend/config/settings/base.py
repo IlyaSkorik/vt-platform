@@ -111,6 +111,12 @@ DATABASES = {
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Migrations live under each bounded context's infrastructure layer (ARCH-001
+# §7.2, §9.2, §14), not the default ``<app>/migrations/``.
+MIGRATION_MODULES = {
+    "identity": "apps.identity.infrastructure.migrations",
+}
+
 # --- Password validation --------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},

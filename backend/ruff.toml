@@ -26,6 +26,10 @@ ignore = [
 # Split settings intentionally use star-imports to compose environments.
 "config/settings/*.py" = ["F403", "F405"]
 "__init__.py" = ["F401"]
+# ORM persistence models: Django `Meta.indexes`/`constraints` are class-level
+# lists by design (RUF012); optional domain fields (`X | None`) map faithfully
+# to nullable columns, where NULL means "absent" — distinct from "" (DJ001).
+"apps/*/infrastructure/models/*.py" = ["RUF012", "DJ001"]
 
 [lint.isort]
 known-first-party = ["apps", "config", "shared"]

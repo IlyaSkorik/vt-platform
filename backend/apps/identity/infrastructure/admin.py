@@ -1,5 +1,41 @@
 """Django admin registrations for the Identity & Access bounded context.
 
-Operational surface only — no business logic (ARCH-001 architecture rules).
-Structure only at bootstrap.
+Operational surface only — no business logic (ARCH-001 architecture rules). Every
+model is registered with its audit timestamps made read-only; nothing else is
+configured here.
 """
+
+from __future__ import annotations
+
+from django.contrib import admin
+
+from apps.identity.infrastructure.models import (
+    UserConsentModel,
+    UserEmailVerificationModel,
+    UserModel,
+    UserPhoneVerificationModel,
+    UserSessionModel,
+)
+
+
+class _ReadOnlyTimestampsAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
+    """Base admin exposing the audit timestamps as read-only.
+
+    Timestamps are written by the domain/mapper and are never editable in admin.
+    (``admin.ModelAdmin`` is not subscriptable at runtime in this Django version,
+    so the django-stubs generic parameter is elided with a typed ignore.)
+    """
+
+    readonly_fields = ("created_at", "updated_at", "deleted_at")
+
+
+admin.site.register(
+    [
+        UserModel,
+        UserEmailVerificationModel,
+        UserPhoneVerificationModel,
+        UserConsentModel,
+        UserSessionModel,
+    ],
+    _ReadOnlyTimestampsAdmin,
+)
