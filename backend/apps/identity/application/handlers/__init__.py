@@ -1,5 +1,37 @@
-"""Domain-event handlers for the Identity & Access bounded context.
+"""Command handlers (use cases) for the Identity & Access bounded context.
 
-React to events from this and other contexts (ARCH-001 §4.8).
-Structure only at bootstrap.
+One handler per command: thin orchestrators over the application ports and the
+``User`` aggregate (ARCH-001 §7.2, §7.4). Implementations live in
+:mod:`apps.identity.application.handlers.user_handlers`; the re-exports below are
+the package's public surface.
 """
+
+from apps.identity.application.handlers.user_handlers import (
+    ChangeEmailHandler,
+    ChangePasswordHandler,
+    ChangePhoneHandler,
+    DeleteUserHandler,
+    GrantConsentHandler,
+    LockUserHandler,
+    RegisterUserHandler,
+    RestoreUserHandler,
+    UnlockUserHandler,
+    VerifyEmailHandler,
+    VerifyPhoneHandler,
+    WithdrawConsentHandler,
+)
+
+__all__ = [
+    "ChangeEmailHandler",
+    "ChangePasswordHandler",
+    "ChangePhoneHandler",
+    "DeleteUserHandler",
+    "GrantConsentHandler",
+    "LockUserHandler",
+    "RegisterUserHandler",
+    "RestoreUserHandler",
+    "UnlockUserHandler",
+    "VerifyEmailHandler",
+    "VerifyPhoneHandler",
+    "WithdrawConsentHandler",
+]

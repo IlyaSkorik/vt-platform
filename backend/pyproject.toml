@@ -40,3 +40,10 @@ dev = [
 
 [tool.uv]
 package = false
+
+[tool.coverage.report]
+# Protocol method bodies and type-only imports are never executed at runtime.
+exclude_also = [
+    '^\s*\.\.\.\s*$',
+    'if TYPE_CHECKING:',
+]
