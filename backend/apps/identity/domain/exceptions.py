@@ -17,8 +17,21 @@ The hierarchy is intentionally shallow:
     │   ├── UnsupportedLocaleError
     │   └── InvalidTimezoneError
     ├── PolicyConfigurationError            — a policy was injected invalid configuration
-    └── PolicyViolationError                — a business policy rejected an operation
-        └── WeakPasswordError
+    ├── PolicyViolationError                — a business policy rejected an operation
+    │   └── WeakPasswordError
+    ├── DirectConstructionError             — the User aggregate was built bypassing its factories
+    └── UserStateError                      — an operation is illegal in the aggregate's current state
+        ├── UserDeletedError
+        ├── UserNotDeletedError
+        ├── EmailAlreadyVerifiedError
+        ├── EmailNotChangedError
+        ├── PhoneNotSetError
+        ├── PhoneAlreadyVerifiedError
+        ├── PhoneNotChangedError
+        ├── VerificationExpiredError
+        ├── UserNotLockedError
+        ├── ConsentNotGrantedError
+        └── StaleConsentError
 """
 
 from __future__ import annotations
@@ -104,3 +117,66 @@ class WeakPasswordError(PolicyViolationError):
         self.violations: tuple[str, ...] = violations
         detail = ", ".join(violations) if violations else "unspecified reason"
         super().__init__(f"Password does not satisfy the policy: {detail}.")
+
+
+class DirectConstructionError(IdentityDomainError):
+    """Raised when :class:`~apps.identity.domain.entities.User` is built directly.
+
+    The aggregate root must be created through ``User.register`` (a new account) or
+    ``User.rehydrate`` (reconstruction from persistence), which alone establish the
+    creation invariants. Calling the dataclass constructor directly bypasses them
+    and is therefore refused.
+    """
+
+
+class UserStateError(IdentityDomainError):
+    """Base for an operation that is illegal in the User aggregate's current state.
+
+    The inputs are individually valid, but the aggregate's lifecycle forbids the
+    transition (e.g. verifying an already-verified email, mutating a deleted user).
+    Mapped to RFC 9457 Problem Details at the presentation edge (ARCH-001 §7.6).
+    """
+
+
+class UserDeletedError(UserStateError):
+    """The operation is not permitted because the user is soft-deleted."""
+
+
+class UserNotDeletedError(UserStateError):
+    """A restore was attempted on a user that is not soft-deleted."""
+
+
+class EmailAlreadyVerifiedError(UserStateError):
+    """The email address is already verified; it cannot be verified again."""
+
+
+class EmailNotChangedError(UserStateError):
+    """The supplied email is identical to the current one; the change is a no-op."""
+
+
+class PhoneNotSetError(UserStateError):
+    """A phone operation was attempted, but the user has no phone number set."""
+
+
+class PhoneAlreadyVerifiedError(UserStateError):
+    """The phone number is already verified; it cannot be verified again."""
+
+
+class PhoneNotChangedError(UserStateError):
+    """The supplied phone number is identical to the current one; the change is a no-op."""
+
+
+class VerificationExpiredError(UserStateError):
+    """The verification link or code has expired and can no longer confirm ownership."""
+
+
+class UserNotLockedError(UserStateError):
+    """An unlock was attempted on a user that is not currently locked."""
+
+
+class ConsentNotGrantedError(UserStateError):
+    """Consent withdrawal was attempted, but the user has no active consent."""
+
+
+class StaleConsentError(UserStateError):
+    """The consent version being granted is older than the current version in force."""

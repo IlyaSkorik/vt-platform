@@ -41,6 +41,13 @@ Events implemented here (all past tense — they report, never command):
 * :class:`UserUnlocked`            — the account lock was released.
 * :class:`SessionStarted`          — an authenticated session was opened.
 * :class:`SessionEnded`            — an authenticated session was closed.
+* :class:`EmailChanged`            — the account's email address was changed.
+* :class:`PhoneChanged`            — the account's phone number was changed.
+* :class:`UserRenamed`             — the account holder's name was changed.
+* :class:`LocaleChanged`           — the preferred locale was changed.
+* :class:`TimezoneChanged`         — the preferred timezone was changed.
+* :class:`UserDeleted`             — the account was soft-deleted.
+* :class:`UserRestored`            — a soft-deleted account was restored.
 """
 
 from __future__ import annotations
@@ -68,18 +75,25 @@ __all__ = [
     "ConsentType",
     "ConsentWithdrawn",
     "DomainEvent",
+    "EmailChanged",
     "EmailVerified",
+    "LocaleChanged",
     "PasswordChanged",
     "PasswordResetCompleted",
     "PasswordResetRequested",
+    "PhoneChanged",
     "PhoneVerified",
     "RoleAssigned",
     "RoleRevoked",
     "SessionEndReason",
     "SessionEnded",
     "SessionStarted",
+    "TimezoneChanged",
+    "UserDeleted",
     "UserLocked",
     "UserRegistered",
+    "UserRenamed",
+    "UserRestored",
     "UserUnlocked",
 ]
 
@@ -462,3 +476,95 @@ class SessionEnded(DomainEvent):
 
     session_id: uuid.UUID
     reason: SessionEndReason
+
+
+# ---------------------------------------------------------------------------
+# Contact changes (paired with EmailVerified / PhoneVerified above)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class EmailChanged(DomainEvent):
+    """The account's email address was changed (IDN-002).
+
+    Carries the new address. A change invalidates any prior verification: the new
+    address is untrusted until confirmed again (announced by :class:`EmailVerified`).
+    A consumer typically notifies the previous address of the change for security.
+    """
+
+    email: Email
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class PhoneChanged(DomainEvent):
+    """The account's phone number was changed (IDN-002).
+
+    Carries the new E.164 number. Like :class:`EmailChanged`, this resets phone
+    verification — the new number must be confirmed via :class:`PhoneVerified`.
+    """
+
+    phone: PhoneNumber
+
+
+# ---------------------------------------------------------------------------
+# Profile changes
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class UserRenamed(DomainEvent):
+    """The account holder's name was changed (IDN-009).
+
+    Carries the new :class:`FullName` so downstream read models, certificates, and
+    notifications can be kept consistent.
+    """
+
+    full_name: FullName
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class LocaleChanged(DomainEvent):
+    """The account's preferred locale was changed (ARCH-001 §8.6).
+
+    Carries the new :class:`Locale`; consumers re-render localized content and
+    messaging against it.
+    """
+
+    locale: Locale
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class TimezoneChanged(DomainEvent):
+    """The account's preferred timezone was changed (API-000 §22).
+
+    Carries the new :class:`Timezone`; consumers render local wall-clock times
+    against it while storage stays UTC.
+    """
+
+    timezone: Timezone
+
+
+# ---------------------------------------------------------------------------
+# Account lifecycle
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class UserDeleted(DomainEvent):
+    """The account was soft-deleted (IDN-010, DATA-001 §4).
+
+    A reversible lifecycle transition: the record is retained for audit and legal
+    retention, but the account is inactive and cannot authenticate. ``reason`` is an
+    optional short cause for the audit trail. Reversed by :class:`UserRestored`.
+    """
+
+    reason: str | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class UserRestored(DomainEvent):
+    """A soft-deleted account was reactivated (IDN-010).
+
+    The inverse of :class:`UserDeleted`; the account may authenticate again, subject
+    to the usual checks (verification and locks).
+    """
