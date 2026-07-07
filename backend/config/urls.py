@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from django.contrib import admin
 from django.http import HttpRequest, JsonResponse
-from django.urls import path
+from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -45,6 +45,6 @@ urlpatterns = [
         SpectacularRedocView.as_view(url_name="schema"),
         name="redoc",
     ),
-    # Versioned bounded-context routers are mounted here, e.g.:
-    #   path("api/v1/", include("apps.identity.presentation.urls")),
+    # Versioned bounded-context routers (ARCH-001 §14, API-000 §2).
+    path("api/v1/", include("apps.identity.presentation.urls")),
 ]

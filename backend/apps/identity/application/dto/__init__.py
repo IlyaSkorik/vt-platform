@@ -6,5 +6,6 @@ package's public surface; see :mod:`apps.identity.application.dto.results`.
 """
 
 from apps.identity.application.dto.results import OperationResultDto, UserDto
+from apps.identity.application.dto.tokens import TokenPairDto
 
-__all__ = ["OperationResultDto", "UserDto"]
+__all__ = ["OperationResultDto", "TokenPairDto", "UserDto"]

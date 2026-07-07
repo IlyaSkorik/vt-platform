@@ -49,6 +49,7 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import Protocol, runtime_checkable
 
+from apps.identity.application.dto import TokenPairDto
 from apps.identity.domain.entities import User
 from apps.identity.domain.events import DomainEvent
 from apps.identity.domain.value_objects import (
@@ -67,6 +68,7 @@ __all__ = [
     "NotificationGateway",
     "PasswordHasher",
     "SmsGateway",
+    "TokenService",
     "UserRepository",
     "UuidGenerator",
 ]
@@ -346,4 +348,51 @@ class EventPublisher(Protocol):
 
     def publish(self, events: Sequence[DomainEvent]) -> None:
         """Publish ``events`` in order to the platform's event transport."""
+        ...
+
+
+# ---------------------------------------------------------------------------
+# Session-token port
+# ---------------------------------------------------------------------------
+
+
+@runtime_checkable
+class TokenService(Protocol):
+    """Port: issue, rotate, and revoke the session's JWT pair.
+
+    **Why it exists.** Minting and validating JWTs needs a concrete signing key,
+    algorithm, and a rotation/blacklist mechanism — infrastructure detail that must
+    not leak into a use case. The domain models a credential only as an opaque
+    :class:`~apps.identity.domain.value_objects.PasswordHash` and knows nothing of
+    sessions or tokens; this port is where the token lifecycle lives, keeping the
+    login/refresh/logout use cases framework-free (ARCH-001 §11, API-000 §17).
+
+    **Who implements it.** An infrastructure adapter over ``djangorestframework-
+    simplejwt`` (issuing the access/refresh pair, rotating on refresh, blacklisting
+    on rotation/logout). Tests substitute a deterministic in-memory fake.
+
+    **Who consumes it.** The login edge (after
+    :class:`~apps.identity.application.handlers.user_handlers.AuthenticateUserHandler`
+    has verified credentials) calls :meth:`issue`; the refresh use case calls
+    :meth:`rotate`; the logout use case calls :meth:`revoke`.
+
+    Contract notes: ``subject`` is the account's opaque id string
+    (:meth:`~apps.identity.domain.value_objects.UserId.json`). :meth:`rotate` and
+    :meth:`revoke` MUST raise
+    :class:`~apps.identity.application.exceptions.InvalidTokenError` for any
+    unusable token (malformed, expired, wrong type, already rotated) rather than
+    returning a sentinel — the caller never inspects token internals. Rotation
+    invalidates the presented refresh token so it cannot be replayed.
+    """
+
+    def issue(self, *, subject: str) -> TokenPairDto:
+        """Issue a fresh access + refresh pair for the account ``subject``."""
+        ...
+
+    def rotate(self, *, refresh_token: str) -> TokenPairDto:
+        """Validate ``refresh_token``, invalidate it, and issue a new pair."""
+        ...
+
+    def revoke(self, *, refresh_token: str) -> None:
+        """Blacklist ``refresh_token`` so the session can no longer be renewed."""
         ...

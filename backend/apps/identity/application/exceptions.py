@@ -40,9 +40,12 @@ from apps.identity.domain.exceptions import (
 )
 
 __all__ = [
+    "AccountInactiveError",
     "ApplicationError",
     "EmailAlreadyInUseError",
+    "InvalidCredentialsError",
     "InvalidInputError",
+    "InvalidTokenError",
     "PhoneAlreadyInUseError",
     "PolicyViolationError",
     "UserNotFoundError",
@@ -121,6 +124,45 @@ class UserStateConflictError(ApplicationError):
     def __init__(self, message: str, *, domain_code: str) -> None:
         super().__init__(message)
         self.domain_code = domain_code
+
+
+class InvalidCredentialsError(ApplicationError):
+    """Authentication failed: the email/password pair did not match an account.
+
+    Raised by the login use case for **every** credential failure mode — unknown
+    email, wrong password, or a malformed email that cannot identify an account —
+    so the caller cannot distinguish them and enumerate accounts (API-000 §26,
+    API-001 §4.4). Deliberately carries no detail about *which* check failed.
+    """
+
+    code: ClassVar[str] = "invalid_credentials"
+
+
+class InvalidTokenError(ApplicationError):
+    """A refresh token could not be accepted for renewal or revocation.
+
+    Raised by the session use cases (refresh, logout) when the
+    :class:`~apps.identity.application.interfaces.TokenService` rejects a refresh
+    token — because it is malformed, expired, of the wrong type, or has already
+    been rotated/blacklisted (a replay). Like
+    :class:`InvalidCredentialsError`, it is deliberately opaque about *why* the
+    token failed so a caller cannot probe token state; the edge maps it to a
+    generic ``401`` (API-001 §4.5, API-000 §26).
+    """
+
+    code: ClassVar[str] = "invalid_token"
+
+
+class AccountInactiveError(ApplicationError):
+    """Credentials were correct, but the account may not establish a session.
+
+    Raised by the login use case when a verified password belongs to an account
+    that is locked or soft-deleted (IDN-009). Distinct from
+    :class:`InvalidCredentialsError`: the credentials matched, but the account's
+    lifecycle state forbids sign-in. Mapped to ``403`` at the edge.
+    """
+
+    code: ClassVar[str] = "account_inactive"
 
 
 class WeakPasswordError(ApplicationError):

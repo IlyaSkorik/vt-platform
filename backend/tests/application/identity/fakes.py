@@ -14,6 +14,8 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
+from apps.identity.application.dto import TokenPairDto
+from apps.identity.application.exceptions import InvalidTokenError
 from apps.identity.domain.entities import User
 from apps.identity.domain.value_objects import Email, PasswordHash, PhoneNumber, UserId
 
@@ -101,3 +103,42 @@ class FakeUuidGenerator:
         value = UserId.generate().value
         self.issued.append(value)
         return value
+
+
+class FakeTokenService:
+    """Deterministic :class:`TokenService` fake — no cryptography, no persistence.
+
+    Tracks which refresh tokens are still valid so ``rotate``/``revoke`` reject an
+    unknown, already-rotated, or already-revoked token exactly as a real adapter
+    would (raising :class:`InvalidTokenError`).
+    """
+
+    def __init__(self) -> None:
+        self.issued: list[str] = []
+        self.rotated: list[str] = []
+        self.revoked: list[str] = []
+        self._valid: set[str] = set()
+        self._counter = 0
+
+    def issue(self, *, subject: str) -> TokenPairDto:
+        self._counter += 1
+        refresh = f"refresh-{subject}-{self._counter}"
+        access = f"access-{subject}-{self._counter}"
+        self._valid.add(refresh)
+        self.issued.append(subject)
+        return TokenPairDto(
+            access_token=access, refresh_token=refresh, token_type="Bearer", expires_in=900
+        )
+
+    def rotate(self, *, refresh_token: str) -> TokenPairDto:
+        if refresh_token not in self._valid:
+            raise InvalidTokenError("The refresh token is invalid or expired.")
+        self._valid.discard(refresh_token)
+        self.rotated.append(refresh_token)
+        return self.issue(subject="rotated")
+
+    def revoke(self, *, refresh_token: str) -> None:
+        if refresh_token not in self._valid:
+            raise InvalidTokenError("The refresh token is invalid or expired.")
+        self._valid.discard(refresh_token)
+        self.revoked.append(refresh_token)

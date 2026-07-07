@@ -29,6 +29,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 __all__ = [
+    "AuthenticateUserCommand",
     "ChangeEmailCommand",
     "ChangePasswordCommand",
     "ChangePhoneCommand",
@@ -42,6 +43,21 @@ __all__ = [
     "VerifyPhoneCommand",
     "WithdrawConsentCommand",
 ]
+
+
+@dataclass(frozen=True, slots=True)
+class AuthenticateUserCommand:
+    """Authenticate an account by email + password (login).
+
+    Carries only the raw credentials the presentation layer collected. The
+    handler resolves the account, verifies the password through the
+    :class:`~apps.identity.application.interfaces.PasswordHasher` port, and checks
+    the account may establish a session — never leaking *which* of "unknown email"
+    or "wrong password" failed (generic credentials error, API-000 §26).
+    """
+
+    email: str
+    password: str
 
 
 @dataclass(frozen=True, slots=True)

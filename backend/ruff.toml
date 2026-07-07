@@ -30,6 +30,9 @@ ignore = [
 # lists by design (RUF012); optional domain fields (`X | None`) map faithfully
 # to nullable columns, where NULL means "absent" — distinct from "" (DJ001).
 "apps/*/infrastructure/models/*.py" = ["RUF012", "DJ001"]
+# REST serializers: field names are the API's camelCase wire keys (API-000 §7),
+# which the platform contract mandates over pep8 snake_case (N815).
+"apps/*/presentation/**/serializers.py" = ["N815"]
 
 [lint.isort]
 known-first-party = ["apps", "config", "shared"]

@@ -1,0 +1,328 @@
+"""Authentication controllers for the Identity REST API v1 (API-001 §4).
+
+Four noun-resource endpoints — registration, sessions (login), token refresh, and
+the current session (logout) — each a thin HTTP adapter that follows one flow:
+
+    HTTP request → serializer (validate) → command → handler → DTO → HTTP response
+
+A view never queries the ORM, verifies a password, issues a JWT itself, or holds a
+business rule: it validates the request shape, maps it onto an application
+command, invokes a handler assembled by the :mod:`composition` root, and renders
+the resulting DTO into the API envelope (API-000 §7) or an RFC 9457 problem
+(API-000 §8, via :mod:`apps.identity.presentation.api.v1.problems`). Token
+issuance/rotation is delegated to the ``TokenService`` port; the refresh token is
+carried in an httpOnly cookie for web clients and echoed in the body for native
+clients (API-001 §1.2).
+"""
+
+from __future__ import annotations
+
+import contextlib
+from datetime import timedelta
+from typing import Any, cast
+
+from django.conf import settings
+from drf_spectacular.utils import OpenApiResponse, extend_schema
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTStatelessUserAuthentication
+from rest_framework_simplejwt.settings import api_settings as jwt_settings
+
+from apps.identity.application.commands import (
+    AuthenticateUserCommand,
+    LogoutCommand,
+    RefreshTokenCommand,
+    RegisterUserCommand,
+)
+from apps.identity.application.dto import TokenPairDto, UserDto
+from apps.identity.application.exceptions import ApplicationError, InvalidTokenError
+from apps.identity.presentation.api.v1.auth import composition
+from apps.identity.presentation.api.v1.auth.serializers import (
+    ProblemDetailSerializer,
+    RegistrationRequestSerializer,
+    RegistrationResponseSerializer,
+    SessionCreateRequestSerializer,
+    SessionResponseSerializer,
+    TokenRefreshRequestSerializer,
+    TokenRefreshResponseSerializer,
+)
+from apps.identity.presentation.api.v1.problems import (
+    application_problem,
+    request_id,
+    unauthorized_problem,
+    validation_problem,
+)
+
+_AUTH_TAG = "Identity"
+
+
+# ---------------------------------------------------------------------------
+# Rendering helpers
+# ---------------------------------------------------------------------------
+
+
+def _user_status(user: UserDto) -> str:
+    """Derive the API ``status`` string from the account's lifecycle flags."""
+    if user.is_deleted:
+        return "deleted"
+    if user.is_locked:
+        return "suspended"
+    if user.is_email_verified:
+        return "active"
+    return "registered"
+
+
+def _user_resource(user: UserDto) -> dict[str, Any]:
+    """Project a :class:`UserDto` into the full user resource (API-001 §4.1)."""
+    return {
+        "id": user.id,
+        "type": "user",
+        "email": user.email,
+        "displayName": user.full_name,
+        "status": _user_status(user),
+        "emailVerified": user.is_email_verified,
+        "phoneVerified": user.is_phone_verified,
+        "mfaEnabled": False,
+        "locale": user.locale,
+        "createdAt": user.created_at.isoformat().replace("+00:00", "Z"),
+        "updatedAt": user.updated_at.isoformat().replace("+00:00", "Z"),
+    }
+
+
+def _user_summary(user: UserDto) -> dict[str, Any]:
+    """Project a :class:`UserDto` into the compact session user summary."""
+    return {
+        "id": user.id,
+        "type": "user",
+        "displayName": user.full_name,
+        "emailVerified": user.is_email_verified,
+    }
+
+
+def _session_resource(tokens: TokenPairDto, *, user: UserDto | None = None) -> dict[str, Any]:
+    """Build a session/token resource body from an issued or rotated pair."""
+    resource: dict[str, Any] = {
+        "type": "session",
+        "accessToken": tokens.access_token,
+        "tokenType": tokens.token_type,
+        "expiresIn": tokens.expires_in,
+        "refreshToken": tokens.refresh_token,
+    }
+    if user is not None:
+        resource["user"] = _user_summary(user)
+    return resource
+
+
+def _envelope(request: Request, data: dict[str, Any], *, status: int) -> Response:
+    """Wrap a resource in the ``data``/``meta`` envelope (API-000 §7.1)."""
+    correlation_id = request_id(request)
+    return Response(
+        {"data": data, "meta": {"requestId": correlation_id}},
+        status=status,
+        headers={"X-Request-ID": correlation_id},
+    )
+
+
+def _refresh_cookie_max_age() -> int:
+    """Refresh cookie lifetime in whole seconds (SimpleJWT ``REFRESH_TOKEN_LIFETIME``)."""
+    lifetime = jwt_settings.REFRESH_TOKEN_LIFETIME
+    if not isinstance(lifetime, timedelta):
+        return 0
+    return int(lifetime.total_seconds())
+
+
+def _cookie_config() -> dict[str, Any]:
+    """The refresh-cookie settings block, typed for the cookie API."""
+    return cast(dict[str, Any], settings.REFRESH_TOKEN_COOKIE)
+
+
+def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
+    """Attach the rotating refresh token as a hardened httpOnly cookie."""
+    cookie = _cookie_config()
+    response.set_cookie(
+        cookie["NAME"],
+        refresh_token,
+        max_age=_refresh_cookie_max_age(),
+        path=cookie["PATH"],
+        httponly=cookie["HTTPONLY"],
+        secure=cookie["SECURE"],
+        samesite=cookie["SAMESITE"],
+    )
+
+
+def _clear_refresh_cookie(response: Response) -> None:
+    """Remove the refresh cookie (logout)."""
+    cookie = _cookie_config()
+    response.delete_cookie(cookie["NAME"], path=cookie["PATH"], samesite=cookie["SAMESITE"])
+
+
+def _extract_refresh_token(request: Request, body: dict[str, Any]) -> str | None:
+    """Read the refresh token from the request body (native) or cookie (web)."""
+    from_body = body.get("refreshToken")
+    if from_body:
+        return str(from_body)
+    from_cookie = request.COOKIES.get(_cookie_config()["NAME"])
+    return str(from_cookie) if from_cookie else None
+
+
+# ---------------------------------------------------------------------------
+# Endpoints
+# ---------------------------------------------------------------------------
+
+
+class RegistrationView(APIView):
+    """POST /api/v1/auth/registration — create a new adult account (API-001 §4.1)."""
+
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
+
+    @extend_schema(
+        tags=[_AUTH_TAG],
+        operation_id="auth_registration_create",
+        summary="Register a new account",
+        description="Create a new adult user account. Public endpoint.",
+        request=RegistrationRequestSerializer,
+        responses={
+            201: RegistrationResponseSerializer,
+            400: OpenApiResponse(ProblemDetailSerializer, description="Malformed request."),
+            409: OpenApiResponse(ProblemDetailSerializer, description="Email already in use."),
+            422: OpenApiResponse(ProblemDetailSerializer, description="Weak password / invalid."),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        instance = request.path
+        serializer = RegistrationRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return validation_problem(serializer.errors, instance=instance, request=request)
+        data = serializer.validated_data
+        command = RegisterUserCommand(
+            email=str(data["email"]),
+            password=str(data["password"]),
+            first_name=str(data["firstName"]),
+            last_name=str(data["lastName"]),
+            middle_name=_optional_str(data.get("middleName")),
+            phone=_optional_str(data.get("phone")),
+            locale=_optional_str(data.get("locale")),
+            timezone=_optional_str(data.get("timezone")),
+        )
+        try:
+            result = composition.build_register_user_handler().handle(command)
+        except ApplicationError as exc:
+            return application_problem(exc, instance=instance, request=request)
+        response = _envelope(request, _user_resource(result.user), status=201)
+        response["Location"] = f"/api/v1/users/{result.user.id}"
+        return response
+
+
+class SessionCollectionView(APIView):
+    """POST /api/v1/auth/sessions — authenticate and establish a session (API-001 §4.4)."""
+
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
+
+    @extend_schema(
+        tags=[_AUTH_TAG],
+        operation_id="auth_session_create",
+        summary="Log in (create a session)",
+        description="Verify credentials and issue an access token (+ rotating refresh token).",
+        request=SessionCreateRequestSerializer,
+        responses={
+            201: SessionResponseSerializer,
+            400: OpenApiResponse(ProblemDetailSerializer, description="Malformed request."),
+            401: OpenApiResponse(ProblemDetailSerializer, description="Invalid credentials."),
+            403: OpenApiResponse(ProblemDetailSerializer, description="Account suspended."),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        instance = request.path
+        serializer = SessionCreateRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return validation_problem(serializer.errors, instance=instance, request=request)
+        data = serializer.validated_data
+        command = AuthenticateUserCommand(email=str(data["email"]), password=str(data["password"]))
+        try:
+            result = composition.build_authenticate_user_handler().handle(command)
+        except ApplicationError as exc:
+            return application_problem(exc, instance=instance, request=request)
+        tokens = composition.build_token_service().issue(subject=result.user.id)
+        response = _envelope(request, _session_resource(tokens, user=result.user), status=201)
+        _set_refresh_cookie(response, tokens.refresh_token)
+        return response
+
+
+class TokenRefreshView(APIView):
+    """POST /api/v1/auth/token/refresh — rotate the refresh token (API-001 §4.5)."""
+
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
+
+    @extend_schema(
+        tags=[_AUTH_TAG],
+        operation_id="auth_token_refresh",
+        summary="Refresh the access token",
+        description="Exchange a valid rotating refresh token for a new access/refresh pair.",
+        request=TokenRefreshRequestSerializer,
+        responses={
+            200: TokenRefreshResponseSerializer,
+            401: OpenApiResponse(ProblemDetailSerializer, description="Invalid/expired refresh."),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        instance = request.path
+        serializer = TokenRefreshRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return validation_problem(serializer.errors, instance=instance, request=request)
+        refresh_token = _extract_refresh_token(request, dict(serializer.validated_data))
+        if refresh_token is None:
+            return unauthorized_problem(
+                instance=instance, request=request, detail="A refresh token is required."
+            )
+        command = RefreshTokenCommand(refresh_token=refresh_token)
+        try:
+            tokens = composition.build_refresh_token_handler().handle(command)
+        except ApplicationError as exc:
+            return application_problem(exc, instance=instance, request=request)
+        response = _envelope(request, _session_resource(tokens), status=200)
+        _set_refresh_cookie(response, tokens.refresh_token)
+        return response
+
+
+class CurrentSessionView(APIView):
+    """DELETE /api/v1/auth/sessions/current — revoke the current session (API-001 §4.6)."""
+
+    authentication_classes = (JWTStatelessUserAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    @extend_schema(
+        tags=[_AUTH_TAG],
+        operation_id="auth_session_current_delete",
+        summary="Log out (revoke the current session)",
+        description="Blacklist the session's refresh token. The access token is left to expire.",
+        request=None,
+        responses={
+            204: OpenApiResponse(description="Session revoked."),
+            401: OpenApiResponse(ProblemDetailSerializer, description="No valid session."),
+        },
+    )
+    def delete(self, request: Request) -> Response:
+        refresh_token = _extract_refresh_token(request, {})
+        if refresh_token is not None:
+            # Logout is idempotent: an already-unusable token means the session is
+            # effectively gone. Nothing more to revoke; still clear the cookie.
+            with contextlib.suppress(InvalidTokenError):
+                composition.build_logout_handler().handle(
+                    LogoutCommand(refresh_token=refresh_token)
+                )
+        response = Response(status=204)
+        _clear_refresh_cookie(response)
+        return response
+
+
+def _optional_str(value: object) -> str | None:
+    """Coerce an optional serializer value to ``str | None`` (blank → ``None``)."""
+    if value is None:
+        return None
+    text = str(value)
+    return text if text else None

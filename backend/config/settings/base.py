@@ -39,6 +39,8 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
+    # Refresh-token blacklist (rotation + logout revocation, API-000 §17.2).
+    "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
     "django_filters",
     "corsheaders",
@@ -181,6 +183,17 @@ SIMPLE_JWT = {
     "ROTATE_REFRESH_TOKENS": settings.jwt.rotate_refresh_tokens,
     "BLACKLIST_AFTER_ROTATION": settings.jwt.blacklist_after_rotation,
     "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
+# Refresh token cookie (web clients): httpOnly + Secure + SameSite so the token is
+# never readable by JS and never sent cross-site (ARCH-001 §11.1, API-001 §1.2).
+# Native clients ignore the cookie and use the response body instead.
+REFRESH_TOKEN_COOKIE = {
+    "NAME": "refresh_token",
+    "PATH": "/api/v1/auth",
+    "HTTPONLY": True,
+    "SECURE": not DEBUG,
+    "SAMESITE": "Strict",
 }
 
 # --- OpenAPI 3.1 schema (drf-spectacular, API-000 §25) --------------------

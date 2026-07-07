@@ -20,7 +20,7 @@ The hierarchy is intentionally shallow:
     ├── PolicyViolationError                — a business policy rejected an operation
     │   └── WeakPasswordError
     ├── DirectConstructionError             — the User aggregate was built bypassing its factories
-    └── UserStateError                      — an operation is illegal in the aggregate's current state
+    └── UserStateError                      — an operation illegal in the aggregate's current state
         ├── UserDeletedError
         ├── UserNotDeletedError
         ├── EmailAlreadyVerifiedError

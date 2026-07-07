@@ -30,7 +30,10 @@ This module imports nothing from infrastructure, presentation, or Django.
 
 from __future__ import annotations
 
+from typing import Final
+
 from apps.identity.application.commands import (
+    AuthenticateUserCommand,
     ChangeEmailCommand,
     ChangePasswordCommand,
     ChangePhoneCommand,
@@ -46,7 +49,9 @@ from apps.identity.application.commands import (
 )
 from apps.identity.application.dto import OperationResultDto, UserDto
 from apps.identity.application.exceptions import (
+    AccountInactiveError,
     EmailAlreadyInUseError,
+    InvalidCredentialsError,
     InvalidInputError,
     PhoneAlreadyInUseError,
     UserNotFoundError,
@@ -60,6 +65,7 @@ from apps.identity.application.interfaces import (
 )
 from apps.identity.domain.entities import User
 from apps.identity.domain.events import ConsentType
+from apps.identity.domain.exceptions import ValueObjectValidationError
 from apps.identity.domain.policies import (
     ConsentPolicy,
     EmailVerificationPolicy,
@@ -71,12 +77,14 @@ from apps.identity.domain.value_objects import (
     Email,
     FullName,
     Locale,
+    PasswordHash,
     PhoneNumber,
     Timezone,
     UserId,
 )
 
 __all__ = [
+    "AuthenticateUserHandler",
     "ChangeEmailHandler",
     "ChangePasswordHandler",
     "ChangePhoneHandler",
@@ -90,6 +98,15 @@ __all__ = [
     "VerifyPhoneHandler",
     "WithdrawConsentHandler",
 ]
+
+
+#: A syntactically valid Argon2 digest matching **no** password. When an account
+#: is not found, the login handler still runs a verify against this so an
+#: unknown-email request costs the same wall-clock time as a wrong-password one,
+#: denying a timing side-channel that would otherwise enumerate accounts (§26).
+_DUMMY_PASSWORD_HASH: Final = PasswordHash.from_hash(
+    "$argon2id$v=19$m=65536,t=3,p=4$R7qaszSliB96sR+y7FYb+A$BO8zHWZUEAXhQCI8eVsi8l2TvtUZoLUUrgzsL4jcOBE"
+)
 
 
 def _load_user(users: UserRepository, raw_user_id: str) -> User:
@@ -172,6 +189,60 @@ class RegisterUserHandler:
             )
         self._users.save(user)
         return OperationResultDto(user=UserDto.from_user(user, now=now), events=tuple(events))
+
+
+class AuthenticateUserHandler:
+    """Use case: verify credentials and confirm the account may sign in (login).
+
+    A **read-only** use case: it loads the account, verifies the submitted password
+    through the :class:`PasswordHasher` port, and confirms the account is neither
+    locked nor deleted. It never mutates the aggregate and emits no domain events —
+    issuing the session's JWTs is a delivery concern handled by the presentation/
+    infrastructure edge, outside this handler.
+
+    Security posture (API-000 §26, API-001 §4.4):
+
+    * **No account enumeration.** An unknown email, a malformed email, and a wrong
+      password all raise the same :class:`InvalidCredentialsError`; the unknown/
+      malformed paths still run a verify against a dummy hash so they cost the same
+      time as a real one.
+    * **Email verification is not a login gate.** A registered-but-unverified
+      account *can* sign in; ``is_email_verified`` travels out on the DTO so the
+      edge can gate *sensitive* actions later (IDN-001). Only locked/deleted
+      accounts are refused here (:class:`AccountInactiveError`).
+    """
+
+    def __init__(
+        self,
+        *,
+        users: UserRepository,
+        password_hasher: PasswordHasher,
+        clock: Clock,
+    ) -> None:
+        self._users = users
+        self._password_hasher = password_hasher
+        self._clock = clock
+
+    def handle(self, command: AuthenticateUserCommand) -> OperationResultDto:
+        now = self._clock.utcnow()
+        try:
+            email = Email(command.email)
+        except ValueObjectValidationError as exc:
+            # A malformed email identifies no account; equalize timing, then fail
+            # with the same generic error as a wrong password (no enumeration).
+            self._password_hasher.verify(command.password, _DUMMY_PASSWORD_HASH)
+            raise InvalidCredentialsError("Invalid email or password.") from exc
+
+        user = self._users.get_by_email(email)
+        if user is None:
+            self._password_hasher.verify(command.password, _DUMMY_PASSWORD_HASH)
+            raise InvalidCredentialsError("Invalid email or password.")
+        if not self._password_hasher.verify(command.password, user.password_hash):
+            raise InvalidCredentialsError("Invalid email or password.")
+        if user.is_deleted() or user.is_locked(now):
+            raise AccountInactiveError("This account cannot sign in.")
+
+        return OperationResultDto(user=UserDto.from_user(user, now=now), events=())
 
 
 class VerifyEmailHandler:

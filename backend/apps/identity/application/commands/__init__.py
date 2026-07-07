@@ -6,7 +6,12 @@ One command = one intent to change state = one transaction boundary
 the package's public surface.
 """
 
+from apps.identity.application.commands.session_commands import (
+    LogoutCommand,
+    RefreshTokenCommand,
+)
 from apps.identity.application.commands.user_commands import (
+    AuthenticateUserCommand,
     ChangeEmailCommand,
     ChangePasswordCommand,
     ChangePhoneCommand,
@@ -22,12 +27,15 @@ from apps.identity.application.commands.user_commands import (
 )
 
 __all__ = [
+    "AuthenticateUserCommand",
     "ChangeEmailCommand",
     "ChangePasswordCommand",
     "ChangePhoneCommand",
     "DeleteUserCommand",
     "GrantConsentCommand",
     "LockUserCommand",
+    "LogoutCommand",
+    "RefreshTokenCommand",
     "RegisterUserCommand",
     "RestoreUserCommand",
     "UnlockUserCommand",
