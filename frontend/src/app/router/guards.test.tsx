@@ -11,7 +11,7 @@ import { GuestRoute, ProtectedRoute } from "./guards";
  */
 const status = { current: "unauthenticated" as AuthStatus };
 vi.mock("@/app/providers", () => ({
-  useAuth: () => ({ status: status.current }),
+  useAuth: () => ({ status: status.current, sessionExpired: false }),
 }));
 
 /**

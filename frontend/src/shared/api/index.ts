@@ -12,4 +12,9 @@ export {
   type ProblemFieldError,
 } from "./error";
 export { createQueryClient } from "./query-client";
+export {
+  emitSessionEvent,
+  onSessionEvent,
+  type SessionEvent,
+} from "./session-events";
 export { type TokenStore, tokenStore } from "./token-store";

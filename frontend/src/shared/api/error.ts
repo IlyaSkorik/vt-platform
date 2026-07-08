@@ -1,4 +1,5 @@
 import { HTTPError, TimeoutError } from "ky";
+import { takeProblem } from "./problem-cache";
 
 /**
  * RFC 9457 Problem Details — the platform's single error contract
@@ -99,13 +100,22 @@ export async function toApiError(error: unknown): Promise<ApiError> {
   }
 
   if (error instanceof HTTPError) {
-    const { response } = error;
-    const problem = await parseProblemDetails(response);
+    const { response, request } = error;
+    // The correlation id is set on the request by our hook and echoed by the
+    // server on the response; read the request first (always present) and fall
+    // back to the response header.
+    const requestId =
+      request?.headers.get("x-request-id") ?? response.headers.get("x-request-id") ?? undefined;
+    // Prefer the body captured (intact) by the afterResponse hook; Ky consumes
+    // the response body when it builds the HTTPError, so a direct re-read here
+    // would fail. Fall back to a best-effort parse for non-Ky call sites.
+    const problem =
+      (requestId ? takeProblem(requestId) : undefined) ?? (await parseProblemDetails(response));
     const message = problem?.detail ?? problem?.title ?? response.statusText ?? "Request failed";
     return new ApiError(message, {
       status: response.status,
       code: problem?.code,
-      requestId: problem?.requestId ?? response.headers.get("x-request-id") ?? undefined,
+      requestId: problem?.requestId ?? requestId,
       problem,
       cause: error,
     });

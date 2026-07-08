@@ -59,10 +59,31 @@ const routes: RouteObject[] = [
                 lazy: lazyPage(() => import("@/pages/forgot-password"), "ForgotPasswordPage"),
               },
               {
+                path: ROUTES.resetPassword.slice(1),
+                lazy: lazyPage(() => import("@/pages/reset-password"), "ResetPasswordPage"),
+              },
+              {
                 path: ROUTES.verifyEmail.slice(1),
                 lazy: lazyPage(() => import("@/pages/verify-email"), "VerifyEmailPage"),
               },
             ],
+          },
+        ],
+      },
+
+      // Session / authorization outcome screens — reachable regardless of auth
+      // state (a dropped session or a 403 must always render), in the auth
+      // layout for a consistent, chrome-light presentation.
+      {
+        element: <AuthLayout />,
+        children: [
+          {
+            path: ROUTES.sessionExpired.slice(1),
+            lazy: lazyPage(() => import("@/pages/session-expired"), "SessionExpiredPage"),
+          },
+          {
+            path: ROUTES.unauthorized.slice(1),
+            lazy: lazyPage(() => import("@/pages/unauthorized"), "UnauthorizedPage"),
           },
         ],
       },

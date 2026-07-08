@@ -1,0 +1,130 @@
+import { describe, expect, it } from "vitest";
+import {
+  forgotPasswordSchema,
+  loginSchema,
+  PASSWORD_MIN_LENGTH,
+  registerSchema,
+  resetPasswordSchema,
+} from "./schemas";
+
+const STRONG_PASSWORD = "SuperSecret123";
+
+describe("loginSchema", () => {
+  it("accepts a valid credential set", () => {
+    const result = loginSchema.safeParse({
+      email: "user@example.com",
+      password: "anything",
+      rememberMe: true,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects an invalid email", () => {
+    const result = loginSchema.safeParse({
+      email: "not-an-email",
+      password: "x",
+      rememberMe: false,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects an empty password", () => {
+    const result = loginSchema.safeParse({
+      email: "user@example.com",
+      password: "",
+      rememberMe: false,
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("registerSchema", () => {
+  const base = {
+    displayName: "Ирина Смирнова",
+    email: "irina@example.com",
+    password: STRONG_PASSWORD,
+    confirmPassword: STRONG_PASSWORD,
+    acceptTerms: true as const,
+  };
+
+  it("accepts a complete, valid registration", () => {
+    expect(registerSchema.safeParse(base).success).toBe(true);
+  });
+
+  it(`requires a password of at least ${PASSWORD_MIN_LENGTH} characters`, () => {
+    const result = registerSchema.safeParse({
+      ...base,
+      password: "Short1",
+      confirmPassword: "Short1",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("requires mixed case and a digit", () => {
+    const result = registerSchema.safeParse({
+      ...base,
+      password: "alllowercaseletters",
+      confirmPassword: "alllowercaseletters",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("requires the confirmation to match", () => {
+    const result = registerSchema.safeParse({ ...base, confirmPassword: "Mismatch12345" });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.some((issue) => issue.path.includes("confirmPassword"))).toBe(
+        true,
+      );
+    }
+  });
+
+  it("requires terms acceptance", () => {
+    const result = registerSchema.safeParse({ ...base, acceptTerms: false });
+    expect(result.success).toBe(false);
+  });
+
+  it("requires a display name of at least 2 characters", () => {
+    const result = registerSchema.safeParse({ ...base, displayName: "И" });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("forgotPasswordSchema", () => {
+  it("accepts a valid email", () => {
+    expect(forgotPasswordSchema.safeParse({ email: "user@example.com" }).success).toBe(true);
+  });
+
+  it("rejects a missing email", () => {
+    expect(forgotPasswordSchema.safeParse({ email: "" }).success).toBe(false);
+  });
+});
+
+describe("resetPasswordSchema", () => {
+  it("accepts a valid reset with matching passwords", () => {
+    const result = resetPasswordSchema.safeParse({
+      token: "reset-token",
+      password: STRONG_PASSWORD,
+      confirmPassword: STRONG_PASSWORD,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a missing token", () => {
+    const result = resetPasswordSchema.safeParse({
+      token: "",
+      password: STRONG_PASSWORD,
+      confirmPassword: STRONG_PASSWORD,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects mismatched passwords", () => {
+    const result = resetPasswordSchema.safeParse({
+      token: "reset-token",
+      password: STRONG_PASSWORD,
+      confirmPassword: "Different12345",
+    });
+    expect(result.success).toBe(false);
+  });
+});

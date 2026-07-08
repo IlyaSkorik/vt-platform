@@ -5,14 +5,14 @@ import { ROUTES } from "@/shared/config";
 /**
  * ProtectedRoute — gates authenticated areas.
  *
- * Unauthenticated visitors are redirected to login, preserving the attempted
- * location in router state so the Auth feature can return them afterwards.
- * While the session is resolving, nothing is rendered (a splash/skeleton will
- * be added with the Auth feature). No authentication logic lives here — it only
- * reads the auth status from context.
+ * Unauthenticated visitors are redirected: to `/session-expired` when a live
+ * session just dropped (so the user understands why), otherwise to `/login`
+ * with the attempted location preserved in router state for return-after-login.
+ * While the session is resolving, nothing is rendered. No authentication logic
+ * lives here — it only reads status from context.
  */
 export function ProtectedRoute(): React.JSX.Element | null {
-  const { status } = useAuth();
+  const { status, sessionExpired } = useAuth();
   const location = useLocation();
 
   if (status === "loading") {
@@ -20,6 +20,9 @@ export function ProtectedRoute(): React.JSX.Element | null {
   }
 
   if (status === "unauthenticated") {
+    if (sessionExpired) {
+      return <Navigate to={ROUTES.sessionExpired} replace />;
+    }
     return <Navigate to={ROUTES.login} replace state={{ from: location }} />;
   }
 

@@ -8,7 +8,9 @@ import { apiClient, toApiError } from "./client";
  * correlation ids, retry/timeout policy — and every failure is normalized into
  * the platform's typed `ApiError` (RFC 9457, API-000 §8).
  *
- * Signature matches Orval's `fetch` httpClient contract: `(url, RequestInit)`.
+ * Return shape matches Orval's `fetch` httpClient contract: each operation is
+ * typed as `{ status; data }`, so the mutator resolves to that envelope rather
+ * than the bare body. A `204`/empty response yields `data: undefined`.
  */
 export const customInstance = async <T>(url: string, options: RequestInit = {}): Promise<T> => {
   try {
@@ -16,13 +18,15 @@ export const customInstance = async <T>(url: string, options: RequestInit = {}):
     const path = url.replace(/^\/+/, "");
     const response = await apiClient(path, options);
 
-    if (response.status === 204 || response.headers.get("content-length") === "0") {
-      return undefined as T;
-    }
-
+    const isEmpty = response.status === 204 || response.headers.get("content-length") === "0";
     const contentType = response.headers.get("content-type") ?? "";
-    const payload = contentType.includes("json") ? await response.json() : await response.text();
-    return payload as T;
+    const data = isEmpty
+      ? undefined
+      : contentType.includes("json")
+        ? await response.json()
+        : await response.text();
+
+    return { status: response.status, data } as T;
   } catch (error) {
     throw await toApiError(error);
   }

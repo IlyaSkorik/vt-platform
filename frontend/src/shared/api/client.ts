@@ -2,7 +2,12 @@ import ky, { type KyInstance } from "ky";
 import { env } from "@/shared/config";
 import { API_TIMEOUT_MS, RETRY_LIMIT, RETRYABLE_METHODS, RETRYABLE_STATUS_CODES } from "./config";
 import { toApiError } from "./error";
-import { attachAuth, attachRequestContext, refreshOnUnauthorized } from "./hooks";
+import {
+  attachAuth,
+  attachRequestContext,
+  captureProblemDetails,
+  refreshOnUnauthorized,
+} from "./hooks";
 
 /**
  * The single HTTP client for the entire SPA (Ky — never Axios, ARCH-001 §8.5).
@@ -34,7 +39,7 @@ export const apiClient: KyInstance = ky.create({
   },
   hooks: {
     beforeRequest: [attachAuth, attachRequestContext],
-    afterResponse: [refreshOnUnauthorized],
+    afterResponse: [captureProblemDetails, refreshOnUnauthorized],
     beforeError: [
       // Passthrough seam. Full Problem Details parsing (async) happens in
       // `toApiError` at call sites via the Orval mutator, which turns every

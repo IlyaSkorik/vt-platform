@@ -18,7 +18,12 @@ export const ROUTES = {
   login: "/login",
   register: "/register",
   forgotPassword: "/forgot-password",
+  resetPassword: "/reset-password",
   verifyEmail: "/verify-email",
+
+  // Session / authorization outcome screens (guest-accessible).
+  sessionExpired: "/session-expired",
+  unauthorized: "/403",
 
   // App shell sections (protected).
   dashboard: "/dashboard",
