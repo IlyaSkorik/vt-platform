@@ -117,6 +117,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # §7.2, §9.2, §14), not the default ``<app>/migrations/``.
 MIGRATION_MODULES = {
     "identity": "apps.identity.infrastructure.migrations",
+    "participants": "apps.participants.infrastructure.migrations",
 }
 
 # --- Password validation --------------------------------------------------
