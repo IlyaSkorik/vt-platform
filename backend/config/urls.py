@@ -47,4 +47,5 @@ urlpatterns = [
     ),
     # Versioned bounded-context routers (ARCH-001 §14, API-000 §2).
     path("api/v1/", include("apps.identity.presentation.urls")),
+    path("api/v1/", include("apps.participants.presentation.urls")),
 ]
