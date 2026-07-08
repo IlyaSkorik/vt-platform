@@ -79,6 +79,26 @@ export type { InputProps } from "./input";
 export { Input } from "./input";
 export type { LoadingStateProps, LoadingStateSize } from "./loading-state";
 export { LoadingState } from "./loading-state";
+export type {
+  EmptyPageProps,
+  PageActionsProps,
+  PageContainerProps,
+  PageContentProps,
+  PageDescriptionProps,
+  PageHeaderProps,
+  PageSectionProps,
+  PageTitleProps,
+} from "./page";
+export {
+  EmptyPage,
+  PageActions,
+  PageContainer,
+  PageContent,
+  PageDescription,
+  PageHeader,
+  PageSection,
+  PageTitle,
+} from "./page";
 export type { PaginationItem, PaginationProps } from "./pagination";
 export { getPaginationRange, Pagination } from "./pagination";
 export type { PasswordInputProps } from "./password-input";

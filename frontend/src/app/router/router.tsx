@@ -1,32 +1,45 @@
 import { createBrowserRouter, type RouteObject } from "react-router";
+import { AppShellLayout } from "@/app/layouts/app-shell-layout";
 import { AuthLayout } from "@/app/layouts/auth-layout";
-import { DashboardLayout } from "@/app/layouts/dashboard-layout";
+import { NotFoundLayout } from "@/app/layouts/not-found-layout";
+import { PublicLayout } from "@/app/layouts/public-layout";
 import { RootLayout } from "@/app/layouts/root-layout";
 import { ROUTES } from "@/shared/config";
 import { GuestRoute, ProtectedRoute } from "./guards";
 import { RouteError } from "./route-error";
 
+/** Lazily import a page module, mapping its named export to `Component`. */
+const lazyPage =
+  (loader: () => Promise<Record<string, React.ComponentType>>, name: string) => async () => ({
+    Component: (await loader())[name] as React.ComponentType,
+  });
+
 /**
  * Application route tree (React Router v7, data router).
  *
  * Every page is route-level code-split via `lazy` so the initial bundle stays
- * small and each route loads on demand (ARCH-001 §8.4). The tree encodes the
- * access model structurally:
- *   - Public:    "/" landing.
- *   - Guest:     auth screens, redirected away once authenticated.
- *   - Protected: app screens, redirected to login when unauthenticated.
+ * small (ARCH-001 §8.4). The tree encodes the access model AND the layout each
+ * area lives in:
+ *   - Public:    landing, rendered in `PublicLayout`.
+ *   - Guest:     auth screens in `AuthLayout`, redirected away once authed.
+ *   - Protected: app screens in the permanent `AppShellLayout`.
+ *   - 404:       catch-all in the neutral `NotFoundLayout`.
  *
- * Pages contain layout placeholders only — no business UI (bootstrap scope).
+ * App section pages that a feature has not yet shipped fall back to a shared
+ * "coming soon" placeholder so every sidebar link resolves inside the shell.
  */
 const routes: RouteObject[] = [
   {
     element: <RootLayout />,
     errorElement: <RouteError />,
     children: [
+      // Public.
       {
-        index: true,
-        lazy: async () => ({ Component: (await import("@/pages/home")).HomePage }),
+        element: <PublicLayout />,
+        children: [{ index: true, lazy: lazyPage(() => import("@/pages/home"), "HomePage") }],
       },
+
+      // Guest-only (auth).
       {
         element: <GuestRoute />,
         children: [
@@ -35,59 +48,69 @@ const routes: RouteObject[] = [
             children: [
               {
                 path: ROUTES.login.slice(1),
-                lazy: async () => ({ Component: (await import("@/pages/login")).LoginPage }),
+                lazy: lazyPage(() => import("@/pages/login"), "LoginPage"),
               },
               {
                 path: ROUTES.register.slice(1),
-                lazy: async () => ({
-                  Component: (await import("@/pages/register")).RegisterPage,
-                }),
+                lazy: lazyPage(() => import("@/pages/register"), "RegisterPage"),
               },
               {
                 path: ROUTES.forgotPassword.slice(1),
-                lazy: async () => ({
-                  Component: (await import("@/pages/forgot-password")).ForgotPasswordPage,
-                }),
+                lazy: lazyPage(() => import("@/pages/forgot-password"), "ForgotPasswordPage"),
               },
               {
                 path: ROUTES.verifyEmail.slice(1),
-                lazy: async () => ({
-                  Component: (await import("@/pages/verify-email")).VerifyEmailPage,
-                }),
+                lazy: lazyPage(() => import("@/pages/verify-email"), "VerifyEmailPage"),
               },
             ],
           },
         ],
       },
+
+      // Protected — the permanent Application Shell.
       {
         element: <ProtectedRoute />,
         children: [
           {
-            element: <DashboardLayout />,
+            element: <AppShellLayout />,
             children: [
               {
                 path: ROUTES.dashboard.slice(1),
-                lazy: async () => ({
-                  Component: (await import("@/pages/dashboard")).DashboardPage,
-                }),
-              },
-              {
-                path: ROUTES.profile.slice(1),
-                lazy: async () => ({ Component: (await import("@/pages/profile")).ProfilePage }),
+                lazy: lazyPage(() => import("@/pages/dashboard"), "DashboardPage"),
               },
               {
                 path: ROUTES.participants.slice(1),
-                lazy: async () => ({
-                  Component: (await import("@/pages/participants")).ParticipantsPage,
-                }),
+                lazy: lazyPage(() => import("@/pages/participants"), "ParticipantsPage"),
               },
+              {
+                path: ROUTES.profile.slice(1),
+                lazy: lazyPage(() => import("@/pages/profile"), "ProfilePage"),
+              },
+              // Sections whose features have not shipped yet — placeholder page.
+              ...[
+                ROUTES.competitions,
+                ROUTES.applications,
+                ROUTES.performances,
+                ROUTES.judging,
+                ROUTES.results,
+                ROUTES.finance,
+                ROUTES.analytics,
+                ROUTES.settings,
+              ].map((path) => ({
+                path: path.slice(1),
+                lazy: lazyPage(() => import("@/pages/placeholder"), "PlaceholderPage"),
+              })),
             ],
           },
         ],
       },
+
+      // 404 catch-all.
       {
-        path: "*",
-        lazy: async () => ({ Component: (await import("@/pages/not-found")).NotFoundPage }),
+        element: <NotFoundLayout />,
+        children: [
+          { path: "*", lazy: lazyPage(() => import("@/pages/not-found"), "NotFoundPage") },
+        ],
       },
     ],
   },
