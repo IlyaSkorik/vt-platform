@@ -32,6 +32,7 @@ from apps.identity.infrastructure.messaging import (
 )
 from apps.identity.infrastructure.repositories import DjangoUserRepository
 from apps.identity.infrastructure.system import SystemClock, Uuid7Generator
+from apps.identity.application.handlers.user_handlers import CurrentUserHandler
 
 __all__ = [
     "build_authenticate_user_handler",
@@ -42,6 +43,7 @@ __all__ = [
     "build_register_user_handler",
     "build_request_email_verification_handler",
     "build_token_service",
+    "build_current_user_handler",
 ]
 
 
@@ -115,3 +117,10 @@ def build_refresh_token_handler(tokens: TokenService | None = None) -> RefreshTo
 def build_logout_handler(tokens: TokenService | None = None) -> LogoutHandler:
     """Assemble the logout use case over the token service."""
     return LogoutHandler(tokens=tokens if tokens is not None else build_token_service())
+
+def build_current_user_handler() -> CurrentUserHandler:
+    """Assemble the current user retrieval use case with its adapters."""
+    return CurrentUserHandler(
+        users=DjangoUserRepository(),
+        clock=SystemClock(),
+    )

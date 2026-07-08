@@ -390,6 +390,30 @@ class CurrentSessionView(APIView):
         _clear_refresh_cookie(response)
         return response
 
+class CurrentUserView(APIView):
+    """GET /api/v1/users/me — retrieve the current user (API-001 §4.7)."""
+
+    authentication_classes = (JWTStatelessUserAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    @extend_schema(
+        tags=[_AUTH_TAG],
+        operation_id="auth_current_user_get",
+        summary="Get the current authenticated user",
+        description="Retrieve the full user resource for the authenticated account.",
+        request=None,
+        responses={
+            200: RegistrationResponseSerializer,
+            401: OpenApiResponse(ProblemDetailSerializer, description="No valid session."),
+        },
+    )
+    def get(self, request: Request) -> Response:
+        user = composition.build_current_user_handler().handle(str(request.user.id))
+        if user is None:
+            return unauthorized_problem(
+                instance=request.path, request=request, detail="User not found."
+            )
+        return _envelope(request, _user_resource(user), status=200)
 
 def _optional_str(value: object) -> str | None:
     """Coerce an optional serializer value to ``str | None`` (blank → ``None``)."""

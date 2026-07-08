@@ -547,3 +547,15 @@ class RestoreUserHandler:
             events = user.restore(now=now)
         self._users.save(user)
         return OperationResultDto(user=UserDto.from_user(user, now=now), events=tuple(events))
+
+class CurrentUserHandler:
+    """Use case: retrieve the current authenticated user's details."""
+
+    def __init__(self, *, users: UserRepository, clock: Clock) -> None:
+        self._users = users
+        self._clock = clock
+
+    def handle(self, user_id: str) -> UserDto:
+        user = _load_user(self._users, user_id)
+        now = self._clock.now()
+        return UserDto.from_user(user, now=now)
