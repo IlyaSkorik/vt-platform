@@ -1,0 +1,39 @@
+{
+  "//": "Type-checking configuration for the application source (src/). Vite performs the actual transpilation; TypeScript is used purely as a type checker (noEmit).",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "ES2023",
+    "useDefineForClassFields": true,
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "types": ["vite/client"],
+
+    /* Bundler mode — Vite resolves modules, TS only type-checks. */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "isolatedModules": true,
+    "skipLibCheck": true,
+
+    /* Strictness — the platform mandates strict TypeScript (ARCH-001 §26.2). */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* Absolute imports / path aliases. Since TS 5.0 `paths` resolves relative to
+     * this config file, so no (now-deprecated) `baseUrl` is required. */
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src", ".storybook", "vitest.setup.ts"]
+}

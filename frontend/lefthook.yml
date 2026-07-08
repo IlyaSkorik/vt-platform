@@ -1,0 +1,22 @@
+# Lefthook git hooks for the frontend workspace.
+# Install once (from this directory): pnpm hooks:install
+#
+# Hooks are intentionally NOT auto-installed on `pnpm install` to avoid mutating
+# the repository's shared git hooks during a bootstrap. Run the command above
+# deliberately when you want local enforcement.
+
+pre-commit:
+  parallel: true
+  commands:
+    lint:
+      glob: "*.{ts,tsx,js,jsx,json,css}"
+      run: pnpm biome check --write --no-errors-on-unmatched {staged_files}
+      stage_fixed: true
+
+pre-push:
+  parallel: true
+  commands:
+    typecheck:
+      run: pnpm typecheck
+    test:
+      run: pnpm test

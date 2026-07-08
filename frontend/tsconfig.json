@@ -1,0 +1,5 @@
+{
+  "//": "Solution-style root config. It only wires up the project references; the real compiler options live in the referenced configs so editors and `tsc -b` share one source of truth.",
+  "files": [],
+  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }]
+}

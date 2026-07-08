@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+dist-ssr/
+storybook-static/
+
+# Generated API SDK (regenerated from the OpenAPI contract via `pnpm api:generate`)
+src/shared/api/generated/**
+!src/shared/api/generated/.gitkeep
+
+# Test / tooling artifacts
+coverage/
+playwright-report/
+test-results/
+.vitest/
+*.tsbuildinfo
+node_modules/.tmp/
+
+# Local environment
+.env
+.env.local
+.env.*.local
+
+# Editor / OS
+.DS_Store
+*.log
+.idea/
+.vscode/*
+!.vscode/extensions.json

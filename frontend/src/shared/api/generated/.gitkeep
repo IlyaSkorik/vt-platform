@@ -1,0 +1,3 @@
+# The typed API SDK is generated here by `pnpm api:generate` (Orval).
+# Generated sources are git-ignored and reproducible from the OpenAPI contract.
+# See ../../../orval.config.ts.

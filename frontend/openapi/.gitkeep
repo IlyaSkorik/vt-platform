@@ -1,0 +1,3 @@
+# OpenAPI 3.1 contract drop location.
+# The backend publishes schema.yaml here (drf-spectacular); Orval reads it.
+# See ../orval.config.ts.
