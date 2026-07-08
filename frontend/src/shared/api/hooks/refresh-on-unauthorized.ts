@@ -18,7 +18,10 @@ import { tokenStore } from "../token-store";
  *      so no token material is read or written here; the server rotates it and
  *      returns a fresh access token, which we place in the in-memory store.
  *   3. On success the original request is replayed with the new bearer token
- *      (marked so it can never trigger a second refresh → no loop).
+ *      via a bare `fetch` that bypasses this Ky hook pipeline, so the replay can
+ *      never re-enter this hook → no refresh loop. Nothing is added to the
+ *      replayed request beyond the refreshed `Authorization` header (a custom
+ *      marker header would trip a CORS preflight the server does not allow).
  *   4. On failure (expired/absent refresh cookie, or reuse detection → family
  *      revoked, `403`), the session is cleared and `session-expired` is emitted
  *      for the AuthProvider to handle; the `401` propagates to the caller.
@@ -27,7 +30,6 @@ import { tokenStore } from "../token-store";
  * failure, not an expired access token, and must surface unchanged.
  */
 
-const RETRY_MARKER = "X-VT-Refresh-Retry";
 const UNAUTHORIZED = 401;
 
 /** Paths where a 401 means "bad credentials", not "expired token". */
@@ -77,8 +79,8 @@ export const refreshOnUnauthorized: AfterResponseHook = async ({ request, respon
   if (response.status !== UNAUTHORIZED) {
     return response;
   }
-  // Never refresh for the auth endpoints themselves, and never twice.
-  if (isAuthPath(request.url) || request.headers.has(RETRY_MARKER)) {
+  // Never refresh for the auth endpoints themselves.
+  if (isAuthPath(request.url)) {
     return response;
   }
 
@@ -89,11 +91,11 @@ export const refreshOnUnauthorized: AfterResponseHook = async ({ request, respon
     return response;
   }
 
-  // Replay the original request with the new token, marked so a subsequent
-  // 401 cannot start another refresh. A bare `fetch` bypasses the Ky hook
-  // pipeline, so this replay never re-enters this hook.
+  // Replay the original request with the new token. A bare `fetch` bypasses the
+  // Ky hook pipeline, so this replay never re-enters this hook — no refresh loop
+  // is possible and no retry marker header is needed. (Adding a non-safelisted
+  // header here would force a CORS preflight the server does not allow.)
   const retried = new Request(request);
   retried.headers.set(HEADER.authorization, `Bearer ${tokenStore.get() ?? ""}`);
-  retried.headers.set(RETRY_MARKER, "1");
   return fetch(retried);
 };

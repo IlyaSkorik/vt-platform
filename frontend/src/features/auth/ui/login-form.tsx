@@ -33,7 +33,7 @@ export function LoginForm({ onSuccess }: LoginFormProps): React.JSX.Element {
     formState: { errors, isSubmitting },
   } = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "", rememberMe: false },
+    defaultValues: { email: "", password: "", rememberMe: true },
   });
 
   const rememberMe = watch("rememberMe");

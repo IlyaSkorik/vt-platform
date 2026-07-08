@@ -5,8 +5,9 @@ import { refreshOnUnauthorized } from "./refresh-on-unauthorized";
 /**
  * The hook receives Ky's `AfterResponseState`; we only exercise `request` and
  * `response`. A `401` on a protected path triggers a single refresh, then
- * replays the original request with the new token. Auth paths and already-
- * retried requests are passed through untouched.
+ * replays the original request with the new token. Auth paths are passed
+ * through untouched. The replay is a bare `fetch` (bypasses the Ky pipeline),
+ * so no re-entry — and therefore no loop — is possible.
  */
 type HookState = Parameters<typeof refreshOnUnauthorized>[0];
 
@@ -90,12 +91,19 @@ describe("refreshOnUnauthorized", () => {
     unsubscribe();
   });
 
-  it("does not attempt a second refresh on an already-retried request", async () => {
-    const fetchSpy = vi.fn();
+  it("replays with the fresh Bearer and adds no non-safelisted marker header", async () => {
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(200, { data: { accessToken: "fresh-token" } }))
+      .mockResolvedValueOnce(jsonResponse(200, { data: { id: "1" } }));
     globalThis.fetch = fetchSpy as unknown as typeof fetch;
-    const input = state("https://api.test/api/v1/users/me", 401, { "X-VT-Refresh-Retry": "1" });
-    const result = await refreshOnUnauthorized(input);
-    expect(result).toBe(input.response);
-    expect(fetchSpy).not.toHaveBeenCalled();
+
+    const input = state("https://api.test/api/v1/users/me", 401);
+    await refreshOnUnauthorized(input);
+
+    const replayed = fetchSpy.mock.calls[1]?.[0] as Request;
+    expect(replayed.headers.get("Authorization")).toBe("Bearer fresh-token");
+    // A marker header here would force a CORS preflight the server rejects.
+    expect(replayed.headers.has("X-VT-Refresh-Retry")).toBe(false);
   });
 });
