@@ -13,7 +13,7 @@ export function ThemeToggle(): React.JSX.Element {
   return (
     <Button
       variant="ghost"
-      size="icon"
+      iconOnly
       onClick={toggleTheme}
       aria-pressed={isDark}
       aria-label={isDark ? "Включить светлую тему" : "Включить тёмную тему"}
