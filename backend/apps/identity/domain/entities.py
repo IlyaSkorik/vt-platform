@@ -400,6 +400,18 @@ class User:
         self._touch(now)
         return events
 
+    def ensure_email_unverified(self) -> None:
+        """Guard that the email is not yet verified, else raise (a read-only check).
+
+        Lets a use case that (re)issues a verification challenge refuse early — with
+        the same :class:`~apps.identity.domain.exceptions.EmailAlreadyVerifiedError`
+        :meth:`verify_email` would raise — without mutating the aggregate or
+        emitting an event, since sending a fresh link is not a state change.
+        """
+        self._ensure_active()
+        if self.is_email_verified():
+            raise EmailAlreadyVerifiedError("The email address is already verified.")
+
     def change_phone(self, new_phone: PhoneNumber, *, now: datetime) -> list[DomainEvent]:
         """Set or replace the phone number, resetting its verified status."""
         self._ensure_active()

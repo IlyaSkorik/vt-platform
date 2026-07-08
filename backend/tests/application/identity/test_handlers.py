@@ -17,19 +17,23 @@ from apps.identity.application.commands import (
     ChangeEmailCommand,
     ChangePasswordCommand,
     ChangePhoneCommand,
+    ConfirmEmailVerificationCommand,
     DeleteUserCommand,
     GrantConsentCommand,
     LockUserCommand,
     RegisterUserCommand,
+    RequestEmailVerificationCommand,
     RestoreUserCommand,
     UnlockUserCommand,
     VerifyEmailCommand,
     VerifyPhoneCommand,
     WithdrawConsentCommand,
 )
+from apps.identity.application.events import SendVerificationEmailOnUserRegistered
 from apps.identity.application.exceptions import (
     EmailAlreadyInUseError,
     InvalidInputError,
+    InvalidVerificationTokenError,
     PhoneAlreadyInUseError,
     UserNotFoundError,
     UserStateConflictError,
@@ -39,10 +43,12 @@ from apps.identity.application.handlers import (
     ChangeEmailHandler,
     ChangePasswordHandler,
     ChangePhoneHandler,
+    ConfirmEmailVerificationHandler,
     DeleteUserHandler,
     GrantConsentHandler,
     LockUserHandler,
     RegisterUserHandler,
+    RequestEmailVerificationHandler,
     RestoreUserHandler,
     UnlockUserHandler,
     VerifyEmailHandler,
@@ -82,9 +88,11 @@ from apps.identity.domain.value_objects import (
 from tests.application.identity.fakes import (
     NOW,
     FakeClock,
+    FakeEmailGateway,
     FakePasswordHasher,
     FakeUserRepository,
     FakeUuidGenerator,
+    FakeVerificationTokenService,
 )
 
 STRONG_PASSWORD = "V3ry$ecurePass!"
@@ -286,6 +294,141 @@ class TestVerifyEmailHandler:
         with pytest.raises(UserStateConflictError) as excinfo:
             self._handler(repo).handle(command)
         assert excinfo.value.domain_code == "VerificationExpiredError"
+
+
+# ---------------------------------------------------------------------------
+# ConfirmEmailVerificationHandler
+# ---------------------------------------------------------------------------
+
+
+class TestConfirmEmailVerificationHandler:
+    def _handler(
+        self, repo: FakeUserRepository, tokens: FakeVerificationTokenService
+    ) -> ConfirmEmailVerificationHandler:
+        return ConfirmEmailVerificationHandler(
+            users=repo,
+            tokens=tokens,
+            email_verification_policy=EMAIL_POLICY,
+            clock=FakeClock(),
+        )
+
+    def test_confirms_email_from_token(self) -> None:
+        repo = FakeUserRepository()
+        tokens = FakeVerificationTokenService()
+        user = repo.seed(make_user())
+        tokens.issue_link(user_id=user.id, issued_at=NOW - timedelta(hours=1))
+        token = tokens.links[0].split("token=")[1]
+
+        result = self._handler(repo, tokens).handle(ConfirmEmailVerificationCommand(token=token))
+
+        assert result.user.is_email_verified is True
+        assert isinstance(result.events[0], EmailVerified)
+        assert repo.saved[-1] is user
+
+    def test_invalid_token_is_rejected(self) -> None:
+        repo = FakeUserRepository()
+        tokens = FakeVerificationTokenService()
+
+        with pytest.raises(InvalidVerificationTokenError):
+            self._handler(repo, tokens).handle(ConfirmEmailVerificationCommand(token="garbage"))
+
+    def test_expired_link_is_state_conflict(self) -> None:
+        repo = FakeUserRepository()
+        tokens = FakeVerificationTokenService()
+        user = repo.seed(make_user())
+        tokens.issue_link(user_id=user.id, issued_at=NOW - timedelta(hours=25))
+        token = tokens.links[0].split("token=")[1]
+
+        with pytest.raises(UserStateConflictError) as excinfo:
+            self._handler(repo, tokens).handle(ConfirmEmailVerificationCommand(token=token))
+        assert excinfo.value.domain_code == "VerificationExpiredError"
+
+    def test_unknown_user_is_not_found(self) -> None:
+        repo = FakeUserRepository()
+        tokens = FakeVerificationTokenService()
+        # Issue for a user that was never persisted.
+        tokens.issue_link(user_id=UserId.generate(), issued_at=NOW)
+        token = tokens.links[0].split("token=")[1]
+
+        with pytest.raises(UserNotFoundError):
+            self._handler(repo, tokens).handle(ConfirmEmailVerificationCommand(token=token))
+
+
+# ---------------------------------------------------------------------------
+# RequestEmailVerificationHandler
+# ---------------------------------------------------------------------------
+
+
+class TestRequestEmailVerificationHandler:
+    def _handler(
+        self,
+        repo: FakeUserRepository,
+        tokens: FakeVerificationTokenService,
+        gateway: FakeEmailGateway,
+    ) -> RequestEmailVerificationHandler:
+        return RequestEmailVerificationHandler(
+            users=repo, tokens=tokens, email_gateway=gateway, clock=FakeClock()
+        )
+
+    def test_sends_a_fresh_verification_email(self) -> None:
+        repo = FakeUserRepository()
+        tokens = FakeVerificationTokenService()
+        gateway = FakeEmailGateway()
+        user = repo.seed(make_user())
+
+        self._handler(repo, tokens, gateway).handle(
+            RequestEmailVerificationCommand(user_id=user.id.json())
+        )
+
+        assert len(gateway.verification_emails) == 1
+        sent = gateway.verification_emails[0]
+        assert sent.email == user.email
+        assert sent.verification_url == tokens.links[-1]
+
+    def test_refuses_when_already_verified(self) -> None:
+        repo = FakeUserRepository()
+        tokens = FakeVerificationTokenService()
+        gateway = FakeEmailGateway()
+        user = make_user()
+        user.verify_email(policy=EMAIL_POLICY, sent_at=NOW, now=NOW)
+        repo.seed(user)
+
+        with pytest.raises(UserStateConflictError) as excinfo:
+            self._handler(repo, tokens, gateway).handle(
+                RequestEmailVerificationCommand(user_id=user.id.json())
+            )
+        assert excinfo.value.domain_code == "EmailAlreadyVerifiedError"
+        assert gateway.verification_emails == []
+
+
+# ---------------------------------------------------------------------------
+# SendVerificationEmailOnUserRegistered (event side-effect)
+# ---------------------------------------------------------------------------
+
+
+class TestSendVerificationEmailOnUserRegistered:
+    def test_registration_event_sends_verification_email(self) -> None:
+        tokens = FakeVerificationTokenService()
+        gateway = FakeEmailGateway()
+        handler = SendVerificationEmailOnUserRegistered(
+            email_gateway=gateway, tokens=tokens, clock=FakeClock()
+        )
+        user, events = User.register(
+            user_id=UserId.generate(),
+            email=Email("new@example.com"),
+            full_name=FullName.of("Ada", "Lovelace"),
+            password_hash=VALID_HASH,
+            now=NOW,
+        )
+        registered = events[0]
+        assert isinstance(registered, UserRegistered)
+
+        handler.handle(registered)
+
+        assert len(gateway.verification_emails) == 1
+        sent = gateway.verification_emails[0]
+        assert sent.email == user.email
+        assert sent.verification_url == tokens.links[-1]
 
 
 # ---------------------------------------------------------------------------

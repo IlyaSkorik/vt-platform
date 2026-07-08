@@ -37,10 +37,12 @@ from apps.identity.application.commands import (
     ChangeEmailCommand,
     ChangePasswordCommand,
     ChangePhoneCommand,
+    ConfirmEmailVerificationCommand,
     DeleteUserCommand,
     GrantConsentCommand,
     LockUserCommand,
     RegisterUserCommand,
+    RequestEmailVerificationCommand,
     RestoreUserCommand,
     UnlockUserCommand,
     VerifyEmailCommand,
@@ -59,9 +61,11 @@ from apps.identity.application.exceptions import (
 )
 from apps.identity.application.interfaces import (
     Clock,
+    EmailGateway,
     PasswordHasher,
     UserRepository,
     UuidGenerator,
+    VerificationTokenService,
 )
 from apps.identity.domain.entities import User
 from apps.identity.domain.events import ConsentType
@@ -88,10 +92,12 @@ __all__ = [
     "ChangeEmailHandler",
     "ChangePasswordHandler",
     "ChangePhoneHandler",
+    "ConfirmEmailVerificationHandler",
     "DeleteUserHandler",
     "GrantConsentHandler",
     "LockUserHandler",
     "RegisterUserHandler",
+    "RequestEmailVerificationHandler",
     "RestoreUserHandler",
     "UnlockUserHandler",
     "VerifyEmailHandler",
@@ -266,6 +272,84 @@ class VerifyEmailHandler:
             events = user.verify_email(policy=self._policy, sent_at=command.sent_at, now=now)
         self._users.save(user)
         return OperationResultDto(user=UserDto.from_user(user, now=now), events=tuple(events))
+
+
+class ConfirmEmailVerificationHandler:
+    """Use case: confirm an email from the signed token carried by the emailed link.
+
+    The edge-facing counterpart to :class:`VerifyEmailHandler`: it accepts only the
+    opaque token, verifies its integrity through the
+    :class:`~apps.identity.application.interfaces.VerificationTokenService` (which
+    yields the account id and the instant the link was issued), then applies the
+    same domain verification — honouring the link timeout owned by
+    :class:`~apps.identity.domain.policies.EmailVerificationPolicy`. A tampered or
+    malformed token raises
+    :class:`~apps.identity.application.exceptions.InvalidVerificationTokenError`; a
+    stale (expired) link surfaces as the domain's verification-expired error.
+    """
+
+    def __init__(
+        self,
+        *,
+        users: UserRepository,
+        tokens: VerificationTokenService,
+        email_verification_policy: EmailVerificationPolicy,
+        clock: Clock,
+    ) -> None:
+        self._users = users
+        self._tokens = tokens
+        self._policy = email_verification_policy
+        self._clock = clock
+
+    def handle(self, command: ConfirmEmailVerificationCommand) -> OperationResultDto:
+        now = self._clock.utcnow()
+        decoded = self._tokens.verify(command.token)
+        user = self._users.get(decoded.user_id)
+        if user is None:
+            raise UserNotFoundError(f"No user found with id {decoded.user_id}.")
+        with translate_domain_errors():
+            events = user.verify_email(policy=self._policy, sent_at=decoded.issued_at, now=now)
+        self._users.save(user)
+        return OperationResultDto(user=UserDto.from_user(user, now=now), events=tuple(events))
+
+
+class RequestEmailVerificationHandler:
+    """Use case: (re)send an email-verification link to the account's current address.
+
+    Loads the (authenticated) account, refuses if the email is already verified
+    (a domain state error → ``409``), then mints a fresh link and dispatches the
+    email through the :class:`~apps.identity.application.interfaces.EmailGateway`.
+    Sending is a side effect this handler performs directly (rather than returning
+    an event) because it is itself the reaction to a resend *request*, not a state
+    change of the aggregate.
+    """
+
+    def __init__(
+        self,
+        *,
+        users: UserRepository,
+        tokens: VerificationTokenService,
+        email_gateway: EmailGateway,
+        clock: Clock,
+    ) -> None:
+        self._users = users
+        self._tokens = tokens
+        self._email_gateway = email_gateway
+        self._clock = clock
+
+    def handle(self, command: RequestEmailVerificationCommand) -> OperationResultDto:
+        now = self._clock.utcnow()
+        user = _load_user(self._users, command.user_id)
+        with translate_domain_errors():
+            user.ensure_email_unverified()
+        link = self._tokens.issue_link(user_id=user.id, issued_at=now)
+        self._email_gateway.send_verification_email(
+            email=user.email,
+            full_name=user.full_name,
+            verification_url=link,
+            locale=user.locale,
+        )
+        return OperationResultDto(user=UserDto.from_user(user, now=now), events=())
 
 
 class ChangeEmailHandler:

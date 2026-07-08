@@ -12,12 +12,26 @@ collect it; it is imported by the handler tests.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from apps.identity.application.dto import TokenPairDto
-from apps.identity.application.exceptions import InvalidTokenError
+from apps.identity.application.exceptions import (
+    InvalidTokenError,
+    InvalidVerificationTokenError,
+)
+from apps.identity.application.interfaces import VerificationToken
 from apps.identity.domain.entities import User
-from apps.identity.domain.value_objects import Email, PasswordHash, PhoneNumber, UserId
+from apps.identity.domain.events import DomainEvent
+from apps.identity.domain.value_objects import (
+    Email,
+    FullName,
+    Locale,
+    PasswordHash,
+    PhoneNumber,
+    UserId,
+)
 
 #: Fixed reference instant shared by the fake clock and the tests.
 NOW = datetime(2026, 7, 7, 12, 0, tzinfo=UTC)
@@ -142,3 +156,80 @@ class FakeTokenService:
             raise InvalidTokenError("The refresh token is invalid or expired.")
         self._valid.discard(refresh_token)
         self.revoked.append(refresh_token)
+
+
+@dataclass(frozen=True, slots=True)
+class SentEmail:
+    """A verification email a :class:`FakeEmailGateway` recorded."""
+
+    email: Email
+    full_name: FullName
+    verification_url: str
+    locale: Locale
+
+
+class FakeEmailGateway:
+    """Recording :class:`EmailGateway` fake — captures calls, sends nothing."""
+
+    def __init__(self) -> None:
+        self.verification_emails: list[SentEmail] = []
+        self.password_resets: list[Email] = []
+
+    def send_verification_email(
+        self, *, email: Email, full_name: FullName, verification_url: str, locale: Locale
+    ) -> None:
+        self.verification_emails.append(
+            SentEmail(
+                email=email,
+                full_name=full_name,
+                verification_url=verification_url,
+                locale=locale,
+            )
+        )
+
+    def send_password_reset(
+        self,
+        *,
+        email: Email,
+        full_name: FullName,
+        reset_url: str,
+        expires_at: datetime,
+        locale: Locale,
+    ) -> None:
+        self.password_resets.append(email)
+
+
+class FakeVerificationTokenService:
+    """Reversible :class:`VerificationTokenService` fake — no cryptography.
+
+    Mints a self-describing link whose token round-trips back to the exact
+    ``(user_id, issued_at)`` it was issued for; an unknown token is rejected with
+    :class:`InvalidVerificationTokenError`, mirroring a bad signature.
+    """
+
+    def __init__(self) -> None:
+        self._issued: dict[str, VerificationToken] = {}
+        self.links: list[str] = []
+
+    def issue_link(self, *, user_id: UserId, issued_at: datetime) -> str:
+        token = f"tok-{user_id.json()}-{issued_at.isoformat()}"
+        self._issued[token] = VerificationToken(user_id=user_id, issued_at=issued_at)
+        link = f"https://frontend.test/verify-email?token={token}"
+        self.links.append(link)
+        return link
+
+    def verify(self, token: str) -> VerificationToken:
+        decoded = self._issued.get(token)
+        if decoded is None:
+            raise InvalidVerificationTokenError("The verification token is invalid.")
+        return decoded
+
+
+class FakeEventPublisher:
+    """Recording :class:`EventPublisher` fake — captures published events in order."""
+
+    def __init__(self) -> None:
+        self.published: list[DomainEvent] = []
+
+    def publish(self, events: Sequence[DomainEvent]) -> None:
+        self.published.extend(events)

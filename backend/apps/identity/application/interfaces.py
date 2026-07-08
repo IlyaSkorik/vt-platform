@@ -46,6 +46,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol, runtime_checkable
 
@@ -71,6 +72,8 @@ __all__ = [
     "TokenService",
     "UserRepository",
     "UuidGenerator",
+    "VerificationToken",
+    "VerificationTokenService",
 ]
 
 
@@ -348,6 +351,65 @@ class EventPublisher(Protocol):
 
     def publish(self, events: Sequence[DomainEvent]) -> None:
         """Publish ``events`` in order to the platform's event transport."""
+        ...
+
+
+# ---------------------------------------------------------------------------
+# Email-verification token port
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class VerificationToken:
+    """The decoded contents of an email-verification token.
+
+    A framework-free carrier the confirm-email use case reads after the token
+    service verifies a token's integrity: *which* account it is for
+    (:attr:`user_id`) and *when* the link was issued (:attr:`issued_at`), the
+    instant the domain checks against
+    :class:`~apps.identity.domain.policies.EmailVerificationPolicy` to decide
+    whether the link has expired. It carries no secret — the signed token is the
+    secret; this is only its verified payload.
+    """
+
+    user_id: UserId
+    issued_at: datetime
+
+
+@runtime_checkable
+class VerificationTokenService(Protocol):
+    """Port: mint and verify the signed token behind an email-verification link.
+
+    **Why it exists.** Turning "this account should verify its email" into an
+    opaque, tamper-evident link — and later proving a presented link is authentic —
+    needs a concrete signing key and codec. That is infrastructure detail: a use
+    case must trigger it (on ``UserRegistered`` / a resend) and check it (on
+    confirmation) without binding to Django's signer, a JWT, or any URL shape.
+
+    **Who implements it.** An infrastructure adapter over the platform's signing
+    facility (Django's ``TimestampSigner`` / ``dumps``), which also knows the web
+    client's base URL and so can render the full user-facing link. Tests use a
+    reversible in-memory fake.
+
+    **Who consumes it.** The verification-email side-effect handler (to
+    :meth:`issue_link` on registration/resend) and the confirm-email use case (to
+    :meth:`verify` the token a user returns).
+
+    Contract notes: :meth:`issue_link` returns a complete, user-clickable URL and
+    stamps the token with ``issued_at`` so the *domain* — not this adapter — owns
+    the expiry rule. :meth:`verify` raises
+    :class:`~apps.identity.application.exceptions.InvalidVerificationTokenError`
+    for any token whose signature does not check out (malformed, tampered), never a
+    sentinel; a *well-formed but stale* link is not rejected here — its ``issued_at``
+    travels back out so the domain policy can decide expiry (a distinct ``410``).
+    """
+
+    def issue_link(self, *, user_id: UserId, issued_at: datetime) -> str:
+        """Mint a signed token for ``user_id`` stamped ``issued_at`` and return its link."""
+        ...
+
+    def verify(self, token: str) -> VerificationToken:
+        """Verify ``token``'s integrity and return its payload, or raise on failure."""
         ...
 
 

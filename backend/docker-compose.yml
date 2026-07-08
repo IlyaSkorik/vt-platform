@@ -10,8 +10,16 @@ services:
     command: >
       sh -c "python manage.py migrate --noinput &&
              python manage.py runserver 0.0.0.0:8000"
+    # Inside the compose network, services reach each other by service name —
+    # not `localhost` (that resolves to the container itself). These override
+    # the host-oriented defaults in `.env` so the stack is self-contained.
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.development
+      POSTGRES_HOST: postgres
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      EMAIL_HOST: mailhog
     env_file:
       - .env
     ports:
@@ -23,6 +31,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      mailhog:
+        condition: service_started
 
   worker:
     build:
@@ -31,6 +41,11 @@ services:
     command: celery -A config worker -l info
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.development
+      POSTGRES_HOST: postgres
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      EMAIL_HOST: mailhog
     env_file:
       - .env
     volumes:
@@ -43,9 +58,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: celery -A config beat -l info
+    # `--schedule` writes to /tmp: the container runs as non-root `app`, and the
+    # default path (`./celerybeat-schedule`) is in the host-owned bind mount.
+    command: celery -A config beat -l info --schedule /tmp/celerybeat-schedule
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.development
+      POSTGRES_HOST: postgres
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      EMAIL_HOST: mailhog
     env_file:
       - .env
     volumes:

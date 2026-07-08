@@ -32,14 +32,18 @@ from rest_framework_simplejwt.settings import api_settings as jwt_settings
 
 from apps.identity.application.commands import (
     AuthenticateUserCommand,
+    ConfirmEmailVerificationCommand,
     LogoutCommand,
     RefreshTokenCommand,
     RegisterUserCommand,
+    RequestEmailVerificationCommand,
 )
 from apps.identity.application.dto import TokenPairDto, UserDto
 from apps.identity.application.exceptions import ApplicationError, InvalidTokenError
 from apps.identity.presentation.api.v1.auth import composition
 from apps.identity.presentation.api.v1.auth.serializers import (
+    EmailVerificationConfirmSerializer,
+    EmailVerificationResponseSerializer,
     ProblemDetailSerializer,
     RegistrationRequestSerializer,
     RegistrationResponseSerializer,
@@ -209,11 +213,78 @@ class RegistrationView(APIView):
         )
         try:
             result = composition.build_register_user_handler().handle(command)
+            # Dispatch the events the domain produced (UserRegistered → send the
+            # verification email). Synchronous, in-process: registration is not
+            # reported as successful unless the verification email was dispatched.
+            composition.build_event_publisher().publish(result.events)
         except ApplicationError as exc:
             return application_problem(exc, instance=instance, request=request)
         response = _envelope(request, _user_resource(result.user), status=201)
         response["Location"] = f"/api/v1/users/{result.user.id}"
         return response
+
+
+class EmailVerificationConfirmationView(APIView):
+    """POST /api/v1/auth/email-verification/confirmations — confirm an email (API-001 §4.2)."""
+
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
+
+    @extend_schema(
+        tags=[_AUTH_TAG],
+        operation_id="confirmEmailVerification",
+        summary="Confirm email ownership using the emailed token",
+        description="Confirm the account's email address using the token from the sent link.",
+        request=EmailVerificationConfirmSerializer,
+        responses={
+            200: EmailVerificationResponseSerializer,
+            400: OpenApiResponse(ProblemDetailSerializer, description="Malformed request."),
+            409: OpenApiResponse(ProblemDetailSerializer, description="Already verified."),
+            410: OpenApiResponse(ProblemDetailSerializer, description="Token expired."),
+            422: OpenApiResponse(ProblemDetailSerializer, description="Invalid token."),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        instance = request.path
+        serializer = EmailVerificationConfirmSerializer(data=request.data)
+        if not serializer.is_valid():
+            return validation_problem(serializer.errors, instance=instance, request=request)
+        data = serializer.validated_data
+        command = ConfirmEmailVerificationCommand(token=str(data["token"]))
+        try:
+            result = composition.build_confirm_email_verification_handler().handle(command)
+        except ApplicationError as exc:
+            return application_problem(exc, instance=instance, request=request)
+        return _envelope(request, _user_resource(result.user), status=200)
+
+
+class EmailVerificationRequestView(APIView):
+    """POST /api/v1/auth/email-verification/requests — (re)send the challenge (API-001 §4.2)."""
+
+    authentication_classes = (JWTStatelessUserAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    @extend_schema(
+        tags=[_AUTH_TAG],
+        operation_id="requestEmailVerification",
+        summary="(Re)send an email-verification challenge",
+        description="Send a fresh verification link to the authenticated account's email.",
+        request=None,
+        responses={
+            202: OpenApiResponse(description="Verification email dispatched."),
+            401: OpenApiResponse(ProblemDetailSerializer, description="No valid session."),
+            409: OpenApiResponse(ProblemDetailSerializer, description="Already verified."),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        instance = request.path
+        command = RequestEmailVerificationCommand(user_id=str(request.user.id))
+        try:
+            composition.build_request_email_verification_handler().handle(command)
+        except ApplicationError as exc:
+            return application_problem(exc, instance=instance, request=request)
+        correlation_id = request_id(request)
+        return Response(status=202, headers={"X-Request-ID": correlation_id})
 
 
 class SessionCollectionView(APIView):

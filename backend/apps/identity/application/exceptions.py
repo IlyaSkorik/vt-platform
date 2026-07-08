@@ -46,6 +46,7 @@ __all__ = [
     "InvalidCredentialsError",
     "InvalidInputError",
     "InvalidTokenError",
+    "InvalidVerificationTokenError",
     "PhoneAlreadyInUseError",
     "PolicyViolationError",
     "UserNotFoundError",
@@ -151,6 +152,21 @@ class InvalidTokenError(ApplicationError):
     """
 
     code: ClassVar[str] = "invalid_token"
+
+
+class InvalidVerificationTokenError(ApplicationError):
+    """An email-verification token could not be accepted.
+
+    Raised by the confirm-email use case when the
+    :class:`~apps.identity.application.interfaces.VerificationTokenService` cannot
+    decode the presented token — it is malformed, tampered with, or its signature
+    does not verify. Distinct from an *expired* link (a well-formed token whose
+    validity window has lapsed), which surfaces as a domain
+    :class:`~apps.identity.domain.exceptions.VerificationExpiredError` →
+    :class:`UserStateConflictError`. Mapped to ``422`` at the edge (API-001 §4.2).
+    """
+
+    code: ClassVar[str] = "invalid_verification_token"
 
 
 class AccountInactiveError(ApplicationError):

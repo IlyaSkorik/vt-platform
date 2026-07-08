@@ -13,6 +13,8 @@ from django.urls import path
 
 from apps.identity.presentation.api.v1.auth.views import (
     CurrentSessionView,
+    EmailVerificationConfirmationView,
+    EmailVerificationRequestView,
     RegistrationView,
     SessionCollectionView,
     TokenRefreshView,
@@ -22,6 +24,16 @@ app_name = "auth"
 
 urlpatterns = [
     path("auth/registration", RegistrationView.as_view(), name="registration"),
+    path(
+        "auth/email-verification/requests",
+        EmailVerificationRequestView.as_view(),
+        name="email-verification-requests",
+    ),
+    path(
+        "auth/email-verification/confirmations",
+        EmailVerificationConfirmationView.as_view(),
+        name="email-verification-confirmations",
+    ),
     path("auth/sessions", SessionCollectionView.as_view(), name="sessions"),
     path("auth/sessions/current", CurrentSessionView.as_view(), name="session-current"),
     path("auth/token/refresh", TokenRefreshView.as_view(), name="token-refresh"),

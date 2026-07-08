@@ -33,10 +33,12 @@ __all__ = [
     "ChangeEmailCommand",
     "ChangePasswordCommand",
     "ChangePhoneCommand",
+    "ConfirmEmailVerificationCommand",
     "DeleteUserCommand",
     "GrantConsentCommand",
     "LockUserCommand",
     "RegisterUserCommand",
+    "RequestEmailVerificationCommand",
     "RestoreUserCommand",
     "UnlockUserCommand",
     "VerifyEmailCommand",
@@ -84,6 +86,31 @@ class VerifyEmailCommand:
 
     user_id: str
     sent_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class ConfirmEmailVerificationCommand:
+    """Confirm an email address from the signed token carried by the emailed link.
+
+    The presentation edge collected only the opaque ``token``; the handler verifies
+    its integrity through the
+    :class:`~apps.identity.application.interfaces.VerificationTokenService` (which
+    yields the account id and the issue instant) and then applies the domain
+    verification, so the token codec never leaks into presentation.
+    """
+
+    token: str
+
+
+@dataclass(frozen=True, slots=True)
+class RequestEmailVerificationCommand:
+    """(Re)send an email-verification link to an account's current address.
+
+    ``user_id`` identifies the (authenticated) account requesting the challenge;
+    the handler mints a fresh link and dispatches the email.
+    """
+
+    user_id: str
 
 
 @dataclass(frozen=True, slots=True)

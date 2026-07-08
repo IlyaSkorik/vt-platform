@@ -9,9 +9,12 @@ layer is mocked.
 
 from __future__ import annotations
 
+import re
 from typing import Any, cast
+from urllib.parse import parse_qs, urlparse
 
 import pytest
+from django.core import mail
 from rest_framework.test import APIClient
 
 pytestmark = pytest.mark.django_db
@@ -20,6 +23,8 @@ REGISTRATION_URL = "/api/v1/auth/registration"
 SESSIONS_URL = "/api/v1/auth/sessions"
 CURRENT_SESSION_URL = "/api/v1/auth/sessions/current"
 REFRESH_URL = "/api/v1/auth/token/refresh"
+EMAIL_CONFIRM_URL = "/api/v1/auth/email-verification/confirmations"
+EMAIL_REQUEST_URL = "/api/v1/auth/email-verification/requests"
 
 _PASSWORD = "Str0ngPass!word"
 _PROBLEM_CT = "application/problem+json"
@@ -210,3 +215,119 @@ class TestLogout:
         response = client.delete(CURRENT_SESSION_URL)
 
         assert response.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# Email verification
+# ---------------------------------------------------------------------------
+
+
+def _token_from_last_email() -> str:
+    """Extract the ``token`` query parameter from the most recent sent email."""
+    assert len(mail.outbox) >= 1
+    body = str(mail.outbox[-1].body)
+    match = re.search(r"https?://\S+", body)
+    assert match is not None
+    return parse_qs(urlparse(match.group(0)).query)["token"][0]
+
+
+class TestEmailVerification:
+    def test_registration_sends_exactly_one_verification_email(self, client: APIClient) -> None:
+        mail.outbox.clear()
+
+        _register(client)
+
+        assert len(mail.outbox) == 1
+        message = mail.outbox[0]
+        assert message.to == ["parent@example.com"]
+        assert message.from_email
+        assert message.subject
+        assert "verify-email?token=" in message.body
+
+    def test_confirming_the_link_verifies_the_account(self, client: APIClient) -> None:
+        mail.outbox.clear()
+        _register(client)
+        token = _token_from_last_email()
+
+        response = client.post(EMAIL_CONFIRM_URL, {"token": token}, format="json")
+
+        assert response.status_code == 200
+        data = response.data["data"]
+        assert data["emailVerified"] is True
+        assert data["status"] == "active"
+
+    def test_verified_account_can_log_in(self, client: APIClient) -> None:
+        mail.outbox.clear()
+        _register(client)
+        client.post(EMAIL_CONFIRM_URL, {"token": _token_from_last_email()}, format="json")
+
+        login = client.post(
+            SESSIONS_URL, {"email": "parent@example.com", "password": _PASSWORD}, format="json"
+        )
+
+        assert login.status_code == 201
+        assert login.data["data"]["user"]["emailVerified"] is True
+
+    def test_garbage_token_is_unprocessable(self, client: APIClient) -> None:
+        response = client.post(EMAIL_CONFIRM_URL, {"token": "not-a-token"}, format="json")
+
+        assert response.status_code == 422
+        assert response["Content-Type"] == _PROBLEM_CT
+        assert response.data["type"].endswith("/validation-error")
+
+    def test_confirming_twice_is_a_conflict(self, client: APIClient) -> None:
+        mail.outbox.clear()
+        _register(client)
+        token = _token_from_last_email()
+        first = client.post(EMAIL_CONFIRM_URL, {"token": token}, format="json")
+        assert first.status_code == 200
+
+        second = client.post(EMAIL_CONFIRM_URL, {"token": token}, format="json")
+
+        assert second.status_code == 409
+        assert second["Content-Type"] == _PROBLEM_CT
+        assert second.data["type"].endswith("/conflict")
+
+    def test_new_account_is_unverified_then_first_confirm_200_second_409(
+        self, client: APIClient
+    ) -> None:
+        # Regression: a brand-new account must NOT be pre-verified. The FIRST
+        # confirmation of its emailed token verifies it (200); only a SECOND
+        # confirmation is a conflict (409). A first-attempt 409 would mean the
+        # aggregate was wrongly treated as already verified at registration.
+        mail.outbox.clear()
+        registration = client.post(REGISTRATION_URL, _registration_payload(), format="json")
+        assert registration.status_code == 201
+        assert registration.data["data"]["emailVerified"] is False
+        assert registration.data["data"]["status"] == "registered"
+
+        token = _token_from_last_email()
+
+        first = client.post(EMAIL_CONFIRM_URL, {"token": token}, format="json")
+        assert first.status_code == 200
+        assert first.data["data"]["emailVerified"] is True
+
+        second = client.post(EMAIL_CONFIRM_URL, {"token": token}, format="json")
+        assert second.status_code == 409
+        assert second["Content-Type"] == _PROBLEM_CT
+        assert second.data["type"].endswith("/conflict")
+
+    def test_resend_requires_authentication(self, client: APIClient) -> None:
+        response = client.post(EMAIL_REQUEST_URL)
+
+        assert response.status_code == 401
+
+    def test_resend_dispatches_a_new_email(self, client: APIClient) -> None:
+        _register(client)
+        login = client.post(
+            SESSIONS_URL, {"email": "parent@example.com", "password": _PASSWORD}, format="json"
+        )
+        access = login.data["data"]["accessToken"]
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        mail.outbox.clear()
+
+        response = client.post(EMAIL_REQUEST_URL)
+
+        assert response.status_code == 202
+        assert len(mail.outbox) == 1
+        assert mail.outbox[0].to == ["parent@example.com"]

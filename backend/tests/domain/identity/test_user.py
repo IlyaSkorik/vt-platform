@@ -358,6 +358,18 @@ class TestVerifyEmail:
         with pytest.raises(VerificationExpiredError):
             registered.verify_email(policy=email_policy, sent_at=sent_at, now=NOW)
 
+    def test_ensure_email_unverified_passes_when_unverified(self, registered: User) -> None:
+        # A read-only guard: no exception, no state change, no events.
+        registered.ensure_email_unverified()
+        assert not registered.is_email_verified()
+
+    def test_ensure_email_unverified_rejects_a_verified_email(
+        self, registered: User, email_policy: EmailVerificationPolicy
+    ) -> None:
+        _verified(registered, email_policy)
+        with pytest.raises(EmailAlreadyVerifiedError):
+            registered.ensure_email_unverified()
+
 
 # ---------------------------------------------------------------------------
 # Phone

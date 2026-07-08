@@ -12,9 +12,10 @@ for development). Secrets are never committed (ARCH-001 §16.3).
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Annotated
 
 from pydantic import Field, RedisDsn, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class DatabaseSettings(BaseSettings):
@@ -41,6 +42,28 @@ class JWTSettings(BaseSettings):
     blacklist_after_rotation: bool = True
 
 
+class EmailSettings(BaseSettings):
+    """Transactional email / SMTP settings (ARCH-001 §17.3, IDN-002).
+
+    Drives Django's email backend. The development stack points these at the
+    Mailhog SMTP sink (``mailhog:1025``, no TLS); production supplies a real
+    provider's host, port, credentials, and TLS via the environment.
+    """
+
+    model_config = SettingsConfigDict(env_prefix="EMAIL_", extra="ignore")
+
+    backend: str = "django.core.mail.backends.smtp.EmailBackend"
+    host: str = "localhost"
+    port: int = 1025
+    host_user: str = ""
+    host_password: str = ""
+    use_tls: bool = False
+    use_ssl: bool = False
+    timeout: int = 10
+    # Envelope sender for transactional mail (IDN-002 verification, resets).
+    default_from: str = "no-reply@vzlyot-talantov.ru"
+
+
 class Settings(BaseSettings):
     """Root application settings.
 
@@ -62,7 +85,7 @@ class Settings(BaseSettings):
         alias="DJANGO_SECRET_KEY",
     )
     debug: bool = Field(default=False, alias="DJANGO_DEBUG")
-    allowed_hosts: list[str] = Field(
+    allowed_hosts: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["localhost", "127.0.0.1"],
         alias="DJANGO_ALLOWED_HOSTS",
     )
@@ -72,9 +95,16 @@ class Settings(BaseSettings):
     language_code: str = Field(default="ru", alias="DJANGO_LANGUAGE_CODE")
 
     # --- Networking / CORS (API-000 §26, ARCH-001 §10.4) ---
-    cors_allowed_origins: list[str] = Field(
+    cors_allowed_origins: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["http://localhost:5173", "http://127.0.0.1:5173"],
         alias="DJANGO_CORS_ALLOWED_ORIGINS",
+    )
+
+    # Public base URL of the web client, used to build user-facing links that the
+    # backend emails (e.g. the email-verification link, IDN-002). No trailing slash.
+    frontend_base_url: str = Field(
+        default="http://localhost:5173",
+        alias="FRONTEND_BASE_URL",
     )
 
     # --- Redis / Celery (ARCH-001 §6.1, §7.5) ---
@@ -94,6 +124,7 @@ class Settings(BaseSettings):
     # --- Composed groups ---
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)
     jwt: JWTSettings = Field(default_factory=JWTSettings)
+    email: EmailSettings = Field(default_factory=EmailSettings)
 
     @field_validator("allowed_hosts", "cors_allowed_origins", mode="before")
     @classmethod

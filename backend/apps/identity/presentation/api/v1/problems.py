@@ -21,7 +21,11 @@ from typing import Any, Final
 
 from rest_framework.response import Response
 
-from apps.identity.application.exceptions import ApplicationError, WeakPasswordError
+from apps.identity.application.exceptions import (
+    ApplicationError,
+    UserStateConflictError,
+    WeakPasswordError,
+)
 
 __all__ = [
     "PROBLEM_CONTENT_TYPE",
@@ -52,6 +56,7 @@ _PROBLEM_MAP: Final[dict[str, tuple[int, str, str, str | None]]] = {
     "phone_already_in_use": (409, "conflict", "Phone number already in use", None),
     "weak_password": (422, "validation-error", "Validation failed", None),
     "invalid_input": (400, "validation-error", "Validation failed", None),
+    "invalid_verification_token": (422, "validation-error", "Invalid verification token", None),
     "user_not_found": (404, "not-found", "Resource not found", None),
     "user_state_conflict": (409, "conflict", "Conflict", None),
     "policy_violation": (422, "business-rule-violation", "Business rule violation", None),
@@ -59,6 +64,18 @@ _PROBLEM_MAP: Final[dict[str, tuple[int, str, str, str | None]]] = {
 
 #: Rendering for any application error whose ``code`` is not explicitly mapped.
 _FALLBACK: Final[tuple[int, str, str, str | None]] = (400, "bad-request", "Bad request", None)
+
+#: Domain-error names (carried on ``UserStateConflictError.domain_code``) that the
+#: generic ``409 conflict`` under-describes and must render as a distinct problem.
+#: An expired email-verification link is a ``410 Gone`` (API-001 §4.2).
+_STATE_CONFLICT_OVERRIDES: Final[dict[str, tuple[int, str, str, str | None]]] = {
+    "VerificationExpiredError": (
+        410,
+        "token-expired",
+        "Verification token expired",
+        "email-verification-expired",
+    ),
+}
 
 
 def request_id(request: Any) -> str:
@@ -109,6 +126,12 @@ def application_problem(exc: ApplicationError, *, instance: str, request: Any) -
     can render a precise checklist (API-000 §8.2).
     """
     status, type_suffix, title, code = _PROBLEM_MAP.get(exc.code, _FALLBACK)
+    # A user-state conflict is a 409 by default, but some domain states are more
+    # specific (an expired verification link is a 410 Gone) — refine by domain_code.
+    if isinstance(exc, UserStateConflictError):
+        status, type_suffix, title, code = _STATE_CONFLICT_OVERRIDES.get(
+            exc.domain_code, (status, type_suffix, title, code)
+        )
     errors: list[dict[str, str]] | None = None
     if isinstance(exc, WeakPasswordError):
         errors = [

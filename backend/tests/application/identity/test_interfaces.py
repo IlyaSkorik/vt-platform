@@ -29,6 +29,8 @@ from apps.identity.application.interfaces import (
     SmsGateway,
     UserRepository,
     UuidGenerator,
+    VerificationToken,
+    VerificationTokenService,
 )
 from apps.identity.domain.entities import User
 from apps.identity.domain.events import DomainEvent
@@ -179,6 +181,21 @@ class FakeEventPublisher:
         self.published.extend(events)
 
 
+class FakeVerificationTokenService:
+    """Reversible ``VerificationTokenService`` fake."""
+
+    def __init__(self) -> None:
+        self._issued: dict[str, VerificationToken] = {}
+
+    def issue_link(self, *, user_id: UserId, issued_at: datetime) -> str:
+        token = f"{user_id.json()}|{issued_at.isoformat()}"
+        self._issued[token] = VerificationToken(user_id=user_id, issued_at=issued_at)
+        return f"https://vt.example/verify-email?token={token}"
+
+    def verify(self, token: str) -> VerificationToken:
+        return self._issued[token]
+
+
 # ---------------------------------------------------------------------------
 # Static type-correctness checks (verified by mypy --strict)
 # ---------------------------------------------------------------------------
@@ -216,6 +233,12 @@ def _accepts_event_publisher(publisher: EventPublisher) -> EventPublisher:
     return publisher
 
 
+def _accepts_verification_token_service(
+    service: VerificationTokenService,
+) -> VerificationTokenService:
+    return service
+
+
 # Binding each fake to its port type is itself the static conformance assertion.
 _REPO: UserRepository = _accepts_user_repository(FakeUserRepository())
 _HASHER: PasswordHasher = _accepts_password_hasher(FakePasswordHasher())
@@ -225,6 +248,9 @@ _NOTIFY: NotificationGateway = _accepts_notification_gateway(FakeNotificationGat
 _CLOCK: Clock = _accepts_clock(FakeClock(NOW))
 _UUIDS: UuidGenerator = _accepts_uuid_generator(FakeUuidGenerator())
 _PUBLISHER: EventPublisher = _accepts_event_publisher(FakeEventPublisher())
+_VERIFY_TOKENS: VerificationTokenService = _accepts_verification_token_service(
+    FakeVerificationTokenService()
+)
 
 
 # ---------------------------------------------------------------------------
@@ -242,6 +268,7 @@ class TestProtocolCompatibility:
         assert isinstance(FakeClock(NOW), Clock)
         assert isinstance(FakeUuidGenerator(), UuidGenerator)
         assert isinstance(FakeEventPublisher(), EventPublisher)
+        assert isinstance(FakeVerificationTokenService(), VerificationTokenService)
 
     def test_incomplete_repository_does_not_satisfy_port(self) -> None:
         class PartialRepository:

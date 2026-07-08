@@ -14,6 +14,8 @@ from __future__ import annotations
 from datetime import timedelta
 from pathlib import Path
 
+from corsheaders.defaults import default_headers
+
 from .env import get_settings
 
 settings = get_settings()
@@ -210,6 +212,28 @@ SPECTACULAR_SETTINGS = {
 # --- CORS (locked to known origins, API-000 §26) --------------------------
 CORS_ALLOWED_ORIGINS = settings.cors_allowed_origins
 CORS_ALLOW_CREDENTIALS = True
+# The frontend transport tags requests with custom headers the browser must be
+# told to allow, or it blocks the preflight: a correlation id on every request
+# (X-Request-ID, API-000 §7) and an idempotency key on unsafe creates
+# (Idempotency-Key, API-000 §19).
+CORS_ALLOW_HEADERS = (*default_headers, "x-request-id", "idempotency-key")
+
+# --- Email / SMTP (transactional mail, IDN-002) ---------------------------
+# Driven by the typed EmailSettings group. Development points at the Mailhog
+# SMTP sink (mailhog:1025, no TLS); production supplies a real provider.
+EMAIL_BACKEND = settings.email.backend
+EMAIL_HOST = settings.email.host
+EMAIL_PORT = settings.email.port
+EMAIL_HOST_USER = settings.email.host_user
+EMAIL_HOST_PASSWORD = settings.email.host_password
+EMAIL_USE_TLS = settings.email.use_tls
+EMAIL_USE_SSL = settings.email.use_ssl
+EMAIL_TIMEOUT = settings.email.timeout
+DEFAULT_FROM_EMAIL = settings.email.default_from
+
+# Public base URL of the web client, used to build user-facing links the backend
+# emails (email-verification link, IDN-002). No trailing slash.
+FRONTEND_BASE_URL = settings.frontend_base_url.rstrip("/")
 
 # --- Cache & Celery (Redis; ARCH-001 §6.1, §7.5) --------------------------
 CACHES = {

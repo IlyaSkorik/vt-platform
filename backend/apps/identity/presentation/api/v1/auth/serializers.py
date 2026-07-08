@@ -61,6 +61,15 @@ class SessionCreateRequestSerializer(serializers.Serializer[dict[str, object]]):
     )
 
 
+class EmailVerificationConfirmSerializer(serializers.Serializer[dict[str, object]]):
+    """Validate an email-verification confirmation body (API-001 §4.2).
+
+    The emailed token is the proof of ownership; no session is required.
+    """
+
+    token = serializers.CharField()
+
+
 class TokenRefreshRequestSerializer(serializers.Serializer[dict[str, object]]):
     """Validate a token-refresh request body (API-001 §4.5).
 
@@ -139,6 +148,11 @@ class TokenResourceSerializer(serializers.Serializer[dict[str, object]]):
 
 RegistrationResponseSerializer = inline_serializer(
     name="RegistrationResponse",
+    fields={"data": UserResourceSerializer(), "meta": MetaSerializer()},
+)
+
+EmailVerificationResponseSerializer = inline_serializer(
+    name="EmailVerificationResponse",
     fields={"data": UserResourceSerializer(), "meta": MetaSerializer()},
 )
 

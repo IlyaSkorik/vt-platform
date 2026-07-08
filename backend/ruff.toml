@@ -33,6 +33,9 @@ ignore = [
 # REST serializers: field names are the API's camelCase wire keys (API-000 §7),
 # which the platform contract mandates over pep8 snake_case (N815).
 "apps/*/presentation/**/serializers.py" = ["N815"]
+# Localized transactional-email copy is Russian (the platform's primary language,
+# ARCH-001): Cyrillic letters that resemble Latin ones are intentional, not typos.
+"apps/*/infrastructure/messaging/email_gateway.py" = ["RUF001"]
 
 [lint.isort]
 known-first-party = ["apps", "config", "shared"]
