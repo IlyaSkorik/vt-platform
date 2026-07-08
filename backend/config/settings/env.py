@@ -86,7 +86,7 @@ class Settings(BaseSettings):
     )
     debug: bool = Field(default=False, alias="DJANGO_DEBUG")
     allowed_hosts: Annotated[list[str], NoDecode] = Field(
-        default_factory=lambda: ["localhost", "127.0.0.1"],
+        default_factory=lambda: ["localhost"],
         alias="DJANGO_ALLOWED_HOSTS",
     )
 
@@ -96,7 +96,7 @@ class Settings(BaseSettings):
 
     # --- Networking / CORS (API-000 §26, ARCH-001 §10.4) ---
     cors_allowed_origins: Annotated[list[str], NoDecode] = Field(
-        default_factory=lambda: ["http://localhost:5173", "http://127.0.0.1:5173"],
+        default_factory=lambda: ["http://localhost:5173"],
         alias="DJANGO_CORS_ALLOWED_ORIGINS",
     )
 
