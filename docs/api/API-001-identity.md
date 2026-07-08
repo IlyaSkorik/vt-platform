@@ -105,9 +105,9 @@ Per [ARCH-001 §11](../architecture/ARCH-001-vt-platform-architecture.md#11-auth
 {
   "email": "parent@example.com",
   "password": "••••••••••",
-  "displayName": "Ирина С.",
-  "locale": "ru-RU",
-  "acceptedTermsVersion": "2026-01"
+  "firstName": "Ирина",
+  "lastName": "Смирнова",
+  "locale": "ru-RU"
 }
 ```
 

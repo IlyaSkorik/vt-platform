@@ -40,10 +40,11 @@ export type LoginValues = z.infer<typeof loginSchema>;
 
 export const registerSchema = z
   .object({
-    displayName: z
+    firstName: z.string().min(1, "Укажите имя").max(100, "Имя не должно превышать 100 символов"),
+    lastName: z
       .string()
-      .min(2, "Имя должно содержать не менее 2 символов")
-      .max(120, "Имя не должно превышать 120 символов"),
+      .min(1, "Укажите фамилию")
+      .max(100, "Фамилия не должна превышать 100 символов"),
     email: emailSchema,
     password: passwordSchema,
     confirmPassword: z.string().min(1, "Повторите пароль"),

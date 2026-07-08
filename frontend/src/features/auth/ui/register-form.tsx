@@ -36,7 +36,8 @@ export function RegisterForm({ onSuccess }: RegisterFormProps): React.JSX.Elemen
   } = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      displayName: "",
+      firstName: "",
+      lastName: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -55,7 +56,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps): React.JSX.Elemen
       setFormError(
         applyProblemToForm<RegisterValues>(error, {
           setError,
-          knownFields: ["displayName", "email", "password", "confirmPassword"],
+          knownFields: ["firstName", "lastName", "email", "password", "confirmPassword"],
         }),
       );
     }
@@ -70,11 +71,18 @@ export function RegisterForm({ onSuccess }: RegisterFormProps): React.JSX.Elemen
       ) : null}
 
       <Input
-        label="Отображаемое имя"
-        autoComplete="name"
+        label="Имя"
+        autoComplete="given-name"
         autoFocus
-        error={errors.displayName?.message}
-        {...register("displayName")}
+        error={errors.firstName?.message}
+        {...register("firstName")}
+      />
+
+      <Input
+        label="Фамилия"
+        autoComplete="family-name"
+        error={errors.lastName?.message}
+        {...register("lastName")}
       />
 
       <Input

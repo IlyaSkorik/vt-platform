@@ -7,7 +7,6 @@
  */
 export {
   authKeys,
-  CURRENT_TERMS_VERSION,
   fetchCurrentUser,
   useForgotPassword,
   useLogin,

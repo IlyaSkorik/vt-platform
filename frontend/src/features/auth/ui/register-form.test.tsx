@@ -27,7 +27,8 @@ function jsonResponse(status: number, body: unknown): Response {
 }
 
 async function fillValidForm(user: ReturnType<typeof userEvent.setup>): Promise<void> {
-  await user.type(screen.getByLabelText("Отображаемое имя"), "Ирина Смирнова");
+  await user.type(screen.getByLabelText("Имя"), "Ирина");
+  await user.type(screen.getByLabelText("Фамилия"), "Смирнова");
   await user.type(screen.getByLabelText("Email"), "irina@example.com");
   await user.type(screen.getByLabelText("Пароль"), "SuperSecret123");
   await user.type(screen.getByLabelText("Подтверждение пароля"), "SuperSecret123");
@@ -48,7 +49,8 @@ describe("RegisterForm", () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.type(screen.getByLabelText("Отображаемое имя"), "Ирина Смирнова");
+    await user.type(screen.getByLabelText("Имя"), "Ирина");
+    await user.type(screen.getByLabelText("Фамилия"), "Смирнова");
     await user.type(screen.getByLabelText("Email"), "irina@example.com");
     await user.type(screen.getByLabelText("Пароль"), "SuperSecret123");
     await user.type(screen.getByLabelText("Подтверждение пароля"), "SuperSecret123");
@@ -63,7 +65,8 @@ describe("RegisterForm", () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.type(screen.getByLabelText("Отображаемое имя"), "Ирина");
+    await user.type(screen.getByLabelText("Имя"), "Ирина");
+    await user.type(screen.getByLabelText("Фамилия"), "Смирнова");
     await user.type(screen.getByLabelText("Email"), "irina@example.com");
     await user.type(screen.getByLabelText("Пароль"), "SuperSecret123");
     await user.type(screen.getByLabelText("Подтверждение пароля"), "Mismatch12345");

@@ -22,7 +22,8 @@ type Story = StoryObj<typeof meta>;
 
 async function fillValidForm(canvasElement: HTMLElement): Promise<void> {
   const canvas = within(canvasElement);
-  await userEvent.type(canvas.getByLabelText("Отображаемое имя"), "Ирина Смирнова");
+  await userEvent.type(canvas.getByLabelText("Имя"), "Ирина");
+  await userEvent.type(canvas.getByLabelText("Фамилия"), "Смирнова");
   await userEvent.type(canvas.getByLabelText("Email"), "irina@example.com");
   await userEvent.type(canvas.getByLabelText("Пароль"), "SuperSecret123");
   await userEvent.type(canvas.getByLabelText("Подтверждение пароля"), "SuperSecret123");

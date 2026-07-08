@@ -40,7 +40,8 @@ describe("loginSchema", () => {
 
 describe("registerSchema", () => {
   const base = {
-    displayName: "Ирина Смирнова",
+    firstName: "Ирина",
+    lastName: "Смирнова",
     email: "irina@example.com",
     password: STRONG_PASSWORD,
     confirmPassword: STRONG_PASSWORD,
@@ -84,9 +85,9 @@ describe("registerSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("requires a display name of at least 2 characters", () => {
-    const result = registerSchema.safeParse({ ...base, displayName: "И" });
-    expect(result.success).toBe(false);
+  it("requires a first and last name", () => {
+    expect(registerSchema.safeParse({ ...base, firstName: "" }).success).toBe(false);
+    expect(registerSchema.safeParse({ ...base, lastName: "" }).success).toBe(false);
   });
 });
 
