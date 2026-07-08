@@ -34,7 +34,6 @@ const tokenSchema = z.string().min(1, "Токен отсутствует или 
 export const loginSchema = z.object({
   email: emailSchema,
   password: loginPasswordSchema,
-  rememberMe: z.boolean(),
 });
 export type LoginValues = z.infer<typeof loginSchema>;
 

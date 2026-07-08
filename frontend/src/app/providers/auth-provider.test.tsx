@@ -87,34 +87,18 @@ const originalFetch = globalThis.fetch;
 
 beforeEach(() => {
   tokenStore.clear();
-  tokenStore.setRememberMe(false);
 });
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
   tokenStore.clear();
-  tokenStore.setRememberMe(false);
   vi.restoreAllMocks();
 });
 
 describe("AuthProvider bootstrap", () => {
-  // Case B: cold start, no refresh cookie and no remember-me → anonymous,
-  // no GET /users/me, no refresh.
-  it("initializes anonymous with no request when there is nothing to restore", async () => {
-    const fetchSpy = routingFetch({});
-    globalThis.fetch = fetchSpy as unknown as typeof fetch;
-
-    renderProvider();
-
-    await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("unauthenticated"));
-    expect(fetchSpy).not.toHaveBeenCalled();
-    expect(screen.getByTestId("expired")).toHaveTextContent("false");
-  });
-
   // Case A: cold start with a valid refresh cookie → refresh 200, then /me 200,
   // and crucially no initial 401 (GET /me is never called before the refresh).
   it("restores the session via refresh before fetching the user (no initial 401)", async () => {
-    tokenStore.setRememberMe(true);
     const fetchSpy = routingFetch({
       refresh: () => jsonResponse(200, { data: { accessToken: "fresh-token" } }),
       me: () => jsonResponse(200, USER_BODY),
@@ -134,10 +118,9 @@ describe("AuthProvider bootstrap", () => {
     expect(urls[0]).toContain("/auth/token/refresh");
   });
 
-  // Case B (remember-me set but cookie gone/revoked): refresh 401 → anonymous,
-  // and GET /users/me is never attempted.
-  it("settles anonymous without hitting /users/me when the refresh fails", async () => {
-    tokenStore.setRememberMe(true);
+  // Case B: cold start with no refresh cookie → refresh 401 → anonymous, and
+  // GET /users/me is never attempted (no wasted 401 on /me).
+  it("attempts refresh then settles anonymous without hitting /users/me", async () => {
     const fetchSpy = routingFetch({
       refresh: () => new Response(null, { status: 401 }),
     });
@@ -150,6 +133,7 @@ describe("AuthProvider bootstrap", () => {
     expect(urls.some((u) => u.includes("/auth/token/refresh"))).toBe(true);
     expect(urls.some((u) => u.includes("/users/me"))).toBe(false);
     expect(tokenStore.get()).toBeNull();
+    expect(screen.getByTestId("expired")).toHaveTextContent("false");
   });
 
   // Case C: a valid in-memory access token already exists → fetch /me directly,

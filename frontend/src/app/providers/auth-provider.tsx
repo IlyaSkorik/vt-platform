@@ -40,11 +40,11 @@ const AuthContext = createContext<AuthContextValue | null>(null);
  *
  * Cold-start bootstrap is proactive (no wasted 401):
  *   - Access token already in memory → enable `GET /users/me` straight away.
- *   - No token but the user opted to be remembered → attempt one silent
- *     `POST /auth/token/refresh` (shared single-flight). On success the fresh
- *     token is stored and the query is enabled; on failure we settle anonymous
+ *   - No token → attempt one silent `POST /auth/token/refresh` (shared
+ *     single-flight). The httpOnly refresh cookie is the sole source of truth
+ *     for whether a session exists, so we always ask the server: on success the
+ *     fresh token is stored and the query is enabled; on 401 we settle anonymous
  *     without ever firing a `GET /users/me` that we know would 401.
- *   - Neither → anonymous immediately, no network request at all.
  *
  * Refresh-on-401 remains as the runtime safety net (expired/revoked token mid
  * session). A `session-expired` event from the transport (failed refresh) flips
@@ -68,25 +68,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      if (tokenStore.get() !== null) {
-        // A token is already in memory (e.g. just after login): fetch /me.
-        if (!cancelled) {
-          setEnabled(true);
-          setBootstrapping(false);
-        }
-        return;
-      }
-      if (tokenStore.getRememberMe()) {
-        // No in-memory token but a session may live in the refresh cookie.
-        const restored = await refreshAccessToken();
-        if (!cancelled) {
-          setEnabled(restored);
-          setBootstrapping(false);
-        }
-        return;
-      }
-      // Truly anonymous: never touch the network.
+      // A token in memory (e.g. just after login) → fetch /me directly.
+      // Otherwise ask the server via the refresh cookie: it alone decides
+      // whether a session exists. Either outcome settles bootstrap.
+      const restored = tokenStore.get() !== null || (await refreshAccessToken());
       if (!cancelled) {
+        setEnabled(restored);
         setBootstrapping(false);
       }
     })();
@@ -107,7 +94,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         await deleteCurrentSession();
       } finally {
         tokenStore.clear();
-        tokenStore.setRememberMe(false);
       }
     },
   });

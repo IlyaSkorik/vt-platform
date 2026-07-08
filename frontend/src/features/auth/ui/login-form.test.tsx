@@ -98,26 +98,4 @@ describe("LoginForm", () => {
     expect(onSuccess).not.toHaveBeenCalled();
     expect(tokenStore.get()).toBeNull();
   });
-
-  it("persists the remember-me preference when checked", async () => {
-    globalThis.fetch = vi.fn(async () =>
-      jsonResponse(201, {
-        data: {
-          type: "session",
-          accessToken: "access-123",
-          tokenType: "Bearer",
-          expiresIn: 900,
-        },
-      }),
-    ) as unknown as typeof fetch;
-    const user = userEvent.setup();
-    renderForm();
-
-    await user.type(screen.getByLabelText("Email"), "user@example.com");
-    await user.type(screen.getByLabelText("Пароль"), "password123");
-    await user.click(screen.getByRole("checkbox", { name: "Запомнить меня" }));
-    await user.click(screen.getByRole("button", { name: "Войти" }));
-
-    await waitFor(() => expect(tokenStore.getRememberMe()).toBe(true));
-  });
 });

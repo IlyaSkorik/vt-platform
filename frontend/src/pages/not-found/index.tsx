@@ -8,7 +8,7 @@ import { Button } from "@/shared/ui";
 export function NotFoundPage(): React.JSX.Element {
   return (
     <div className="flex flex-col items-center justify-center gap-4 text-center">
-      <p className="font-mono text-muted-foreground text-sm">404</p>
+      <p className="font-mono text-muted-foreground text-6xl">404</p>
       <div className="space-y-2">
         <h1 className="font-bold text-3xl tracking-tight">Страница не найдена</h1>
         <p className="max-w-md text-muted-foreground text-sm">

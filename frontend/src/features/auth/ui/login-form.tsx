@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useId, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Alert, Button, Checkbox, Input, PasswordInput } from "@/shared/ui";
+import { Alert, Button, Input, PasswordInput } from "@/shared/ui";
 import { useLogin } from "../api";
 import { applyProblemToForm } from "../lib/problem-to-form";
 import { type LoginValues, loginSchema } from "../model/schemas";
@@ -28,15 +28,11 @@ export function LoginForm({ onSuccess }: LoginFormProps): React.JSX.Element {
     register,
     handleSubmit,
     setError,
-    setValue,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "", rememberMe: true },
+    defaultValues: { email: "", password: "" },
   });
-
-  const rememberMe = watch("rememberMe");
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
@@ -75,12 +71,6 @@ export function LoginForm({ onSuccess }: LoginFormProps): React.JSX.Element {
         autoComplete="current-password"
         error={errors.password?.message}
         {...register("password")}
-      />
-
-      <Checkbox
-        label="Запомнить меня"
-        checked={rememberMe}
-        onCheckedChange={(checked) => setValue("rememberMe", checked === true)}
       />
 
       <Button type="submit" className="w-full" loading={isSubmitting} disabled={isSubmitting}>
