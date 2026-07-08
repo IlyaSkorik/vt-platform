@@ -1,6 +1,6 @@
 import type { AfterResponseHook } from "ky";
-import { env } from "@/shared/config";
 import { HEADER } from "../config";
+import { refreshAccessToken } from "../refresh";
 import { emitSessionEvent } from "../session-events";
 import { tokenStore } from "../token-store";
 
@@ -11,12 +11,12 @@ import { tokenStore } from "../token-store";
  * token expired, transparently refresh and replay the original request exactly
  * once (API-001 §4.5):
  *
- *   1. A single in-flight refresh is shared across concurrent 401s (a
- *      de-duplicated promise) so a burst of expired requests triggers exactly
- *      one `POST /auth/token/refresh` — no refresh stampede.
+ *   1. Refresh is delegated to the shared single-flight {@link refreshAccessToken},
+ *      so a burst of concurrent 401s — and the AuthProvider's bootstrap — all
+ *      share one in-flight `POST /auth/token/refresh` (no refresh stampede).
  *   2. The web client's rotating refresh token travels as an httpOnly cookie,
  *      so no token material is read or written here; the server rotates it and
- *      returns a fresh access token, which we place in the in-memory store.
+ *      returns a fresh access token, which the shared refresh places in memory.
  *   3. On success the original request is replayed with the new bearer token
  *      via a bare `fetch` that bypasses this Ky hook pipeline, so the replay can
  *      never re-enter this hook → no refresh loop. Nothing is added to the
@@ -45,36 +45,6 @@ function isAuthPath(url: string): boolean {
   return AUTH_PATHS.some((path) => url.includes(path));
 }
 
-let refreshInFlight: Promise<boolean> | null = null;
-
-/** Perform the token refresh exactly once, sharing the promise across callers. */
-function refreshOnce(): Promise<boolean> {
-  refreshInFlight ??= (async () => {
-    try {
-      const response = await fetch(`${env.apiBaseUrl}/auth/token/refresh`, {
-        method: "POST",
-        credentials: "include",
-        headers: { Accept: "application/json" },
-      });
-      if (!response.ok) {
-        return false;
-      }
-      const body = (await response.json()) as { data?: { accessToken?: string } };
-      const accessToken = body.data?.accessToken;
-      if (!accessToken) {
-        return false;
-      }
-      tokenStore.set(accessToken);
-      return true;
-    } catch {
-      return false;
-    } finally {
-      refreshInFlight = null;
-    }
-  })();
-  return refreshInFlight;
-}
-
 export const refreshOnUnauthorized: AfterResponseHook = async ({ request, response }) => {
   if (response.status !== UNAUTHORIZED) {
     return response;
@@ -84,7 +54,7 @@ export const refreshOnUnauthorized: AfterResponseHook = async ({ request, respon
     return response;
   }
 
-  const refreshed = await refreshOnce();
+  const refreshed = await refreshAccessToken();
   if (!refreshed) {
     tokenStore.clear();
     emitSessionEvent("session-expired");

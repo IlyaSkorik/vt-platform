@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, use, useCallback, useEffect, useMemo, useState } from "react";
 import { authKeys, fetchCurrentUser } from "@/features/auth";
-import { onSessionEvent, tokenStore } from "@/shared/api";
+import { onSessionEvent, refreshAccessToken, tokenStore } from "@/shared/api";
 import { deleteCurrentSession } from "@/shared/api/generated/identity/identity";
 import type { User } from "@/shared/api/generated/model";
 
@@ -31,25 +31,29 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-/** On cold start, only attempt to restore a session when there is a reason to. */
-function shouldBootstrap(): boolean {
-  return tokenStore.get() !== null || tokenStore.getRememberMe();
-}
-
 /**
  * Auth provider — owns the session lifecycle.
  *
  * Sits inside the QueryClientProvider so it can drive TanStack Query directly.
  * The current-user query is the single source of truth: its data means an
- * authenticated session, its absence means none. On cold start it silently
- * bootstraps (via the httpOnly refresh cookie → `GET /users/me`) only when the
- * user opted to be remembered or a token already lives in memory. A
- * `session-expired` event from the transport (failed refresh) flips the flag
- * that routes guards to the dedicated screen.
+ * authenticated session, its absence means none.
+ *
+ * Cold-start bootstrap is proactive (no wasted 401):
+ *   - Access token already in memory → enable `GET /users/me` straight away.
+ *   - No token but the user opted to be remembered → attempt one silent
+ *     `POST /auth/token/refresh` (shared single-flight). On success the fresh
+ *     token is stored and the query is enabled; on failure we settle anonymous
+ *     without ever firing a `GET /users/me` that we know would 401.
+ *   - Neither → anonymous immediately, no network request at all.
+ *
+ * Refresh-on-401 remains as the runtime safety net (expired/revoked token mid
+ * session). A `session-expired` event from the transport (failed refresh) flips
+ * the flag that routes guards to the dedicated screen.
  */
 export function AuthProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
   const queryClient = useQueryClient();
-  const [enabled, setEnabled] = useState<boolean>(shouldBootstrap);
+  const [enabled, setEnabled] = useState(false);
+  const [bootstrapping, setBootstrapping] = useState(true);
   const [sessionExpired, setSessionExpired] = useState(false);
 
   const query = useQuery<AuthUser>({
@@ -59,6 +63,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     retry: false,
     staleTime: 5 * 60_000,
   });
+
+  // Proactive session restoration, exactly once on mount.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      if (tokenStore.get() !== null) {
+        // A token is already in memory (e.g. just after login): fetch /me.
+        if (!cancelled) {
+          setEnabled(true);
+          setBootstrapping(false);
+        }
+        return;
+      }
+      if (tokenStore.getRememberMe()) {
+        // No in-memory token but a session may live in the refresh cookie.
+        const restored = await refreshAccessToken();
+        if (!cancelled) {
+          setEnabled(restored);
+          setBootstrapping(false);
+        }
+        return;
+      }
+      // Truly anonymous: never touch the network.
+      if (!cancelled) {
+        setBootstrapping(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const refresh = useCallback(async () => {
     setSessionExpired(false);
@@ -99,11 +134,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   const user = query.data ?? null;
 
   const status: AuthStatus = useMemo(() => {
-    if (enabled && query.isLoading) {
+    if (bootstrapping || (enabled && query.isLoading)) {
       return "loading";
     }
     return user ? "authenticated" : "unauthenticated";
-  }, [enabled, query.isLoading, user]);
+  }, [bootstrapping, enabled, query.isLoading, user]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

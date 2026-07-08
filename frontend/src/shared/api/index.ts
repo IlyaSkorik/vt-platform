@@ -12,6 +12,7 @@ export {
   type ProblemFieldError,
 } from "./error";
 export { createQueryClient } from "./query-client";
+export { refreshAccessToken } from "./refresh";
 export {
   emitSessionEvent,
   onSessionEvent,
