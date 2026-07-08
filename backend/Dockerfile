@@ -4,26 +4,29 @@
 # --- Stage 1: build dependencies into a virtual environment ---------------
 FROM python:3.13-slim AS builder
 
-# uv provides fast, reproducible installs from the committed lockfile.
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
+# Build the venv OUTSIDE /app so the dev bind mount (`.:/app`) can never shadow
+# it with the host's venv (which targets a host-only interpreter path).
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
-    UV_PYTHON_DOWNLOADS=never
+    UV_PYTHON_DOWNLOADS=never \
+    UV_PROJECT_ENVIRONMENT=/opt/venv
 
 WORKDIR /app
 
-# Install dependencies first (cached layer), then the project metadata.
 COPY pyproject.toml uv.lock ./
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-install-project
 
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
+
+COPY . .
 # --- Stage 2: lean runtime ------------------------------------------------
 FROM python:3.13-slim AS runtime
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/app/.venv/bin:$PATH" \
+    PATH="/opt/venv/bin:$PATH" \
     DJANGO_SETTINGS_MODULE=config.settings.production
 
 # libpq for psycopg runtime.
@@ -35,7 +38,7 @@ RUN apt-get update \
 
 WORKDIR /app
 
-COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /opt/venv /opt/venv
 COPY . /app
 
 USER app

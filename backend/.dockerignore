@@ -1,0 +1,43 @@
+# Keep the build context small and the image clean. Mirrors .gitignore, but
+# the point here is the runtime image: the host venv targets a host-only
+# interpreter and must never be copied in (the image builds its own at
+# /opt/venv), and secrets must never be baked into a layer.
+
+# --- Environment & secrets ---
+.env
+.env.*
+!.env.example
+
+# --- Virtual environments (host-only; image builds its own) ---
+.venv/
+venv/
+env/
+
+# --- Python caches ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+
+# --- Tooling caches ---
+.uv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# --- VCS / editor / OS ---
+.git/
+.gitignore
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# --- Docs & local compose (not needed at runtime) ---
+README.md
+docker-compose.yml

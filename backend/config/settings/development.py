@@ -19,3 +19,6 @@ INSTALLED_APPS = [*INSTALLED_APPS]
 
 # Relaxed CORS for local frontends is still origin-scoped in .env.
 CORS_ALLOW_ALL_ORIGINS = False
+# Short preflight cache in dev so header/allowlist changes take effect on the
+# next request instead of being pinned by the browser for the default 24h.
+CORS_PREFLIGHT_MAX_AGE = 0
