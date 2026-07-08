@@ -1,0 +1,24 @@
+/**
+ * Elevation (shadow) tokens.
+ *
+ * The shadow *geometry* is theme-independent and lives here; the shadow
+ * *colour* is theme-dependent and is supplied by the theme files as
+ * `--shadow-color` / `--shadow-color-strong`. `@theme inline` keeps those
+ * colour references live, so switching themes restyles every elevation without
+ * redefining the scale.
+ *
+ * `--shadow-elevation-{1,2,3}` are compatibility aliases for the in-repo
+ * shadcn/ui components, mapped onto the named scale.
+ */
+@theme inline {
+  --shadow-xs: 0 1px 2px 0 var(--shadow-color);
+  --shadow-sm: 0 1px 3px 0 var(--shadow-color), 0 1px 2px -1px var(--shadow-color);
+  --shadow-md: 0 4px 8px -2px var(--shadow-color-strong), 0 2px 4px -2px var(--shadow-color);
+  --shadow-lg: 0 12px 24px -6px var(--shadow-color-strong), 0 4px 8px -4px var(--shadow-color);
+  --shadow-xl: 0 24px 48px -12px var(--shadow-color-strong);
+
+  /* Compatibility aliases (shared/ui shadcn components). */
+  --shadow-elevation-1: var(--shadow-xs);
+  --shadow-elevation-2: var(--shadow-md);
+  --shadow-elevation-3: var(--shadow-lg);
+}

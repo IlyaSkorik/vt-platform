@@ -1,0 +1,48 @@
+/**
+ * Semantic tokens — Tier 2 (meaning, not values).
+ *
+ * This is the layer React components (and Tailwind utilities) consume. It gives
+ * *intent* to primitives: "the primary brand colour", "the destructive action
+ * colour" — never "#0e327c".
+ *
+ * Two kinds of semantic tokens exist in the system:
+ *   1. Theme-VARIANT tokens (backgrounds, surfaces, text, borders, status, …)
+ *      — their values differ per theme, so they live in `themes/vt-*.css`.
+ *   2. Theme-INVARIANT tokens (below) — brand identity and the shadcn/ui
+ *      compatibility aliases. Their *references* are identical in every theme;
+ *      only the theme-variant tokens they point at change. Defining them once,
+ *      here, keeps a single source of truth and zero duplication.
+ *
+ * The bridge into Tailwind (`--color-*`) lives in `../index.css`.
+ */
+:root {
+  /* --- Brand identity (constant across themes) ---------------------------- */
+  --brand-primary: var(--blue-800);
+  --brand-primary-strong: var(--blue-900);
+  --brand-secondary: var(--gold-500);
+  --brand-accent: var(--rocket-500);
+
+  /* --- shadcn/ui-compatible aliases --------------------------------------
+   * Derived from the semantic layer so the in-repo component library keeps
+   * working unchanged. Because var() is resolved late, these single
+   * definitions pick up the correct light/dark values automatically. */
+  --background: var(--background-primary);
+  --foreground: var(--text-primary);
+  --card: var(--surface-primary);
+  --card-foreground: var(--text-primary);
+  --popover: var(--surface-elevated);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--interactive-primary);
+  --primary-foreground: var(--text-on-brand);
+  --secondary: var(--surface-secondary);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--surface-secondary);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--background-tertiary);
+  --accent-foreground: var(--text-primary);
+  --destructive: var(--danger);
+  --destructive-foreground: var(--danger-foreground);
+  --border: var(--border-default);
+  --input: var(--border-default);
+  --ring: var(--border-focus);
+}

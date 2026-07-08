@@ -1,0 +1,143 @@
+/**
+ * VT Platform — design-token system entry point.
+ *
+ * Assembles the tiered token architecture and bridges it into Tailwind CSS v4.
+ *
+ *   Tier 1  primitive.css ............ raw values (the only HEX in the system)
+ *   Tier 2  semantic.css + themes/ ... meaning; what components consume
+ *   Tier 3  Tailwind utilities ....... generated from the semantic layer below
+ *
+ * Non-colour scales (typography, spacing, radius, shadows, gradients, motion,
+ * z-index) are theme-independent and register their own Tailwind theme keys.
+ *
+ * Rebranding = edit `primitive.css` + `themes/*`. Components never change.
+ * Import order note: CSS requires every `@import` to precede other rules.
+ */
+
+/* Tailwind core. */
+@import "tailwindcss";
+
+/* Tier 1 — primitives (raw values). */
+@import "./tokens/primitive.css";
+
+/* Theme-independent scales. */
+@import "./tokens/typography.css";
+@import "./tokens/spacing.css";
+@import "./tokens/radius.css";
+@import "./tokens/shadows.css";
+@import "./tokens/gradients.css";
+@import "./tokens/motion.css";
+@import "./tokens/z-index.css";
+
+/* Themes — theme-variant semantic values (identical token sets). */
+@import "./themes/vt-light.css";
+@import "./themes/vt-dark.css";
+
+/* Tier 2 — theme-invariant semantic aliases (brand + shadcn/ui compat). */
+@import "./tokens/semantic.css";
+
+/* Class-based dark mode: `.dark` on <html> flips the theme. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------------------
+ * Tailwind bridge — expose the semantic colour layer as utilities.
+ *
+ * `inline` keeps the utilities pointing at the live `var(--…)`, so a `.dark`
+ * override restyles every utility without regenerating CSS. Only SEMANTIC
+ * tokens are bridged — primitives are deliberately absent, so `bg-blue-900`
+ * cannot be written in a component.
+ * ------------------------------------------------------------------------- */
+@theme inline {
+  /* shadcn/ui-compatible surface + text utilities. */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Expressive semantic aliases (VT naming). */
+  --color-surface: var(--surface-primary);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-overlay: var(--surface-overlay);
+  --color-brand: var(--brand-primary);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-brand-accent: var(--brand-accent);
+
+  /* Status utilities. */
+  --color-success: var(--success);
+  --color-success-surface: var(--success-surface);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-surface: var(--warning-surface);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-danger: var(--danger);
+  --color-danger-surface: var(--danger-surface);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-info: var(--info);
+  --color-info-surface: var(--info-surface);
+  --color-info-foreground: var(--info-foreground);
+
+  /* Data-visualisation series. */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+}
+
+/* ---------------------------------------------------------------------------
+ * Base layer — global element defaults built on the token system.
+ * ------------------------------------------------------------------------- */
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-family-body);
+  }
+
+  /* Visible, consistent focus ring for keyboard users (WCAG 2.1 AA). */
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  /* Respect users who prefer reduced motion. `!important` is required so this
+   * zero-specificity `*` reset overrides higher-specificity animation utility
+   * classes (e.g. Tailwind's `animate-spin`). */
+  @media (prefers-reduced-motion: reduce) {
+    /* biome-ignore-start lint/complexity/noImportantStyles: reduced-motion reset must beat utility classes */
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+    /* biome-ignore-end lint/complexity/noImportantStyles: reduced-motion reset */
+  }
+}

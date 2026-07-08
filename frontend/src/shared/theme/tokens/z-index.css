@@ -1,0 +1,18 @@
+/**
+ * Z-index tokens — a single, ordered stacking scale.
+ *
+ * Centralising elevation order here prevents the "z-index: 99999" arms race:
+ * every layered surface (dropdown, modal, toast, …) references a named step.
+ */
+:root {
+  --z-hide: -1;
+  --z-base: 0;
+  --z-raised: 10;
+  --z-dropdown: 1000;
+  --z-sticky: 1100;
+  --z-overlay: 1200;
+  --z-modal: 1300;
+  --z-popover: 1400;
+  --z-toast: 1500;
+  --z-tooltip: 1600;
+}

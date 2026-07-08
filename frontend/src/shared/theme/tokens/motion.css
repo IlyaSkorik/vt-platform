@@ -1,0 +1,24 @@
+/**
+ * Motion tokens — durations and easing curves.
+ *
+ * Easings are declared with `@theme` so Tailwind emits `ease-standard`,
+ * `ease-emphasized`, … utilities. Durations are plain custom properties
+ * (Tailwind's `duration-*` utilities take literal values), referenced from
+ * hand-written transitions/animations.
+ *
+ * The reduced-motion preference is honoured globally in the base layer.
+ */
+@theme {
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.3, 0, 0, 1);
+  --ease-decelerate: cubic-bezier(0, 0, 0, 1);
+  --ease-accelerate: cubic-bezier(0.3, 0, 1, 1);
+}
+
+:root {
+  --duration-instant: 0ms;
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+  --duration-slow: 320ms;
+  --duration-slower: 480ms;
+}

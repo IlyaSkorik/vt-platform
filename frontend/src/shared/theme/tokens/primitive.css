@@ -1,0 +1,73 @@
+/**
+ * Primitive tokens — Tier 1 (raw values).
+ *
+ * The lowest layer of the token system: literal, theme-agnostic values with no
+ * meaning attached. These are the *only* place raw HEX lives.
+ *
+ * RULES
+ *   • Primitives are NEVER referenced by React components.
+ *   • Primitives are NEVER exposed as Tailwind utilities (so `bg-blue-900`
+ *     cannot exist) — they are only consumed by the semantic layer.
+ *   • Rebranding the platform means editing THIS file plus the theme files;
+ *     no component changes.
+ *
+ * Palette source: VT brand guidelines («Взлёт талантов»).
+ * Naming: higher number = darker, mirroring the Tailwind 50–950 convention.
+ */
+:root {
+  /* --- Primary Blue -------------------------------------------------------- */
+  --blue-900: #061c56;
+  --blue-800: #0e327c;
+  --blue-700: #2a1e73;
+  --blue-600: #5a1f86;
+
+  /* --- Gold ---------------------------------------------------------------- */
+  --gold-100: #f6e4a7;
+  --gold-300: #f2c766;
+  --gold-500: #e7a93b;
+  --gold-700: #c98523;
+
+  /* --- Flame --------------------------------------------------------------- */
+  --flame-100: #fff5d7;
+  --flame-300: #ffd76a;
+  --flame-500: #ffb34f;
+  --flame-700: #f07b38;
+
+  /* --- Rocket Trail -------------------------------------------------------- */
+  --rocket-400: #8e5eff;
+  --rocket-500: #6b49e6;
+  --rocket-600: #4a3fd8;
+  --rocket-700: #273acf;
+
+  /* --- Neutrals (navy-tinted grey ramp, tuned to the brand blues) ---------- */
+  --neutral-0: #ffffff;
+  --neutral-50: #f6f7fb;
+  --neutral-100: #eceef6;
+  --neutral-200: #d7dbe9;
+  --neutral-300: #b4bad0;
+  --neutral-400: #8b93b2;
+  --neutral-500: #656d90;
+  --neutral-600: #4a5170;
+  --neutral-700: #343a54;
+  --neutral-800: #20263c;
+  --neutral-900: #141829;
+  --neutral-950: #0b0e1a;
+  --black: #000000;
+
+  /* --- Functional hues (status) ------------------------------------------- */
+  --green-100: #d6f5e4;
+  --green-400: #34c07d;
+  --green-500: #1f9d63;
+
+  --amber-100: #fdeecd;
+  --amber-400: #f0a92b;
+  --amber-500: #d98a0b;
+
+  --red-100: #fadcdc;
+  --red-400: #ec6a6a;
+  --red-500: #d64545;
+
+  --sky-100: #d7e7fb;
+  --sky-400: #4e93ec;
+  --sky-500: #2f74d0;
+}

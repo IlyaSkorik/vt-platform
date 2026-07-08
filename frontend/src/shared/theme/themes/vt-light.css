@@ -1,0 +1,70 @@
+/**
+ * Theme: VT Light (default).
+ *
+ * Maps the semantic colour contract onto primitives for the light theme.
+ * This is one of two interchangeable theme files: `vt-light.css` and
+ * `vt-dark.css` declare the *identical set* of semantic tokens — only the
+ * values differ. Nothing else in the system needs to change to switch or add a
+ * theme.
+ *
+ * Applied at `:root` because light is the default (no class required). The dark
+ * theme overrides these under `.dark`.
+ */
+:root {
+  color-scheme: light;
+
+  /* Backgrounds — the page beneath everything. */
+  --background-primary: var(--neutral-0);
+  --background-secondary: var(--neutral-50);
+  --background-tertiary: var(--neutral-100);
+
+  /* Surfaces — cards, sheets, popovers layered on the background. */
+  --surface-primary: var(--neutral-0);
+  --surface-secondary: var(--neutral-50);
+  --surface-elevated: var(--neutral-0);
+  --surface-overlay: var(--neutral-0);
+
+  /* Text */
+  --text-primary: var(--neutral-900);
+  --text-secondary: var(--neutral-700);
+  --text-muted: var(--neutral-500);
+  --text-inverse: var(--neutral-0);
+  --text-on-brand: var(--neutral-0);
+
+  /* Borders & focus */
+  --border-subtle: var(--neutral-100);
+  --border-default: var(--neutral-200);
+  --border-strong: var(--neutral-300);
+  --border-focus: var(--blue-700);
+
+  /* Interactive — brand colours in their light-theme usage. */
+  --interactive-primary: var(--blue-800);
+  --interactive-primary-hover: var(--blue-900);
+  --interactive-secondary: var(--gold-500);
+  --interactive-accent: var(--rocket-500);
+
+  /* Status */
+  --success: var(--green-500);
+  --success-surface: var(--green-100);
+  --success-foreground: var(--neutral-0);
+  --warning: var(--amber-500);
+  --warning-surface: var(--amber-100);
+  --warning-foreground: var(--neutral-900);
+  --danger: var(--red-500);
+  --danger-surface: var(--red-100);
+  --danger-foreground: var(--neutral-0);
+  --info: var(--sky-500);
+  --info-surface: var(--sky-100);
+  --info-foreground: var(--neutral-0);
+
+  /* Elevation colour consumed by the shadow scale. */
+  --shadow-color: color-mix(in oklab, var(--blue-900) 12%, transparent);
+  --shadow-color-strong: color-mix(in oklab, var(--blue-900) 18%, transparent);
+
+  /* Data-visualisation series. */
+  --chart-1: var(--blue-800);
+  --chart-2: var(--rocket-500);
+  --chart-3: var(--gold-500);
+  --chart-4: var(--flame-500);
+  --chart-5: var(--green-500);
+}

@@ -1,6 +1,6 @@
 import type { Preview } from "@storybook/react-vite";
 import { useEffect } from "react";
-import "../src/shared/styles/global.css";
+import "../src/shared/theme/index.css";
 
 /**
  * Global Storybook preview configuration.

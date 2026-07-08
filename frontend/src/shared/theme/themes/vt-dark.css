@@ -1,0 +1,69 @@
+/**
+ * Theme: VT Dark.
+ *
+ * The dark counterpart to `vt-light.css`. It declares the SAME semantic tokens
+ * with dark-appropriate values — the only difference between the two themes.
+ * React components are entirely unaware which theme is active.
+ *
+ * Applied via the `.dark` class (toggled by the ThemeProvider on <html>) and,
+ * for completeness, the `[data-theme="dark"]` attribute.
+ */
+.dark,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Backgrounds */
+  --background-primary: var(--neutral-950);
+  --background-secondary: var(--neutral-900);
+  --background-tertiary: var(--neutral-800);
+
+  /* Surfaces */
+  --surface-primary: var(--neutral-900);
+  --surface-secondary: var(--neutral-800);
+  --surface-elevated: var(--neutral-800);
+  --surface-overlay: var(--neutral-800);
+
+  /* Text */
+  --text-primary: var(--neutral-50);
+  --text-secondary: var(--neutral-300);
+  --text-muted: var(--neutral-400);
+  --text-inverse: var(--neutral-950);
+  --text-on-brand: var(--neutral-0);
+
+  /* Borders & focus */
+  --border-subtle: var(--neutral-800);
+  --border-default: var(--neutral-700);
+  --border-strong: var(--neutral-600);
+  --border-focus: var(--rocket-400);
+
+  /* Interactive — brightened brand colours for contrast on dark surfaces. */
+  --interactive-primary: var(--rocket-500);
+  --interactive-primary-hover: var(--rocket-400);
+  --interactive-secondary: var(--gold-300);
+  --interactive-accent: var(--rocket-400);
+
+  /* Status */
+  --success: var(--green-400);
+  --success-surface: color-mix(in oklab, var(--green-500) 24%, transparent);
+  --success-foreground: var(--neutral-950);
+  --warning: var(--amber-400);
+  --warning-surface: color-mix(in oklab, var(--amber-500) 24%, transparent);
+  --warning-foreground: var(--neutral-950);
+  --danger: var(--red-400);
+  --danger-surface: color-mix(in oklab, var(--red-500) 24%, transparent);
+  --danger-foreground: var(--neutral-950);
+  --info: var(--sky-400);
+  --info-surface: color-mix(in oklab, var(--sky-500) 24%, transparent);
+  --info-foreground: var(--neutral-950);
+
+  /* Elevation colour — deeper, near-black on dark surfaces. */
+  --shadow-color: color-mix(in oklab, var(--black) 45%, transparent);
+  --shadow-color-strong: color-mix(in oklab, var(--black) 60%, transparent);
+
+  /* Data-visualisation series. */
+  --chart-1: var(--rocket-400);
+  --chart-2: var(--blue-600);
+  --chart-3: var(--gold-300);
+  --chart-4: var(--flame-300);
+  --chart-5: var(--green-400);
+}
