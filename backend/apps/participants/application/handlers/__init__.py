@@ -1,21 +1,44 @@
-"""Domain-event handlers for the Participants bounded context.
+"""Command & query handlers (use cases) for the Participants bounded context.
 
-Purpose
-    React to domain events — raised within this context or received from other
-    contexts (ARCH-001 §4.8) — to run follow-up work such as provisioning a
-    profile after a participant is registered or re-evaluating activation when a
-    guardian relationship is verified. Handlers are the subscribing counterpart
-    to the facts produced in :mod:`apps.participants.domain.events`.
-
-Layer responsibility
-    Thin orchestrators triggered by events; they invoke command/query use cases
-    or ports and hold no business rules. Whether a handler runs inline or via an
-    outbox/worker is decided at composition time.
-
-Dependency rules
-    Depends only on this context's ``domain`` and the application's own
-    ``interfaces``/``dto``/``commands``/``queries``. Must not import
-    ``infrastructure`` or ``presentation``, nor any Django/DRF symbol.
-
-Structure only at bootstrap — no handlers defined yet.
+One handler per command, plus a read handler for retrieval: thin orchestrators
+over the application ports and the ``Participant`` aggregate (ARCH-001 §7.2, §7.4).
+Implementations live in
+:mod:`apps.participants.application.handlers.participant_handlers`; the re-exports
+below are the package's public surface.
 """
+
+from apps.participants.application.handlers.participant_handlers import (
+    ActivateParticipantHandler,
+    ArchiveParticipantHandler,
+    AuthorizeInstitutionHandler,
+    CreateParticipantHandler,
+    GetParticipantHandler,
+    ProposeGuardianLinkHandler,
+    ReactivateParticipantHandler,
+    ReassignDisplayAliasHandler,
+    RecordConsentHandler,
+    RenameParticipantHandler,
+    RequestParticipantErasureHandler,
+    RevokeGuardianLinkHandler,
+    VerifyGuardianLinkHandler,
+    VerifyParticipantHandler,
+    WithdrawConsentHandler,
+)
+
+__all__ = [
+    "ActivateParticipantHandler",
+    "ArchiveParticipantHandler",
+    "AuthorizeInstitutionHandler",
+    "CreateParticipantHandler",
+    "GetParticipantHandler",
+    "ProposeGuardianLinkHandler",
+    "ReactivateParticipantHandler",
+    "ReassignDisplayAliasHandler",
+    "RecordConsentHandler",
+    "RenameParticipantHandler",
+    "RequestParticipantErasureHandler",
+    "RevokeGuardianLinkHandler",
+    "VerifyGuardianLinkHandler",
+    "VerifyParticipantHandler",
+    "WithdrawConsentHandler",
+]
