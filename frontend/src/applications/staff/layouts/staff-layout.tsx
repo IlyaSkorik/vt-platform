@@ -4,8 +4,9 @@ import { Link, NavLink, Outlet, useLocation } from "react-router";
 
 import { ThemeToggle } from "@/app/layouts/theme-toggle";
 import { UserMenu } from "@/app/layouts/user-menu";
-import { WorkspaceSwitcher } from "@/app/layouts/workspace-switcher";
-import { APP_NAME, ROUTES, STAFF_NAVIGATION, type WorkspaceNavItem } from "@/shared/config";
+import { STAFF_NAVIGATION, type StaffNavItem } from "@/applications/staff/navigation";
+import { WorkspaceSwitcher } from "@/applications/workspace-switcher";
+import { APP_NAME, ROUTES } from "@/shared/config";
 import { cn } from "@/shared/lib";
 import {
   Button,
@@ -20,7 +21,7 @@ import {
 
 const SKIP_TARGET_ID = "staff-main";
 
-function findStaffItem(pathname: string): WorkspaceNavItem {
+function findStaffItem(pathname: string): StaffNavItem {
   const fallback = STAFF_NAVIGATION[0];
   if (fallback == null) {
     throw new Error("Staff navigation is empty");

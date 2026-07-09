@@ -16,17 +16,14 @@ type WorkspacePlaceholderPageProps = {
   title: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
-  tone: "participant" | "staff";
 };
 
 export function WorkspacePlaceholderPage({
   title,
   description,
   icon: Icon,
-  tone,
 }: WorkspacePlaceholderPageProps): React.JSX.Element {
-  const emptyTitle =
-    tone === "participant" ? "Раздел личного кабинета готов" : "Раздел панели готов";
+  const emptyTitle = "Раздел панели готов";
 
   return (
     <PageContainer>

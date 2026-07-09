@@ -4,9 +4,13 @@ import { Link, NavLink, Outlet, useLocation } from "react-router";
 
 import { ThemeToggle } from "@/app/layouts/theme-toggle";
 import { UserMenu } from "@/app/layouts/user-menu";
-import { WorkspaceSwitcher } from "@/app/layouts/workspace-switcher";
 import { useAuth } from "@/app/providers";
-import { APP_NAME, PARTICIPANT_NAVIGATION, ROUTES, type WorkspaceNavItem } from "@/shared/config";
+import {
+  PARTICIPANT_NAVIGATION,
+  type ParticipantNavItem,
+} from "@/applications/participant/navigation";
+import { WorkspaceSwitcher } from "@/applications/workspace-switcher";
+import { APP_NAME, ROUTES } from "@/shared/config";
 import { cn } from "@/shared/lib";
 import {
   Button,
@@ -21,7 +25,7 @@ import {
 
 const SKIP_TARGET_ID = "participant-main";
 
-function findParticipantItem(pathname: string): WorkspaceNavItem {
+function findParticipantItem(pathname: string): ParticipantNavItem {
   const fallback = PARTICIPANT_NAVIGATION[0];
   if (fallback == null) {
     throw new Error("Participant navigation is empty");

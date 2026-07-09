@@ -1,8 +1,8 @@
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ParticipantLayout } from "./participant-layout";
-import { StaffLayout } from "./staff-layout";
+import { ParticipantLayout } from "@/applications/participant/layouts/participant-layout";
+import { StaffLayout } from "@/applications/staff/layouts/staff-layout";
 
 const authState = {
   staffMembership: null as null | { role: string; status: string },

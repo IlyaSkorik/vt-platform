@@ -1,10 +1,8 @@
 import {
   BarChart3,
-  Bell,
   BriefcaseBusiness,
   CalendarDays,
   ClipboardList,
-  FileText,
   Gavel,
   Home,
   Landmark,
@@ -15,61 +13,16 @@ import {
   Users,
 } from "lucide-react";
 
-import { ROUTES, type RoutePath } from "./routes";
+import { ROUTES, type RoutePath } from "@/shared/config";
 
-export type WorkspaceNavItem = {
+export type StaffNavItem = {
   title: string;
   path: RoutePath;
   icon: React.ComponentType<{ className?: string }>;
   description: string;
 };
 
-export const PARTICIPANT_NAVIGATION: WorkspaceNavItem[] = [
-  {
-    title: "Главная",
-    path: ROUTES.cabinet,
-    icon: Home,
-    description: "Личная сводка участника.",
-  },
-  {
-    title: "Мои участники",
-    path: ROUTES.cabinetParticipants,
-    icon: Users,
-    description: "Профили участников, привязанные к аккаунту.",
-  },
-  {
-    title: "Мои заявки",
-    path: ROUTES.cabinetApplications,
-    icon: ClipboardList,
-    description: "Заявки и статусы подачи.",
-  },
-  {
-    title: "Конкурсы",
-    path: ROUTES.cabinetCompetitions,
-    icon: Medal,
-    description: "Конкурсы, доступные для участия.",
-  },
-  {
-    title: "Документы",
-    path: ROUTES.cabinetDocuments,
-    icon: FileText,
-    description: "Файлы и документы личного кабинета.",
-  },
-  {
-    title: "Уведомления",
-    path: ROUTES.cabinetNotifications,
-    icon: Bell,
-    description: "Личные сообщения и события.",
-  },
-  {
-    title: "Настройки",
-    path: ROUTES.cabinetSettings,
-    icon: Settings,
-    description: "Персональные параметры аккаунта.",
-  },
-];
-
-export const STAFF_NAVIGATION: WorkspaceNavItem[] = [
+export const STAFF_NAVIGATION: StaffNavItem[] = [
   {
     title: "Dashboard",
     path: ROUTES.staff,

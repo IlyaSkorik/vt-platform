@@ -2,16 +2,16 @@ import { createBrowserRouter, Navigate, type RouteObject } from "react-router";
 import { AuthLayout } from "@/app/layouts/auth-layout";
 import { MinimalLayout } from "@/app/layouts/minimal-layout";
 import { NotFoundLayout } from "@/app/layouts/not-found-layout";
-import { ParticipantLayout } from "@/app/layouts/participant-layout";
 import { PublicLayout } from "@/app/layouts/public-layout";
 import { RootLayout } from "@/app/layouts/root-layout";
-import { StaffLayout } from "@/app/layouts/staff-layout";
+import { ParticipantLayout } from "@/applications/participant/layouts/participant-layout";
 import {
   PARTICIPANT_NAVIGATION,
-  ROUTES,
-  STAFF_NAVIGATION,
-  type WorkspaceNavItem,
-} from "@/shared/config";
+  type ParticipantNavItem,
+} from "@/applications/participant/navigation";
+import { StaffLayout } from "@/applications/staff/layouts/staff-layout";
+import { STAFF_NAVIGATION, type StaffNavItem } from "@/applications/staff/navigation";
+import { ROUTES } from "@/shared/config";
 import { GuestRoute, ProtectedRoute, StaffRoute } from "./guards";
 import { RouteError } from "./route-error";
 
@@ -22,8 +22,12 @@ const lazyPage =
   });
 
 const workspacePlaceholder =
-  (item: WorkspaceNavItem, tone: "participant" | "staff") => async () => {
-    const { WorkspacePlaceholderPage } = await import("@/pages/workspace-placeholder");
+  (item: ParticipantNavItem | StaffNavItem, tone: "participant" | "staff") => async () => {
+    const { WorkspacePlaceholderPage } = await import(
+      tone === "participant"
+        ? "@/applications/participant/pages/placeholder"
+        : "@/applications/staff/pages/placeholder"
+    );
     return {
       Component: () => (
         <WorkspacePlaceholderPage
@@ -130,7 +134,7 @@ const routes: RouteObject[] = [
               {
                 path: ROUTES.cabinet.slice(1),
                 lazy: lazyPage(
-                  () => import("@/pages/participant-dashboard"),
+                  () => import("@/applications/participant/pages/dashboard"),
                   "ParticipantDashboardPage",
                 ),
               },
@@ -204,7 +208,10 @@ const routes: RouteObject[] = [
             children: [
               {
                 path: ROUTES.staff.slice(1),
-                lazy: lazyPage(() => import("@/pages/staff-dashboard"), "StaffDashboardPage"),
+                lazy: lazyPage(
+                  () => import("@/applications/staff/pages/dashboard"),
+                  "StaffDashboardPage",
+                ),
               },
               {
                 path: ROUTES.staffCompetitions.slice(1),

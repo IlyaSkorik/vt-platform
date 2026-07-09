@@ -9,8 +9,3 @@ export {
   resolveBreadcrumbs,
 } from "./navigation";
 export { ROUTES, type RouteKey, type RoutePath } from "./routes";
-export {
-  PARTICIPANT_NAVIGATION,
-  STAFF_NAVIGATION,
-  type WorkspaceNavItem,
-} from "./workspaces";
