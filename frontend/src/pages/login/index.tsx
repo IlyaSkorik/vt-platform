@@ -4,7 +4,14 @@ import { LoginForm } from "@/features/auth";
 import { ROUTES } from "@/shared/config";
 
 interface LocationState {
-  from?: { pathname?: string };
+  from?: { pathname?: string; search?: string };
+}
+
+function safeNext(value: string | null): string | null {
+  if (value == null || !value.startsWith("/") || value.startsWith("//")) {
+    return null;
+  }
+  return value;
 }
 
 /**
@@ -20,7 +27,10 @@ export function LoginPage(): React.JSX.Element {
   const { refresh } = useAuth();
 
   const state = location.state as LocationState | null;
-  const from = state?.from?.pathname ?? ROUTES.cabinet;
+  const params = new URLSearchParams(location.search);
+  const stateFrom =
+    state?.from?.pathname != null ? `${state.from.pathname}${state.from.search ?? ""}` : null;
+  const from = safeNext(params.get("next")) ?? safeNext(stateFrom) ?? ROUTES.cabinet;
 
   const handleSuccess = async (): Promise<void> => {
     await refresh();

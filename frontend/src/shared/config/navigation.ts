@@ -2,6 +2,7 @@ import {
   Award,
   BarChart3,
   ClipboardList,
+  Gauge,
   Gavel,
   LayoutDashboard,
   type LucideIcon,
@@ -48,6 +49,17 @@ export interface NavGroup {
 }
 
 export type NavModel = readonly NavGroup[];
+
+export interface NavigationOptions {
+  readonly hasStaffAccess: boolean;
+}
+
+const STAFF_NAV_ITEM: NavItem = {
+  id: "staff",
+  label: "Панель управления",
+  to: ROUTES.staff,
+  icon: Gauge,
+};
 
 /**
  * The VT Platform primary navigation.
@@ -100,6 +112,25 @@ export const NAVIGATION: NavModel = [
   },
 ];
 
+export function getNavigation({ hasStaffAccess }: NavigationOptions): NavModel {
+  if (!hasStaffAccess) {
+    return NAVIGATION;
+  }
+  const overview = NAVIGATION[0];
+  if (overview == null) {
+    return NAVIGATION;
+  }
+  const rest = NAVIGATION.slice(1);
+  return [
+    {
+      id: overview.id,
+      ...(overview.label != null ? { label: overview.label } : {}),
+      items: [...overview.items, STAFF_NAV_ITEM],
+    },
+    ...rest,
+  ];
+}
+
 /** Icons re-exported for empty-section stories/tests without extra imports. */
 export const NAV_ICONS = { Music, ClipboardList } as const;
 
@@ -118,7 +149,7 @@ interface NavCrumb {
  */
 const CRUMB_INDEX: ReadonlyMap<string, readonly NavCrumb[]> = (() => {
   const index = new Map<string, NavCrumb[]>();
-  for (const group of NAVIGATION) {
+  for (const group of getNavigation({ hasStaffAccess: true })) {
     for (const item of group.items) {
       const base: NavCrumb = {
         id: item.id,

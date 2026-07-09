@@ -20,6 +20,7 @@ export const ROUTES = {
   forgotPassword: "/forgot-password",
   resetPassword: "/reset-password",
   verifyEmail: "/verify-email",
+  staffInvitation: "/staff/invitations/:token",
 
   // Session / authorization outcome screens (guest-accessible).
   sessionExpired: "/session-expired",
@@ -39,6 +40,7 @@ export const ROUTES = {
   finance: "/finance",
   analytics: "/analytics",
   settings: "/settings",
+  staff: "/staff",
   profile: "/profile",
 
   notFound: "/404",

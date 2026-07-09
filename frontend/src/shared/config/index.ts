@@ -3,6 +3,7 @@
 export { APP_NAME, APP_NAME_EN, SUPPORT_EMAIL } from "./app";
 export { type Env, env } from "./env";
 export {
+  getNavigation,
   NAV_ICONS,
   NAVIGATION,
   type NavCrumb,

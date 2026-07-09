@@ -30,7 +30,7 @@ function setViewport(isMobile: boolean): void {
   })) as unknown as typeof window.matchMedia;
 }
 
-function renderShell(initialPath = ROUTES.cabinet) {
+function renderShell(initialPath: string = ROUTES.cabinet) {
   return render(
     <MemoryRouter initialEntries={[initialPath]}>
       <AppShell headerActions={<button type="button">Меню пользователя</button>}>

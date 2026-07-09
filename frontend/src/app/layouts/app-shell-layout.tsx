@@ -1,5 +1,6 @@
 import { Outlet } from "react-router";
-import { ROUTES } from "@/shared/config";
+import { useAuth } from "@/app/providers";
+import { getNavigation, ROUTES } from "@/shared/config";
 import { AppShell } from "@/widgets/app-shell";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
@@ -14,8 +15,11 @@ import { UserMenu } from "./user-menu";
  * behaviour lives in the shell widget, so pages never touch chrome.
  */
 export function AppShellLayout(): React.JSX.Element {
+  const { staffMembership } = useAuth();
+
   return (
     <AppShell
+      navigation={getNavigation({ hasStaffAccess: staffMembership != null })}
       homeHref={ROUTES.cabinet}
       headerActions={
         <>

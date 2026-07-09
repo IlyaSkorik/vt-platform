@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate, type RouteObject } from "react-router";
 import { AppShellLayout } from "@/app/layouts/app-shell-layout";
 import { AuthLayout } from "@/app/layouts/auth-layout";
+import { MinimalLayout } from "@/app/layouts/minimal-layout";
 import { NotFoundLayout } from "@/app/layouts/not-found-layout";
 import { PublicLayout } from "@/app/layouts/public-layout";
 import { RootLayout } from "@/app/layouts/root-layout";
@@ -37,6 +38,17 @@ const routes: RouteObject[] = [
       {
         element: <PublicLayout />,
         children: [{ index: true, lazy: lazyPage(() => import("@/pages/home"), "HomePage") }],
+      },
+
+      // Public focused flows.
+      {
+        element: <MinimalLayout />,
+        children: [
+          {
+            path: ROUTES.staffInvitation.slice(1),
+            lazy: lazyPage(() => import("@/pages/staff-invitation"), "StaffInvitationPage"),
+          },
+        ],
       },
 
       // Guest-only (auth).
@@ -122,6 +134,7 @@ const routes: RouteObject[] = [
                 ROUTES.finance,
                 ROUTES.analytics,
                 ROUTES.settings,
+                ROUTES.staff,
               ].map((path) => ({
                 path: path.slice(1),
                 lazy: lazyPage(() => import("@/pages/placeholder"), "PlaceholderPage"),
