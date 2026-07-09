@@ -1,12 +1,13 @@
 import { createBrowserRouter, Navigate, type RouteObject } from "react-router";
-import { AppShellLayout } from "@/app/layouts/app-shell-layout";
 import { AuthLayout } from "@/app/layouts/auth-layout";
 import { MinimalLayout } from "@/app/layouts/minimal-layout";
 import { NotFoundLayout } from "@/app/layouts/not-found-layout";
+import { ParticipantLayout } from "@/app/layouts/participant-layout";
 import { PublicLayout } from "@/app/layouts/public-layout";
 import { RootLayout } from "@/app/layouts/root-layout";
+import { StaffLayout } from "@/app/layouts/staff-layout";
 import { ROUTES } from "@/shared/config";
-import { GuestRoute, ProtectedRoute } from "./guards";
+import { GuestRoute, ProtectedRoute, StaffRoute } from "./guards";
 import { RouteError } from "./route-error";
 
 /** Lazily import a page module, mapping its named export to `Component`. */
@@ -15,32 +16,31 @@ const lazyPage =
     Component: (await loader())[name] as React.ComponentType,
   });
 
+const participantPage = (title: string, description: string) => async () => {
+  const { WorkspacePlaceholderPage } = await import("@/pages/workspace-placeholder");
+  return {
+    Component: () => <WorkspacePlaceholderPage title={title} description={description} />,
+  } satisfies { Component: React.ComponentType };
+};
+
+const staffPage = participantPage;
+
 /**
  * Application route tree (React Router v7, data router).
  *
- * Every page is route-level code-split via `lazy` so the initial bundle stays
- * small (ARCH-001 §8.4). The tree encodes the access model AND the layout each
- * area lives in:
- *   - Public:    landing, rendered in `PublicLayout`.
- *   - Guest:     auth screens in `AuthLayout`, redirected away once authed.
- *   - Protected: app screens in the permanent `AppShellLayout`.
- *   - 404:       catch-all in the neutral `NotFoundLayout`.
- *
- * App section pages that a feature has not yet shipped fall back to a shared
- * "coming soon" placeholder so every sidebar link resolves inside the shell.
+ * Participant Cabinet and Staff Workspace are independent protected workspaces:
+ * `/cabinet/**` is always available to authenticated users, while `/staff/**`
+ * is guarded by CurrentUser.staffMembership and rendered in its own layout.
  */
 const routes: RouteObject[] = [
   {
     element: <RootLayout />,
     errorElement: <RouteError />,
     children: [
-      // Public.
       {
         element: <PublicLayout />,
         children: [{ index: true, lazy: lazyPage(() => import("@/pages/home"), "HomePage") }],
       },
-
-      // Public focused flows.
       {
         element: <MinimalLayout />,
         children: [
@@ -50,8 +50,6 @@ const routes: RouteObject[] = [
           },
         ],
       },
-
-      // Guest-only (auth).
       {
         element: <GuestRoute />,
         children: [
@@ -82,10 +80,6 @@ const routes: RouteObject[] = [
           },
         ],
       },
-
-      // Session / authorization outcome screens — reachable regardless of auth
-      // state (a dropped session or a 403 must always render), in the auth
-      // layout for a consistent, chrome-light presentation.
       {
         element: <AuthLayout />,
         children: [
@@ -99,52 +93,123 @@ const routes: RouteObject[] = [
           },
         ],
       },
-
-      // Protected — the permanent Application Shell.
       {
         element: <ProtectedRoute />,
         children: [
           {
-            element: <AppShellLayout />,
+            element: <ParticipantLayout />,
             children: [
               {
                 path: ROUTES.cabinet.slice(1),
                 lazy: lazyPage(() => import("@/pages/dashboard"), "DashboardPage"),
               },
-              // Legacy /dashboard → /cabinet (the canonical authenticated home).
               {
-                path: ROUTES.dashboard.slice(1),
-                element: <Navigate to={ROUTES.cabinet} replace />,
+                path: ROUTES.cabinetProfile.slice(1),
+                lazy: lazyPage(() => import("@/pages/profile"), "ProfilePage"),
               },
               {
-                path: ROUTES.participants.slice(1),
+                path: ROUTES.cabinetParticipants.slice(1),
                 lazy: lazyPage(() => import("@/pages/participants"), "ParticipantsPage"),
               },
               {
-                path: ROUTES.profile.slice(1),
-                lazy: lazyPage(() => import("@/pages/profile"), "ProfilePage"),
+                path: ROUTES.cabinetApplications.slice(1),
+                lazy: participantPage("Заявки", "Заявки участника и их текущие статусы."),
               },
-              // Sections whose features have not shipped yet — placeholder page.
-              ...[
-                ROUTES.competitions,
-                ROUTES.applications,
-                ROUTES.performances,
-                ROUTES.judging,
-                ROUTES.results,
-                ROUTES.finance,
-                ROUTES.analytics,
-                ROUTES.settings,
-                ROUTES.staff,
-              ].map((path) => ({
-                path: path.slice(1),
-                lazy: lazyPage(() => import("@/pages/placeholder"), "PlaceholderPage"),
-              })),
+              {
+                path: ROUTES.cabinetCompetitions.slice(1),
+                lazy: participantPage("Конкурсы", "Доступные конкурсы для личного кабинета."),
+              },
+              {
+                path: ROUTES.cabinetDocuments.slice(1),
+                lazy: participantPage("Документы", "Файлы и документы участника."),
+              },
+              {
+                path: ROUTES.cabinetNotifications.slice(1),
+                lazy: participantPage("Уведомления", "События и сообщения личного кабинета."),
+              },
+              {
+                path: ROUTES.cabinetSettings.slice(1),
+                lazy: participantPage("Настройки", "Персональные настройки кабинета."),
+              },
+            ],
+          },
+          { path: ROUTES.dashboard.slice(1), element: <Navigate to={ROUTES.cabinet} replace /> },
+          {
+            path: ROUTES.profile.slice(1),
+            element: <Navigate to={ROUTES.cabinetProfile} replace />,
+          },
+          {
+            path: ROUTES.participants.slice(1),
+            element: <Navigate to={ROUTES.cabinetParticipants} replace />,
+          },
+          {
+            path: ROUTES.applications.slice(1),
+            element: <Navigate to={ROUTES.cabinetApplications} replace />,
+          },
+          {
+            path: ROUTES.competitions.slice(1),
+            element: <Navigate to={ROUTES.cabinetCompetitions} replace />,
+          },
+          {
+            path: ROUTES.settings.slice(1),
+            element: <Navigate to={ROUTES.cabinetSettings} replace />,
+          },
+        ],
+      },
+      {
+        element: <StaffRoute />,
+        children: [
+          {
+            element: <StaffLayout />,
+            children: [
+              {
+                path: ROUTES.staff.slice(1),
+                lazy: staffPage("Панель управления", "Операционная панель организации."),
+              },
+              {
+                path: ROUTES.staffCompetitions.slice(1),
+                lazy: staffPage("Конкурсы", "Управление конкурсами организации."),
+              },
+              {
+                path: ROUTES.staffApplications.slice(1),
+                lazy: staffPage("Заявки", "Проверка и обработка заявок."),
+              },
+              {
+                path: ROUTES.staffParticipants.slice(1),
+                lazy: staffPage("Участники", "Работа с участниками организации."),
+              },
+              {
+                path: ROUTES.staffJudges.slice(1),
+                lazy: staffPage("Судьи", "Команда судей и назначений."),
+              },
+              {
+                path: ROUTES.staffSchedules.slice(1),
+                lazy: staffPage("Расписание", "Планирование событий и выступлений."),
+              },
+              {
+                path: ROUTES.staffFinance.slice(1),
+                lazy: staffPage("Финансы", "Финансовые операции организации."),
+              },
+              {
+                path: ROUTES.staffOrganization.slice(1),
+                lazy: staffPage("Организация", "Профиль и параметры организации."),
+              },
+              {
+                path: ROUTES.staffUsers.slice(1),
+                lazy: staffPage("Пользователи", "Управление доступами сотрудников."),
+              },
+              {
+                path: ROUTES.staffInvitations.slice(1),
+                lazy: staffPage("Приглашения", "Приглашения сотрудников в организацию."),
+              },
+              {
+                path: ROUTES.staffSettings.slice(1),
+                lazy: staffPage("Настройки", "Настройки панели управления."),
+              },
             ],
           },
         ],
       },
-
-      // 404 catch-all.
       {
         element: <NotFoundLayout />,
         children: [

@@ -54,7 +54,7 @@ export function UserMenu(): React.JSX.Element {
           ) : null}
           <DropdownMenu.Separator className="my-1 h-px bg-border" />
           <DropdownMenu.Item
-            onSelect={() => navigate(ROUTES.profile)}
+            onSelect={() => navigate(ROUTES.cabinetProfile)}
             className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground [&_svg]:size-4"
           >
             <UserIcon aria-hidden="true" />

@@ -1,25 +1,17 @@
 import { Outlet } from "react-router";
-import { useAuth } from "@/app/providers";
-import { getNavigation, ROUTES } from "@/shared/config";
+import { NAVIGATION, ROUTES } from "@/shared/config";
 import { AppShell } from "@/widgets/app-shell";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
 
 /**
- * AppShellLayout — the route element wrapping every authenticated page in the
- * permanent {@link AppShell}.
- *
- * It is a thin adapter: it injects the app-level header controls (theme
- * switch, user menu) into the shell's `headerActions` slot and renders the
- * routed page through `<Outlet />`. All layout, navigation and responsive
- * behaviour lives in the shell widget, so pages never touch chrome.
+ * Legacy shell adapter retained for old app-shell consumers. Staff navigation
+ * lives only in StaffLayout; this layout never branches on CurrentUser.
  */
 export function AppShellLayout(): React.JSX.Element {
-  const { staffMembership } = useAuth();
-
   return (
     <AppShell
-      navigation={getNavigation({ hasStaffAccess: staffMembership != null })}
+      navigation={NAVIGATION}
       homeHref={ROUTES.cabinet}
       headerActions={
         <>

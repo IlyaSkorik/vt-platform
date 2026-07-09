@@ -1,35 +1,21 @@
-/**
- * Centralized route path registry.
- *
- * Every navigable path in the app is declared here so links, guards and the
- * router never drift apart via stringly-typed paths scattered across the code.
- *
- * Paths are grouped by access model:
- *   - Public / guest: landing and authentication screens.
- *   - App (protected): the sections rendered inside the Application Shell.
- *
- * The app section paths back the navigation model (`./navigation`). They are
- * declared up front so the shell can link to every section, even before the
- * owning feature ships its page (unmatched routes fall through to 404).
- */
 export const ROUTES = {
-  // Public / guest.
   home: "/",
   login: "/login",
   register: "/register",
   forgotPassword: "/forgot-password",
   resetPassword: "/reset-password",
   verifyEmail: "/verify-email",
-  staffInvitation: "/staff/invitations/:token",
-
-  // Session / authorization outcome screens (guest-accessible).
+  emailVerified: "/email-verified",
   sessionExpired: "/session-expired",
-  unauthorized: "/403",
-
-  // App shell sections (protected).
-  // The personal cabinet is the authenticated home for EVERY user (participants,
-  // parents, teachers). Login always lands here — never on a staff-only surface.
+  unauthorized: "/unauthorized",
   cabinet: "/cabinet",
+  cabinetProfile: "/cabinet/profile",
+  cabinetParticipants: "/cabinet/participants",
+  cabinetApplications: "/cabinet/applications",
+  cabinetCompetitions: "/cabinet/competitions",
+  cabinetDocuments: "/cabinet/documents",
+  cabinetNotifications: "/cabinet/notifications",
+  cabinetSettings: "/cabinet/settings",
   dashboard: "/dashboard",
   participants: "/participants",
   competitions: "/competitions",
@@ -41,9 +27,19 @@ export const ROUTES = {
   analytics: "/analytics",
   settings: "/settings",
   staff: "/staff",
+  staffCompetitions: "/staff/competitions",
+  staffApplications: "/staff/applications",
+  staffParticipants: "/staff/participants",
+  staffJudges: "/staff/judges",
+  staffSchedules: "/staff/schedules",
+  staffFinance: "/staff/finance",
+  staffOrganization: "/staff/organization",
+  staffUsers: "/staff/users",
+  staffInvitations: "/staff/invitations",
+  staffSettings: "/staff/settings",
+  staffInvitation: "/staff/invitations/:token",
   profile: "/profile",
-
-  notFound: "/404",
 } as const;
 
-export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];
+export type RouteKey = keyof typeof ROUTES;
+export type RoutePath = (typeof ROUTES)[RouteKey];

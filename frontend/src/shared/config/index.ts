@@ -1,15 +1,16 @@
-/** Public API of the `shared/config` segment. */
-
-export { APP_NAME, APP_NAME_EN, SUPPORT_EMAIL } from "./app";
+export { APP_NAME } from "./app";
 export { type Env, env } from "./env";
 export {
-  getNavigation,
-  NAV_ICONS,
   NAVIGATION,
-  type NavCrumb,
   type NavGroup,
   type NavItem,
+  type NavigationItem,
   type NavModel,
   resolveBreadcrumbs,
 } from "./navigation";
-export { ROUTES, type RoutePath } from "./routes";
+export { ROUTES, type RouteKey, type RoutePath } from "./routes";
+export {
+  PARTICIPANT_NAVIGATION,
+  STAFF_NAVIGATION,
+  type WorkspaceNavItem,
+} from "./workspaces";
