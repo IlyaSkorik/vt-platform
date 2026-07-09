@@ -52,6 +52,7 @@ THIRD_PARTY_APPS = [
 # PostgreSQL schema at the persistence layer (ARCH-001 §9.2).
 LOCAL_APPS = [
     "apps.identity",
+    "apps.organization",
     "apps.participants",
     "apps.institutions",
     "apps.competitions",
@@ -119,6 +120,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # §7.2, §9.2, §14), not the default ``<app>/migrations/``.
 MIGRATION_MODULES = {
     "identity": "apps.identity.infrastructure.migrations",
+    "organization": "apps.organization.infrastructure.migrations",
     "participants": "apps.participants.infrastructure.migrations",
 }
 
