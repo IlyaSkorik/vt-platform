@@ -33,6 +33,7 @@ from apps.organization.domain.value_objects import (
     OrganizationId,
     OrganizationName,
     OrganizationSlug,
+    OrganizationStatus,
     StaffEmail,
     StaffInvitationId,
     StaffMembershipId,
@@ -70,12 +71,12 @@ class TestOrganization:
 
     def test_direct_construction_forbidden(self) -> None:
         with pytest.raises(DirectConstructionError):
-            Organization(  # type: ignore[call-arg]
+            Organization(
                 _token=object(),
                 _id=OrganizationId.generate(),
                 _name=OrganizationName("x"),
                 _slug=OrganizationSlug("x"),
-                _status=None,  # type: ignore[arg-type]
+                _status=OrganizationStatus.ACTIVE,
                 _created_at=NOW,
                 _updated_at=NOW,
             )
@@ -178,6 +179,7 @@ class TestStaffInvitation:
             email=StaffEmail("staff@example.com"),
             role=StaffRole.MODERATOR,
             token_hash=InvitationTokenHash("a" * 64),
+            raw_token="raw-token",
             invited_by=_user(),
             policy=policy,
             now=NOW,

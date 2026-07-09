@@ -13,6 +13,11 @@ per call; there is no shared mutable state.
 
 from __future__ import annotations
 
+from datetime import datetime
+
+from django.conf import settings
+from django.core.mail import EmailMessage
+
 from apps.organization.application.handlers import (
     AcceptStaffInvitationHandler,
     GetStaffInvitationHandler,
@@ -23,6 +28,7 @@ from apps.organization.application.handlers import (
 from apps.organization.application.interfaces import EmailGateway, InvitationTokenService
 from apps.organization.application.read_models import StaffMembershipReader
 from apps.organization.domain.events import StaffInvitationIssued
+from apps.organization.domain.value_objects import OrganizationName, StaffEmail, StaffRole
 from apps.organization.infrastructure.messaging import (
     EventDispatcher,
     Sha256InvitationTokenHasher,
@@ -93,10 +99,35 @@ def build_accept_staff_invitation_handler() -> AcceptStaffInvitationHandler:
     )
 
 
-def _build_email_gateway() -> EmailGateway:
-    from apps.identity.infrastructure.messaging import DjangoEmailGateway
+class DjangoStaffInvitationEmailGateway:
+    def __init__(self, *, from_email: str | None = None) -> None:
+        self._from_email = from_email if from_email is not None else settings.DEFAULT_FROM_EMAIL
 
-    return DjangoEmailGateway()
+    def send_staff_invitation(
+        self,
+        *,
+        recipient_email: StaffEmail,
+        organization_name: OrganizationName,
+        role: StaffRole,
+        expires_at: datetime,
+        token: str,
+    ) -> None:
+        subject = "Приглашение в команду Взлёт талантов"
+        body = (
+            f"Вас пригласили в команду {organization_name.value} c ролью {role.value}.\n\n"  # noqa: RUF001
+            f"Ссылка для принятия приглашения: {token}\n\n"
+            f"Ссылка действительна до {expires_at.isoformat()}."
+        )
+        EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=self._from_email,
+            to=[recipient_email.value],
+        ).send(fail_silently=False)
+
+
+def _build_email_gateway() -> EmailGateway:
+    return DjangoStaffInvitationEmailGateway()
 
 
 def _build_invitation_token_service() -> InvitationTokenService:

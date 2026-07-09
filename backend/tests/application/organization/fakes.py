@@ -46,10 +46,14 @@ def a_staff_invitation(
     _invitation_id = invitation_id if invitation_id is not None else StaffInvitationId.generate()
     _organization_id = organization_id if organization_id is not None else OrganizationId.generate()
     _email = email if email is not None else StaffEmail("test@example.com")
-    _role = role if role is not None else StaffRole.MEMBER
+    _role = role if role is not None else StaffRole.SUPPORT
     _raw_token = raw_token if raw_token is not None else "raw-token"
-    _token_hash = token_hash if token_hash is not None else InvitationTokenHash("hashed-token")
-    _invited_by = invited_by if invited_by is not None else StaffUserId.generate()
+    _token_hash = (
+        token_hash
+        if token_hash is not None
+        else InvitationTokenHash(hashlib.sha256(_raw_token.encode()).hexdigest())
+    )
+    _invited_by = invited_by if invited_by is not None else StaffUserId.from_uuid(SequenceUuidGenerator().new())
     _expires_at = expires_at if expires_at is not None else _now.replace(year=_now.year + 1)
 
     invitation, _ = StaffInvitation.issue(

@@ -1,6 +1,7 @@
 """REST views for Organization staff invitation endpoints."""
 from __future__ import annotations
 
+from django.contrib.auth.models import AnonymousUser
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -9,15 +10,15 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTStatelessUserAuthentication
 
 from apps.identity.presentation.api.v1.problems import (
-    application_problem,
+    problem_response,
     request_id,
     validation_problem,
 )
 from apps.organization.application.dto.commands import (
     AcceptStaffInvitationCommand,
-    GetStaffInvitationQuery,
     InviteStaffCommand,
 )
+from apps.organization.application.dto.queries import GetStaffInvitationQuery
 from apps.organization.application.exceptions import ApplicationError
 from apps.organization.composition import (
     build_accept_staff_invitation_handler,
@@ -34,6 +35,32 @@ from apps.organization.presentation.api.v1.staff.serializers import (
 )
 
 _TAG = "Organization"
+
+_PROBLEM_MAP = {
+    "organization_not_found": (404, "not-found", "Resource not found", None),
+    "staff_invitation_not_found": (404, "not-found", "Resource not found", None),
+    "invalid_input": (400, "validation-error", "Validation failed", None),
+    "invalid_invitation_token": (410, "token-expired", "Invitation token expired", None),
+    "user_already_staff": (409, "conflict", "Conflict", None),
+    "permission_denied": (403, "forbidden", "Forbidden", None),
+    "invitation_conflict": (409, "conflict", "Conflict", None),
+    "invitation_state_conflict": (409, "conflict", "Conflict", None),
+}
+
+
+def application_problem(exc: ApplicationError, *, instance: str, request: Request) -> Response:
+    status, type_suffix, title, code = _PROBLEM_MAP.get(
+        exc.code, (400, "bad-request", "Bad request", None)
+    )
+    return problem_response(
+        status=status,
+        type_suffix=type_suffix,
+        title=title,
+        detail=str(exc) or title,
+        instance=instance,
+        correlation_id=request_id(request),
+        code=code,
+    )
 
 class StaffInvitationDetailView(APIView):
     """GET /api/v1/staff/invitations/{token} — look up a staff invitation."""
@@ -60,7 +87,14 @@ class StaffInvitationDetailView(APIView):
         except ApplicationError as exc:
             return application_problem(exc, instance=request.path, request=request)
 
-        serializer = StaffInvitationDetailSerializer(result)
+        serializer = StaffInvitationDetailSerializer(
+            instance={
+                "organization_name": result.organization_name,
+                "role": result.role,
+                "expires_at": result.expires_at,
+                "invited_email": result.invited_email,
+            }
+        )
         return Response(serializer.data, status=200)
 
 
@@ -139,6 +173,13 @@ class StaffInvitationAcceptanceView(APIView):
         serializer = AcceptInvitationRequestSerializer(data=request.data)
         if not serializer.is_valid():
             return validation_problem(serializer.errors, instance=request.path, request=request)
+
+        if isinstance(request.user, AnonymousUser):
+            return application_problem(
+                ApplicationError("Authentication required."),
+                instance=request.path,
+                request=request,
+            )
 
         data = serializer.validated_data
         command = AcceptStaffInvitationCommand(
