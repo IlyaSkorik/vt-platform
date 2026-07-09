@@ -32,8 +32,9 @@ export function ProtectedRoute(): React.JSX.Element | null {
 /**
  * GuestRoute — gates guest-only areas (login, register, password reset).
  *
- * Authenticated users are bounced to the dashboard so they never see the auth
- * screens while signed in.
+ * Authenticated users are bounced to the personal cabinet (the platform's home
+ * for every account) so they never see the auth screens while signed in. Staff
+ * access remains an opt-in area and never becomes a landing page.
  */
 export function GuestRoute(): React.JSX.Element | null {
   const { status } = useAuth();
@@ -43,7 +44,7 @@ export function GuestRoute(): React.JSX.Element | null {
   }
 
   if (status === "authenticated") {
-    return <Navigate to={ROUTES.dashboard} replace />;
+    return <Navigate to={ROUTES.cabinet} replace />;
   }
 
   return <Outlet />;

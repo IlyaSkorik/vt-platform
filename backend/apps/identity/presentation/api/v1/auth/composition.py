@@ -21,6 +21,7 @@ from apps.identity.application.handlers import (
     RegisterUserHandler,
     RequestEmailVerificationHandler,
 )
+from apps.identity.application.handlers.user_handlers import CurrentUserHandler
 from apps.identity.application.interfaces import EventPublisher, TokenService
 from apps.identity.domain.events import UserRegistered
 from apps.identity.domain.policies import EmailVerificationPolicy, PasswordPolicy
@@ -32,18 +33,17 @@ from apps.identity.infrastructure.messaging import (
 )
 from apps.identity.infrastructure.repositories import DjangoUserRepository
 from apps.identity.infrastructure.system import SystemClock, Uuid7Generator
-from apps.identity.application.handlers.user_handlers import CurrentUserHandler
 
 __all__ = [
     "build_authenticate_user_handler",
     "build_confirm_email_verification_handler",
+    "build_current_user_handler",
     "build_event_publisher",
     "build_logout_handler",
     "build_refresh_token_handler",
     "build_register_user_handler",
     "build_request_email_verification_handler",
     "build_token_service",
-    "build_current_user_handler",
 ]
 
 

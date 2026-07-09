@@ -5,16 +5,19 @@ import { afterEach, describe, expect, it } from "vitest";
 import { AuthProvider } from "@/app/providers";
 import { authKeys } from "@/features/auth";
 import { tokenStore } from "@/shared/api";
-import type { User } from "@/shared/api/generated/model";
+import type { CurrentUser } from "@/shared/api/generated/model";
 import { Dashboard } from "./dashboard";
 
-const DEMO_USER: User = {
-  id: "u-1",
-  type: "user",
-  email: "maria@vzlettalantov.by",
-  displayName: "Мария",
-  status: "active",
-  emailVerified: true,
+const DEMO_CURRENT_USER: CurrentUser = {
+  user: {
+    id: "u-1",
+    type: "user",
+    email: "maria@vzlettalantov.by",
+    displayName: "Мария",
+    status: "active",
+    emailVerified: true,
+  },
+  staffMembership: null,
 };
 
 /**
@@ -27,7 +30,7 @@ function renderDashboard() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: 5 * 60_000 } },
   });
-  client.setQueryData(authKeys.currentUser, DEMO_USER);
+  client.setQueryData(authKeys.currentUser, DEMO_CURRENT_USER);
   tokenStore.set("test-access-token");
 
   return render(

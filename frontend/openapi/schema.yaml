@@ -160,14 +160,18 @@ paths:
     get:
       operationId: getCurrentUser
       tags: [Identity]
-      summary: Return the authenticated user's account and effective roles.
+      summary: Return the authenticated account composed with its staff membership.
+      description: >-
+        Composition endpoint (owned by no single bounded context): the Identity
+        account plus the account's Organization staff membership. `staffMembership`
+        is null for the vast majority of users, who are not staff.
       responses:
         "200":
-          description: The current user.
+          description: The current user, composed with staff membership.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserResponse"
+                $ref: "#/components/schemas/CurrentUserResponse"
         "401": { $ref: "#/components/responses/Problem" }
 components:
   securitySchemes:
@@ -254,14 +258,10 @@ components:
           type: string
           format: password
           minLength: 12
-    Role:
-      type: object
-      required: [id, type, name]
-      properties:
-        id: { type: string, format: uuid }
-        type: { type: string }
-        name: { type: string }
-        scope: { type: string }
+    # NOTE: Identity no longer exposes roles. Staff authorization lives entirely
+    # in the Organization context and is surfaced only via
+    # CurrentUserResponse.staffMembership. Do not reintroduce a roles concept on
+    # User or a Role schema here.
     User:
       type: object
       required: [id, type, email, displayName, status, emailVerified]
@@ -277,12 +277,38 @@ components:
         phoneVerified: { type: boolean }
         mfaEnabled: { type: boolean }
         locale: { type: string }
-        roles:
-          type: array
-          items:
-            $ref: "#/components/schemas/Role"
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
+    StaffMembership:
+      type: object
+      required: [role, status]
+      description: >-
+        The authenticated account's staff role over the organization (Organization
+        context). Present only for staff; null otherwise.
+      properties:
+        role:
+          type: string
+          enum:
+            - OWNER
+            - DIRECTOR
+            - FINANCE
+            - COMPETITION_MANAGER
+            - CONTENT_MANAGER
+            - MODERATOR
+            - SUPPORT
+        status:
+          type: string
+          enum: [PENDING, ACTIVE, REVOKED]
+    CurrentUser:
+      type: object
+      required: [user, staffMembership]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        staffMembership:
+          oneOf:
+            - $ref: "#/components/schemas/StaffMembership"
+            - type: "null"
     Session:
       type: object
       required: [type, accessToken, tokenType, expiresIn]
@@ -311,6 +337,14 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/User"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    CurrentUserResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/CurrentUser"
         meta:
           $ref: "#/components/schemas/ResponseMeta"
     SessionResponse:

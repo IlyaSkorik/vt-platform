@@ -64,6 +64,9 @@ LOCAL_APPS = [
     "apps.notifications",
     "apps.analytics",
     "apps.audit",
+    # Composition edge — owns no domain; composes cross-context read models
+    # (e.g. GET /users/me = Identity account + Organization staff status).
+    "apps.composition",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

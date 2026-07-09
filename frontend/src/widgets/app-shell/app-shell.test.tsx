@@ -2,6 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { ROUTES } from "@/shared/config";
 import { SIDEBAR_STORAGE_KEY } from "@/shared/constants";
 import { AppShell } from "./app-shell";
 
@@ -29,7 +30,7 @@ function setViewport(isMobile: boolean): void {
   })) as unknown as typeof window.matchMedia;
 }
 
-function renderShell(initialPath = "/dashboard") {
+function renderShell(initialPath = ROUTES.cabinet) {
   return render(
     <MemoryRouter initialEntries={[initialPath]}>
       <AppShell headerActions={<button type="button">Меню пользователя</button>}>
@@ -58,7 +59,7 @@ describe("AppShell — navigation rendering", () => {
     setViewport(false);
     renderShell();
     const sidebar = screen.getByRole("complementary", { name: "Боковая навигация" });
-    expect(within(sidebar).getByRole("link", { name: "Панель" })).toBeInTheDocument();
+    expect(within(sidebar).getByRole("link", { name: "Кабинет" })).toBeInTheDocument();
     expect(within(sidebar).getByRole("link", { name: "Участники" })).toBeInTheDocument();
     expect(within(sidebar).getByRole("button", { name: "Конкурсы" })).toBeInTheDocument();
   });

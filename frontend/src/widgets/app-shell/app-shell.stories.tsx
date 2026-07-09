@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Bell, Moon } from "lucide-react";
 import { MemoryRouter } from "react-router";
+import { ROUTES } from "@/shared/config";
 import {
   Avatar,
   Card,
@@ -28,7 +29,7 @@ const meta = {
   parameters: { layout: "fullscreen" },
   decorators: [
     (Story, context) => (
-      <MemoryRouter initialEntries={[(context.parameters.route as string) ?? "/dashboard"]}>
+      <MemoryRouter initialEntries={[(context.parameters.route as string) ?? ROUTES.cabinet]}>
         <Story />
       </MemoryRouter>
     ),
@@ -73,11 +74,11 @@ function DemoPage({ title }: { title: string }): React.JSX.Element {
 }
 
 export const Desktop: Story = {
-  args: { headerActions, children: <DemoPage title="Панель" /> },
+  args: { headerActions, children: <DemoPage title="Кабинет" /> },
 };
 
 export const CollapsedSidebar: Story = {
-  args: { headerActions, children: <DemoPage title="Панель" /> },
+  args: { headerActions, children: <DemoPage title="Кабинет" /> },
   parameters: {
     docs: {
       description: {
@@ -93,7 +94,7 @@ export const NestedRouteBreadcrumbs: Story = {
 };
 
 export const Mobile: Story = {
-  args: { headerActions, children: <DemoPage title="Панель" /> },
+  args: { headerActions, children: <DemoPage title="Кабинет" /> },
   globals: { viewport: { value: "mobile1", isRotated: false } },
   parameters: {
     docs: {
@@ -106,13 +107,13 @@ export const Mobile: Story = {
 };
 
 export const Tablet: Story = {
-  args: { headerActions, children: <DemoPage title="Панель" /> },
+  args: { headerActions, children: <DemoPage title="Кабинет" /> },
   globals: { viewport: { value: "tablet", isRotated: false } },
 };
 
 export const WithNotificationsAction: Story = {
   args: {
-    children: <DemoPage title="Панель" />,
+    children: <DemoPage title="Кабинет" />,
     headerActions: (
       <>
         <IconButton

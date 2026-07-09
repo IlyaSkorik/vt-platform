@@ -1,1 +1,1 @@
-"""Identity & Access bounded context (accounts, authentication, roles, consent)."""
+"""Identity & Access bounded context (accounts, authentication, consent)."""

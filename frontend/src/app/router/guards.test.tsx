@@ -15,7 +15,7 @@ vi.mock("@/app/providers", () => ({
 }));
 
 /**
- * Renders `ProtectedRoute` guarding `/dashboard`. The redirect target
+ * Renders `ProtectedRoute` guarding `/cabinet`. The redirect target
  * (`/login`) is a sibling, NOT a child of the guard — otherwise a redirect
  * would re-enter the guard and loop forever.
  */
@@ -24,23 +24,23 @@ function renderProtected(path: string) {
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route element={<ProtectedRoute />}>
-          <Route path={ROUTES.dashboard} element={<p>Панель</p>} />
+          <Route path={ROUTES.cabinet.slice(1)} element={<p>Кабинет</p>} />
         </Route>
-        <Route path={ROUTES.login} element={<p>Экран входа</p>} />
+        <Route path={ROUTES.login.slice(1)} element={<p>Экран входа</p>} />
       </Routes>
     </MemoryRouter>,
   );
 }
 
-/** Renders `GuestRoute` guarding `/login`; `/dashboard` is the sibling target. */
+/** Renders `GuestRoute` guarding `/login`; `/cabinet` is the sibling target. */
 function renderGuest(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route element={<GuestRoute />}>
-          <Route path={ROUTES.login} element={<p>Вход</p>} />
+          <Route path={ROUTES.login.slice(1)} element={<p>Вход</p>} />
         </Route>
-        <Route path={ROUTES.dashboard} element={<p>Экран панели</p>} />
+        <Route path={ROUTES.cabinet.slice(1)} element={<p>Экран кабинета</p>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -49,20 +49,20 @@ function renderGuest(path: string) {
 describe("ProtectedRoute", () => {
   it("renders nothing while the session is loading", () => {
     status.current = "loading";
-    const { container } = renderProtected(ROUTES.dashboard);
+    const { container } = renderProtected(ROUTES.cabinet);
     expect(container).toBeEmptyDOMElement();
   });
 
   it("redirects unauthenticated users to login", () => {
     status.current = "unauthenticated";
-    renderProtected(ROUTES.dashboard);
+    renderProtected(ROUTES.cabinet);
     expect(screen.getByText("Экран входа")).toBeInTheDocument();
   });
 
   it("renders the protected outlet when authenticated", () => {
     status.current = "authenticated";
-    renderProtected(ROUTES.dashboard);
-    expect(screen.getByText("Панель")).toBeInTheDocument();
+    renderProtected(ROUTES.cabinet);
+    expect(screen.getByText("Кабинет")).toBeInTheDocument();
   });
 });
 
@@ -79,9 +79,9 @@ describe("GuestRoute", () => {
     expect(screen.getByText("Вход")).toBeInTheDocument();
   });
 
-  it("redirects authenticated users to the dashboard", () => {
+  it("redirects authenticated users to the cabinet", () => {
     status.current = "authenticated";
     renderGuest(ROUTES.login);
-    expect(screen.getByText("Экран панели")).toBeInTheDocument();
+    expect(screen.getByText("Экран кабинета")).toBeInTheDocument();
   });
 });

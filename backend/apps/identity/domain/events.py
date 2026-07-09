@@ -35,8 +35,6 @@ Events implemented here (all past tense — they report, never command):
 * :class:`PasswordResetCompleted`  — a password reset flow finished.
 * :class:`ConsentGranted`          — the user accepted a versioned consent document.
 * :class:`ConsentWithdrawn`        — the user revoked a previously granted consent.
-* :class:`RoleAssigned`            — a role was granted to the user.
-* :class:`RoleRevoked`             — a role was removed from the user.
 * :class:`UserLocked`              — the account was locked out.
 * :class:`UserUnlocked`            — the account lock was released.
 * :class:`SessionStarted`          — an authenticated session was opened.
@@ -83,8 +81,6 @@ __all__ = [
     "PasswordResetRequested",
     "PhoneChanged",
     "PhoneVerified",
-    "RoleAssigned",
-    "RoleRevoked",
     "SessionEndReason",
     "SessionEnded",
     "SessionStarted",
@@ -378,38 +374,6 @@ class ConsentWithdrawn(DomainEvent):
 
     consent_type: ConsentType
     consent_version: ConsentVersion
-
-
-# ---------------------------------------------------------------------------
-# Roles & access
-# ---------------------------------------------------------------------------
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class RoleAssigned(DomainEvent):
-    """A role was granted to the user (IDN-006).
-
-    Widens what the account may do (participant, guardian, judge, organizer, …).
-    ``role`` is the role identifier; ``assigned_by`` records the actor who granted
-    it — ``None`` when the platform assigned it automatically (e.g. a default role
-    at registration) rather than an administrator. The audit trail cares who
-    escalated access, hence the actor is part of the fact.
-    """
-
-    role: str
-    assigned_by: UserId | None = None
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class RoleRevoked(DomainEvent):
-    """A role was removed from the user (IDN-006).
-
-    The inverse of :class:`RoleAssigned`; narrows the account's access.
-    ``revoked_by`` records the actor, or ``None`` for a system/automatic revocation.
-    """
-
-    role: str
-    revoked_by: UserId | None = None
 
 
 # ---------------------------------------------------------------------------

@@ -58,6 +58,7 @@ from apps.identity.presentation.api.v1.problems import (
     unauthorized_problem,
     validation_problem,
 )
+from apps.identity.presentation.api.v1.resources import user_resource as _user_resource
 
 _AUTH_TAG = "Identity"
 
@@ -65,34 +66,6 @@ _AUTH_TAG = "Identity"
 # ---------------------------------------------------------------------------
 # Rendering helpers
 # ---------------------------------------------------------------------------
-
-
-def _user_status(user: UserDto) -> str:
-    """Derive the API ``status`` string from the account's lifecycle flags."""
-    if user.is_deleted:
-        return "deleted"
-    if user.is_locked:
-        return "suspended"
-    if user.is_email_verified:
-        return "active"
-    return "registered"
-
-
-def _user_resource(user: UserDto) -> dict[str, Any]:
-    """Project a :class:`UserDto` into the full user resource (API-001 §4.1)."""
-    return {
-        "id": user.id,
-        "type": "user",
-        "email": user.email,
-        "displayName": user.full_name,
-        "status": _user_status(user),
-        "emailVerified": user.is_email_verified,
-        "phoneVerified": user.is_phone_verified,
-        "mfaEnabled": False,
-        "locale": user.locale,
-        "createdAt": user.created_at.isoformat().replace("+00:00", "Z"),
-        "updatedAt": user.updated_at.isoformat().replace("+00:00", "Z"),
-    }
 
 
 def _user_summary(user: UserDto) -> dict[str, Any]:
@@ -390,30 +363,6 @@ class CurrentSessionView(APIView):
         _clear_refresh_cookie(response)
         return response
 
-class CurrentUserView(APIView):
-    """GET /api/v1/users/me — retrieve the current user (API-001 §4.7)."""
-
-    authentication_classes = (JWTStatelessUserAuthentication,)
-    permission_classes = (IsAuthenticated,)
-
-    @extend_schema(
-        tags=[_AUTH_TAG],
-        operation_id="auth_current_user_get",
-        summary="Get the current authenticated user",
-        description="Retrieve the full user resource for the authenticated account.",
-        request=None,
-        responses={
-            200: RegistrationResponseSerializer,
-            401: OpenApiResponse(ProblemDetailSerializer, description="No valid session."),
-        },
-    )
-    def get(self, request: Request) -> Response:
-        user = composition.build_current_user_handler().handle(str(request.user.id))
-        if user is None:
-            return unauthorized_problem(
-                instance=request.path, request=request, detail="User not found."
-            )
-        return _envelope(request, _user_resource(user), status=200)
 
 def _optional_str(value: object) -> str | None:
     """Coerce an optional serializer value to ``str | None`` (blank → ``None``)."""

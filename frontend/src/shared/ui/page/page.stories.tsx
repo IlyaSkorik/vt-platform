@@ -92,7 +92,7 @@ export const Empty: Story = {
           <EmptyPage
             title="Раздел в разработке"
             description="Финансовый модуль появится в одном из ближайших релизов."
-            action={<Button variant="outline">Вернуться на панель</Button>}
+            action={<Button variant="outline">Вернуться в кабинет</Button>}
           />
         </PageContent>
       </PageContainer>

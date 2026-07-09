@@ -6,7 +6,7 @@ import { Outlet, ScrollRestoration } from "react-router";
  *
  * Provides scroll restoration between navigations and a Suspense boundary for
  * lazily-loaded route modules. It renders no chrome itself; nested layouts
- * (auth, dashboard) own their visual shells. A skip link keeps keyboard
+ * (auth, cabinet) own their visual shells. A skip link keeps keyboard
  * navigation accessible (WCAG 2.1 AA).
  */
 export function RootLayout(): React.JSX.Element {

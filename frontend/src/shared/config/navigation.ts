@@ -59,7 +59,7 @@ export type NavModel = readonly NavGroup[];
 export const NAVIGATION: NavModel = [
   {
     id: "overview",
-    items: [{ id: "dashboard", label: "Панель", to: ROUTES.dashboard, icon: LayoutDashboard }],
+    items: [{ id: "cabinet", label: "Кабинет", to: ROUTES.cabinet, icon: LayoutDashboard }],
   },
   {
     id: "registry",

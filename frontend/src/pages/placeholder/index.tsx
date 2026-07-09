@@ -26,7 +26,7 @@ export function PlaceholderPage(): React.JSX.Element {
           description="Этот раздел появится в одном из ближайших релизов платформы."
           action={
             <Button asChild variant="outline">
-              <Link to={ROUTES.dashboard}>Вернуться на панель</Link>
+              <Link to={ROUTES.cabinet}>Вернуться в кабинет</Link>
             </Button>
           }
         />

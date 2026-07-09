@@ -18,7 +18,6 @@ from apps.identity.presentation.api.v1.auth.views import (
     RegistrationView,
     SessionCollectionView,
     TokenRefreshView,
-    CurrentUserView,
 )
 
 app_name = "auth"
@@ -38,5 +37,4 @@ urlpatterns = [
     path("auth/sessions", SessionCollectionView.as_view(), name="sessions"),
     path("auth/sessions/current", CurrentSessionView.as_view(), name="session-current"),
     path("auth/token/refresh", TokenRefreshView.as_view(), name="token-refresh"),
-    path("users/me", CurrentUserView.as_view(), name="users-me"),
 ]

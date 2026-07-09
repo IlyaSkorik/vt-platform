@@ -26,7 +26,7 @@ export function UnauthorizedPage(): React.JSX.Element {
       </Alert>
       <div className="flex flex-col gap-2">
         <Button asChild className="w-full">
-          <Link to={ROUTES.dashboard}>На главную панель</Link>
+          <Link to={ROUTES.cabinet}>На главную страницу кабинета</Link>
         </Button>
         <Button asChild variant="ghost" className="w-full">
           <Link to={ROUTES.home}>На главную</Link>

@@ -26,6 +26,9 @@ export const ROUTES = {
   unauthorized: "/403",
 
   // App shell sections (protected).
+  // The personal cabinet is the authenticated home for EVERY user (participants,
+  // parents, teachers). Login always lands here — never on a staff-only surface.
+  cabinet: "/cabinet",
   dashboard: "/dashboard",
   participants: "/participants",
   competitions: "/competitions",

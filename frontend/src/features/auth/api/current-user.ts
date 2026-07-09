@@ -1,5 +1,5 @@
 import { getCurrentUser } from "@/shared/api/generated/identity/identity";
-import type { User } from "@/shared/api/generated/model";
+import type { CurrentUser } from "@/shared/api/generated/model";
 
 /** Query keys for the Identity resources the auth feature reads. */
 export const authKeys = {
@@ -7,13 +7,14 @@ export const authKeys = {
 };
 
 /**
- * Fetch the authenticated user (`GET /users/me`, API-001 §4.8), unwrapping the
- * `data` envelope so callers work with a plain {@link User}. Throws `ApiError`
- * (incl. `401`) via the shared mutator, which TanStack Query surfaces. The
- * mutator rejects on any non-2xx, so only the success branch reaches here — the
- * status check narrows the generated response union to that branch.
+ * Fetch the composed current user (`GET /users/me`), unwrapping the `data`
+ * envelope so callers work with a plain {@link CurrentUser} — the Identity
+ * account plus its Organization staff membership (`staffMembership` is null for
+ * non-staff). Throws `ApiError` (incl. `401`) via the shared mutator, which
+ * TanStack Query surfaces. The mutator rejects on any non-2xx, so only the
+ * success branch reaches here — the status check narrows the response union.
  */
-export async function fetchCurrentUser(signal?: AbortSignal): Promise<User> {
+export async function fetchCurrentUser(signal?: AbortSignal): Promise<CurrentUser> {
   const response = await getCurrentUser(signal ? { signal } : {});
   if (response.status === 200) {
     return response.data.data;

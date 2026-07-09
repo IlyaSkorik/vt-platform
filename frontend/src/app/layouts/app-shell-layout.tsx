@@ -16,7 +16,7 @@ import { UserMenu } from "./user-menu";
 export function AppShellLayout(): React.JSX.Element {
   return (
     <AppShell
-      homeHref={ROUTES.dashboard}
+      homeHref={ROUTES.cabinet}
       headerActions={
         <>
           <ThemeToggle />

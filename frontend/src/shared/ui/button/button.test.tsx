@@ -77,11 +77,11 @@ describe("Button", () => {
   it("renders as a child element when asChild is set", () => {
     render(
       <Button asChild>
-        <a href="/dashboard">Панель</a>
+        <a href="/cabinet">Кабинет</a>
       </Button>,
     );
-    const link = screen.getByRole("link", { name: "Панель" });
-    expect(link).toHaveAttribute("href", "/dashboard");
+    const link = screen.getByRole("link", { name: "Кабинет" });
+    expect(link).toHaveAttribute("href", "/cabinet");
     expect(link).toHaveAttribute("data-slot", "button");
   });
 

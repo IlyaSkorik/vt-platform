@@ -557,5 +557,5 @@ class CurrentUserHandler:
 
     def handle(self, user_id: str) -> UserDto:
         user = _load_user(self._users, user_id)
-        now = self._clock.now()
+        now = self._clock.utcnow()
         return UserDto.from_user(user, now=now)

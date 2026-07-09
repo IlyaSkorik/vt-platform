@@ -3,16 +3,27 @@ import { createContext, use, useCallback, useEffect, useMemo, useState } from "r
 import { authKeys, fetchCurrentUser } from "@/features/auth";
 import { onSessionEvent, refreshAccessToken, tokenStore } from "@/shared/api";
 import { deleteCurrentSession } from "@/shared/api/generated/identity/identity";
-import type { User } from "@/shared/api/generated/model";
+import type { CurrentUser, StaffMembership, User } from "@/shared/api/generated/model";
 
-/** The authenticated user, sourced from `GET /users/me` (API-001 §4.8). */
+/** The authenticated account, sourced from `GET /users/me` (composition edge). */
 export type AuthUser = User;
+
+/** The account's staff membership over the organization, or `null` for ordinary users. */
+export type AuthStaffMembership = StaffMembership;
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
 interface AuthContextValue {
   status: AuthStatus;
   user: AuthUser | null;
+  /**
+   * The account's staff membership (role + status), or `null` when the account
+   * is not staff. Sourced from the Organization context via `/users/me`. The
+   * personal cabinet never depends on this; staff-only areas can opt in later.
+   */
+  staffMembership: AuthStaffMembership | null;
+  /** Convenience: an ACTIVE staff membership exists. */
+  isStaff: boolean;
   isAuthenticated: boolean;
   /**
    * True when a previously live session dropped (expired token + failed
@@ -56,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   const [bootstrapping, setBootstrapping] = useState(true);
   const [sessionExpired, setSessionExpired] = useState(false);
 
-  const query = useQuery<AuthUser>({
+  const query = useQuery<CurrentUser>({
     queryKey: authKeys.currentUser,
     queryFn: ({ signal }) => fetchCurrentUser(signal),
     enabled,
@@ -117,7 +128,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     });
   }, [queryClient]);
 
-  const user = query.data ?? null;
+  const currentUser = query.data ?? null;
+  const user = currentUser?.user ?? null;
+  const staffMembership = currentUser?.staffMembership ?? null;
 
   const status: AuthStatus = useMemo(() => {
     if (bootstrapping || (enabled && query.isLoading)) {
@@ -130,12 +143,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     () => ({
       status,
       user,
+      staffMembership,
+      isStaff: staffMembership?.status === "ACTIVE",
       isAuthenticated: status === "authenticated",
       sessionExpired,
       refresh,
       signOut,
     }),
-    [status, user, sessionExpired, refresh, signOut],
+    [status, user, staffMembership, sessionExpired, refresh, signOut],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;

@@ -26,7 +26,7 @@ export function HomePage(): React.JSX.Element {
           <Link to={ROUTES.register}>Начать</Link>
         </Button>
         <Button asChild size="lg" variant="outline">
-          <Link to={ROUTES.dashboard}>Перейти в панель</Link>
+          <Link to={ROUTES.cabinet}>Перейти в кабинет</Link>
         </Button>
       </div>
     </div>

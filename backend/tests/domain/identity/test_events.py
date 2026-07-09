@@ -25,8 +25,6 @@ from apps.identity.domain.events import (
     PasswordResetCompleted,
     PasswordResetRequested,
     PhoneVerified,
-    RoleAssigned,
-    RoleRevoked,
     SessionEnded,
     SessionEndReason,
     SessionStarted,
@@ -88,8 +86,6 @@ def _sample_events(aggregate_id: UserId) -> list[DomainEvent]:
             consent_type=ConsentType.MARKETING,
             consent_version=ConsentVersion("2026-01"),
         ),
-        RoleAssigned(aggregate_id=aggregate_id, role="judge"),
-        RoleRevoked(aggregate_id=aggregate_id, role="judge"),
         UserLocked(aggregate_id=aggregate_id, reason="too_many_attempts"),
         UserUnlocked(aggregate_id=aggregate_id, reason="cooloff_elapsed"),
         SessionStarted(aggregate_id=aggregate_id, session_id=_uuid7()),
@@ -254,16 +250,6 @@ class TestSerialization:
         assert payload["consent_type"] == "privacy_policy"
         assert payload["consent_version"] == "2026-01"
 
-    def test_optional_none_fields_survive_serialization(self, aggregate_id: UserId) -> None:
-        payload = RoleAssigned(aggregate_id=aggregate_id, role="judge").to_dict()
-        assert payload["role"] == "judge"
-        assert payload["assigned_by"] is None
-
-    def test_optional_user_id_actor_is_serialized(self, aggregate_id: UserId) -> None:
-        actor = UserId.generate()
-        payload = RoleAssigned(aggregate_id=aggregate_id, role="judge", assigned_by=actor).to_dict()
-        assert payload["assigned_by"] == actor.json()
-
     def test_unmapped_field_type_fails_loudly(self) -> None:
         # Defensive guard: a payload carrying a type the serializer does not
         # know about must fail loudly rather than emit junk.
@@ -309,12 +295,6 @@ class TestEventPayloads:
         )
         assert event.consent_type is ConsentType.MINOR_DATA_PROCESSING
         assert event.consent_version == ConsentVersion("1.2")
-
-    def test_role_revoked_records_actor(self, aggregate_id: UserId) -> None:
-        actor = UserId.generate()
-        event = RoleRevoked(aggregate_id=aggregate_id, role="organizer", revoked_by=actor)
-        assert event.role == "organizer"
-        assert event.revoked_by == actor
 
     def test_user_locked_temporary(self, aggregate_id: UserId) -> None:
         until = datetime(2026, 7, 6, 13, 0, tzinfo=UTC)

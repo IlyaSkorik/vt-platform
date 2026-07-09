@@ -1,4 +1,4 @@
-import { createBrowserRouter, type RouteObject } from "react-router";
+import { createBrowserRouter, Navigate, type RouteObject } from "react-router";
 import { AppShellLayout } from "@/app/layouts/app-shell-layout";
 import { AuthLayout } from "@/app/layouts/auth-layout";
 import { NotFoundLayout } from "@/app/layouts/not-found-layout";
@@ -96,8 +96,13 @@ const routes: RouteObject[] = [
             element: <AppShellLayout />,
             children: [
               {
-                path: ROUTES.dashboard.slice(1),
+                path: ROUTES.cabinet.slice(1),
                 lazy: lazyPage(() => import("@/pages/dashboard"), "DashboardPage"),
+              },
+              // Legacy /dashboard → /cabinet (the canonical authenticated home).
+              {
+                path: ROUTES.dashboard.slice(1),
+                element: <Navigate to={ROUTES.cabinet} replace />,
               },
               {
                 path: ROUTES.participants.slice(1),

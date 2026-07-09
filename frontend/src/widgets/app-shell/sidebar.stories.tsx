@@ -26,7 +26,7 @@ const meta = {
   ],
   args: {
     navigation: NAVIGATION,
-    homeHref: ROUTES.dashboard,
+    homeHref: ROUTES.cabinet,
     onToggleCollapsed: () => {},
   },
 } satisfies Meta<typeof Sidebar>;

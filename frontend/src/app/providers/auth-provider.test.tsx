@@ -21,12 +21,15 @@ function jsonResponse(status: number, body: unknown): Response {
 
 const USER_BODY = {
   data: {
-    id: "1",
-    type: "user",
-    email: "u@e.com",
-    displayName: "Ирина",
-    status: "active",
-    emailVerified: true,
+    user: {
+      id: "1",
+      type: "user",
+      email: "u@e.com",
+      displayName: "Ирина",
+      status: "active",
+      emailVerified: true,
+    },
+    staffMembership: null,
   },
 };
 

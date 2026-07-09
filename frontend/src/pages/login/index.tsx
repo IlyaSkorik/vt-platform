@@ -12,7 +12,7 @@ interface LocationState {
  *
  * On success it re-derives the session (`GET /users/me`) and returns the user
  * to the page they originally attempted (preserved by `ProtectedRoute`), or the
- * dashboard by default.
+ * personal cabinet by default. Login never routes to a staff-only surface.
  */
 export function LoginPage(): React.JSX.Element {
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ export function LoginPage(): React.JSX.Element {
   const { refresh } = useAuth();
 
   const state = location.state as LocationState | null;
-  const from = state?.from?.pathname ?? ROUTES.dashboard;
+  const from = state?.from?.pathname ?? ROUTES.cabinet;
 
   const handleSuccess = async (): Promise<void> => {
     await refresh();
