@@ -33,6 +33,7 @@ __all__ = [
     "MembershipStateConflictError",
     "OrganizationNotFoundError",
     "OrganizationStateConflictError",
+    "PermissionDeniedError",
     "StaffInvitationNotFoundError",
     "StaffMembershipNotFoundError",
     "UserAlreadyStaffError",
@@ -84,6 +85,12 @@ class UserAlreadyStaffError(ApplicationError):
     """The target user already holds an ACTIVE membership in the organization."""
 
     code: ClassVar[str] = "user_already_staff"
+
+
+class PermissionDeniedError(ApplicationError):
+    """The current actor is not permitted to perform the requested action."""
+
+    code: ClassVar[str] = "permission_denied"
 
 
 class InvitationConflictError(ApplicationError):

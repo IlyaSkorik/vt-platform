@@ -154,6 +154,7 @@ class StaffInvitationIssued(DomainEvent):
     role: StaffRole
     invited_by: StaffUserId
     expires_at: datetime
+    raw_token: str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

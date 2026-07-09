@@ -43,10 +43,13 @@ class AcceptStaffInvitationCommand:
 
     ``accepted_by`` is the raw UUID of the authenticated user accepting it — the
     membership binds to *this* user, not to whatever address was invited.
+    ``email`` is the authenticated user's email address, used to verify the
+    invitation belongs to the person accepting it.
     """
 
     raw_token: str
     accepted_by: str
+    email: str
 
 
 @dataclass(frozen=True, slots=True)

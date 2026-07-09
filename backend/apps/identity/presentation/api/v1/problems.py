@@ -60,6 +60,10 @@ _PROBLEM_MAP: Final[dict[str, tuple[int, str, str, str | None]]] = {
     "user_not_found": (404, "not-found", "Resource not found", None),
     "user_state_conflict": (409, "conflict", "Conflict", None),
     "policy_violation": (422, "business-rule-violation", "Business rule violation", None),
+    "staff_invitation_not_found": (404, "not-found", "Resource not found", None),
+    "invitation_conflict": (409, "conflict", "Conflict", None),
+    "invalid_invitation_token": (410, "token-expired", "Invitation token expired", None),
+    "permission_denied": (403, "forbidden", "Forbidden", None),
 }
 
 #: Rendering for any application error whose ``code`` is not explicitly mapped.

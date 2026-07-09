@@ -9,5 +9,6 @@ from __future__ import annotations
 
 from .event_dispatcher import EventDispatcher
 from .token_hasher import Sha256InvitationTokenHasher
+from .token_service import InvitationTokenService
 
-__all__ = ["EventDispatcher", "Sha256InvitationTokenHasher"]
+__all__ = ["EventDispatcher", "InvitationTokenService", "Sha256InvitationTokenHasher"]

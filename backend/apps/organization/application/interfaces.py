@@ -25,9 +25,11 @@ from apps.organization.domain.events import DomainEvent
 from apps.organization.domain.value_objects import (
     InvitationTokenHash,
     OrganizationId,
+    OrganizationName,
     StaffEmail,
     StaffInvitationId,
     StaffMembershipId,
+    StaffRole,
     StaffUserId,
 )
 
@@ -170,10 +172,11 @@ class EmailGateway(Protocol):
     def send_staff_invitation(
         self,
         *,
-        email: StaffEmail,
-        role: str,
-        accept_url: str,
+        recipient_email: StaffEmail,
+        organization_name: OrganizationName,
+        role: StaffRole,
         expires_at: datetime,
+        token: str,
     ) -> None:
         """Send an invitation to ``email`` with a link the invitee accepts through."""
         ...

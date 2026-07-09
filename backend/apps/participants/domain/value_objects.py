@@ -639,10 +639,7 @@ class ActorReference:
     @classmethod
     def of(cls, actor_id: str | uuid.UUID, actor_type: ActorType) -> ActorReference:
         """Build from a raw id (string or UUID) and an :class:`ActorType`."""
-        if isinstance(actor_id, uuid.UUID):
-            parsed = actor_id
-        else:
-            parsed = _parse_uuid(actor_id, error=ValueObjectValidationError, label="ActorReference")
+        parsed = actor_id if isinstance(actor_id, uuid.UUID) else _parse_uuid(actor_id, error=ValueObjectValidationError, label="ActorReference")
         return cls(actor_id=parsed, actor_type=actor_type)
 
     def __str__(self) -> str:

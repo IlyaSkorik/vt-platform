@@ -13,19 +13,46 @@ per call; there is no shared mutable state.
 
 from __future__ import annotations
 
-from apps.organization.application.handlers import ProvisionOwnerHandler
+from apps.organization.application.handlers import (
+    AcceptStaffInvitationHandler,
+    GetStaffInvitationHandler,
+    InviteStaffHandler,
+    ProvisionOwnerHandler,
+    SendInvitationEmailHandler,
+)
+from apps.organization.application.interfaces import EmailGateway, InvitationTokenService
 from apps.organization.application.read_models import StaffMembershipReader
-from apps.organization.infrastructure.messaging import EventDispatcher
+from apps.organization.domain.events import StaffInvitationIssued
+from apps.organization.infrastructure.messaging import (
+    EventDispatcher,
+    Sha256InvitationTokenHasher,
+)
 from apps.organization.infrastructure.repositories import (
     DjangoOrganizationRepository,
+    DjangoStaffInvitationRepository,
     DjangoStaffMembershipRepository,
 )
 from apps.organization.infrastructure.system import SystemClock, Uuid7Generator
 
 __all__ = [
+    "build_accept_staff_invitation_handler",
+    "build_get_staff_invitation_handler",
+    "build_invite_staff_handler",
     "build_provision_owner_handler",
     "build_staff_membership_read_service",
 ]
+
+
+def _build_event_dispatcher() -> EventDispatcher:
+    dispatcher = EventDispatcher()
+    dispatcher.subscribe(
+        StaffInvitationIssued,
+        SendInvitationEmailHandler(
+            emails=_build_email_gateway(),
+            organizations=DjangoOrganizationRepository(),
+        ),
+    )
+    return dispatcher
 
 
 def build_provision_owner_handler() -> ProvisionOwnerHandler:
@@ -35,7 +62,58 @@ def build_provision_owner_handler() -> ProvisionOwnerHandler:
         memberships=DjangoStaffMembershipRepository(),
         clock=SystemClock(),
         uuids=Uuid7Generator(),
-        events=EventDispatcher(),
+        events=_build_event_dispatcher(),
+    )
+
+
+def build_invite_staff_handler() -> InviteStaffHandler:
+    """Assemble the invitation-issuance use case with its adapters."""
+    return InviteStaffHandler(
+        organizations=DjangoOrganizationRepository(),
+        memberships=DjangoStaffMembershipRepository(),
+        invitations=DjangoStaffInvitationRepository(),
+        clock=SystemClock(),
+        uuids=Uuid7Generator(),
+        hasher=Sha256InvitationTokenHasher(),
+        token_service=_build_invitation_token_service(),
+        events=_build_event_dispatcher(),
+    )
+
+
+def build_accept_staff_invitation_handler() -> AcceptStaffInvitationHandler:
+    """Assemble the invitation-acceptance use case with its adapters."""
+    return AcceptStaffInvitationHandler(
+        organizations=DjangoOrganizationRepository(),
+        memberships=DjangoStaffMembershipRepository(),
+        invitations=DjangoStaffInvitationRepository(),
+        clock=SystemClock(),
+        uuids=Uuid7Generator(),
+        hasher=Sha256InvitationTokenHasher(),
+        events=_build_event_dispatcher(),
+    )
+
+
+def _build_email_gateway() -> EmailGateway:
+    from apps.identity.infrastructure.messaging import DjangoEmailGateway
+
+    return DjangoEmailGateway()
+
+
+def _build_invitation_token_service() -> InvitationTokenService:
+    from apps.organization.infrastructure.messaging import (
+        InvitationTokenService as ConcreteInvitationTokenService,
+    )
+
+    return ConcreteInvitationTokenService()
+
+
+def build_get_staff_invitation_handler() -> GetStaffInvitationHandler:
+    """Assemble the invitation-lookup use case with its adapters."""
+    return GetStaffInvitationHandler(
+        invitations=DjangoStaffInvitationRepository(),
+        organizations=DjangoOrganizationRepository(),
+        hasher=Sha256InvitationTokenHasher(),
+        clock=SystemClock(),
     )
 
 

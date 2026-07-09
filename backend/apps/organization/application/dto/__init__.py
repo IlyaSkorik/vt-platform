@@ -6,7 +6,7 @@ DTOs so no outer layer needs to import the domain to read a result.
 
 :class:`StaffMembershipView` is special — it is the **published cross-context read
 model**. The ``/users/me`` composition edge and other contexts consume it to learn
-a user's staff status without ever touching an Organization aggregate or its
+a user\'s staff status without ever touching an Organization aggregate or its
 value objects.
 """
 
@@ -19,10 +19,22 @@ from apps.organization.domain.entities import StaffInvitation, StaffMembership
 from apps.organization.domain.events import DomainEvent
 
 __all__ = [
+    "InvitationOperationResultDto",
     "InvitationView",
     "MembershipOperationResultDto",
+    "StaffInvitationDetailsDto",
     "StaffMembershipView",
 ]
+
+
+@dataclass(frozen=True, slots=True)
+class StaffInvitationDetailsDto:
+    """A flat read view of a :class:`StaffInvitation` for the lookup endpoint."""
+
+    organization_name: str
+    role: str
+    expires_at: datetime
+    invited_email: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,6 +88,15 @@ class InvitationView:
             revoked_at=invitation.revoked_at,
             created_at=invitation.created_at,
         )
+
+
+@dataclass(frozen=True, slots=True)
+class InvitationOperationResultDto:
+    """The outcome of an invitation command: the invitation view plus new events."""
+
+    invitation: InvitationView
+    raw_token: str
+    events: tuple[DomainEvent, ...]
 
 
 @dataclass(frozen=True, slots=True)

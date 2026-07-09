@@ -591,6 +591,7 @@ class StaffInvitation:
         email: StaffEmail,
         role: StaffRole,
         token_hash: InvitationTokenHash,
+        raw_token: str,
         invited_by: StaffUserId,
         policy: InvitationExpiryPolicy,
         now: datetime,
@@ -621,6 +622,7 @@ class StaffInvitation:
             role=role,
             invited_by=invited_by,
             expires_at=expires_at,
+            raw_token=raw_token,
         )
         return invitation, [event]
 

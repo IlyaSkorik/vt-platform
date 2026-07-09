@@ -15,17 +15,59 @@ from datetime import UTC, datetime
 from apps.organization.application.interfaces import IssuedInvitationToken
 from apps.organization.domain.entities import Organization, StaffInvitation, StaffMembership
 from apps.organization.domain.events import DomainEvent
+from apps.organization.domain.policies import InvitationExpiryPolicy
 from apps.organization.domain.value_objects import (
     InvitationTokenHash,
     MembershipStatus,
     OrganizationId,
+    OrganizationName,  # Added
     StaffEmail,
     StaffInvitationId,
     StaffMembershipId,
+    StaffRole,  # Added
     StaffUserId,
 )
 
 NOW = datetime(2026, 7, 9, 12, 0, tzinfo=UTC)
+
+
+def a_staff_invitation(
+    invitation_id: StaffInvitationId | None = None,
+    organization_id: OrganizationId | None = None,
+    email: StaffEmail | None = None,
+    role: StaffRole | None = None,
+    token_hash: InvitationTokenHash | None = None,
+    raw_token: str | None = None,
+    invited_by: StaffUserId | None = None,
+    expires_at: datetime | None = None,
+    now: datetime | None = None,
+) -> StaffInvitation:
+    _now = now if now is not None else NOW
+    _invitation_id = invitation_id if invitation_id is not None else StaffInvitationId.generate()
+    _organization_id = organization_id if organization_id is not None else OrganizationId.generate()
+    _email = email if email is not None else StaffEmail("test@example.com")
+    _role = role if role is not None else StaffRole.MEMBER
+    _raw_token = raw_token if raw_token is not None else "raw-token"
+    _token_hash = token_hash if token_hash is not None else InvitationTokenHash("hashed-token")
+    _invited_by = invited_by if invited_by is not None else StaffUserId.generate()
+    _expires_at = expires_at if expires_at is not None else _now.replace(year=_now.year + 1)
+
+    invitation, _ = StaffInvitation.issue(
+        invitation_id=_invitation_id,
+        organization_id=_organization_id,
+        email=_email,
+        role=_role,
+        token_hash=_token_hash,
+        raw_token=_raw_token,
+        invited_by=_invited_by,
+        policy=InvitationExpiryPolicy(),
+        now=_now,
+    )
+    # Manually set expires_at if it was explicitly provided to the helper
+    if expires_at is not None:
+        invitation._expires_at = expires_at # Directly access private attribute for test setup
+
+    return invitation
 
 
 class FakeClock:
@@ -140,6 +182,17 @@ class FakeStaffInvitationRepository:
     def save(self, invitation: StaffInvitation) -> None:
         self._by_id[invitation.id] = invitation
         self.saved.append(invitation)
+
+
+class RecordingEmailGateway:
+    def __init__(self) -> None:
+        self.sent: list[tuple[StaffEmail, OrganizationName, StaffRole, datetime, str]] = []
+
+    def send_staff_invitation(
+        self, *, recipient_email: StaffEmail, organization_name: OrganizationName, role: StaffRole,
+        expires_at: datetime, token: str
+    ) -> None:
+        self.sent.append((recipient_email, organization_name, role, expires_at, token))
 
 
 class FakeTokenHasher:

@@ -4,30 +4,150 @@ from __future__ import annotations
 
 import pytest
 
-from apps.organization.application.dto.commands import ProvisionOwnerCommand
+from apps.organization.application.dto.commands import (
+    AcceptStaffInvitationCommand,
+    InviteStaffCommand,
+    ProvisionOwnerCommand,
+)
+from apps.organization.application.dto.queries import GetStaffInvitationQuery
 from apps.organization.application.exceptions import (
     InvalidInputError,
+    InvalidInvitationTokenError,
+    InvitationConflictError,
     OrganizationNotFoundError,
+    PermissionDeniedError,
+    StaffInvitationNotFoundError,
     UserAlreadyStaffError,
 )
-from apps.organization.application.handlers import ProvisionOwnerHandler
+from apps.organization.application.handlers import (
+    AcceptStaffInvitationHandler,
+    GetStaffInvitationHandler,
+    InviteStaffHandler,
+    ProvisionOwnerHandler,
+    SendInvitationEmailHandler,
+)
 from apps.organization.application.read_models import StaffMembershipReader
 from apps.organization.domain.entities import Organization
+from apps.organization.domain.events import StaffInvitationIssued
+from apps.organization.domain.policies import InvitationExpiryPolicy
 from apps.organization.domain.value_objects import (
     OrganizationId,
     OrganizationName,
     OrganizationSlug,
+    StaffEmail,
     StaffRole,
+    StaffUserId,
 )
 
 from .fakes import (
     NOW,
     FakeClock,
     FakeOrganizationRepository,
+    FakeStaffInvitationRepository,
     FakeStaffMembershipRepository,
+    FakeTokenHasher,
+    RecordingEmailGateway,
     RecordingEventPublisher,
     SequenceUuidGenerator,
+    a_staff_invitation,
 )
+
+
+class TestGetStaffInvitationHandler:
+    def _handler(self, orgs, invitations, clock, hasher):
+        return GetStaffInvitationHandler(
+            invitations=invitations,
+            organizations=orgs,
+            hasher=hasher,
+            clock=clock,
+        )
+
+    def test_lookup_valid_invitation(self) -> None:
+        orgs = FakeOrganizationRepository()
+        invitations = FakeStaffInvitationRepository()
+        clock = FakeClock()
+        hasher = FakeTokenHasher()
+        _seeded_org(orgs)
+
+        # Create an invitation
+        invited_email = StaffEmail("test@example.com")
+        raw_token = hasher.generate().raw_token
+        invitation = a_staff_invitation(
+            email=invited_email,
+            raw_token=raw_token,
+            expires_at=clock.utcnow().replace(year=clock.utcnow().year + 1),
+        )
+        invitations.save(invitation)
+
+        # Perform lookup
+        query = GetStaffInvitationQuery(raw_token=raw_token)
+        result = self._handler(orgs, invitations, clock, hasher).handle(query)
+
+        organization = orgs.get_default()
+
+        assert organization is not None
+        assert result.organization_name == organization.name.value
+        assert result.role == invitation.role.value
+        assert result.expires_at == invitation.expires_at
+        assert result.invited_email == invited_email.value
+
+    def test_lookup_unknown_invitation_raises_404(self) -> None:
+        orgs = FakeOrganizationRepository()
+        invitations = FakeStaffInvitationRepository()
+        clock = FakeClock()
+        hasher = FakeTokenHasher()
+        _seeded_org(orgs)
+
+        query = GetStaffInvitationQuery(raw_token="unknown-token")
+        with pytest.raises(StaffInvitationNotFoundError):
+            self._handler(orgs, invitations, clock, hasher).handle(query)
+
+    def test_lookup_accepted_invitation_raises_409(self) -> None:
+        orgs = FakeOrganizationRepository()
+        invitations = FakeStaffInvitationRepository()
+        clock = FakeClock()
+        hasher = FakeTokenHasher()
+        _seeded_org(orgs)
+
+        # Create and accept an invitation
+        invited_email = StaffEmail("test@example.com")
+        raw_token = hasher.generate().raw_token
+        invitation = a_staff_invitation(
+            email=invited_email,
+            raw_token=raw_token,
+            expires_at=clock.utcnow().replace(year=clock.utcnow().year + 1),
+        )
+        invitations.save(invitation)
+
+        # Simulate acceptance
+        invitation.accept(accepted_by=StaffUserId.generate(), policy=InvitationExpiryPolicy(),
+                          now=clock.utcnow())
+        invitations.save(invitation)
+
+        query = GetStaffInvitationQuery(raw_token=raw_token)
+        with pytest.raises(InvitationConflictError):
+            self._handler(orgs, invitations, clock, hasher).handle(query)
+
+    def test_lookup_expired_invitation_raises_410(self) -> None:
+        orgs = FakeOrganizationRepository()
+        invitations = FakeStaffInvitationRepository()
+        clock = FakeClock()
+        hasher = FakeTokenHasher()
+        _seeded_org(orgs)
+
+        # Create an invitation that is already expired
+        invited_email = StaffEmail("test@example.com")
+        raw_token = hasher.generate().raw_token
+        invitation = a_staff_invitation(
+            email=invited_email,
+            raw_token=raw_token,
+            expires_at=clock.utcnow().replace(year=clock.utcnow().year - 1),
+        )
+        invitations.save(invitation)
+
+        query = GetStaffInvitationQuery(raw_token=raw_token)
+        with pytest.raises(InvalidInvitationTokenError): # This maps to 410
+            self._handler(orgs, invitations, clock, hasher).handle(query)
 
 
 def _seeded_org(repo: FakeOrganizationRepository) -> Organization:
@@ -40,8 +160,14 @@ def _seeded_org(repo: FakeOrganizationRepository) -> Organization:
     return repo.seed(org)
 
 
-def _new_user_uuid() -> str:
-    return OrganizationId.generate().json()
+def _new_user_uuid() -> StaffUserId:
+    return StaffUserId.generate()
+
+
+
+class RecordingTokenService:
+    def build_accept_url(self, *, raw_token: str) -> str:
+        return f"https://example.test/invite?token={raw_token}"
 
 
 class TestProvisionOwnerHandler:
@@ -99,6 +225,261 @@ class TestProvisionOwnerHandler:
             handler.handle(ProvisionOwnerCommand(user_id=user_id))
 
 
+class TestInviteStaffHandler:
+    def _handler(self, orgs, members, invitations, events):
+        return InviteStaffHandler(
+            organizations=orgs,
+            memberships=members,
+            invitations=invitations,
+            clock=FakeClock(),
+            uuids=SequenceUuidGenerator(),
+            hasher=FakeTokenHasher(),
+            token_service=RecordingTokenService(),
+            events=events,
+        )
+
+    def test_creates_invitation_for_owner(self) -> None:
+        orgs = FakeOrganizationRepository()
+        members = FakeStaffMembershipRepository()
+        invitations = FakeStaffInvitationRepository()
+        events = RecordingEventPublisher()
+        _seeded_org(orgs)
+        owner_id = _new_user_uuid().json()
+        ProvisionOwnerHandler(
+            organizations=orgs,
+            memberships=members,
+            clock=FakeClock(),
+            uuids=SequenceUuidGenerator(),
+            events=events,
+        ).handle(ProvisionOwnerCommand(user_id=str(owner_id)))
+
+        result = self._handler(orgs, members, invitations, events).handle(
+            InviteStaffCommand(
+                email="new.staff@example.com",
+                role=StaffRole.DIRECTOR.value,
+                invited_by=owner_id.json(),
+            )
+        )
+
+        assert result.invitation.email == "new.staff@example.com"
+        assert result.invitation.role == StaffRole.DIRECTOR.value
+        assert len(invitations.saved) == 1
+        assert len(events.published) == 2  # owner provisioned, invitation issued
+
+    def test_rejects_non_owner_inviter(self) -> None:
+        orgs = FakeOrganizationRepository()
+        members = FakeStaffMembershipRepository()
+        invitations = FakeStaffInvitationRepository()
+        events = RecordingEventPublisher()
+        _seeded_org(orgs)
+
+        with pytest.raises(PermissionDeniedError):
+            self._handler(orgs, members, invitations, events).handle(
+                InviteStaffCommand(
+                    email="new.staff@example.com",
+                    role=StaffRole.DIRECTOR.value,
+                    invited_by=_new_user_uuid(),
+                )
+            )
+
+
+class TestAcceptStaffInvitationHandler:
+    def _handler(self, orgs, members, invitations, events):
+        return AcceptStaffInvitationHandler(
+            organizations=orgs,
+            memberships=members,
+            invitations=invitations,
+            clock=FakeClock(),
+            uuids=SequenceUuidGenerator(),
+            hasher=FakeTokenHasher(),
+            token_service=RecordingTokenService(),
+            events=events,
+        )
+
+    def test_accepts_valid_invitation_and_creates_membership(self) -> None:
+        orgs = FakeOrganizationRepository()
+        members = FakeStaffMembershipRepository()
+        invitations = FakeStaffInvitationRepository()
+        events = RecordingEventPublisher()
+        _seeded_org(orgs)
+        owner_id = _new_user_uuid()
+        ProvisionOwnerHandler(
+            organizations=orgs,
+            memberships=members,
+            clock=FakeClock(),
+            uuids=SequenceUuidGenerator(),
+            events=events,
+        ).handle(ProvisionOwnerCommand(user_id=str(owner_id)))
+
+        invite_handler = InviteStaffHandler(
+            organizations=orgs,
+            memberships=members,
+            invitations=invitations,
+            clock=FakeClock(),
+            uuids=SequenceUuidGenerator(),
+            hasher=FakeTokenHasher(),
+            token_service=RecordingTokenService(),
+            events=events,
+        )
+        invite_result = invite_handler.handle(
+            InviteStaffCommand(
+                email="new.staff@example.com",
+                role=StaffRole.DIRECTOR.value,
+                invited_by=owner_id,
+            )
+        )
+
+        accept_result = self._handler(orgs, members, invitations, events).handle(
+            AcceptStaffInvitationCommand(
+                raw_token=invite_result.raw_token,
+                accepted_by=_new_user_uuid().json(),
+                email="new.staff@example.com",
+            )
+        )
+
+        assert accept_result.membership.role == StaffRole.DIRECTOR.value
+        assert accept_result.membership.status == "ACTIVE"
+        assert len(members.saved) == 2
+
+        # Add assertion for invitation closed
+        assert invitations.get(invite_result.invitation.id).is_pending() is False
+
+    def test_rejects_accept_twice(self) -> None:
+        orgs = FakeOrganizationRepository()
+        members = FakeStaffMembershipRepository()
+        invitations = FakeStaffInvitationRepository()
+        events = RecordingEventPublisher()
+        _seeded_org(orgs)
+        owner_id = _new_user_uuid()
+        ProvisionOwnerHandler(
+            organizations=orgs,
+            memberships=members,
+            clock=FakeClock(),
+            uuids=SequenceUuidGenerator(),
+            events=events,
+        ).handle(ProvisionOwnerCommand(user_id=str(owner_id)))
+
+        invite_handler = InviteStaffHandler(
+            organizations=orgs,
+            memberships=members,
+            invitations=invitations,
+            clock=FakeClock(),
+            uuids=SequenceUuidGenerator(),
+            hasher=FakeTokenHasher(),
+            events=events,
+        )
+        invite_result = invite_handler.handle(
+            InviteStaffCommand(
+                email="new.staff@example.com",
+                role=StaffRole.DIRECTOR.value,
+                invited_by=owner_id,
+            )
+        )
+
+        accept_command = AcceptStaffInvitationCommand(
+            raw_token=invite_result.raw_token,
+            accepted_by=_new_user_uuid().json(),
+            email="new.staff@example.com",
+        )
+        self._handler(orgs, members, invitations, events).handle(accept_command)
+
+        with pytest.raises(InvitationConflictError):
+            self._handler(orgs, members, invitations, events).handle(accept_command)
+
+    def test_rejects_accept_expired(self) -> None:
+        orgs = FakeOrganizationRepository()
+        members = FakeStaffMembershipRepository()
+        invitations = FakeStaffInvitationRepository()
+        events = RecordingEventPublisher()
+        clock = FakeClock()
+        hasher = FakeTokenHasher()
+        _seeded_org(orgs)
+        owner_id = _new_user_uuid()
+        ProvisionOwnerHandler(
+            organizations=orgs,
+            memberships=members,
+            clock=clock,
+            uuids=SequenceUuidGenerator(),
+            events=events,
+        ).handle(ProvisionOwnerCommand(user_id=str(owner_id)))
+
+        # Create an invitation that is already expired
+        invited_email = StaffEmail("expired@example.com")
+        raw_token = hasher.generate().raw_token
+        expired_invitation = a_staff_invitation(
+            email=invited_email,
+            raw_token=raw_token,
+            expires_at=clock.utcnow().replace(year=clock.utcnow().year - 1),
+            now=clock.utcnow(),
+        )
+        invitations.save(expired_invitation)
+
+        with pytest.raises(InvalidInvitationTokenError): # This maps to 410
+            self._handler(orgs, members, invitations, events).handle(
+                AcceptStaffInvitationCommand(
+                    raw_token=raw_token,
+                    accepted_by=_new_user_uuid().json(),
+                    email=invited_email.value,
+                )
+            )
+
+    def test_rejects_mismatched_invitee_email(self) -> None:
+        orgs = FakeOrganizationRepository()
+        members = FakeStaffMembershipRepository()
+        invitations = FakeStaffInvitationRepository()
+        events = RecordingEventPublisher()
+        _seeded_org(orgs)
+        owner_id = _new_user_uuid()
+        ProvisionOwnerHandler(
+            organizations=orgs,
+            memberships=members,
+            clock=FakeClock(),
+            uuids=SequenceUuidGenerator(),
+            events=events,
+        ).handle(ProvisionOwnerCommand(user_id=str(owner_id)))
+
+        invite_handler = InviteStaffHandler(
+            organizations=orgs,
+            memberships=members,
+            invitations=invitations,
+            clock=FakeClock(),
+            uuids=SequenceUuidGenerator(),
+            hasher=FakeTokenHasher(),
+            events=events,
+        )
+        invite_result = invite_handler.handle(
+            InviteStaffCommand(
+                email="new.staff@example.com",
+                role=StaffRole.DIRECTOR.value,
+                invited_by=owner_id,
+            )
+        )
+
+        with pytest.raises(PermissionDeniedError):
+            self._handler(orgs, members, invitations, events).handle(
+                AcceptStaffInvitationCommand(
+                    raw_token=invite_result.raw_token,
+                    accepted_by=_new_user_uuid().json(),
+                    email="other@example.com",
+                )
+            )
+
+    def test_rejects_unknown_token(self) -> None:
+        with pytest.raises(InvalidInvitationTokenError):
+            self._handler(
+                FakeOrganizationRepository(),
+                FakeStaffMembershipRepository(),
+                FakeStaffInvitationRepository(),
+                RecordingEventPublisher(),
+            ).handle(
+                AcceptStaffInvitationCommand(
+                    raw_token="missing-token",
+                    accepted_by=_new_user_uuid().json(),
+                    email="someone@example.com",
+                )
+            )
+
+
 class TestStaffMembershipReader:
     def test_returns_none_when_not_staff(self) -> None:
         orgs = FakeOrganizationRepository()
@@ -126,12 +507,58 @@ class TestStaffMembershipReader:
             clock=FakeClock(),
             uuids=SequenceUuidGenerator(),
             events=events,
-        ).handle(ProvisionOwnerCommand(user_id=user_id))
+        ).handle(ProvisionOwnerCommand(user_id=user_id.json()))
 
         reader = StaffMembershipReader(organizations=orgs, memberships=members)
-        import uuid
 
-        view = reader.active_for_user(uuid.UUID(user_id))
+        view = reader.active_for_user(user_id.value)
         assert view is not None
         assert view.role == "OWNER"
         assert view.status == "ACTIVE"
+
+
+class TestSendInvitationEmailHandler:
+    def test_sends_email_on_staff_invitation_issued_event(self) -> None:
+        orgs = FakeOrganizationRepository()
+        email_gateway = RecordingEmailGateway()
+        _seeded_org(orgs)
+        organization = orgs.get_default()
+
+        handler = SendInvitationEmailHandler(emails=email_gateway, organizations=orgs)
+
+        event = StaffInvitationIssued(
+            aggregate_id=OrganizationId.generate().value,
+            organization_id=organization.id,
+            email=StaffEmail("test@example.com"),
+            role=StaffRole.MEMBER,
+            invited_by=StaffUserId.generate(),
+            expires_at=NOW,
+            raw_token="some-raw-token",
+        )
+        handler(event)
+
+        assert len(email_gateway.sent) == 1
+        sent_email, sent_org_name, sent_role, sent_expires_at, sent_token = email_gateway.sent[0]
+        assert sent_email == StaffEmail("test@example.com")
+        assert sent_org_name == organization.name
+        assert sent_role == StaffRole.MEMBER
+        assert sent_expires_at == NOW
+        assert sent_token == "some-raw-token"
+
+    def test_raises_error_if_organization_not_found(self) -> None:
+        orgs = FakeOrganizationRepository()
+        email_gateway = RecordingEmailGateway()
+
+        handler = SendInvitationEmailHandler(emails=email_gateway, organizations=orgs)
+
+        event = StaffInvitationIssued(
+            aggregate_id=OrganizationId.generate().value,
+            organization_id=OrganizationId.generate(), # A non-existent organization
+            email=StaffEmail("test@example.com"),
+            role=StaffRole.MEMBER,
+            invited_by=StaffUserId.generate(),
+            expires_at=NOW,
+            raw_token="some-raw-token",
+        )
+        with pytest.raises(OrganizationNotFoundError):
+            handler(event)
