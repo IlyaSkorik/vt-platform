@@ -169,9 +169,7 @@ class RegisterUserHandler:
             full_name = FullName.of(command.first_name, command.last_name, command.middle_name)
             phone = PhoneNumber(command.phone) if command.phone is not None else None
             locale = Locale(command.locale) if command.locale is not None else Locale.default()
-            timezone = (
-                Timezone(command.timezone) if command.timezone is not None else Timezone.utc()
-            )
+            timezone = Timezone(command.timezone) if command.timezone is not None else Timezone.utc()
             # Strength is a domain rule, validated on the plaintext before hashing.
             self._password_policy.enforce(command.password)
 
@@ -448,9 +446,7 @@ class ChangePasswordHandler:
 class GrantConsentHandler:
     """Use case: record acceptance of a versioned consent document."""
 
-    def __init__(
-        self, *, users: UserRepository, consent_policy: ConsentPolicy, clock: Clock
-    ) -> None:
+    def __init__(self, *, users: UserRepository, consent_policy: ConsentPolicy, clock: Clock) -> None:
         self._users = users
         self._policy = consent_policy
         self._clock = clock
@@ -461,9 +457,7 @@ class GrantConsentHandler:
         consent_type = _parse_consent_type(command.consent_type)
         with translate_domain_errors():
             version = ConsentVersion(command.consent_version)
-            events = user.grant_consent(
-                version, policy=self._policy, now=now, consent_type=consent_type
-            )
+            events = user.grant_consent(version, policy=self._policy, now=now, consent_type=consent_type)
         self._users.save(user)
         return OperationResultDto(user=UserDto.from_user(user, now=now), events=tuple(events))
 
@@ -547,6 +541,7 @@ class RestoreUserHandler:
             events = user.restore(now=now)
         self._users.save(user)
         return OperationResultDto(user=UserDto.from_user(user, now=now), events=tuple(events))
+
 
 class CurrentUserHandler:
     """Use case: retrieve the current authenticated user's details."""

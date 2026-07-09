@@ -90,9 +90,7 @@ class DjangoParticipantRepository:
     def exists_by_display_alias(self, alias: DisplayAlias) -> bool:
         """Whether an active, non-erased participant currently uses ``alias``."""
         try:
-            return ParticipantModel.objects.filter(
-                _ACTIVE_ALIAS, display_alias=alias.value
-            ).exists()
+            return ParticipantModel.objects.filter(_ACTIVE_ALIAS, display_alias=alias.value).exists()
         except DatabaseError as exc:  # pragma: no cover - defensive
             raise PersistenceError("Failed to check display alias.") from exc
 
@@ -115,21 +113,16 @@ class DjangoParticipantRepository:
         previous_version = participant.version - 1
         try:
             with transaction.atomic():
-                updated = ParticipantModel.objects.filter(
-                    pk=participant.id.value, version=previous_version
-                ).update(**update_values)
+                updated = ParticipantModel.objects.filter(pk=participant.id.value, version=previous_version).update(**update_values)
                 if not updated:
                     if ParticipantModel.objects.filter(pk=participant.id.value).exists():
                         raise ConcurrencyConflictError(
-                            f"Participant {participant.id} was modified concurrently; "
-                            f"expected version {previous_version}."
+                            f"Participant {participant.id} was modified concurrently; expected version {previous_version}."
                         )
                     ParticipantModel.objects.create(**values)
                 self._sync_guardian_links(participant)
         except IntegrityError as exc:
-            raise IntegrityViolationError(
-                f"Failed to persist participant {participant.id}."
-            ) from exc
+            raise IntegrityViolationError(f"Failed to persist participant {participant.id}.") from exc
         except DatabaseError as exc:  # pragma: no cover - defensive
             raise PersistenceError(f"Failed to persist participant {participant.id}.") from exc
 
@@ -144,13 +137,11 @@ class DjangoParticipantRepository:
         deleted_at = participant.erased_at or participant.updated_at
         try:
             with transaction.atomic():
-                ParticipantModel.objects.filter(
-                    pk=participant.id.value, deleted_at__isnull=True
-                ).update(deleted_at=deleted_at, version=F("version") + 1)
+                ParticipantModel.objects.filter(pk=participant.id.value, deleted_at__isnull=True).update(
+                    deleted_at=deleted_at, version=F("version") + 1
+                )
         except IntegrityError as exc:  # pragma: no cover - defensive
-            raise IntegrityViolationError(
-                f"Failed to delete participant {participant.id}."
-            ) from exc
+            raise IntegrityViolationError(f"Failed to delete participant {participant.id}.") from exc
         except DatabaseError as exc:  # pragma: no cover - defensive
             raise PersistenceError(f"Failed to delete participant {participant.id}.") from exc
 
@@ -161,11 +152,7 @@ class DjangoParticipantRepository:
     @staticmethod
     def _links_for(participant_pk: uuid.UUID) -> list[GuardianLinkModel]:
         """Load a participant's guardian-link rows in a stable order."""
-        return list(
-            GuardianLinkModel.objects.filter(participant_id=participant_pk).order_by(
-                "created_at", "id"
-            )
-        )
+        return list(GuardianLinkModel.objects.filter(participant_id=participant_pk).order_by("created_at", "id"))
 
     @staticmethod
     def _sync_guardian_links(participant: Participant) -> None:
@@ -178,7 +165,4 @@ class DjangoParticipantRepository:
     @staticmethod
     def _column_values(model: ParticipantModel) -> dict[str, object]:
         """Flatten a mapped ``ParticipantModel`` into its concrete column values."""
-        return {
-            field.attname: getattr(model, field.attname)
-            for field in ParticipantModel._meta.concrete_fields
-        }
+        return {field.attname: getattr(model, field.attname) for field in ParticipantModel._meta.concrete_fields}

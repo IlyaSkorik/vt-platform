@@ -48,13 +48,9 @@ class UserConsentModel(BasePersistenceModel):
         on_delete=models.CASCADE,
         related_name="consents",
     )
-    consent_type = models.CharField(
-        max_length=32, choices=ConsentType.choices, default=ConsentType.TERMS_OF_SERVICE
-    )
+    consent_type = models.CharField(max_length=32, choices=ConsentType.choices, default=ConsentType.TERMS_OF_SERVICE)
     consent_version = models.CharField(max_length=64)
-    status = models.CharField(
-        max_length=16, choices=ConsentStatus.choices, default=ConsentStatus.REQUESTED
-    )
+    status = models.CharField(max_length=16, choices=ConsentStatus.choices, default=ConsentStatus.REQUESTED)
     # Cross-context reference (Participants) held by identity, never a FK.
     subject_participant_id = models.UUIDField(null=True, blank=True, default=None)
     purpose = models.CharField(max_length=255, null=True, blank=True, default=None)

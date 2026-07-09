@@ -75,17 +75,13 @@ class CurrentUserView(APIView):
         try:
             user = identity_composition.build_current_user_handler().handle(user_id)
         except UserNotFoundError:
-            return unauthorized_problem(
-                instance=request.path, request=request, detail="User not found."
-            )
+            return unauthorized_problem(instance=request.path, request=request, detail="User not found.")
         except ApplicationError as exc:
             return application_problem(exc, instance=request.path, request=request)
 
         # The staff read model keys off the raw user UUID. A malformed subject can
         # never reach here (the JWT auth already validated it), so parsing is safe.
-        membership = build_staff_membership_read_service().active_for_user(
-            uuid.UUID(user_id)
-        )
+        membership = build_staff_membership_read_service().active_for_user(uuid.UUID(user_id))
 
         correlation_id = request_id(request)
         body = {

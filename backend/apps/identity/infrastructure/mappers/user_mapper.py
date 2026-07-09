@@ -74,9 +74,7 @@ class UserMapper:
             updated_at=model.updated_at,
             version=model.version,
             phone=PhoneNumber(model.phone) if model.phone is not None else None,
-            consent_version=(
-                ConsentVersion(model.consent_version) if model.consent_version is not None else None
-            ),
+            consent_version=(ConsentVersion(model.consent_version) if model.consent_version is not None else None),
             email_verified_at=model.email_verified_at,
             phone_verified_at=model.phone_verified_at,
             locked_until=model.locked_until,

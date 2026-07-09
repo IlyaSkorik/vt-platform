@@ -70,32 +70,24 @@ def test_age_group_policy_raises_when_uncovered() -> None:
 
 
 def test_guardianship_satisfied_with_guardian_and_consent() -> None:
-    assessment = GuardianshipPolicy().evaluate(
-        active_guardian_count=1, has_institutional_authority=False, has_active_consent=True
-    )
+    assessment = GuardianshipPolicy().evaluate(active_guardian_count=1, has_institutional_authority=False, has_active_consent=True)
     assert assessment.allowed is True
     assert assessment.reason is None
 
 
 def test_guardianship_satisfied_with_institution_and_consent() -> None:
-    assessment = GuardianshipPolicy().evaluate(
-        active_guardian_count=0, has_institutional_authority=True, has_active_consent=True
-    )
+    assessment = GuardianshipPolicy().evaluate(active_guardian_count=0, has_institutional_authority=True, has_active_consent=True)
     assert assessment.allowed is True
 
 
 def test_guardianship_blocked_without_responsible_adult() -> None:
-    assessment = GuardianshipPolicy().evaluate(
-        active_guardian_count=0, has_institutional_authority=False, has_active_consent=True
-    )
+    assessment = GuardianshipPolicy().evaluate(active_guardian_count=0, has_institutional_authority=False, has_active_consent=True)
     assert assessment.allowed is False
     assert assessment.reason is ActivationBlockReason.NO_RESPONSIBLE_ADULT
 
 
 def test_guardianship_blocked_without_consent() -> None:
-    assessment = GuardianshipPolicy().evaluate(
-        active_guardian_count=1, has_institutional_authority=False, has_active_consent=False
-    )
+    assessment = GuardianshipPolicy().evaluate(active_guardian_count=1, has_institutional_authority=False, has_active_consent=False)
     assert assessment.allowed is False
     assert assessment.reason is ActivationBlockReason.CONSENT_MISSING
 

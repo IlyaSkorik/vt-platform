@@ -50,13 +50,9 @@ def _new(*, alias: str = "Falcon-99") -> Participant:
 def _active(participant: Participant) -> Participant:
     participant.verify(now=NOW)
     guardian = GuardianId.generate()
-    participant.propose_guardian_link(
-        guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=NOW
-    )
+    participant.propose_guardian_link(guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=NOW)
     participant.verify_guardian_link(guardian_id=guardian, now=NOW)
-    participant.authorize_institution(
-        institution_id=InstitutionId.generate(), teacher_id=TeacherId.generate(), now=NOW
-    )
+    participant.authorize_institution(institution_id=InstitutionId.generate(), teacher_id=TeacherId.generate(), now=NOW)
     participant.record_consent(consent=ConsentReference.of(_generate_uuid7(), "2026-01"), now=NOW)
     participant.activate(policy=_GUARDIANSHIP, now=NOW)
     return participant

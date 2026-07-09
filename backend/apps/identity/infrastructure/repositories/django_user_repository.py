@@ -169,16 +169,11 @@ class DjangoUserRepository:
         previous_version = user.version - 1
         try:
             with transaction.atomic():
-                updated = UserModel.objects.filter(
-                    pk=user.id.value, version=previous_version
-                ).update(**update_values)
+                updated = UserModel.objects.filter(pk=user.id.value, version=previous_version).update(**update_values)
                 if updated:
                     return
                 if UserModel.objects.filter(pk=user.id.value).exists():
-                    raise ConcurrencyConflictError(
-                        f"User {user.id} was modified concurrently; "
-                        f"expected version {previous_version}."
-                    )
+                    raise ConcurrencyConflictError(f"User {user.id} was modified concurrently; expected version {previous_version}.")
                 UserModel.objects.create(**values)
         except IntegrityError as exc:
             raise IntegrityViolationError(f"Failed to persist user {user.id}.") from exc
@@ -202,9 +197,7 @@ class DjangoUserRepository:
         deleted_at = user.deleted_at or timezone.now()
         try:
             with transaction.atomic():
-                UserModel.objects.filter(pk=user.id.value, deleted_at__isnull=True).update(
-                    deleted_at=deleted_at, version=F("version") + 1
-                )
+                UserModel.objects.filter(pk=user.id.value, deleted_at__isnull=True).update(deleted_at=deleted_at, version=F("version") + 1)
         except IntegrityError as exc:  # pragma: no cover - defensive
             raise IntegrityViolationError(f"Failed to delete user {user.id}.") from exc
         except DatabaseError as exc:  # pragma: no cover - defensive
@@ -222,7 +215,4 @@ class DjangoUserRepository:
         insert/update paths write exactly the columns the aggregate owns, without
         the repository re-deriving them from the domain object.
         """
-        return {
-            field.attname: getattr(model, field.attname)
-            for field in UserModel._meta.concrete_fields
-        }
+        return {field.attname: getattr(model, field.attname) for field in UserModel._meta.concrete_fields}

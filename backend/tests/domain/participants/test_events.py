@@ -80,9 +80,7 @@ def test_rejects_non_v7_event_id() -> None:
 
 def test_rejects_naive_occurred_at() -> None:
     with pytest.raises(ValueError, match="timezone-aware"):
-        ParticipantVerified(
-            aggregate_id=ParticipantId.generate(), occurred_at=datetime(2026, 7, 7, 12, 0)
-        )
+        ParticipantVerified(aggregate_id=ParticipantId.generate(), occurred_at=datetime(2026, 7, 7, 12, 0))
 
 
 def test_rejects_non_positive_version() -> None:
@@ -128,9 +126,7 @@ def test_guardian_linked_to_dict() -> None:
 
 def test_erasure_requested_to_dict() -> None:
     ref = _generate_uuid7()
-    event = ParticipantErasureRequested(
-        aggregate_id=ParticipantId.generate(), request_reference=ref, occurred_at=NOW
-    )
+    event = ParticipantErasureRequested(aggregate_id=ParticipantId.generate(), request_reference=ref, occurred_at=NOW)
     assert event.to_dict()["request_reference"] == str(ref)
 
 

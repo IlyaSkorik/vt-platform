@@ -68,9 +68,7 @@ class DjangoEmailGateway:
     def __init__(self, *, from_email: str | None = None) -> None:
         self._from_email = from_email if from_email is not None else settings.DEFAULT_FROM_EMAIL
 
-    def send_verification_email(
-        self, *, email: Email, full_name: FullName, verification_url: str, locale: Locale
-    ) -> None:
+    def send_verification_email(self, *, email: Email, full_name: FullName, verification_url: str, locale: Locale) -> None:
         """Send an email-ownership verification link to ``email``."""
         self._send(
             subject=_VERIFICATION_SUBJECT,

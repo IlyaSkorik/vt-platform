@@ -204,9 +204,7 @@ class EmailGateway(Protocol):
     minted by a dedicated use case, not the delivery adapter.
     """
 
-    def send_verification_email(
-        self, *, email: Email, full_name: FullName, verification_url: str, locale: Locale
-    ) -> None:
+    def send_verification_email(self, *, email: Email, full_name: FullName, verification_url: str, locale: Locale) -> None:
         """Send an email-ownership verification link to ``email``."""
         ...
 

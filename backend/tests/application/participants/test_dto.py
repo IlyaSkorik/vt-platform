@@ -65,13 +65,9 @@ def test_participant_dto_full_projection() -> None:
     participant = _new()
     participant.verify(now=NOW)
     guardian = GuardianId.generate()
-    participant.propose_guardian_link(
-        guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=NOW
-    )
+    participant.propose_guardian_link(guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=NOW)
     participant.verify_guardian_link(guardian_id=guardian, now=NOW)
-    participant.authorize_institution(
-        institution_id=InstitutionId.generate(), teacher_id=TeacherId.generate(), now=NOW
-    )
+    participant.authorize_institution(institution_id=InstitutionId.generate(), teacher_id=TeacherId.generate(), now=NOW)
     participant.record_consent(consent=ConsentReference.of(_generate_uuid7(), "2026-01"), now=NOW)
     participant.activate(policy=_GUARDIANSHIP, now=NOW)
 
@@ -100,8 +96,6 @@ def test_participant_dto_institution_without_teacher() -> None:
 def test_operation_result_carries_participant_and_events() -> None:
     participant = _new()
     events = participant.verify(now=NOW)
-    result = OperationResultDto(
-        participant=ParticipantDto.from_participant(participant), events=tuple(events)
-    )
+    result = OperationResultDto(participant=ParticipantDto.from_participant(participant), events=tuple(events))
     assert result.participant.status == "verified"
     assert len(result.events) == 1

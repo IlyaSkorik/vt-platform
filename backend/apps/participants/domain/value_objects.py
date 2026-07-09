@@ -90,13 +90,7 @@ def _generate_uuid7() -> uuid.UUID:
     rand = int.from_bytes(os.urandom(10), "big")  # 80 random bits
     rand_a = rand >> 68 & 0x0FFF  # 12 bits
     rand_b = rand & ((1 << 62) - 1)  # 62 bits
-    value = (
-        (unix_ms & ((1 << 48) - 1)) << 80
-        | _UUID_V7_VERSION << 76
-        | rand_a << 64
-        | 0b10 << 62
-        | rand_b
-    )
+    value = (unix_ms & ((1 << 48) - 1)) << 80 | _UUID_V7_VERSION << 76 | rand_a << 64 | 0b10 << 62 | rand_b
     return uuid.UUID(int=value)
 
 
@@ -291,10 +285,7 @@ def _validate_name_part(value: str, *, field: str) -> str:
     if len(cleaned) > _NAME_MAX_LEN:
         raise InvalidPersonNameError(f"{field} must be at most {_NAME_MAX_LEN} characters.")
     if not _NAME_PART_RE.match(cleaned):
-        raise InvalidPersonNameError(
-            f"{field} contains invalid characters (letters, spaces, hyphens and "
-            f"apostrophes only): {value!r}."
-        )
+        raise InvalidPersonNameError(f"{field} contains invalid characters (letters, spaces, hyphens and apostrophes only): {value!r}.")
     return cleaned
 
 
@@ -314,16 +305,10 @@ class PersonName:
     middle_name: str | None = None
 
     def __post_init__(self) -> None:
-        object.__setattr__(
-            self, "first_name", _validate_name_part(self.first_name, field="first_name")
-        )
-        object.__setattr__(
-            self, "last_name", _validate_name_part(self.last_name, field="last_name")
-        )
+        object.__setattr__(self, "first_name", _validate_name_part(self.first_name, field="first_name"))
+        object.__setattr__(self, "last_name", _validate_name_part(self.last_name, field="last_name"))
         if self.middle_name is not None and _clean_name_part(self.middle_name):
-            object.__setattr__(
-                self, "middle_name", _validate_name_part(self.middle_name, field="middle_name")
-            )
+            object.__setattr__(self, "middle_name", _validate_name_part(self.middle_name, field="middle_name"))
         else:
             object.__setattr__(self, "middle_name", None)
 
@@ -379,10 +364,7 @@ class DateOfBirth:
         if not isinstance(self.value, date) or isinstance(self.value, datetime):
             raise InvalidDateOfBirthError("DateOfBirth must wrap a datetime.date (not a datetime).")
         if not _MIN_BIRTH_YEAR <= self.value.year <= _MAX_BIRTH_YEAR:
-            raise InvalidDateOfBirthError(
-                f"DateOfBirth year must be between {_MIN_BIRTH_YEAR} and {_MAX_BIRTH_YEAR}, "
-                f"got {self.value.year}."
-            )
+            raise InvalidDateOfBirthError(f"DateOfBirth year must be between {_MIN_BIRTH_YEAR} and {_MAX_BIRTH_YEAR}, got {self.value.year}.")
 
     @classmethod
     def from_iso(cls, value: str) -> DateOfBirth:
@@ -401,9 +383,7 @@ class DateOfBirth:
         surfaced as :class:`InvalidDateOfBirthError`.
         """
         if reference < self.value:
-            raise InvalidDateOfBirthError(
-                "Reference date precedes the date of birth; cannot derive a non-negative age."
-            )
+            raise InvalidDateOfBirthError("Reference date precedes the date of birth; cannot derive a non-negative age.")
         had_birthday = (reference.month, reference.day) >= (self.value.month, self.value.day)
         return reference.year - self.value.year - (0 if had_birthday else 1)
 
@@ -447,18 +427,14 @@ class AgeGroup:
     def __post_init__(self) -> None:
         code = self.code.strip().lower()
         if not code or len(code) > _AGE_GROUP_CODE_MAX or not _AGE_GROUP_CODE_RE.match(code):
-            raise ValueObjectValidationError(
-                f"AgeGroup code must be a short lowercase slug, got {self.code!r}."
-            )
+            raise ValueObjectValidationError(f"AgeGroup code must be a short lowercase slug, got {self.code!r}.")
         label = " ".join(self.label.split())
         if not label or len(label) > _AGE_GROUP_LABEL_MAX:
             raise ValueObjectValidationError("AgeGroup label must be a non-empty, bounded string.")
         if self.min_age < 0:
             raise ValueObjectValidationError(f"AgeGroup min_age must be >= 0, got {self.min_age}.")
         if self.max_age < self.min_age:
-            raise ValueObjectValidationError(
-                f"AgeGroup max_age ({self.max_age}) must be >= min_age ({self.min_age})."
-            )
+            raise ValueObjectValidationError(f"AgeGroup max_age ({self.max_age}) must be >= min_age ({self.min_age}).")
         object.__setattr__(self, "code", code)
         object.__setattr__(self, "label", label)
 
@@ -500,14 +476,9 @@ class DisplayAlias:
     def __post_init__(self) -> None:
         cleaned = " ".join(self.value.split())
         if not _ALIAS_MIN_LEN <= len(cleaned) <= _ALIAS_MAX_LEN:
-            raise InvalidDisplayAliasError(
-                f"DisplayAlias must be {_ALIAS_MIN_LEN}-{_ALIAS_MAX_LEN} characters."
-            )
+            raise InvalidDisplayAliasError(f"DisplayAlias must be {_ALIAS_MIN_LEN}-{_ALIAS_MAX_LEN} characters.")
         if not _ALIAS_RE.match(cleaned):
-            raise InvalidDisplayAliasError(
-                f"DisplayAlias may contain letters, digits, spaces, hyphens and underscores "
-                f"only: {self.value!r}."
-            )
+            raise InvalidDisplayAliasError(f"DisplayAlias may contain letters, digits, spaces, hyphens and underscores only: {self.value!r}.")
         object.__setattr__(self, "value", cleaned)
 
     @classmethod
@@ -545,9 +516,7 @@ class ConsentReference:
             raise InvalidConsentReferenceError("ConsentReference.consent_id must be a uuid.UUID.")
         version = self.consent_version.strip()
         if not version or len(version) > _CONSENT_VERSION_MAX:
-            raise InvalidConsentReferenceError(
-                "ConsentReference.consent_version must be non-empty."
-            )
+            raise InvalidConsentReferenceError("ConsentReference.consent_version must be non-empty.")
         object.__setattr__(self, "consent_version", version)
 
     @classmethod
@@ -556,9 +525,7 @@ class ConsentReference:
         if isinstance(consent_id, uuid.UUID):
             parsed = consent_id
         else:
-            parsed = _parse_uuid(
-                consent_id, error=InvalidConsentReferenceError, label="ConsentReference"
-            )
+            parsed = _parse_uuid(consent_id, error=InvalidConsentReferenceError, label="ConsentReference")
         return cls(consent_id=parsed, consent_version=consent_version)
 
     def __str__(self) -> str:

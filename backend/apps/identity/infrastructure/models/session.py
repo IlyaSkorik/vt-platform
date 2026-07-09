@@ -35,9 +35,7 @@ class UserSessionModel(BasePersistenceModel):
         related_name="sessions",
     )
     token_id = models.CharField(max_length=255)
-    status = models.CharField(
-        max_length=16, choices=SessionStatus.choices, default=SessionStatus.ESTABLISHED
-    )
+    status = models.CharField(max_length=16, choices=SessionStatus.choices, default=SessionStatus.ESTABLISHED)
     device = models.CharField(max_length=255, null=True, blank=True, default=None)
     ip_address = models.GenericIPAddressField(null=True, blank=True, default=None)
     remember_me = models.BooleanField(default=False)

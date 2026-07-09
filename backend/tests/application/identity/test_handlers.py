@@ -127,9 +127,7 @@ def unknown_user_id() -> str:
 
 
 class TestRegisterUserHandler:
-    def _handler(
-        self, repo: FakeUserRepository, hasher: FakePasswordHasher, uuids: FakeUuidGenerator
-    ) -> RegisterUserHandler:
+    def _handler(self, repo: FakeUserRepository, hasher: FakePasswordHasher, uuids: FakeUuidGenerator) -> RegisterUserHandler:
         return RegisterUserHandler(
             users=repo,
             password_hasher=hasher,
@@ -245,9 +243,7 @@ class TestRegisterUserHandler:
 
 class TestLoadUser:
     def _handler(self, repo: FakeUserRepository) -> VerifyEmailHandler:
-        return VerifyEmailHandler(
-            users=repo, email_verification_policy=EMAIL_POLICY, clock=FakeClock()
-        )
+        return VerifyEmailHandler(users=repo, email_verification_policy=EMAIL_POLICY, clock=FakeClock())
 
     def test_missing_user_raises_not_found(self) -> None:
         repo = FakeUserRepository()
@@ -271,9 +267,7 @@ class TestLoadUser:
 
 class TestVerifyEmailHandler:
     def _handler(self, repo: FakeUserRepository) -> VerifyEmailHandler:
-        return VerifyEmailHandler(
-            users=repo, email_verification_policy=EMAIL_POLICY, clock=FakeClock()
-        )
+        return VerifyEmailHandler(users=repo, email_verification_policy=EMAIL_POLICY, clock=FakeClock())
 
     def test_verifies_email(self) -> None:
         repo = FakeUserRepository()
@@ -302,9 +296,7 @@ class TestVerifyEmailHandler:
 
 
 class TestConfirmEmailVerificationHandler:
-    def _handler(
-        self, repo: FakeUserRepository, tokens: FakeVerificationTokenService
-    ) -> ConfirmEmailVerificationHandler:
+    def _handler(self, repo: FakeUserRepository, tokens: FakeVerificationTokenService) -> ConfirmEmailVerificationHandler:
         return ConfirmEmailVerificationHandler(
             users=repo,
             tokens=tokens,
@@ -366,9 +358,7 @@ class TestRequestEmailVerificationHandler:
         tokens: FakeVerificationTokenService,
         gateway: FakeEmailGateway,
     ) -> RequestEmailVerificationHandler:
-        return RequestEmailVerificationHandler(
-            users=repo, tokens=tokens, email_gateway=gateway, clock=FakeClock()
-        )
+        return RequestEmailVerificationHandler(users=repo, tokens=tokens, email_gateway=gateway, clock=FakeClock())
 
     def test_sends_a_fresh_verification_email(self) -> None:
         repo = FakeUserRepository()
@@ -376,9 +366,7 @@ class TestRequestEmailVerificationHandler:
         gateway = FakeEmailGateway()
         user = repo.seed(make_user())
 
-        self._handler(repo, tokens, gateway).handle(
-            RequestEmailVerificationCommand(user_id=user.id.json())
-        )
+        self._handler(repo, tokens, gateway).handle(RequestEmailVerificationCommand(user_id=user.id.json()))
 
         assert len(gateway.verification_emails) == 1
         sent = gateway.verification_emails[0]
@@ -394,9 +382,7 @@ class TestRequestEmailVerificationHandler:
         repo.seed(user)
 
         with pytest.raises(UserStateConflictError) as excinfo:
-            self._handler(repo, tokens, gateway).handle(
-                RequestEmailVerificationCommand(user_id=user.id.json())
-            )
+            self._handler(repo, tokens, gateway).handle(RequestEmailVerificationCommand(user_id=user.id.json()))
         assert excinfo.value.domain_code == "EmailAlreadyVerifiedError"
         assert gateway.verification_emails == []
 
@@ -410,9 +396,7 @@ class TestSendVerificationEmailOnUserRegistered:
     def test_registration_event_sends_verification_email(self) -> None:
         tokens = FakeVerificationTokenService()
         gateway = FakeEmailGateway()
-        handler = SendVerificationEmailOnUserRegistered(
-            email_gateway=gateway, tokens=tokens, clock=FakeClock()
-        )
+        handler = SendVerificationEmailOnUserRegistered(email_gateway=gateway, tokens=tokens, clock=FakeClock())
         user, events = User.register(
             user_id=UserId.generate(),
             email=Email("new@example.com"),
@@ -516,9 +500,7 @@ class TestChangePhoneHandler:
 
 class TestVerifyPhoneHandler:
     def _handler(self, repo: FakeUserRepository) -> VerifyPhoneHandler:
-        return VerifyPhoneHandler(
-            users=repo, phone_verification_policy=PHONE_POLICY, clock=FakeClock()
-        )
+        return VerifyPhoneHandler(users=repo, phone_verification_policy=PHONE_POLICY, clock=FakeClock())
 
     def test_verifies_phone(self) -> None:
         repo = FakeUserRepository()
@@ -546,12 +528,8 @@ class TestVerifyPhoneHandler:
 
 
 class TestChangePasswordHandler:
-    def _handler(
-        self, repo: FakeUserRepository, hasher: FakePasswordHasher
-    ) -> ChangePasswordHandler:
-        return ChangePasswordHandler(
-            users=repo, password_hasher=hasher, password_policy=PASSWORD_POLICY, clock=FakeClock()
-        )
+    def _handler(self, repo: FakeUserRepository, hasher: FakePasswordHasher) -> ChangePasswordHandler:
+        return ChangePasswordHandler(users=repo, password_hasher=hasher, password_policy=PASSWORD_POLICY, clock=FakeClock())
 
     def test_changes_password(self) -> None:
         repo, hasher = FakeUserRepository(), FakePasswordHasher()
@@ -597,9 +575,7 @@ class TestGrantConsentHandler:
     def test_grants_consent_explicit_type(self) -> None:
         repo = FakeUserRepository()
         user = repo.seed(make_user())
-        command = GrantConsentCommand(
-            user_id=user.id.json(), consent_version="1.1", consent_type="privacy_policy"
-        )
+        command = GrantConsentCommand(user_id=user.id.json(), consent_version="1.1", consent_type="privacy_policy")
 
         result = self._handler(repo).handle(command)
 
@@ -610,9 +586,7 @@ class TestGrantConsentHandler:
     def test_unknown_consent_type_is_invalid_input(self) -> None:
         repo = FakeUserRepository()
         user = repo.seed(make_user())
-        command = GrantConsentCommand(
-            user_id=user.id.json(), consent_version="1.0", consent_type="bogus"
-        )
+        command = GrantConsentCommand(user_id=user.id.json(), consent_version="1.0", consent_type="bogus")
 
         with pytest.raises(InvalidInputError):
             self._handler(repo).handle(command)

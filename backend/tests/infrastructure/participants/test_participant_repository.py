@@ -87,13 +87,9 @@ def test_save_then_get_full(repo: DjangoParticipantRepository) -> None:
     participant = make_participant()
     participant.verify(now=_NOW)
     guardian = GuardianId.generate()
-    participant.propose_guardian_link(
-        guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=_NOW
-    )
+    participant.propose_guardian_link(guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=_NOW)
     participant.verify_guardian_link(guardian_id=guardian, now=_NOW)
-    participant.authorize_institution(
-        institution_id=InstitutionId.generate(), teacher_id=TeacherId.generate(), now=_NOW
-    )
+    participant.authorize_institution(institution_id=InstitutionId.generate(), teacher_id=TeacherId.generate(), now=_NOW)
     participant.record_consent(consent=ConsentReference.of(_generate_uuid7(), "2026-01"), now=_NOW)
     participant.activate(policy=_GUARDIANSHIP, now=_NOW)
     repo.save(participant)
@@ -158,9 +154,7 @@ def test_guardian_links_are_synchronized(repo: DjangoParticipantRepository) -> N
     participant = make_participant()
     repo.save(participant)
     guardian_a = GuardianId.generate()
-    participant.propose_guardian_link(
-        guardian_id=guardian_a, relationship_type=GuardianRelationshipType.MOTHER, now=_NOW
-    )
+    participant.propose_guardian_link(guardian_id=guardian_a, relationship_type=GuardianRelationshipType.MOTHER, now=_NOW)
     repo.save(participant)
     participant.verify_guardian_link(guardian_id=guardian_a, now=_NOW)
     repo.save(participant)
@@ -169,9 +163,7 @@ def test_guardian_links_are_synchronized(repo: DjangoParticipantRepository) -> N
     participant.revoke_guardian_link(guardian_id=guardian_a, now=_NOW)
     repo.save(participant)
     guardian_b = GuardianId.generate()
-    participant.propose_guardian_link(
-        guardian_id=guardian_b, relationship_type=GuardianRelationshipType.FATHER, now=_NOW
-    )
+    participant.propose_guardian_link(guardian_id=guardian_b, relationship_type=GuardianRelationshipType.FATHER, now=_NOW)
     repo.save(participant)
 
     loaded = repo.get(participant.id)
@@ -202,9 +194,7 @@ def test_erased_participant_frees_alias(repo: DjangoParticipantRepository) -> No
     participant = make_participant(alias="Falcon-99")
     participant.verify(now=_NOW)
     guardian = GuardianId.generate()
-    participant.propose_guardian_link(
-        guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=_NOW
-    )
+    participant.propose_guardian_link(guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=_NOW)
     participant.verify_guardian_link(guardian_id=guardian, now=_NOW)
     participant.record_consent(consent=ConsentReference.of(_generate_uuid7(), "1"), now=_NOW)
     participant.activate(policy=_GUARDIANSHIP, now=_NOW)

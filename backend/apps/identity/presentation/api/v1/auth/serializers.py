@@ -41,9 +41,7 @@ class RegistrationRequestSerializer(serializers.Serializer[dict[str, object]]):
     """Validate a new-account registration request body (API-001 §4.1)."""
 
     email = serializers.EmailField()
-    password = serializers.CharField(
-        write_only=True, trim_whitespace=False, style={"input_type": "password"}
-    )
+    password = serializers.CharField(write_only=True, trim_whitespace=False, style={"input_type": "password"})
     firstName = serializers.CharField()
     lastName = serializers.CharField()
     middleName = serializers.CharField(required=False, allow_null=True)
@@ -56,9 +54,7 @@ class SessionCreateRequestSerializer(serializers.Serializer[dict[str, object]]):
     """Validate a login (session-creation) request body (API-001 §4.4)."""
 
     email = serializers.CharField()
-    password = serializers.CharField(
-        write_only=True, trim_whitespace=False, style={"input_type": "password"}
-    )
+    password = serializers.CharField(write_only=True, trim_whitespace=False, style={"input_type": "password"})
 
 
 class EmailVerificationConfirmSerializer(serializers.Serializer[dict[str, object]]):

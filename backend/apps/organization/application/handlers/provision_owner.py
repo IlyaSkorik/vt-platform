@@ -56,18 +56,12 @@ class ProvisionOwnerHandler:
         now = self._clock.utcnow()
         organization = self._organizations.get_default()
         if organization is None:
-            raise OrganizationNotFoundError(
-                "The organization has not been seeded; run migrations first."
-            )
+            raise OrganizationNotFoundError("The organization has not been seeded; run migrations first.")
         with translate_domain_errors():
             user_id = StaffUserId.from_string(command.user_id)
 
-        if self._memberships.exists_active(
-            user_id=user_id, organization_id=organization.id
-        ):
-            raise UserAlreadyStaffError(
-                "This user already has an active staff membership."
-            )
+        if self._memberships.exists_active(user_id=user_id, organization_id=organization.id):
+            raise UserAlreadyStaffError("This user already has an active staff membership.")
 
         membership_id = StaffMembershipId.from_uuid(self._uuids.new())
         membership, domain_events = StaffMembership.activate_for_owner(

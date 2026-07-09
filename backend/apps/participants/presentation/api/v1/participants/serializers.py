@@ -36,18 +36,14 @@ class CreateParticipantRequestSerializer(serializers.Serializer[dict[str, object
     middleName = serializers.CharField(required=False, allow_null=True)
     dateOfBirth = serializers.DateField()
     displayAlias = serializers.CharField()
-    createdByType = serializers.ChoiceField(
-        choices=["guardian", "teacher"], required=False, default="guardian"
-    )
+    createdByType = serializers.ChoiceField(choices=["guardian", "teacher"], required=False, default="guardian")
 
 
 class ProposeGuardianLinkRequestSerializer(serializers.Serializer[dict[str, object]]):
     """Validate a propose-guardian-link request body."""
 
     guardianId = serializers.UUIDField()
-    relationshipType = serializers.ChoiceField(
-        choices=["mother", "father", "legal_guardian", "other"]
-    )
+    relationshipType = serializers.ChoiceField(choices=["mother", "father", "legal_guardian", "other"])
 
 
 # ---------------------------------------------------------------------------

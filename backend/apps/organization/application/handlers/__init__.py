@@ -1,4 +1,3 @@
-
 from .accept_staff_invitation import AcceptStaffInvitationHandler
 from .create_staff_invitation import InviteStaffHandler
 from .get_staff_invitation import GetStaffInvitationHandler

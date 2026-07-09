@@ -77,9 +77,7 @@ class StaffMembershipRepository(Protocol):
         """Return the membership with ``membership_id``, or ``None``."""
         ...
 
-    def find_active(
-        self, *, user_id: StaffUserId, organization_id: OrganizationId
-    ) -> StaffMembership | None:
+    def find_active(self, *, user_id: StaffUserId, organization_id: OrganizationId) -> StaffMembership | None:
         """Return the user's ACTIVE membership in the organization, or ``None``.
 
         **The authorization query.** A non-``None`` result is the sole basis for
@@ -87,15 +85,11 @@ class StaffMembershipRepository(Protocol):
         """
         ...
 
-    def exists_active(
-        self, *, user_id: StaffUserId, organization_id: OrganizationId
-    ) -> bool:
+    def exists_active(self, *, user_id: StaffUserId, organization_id: OrganizationId) -> bool:
         """Whether the user already has an ACTIVE membership (uniqueness pre-check)."""
         ...
 
-    def list_by_organization(
-        self, organization_id: OrganizationId
-    ) -> Sequence[StaffMembership]:
+    def list_by_organization(self, organization_id: OrganizationId) -> Sequence[StaffMembership]:
         """Return all non-deleted memberships of the organization."""
         ...
 
@@ -116,9 +110,7 @@ class StaffInvitationRepository(Protocol):
         """Return the invitation whose token digest is ``token_hash``, or ``None``."""
         ...
 
-    def find_pending_by_email(
-        self, *, email: StaffEmail, organization_id: OrganizationId
-    ) -> StaffInvitation | None:
+    def find_pending_by_email(self, *, email: StaffEmail, organization_id: OrganizationId) -> StaffInvitation | None:
         """Return an open invitation for ``email`` in the organization, or ``None``."""
         ...
 

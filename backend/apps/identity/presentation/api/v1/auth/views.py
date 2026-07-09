@@ -320,9 +320,7 @@ class TokenRefreshView(APIView):
             return validation_problem(serializer.errors, instance=instance, request=request)
         refresh_token = _extract_refresh_token(request, dict(serializer.validated_data))
         if refresh_token is None:
-            return unauthorized_problem(
-                instance=instance, request=request, detail="A refresh token is required."
-            )
+            return unauthorized_problem(instance=instance, request=request, detail="A refresh token is required.")
         command = RefreshTokenCommand(refresh_token=refresh_token)
         try:
             tokens = composition.build_refresh_token_handler().handle(command)
@@ -356,9 +354,7 @@ class CurrentSessionView(APIView):
             # Logout is idempotent: an already-unusable token means the session is
             # effectively gone. Nothing more to revoke; still clear the cookie.
             with contextlib.suppress(InvalidTokenError):
-                composition.build_logout_handler().handle(
-                    LogoutCommand(refresh_token=refresh_token)
-                )
+                composition.build_logout_handler().handle(LogoutCommand(refresh_token=refresh_token))
         response = Response(status=204)
         _clear_refresh_cookie(response)
         return response

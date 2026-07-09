@@ -103,9 +103,7 @@ class ParticipantDto:
             teacher_id=teacher_id.json() if teacher_id is not None else None,
             consent_id=str(consent.consent_id) if consent is not None else None,
             consent_version=consent.consent_version if consent is not None else None,
-            guardian_links=tuple(
-                GuardianLinkDto.from_link(link) for link in participant.guardian_links
-            ),
+            guardian_links=tuple(GuardianLinkDto.from_link(link) for link in participant.guardian_links),
             verified_at=participant.verified_at,
             activated_at=participant.activated_at,
             archived_at=participant.archived_at,

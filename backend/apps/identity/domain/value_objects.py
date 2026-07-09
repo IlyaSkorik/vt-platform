@@ -79,13 +79,7 @@ def _generate_uuid7() -> uuid.UUID:
     rand = int.from_bytes(os.urandom(10), "big")  # 80 random bits
     rand_a = rand >> 68 & 0x0FFF  # 12 bits
     rand_b = rand & ((1 << 62) - 1)  # 62 bits
-    value = (
-        (unix_ms & ((1 << 48) - 1)) << 80
-        | _UUID_V7_VERSION << 76
-        | rand_a << 64
-        | 0b10 << 62
-        | rand_b
-    )
+    value = (unix_ms & ((1 << 48) - 1)) << 80 | _UUID_V7_VERSION << 76 | rand_a << 64 | 0b10 << 62 | rand_b
     return uuid.UUID(int=value)
 
 
@@ -299,14 +293,11 @@ def _match_formatter(e164: str, *, original: str) -> _PhoneFormatter:
             national = e164[len(code) :]
             if len(national) != formatter.national_length:
                 raise InvalidPhoneNumberError(
-                    f"A {code} number must have {formatter.national_length} national digits, "
-                    f"got {len(national)}: {original!r}."
+                    f"A {code} number must have {formatter.national_length} national digits, got {len(national)}: {original!r}."
                 )
             return formatter
     supported = ", ".join(sorted(SUPPORTED_PHONE_FORMATTERS))
-    raise InvalidPhoneNumberError(
-        f"Unsupported country calling code in {original!r}; supported codes are: {supported}."
-    )
+    raise InvalidPhoneNumberError(f"Unsupported country calling code in {original!r}; supported codes are: {supported}.")
 
 
 def _normalize_phone(value: str) -> str:
@@ -314,9 +305,7 @@ def _normalize_phone(value: str) -> str:
     if not cleaned:
         raise InvalidPhoneNumberError("Phone number must not be empty.")
     if not _E164_RE.match(cleaned):
-        raise InvalidPhoneNumberError(
-            f"Phone number must be in E.164 format (e.g. '+79991234567'), got {value!r}."
-        )
+        raise InvalidPhoneNumberError(f"Phone number must be in E.164 format (e.g. '+79991234567'), got {value!r}.")
     _match_formatter(cleaned, original=value)  # validate country + length
     return cleaned
 
@@ -384,10 +373,7 @@ def _validate_name_part(value: str, *, field: str) -> str:
     if len(cleaned) > _NAME_MAX_LEN:
         raise InvalidFullNameError(f"{field} must be at most {_NAME_MAX_LEN} characters.")
     if not _NAME_PART_RE.match(cleaned):
-        raise InvalidFullNameError(
-            f"{field} contains invalid characters (letters, spaces, hyphens and "
-            f"apostrophes only): {value!r}."
-        )
+        raise InvalidFullNameError(f"{field} contains invalid characters (letters, spaces, hyphens and apostrophes only): {value!r}.")
     return cleaned
 
 
@@ -407,16 +393,10 @@ class FullName:
     middle_name: str | None = None
 
     def __post_init__(self) -> None:
-        object.__setattr__(
-            self, "first_name", _validate_name_part(self.first_name, field="first_name")
-        )
-        object.__setattr__(
-            self, "last_name", _validate_name_part(self.last_name, field="last_name")
-        )
+        object.__setattr__(self, "first_name", _validate_name_part(self.first_name, field="first_name"))
+        object.__setattr__(self, "last_name", _validate_name_part(self.last_name, field="last_name"))
         if self.middle_name is not None and _clean_name_part(self.middle_name):
-            object.__setattr__(
-                self, "middle_name", _validate_name_part(self.middle_name, field="middle_name")
-            )
+            object.__setattr__(self, "middle_name", _validate_name_part(self.middle_name, field="middle_name"))
         else:
             object.__setattr__(self, "middle_name", None)
 
@@ -482,9 +462,7 @@ class PasswordHash:
     """
 
     #: Algorithms recognized for migration decisions (Argon2 preferred, ARCH-001 §11.2).
-    SUPPORTED_ALGORITHMS: ClassVar[frozenset[str]] = frozenset(
-        {"argon2id", "argon2i", "argon2d", "pbkdf2_sha256", "bcrypt", "scrypt"}
-    )
+    SUPPORTED_ALGORITHMS: ClassVar[frozenset[str]] = frozenset({"argon2id", "argon2i", "argon2d", "pbkdf2_sha256", "bcrypt", "scrypt"})
     #: The preferred algorithm for newly created hashes and rehash decisions.
     PREFERRED_ALGORITHM: ClassVar[str] = "argon2id"
 
@@ -500,10 +478,7 @@ class PasswordHash:
             # A real digest is always an encoded string (PHC/Django format). The
             # absence of any structure strongly suggests plaintext leaked in, so we
             # refuse it rather than risk persisting a raw password.
-            raise InvalidPasswordHashError(
-                "Password hash does not look like an encoded digest; refusing to store "
-                "a possible plaintext value."
-            )
+            raise InvalidPasswordHashError("Password hash does not look like an encoded digest; refusing to store a possible plaintext value.")
 
     @classmethod
     def from_hash(cls, encoded_hash: str, algorithm: str | None = None) -> PasswordHash:
@@ -513,9 +488,7 @@ class PasswordHash:
         expected in PHC (``$argon2id$...``) or Django (``pbkdf2_sha256$...``) form.
         No hashing is performed here.
         """
-        resolved = (
-            algorithm.strip() if algorithm and algorithm.strip() else _parse_algorithm(encoded_hash)
-        )
+        resolved = algorithm.strip() if algorithm and algorithm.strip() else _parse_algorithm(encoded_hash)
         return cls(algorithm=resolved, encoded_hash=encoded_hash)
 
     def needs_migration(self, preferred_algorithm: str | None = None) -> bool:
@@ -546,8 +519,7 @@ def _parse_algorithm(encoded_hash: str) -> str:
         if head:
             return head
     raise InvalidPasswordHashError(
-        f"Cannot determine hashing algorithm from encoded value; pass 'algorithm' explicitly "
-        f"(got {encoded_hash[:12]!r}…)."
+        f"Cannot determine hashing algorithm from encoded value; pass 'algorithm' explicitly (got {encoded_hash[:12]!r}…)."
     )
 
 
@@ -561,10 +533,7 @@ _VERSION_SPLIT_RE: Final = re.compile(r"[.\-]")
 def _parse_version_components(value: str) -> tuple[int, ...]:
     parts = _VERSION_SPLIT_RE.split(value)
     if not parts or any(not part.isdigit() for part in parts):
-        raise InvalidConsentVersionError(
-            f"Consent version must be dot/dash-separated integers (e.g. '2026-01' or "
-            f"'1.2'), got {value!r}."
-        )
+        raise InvalidConsentVersionError(f"Consent version must be dot/dash-separated integers (e.g. '2026-01' or '1.2'), got {value!r}.")
     return tuple(int(part) for part in parts)
 
 
@@ -633,9 +602,7 @@ def _normalize_locale(value: str) -> str:
     raw = value.strip().replace("_", "-")
     parts = raw.split("-")
     if len(parts) != 2 or not parts[0] or not parts[1]:
-        raise UnsupportedLocaleError(
-            f"Locale must be a 'language-REGION' tag (e.g. 'ru-RU'), got {value!r}."
-        )
+        raise UnsupportedLocaleError(f"Locale must be a 'language-REGION' tag (e.g. 'ru-RU'), got {value!r}.")
     return f"{parts[0].lower()}-{parts[1].upper()}"
 
 
@@ -661,9 +628,7 @@ class Locale:
         normalized = _normalize_locale(self.value)
         if normalized not in self.SUPPORTED:
             supported = ", ".join(sorted(self.SUPPORTED))
-            raise UnsupportedLocaleError(
-                f"Unsupported locale {self.value!r}; supported locales are: {supported}."
-            )
+            raise UnsupportedLocaleError(f"Unsupported locale {self.value!r}; supported locales are: {supported}.")
         object.__setattr__(self, "value", normalized)
 
     @classmethod

@@ -69,17 +69,11 @@ class ParticipantMapper:
         if model.institution_id is not None:
             authority = InstitutionAuthority(
                 institution_id=InstitutionId.from_uuid(model.institution_id),
-                teacher_id=(
-                    TeacherId.from_uuid(model.teacher_id)
-                    if model.teacher_id is not None
-                    else None
-                ),
+                teacher_id=(TeacherId.from_uuid(model.teacher_id) if model.teacher_id is not None else None),
             )
         consent: ConsentReference | None = None
         if model.consent_id is not None and model.consent_version is not None:
-            consent = ConsentReference(
-                consent_id=model.consent_id, consent_version=model.consent_version
-            )
+            consent = ConsentReference(consent_id=model.consent_id, consent_version=model.consent_version)
         guardian_links = tuple(
             GuardianLink(
                 guardian_id=GuardianId.from_uuid(link.guardian_id),
@@ -98,9 +92,7 @@ class ParticipantMapper:
             ),
             date_of_birth=DateOfBirth(model.date_of_birth),
             display_alias=DisplayAlias(model.display_alias),
-            created_by=ActorReference(
-                actor_id=model.created_by_id, actor_type=ActorType(model.created_by_type)
-            ),
+            created_by=ActorReference(actor_id=model.created_by_id, actor_type=ActorType(model.created_by_type)),
             status=ParticipantStatus(model.status),
             created_at=model.created_at,
             updated_at=model.updated_at,

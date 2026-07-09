@@ -137,9 +137,7 @@ def _parse_reference(raw: str) -> uuid.UUID:
 
 def _result(participant: Participant, events: Sequence[DomainEvent]) -> OperationResultDto:
     """Render the post-operation aggregate and its events into a result DTO."""
-    return OperationResultDto(
-        participant=ParticipantDto.from_participant(participant), events=tuple(events)
-    )
+    return OperationResultDto(participant=ParticipantDto.from_participant(participant), events=tuple(events))
 
 
 # ---------------------------------------------------------------------------
@@ -178,9 +176,7 @@ class CreateParticipantHandler:
             created_by = ActorReference.of(command.created_by_id, actor_type)
 
         if self._participants.exists_by_display_alias(display_alias):
-            raise DisplayAliasAlreadyInUseError(
-                f"Display alias {display_alias.value!r} is already in use."
-            )
+            raise DisplayAliasAlreadyInUseError(f"Display alias {display_alias.value!r} is already in use.")
 
         participant_id = ParticipantId.from_uuid(self._uuids.new())
         with translate_domain_errors():
@@ -215,9 +211,7 @@ class ProposeGuardianLinkHandler:
         relationship_type = _parse_relationship_type(command.relationship_type)
         with translate_domain_errors():
             guardian_id = GuardianId.from_string(command.guardian_id)
-            events = participant.propose_guardian_link(
-                guardian_id=guardian_id, relationship_type=relationship_type, now=now
-            )
+            events = participant.propose_guardian_link(guardian_id=guardian_id, relationship_type=relationship_type, now=now)
         self._participants.save(participant)
         return _result(participant, events)
 
@@ -273,14 +267,8 @@ class AuthorizeInstitutionHandler:
         participant = _load_participant(self._participants, command.participant_id)
         with translate_domain_errors():
             institution_id = InstitutionId.from_string(command.institution_id)
-            teacher_id = (
-                TeacherId.from_string(command.teacher_id)
-                if command.teacher_id is not None
-                else None
-            )
-            events = participant.authorize_institution(
-                institution_id=institution_id, teacher_id=teacher_id, now=now
-            )
+            teacher_id = TeacherId.from_string(command.teacher_id) if command.teacher_id is not None else None
+            events = participant.authorize_institution(institution_id=institution_id, teacher_id=teacher_id, now=now)
         self._participants.save(participant)
         return _result(participant, events)
 
@@ -361,13 +349,9 @@ class ReassignDisplayAliasHandler:
             display_alias = DisplayAlias(command.display_alias)
         owner = self._participants.get_by_display_alias(display_alias)
         if owner is not None and owner.id != participant.id:
-            raise DisplayAliasAlreadyInUseError(
-                f"Display alias {display_alias.value!r} is already in use."
-            )
+            raise DisplayAliasAlreadyInUseError(f"Display alias {display_alias.value!r} is already in use.")
         with translate_domain_errors():
-            events = participant.reassign_display_alias(
-                display_alias, pseudonymization_policy=self._pseudonymization_policy, now=now
-            )
+            events = participant.reassign_display_alias(display_alias, pseudonymization_policy=self._pseudonymization_policy, now=now)
         self._participants.save(participant)
         return _result(participant, events)
 

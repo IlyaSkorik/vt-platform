@@ -166,9 +166,7 @@ STORAGES = {
 
 # --- REST Framework (API-000) --------------------------------------------
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
+    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
     "DEFAULT_PERMISSION_CLASSES": (
         # Deny by default (ARCH-001 §12.4, API-000 §18).
         "rest_framework.permissions.IsAuthenticated",

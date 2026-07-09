@@ -114,9 +114,7 @@ class FakeEmailGateway:
     def __init__(self) -> None:
         self.sent: list[tuple[str, Email]] = []
 
-    def send_verification_email(
-        self, *, email: Email, full_name: FullName, verification_url: str, locale: Locale
-    ) -> None:
+    def send_verification_email(self, *, email: Email, full_name: FullName, verification_url: str, locale: Locale) -> None:
         self.sent.append(("verification", email))
 
     def send_password_reset(
@@ -248,9 +246,7 @@ _NOTIFY: NotificationGateway = _accepts_notification_gateway(FakeNotificationGat
 _CLOCK: Clock = _accepts_clock(FakeClock(NOW))
 _UUIDS: UuidGenerator = _accepts_uuid_generator(FakeUuidGenerator())
 _PUBLISHER: EventPublisher = _accepts_event_publisher(FakeEventPublisher())
-_VERIFY_TOKENS: VerificationTokenService = _accepts_verification_token_service(
-    FakeVerificationTokenService()
-)
+_VERIFY_TOKENS: VerificationTokenService = _accepts_verification_token_service(FakeVerificationTokenService())
 
 
 # ---------------------------------------------------------------------------
@@ -335,9 +331,7 @@ class TestPortsAreUsable:
             locale=Locale.default(),
         )
 
-        assert isinstance(email, FakeEmailGateway) and email.sent == [
-            ("verification", Email("a@example.com"))
-        ]
+        assert isinstance(email, FakeEmailGateway) and email.sent == [("verification", Email("a@example.com"))]
         assert isinstance(sms, FakeSmsGateway) and sms.sent[0][1] == "123456"
         assert isinstance(notify, FakeNotificationGateway) and notify.sent[0][0] == recipient
 

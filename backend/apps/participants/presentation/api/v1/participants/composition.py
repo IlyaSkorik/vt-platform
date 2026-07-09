@@ -51,23 +51,17 @@ def build_get_participant_handler() -> GetParticipantHandler:
 
 def build_propose_guardian_link_handler() -> ProposeGuardianLinkHandler:
     """Assemble the propose-guardian-link use case."""
-    return ProposeGuardianLinkHandler(
-        participants=DjangoParticipantRepository(), clock=SystemClock()
-    )
+    return ProposeGuardianLinkHandler(participants=DjangoParticipantRepository(), clock=SystemClock())
 
 
 def build_verify_guardian_link_handler() -> VerifyGuardianLinkHandler:
     """Assemble the verify-guardian-link use case."""
-    return VerifyGuardianLinkHandler(
-        participants=DjangoParticipantRepository(), clock=SystemClock()
-    )
+    return VerifyGuardianLinkHandler(participants=DjangoParticipantRepository(), clock=SystemClock())
 
 
 def build_verify_participant_handler() -> VerifyParticipantHandler:
     """Assemble the verify-participant use case."""
-    return VerifyParticipantHandler(
-        participants=DjangoParticipantRepository(), clock=SystemClock()
-    )
+    return VerifyParticipantHandler(participants=DjangoParticipantRepository(), clock=SystemClock())
 
 
 def build_activate_participant_handler() -> ActivateParticipantHandler:

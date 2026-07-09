@@ -29,9 +29,7 @@ from tests.application.identity.fakes import NOW
 
 class TestCommandDefaults:
     def test_register_defaults(self) -> None:
-        command = RegisterUserCommand(
-            email="a@example.com", password="pw", first_name="A", last_name="B"
-        )
+        command = RegisterUserCommand(email="a@example.com", password="pw", first_name="A", last_name="B")
         assert command.middle_name is None
         assert command.phone is None
         assert command.locale is None

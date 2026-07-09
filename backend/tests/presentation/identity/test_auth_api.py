@@ -82,9 +82,7 @@ class TestRegistration:
         assert response.data["type"].endswith("/conflict")
 
     def test_weak_password_is_unprocessable(self, client: APIClient) -> None:
-        response = client.post(
-            REGISTRATION_URL, _registration_payload(password="weak"), format="json"
-        )
+        response = client.post(REGISTRATION_URL, _registration_payload(password="weak"), format="json")
 
         assert response.status_code == 422
         assert response["Content-Type"] == _PROBLEM_CT
@@ -112,9 +110,7 @@ class TestLogin:
     def test_issues_tokens_and_sets_the_refresh_cookie(self, client: APIClient) -> None:
         _register(client)
 
-        response = client.post(
-            SESSIONS_URL, {"email": "parent@example.com", "password": _PASSWORD}, format="json"
-        )
+        response = client.post(SESSIONS_URL, {"email": "parent@example.com", "password": _PASSWORD}, format="json")
 
         assert response.status_code == 201
         data = response.data["data"]
@@ -130,18 +126,14 @@ class TestLogin:
     def test_wrong_password_is_unauthorized(self, client: APIClient) -> None:
         _register(client)
 
-        response = client.post(
-            SESSIONS_URL, {"email": "parent@example.com", "password": "nope"}, format="json"
-        )
+        response = client.post(SESSIONS_URL, {"email": "parent@example.com", "password": "nope"}, format="json")
 
         assert response.status_code == 401
         assert response["Content-Type"] == _PROBLEM_CT
         assert response.data["type"].endswith("/authentication-failed")
 
     def test_unknown_email_is_unauthorized(self, client: APIClient) -> None:
-        response = client.post(
-            SESSIONS_URL, {"email": "ghost@example.com", "password": _PASSWORD}, format="json"
-        )
+        response = client.post(SESSIONS_URL, {"email": "ghost@example.com", "password": _PASSWORD}, format="json")
 
         assert response.status_code == 401
         assert response.data["type"].endswith("/authentication-failed")
@@ -155,9 +147,7 @@ class TestLogin:
 class TestTokenRefresh:
     def _login(self, client: APIClient) -> dict[str, Any]:
         _register(client)
-        response = client.post(
-            SESSIONS_URL, {"email": "parent@example.com", "password": _PASSWORD}, format="json"
-        )
+        response = client.post(SESSIONS_URL, {"email": "parent@example.com", "password": _PASSWORD}, format="json")
         return cast(dict[str, Any], response.data["data"])
 
     def test_rotates_the_refresh_cookie(self, client: APIClient) -> None:
@@ -196,9 +186,7 @@ class TestTokenRefresh:
 class TestLogout:
     def test_revokes_the_session_and_clears_the_cookie(self, client: APIClient) -> None:
         _register(client)
-        login = client.post(
-            SESSIONS_URL, {"email": "parent@example.com", "password": _PASSWORD}, format="json"
-        )
+        login = client.post(SESSIONS_URL, {"email": "parent@example.com", "password": _PASSWORD}, format="json")
         access = login.data["data"]["accessToken"]
         refresh = login.data["data"]["refreshToken"]
         client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
@@ -261,9 +249,7 @@ class TestEmailVerification:
         _register(client)
         client.post(EMAIL_CONFIRM_URL, {"token": _token_from_last_email()}, format="json")
 
-        login = client.post(
-            SESSIONS_URL, {"email": "parent@example.com", "password": _PASSWORD}, format="json"
-        )
+        login = client.post(SESSIONS_URL, {"email": "parent@example.com", "password": _PASSWORD}, format="json")
 
         assert login.status_code == 201
         assert login.data["data"]["user"]["emailVerified"] is True
@@ -288,9 +274,7 @@ class TestEmailVerification:
         assert second["Content-Type"] == _PROBLEM_CT
         assert second.data["type"].endswith("/conflict")
 
-    def test_new_account_is_unverified_then_first_confirm_200_second_409(
-        self, client: APIClient
-    ) -> None:
+    def test_new_account_is_unverified_then_first_confirm_200_second_409(self, client: APIClient) -> None:
         # Regression: a brand-new account must NOT be pre-verified. The FIRST
         # confirmation of its emailed token verifies it (200); only a SECOND
         # confirmation is a conflict (409). A first-attempt 409 would mean the
@@ -319,9 +303,7 @@ class TestEmailVerification:
 
     def test_resend_dispatches_a_new_email(self, client: APIClient) -> None:
         _register(client)
-        login = client.post(
-            SESSIONS_URL, {"email": "parent@example.com", "password": _PASSWORD}, format="json"
-        )
+        login = client.post(SESSIONS_URL, {"email": "parent@example.com", "password": _PASSWORD}, format="json")
         access = login.data["data"]["accessToken"]
         client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
         mail.outbox.clear()

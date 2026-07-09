@@ -67,9 +67,7 @@ class StaffMembershipReader:
         if organization is None:
             return None
         staff_user_id = StaffUserId.from_uuid(user_id)
-        membership = self._memberships.find_active(
-            user_id=staff_user_id, organization_id=organization.id
-        )
+        membership = self._memberships.find_active(user_id=staff_user_id, organization_id=organization.id)
         if membership is None:
             return None
         return StaffMembershipView.from_membership(membership)

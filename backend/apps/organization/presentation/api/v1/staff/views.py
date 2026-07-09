@@ -1,4 +1,5 @@
 """REST views for Organization staff invitation endpoints."""
+
 from __future__ import annotations
 
 from django.contrib.auth.models import AnonymousUser
@@ -49,9 +50,7 @@ _PROBLEM_MAP = {
 
 
 def application_problem(exc: ApplicationError, *, instance: str, request: Request) -> Response:
-    status, type_suffix, title, code = _PROBLEM_MAP.get(
-        exc.code, (400, "bad-request", "Bad request", None)
-    )
+    status, type_suffix, title, code = _PROBLEM_MAP.get(exc.code, (400, "bad-request", "Bad request", None))
     return problem_response(
         status=status,
         type_suffix=type_suffix,
@@ -61,6 +60,7 @@ def application_problem(exc: ApplicationError, *, instance: str, request: Reques
         correlation_id=request_id(request),
         code=code,
     )
+
 
 class StaffInvitationDetailView(APIView):
     """GET /api/v1/staff/invitations/{token} — look up a staff invitation."""

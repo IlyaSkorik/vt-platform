@@ -188,15 +188,11 @@ class PasswordPolicy:
         _ensure_positive_int(self.min_length, "min_length")
         _ensure_positive_int(self.max_length, "max_length")
         if self.max_length < self.min_length:
-            raise PolicyConfigurationError(
-                f"max_length ({self.max_length}) must be >= min_length ({self.min_length})."
-            )
+            raise PolicyConfigurationError(f"max_length ({self.max_length}) must be >= min_length ({self.min_length}).")
         _ensure_non_negative_int(self.history_depth, "history_depth")
         if self.max_age is not None:
             _ensure_positive_timedelta(self.max_age, "max_age")
-        object.__setattr__(
-            self, "_forbidden_folded", frozenset(p.casefold() for p in self.forbidden_passwords)
-        )
+        object.__setattr__(self, "_forbidden_folded", frozenset(p.casefold() for p in self.forbidden_passwords))
 
     def validate(self, password: str) -> PasswordValidationResult:
         """Check ``password`` against every rule and report all violations at once."""
@@ -328,9 +324,7 @@ class EmailVerificationPolicy:
         """Whether a link issued at ``sent_at`` is no longer valid at ``now``."""
         return now - sent_at >= self.verification_timeout
 
-    def evaluate_resend(
-        self, *, last_sent_at: datetime | None, attempts_made: int, now: datetime
-    ) -> ResendDecision:
+    def evaluate_resend(self, *, last_sent_at: datetime | None, attempts_made: int, now: datetime) -> ResendDecision:
         """Decide whether the verification email may be resent now.
 
         ``last_sent_at`` is ``None`` when nothing has been sent yet (no cooldown
@@ -338,9 +332,7 @@ class EmailVerificationPolicy:
         """
         remaining = self.max_resend_attempts - attempts_made
         if remaining <= 0:
-            return ResendDecision.deny(
-                ResendDenialReason.MAX_ATTEMPTS_REACHED, attempts_remaining=0
-            )
+            return ResendDecision.deny(ResendDenialReason.MAX_ATTEMPTS_REACHED, attempts_remaining=0)
         if last_sent_at is not None:
             elapsed = now - last_sent_at
             if elapsed < self.resend_interval:
@@ -589,9 +581,7 @@ class SessionPolicy:
 
     def evaluate_admission(self, active_sessions: int) -> SessionAdmission:
         """Whether another concurrent session may be opened right now."""
-        return SessionAdmission.evaluate(
-            active_sessions=active_sessions, max_active_sessions=self.max_active_sessions
-        )
+        return SessionAdmission.evaluate(active_sessions=active_sessions, max_active_sessions=self.max_active_sessions)
 
 
 # ---------------------------------------------------------------------------

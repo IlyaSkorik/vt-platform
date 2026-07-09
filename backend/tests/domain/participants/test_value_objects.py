@@ -62,9 +62,7 @@ _ID_TYPES = [
 
 
 @pytest.mark.parametrize(("id_type", "error"), _ID_TYPES)
-def test_identifier_generate_is_uuid7_and_round_trips(
-    id_type: type[ParticipantId], error: type[ValueObjectValidationError]
-) -> None:
+def test_identifier_generate_is_uuid7_and_round_trips(id_type: type[ParticipantId], error: type[ValueObjectValidationError]) -> None:
     identity = id_type.generate()
     assert identity.value.version == 7
     assert id_type.from_string(identity.json()) == identity
@@ -74,25 +72,19 @@ def test_identifier_generate_is_uuid7_and_round_trips(
 
 
 @pytest.mark.parametrize(("id_type", "error"), _ID_TYPES)
-def test_identifier_rejects_non_uuid7(
-    id_type: type[ParticipantId], error: type[ValueObjectValidationError]
-) -> None:
+def test_identifier_rejects_non_uuid7(id_type: type[ParticipantId], error: type[ValueObjectValidationError]) -> None:
     with pytest.raises(error):
         id_type.from_uuid(uuid.uuid4())
 
 
 @pytest.mark.parametrize(("id_type", "error"), _ID_TYPES)
-def test_identifier_rejects_malformed_string(
-    id_type: type[ParticipantId], error: type[ValueObjectValidationError]
-) -> None:
+def test_identifier_rejects_malformed_string(id_type: type[ParticipantId], error: type[ValueObjectValidationError]) -> None:
     with pytest.raises(error):
         id_type.from_string("not-a-uuid")
 
 
 @pytest.mark.parametrize(("id_type", "error"), _ID_TYPES)
-def test_identifier_rejects_wrong_type(
-    id_type: type[ParticipantId], error: type[ValueObjectValidationError]
-) -> None:
+def test_identifier_rejects_wrong_type(id_type: type[ParticipantId], error: type[ValueObjectValidationError]) -> None:
     with pytest.raises(error):
         id_type.from_uuid("nope")  # type: ignore[arg-type]
 

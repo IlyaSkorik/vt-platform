@@ -55,9 +55,7 @@ class GuardianLinkModel(BasePersistenceModel):
                 name="participants_guardian_link_status_valid",
             ),
             models.CheckConstraint(
-                condition=models.Q(
-                    relationship_type__in=[t.value for t in GuardianRelationshipType]
-                ),
+                condition=models.Q(relationship_type__in=[t.value for t in GuardianRelationshipType]),
                 name="participants_guardian_link_type_valid",
             ),
         ]

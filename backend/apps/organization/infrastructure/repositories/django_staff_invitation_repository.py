@@ -46,9 +46,7 @@ class DjangoStaffInvitationRepository:
             raise PersistenceError("Failed to load invitation by token hash.") from exc
         return StaffInvitationMapper.to_domain(model)
 
-    def find_pending_by_email(
-        self, *, email: StaffEmail, organization_id: OrganizationId
-    ) -> StaffInvitation | None:
+    def find_pending_by_email(self, *, email: StaffEmail, organization_id: OrganizationId) -> StaffInvitation | None:
         """Return an open invitation for ``email`` in the organization, or ``None``.
 
         Open = neither accepted nor revoked nor soft-deleted; the partial unique
@@ -81,7 +79,4 @@ class DjangoStaffInvitationRepository:
 
 def _column_values(model: StaffInvitationModel) -> dict[str, object]:
     """Flatten a mapped model into its concrete column values."""
-    return {
-        field.attname: getattr(model, field.attname)
-        for field in StaffInvitationModel._meta.concrete_fields
-    }
+    return {field.attname: getattr(model, field.attname) for field in StaffInvitationModel._meta.concrete_fields}

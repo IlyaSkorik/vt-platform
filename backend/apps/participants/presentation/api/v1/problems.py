@@ -117,9 +117,7 @@ def application_problem(exc: ApplicationError, *, instance: str, request: Any) -
     )
 
 
-def validation_problem(
-    serializer_errors: dict[str, Any], *, instance: str, request: Any
-) -> Response:
+def validation_problem(serializer_errors: dict[str, Any], *, instance: str, request: Any) -> Response:
     """Render DRF serializer errors as a ``400`` validation Problem Details doc.
 
     Field-shape/type failures are ``400`` (API-000 §8.2); each entry carries a JSON

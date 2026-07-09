@@ -73,9 +73,7 @@ class UserDto:
             is_locked=user.is_locked(now),
             locked_until=user.locked_until,
             is_deleted=user.is_deleted(),
-            consent_version=(
-                user.consent_version.value if user.consent_version is not None else None
-            ),
+            consent_version=(user.consent_version.value if user.consent_version is not None else None),
             created_at=user.created_at,
             updated_at=user.updated_at,
             version=user.version,

@@ -129,9 +129,7 @@ def test_propose_and_verify_guardian_link(auth_client: APIClient) -> None:
     assert propose.status_code == 201
     assert propose.data["data"]["guardianLinks"][0]["status"] == "proposed"
 
-    verify = auth_client.post(
-        f"/api/v1/participants/{participant_id}/guardian-links/{guardian_id}/verification"
-    )
+    verify = auth_client.post(f"/api/v1/participants/{participant_id}/guardian-links/{guardian_id}/verification")
     assert verify.status_code == 200
     assert verify.data["data"]["guardianLinks"][0]["status"] == "active"
 
@@ -150,9 +148,7 @@ def test_propose_guardian_link_malformed_is_bad_request(auth_client: APIClient) 
 def test_verify_unlinked_guardian_is_conflict(auth_client: APIClient) -> None:
     participant_id = _create(auth_client).data["data"]["id"]
     guardian_id = "019f0000-0000-7000-8000-0000000000cc"
-    response = auth_client.post(
-        f"/api/v1/participants/{participant_id}/guardian-links/{guardian_id}/verification"
-    )
+    response = auth_client.post(f"/api/v1/participants/{participant_id}/guardian-links/{guardian_id}/verification")
     assert response.status_code == 409
     assert response["Content-Type"] == "application/problem+json"
 
@@ -212,15 +208,11 @@ def test_full_activation_flow(auth_client: APIClient) -> None:
         {"guardianId": guardian_id, "relationshipType": "mother"},
         format="json",
     )
-    auth_client.post(
-        f"/api/v1/participants/{participant_id}/guardian-links/{guardian_id}/verification"
-    )
+    auth_client.post(f"/api/v1/participants/{participant_id}/guardian-links/{guardian_id}/verification")
     auth_client.post(f"/api/v1/participants/{participant_id}/verification")
     # Consent arrives from the Identity context (ConsentGranted); record it via the
     # use case, then activation is permitted through the API (PRT-001).
-    RecordConsentHandler(
-        participants=DjangoParticipantRepository(), clock=SystemClock()
-    ).handle(
+    RecordConsentHandler(participants=DjangoParticipantRepository(), clock=SystemClock()).handle(
         RecordConsentCommand(
             participant_id=participant_id,
             consent_id=str(_generate_uuid7()),

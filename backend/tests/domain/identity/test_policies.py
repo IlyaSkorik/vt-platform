@@ -61,9 +61,7 @@ class TestPasswordPolicyConfiguration:
             policy.min_length = 4  # type: ignore[misc]
 
     def test_equal_configs_compare_equal(self) -> None:
-        assert PasswordPolicy(forbidden_passwords=frozenset({"a"})) == PasswordPolicy(
-            forbidden_passwords=frozenset({"a"})
-        )
+        assert PasswordPolicy(forbidden_passwords=frozenset({"a"})) == PasswordPolicy(forbidden_passwords=frozenset({"a"}))
 
     @pytest.mark.parametrize(
         "kwargs",
@@ -210,20 +208,14 @@ class TestEmailVerificationPolicy:
         assert decision.attempts_remaining == policy.max_resend_attempts
 
     def test_resend_allowed_after_interval(self) -> None:
-        policy = EmailVerificationPolicy(
-            resend_interval=timedelta(minutes=1), max_resend_attempts=5
-        )
-        decision = policy.evaluate_resend(
-            last_sent_at=NOW - timedelta(minutes=2), attempts_made=1, now=NOW
-        )
+        policy = EmailVerificationPolicy(resend_interval=timedelta(minutes=1), max_resend_attempts=5)
+        decision = policy.evaluate_resend(last_sent_at=NOW - timedelta(minutes=2), attempts_made=1, now=NOW)
         assert decision.allowed is True
         assert decision.attempts_remaining == 4
 
     def test_resend_blocked_by_cooldown(self) -> None:
         policy = EmailVerificationPolicy(resend_interval=timedelta(minutes=5))
-        decision = policy.evaluate_resend(
-            last_sent_at=NOW - timedelta(minutes=1), attempts_made=1, now=NOW
-        )
+        decision = policy.evaluate_resend(last_sent_at=NOW - timedelta(minutes=1), attempts_made=1, now=NOW)
         assert decision.allowed is False
         assert decision.reason is ResendDenialReason.COOLDOWN_ACTIVE
         assert decision.retry_after == timedelta(minutes=4)
@@ -231,9 +223,7 @@ class TestEmailVerificationPolicy:
 
     def test_resend_blocked_by_max_attempts(self) -> None:
         policy = EmailVerificationPolicy(max_resend_attempts=3)
-        decision = policy.evaluate_resend(
-            last_sent_at=NOW - timedelta(hours=1), attempts_made=3, now=NOW
-        )
+        decision = policy.evaluate_resend(last_sent_at=NOW - timedelta(hours=1), attempts_made=3, now=NOW)
         assert decision.allowed is False
         assert decision.reason is ResendDenialReason.MAX_ATTEMPTS_REACHED
         assert decision.attempts_remaining == 0
@@ -312,23 +302,17 @@ class TestConsentPolicy:
 
     def test_granted_at_missing_requires_consent(self) -> None:
         policy = ConsentPolicy(current_version=ConsentVersion("2026-01"))
-        decision = policy.evaluate(
-            granted_version=ConsentVersion("2026-01"), granted_at=None, now=NOW
-        )
+        decision = policy.evaluate(granted_version=ConsentVersion("2026-01"), granted_at=None, now=NOW)
         assert decision.reason is ReconsentReason.NEVER_GRANTED
 
     def test_superseded_version_requires_consent(self) -> None:
         policy = ConsentPolicy(current_version=ConsentVersion("2026-02"))
-        decision = policy.evaluate(
-            granted_version=ConsentVersion("2026-01"), granted_at=NOW, now=NOW
-        )
+        decision = policy.evaluate(granted_version=ConsentVersion("2026-01"), granted_at=NOW, now=NOW)
         assert decision.reconsent_required is True
         assert decision.reason is ReconsentReason.VERSION_SUPERSEDED
 
     def test_expired_consent_requires_consent(self) -> None:
-        policy = ConsentPolicy(
-            current_version=ConsentVersion("2026-01"), validity_period=timedelta(days=365)
-        )
+        policy = ConsentPolicy(current_version=ConsentVersion("2026-01"), validity_period=timedelta(days=365))
         decision = policy.evaluate(
             granted_version=ConsentVersion("2026-01"),
             granted_at=NOW - timedelta(days=400),
@@ -338,9 +322,7 @@ class TestConsentPolicy:
         assert decision.reason is ReconsentReason.CONSENT_EXPIRED
 
     def test_current_consent_is_satisfied(self) -> None:
-        policy = ConsentPolicy(
-            current_version=ConsentVersion("2026-01"), validity_period=timedelta(days=365)
-        )
+        policy = ConsentPolicy(current_version=ConsentVersion("2026-01"), validity_period=timedelta(days=365))
         decision = policy.evaluate(
             granted_version=ConsentVersion("2026-01"),
             granted_at=NOW - timedelta(days=10),
@@ -389,16 +371,12 @@ class TestSessionPolicy:
             SessionPolicy(**kwargs)  # type: ignore[arg-type]
 
     def test_lifetime_depends_on_remember_me(self) -> None:
-        policy = SessionPolicy(
-            absolute_lifetime=timedelta(hours=12), remember_me_lifetime=timedelta(days=30)
-        )
+        policy = SessionPolicy(absolute_lifetime=timedelta(hours=12), remember_me_lifetime=timedelta(days=30))
         assert policy.lifetime(remember_me=False) == timedelta(hours=12)
         assert policy.lifetime(remember_me=True) == timedelta(days=30)
 
     def test_active_session(self) -> None:
-        policy = SessionPolicy(
-            idle_timeout=timedelta(minutes=30), absolute_lifetime=timedelta(hours=12)
-        )
+        policy = SessionPolicy(idle_timeout=timedelta(minutes=30), absolute_lifetime=timedelta(hours=12))
         decision = policy.evaluate_expiry(
             started_at=NOW - timedelta(hours=1),
             last_activity_at=NOW - timedelta(minutes=5),
@@ -418,9 +396,7 @@ class TestSessionPolicy:
         assert decision.reason is SessionExpiryReason.ABSOLUTE_LIFETIME_EXCEEDED
 
     def test_idle_timeout(self) -> None:
-        policy = SessionPolicy(
-            idle_timeout=timedelta(minutes=30), absolute_lifetime=timedelta(hours=12)
-        )
+        policy = SessionPolicy(idle_timeout=timedelta(minutes=30), absolute_lifetime=timedelta(hours=12))
         decision = policy.evaluate_expiry(
             started_at=NOW - timedelta(hours=1),
             last_activity_at=NOW - timedelta(minutes=31),
@@ -445,9 +421,7 @@ class TestSessionPolicy:
 
     def test_admission_allowed_under_cap(self) -> None:
         decision = SessionPolicy(max_active_sessions=5).evaluate_admission(3)
-        assert decision == SessionAdmission(
-            allowed=True, active_sessions=3, max_active_sessions=5, sessions_to_evict=0
-        )
+        assert decision == SessionAdmission(allowed=True, active_sessions=3, max_active_sessions=5, sessions_to_evict=0)
 
     def test_admission_denied_at_cap_requires_one_eviction(self) -> None:
         decision = SessionPolicy(max_active_sessions=5).evaluate_admission(5)

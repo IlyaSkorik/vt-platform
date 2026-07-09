@@ -76,19 +76,9 @@ def _serialize(value: object) -> object:
             return value.isoformat()
         case uuid.UUID():
             return str(value)
-        case (
-            OrganizationId()
-            | StaffMembershipId()
-            | StaffInvitationId()
-            | StaffUserId()
-        ):
+        case OrganizationId() | StaffMembershipId() | StaffInvitationId() | StaffUserId():
             return value.json()
-        case (
-            OrganizationName()
-            | OrganizationSlug()
-            | StaffEmail()
-            | InvitationTokenHash()
-        ):
+        case OrganizationName() | OrganizationSlug() | StaffEmail() | InvitationTokenHash():
             return str(value)
     raise TypeError(f"Cannot serialize event field of type {type(value).__name__!r}.")
 
@@ -109,10 +99,7 @@ class DomainEvent:
         event's class name is added as ``event_type`` so a consumer (outbox, log,
         wire) can route without importing the class.
         """
-        payload = {
-            name: _serialize(getattr(self, name))
-            for name in (f.name for f in dataclasses.fields(self))
-        }
+        payload = {name: _serialize(getattr(self, name)) for name in (f.name for f in dataclasses.fields(self))}
         payload["event_type"] = type(self).__name__
         return payload
 

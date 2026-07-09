@@ -91,13 +91,9 @@ def _activated() -> Participant:
     participant = _create()
     participant.verify(now=NOW)
     guardian = GuardianId.generate()
-    participant.propose_guardian_link(
-        guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=NOW
-    )
+    participant.propose_guardian_link(guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=NOW)
     participant.verify_guardian_link(guardian_id=guardian, now=NOW)
-    participant.record_consent(
-        consent=ConsentReference.of(_generate_uuid7(), "2026-01"), now=NOW
-    )
+    participant.record_consent(consent=ConsentReference.of(_generate_uuid7(), "2026-01"), now=NOW)
     participant.activate(policy=_GUARDIANSHIP, now=NOW)
     return participant
 
@@ -174,9 +170,7 @@ def test_rehydrate_preserves_state_and_emits_nothing() -> None:
 def test_propose_then_verify_guardian_link() -> None:
     participant = _create()
     guardian = GuardianId.generate()
-    assert participant.propose_guardian_link(
-        guardian_id=guardian, relationship_type=GuardianRelationshipType.FATHER, now=NOW
-    ) == []
+    assert participant.propose_guardian_link(guardian_id=guardian, relationship_type=GuardianRelationshipType.FATHER, now=NOW) == []
     assert not participant.has_active_guardian()
 
     events = participant.verify_guardian_link(guardian_id=guardian, now=NOW)
@@ -189,25 +183,17 @@ def test_propose_then_verify_guardian_link() -> None:
 def test_duplicate_guardian_is_rejected() -> None:
     participant = _create()
     guardian = GuardianId.generate()
-    participant.propose_guardian_link(
-        guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=NOW
-    )
+    participant.propose_guardian_link(guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=NOW)
     with pytest.raises(GuardianAlreadyLinkedError):
-        participant.propose_guardian_link(
-            guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=NOW
-        )
+        participant.propose_guardian_link(guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=NOW)
 
 
 def test_revoked_guardian_can_be_reproposed() -> None:
     participant = _create()
     guardian = GuardianId.generate()
-    participant.propose_guardian_link(
-        guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=NOW
-    )
+    participant.propose_guardian_link(guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=NOW)
     participant.revoke_guardian_link(guardian_id=guardian, now=NOW)
-    participant.propose_guardian_link(
-        guardian_id=guardian, relationship_type=GuardianRelationshipType.FATHER, now=NOW
-    )
+    participant.propose_guardian_link(guardian_id=guardian, relationship_type=GuardianRelationshipType.FATHER, now=NOW)
     assert len(participant.guardian_links) == 1
     assert participant.guardian_links[0].is_proposed()
 
@@ -221,9 +207,7 @@ def test_verify_missing_guardian_link_raises() -> None:
 def test_verify_non_proposed_guardian_link_raises() -> None:
     participant = _create()
     guardian = GuardianId.generate()
-    participant.propose_guardian_link(
-        guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=NOW
-    )
+    participant.propose_guardian_link(guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=NOW)
     participant.verify_guardian_link(guardian_id=guardian, now=NOW)
     with pytest.raises(GuardianLinkNotPendingError):
         participant.verify_guardian_link(guardian_id=guardian, now=NOW)
@@ -277,14 +261,10 @@ def test_rename_updates_name() -> None:
 
 def test_reassign_display_alias_guards_identity() -> None:
     participant = _create()
-    participant.reassign_display_alias(
-        DisplayAlias("Eagle-7"), pseudonymization_policy=_PSEUDONYM, now=NOW
-    )
+    participant.reassign_display_alias(DisplayAlias("Eagle-7"), pseudonymization_policy=_PSEUDONYM, now=NOW)
     assert participant.display_alias.value == "Eagle-7"
     with pytest.raises(AliasRevealsIdentityError):
-        participant.reassign_display_alias(
-            DisplayAlias("Petrov again"), pseudonymization_policy=_PSEUDONYM, now=NOW
-        )
+        participant.reassign_display_alias(DisplayAlias("Petrov again"), pseudonymization_policy=_PSEUDONYM, now=NOW)
 
 
 # ---------------------------------------------------------------------------
@@ -336,9 +316,7 @@ def test_activate_blocked_without_consent() -> None:
     participant = _create()
     participant.verify(now=NOW)
     guardian = GuardianId.generate()
-    participant.propose_guardian_link(
-        guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=NOW
-    )
+    participant.propose_guardian_link(guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=NOW)
     participant.verify_guardian_link(guardian_id=guardian, now=NOW)
     with pytest.raises(ActivationRequirementsError) as exc:
         participant.activate(policy=_GUARDIANSHIP, now=NOW)

@@ -139,9 +139,7 @@ class ParticipantCollectionView(_AuthenticatedView):
         instance = request.path
         serializer = CreateParticipantRequestSerializer(data=request.data)
         if not serializer.is_valid():
-            return problems.validation_problem(
-                serializer.errors, instance=instance, request=request
-            )
+            return problems.validation_problem(serializer.errors, instance=instance, request=request)
         data = serializer.validated_data
         command = CreateParticipantCommand(
             first_name=str(data["firstName"]),
@@ -177,9 +175,7 @@ class ParticipantDetailView(_AuthenticatedView):
     def get(self, request: Request, participant_id: str) -> Response:
         instance = request.path
         try:
-            dto = composition.build_get_participant_handler().handle(
-                GetParticipantQuery(participant_id=participant_id)
-            )
+            dto = composition.build_get_participant_handler().handle(GetParticipantQuery(participant_id=participant_id))
         except ApplicationError as exc:
             return problems.application_problem(exc, instance=instance, request=request)
         return _envelope(request, _participant_resource(dto), status=200)
@@ -204,9 +200,7 @@ class GuardianLinkCollectionView(_AuthenticatedView):
         instance = request.path
         serializer = ProposeGuardianLinkRequestSerializer(data=request.data)
         if not serializer.is_valid():
-            return problems.validation_problem(
-                serializer.errors, instance=instance, request=request
-            )
+            return problems.validation_problem(serializer.errors, instance=instance, request=request)
         data = serializer.validated_data
         command = ProposeGuardianLinkCommand(
             participant_id=participant_id,
@@ -236,9 +230,7 @@ class GuardianLinkVerificationView(_AuthenticatedView):
     )
     def post(self, request: Request, participant_id: str, guardian_id: str) -> Response:
         instance = request.path
-        command = VerifyGuardianLinkCommand(
-            participant_id=participant_id, guardian_id=guardian_id
-        )
+        command = VerifyGuardianLinkCommand(participant_id=participant_id, guardian_id=guardian_id)
         try:
             result = composition.build_verify_guardian_link_handler().handle(command)
         except ApplicationError as exc:

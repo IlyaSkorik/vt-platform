@@ -97,8 +97,7 @@ class Organization:
     def __post_init__(self, _token: object) -> None:
         if _token is not _CREATION_TOKEN:
             raise DirectConstructionError(
-                "Organization must be created via Organization.seed() or "
-                "Organization.rehydrate(), not by calling the constructor directly."
+                "Organization must be created via Organization.seed() or Organization.rehydrate(), not by calling the constructor directly."
             )
 
     # ------------------------------------------------------------------
@@ -267,8 +266,7 @@ class StaffMembership:
     def __post_init__(self, _token: object) -> None:
         if _token is not _CREATION_TOKEN:
             raise DirectConstructionError(
-                "StaffMembership must be created via a factory "
-                "(pending_from_invitation / activate_for_owner) or rehydrate()."
+                "StaffMembership must be created via a factory (pending_from_invitation / activate_for_owner) or rehydrate()."
             )
 
     # ------------------------------------------------------------------
@@ -482,9 +480,7 @@ class StaffMembership:
             )
         ]
 
-    def change_role(
-        self, new_role: StaffRole, *, changed_by: StaffUserId, now: datetime
-    ) -> list[DomainEvent]:
+    def change_role(self, new_role: StaffRole, *, changed_by: StaffUserId, now: datetime) -> list[DomainEvent]:
         """Change the role of an ACTIVE membership."""
         if self._status is MembershipStatus.REVOKED:
             raise MembershipAlreadyRevokedError("A revoked membership's role cannot be changed.")
@@ -541,10 +537,7 @@ class StaffMembership:
         return hash(self._id)
 
     def __repr__(self) -> str:
-        return (
-            f"StaffMembership(id={self._id!r}, user_id={self._user_id!r}, "
-            f"role={self._role}, status={self._status})"
-        )
+        return f"StaffMembership(id={self._id!r}, user_id={self._user_id!r}, role={self._role}, status={self._status})"
 
 
 @dataclass(slots=True, eq=False, repr=False)
@@ -574,9 +567,7 @@ class StaffInvitation:
 
     def __post_init__(self, _token: object) -> None:
         if _token is not _CREATION_TOKEN:
-            raise DirectConstructionError(
-                "StaffInvitation must be created via StaffInvitation.issue() or rehydrate()."
-            )
+            raise DirectConstructionError("StaffInvitation must be created via StaffInvitation.issue() or rehydrate().")
 
     # ------------------------------------------------------------------
     # Factories
@@ -792,7 +783,4 @@ class StaffInvitation:
         return hash(self._id)
 
     def __repr__(self) -> str:
-        return (
-            f"StaffInvitation(id={self._id!r}, email={self._email.value!r}, "
-            f"role={self._role}, pending={self.is_pending()})"
-        )
+        return f"StaffInvitation(id={self._id!r}, email={self._email.value!r}, role={self._role}, pending={self.is_pending()})"

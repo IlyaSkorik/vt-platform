@@ -145,10 +145,7 @@ class User:
 
     def __post_init__(self, _token: object) -> None:
         if _token is not _CREATION_TOKEN:
-            raise DirectConstructionError(
-                "User must be created via User.register() or User.rehydrate(), "
-                "not by calling the constructor directly."
-            )
+            raise DirectConstructionError("User must be created via User.register() or User.rehydrate(), not by calling the constructor directly.")
 
     # ------------------------------------------------------------------
     # Factories
@@ -376,26 +373,20 @@ class User:
         self._ensure_active()
         if new_email == self._email:
             raise EmailNotChangedError("The new email is identical to the current one.")
-        events: list[DomainEvent] = [
-            EmailChanged(aggregate_id=self._id, email=new_email, occurred_at=now)
-        ]
+        events: list[DomainEvent] = [EmailChanged(aggregate_id=self._id, email=new_email, occurred_at=now)]
         self._email = new_email
         self._email_verified_at = None
         self._touch(now)
         return events
 
-    def verify_email(
-        self, *, policy: EmailVerificationPolicy, sent_at: datetime, now: datetime
-    ) -> list[DomainEvent]:
+    def verify_email(self, *, policy: EmailVerificationPolicy, sent_at: datetime, now: datetime) -> list[DomainEvent]:
         """Mark the current email verified, honouring the verification-link timeout."""
         self._ensure_active()
         if self.is_email_verified():
             raise EmailAlreadyVerifiedError("The email address is already verified.")
         if policy.is_verification_expired(sent_at, now):
             raise VerificationExpiredError("The email verification link has expired.")
-        events: list[DomainEvent] = [
-            EmailVerified(aggregate_id=self._id, email=self._email, occurred_at=now)
-        ]
+        events: list[DomainEvent] = [EmailVerified(aggregate_id=self._id, email=self._email, occurred_at=now)]
         self._email_verified_at = now
         self._touch(now)
         return events
@@ -417,17 +408,13 @@ class User:
         self._ensure_active()
         if self._phone is not None and new_phone == self._phone:
             raise PhoneNotChangedError("The new phone number is identical to the current one.")
-        events: list[DomainEvent] = [
-            PhoneChanged(aggregate_id=self._id, phone=new_phone, occurred_at=now)
-        ]
+        events: list[DomainEvent] = [PhoneChanged(aggregate_id=self._id, phone=new_phone, occurred_at=now)]
         self._phone = new_phone
         self._phone_verified_at = None
         self._touch(now)
         return events
 
-    def verify_phone(
-        self, *, policy: PhoneVerificationPolicy, issued_at: datetime, now: datetime
-    ) -> list[DomainEvent]:
+    def verify_phone(self, *, policy: PhoneVerificationPolicy, issued_at: datetime, now: datetime) -> list[DomainEvent]:
         """Mark the current phone verified, honouring the code lifetime."""
         self._ensure_active()
         if self._phone is None:
@@ -436,9 +423,7 @@ class User:
             raise PhoneAlreadyVerifiedError("The phone number is already verified.")
         if policy.is_code_expired(issued_at, now):
             raise VerificationExpiredError("The phone verification code has expired.")
-        events: list[DomainEvent] = [
-            PhoneVerified(aggregate_id=self._id, phone=self._phone, occurred_at=now)
-        ]
+        events: list[DomainEvent] = [PhoneVerified(aggregate_id=self._id, phone=self._phone, occurred_at=now)]
         self._phone_verified_at = now
         self._touch(now)
         return events
@@ -447,9 +432,7 @@ class User:
     # Credentials
     # ------------------------------------------------------------------
 
-    def change_password(
-        self, new_password_hash: PasswordHash, *, now: datetime
-    ) -> list[DomainEvent]:
+    def change_password(self, new_password_hash: PasswordHash, *, now: datetime) -> list[DomainEvent]:
         """Replace the stored password digest.
 
         The domain accepts an already-computed :class:`PasswordHash`; plaintext
@@ -481,9 +464,7 @@ class User:
         """
         self._ensure_active()
         if not policy.is_current(consent_version):
-            raise StaleConsentError(
-                f"Cannot grant consent version {consent_version} older than the current version."
-            )
+            raise StaleConsentError(f"Cannot grant consent version {consent_version} older than the current version.")
         events: list[DomainEvent] = [
             ConsentGranted(
                 aggregate_id=self._id,
@@ -496,9 +477,7 @@ class User:
         self._touch(now)
         return events
 
-    def withdraw_consent(
-        self, *, now: datetime, consent_type: ConsentType = ConsentType.TERMS_OF_SERVICE
-    ) -> list[DomainEvent]:
+    def withdraw_consent(self, *, now: datetime, consent_type: ConsentType = ConsentType.TERMS_OF_SERVICE) -> list[DomainEvent]:
         """Revoke the currently-active consent."""
         self._ensure_active()
         if self._consent_version is None:
@@ -529,9 +508,7 @@ class User:
         failed-attempt counters this aggregate deliberately does not hold).
         """
         self._ensure_active()
-        events: list[DomainEvent] = [
-            UserLocked(aggregate_id=self._id, reason=reason, locked_until=until, occurred_at=now)
-        ]
+        events: list[DomainEvent] = [UserLocked(aggregate_id=self._id, reason=reason, locked_until=until, occurred_at=now)]
         self._locked_until = _PERMANENT_LOCK if until is None else until
         self._touch(now)
         return events
@@ -541,9 +518,7 @@ class User:
         self._ensure_active()
         if not self.is_locked(now):
             raise UserNotLockedError("The account is not currently locked.")
-        events: list[DomainEvent] = [
-            UserUnlocked(aggregate_id=self._id, reason=reason, occurred_at=now)
-        ]
+        events: list[DomainEvent] = [UserUnlocked(aggregate_id=self._id, reason=reason, occurred_at=now)]
         self._locked_until = None
         self._touch(now)
         return events
@@ -555,9 +530,7 @@ class User:
     def soft_delete(self, *, now: datetime, reason: str | None = None) -> list[DomainEvent]:
         """Soft-delete the account (reversible; retains the record for audit)."""
         self._ensure_active()
-        events: list[DomainEvent] = [
-            UserDeleted(aggregate_id=self._id, reason=reason, occurred_at=now)
-        ]
+        events: list[DomainEvent] = [UserDeleted(aggregate_id=self._id, reason=reason, occurred_at=now)]
         self._deleted_at = now
         self._touch(now)
         return events
@@ -578,9 +551,7 @@ class User:
     def rename(self, new_name: FullName, *, now: datetime) -> list[DomainEvent]:
         """Change the account holder's name."""
         self._ensure_active()
-        events: list[DomainEvent] = [
-            UserRenamed(aggregate_id=self._id, full_name=new_name, occurred_at=now)
-        ]
+        events: list[DomainEvent] = [UserRenamed(aggregate_id=self._id, full_name=new_name, occurred_at=now)]
         self._full_name = new_name
         self._touch(now)
         return events
@@ -588,9 +559,7 @@ class User:
     def change_locale(self, new_locale: Locale, *, now: datetime) -> list[DomainEvent]:
         """Change the preferred locale."""
         self._ensure_active()
-        events: list[DomainEvent] = [
-            LocaleChanged(aggregate_id=self._id, locale=new_locale, occurred_at=now)
-        ]
+        events: list[DomainEvent] = [LocaleChanged(aggregate_id=self._id, locale=new_locale, occurred_at=now)]
         self._locale = new_locale
         self._touch(now)
         return events
@@ -598,9 +567,7 @@ class User:
     def change_timezone(self, new_timezone: Timezone, *, now: datetime) -> list[DomainEvent]:
         """Change the preferred timezone."""
         self._ensure_active()
-        events: list[DomainEvent] = [
-            TimezoneChanged(aggregate_id=self._id, timezone=new_timezone, occurred_at=now)
-        ]
+        events: list[DomainEvent] = [TimezoneChanged(aggregate_id=self._id, timezone=new_timezone, occurred_at=now)]
         self._timezone = new_timezone
         self._touch(now)
         return events

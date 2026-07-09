@@ -48,11 +48,7 @@ def a_staff_invitation(
     _email = email if email is not None else StaffEmail("test@example.com")
     _role = role if role is not None else StaffRole.SUPPORT
     _raw_token = raw_token if raw_token is not None else "raw-token"
-    _token_hash = (
-        token_hash
-        if token_hash is not None
-        else InvitationTokenHash(hashlib.sha256(_raw_token.encode()).hexdigest())
-    )
+    _token_hash = token_hash if token_hash is not None else InvitationTokenHash(hashlib.sha256(_raw_token.encode()).hexdigest())
     _invited_by = invited_by if invited_by is not None else StaffUserId.from_uuid(SequenceUuidGenerator().new())
     _expires_at = expires_at if expires_at is not None else _now.replace(year=_now.year + 1)
 
@@ -69,7 +65,7 @@ def a_staff_invitation(
     )
     # Manually set expires_at if it was explicitly provided to the helper
     if expires_at is not None:
-        invitation._expires_at = expires_at # Directly access private attribute for test setup
+        invitation._expires_at = expires_at  # Directly access private attribute for test setup
 
     return invitation
 
@@ -127,28 +123,20 @@ class FakeStaffMembershipRepository:
     def get(self, membership_id: StaffMembershipId) -> StaffMembership | None:
         return self._by_id.get(membership_id)
 
-    def find_active(
-        self, *, user_id: StaffUserId, organization_id: OrganizationId
-    ) -> StaffMembership | None:
+    def find_active(self, *, user_id: StaffUserId, organization_id: OrganizationId) -> StaffMembership | None:
         return next(
             (
                 m
                 for m in self._by_id.values()
-                if m.user_id == user_id
-                and m.organization_id == organization_id
-                and m.status is MembershipStatus.ACTIVE
+                if m.user_id == user_id and m.organization_id == organization_id and m.status is MembershipStatus.ACTIVE
             ),
             None,
         )
 
-    def exists_active(
-        self, *, user_id: StaffUserId, organization_id: OrganizationId
-    ) -> bool:
+    def exists_active(self, *, user_id: StaffUserId, organization_id: OrganizationId) -> bool:
         return self.find_active(user_id=user_id, organization_id=organization_id) is not None
 
-    def list_by_organization(
-        self, organization_id: OrganizationId
-    ) -> Sequence[StaffMembership]:
+    def list_by_organization(self, organization_id: OrganizationId) -> Sequence[StaffMembership]:
         return [m for m in self._by_id.values() if m.organization_id == organization_id]
 
     def save(self, membership: StaffMembership) -> None:
@@ -165,21 +153,11 @@ class FakeStaffInvitationRepository:
         return self._by_id.get(invitation_id)
 
     def get_by_token_hash(self, token_hash: InvitationTokenHash) -> StaffInvitation | None:
-        return next(
-            (i for i in self._by_id.values() if i.token_hash == token_hash), None
-        )
+        return next((i for i in self._by_id.values() if i.token_hash == token_hash), None)
 
-    def find_pending_by_email(
-        self, *, email: StaffEmail, organization_id: OrganizationId
-    ) -> StaffInvitation | None:
+    def find_pending_by_email(self, *, email: StaffEmail, organization_id: OrganizationId) -> StaffInvitation | None:
         return next(
-            (
-                i
-                for i in self._by_id.values()
-                if i.email == email
-                and i.organization_id == organization_id
-                and i.is_pending()
-            ),
+            (i for i in self._by_id.values() if i.email == email and i.organization_id == organization_id and i.is_pending()),
             None,
         )
 
@@ -193,8 +171,7 @@ class RecordingEmailGateway:
         self.sent: list[tuple[StaffEmail, OrganizationName, StaffRole, datetime, str]] = []
 
     def send_staff_invitation(
-        self, *, recipient_email: StaffEmail, organization_name: OrganizationName, role: StaffRole,
-        expires_at: datetime, token: str
+        self, *, recipient_email: StaffEmail, organization_name: OrganizationName, role: StaffRole, expires_at: datetime, token: str
     ) -> None:
         self.sent.append((recipient_email, organization_name, role, expires_at, token))
 

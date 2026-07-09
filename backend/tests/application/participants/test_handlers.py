@@ -130,14 +130,10 @@ def _seed(
         participant.verify(now=NOW)
     if with_guardian or active:
         guardian = GuardianId.generate()
-        participant.propose_guardian_link(
-            guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=NOW
-        )
+        participant.propose_guardian_link(guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=NOW)
         participant.verify_guardian_link(guardian_id=guardian, now=NOW)
     if with_consent or active:
-        participant.record_consent(
-            consent=ConsentReference.of(_generate_uuid7(), "2026-01"), now=NOW
-        )
+        participant.record_consent(consent=ConsentReference.of(_generate_uuid7(), "2026-01"), now=NOW)
     if active:
         participant.activate(policy=_GUARDIANSHIP, now=NOW)
     return repo.seed(participant)
@@ -162,12 +158,8 @@ def _create_command(**overrides: str | None) -> CreateParticipantCommand:
 # ---------------------------------------------------------------------------
 
 
-def test_create_happy_path(
-    repo: FakeParticipantRepository, clock: FakeClock, uuids: FakeUuidGenerator
-) -> None:
-    handler = CreateParticipantHandler(
-        participants=repo, clock=clock, uuids=uuids, pseudonymization_policy=_PSEUDONYM
-    )
+def test_create_happy_path(repo: FakeParticipantRepository, clock: FakeClock, uuids: FakeUuidGenerator) -> None:
+    handler = CreateParticipantHandler(participants=repo, clock=clock, uuids=uuids, pseudonymization_policy=_PSEUDONYM)
     result = handler.handle(_create_command())
     assert result.participant.status == "created"
     assert result.participant.display_alias == "Falcon-99"
@@ -175,43 +167,27 @@ def test_create_happy_path(
     assert len(repo.saved) == 1
 
 
-def test_create_rejects_duplicate_alias(
-    repo: FakeParticipantRepository, clock: FakeClock, uuids: FakeUuidGenerator
-) -> None:
+def test_create_rejects_duplicate_alias(repo: FakeParticipantRepository, clock: FakeClock, uuids: FakeUuidGenerator) -> None:
     _seed(repo, alias="Falcon-99")
-    handler = CreateParticipantHandler(
-        participants=repo, clock=clock, uuids=uuids, pseudonymization_policy=_PSEUDONYM
-    )
+    handler = CreateParticipantHandler(participants=repo, clock=clock, uuids=uuids, pseudonymization_policy=_PSEUDONYM)
     with pytest.raises(DisplayAliasAlreadyInUseError):
         handler.handle(_create_command())
 
 
-def test_create_rejects_unknown_actor_type(
-    repo: FakeParticipantRepository, clock: FakeClock, uuids: FakeUuidGenerator
-) -> None:
-    handler = CreateParticipantHandler(
-        participants=repo, clock=clock, uuids=uuids, pseudonymization_policy=_PSEUDONYM
-    )
+def test_create_rejects_unknown_actor_type(repo: FakeParticipantRepository, clock: FakeClock, uuids: FakeUuidGenerator) -> None:
+    handler = CreateParticipantHandler(participants=repo, clock=clock, uuids=uuids, pseudonymization_policy=_PSEUDONYM)
     with pytest.raises(InvalidInputError):
         handler.handle(_create_command(created_by_type="wizard"))
 
 
-def test_create_rejects_invalid_date(
-    repo: FakeParticipantRepository, clock: FakeClock, uuids: FakeUuidGenerator
-) -> None:
-    handler = CreateParticipantHandler(
-        participants=repo, clock=clock, uuids=uuids, pseudonymization_policy=_PSEUDONYM
-    )
+def test_create_rejects_invalid_date(repo: FakeParticipantRepository, clock: FakeClock, uuids: FakeUuidGenerator) -> None:
+    handler = CreateParticipantHandler(participants=repo, clock=clock, uuids=uuids, pseudonymization_policy=_PSEUDONYM)
     with pytest.raises(InvalidInputError):
         handler.handle(_create_command(date_of_birth="not-a-date"))
 
 
-def test_create_rejects_identity_leaking_alias(
-    repo: FakeParticipantRepository, clock: FakeClock, uuids: FakeUuidGenerator
-) -> None:
-    handler = CreateParticipantHandler(
-        participants=repo, clock=clock, uuids=uuids, pseudonymization_policy=_PSEUDONYM
-    )
+def test_create_rejects_identity_leaking_alias(repo: FakeParticipantRepository, clock: FakeClock, uuids: FakeUuidGenerator) -> None:
+    handler = CreateParticipantHandler(participants=repo, clock=clock, uuids=uuids, pseudonymization_policy=_PSEUDONYM)
     with pytest.raises(PolicyViolationError):
         handler.handle(_create_command(display_alias="Petrov art"))
 
@@ -235,9 +211,7 @@ def test_propose_guardian_link(repo: FakeParticipantRepository, clock: FakeClock
     assert result.participant.guardian_links[0].status == "proposed"
 
 
-def test_propose_guardian_link_bad_participant_id(
-    repo: FakeParticipantRepository, clock: FakeClock
-) -> None:
+def test_propose_guardian_link_bad_participant_id(repo: FakeParticipantRepository, clock: FakeClock) -> None:
     handler = ProposeGuardianLinkHandler(participants=repo, clock=clock)
     with pytest.raises(InvalidInputError):
         handler.handle(
@@ -249,9 +223,7 @@ def test_propose_guardian_link_bad_participant_id(
         )
 
 
-def test_propose_guardian_link_not_found(
-    repo: FakeParticipantRepository, clock: FakeClock
-) -> None:
+def test_propose_guardian_link_not_found(repo: FakeParticipantRepository, clock: FakeClock) -> None:
     handler = ProposeGuardianLinkHandler(participants=repo, clock=clock)
     with pytest.raises(ParticipantNotFoundError):
         handler.handle(
@@ -263,9 +235,7 @@ def test_propose_guardian_link_not_found(
         )
 
 
-def test_propose_guardian_link_unknown_relationship(
-    repo: FakeParticipantRepository, clock: FakeClock
-) -> None:
+def test_propose_guardian_link_unknown_relationship(repo: FakeParticipantRepository, clock: FakeClock) -> None:
     participant = _seed(repo)
     handler = ProposeGuardianLinkHandler(participants=repo, clock=clock)
     with pytest.raises(InvalidInputError):
@@ -278,9 +248,7 @@ def test_propose_guardian_link_unknown_relationship(
         )
 
 
-def test_propose_guardian_link_bad_guardian_id(
-    repo: FakeParticipantRepository, clock: FakeClock
-) -> None:
+def test_propose_guardian_link_bad_guardian_id(repo: FakeParticipantRepository, clock: FakeClock) -> None:
     participant = _seed(repo)
     handler = ProposeGuardianLinkHandler(participants=repo, clock=clock)
     with pytest.raises(InvalidInputError):
@@ -293,49 +261,29 @@ def test_propose_guardian_link_bad_guardian_id(
         )
 
 
-def test_verify_guardian_link_emits_event(
-    repo: FakeParticipantRepository, clock: FakeClock
-) -> None:
+def test_verify_guardian_link_emits_event(repo: FakeParticipantRepository, clock: FakeClock) -> None:
     participant = _seed(repo)
     guardian = GuardianId.generate()
-    participant.propose_guardian_link(
-        guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=NOW
-    )
+    participant.propose_guardian_link(guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=NOW)
     handler = VerifyGuardianLinkHandler(participants=repo, clock=clock)
-    result = handler.handle(
-        VerifyGuardianLinkCommand(
-            participant_id=participant.id.json(), guardian_id=guardian.json()
-        )
-    )
+    result = handler.handle(VerifyGuardianLinkCommand(participant_id=participant.id.json(), guardian_id=guardian.json()))
     assert isinstance(result.events[0], GuardianLinked)
 
 
-def test_verify_missing_guardian_link_is_state_conflict(
-    repo: FakeParticipantRepository, clock: FakeClock
-) -> None:
+def test_verify_missing_guardian_link_is_state_conflict(repo: FakeParticipantRepository, clock: FakeClock) -> None:
     participant = _seed(repo)
     handler = VerifyGuardianLinkHandler(participants=repo, clock=clock)
     with pytest.raises(ParticipantStateConflictError) as exc:
-        handler.handle(
-            VerifyGuardianLinkCommand(
-                participant_id=participant.id.json(), guardian_id=str(_generate_uuid7())
-            )
-        )
+        handler.handle(VerifyGuardianLinkCommand(participant_id=participant.id.json(), guardian_id=str(_generate_uuid7())))
     assert exc.value.domain_code == "GuardianLinkNotFoundError"
 
 
 def test_revoke_guardian_link(repo: FakeParticipantRepository, clock: FakeClock) -> None:
     participant = _seed(repo)
     guardian = GuardianId.generate()
-    participant.propose_guardian_link(
-        guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=NOW
-    )
+    participant.propose_guardian_link(guardian_id=guardian, relationship_type=GuardianRelationshipType.MOTHER, now=NOW)
     handler = RevokeGuardianLinkHandler(participants=repo, clock=clock)
-    result = handler.handle(
-        RevokeGuardianLinkCommand(
-            participant_id=participant.id.json(), guardian_id=guardian.json()
-        )
-    )
+    result = handler.handle(RevokeGuardianLinkCommand(participant_id=participant.id.json(), guardian_id=guardian.json()))
     assert result.participant.guardian_links[0].status == "revoked"
 
 
@@ -344,9 +292,7 @@ def test_revoke_guardian_link(repo: FakeParticipantRepository, clock: FakeClock)
 # ---------------------------------------------------------------------------
 
 
-def test_authorize_institution_with_teacher(
-    repo: FakeParticipantRepository, clock: FakeClock
-) -> None:
+def test_authorize_institution_with_teacher(repo: FakeParticipantRepository, clock: FakeClock) -> None:
     participant = _seed(repo)
     handler = AuthorizeInstitutionHandler(participants=repo, clock=clock)
     result = handler.handle(
@@ -360,9 +306,7 @@ def test_authorize_institution_with_teacher(
     assert result.participant.teacher_id is not None
 
 
-def test_authorize_institution_without_teacher(
-    repo: FakeParticipantRepository, clock: FakeClock
-) -> None:
+def test_authorize_institution_without_teacher(repo: FakeParticipantRepository, clock: FakeClock) -> None:
     participant = _seed(repo)
     handler = AuthorizeInstitutionHandler(participants=repo, clock=clock)
     result = handler.handle(
@@ -375,17 +319,11 @@ def test_authorize_institution_without_teacher(
     assert result.participant.teacher_id is None
 
 
-def test_authorize_institution_bad_id(
-    repo: FakeParticipantRepository, clock: FakeClock
-) -> None:
+def test_authorize_institution_bad_id(repo: FakeParticipantRepository, clock: FakeClock) -> None:
     participant = _seed(repo)
     handler = AuthorizeInstitutionHandler(participants=repo, clock=clock)
     with pytest.raises(InvalidInputError):
-        handler.handle(
-            AuthorizeInstitutionCommand(
-                participant_id=participant.id.json(), institution_id="nope", teacher_id=None
-            )
-        )
+        handler.handle(AuthorizeInstitutionCommand(participant_id=participant.id.json(), institution_id="nope", teacher_id=None))
 
 
 def test_record_consent(repo: FakeParticipantRepository, clock: FakeClock) -> None:
@@ -405,11 +343,7 @@ def test_record_consent_bad_id(repo: FakeParticipantRepository, clock: FakeClock
     participant = _seed(repo)
     handler = RecordConsentHandler(participants=repo, clock=clock)
     with pytest.raises(InvalidInputError):
-        handler.handle(
-            RecordConsentCommand(
-                participant_id=participant.id.json(), consent_id="nope", consent_version="1"
-            )
-        )
+        handler.handle(RecordConsentCommand(participant_id=participant.id.json(), consent_id="nope", consent_version="1"))
 
 
 def test_withdraw_consent(repo: FakeParticipantRepository, clock: FakeClock) -> None:
@@ -419,9 +353,7 @@ def test_withdraw_consent(repo: FakeParticipantRepository, clock: FakeClock) -> 
     assert result.participant.consent_version is None
 
 
-def test_withdraw_without_consent_is_state_conflict(
-    repo: FakeParticipantRepository, clock: FakeClock
-) -> None:
+def test_withdraw_without_consent_is_state_conflict(repo: FakeParticipantRepository, clock: FakeClock) -> None:
     participant = _seed(repo)
     handler = WithdrawConsentHandler(participants=repo, clock=clock)
     with pytest.raises(ParticipantStateConflictError):
@@ -436,54 +368,30 @@ def test_withdraw_without_consent_is_state_conflict(
 def test_rename(repo: FakeParticipantRepository, clock: FakeClock) -> None:
     participant = _seed(repo)
     handler = RenameParticipantHandler(participants=repo, clock=clock)
-    result = handler.handle(
-        RenameParticipantCommand(
-            participant_id=participant.id.json(), first_name="Ivan", last_name="Sidorov"
-        )
-    )
+    result = handler.handle(RenameParticipantCommand(participant_id=participant.id.json(), first_name="Ivan", last_name="Sidorov"))
     assert result.participant.last_name == "Sidorov"
 
 
 def test_reassign_display_alias(repo: FakeParticipantRepository, clock: FakeClock) -> None:
     participant = _seed(repo)
-    handler = ReassignDisplayAliasHandler(
-        participants=repo, clock=clock, pseudonymization_policy=_PSEUDONYM
-    )
-    result = handler.handle(
-        ReassignDisplayAliasCommand(participant_id=participant.id.json(), display_alias="Eagle-7")
-    )
+    handler = ReassignDisplayAliasHandler(participants=repo, clock=clock, pseudonymization_policy=_PSEUDONYM)
+    result = handler.handle(ReassignDisplayAliasCommand(participant_id=participant.id.json(), display_alias="Eagle-7"))
     assert result.participant.display_alias == "Eagle-7"
 
 
-def test_reassign_display_alias_conflict(
-    repo: FakeParticipantRepository, clock: FakeClock
-) -> None:
+def test_reassign_display_alias_conflict(repo: FakeParticipantRepository, clock: FakeClock) -> None:
     _seed(repo, alias="Eagle-7")
     participant = _seed(repo, alias="Falcon-99")
-    handler = ReassignDisplayAliasHandler(
-        participants=repo, clock=clock, pseudonymization_policy=_PSEUDONYM
-    )
+    handler = ReassignDisplayAliasHandler(participants=repo, clock=clock, pseudonymization_policy=_PSEUDONYM)
     with pytest.raises(DisplayAliasAlreadyInUseError):
-        handler.handle(
-            ReassignDisplayAliasCommand(
-                participant_id=participant.id.json(), display_alias="Eagle-7"
-            )
-        )
+        handler.handle(ReassignDisplayAliasCommand(participant_id=participant.id.json(), display_alias="Eagle-7"))
 
 
-def test_reassign_display_alias_reveals_identity(
-    repo: FakeParticipantRepository, clock: FakeClock
-) -> None:
+def test_reassign_display_alias_reveals_identity(repo: FakeParticipantRepository, clock: FakeClock) -> None:
     participant = _seed(repo)
-    handler = ReassignDisplayAliasHandler(
-        participants=repo, clock=clock, pseudonymization_policy=_PSEUDONYM
-    )
+    handler = ReassignDisplayAliasHandler(participants=repo, clock=clock, pseudonymization_policy=_PSEUDONYM)
     with pytest.raises(PolicyViolationError):
-        handler.handle(
-            ReassignDisplayAliasCommand(
-                participant_id=participant.id.json(), display_alias="Petrov again"
-            )
-        )
+        handler.handle(ReassignDisplayAliasCommand(participant_id=participant.id.json(), display_alias="Petrov again"))
 
 
 # ---------------------------------------------------------------------------
@@ -499,9 +407,7 @@ def test_verify_participant(repo: FakeParticipantRepository, clock: FakeClock) -
     assert isinstance(result.events[0], ParticipantVerified)
 
 
-def test_verify_participant_wrong_state(
-    repo: FakeParticipantRepository, clock: FakeClock
-) -> None:
+def test_verify_participant_wrong_state(repo: FakeParticipantRepository, clock: FakeClock) -> None:
     participant = _seed(repo, verified=True)
     handler = VerifyParticipantHandler(participants=repo, clock=clock)
     with pytest.raises(ParticipantStateConflictError):
@@ -510,33 +416,23 @@ def test_verify_participant_wrong_state(
 
 def test_activate_happy_path(repo: FakeParticipantRepository, clock: FakeClock) -> None:
     participant = _seed(repo, verified=True, with_guardian=True, with_consent=True)
-    handler = ActivateParticipantHandler(
-        participants=repo, clock=clock, guardianship_policy=_GUARDIANSHIP
-    )
+    handler = ActivateParticipantHandler(participants=repo, clock=clock, guardianship_policy=_GUARDIANSHIP)
     result = handler.handle(ActivateParticipantCommand(participant_id=participant.id.json()))
     assert result.participant.status == "active"
     assert isinstance(result.events[0], ParticipantActivated)
 
 
-def test_activate_blocked_without_consent(
-    repo: FakeParticipantRepository, clock: FakeClock
-) -> None:
+def test_activate_blocked_without_consent(repo: FakeParticipantRepository, clock: FakeClock) -> None:
     participant = _seed(repo, verified=True, with_guardian=True)
-    handler = ActivateParticipantHandler(
-        participants=repo, clock=clock, guardianship_policy=_GUARDIANSHIP
-    )
+    handler = ActivateParticipantHandler(participants=repo, clock=clock, guardianship_policy=_GUARDIANSHIP)
     with pytest.raises(ActivationBlockedError) as exc:
         handler.handle(ActivateParticipantCommand(participant_id=participant.id.json()))
     assert exc.value.reason == ActivationBlockReason.CONSENT_MISSING.value
 
 
-def test_activate_blocked_without_adult(
-    repo: FakeParticipantRepository, clock: FakeClock
-) -> None:
+def test_activate_blocked_without_adult(repo: FakeParticipantRepository, clock: FakeClock) -> None:
     participant = _seed(repo, verified=True, with_consent=True)
-    handler = ActivateParticipantHandler(
-        participants=repo, clock=clock, guardianship_policy=_GUARDIANSHIP
-    )
+    handler = ActivateParticipantHandler(participants=repo, clock=clock, guardianship_policy=_GUARDIANSHIP)
     with pytest.raises(ActivationBlockedError) as exc:
         handler.handle(ActivateParticipantCommand(participant_id=participant.id.json()))
     assert exc.value.reason == ActivationBlockReason.NO_RESPONSIBLE_ADULT.value
@@ -549,38 +445,24 @@ def test_archive_and_reactivate(repo: FakeParticipantRepository, clock: FakeCloc
     assert archived.participant.status == "archived"
     assert isinstance(archived.events[0], ParticipantArchived)
 
-    reactivate = ReactivateParticipantHandler(
-        participants=repo, clock=clock, guardianship_policy=_GUARDIANSHIP
-    )
-    reactivated = reactivate.handle(
-        ReactivateParticipantCommand(participant_id=participant.id.json())
-    )
+    reactivate = ReactivateParticipantHandler(participants=repo, clock=clock, guardianship_policy=_GUARDIANSHIP)
+    reactivated = reactivate.handle(ReactivateParticipantCommand(participant_id=participant.id.json()))
     assert reactivated.participant.status == "active"
 
 
 def test_request_erasure(repo: FakeParticipantRepository, clock: FakeClock) -> None:
     participant = _seed(repo, active=True)
     handler = RequestParticipantErasureHandler(participants=repo, clock=clock)
-    result = handler.handle(
-        RequestParticipantErasureCommand(
-            participant_id=participant.id.json(), request_reference=str(_generate_uuid7())
-        )
-    )
+    result = handler.handle(RequestParticipantErasureCommand(participant_id=participant.id.json(), request_reference=str(_generate_uuid7())))
     assert result.participant.status == "erased"
     assert isinstance(result.events[0], ParticipantErasureRequested)
 
 
-def test_request_erasure_bad_reference(
-    repo: FakeParticipantRepository, clock: FakeClock
-) -> None:
+def test_request_erasure_bad_reference(repo: FakeParticipantRepository, clock: FakeClock) -> None:
     participant = _seed(repo, active=True)
     handler = RequestParticipantErasureHandler(participants=repo, clock=clock)
     with pytest.raises(InvalidInputError):
-        handler.handle(
-            RequestParticipantErasureCommand(
-                participant_id=participant.id.json(), request_reference="nope"
-            )
-        )
+        handler.handle(RequestParticipantErasureCommand(participant_id=participant.id.json(), request_reference="nope"))
 
 
 # ---------------------------------------------------------------------------

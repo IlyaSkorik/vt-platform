@@ -68,16 +68,12 @@ class AcceptStaffInvitationHandler:
 
         organization = self._organizations.get_default()
         if organization is None:
-            raise OrganizationNotFoundError(
-                "The organization has not been seeded; run migrations first."
-            )
+            raise OrganizationNotFoundError("The organization has not been seeded; run migrations first.")
 
         if invitation.email != email:
             raise PermissionDeniedError("This invitation is not for the authenticated user.")
 
-        if self._memberships.exists_active(
-            user_id=accepted_by, organization_id=organization.id
-        ):
+        if self._memberships.exists_active(user_id=accepted_by, organization_id=organization.id):
             raise UserAlreadyStaffError("This user already has an active staff membership.")
 
         with translate_domain_errors():

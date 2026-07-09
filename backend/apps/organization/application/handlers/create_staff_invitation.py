@@ -65,23 +65,17 @@ class InviteStaffHandler:
         now = self._clock.utcnow()
         organization = self._organizations.get_default()
         if organization is None:
-            raise OrganizationNotFoundError(
-                "The organization has not been seeded; run migrations first."
-            )
+            raise OrganizationNotFoundError("The organization has not been seeded; run migrations first.")
 
         email = StaffEmail(command.email)
         role = StaffRole(command.role)
         invited_by = StaffUserId.from_string(command.invited_by)
 
-        inviter_membership = self._memberships.find_active(
-            user_id=invited_by, organization_id=organization.id
-        )
+        inviter_membership = self._memberships.find_active(user_id=invited_by, organization_id=organization.id)
         if inviter_membership is None or not inviter_membership.has_role(StaffRole.OWNER):
             raise PermissionDeniedError("Only active owners may issue staff invitations.")
 
-        if self._invitations.find_pending_by_email(
-            email=email, organization_id=organization.id
-        ) is not None:
+        if self._invitations.find_pending_by_email(email=email, organization_id=organization.id) is not None:
             raise InvitationConflictError("An open invitation already exists for this email.")
 
         issued_token = self._hasher.generate()

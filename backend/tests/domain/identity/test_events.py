@@ -298,9 +298,7 @@ class TestEventPayloads:
 
     def test_user_locked_temporary(self, aggregate_id: UserId) -> None:
         until = datetime(2026, 7, 6, 13, 0, tzinfo=UTC)
-        event = UserLocked(
-            aggregate_id=aggregate_id, reason="too_many_attempts", locked_until=until
-        )
+        event = UserLocked(aggregate_id=aggregate_id, reason="too_many_attempts", locked_until=until)
         assert event.reason == "too_many_attempts"
         assert event.locked_until == until
 

@@ -140,9 +140,7 @@ class FakeTokenService:
         access = f"access-{subject}-{self._counter}"
         self._valid.add(refresh)
         self.issued.append(subject)
-        return TokenPairDto(
-            access_token=access, refresh_token=refresh, token_type="Bearer", expires_in=900
-        )
+        return TokenPairDto(access_token=access, refresh_token=refresh, token_type="Bearer", expires_in=900)
 
     def rotate(self, *, refresh_token: str) -> TokenPairDto:
         if refresh_token not in self._valid:
@@ -175,9 +173,7 @@ class FakeEmailGateway:
         self.verification_emails: list[SentEmail] = []
         self.password_resets: list[Email] = []
 
-    def send_verification_email(
-        self, *, email: Email, full_name: FullName, verification_url: str, locale: Locale
-    ) -> None:
+    def send_verification_email(self, *, email: Email, full_name: FullName, verification_url: str, locale: Locale) -> None:
         self.verification_emails.append(
             SentEmail(
                 email=email,

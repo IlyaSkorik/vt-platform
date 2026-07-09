@@ -74,13 +74,7 @@ def _generate_uuid7() -> uuid.UUID:
     rand = int.from_bytes(os.urandom(10), "big")  # 80 random bits
     rand_a = rand >> 68 & 0x0FFF  # 12 bits
     rand_b = rand & ((1 << 62) - 1)  # 62 bits
-    value = (
-        (unix_ms & ((1 << 48) - 1)) << 80
-        | _UUID_V7_VERSION << 76
-        | rand_a << 64
-        | 0b10 << 62
-        | rand_b
-    )
+    value = (unix_ms & ((1 << 48) - 1)) << 80 | _UUID_V7_VERSION << 76 | rand_a << 64 | 0b10 << 62 | rand_b
     return uuid.UUID(int=value)
 
 
@@ -97,13 +91,9 @@ class OrganizationId:
 
     def __post_init__(self) -> None:
         if not isinstance(self.value, uuid.UUID):
-            raise InvalidOrganizationIdError(
-                f"OrganizationId must wrap a uuid.UUID, got {type(self.value)!r}."
-            )
+            raise InvalidOrganizationIdError(f"OrganizationId must wrap a uuid.UUID, got {type(self.value)!r}.")
         if self.value.version != _UUID_V7_VERSION:
-            raise InvalidOrganizationIdError(
-                f"OrganizationId must be a UUID v7, got version {self.value.version}."
-            )
+            raise InvalidOrganizationIdError(f"OrganizationId must be a UUID v7, got version {self.value.version}.")
 
     @classmethod
     def generate(cls) -> OrganizationId:
@@ -143,13 +133,9 @@ class StaffMembershipId:
 
     def __post_init__(self) -> None:
         if not isinstance(self.value, uuid.UUID):
-            raise InvalidStaffMembershipIdError(
-                f"StaffMembershipId must wrap a uuid.UUID, got {type(self.value)!r}."
-            )
+            raise InvalidStaffMembershipIdError(f"StaffMembershipId must wrap a uuid.UUID, got {type(self.value)!r}.")
         if self.value.version != _UUID_V7_VERSION:
-            raise InvalidStaffMembershipIdError(
-                f"StaffMembershipId must be a UUID v7, got version {self.value.version}."
-            )
+            raise InvalidStaffMembershipIdError(f"StaffMembershipId must be a UUID v7, got version {self.value.version}.")
 
     @classmethod
     def generate(cls) -> StaffMembershipId:
@@ -189,13 +175,9 @@ class StaffInvitationId:
 
     def __post_init__(self) -> None:
         if not isinstance(self.value, uuid.UUID):
-            raise InvalidStaffInvitationIdError(
-                f"StaffInvitationId must wrap a uuid.UUID, got {type(self.value)!r}."
-            )
+            raise InvalidStaffInvitationIdError(f"StaffInvitationId must wrap a uuid.UUID, got {type(self.value)!r}.")
         if self.value.version != _UUID_V7_VERSION:
-            raise InvalidStaffInvitationIdError(
-                f"StaffInvitationId must be a UUID v7, got version {self.value.version}."
-            )
+            raise InvalidStaffInvitationIdError(f"StaffInvitationId must be a UUID v7, got version {self.value.version}.")
 
     @classmethod
     def generate(cls) -> StaffInvitationId:
@@ -240,13 +222,9 @@ class StaffUserId:
 
     def __post_init__(self) -> None:
         if not isinstance(self.value, uuid.UUID):
-            raise InvalidStaffUserIdError(
-                f"StaffUserId must wrap a uuid.UUID, got {type(self.value)!r}."
-            )
+            raise InvalidStaffUserIdError(f"StaffUserId must wrap a uuid.UUID, got {type(self.value)!r}.")
         if self.value.version != _UUID_V7_VERSION:
-            raise InvalidStaffUserIdError(
-                f"StaffUserId must be a UUID v7, got version {self.value.version}."
-            )
+            raise InvalidStaffUserIdError(f"StaffUserId must be a UUID v7, got version {self.value.version}.")
 
     @classmethod
     def from_uuid(cls, value: uuid.UUID) -> StaffUserId:
@@ -293,9 +271,7 @@ class OrganizationName:
         if not stripped:
             raise InvalidOrganizationNameError("Organization name must not be empty.")
         if len(stripped) > _NAME_MAX:
-            raise InvalidOrganizationNameError(
-                f"Organization name must be at most {_NAME_MAX} characters."
-            )
+            raise InvalidOrganizationNameError(f"Organization name must be at most {_NAME_MAX} characters.")
         # Normalize to the stripped form so equality ignores surrounding whitespace.
         object.__setattr__(self, "value", stripped)
 
@@ -313,13 +289,9 @@ class OrganizationSlug:
         if not self.value:
             raise InvalidOrganizationSlugError("Organization slug must not be empty.")
         if len(self.value) > _SLUG_MAX:
-            raise InvalidOrganizationSlugError(
-                f"Organization slug must be at most {_SLUG_MAX} characters."
-            )
+            raise InvalidOrganizationSlugError(f"Organization slug must be at most {_SLUG_MAX} characters.")
         if not _SLUG_RE.match(self.value):
-            raise InvalidOrganizationSlugError(
-                f"Organization slug must be lowercase kebab-case: {self.value!r}."
-            )
+            raise InvalidOrganizationSlugError(f"Organization slug must be lowercase kebab-case: {self.value!r}.")
 
     def __str__(self) -> str:
         return self.value
@@ -402,9 +374,7 @@ def _normalize_email(value: str) -> str:
         if not 1 <= len(label) <= _EMAIL_MAX_LABEL:
             raise InvalidStaffEmailError(f"Email domain label length is invalid: {value!r}.")
         if label.startswith("-") or label.endswith("-"):
-            raise InvalidStaffEmailError(
-                f"Email domain label must not start/end with '-': {value!r}."
-            )
+            raise InvalidStaffEmailError(f"Email domain label must not start/end with '-': {value!r}.")
         if not _EMAIL_LABEL_RE.match(label):
             raise InvalidStaffEmailError(f"Email domain label has invalid characters: {value!r}.")
     if not _EMAIL_TLD_RE.match(labels[-1]):
@@ -451,9 +421,7 @@ class InvitationTokenHash:
 
     def __post_init__(self) -> None:
         if not _SHA256_HEX_RE.match(self.value):
-            raise InvalidInvitationTokenHashError(
-                "Invitation token hash must be a 64-character lowercase hex SHA-256 digest."
-            )
+            raise InvalidInvitationTokenHashError("Invitation token hash must be a 64-character lowercase hex SHA-256 digest.")
 
     def __str__(self) -> str:
         return self.value

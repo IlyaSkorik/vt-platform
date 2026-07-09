@@ -39,11 +39,7 @@ class DjangoOrganizationRepository:
         active row is authoritative should more than one ever exist.
         """
         try:
-            model = (
-                OrganizationModel.objects.filter(deleted_at__isnull=True)
-                .order_by("created_at")
-                .first()
-            )
+            model = OrganizationModel.objects.filter(deleted_at__isnull=True).order_by("created_at").first()
         except DatabaseError as exc:  # pragma: no cover - defensive
             raise PersistenceError("Failed to load the default organization.") from exc
         return OrganizationMapper.to_domain(model) if model is not None else None
@@ -61,7 +57,4 @@ class DjangoOrganizationRepository:
 
 def _column_values(model: OrganizationModel) -> dict[str, object]:
     """Flatten a mapped model into its concrete column values."""
-    return {
-        field.attname: getattr(model, field.attname)
-        for field in OrganizationModel._meta.concrete_fields
-    }
+    return {field.attname: getattr(model, field.attname) for field in OrganizationModel._meta.concrete_fields}

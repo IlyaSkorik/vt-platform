@@ -44,9 +44,7 @@ class FakeParticipantRepository:
         return participant_id in self._by_id
 
     def exists_by_display_alias(self, alias: DisplayAlias) -> bool:
-        return any(
-            p.display_alias == alias and not p.is_erased() for p in self._by_id.values()
-        )
+        return any(p.display_alias == alias and not p.is_erased() for p in self._by_id.values())
 
     def save(self, participant: Participant) -> None:
         self._by_id[participant.id] = participant

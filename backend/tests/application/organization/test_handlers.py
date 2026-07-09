@@ -173,7 +173,6 @@ def _new_user_uuid() -> StaffUserId:
     return StaffUserId.from_uuid(SequenceUuidGenerator().new())
 
 
-
 class RecordingTokenService:
     def build_accept_url(self, *, raw_token: str) -> str:
         return f"https://example.test/invite?token={raw_token}"
@@ -201,9 +200,7 @@ class TestProvisionOwnerHandler:
         _seeded_org(orgs)
         user_id = _new_user_uuid()
 
-        result = self._handler(orgs, members, events).handle(
-            ProvisionOwnerCommand(user_id=user_id.json())
-        )
+        result = self._handler(orgs, members, events).handle(ProvisionOwnerCommand(user_id=user_id.json()))
 
         assert result.membership.role == StaffRole.OWNER.value
         assert result.membership.status == "ACTIVE"
@@ -223,9 +220,7 @@ class TestProvisionOwnerHandler:
         orgs = FakeOrganizationRepository()
         _seeded_org(orgs)
         with pytest.raises(InvalidInputError):
-            self._handler(
-                orgs, FakeStaffMembershipRepository(), RecordingEventPublisher()
-            ).handle(ProvisionOwnerCommand(user_id="not-a-uuid"))
+            self._handler(orgs, FakeStaffMembershipRepository(), RecordingEventPublisher()).handle(ProvisionOwnerCommand(user_id="not-a-uuid"))
 
     def test_rejects_duplicate_active_owner(self) -> None:
         orgs = FakeOrganizationRepository()

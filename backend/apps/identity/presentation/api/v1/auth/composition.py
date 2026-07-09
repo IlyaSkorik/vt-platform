@@ -118,6 +118,7 @@ def build_logout_handler(tokens: TokenService | None = None) -> LogoutHandler:
     """Assemble the logout use case over the token service."""
     return LogoutHandler(tokens=tokens if tokens is not None else build_token_service())
 
+
 def build_current_user_handler() -> CurrentUserHandler:
     """Assemble the current user retrieval use case with its adapters."""
     return CurrentUserHandler(

@@ -129,8 +129,7 @@ class Participant:
     def __post_init__(self, _token: object) -> None:
         if _token is not _CREATION_TOKEN:
             raise DirectConstructionError(
-                "Participant must be created via Participant.create() or "
-                "Participant.rehydrate(), not by calling the constructor directly."
+                "Participant must be created via Participant.create() or Participant.rehydrate(), not by calling the constructor directly."
             )
 
     # ------------------------------------------------------------------
@@ -163,9 +162,7 @@ class Participant:
         if date_of_birth.is_after(now.date()):
             raise InvalidDateOfBirthError("Date of birth must not be in the future.")
         if pseudonymization_policy.reveals_identity(display_alias, name=name):
-            raise AliasRevealsIdentityError(
-                "Display alias must not embed the participant's real name (JDG-006)."
-            )
+            raise AliasRevealsIdentityError("Display alias must not embed the participant's real name (JDG-006).")
         participant = cls(
             _token=_CREATION_TOKEN,
             _id=participant_id,
@@ -379,9 +376,7 @@ class Participant:
         self._ensure_not_erased()
         existing = self._find_link(guardian_id)
         if existing is not None and not existing.is_revoked():
-            raise GuardianAlreadyLinkedError(
-                f"Guardian {guardian_id} is already linked to this participant."
-            )
+            raise GuardianAlreadyLinkedError(f"Guardian {guardian_id} is already linked to this participant.")
         new_link = GuardianLink(guardian_id=guardian_id, relationship_type=relationship_type)
         self._guardian_links = (*self._without_link(guardian_id), new_link)
         self._touch(now)
@@ -399,9 +394,7 @@ class Participant:
         if link is None:
             raise GuardianLinkNotFoundError(f"Guardian {guardian_id} is not linked.")
         if not link.is_proposed():
-            raise GuardianLinkNotPendingError(
-                f"Guardian link {guardian_id} is not proposed (status {link.status.value})."
-            )
+            raise GuardianLinkNotPendingError(f"Guardian link {guardian_id} is not proposed (status {link.status.value}).")
         self._guardian_links = (*self._without_link(guardian_id), link.verified(now=now))
         events: list[DomainEvent] = [
             GuardianLinked(
@@ -442,9 +435,7 @@ class Participant:
         the application/presentation layers, not weakened here.
         """
         self._ensure_not_erased()
-        self._institution_authority = InstitutionAuthority(
-            institution_id=institution_id, teacher_id=teacher_id
-        )
+        self._institution_authority = InstitutionAuthority(institution_id=institution_id, teacher_id=teacher_id)
         self._touch(now)
         return []
 
@@ -494,9 +485,7 @@ class Participant:
         """Change the judging alias, keeping it non-identifying (JDG-006)."""
         self._ensure_not_erased()
         if pseudonymization_policy.reveals_identity(new_alias, name=self._name):
-            raise AliasRevealsIdentityError(
-                "Display alias must not embed the participant's real name (JDG-006)."
-            )
+            raise AliasRevealsIdentityError("Display alias must not embed the participant's real name (JDG-006).")
         self._display_alias = new_alias
         self._touch(now)
         return []
@@ -513,9 +502,7 @@ class Participant:
         """
         self._ensure_not_erased()
         if self._status is not ParticipantStatus.CREATED:
-            raise InvalidParticipantTransitionError(
-                f"Cannot verify a participant in state {self._status.value}; expected 'created'."
-            )
+            raise InvalidParticipantTransitionError(f"Cannot verify a participant in state {self._status.value}; expected 'created'.")
         self._status = ParticipantStatus.VERIFIED
         self._verified_at = now
         events: list[DomainEvent] = [ParticipantVerified(aggregate_id=self._id, occurred_at=now)]
@@ -532,9 +519,7 @@ class Participant:
         """
         self._ensure_not_erased()
         if self._status is not ParticipantStatus.VERIFIED:
-            raise InvalidParticipantTransitionError(
-                f"Cannot activate a participant in state {self._status.value}; expected 'verified'."
-            )
+            raise InvalidParticipantTransitionError(f"Cannot activate a participant in state {self._status.value}; expected 'verified'.")
         self._guard_activation(policy)
         self._status = ParticipantStatus.ACTIVE
         self._activated_at = now
@@ -550,9 +535,7 @@ class Participant:
         """
         self._ensure_not_erased()
         if self._status is not ParticipantStatus.ACTIVE:
-            raise InvalidParticipantTransitionError(
-                f"Cannot archive a participant in state {self._status.value}; expected 'active'."
-            )
+            raise InvalidParticipantTransitionError(f"Cannot archive a participant in state {self._status.value}; expected 'active'.")
         self._status = ParticipantStatus.ARCHIVED
         self._archived_at = now
         events: list[DomainEvent] = [ParticipantArchived(aggregate_id=self._id, occurred_at=now)]
@@ -567,10 +550,7 @@ class Participant:
         """
         self._ensure_not_erased()
         if self._status is not ParticipantStatus.ARCHIVED:
-            raise ParticipantNotArchivedError(
-                f"Cannot reactivate a participant in state {self._status.value}; "
-                f"expected 'archived'."
-            )
+            raise ParticipantNotArchivedError(f"Cannot reactivate a participant in state {self._status.value}; expected 'archived'.")
         self._guard_activation(policy)
         self._status = ParticipantStatus.ACTIVE
         self._activated_at = now
@@ -579,9 +559,7 @@ class Participant:
         self._touch(now)
         return events
 
-    def request_erasure(
-        self, *, request_reference: uuid.UUID, now: datetime
-    ) -> list[DomainEvent]:
+    def request_erasure(self, *, request_reference: uuid.UUID, now: datetime) -> list[DomainEvent]:
         """Request erasure: ``{Active|Archived} → Erased`` (EVT-PRT-006, PRT-007).
 
         Terminal and irreversible. Emits :class:`ParticipantErasureRequested` to
@@ -590,17 +568,10 @@ class Participant:
         """
         self._ensure_not_erased()
         if self._status not in (ParticipantStatus.ACTIVE, ParticipantStatus.ARCHIVED):
-            raise InvalidParticipantTransitionError(
-                f"Cannot erase a participant in state {self._status.value}; "
-                f"expected 'active' or 'archived'."
-            )
+            raise InvalidParticipantTransitionError(f"Cannot erase a participant in state {self._status.value}; expected 'active' or 'archived'.")
         self._status = ParticipantStatus.ERASED
         self._erased_at = now
-        events: list[DomainEvent] = [
-            ParticipantErasureRequested(
-                aggregate_id=self._id, request_reference=request_reference, occurred_at=now
-            )
-        ]
+        events: list[DomainEvent] = [ParticipantErasureRequested(aggregate_id=self._id, request_reference=request_reference, occurred_at=now)]
         self._touch(now)
         return events
 
@@ -617,10 +588,7 @@ class Participant:
         return hash(self._id)
 
     def __repr__(self) -> str:
-        return (
-            f"Participant(id={self._id.json()!r}, alias={self._display_alias.value!r}, "
-            f"status={self._status.value!r}, version={self._version})"
-        )
+        return f"Participant(id={self._id.json()!r}, alias={self._display_alias.value!r}, status={self._status.value!r}, version={self._version})"
 
     # ------------------------------------------------------------------
     # Internals
@@ -635,15 +603,11 @@ class Participant:
         )
         if not assessment.allowed:
             reason = assessment.reason.value if assessment.reason is not None else "unknown"
-            raise ActivationRequirementsError(
-                f"Participant cannot be activated: {reason} (PRT-001).", reason=reason
-            )
+            raise ActivationRequirementsError(f"Participant cannot be activated: {reason} (PRT-001).", reason=reason)
 
     def _find_link(self, guardian_id: GuardianId) -> GuardianLink | None:
         """Return the guardian link for ``guardian_id``, or ``None``."""
-        return next(
-            (link for link in self._guardian_links if link.guardian_id == guardian_id), None
-        )
+        return next((link for link in self._guardian_links if link.guardian_id == guardian_id), None)
 
     def _without_link(self, guardian_id: GuardianId) -> tuple[GuardianLink, ...]:
         """The guardian links with any link for ``guardian_id`` removed."""
@@ -652,9 +616,7 @@ class Participant:
     def _ensure_not_erased(self) -> None:
         """Guard: forbid mutating an erased participant (terminal state)."""
         if self._status is ParticipantStatus.ERASED:
-            raise ParticipantErasedError(
-                f"Participant {self._id} is erased; operation not permitted."
-            )
+            raise ParticipantErasedError(f"Participant {self._id} is erased; operation not permitted.")
 
     def _touch(self, now: datetime) -> None:
         """Stamp the mutation time and advance the optimistic-concurrency version."""

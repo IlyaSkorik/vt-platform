@@ -42,10 +42,7 @@ def optimistic_upsert(
             if updated:
                 return
             if manager.filter(pk=pk).exists():
-                raise ConcurrencyConflictError(
-                    f"{model_cls.__name__} {pk} was modified concurrently; "
-                    f"expected version {previous_version}."
-                )
+                raise ConcurrencyConflictError(f"{model_cls.__name__} {pk} was modified concurrently; expected version {previous_version}.")
             manager.create(**columns)
     except IntegrityError as exc:
         raise IntegrityViolationError(f"Failed to persist {model_cls.__name__} {pk}.") from exc

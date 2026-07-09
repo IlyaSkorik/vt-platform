@@ -67,9 +67,7 @@ class AgeGroupPolicy:
         for i, band in enumerate(self.bands):
             for other in self.bands[i + 1 :]:
                 if band.overlaps(other):
-                    raise PolicyConfigurationError(
-                        f"AgeGroup bands {band.code!r} and {other.code!r} overlap."
-                    )
+                    raise PolicyConfigurationError(f"AgeGroup bands {band.code!r} and {other.code!r} overlap.")
 
     def derive(self, date_of_birth: DateOfBirth, *, reference_date: date) -> AgeGroup:
         """Return the age band a participant falls into at ``reference_date`` (PRT-002).
@@ -82,9 +80,7 @@ class AgeGroupPolicy:
         for band in self.bands:
             if band.contains(age):
                 return band
-        raise AgeGroupUndefinedError(
-            f"No configured age band covers age {age} at {reference_date.isoformat()}."
-        )
+        raise AgeGroupUndefinedError(f"No configured age band covers age {age} at {reference_date.isoformat()}.")
 
 
 # ---------------------------------------------------------------------------
@@ -184,7 +180,4 @@ class PseudonymizationPolicy:
         parts = [name.first_name, name.last_name]
         if name.middle_name is not None:
             parts.append(name.middle_name)
-        return any(
-            len(part) >= self.min_significant_length and part.casefold() in folded
-            for part in parts
-        )
+        return any(len(part) >= self.min_significant_length and part.casefold() in folded for part in parts)

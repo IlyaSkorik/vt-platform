@@ -133,15 +133,10 @@ def application_problem(exc: ApplicationError, *, instance: str, request: Any) -
     # A user-state conflict is a 409 by default, but some domain states are more
     # specific (an expired verification link is a 410 Gone) — refine by domain_code.
     if isinstance(exc, UserStateConflictError):
-        status, type_suffix, title, code = _STATE_CONFLICT_OVERRIDES.get(
-            exc.domain_code, (status, type_suffix, title, code)
-        )
+        status, type_suffix, title, code = _STATE_CONFLICT_OVERRIDES.get(exc.domain_code, (status, type_suffix, title, code))
     errors: list[dict[str, str]] | None = None
     if isinstance(exc, WeakPasswordError):
-        errors = [
-            {"pointer": "/password", "code": "weak-password", "detail": violation}
-            for violation in exc.violations
-        ]
+        errors = [{"pointer": "/password", "code": "weak-password", "detail": violation} for violation in exc.violations]
     return problem_response(
         status=status,
         type_suffix=type_suffix,
@@ -154,9 +149,7 @@ def application_problem(exc: ApplicationError, *, instance: str, request: Any) -
     )
 
 
-def validation_problem(
-    serializer_errors: dict[str, Any], *, instance: str, request: Any
-) -> Response:
+def validation_problem(serializer_errors: dict[str, Any], *, instance: str, request: Any) -> Response:
     """Render DRF serializer errors as a ``400`` validation Problem Details doc.
 
     Field-shape/type failures are ``400`` (API-000 §8.2); each entry carries a JSON

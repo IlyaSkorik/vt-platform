@@ -50,10 +50,7 @@ class Command(BaseCommand):
 
         user = DjangoUserRepository().get_by_email(email)
         if user is None:
-            raise CommandError(
-                f"No registered user found with email {raw_email!r}. "
-                "The user must register (and exist) before being made an owner."
-            )
+            raise CommandError(f"No registered user found with email {raw_email!r}. The user must register (and exist) before being made an owner.")
 
         command = ProvisionOwnerCommand(user_id=user.id.json())
         try:
@@ -62,8 +59,5 @@ class Command(BaseCommand):
             raise CommandError(f"Could not provision owner: {exc}") from exc
 
         self.stdout.write(
-            self.style.SUCCESS(
-                f"Provisioned OWNER for {raw_email} "
-                f"(role={result.membership.role}, status={result.membership.status})."
-            )
+            self.style.SUCCESS(f"Provisioned OWNER for {raw_email} (role={result.membership.role}, status={result.membership.status}).")
         )

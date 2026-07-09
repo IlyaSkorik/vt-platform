@@ -117,9 +117,7 @@ def phone_policy() -> PhoneVerificationPolicy:
 
 
 @pytest.fixture
-def registered(
-    user_id: UserId, email: Email, full_name: FullName, password_hash: PasswordHash
-) -> User:
+def registered(user_id: UserId, email: Email, full_name: FullName, password_hash: PasswordHash) -> User:
     """A freshly registered aggregate (events discarded)."""
     user, _ = User.register(
         user_id=user_id,
@@ -143,9 +141,7 @@ def _verified(user: User, email_policy: EmailVerificationPolicy, at: datetime = 
 
 
 class TestConstruction:
-    def test_direct_construction_is_forbidden(
-        self, user_id: UserId, email: Email, full_name: FullName, password_hash: PasswordHash
-    ) -> None:
+    def test_direct_construction_is_forbidden(self, user_id: UserId, email: Email, full_name: FullName, password_hash: PasswordHash) -> None:
         with pytest.raises(DirectConstructionError):
             User(
                 _token=object(),
@@ -161,9 +157,7 @@ class TestConstruction:
 
 
 class TestRegistration:
-    def test_register_returns_user_and_event(
-        self, user_id: UserId, email: Email, full_name: FullName, password_hash: PasswordHash
-    ) -> None:
+    def test_register_returns_user_and_event(self, user_id: UserId, email: Email, full_name: FullName, password_hash: PasswordHash) -> None:
         user, events = User.register(
             user_id=user_id,
             email=email,
@@ -175,9 +169,7 @@ class TestRegistration:
         assert len(events) == 1
         assert isinstance(events[0], UserRegistered)
 
-    def test_register_produces_user_registered_payload(
-        self, user_id: UserId, email: Email, full_name: FullName, password_hash: PasswordHash
-    ) -> None:
+    def test_register_produces_user_registered_payload(self, user_id: UserId, email: Email, full_name: FullName, password_hash: PasswordHash) -> None:
         _, events = User.register(
             user_id=user_id,
             email=email,
@@ -208,9 +200,7 @@ class TestRegistration:
         assert registered.deleted_at is None
         assert registered.version == 1
 
-    def test_register_accepts_optional_preferences(
-        self, user_id: UserId, email: Email, full_name: FullName, password_hash: PasswordHash
-    ) -> None:
+    def test_register_accepts_optional_preferences(self, user_id: UserId, email: Email, full_name: FullName, password_hash: PasswordHash) -> None:
         phone = PhoneNumber("+79991234567")
         user, _ = User.register(
             user_id=user_id,
@@ -228,9 +218,7 @@ class TestRegistration:
 
 
 class TestRehydration:
-    def test_rehydrate_restores_state_verbatim(
-        self, user_id: UserId, email: Email, full_name: FullName, password_hash: PasswordHash
-    ) -> None:
+    def test_rehydrate_restores_state_verbatim(self, user_id: UserId, email: Email, full_name: FullName, password_hash: PasswordHash) -> None:
         created = datetime(2026, 1, 1, 8, 0, tzinfo=UTC)
         updated = datetime(2026, 6, 1, 9, 0, tzinfo=UTC)
         user = User.rehydrate(
@@ -261,9 +249,7 @@ class TestRehydration:
         assert user.is_email_verified()
         assert user.is_phone_verified()
 
-    def test_rehydrate_emits_no_events(
-        self, user_id: UserId, email: Email, full_name: FullName, password_hash: PasswordHash
-    ) -> None:
+    def test_rehydrate_emits_no_events(self, user_id: UserId, email: Email, full_name: FullName, password_hash: PasswordHash) -> None:
         # rehydrate returns the aggregate only — never a (User, events) tuple.
         user = User.rehydrate(
             user_id=user_id,
@@ -278,9 +264,7 @@ class TestRehydration:
         )
         assert isinstance(user, User)
 
-    def test_rehydrate_never_increments_version(
-        self, user_id: UserId, email: Email, full_name: FullName, password_hash: PasswordHash
-    ) -> None:
+    def test_rehydrate_never_increments_version(self, user_id: UserId, email: Email, full_name: FullName, password_hash: PasswordHash) -> None:
         user = User.rehydrate(
             user_id=user_id,
             email=email,
@@ -314,9 +298,7 @@ class TestProperties:
 
 
 class TestChangeEmail:
-    def test_change_email_updates_and_resets_verification(
-        self, registered: User, email_policy: EmailVerificationPolicy
-    ) -> None:
+    def test_change_email_updates_and_resets_verification(self, registered: User, email_policy: EmailVerificationPolicy) -> None:
         _verified(registered, email_policy)
         assert registered.is_email_verified()
         new_email = Email("new@example.com")
@@ -336,24 +318,18 @@ class TestChangeEmail:
 
 
 class TestVerifyEmail:
-    def test_verify_email_marks_verified(
-        self, registered: User, email_policy: EmailVerificationPolicy
-    ) -> None:
+    def test_verify_email_marks_verified(self, registered: User, email_policy: EmailVerificationPolicy) -> None:
         events = registered.verify_email(policy=email_policy, sent_at=NOW, now=NOW)
         assert [type(e) for e in events] == [EmailVerified]
         assert registered.is_email_verified()
         assert registered.email_verified_at == NOW
 
-    def test_verify_email_twice_is_rejected(
-        self, registered: User, email_policy: EmailVerificationPolicy
-    ) -> None:
+    def test_verify_email_twice_is_rejected(self, registered: User, email_policy: EmailVerificationPolicy) -> None:
         _verified(registered, email_policy)
         with pytest.raises(EmailAlreadyVerifiedError):
             registered.verify_email(policy=email_policy, sent_at=NOW, now=NOW)
 
-    def test_verify_email_after_link_expired_is_rejected(
-        self, registered: User, email_policy: EmailVerificationPolicy
-    ) -> None:
+    def test_verify_email_after_link_expired_is_rejected(self, registered: User, email_policy: EmailVerificationPolicy) -> None:
         sent_at = NOW - timedelta(hours=25)
         with pytest.raises(VerificationExpiredError):
             registered.verify_email(policy=email_policy, sent_at=sent_at, now=NOW)
@@ -363,9 +339,7 @@ class TestVerifyEmail:
         registered.ensure_email_unverified()
         assert not registered.is_email_verified()
 
-    def test_ensure_email_unverified_rejects_a_verified_email(
-        self, registered: User, email_policy: EmailVerificationPolicy
-    ) -> None:
+    def test_ensure_email_unverified_rejects_a_verified_email(self, registered: User, email_policy: EmailVerificationPolicy) -> None:
         _verified(registered, email_policy)
         with pytest.raises(EmailAlreadyVerifiedError):
             registered.ensure_email_unverified()
@@ -384,9 +358,7 @@ class TestChangePhone:
         assert registered.phone == phone
         assert not registered.is_phone_verified()
 
-    def test_change_phone_replaces_and_resets_verification(
-        self, registered: User, phone_policy: PhoneVerificationPolicy
-    ) -> None:
+    def test_change_phone_replaces_and_resets_verification(self, registered: User, phone_policy: PhoneVerificationPolicy) -> None:
         registered.change_phone(PhoneNumber("+79991234567"), now=NOW)
         registered.verify_phone(policy=phone_policy, issued_at=NOW, now=NOW)
         assert registered.is_phone_verified()
@@ -402,32 +374,24 @@ class TestChangePhone:
 
 
 class TestVerifyPhone:
-    def test_verify_phone_marks_verified(
-        self, registered: User, phone_policy: PhoneVerificationPolicy
-    ) -> None:
+    def test_verify_phone_marks_verified(self, registered: User, phone_policy: PhoneVerificationPolicy) -> None:
         registered.change_phone(PhoneNumber("+79991234567"), now=NOW)
         events = registered.verify_phone(policy=phone_policy, issued_at=NOW, now=NOW)
         assert [type(e) for e in events] == [PhoneVerified]
         assert registered.is_phone_verified()
         assert registered.phone_verified_at == NOW
 
-    def test_verify_phone_without_number_is_rejected(
-        self, registered: User, phone_policy: PhoneVerificationPolicy
-    ) -> None:
+    def test_verify_phone_without_number_is_rejected(self, registered: User, phone_policy: PhoneVerificationPolicy) -> None:
         with pytest.raises(PhoneNotSetError):
             registered.verify_phone(policy=phone_policy, issued_at=NOW, now=NOW)
 
-    def test_verify_phone_twice_is_rejected(
-        self, registered: User, phone_policy: PhoneVerificationPolicy
-    ) -> None:
+    def test_verify_phone_twice_is_rejected(self, registered: User, phone_policy: PhoneVerificationPolicy) -> None:
         registered.change_phone(PhoneNumber("+79991234567"), now=NOW)
         registered.verify_phone(policy=phone_policy, issued_at=NOW, now=NOW)
         with pytest.raises(PhoneAlreadyVerifiedError):
             registered.verify_phone(policy=phone_policy, issued_at=NOW, now=NOW)
 
-    def test_verify_phone_after_code_expired_is_rejected(
-        self, registered: User, phone_policy: PhoneVerificationPolicy
-    ) -> None:
+    def test_verify_phone_after_code_expired_is_rejected(self, registered: User, phone_policy: PhoneVerificationPolicy) -> None:
         registered.change_phone(PhoneNumber("+79991234567"), now=NOW)
         issued_at = NOW - timedelta(minutes=11)
         with pytest.raises(VerificationExpiredError):
@@ -441,9 +405,7 @@ class TestVerifyPhone:
 
 class TestChangePassword:
     def test_change_password_replaces_digest(self, registered: User) -> None:
-        new_hash = PasswordHash.from_hash(
-            "$argon2id$v=19$m=65536,t=3,p=4$bmV3c2FsdA$TmV3RGlnZXN0VmFsdWU"
-        )
+        new_hash = PasswordHash.from_hash("$argon2id$v=19$m=65536,t=3,p=4$bmV3c2FsdA$TmV3RGlnZXN0VmFsdWU")
         events = registered.change_password(new_hash, now=NOW)
         assert [type(e) for e in events] == [PasswordChanged]
         assert registered.password_hash == new_hash
@@ -451,9 +413,7 @@ class TestChangePassword:
     def test_change_password_on_deleted_is_rejected(self, registered: User) -> None:
         registered.soft_delete(now=NOW)
         with pytest.raises(UserDeletedError):
-            registered.change_password(
-                PasswordHash.from_hash("$argon2id$x$y$c29tZXNhbHQ$RGlnZXN0"), now=NOW
-            )
+            registered.change_password(PasswordHash.from_hash("$argon2id$x$y$c29tZXNhbHQ$RGlnZXN0"), now=NOW)
 
 
 # ---------------------------------------------------------------------------
@@ -462,17 +422,13 @@ class TestChangePassword:
 
 
 class TestConsent:
-    def test_grant_consent_records_version(
-        self, registered: User, consent_policy: ConsentPolicy
-    ) -> None:
+    def test_grant_consent_records_version(self, registered: User, consent_policy: ConsentPolicy) -> None:
         version = ConsentVersion("1.0")
         events = registered.grant_consent(version, policy=consent_policy, now=NOW)
         assert [type(e) for e in events] == [ConsentGranted]
         assert registered.consent_version == version
 
-    def test_grant_consent_uses_given_type(
-        self, registered: User, consent_policy: ConsentPolicy
-    ) -> None:
+    def test_grant_consent_uses_given_type(self, registered: User, consent_policy: ConsentPolicy) -> None:
         events = registered.grant_consent(
             ConsentVersion("1.0"),
             policy=consent_policy,
@@ -488,9 +444,7 @@ class TestConsent:
         with pytest.raises(StaleConsentError):
             registered.grant_consent(ConsentVersion("1.0"), policy=policy, now=NOW)
 
-    def test_withdraw_consent_clears_version(
-        self, registered: User, consent_policy: ConsentPolicy
-    ) -> None:
+    def test_withdraw_consent_clears_version(self, registered: User, consent_policy: ConsentPolicy) -> None:
         registered.grant_consent(ConsentVersion("1.0"), policy=consent_policy, now=NOW)
         events = registered.withdraw_consent(now=NOW)
         assert [type(e) for e in events] == [ConsentWithdrawn]
@@ -602,20 +556,14 @@ class TestStatusHelpers:
         assert registered.is_locked(NOW)
         assert not registered.is_locked(until + timedelta(seconds=1))
 
-    def test_requires_consent_when_never_granted(
-        self, registered: User, consent_policy: ConsentPolicy
-    ) -> None:
+    def test_requires_consent_when_never_granted(self, registered: User, consent_policy: ConsentPolicy) -> None:
         assert registered.requires_consent(consent_policy)
 
-    def test_requires_consent_false_when_current(
-        self, registered: User, consent_policy: ConsentPolicy
-    ) -> None:
+    def test_requires_consent_false_when_current(self, registered: User, consent_policy: ConsentPolicy) -> None:
         registered.grant_consent(ConsentVersion("1.0"), policy=consent_policy, now=NOW)
         assert not registered.requires_consent(consent_policy)
 
-    def test_requires_consent_when_version_superseded(
-        self, registered: User, consent_policy: ConsentPolicy
-    ) -> None:
+    def test_requires_consent_when_version_superseded(self, registered: User, consent_policy: ConsentPolicy) -> None:
         registered.grant_consent(ConsentVersion("1.0"), policy=consent_policy, now=NOW)
         newer = ConsentPolicy(current_version=ConsentVersion("2.0"))
         assert registered.requires_consent(newer)
@@ -623,22 +571,16 @@ class TestStatusHelpers:
     def test_can_login_requires_verified_email(self, registered: User) -> None:
         assert not registered.can_login(now=NOW)
 
-    def test_can_login_when_active_verified_unlocked(
-        self, registered: User, email_policy: EmailVerificationPolicy
-    ) -> None:
+    def test_can_login_when_active_verified_unlocked(self, registered: User, email_policy: EmailVerificationPolicy) -> None:
         _verified(registered, email_policy)
         assert registered.can_login(now=NOW)
 
-    def test_can_login_false_when_locked(
-        self, registered: User, email_policy: EmailVerificationPolicy
-    ) -> None:
+    def test_can_login_false_when_locked(self, registered: User, email_policy: EmailVerificationPolicy) -> None:
         _verified(registered, email_policy)
         registered.lock(reason="x", until=NOW + timedelta(hours=1), now=NOW)
         assert not registered.can_login(now=NOW)
 
-    def test_can_login_false_when_deleted(
-        self, registered: User, email_policy: EmailVerificationPolicy
-    ) -> None:
+    def test_can_login_false_when_deleted(self, registered: User, email_policy: EmailVerificationPolicy) -> None:
         _verified(registered, email_policy)
         registered.soft_delete(now=NOW)
         assert not registered.can_login(now=NOW)
@@ -674,9 +616,7 @@ class TestOptimisticConcurrency:
 
 
 class TestIdentity:
-    def test_equality_is_by_id(
-        self, user_id: UserId, email: Email, full_name: FullName, password_hash: PasswordHash
-    ) -> None:
+    def test_equality_is_by_id(self, user_id: UserId, email: Email, full_name: FullName, password_hash: PasswordHash) -> None:
         one, _ = User.register(
             user_id=user_id,
             email=email,
@@ -698,9 +638,7 @@ class TestIdentity:
         )
         assert one == two
 
-    def test_distinct_ids_are_not_equal(
-        self, email: Email, full_name: FullName, password_hash: PasswordHash
-    ) -> None:
+    def test_distinct_ids_are_not_equal(self, email: Email, full_name: FullName, password_hash: PasswordHash) -> None:
         one, _ = User.register(
             user_id=UserId.generate(),
             email=email,
@@ -782,9 +720,7 @@ class TestEventGeneration:
         produced += registered.verify_email(policy=email_policy, sent_at=NOW, now=NOW)
         produced += registered.change_phone(PhoneNumber("+79991234567"), now=NOW)
         produced += registered.grant_consent(ConsentVersion("1.0"), policy=consent_policy, now=NOW)
-        produced += registered.change_password(
-            PasswordHash.from_hash("$argon2id$v=19$m=1$c2FsdHNhbHQ$RGlnZXN0VmFs"), now=NOW
-        )
+        produced += registered.change_password(PasswordHash.from_hash("$argon2id$v=19$m=1$c2FsdHNhbHQ$RGlnZXN0VmFs"), now=NOW)
         produced += registered.lock(reason="x", until=NOW + timedelta(hours=1), now=NOW)
         assert produced
         assert all(isinstance(event, DomainEvent) for event in produced)

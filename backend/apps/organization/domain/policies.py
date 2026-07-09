@@ -38,9 +38,7 @@ class InvitationExpiryPolicy:
 
     def __post_init__(self) -> None:
         if self.ttl <= timedelta(0):
-            raise PolicyConfigurationError(
-                f"Invitation ttl must be a positive duration, got {self.ttl!r}."
-            )
+            raise PolicyConfigurationError(f"Invitation ttl must be a positive duration, got {self.ttl!r}.")
 
     def expires_at(self, issued_at: datetime) -> datetime:
         """The instant an invitation issued at ``issued_at`` expires."""

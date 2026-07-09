@@ -48,11 +48,7 @@ class JWTService:
         access_token_lifetime: timedelta | None = None,
     ) -> None:
         self._store = store if store is not None else RefreshTokenStore()
-        self._access_lifetime = (
-            access_token_lifetime
-            if access_token_lifetime is not None
-            else api_settings.ACCESS_TOKEN_LIFETIME
-        )
+        self._access_lifetime = access_token_lifetime if access_token_lifetime is not None else api_settings.ACCESS_TOKEN_LIFETIME
 
     def issue(self, *, subject: str) -> TokenPairDto:
         """Issue a fresh access + refresh pair carrying ``subject`` as the identity."""
