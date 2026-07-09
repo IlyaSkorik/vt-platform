@@ -6,7 +6,12 @@ import { ParticipantLayout } from "@/app/layouts/participant-layout";
 import { PublicLayout } from "@/app/layouts/public-layout";
 import { RootLayout } from "@/app/layouts/root-layout";
 import { StaffLayout } from "@/app/layouts/staff-layout";
-import { ROUTES } from "@/shared/config";
+import {
+  PARTICIPANT_NAVIGATION,
+  ROUTES,
+  STAFF_NAVIGATION,
+  type WorkspaceNavItem,
+} from "@/shared/config";
 import { GuestRoute, ProtectedRoute, StaffRoute } from "./guards";
 import { RouteError } from "./route-error";
 
@@ -16,21 +21,44 @@ const lazyPage =
     Component: (await loader())[name] as React.ComponentType,
   });
 
-const participantPage = (title: string, description: string) => async () => {
-  const { WorkspacePlaceholderPage } = await import("@/pages/workspace-placeholder");
-  return {
-    Component: () => <WorkspacePlaceholderPage title={title} description={description} />,
-  } satisfies { Component: React.ComponentType };
+const workspacePlaceholder =
+  (item: WorkspaceNavItem, tone: "participant" | "staff") => async () => {
+    const { WorkspacePlaceholderPage } = await import("@/pages/workspace-placeholder");
+    return {
+      Component: () => (
+        <WorkspacePlaceholderPage
+          title={item.title}
+          description={item.description}
+          icon={item.icon}
+          tone={tone}
+        />
+      ),
+    } satisfies { Component: React.ComponentType };
+  };
+
+const participantItem = (path: string) => {
+  const item = PARTICIPANT_NAVIGATION.find((candidate) => candidate.path === path);
+  if (item == null) {
+    throw new Error(`Missing participant navigation for ${path}`);
+  }
+  return item;
 };
 
-const staffPage = participantPage;
+const staffItem = (path: string) => {
+  const item = STAFF_NAVIGATION.find((candidate) => candidate.path === path);
+  if (item == null) {
+    throw new Error(`Missing staff navigation for ${path}`);
+  }
+  return item;
+};
 
 /**
  * Application route tree (React Router v7, data router).
  *
- * Participant Cabinet and Staff Workspace are independent protected workspaces:
- * `/cabinet/**` is always available to authenticated users, while `/staff/**`
- * is guarded by CurrentUser.staffMembership and rendered in its own layout.
+ * VT Platform is composed as two independent frontend applications sharing
+ * auth, CurrentUser, the API client and the design system:
+ *   - `/cabinet/**` → ParticipantLayout, available to every authenticated user.
+ *   - `/staff/**`   → StaffLayout, gated by CurrentUser.staffMembership.
  */
 const routes: RouteObject[] = [
   {
@@ -101,7 +129,10 @@ const routes: RouteObject[] = [
             children: [
               {
                 path: ROUTES.cabinet.slice(1),
-                lazy: lazyPage(() => import("@/pages/dashboard"), "DashboardPage"),
+                lazy: lazyPage(
+                  () => import("@/pages/participant-dashboard"),
+                  "ParticipantDashboardPage",
+                ),
               },
               {
                 path: ROUTES.cabinetProfile.slice(1),
@@ -113,23 +144,32 @@ const routes: RouteObject[] = [
               },
               {
                 path: ROUTES.cabinetApplications.slice(1),
-                lazy: participantPage("Заявки", "Заявки участника и их текущие статусы."),
+                lazy: workspacePlaceholder(
+                  participantItem(ROUTES.cabinetApplications),
+                  "participant",
+                ),
               },
               {
                 path: ROUTES.cabinetCompetitions.slice(1),
-                lazy: participantPage("Конкурсы", "Доступные конкурсы для личного кабинета."),
+                lazy: workspacePlaceholder(
+                  participantItem(ROUTES.cabinetCompetitions),
+                  "participant",
+                ),
               },
               {
                 path: ROUTES.cabinetDocuments.slice(1),
-                lazy: participantPage("Документы", "Файлы и документы участника."),
+                lazy: workspacePlaceholder(participantItem(ROUTES.cabinetDocuments), "participant"),
               },
               {
                 path: ROUTES.cabinetNotifications.slice(1),
-                lazy: participantPage("Уведомления", "События и сообщения личного кабинета."),
+                lazy: workspacePlaceholder(
+                  participantItem(ROUTES.cabinetNotifications),
+                  "participant",
+                ),
               },
               {
                 path: ROUTES.cabinetSettings.slice(1),
-                lazy: participantPage("Настройки", "Персональные настройки кабинета."),
+                lazy: workspacePlaceholder(participantItem(ROUTES.cabinetSettings), "participant"),
               },
             ],
           },
@@ -164,47 +204,51 @@ const routes: RouteObject[] = [
             children: [
               {
                 path: ROUTES.staff.slice(1),
-                lazy: staffPage("Панель управления", "Операционная панель организации."),
+                lazy: lazyPage(() => import("@/pages/staff-dashboard"), "StaffDashboardPage"),
               },
               {
                 path: ROUTES.staffCompetitions.slice(1),
-                lazy: staffPage("Конкурсы", "Управление конкурсами организации."),
+                lazy: workspacePlaceholder(staffItem(ROUTES.staffCompetitions), "staff"),
               },
               {
                 path: ROUTES.staffApplications.slice(1),
-                lazy: staffPage("Заявки", "Проверка и обработка заявок."),
+                lazy: workspacePlaceholder(staffItem(ROUTES.staffApplications), "staff"),
               },
               {
                 path: ROUTES.staffParticipants.slice(1),
-                lazy: staffPage("Участники", "Работа с участниками организации."),
+                lazy: workspacePlaceholder(staffItem(ROUTES.staffParticipants), "staff"),
               },
               {
                 path: ROUTES.staffJudges.slice(1),
-                lazy: staffPage("Судьи", "Команда судей и назначений."),
+                lazy: workspacePlaceholder(staffItem(ROUTES.staffJudges), "staff"),
               },
               {
                 path: ROUTES.staffSchedules.slice(1),
-                lazy: staffPage("Расписание", "Планирование событий и выступлений."),
-              },
-              {
-                path: ROUTES.staffFinance.slice(1),
-                lazy: staffPage("Финансы", "Финансовые операции организации."),
+                lazy: workspacePlaceholder(staffItem(ROUTES.staffSchedules), "staff"),
               },
               {
                 path: ROUTES.staffOrganization.slice(1),
-                lazy: staffPage("Организация", "Профиль и параметры организации."),
+                lazy: workspacePlaceholder(staffItem(ROUTES.staffOrganization), "staff"),
               },
               {
                 path: ROUTES.staffUsers.slice(1),
-                lazy: staffPage("Пользователи", "Управление доступами сотрудников."),
+                lazy: workspacePlaceholder(staffItem(ROUTES.staffUsers), "staff"),
               },
               {
                 path: ROUTES.staffInvitations.slice(1),
-                lazy: staffPage("Приглашения", "Приглашения сотрудников в организацию."),
+                lazy: workspacePlaceholder(staffItem(ROUTES.staffInvitations), "staff"),
+              },
+              {
+                path: ROUTES.staffFinance.slice(1),
+                lazy: workspacePlaceholder(staffItem(ROUTES.staffFinance), "staff"),
+              },
+              {
+                path: ROUTES.staffAnalytics.slice(1),
+                lazy: workspacePlaceholder(staffItem(ROUTES.staffAnalytics), "staff"),
               },
               {
                 path: ROUTES.staffSettings.slice(1),
-                lazy: staffPage("Настройки", "Настройки панели управления."),
+                lazy: workspacePlaceholder(staffItem(ROUTES.staffSettings), "staff"),
               },
             ],
           },

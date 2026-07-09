@@ -1,24 +1,60 @@
-import { PageContainer, PageContent, PageDescription, PageHeader, PageTitle } from "@/shared/ui";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  EmptyState,
+  PageContainer,
+  PageContent,
+  PageDescription,
+  PageHeader,
+  PageTitle,
+} from "@/shared/ui";
 
 type WorkspacePlaceholderPageProps = {
   title: string;
   description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tone: "participant" | "staff";
 };
 
 export function WorkspacePlaceholderPage({
   title,
   description,
+  icon: Icon,
+  tone,
 }: WorkspacePlaceholderPageProps): React.JSX.Element {
+  const emptyTitle =
+    tone === "participant" ? "Раздел личного кабинета готов" : "Раздел панели готов";
+
   return (
     <PageContainer>
       <PageHeader>
-        <PageTitle>{title}</PageTitle>
-        <PageDescription>{description}</PageDescription>
+        <div className="flex items-start gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+            <Icon className="size-5" aria-hidden="true" />
+          </div>
+          <div className="min-w-0">
+            <PageTitle>{title}</PageTitle>
+            <PageDescription>{description}</PageDescription>
+          </div>
+        </div>
       </PageHeader>
       <PageContent>
-        <div className="rounded-md border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-600">
-          Раздел готов к подключению бизнес-сценариев.
-        </div>
+        <Card className="shadow-none">
+          <CardHeader>
+            <CardTitle>{title}</CardTitle>
+            <CardDescription>{description}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <EmptyState
+              icon={<Icon aria-hidden="true" />}
+              title={emptyTitle}
+              description="Бизнес-модуль ещё не реализован. Маршрут, layout, навигация и пустое состояние уже подключены."
+            />
+          </CardContent>
+        </Card>
       </PageContent>
     </PageContainer>
   );

@@ -33,6 +33,7 @@ export const ROUTES = {
   staffJudges: "/staff/judges",
   staffSchedules: "/staff/schedules",
   staffFinance: "/staff/finance",
+  staffAnalytics: "/staff/analytics",
   staffOrganization: "/staff/organization",
   staffUsers: "/staff/users",
   staffInvitations: "/staff/invitations",

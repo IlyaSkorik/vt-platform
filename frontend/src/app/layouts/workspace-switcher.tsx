@@ -1,4 +1,4 @@
-import { BriefcaseBusiness, Home } from "lucide-react";
+import { BriefcaseBusiness, User } from "lucide-react";
 import { NavLink } from "react-router";
 
 import { ROUTES } from "@/shared/config";
@@ -10,24 +10,24 @@ type WorkspaceSwitcherProps = {
 
 const linkClassName = ({ isActive }: { isActive: boolean }) =>
   cn(
-    "inline-flex min-h-9 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+    "inline-flex min-h-9 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
     isActive
-      ? "bg-slate-900 text-white shadow-sm"
-      : "text-slate-600 hover:bg-slate-100 hover:text-slate-950",
+      ? "bg-primary text-primary-foreground shadow-elevation-1"
+      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
   );
 
 export function WorkspaceSwitcher({ className }: WorkspaceSwitcherProps): React.JSX.Element {
   return (
     <nav
       aria-label="Переключение рабочего пространства"
-      className={cn("flex items-center gap-1", className)}
+      className={cn("flex items-center rounded-lg border border-border bg-muted/40 p-1", className)}
     >
       <NavLink to={ROUTES.cabinet} className={linkClassName}>
-        <Home className="h-4 w-4" aria-hidden="true" />
+        <User className="size-4" aria-hidden="true" />
         <span>Личный кабинет</span>
       </NavLink>
       <NavLink to={ROUTES.staff} className={linkClassName}>
-        <BriefcaseBusiness className="h-4 w-4" aria-hidden="true" />
+        <BriefcaseBusiness className="size-4" aria-hidden="true" />
         <span>Панель управления</span>
       </NavLink>
     </nav>

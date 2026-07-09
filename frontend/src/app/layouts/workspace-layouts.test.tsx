@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ParticipantLayout } from "./participant-layout";
@@ -49,6 +49,18 @@ function renderStaff(): void {
   );
 }
 
+function getFirstWorkspaceSwitcher(): HTMLElement {
+  const switcher = screen.getAllByRole("navigation", {
+    name: "Переключение рабочего пространства",
+  })[0];
+
+  if (switcher == null) {
+    throw new Error("Workspace switcher was not rendered");
+  }
+
+  return switcher;
+}
+
 describe("workspace layouts", () => {
   beforeEach(() => {
     authState.staffMembership = null;
@@ -58,18 +70,24 @@ describe("workspace layouts", () => {
     renderParticipant();
 
     expect(screen.getByText("Личный контент")).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /Панель управления/ })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("navigation", { name: "Навигация личного кабинета" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("navigation", { name: "Переключение рабочего пространства" }),
+    ).not.toBeInTheDocument();
   });
 
   it("renders participant workspace switcher from CurrentUser staffMembership", () => {
     authState.staffMembership = { role: "DIRECTOR", status: "ACTIVE" };
     renderParticipant();
 
-    expect(screen.getByRole("link", { name: /Личный кабинет/ })).toHaveAttribute(
+    const switcher = getFirstWorkspaceSwitcher();
+    expect(within(switcher).getByRole("link", { name: /Личный кабинет/ })).toHaveAttribute(
       "href",
       "/cabinet",
     );
-    expect(screen.getByRole("link", { name: /Панель управления/ })).toHaveAttribute(
+    expect(within(switcher).getByRole("link", { name: /Панель управления/ })).toHaveAttribute(
       "href",
       "/staff",
     );
@@ -83,7 +101,9 @@ describe("workspace layouts", () => {
     expect(
       screen.getByRole("navigation", { name: "Навигация панели управления" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Личный кабинет/ })).toHaveAttribute(
+
+    const switcher = getFirstWorkspaceSwitcher();
+    expect(within(switcher).getByRole("link", { name: /Личный кабинет/ })).toHaveAttribute(
       "href",
       "/cabinet",
     );
