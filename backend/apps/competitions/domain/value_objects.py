@@ -1080,9 +1080,9 @@ class DocumentVisibility(StrEnum):
 
 
 class Currency(StrEnum):
-    """An ISO-4217 currency code a price is denominated in (default ``RUB``)."""
+    """An ISO-4217 currency code a price is denominated in (default ``BYN``)."""
 
-    RUB = "RUB"
+    BYN = "BYN"
 
 
 # ---------------------------------------------------------------------------
@@ -1108,7 +1108,7 @@ class Money:
     """
 
     amount: Decimal
-    currency: Currency = Currency.RUB
+    currency: Currency = Currency.BYN
 
     def __post_init__(self) -> None:
         if not isinstance(self.amount, Decimal):
@@ -1126,7 +1126,7 @@ class Money:
         object.__setattr__(self, "amount", quantized)
 
     @classmethod
-    def of(cls, amount: str | int | Decimal, currency: Currency = Currency.RUB) -> Money:
+    def of(cls, amount: str | int | Decimal, currency: Currency = Currency.BYN) -> Money:
         """Build :class:`Money` from a string/int/Decimal amount (never a float)."""
         if isinstance(amount, float):
             raise InvalidMoneyError("Refusing to build Money from a float; pass a str, int, or Decimal.")

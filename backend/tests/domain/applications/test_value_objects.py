@@ -150,7 +150,7 @@ class TestMoney:
         assert Money.of("1500").amount == Decimal("1500.00")
 
     def test_default_currency_is_rub(self) -> None:
-        assert Money.of("10").currency is Currency.RUB
+        assert Money.of("10").currency is Currency.BYN
 
     def test_negative_rejected(self) -> None:
         with pytest.raises(InvalidMoneyError):
@@ -165,7 +165,7 @@ class TestPriceSnapshot:
     def test_exposes_amount_and_currency(self) -> None:
         snap = PriceSnapshot(price=Money.of("1500"), calculated_at=NOW)
         assert snap.amount == Decimal("1500.00")
-        assert snap.currency is Currency.RUB
+        assert snap.currency is Currency.BYN
         assert snap.calculated_at == NOW
 
     def test_requires_money(self) -> None:

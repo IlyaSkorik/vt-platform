@@ -231,7 +231,7 @@ Guidance:
 
 ### 7.4 Common Value Shapes
 
-- **Money:** `{ "amount": 50000, "currency": "RUB" }` — integer **minor units**, never a float ([FIN-001](../business/DATA-002-business-rules-catalog.md#rule-fin-001)).
+- **Money:** `{ "amount": 50000, "currency": "BYN" }` — integer **minor units**, never a float ([FIN-001](../business/DATA-002-business-rules-catalog.md#rule-fin-001)).
 - **Timestamps:** ISO-8601 UTC strings (§22).
 - **References:** cross-resource references are by **id** (+ `type`), optionally expanded via `?include=` (§13), reflecting the by-identity rule of [DIA-001 §8](../diagrams/DIA-001-entity-relationship-model.md#8-cross-domain-relationships).
 

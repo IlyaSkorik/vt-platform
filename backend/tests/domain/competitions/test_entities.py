@@ -570,7 +570,7 @@ class TestEventSerialization:
         payload = added.to_dict()
         assert payload["event_type"] == "PricingRuleAdded"
         assert payload["amount"] == "1500.00"
-        assert payload["currency"] == "RUB"
+        assert payload["currency"] == "BYN"
         assert isinstance(payload["category_id"], str)
 
 

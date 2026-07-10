@@ -85,7 +85,7 @@ class TestMoney:
         assert Money.of("1500").amount == Decimal("1500.00")
 
     def test_default_currency_is_rub(self) -> None:
-        assert Money.of("10").currency is Currency.RUB
+        assert Money.of("10").currency is Currency.BYN
 
     def test_negative_rejected(self) -> None:
         with pytest.raises(InvalidMoneyError):
@@ -96,7 +96,7 @@ class TestMoney:
             Money.of(1500.0)  # type: ignore[arg-type]
 
     def test_value_equality(self) -> None:
-        assert Money.of("900") == Money(amount=Decimal("900.00"), currency=Currency.RUB)
+        assert Money.of("900") == Money(amount=Decimal("900.00"), currency=Currency.BYN)
 
 
 class TestBoundedNames:

@@ -1,0 +1,447 @@
+"""Output view DTOs for the Competitions application layer.
+
+Immutable, primitive-only projections of the :class:`Competition` aggregate. They
+are the boundary in the *outward* direction: handlers render the aggregate into
+flat, serialization-agnostic shapes so no outer layer needs to import the domain to
+read a result. Enums are rendered as their string values, ids as canonical UUID
+strings, money as a decimal string, so the presentation edge maps them 1:1 onto the
+API wire shape.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import date, datetime
+
+from apps.competitions.domain.entities import (
+    AdditionalService,
+    AgeCategory,
+    Category,
+    Competition,
+    CompetitionDocument,
+    CompetitionRegulation,
+    Contact,
+    Discipline,
+    InformationBlock,
+    ParticipantGroup,
+)
+from apps.competitions.domain.value_objects import AdmissionRule, PricingRule
+
+__all__ = [
+    "AddedChildResult",
+    "AdditionalServiceView",
+    "AdmissionRuleView",
+    "AgeCategoryView",
+    "BrandingView",
+    "CategoryView",
+    "CompetitionDetailView",
+    "CompetitionSummaryView",
+    "ContactView",
+    "DeadlinesView",
+    "DisciplineView",
+    "DocumentView",
+    "InformationBlockView",
+    "ParticipantGroupView",
+    "PeriodView",
+    "PricingRuleView",
+    "PublicationReportView",
+    "RegulationView",
+    "SettingsView",
+    "VenueView",
+]
+
+
+@dataclass(frozen=True, slots=True)
+class VenueView:
+    name: str
+    address: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class PeriodView:
+    start: date
+    end: date
+
+
+@dataclass(frozen=True, slots=True)
+class BrandingView:
+    logo: str | None
+    banner: str | None
+    poster: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class DeadlinesView:
+    application: datetime | None
+    payment: datetime | None
+    music_upload: datetime | None
+    document_upload: datetime | None
+    correction: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class SettingsView:
+    allow_multiple_applications: bool
+    allow_application_editing: bool
+    allow_music_replacement: bool
+    allow_video_replacement: bool
+    allow_participant_changes: bool
+    require_music_upload: bool
+    require_video_upload: bool
+    require_photo_upload: bool
+    require_identity_document: bool
+    require_parent_consent: bool
+    require_teacher: bool
+    require_comment_for_application: bool
+
+
+@dataclass(frozen=True, slots=True)
+class CategoryView:
+    id: str
+    name: str
+
+    @classmethod
+    def of(cls, category: Category) -> CategoryView:
+        return cls(id=category.id.json(), name=category.name.value)
+
+
+@dataclass(frozen=True, slots=True)
+class DisciplineView:
+    id: str
+    category_id: str
+    name: str
+
+    @classmethod
+    def of(cls, discipline: Discipline) -> DisciplineView:
+        return cls(id=discipline.id.json(), category_id=discipline.category_id.json(), name=discipline.name.value)
+
+
+@dataclass(frozen=True, slots=True)
+class AgeCategoryView:
+    id: str
+    min_age: int
+    max_age: int
+
+    @classmethod
+    def of(cls, age_category: AgeCategory) -> AgeCategoryView:
+        return cls(id=age_category.id.json(), min_age=age_category.age_range.min_age, max_age=age_category.age_range.max_age)
+
+
+@dataclass(frozen=True, slots=True)
+class ParticipantGroupView:
+    id: str
+    category_id: str
+    name: str
+    min_count: int
+    max_count: int | None
+
+    @classmethod
+    def of(cls, group: ParticipantGroup) -> ParticipantGroupView:
+        return cls(
+            id=group.id.json(),
+            category_id=group.category_id.json(),
+            name=group.name.value,
+            min_count=group.count_range.min_count,
+            max_count=group.count_range.max_count,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class AdmissionRuleView:
+    category_id: str
+    discipline_id: str
+    age_category_id: str
+    participant_group_id: str
+    participation_format: str
+
+    @classmethod
+    def of(cls, rule: AdmissionRule) -> AdmissionRuleView:
+        c = rule.combination
+        return cls(
+            category_id=c.category_id.json(),
+            discipline_id=c.discipline_id.json(),
+            age_category_id=c.age_category_id.json(),
+            participant_group_id=c.participant_group_id.json(),
+            participation_format=c.participation_format.value,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class PricingRuleView:
+    category_id: str
+    discipline_id: str
+    age_category_id: str
+    participant_group_id: str
+    participation_format: str
+    amount: str
+    currency: str
+
+    @classmethod
+    def of(cls, rule: PricingRule) -> PricingRuleView:
+        c = rule.combination
+        return cls(
+            category_id=c.category_id.json(),
+            discipline_id=c.discipline_id.json(),
+            age_category_id=c.age_category_id.json(),
+            participant_group_id=c.participant_group_id.json(),
+            participation_format=c.participation_format.value,
+            amount=str(rule.price_per_participant.amount),
+            currency=rule.price_per_participant.currency.value,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class RegulationView:
+    id: str
+    title: str
+    version: str
+    publication_date: date
+    file_reference: str
+    is_current: bool
+
+    @classmethod
+    def of(cls, regulation: CompetitionRegulation, *, is_current: bool) -> RegulationView:
+        return cls(
+            id=regulation.id.json(),
+            title=regulation.title.value,
+            version=regulation.version.value,
+            publication_date=regulation.publication_date,
+            file_reference=regulation.file.value,
+            is_current=is_current,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentView:
+    id: str
+    title: str
+    category: str
+    visibility: str
+    file_reference: str
+    description: str | None
+    sort_order: int
+    published: bool
+
+    @classmethod
+    def of(cls, document: CompetitionDocument) -> DocumentView:
+        return cls(
+            id=document.id.json(),
+            title=document.title.value,
+            category=document.category.value,
+            visibility=document.visibility.value,
+            file_reference=document.file.value,
+            description=document.description.value if document.description is not None else None,
+            sort_order=document.sort_order,
+            published=document.is_published,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class AdditionalServiceView:
+    id: str
+    name: str
+    amount: str
+    currency: str
+    description: str | None
+    enabled: bool
+
+    @classmethod
+    def of(cls, service: AdditionalService) -> AdditionalServiceView:
+        return cls(
+            id=service.id.json(),
+            name=service.name.value,
+            amount=str(service.price.amount),
+            currency=service.price.currency.value,
+            description=service.description.value if service.description is not None else None,
+            enabled=service.is_enabled,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class ContactView:
+    id: str
+    type: str
+    value: str
+    is_primary: bool
+
+    @classmethod
+    def of(cls, contact: Contact) -> ContactView:
+        return cls(id=contact.id.json(), type=contact.type.value, value=contact.value.value, is_primary=contact.is_primary)
+
+
+@dataclass(frozen=True, slots=True)
+class InformationBlockView:
+    id: str
+    title: str
+    content: str
+    content_format: str
+    published: bool
+    sort_order: int
+
+    @classmethod
+    def of(cls, block: InformationBlock) -> InformationBlockView:
+        return cls(
+            id=block.id.json(),
+            title=block.title.value,
+            content=block.content.value,
+            content_format=block.content.format.value,
+            published=block.is_published,
+            sort_order=block.sort_order,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class PublicationIssueView:
+    code: str
+    message: str
+
+
+@dataclass(frozen=True, slots=True)
+class PublicationReportView:
+    is_publishable: bool
+    errors: tuple[PublicationIssueView, ...]
+    warnings: tuple[PublicationIssueView, ...]
+
+    @classmethod
+    def of(cls, competition: Competition) -> PublicationReportView:
+        report = competition.publication_report()
+        return cls(
+            is_publishable=report.is_publishable,
+            errors=tuple(PublicationIssueView(code=i.code.value, message=i.message) for i in report.errors),
+            warnings=tuple(PublicationIssueView(code=i.code.value, message=i.message) for i in report.warnings),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class CompetitionSummaryView:
+    """A flat list-item projection of a competition (no child collections)."""
+
+    id: str
+    title: str
+    season: str
+    status: str
+    organizer_id: str
+    description: str | None
+    created_at: datetime
+    updated_at: datetime
+    version: int
+
+    @classmethod
+    def of(cls, competition: Competition) -> CompetitionSummaryView:
+        return cls(
+            id=competition.id.json(),
+            title=competition.title.value,
+            season=competition.season.value,
+            status=competition.status.value,
+            organizer_id=competition.organizer_id.json(),
+            description=competition.description.value if competition.description is not None else None,
+            created_at=competition.created_at,
+            updated_at=competition.updated_at,
+            version=competition.version,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class CompetitionDetailView:
+    """The full projection of a competition aggregate, child collections included."""
+
+    id: str
+    title: str
+    season: str
+    status: str
+    organizer_id: str
+    description: str | None
+    branding: BrandingView
+    venue: VenueView | None
+    registration_period: PeriodView | None
+    competition_period: PeriodView | None
+    settings: SettingsView
+    deadlines: DeadlinesView
+    enabled_formats: tuple[str, ...]
+    categories: tuple[CategoryView, ...]
+    disciplines: tuple[DisciplineView, ...]
+    age_categories: tuple[AgeCategoryView, ...]
+    participant_groups: tuple[ParticipantGroupView, ...]
+    admission_rules: tuple[AdmissionRuleView, ...]
+    pricing_rules: tuple[PricingRuleView, ...]
+    regulations: tuple[RegulationView, ...]
+    current_regulation_id: str | None
+    documents: tuple[DocumentView, ...]
+    additional_services: tuple[AdditionalServiceView, ...]
+    contacts: tuple[ContactView, ...]
+    information_blocks: tuple[InformationBlockView, ...]
+    created_at: datetime
+    updated_at: datetime
+    version: int
+
+    @classmethod
+    def of(cls, competition: Competition) -> CompetitionDetailView:
+        current = competition.current_regulation
+        current_id = current.id if current is not None else None
+        settings = competition.settings
+        deadlines = competition.deadlines
+        branding = competition.branding
+        venue = competition.venue
+        registration = competition.registration_period
+        period = competition.competition_period
+        return cls(
+            id=competition.id.json(),
+            title=competition.title.value,
+            season=competition.season.value,
+            status=competition.status.value,
+            organizer_id=competition.organizer_id.json(),
+            description=competition.description.value if competition.description is not None else None,
+            branding=BrandingView(
+                logo=branding.logo.value if branding.logo is not None else None,
+                banner=branding.banner.value if branding.banner is not None else None,
+                poster=branding.poster.value if branding.poster is not None else None,
+            ),
+            venue=VenueView(name=venue.name, address=venue.address) if venue is not None else None,
+            registration_period=PeriodView(start=registration.start, end=registration.end) if registration is not None else None,
+            competition_period=PeriodView(start=period.start, end=period.end) if period is not None else None,
+            settings=SettingsView(
+                allow_multiple_applications=settings.allow_multiple_applications,
+                allow_application_editing=settings.allow_application_editing,
+                allow_music_replacement=settings.allow_music_replacement,
+                allow_video_replacement=settings.allow_video_replacement,
+                allow_participant_changes=settings.allow_participant_changes,
+                require_music_upload=settings.require_music_upload,
+                require_video_upload=settings.require_video_upload,
+                require_photo_upload=settings.require_photo_upload,
+                require_identity_document=settings.require_identity_document,
+                require_parent_consent=settings.require_parent_consent,
+                require_teacher=settings.require_teacher,
+                require_comment_for_application=settings.require_comment_for_application,
+            ),
+            deadlines=DeadlinesView(
+                application=deadlines.application,
+                payment=deadlines.payment,
+                music_upload=deadlines.music_upload,
+                document_upload=deadlines.document_upload,
+                correction=deadlines.correction,
+            ),
+            enabled_formats=tuple(sorted(fmt.value for fmt in competition.participation_formats)),
+            categories=tuple(CategoryView.of(c) for c in competition.categories),
+            disciplines=tuple(DisciplineView.of(d) for d in competition.disciplines),
+            age_categories=tuple(AgeCategoryView.of(a) for a in competition.age_categories),
+            participant_groups=tuple(ParticipantGroupView.of(g) for g in competition.participant_groups),
+            admission_rules=tuple(AdmissionRuleView.of(r) for r in competition.admission_rules),
+            pricing_rules=tuple(PricingRuleView.of(p) for p in competition.pricing_rules),
+            regulations=tuple(RegulationView.of(r, is_current=r.id == current_id) for r in competition.regulations),
+            current_regulation_id=current_id.json() if current_id is not None else None,
+            documents=tuple(DocumentView.of(d) for d in competition.documents),
+            additional_services=tuple(AdditionalServiceView.of(s) for s in competition.additional_services),
+            contacts=tuple(ContactView.of(c) for c in competition.contacts),
+            information_blocks=tuple(InformationBlockView.of(b) for b in competition.information_blocks),
+            created_at=competition.created_at,
+            updated_at=competition.updated_at,
+            version=competition.version,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class AddedChildResult:
+    """The outcome of an add-child command: the new child id plus the refreshed aggregate."""
+
+    child_id: str
+    competition: CompetitionDetailView

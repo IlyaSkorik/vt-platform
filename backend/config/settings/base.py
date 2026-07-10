@@ -125,6 +125,7 @@ MIGRATION_MODULES = {
     "identity": "apps.identity.infrastructure.migrations",
     "organization": "apps.organization.infrastructure.migrations",
     "participants": "apps.participants.infrastructure.migrations",
+    "competitions": "apps.competitions.infrastructure.migrations",
 }
 
 # --- Password validation --------------------------------------------------

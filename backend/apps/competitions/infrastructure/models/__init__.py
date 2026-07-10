@@ -1,7 +1,44 @@
-"""ORM models (adapters) for the Competitions bounded context.
+"""Persistence models for the Competitions bounded context.
 
-Django models live ONLY here, never in the domain (ARCH-001 §7.2, §14), and
-carry NO business logic. A package (not a single module) so models can be split
-per aggregate as the context grows. Each context maps to its own PostgreSQL
-schema (ARCH-001 §9.2). No models are defined during bootstrap.
+Persistence-only Django models (ARCH-001 §7.2, §14): the :class:`CompetitionModel`
+aggregate-root row and its child tables (taxonomy, admission/pricing rules, and
+content). No business logic lives here — the domain aggregate is authoritative and
+the mapper/repository read and write these rows on its behalf.
 """
+
+from __future__ import annotations
+
+from .base import BasePersistenceModel, uuid7
+from .competition import CompetitionModel, CompetitionStatusChoices
+from .content import (
+    AdditionalServiceModel,
+    ContactModel,
+    DocumentModel,
+    InformationBlockModel,
+    RegulationModel,
+)
+from .rules import AdmissionRuleModel, PricingRuleModel
+from .taxonomy import (
+    AgeCategoryModel,
+    CategoryModel,
+    DisciplineModel,
+    ParticipantGroupModel,
+)
+
+__all__ = [
+    "AdditionalServiceModel",
+    "AdmissionRuleModel",
+    "AgeCategoryModel",
+    "BasePersistenceModel",
+    "CategoryModel",
+    "CompetitionModel",
+    "CompetitionStatusChoices",
+    "ContactModel",
+    "DisciplineModel",
+    "DocumentModel",
+    "InformationBlockModel",
+    "ParticipantGroupModel",
+    "PricingRuleModel",
+    "RegulationModel",
+    "uuid7",
+]
