@@ -92,7 +92,7 @@ class AdditionalServiceModel(BasePersistenceModel):
     )
     name = models.CharField(max_length=120)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
-    currency = models.CharField(max_length=3, choices=_CURRENCY_CHOICES, default=Currency.RUB.value)
+    currency = models.CharField(max_length=3, choices=_CURRENCY_CHOICES, default=Currency.BYN.value)
     description = models.TextField(null=True, blank=True, default=None)
     enabled = models.BooleanField(default=True)
 

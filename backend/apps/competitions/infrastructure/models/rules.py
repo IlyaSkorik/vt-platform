@@ -68,7 +68,7 @@ class PricingRuleModel(BasePersistenceModel):
     participant_group_id = models.UUIDField()
     participation_format = models.CharField(max_length=16, choices=_FORMAT_CHOICES)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
-    currency = models.CharField(max_length=3, choices=_CURRENCY_CHOICES, default=Currency.RUB.value)
+    currency = models.CharField(max_length=3, choices=_CURRENCY_CHOICES, default=Currency.BYN.value)
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "competitions_pricing_rule"

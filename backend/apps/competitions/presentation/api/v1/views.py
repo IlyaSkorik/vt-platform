@@ -12,7 +12,7 @@ from apps.competitions.application.dto.commands import (
     CreateCompetitionCommand,
     OpenRegistrationCommand,
     PublishCompetitionCommand,
-    UpdateCompetitionGeneralInformationCommand,
+    UpdateGeneralInformationCommand,
 )
 from apps.competitions.application.dto.queries import (
     GetCompetitionQuery,
@@ -313,7 +313,7 @@ class CompetitionViewSet(viewsets.ViewSet):
         )
 
         result = self.update_handler.handle(
-            UpdateCompetitionGeneralInformationCommand(
+            UpdateGeneralInformationCommand(
                 competition_id=pk,
                 **serializer.validated_data,
             )

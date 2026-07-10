@@ -11,7 +11,7 @@ from apps.competitions.application.interfaces import (
 )
 from apps.competitions.domain.entities import Competition
 from apps.competitions.domain.events import DomainEvent
-from backend.apps.competitions.domain.value_objects import AdmissionCombination, AgeCategoryId, CategoryId, DisciplineId, ParticipantGroupId, ParticipationFormat
+from apps.competitions.domain.value_objects import AdmissionCombination, AgeCategoryId, CategoryId, DisciplineId, ParticipantGroupId, ParticipationFormat
 
 
 class CompetitionCommandHandler(ABC):

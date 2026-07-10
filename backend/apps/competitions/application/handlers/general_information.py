@@ -5,10 +5,10 @@ from __future__ import annotations
 from datetime import date
 
 from apps.competitions.application.dto.commands import (
-    UpdateCompetitionBrandingCommand,
-    UpdateCompetitionDeadlinesCommand,
-    UpdateCompetitionGeneralInformationCommand,
-    UpdateCompetitionSettingsCommand,
+    UpdateBrandingCommand,
+    UpdateDeadlinesCommand,
+    UpdateGeneralInformationCommand,
+    UpdateSettingsCommand,
 )
 from apps.competitions.application.dto.views import CompetitionDetailView
 from apps.competitions.domain.value_objects import (
@@ -45,7 +45,7 @@ def _file(value: str | None) -> FileReference | None:
 class UpdateCompetitionGeneralInformationHandler(CompetitionCommandHandler):
     """Update competition title, description, season, venue and periods."""
 
-    def handle(self, command: UpdateCompetitionGeneralInformationCommand) -> CompetitionDetailView:
+    def handle(self, command: UpdateGeneralInformationCommand) -> CompetitionDetailView:
         competition = self._require(command.competition_id)
 
         events = competition.update_general_information(
@@ -81,7 +81,7 @@ class UpdateCompetitionGeneralInformationHandler(CompetitionCommandHandler):
 class UpdateCompetitionBrandingHandler(CompetitionCommandHandler):
     """Replace competition branding assets."""
 
-    def handle(self, command: UpdateCompetitionBrandingCommand) -> CompetitionDetailView:
+    def handle(self, command: UpdateBrandingCommand) -> CompetitionDetailView:
         competition = self._require(command.competition_id)
 
         events = competition.update_branding(
@@ -97,7 +97,7 @@ class UpdateCompetitionBrandingHandler(CompetitionCommandHandler):
 class UpdateCompetitionSettingsHandler(CompetitionCommandHandler):
     """Replace competition behaviour settings."""
 
-    def handle(self, command: UpdateCompetitionSettingsCommand) -> CompetitionDetailView:
+    def handle(self, command: UpdateSettingsCommand) -> CompetitionDetailView:
         competition = self._require(command.competition_id)
 
         settings = CompetitionSettings(
@@ -126,7 +126,7 @@ class UpdateCompetitionSettingsHandler(CompetitionCommandHandler):
 class UpdateCompetitionDeadlinesHandler(CompetitionCommandHandler):
     """Replace competition registration deadlines."""
 
-    def handle(self, command: UpdateCompetitionDeadlinesCommand) -> CompetitionDetailView:
+    def handle(self, command: UpdateDeadlinesCommand) -> CompetitionDetailView:
         competition = self._require(command.competition_id)
 
         deadlines = RegistrationDeadlines(
