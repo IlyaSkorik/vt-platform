@@ -51,8 +51,10 @@ services:
     volumes:
       - .:/app
     depends_on:
-      - redis
-      - postgres
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   beat:
     build:
@@ -73,8 +75,10 @@ services:
     volumes:
       - .:/app
     depends_on:
-      - redis
-      - postgres
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   postgres:
     image: postgres:16-alpine
