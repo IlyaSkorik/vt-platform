@@ -1278,6 +1278,69 @@ paths:
               schema:
                 $ref: '#/components/schemas/CompetitionProblemDetail'
           description: Business rule violation.
+  /api/v1/competitions/{id}/contacts-configuration:
+    put:
+      operationId: updateContactsConfiguration
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateContactsConfig'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateContactsConfig'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateContactsConfig'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
   /api/v1/competitions/{id}/contacts/{contact_id}:
     delete:
       operationId: removeContact
@@ -2192,6 +2255,69 @@ paths:
         required: true
       tags:
       - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/landing-configuration:
+    put:
+      operationId: updateLandingConfiguration
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLandingConfig'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateLandingConfig'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateLandingConfig'
+        required: true
       security:
       - jwtAuth: []
       responses:
@@ -3629,132 +3755,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/CompetitionProblemDetail'
           description: Business rule violation.
-  /api/v1/competitions/{id}/contacts-configuration:
-    put:
-      operationId: updateContactsConfiguration
-      description: Organizer Competition API — staff-only.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - Competitions
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateContactsConfiguration'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UpdateContactsConfiguration'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UpdateContactsConfiguration'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionDetailResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Validation failed.
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Not organization staff.
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Competition or element not found.
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Lifecycle or configuration conflict.
-        '422':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Business rule violation.
-  /api/v1/competitions/{id}/landing-configuration:
-    put:
-      operationId: updateLandingConfiguration
-      description: Organizer Competition API — staff-only.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - Competitions
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateLandingConfiguration'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UpdateLandingConfiguration'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UpdateLandingConfiguration'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionDetailResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Validation failed.
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Not organization staff.
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Competition or element not found.
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Lifecycle or configuration conflict.
-        '422':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Business rule violation.
   /api/v1/competitions/{id}/start:
     post:
       operationId: startCompetition
@@ -3806,52 +3806,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/CompetitionProblemDetail'
           description: Business rule violation.
-  /api/v1/competitions/{id}/uploads/landing-image:
-    post:
-      operationId: uploadLandingImage
-      description: Upload an image for the public landing builder and return a media file reference.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - Competitions
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                file:
-                  type: string
-                  format: binary
-              required:
-              - file
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          description: Landing image uploaded; body contains data.fileReference.
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Validation failed.
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Not organization staff.
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Competition or element not found.
   /api/v1/competitions/{id}/uploads/document:
     post:
       operationId: uploadDocumentFile
@@ -3880,6 +3834,53 @@ paths:
       responses:
         '200':
           description: Document file uploaded; body contains data.fileReference.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+  /api/v1/competitions/{id}/uploads/landing-image:
+    post:
+      operationId: uploadLandingImage
+      description: Upload an image for the public landing builder and return a media
+        file reference.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Landing image uploaded; body contains data.fileReference.
         '400':
           content:
             application/json:
@@ -3944,6 +3945,35 @@ paths:
               schema:
                 $ref: '#/components/schemas/CompetitionProblemDetail'
           description: Competition or element not found.
+  /api/v1/organization/profile:
+    get:
+      operationId: getOrganizationProfile
+      description: Return the singleton organization profile. Contact fields are null
+        until persisted.
+      summary: Get organization profile
+      tags:
+      - Organization
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationProfileResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Organization not seeded.
   /api/v1/participants:
     post:
       operationId: participants_create
@@ -4186,34 +4216,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/ParticipantsProblemDetail'
           description: Invalid transition.
-  /api/v1/organization/profile:
+  /api/v1/public/festivals:
     get:
-      operationId: getOrganizationProfile
-      description: Return the singleton organization profile. Contact fields are null until persisted.
-      summary: Get organization profile
+      operationId: listPublicFestivals
+      description: List every publicly-visible competition for the participant catalog.
       tags:
-      - Organization
+      - Public Catalog
       security:
-      - jwtAuth: []
+      - {}
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrganizationProfileResponse'
+                $ref: '#/components/schemas/PublicFestivalListEnvelope'
           description: ''
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-          description: Not organization staff.
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-          description: Organization not seeded.
   /api/v1/staff/invitations:
     post:
       operationId: createStaffInvitation
@@ -4392,10 +4409,8 @@ components:
           - string
           - 'null'
         billingModel:
-          type: string
-          enum:
-          - PER_PARTICIPANT
-          - PER_PERFORMANCE
+          allOf:
+          - $ref: '#/components/schemas/BillingModelEnum'
           default: PER_PARTICIPANT
         participationFormatIds:
           type: array
@@ -4463,7 +4478,7 @@ components:
           minimum: 0
         type:
           allOf:
-          - $ref: '#/components/schemas/TypeEnum'
+          - $ref: '#/components/schemas/TypeFd5Enum'
           default: STANDARD
         mixedCalculationMethod:
           oneOf:
@@ -4656,11 +4671,9 @@ components:
           default: BYN
           maxLength: 3
         calculationType:
-          type: string
+          allOf:
+          - $ref: '#/components/schemas/CalculationTypeEnum'
           default: PER_PARTICIPANT
-          enum:
-          - PER_PARTICIPANT
-          - PER_PERFORMANCE
       required:
       - ageCategoryId
       - amount
@@ -4688,6 +4701,34 @@ components:
       - publicationDate
       - title
       - version
+    AllowedProvidersEnum:
+      enum:
+      - YOUTUBE
+      - VK_VIDEO
+      - RUTUBE
+      - VIMEO
+      type: string
+      description: |-
+        * `YOUTUBE` - YOUTUBE
+        * `VK_VIDEO` - VK_VIDEO
+        * `RUTUBE` - RUTUBE
+        * `VIMEO` - VIMEO
+    BillingModelEnum:
+      enum:
+      - PER_PARTICIPANT
+      - PER_PERFORMANCE
+      type: string
+      description: |-
+        * `PER_PARTICIPANT` - PER_PARTICIPANT
+        * `PER_PERFORMANCE` - PER_PERFORMANCE
+    CalculationTypeEnum:
+      enum:
+      - PER_PARTICIPANT
+      - PER_PERFORMANCE
+      type: string
+      description: |-
+        * `PER_PARTICIPANT` - PER_PARTICIPANT
+        * `PER_PERFORMANCE` - PER_PERFORMANCE
     CompetitionDetail:
       type: object
       properties:
@@ -5134,8 +5175,95 @@ components:
         * `AVERAGE` - AVERAGE
         * `OLDEST` - OLDEST
         * `YOUNGEST` - YOUNGEST
+    ModeEnum:
+      enum:
+      - NOT_REQUIRED
+      - URL_ONLY
+      - FILE_ONLY
+      - URL_OR_FILE
+      type: string
+      description: |-
+        * `NOT_REQUIRED` - NOT_REQUIRED
+        * `URL_ONLY` - URL_ONLY
+        * `FILE_ONLY` - FILE_ONLY
+        * `URL_OR_FILE` - URL_OR_FILE
     NullEnum:
       type: 'null'
+    OrganizationProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        phone:
+          type:
+          - string
+          - 'null'
+        email:
+          type:
+          - string
+          - 'null'
+        website:
+          type:
+          - string
+          - 'null'
+        address:
+          type:
+          - string
+          - 'null'
+        logo:
+          type:
+          - string
+          - 'null'
+        vk:
+          type:
+          - string
+          - 'null'
+        instagram:
+          type:
+          - string
+          - 'null'
+        telegram:
+          type:
+          - string
+          - 'null'
+        legalInformation:
+          type:
+          - string
+          - 'null'
+      required:
+      - address
+      - email
+      - id
+      - instagram
+      - legalInformation
+      - logo
+      - name
+      - phone
+      - slug
+      - telegram
+      - vk
+      - website
+    OrganizationProfileMeta:
+      type: object
+      properties:
+        requestId:
+          type: string
+      required:
+      - requestId
+    OrganizationProfileResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/OrganizationProfile'
+        meta:
+          $ref: '#/components/schemas/OrganizationProfileMeta'
+      required:
+      - data
+      - meta
     ParticipantMeta:
       type: object
       description: |-
@@ -5262,12 +5390,9 @@ components:
           default: BYN
           maxLength: 3
         calculationType:
-          type: string
-          enum:
-          - PER_PARTICIPANT
-          - PER_PERFORMANCE
-          - null
-          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/CalculationTypeEnum'
+          - $ref: '#/components/schemas/NullEnum'
     PatchedRenameCategory:
       type: object
       properties:
@@ -5318,10 +5443,8 @@ components:
           - string
           - 'null'
         billingModel:
-          type: string
-          enum:
-          - PER_PARTICIPANT
-          - PER_PERFORMANCE
+          allOf:
+          - $ref: '#/components/schemas/BillingModelEnum'
           default: PER_PARTICIPANT
         participationFormatIds:
           type: array
@@ -5361,7 +5484,7 @@ components:
           minimum: 0
         type:
           oneOf:
-          - $ref: '#/components/schemas/TypeEnum'
+          - $ref: '#/components/schemas/TypeFd5Enum'
           - $ref: '#/components/schemas/NullEnum'
         mixedCalculationMethod:
           oneOf:
@@ -5520,6 +5643,26 @@ components:
           - integer
           - 'null'
           minimum: 0
+    PaymentMethodsEnum:
+      enum:
+      - ONLINE
+      - BANK_TRANSFER
+      - CASH
+      type: string
+      description: |-
+        * `ONLINE` - ONLINE
+        * `BANK_TRANSFER` - BANK_TRANSFER
+        * `CASH` - CASH
+    PaymentTimingEnum:
+      enum:
+      - BEFORE_REVIEW
+      - BEFORE_APPROVAL
+      - BEFORE_COMPETITION
+      type: string
+      description: |-
+        * `BEFORE_REVIEW` - BEFORE_REVIEW
+        * `BEFORE_APPROVAL` - BEFORE_APPROVAL
+        * `BEFORE_COMPETITION` - BEFORE_COMPETITION
     ProblemDetail:
       type: object
       properties:
@@ -5562,6 +5705,181 @@ components:
       required:
       - guardianId
       - relationshipType
+    PublicCatalogMeta:
+      type: object
+      description: Response envelope metadata (API-000 §5).
+      properties:
+        requestId:
+          type: string
+      required:
+      - requestId
+    PublicFestival:
+      type: object
+      description: One competition as rendered in the public catalog.
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        season:
+          type: string
+        description:
+          type:
+          - string
+          - 'null'
+        status:
+          type: string
+        organizer:
+          $ref: '#/components/schemas/PublicFestivalOrganizer'
+        city:
+          type:
+          - string
+          - 'null'
+        venueName:
+          type:
+          - string
+          - 'null'
+        venueAddress:
+          type:
+          - string
+          - 'null'
+        coverImage:
+          type:
+          - string
+          - 'null'
+        competitionStart:
+          type:
+          - string
+          - 'null'
+          format: date
+        competitionEnd:
+          type:
+          - string
+          - 'null'
+          format: date
+        registrationStart:
+          type:
+          - string
+          - 'null'
+          format: date
+        registrationEnd:
+          type:
+          - string
+          - 'null'
+          format: date
+        applicationDeadline:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        pricing:
+          $ref: '#/components/schemas/PublicFestivalPricing'
+        formats:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicFestivalFormat'
+        modes:
+          type: array
+          items:
+            type: string
+        categories:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        updatedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - applicationDeadline
+      - categories
+      - city
+      - competitionEnd
+      - competitionStart
+      - coverImage
+      - createdAt
+      - description
+      - formats
+      - id
+      - modes
+      - organizer
+      - pricing
+      - registrationEnd
+      - registrationStart
+      - season
+      - status
+      - title
+      - updatedAt
+      - venueAddress
+      - venueName
+    PublicFestivalFormat:
+      type: object
+      description: A participation format with its normalized display mode.
+      properties:
+        name:
+          type: string
+        mode:
+          type:
+          - string
+          - 'null'
+      required:
+      - mode
+      - name
+    PublicFestivalListEnvelope:
+      type: object
+      description: The full ``GET /public/festivals`` response envelope.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicFestival'
+        meta:
+          $ref: '#/components/schemas/PublicCatalogMeta'
+      required:
+      - data
+      - meta
+    PublicFestivalOrganizer:
+      type: object
+      description: Organizer identity for a catalog card.
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        logo:
+          type:
+          - string
+          - 'null'
+      required:
+      - id
+      - logo
+      - name
+    PublicFestivalPricing:
+      type: object
+      description: The "from X" price summary.
+      properties:
+        amountFrom:
+          type:
+          - string
+          - 'null'
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        currency:
+          type:
+          - string
+          - 'null'
+        multiple:
+          type: boolean
+      required:
+      - amountFrom
+      - currency
+      - multiple
     RegistrationRequest:
       type: object
       description: Validate a new-account registration request body (API-001 §4.1).
@@ -5764,7 +6082,7 @@ components:
       required:
       - accessToken
       - expiresIn
-    TypeEnum:
+    TypeFd5Enum:
       enum:
       - STANDARD
       - MIXED
@@ -5800,494 +6118,6 @@ components:
           - string
           - 'null'
           format: date-time
-    _FormatMusicRequirements:
-      type: object
-      properties:
-        requireUpload:
-          type: boolean
-        allowReplacement:
-          type: boolean
-        allowedFormats:
-          type: array
-          items:
-            type: string
-        maxUploadSizeMb:
-          type:
-          - integer
-          - 'null'
-      required:
-      - requireUpload
-      - allowReplacement
-      - allowedFormats
-      - maxUploadSizeMb
-    _FormatVideoRequirements:
-      type: object
-      properties:
-        mode:
-          type: string
-          enum:
-          - NOT_REQUIRED
-          - URL_ONLY
-          - FILE_ONLY
-          - URL_OR_FILE
-        allowedProviders:
-          type: array
-          items:
-            type: string
-            enum:
-            - YOUTUBE
-            - VK_VIDEO
-            - RUTUBE
-            - VIMEO
-        allowReplacement:
-          type: boolean
-      required:
-      - mode
-      - allowedProviders
-      - allowReplacement
-    _FormatPaymentReceiptRequirements:
-      type: object
-      properties:
-        requireReceipt:
-          type: boolean
-        allowUploadLater:
-          type: boolean
-        allowReplacement:
-          type: boolean
-      required:
-      - requireReceipt
-      - allowUploadLater
-      - allowReplacement
-    _FormatRequirements:
-      type: object
-      properties:
-        participationFormatId:
-          type: string
-        music:
-          $ref: '#/components/schemas/_FormatMusicRequirements'
-        video:
-          $ref: '#/components/schemas/_FormatVideoRequirements'
-        paymentReceipt:
-          $ref: '#/components/schemas/_FormatPaymentReceiptRequirements'
-      required:
-      - participationFormatId
-      - music
-      - video
-      - paymentReceipt
-
-    _ContactProfileOverride:
-      type: object
-      properties:
-        organizationName:
-          type:
-          - string
-          - 'null'
-        phone:
-          type:
-          - string
-          - 'null'
-        email:
-          type:
-          - string
-          - 'null'
-        website:
-          type:
-          - string
-          - 'null'
-        address:
-          type:
-          - string
-          - 'null'
-        vk:
-          type:
-          - string
-          - 'null'
-        instagram:
-          type:
-          - string
-          - 'null'
-        telegram:
-          type:
-          - string
-          - 'null'
-      required:
-      - organizationName
-      - phone
-      - email
-      - website
-      - address
-      - vk
-      - instagram
-      - telegram
-    _TeamContact:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        position:
-          type:
-          - string
-          - 'null'
-        phone:
-          type:
-          - string
-          - 'null'
-        email:
-          type:
-          - string
-          - 'null'
-        description:
-          type:
-          - string
-          - 'null'
-        sortOrder:
-          type: integer
-      required:
-      - id
-      - name
-      - position
-      - phone
-      - email
-      - description
-      - sortOrder
-    _EmergencyContacts:
-      type: object
-      properties:
-        phone:
-          type:
-          - string
-          - 'null'
-        email:
-          type:
-          - string
-          - 'null'
-        notes:
-          type:
-          - string
-          - 'null'
-      required:
-      - phone
-      - email
-      - notes
-    _VenueDetails:
-      type: object
-      properties:
-        city:
-          type:
-          - string
-          - 'null'
-        country:
-          type:
-          - string
-          - 'null'
-        googleMapsUrl:
-          type:
-          - string
-          - 'null'
-        yandexMapsUrl:
-          type:
-          - string
-          - 'null'
-        directions:
-          type:
-          - string
-          - 'null'
-      required:
-      - city
-      - country
-      - googleMapsUrl
-      - yandexMapsUrl
-      - directions
-    _ContactsConfig:
-      type: object
-      properties:
-        useOrganizationContacts:
-          type: boolean
-        override:
-          $ref: '#/components/schemas/_ContactProfileOverride'
-        teamContacts:
-          type: array
-          items:
-            $ref: '#/components/schemas/_TeamContact'
-        emergency:
-          $ref: '#/components/schemas/_EmergencyContacts'
-        venueDetails:
-          $ref: '#/components/schemas/_VenueDetails'
-      required:
-      - useOrganizationContacts
-      - override
-      - teamContacts
-      - emergency
-      - venueDetails
-    UpdateContactsConfiguration:
-      type: object
-      properties:
-        useOrganizationContacts:
-          type: boolean
-        override:
-          $ref: '#/components/schemas/_ContactProfileOverride'
-        teamContacts:
-          type: array
-          items:
-            $ref: '#/components/schemas/_TeamContact'
-        emergency:
-          $ref: '#/components/schemas/_EmergencyContacts'
-        venueDetails:
-          $ref: '#/components/schemas/_VenueDetails'
-      required:
-      - useOrganizationContacts
-      - override
-      - teamContacts
-      - emergency
-      - venueDetails
-    _JuryCard:
-      type: object
-      properties:
-        id:
-          type: string
-        photo:
-          type:
-          - string
-          - 'null'
-        name:
-          type: string
-        position:
-          type:
-          - string
-          - 'null'
-        description:
-          type:
-          - string
-          - 'null'
-        sortOrder:
-          type: integer
-      required:
-      - id
-      - photo
-      - name
-      - position
-      - description
-      - sortOrder
-    _PartnerCard:
-      type: object
-      properties:
-        id:
-          type: string
-        logo:
-          type:
-          - string
-          - 'null'
-        name:
-          type: string
-        website:
-          type:
-          - string
-          - 'null'
-        sortOrder:
-          type: integer
-      required:
-      - id
-      - logo
-      - name
-      - website
-      - sortOrder
-    _GalleryImage:
-      type: object
-      properties:
-        id:
-          type: string
-        url:
-          type: string
-        caption:
-          type:
-          - string
-          - 'null'
-        sortOrder:
-          type: integer
-      required:
-      - id
-      - url
-      - caption
-      - sortOrder
-    _FaqItem:
-      type: object
-      properties:
-        id:
-          type: string
-        question:
-          type: string
-        answer:
-          type: string
-        sortOrder:
-          type: integer
-      required:
-      - id
-      - question
-      - answer
-      - sortOrder
-    _LandingBlock:
-      type: object
-      properties:
-        id:
-          type: string
-        type:
-          type: string
-          enum:
-          - HERO
-          - VENUE
-          - JURY
-          - PARTNERS
-          - GALLERY
-          - FAQ
-          - CONTENT
-        enabled:
-          type: boolean
-        sortOrder:
-          type: integer
-        title:
-          type:
-          - string
-          - 'null'
-        subtitle:
-          type:
-          - string
-          - 'null'
-        coverImage:
-          type:
-          - string
-          - 'null'
-        body:
-          type:
-          - string
-          - 'null'
-        contentFormat:
-          type:
-          - string
-          - 'null'
-        cards:
-          type: array
-          items:
-            $ref: '#/components/schemas/_JuryCard'
-        partners:
-          type: array
-          items:
-            $ref: '#/components/schemas/_PartnerCard'
-        images:
-          type: array
-          items:
-            $ref: '#/components/schemas/_GalleryImage'
-        faqItems:
-          type: array
-          items:
-            $ref: '#/components/schemas/_FaqItem'
-      required:
-      - id
-      - type
-      - enabled
-      - sortOrder
-      - title
-      - subtitle
-      - coverImage
-      - body
-      - contentFormat
-      - cards
-      - partners
-      - images
-      - faqItems
-    _LandingConfig:
-      type: object
-      properties:
-        blocks:
-          type: array
-          items:
-            $ref: '#/components/schemas/_LandingBlock'
-      required:
-      - blocks
-    UpdateLandingConfiguration:
-      type: object
-      properties:
-        blocks:
-          type: array
-          items:
-            $ref: '#/components/schemas/_LandingBlock'
-      required:
-      - blocks
-    OrganizationProfile:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        slug:
-          type: string
-        phone:
-          type:
-          - string
-          - 'null'
-        email:
-          type:
-          - string
-          - 'null'
-        website:
-          type:
-          - string
-          - 'null'
-        address:
-          type:
-          - string
-          - 'null'
-        logo:
-          type:
-          - string
-          - 'null'
-        vk:
-          type:
-          - string
-          - 'null'
-        instagram:
-          type:
-          - string
-          - 'null'
-        telegram:
-          type:
-          - string
-          - 'null'
-        legalInformation:
-          type:
-          - string
-          - 'null'
-      required:
-      - id
-      - name
-      - slug
-      - phone
-      - email
-      - website
-      - address
-      - logo
-      - vk
-      - instagram
-      - telegram
-      - legalInformation
-    OrganizationProfileResponse:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/OrganizationProfile'
-        meta:
-          type: object
-          properties:
-            requestId:
-              type: string
-          required:
-          - requestId
-      required:
-      - data
-      - meta
-
     UpdateCompetitionSettings:
       type: object
       properties:
@@ -6314,19 +6144,11 @@ components:
         paymentRequired:
           type: boolean
         paymentTiming:
-          type: string
-          enum:
-          - BEFORE_REVIEW
-          - BEFORE_APPROVAL
-          - BEFORE_COMPETITION
+          $ref: '#/components/schemas/PaymentTimingEnum'
         paymentMethods:
           type: array
           items:
-            type: string
-            enum:
-            - ONLINE
-            - BANK_TRANSFER
-            - CASH
+            $ref: '#/components/schemas/PaymentMethodsEnum'
         requirePersonalDataConsent:
           type: boolean
         requireMediaConsent:
@@ -6339,8 +6161,10 @@ components:
           type: boolean
         smsNotifications:
           type: boolean
+          default: false
         pushNotifications:
           type: boolean
+          default: false
         manualApplicationApproval:
           type: boolean
         automaticApprovalAfterPayment:
@@ -6350,32 +6174,60 @@ components:
         formatRequirements:
           type: array
           items:
-            $ref: '#/components/schemas/_FormatRequirements'
+            $ref: '#/components/schemas/_FormatRequirementsInput'
       required:
-      - allowMultipleApplications
-      - allowApplicationEditing
-      - allowWithdrawingApplications
-      - allowCopyingPreviousApplications
-      - requireTeacher
-      - requireParentGuardian
-      - participantCommentEnabled
-      - requireDocumentUpload
       - allowAdditionalDocumentsLater
+      - allowApplicationEditing
+      - allowCopyingPreviousApplications
+      - allowMultipleApplications
       - allowReplacingDocuments
+      - allowReturningForCorrection
+      - allowWithdrawingApplications
+      - automaticApprovalAfterPayment
+      - cabinetNotifications
+      - emailNotifications
+      - formatRequirements
+      - manualApplicationApproval
+      - participantCommentEnabled
+      - paymentMethods
       - paymentRequired
       - paymentTiming
-      - paymentMethods
-      - requirePersonalDataConsent
+      - requireDocumentUpload
       - requireMediaConsent
+      - requireParentGuardian
+      - requirePersonalDataConsent
       - requireRegulationsAcceptance
-      - emailNotifications
-      - cabinetNotifications
-      - smsNotifications
-      - pushNotifications
-      - manualApplicationApproval
-      - automaticApprovalAfterPayment
-      - allowReturningForCorrection
-      - formatRequirements
+      - requireTeacher
+    UpdateContactsConfig:
+      type: object
+      properties:
+        useOrganizationContacts:
+          type: boolean
+        override:
+          $ref: '#/components/schemas/_ContactProfileOverrideInput'
+        teamContacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/_TeamContactInput'
+        emergency:
+          $ref: '#/components/schemas/_EmergencyContactsInput'
+        venueDetails:
+          $ref: '#/components/schemas/_VenueDetailsInput'
+      required:
+      - emergency
+      - override
+      - teamContacts
+      - useOrganizationContacts
+      - venueDetails
+    UpdateLandingConfig:
+      type: object
+      properties:
+        blocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/_LandingBlockInput'
+      required:
+      - blocks
     UserResource:
       type: object
       description: A user account resource (API-001 §4.1, §4.8).
@@ -6454,9 +6306,6 @@ components:
           - 'null'
         billingModel:
           type: string
-          enum:
-          - PER_PARTICIPANT
-          - PER_PERFORMANCE
         participationFormatIds:
           type: array
           items:
@@ -6604,6 +6453,106 @@ components:
       - isPrimary
       - type
       - value
+    _ContactProfileOverride:
+      type: object
+      properties:
+        organizationName:
+          type:
+          - string
+          - 'null'
+        phone:
+          type:
+          - string
+          - 'null'
+        email:
+          type:
+          - string
+          - 'null'
+        website:
+          type:
+          - string
+          - 'null'
+        address:
+          type:
+          - string
+          - 'null'
+        vk:
+          type:
+          - string
+          - 'null'
+        instagram:
+          type:
+          - string
+          - 'null'
+        telegram:
+          type:
+          - string
+          - 'null'
+      required:
+      - address
+      - email
+      - instagram
+      - organizationName
+      - phone
+      - telegram
+      - vk
+      - website
+    _ContactProfileOverrideInput:
+      type: object
+      properties:
+        organizationName:
+          type:
+          - string
+          - 'null'
+        phone:
+          type:
+          - string
+          - 'null'
+        email:
+          type:
+          - string
+          - 'null'
+        website:
+          type:
+          - string
+          - 'null'
+        address:
+          type:
+          - string
+          - 'null'
+        vk:
+          type:
+          - string
+          - 'null'
+        instagram:
+          type:
+          - string
+          - 'null'
+        telegram:
+          type:
+          - string
+          - 'null'
+    _ContactsConfig:
+      type: object
+      properties:
+        useOrganizationContacts:
+          type: boolean
+        override:
+          $ref: '#/components/schemas/_ContactProfileOverride'
+        teamContacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/_TeamContact'
+        emergency:
+          $ref: '#/components/schemas/_EmergencyContacts'
+        venueDetails:
+          $ref: '#/components/schemas/_VenueDetails'
+      required:
+      - emergency
+      - override
+      - teamContacts
+      - useOrganizationContacts
+      - venueDetails
     _Deadlines:
       type: object
       properties:
@@ -6684,6 +6633,147 @@ components:
       - sortOrder
       - title
       - visibility
+    _EmergencyContacts:
+      type: object
+      properties:
+        phone:
+          type:
+          - string
+          - 'null'
+        email:
+          type:
+          - string
+          - 'null'
+        notes:
+          type:
+          - string
+          - 'null'
+      required:
+      - email
+      - notes
+      - phone
+    _EmergencyContactsInput:
+      type: object
+      properties:
+        phone:
+          type:
+          - string
+          - 'null'
+        email:
+          type:
+          - string
+          - 'null'
+        notes:
+          type:
+          - string
+          - 'null'
+    _FaqItem:
+      type: object
+      properties:
+        id:
+          type: string
+        question:
+          type: string
+        answer:
+          type: string
+        sortOrder:
+          type: integer
+      required:
+      - answer
+      - id
+      - question
+      - sortOrder
+    _FaqItemInput:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        question:
+          type: string
+          maxLength: 500
+        answer:
+          type: string
+          maxLength: 5000
+        sortOrder:
+          type: integer
+          minimum: 0
+          default: 0
+      required:
+      - answer
+      - id
+      - question
+    _FormatRequirements:
+      type: object
+      properties:
+        participationFormatId:
+          type: string
+        music:
+          $ref: '#/components/schemas/_MusicRequirements'
+        video:
+          $ref: '#/components/schemas/_VideoRequirements'
+        paymentReceipt:
+          $ref: '#/components/schemas/_PaymentReceiptRequirements'
+      required:
+      - music
+      - participationFormatId
+      - paymentReceipt
+      - video
+    _FormatRequirementsInput:
+      type: object
+      properties:
+        participationFormatId:
+          type: string
+          format: uuid
+        music:
+          $ref: '#/components/schemas/_MusicRequirementsInput'
+        video:
+          $ref: '#/components/schemas/_VideoRequirementsInput'
+        paymentReceipt:
+          $ref: '#/components/schemas/_PaymentReceiptRequirementsInput'
+      required:
+      - music
+      - participationFormatId
+      - paymentReceipt
+      - video
+    _GalleryImage:
+      type: object
+      properties:
+        id:
+          type: string
+        url:
+          type: string
+        caption:
+          type:
+          - string
+          - 'null'
+        sortOrder:
+          type: integer
+      required:
+      - caption
+      - id
+      - sortOrder
+      - url
+    _GalleryImageInput:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        url:
+          type: string
+          maxLength: 2000
+        caption:
+          type:
+          - string
+          - 'null'
+        sortOrder:
+          type: integer
+          minimum: 0
+          default: 0
+      required:
+      - id
+      - url
     _InformationBlock:
       type: object
       properties:
@@ -6706,6 +6796,204 @@ components:
       - published
       - sortOrder
       - title
+    _JuryCard:
+      type: object
+      properties:
+        id:
+          type: string
+        photo:
+          type:
+          - string
+          - 'null'
+        name:
+          type: string
+        position:
+          type:
+          - string
+          - 'null'
+        description:
+          type:
+          - string
+          - 'null'
+        sortOrder:
+          type: integer
+      required:
+      - description
+      - id
+      - name
+      - photo
+      - position
+      - sortOrder
+    _JuryCardInput:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 200
+        photo:
+          type:
+          - string
+          - 'null'
+        position:
+          type:
+          - string
+          - 'null'
+        description:
+          type:
+          - string
+          - 'null'
+        sortOrder:
+          type: integer
+          minimum: 0
+          default: 0
+      required:
+      - id
+      - name
+    _LandingBlock:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        enabled:
+          type: boolean
+        sortOrder:
+          type: integer
+        title:
+          type:
+          - string
+          - 'null'
+        subtitle:
+          type:
+          - string
+          - 'null'
+        coverImage:
+          type:
+          - string
+          - 'null'
+        body:
+          type:
+          - string
+          - 'null'
+        contentFormat:
+          type:
+          - string
+          - 'null'
+        cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/_JuryCard'
+        partners:
+          type: array
+          items:
+            $ref: '#/components/schemas/_PartnerCard'
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/_GalleryImage'
+        faqItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/_FaqItem'
+      required:
+      - body
+      - cards
+      - contentFormat
+      - coverImage
+      - enabled
+      - faqItems
+      - id
+      - images
+      - partners
+      - sortOrder
+      - subtitle
+      - title
+      - type
+    _LandingBlockInput:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/_LandingBlockInputTypeEnum'
+        enabled:
+          type: boolean
+        sortOrder:
+          type: integer
+          minimum: 0
+        title:
+          type:
+          - string
+          - 'null'
+        subtitle:
+          type:
+          - string
+          - 'null'
+        coverImage:
+          type:
+          - string
+          - 'null'
+        body:
+          type:
+          - string
+          - 'null'
+        contentFormat:
+          type:
+          - string
+          - 'null'
+        cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/_JuryCardInput'
+        partners:
+          type: array
+          items:
+            $ref: '#/components/schemas/_PartnerCardInput'
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/_GalleryImageInput'
+        faqItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/_FaqItemInput'
+      required:
+      - enabled
+      - id
+      - sortOrder
+      - type
+    _LandingBlockInputTypeEnum:
+      enum:
+      - HERO
+      - VENUE
+      - JURY
+      - PARTNERS
+      - GALLERY
+      - FAQ
+      - CONTENT
+      type: string
+      description: |-
+        * `HERO` - HERO
+        * `VENUE` - VENUE
+        * `JURY` - JURY
+        * `PARTNERS` - PARTNERS
+        * `GALLERY` - GALLERY
+        * `FAQ` - FAQ
+        * `CONTENT` - CONTENT
+    _LandingConfig:
+      type: object
+      properties:
+        blocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/_LandingBlock'
+      required:
+      - blocks
     _Meta:
       type: object
       properties:
@@ -6713,6 +7001,44 @@ components:
           type: string
       required:
       - requestId
+    _MusicRequirements:
+      type: object
+      properties:
+        requireUpload:
+          type: boolean
+        allowReplacement:
+          type: boolean
+        allowedFormats:
+          type: array
+          items:
+            type: string
+        maxUploadSizeMb:
+          type: integer
+      required:
+      - allowReplacement
+      - allowedFormats
+      - maxUploadSizeMb
+      - requireUpload
+    _MusicRequirementsInput:
+      type: object
+      properties:
+        requireUpload:
+          type: boolean
+        allowReplacement:
+          type: boolean
+        allowedFormats:
+          type: array
+          items:
+            type: string
+        maxUploadSizeMb:
+          type: integer
+          maximum: 512
+          minimum: 1
+      required:
+      - allowReplacement
+      - allowedFormats
+      - maxUploadSizeMb
+      - requireUpload
     _ParticipantGroup:
       type: object
       properties:
@@ -6763,6 +7089,79 @@ components:
       - id
       - name
       - sortOrder
+    _PartnerCard:
+      type: object
+      properties:
+        id:
+          type: string
+        logo:
+          type:
+          - string
+          - 'null'
+        name:
+          type: string
+        website:
+          type:
+          - string
+          - 'null'
+        sortOrder:
+          type: integer
+      required:
+      - id
+      - logo
+      - name
+      - sortOrder
+      - website
+    _PartnerCardInput:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 200
+        logo:
+          type:
+          - string
+          - 'null'
+        website:
+          type:
+          - string
+          - 'null'
+        sortOrder:
+          type: integer
+          minimum: 0
+          default: 0
+      required:
+      - id
+      - name
+    _PaymentReceiptRequirements:
+      type: object
+      properties:
+        requireReceipt:
+          type: boolean
+        allowUploadLater:
+          type: boolean
+        allowReplacement:
+          type: boolean
+      required:
+      - allowReplacement
+      - allowUploadLater
+      - requireReceipt
+    _PaymentReceiptRequirementsInput:
+      type: object
+      properties:
+        requireReceipt:
+          type: boolean
+        allowUploadLater:
+          type: boolean
+        allowReplacement:
+          type: boolean
+      required:
+      - allowReplacement
+      - allowUploadLater
+      - requireReceipt
     _Period:
       type: object
       properties:
@@ -6794,9 +7193,6 @@ components:
           type: string
         calculationType:
           type: string
-          enum:
-          - PER_PARTICIPANT
-          - PER_PERFORMANCE
       required:
       - ageCategoryId
       - amount
@@ -6856,18 +7252,10 @@ components:
           type: boolean
         paymentTiming:
           type: string
-          enum:
-          - BEFORE_REVIEW
-          - BEFORE_APPROVAL
-          - BEFORE_COMPETITION
         paymentMethods:
           type: array
           items:
             type: string
-            enum:
-            - ONLINE
-            - BANK_TRANSFER
-            - CASH
         requirePersonalDataConsent:
           type: boolean
         requireMediaConsent:
@@ -6893,30 +7281,95 @@ components:
           items:
             $ref: '#/components/schemas/_FormatRequirements'
       required:
-      - allowMultipleApplications
-      - allowApplicationEditing
-      - allowWithdrawingApplications
-      - allowCopyingPreviousApplications
-      - requireTeacher
-      - requireParentGuardian
-      - participantCommentEnabled
-      - requireDocumentUpload
       - allowAdditionalDocumentsLater
+      - allowApplicationEditing
+      - allowCopyingPreviousApplications
+      - allowMultipleApplications
       - allowReplacingDocuments
+      - allowReturningForCorrection
+      - allowWithdrawingApplications
+      - automaticApprovalAfterPayment
+      - cabinetNotifications
+      - emailNotifications
+      - formatRequirements
+      - manualApplicationApproval
+      - participantCommentEnabled
+      - paymentMethods
       - paymentRequired
       - paymentTiming
-      - paymentMethods
-      - requirePersonalDataConsent
-      - requireMediaConsent
-      - requireRegulationsAcceptance
-      - emailNotifications
-      - cabinetNotifications
-      - smsNotifications
       - pushNotifications
-      - manualApplicationApproval
-      - automaticApprovalAfterPayment
-      - allowReturningForCorrection
-      - formatRequirements
+      - requireDocumentUpload
+      - requireMediaConsent
+      - requireParentGuardian
+      - requirePersonalDataConsent
+      - requireRegulationsAcceptance
+      - requireTeacher
+      - smsNotifications
+    _TeamContact:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        position:
+          type:
+          - string
+          - 'null'
+        phone:
+          type:
+          - string
+          - 'null'
+        email:
+          type:
+          - string
+          - 'null'
+        description:
+          type:
+          - string
+          - 'null'
+        sortOrder:
+          type: integer
+      required:
+      - description
+      - email
+      - id
+      - name
+      - phone
+      - position
+      - sortOrder
+    _TeamContactInput:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 200
+        position:
+          type:
+          - string
+          - 'null'
+        phone:
+          type:
+          - string
+          - 'null'
+        email:
+          type:
+          - string
+          - 'null'
+        description:
+          type:
+          - string
+          - 'null'
+        sortOrder:
+          type: integer
+          minimum: 0
+          default: 0
+      required:
+      - id
+      - name
     _Venue:
       type: object
       properties:
@@ -6929,6 +7382,88 @@ components:
       required:
       - address
       - name
+    _VenueDetails:
+      type: object
+      properties:
+        city:
+          type:
+          - string
+          - 'null'
+        country:
+          type:
+          - string
+          - 'null'
+        googleMapsUrl:
+          type:
+          - string
+          - 'null'
+        yandexMapsUrl:
+          type:
+          - string
+          - 'null'
+        directions:
+          type:
+          - string
+          - 'null'
+      required:
+      - city
+      - country
+      - directions
+      - googleMapsUrl
+      - yandexMapsUrl
+    _VenueDetailsInput:
+      type: object
+      properties:
+        city:
+          type:
+          - string
+          - 'null'
+        country:
+          type:
+          - string
+          - 'null'
+        googleMapsUrl:
+          type:
+          - string
+          - 'null'
+        yandexMapsUrl:
+          type:
+          - string
+          - 'null'
+        directions:
+          type:
+          - string
+          - 'null'
+    _VideoRequirements:
+      type: object
+      properties:
+        mode:
+          type: string
+        allowedProviders:
+          type: array
+          items:
+            type: string
+        allowReplacement:
+          type: boolean
+      required:
+      - allowReplacement
+      - allowedProviders
+      - mode
+    _VideoRequirementsInput:
+      type: object
+      properties:
+        mode:
+          $ref: '#/components/schemas/ModeEnum'
+        allowedProviders:
+          type: array
+          items:
+            $ref: '#/components/schemas/AllowedProvidersEnum'
+        allowReplacement:
+          type: boolean
+      required:
+      - allowReplacement
+      - allowedProviders
+      - mode
   securitySchemes:
     jwtAuth:
       type: http

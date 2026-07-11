@@ -68,4 +68,31 @@ export default defineConfig({
       },
     },
   },
+  vtPublicCatalog: {
+    input: {
+      target: "./openapi/schema-full.yaml",
+      override: {
+        transformer: "./openapi/strip-api-version-prefix.ts",
+      },
+      filters: {
+        // The participant-facing Public Catalog read model — a dedicated,
+        // unauthenticated contract kept separate from the organizer tag.
+        tags: ["Public Catalog"],
+      },
+    },
+    output: {
+      mode: "tags-split",
+      target: "./src/shared/api/generated",
+      schemas: "./src/shared/api/generated/model-public-catalog",
+      client: "fetch",
+      httpClient: "fetch",
+      clean: false,
+      override: {
+        mutator: {
+          path: "./src/shared/api/orval-mutator.ts",
+          name: "customInstance",
+        },
+      },
+    },
+  },
 });
