@@ -41,6 +41,7 @@ __all__ = [
     "UpdateCompetitionDeadlinesSerializer",
     "UpdateCompetitionGeneralInformationSerializer",
     "UpdateCompetitionSettingsSerializer",
+    "UpdateContactsConfigSerializer",
     "UpdateDocumentSerializer",
     "UpdateInformationBlockSerializer",
     "UpdateParticipantGroupSerializer",
@@ -148,6 +149,51 @@ class UpdateCompetitionDeadlinesSerializer(serializers.Serializer[dict[str, obje
     musicUpload = serializers.DateTimeField(source="music_upload", required=False, allow_null=True)
     documentUpload = serializers.DateTimeField(source="document_upload", required=False, allow_null=True)
     correction = serializers.DateTimeField(required=False, allow_null=True)
+
+
+class _ContactProfileOverrideInputSerializer(serializers.Serializer[dict[str, object]]):
+    organizationName = serializers.CharField(
+        source="organization_name", required=False, allow_blank=True, allow_null=True
+    )
+    phone = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    email = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    website = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    address = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    vk = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    instagram = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    telegram = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
+
+class _TeamContactInputSerializer(serializers.Serializer[dict[str, object]]):
+    id = serializers.UUIDField()
+    name = serializers.CharField(max_length=200)
+    position = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    phone = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    email = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    description = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    sortOrder = serializers.IntegerField(source="sort_order", required=False, default=0, min_value=0)
+
+
+class _EmergencyContactsInputSerializer(serializers.Serializer[dict[str, object]]):
+    phone = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    email = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    notes = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
+
+class _VenueDetailsInputSerializer(serializers.Serializer[dict[str, object]]):
+    city = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    country = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    googleMapsUrl = serializers.CharField(source="google_maps_url", required=False, allow_blank=True, allow_null=True)
+    yandexMapsUrl = serializers.CharField(source="yandex_maps_url", required=False, allow_blank=True, allow_null=True)
+    directions = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
+
+class UpdateContactsConfigSerializer(serializers.Serializer[dict[str, object]]):
+    useOrganizationContacts = serializers.BooleanField(source="use_organization_contacts")
+    override = _ContactProfileOverrideInputSerializer()
+    teamContacts = _TeamContactInputSerializer(source="team_contacts", many=True)
+    emergency = _EmergencyContactsInputSerializer()
+    venueDetails = _VenueDetailsInputSerializer(source="venue_details")
 
 
 class AddCategorySerializer(serializers.Serializer[dict[str, object]]):
@@ -508,6 +554,49 @@ class _SettingsSerializer(serializers.Serializer[dict[str, object]]):
     formatRequirements = _FormatRequirementsSerializer(source="format_requirements", many=True)
 
 
+class _ContactProfileOverrideSerializer(serializers.Serializer[dict[str, object]]):
+    organizationName = serializers.CharField(source="organization_name", allow_null=True)
+    phone = serializers.CharField(allow_null=True)
+    email = serializers.CharField(allow_null=True)
+    website = serializers.CharField(allow_null=True)
+    address = serializers.CharField(allow_null=True)
+    vk = serializers.CharField(allow_null=True)
+    instagram = serializers.CharField(allow_null=True)
+    telegram = serializers.CharField(allow_null=True)
+
+
+class _TeamContactSerializer(serializers.Serializer[dict[str, object]]):
+    id = serializers.CharField()
+    name = serializers.CharField()
+    position = serializers.CharField(allow_null=True)
+    phone = serializers.CharField(allow_null=True)
+    email = serializers.CharField(allow_null=True)
+    description = serializers.CharField(allow_null=True)
+    sortOrder = serializers.IntegerField(source="sort_order")
+
+
+class _EmergencyContactsSerializer(serializers.Serializer[dict[str, object]]):
+    phone = serializers.CharField(allow_null=True)
+    email = serializers.CharField(allow_null=True)
+    notes = serializers.CharField(allow_null=True)
+
+
+class _VenueDetailsSerializer(serializers.Serializer[dict[str, object]]):
+    city = serializers.CharField(allow_null=True)
+    country = serializers.CharField(allow_null=True)
+    googleMapsUrl = serializers.CharField(source="google_maps_url", allow_null=True)
+    yandexMapsUrl = serializers.CharField(source="yandex_maps_url", allow_null=True)
+    directions = serializers.CharField(allow_null=True)
+
+
+class _ContactsConfigSerializer(serializers.Serializer[dict[str, object]]):
+    useOrganizationContacts = serializers.BooleanField(source="use_organization_contacts")
+    override = _ContactProfileOverrideSerializer()
+    teamContacts = _TeamContactSerializer(source="team_contacts", many=True)
+    emergency = _EmergencyContactsSerializer()
+    venueDetails = _VenueDetailsSerializer(source="venue_details")
+
+
 class _CategorySerializer(serializers.Serializer[dict[str, object]]):
     id = serializers.CharField()
     name = serializers.CharField()
@@ -638,6 +727,7 @@ class CompetitionDetailSerializer(serializers.Serializer[dict[str, object]]):
     registrationPeriod = _PeriodSerializer(source="registration_period", allow_null=True)
     competitionPeriod = _PeriodSerializer(source="competition_period", allow_null=True)
     settings = _SettingsSerializer()
+    contactsConfig = _ContactsConfigSerializer(source="contacts_config")
     deadlines = _DeadlinesSerializer()
     participationFormats = _ParticipationFormatSerializer(source="participation_formats", many=True)
     categories = _CategorySerializer(many=True)

@@ -26,6 +26,7 @@ from apps.competitions.domain.entities import (
     ParticipantGroup,
     ParticipationFormat,
 )
+from apps.competitions.domain.contacts_configuration import ContactsConfiguration
 from apps.competitions.domain.value_objects import AdmissionRule, CompetitionSettings, PricingRule
 
 __all__ = [
@@ -37,10 +38,13 @@ __all__ = [
     "CategoryView",
     "CompetitionDetailView",
     "CompetitionSummaryView",
+    "ContactProfileOverrideView",
+    "ContactsConfigView",
     "ContactView",
     "DeadlinesView",
     "DisciplineView",
     "DocumentView",
+    "EmergencyContactsView",
     "InformationBlockView",
     "ParticipantGroupView",
     "ParticipationFormatView",
@@ -49,6 +53,8 @@ __all__ = [
     "PublicationReportView",
     "RegulationView",
     "SettingsView",
+    "TeamContactView",
+    "VenueDetailsView",
     "VenueView",
 ]
 
@@ -426,6 +432,94 @@ class ContactView:
 
 
 @dataclass(frozen=True, slots=True)
+class ContactProfileOverrideView:
+    organization_name: str | None
+    phone: str | None
+    email: str | None
+    website: str | None
+    address: str | None
+    vk: str | None
+    instagram: str | None
+    telegram: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class TeamContactView:
+    id: str
+    name: str
+    position: str | None
+    phone: str | None
+    email: str | None
+    description: str | None
+    sort_order: int
+
+
+@dataclass(frozen=True, slots=True)
+class EmergencyContactsView:
+    phone: str | None
+    email: str | None
+    notes: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class VenueDetailsView:
+    city: str | None
+    country: str | None
+    google_maps_url: str | None
+    yandex_maps_url: str | None
+    directions: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class ContactsConfigView:
+    use_organization_contacts: bool
+    override: ContactProfileOverrideView
+    team_contacts: tuple[TeamContactView, ...]
+    emergency: EmergencyContactsView
+    venue_details: VenueDetailsView
+
+    @classmethod
+    def of(cls, config: ContactsConfiguration) -> ContactsConfigView:
+        return cls(
+            use_organization_contacts=config.use_organization_contacts,
+            override=ContactProfileOverrideView(
+                organization_name=config.override.organization_name,
+                phone=config.override.phone,
+                email=config.override.email,
+                website=config.override.website,
+                address=config.override.address,
+                vk=config.override.vk,
+                instagram=config.override.instagram,
+                telegram=config.override.telegram,
+            ),
+            team_contacts=tuple(
+                TeamContactView(
+                    id=item.id,
+                    name=item.name,
+                    position=item.position,
+                    phone=item.phone,
+                    email=item.email,
+                    description=item.description,
+                    sort_order=item.sort_order,
+                )
+                for item in config.team_contacts
+            ),
+            emergency=EmergencyContactsView(
+                phone=config.emergency.phone,
+                email=config.emergency.email,
+                notes=config.emergency.notes,
+            ),
+            venue_details=VenueDetailsView(
+                city=config.venue_details.city,
+                country=config.venue_details.country,
+                google_maps_url=config.venue_details.google_maps_url,
+                yandex_maps_url=config.venue_details.yandex_maps_url,
+                directions=config.venue_details.directions,
+            ),
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class InformationBlockView:
     id: str
     title: str
@@ -512,6 +606,7 @@ class CompetitionDetailView:
     registration_period: PeriodView | None
     competition_period: PeriodView | None
     settings: SettingsView
+    contacts_config: ContactsConfigView
     deadlines: DeadlinesView
     participation_formats: tuple[ParticipationFormatView, ...]
     categories: tuple[CategoryView, ...]
@@ -556,6 +651,7 @@ class CompetitionDetailView:
             registration_period=PeriodView(start=registration.start, end=registration.end) if registration is not None else None,
             competition_period=PeriodView(start=period.start, end=period.end) if period is not None else None,
             settings=SettingsView.of(settings),
+            contacts_config=ContactsConfigView.of(competition.contacts_config),
             deadlines=DeadlinesView(
                 application=deadlines.application,
                 payment=deadlines.payment,

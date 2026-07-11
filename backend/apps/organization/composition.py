@@ -20,6 +20,7 @@ from django.core.mail import EmailMessage
 
 from apps.organization.application.handlers import (
     AcceptStaffInvitationHandler,
+    GetOrganizationProfileHandler,
     GetStaffInvitationHandler,
     InviteStaffHandler,
     ProvisionOwnerHandler,
@@ -42,6 +43,7 @@ from apps.organization.infrastructure.system import SystemClock, Uuid7Generator
 
 __all__ = [
     "build_accept_staff_invitation_handler",
+    "build_get_organization_profile_handler",
     "build_get_staff_invitation_handler",
     "build_invite_staff_handler",
     "build_provision_owner_handler",
@@ -146,6 +148,11 @@ def build_get_staff_invitation_handler() -> GetStaffInvitationHandler:
         hasher=Sha256InvitationTokenHasher(),
         clock=SystemClock(),
     )
+
+
+def build_get_organization_profile_handler() -> GetOrganizationProfileHandler:
+    """Assemble the organization profile read use case."""
+    return GetOrganizationProfileHandler(organizations=DjangoOrganizationRepository())
 
 
 def build_staff_membership_read_service() -> StaffMembershipReader:

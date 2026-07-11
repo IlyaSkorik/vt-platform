@@ -1,4 +1,4 @@
-"""Use cases: competition contacts."""
+"""Use cases: competition contacts (legacy channels + contacts-module config)."""
 
 from __future__ import annotations
 
@@ -6,8 +6,16 @@ from apps.competitions.application.dto.commands import (
     AddContactCommand,
     RemoveContactCommand,
     SetPrimaryContactCommand,
+    UpdateContactsConfigCommand,
 )
 from apps.competitions.application.dto.views import CompetitionDetailView
+from apps.competitions.domain.contacts_configuration import (
+    ContactProfileOverride,
+    ContactsConfiguration,
+    EmergencyContacts,
+    TeamContact,
+    VenueDetails,
+)
 from apps.competitions.domain.value_objects import (
     ContactId,
     ContactType,
@@ -20,7 +28,67 @@ __all__ = (
     "AddContactHandler",
     "RemoveContactHandler",
     "SetPrimaryContactHandler",
+    "UpdateContactsConfigHandler",
 )
+
+
+def _optional_str(value: object) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _contacts_config_from_command(command: UpdateContactsConfigCommand) -> ContactsConfiguration:
+    override = command.override if isinstance(command.override, dict) else {}
+    emergency = command.emergency if isinstance(command.emergency, dict) else {}
+    venue = command.venue_details if isinstance(command.venue_details, dict) else {}
+
+    team: list[TeamContact] = []
+    for raw in command.team_contacts:
+        sort_raw = raw.get("sort_order", 0)
+        try:
+            sort_order = int(sort_raw)  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            sort_order = 0
+        team.append(
+            TeamContact(
+                id=str(raw["id"]),
+                name=str(raw["name"]),
+                position=_optional_str(raw.get("position")),
+                phone=_optional_str(raw.get("phone")),
+                email=_optional_str(raw.get("email")),
+                description=_optional_str(raw.get("description")),
+                sort_order=sort_order,
+            )
+        )
+
+    return ContactsConfiguration(
+        use_organization_contacts=command.use_organization_contacts,
+        override=ContactProfileOverride(
+            organization_name=_optional_str(override.get("organization_name")),
+            phone=_optional_str(override.get("phone")),
+            email=_optional_str(override.get("email")),
+            website=_optional_str(override.get("website")),
+            address=_optional_str(override.get("address")),
+            vk=_optional_str(override.get("vk")),
+            instagram=_optional_str(override.get("instagram")),
+            telegram=_optional_str(override.get("telegram")),
+        ),
+        team_contacts=tuple(team),
+        emergency=EmergencyContacts(
+            phone=_optional_str(emergency.get("phone")),
+            email=_optional_str(emergency.get("email")),
+            notes=_optional_str(emergency.get("notes")),
+        ),
+        venue_details=VenueDetails(
+            city=_optional_str(venue.get("city")),
+            country=_optional_str(venue.get("country")),
+            google_maps_url=_optional_str(venue.get("google_maps_url")),
+            yandex_maps_url=_optional_str(venue.get("yandex_maps_url")),
+            directions=_optional_str(venue.get("directions")),
+        ),
+    )
 
 
 class AddContactHandler(CompetitionCommandHandler):
@@ -84,4 +152,16 @@ class RemoveContactHandler(CompetitionCommandHandler):
             now=self._clock.utcnow(),
         )
 
+        return self._persist(competition, events)
+
+
+class UpdateContactsConfigHandler(CompetitionCommandHandler):
+    """Replace competition contacts-module configuration."""
+
+    def handle(self, command: UpdateContactsConfigCommand) -> CompetitionDetailView:
+        competition = self._require(command.competition_id)
+        events = competition.update_contacts_config(
+            config=_contacts_config_from_command(command),
+            now=self._clock.utcnow(),
+        )
         return self._persist(competition, events)

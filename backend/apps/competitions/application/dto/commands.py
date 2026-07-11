@@ -68,6 +68,7 @@ __all__ = [
     "UpdateInformationBlockCommand",
     "UpdateParticipantGroupCommand",
     "UpdateParticipationFormatCommand",
+    "UpdateContactsConfigCommand",
     "UpdateSettingsCommand",
 ]
 
@@ -156,6 +157,18 @@ class UpdateDeadlinesCommand:
     music_upload: datetime | None = None
     document_upload: datetime | None = None
     correction: datetime | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class UpdateContactsConfigCommand:
+    """Replace the competition's contacts-module configuration wholesale."""
+
+    competition_id: str
+    use_organization_contacts: bool
+    override: dict[str, object]
+    team_contacts: list[dict[str, object]]
+    emergency: dict[str, object]
+    venue_details: dict[str, object]
 
 
 # ---------------------------------------------------------------------------

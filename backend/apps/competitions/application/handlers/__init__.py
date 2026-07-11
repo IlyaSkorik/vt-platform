@@ -10,6 +10,7 @@ from .contacts import (
     AddContactHandler,
     RemoveContactHandler,
     SetPrimaryContactHandler,
+    UpdateContactsConfigHandler,
 )
 from .create import CreateCompetitionHandler
 from .documents import (
@@ -142,6 +143,7 @@ __all__ = [
     "UpdateCompetitionGeneralInformationHandler",
     "UpdateAgeCategoryHandler",
     "UpdateCompetitionSettingsHandler",
+    "UpdateContactsConfigHandler",
     "UpdateDocumentHandler",
     "UpdateInformationBlockHandler",
     "UpdateParticipantGroupHandler",

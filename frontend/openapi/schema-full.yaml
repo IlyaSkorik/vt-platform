@@ -3629,6 +3629,69 @@ paths:
               schema:
                 $ref: '#/components/schemas/CompetitionProblemDetail'
           description: Business rule violation.
+  /api/v1/competitions/{id}/contacts-configuration:
+    put:
+      operationId: updateContactsConfiguration
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateContactsConfiguration'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateContactsConfiguration'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateContactsConfiguration'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
   /api/v1/competitions/{id}/start:
     post:
       operationId: startCompetition
@@ -4014,6 +4077,34 @@ paths:
               schema:
                 $ref: '#/components/schemas/ParticipantsProblemDetail'
           description: Invalid transition.
+  /api/v1/organization/profile:
+    get:
+      operationId: getOrganizationProfile
+      description: Return the singleton organization profile. Contact fields are null until persisted.
+      summary: Get organization profile
+      tags:
+      - Organization
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationProfileResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Organization not seeded.
   /api/v1/staff/invitations:
     post:
       operationId: createStaffInvitation
@@ -4521,6 +4612,8 @@ components:
           - type: 'null'
         settings:
           $ref: '#/components/schemas/_Settings'
+        contactsConfig:
+          $ref: '#/components/schemas/_ContactsConfig'
         deadlines:
           $ref: '#/components/schemas/_Deadlines'
         participationFormats:
@@ -4591,6 +4684,7 @@ components:
       - categories
       - competitionPeriod
       - contacts
+      - contactsConfig
       - createdAt
       - currentRegulationId
       - deadlines
@@ -5668,6 +5762,248 @@ components:
       - music
       - video
       - paymentReceipt
+
+    _ContactProfileOverride:
+      type: object
+      properties:
+        organizationName:
+          type:
+          - string
+          - 'null'
+        phone:
+          type:
+          - string
+          - 'null'
+        email:
+          type:
+          - string
+          - 'null'
+        website:
+          type:
+          - string
+          - 'null'
+        address:
+          type:
+          - string
+          - 'null'
+        vk:
+          type:
+          - string
+          - 'null'
+        instagram:
+          type:
+          - string
+          - 'null'
+        telegram:
+          type:
+          - string
+          - 'null'
+      required:
+      - organizationName
+      - phone
+      - email
+      - website
+      - address
+      - vk
+      - instagram
+      - telegram
+    _TeamContact:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        position:
+          type:
+          - string
+          - 'null'
+        phone:
+          type:
+          - string
+          - 'null'
+        email:
+          type:
+          - string
+          - 'null'
+        description:
+          type:
+          - string
+          - 'null'
+        sortOrder:
+          type: integer
+      required:
+      - id
+      - name
+      - position
+      - phone
+      - email
+      - description
+      - sortOrder
+    _EmergencyContacts:
+      type: object
+      properties:
+        phone:
+          type:
+          - string
+          - 'null'
+        email:
+          type:
+          - string
+          - 'null'
+        notes:
+          type:
+          - string
+          - 'null'
+      required:
+      - phone
+      - email
+      - notes
+    _VenueDetails:
+      type: object
+      properties:
+        city:
+          type:
+          - string
+          - 'null'
+        country:
+          type:
+          - string
+          - 'null'
+        googleMapsUrl:
+          type:
+          - string
+          - 'null'
+        yandexMapsUrl:
+          type:
+          - string
+          - 'null'
+        directions:
+          type:
+          - string
+          - 'null'
+      required:
+      - city
+      - country
+      - googleMapsUrl
+      - yandexMapsUrl
+      - directions
+    _ContactsConfig:
+      type: object
+      properties:
+        useOrganizationContacts:
+          type: boolean
+        override:
+          $ref: '#/components/schemas/_ContactProfileOverride'
+        teamContacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/_TeamContact'
+        emergency:
+          $ref: '#/components/schemas/_EmergencyContacts'
+        venueDetails:
+          $ref: '#/components/schemas/_VenueDetails'
+      required:
+      - useOrganizationContacts
+      - override
+      - teamContacts
+      - emergency
+      - venueDetails
+    UpdateContactsConfiguration:
+      type: object
+      properties:
+        useOrganizationContacts:
+          type: boolean
+        override:
+          $ref: '#/components/schemas/_ContactProfileOverride'
+        teamContacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/_TeamContact'
+        emergency:
+          $ref: '#/components/schemas/_EmergencyContacts'
+        venueDetails:
+          $ref: '#/components/schemas/_VenueDetails'
+      required:
+      - useOrganizationContacts
+      - override
+      - teamContacts
+      - emergency
+      - venueDetails
+    OrganizationProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        phone:
+          type:
+          - string
+          - 'null'
+        email:
+          type:
+          - string
+          - 'null'
+        website:
+          type:
+          - string
+          - 'null'
+        address:
+          type:
+          - string
+          - 'null'
+        logo:
+          type:
+          - string
+          - 'null'
+        vk:
+          type:
+          - string
+          - 'null'
+        instagram:
+          type:
+          - string
+          - 'null'
+        telegram:
+          type:
+          - string
+          - 'null'
+        legalInformation:
+          type:
+          - string
+          - 'null'
+      required:
+      - id
+      - name
+      - slug
+      - phone
+      - email
+      - website
+      - address
+      - logo
+      - vk
+      - instagram
+      - telegram
+      - legalInformation
+    OrganizationProfileResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/OrganizationProfile'
+        meta:
+          type: object
+          properties:
+            requestId:
+              type: string
+          required:
+          - requestId
+      required:
+      - data
+      - meta
+
     UpdateCompetitionSettings:
       type: object
       properties:

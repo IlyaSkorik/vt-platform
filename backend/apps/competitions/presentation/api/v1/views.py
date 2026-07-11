@@ -84,6 +84,7 @@ from apps.competitions.application.dto.commands import (
     UpdateParticipantGroupCommand,
     UpdateParticipationFormatCommand,
     UpdateSettingsCommand,
+    UpdateContactsConfigCommand,
 )
 from apps.competitions.application.dto.queries import (
     GetCompetitionQuery,
@@ -143,6 +144,7 @@ from apps.competitions.application.handlers import (
     UpdateCompetitionDeadlinesHandler,
     UpdateCompetitionGeneralInformationHandler,
     UpdateCompetitionSettingsHandler,
+    UpdateContactsConfigHandler,
     UpdateDocumentHandler,
     UpdateInformationBlockHandler,
     UpdateParticipantGroupHandler,
@@ -191,6 +193,7 @@ from .serializers import (
     UpdateCompetitionDeadlinesSerializer,
     UpdateCompetitionGeneralInformationSerializer,
     UpdateCompetitionSettingsSerializer,
+    UpdateContactsConfigSerializer,
     UpdateDocumentSerializer,
     UpdateInformationBlockSerializer,
     UpdateParticipantGroupSerializer,
@@ -403,6 +406,35 @@ class CompetitionViewSet(viewsets.ViewSet):
             return problem
         assert kwargs is not None
         return self._run(UpdateCompetitionSettingsHandler, UpdateSettingsCommand(competition_id=pk, **kwargs), request)
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="updateContactsConfiguration",
+        request=UpdateContactsConfigSerializer,
+        responses=_detail_ok(),
+    )
+    @action(detail=True, methods=["put"], url_path="contacts-configuration")
+    def configure_contacts(self, request: Request, pk: str) -> Response:
+        kwargs, problem = self._body(UpdateContactsConfigSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        # Nested UUIDField yields uuid.UUID — normalize to strings for the command DTO.
+        team_contacts = [
+            {**item, "id": str(item["id"])} for item in kwargs.get("team_contacts", [])
+        ]
+        return self._run(
+            UpdateContactsConfigHandler,
+            UpdateContactsConfigCommand(
+                competition_id=pk,
+                use_organization_contacts=kwargs["use_organization_contacts"],
+                override=kwargs.get("override", {}),
+                team_contacts=team_contacts,
+                emergency=kwargs.get("emergency", {}),
+                venue_details=kwargs.get("venue_details", {}),
+            ),
+            request,
+        )
 
     @extend_schema(tags=[_TAG], operation_id="updateDeadlines", request=UpdateCompetitionDeadlinesSerializer, responses=_detail_ok())
     @action(detail=True, methods=["put"], url_path="deadlines")
