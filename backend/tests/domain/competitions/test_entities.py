@@ -46,9 +46,11 @@ from apps.competitions.domain.exceptions import (
     DuplicateDisciplineError,
     DuplicateInformationBlockError,
     DuplicatePricingRuleError,
+    EmptyAdditionalServiceFormatsError,
     IllegalStatusTransitionError,
     OverlappingAgeRangeError,
     OverlappingParticipantRangeError,
+    ParticipationFormatInUseError,
     ParticipationFormatNotEnabledError,
     PublicationRequirementsNotMetError,
     RegulationNotFoundError,
@@ -91,6 +93,7 @@ from apps.competitions.domain.value_objects import (
     RegulationVersion,
     RichText,
     Season,
+    ServiceBillingModel,
     ServiceId,
     ServiceName,
 )
@@ -607,27 +610,101 @@ class TestRegulations:
 
 
 class TestAdditionalServices:
-    def test_add_service_fixed_price_and_event(self) -> None:
-        c = _draft()
+    def test_add_service_scoped_to_formats_and_event(self) -> None:
+        fx = _configured(priced=False)
         sid = ServiceId.generate()
-        events = c.add_additional_service(service_id=sid, name=ServiceName("Medal"), price=Money.of("500"), now=NOW)
+        events = fx.competition.add_additional_service(
+            service_id=sid,
+            name=ServiceName("Medal"),
+            price=Money.of("500"),
+            available_format_ids=[fx.offline.participation_format_id],
+            billing_model=ServiceBillingModel.PER_PERFORMANCE,
+            now=NOW,
+        )
         assert isinstance(events[0], AdditionalServiceAdded)
-        (service,) = c.additional_services
+        (service,) = fx.competition.additional_services
         assert service.price == Money.of("500")
+        assert service.billing_model is ServiceBillingModel.PER_PERFORMANCE
+        assert service.is_available_for(fx.offline.participation_format_id)
+        assert not service.is_available_for(fx.online.participation_format_id)
+        assert service.total_for(3) == Money.of("500")
         assert service.is_enabled
 
-    def test_enable_disable_update_remove(self) -> None:
-        c = _draft()
+    def test_per_participant_billing_multiplies_headcount(self) -> None:
+        fx = _configured(priced=False)
         sid = ServiceId.generate()
-        c.add_additional_service(service_id=sid, name=ServiceName("Video"), price=Money.of("1000"), now=NOW)
-        c.disable_additional_service(service_id=sid, now=NOW)
-        assert not c.additional_services[0].is_enabled
-        c.enable_additional_service(service_id=sid, now=NOW)
-        assert c.additional_services[0].is_enabled
-        c.update_additional_service(service_id=sid, name=ServiceName("Pro Video"), price=Money.of("1200"), description=None, now=NOW)
-        assert c.additional_services[0].name == ServiceName("Pro Video")
-        c.remove_additional_service(service_id=sid, now=NOW)
-        assert c.additional_services == ()
+        fx.competition.add_additional_service(
+            service_id=sid,
+            name=ServiceName("Shipping"),
+            price=Money.of("10"),
+            available_format_ids=[fx.online.participation_format_id],
+            billing_model=ServiceBillingModel.PER_PARTICIPANT,
+            now=NOW,
+        )
+        assert fx.competition.additional_services[0].total_for(4) == Money.of("40")
+
+    def test_requires_at_least_one_format(self) -> None:
+        c = _draft()
+        with pytest.raises(EmptyAdditionalServiceFormatsError):
+            c.add_additional_service(
+                service_id=ServiceId.generate(),
+                name=ServiceName("Medal"),
+                price=Money.of("100"),
+                available_format_ids=[],
+                now=NOW,
+            )
+
+    def test_enable_disable_update_remove(self) -> None:
+        fx = _configured(priced=False)
+        sid = ServiceId.generate()
+        fx.competition.add_additional_service(
+            service_id=sid,
+            name=ServiceName("Video"),
+            price=Money.of("1000"),
+            available_format_ids=[fx.offline.participation_format_id],
+            now=NOW,
+        )
+        fx.competition.disable_additional_service(service_id=sid, now=NOW)
+        assert not fx.competition.additional_services[0].is_enabled
+        fx.competition.enable_additional_service(service_id=sid, now=NOW)
+        assert fx.competition.additional_services[0].is_enabled
+        fx.competition.update_additional_service(
+            service_id=sid,
+            name=ServiceName("Pro Video"),
+            price=Money.of("1200"),
+            description=None,
+            available_format_ids=[fx.offline.participation_format_id, fx.online.participation_format_id],
+            billing_model=ServiceBillingModel.PER_PARTICIPANT,
+            required=True,
+            sort_order=2,
+            now=NOW,
+        )
+        updated = fx.competition.additional_services[0]
+        assert updated.name == ServiceName("Pro Video")
+        assert updated.required is True
+        assert updated.sort_order == 2
+        assert updated.is_available_for(fx.online.participation_format_id)
+        fx.competition.remove_additional_service(service_id=sid, now=NOW)
+        assert fx.competition.additional_services == ()
+
+    def test_format_in_use_by_service_blocks_removal(self) -> None:
+        fx = _configured(priced=False)
+        # Drop admission/pricing references to formats first so only the service holds them.
+        for combination in (fx.offline, fx.online):
+            fx.competition.remove_admission_rule(combination=combination, now=NOW)
+        unused = ParticipationFormatId.generate()
+        fx.competition.add_participation_format(
+            format_id=unused, name=ParticipationFormatName("Correspondence"), now=NOW
+        )
+        fx.competition.add_additional_service(
+            service_id=ServiceId.generate(),
+            name=ServiceName("E-diploma"),
+            price=Money.of("50"),
+            available_format_ids=[unused],
+            now=NOW,
+        )
+        with pytest.raises(ParticipationFormatInUseError):
+            fx.competition.remove_participation_format(format_id=unused, now=NOW)
 
     def test_missing_service_raises(self) -> None:
         c = _draft()

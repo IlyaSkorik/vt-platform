@@ -40,7 +40,8 @@ edge (ARCH-001 §7.6). No Django/DRF imports.
     │   ├── InvalidTemplateNameError
     │   ├── InvalidServiceIdError
     │   ├── InvalidServiceNameError
-    │   └── InvalidServiceDescriptionError
+    │   ├── InvalidServiceDescriptionError
+    │   └── EmptyAdditionalServiceFormatsError
     ├── DirectConstructionError                 — an aggregate was built bypassing its factories
     ├── CompetitionStateError                   — an operation illegal in the Competition's lifecycle
     │   ├── ConfigurationLockedError            — configuration edited when not editable (post-CONFIGURED)
@@ -239,6 +240,10 @@ class InvalidParticipationFormatDescriptionError(ValueObjectValidationError):
 
 class InvalidServiceDescriptionError(ValueObjectValidationError):
     """The provided value is not a valid additional-service description (too long)."""
+
+
+class EmptyAdditionalServiceFormatsError(ValueObjectValidationError):
+    """An additional service must be available for at least one participation format."""
 
 
 class InvalidRichTextError(ValueObjectValidationError):

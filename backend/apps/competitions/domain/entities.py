@@ -117,8 +117,10 @@ from .exceptions import (
     DuplicateParticipantGroupError,
     DuplicateParticipationFormatError,
     DuplicatePricingRuleError,
+    EmptyAdditionalServiceFormatsError,
     IllegalStatusTransitionError,
     InformationBlockNotFoundError,
+    InvalidMoneyError,
     InvalidSortOrderError,
     OverlappingAgeRangeError,
     OverlappingParticipantRangeError,
@@ -185,6 +187,7 @@ from .value_objects import (
     RegulationVersion,
     RichText,
     Season,
+    ServiceBillingModel,
     ServiceDescription,
     ServiceId,
     ServiceName,
@@ -1024,18 +1027,25 @@ class CompetitionDocument:
 
 @dataclass(slots=True, eq=False, repr=False)
 class AdditionalService:
-    """An optional paid service (extra diploma, medal, video recording, shipping, …).
+    """An optional paid service scoped to selected participation formats.
 
-    Its price is a **fixed** amount — unlike a pricing rule it is *not* multiplied by
-    the number of participants. ``enabled`` toggles whether the service is currently
-    offered without deleting its configuration.
+    Examples: medal (in-person only), shipping / e-diploma (online only), video
+    recording (in-person only). Availability is a multi-select of existing
+    :class:`ParticipationFormat` ids — never a hardcoded offline/online flag.
+
+    ``billing_model`` decides how ``price`` becomes a line total:
+    per participant (× headcount) or per performance (fixed).
     """
 
     _id: ServiceId
     _name: ServiceName
     _price: Money
+    _billing_model: ServiceBillingModel
+    _available_format_ids: frozenset[ParticipationFormatId]
     _description: ServiceDescription | None = None
+    _required: bool = False
     _enabled: bool = True
+    _sort_order: int = 0
 
     @classmethod
     def create(
@@ -1044,10 +1054,29 @@ class AdditionalService:
         service_id: ServiceId,
         name: ServiceName,
         price: Money,
+        available_format_ids: Iterable[ParticipationFormatId],
+        billing_model: ServiceBillingModel = ServiceBillingModel.PER_PARTICIPANT,
         description: ServiceDescription | None = None,
+        required: bool = False,
         enabled: bool = True,
+        sort_order: int = 0,
     ) -> AdditionalService:
-        return cls(_id=service_id, _name=name, _price=price, _description=description, _enabled=enabled)
+        formats = frozenset(available_format_ids)
+        if not formats:
+            raise EmptyAdditionalServiceFormatsError(
+                "An additional service must be available for at least one participation format."
+            )
+        return cls(
+            _id=service_id,
+            _name=name,
+            _price=price,
+            _billing_model=billing_model,
+            _available_format_ids=formats,
+            _description=description,
+            _required=required,
+            _enabled=enabled,
+            _sort_order=_validate_sort_order(sort_order),
+        )
 
     @classmethod
     def rehydrate(
@@ -1056,10 +1085,24 @@ class AdditionalService:
         service_id: ServiceId,
         name: ServiceName,
         price: Money,
+        available_format_ids: Iterable[ParticipationFormatId],
+        billing_model: ServiceBillingModel = ServiceBillingModel.PER_PARTICIPANT,
         description: ServiceDescription | None = None,
+        required: bool = False,
         enabled: bool = True,
+        sort_order: int = 0,
     ) -> AdditionalService:
-        return cls(_id=service_id, _name=name, _price=price, _description=description, _enabled=enabled)
+        return cls(
+            _id=service_id,
+            _name=name,
+            _price=price,
+            _billing_model=billing_model,
+            _available_format_ids=frozenset(available_format_ids),
+            _description=description,
+            _required=required,
+            _enabled=enabled,
+            _sort_order=sort_order,
+        )
 
     @property
     def id(self) -> ServiceId:
@@ -1074,17 +1117,63 @@ class AdditionalService:
         return self._price
 
     @property
+    def billing_model(self) -> ServiceBillingModel:
+        return self._billing_model
+
+    @property
+    def available_format_ids(self) -> frozenset[ParticipationFormatId]:
+        return self._available_format_ids
+
+    @property
     def description(self) -> ServiceDescription | None:
         return self._description
+
+    @property
+    def required(self) -> bool:
+        return self._required
 
     @property
     def is_enabled(self) -> bool:
         return self._enabled
 
-    def update(self, *, name: ServiceName, price: Money, description: ServiceDescription | None) -> None:
+    @property
+    def sort_order(self) -> int:
+        return self._sort_order
+
+    def is_available_for(self, format_id: ParticipationFormatId) -> bool:
+        return format_id in self._available_format_ids
+
+    def total_for(self, participant_count: int) -> Money:
+        """Line total for ``participant_count`` under this service's billing model."""
+        if participant_count < 1:
+            raise InvalidMoneyError("Participant count must be at least 1 to compute a total.")
+        if self._billing_model is ServiceBillingModel.PER_PERFORMANCE:
+            return self._price
+        return Money(amount=self._price.amount * participant_count, currency=self._price.currency)
+
+    def update(
+        self,
+        *,
+        name: ServiceName,
+        price: Money,
+        description: ServiceDescription | None,
+        available_format_ids: Iterable[ParticipationFormatId],
+        billing_model: ServiceBillingModel,
+        required: bool,
+        sort_order: int,
+    ) -> None:
+        formats = frozenset(available_format_ids)
+        if not formats:
+            raise EmptyAdditionalServiceFormatsError(
+                "An additional service must be available for at least one participation format."
+            )
         self._name = name
         self._price = price
         self._description = description
+        self._available_format_ids = formats
+        self._billing_model = billing_model
+        self._required = required
+        self._sort_order = _validate_sort_order(sort_order)
 
     def enable(self) -> None:
         self._enabled = True
@@ -1099,7 +1188,10 @@ class AdditionalService:
         return hash(self._id)
 
     def __repr__(self) -> str:
-        return f"AdditionalService(id={self._id!r}, name={self._name.value!r}, enabled={self._enabled})"
+        return (
+            f"AdditionalService(id={self._id!r}, name={self._name.value!r}, "
+            f"billing={self._billing_model.value}, enabled={self._enabled})"
+        )
 
 
 @dataclass(slots=True, eq=False, repr=False)
@@ -1663,7 +1755,12 @@ class Competition:
 
     @property
     def additional_services(self) -> tuple[AdditionalService, ...]:
-        return tuple(self._additional_services.values())
+        return tuple(
+            sorted(
+                self._additional_services.values(),
+                key=lambda s: (s.sort_order, s.name.value, s.id.json()),
+            )
+        )
 
     @property
     def current_regulation(self) -> CompetitionRegulation | None:
@@ -2101,13 +2198,15 @@ class Competition:
         return events
 
     def remove_participation_format(self, *, format_id: ParticipationFormatId, now: datetime) -> None:
-        """Hard-remove a format. Refused while referenced by admission or pricing rules."""
+        """Hard-remove a format. Refused while referenced by admission, pricing, or services."""
         self._ensure_configurable()
         self._require_participation_format(format_id)
         if any(c.participation_format_id == format_id for c in self._admission_rules):
             raise ParticipationFormatInUseError("The format is referenced by admission rules.")
         if any(c.participation_format_id == format_id for c in self._pricing_rules):
             raise ParticipationFormatInUseError("The format is referenced by pricing rules.")
+        if any(format_id in s.available_format_ids for s in self._additional_services.values()):
+            raise ParticipationFormatInUseError("The format is referenced by additional services.")
         del self._formats[format_id]
         self._touch(now)
 
@@ -2359,13 +2458,29 @@ class Competition:
         service_id: ServiceId,
         name: ServiceName,
         price: Money,
+        available_format_ids: Sequence[ParticipationFormatId],
         now: datetime,
+        billing_model: ServiceBillingModel = ServiceBillingModel.PER_PARTICIPANT,
         description: ServiceDescription | None = None,
+        required: bool = False,
         enabled: bool = True,
+        sort_order: int = 0,
     ) -> list[DomainEvent]:
-        """Add an optional paid service (fixed price, not per participant)."""
+        """Add an optional paid service available for the given participation formats."""
         self._ensure_not_archived()
-        service = AdditionalService.create(service_id=service_id, name=name, price=price, description=description, enabled=enabled)
+        for format_id in available_format_ids:
+            self._require_participation_format(format_id)
+        service = AdditionalService.create(
+            service_id=service_id,
+            name=name,
+            price=price,
+            available_format_ids=available_format_ids,
+            billing_model=billing_model,
+            description=description,
+            required=required,
+            enabled=enabled,
+            sort_order=sort_order,
+        )
         self._additional_services[service_id] = service
         self._touch(now)
         return [
@@ -2376,6 +2491,9 @@ class Competition:
                 amount=str(price.amount),
                 currency=price.currency,
                 enabled=enabled,
+                billing_model=billing_model,
+                required=required,
+                sort_order=service.sort_order,
             )
         ]
 
@@ -2386,10 +2504,24 @@ class Competition:
         name: ServiceName,
         price: Money,
         description: ServiceDescription | None,
+        available_format_ids: Sequence[ParticipationFormatId],
+        billing_model: ServiceBillingModel,
+        required: bool,
+        sort_order: int,
         now: datetime,
     ) -> None:
         self._ensure_not_archived()
-        self._require_service(service_id).update(name=name, price=price, description=description)
+        for format_id in available_format_ids:
+            self._require_participation_format(format_id)
+        self._require_service(service_id).update(
+            name=name,
+            price=price,
+            description=description,
+            available_format_ids=available_format_ids,
+            billing_model=billing_model,
+            required=required,
+            sort_order=sort_order,
+        )
         self._touch(now)
 
     def enable_additional_service(self, *, service_id: ServiceId, now: datetime) -> None:

@@ -54,6 +54,7 @@ from .value_objects import (
     RegulationTitle,
     RegulationVersion,
     Season,
+    ServiceBillingModel,
     ServiceId,
     ServiceName,
     _generate_uuid7,
@@ -289,6 +290,9 @@ class AdditionalServiceAdded(DomainEvent):
     amount: str
     currency: Currency
     enabled: bool
+    billing_model: ServiceBillingModel = ServiceBillingModel.PER_PARTICIPANT
+    required: bool = False
+    sort_order: int = 0
 
 
 # ---------------------------------------------------------------------------

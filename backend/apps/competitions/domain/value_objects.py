@@ -143,6 +143,7 @@ __all__ = [
     "RichText",
     "RichTextFormat",
     "Season",
+    "ServiceBillingModel",
     "ServiceDescription",
     "ServiceId",
     "ServiceName",
@@ -1239,6 +1240,18 @@ class PricingCalculationType(StrEnum):
     PER_PERFORMANCE = "PER_PERFORMANCE"
 
 
+class ServiceBillingModel(StrEnum):
+    """How an additional service's unit price becomes a line total.
+
+    ``PER_PARTICIPANT`` — total = price × participant count.
+    ``PER_PERFORMANCE`` — total = price (fixed), independent of headcount.
+    Availability is scoped separately via selected participation formats.
+    """
+
+    PER_PARTICIPANT = "PER_PARTICIPANT"
+    PER_PERFORMANCE = "PER_PERFORMANCE"
+
+
 # ---------------------------------------------------------------------------
 # Pricing & admissibility
 # ---------------------------------------------------------------------------
@@ -1250,8 +1263,9 @@ _MONEY_QUANTUM: Final = Decimal("0.01")
 class Money:
     """A non-negative monetary amount in a single currency, quantized to 2 dp.
 
-    In this context a :class:`Money` is a per-participant price or a fixed service
-    price. Amounts are stored as :class:`~decimal.Decimal` to avoid binary-float
+    In this context a :class:`Money` is a unit price for a pricing rule or an
+    additional service (billing model decides how it becomes a line total).
+    Amounts are stored as :class:`~decimal.Decimal` to avoid binary-float
     rounding error.
 
     **Future extension points (not implemented):** multiple currencies already fit
