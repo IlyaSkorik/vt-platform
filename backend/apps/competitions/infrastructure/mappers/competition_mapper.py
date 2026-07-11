@@ -24,7 +24,6 @@ run workflows, publish events, query, or call ``save()``.
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import fields
 
 from apps.competitions.domain.entities import (
     AdditionalService,
@@ -52,7 +51,6 @@ from apps.competitions.domain.value_objects import (
     CompetitionBranding,
     CompetitionDescription,
     CompetitionId,
-    CompetitionSettings,
     CompetitionStatus,
     CompetitionTitle,
     ContactId,
@@ -95,6 +93,7 @@ from apps.competitions.domain.value_objects import (
     ServiceName,
     Venue,
 )
+from apps.competitions.infrastructure.mappers.settings_json import settings_from_json, settings_to_json
 from apps.competitions.infrastructure.models import (
     AdditionalServiceModel,
     AdmissionRuleModel,
@@ -112,27 +111,6 @@ from apps.competitions.infrastructure.models import (
 )
 
 __all__ = ["CompetitionChildRows", "CompetitionMapper"]
-
-_SETTINGS_FIELDS = tuple(f.name for f in fields(CompetitionSettings))
-
-
-def _settings_to_json(settings: CompetitionSettings) -> dict[str, bool]:
-    """Flatten the settings flag bag into a JSON-safe dict."""
-    return {name: bool(getattr(settings, name)) for name in _SETTINGS_FIELDS}
-
-
-def _settings_from_json(data: object) -> CompetitionSettings:
-    """Rebuild the settings bag from stored JSON, tolerating missing/extra keys.
-
-    Missing keys fall back to the value object's own defaults, which is exactly what
-    makes the JSON column safely extensible (a newly-added flag applies its default
-    to rows written before it existed).
-    """
-    default = CompetitionSettings.default()
-    if not isinstance(data, dict):
-        return default
-    values = {name: bool(data.get(name, getattr(default, name))) for name in _SETTINGS_FIELDS}
-    return CompetitionSettings(**values)
 
 
 class CompetitionChildRows:
@@ -233,7 +211,7 @@ class CompetitionMapper:
                 if model.competition_start is not None and model.competition_end is not None
                 else None
             ),
-            settings=_settings_from_json(model.settings),
+            settings=settings_from_json(model.settings),
             deadlines=RegistrationDeadlines(
                 application=model.deadline_application,
                 payment=model.deadline_payment,
@@ -405,7 +383,7 @@ class CompetitionMapper:
             "deadline_music_upload": deadlines.music_upload,
             "deadline_document_upload": deadlines.document_upload,
             "deadline_correction": deadlines.correction,
-            "settings": _settings_to_json(entity.settings),
+            "settings": settings_to_json(entity.settings),
             "current_regulation_id": current_regulation.id.value if current_regulation is not None else None,
             "created_at": entity.created_at,
             "updated_at": entity.updated_at,
