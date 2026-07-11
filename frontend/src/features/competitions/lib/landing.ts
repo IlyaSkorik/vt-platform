@@ -3,10 +3,11 @@ import type {
   _GalleryImage,
   _JuryCard,
   _LandingBlock,
+  _LandingBlockInput,
   _LandingConfig,
   _PartnerCard,
   CompetitionDetail,
-  UpdateLandingConfiguration,
+  UpdateLandingConfig as UpdateLandingConfiguration,
 } from "@/shared/api/generated/model-competitions";
 
 export const SYSTEM_BLOCK_IDS = {
@@ -83,7 +84,7 @@ export function blockDisplayTitle(block: _LandingBlock): string {
   if (block.type === "HERO" && block.title?.trim()) {
     return block.title.trim();
   }
-  return LANDING_BLOCK_TYPE_LABELS[block.type];
+  return LANDING_BLOCK_TYPE_LABELS[block.type as LandingBlockType] ?? block.type;
 }
 
 export function isSystemBlock(block: _LandingBlock): boolean {
@@ -232,9 +233,11 @@ export function sanitizeLandingBlock(block: _LandingBlock): _LandingBlock {
 
 export function landingConfigToPayload(config: _LandingConfig): UpdateLandingConfiguration {
   return {
+    // `sanitizeLandingBlock` yields response-shaped `_LandingBlock`; the request
+    // payload wants `_LandingBlockInput` (same wire shape, enum-typed fields).
     blocks: sortLandingBlocks(config.blocks).map((block, index) =>
       sanitizeLandingBlock({ ...block, sortOrder: index }),
-    ),
+    ) as _LandingBlockInput[],
   };
 }
 

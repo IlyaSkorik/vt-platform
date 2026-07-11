@@ -5,7 +5,7 @@ import type {
   _TeamContact,
   _VenueDetails,
   CompetitionDetail,
-  UpdateContactsConfiguration,
+  UpdateContactsConfig as UpdateContactsConfiguration,
 } from "@/shared/api/generated/model-competitions";
 
 export function defaultContactsConfig(): _ContactsConfig {

@@ -82,8 +82,8 @@ import type {
   PatchedUpdateParticipantGroup,
   PatchedUpdateParticipationFormat,
   UpdateCompetitionSettings,
-  UpdateContactsConfiguration,
-  UpdateLandingConfiguration,
+  UpdateContactsConfig as UpdateContactsConfiguration,
+  UpdateLandingConfig as UpdateLandingConfiguration,
 } from "@/shared/api/generated/model-competitions";
 import { cacheOrganizerId } from "../lib/organizer-id";
 import { unwrapCompetitionDetail, unwrapCompetitionList } from "./envelope";

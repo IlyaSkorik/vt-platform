@@ -4,14 +4,14 @@ import type {
   AddAgeCategory,
   MixedCalculationMethodEnum,
   PatchedUpdateAgeCategory,
-  TypeEnum,
+  TypeFd5Enum,
 } from "@/shared/api/generated/model-competitions";
 import {
-  TypeEnum as AgeTypes,
+  TypeFd5Enum as AgeTypes,
   MixedCalculationMethodEnum as MixedMethods,
 } from "@/shared/api/generated/model-competitions";
 
-export type AgeCategoryKind = TypeEnum;
+export type AgeCategoryKind = TypeFd5Enum;
 export type MixedAgeMethod = MixedCalculationMethodEnum;
 
 export const AGE_CATEGORY_TYPE_LABELS: Record<AgeCategoryKind, string> = {

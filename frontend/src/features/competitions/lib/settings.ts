@@ -1,14 +1,15 @@
 import type {
   _FormatRequirements,
+  _FormatRequirementsInput,
   _ParticipationFormat,
   _Settings,
-  _SettingsPaymentMethodsItem,
-  _SettingsPaymentTiming,
+  PaymentMethodsEnum,
+  PaymentTimingEnum,
   UpdateCompetitionSettings,
 } from "@/shared/api/generated/model-competitions";
 
-export type SettingsPaymentTiming = _SettingsPaymentTiming;
-export type SettingsPaymentMethod = _SettingsPaymentMethodsItem;
+export type SettingsPaymentTiming = PaymentTimingEnum;
+export type SettingsPaymentMethod = PaymentMethodsEnum;
 
 export const PAYMENT_TIMING_OPTIONS: { value: SettingsPaymentTiming; label: string }[] = [
   { value: "BEFORE_REVIEW", label: "До рассмотрения заявки" },
@@ -127,8 +128,10 @@ export function settingsToUpdatePayload(settings: _Settings): UpdateCompetitionS
     allowAdditionalDocumentsLater: settings.allowAdditionalDocumentsLater,
     allowReplacingDocuments: settings.allowReplacingDocuments,
     paymentRequired: settings.paymentRequired,
-    paymentTiming: settings.paymentTiming,
-    paymentMethods: settings.paymentMethods,
+    // `_Settings` (response) types these loosely (string / string[]); the request
+    // payload uses the enum unions. Same wire values — narrow at the boundary.
+    paymentTiming: settings.paymentTiming as PaymentTimingEnum,
+    paymentMethods: settings.paymentMethods as PaymentMethodsEnum[],
     requirePersonalDataConsent: settings.requirePersonalDataConsent,
     requireMediaConsent: settings.requireMediaConsent,
     requireRegulationsAcceptance: settings.requireRegulationsAcceptance,
@@ -139,6 +142,6 @@ export function settingsToUpdatePayload(settings: _Settings): UpdateCompetitionS
     manualApplicationApproval: settings.manualApplicationApproval,
     automaticApprovalAfterPayment: settings.automaticApprovalAfterPayment,
     allowReturningForCorrection: settings.allowReturningForCorrection,
-    formatRequirements: settings.formatRequirements,
+    formatRequirements: settings.formatRequirements as _FormatRequirementsInput[],
   };
 }
