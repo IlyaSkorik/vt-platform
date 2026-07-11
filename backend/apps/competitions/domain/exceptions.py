@@ -11,6 +11,7 @@ edge (ARCH-001 §7.6). No Django/DRF imports.
     │   ├── InvalidDisciplineIdError
     │   ├── InvalidAgeCategoryIdError
     │   ├── InvalidParticipantGroupIdError
+    │   ├── InvalidParticipationFormatIdError
     │   ├── InvalidRegulationIdError
     │   ├── InvalidDocumentIdError
     │   ├── InvalidOrganizerIdError
@@ -27,6 +28,8 @@ edge (ARCH-001 §7.6). No Django/DRF imports.
     │   ├── InvalidDisciplineNameError
     │   ├── InvalidParticipantGroupNameError
     │   ├── InvalidParticipantGroupDescriptionError
+    │   ├── InvalidParticipationFormatNameError
+    │   ├── InvalidParticipationFormatDescriptionError
     │   ├── InvalidRegulationTitleError
     │   ├── InvalidRegulationVersionError
     │   ├── InvalidDocumentTitleError
@@ -50,6 +53,7 @@ edge (ARCH-001 §7.6). No Django/DRF imports.
     │   ├── DisciplineNotFoundError
     │   ├── AgeCategoryNotFoundError
     │   ├── ParticipantGroupNotFoundError
+    │   ├── ParticipationFormatNotFoundError
     │   ├── RegulationNotFoundError
     │   ├── DocumentNotFoundError
     │   ├── ServiceNotFoundError
@@ -64,6 +68,7 @@ edge (ARCH-001 §7.6). No Django/DRF imports.
     │   ├── DuplicateAgeCategoryError
     │   ├── OverlappingAgeRangeError
     │   ├── DuplicateParticipantGroupError
+    │   ├── DuplicateParticipationFormatError
     │   ├── OverlappingParticipantRangeError
     │   ├── DuplicateAdmissionRuleError
     │   └── DuplicatePricingRuleError
@@ -114,6 +119,10 @@ class InvalidAgeCategoryIdError(ValueObjectValidationError):
 
 class InvalidParticipantGroupIdError(ValueObjectValidationError):
     """The provided value is not a valid ``ParticipantGroupId`` (must be a UUID v7)."""
+
+
+class InvalidParticipationFormatIdError(ValueObjectValidationError):
+    """The provided value is not a valid ``ParticipationFormatId`` (must be a UUID v7)."""
 
 
 class InvalidRegulationIdError(ValueObjectValidationError):
@@ -172,6 +181,10 @@ class InvalidParticipantGroupNameError(ValueObjectValidationError):
     """The provided value is not a valid participant-group name (empty or too long)."""
 
 
+class InvalidParticipationFormatNameError(ValueObjectValidationError):
+    """The provided value is not a valid participation-format name (empty or too long)."""
+
+
 class InvalidRegulationTitleError(ValueObjectValidationError):
     """The provided value is not a valid regulation title (empty or too long)."""
 
@@ -218,6 +231,10 @@ class InvalidCategoryDescriptionError(ValueObjectValidationError):
 
 class InvalidParticipantGroupDescriptionError(ValueObjectValidationError):
     """The provided value is not a valid participant-group description (too long)."""
+
+
+class InvalidParticipationFormatDescriptionError(ValueObjectValidationError):
+    """The provided value is not a valid participation-format description (too long)."""
 
 
 class InvalidServiceDescriptionError(ValueObjectValidationError):
@@ -333,6 +350,10 @@ class ParticipantGroupNotFoundError(ConfigurationReferenceError):
     """The referenced participant group does not exist in this competition."""
 
 
+class ParticipationFormatNotFoundError(ConfigurationReferenceError):
+    """The referenced participation format does not exist in this competition."""
+
+
 class RegulationNotFoundError(ConfigurationReferenceError):
     """The referenced regulation does not exist in this competition."""
 
@@ -412,6 +433,10 @@ class OverlappingParticipantRangeError(ConfigurationConflictError):
 
 class DuplicateParticipantGroupError(ConfigurationConflictError):
     """A participant group with the same name already exists in its category."""
+
+
+class DuplicateParticipationFormatError(ConfigurationConflictError):
+    """A participation format with the same name already exists in this competition."""
 
 
 class DuplicateAdmissionRuleError(ConfigurationConflictError):

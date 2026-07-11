@@ -32,7 +32,8 @@ from apps.competitions.domain.value_objects import (
     ParticipantCountRange,
     ParticipantGroupId,
     ParticipantGroupName,
-    ParticipationFormat,
+    ParticipationFormatId,
+    ParticipationFormatName,
     RegulationId,
     RegulationTitle,
     RegulationVersion,
@@ -63,10 +64,14 @@ def _template() -> TemplateFixture:
         count_range=ParticipantCountRange(1, 1),
         now=NOW,
     )
-    t.enable_format(participation_format=ParticipationFormat.OFFLINE, now=NOW)
-    t.enable_format(participation_format=ParticipationFormat.ONLINE, now=NOW)
-    offline = AdmissionCombination(cat.id, disc.id, age.id, grp.id, ParticipationFormat.OFFLINE)
-    online = AdmissionCombination(cat.id, disc.id, age.id, grp.id, ParticipationFormat.ONLINE)
+    offline_fmt = t.add_participation_format(
+        format_id=ParticipationFormatId.generate(), name=ParticipationFormatName("Очно"), now=NOW
+    )
+    online_fmt = t.add_participation_format(
+        format_id=ParticipationFormatId.generate(), name=ParticipationFormatName("Онлайн"), now=NOW
+    )
+    offline = AdmissionCombination(cat.id, disc.id, age.id, grp.id, offline_fmt.id)
+    online = AdmissionCombination(cat.id, disc.id, age.id, grp.id, online_fmt.id)
     t.add_admission_rule(combination=offline, now=NOW)
     t.add_admission_rule(combination=online, now=NOW)
     t.add_pricing_rule(combination=offline, price_per_participant=Money.of("1500"), now=NOW)
@@ -101,8 +106,8 @@ class TestTemplateInvariants:
             count_range=ParticipantCountRange(1, 1),
             now=NOW,
         )
-        t.enable_format(participation_format=ParticipationFormat.OFFLINE, now=NOW)
-        bad = AdmissionCombination(other.id, disc.id, age.id, grp.id, ParticipationFormat.OFFLINE)
+        fmt = t.add_participation_format(format_id=ParticipationFormatId.generate(), name=ParticipationFormatName("Очно"), now=NOW)
+        bad = AdmissionCombination(other.id, disc.id, age.id, grp.id, fmt.id)
         with pytest.raises(DisciplineCategoryMismatchError):
             t.add_admission_rule(combination=bad, now=NOW)
 
@@ -124,7 +129,8 @@ class TestFromTemplate:
         assert len(competition.disciplines) == 1
         assert len(competition.admission_rules) == 2
         assert len(competition.pricing_rules) == 2
-        assert competition.participation_formats == {ParticipationFormat.OFFLINE, ParticipationFormat.ONLINE}
+        assert {f.name.value for f in competition.participation_formats} == {"Очно", "Онлайн"}
+        assert all(f.id not in {tf.id for tf in fx.template.participation_formats} for f in competition.participation_formats)
 
         # Fresh ids: cloned category id differs from the template's.
         cloned_category = competition.categories[0]
@@ -148,7 +154,8 @@ class TestFromTemplate:
         disc = competition.disciplines[0]
         age = competition.age_categories[0]
         grp = competition.participant_groups[0]
-        combo = AdmissionCombination(cat.id, disc.id, age.id, grp.id, ParticipationFormat.OFFLINE)
+        offline_fmt = next(f for f in competition.participation_formats if f.name.value == "Очно")
+        combo = AdmissionCombination(cat.id, disc.id, age.id, grp.id, offline_fmt.id)
         assert competition.is_admissible(combo)
         assert competition.price_for(combo) == Money.of("1500")
 

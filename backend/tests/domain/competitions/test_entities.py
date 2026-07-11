@@ -82,7 +82,8 @@ from apps.competitions.domain.value_objects import (
     ParticipantCountRange,
     ParticipantGroupId,
     ParticipantGroupName,
-    ParticipationFormat,
+    ParticipationFormatId,
+    ParticipationFormatName,
     PublicationIssueCode,
     RegistrationDeadlines,
     RegulationId,
@@ -141,10 +142,17 @@ def _configured(*, priced: bool = True, with_regulation: bool = True) -> Fixture
         count_range=ParticipantCountRange(1, 1),
         now=NOW,
     )
-    c.enable_format(participation_format=ParticipationFormat.OFFLINE, now=NOW)
-    c.enable_format(participation_format=ParticipationFormat.ONLINE, now=NOW)
-    offline = AdmissionCombination(cat.id, disc.id, age.id, grp.id, ParticipationFormat.OFFLINE)
-    online = AdmissionCombination(cat.id, disc.id, age.id, grp.id, ParticipationFormat.ONLINE)
+    c.add_participation_format(
+        format_id=ParticipationFormatId.generate(), name=ParticipationFormatName("Очно"), now=NOW
+    )
+    c.add_participation_format(
+        format_id=ParticipationFormatId.generate(), name=ParticipationFormatName("Онлайн"), now=NOW
+    )
+    by_name = {f.name.value: f for f in c.participation_formats}
+    offline_fmt = by_name["Очно"]
+    online_fmt = by_name["Онлайн"]
+    offline = AdmissionCombination(cat.id, disc.id, age.id, grp.id, offline_fmt.id)
+    online = AdmissionCombination(cat.id, disc.id, age.id, grp.id, online_fmt.id)
     c.add_admission_rule(combination=offline, now=NOW)
     c.add_admission_rule(combination=online, now=NOW)
     if priced:
@@ -316,8 +324,9 @@ class TestAdmissionAndPricing:
             count_range=ParticipantCountRange(1, 1),
             now=NOW,
         )
-        c.enable_format(participation_format=ParticipationFormat.OFFLINE, now=NOW)
-        combo = AdmissionCombination(cat.id, disc.id, age.id, grp.id, ParticipationFormat.OFFLINE)
+        c.add_participation_format(format_id=ParticipationFormatId.generate(), name=ParticipationFormatName("Очно"), now=NOW)
+        fmt = c.participation_formats[0]
+        combo = AdmissionCombination(cat.id, disc.id, age.id, grp.id, fmt.id)
         events = c.add_admission_rule(combination=combo, now=NOW)
         assert isinstance(events[0], AdmissionRuleAdded)
         assert c.is_admissible(combo)
@@ -326,7 +335,7 @@ class TestAdmissionAndPricing:
     def test_discipline_category_mismatch_rejected(self) -> None:
         fx = _configured()
         other_cat = fx.competition.add_category(category_id=CategoryId.generate(), name=CategoryName("Dance"), now=NOW)
-        bad = AdmissionCombination(other_cat.id, fx.discipline_id, fx.age_id, fx.group_id, ParticipationFormat.OFFLINE)
+        bad = AdmissionCombination(other_cat.id, fx.discipline_id, fx.age_id, fx.group_id, fx.offline.participation_format_id)
         with pytest.raises(DisciplineCategoryMismatchError):
             fx.competition.add_admission_rule(combination=bad, now=NOW)
 
@@ -342,7 +351,14 @@ class TestAdmissionAndPricing:
             count_range=ParticipantCountRange(1, 1),
             now=NOW,
         )
-        combo = AdmissionCombination(cat.id, disc.id, age.id, grp.id, ParticipationFormat.OFFLINE)
+        c.add_participation_format(
+            format_id=ParticipationFormatId.generate(),
+            name=ParticipationFormatName("Очно"),
+            now=NOW,
+            enabled=False,
+        )
+        fmt = c.participation_formats[0]
+        combo = AdmissionCombination(cat.id, disc.id, age.id, grp.id, fmt.id)
         with pytest.raises(ParticipationFormatNotEnabledError):
             c.add_admission_rule(combination=combo, now=NOW)
 
@@ -391,13 +407,15 @@ class TestAdmissionAndPricing:
 
 
 class TestFormats:
-    def test_enable_disable_events(self) -> None:
+    def test_add_and_soft_disable_events(self) -> None:
         c = _draft()
-        enabled = c.enable_format(participation_format=ParticipationFormat.OFFLINE, now=NOW)
+        format_id = ParticipationFormatId.generate()
+        enabled = c.add_participation_format(format_id=format_id, name=ParticipationFormatName("Очно"), now=NOW)
         assert isinstance(enabled[0], ParticipationFormatEnabled)
-        assert c.enable_format(participation_format=ParticipationFormat.OFFLINE, now=NOW) == []  # idempotent
-        disabled = c.disable_format(participation_format=ParticipationFormat.OFFLINE, now=NOW)
+        disabled = c.update_participation_format(format_id=format_id, enabled=False, now=NOW)
         assert isinstance(disabled[0], ParticipationFormatDisabled)
+        reenabled = c.update_participation_format(format_id=format_id, enabled=True, now=NOW)
+        assert isinstance(reenabled[0], ParticipationFormatEnabled)
 
 
 class TestDeletionGuards:

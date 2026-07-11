@@ -9,19 +9,21 @@ Value objects implemented here fall into five groups:
 
 * **Identifiers** (UUID v7, one distinct type per aggregate/child/reference):
   :class:`CompetitionId`, :class:`CategoryId`, :class:`DisciplineId`,
-  :class:`AgeCategoryId`, :class:`ParticipantGroupId`, :class:`RegulationId`,
-  :class:`DocumentId`, and :class:`OrganizerId` (an opaque reference to the
-  Organization context, held by id only — no cross-context import edge).
+  :class:`AgeCategoryId`, :class:`ParticipantGroupId`,
+  :class:`ParticipationFormatId`, :class:`RegulationId`, :class:`DocumentId`,
+  and :class:`OrganizerId` (an opaque reference to the Organization context,
+  held by id only — no cross-context import edge).
 * **General-information VOs**: :class:`CompetitionTitle`,
   :class:`CompetitionDescription`, :class:`Season`, :class:`Venue`,
   :class:`FileReference` (logo/banner/regulation/document files),
   :class:`DateRange` (registration & competition periods).
 * **Configuration ranges & names**: :class:`AgeRange`,
   :class:`ParticipantCountRange`, :class:`CategoryName`, :class:`DisciplineName`,
-  :class:`ParticipantGroupName`, :class:`RegulationTitle`,
+  :class:`ParticipantGroupName`, :class:`ParticipationFormatName`,
+  :class:`ParticipationFormatDescription`, :class:`RegulationTitle`,
   :class:`RegulationVersion`, :class:`DocumentTitle`, :class:`DocumentDescription`.
-* **Enumerations**: :class:`CompetitionStatus`, :class:`ParticipationFormat`,
-  :class:`DocumentCategory`, :class:`DocumentVisibility`, :class:`Currency`.
+* **Enumerations**: :class:`CompetitionStatus`, :class:`DocumentCategory`,
+  :class:`DocumentVisibility`, :class:`Currency`.
 * **Pricing & admissibility**: :class:`Money`, :class:`AdmissionCombination`
   (the five-dimensional key shared by admission and pricing), :class:`AdmissionRule`
   and :class:`PricingRule` (immutable configuration facts, held in sets on the root).
@@ -70,6 +72,9 @@ from .exceptions import (
     InvalidParticipantCountRangeError,
     InvalidParticipantGroupIdError,
     InvalidParticipantGroupNameError,
+    InvalidParticipationFormatDescriptionError,
+    InvalidParticipationFormatIdError,
+    InvalidParticipationFormatNameError,
     InvalidRegistrationDeadlinesError,
     InvalidRegulationIdError,
     InvalidRegulationTitleError,
@@ -124,7 +129,9 @@ __all__ = [
     "ParticipantGroupDescription",
     "ParticipantGroupId",
     "ParticipantGroupName",
-    "ParticipationFormat",
+    "ParticipationFormatDescription",
+    "ParticipationFormatId",
+    "ParticipationFormatName",
     "PricingRule",
     "PublicationIssue",
     "PublicationIssueCode",
@@ -359,6 +366,44 @@ class ParticipantGroupId:
 
     def __repr__(self) -> str:
         return f"ParticipantGroupId({str(self.value)!r})"
+
+
+@dataclass(frozen=True, slots=True, repr=False)
+class ParticipationFormatId:
+    """The identity of a :class:`ParticipationFormat` child entity (UUID v7)."""
+
+    value: uuid.UUID
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.value, uuid.UUID):
+            raise InvalidParticipationFormatIdError(f"ParticipationFormatId must wrap a uuid.UUID, got {type(self.value)!r}.")
+        if self.value.version != _UUID_V7_VERSION:
+            raise InvalidParticipationFormatIdError(f"ParticipationFormatId must be a UUID v7, got version {self.value.version}.")
+
+    @classmethod
+    def generate(cls) -> ParticipationFormatId:
+        return cls(_generate_uuid7())
+
+    @classmethod
+    def from_uuid(cls, value: uuid.UUID) -> ParticipationFormatId:
+        return cls(value)
+
+    @classmethod
+    def from_string(cls, value: str) -> ParticipationFormatId:
+        try:
+            parsed = uuid.UUID(value)
+        except (ValueError, AttributeError, TypeError) as exc:
+            raise InvalidParticipationFormatIdError(f"{value!r} is not a valid UUID string.") from exc
+        return cls(parsed)
+
+    def json(self) -> str:
+        return str(self.value)
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+    def __repr__(self) -> str:
+        return f"ParticipationFormatId({str(self.value)!r})"
 
 
 @dataclass(frozen=True, slots=True, repr=False)
@@ -959,6 +1004,41 @@ class ParticipantGroupDescription:
 
 
 @dataclass(frozen=True, slots=True)
+class ParticipationFormatName:
+    """A non-empty, length-bounded participation-format name (e.g. "Очно", "Онлайн")."""
+
+    value: str
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "value",
+            _validate_name(self.value, error=InvalidParticipationFormatNameError, label="Participation format name", maximum=_NAME_MAX),
+        )
+
+    def __str__(self) -> str:
+        return self.value
+
+
+@dataclass(frozen=True, slots=True)
+class ParticipationFormatDescription:
+    """A length-bounded participation-format description (may be blank)."""
+
+    value: str
+
+    def __post_init__(self) -> None:
+        stripped = self.value.strip()
+        if len(stripped) > _CATEGORY_DESCRIPTION_MAX:
+            raise InvalidParticipationFormatDescriptionError(
+                f"Participation format description must be at most {_CATEGORY_DESCRIPTION_MAX} characters."
+            )
+        object.__setattr__(self, "value", stripped)
+
+    def __str__(self) -> str:
+        return self.value
+
+
+@dataclass(frozen=True, slots=True)
 class RegulationTitle:
     """A non-empty, length-bounded regulation title."""
 
@@ -1093,18 +1173,6 @@ class CompetitionStatus(StrEnum):
     ARCHIVED = "ARCHIVED"
 
 
-class ParticipationFormat(StrEnum):
-    """A supported mode of participation, enabled per competition.
-
-    Only ``OFFLINE`` and ``ONLINE`` are supported today; ``HYBRID`` and ``REMOTE``
-    are anticipated future members and are the intended extension point — adding
-    them here (plus a pricing/admission row) is all a new format requires.
-    """
-
-    OFFLINE = "OFFLINE"
-    ONLINE = "ONLINE"
-
-
 class DocumentCategory(StrEnum):
     """The organizer-facing classification of an uploaded document.
 
@@ -1229,10 +1297,13 @@ class AdmissionCombination:
     discipline_id: DisciplineId
     age_category_id: AgeCategoryId
     participant_group_id: ParticipantGroupId
-    participation_format: ParticipationFormat
+    participation_format_id: ParticipationFormatId
 
     def __str__(self) -> str:
-        return f"{self.category_id}/{self.discipline_id}/{self.age_category_id}/{self.participant_group_id}/{self.participation_format.value}"
+        return (
+            f"{self.category_id}/{self.discipline_id}/{self.age_category_id}/"
+            f"{self.participant_group_id}/{self.participation_format_id}"
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -1257,10 +1328,10 @@ class AdmissionRule:
 class PricingRule:
     """The price **per participant** for one admissible combination.
 
-    Offline and online prices differ naturally because ``participation_format`` is
-    part of the combination, so two rules (one per format) express two prices. Like
-    :class:`AdmissionRule` this is an immutable configuration fact keyed by its
-    combination.
+    Offline and online prices differ naturally because ``participation_format_id``
+    is part of the combination, so two rules (one per format) express two prices.
+    Like :class:`AdmissionRule` this is an immutable configuration fact keyed by
+    its combination.
 
     **Future extension points (not implemented):** *promo codes*, *discounts* and
     *coupons* are deliberately absent — they belong to a pricing/checkout stage

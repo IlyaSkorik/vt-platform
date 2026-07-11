@@ -48,7 +48,7 @@ from .value_objects import (
     InformationBlockTitle,
     OrganizerId,
     ParticipantGroupId,
-    ParticipationFormat,
+    ParticipationFormatId,
     RegulationId,
     RegulationTitle,
     RegulationVersion,
@@ -118,6 +118,7 @@ def _serialize(value: object) -> object:
             | DisciplineId()
             | AgeCategoryId()
             | ParticipantGroupId()
+            | ParticipationFormatId()
             | ServiceId()
             | ContactId()
             | InformationBlockId()
@@ -225,7 +226,7 @@ class AdmissionRuleAdded(DomainEvent):
     discipline_id: DisciplineId
     age_category_id: AgeCategoryId
     participant_group_id: ParticipantGroupId
-    participation_format: ParticipationFormat
+    participation_format_id: ParticipationFormatId
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -236,7 +237,7 @@ class AdmissionRuleRemoved(DomainEvent):
     discipline_id: DisciplineId
     age_category_id: AgeCategoryId
     participant_group_id: ParticipantGroupId
-    participation_format: ParticipationFormat
+    participation_format_id: ParticipationFormatId
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -247,7 +248,7 @@ class PricingRuleAdded(DomainEvent):
     discipline_id: DisciplineId
     age_category_id: AgeCategoryId
     participant_group_id: ParticipantGroupId
-    participation_format: ParticipationFormat
+    participation_format_id: ParticipationFormatId
     amount: str
     currency: Currency
 
@@ -260,21 +261,21 @@ class PricingRuleRemoved(DomainEvent):
     discipline_id: DisciplineId
     age_category_id: AgeCategoryId
     participant_group_id: ParticipantGroupId
-    participation_format: ParticipationFormat
+    participation_format_id: ParticipationFormatId
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ParticipationFormatEnabled(DomainEvent):
     """A participation format was enabled for the competition."""
 
-    participation_format: ParticipationFormat
+    participation_format_id: ParticipationFormatId
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ParticipationFormatDisabled(DomainEvent):
     """A participation format was disabled for the competition."""
 
-    participation_format: ParticipationFormat
+    participation_format_id: ParticipationFormatId
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

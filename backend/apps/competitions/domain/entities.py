@@ -47,8 +47,8 @@ is shaped so these land as *additions*, not rewrites:
   (e.g. ``Mapping[Locale, RichText]``); the aggregate shape is unchanged.
 * *Regional competitions* — a ``Region`` value object referenced by id, plus
   region-scoped pricing (see ``Money``'s regional-pricing note).
-* *Online streaming* — a new ``ParticipationFormat`` member and/or a streaming
-  child entity holding stream references.
+* *Online streaming* — a streaming child entity holding stream references,
+  optionally linked to a participation format by id.
 * *Promo codes / discounts / coupons* — a checkout-stage concern (Application/
   Payments), computed *from* the list price in ``PricingRule``, never stored on it.
 * *Sponsorship* — a ``Sponsor`` child entity (name, tier, logo ``FileReference``).
@@ -115,6 +115,7 @@ from .exceptions import (
     DuplicateDisciplineError,
     DuplicateInformationBlockError,
     DuplicateParticipantGroupError,
+    DuplicateParticipationFormatError,
     DuplicatePricingRuleError,
     IllegalStatusTransitionError,
     InformationBlockNotFoundError,
@@ -126,6 +127,7 @@ from .exceptions import (
     ParticipantGroupNotFoundError,
     ParticipationFormatInUseError,
     ParticipationFormatNotEnabledError,
+    ParticipationFormatNotFoundError,
     PricingRuleNotFoundError,
     PublicationRequirementsNotMetError,
     RegulationNotFoundError,
@@ -170,7 +172,9 @@ from .value_objects import (
     ParticipantGroupDescription,
     ParticipantGroupId,
     ParticipantGroupName,
-    ParticipationFormat,
+    ParticipationFormatDescription,
+    ParticipationFormatId,
+    ParticipationFormatName,
     PricingRule,
     PublicationIssue,
     PublicationIssueCode,
@@ -244,7 +248,7 @@ def ensure_admission_combination_valid(
     disciplines: Mapping[DisciplineId, Discipline],
     age_categories: Mapping[AgeCategoryId, AgeCategory],
     participant_groups: Mapping[ParticipantGroupId, ParticipantGroup],
-    formats: frozenset[ParticipationFormat] | set[ParticipationFormat],
+    formats: Mapping[ParticipationFormatId, ParticipationFormat],
 ) -> None:
     """Assert every element ``combination`` references exists and is mutually consistent."""
     if combination.category_id not in categories:
@@ -264,8 +268,15 @@ def ensure_admission_combination_valid(
         raise ParticipantGroupNotFoundError(f"No participant group {combination.participant_group_id} in this configuration.")
     if group.category_id != combination.category_id:
         raise ParticipantGroupCategoryMismatchError("The participant group does not belong to the stated category.")
-    if combination.participation_format not in formats:
-        raise ParticipationFormatNotEnabledError(f"Participation format {combination.participation_format.value} is not enabled.")
+    participation_format = formats.get(combination.participation_format_id)
+    if participation_format is None:
+        raise ParticipationFormatNotFoundError(
+            f"No participation format {combination.participation_format_id} in this configuration."
+        )
+    if not participation_format.enabled:
+        raise ParticipationFormatNotEnabledError(
+            f"Participation format {combination.participation_format_id} is not enabled."
+        )
 
 
 def ensure_age_range_free(
@@ -683,6 +694,111 @@ class ParticipantGroup:
 
     def __repr__(self) -> str:
         return f"ParticipantGroup(id={self._id!r}, name={self._name.value!r}, range={self._count_range})"
+
+
+@dataclass(slots=True, eq=False, repr=False)
+class ParticipationFormat:
+    """A named mode of participation for a competition (e.g. offline / online).
+
+    Organizers configure formats as data — name, optional description, enabled
+    flag and sort order — rather than toggling a fixed enumeration. Soft-disable
+    (``enabled=False``) keeps the format in the graph so admission/pricing rules
+    that reference it remain valid; hard removal is refused while referenced.
+    """
+
+    _id: ParticipationFormatId
+    _name: ParticipationFormatName
+    _description: ParticipationFormatDescription | None = None
+    _enabled: bool = True
+    _sort_order: int = 0
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        format_id: ParticipationFormatId,
+        name: ParticipationFormatName,
+        description: ParticipationFormatDescription | None = None,
+        enabled: bool = True,
+        sort_order: int = 0,
+    ) -> ParticipationFormat:
+        return cls(
+            _id=format_id,
+            _name=name,
+            _description=description,
+            _enabled=enabled,
+            _sort_order=_validate_sort_order(sort_order),
+        )
+
+    @classmethod
+    def rehydrate(
+        cls,
+        *,
+        format_id: ParticipationFormatId,
+        name: ParticipationFormatName,
+        description: ParticipationFormatDescription | None = None,
+        enabled: bool = True,
+        sort_order: int = 0,
+    ) -> ParticipationFormat:
+        return cls(
+            _id=format_id,
+            _name=name,
+            _description=description,
+            _enabled=enabled,
+            _sort_order=sort_order,
+        )
+
+    @property
+    def id(self) -> ParticipationFormatId:
+        return self._id
+
+    @property
+    def name(self) -> ParticipationFormatName:
+        return self._name
+
+    @property
+    def description(self) -> ParticipationFormatDescription | None:
+        return self._description
+
+    @property
+    def enabled(self) -> bool:
+        return self._enabled
+
+    @property
+    def sort_order(self) -> int:
+        return self._sort_order
+
+    def update(
+        self,
+        *,
+        name: ParticipationFormatName | None = None,
+        description: ParticipationFormatDescription | None = _SENTINEL,
+        enabled: bool | None = None,
+        sort_order: int | None = None,
+    ) -> None:
+        if name is not None:
+            self._name = name
+        if description is not _SENTINEL:
+            self._description = description
+        if enabled is not None:
+            self._enabled = enabled
+        if sort_order is not None:
+            self._sort_order = _validate_sort_order(sort_order)
+
+    def enable(self) -> None:
+        self._enabled = True
+
+    def disable(self) -> None:
+        self._enabled = False
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, ParticipationFormat) and other._id == self._id
+
+    def __hash__(self) -> int:
+        return hash(self._id)
+
+    def __repr__(self) -> str:
+        return f"ParticipationFormat(id={self._id!r}, name={self._name.value!r}, enabled={self._enabled})"
 
 
 @dataclass(slots=True, eq=False, repr=False)
@@ -1152,7 +1268,7 @@ class Competition:
     _disciplines: dict[DisciplineId, Discipline] = field(default_factory=dict)
     _age_categories: dict[AgeCategoryId, AgeCategory] = field(default_factory=dict)
     _participant_groups: dict[ParticipantGroupId, ParticipantGroup] = field(default_factory=dict)
-    _formats: set[ParticipationFormat] = field(default_factory=set)
+    _formats: dict[ParticipationFormatId, ParticipationFormat] = field(default_factory=dict)
     _admission_rules: dict[AdmissionCombination, AdmissionRule] = field(default_factory=dict)
     _pricing_rules: dict[AdmissionCombination, PricingRule] = field(default_factory=dict)
     _regulations: dict[RegulationId, CompetitionRegulation] = field(default_factory=dict)
@@ -1244,7 +1360,7 @@ class Competition:
         disciplines: Sequence[Discipline] = (),
         age_categories: Sequence[AgeCategory] = (),
         participant_groups: Sequence[ParticipantGroup] = (),
-        formats: Iterable[ParticipationFormat] = (),
+        formats: Sequence[ParticipationFormat] = (),
         admission_rules: Sequence[AdmissionRule] = (),
         pricing_rules: Sequence[PricingRule] = (),
         regulations: Sequence[CompetitionRegulation] = (),
@@ -1281,7 +1397,7 @@ class Competition:
             _disciplines={d.id: d for d in disciplines},
             _age_categories={a.id: a for a in age_categories},
             _participant_groups={g.id: g for g in participant_groups},
-            _formats=set(formats),
+            _formats={f.id: f for f in formats},
             _admission_rules={r.combination: r for r in admission_rules},
             _pricing_rules={p.combination: p for p in pricing_rules},
             _regulations={r.id: r for r in regulations},
@@ -1341,6 +1457,7 @@ class Competition:
         discipline_map: dict[DisciplineId, DisciplineId] = {}
         age_map: dict[AgeCategoryId, AgeCategoryId] = {}
         group_map: dict[ParticipantGroupId, ParticipantGroupId] = {}
+        format_map: dict[ParticipationFormatId, ParticipationFormatId] = {}
 
         for category in template.categories:
             new_category_id = CategoryId.generate()
@@ -1383,7 +1500,16 @@ class Competition:
                 description=group.description,
                 sort_order=group.sort_order,
             )
-        self._formats.update(template.participation_formats)
+        for participation_format in template.participation_formats:
+            new_format_id = ParticipationFormatId.generate()
+            format_map[participation_format.id] = new_format_id
+            self._formats[new_format_id] = ParticipationFormat.create(
+                format_id=new_format_id,
+                name=participation_format.name,
+                description=participation_format.description,
+                enabled=participation_format.enabled,
+                sort_order=participation_format.sort_order,
+            )
 
         def _remap(combination: AdmissionCombination) -> AdmissionCombination:
             return AdmissionCombination(
@@ -1391,7 +1517,7 @@ class Competition:
                 discipline_id=discipline_map[combination.discipline_id],
                 age_category_id=age_map[combination.age_category_id],
                 participant_group_id=group_map[combination.participant_group_id],
-                participation_format=combination.participation_format,
+                participation_format_id=format_map[combination.participation_format_id],
             )
 
         for rule in template.admission_rules:
@@ -1511,8 +1637,8 @@ class Competition:
         return tuple(self._participant_groups.values())
 
     @property
-    def participation_formats(self) -> frozenset[ParticipationFormat]:
-        return frozenset(self._formats)
+    def participation_formats(self) -> tuple[ParticipationFormat, ...]:
+        return tuple(self._formats.values())
 
     @property
     def admission_rules(self) -> tuple[AdmissionRule, ...]:
@@ -1892,28 +2018,82 @@ class Competition:
         self._touch(now)
 
     # ------------------------------------------------------------------
-    # Participation formats (DRAFT-only)
+    # Participation formats (DRAFT/CONFIGURED only)
     # ------------------------------------------------------------------
 
-    def enable_format(self, *, participation_format: ParticipationFormat, now: datetime) -> list[DomainEvent]:
+    def add_participation_format(
+        self,
+        *,
+        format_id: ParticipationFormatId,
+        name: ParticipationFormatName,
+        now: datetime,
+        description: ParticipationFormatDescription | None = None,
+        enabled: bool = True,
+        sort_order: int | None = None,
+    ) -> list[DomainEvent]:
+        """Add a participation format. Names are unique within the competition."""
         self._ensure_configurable()
-        if participation_format in self._formats:
-            return []
-        self._formats.add(participation_format)
+        if any(f.name == name for f in self._formats.values()):
+            raise DuplicateParticipationFormatError(f"A participation format named {name.value!r} already exists.")
+        if sort_order is None:
+            sort_order = self._next_format_sort_order()
+        self._formats[format_id] = ParticipationFormat.create(
+            format_id=format_id,
+            name=name,
+            description=description,
+            enabled=enabled,
+            sort_order=sort_order,
+        )
         self._touch(now)
-        return [ParticipationFormatEnabled(aggregate_id=self._id.value, participation_format=participation_format)]
+        if enabled:
+            return [ParticipationFormatEnabled(aggregate_id=self._id.value, participation_format_id=format_id)]
+        return []
 
-    def disable_format(self, *, participation_format: ParticipationFormat, now: datetime) -> list[DomainEvent]:
+    def update_participation_format(
+        self,
+        *,
+        format_id: ParticipationFormatId,
+        now: datetime,
+        name: ParticipationFormatName | None = None,
+        description: ParticipationFormatDescription | None = _SENTINEL,
+        enabled: bool | None = None,
+        sort_order: int | None = None,
+    ) -> list[DomainEvent]:
+        """Partial update of a participation format.
+
+        Soft-disable (``enabled=False``) is always allowed, even when the format
+        is referenced by admission or pricing rules.
+        """
         self._ensure_configurable()
-        if any(c.participation_format is participation_format for c in self._admission_rules):
-            raise ParticipationFormatInUseError("The format is referenced by admission rules.")
-        if any(c.participation_format is participation_format for c in self._pricing_rules):
-            raise ParticipationFormatInUseError("The format is referenced by pricing rules.")
-        if participation_format not in self._formats:
-            return []
-        self._formats.discard(participation_format)
+        participation_format = self._require_participation_format(format_id)
+        if name is not None and any(fid != format_id and f.name == name for fid, f in self._formats.items()):
+            raise DuplicateParticipationFormatError(f"A participation format named {name.value!r} already exists.")
+        was_enabled = participation_format.enabled
+        participation_format.update(
+            name=name,
+            description=description,
+            enabled=enabled,
+            sort_order=sort_order,
+        )
         self._touch(now)
-        return [ParticipationFormatDisabled(aggregate_id=self._id.value, participation_format=participation_format)]
+        events: list[DomainEvent] = []
+        if enabled is not None and enabled != was_enabled:
+            if enabled:
+                events.append(ParticipationFormatEnabled(aggregate_id=self._id.value, participation_format_id=format_id))
+            else:
+                events.append(ParticipationFormatDisabled(aggregate_id=self._id.value, participation_format_id=format_id))
+        return events
+
+    def remove_participation_format(self, *, format_id: ParticipationFormatId, now: datetime) -> None:
+        """Hard-remove a format. Refused while referenced by admission or pricing rules."""
+        self._ensure_configurable()
+        self._require_participation_format(format_id)
+        if any(c.participation_format_id == format_id for c in self._admission_rules):
+            raise ParticipationFormatInUseError("The format is referenced by admission rules.")
+        if any(c.participation_format_id == format_id for c in self._pricing_rules):
+            raise ParticipationFormatInUseError("The format is referenced by pricing rules.")
+        del self._formats[format_id]
+        self._touch(now)
 
     # ------------------------------------------------------------------
     # Admission & pricing rules (DRAFT-only)
@@ -1934,7 +2114,7 @@ class Competition:
                 discipline_id=combination.discipline_id,
                 age_category_id=combination.age_category_id,
                 participant_group_id=combination.participant_group_id,
-                participation_format=combination.participation_format,
+                participation_format_id=combination.participation_format_id,
             )
         ]
 
@@ -1954,7 +2134,7 @@ class Competition:
                 discipline_id=combination.discipline_id,
                 age_category_id=combination.age_category_id,
                 participant_group_id=combination.participant_group_id,
-                participation_format=combination.participation_format,
+                participation_format_id=combination.participation_format_id,
             )
         ]
 
@@ -1996,7 +2176,7 @@ class Competition:
                 discipline_id=combination.discipline_id,
                 age_category_id=combination.age_category_id,
                 participant_group_id=combination.participant_group_id,
-                participation_format=combination.participation_format,
+                participation_format_id=combination.participation_format_id,
             )
         ]
 
@@ -2376,7 +2556,8 @@ class Competition:
             errors.append(PublicationIssue(PublicationIssueCode.NO_AGE_CATEGORIES, "At least one age category is required."))
         if not self._participant_groups:
             errors.append(PublicationIssue(PublicationIssueCode.NO_PARTICIPANT_GROUPS, "At least one participant group is required."))
-        if not self._formats:
+        enabled_formats = [f for f in self._formats.values() if f.enabled]
+        if not enabled_formats:
             errors.append(PublicationIssue(PublicationIssueCode.NO_PARTICIPATION_FORMATS, "At least one participation format must be enabled."))
         if not self._admission_rules:
             errors.append(PublicationIssue(PublicationIssueCode.NO_ADMISSION_RULES, "At least one admission rule is required."))
@@ -2385,14 +2566,15 @@ class Competition:
             errors.append(PublicationIssue(PublicationIssueCode.MISSING_PRICING_RULES, f"{unpriced} admissible combination(s) have no price."))
         if self._current_regulation_id is None:
             errors.append(PublicationIssue(PublicationIssueCode.MISSING_REGULATION, "A published regulation is required."))
-        used_formats = {combination.participation_format for combination in self._admission_rules}
-        for unused in self._formats - used_formats:
-            warnings.append(
-                PublicationIssue(
-                    PublicationIssueCode.UNUSED_PARTICIPATION_FORMAT,
-                    f"Format {unused.value} is enabled but unused by any admission rule.",
+        used_format_ids = {combination.participation_format_id for combination in self._admission_rules}
+        for unused in enabled_formats:
+            if unused.id not in used_format_ids:
+                warnings.append(
+                    PublicationIssue(
+                        PublicationIssueCode.UNUSED_PARTICIPATION_FORMAT,
+                        f"Format {unused.name.value} is enabled but unused by any admission rule.",
+                    )
                 )
-            )
         return CompetitionPublicationReport(errors=tuple(errors), warnings=tuple(warnings))
 
     def mark_configured(self, *, now: datetime) -> list[DomainEvent]:
@@ -2509,7 +2691,7 @@ class Competition:
             discipline_id=combination.discipline_id,
             age_category_id=combination.age_category_id,
             participant_group_id=combination.participant_group_id,
-            participation_format=combination.participation_format,
+            participation_format_id=combination.participation_format_id,
             amount=str(price.amount),
             currency=price.currency,
         )
@@ -2537,6 +2719,12 @@ class Competition:
         if group is None:
             raise ParticipantGroupNotFoundError(f"No participant group {participant_group_id} in this competition.")
         return group
+
+    def _require_participation_format(self, format_id: ParticipationFormatId) -> ParticipationFormat:
+        participation_format = self._formats.get(format_id)
+        if participation_format is None:
+            raise ParticipationFormatNotFoundError(f"No participation format {format_id} in this competition.")
+        return participation_format
 
     def _require_document(self, document_id: DocumentId) -> CompetitionDocument:
         document = self._documents.get(document_id)
@@ -2571,6 +2759,11 @@ class Competition:
         if not siblings:
             return 0
         return max(g.sort_order for g in siblings) + 1
+
+    def _next_format_sort_order(self) -> int:
+        if not self._formats:
+            return 0
+        return max(f.sort_order for f in self._formats.values()) + 1
 
     def _next_discipline_sort_order(self, category_id: CategoryId) -> int:
         siblings = [d for d in self._disciplines.values() if d.category_id == category_id]

@@ -30,7 +30,8 @@ from apps.competitions.domain.value_objects import (
     DocumentVisibility,
     Money,
     ParticipantCountRange,
-    ParticipationFormat,
+    ParticipationFormatId,
+    ParticipationFormatName,
     PublicationIssue,
     PublicationIssueCode,
     RegistrationDeadlines,
@@ -137,8 +138,10 @@ class TestEnums:
     def test_document_visibility_members(self) -> None:
         assert {v.value for v in DocumentVisibility} == {"ALL", "PUBLIC", "PARTICIPANTS", "STAFF"}
 
-    def test_participation_format_members(self) -> None:
-        assert {f.value for f in ParticipationFormat} == {"OFFLINE", "ONLINE"}
+    def test_participation_format_id_and_name(self) -> None:
+        fmt_id = ParticipationFormatId.generate()
+        assert fmt_id.value.version == 7
+        assert ParticipationFormatName("Очно").value == "Очно"
 
 
 class TestPublicationReport:
