@@ -16,6 +16,7 @@ import {
 import { ApiError } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
 import { Alert, Button, EmptyState, PageContainer, Skeleton, toast } from "@/shared/ui";
+import { DocumentsSection } from "@/widgets/competition-documents";
 import { GeneralSection } from "@/widgets/competition-general";
 import { RegulationsSection } from "@/widgets/competition-regulations";
 import { CompetitionWorkspaceLayout, SectionPlaceholder } from "@/widgets/competition-workspace";
@@ -168,6 +169,14 @@ export function StaffCompetitionWorkspacePage(): React.JSX.Element {
           <RegulationsSection
             competition={competition}
             checklist={checklist}
+            onAutosaveStateChange={setAutosaveState}
+            onNavigateSection={handleSectionChange}
+          />
+        ) : section.id === "documents" ? (
+          <DocumentsSection
+            competition={competition}
+            checklist={checklist}
+            isLoading={detailQuery.isFetching && !detailQuery.isFetched}
             onAutosaveStateChange={setAutosaveState}
             onNavigateSection={handleSectionChange}
           />

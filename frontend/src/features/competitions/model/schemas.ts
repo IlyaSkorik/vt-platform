@@ -16,7 +16,7 @@ function isValidDateOrder(start: string | undefined, end: string | undefined): b
 
 export const generalInformationSchema = z
   .object({
-    title: z.string().trim().min(1, "Укажите название конкурса").max(200),
+    title: z.string().trim().min(1, "Укажите название фестиваля").max(200),
     season: z.string().trim().min(1, "Укажите сезон").max(50),
     description: z.string().trim().max(2000).optional(),
     poster: z.string().trim().max(1024).optional(),
@@ -58,3 +58,39 @@ export const regulationDraftSchema = z.object({
 });
 
 export type RegulationDraftValues = z.infer<typeof regulationDraftSchema>;
+
+export const DOCUMENT_CATEGORIES = [
+  "REGULATION",
+  "PROGRAM",
+  "SCHEDULE",
+  "REQUISITES",
+  "MEMO",
+  "ACCOMMODATION",
+  "OTHER",
+] as const;
+
+/** Categories selectable in the documents library (regulations live in their own section). */
+export const DOCUMENT_FORM_CATEGORIES = [
+  "PROGRAM",
+  "SCHEDULE",
+  "REQUISITES",
+  "MEMO",
+  "ACCOMMODATION",
+  "OTHER",
+] as const;
+
+export const DOCUMENT_VISIBILITIES = ["ALL", "PUBLIC", "PARTICIPANTS", "STAFF"] as const;
+
+export const documentFormSchema = z.object({
+  title: z.string().trim().min(1, "Укажите название документа").max(200),
+  description: z.string().trim().max(2000).optional(),
+  category: z.enum(DOCUMENT_FORM_CATEGORIES, { message: "Выберите тип документа" }),
+  visibility: z.enum(DOCUMENT_VISIBILITIES, { message: "Выберите видимость" }),
+  fileReference: z.string().trim().min(1, "Загрузите файл документа").max(1024),
+  sortOrder: z.number().int().min(0, "Порядок не может быть отрицательным"),
+  published: z.boolean(),
+});
+
+export type DocumentFormValues = z.infer<typeof documentFormSchema>;
+export type DocumentCategory = (typeof DOCUMENT_CATEGORIES)[number];
+export type DocumentFormCategory = (typeof DOCUMENT_FORM_CATEGORIES)[number];

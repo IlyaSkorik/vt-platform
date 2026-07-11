@@ -3,8 +3,8 @@ import { competitionStatusLabel, matchesStatusFilter } from "../model/status";
 
 describe("competition status helpers", () => {
   it("maps known statuses to labels", () => {
-    expect(competitionStatusLabel("DRAFT")).toBe("Draft");
-    expect(competitionStatusLabel("REGISTRATION_OPEN")).toBe("Registration Open");
+    expect(competitionStatusLabel("DRAFT")).toBe("Черновик");
+    expect(competitionStatusLabel("REGISTRATION_OPEN")).toBe("Регистрация открыта");
   });
 
   it("treats configured and ready as published filter matches", () => {

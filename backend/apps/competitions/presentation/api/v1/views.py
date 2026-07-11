@@ -714,6 +714,81 @@ class CompetitionViewSet(viewsets.ViewSet):
     # Documents
     # ------------------------------------------------------------------
 
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="uploadDocumentFile",
+        request={
+            "multipart/form-data": {
+                "type": "object",
+                "properties": {"file": {"type": "string", "format": "binary"}},
+                "required": ["file"],
+            }
+        },
+        responses={
+            200: OpenApiResponse(description="Document file uploaded; body contains data.fileReference."),
+            400: OpenApiResponse(ProblemDetailSerializer, description="Validation failed."),
+            403: OpenApiResponse(ProblemDetailSerializer, description="Not organization staff."),
+            404: OpenApiResponse(ProblemDetailSerializer, description="Competition or element not found."),
+        },
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="uploads/document",
+        parser_classes=[MultiPartParser, FormParser],
+    )
+    def upload_document_file(self, request: Request, pk: str) -> Response:
+        """Upload a competition document file and return a media file reference."""
+        try:
+            build_get_competition_handler().handle(GetCompetitionQuery(competition_id=pk))
+        except (ApplicationError, CompetitionDomainError) as exc:
+            return competition_problem(exc, instance=request.path, request=request)
+
+        uploaded = request.FILES.get("file")
+        if uploaded is None:
+            return validation_problem(
+                {"file": ["Выберите файл документа."]},
+                instance=request.path,
+                request=request,
+            )
+
+        content_type = (uploaded.content_type or "").lower()
+        extension_by_type = {
+            "application/pdf": ".pdf",
+            "image/jpeg": ".jpg",
+            "image/png": ".png",
+            "image/webp": ".webp",
+        }
+        if content_type not in extension_by_type:
+            return validation_problem(
+                {"file": ["Допустимы PDF, JPEG, PNG или WebP."]},
+                instance=request.path,
+                request=request,
+            )
+
+        if uploaded.size > 20 * 1024 * 1024:
+            return validation_problem(
+                {"file": ["Размер файла не должен превышать 20 МБ."]},
+                instance=request.path,
+                request=request,
+            )
+
+        extension = extension_by_type[content_type]
+        relative_path = default_storage.save(
+            f"competitions/{pk}/documents/{uuid.uuid4().hex}{extension}",
+            uploaded,
+        )
+        file_reference = f"/{settings.MEDIA_URL.strip('/')}/{relative_path}"
+        correlation_id = request_id(request)
+        return Response(
+            {
+                "data": {"fileReference": file_reference},
+                "meta": {"requestId": correlation_id},
+            },
+            status=status.HTTP_200_OK,
+            headers={"X-Request-ID": correlation_id},
+        )
+
     @extend_schema(tags=[_TAG], operation_id="addDocument", request=AddDocumentSerializer, responses=_detail_ok(status.HTTP_201_CREATED))
     @action(detail=True, methods=["post"], url_path="documents")
     def documents(self, request: Request, pk: str) -> Response:

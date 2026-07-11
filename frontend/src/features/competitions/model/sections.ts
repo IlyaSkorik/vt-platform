@@ -41,7 +41,7 @@ export interface CompetitionSection {
 export const COMPETITION_SECTIONS: readonly CompetitionSection[] = [
   { id: "general", title: "Общее", icon: Sparkles, implemented: true },
   { id: "regulations", title: "Положение", icon: BookOpen, implemented: true },
-  { id: "documents", title: "Документы", icon: FileText, implemented: false },
+  { id: "documents", title: "Документы", icon: FileText, implemented: true },
   { id: "categories", title: "Категории", icon: FolderTree, implemented: false },
   { id: "disciplines", title: "Дисциплины", icon: Layers, implemented: false },
   { id: "age-categories", title: "Возрастные категории", icon: Tags, implemented: false },

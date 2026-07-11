@@ -8,6 +8,7 @@ import {
 import { type ApiError, apiClient, toApiError } from "@/shared/api";
 import {
   addContact,
+  addDocument,
   addRegulation,
   archiveCompetition,
   getCompetition,
@@ -18,19 +19,25 @@ import {
   openRegistration,
   postCompetition,
   publishCompetition,
+  publishDocument,
   removeContact,
+  removeDocument,
   removeRegulation,
+  unpublishDocument,
   updateBranding,
   updateCompetition,
+  updateDocument,
 } from "@/shared/api/generated/competitions/competitions";
 import type {
   AddContact,
+  AddDocument,
   AddRegulation,
   CompetitionDetail,
   CompetitionSummary,
   CreateCompetition,
   PatchedUpdateCompetitionBranding,
   PatchedUpdateCompetitionGeneralInformation,
+  PatchedUpdateDocument,
 } from "@/shared/api/generated/model-competitions";
 import { cacheOrganizerId } from "../lib/organizer-id";
 import { unwrapCompetitionDetail, unwrapCompetitionList } from "./envelope";
@@ -121,6 +128,59 @@ async function uploadRegulationPdf(competitionId: string, file: File): Promise<s
   } catch (error) {
     throw await toApiError(error);
   }
+}
+
+async function uploadDocumentFile(competitionId: string, file: File): Promise<string> {
+  const body = new FormData();
+  body.append("file", file);
+  try {
+    const response = await apiClient
+      .post(`competitions/${competitionId}/uploads/document`, { body })
+      .json<{ data?: { fileReference?: string } }>();
+    const fileReference = response.data?.fileReference?.trim();
+    if (!fileReference) {
+      throw new Error("Unexpected document upload response.");
+    }
+    return fileReference;
+  } catch (error) {
+    throw await toApiError(error);
+  }
+}
+
+async function createDocument(
+  competitionId: string,
+  payload: AddDocument,
+): Promise<CompetitionDetail> {
+  const response = await addDocument(competitionId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function patchDocument(
+  competitionId: string,
+  documentId: string,
+  payload: PatchedUpdateDocument,
+): Promise<CompetitionDetail> {
+  const response = await updateDocument(competitionId, documentId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function deleteDocument(
+  competitionId: string,
+  documentId: string,
+): Promise<CompetitionDetail> {
+  const response = await removeDocument(competitionId, documentId);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function setDocumentPublished(
+  competitionId: string,
+  documentId: string,
+  published: boolean,
+): Promise<CompetitionDetail> {
+  const response = published
+    ? await publishDocument(competitionId, documentId)
+    : await unpublishDocument(competitionId, documentId);
+  return unwrapCompetitionDetail(response.data);
 }
 
 async function publishRegulation(
@@ -514,6 +574,115 @@ export function useSyncContactMutation(): UseMutationResult<
         value: value.trim(),
         isPrimary: false,
       });
+    },
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useUploadDocumentFileMutation(): UseMutationResult<
+  string,
+  ApiError,
+  { competitionId: string; file: File }
+> {
+  return useMutation<string, ApiError, { competitionId: string; file: File }>({
+    mutationFn: ({ competitionId, file }) => uploadDocumentFile(competitionId, file),
+  });
+}
+
+export function useAddDocumentMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; payload: AddDocument }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<CompetitionDetail, ApiError, { competitionId: string; payload: AddDocument }>({
+    mutationFn: ({ competitionId, payload }) => createDocument(competitionId, payload),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useUpdateDocumentMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; documentId: string; payload: PatchedUpdateDocument }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; documentId: string; payload: PatchedUpdateDocument }
+  >({
+    mutationFn: ({ competitionId, documentId, payload }) =>
+      patchDocument(competitionId, documentId, payload),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useRemoveDocumentMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; documentId: string }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<CompetitionDetail, ApiError, { competitionId: string; documentId: string }>({
+    mutationFn: ({ competitionId, documentId }) => deleteDocument(competitionId, documentId),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useSetDocumentPublishedMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; documentId: string; published: boolean }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; documentId: string; published: boolean }
+  >({
+    mutationFn: ({ competitionId, documentId, published }) =>
+      setDocumentPublished(competitionId, documentId, published),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useReorderDocumentsMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  {
+    competitionId: string;
+    updates: Array<{ documentId: string; payload: PatchedUpdateDocument }>;
+  }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    {
+      competitionId: string;
+      updates: Array<{ documentId: string; payload: PatchedUpdateDocument }>;
+    }
+  >({
+    mutationFn: async ({ competitionId, updates }) => {
+      let latest: CompetitionDetail | null = null;
+      for (const update of updates) {
+        latest = await patchDocument(competitionId, update.documentId, update.payload);
+      }
+      if (!latest) {
+        return fetchCompetition(competitionId);
+      }
+      return latest;
     },
     onSuccess: (detail) => {
       setCompetitionCache(queryClient, detail);

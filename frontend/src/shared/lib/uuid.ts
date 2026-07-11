@@ -29,3 +29,18 @@ export function isUuidV7(value: string): boolean {
     value.trim(),
   );
 }
+
+/** Extract the Unix-ms timestamp encoded in a UUID v7, if present. */
+export function timestampFromUuidV7(value: string): Date | null {
+  const trimmed = value.trim();
+  if (!isUuidV7(trimmed)) {
+    return null;
+  }
+  const hex = trimmed.replaceAll("-", "").slice(0, 12);
+  const ms = Number.parseInt(hex, 16);
+  if (!Number.isFinite(ms)) {
+    return null;
+  }
+  const date = new Date(ms);
+  return Number.isNaN(date.getTime()) ? null : date;
+}

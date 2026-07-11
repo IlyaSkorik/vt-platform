@@ -1,4 +1,5 @@
 export {
+  useAddDocumentMutation,
   useAddRegulationMutation,
   useArchiveCompetitionMutation,
   useCompetitionDetail,
@@ -9,10 +10,15 @@ export {
   useMarkReadyMutation,
   useOpenRegistrationMutation,
   usePublishCompetitionMutation,
+  useRemoveDocumentMutation,
   useRemoveRegulationMutation,
+  useReorderDocumentsMutation,
+  useSetDocumentPublishedMutation,
   useSyncContactMutation,
   useUpdateBrandingMutation,
+  useUpdateDocumentMutation,
   useUpdateGeneralInformationMutation,
+  useUploadDocumentFileMutation,
   useUploadPosterMutation,
   useUploadRegulationFileMutation,
 } from "./competitions-api";

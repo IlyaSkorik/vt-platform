@@ -335,7 +335,7 @@ export function GeneralSection({
             <Card className="shadow-none">
               <CardContent className="grid gap-4 pt-6 md:grid-cols-2">
                 <Input
-                  label="Название конкурса"
+                  label="Название фестиваля"
                   required
                   error={errors.title?.message}
                   disabled={isReadOnly}

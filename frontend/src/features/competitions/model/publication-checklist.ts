@@ -34,7 +34,7 @@ export function buildPublicationChecklist(competition: CompetitionDetail): Publi
   const generalItems: PublicationChecklistItem[] = [
     {
       id: "title",
-      label: "Название конкурса",
+      label: "Название фестиваля",
       done:
         hasText(competition.title) &&
         competition.title.trim() !== "Новый конкурс" &&

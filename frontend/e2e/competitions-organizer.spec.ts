@@ -190,7 +190,7 @@ test.describe("Organizer workspace screenshots", () => {
       fullPage: true,
     });
 
-    await expect(page.getByLabel("Название конкурса")).toHaveValue("Spring Talent Festival");
+    await expect(page.getByLabel("Название фестиваля")).toHaveValue("Spring Talent Festival");
     await page.screenshot({
       path: path.join(screenshotDir, "04-general-section.png"),
       fullPage: true,
