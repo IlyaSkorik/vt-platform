@@ -80,7 +80,17 @@ describe("buildPublicationChecklist", () => {
             mixedCalculationMethod: null,
           },
         ],
-        participantGroups: [{ id: "g1", categoryId: "c1", name: "Solo", minCount: 1, maxCount: 1 }],
+        participantGroups: [
+          {
+            id: "g1",
+            categoryId: "c1",
+            name: "Solo",
+            minCount: 1,
+            maxCount: 1,
+            description: null,
+            sortOrder: 0,
+          },
+        ],
         enabledFormats: ["SOLO"],
         admissionRules: [
           {

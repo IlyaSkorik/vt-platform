@@ -4,6 +4,7 @@ export {
   useAddCategoryMutation,
   useAddDisciplineMutation,
   useAddDocumentMutation,
+  useAddParticipantGroupMutation,
   useAddRegulationMutation,
   useArchiveCompetitionMutation,
   useCompetitionDetail,
@@ -18,11 +19,13 @@ export {
   useRemoveCategoryMutation,
   useRemoveDisciplineMutation,
   useRemoveDocumentMutation,
+  useRemoveParticipantGroupMutation,
   useRemoveRegulationMutation,
   useReorderAgeCategoriesMutation,
   useReorderCategoriesMutation,
   useReorderDisciplinesMutation,
   useReorderDocumentsMutation,
+  useReorderParticipantGroupsMutation,
   useSetDocumentPublishedMutation,
   useSyncContactMutation,
   useUpdateAgeCategoryMutation,
@@ -31,6 +34,7 @@ export {
   useUpdateDisciplineMutation,
   useUpdateDocumentMutation,
   useUpdateGeneralInformationMutation,
+  useUpdateParticipantGroupMutation,
   useUploadDocumentFileMutation,
   useUploadPosterMutation,
   useUploadRegulationFileMutation,
@@ -82,6 +86,20 @@ export {
 } from "./lib/general-mapper";
 export { resolveMediaUrl } from "./lib/media-url";
 export { cacheOrganizerId, resolveOrganizerId } from "./lib/organizer-id";
+export {
+  buildParticipantGroupReorderUpdates,
+  buildParticipantGroupTree,
+  createParticipantGroupPayload,
+  duplicateParticipantGroupDraft,
+  filterParticipantGroupTree,
+  formatParticipantRange,
+  formatParticipantRangeLabel,
+  moveIdBefore as moveParticipantGroupIdBefore,
+  nextParticipantGroupSortOrder,
+  type ParticipantGroupNominationNode,
+  sortParticipantGroups,
+  updateParticipantGroupPayload,
+} from "./lib/participant-groups";
 export {
   buildRegulationChangeLog,
   clearRegulationDraft,

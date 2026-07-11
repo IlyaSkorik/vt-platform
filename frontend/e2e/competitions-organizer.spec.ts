@@ -110,7 +110,53 @@ const competitionDetail = {
         mixedCalculationMethod: null,
       },
     ],
-    participantGroups: [],
+    participantGroups: [
+      {
+        id: "pg-1",
+        categoryId: "cat-1",
+        name: "Solo",
+        minCount: 1,
+        maxCount: 1,
+        description: "Один участник",
+        sortOrder: 0,
+      },
+      {
+        id: "pg-2",
+        categoryId: "cat-1",
+        name: "Duet",
+        minCount: 2,
+        maxCount: 2,
+        description: null,
+        sortOrder: 1,
+      },
+      {
+        id: "pg-3",
+        categoryId: "cat-1",
+        name: "Ensemble",
+        minCount: 5,
+        maxCount: 12,
+        description: "Малый состав",
+        sortOrder: 2,
+      },
+      {
+        id: "pg-4",
+        categoryId: "cat-2",
+        name: "Solo",
+        minCount: 1,
+        maxCount: 1,
+        description: null,
+        sortOrder: 0,
+      },
+      {
+        id: "pg-5",
+        categoryId: "cat-2",
+        name: "Choir",
+        minCount: 13,
+        maxCount: 40,
+        description: "Хоровой состав",
+        sortOrder: 1,
+      },
+    ],
     admissionRules: [],
     pricingRules: [],
     regulations: [],
@@ -285,6 +331,27 @@ test.describe("Organizer workspace screenshots", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.screenshot({
       path: path.join(screenshotDir, "06-age-categories-mobile.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/staff/competitions/comp-1?section=participant-groups");
+    await expect(page.getByRole("heading", { name: "Группы участников" })).toBeVisible();
+    await expect(page.getByText("Ensemble")).toBeVisible();
+    await page.screenshot({
+      path: path.join(screenshotDir, "07-participant-groups-desktop.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 820, height: 1180 });
+    await page.screenshot({
+      path: path.join(screenshotDir, "07-participant-groups-tablet.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({
+      path: path.join(screenshotDir, "07-participant-groups-mobile.png"),
       fullPage: true,
     });
   });

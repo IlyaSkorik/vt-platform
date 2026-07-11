@@ -12,6 +12,7 @@ import {
   addContact,
   addDiscipline,
   addDocument,
+  addParticipantGroup,
   addRegulation,
   archiveCompetition,
   getCompetition,
@@ -28,6 +29,7 @@ import {
   removeContact,
   removeDiscipline,
   removeDocument,
+  removeParticipantGroup,
   removeRegulation,
   renameCategory,
   renameDiscipline,
@@ -36,6 +38,7 @@ import {
   updateBranding,
   updateCompetition,
   updateDocument,
+  updateParticipantGroup,
 } from "@/shared/api/generated/competitions/competitions";
 import type {
   AddAgeCategory,
@@ -43,6 +46,7 @@ import type {
   AddContact,
   AddDiscipline,
   AddDocument,
+  AddParticipantGroup,
   AddRegulation,
   CompetitionDetail,
   CompetitionSummary,
@@ -53,6 +57,7 @@ import type {
   PatchedUpdateCompetitionBranding,
   PatchedUpdateCompetitionGeneralInformation,
   PatchedUpdateDocument,
+  PatchedUpdateParticipantGroup,
 } from "@/shared/api/generated/model-competitions";
 import { cacheOrganizerId } from "../lib/organizer-id";
 import { unwrapCompetitionDetail, unwrapCompetitionList } from "./envelope";
@@ -332,6 +337,31 @@ async function deleteAgeCategory(
   ageCategoryId: string,
 ): Promise<CompetitionDetail> {
   const response = await removeAgeCategory(competitionId, ageCategoryId);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function createParticipantGroup(
+  competitionId: string,
+  payload: AddParticipantGroup,
+): Promise<CompetitionDetail> {
+  const response = await addParticipantGroup(competitionId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function patchParticipantGroup(
+  competitionId: string,
+  participantGroupId: string,
+  payload: PatchedUpdateParticipantGroup,
+): Promise<CompetitionDetail> {
+  const response = await updateParticipantGroup(competitionId, participantGroupId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function deleteParticipantGroup(
+  competitionId: string,
+  participantGroupId: string,
+): Promise<CompetitionDetail> {
+  const response = await removeParticipantGroup(competitionId, participantGroupId);
   return unwrapCompetitionDetail(response.data);
 }
 
@@ -1019,6 +1049,107 @@ export function useReorderAgeCategoriesMutation(): UseMutationResult<
       let latest: CompetitionDetail | null = null;
       for (const update of updates) {
         latest = await patchAgeCategory(competitionId, update.ageCategoryId, update.payload);
+      }
+      if (!latest) {
+        return fetchCompetition(competitionId);
+      }
+      return latest;
+    },
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useAddParticipantGroupMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; payload: AddParticipantGroup }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; payload: AddParticipantGroup }
+  >({
+    mutationFn: ({ competitionId, payload }) => createParticipantGroup(competitionId, payload),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useUpdateParticipantGroupMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  {
+    competitionId: string;
+    participantGroupId: string;
+    payload: PatchedUpdateParticipantGroup;
+  }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    {
+      competitionId: string;
+      participantGroupId: string;
+      payload: PatchedUpdateParticipantGroup;
+    }
+  >({
+    mutationFn: ({ competitionId, participantGroupId, payload }) =>
+      patchParticipantGroup(competitionId, participantGroupId, payload),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useRemoveParticipantGroupMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; participantGroupId: string }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; participantGroupId: string }
+  >({
+    mutationFn: ({ competitionId, participantGroupId }) =>
+      deleteParticipantGroup(competitionId, participantGroupId),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useReorderParticipantGroupsMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  {
+    competitionId: string;
+    updates: Array<{ participantGroupId: string; payload: PatchedUpdateParticipantGroup }>;
+  }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    {
+      competitionId: string;
+      updates: Array<{ participantGroupId: string; payload: PatchedUpdateParticipantGroup }>;
+    }
+  >({
+    mutationFn: async ({ competitionId, updates }) => {
+      let latest: CompetitionDetail | null = null;
+      for (const update of updates) {
+        latest = await patchParticipantGroup(
+          competitionId,
+          update.participantGroupId,
+          update.payload,
+        );
       }
       if (!latest) {
         return fetchCompetition(competitionId);

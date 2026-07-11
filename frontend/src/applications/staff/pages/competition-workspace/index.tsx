@@ -20,6 +20,7 @@ import { AgeCategoriesSection } from "@/widgets/competition-age-categories";
 import { CategoriesSection } from "@/widgets/competition-categories";
 import { DocumentsSection } from "@/widgets/competition-documents";
 import { GeneralSection } from "@/widgets/competition-general";
+import { ParticipantGroupsSection } from "@/widgets/competition-participant-groups";
 import { RegulationsSection } from "@/widgets/competition-regulations";
 import { CompetitionWorkspaceLayout, SectionPlaceholder } from "@/widgets/competition-workspace";
 
@@ -192,6 +193,14 @@ export function StaffCompetitionWorkspacePage(): React.JSX.Element {
           />
         ) : section.id === "age-categories" ? (
           <AgeCategoriesSection
+            competition={competition}
+            checklist={checklist}
+            isLoading={detailQuery.isFetching && !detailQuery.isFetched}
+            onAutosaveStateChange={setAutosaveState}
+            onNavigateSection={handleSectionChange}
+          />
+        ) : section.id === "participant-groups" ? (
+          <ParticipantGroupsSection
             competition={competition}
             checklist={checklist}
             isLoading={detailQuery.isFetching && !detailQuery.isFetched}
