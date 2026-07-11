@@ -34,6 +34,7 @@ from apps.organization.infrastructure.messaging import (
     EventDispatcher,
     Sha256InvitationTokenHasher,
 )
+from apps.organization.infrastructure.read_models import DjangoOrganizationDirectory
 from apps.organization.infrastructure.repositories import (
     DjangoOrganizationRepository,
     DjangoStaffInvitationRepository,
@@ -46,6 +47,7 @@ __all__ = [
     "build_get_organization_profile_handler",
     "build_get_staff_invitation_handler",
     "build_invite_staff_handler",
+    "build_organization_directory",
     "build_provision_owner_handler",
     "build_staff_membership_read_service",
 ]
@@ -161,3 +163,8 @@ def build_staff_membership_read_service() -> StaffMembershipReader:
         organizations=DjangoOrganizationRepository(),
         memberships=DjangoStaffMembershipRepository(),
     )
+
+
+def build_organization_directory() -> DjangoOrganizationDirectory:
+    """Assemble the published cross-context organizer directory read model."""
+    return DjangoOrganizationDirectory()

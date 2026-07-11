@@ -13,6 +13,8 @@ implementation is assembled at the composition root over the repositories.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Iterable
+from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
 from apps.organization.application.dto import StaffMembershipView
@@ -22,7 +24,43 @@ from apps.organization.application.interfaces import (
 )
 from apps.organization.domain.value_objects import StaffUserId
 
-__all__ = ["StaffMembershipReadService", "StaffMembershipReader"]
+__all__ = [
+    "OrganizationDirectory",
+    "OrganizerCardView",
+    "StaffMembershipReadService",
+    "StaffMembershipReader",
+]
+
+
+@dataclass(frozen=True, slots=True)
+class OrganizerCardView:
+    """Published read model of an organizer's public identity.
+
+    The *entire* contract other contexts see when they need to render "who runs
+    this competition" — flat and primitive-only. ``logo`` is part of the shape
+    from day one even though the Organization aggregate does not persist one yet
+    (it resolves to ``None``); consumers render an initials fallback and gain the
+    real asset for free once branding lands, with no contract change.
+    """
+
+    id: str
+    name: str
+    logo: str | None = None
+
+
+@runtime_checkable
+class OrganizationDirectory(Protocol):
+    """Port: resolve organizer ids to their public :class:`OrganizerCardView`.
+
+    A batch lookup so a read model rendering many competitions resolves every
+    organizer in one call. Ids with no matching organization are simply absent
+    from the returned mapping — the caller decides on a fallback rather than the
+    directory inventing one.
+    """
+
+    def resolve(self, organizer_ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, OrganizerCardView]:
+        """Return a mapping of the given ids to their organizer card view."""
+        ...
 
 
 @runtime_checkable
