@@ -3,7 +3,7 @@
 Persistence only (ARCH-001 §7.2, §14). Admission and pricing rules are domain
 *value objects* keyed by an :class:`AdmissionCombination` (a five-part key), but in
 the database each is a row carrying the combination's five columns plus, for
-pricing, the per-participant price. The combination columns are plain UUID / enum
+pricing, the per-participant price. The combination columns are plain UUID
 columns (the aggregate root owns their referential integrity). Rows are
 synchronized wholesale by the repository under the root's optimistic lock, so the
 synthetic ``id`` primary key is regenerated on each save and is never surfaced to
@@ -14,13 +14,12 @@ from __future__ import annotations
 
 from django.db import models
 
-from apps.competitions.domain.value_objects import Currency, ParticipationFormat
+from apps.competitions.domain.value_objects import Currency
 
 from .base import BasePersistenceModel
 
 __all__ = ["AdmissionRuleModel", "PricingRuleModel"]
 
-_FORMAT_CHOICES = [(f.value, f.name.title()) for f in ParticipationFormat]
 _CURRENCY_CHOICES = [(c.value, c.value) for c in Currency]
 
 
@@ -36,7 +35,7 @@ class AdmissionRuleModel(BasePersistenceModel):
     discipline_id = models.UUIDField()
     age_category_id = models.UUIDField()
     participant_group_id = models.UUIDField()
-    participation_format = models.CharField(max_length=16, choices=_FORMAT_CHOICES)
+    participation_format_id = models.UUIDField()
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "competitions_admission_rule"
@@ -45,7 +44,14 @@ class AdmissionRuleModel(BasePersistenceModel):
         constraints = [
             *BasePersistenceModel.Meta.constraints,
             models.UniqueConstraint(
-                fields=["competition", "category_id", "discipline_id", "age_category_id", "participant_group_id", "participation_format"],
+                fields=[
+                    "competition",
+                    "category_id",
+                    "discipline_id",
+                    "age_category_id",
+                    "participant_group_id",
+                    "participation_format_id",
+                ],
                 name="competitions_unique_admission_combination",
             ),
         ]
@@ -66,7 +72,7 @@ class PricingRuleModel(BasePersistenceModel):
     discipline_id = models.UUIDField()
     age_category_id = models.UUIDField()
     participant_group_id = models.UUIDField()
-    participation_format = models.CharField(max_length=16, choices=_FORMAT_CHOICES)
+    participation_format_id = models.UUIDField()
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     currency = models.CharField(max_length=3, choices=_CURRENCY_CHOICES, default=Currency.BYN.value)
 
@@ -77,7 +83,14 @@ class PricingRuleModel(BasePersistenceModel):
         constraints = [
             *BasePersistenceModel.Meta.constraints,
             models.UniqueConstraint(
-                fields=["competition", "category_id", "discipline_id", "age_category_id", "participant_group_id", "participation_format"],
+                fields=[
+                    "competition",
+                    "category_id",
+                    "discipline_id",
+                    "age_category_id",
+                    "participant_group_id",
+                    "participation_format_id",
+                ],
                 name="competitions_unique_pricing_combination",
             ),
             models.CheckConstraint(condition=models.Q(amount__gte=0), name="competitions_pricing_amount_non_negative"),

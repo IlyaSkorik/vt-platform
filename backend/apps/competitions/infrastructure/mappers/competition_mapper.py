@@ -37,6 +37,7 @@ from apps.competitions.domain.entities import (
     Discipline,
     InformationBlock,
     ParticipantGroup,
+    ParticipationFormat,
 )
 from apps.competitions.domain.value_objects import (
     AdmissionCombination,
@@ -76,7 +77,9 @@ from apps.competitions.domain.value_objects import (
     ParticipantGroupDescription,
     ParticipantGroupId,
     ParticipantGroupName,
-    ParticipationFormat,
+    ParticipationFormatDescription,
+    ParticipationFormatId,
+    ParticipationFormatName,
     PricingRule,
     RegistrationDeadlines,
     RegulationId,
@@ -101,6 +104,7 @@ from apps.competitions.infrastructure.models import (
     DocumentModel,
     InformationBlockModel,
     ParticipantGroupModel,
+    ParticipationFormatModel,
     PricingRuleModel,
     RegulationModel,
 )
@@ -142,6 +146,7 @@ class CompetitionChildRows:
         "documents",
         "information_blocks",
         "participant_groups",
+        "participation_formats",
         "pricing_rules",
         "regulations",
     )
@@ -153,6 +158,7 @@ class CompetitionChildRows:
         disciplines: list[DisciplineModel],
         age_categories: list[AgeCategoryModel],
         participant_groups: list[ParticipantGroupModel],
+        participation_formats: list[ParticipationFormatModel],
         admission_rules: list[AdmissionRuleModel],
         pricing_rules: list[PricingRuleModel],
         regulations: list[RegulationModel],
@@ -165,6 +171,7 @@ class CompetitionChildRows:
         self.disciplines = disciplines
         self.age_categories = age_categories
         self.participant_groups = participant_groups
+        self.participation_formats = participation_formats
         self.admission_rules = admission_rules
         self.pricing_rules = pricing_rules
         self.regulations = regulations
@@ -189,6 +196,7 @@ class CompetitionMapper:
         disciplines: Iterable[DisciplineModel] = (),
         age_categories: Iterable[AgeCategoryModel] = (),
         participant_groups: Iterable[ParticipantGroupModel] = (),
+        participation_formats: Iterable[ParticipationFormatModel] = (),
         admission_rules: Iterable[AdmissionRuleModel] = (),
         pricing_rules: Iterable[PricingRuleModel] = (),
         regulations: Iterable[RegulationModel] = (),
@@ -274,7 +282,16 @@ class CompetitionMapper:
                 )
                 for row in participant_groups
             ],
-            formats=[ParticipationFormat(value) for value in model.enabled_formats],
+            formats=[
+                ParticipationFormat.rehydrate(
+                    format_id=ParticipationFormatId.from_uuid(row.id),
+                    name=ParticipationFormatName(row.name),
+                    description=ParticipationFormatDescription(row.description) if row.description else None,
+                    enabled=row.enabled,
+                    sort_order=row.sort_order,
+                )
+                for row in participation_formats
+            ],
             admission_rules=[AdmissionRule(combination=_combination(row)) for row in admission_rules],
             pricing_rules=[
                 PricingRule(combination=_combination(row), price_per_participant=Money(amount=row.amount, currency=Currency(row.currency)))
@@ -377,7 +394,6 @@ class CompetitionMapper:
             "deadline_document_upload": deadlines.document_upload,
             "deadline_correction": deadlines.correction,
             "settings": _settings_to_json(entity.settings),
-            "enabled_formats": sorted(fmt.value for fmt in entity.participation_formats),
             "current_regulation_id": current_regulation.id.value if current_regulation is not None else None,
             "created_at": entity.created_at,
             "updated_at": entity.updated_at,
@@ -441,6 +457,17 @@ class CompetitionMapper:
                 )
                 for g in entity.participant_groups
             ],
+            participation_formats=[
+                ParticipationFormatModel(
+                    id=f.id.value,
+                    competition_id=competition_id,
+                    name=f.name.value,
+                    description=f.description.value if f.description is not None else None,
+                    enabled=f.enabled,
+                    sort_order=f.sort_order,
+                )
+                for f in entity.participation_formats
+            ],
             admission_rules=[
                 AdmissionRuleModel(
                     competition_id=competition_id,
@@ -448,7 +475,7 @@ class CompetitionMapper:
                     discipline_id=r.combination.discipline_id.value,
                     age_category_id=r.combination.age_category_id.value,
                     participant_group_id=r.combination.participant_group_id.value,
-                    participation_format=r.combination.participation_format.value,
+                    participation_format_id=r.combination.participation_format_id.value,
                 )
                 for r in entity.admission_rules
             ],
@@ -459,7 +486,7 @@ class CompetitionMapper:
                     discipline_id=p.combination.discipline_id.value,
                     age_category_id=p.combination.age_category_id.value,
                     participant_group_id=p.combination.participant_group_id.value,
-                    participation_format=p.combination.participation_format.value,
+                    participation_format_id=p.combination.participation_format_id.value,
                     amount=p.price_per_participant.amount,
                     currency=p.price_per_participant.currency.value,
                 )
@@ -534,5 +561,5 @@ def _combination(row: AdmissionRuleModel | PricingRuleModel) -> AdmissionCombina
         discipline_id=DisciplineId.from_uuid(row.discipline_id),
         age_category_id=AgeCategoryId.from_uuid(row.age_category_id),
         participant_group_id=ParticipantGroupId.from_uuid(row.participant_group_id),
-        participation_format=ParticipationFormat(row.participation_format),
+        participation_format_id=ParticipationFormatId.from_uuid(row.participation_format_id),
     )

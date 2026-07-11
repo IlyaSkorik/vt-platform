@@ -8,10 +8,10 @@ aggregate.
 
 **Column vs JSON choice.** Distinct business fields the domain models as separate
 value objects (venue, branding, periods, deadlines) are flattened to explicit,
-queryable columns. Two cohesive value bags are stored as JSON instead: the
-:class:`~apps.competitions.domain.value_objects.CompetitionSettings` flag bag —
-deliberately append-only/extensible, so JSON lets a new flag land without a schema
-migration — and the small ``enabled_formats`` value-set.
+queryable columns. The cohesive
+:class:`~apps.competitions.domain.value_objects.CompetitionSettings` flag bag is
+stored as JSON — deliberately append-only/extensible, so a new flag lands without
+a schema migration. Participation formats live in their own child table.
 """
 
 from __future__ import annotations
@@ -74,7 +74,6 @@ class CompetitionModel(BasePersistenceModel):
 
     # Cohesive value bags stored as JSON (see module docstring).
     settings = models.JSONField(default=dict)
-    enabled_formats = models.JSONField(default=list)
 
     # Pointer to the current regulation version (a child row in competitions_regulation).
     current_regulation_id = models.UUIDField(null=True, blank=True, default=None)

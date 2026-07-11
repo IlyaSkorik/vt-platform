@@ -45,6 +45,7 @@ from apps.competitions.infrastructure.models import (
     DocumentModel,
     InformationBlockModel,
     ParticipantGroupModel,
+    ParticipationFormatModel,
     PricingRuleModel,
     RegulationModel,
 )
@@ -145,6 +146,7 @@ class DjangoCompetitionRepository:
             disciplines=DisciplineModel.objects.filter(competition_id=pk).order_by("sort_order", "created_at", "id"),
             age_categories=AgeCategoryModel.objects.filter(competition_id=pk).order_by("sort_order", "min_age", "id"),
             participant_groups=ParticipantGroupModel.objects.filter(competition_id=pk).order_by("sort_order", "created_at", "id"),
+            participation_formats=ParticipationFormatModel.objects.filter(competition_id=pk).order_by("sort_order", "created_at", "id"),
             admission_rules=AdmissionRuleModel.objects.filter(competition_id=pk).order_by("created_at", "id"),
             pricing_rules=PricingRuleModel.objects.filter(competition_id=pk).order_by("created_at", "id"),
             regulations=RegulationModel.objects.filter(competition_id=pk).order_by("publication_date", "id"),
@@ -161,6 +163,7 @@ class DjangoCompetitionRepository:
         _replace(DisciplineModel, pk, rows.disciplines)
         _replace(AgeCategoryModel, pk, rows.age_categories)
         _replace(ParticipantGroupModel, pk, rows.participant_groups)
+        _replace(ParticipationFormatModel, pk, rows.participation_formats)
         _replace(AdmissionRuleModel, pk, rows.admission_rules)
         _replace(PricingRuleModel, pk, rows.pricing_rules)
         _replace(RegulationModel, pk, rows.regulations)

@@ -20,6 +20,7 @@ __all__ = [
     "CategoryModel",
     "DisciplineModel",
     "ParticipantGroupModel",
+    "ParticipationFormatModel",
 ]
 
 
@@ -136,6 +137,32 @@ class ParticipantGroupModel(BasePersistenceModel):
         constraints = [
             *BasePersistenceModel.Meta.constraints,
             models.UniqueConstraint(fields=["competition", "category_id", "name"], name="competitions_unique_group_name"),
+        ]
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class ParticipationFormatModel(BasePersistenceModel):
+    """Database row for a participation format (persistence only)."""
+
+    competition = models.ForeignKey(
+        "competitions.CompetitionModel",
+        on_delete=models.CASCADE,
+        related_name="participation_formats",
+    )
+    name = models.CharField(max_length=120)
+    description = models.TextField(null=True, blank=True, default=None)
+    enabled = models.BooleanField(default=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta(BasePersistenceModel.Meta):
+        db_table = "competitions_participation_format"
+        verbose_name = "participation format"
+        verbose_name_plural = "participation formats"
+        constraints = [
+            *BasePersistenceModel.Meta.constraints,
+            models.UniqueConstraint(fields=["competition", "name"], name="competitions_unique_participation_format_name"),
         ]
 
     def __str__(self) -> str:

@@ -23,6 +23,7 @@ from .taxonomy import (
     CategoryModel,
     DisciplineModel,
     ParticipantGroupModel,
+    ParticipationFormatModel,
 )
 
 __all__ = [
@@ -38,6 +39,7 @@ __all__ = [
     "DocumentModel",
     "InformationBlockModel",
     "ParticipantGroupModel",
+    "ParticipationFormatModel",
     "PricingRuleModel",
     "RegulationModel",
     "uuid7",

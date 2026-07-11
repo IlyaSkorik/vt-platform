@@ -45,7 +45,8 @@ from apps.competitions.domain.value_objects import (
     ParticipantCountRange,
     ParticipantGroupId,
     ParticipantGroupName,
-    ParticipationFormat,
+    ParticipationFormatId,
+    ParticipationFormatName,
     RegulationId,
     RegulationTitle,
     RegulationVersion,
@@ -89,13 +90,16 @@ def _fully_configured() -> Competition:
         count_range=ParticipantCountRange(1, 1),
         now=_NOW,
     )
-    competition.enable_format(participation_format=ParticipationFormat.OFFLINE, now=_NOW)
+    competition.add_participation_format(
+        format_id=ParticipationFormatId.generate(), name=ParticipationFormatName("Очно"), now=_NOW
+    )
+    fmt = competition.participation_formats[0]
     combination = AdmissionCombination(
         category_id=category.id,
         discipline_id=discipline.id,
         age_category_id=age.id,
         participant_group_id=group.id,
-        participation_format=ParticipationFormat.OFFLINE,
+        participation_format_id=fmt.id,
     )
     competition.add_admission_rule(combination=combination, now=_NOW)
     competition.add_pricing_rule(combination=combination, price_per_participant=Money.of("1500.00"), now=_NOW)
@@ -155,7 +159,9 @@ def test_save_then_get_full_round_trip(repo: DjangoCompetitionRepository) -> Non
     assert len(loaded.disciplines) == 1
     assert len(loaded.age_categories) == 1
     assert len(loaded.participant_groups) == 1
-    assert loaded.participation_formats == frozenset({ParticipationFormat.OFFLINE})
+    assert len(loaded.participation_formats) == 1
+    assert loaded.participation_formats[0].name.value == "Очно"
+    assert loaded.participation_formats[0].enabled is True
     assert len(loaded.admission_rules) == 1
     assert len(loaded.pricing_rules) == 1
     assert loaded.pricing_rules[0].price_per_participant.amount == Decimal("1500.00")
