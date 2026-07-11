@@ -74,6 +74,7 @@ class CompetitionModel(BasePersistenceModel):
 
     # Cohesive value bags stored as JSON (see module docstring).
     settings = models.JSONField(default=dict)
+    contacts_config = models.JSONField(default=dict)
 
     # Pointer to the current regulation version (a child row in competitions_regulation).
     current_regulation_id = models.UUIDField(null=True, blank=True, default=None)
