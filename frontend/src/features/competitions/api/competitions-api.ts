@@ -52,6 +52,7 @@ import {
   updateDocument,
   updateParticipantGroup,
   updateParticipationFormat,
+  updateSettings,
 } from "@/shared/api/generated/competitions/competitions";
 import type {
   AddAdditionalService,
@@ -78,6 +79,7 @@ import type {
   PatchedUpdateDocument,
   PatchedUpdateParticipantGroup,
   PatchedUpdateParticipationFormat,
+  UpdateCompetitionSettings,
 } from "@/shared/api/generated/model-competitions";
 import { cacheOrganizerId } from "../lib/organizer-id";
 import { unwrapCompetitionDetail, unwrapCompetitionList } from "./envelope";
@@ -1764,6 +1766,32 @@ export function useSetAdditionalServiceEnabledMutation(): UseMutationResult<
   >({
     mutationFn: ({ competitionId, serviceId, enabled }) =>
       setAdditionalServiceEnabled(competitionId, serviceId, enabled),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+async function putSettings(
+  competitionId: string,
+  payload: UpdateCompetitionSettings,
+): Promise<CompetitionDetail> {
+  const response = await updateSettings(competitionId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
+
+export function useUpdateCompetitionSettingsMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; payload: UpdateCompetitionSettings }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; payload: UpdateCompetitionSettings }
+  >({
+    mutationFn: ({ competitionId, payload }) => putSettings(competitionId, payload),
     onSuccess: (detail) => {
       setCompetitionCache(queryClient, detail);
     },

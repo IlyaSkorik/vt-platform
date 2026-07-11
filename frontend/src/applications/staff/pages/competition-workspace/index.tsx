@@ -26,6 +26,7 @@ import { ParticipantGroupsSection } from "@/widgets/competition-participant-grou
 import { ParticipationFormatsSection } from "@/widgets/competition-participation-formats";
 import { PricingSection } from "@/widgets/competition-pricing";
 import { RegulationsSection } from "@/widgets/competition-regulations";
+import { SettingsSection } from "@/widgets/competition-settings";
 import { CompetitionWorkspaceLayout, SectionPlaceholder } from "@/widgets/competition-workspace";
 
 function WorkspaceSkeleton(): React.JSX.Element {
@@ -237,6 +238,14 @@ export function StaffCompetitionWorkspacePage(): React.JSX.Element {
           />
         ) : section.id === "additional-services" ? (
           <AdditionalServicesSection
+            competition={competition}
+            checklist={checklist}
+            isLoading={detailQuery.isFetching && !detailQuery.isFetched}
+            onAutosaveStateChange={setAutosaveState}
+            onNavigateSection={handleSectionChange}
+          />
+        ) : section.id === "settings" ? (
+          <SettingsSection
             competition={competition}
             checklist={checklist}
             isLoading={detailQuery.isFetching && !detailQuery.isFetched}

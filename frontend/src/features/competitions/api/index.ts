@@ -44,6 +44,7 @@ export {
   useUpdateAgeCategoryMutation,
   useUpdateBrandingMutation,
   useUpdateCategoryMutation,
+  useUpdateCompetitionSettingsMutation,
   useUpdateDisciplineMutation,
   useUpdateDocumentMutation,
   useUpdateGeneralInformationMutation,

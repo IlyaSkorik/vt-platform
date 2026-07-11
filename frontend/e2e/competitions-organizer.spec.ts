@@ -37,16 +37,67 @@ const competitionDetail = {
     settings: {
       allowMultipleApplications: false,
       allowApplicationEditing: true,
-      allowMusicReplacement: true,
-      allowVideoReplacement: true,
-      allowParticipantChanges: true,
-      requireMusicUpload: false,
-      requireVideoUpload: false,
-      requirePhotoUpload: false,
-      requireIdentityDocument: false,
-      requireParentConsent: false,
+      allowWithdrawingApplications: false,
+      allowCopyingPreviousApplications: false,
       requireTeacher: false,
-      requireCommentForApplication: false,
+      requireParentGuardian: false,
+      participantCommentEnabled: false,
+      requireDocumentUpload: false,
+      allowAdditionalDocumentsLater: true,
+      allowReplacingDocuments: true,
+      paymentRequired: true,
+      paymentTiming: "BEFORE_APPROVAL",
+      paymentMethods: ["BANK_TRANSFER", "ONLINE"],
+      requirePersonalDataConsent: true,
+      requireMediaConsent: false,
+      requireRegulationsAcceptance: true,
+      emailNotifications: true,
+      cabinetNotifications: true,
+      smsNotifications: false,
+      pushNotifications: false,
+      manualApplicationApproval: false,
+      automaticApprovalAfterPayment: true,
+      allowReturningForCorrection: false,
+      formatRequirements: [
+        {
+          participationFormatId: "fmt-1",
+          music: {
+            requireUpload: true,
+            allowReplacement: true,
+            allowedFormats: ["mp3", "wav"],
+            maxUploadSizeMb: 50,
+          },
+          video: {
+            mode: "NOT_REQUIRED",
+            allowedProviders: [],
+            allowReplacement: false,
+          },
+          paymentReceipt: {
+            requireReceipt: false,
+            allowUploadLater: true,
+            allowReplacement: true,
+          },
+        },
+        {
+          participationFormatId: "fmt-2",
+          music: {
+            requireUpload: false,
+            allowReplacement: false,
+            allowedFormats: [],
+            maxUploadSizeMb: null,
+          },
+          video: {
+            mode: "URL_ONLY",
+            allowedProviders: ["YOUTUBE", "VK_VIDEO"],
+            allowReplacement: false,
+          },
+          paymentReceipt: {
+            requireReceipt: true,
+            allowUploadLater: false,
+            allowReplacement: false,
+          },
+        },
+      ],
     },
     deadlines: {
       application: null,
@@ -408,8 +459,8 @@ test.describe("Organizer workspace screenshots", () => {
     });
 
     await page.goto("/staff/competitions/comp-1?section=categories");
-    await expect(page.getByRole("heading", { name: "Номинации и дисциплины" })).toBeVisible();
-    await expect(page.getByText("Вокал")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Номинации и дисциплины", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Вокал$/ })).toBeVisible();
     await page.screenshot({
       path: path.join(screenshotDir, "05-categories-desktop.png"),
       fullPage: true,
@@ -429,7 +480,7 @@ test.describe("Organizer workspace screenshots", () => {
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/staff/competitions/comp-1?section=age-categories");
-    await expect(page.getByRole("heading", { name: "Возрастные категории" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Возрастные категории", exact: true })).toBeVisible();
     await expect(page.getByText("4–6 лет")).toBeVisible();
     await page.screenshot({
       path: path.join(screenshotDir, "06-age-categories-desktop.png"),
@@ -450,7 +501,7 @@ test.describe("Organizer workspace screenshots", () => {
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/staff/competitions/comp-1?section=participant-groups");
-    await expect(page.getByRole("heading", { name: "Группы участников" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Группы участников", exact: true })).toBeVisible();
     await expect(page.getByText("Ensemble")).toBeVisible();
     await page.screenshot({
       path: path.join(screenshotDir, "07-participant-groups-desktop.png"),
@@ -471,7 +522,7 @@ test.describe("Organizer workspace screenshots", () => {
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/staff/competitions/comp-1?section=participation-formats");
-    await expect(page.getByRole("heading", { name: "Форматы участия" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Форматы участия", exact: true })).toBeVisible();
     await expect(page.getByText("Video Submission")).toBeVisible();
     await page.screenshot({
       path: path.join(screenshotDir, "08-participation-formats-desktop.png"),
@@ -492,7 +543,7 @@ test.describe("Organizer workspace screenshots", () => {
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/staff/competitions/comp-1?section=admission-rules");
-    await expect(page.getByRole("heading", { name: "Правила допуска" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Правила допуска", exact: true })).toBeVisible();
     await expect(page.getByText("Эстрадный вокал")).toBeVisible();
     await page.screenshot({
       path: path.join(screenshotDir, "09-admission-rules-desktop.png"),
@@ -513,7 +564,7 @@ test.describe("Organizer workspace screenshots", () => {
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/staff/competitions/comp-1?section=pricing");
-    await expect(page.getByRole("heading", { name: "Цены" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Цены", exact: true })).toBeVisible();
     await expect(page.getByText("Цена за участника").first()).toBeVisible();
     await page.screenshot({
       path: path.join(screenshotDir, "10-pricing-desktop.png"),
@@ -534,7 +585,7 @@ test.describe("Organizer workspace screenshots", () => {
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/staff/competitions/comp-1?section=additional-services");
-    await expect(page.getByRole("heading", { name: "Доп. услуги" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Доп. услуги", exact: true })).toBeVisible();
     await expect(page.getByText("Медаль").first()).toBeVisible();
     await page.screenshot({
       path: path.join(screenshotDir, "11-additional-services-desktop.png"),
@@ -550,6 +601,57 @@ test.describe("Organizer workspace screenshots", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.screenshot({
       path: path.join(screenshotDir, "11-additional-services-mobile.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/staff/competitions/comp-1?section=settings");
+    await expect(page.getByRole("heading", { name: "Правила участия", exact: true })).toBeVisible();
+    await expect(page.getByText("Подача заявки")).toBeVisible();
+    await expect(page.getByText("Материалы заявки")).toBeVisible();
+    await expect(page.getByText("Готовность фестиваля")).toBeVisible();
+    await page.screenshot({
+      path: path.join(screenshotDir, "12-participation-rules-desktop.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 820, height: 1180 });
+    await page.screenshot({
+      path: path.join(screenshotDir, "12-participation-rules-tablet.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({
+      path: path.join(screenshotDir, "12-participation-rules-mobile.png"),
+      fullPage: true,
+    });
+  });
+
+  test("capture participation rules screens", async ({ page }) => {
+    await mockStaffApi(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/staff/competitions/comp-1?section=settings");
+    await expect(page.getByRole("heading", { name: "Правила участия", exact: true })).toBeVisible();
+    await expect(page.getByText("Подача заявки")).toBeVisible();
+    await expect(page.getByText("Материалы заявки")).toBeVisible();
+    await expect(page.getByText("Готовность фестиваля")).toBeVisible();
+    await expect(page.getByText("Очно", { exact: true })).toBeVisible();
+    await expect(page.getByText("Онлайн", { exact: true })).toBeVisible();
+    await page.screenshot({
+      path: path.join(screenshotDir, "12-participation-rules-desktop.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 820, height: 1180 });
+    await page.screenshot({
+      path: path.join(screenshotDir, "12-participation-rules-tablet.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({
+      path: path.join(screenshotDir, "12-participation-rules-mobile.png"),
       fullPage: true,
     });
   });

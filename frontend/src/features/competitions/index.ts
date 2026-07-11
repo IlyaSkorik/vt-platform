@@ -45,6 +45,7 @@ export {
   useUpdateAgeCategoryMutation,
   useUpdateBrandingMutation,
   useUpdateCategoryMutation,
+  useUpdateCompetitionSettingsMutation,
   useUpdateDisciplineMutation,
   useUpdateDocumentMutation,
   useUpdateGeneralInformationMutation,
@@ -229,6 +230,17 @@ export {
   todayIsoDate,
 } from "./lib/regulations";
 export {
+  AUDIO_FORMAT_OPTIONS,
+  defaultCompetitionSettings,
+  defaultFormatRequirements,
+  mergeSettingsWithFormats,
+  PAYMENT_METHOD_OPTIONS,
+  PAYMENT_TIMING_OPTIONS,
+  settingsToUpdatePayload,
+  VIDEO_MODE_OPTIONS,
+  VIDEO_PROVIDER_OPTIONS,
+} from "./lib/settings";
+export {
   buildCategoryReorderUpdates,
   buildDisciplineReorderUpdates,
   buildTaxonomyTree,
@@ -242,6 +254,11 @@ export {
 } from "./lib/taxonomy";
 export { useUnsavedChangesGuard } from "./lib/use-unsaved-changes-guard";
 export { AUTOSAVE_LABELS, type AutosaveState } from "./model/autosave";
+export {
+  buildCompetitionReadiness,
+  type CompetitionReadiness,
+  type CompetitionReadinessItem,
+} from "./model/competition-readiness";
 export {
   buildPublicationChecklist,
   type PublicationChecklist,
