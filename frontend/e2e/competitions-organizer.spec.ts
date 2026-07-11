@@ -364,6 +364,122 @@ const competitionDetail = {
         directions: "Вход со стороны парка",
       },
     },
+    landingConfig: {
+      blocks: [
+        {
+          id: "01900000-0000-7000-8000-000000000001",
+          type: "HERO",
+          enabled: true,
+          sortOrder: 0,
+          title: "Spring Talent Festival",
+          subtitle: "Международный фестиваль юных талантов",
+          coverImage: null,
+          body: null,
+          contentFormat: null,
+          cards: [],
+          partners: [],
+          images: [],
+          faqItems: [],
+        },
+        {
+          id: "01900000-0000-7000-8000-000000000002",
+          type: "VENUE",
+          enabled: true,
+          sortOrder: 1,
+          title: null,
+          subtitle: null,
+          coverImage: null,
+          body: null,
+          contentFormat: null,
+          cards: [],
+          partners: [],
+          images: [],
+          faqItems: [],
+        },
+        {
+          id: "01900000-0000-7000-8000-000000000003",
+          type: "JURY",
+          enabled: false,
+          sortOrder: 2,
+          title: null,
+          subtitle: null,
+          coverImage: null,
+          body: null,
+          contentFormat: null,
+          cards: [],
+          partners: [],
+          images: [],
+          faqItems: [],
+        },
+        {
+          id: "01900000-0000-7000-8000-000000000004",
+          type: "PARTNERS",
+          enabled: false,
+          sortOrder: 3,
+          title: null,
+          subtitle: null,
+          coverImage: null,
+          body: null,
+          contentFormat: null,
+          cards: [],
+          partners: [],
+          images: [],
+          faqItems: [],
+        },
+        {
+          id: "01900000-0000-7000-8000-000000000005",
+          type: "GALLERY",
+          enabled: false,
+          sortOrder: 4,
+          title: null,
+          subtitle: null,
+          coverImage: null,
+          body: null,
+          contentFormat: null,
+          cards: [],
+          partners: [],
+          images: [],
+          faqItems: [],
+        },
+        {
+          id: "01900000-0000-7000-8000-000000000006",
+          type: "FAQ",
+          enabled: true,
+          sortOrder: 5,
+          title: null,
+          subtitle: null,
+          coverImage: null,
+          body: null,
+          contentFormat: null,
+          cards: [],
+          partners: [],
+          images: [],
+          faqItems: [
+            {
+              id: "01900000-0000-7000-8000-000000000101",
+              question: "Как подать заявку?",
+              answer: "Через личный кабинет участника после открытия регистрации.",
+              sortOrder: 0,
+            },
+          ],
+        },
+        {
+          id: "01900000-0000-7000-8000-000000000007",
+          type: "CONTENT",
+          enabled: true,
+          sortOrder: 6,
+          title: "О фестивале",
+          subtitle: null,
+          coverImage: null,
+          body: "Весенний фестиваль для юных исполнителей.",
+          contentFormat: "PLAIN",
+          cards: [],
+          partners: [],
+          images: [],
+          faqItems: [],
+        },
+      ],
+    },
     informationBlocks: [],
     createdAt: "2026-01-01T10:00:00.000Z",
     updatedAt: "2026-01-10T12:00:00.000Z",
@@ -740,6 +856,34 @@ test.describe("Organizer workspace screenshots", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.screenshot({
       path: path.join(screenshotDir, "13-contacts-mobile.png"),
+      fullPage: true,
+    });
+  });
+
+  test("capture public information screens", async ({ page }) => {
+    await mockStaffApi(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/staff/competitions/comp-1?section=public-information");
+    await expect(
+      page.getByRole("heading", { name: "Публичная информация", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Структура лендинга" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Предпросмотр" })).toBeVisible();
+    await expect(page.getByText("О фестивале").first()).toBeVisible();
+    await page.screenshot({
+      path: path.join(screenshotDir, "14-public-information-desktop.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 820, height: 1180 });
+    await page.screenshot({
+      path: path.join(screenshotDir, "14-public-information-tablet.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({
+      path: path.join(screenshotDir, "14-public-information-mobile.png"),
       fullPage: true,
     });
   });
