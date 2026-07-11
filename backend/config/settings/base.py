@@ -81,6 +81,9 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    # Listed before XFrameOptions so it runs *after* it on the response and can
+    # clear DENY for /media/** (PDF/image previews in the staff SPA iframe).
+    "config.middleware.AllowMediaFramingMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
