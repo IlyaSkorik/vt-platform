@@ -1,0 +1,5483 @@
+openapi: 3.1.0
+info:
+  title: VT Platform API
+  version: 1.0.0
+  description: «Взлёт талантов» — REST API for children's creative competitions.
+paths:
+  /api/v1/auth/email-verification/confirmations:
+    post:
+      operationId: confirmEmailVerification
+      description: Confirm the account's email address using the token from the sent
+        link.
+      summary: Confirm email ownership using the emailed token
+      tags:
+      - Identity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailVerificationConfirm'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmailVerificationConfirm'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmailVerificationConfirm'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailVerificationResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Malformed request.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Already verified.
+        '410':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Token expired.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invalid token.
+  /api/v1/auth/email-verification/requests:
+    post:
+      operationId: requestEmailVerification
+      description: Send a fresh verification link to the authenticated account's email.
+      summary: (Re)send an email-verification challenge
+      tags:
+      - Identity
+      security:
+      - jwtAuth: []
+      responses:
+        '202':
+          description: Verification email dispatched.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: No valid session.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Already verified.
+  /api/v1/auth/registration:
+    post:
+      operationId: auth_registration_create
+      description: Create a new adult user account. Public endpoint.
+      summary: Register a new account
+      tags:
+      - Identity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegistrationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegistrationRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Malformed request.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Email already in use.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Weak password / invalid.
+  /api/v1/auth/sessions:
+    post:
+      operationId: auth_session_create
+      description: Verify credentials and issue an access token (+ rotating refresh
+        token).
+      summary: Log in (create a session)
+      tags:
+      - Identity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SessionCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SessionCreateRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Malformed request.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invalid credentials.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Account suspended.
+  /api/v1/auth/sessions/current:
+    delete:
+      operationId: auth_session_current_delete
+      description: Blacklist the session's refresh token. The access token is left
+        to expire.
+      summary: Log out (revoke the current session)
+      tags:
+      - Identity
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: Session revoked.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: No valid session.
+  /api/v1/auth/token/refresh:
+    post:
+      operationId: auth_token_refresh
+      description: Exchange a valid rotating refresh token for a new access/refresh
+        pair.
+      summary: Refresh the access token
+      tags:
+      - Identity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefreshResponse'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invalid/expired refresh.
+  /api/v1/competitions:
+    get:
+      operationId: listCompetitions
+      description: Organizer Competition API — staff-only.
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CompetitionListResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+    post:
+      operationId: createCompetition
+      description: Organizer Competition API — staff-only.
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCompetition'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateCompetition'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateCompetition'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}:
+    get:
+      operationId: getCompetition
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+    patch:
+      operationId: updateCompetition
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateCompetitionGeneralInformation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateCompetitionGeneralInformation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateCompetitionGeneralInformation'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/admission-rules:
+    post:
+      operationId: addAdmissionRule
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddAdmissionRule'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddAdmissionRule'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddAdmissionRule'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/admission-rules/remove:
+    post:
+      operationId: removeAdmissionRule
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_AdmissionCombination'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/_AdmissionCombination'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/_AdmissionCombination'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/age-categories:
+    post:
+      operationId: addAgeCategory
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddAgeCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddAgeCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddAgeCategory'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/age-categories/{age_category_id}:
+    delete:
+      operationId: removeAgeCategory
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: age_category_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/archive:
+    post:
+      operationId: archiveCompetition
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/branding:
+    patch:
+      operationId: updateBranding
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateCompetitionBranding'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateCompetitionBranding'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateCompetitionBranding'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/categories:
+    post:
+      operationId: addCategory
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddCategory'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/categories/{category_id}:
+    patch:
+      operationId: renameCategory
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: category_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRenameCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRenameCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRenameCategory'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+    delete:
+      operationId: removeCategory
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: category_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/complete:
+    post:
+      operationId: completeCompetition
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/configured:
+    post:
+      operationId: markCompetitionConfigured
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/contacts:
+    post:
+      operationId: addContact
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddContact'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddContact'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddContact'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/contacts/{contact_id}:
+    delete:
+      operationId: removeContact
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: contact_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/contacts/{contact_id}/primary:
+    post:
+      operationId: setPrimaryContact
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: contact_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/deadlines:
+    put:
+      operationId: updateDeadlines
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCompetitionDeadlines'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateCompetitionDeadlines'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateCompetitionDeadlines'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/disciplines:
+    post:
+      operationId: addDiscipline
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddDiscipline'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddDiscipline'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddDiscipline'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/disciplines/{discipline_id}:
+    patch:
+      operationId: renameDiscipline
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: discipline_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRenameDiscipline'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRenameDiscipline'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRenameDiscipline'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+    delete:
+      operationId: removeDiscipline
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: discipline_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/documents:
+    post:
+      operationId: addDocument
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddDocument'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddDocument'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddDocument'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/documents/{document_id}:
+    patch:
+      operationId: updateDocument
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: document_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateDocument'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateDocument'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateDocument'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+    delete:
+      operationId: removeDocument
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: document_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/documents/{document_id}/publish:
+    post:
+      operationId: publishDocument
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: document_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/documents/{document_id}/unpublish:
+    post:
+      operationId: unpublishDocument
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: document_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/information-blocks:
+    post:
+      operationId: addInformationBlock
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddInformationBlock'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddInformationBlock'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddInformationBlock'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/information-blocks/{block_id}:
+    patch:
+      operationId: updateInformationBlock
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: block_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateInformationBlock'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateInformationBlock'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateInformationBlock'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+    delete:
+      operationId: removeInformationBlock
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: block_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/information-blocks/{block_id}/hide:
+    post:
+      operationId: hideInformationBlock
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: block_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/information-blocks/{block_id}/publish:
+    post:
+      operationId: publishInformationBlock
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: block_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/participant-groups:
+    post:
+      operationId: addParticipantGroup
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddParticipantGroup'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddParticipantGroup'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddParticipantGroup'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/participant-groups/{participant_group_id}:
+    delete:
+      operationId: removeParticipantGroup
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: participant_group_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/participation-formats:
+    post:
+      operationId: enableParticipationFormat
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParticipationFormat'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ParticipationFormat'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ParticipationFormat'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/participation-formats/{participation_format}:
+    delete:
+      operationId: disableParticipationFormat
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: participation_format
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/pricing-rules:
+    post:
+      operationId: addPricingRule
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddPricingRule'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddPricingRule'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddPricingRule'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+    patch:
+      operationId: changePrice
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedChangePrice'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedChangePrice'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedChangePrice'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/pricing-rules/remove:
+    post:
+      operationId: removePricingRule
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_AdmissionCombination'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/_AdmissionCombination'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/_AdmissionCombination'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/publish:
+    post:
+      operationId: publishCompetition
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/ready:
+    post:
+      operationId: markCompetitionReady
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/registration/close:
+    post:
+      operationId: closeRegistration
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/registration/open:
+    post:
+      operationId: openRegistration
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/regulations:
+    post:
+      operationId: addRegulation
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddRegulation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddRegulation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddRegulation'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/regulations/{regulation_id}:
+    delete:
+      operationId: removeRegulation
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: regulation_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/regulations/{regulation_id}/current:
+    post:
+      operationId: makeRegulationCurrent
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: regulation_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/revert-to-configured:
+    post:
+      operationId: revertCompetitionToConfigured
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/revert-to-draft:
+    post:
+      operationId: revertCompetitionToDraft
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/services:
+    post:
+      operationId: addAdditionalService
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddAdditionalService'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddAdditionalService'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddAdditionalService'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/services/{service_id}:
+    patch:
+      operationId: updateAdditionalService
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: service_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateAdditionalService'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateAdditionalService'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateAdditionalService'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+    delete:
+      operationId: removeAdditionalService
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: service_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/services/{service_id}/disable:
+    post:
+      operationId: disableAdditionalService
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: service_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/services/{service_id}/enable:
+    post:
+      operationId: enableAdditionalService
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: service_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/settings:
+    put:
+      operationId: updateSettings
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCompetitionSettings'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateCompetitionSettings'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateCompetitionSettings'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/start:
+    post:
+      operationId: startCompetition
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/participants:
+    post:
+      operationId: participants_create
+      description: Create a new participant under the authenticated guardian/teacher.
+      summary: Register a participant
+      tags:
+      - Participants
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateParticipantRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateParticipantRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateParticipantRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantsProblemDetail'
+          description: Malformed request.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantsProblemDetail'
+          description: Display alias in use.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantsProblemDetail'
+          description: Alias reveals identity.
+  /api/v1/participants/{participant_id}:
+    get:
+      operationId: participants_retrieve
+      description: GET /api/v1/participants/{id} — retrieve a participant.
+      summary: Retrieve a participant
+      parameters:
+      - in: path
+        name: participant_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Participants
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantsProblemDetail'
+          description: Not found.
+  /api/v1/participants/{participant_id}/activation:
+    post:
+      operationId: participants_activate
+      description: POST /api/v1/participants/{id}/activation — activate a participant
+        (PRT-001).
+      summary: Activate a participant
+      parameters:
+      - in: path
+        name: participant_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Participants
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantsProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantsProblemDetail'
+          description: Invalid transition.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantsProblemDetail'
+          description: Activation blocked.
+  /api/v1/participants/{participant_id}/guardian-links:
+    post:
+      operationId: participants_guardian_link_create
+      description: POST /api/v1/participants/{id}/guardian-links — propose a guardian
+        relationship.
+      summary: Propose a guardian link
+      parameters:
+      - in: path
+        name: participant_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Participants
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProposeGuardianLinkRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProposeGuardianLinkRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProposeGuardianLinkRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantsProblemDetail'
+          description: Malformed request.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantsProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantsProblemDetail'
+          description: Guardian already linked.
+  /api/v1/participants/{participant_id}/guardian-links/{guardian_id}/verification:
+    post:
+      operationId: participants_guardian_link_verify
+      description: POST /api/v1/participants/{id}/guardian-links/{guardianId}/verification.
+      summary: Verify a guardian link
+      parameters:
+      - in: path
+        name: guardian_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: participant_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Participants
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantsProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantsProblemDetail'
+          description: Link not pending.
+  /api/v1/participants/{participant_id}/verification:
+    post:
+      operationId: participants_verify
+      description: POST /api/v1/participants/{id}/verification — verify a participant's
+        details.
+      summary: Verify a participant
+      parameters:
+      - in: path
+        name: participant_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Participants
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantsProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantsProblemDetail'
+          description: Invalid transition.
+  /api/v1/staff/invitations:
+    post:
+      operationId: createStaffInvitation
+      description: Create an invitation for a person to join the organization as staff.
+      summary: Invite a person to become staff
+      tags:
+      - Organization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteStaffRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InviteStaffRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InviteStaffRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Malformed request.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Forbidden.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invitation conflict.
+  /api/v1/staff/invitations/{token}:
+    get:
+      operationId: getStaffInvitation
+      description: Look up an invitation using the token from the email link.
+      summary: Look up a staff invitation
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - Organization
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffInvitationDetail'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invitation not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invitation already accepted.
+        '410':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invitation expired.
+  /api/v1/staff/invitations/accept:
+    post:
+      operationId: acceptStaffInvitation
+      description: Accept an invitation using the token from the email link.
+      summary: Accept a staff invitation
+      tags:
+      - Organization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptInvitationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AcceptInvitationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AcceptInvitationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Malformed request.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Forbidden or wrong invitee.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invitation not found.
+  /api/v1/users/me:
+    get:
+      operationId: getCurrentUser
+      description: Return the authenticated account (Identity) composed with its staff
+        membership (Organization). `staffMembership` is null for non-staff users.
+      summary: Get the current user composed with staff membership
+      tags:
+      - Identity
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUserResponse'
+          description: ''
+        '401':
+          description: No valid session.
+components:
+  schemas:
+    AcceptInvitationRequest:
+      type: object
+      description: Validate an invitation-acceptance request.
+      properties:
+        token:
+          type: string
+      required:
+      - token
+    AddAdditionalService:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 120
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        currency:
+          type: string
+          default: BYN
+          maxLength: 3
+        description:
+          type:
+          - string
+          - 'null'
+        enabled:
+          type: boolean
+          default: true
+      required:
+      - amount
+      - name
+    AddAdmissionRule:
+      type: object
+      properties:
+        categoryId:
+          type: string
+          format: uuid
+        disciplineId:
+          type: string
+          format: uuid
+        ageCategoryId:
+          type: string
+          format: uuid
+        participantGroupId:
+          type: string
+          format: uuid
+        participationFormat:
+          type: string
+          maxLength: 32
+      required:
+      - ageCategoryId
+      - categoryId
+      - disciplineId
+      - participantGroupId
+      - participationFormat
+    AddAgeCategory:
+      type: object
+      properties:
+        minAge:
+          type: integer
+          minimum: 0
+        maxAge:
+          type: integer
+          minimum: 0
+      required:
+      - maxAge
+      - minAge
+    AddCategory:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 120
+      required:
+      - name
+    AddContact:
+      type: object
+      properties:
+        contactType:
+          type: string
+          maxLength: 32
+        value:
+          type: string
+          maxLength: 500
+        isPrimary:
+          type: boolean
+          default: false
+      required:
+      - contactType
+      - value
+    AddDiscipline:
+      type: object
+      properties:
+        categoryId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 120
+      required:
+      - categoryId
+      - name
+    AddDocument:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        category:
+          type: string
+          maxLength: 32
+        visibility:
+          type: string
+          maxLength: 16
+        fileReference:
+          type: string
+          maxLength: 1024
+        description:
+          type:
+          - string
+          - 'null'
+        sortOrder:
+          type: integer
+          minimum: 0
+          default: 0
+        published:
+          type: boolean
+          default: false
+      required:
+      - category
+      - fileReference
+      - title
+      - visibility
+    AddInformationBlock:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        content:
+          type: string
+        contentFormat:
+          type: string
+          default: PLAIN
+          maxLength: 16
+        sortOrder:
+          type: integer
+          minimum: 0
+          default: 0
+        published:
+          type: boolean
+          default: false
+      required:
+      - content
+      - title
+    AddParticipantGroup:
+      type: object
+      properties:
+        categoryId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 120
+        minCount:
+          type: integer
+          minimum: 1
+        maxCount:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
+      required:
+      - categoryId
+      - minCount
+      - name
+    AddPricingRule:
+      type: object
+      properties:
+        categoryId:
+          type: string
+          format: uuid
+        disciplineId:
+          type: string
+          format: uuid
+        ageCategoryId:
+          type: string
+          format: uuid
+        participantGroupId:
+          type: string
+          format: uuid
+        participationFormat:
+          type: string
+          maxLength: 32
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        currency:
+          type: string
+          default: BYN
+          maxLength: 3
+      required:
+      - ageCategoryId
+      - amount
+      - categoryId
+      - disciplineId
+      - participantGroupId
+      - participationFormat
+    AddRegulation:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        version:
+          type: string
+          maxLength: 50
+        publicationDate:
+          type: string
+          format: date
+        fileReference:
+          type: string
+          maxLength: 1024
+      required:
+      - fileReference
+      - publicationDate
+      - title
+      - version
+    CompetitionDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        season:
+          type: string
+        status:
+          type: string
+        organizerId:
+          type: string
+        description:
+          type:
+          - string
+          - 'null'
+        branding:
+          $ref: '#/components/schemas/_Branding'
+        venue:
+          oneOf:
+          - $ref: '#/components/schemas/_Venue'
+          - type: 'null'
+        registrationPeriod:
+          oneOf:
+          - $ref: '#/components/schemas/_Period'
+          - type: 'null'
+        competitionPeriod:
+          oneOf:
+          - $ref: '#/components/schemas/_Period'
+          - type: 'null'
+        settings:
+          $ref: '#/components/schemas/_Settings'
+        deadlines:
+          $ref: '#/components/schemas/_Deadlines'
+        enabledFormats:
+          type: array
+          items:
+            type: string
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/_Category'
+        disciplines:
+          type: array
+          items:
+            $ref: '#/components/schemas/_Discipline'
+        ageCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/_AgeCategory'
+        participantGroups:
+          type: array
+          items:
+            $ref: '#/components/schemas/_ParticipantGroup'
+        admissionRules:
+          type: array
+          items:
+            $ref: '#/components/schemas/_AdmissionRule'
+        pricingRules:
+          type: array
+          items:
+            $ref: '#/components/schemas/_PricingRule'
+        regulations:
+          type: array
+          items:
+            $ref: '#/components/schemas/_Regulation'
+        currentRegulationId:
+          type:
+          - string
+          - 'null'
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/_Document'
+        additionalServices:
+          type: array
+          items:
+            $ref: '#/components/schemas/_AdditionalService'
+        contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/_Contact'
+        informationBlocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/_InformationBlock'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+      required:
+      - additionalServices
+      - admissionRules
+      - ageCategories
+      - branding
+      - categories
+      - competitionPeriod
+      - contacts
+      - createdAt
+      - currentRegulationId
+      - deadlines
+      - description
+      - disciplines
+      - documents
+      - enabledFormats
+      - id
+      - informationBlocks
+      - organizerId
+      - participantGroups
+      - pricingRules
+      - registrationPeriod
+      - regulations
+      - season
+      - settings
+      - status
+      - title
+      - updatedAt
+      - venue
+      - version
+    CompetitionDetailResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/CompetitionDetail'
+        meta:
+          $ref: '#/components/schemas/_Meta'
+      required:
+      - data
+      - meta
+    CompetitionListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompetitionSummary'
+        meta:
+          $ref: '#/components/schemas/_Meta'
+      required:
+      - data
+      - meta
+    CompetitionProblemDetail:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        requestId:
+          type: string
+        code:
+          type: string
+      required:
+      - detail
+      - instance
+      - requestId
+      - status
+      - title
+      - type
+    CompetitionSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        season:
+          type: string
+        status:
+          type: string
+        organizerId:
+          type: string
+        description:
+          type:
+          - string
+          - 'null'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+      required:
+      - createdAt
+      - description
+      - id
+      - organizerId
+      - season
+      - status
+      - title
+      - updatedAt
+      - version
+    CreateCompetition:
+      type: object
+      properties:
+        organizerId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          maxLength: 200
+        season:
+          type: string
+          maxLength: 50
+        description:
+          type:
+          - string
+          - 'null'
+      required:
+      - organizerId
+      - season
+      - title
+    CreateParticipantRequest:
+      type: object
+      description: Validate a create-participant request body.
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        middleName:
+          type:
+          - string
+          - 'null'
+        dateOfBirth:
+          type: string
+          format: date
+        displayAlias:
+          type: string
+        createdByType:
+          allOf:
+          - $ref: '#/components/schemas/CreatedByTypeEnum'
+          default: guardian
+      required:
+      - dateOfBirth
+      - displayAlias
+      - firstName
+      - lastName
+    CreatedByTypeEnum:
+      enum:
+      - guardian
+      - teacher
+      type: string
+      description: |-
+        * `guardian` - guardian
+        * `teacher` - teacher
+    CurrentUser:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/UserResource'
+        staffMembership:
+          oneOf:
+          - $ref: '#/components/schemas/StaffMembership'
+          - type: 'null'
+      required:
+      - staffMembership
+      - user
+    CurrentUserMeta:
+      type: object
+      properties:
+        requestId:
+          type: string
+      required:
+      - requestId
+    CurrentUserResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/CurrentUser'
+        meta:
+          $ref: '#/components/schemas/CurrentUserMeta'
+      required:
+      - data
+      - meta
+    EmailVerificationConfirm:
+      type: object
+      description: |-
+        Validate an email-verification confirmation body (API-001 §4.2).
+
+        The emailed token is the proof of ownership; no session is required.
+      properties:
+        token:
+          type: string
+      required:
+      - token
+    EmailVerificationResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/UserResource'
+        meta:
+          $ref: '#/components/schemas/Meta'
+      required:
+      - data
+      - meta
+    GuardianLinkResource:
+      type: object
+      description: A guardian relationship embedded in a participant resource.
+      properties:
+        guardianId:
+          type: string
+          format: uuid
+        relationshipType:
+          type: string
+        status:
+          type: string
+        establishedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - establishedAt
+      - guardianId
+      - relationshipType
+      - status
+    InvitationResource:
+      type: object
+      description: Serialize an invitation resource.
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        invitedBy:
+          type: string
+          format: uuid
+        acceptedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        revokedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - acceptedAt
+      - createdAt
+      - email
+      - expiresAt
+      - id
+      - invitedBy
+      - organizationId
+      - revokedAt
+      - role
+    InvitationResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/InvitationResource'
+        meta:
+          $ref: '#/components/schemas/Meta'
+      required:
+      - data
+      - meta
+    InviteStaffRequest:
+      type: object
+      description: Validate a staff-invitation creation request.
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+      required:
+      - email
+      - role
+    MembershipResource:
+      type: object
+      description: Serialize an accepted-membership resource.
+      properties:
+        role:
+          type: string
+        status:
+          type: string
+        organizationId:
+          type: string
+          format: uuid
+      required:
+      - organizationId
+      - role
+      - status
+    MembershipResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/MembershipResource'
+        meta:
+          $ref: '#/components/schemas/Meta'
+      required:
+      - data
+      - meta
+    Meta:
+      type: object
+      description: The ``meta`` envelope block (API-000 §7.3).
+      properties:
+        requestId:
+          type: string
+      required:
+      - requestId
+    ParticipantMeta:
+      type: object
+      description: |-
+        The ``meta`` envelope block (API-000 §7.3).
+
+        Named distinctly from other contexts' meta blocks so drf-spectacular emits a
+        uniquely-named OpenAPI component (no cross-context name collision).
+      properties:
+        requestId:
+          type: string
+      required:
+      - requestId
+    ParticipantResource:
+      type: object
+      description: A participant resource (DIA-001 §4.2).
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          default: participant
+        displayAlias:
+          type: string
+        displayName:
+          type: string
+        status:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        guardianLinks:
+          type: array
+          items:
+            $ref: '#/components/schemas/GuardianLinkResource'
+        institutionId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        consentRecorded:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - consentRecorded
+      - createdAt
+      - dateOfBirth
+      - displayAlias
+      - displayName
+      - guardianLinks
+      - id
+      - institutionId
+      - status
+      - updatedAt
+    ParticipantResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ParticipantResource'
+        meta:
+          $ref: '#/components/schemas/ParticipantMeta'
+      required:
+      - data
+      - meta
+    ParticipantsProblemDetail:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        requestId:
+          type: string
+        code:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - detail
+      - instance
+      - requestId
+      - status
+      - title
+      - type
+    ParticipationFormat:
+      type: object
+      properties:
+        participationFormat:
+          type: string
+          maxLength: 32
+      required:
+      - participationFormat
+    PatchedChangePrice:
+      type: object
+      properties:
+        categoryId:
+          type: string
+          format: uuid
+        disciplineId:
+          type: string
+          format: uuid
+        ageCategoryId:
+          type: string
+          format: uuid
+        participantGroupId:
+          type: string
+          format: uuid
+        participationFormat:
+          type: string
+          maxLength: 32
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        currency:
+          type: string
+          default: BYN
+          maxLength: 3
+    PatchedRenameCategory:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 120
+    PatchedRenameDiscipline:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 120
+    PatchedUpdateAdditionalService:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 120
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        currency:
+          type: string
+          default: BYN
+          maxLength: 3
+        description:
+          type:
+          - string
+          - 'null'
+    PatchedUpdateCompetitionBranding:
+      type: object
+      properties:
+        logo:
+          type:
+          - string
+          - 'null'
+        banner:
+          type:
+          - string
+          - 'null'
+        poster:
+          type:
+          - string
+          - 'null'
+    PatchedUpdateCompetitionGeneralInformation:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        season:
+          type: string
+          maxLength: 50
+        description:
+          type:
+          - string
+          - 'null'
+        logo:
+          type:
+          - string
+          - 'null'
+        banner:
+          type:
+          - string
+          - 'null'
+        venueName:
+          type:
+          - string
+          - 'null'
+        venueAddress:
+          type:
+          - string
+          - 'null'
+        registrationStart:
+          type:
+          - string
+          - 'null'
+          format: date
+        registrationEnd:
+          type:
+          - string
+          - 'null'
+          format: date
+        competitionStart:
+          type:
+          - string
+          - 'null'
+          format: date
+        competitionEnd:
+          type:
+          - string
+          - 'null'
+          format: date
+    PatchedUpdateDocument:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        category:
+          type: string
+          maxLength: 32
+        visibility:
+          type: string
+          maxLength: 16
+        fileReference:
+          type: string
+          maxLength: 1024
+        description:
+          type:
+          - string
+          - 'null'
+        sortOrder:
+          type: integer
+          minimum: 0
+          default: 0
+    PatchedUpdateInformationBlock:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        content:
+          type: string
+        contentFormat:
+          type: string
+          default: PLAIN
+          maxLength: 16
+        sortOrder:
+          type: integer
+          minimum: 0
+          default: 0
+    ProblemDetail:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        requestId:
+          type: string
+        code:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - detail
+      - instance
+      - requestId
+      - status
+      - title
+      - type
+    ProposeGuardianLinkRequest:
+      type: object
+      description: Validate a propose-guardian-link request body.
+      properties:
+        guardianId:
+          type: string
+          format: uuid
+        relationshipType:
+          $ref: '#/components/schemas/RelationshipTypeEnum'
+      required:
+      - guardianId
+      - relationshipType
+    RegistrationRequest:
+      type: object
+      description: Validate a new-account registration request body (API-001 §4.1).
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          writeOnly: true
+        firstName:
+          type: string
+        lastName:
+          type: string
+        middleName:
+          type:
+          - string
+          - 'null'
+        phone:
+          type:
+          - string
+          - 'null'
+        locale:
+          type:
+          - string
+          - 'null'
+        timezone:
+          type:
+          - string
+          - 'null'
+      required:
+      - email
+      - firstName
+      - lastName
+      - password
+    RegistrationResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/UserResource'
+        meta:
+          $ref: '#/components/schemas/Meta'
+      required:
+      - data
+      - meta
+    RelationshipTypeEnum:
+      enum:
+      - mother
+      - father
+      - legal_guardian
+      - other
+      type: string
+      description: |-
+        * `mother` - mother
+        * `father` - father
+        * `legal_guardian` - legal_guardian
+        * `other` - other
+    RoleEnum:
+      enum:
+      - OWNER
+      - DIRECTOR
+      - FINANCE
+      - COMPETITION_MANAGER
+      - CONTENT_MANAGER
+      - MODERATOR
+      - SUPPORT
+      type: string
+      description: |-
+        * `OWNER` - OWNER
+        * `DIRECTOR` - DIRECTOR
+        * `FINANCE` - FINANCE
+        * `COMPETITION_MANAGER` - COMPETITION_MANAGER
+        * `CONTENT_MANAGER` - CONTENT_MANAGER
+        * `MODERATOR` - MODERATOR
+        * `SUPPORT` - SUPPORT
+    SessionCreateRequest:
+      type: object
+      description: Validate a login (session-creation) request body (API-001 §4.4).
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - email
+      - password
+    SessionResource:
+      type: object
+      description: |-
+        The session resource returned on login (API-001 §4.4).
+
+        ``refreshToken`` is present for native clients; web clients receive the same
+        value as an httpOnly cookie and can ignore it.
+      properties:
+        type:
+          type: string
+          default: session
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          default: Bearer
+        expiresIn:
+          type: integer
+        refreshToken:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserSummary'
+      required:
+      - accessToken
+      - expiresIn
+      - user
+    SessionResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/SessionResource'
+        meta:
+          $ref: '#/components/schemas/Meta'
+      required:
+      - data
+      - meta
+    StaffInvitationDetail:
+      type: object
+      description: Serialize an invitation-detail resource.
+      properties:
+        organizationName:
+          type: string
+        role:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        invitedEmail:
+          type: string
+          format: email
+      required:
+      - expiresAt
+      - invitedEmail
+      - organizationName
+      - role
+    StaffMembership:
+      type: object
+      description: The compact staff-membership read model (Organization), or null.
+      properties:
+        role:
+          type: string
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+      required:
+      - role
+      - status
+    StatusEnum:
+      enum:
+      - PENDING
+      - ACTIVE
+      - REVOKED
+      type: string
+      description: |-
+        * `PENDING` - PENDING
+        * `ACTIVE` - ACTIVE
+        * `REVOKED` - REVOKED
+    TokenRefreshRequest:
+      type: object
+      description: |-
+        Validate a token-refresh request body (API-001 §4.5).
+
+        ``refreshToken`` is optional: web clients present the token via the httpOnly
+        cookie and send an empty body, while native clients send it here.
+      properties:
+        refreshToken:
+          type: string
+    TokenRefreshResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/TokenResource'
+        meta:
+          $ref: '#/components/schemas/Meta'
+      required:
+      - data
+      - meta
+    TokenResource:
+      type: object
+      description: The refreshed-session resource (API-001 §4.5).
+      properties:
+        type:
+          type: string
+          default: session
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          default: Bearer
+        expiresIn:
+          type: integer
+        refreshToken:
+          type: string
+      required:
+      - accessToken
+      - expiresIn
+    UpdateCompetitionDeadlines:
+      type: object
+      properties:
+        application:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        payment:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        musicUpload:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        documentUpload:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        correction:
+          type:
+          - string
+          - 'null'
+          format: date-time
+    UpdateCompetitionSettings:
+      type: object
+      properties:
+        allowMultipleApplications:
+          type: boolean
+        allowApplicationEditing:
+          type: boolean
+        allowMusicReplacement:
+          type: boolean
+        allowVideoReplacement:
+          type: boolean
+        allowParticipantChanges:
+          type: boolean
+        requireMusicUpload:
+          type: boolean
+        requireVideoUpload:
+          type: boolean
+        requirePhotoUpload:
+          type: boolean
+        requireIdentityDocument:
+          type: boolean
+        requireParentConsent:
+          type: boolean
+        requireTeacher:
+          type: boolean
+        requireCommentForApplication:
+          type: boolean
+      required:
+      - allowApplicationEditing
+      - allowMultipleApplications
+      - allowMusicReplacement
+      - allowParticipantChanges
+      - allowVideoReplacement
+      - requireCommentForApplication
+      - requireIdentityDocument
+      - requireMusicUpload
+      - requireParentConsent
+      - requirePhotoUpload
+      - requireTeacher
+      - requireVideoUpload
+    UserResource:
+      type: object
+      description: A user account resource (API-001 §4.1, §4.8).
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          default: user
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        status:
+          type: string
+        emailVerified:
+          type: boolean
+        phoneVerified:
+          type: boolean
+        mfaEnabled:
+          type: boolean
+        locale:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - createdAt
+      - displayName
+      - email
+      - emailVerified
+      - id
+      - locale
+      - mfaEnabled
+      - phoneVerified
+      - status
+      - updatedAt
+    UserSummary:
+      type: object
+      description: The compact user summary embedded in a session resource (API-001
+        §4.4).
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          default: user
+        displayName:
+          type: string
+        emailVerified:
+          type: boolean
+      required:
+      - displayName
+      - emailVerified
+      - id
+    _AdditionalService:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        amount:
+          type: string
+        currency:
+          type: string
+        description:
+          type:
+          - string
+          - 'null'
+        enabled:
+          type: boolean
+      required:
+      - amount
+      - currency
+      - description
+      - enabled
+      - id
+      - name
+    _AdmissionCombination:
+      type: object
+      properties:
+        categoryId:
+          type: string
+          format: uuid
+        disciplineId:
+          type: string
+          format: uuid
+        ageCategoryId:
+          type: string
+          format: uuid
+        participantGroupId:
+          type: string
+          format: uuid
+        participationFormat:
+          type: string
+          maxLength: 32
+      required:
+      - ageCategoryId
+      - categoryId
+      - disciplineId
+      - participantGroupId
+      - participationFormat
+    _AdmissionRule:
+      type: object
+      properties:
+        categoryId:
+          type: string
+        disciplineId:
+          type: string
+        ageCategoryId:
+          type: string
+        participantGroupId:
+          type: string
+        participationFormat:
+          type: string
+      required:
+      - ageCategoryId
+      - categoryId
+      - disciplineId
+      - participantGroupId
+      - participationFormat
+    _AgeCategory:
+      type: object
+      properties:
+        id:
+          type: string
+        minAge:
+          type: integer
+        maxAge:
+          type: integer
+      required:
+      - id
+      - maxAge
+      - minAge
+    _Branding:
+      type: object
+      properties:
+        logo:
+          type:
+          - string
+          - 'null'
+        banner:
+          type:
+          - string
+          - 'null'
+        poster:
+          type:
+          - string
+          - 'null'
+      required:
+      - banner
+      - logo
+      - poster
+    _Category:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      required:
+      - id
+      - name
+    _Contact:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        value:
+          type: string
+        isPrimary:
+          type: boolean
+      required:
+      - id
+      - isPrimary
+      - type
+      - value
+    _Deadlines:
+      type: object
+      properties:
+        application:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        payment:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        musicUpload:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        documentUpload:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        correction:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - application
+      - correction
+      - documentUpload
+      - musicUpload
+      - payment
+    _Discipline:
+      type: object
+      properties:
+        id:
+          type: string
+        categoryId:
+          type: string
+        name:
+          type: string
+      required:
+      - categoryId
+      - id
+      - name
+    _Document:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        category:
+          type: string
+        visibility:
+          type: string
+        fileReference:
+          type: string
+        description:
+          type:
+          - string
+          - 'null'
+        sortOrder:
+          type: integer
+        published:
+          type: boolean
+      required:
+      - category
+      - description
+      - fileReference
+      - id
+      - published
+      - sortOrder
+      - title
+      - visibility
+    _InformationBlock:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        contentFormat:
+          type: string
+        published:
+          type: boolean
+        sortOrder:
+          type: integer
+      required:
+      - content
+      - contentFormat
+      - id
+      - published
+      - sortOrder
+      - title
+    _Meta:
+      type: object
+      properties:
+        requestId:
+          type: string
+      required:
+      - requestId
+    _ParticipantGroup:
+      type: object
+      properties:
+        id:
+          type: string
+        categoryId:
+          type: string
+        name:
+          type: string
+        minCount:
+          type: integer
+        maxCount:
+          type:
+          - integer
+          - 'null'
+      required:
+      - categoryId
+      - id
+      - maxCount
+      - minCount
+      - name
+    _Period:
+      type: object
+      properties:
+        start:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+      required:
+      - end
+      - start
+    _PricingRule:
+      type: object
+      properties:
+        categoryId:
+          type: string
+        disciplineId:
+          type: string
+        ageCategoryId:
+          type: string
+        participantGroupId:
+          type: string
+        participationFormat:
+          type: string
+        amount:
+          type: string
+        currency:
+          type: string
+      required:
+      - ageCategoryId
+      - amount
+      - categoryId
+      - currency
+      - disciplineId
+      - participantGroupId
+      - participationFormat
+    _Regulation:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        version:
+          type: string
+        publicationDate:
+          type: string
+          format: date
+        fileReference:
+          type: string
+        isCurrent:
+          type: boolean
+      required:
+      - fileReference
+      - id
+      - isCurrent
+      - publicationDate
+      - title
+      - version
+    _Settings:
+      type: object
+      properties:
+        allowMultipleApplications:
+          type: boolean
+        allowApplicationEditing:
+          type: boolean
+        allowMusicReplacement:
+          type: boolean
+        allowVideoReplacement:
+          type: boolean
+        allowParticipantChanges:
+          type: boolean
+        requireMusicUpload:
+          type: boolean
+        requireVideoUpload:
+          type: boolean
+        requirePhotoUpload:
+          type: boolean
+        requireIdentityDocument:
+          type: boolean
+        requireParentConsent:
+          type: boolean
+        requireTeacher:
+          type: boolean
+        requireCommentForApplication:
+          type: boolean
+      required:
+      - allowApplicationEditing
+      - allowMultipleApplications
+      - allowMusicReplacement
+      - allowParticipantChanges
+      - allowVideoReplacement
+      - requireCommentForApplication
+      - requireIdentityDocument
+      - requireMusicUpload
+      - requireParentConsent
+      - requirePhotoUpload
+      - requireTeacher
+      - requireVideoUpload
+    _Venue:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type:
+          - string
+          - 'null'
+      required:
+      - address
+      - name
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

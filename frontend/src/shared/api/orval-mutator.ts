@@ -14,8 +14,9 @@ import { apiClient, toApiError } from "./client";
  */
 export const customInstance = async <T>(url: string, options: RequestInit = {}): Promise<T> => {
   try {
-    // Ky's `prefix` supplies the versioned base; normalize any leading slash.
-    const path = url.replace(/^\/+/, "");
+    // Ky's `prefix` is already `…/api/v1`. Accept both `/competitions` and a
+    // defensive `/api/v1/competitions` (e.g. stale generated clients).
+    const path = url.replace(/^\/+/, "").replace(/^api\/v1\//, "");
     const response = await apiClient(path, options);
 
     const isEmpty = response.status === 204 || response.headers.get("content-length") === "0";
