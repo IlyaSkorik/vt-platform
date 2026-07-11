@@ -25,6 +25,7 @@ __all__ = [
     "AddDocumentSerializer",
     "AddInformationBlockSerializer",
     "AddParticipantGroupSerializer",
+    "UpdateParticipantGroupSerializer",
     "AddPricingRuleSerializer",
     "AddRegulationSerializer",
     "ChangePriceSerializer",
@@ -199,11 +200,36 @@ class AddParticipantGroupSerializer(serializers.Serializer[dict[str, object]]):
     name = serializers.CharField(max_length=120)
     minCount = serializers.IntegerField(source="min_count", min_value=1)
     maxCount = serializers.IntegerField(source="max_count", required=False, allow_null=True, min_value=1)
+    description = serializers.CharField(required=False, allow_blank=True, allow_null=True, max_length=2000)
+    sortOrder = serializers.IntegerField(source="sort_order", required=False, allow_null=True, min_value=0)
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         max_count = attrs.get("max_count")
         if max_count is not None and attrs["min_count"] > max_count:
             raise serializers.ValidationError("minCount must not exceed maxCount.")
+        return attrs
+
+
+class UpdateParticipantGroupSerializer(serializers.Serializer[dict[str, object]]):
+    name = serializers.CharField(required=False, allow_null=True, max_length=120)
+    minCount = serializers.IntegerField(source="min_count", required=False, allow_null=True, min_value=1)
+    maxCount = serializers.IntegerField(source="max_count", required=False, allow_null=True, min_value=1)
+    description = serializers.CharField(required=False, allow_blank=True, allow_null=True, max_length=2000)
+    sortOrder = serializers.IntegerField(source="sort_order", required=False, allow_null=True, min_value=0)
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        if not any(k in attrs for k in ("name", "min_count", "max_count", "description", "sort_order")):
+            raise serializers.ValidationError(
+                "At least one of name, minCount, maxCount, description, or sortOrder must be provided."
+            )
+        if "min_count" in attrs and attrs["min_count"] is None:
+            raise serializers.ValidationError("minCount cannot be null.")
+        if "min_count" in attrs:
+            max_count = attrs.get("max_count")
+            if max_count is not None and attrs["min_count"] > max_count:
+                raise serializers.ValidationError("minCount must not exceed maxCount.")
+        elif "max_count" in attrs:
+            raise serializers.ValidationError("maxCount requires minCount.")
         return attrs
 
 
@@ -370,6 +396,8 @@ class _ParticipantGroupSerializer(serializers.Serializer[dict[str, object]]):
     name = serializers.CharField()
     minCount = serializers.IntegerField(source="min_count")
     maxCount = serializers.IntegerField(source="max_count", allow_null=True)
+    description = serializers.CharField(allow_null=True)
+    sortOrder = serializers.IntegerField(source="sort_order")
 
 
 class _AdmissionRuleSerializer(serializers.Serializer[dict[str, object]]):

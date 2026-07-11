@@ -81,6 +81,7 @@ from apps.competitions.application.dto.commands import (
     UpdateDocumentCommand,
     UpdateGeneralInformationCommand,
     UpdateInformationBlockCommand,
+    UpdateParticipantGroupCommand,
     UpdateSettingsCommand,
 )
 from apps.competitions.application.dto.queries import (
@@ -143,6 +144,7 @@ from apps.competitions.application.handlers import (
     UpdateCompetitionSettingsHandler,
     UpdateDocumentHandler,
     UpdateInformationBlockHandler,
+    UpdateParticipantGroupHandler,
 )
 from apps.competitions.application.handlers._support import CompetitionCommandHandler
 from apps.competitions.composition import (
@@ -188,6 +190,7 @@ from .serializers import (
     UpdateCompetitionSettingsSerializer,
     UpdateDocumentSerializer,
     UpdateInformationBlockSerializer,
+    UpdateParticipantGroupSerializer,
     _AdmissionCombinationSerializer,
 )
 
@@ -547,11 +550,30 @@ class CompetitionViewSet(viewsets.ViewSet):
             AddParticipantGroupHandler, AddParticipantGroupCommand(competition_id=pk, **kwargs), request, success=status.HTTP_201_CREATED
         )
 
-    @extend_schema(tags=[_TAG], operation_id="removeParticipantGroup", request=None, responses=_detail_ok())
-    @action(detail=True, methods=["delete"], url_path=r"participant-groups/(?P<participant_group_id>[^/.]+)")
+    @extend_schema(methods=["PATCH"], tags=[_TAG], operation_id="updateParticipantGroup", request=UpdateParticipantGroupSerializer, responses=_detail_ok())
+    @extend_schema(methods=["DELETE"], tags=[_TAG], operation_id="removeParticipantGroup", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["patch", "delete"], url_path=r"participant-groups/(?P<participant_group_id>[^/.]+)")
     def participant_group_detail(self, request: Request, pk: str, participant_group_id: str) -> Response:
+        if request.method == "DELETE":
+            return self._run(
+                RemoveParticipantGroupHandler,
+                RemoveParticipantGroupCommand(competition_id=pk, participant_group_id=participant_group_id),
+                request,
+            )
+        kwargs, problem = self._body(UpdateParticipantGroupSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        update_description = "description" in kwargs
         return self._run(
-            RemoveParticipantGroupHandler, RemoveParticipantGroupCommand(competition_id=pk, participant_group_id=participant_group_id), request
+            UpdateParticipantGroupHandler,
+            UpdateParticipantGroupCommand(
+                competition_id=pk,
+                participant_group_id=participant_group_id,
+                update_description=update_description,
+                **kwargs,
+            ),
+            request,
         )
 
     # ------------------------------------------------------------------

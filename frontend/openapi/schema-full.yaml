@@ -2295,6 +2295,72 @@ paths:
                 $ref: '#/components/schemas/CompetitionProblemDetail'
           description: Business rule violation.
   /api/v1/competitions/{id}/participant-groups/{participant_group_id}:
+    patch:
+      operationId: updateParticipantGroup
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: participant_group_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateParticipantGroup'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateParticipantGroup'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateParticipantGroup'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
     delete:
       operationId: removeParticipantGroup
       description: Organizer Competition API — staff-only.
@@ -4242,6 +4308,16 @@ components:
           - integer
           - 'null'
           minimum: 1
+        description:
+          type:
+          - string
+          - 'null'
+          maxLength: 2000
+        sortOrder:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
       required:
       - categoryId
       - minCount
@@ -5057,6 +5133,34 @@ components:
           type: integer
           minimum: 0
           default: 0
+    PatchedUpdateParticipantGroup:
+      type: object
+      properties:
+        name:
+          type:
+          - string
+          - 'null'
+          maxLength: 120
+        minCount:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
+        maxCount:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
+        description:
+          type:
+          - string
+          - 'null'
+          maxLength: 2000
+        sortOrder:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
     ProblemDetail:
       type: object
       properties:
@@ -5712,12 +5816,20 @@ components:
           type:
           - integer
           - 'null'
+        description:
+          type:
+          - string
+          - 'null'
+        sortOrder:
+          type: integer
       required:
       - categoryId
+      - description
       - id
       - maxCount
       - minCount
       - name
+      - sortOrder
     _Period:
       type: object
       properties:
