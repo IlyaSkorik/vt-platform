@@ -80,6 +80,7 @@ from apps.competitions.domain.value_objects import (
     ParticipationFormatDescription,
     ParticipationFormatId,
     ParticipationFormatName,
+    PricingCalculationType,
     PricingRule,
     RegistrationDeadlines,
     RegulationId,
@@ -294,7 +295,11 @@ class CompetitionMapper:
             ],
             admission_rules=[AdmissionRule(combination=_combination(row)) for row in admission_rules],
             pricing_rules=[
-                PricingRule(combination=_combination(row), price_per_participant=Money(amount=row.amount, currency=Currency(row.currency)))
+                PricingRule(
+                    combination=_combination(row),
+                    price_per_participant=Money(amount=row.amount, currency=Currency(row.currency)),
+                    calculation_type=PricingCalculationType(row.calculation_type),
+                )
                 for row in pricing_rules
             ],
             regulations=[
@@ -489,6 +494,7 @@ class CompetitionMapper:
                     participation_format_id=p.combination.participation_format_id.value,
                     amount=p.price_per_participant.amount,
                     currency=p.price_per_participant.currency.value,
+                    calculation_type=p.calculation_type.value,
                 )
                 for p in entity.pricing_rules
             ],

@@ -14,13 +14,14 @@ from __future__ import annotations
 
 from django.db import models
 
-from apps.competitions.domain.value_objects import Currency
+from apps.competitions.domain.value_objects import Currency, PricingCalculationType
 
 from .base import BasePersistenceModel
 
 __all__ = ["AdmissionRuleModel", "PricingRuleModel"]
 
 _CURRENCY_CHOICES = [(c.value, c.value) for c in Currency]
+_CALCULATION_TYPE_CHOICES = [(c.value, c.value) for c in PricingCalculationType]
 
 
 class AdmissionRuleModel(BasePersistenceModel):
@@ -61,7 +62,7 @@ class AdmissionRuleModel(BasePersistenceModel):
 
 
 class PricingRuleModel(BasePersistenceModel):
-    """Database row for a pricing rule — the per-participant price of a combination."""
+    """Database row for a pricing rule — unit price + calculation type for a combination."""
 
     competition = models.ForeignKey(
         "competitions.CompetitionModel",
@@ -75,6 +76,11 @@ class PricingRuleModel(BasePersistenceModel):
     participation_format_id = models.UUIDField()
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     currency = models.CharField(max_length=3, choices=_CURRENCY_CHOICES, default=Currency.BYN.value)
+    calculation_type = models.CharField(
+        max_length=32,
+        choices=_CALCULATION_TYPE_CHOICES,
+        default=PricingCalculationType.PER_PARTICIPANT.value,
+    )
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "competitions_pricing_rule"
@@ -94,7 +100,16 @@ class PricingRuleModel(BasePersistenceModel):
                 name="competitions_unique_pricing_combination",
             ),
             models.CheckConstraint(condition=models.Q(amount__gte=0), name="competitions_pricing_amount_non_negative"),
+            models.CheckConstraint(
+                condition=models.Q(
+                    calculation_type__in=[
+                        PricingCalculationType.PER_PARTICIPANT.value,
+                        PricingCalculationType.PER_PERFORMANCE.value,
+                    ]
+                ),
+                name="competitions_pricing_calculation_type_valid",
+            ),
         ]
 
     def __str__(self) -> str:
-        return f"pricing {self.id} @ {self.amount} {self.currency}"
+        return f"pricing {self.id} @ {self.amount} {self.currency} [{self.calculation_type}]"
