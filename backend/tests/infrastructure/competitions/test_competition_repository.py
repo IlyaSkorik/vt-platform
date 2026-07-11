@@ -52,6 +52,7 @@ from apps.competitions.domain.value_objects import (
     RegulationVersion,
     RichText,
     Season,
+    ServiceBillingModel,
     ServiceId,
     ServiceName,
     _generate_uuid7,
@@ -119,7 +120,16 @@ def _fully_configured() -> Competition:
         file=FileReference("s3://schedule.pdf"),
         now=_NOW,
     )
-    competition.add_additional_service(service_id=ServiceId.generate(), name=ServiceName("Medal"), price=Money.of("300"), now=_NOW)
+    competition.add_additional_service(
+        service_id=ServiceId.generate(),
+        name=ServiceName("Medal"),
+        price=Money.of("300"),
+        available_format_ids=[fmt.id],
+        billing_model=ServiceBillingModel.PER_PERFORMANCE,
+        required=False,
+        sort_order=1,
+        now=_NOW,
+    )
     competition.add_contact(contact_id=ContactId.generate(), contact_type=ContactType.EMAIL, value=ContactValue("a@b.io"), now=_NOW)
     competition.add_information_block(
         block_id=InformationBlockId.generate(), title=InformationBlockTitle("Arrival"), content=RichText("Come early."), now=_NOW
@@ -169,6 +179,9 @@ def test_save_then_get_full_round_trip(repo: DjangoCompetitionRepository) -> Non
     assert loaded.current_regulation.version.value == "1.0"
     assert len(loaded.documents) == 1
     assert len(loaded.additional_services) == 1
+    assert loaded.additional_services[0].billing_model is ServiceBillingModel.PER_PERFORMANCE
+    assert loaded.participation_formats[0].id in loaded.additional_services[0].available_format_ids
+    assert loaded.additional_services[0].sort_order == 1
     assert len(loaded.contacts) == 1
     assert loaded.contacts[0].is_primary is True
     assert len(loaded.information_blocks) == 1

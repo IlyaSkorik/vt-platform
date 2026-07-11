@@ -94,7 +94,15 @@ class AdditionalServiceModel(BasePersistenceModel):
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     currency = models.CharField(max_length=3, choices=_CURRENCY_CHOICES, default=Currency.BYN.value)
     description = models.TextField(null=True, blank=True, default=None)
+    billing_model = models.CharField(
+        max_length=32,
+        choices=[("PER_PARTICIPANT", "PER_PARTICIPANT"), ("PER_PERFORMANCE", "PER_PERFORMANCE")],
+        default="PER_PARTICIPANT",
+    )
+    available_format_ids = models.JSONField(default=list)
+    required = models.BooleanField(default=False)
     enabled = models.BooleanField(default=True)
+    sort_order = models.PositiveIntegerField(default=0)
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "competitions_additional_service"
@@ -103,6 +111,14 @@ class AdditionalServiceModel(BasePersistenceModel):
         constraints = [
             *BasePersistenceModel.Meta.constraints,
             models.CheckConstraint(condition=models.Q(amount__gte=0), name="competitions_service_amount_non_negative"),
+            models.CheckConstraint(
+                condition=models.Q(billing_model__in=["PER_PARTICIPANT", "PER_PERFORMANCE"]),
+                name="competitions_service_billing_model_valid",
+            ),
+        ]
+        indexes = [
+            *BasePersistenceModel.Meta.indexes,
+            models.Index(fields=["competition", "sort_order"]),
         ]
 
     def __str__(self) -> str:

@@ -89,6 +89,7 @@ from apps.competitions.domain.value_objects import (
     RichText,
     RichTextFormat,
     Season,
+    ServiceBillingModel,
     ServiceDescription,
     ServiceId,
     ServiceName,
@@ -332,7 +333,13 @@ class CompetitionMapper:
                     name=ServiceName(row.name),
                     price=Money(amount=row.amount, currency=Currency(row.currency)),
                     description=ServiceDescription(row.description) if row.description else None,
+                    billing_model=ServiceBillingModel(row.billing_model),
+                    available_format_ids=[
+                        ParticipationFormatId.from_string(str(format_id)) for format_id in (row.available_format_ids or [])
+                    ],
+                    required=row.required,
                     enabled=row.enabled,
+                    sort_order=row.sort_order,
                 )
                 for row in additional_services
             ],
@@ -531,7 +538,11 @@ class CompetitionMapper:
                     amount=s.price.amount,
                     currency=s.price.currency.value,
                     description=s.description.value if s.description is not None else None,
+                    billing_model=s.billing_model.value,
+                    available_format_ids=[fid.json() for fid in sorted(s.available_format_ids, key=lambda x: x.json())],
+                    required=s.required,
                     enabled=s.is_enabled,
+                    sort_order=s.sort_order,
                 )
                 for s in entity.additional_services
             ],

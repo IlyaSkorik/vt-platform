@@ -151,7 +151,9 @@ class DjangoCompetitionRepository:
             pricing_rules=PricingRuleModel.objects.filter(competition_id=pk).order_by("created_at", "id"),
             regulations=RegulationModel.objects.filter(competition_id=pk).order_by("publication_date", "id"),
             documents=DocumentModel.objects.filter(competition_id=pk).order_by("sort_order", "created_at", "id"),
-            additional_services=AdditionalServiceModel.objects.filter(competition_id=pk).order_by("created_at", "id"),
+            additional_services=AdditionalServiceModel.objects.filter(competition_id=pk).order_by(
+                "sort_order", "name", "id"
+            ),
             contacts=ContactModel.objects.filter(competition_id=pk).order_by("created_at", "id"),
             information_blocks=InformationBlockModel.objects.filter(competition_id=pk).order_by("sort_order", "created_at", "id"),
         )
