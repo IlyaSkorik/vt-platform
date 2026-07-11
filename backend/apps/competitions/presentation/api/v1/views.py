@@ -225,13 +225,17 @@ def _detail_ok(status_code: int = status.HTTP_200_OK) -> dict[int | str, Any]:
 
 def _command_kwargs(serializer: Serializer[Any]) -> dict[str, Any]:
     """Coerce validated data into command-friendly primitives (UUID/Decimal → str)."""
-    cleaned: dict[str, Any] = {}
-    for key, value in serializer.validated_data.items():
+
+    def coerce(value: object) -> object:
         if isinstance(value, uuid.UUID | Decimal):
-            cleaned[key] = str(value)
-        else:
-            cleaned[key] = value
-    return cleaned
+            return str(value)
+        if isinstance(value, list):
+            return [coerce(item) for item in value]
+        if isinstance(value, tuple):
+            return tuple(coerce(item) for item in value)
+        return value
+
+    return {key: coerce(value) for key, value in serializer.validated_data.items()}
 
 
 class CompetitionViewSet(viewsets.ViewSet):

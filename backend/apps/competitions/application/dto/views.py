@@ -297,7 +297,11 @@ class AdditionalServiceView:
     amount: str
     currency: str
     description: str | None
+    billing_model: str
+    participation_format_ids: tuple[str, ...]
+    required: bool
     enabled: bool
+    sort_order: int
 
     @classmethod
     def of(cls, service: AdditionalService) -> AdditionalServiceView:
@@ -307,7 +311,13 @@ class AdditionalServiceView:
             amount=str(service.price.amount),
             currency=service.price.currency.value,
             description=service.description.value if service.description is not None else None,
+            billing_model=service.billing_model.value,
+            participation_format_ids=tuple(
+                sorted(fid.json() for fid in service.available_format_ids),
+            ),
+            required=service.required,
             enabled=service.is_enabled,
+            sort_order=service.sort_order,
         )
 
 

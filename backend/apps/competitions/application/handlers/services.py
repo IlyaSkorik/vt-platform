@@ -11,6 +11,8 @@ from apps.competitions.application.dto.commands import (
 )
 from apps.competitions.application.dto.views import CompetitionDetailView
 from apps.competitions.domain.value_objects import (
+    ParticipationFormatId,
+    ServiceBillingModel,
     ServiceDescription,
     ServiceId,
     ServiceName,
@@ -25,6 +27,10 @@ __all__ = (
     "RemoveAdditionalServiceHandler",
     "UpdateAdditionalServiceHandler",
 )
+
+
+def _format_ids(raw: list[str]) -> tuple[ParticipationFormatId, ...]:
+    return tuple(ParticipationFormatId.from_string(value) for value in raw)
 
 
 class AddAdditionalServiceHandler(CompetitionCommandHandler):
@@ -47,8 +53,12 @@ class AddAdditionalServiceHandler(CompetitionCommandHandler):
                 amount=command.amount,
                 currency=command.currency,
             ),
+            available_format_ids=_format_ids(command.participation_format_ids),
+            billing_model=ServiceBillingModel(command.billing_model),
             description=(ServiceDescription(command.description) if command.description else None),
+            required=command.required,
             enabled=command.enabled,
+            sort_order=command.sort_order,
             now=self._clock.utcnow(),
         )
 
@@ -76,6 +86,10 @@ class UpdateAdditionalServiceHandler(CompetitionCommandHandler):
                 currency=command.currency,
             ),
             description=(ServiceDescription(command.description) if command.description else None),
+            available_format_ids=_format_ids(command.participation_format_ids),
+            billing_model=ServiceBillingModel(command.billing_model),
+            required=command.required,
+            sort_order=command.sort_order,
             now=self._clock.utcnow(),
         )
 

@@ -320,7 +320,21 @@ class AddAdditionalServiceSerializer(serializers.Serializer[dict[str, object]]):
     amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0)
     currency = serializers.CharField(max_length=3, required=False, default="BYN")
     description = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    billingModel = serializers.ChoiceField(
+        source="billing_model",
+        choices=["PER_PARTICIPANT", "PER_PERFORMANCE"],
+        required=False,
+        default="PER_PARTICIPANT",
+    )
+    participationFormatIds = serializers.ListField(
+        child=serializers.UUIDField(),
+        source="participation_format_ids",
+        allow_empty=False,
+        min_length=1,
+    )
+    required = serializers.BooleanField(required=False, default=False)
     enabled = serializers.BooleanField(required=False, default=True)
+    sortOrder = serializers.IntegerField(source="sort_order", required=False, default=0, min_value=0)
 
 
 class UpdateAdditionalServiceSerializer(serializers.Serializer[dict[str, object]]):
@@ -328,6 +342,20 @@ class UpdateAdditionalServiceSerializer(serializers.Serializer[dict[str, object]
     amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0)
     currency = serializers.CharField(max_length=3, required=False, default="BYN")
     description = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    billingModel = serializers.ChoiceField(
+        source="billing_model",
+        choices=["PER_PARTICIPANT", "PER_PERFORMANCE"],
+        required=False,
+        default="PER_PARTICIPANT",
+    )
+    participationFormatIds = serializers.ListField(
+        child=serializers.UUIDField(),
+        source="participation_format_ids",
+        allow_empty=False,
+        min_length=1,
+    )
+    required = serializers.BooleanField(required=False, default=False)
+    sortOrder = serializers.IntegerField(source="sort_order", required=False, default=0, min_value=0)
 
 
 class AddContactSerializer(serializers.Serializer[dict[str, object]]):
@@ -478,7 +506,11 @@ class _AdditionalServiceSerializer(serializers.Serializer[dict[str, object]]):
     amount = serializers.CharField()
     currency = serializers.CharField()
     description = serializers.CharField(allow_null=True)
+    billingModel = serializers.CharField(source="billing_model")
+    participationFormatIds = serializers.ListField(child=serializers.CharField(), source="participation_format_ids")
+    required = serializers.BooleanField()
     enabled = serializers.BooleanField()
+    sortOrder = serializers.IntegerField(source="sort_order")
 
 
 class _ContactSerializer(serializers.Serializer[dict[str, object]]):

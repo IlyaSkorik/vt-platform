@@ -4191,12 +4191,32 @@ components:
           type:
           - string
           - 'null'
+        billingModel:
+          type: string
+          enum:
+          - PER_PARTICIPANT
+          - PER_PERFORMANCE
+          default: PER_PARTICIPANT
+        participationFormatIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        required:
+          type: boolean
+          default: false
         enabled:
           type: boolean
           default: true
+        sortOrder:
+          type: integer
+          minimum: 0
+          default: 0
       required:
       - amount
       - name
+      - participationFormatIds
     AddAdmissionRule:
       type: object
       properties:
@@ -5091,6 +5111,25 @@ components:
           type:
           - string
           - 'null'
+        billingModel:
+          type: string
+          enum:
+          - PER_PARTICIPANT
+          - PER_PERFORMANCE
+          default: PER_PARTICIPANT
+        participationFormatIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        required:
+          type: boolean
+          default: false
+        sortOrder:
+          type: integer
+          minimum: 0
+          default: 0
     PatchedUpdateAgeCategory:
       type: object
       properties:
@@ -5671,15 +5710,32 @@ components:
           type:
           - string
           - 'null'
+        billingModel:
+          type: string
+          enum:
+          - PER_PARTICIPANT
+          - PER_PERFORMANCE
+        participationFormatIds:
+          type: array
+          items:
+            type: string
+        required:
+          type: boolean
         enabled:
           type: boolean
+        sortOrder:
+          type: integer
       required:
       - amount
+      - billingModel
       - currency
       - description
       - enabled
       - id
       - name
+      - participationFormatIds
+      - required
+      - sortOrder
     _AdmissionCombination:
       type: object
       properties:

@@ -425,9 +425,13 @@ class AddAdditionalServiceCommand:
     competition_id: str
     name: str
     amount: str
+    participation_format_ids: list[str]
     currency: str = "BYN"
     description: str | None = None
+    billing_model: str = "PER_PARTICIPANT"
+    required: bool = False
     enabled: bool = True
+    sort_order: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -436,8 +440,12 @@ class UpdateAdditionalServiceCommand:
     service_id: str
     name: str
     amount: str
+    participation_format_ids: list[str]
     currency: str = "BYN"
     description: str | None = None
+    billing_model: str = "PER_PARTICIPANT"
+    required: bool = False
+    sort_order: int = 0
 
 
 @dataclass(frozen=True, slots=True)
