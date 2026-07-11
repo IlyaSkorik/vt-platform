@@ -2208,6 +2208,7 @@ class Competition:
         if any(format_id in s.available_format_ids for s in self._additional_services.values()):
             raise ParticipationFormatInUseError("The format is referenced by additional services.")
         del self._formats[format_id]
+        self._settings = self._settings.without_format(format_id)
         self._touch(now)
 
     # ------------------------------------------------------------------
@@ -2547,6 +2548,8 @@ class Competition:
     def update_settings(self, *, settings: CompetitionSettings, now: datetime) -> list[DomainEvent]:
         """Replace the competition's behaviour settings wholesale."""
         self._ensure_not_archived()
+        for item in settings.format_requirements:
+            self._require_participation_format(item.participation_format_id)
         self._settings = settings
         self._touch(now)
         return [CompetitionSettingsChanged(aggregate_id=self._id.value)]

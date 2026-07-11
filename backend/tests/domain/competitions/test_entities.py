@@ -729,10 +729,10 @@ class TestSettings:
 
     def test_update_settings_emits_event(self) -> None:
         c = _draft()
-        new = CompetitionSettings.default().with_changes(require_parent_consent=True, allow_multiple_applications=True)
+        new = CompetitionSettings.default().with_changes(require_parent_guardian=True, allow_multiple_applications=True)
         events = c.update_settings(settings=new, now=NOW)
         assert isinstance(events[0], CompetitionSettingsChanged)
-        assert c.settings.require_parent_consent is True
+        assert c.settings.require_parent_guardian is True
         assert c.settings.allow_multiple_applications is True
 
     def test_settings_locked_after_archive(self) -> None:

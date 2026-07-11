@@ -39,7 +39,7 @@ from __future__ import annotations
 import os
 import time
 import uuid
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from enum import StrEnum
@@ -55,6 +55,7 @@ from .exceptions import (
     InvalidCategoryNameError,
     InvalidCompetitionDescriptionError,
     InvalidCompetitionIdError,
+    InvalidCompetitionSettingsError,
     InvalidCompetitionTitleError,
     InvalidContactIdError,
     InvalidContactValueError,
@@ -124,6 +125,7 @@ __all__ = [
     "InformationBlockTitle",
     "MixedAgeCalculationMethod",
     "Money",
+    "MusicRequirements",
     "OrganizerId",
     "ParticipantCountRange",
     "ParticipantGroupDescription",
@@ -132,6 +134,10 @@ __all__ = [
     "ParticipationFormatDescription",
     "ParticipationFormatId",
     "ParticipationFormatName",
+    "ParticipationFormatRequirements",
+    "PaymentMethod",
+    "PaymentReceiptRequirements",
+    "PaymentTiming",
     "PricingCalculationType",
     "PricingRule",
     "PublicationIssue",
@@ -150,6 +156,9 @@ __all__ = [
     "TemplateId",
     "TemplateName",
     "Venue",
+    "VideoProvider",
+    "VideoRequirements",
+    "VideoSubmissionMode",
 ]
 
 _UUID_V7_VERSION: Final = 7
@@ -1626,40 +1635,222 @@ class RegistrationDeadlines:
 # ---------------------------------------------------------------------------
 
 
+_DEFAULT_AUDIO_FORMATS: Final[tuple[str, ...]] = ("mp3", "wav", "m4a", "aac")
+_MAX_UPLOAD_SIZE_MB_LIMIT: Final = 512
+
+
+class PaymentTiming(StrEnum):
+    """When payment is due relative to the application lifecycle."""
+
+    BEFORE_REVIEW = "BEFORE_REVIEW"
+    BEFORE_APPROVAL = "BEFORE_APPROVAL"
+    BEFORE_COMPETITION = "BEFORE_COMPETITION"
+
+
+class PaymentMethod(StrEnum):
+    """Accepted payment channels for the competition."""
+
+    ONLINE = "ONLINE"
+    BANK_TRANSFER = "BANK_TRANSFER"
+    CASH = "CASH"
+
+
+class VideoSubmissionMode(StrEnum):
+    """How video evidence may be provided for a participation format."""
+
+    NOT_REQUIRED = "NOT_REQUIRED"
+    URL_ONLY = "URL_ONLY"
+    FILE_ONLY = "FILE_ONLY"
+    URL_OR_FILE = "URL_OR_FILE"
+
+
+class VideoProvider(StrEnum):
+    """Supported external video URL providers."""
+
+    YOUTUBE = "YOUTUBE"
+    VK_VIDEO = "VK_VIDEO"
+    RUTUBE = "RUTUBE"
+    VIMEO = "VIMEO"
+
+
+@dataclass(frozen=True, slots=True)
+class MusicRequirements:
+    """Music upload policy for one participation format."""
+
+    require_upload: bool = False
+    allow_replacement: bool = True
+    allowed_formats: tuple[str, ...] = _DEFAULT_AUDIO_FORMATS
+    max_upload_size_mb: int = 25
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.max_upload_size_mb, int) or isinstance(self.max_upload_size_mb, bool):
+            raise InvalidCompetitionSettingsError("Music max upload size must be an integer.")
+        if self.max_upload_size_mb < 1 or self.max_upload_size_mb > _MAX_UPLOAD_SIZE_MB_LIMIT:
+            raise InvalidCompetitionSettingsError(
+                f"Music max upload size must be between 1 and {_MAX_UPLOAD_SIZE_MB_LIMIT} MB."
+            )
+        normalized = tuple(ext.strip().lower().lstrip(".") for ext in self.allowed_formats if ext.strip())
+        if self.require_upload and not normalized:
+            raise InvalidCompetitionSettingsError("At least one audio format is required when music upload is required.")
+        object.__setattr__(self, "allowed_formats", normalized or _DEFAULT_AUDIO_FORMATS)
+
+    @classmethod
+    def default(cls) -> MusicRequirements:
+        return cls()
+
+
+@dataclass(frozen=True, slots=True)
+class VideoRequirements:
+    """Video submission policy for one participation format."""
+
+    mode: VideoSubmissionMode = VideoSubmissionMode.NOT_REQUIRED
+    allowed_providers: tuple[VideoProvider, ...] = (
+        VideoProvider.YOUTUBE,
+        VideoProvider.VK_VIDEO,
+        VideoProvider.RUTUBE,
+        VideoProvider.VIMEO,
+    )
+    allow_replacement: bool = True
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.mode, VideoSubmissionMode):
+            raise InvalidCompetitionSettingsError("Video submission mode is invalid.")
+        providers = tuple(dict.fromkeys(self.allowed_providers))
+        if self.mode in {VideoSubmissionMode.URL_ONLY, VideoSubmissionMode.URL_OR_FILE} and not providers:
+            raise InvalidCompetitionSettingsError("At least one video provider is required for URL submissions.")
+        object.__setattr__(self, "allowed_providers", providers)
+
+    @classmethod
+    def default(cls) -> VideoRequirements:
+        return cls()
+
+
+@dataclass(frozen=True, slots=True)
+class PaymentReceiptRequirements:
+    """Payment receipt upload policy for one participation format."""
+
+    require_receipt: bool = False
+    allow_upload_later: bool = True
+    allow_replacement: bool = True
+
+    @classmethod
+    def default(cls) -> PaymentReceiptRequirements:
+        return cls()
+
+
+@dataclass(frozen=True, slots=True)
+class ParticipationFormatRequirements:
+    """Per-format media and receipt requirements (never offline/online enums)."""
+
+    participation_format_id: ParticipationFormatId
+    music: MusicRequirements = field(default_factory=MusicRequirements.default)
+    video: VideoRequirements = field(default_factory=VideoRequirements.default)
+    payment_receipt: PaymentReceiptRequirements = field(default_factory=PaymentReceiptRequirements.default)
+
+    @classmethod
+    def default_for(cls, participation_format_id: ParticipationFormatId) -> ParticipationFormatRequirements:
+        return cls(participation_format_id=participation_format_id)
+
+
 @dataclass(frozen=True, slots=True)
 class CompetitionSettings:
-    """Immutable bag of competition **behaviour** flags, kept off the aggregate root.
+    """Immutable competition behaviour configuration for future workflows.
 
-    Groups the policy toggles that govern how applications behave, so the root is
-    not littered with booleans. Every flag defaults to a conservative value, which
-    keeps this value object **extensible**: new flags are appended with a default,
-    so existing construction sites and persisted rows keep working unchanged.
-
-    Replace wholesale via :meth:`~apps.competitions.domain.entities.Competition.update_settings`;
-    :meth:`with_changes` builds a modified copy conveniently.
+    Global sections configure applications, participant data, documents, payments,
+    consents, notifications and organizer policy. Media/receipt rules live under
+    :attr:`format_requirements` — one entry per selected participation format.
     """
 
+    # Applications
     allow_multiple_applications: bool = False
     allow_application_editing: bool = True
-    allow_music_replacement: bool = True
-    allow_video_replacement: bool = True
-    allow_participant_changes: bool = True
-    require_music_upload: bool = False
-    require_video_upload: bool = False
-    require_photo_upload: bool = False
-    require_identity_document: bool = False
-    require_parent_consent: bool = False
+    allow_withdrawing_applications: bool = True
+    allow_copying_previous_applications: bool = False
+
+    # Participant data
     require_teacher: bool = False
-    require_comment_for_application: bool = False
+    require_parent_guardian: bool = False
+    participant_comment_enabled: bool = False
+
+    # Documents (generic engine — no hardcoded document types)
+    require_document_upload: bool = False
+    allow_additional_documents_later: bool = True
+    allow_replacing_documents: bool = True
+
+    # Payments
+    payment_required: bool = False
+    payment_timing: PaymentTiming = PaymentTiming.BEFORE_APPROVAL
+    payment_methods: tuple[PaymentMethod, ...] = ()
+
+    # Consents
+    require_personal_data_consent: bool = True
+    require_media_consent: bool = False
+    require_regulations_acceptance: bool = True
+
+    # Notifications
+    email_notifications: bool = True
+    cabinet_notifications: bool = True
+    sms_notifications: bool = False  # prepared for future
+    push_notifications: bool = False  # prepared for future
+
+    # Organizer
+    manual_application_approval: bool = True
+    automatic_approval_after_payment: bool = False
+    allow_returning_for_correction: bool = True
+
+    # Per participation format
+    format_requirements: tuple[ParticipationFormatRequirements, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.payment_timing, PaymentTiming):
+            raise InvalidCompetitionSettingsError("Payment timing is invalid.")
+        methods = tuple(dict.fromkeys(self.payment_methods))
+        if self.payment_required and not methods:
+            raise InvalidCompetitionSettingsError("At least one payment method is required when payment is required.")
+        object.__setattr__(self, "payment_methods", methods)
+
+        seen: set[ParticipationFormatId] = set()
+        for item in self.format_requirements:
+            if item.participation_format_id in seen:
+                raise InvalidCompetitionSettingsError("Duplicate participation format requirements.")
+            seen.add(item.participation_format_id)
+
+        if self.automatic_approval_after_payment and not self.payment_required:
+            raise InvalidCompetitionSettingsError(
+                "Automatic approval after payment requires payment to be required."
+            )
 
     @classmethod
     def default(cls) -> CompetitionSettings:
         """The default settings a competition starts with."""
         return cls()
 
-    def with_changes(self, **changes: bool) -> CompetitionSettings:
-        """A copy with the given flags overridden (rejects unknown flag names)."""
+    def with_changes(self, **changes: object) -> CompetitionSettings:
+        """A copy with the given fields overridden (rejects unknown names)."""
         return replace(self, **changes)
+
+    def requirements_for(self, format_id: ParticipationFormatId) -> ParticipationFormatRequirements:
+        """Explicit requirements for ``format_id``, or defaults if not configured yet."""
+        for item in self.format_requirements:
+            if item.participation_format_id == format_id:
+                return item
+        return ParticipationFormatRequirements.default_for(format_id)
+
+    def without_format(self, format_id: ParticipationFormatId) -> CompetitionSettings:
+        """Drop stored requirements for a removed participation format."""
+        remaining = tuple(item for item in self.format_requirements if item.participation_format_id != format_id)
+        if remaining == self.format_requirements:
+            return self
+        return replace(self, format_requirements=remaining)
+
+    def upsert_format_requirements(self, requirements: ParticipationFormatRequirements) -> CompetitionSettings:
+        """Replace or append requirements for one participation format."""
+        others = tuple(
+            item
+            for item in self.format_requirements
+            if item.participation_format_id != requirements.participation_format_id
+        )
+        return replace(self, format_requirements=(*others, requirements))
 
 
 # ---------------------------------------------------------------------------

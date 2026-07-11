@@ -9,6 +9,7 @@ import pytest
 
 from apps.competitions.domain.exceptions import (
     InvalidAgeRangeError,
+    InvalidCompetitionSettingsError,
     InvalidContactValueError,
     InvalidMoneyError,
     InvalidParticipantCountRangeError,
@@ -32,6 +33,7 @@ from apps.competitions.domain.value_objects import (
     ParticipantCountRange,
     ParticipationFormatId,
     ParticipationFormatName,
+    PaymentTiming,
     PublicationIssue,
     PublicationIssueCode,
     RegistrationDeadlines,
@@ -195,7 +197,9 @@ class TestCompetitionSettings:
         s = CompetitionSettings.default()
         assert s.allow_application_editing is True
         assert s.allow_multiple_applications is False
-        assert s.require_parent_consent is False
+        assert s.require_parent_guardian is False
+        assert s.payment_timing is PaymentTiming.BEFORE_APPROVAL
+        assert s.format_requirements == ()
 
     def test_with_changes_is_immutable_copy(self) -> None:
         base = CompetitionSettings.default()
@@ -207,6 +211,10 @@ class TestCompetitionSettings:
     def test_with_changes_rejects_unknown_flag(self) -> None:
         with pytest.raises(TypeError):
             CompetitionSettings.default().with_changes(nonexistent_flag=True)
+
+    def test_payment_required_needs_methods(self) -> None:
+        with pytest.raises(InvalidCompetitionSettingsError):
+            CompetitionSettings(payment_required=True, payment_methods=())
 
 
 class TestRegistrationDeadlines:
