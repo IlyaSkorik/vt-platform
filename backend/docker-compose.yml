@@ -7,6 +7,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    # Match the host bind-mount owner so MEDIA_ROOT (`./media`) is writable.
+    # The image defaults to system user `app` (uid 999), which cannot create
+    # files under a host-owned 1000:1000 mount.
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     command: >
       sh -c "python manage.py migrate --noinput &&
              python manage.py runserver 0.0.0.0:8000"
@@ -38,6 +42,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     command: celery -A config worker -l info
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.development
@@ -60,8 +65,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    # `--schedule` writes to /tmp: the container runs as non-root `app`, and the
-    # default path (`./celerybeat-schedule`) is in the host-owned bind mount.
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    # `--schedule` writes to /tmp: avoid writing celerybeat-schedule into the
+    # host-owned bind mount.
     command: celery -A config beat -l info --schedule /tmp/celerybeat-schedule
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.development
