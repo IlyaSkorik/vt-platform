@@ -68,7 +68,8 @@ export function AgeCategoriesSection({
   onAutosaveStateChange,
   onNavigateSection,
 }: AgeCategoriesSectionProps): React.JSX.Element {
-  const isReadOnly = competition.status === "ARCHIVED";
+  const isConfigurable = competition.status === "DRAFT" || competition.status === "CONFIGURED";
+  const isReadOnly = !isConfigurable;
 
   const addAgeCategory = useAddAgeCategoryMutation();
   const updateAgeCategory = useUpdateAgeCategoryMutation();
@@ -164,6 +165,18 @@ export function AgeCategoriesSection({
   };
 
   const handleSubmit = async (values: AgeCategoryFormValues): Promise<void> => {
+    if (addAgeCategory.isPending || updateAgeCategory.isPending) return;
+    const conflictMessage = validateAgeCategoryDraft({
+      values,
+      existing: competition.ageCategories,
+      editingId: formMode === "edit" ? (editingItem?.id ?? null) : null,
+    });
+    if (conflictMessage) {
+      onAutosaveStateChange("error");
+      toast.error(conflictMessage);
+      return;
+    }
+
     onAutosaveStateChange("saving");
     try {
       if (formMode === "create") {
@@ -243,8 +256,8 @@ export function AgeCategoriesSection({
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-6">
           {isReadOnly ? (
-            <Alert variant="warning" title="Фестиваль в архиве">
-              Возрастные категории доступны только для просмотра.
+            <Alert variant="warning" title="Раздел только для просмотра">
+              Возрастные категории можно изменять только в статусах «Черновик» и «Настроен».
             </Alert>
           ) : null}
 
@@ -569,4 +582,39 @@ function pluralAgeCategories(count: number): string {
   if (mod10 === 1 && mod100 !== 11) return "категория";
   if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "категории";
   return "категорий";
+}
+
+function validateAgeCategoryDraft({
+  values,
+  existing,
+  editingId,
+}: {
+  values: AgeCategoryFormValues;
+  existing: _AgeCategory[];
+  editingId: string | null;
+}): string | null {
+  const normalizedName = values.name.trim().toLocaleLowerCase();
+  const sameNomination = existing.filter(
+    (item) => item.categoryId === values.categoryId && item.id !== editingId,
+  );
+
+  const hasSameName = sameNomination.some(
+    (item) => item.name.trim().toLocaleLowerCase() === normalizedName,
+  );
+  if (hasSameName) {
+    return "Категория с таким названием уже есть в этой номинации";
+  }
+
+  const hasOverlap = sameNomination.some((item) =>
+    rangesOverlap(values.minAge, values.maxAge, item.minAge, item.maxAge),
+  );
+  if (hasOverlap) {
+    return "Возрастной диапазон пересекается с существующей категорией в этой номинации";
+  }
+
+  return null;
+}
+
+function rangesOverlap(aMin: number, aMax: number, bMin: number, bMax: number): boolean {
+  return aMin <= bMax && bMin <= aMax;
 }

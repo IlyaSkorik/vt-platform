@@ -53,6 +53,7 @@ export function AgeCategoryFormDialog({
     initialValues.mixedCalculationMethod,
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [localSubmitting, setLocalSubmitting] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -62,6 +63,7 @@ export function AgeCategoryFormDialog({
       setType(initialValues.type);
       setMixedMethod(initialValues.mixedCalculationMethod);
       setErrors({});
+      setLocalSubmitting(false);
     }
   }, [open, initialValues]);
 
@@ -90,15 +92,21 @@ export function AgeCategoryFormDialog({
 
   const handleSubmit = async (event: React.FormEvent): Promise<void> => {
     event.preventDefault();
+    if (submitting || localSubmitting) return;
     if (!validate()) return;
-    await onSubmit({
-      categoryId: initialValues.categoryId,
-      name: name.trim(),
-      minAge: Number(minAge),
-      maxAge: Number(maxAge),
-      type,
-      mixedCalculationMethod: type === "MIXED" ? mixedMethod : null,
-    });
+    setLocalSubmitting(true);
+    try {
+      await onSubmit({
+        categoryId: initialValues.categoryId,
+        name: name.trim(),
+        minAge: Number(minAge),
+        maxAge: Number(maxAge),
+        type,
+        mixedCalculationMethod: type === "MIXED" ? mixedMethod : null,
+      });
+    } finally {
+      setLocalSubmitting(false);
+    }
   };
 
   const handleSuggestName = (): void => {
@@ -203,7 +211,7 @@ export function AgeCategoryFormDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Отмена
             </Button>
-            <Button type="submit" loading={submitting}>
+            <Button type="submit" loading={submitting || localSubmitting}>
               {mode === "create" ? "Добавить" : "Сохранить"}
             </Button>
           </DialogFooter>

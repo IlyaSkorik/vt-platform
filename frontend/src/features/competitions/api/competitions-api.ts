@@ -366,6 +366,24 @@ async function createAgeCategory(
   return unwrapCompetitionDetail(response.data);
 }
 
+/**
+ * Creation can race with other aggregate writes and return 409 on stale version.
+ * Retry once to survive transient optimistic-lock conflicts.
+ */
+async function createAgeCategoryWithConflictRetry(
+  competitionId: string,
+  payload: AddAgeCategory,
+): Promise<CompetitionDetail> {
+  try {
+    return await createAgeCategory(competitionId, payload);
+  } catch (error) {
+    if (!(error instanceof ApiError) || !error.isConflict) {
+      throw error;
+    }
+    return createAgeCategory(competitionId, payload);
+  }
+}
+
 async function patchAgeCategory(
   competitionId: string,
   ageCategoryId: string,
@@ -373,6 +391,26 @@ async function patchAgeCategory(
 ): Promise<CompetitionDetail> {
   const response = await updateAgeCategory(competitionId, ageCategoryId, payload);
   return unwrapCompetitionDetail(response.data);
+}
+
+/**
+ * Competition writes can race (autosave, reorder, parallel section edits) and the
+ * backend correctly answers 409 on optimistic-lock conflicts. For idempotent age
+ * category updates we transparently retry once.
+ */
+async function patchAgeCategoryWithConflictRetry(
+  competitionId: string,
+  ageCategoryId: string,
+  payload: PatchedUpdateAgeCategory,
+): Promise<CompetitionDetail> {
+  try {
+    return await patchAgeCategory(competitionId, ageCategoryId, payload);
+  } catch (error) {
+    if (!(error instanceof ApiError) || !error.isConflict) {
+      throw error;
+    }
+    return patchAgeCategory(competitionId, ageCategoryId, payload);
+  }
 }
 
 async function deleteAgeCategory(
@@ -1145,7 +1183,8 @@ export function useAddAgeCategoryMutation(): UseMutationResult<
     ApiError,
     { competitionId: string; payload: AddAgeCategory }
   >({
-    mutationFn: ({ competitionId, payload }) => createAgeCategory(competitionId, payload),
+    mutationFn: ({ competitionId, payload }) =>
+      createAgeCategoryWithConflictRetry(competitionId, payload),
     onSuccess: (detail) => {
       setCompetitionCache(queryClient, detail);
     },
@@ -1164,7 +1203,7 @@ export function useUpdateAgeCategoryMutation(): UseMutationResult<
     { competitionId: string; ageCategoryId: string; payload: PatchedUpdateAgeCategory }
   >({
     mutationFn: ({ competitionId, ageCategoryId, payload }) =>
-      patchAgeCategory(competitionId, ageCategoryId, payload),
+      patchAgeCategoryWithConflictRetry(competitionId, ageCategoryId, payload),
     onSuccess: (detail) => {
       setCompetitionCache(queryClient, detail);
     },
@@ -1208,7 +1247,11 @@ export function useReorderAgeCategoriesMutation(): UseMutationResult<
     mutationFn: async ({ competitionId, updates }) => {
       let latest: CompetitionDetail | null = null;
       for (const update of updates) {
-        latest = await patchAgeCategory(competitionId, update.ageCategoryId, update.payload);
+        latest = await patchAgeCategoryWithConflictRetry(
+          competitionId,
+          update.ageCategoryId,
+          update.payload,
+        );
       }
       if (!latest) {
         return fetchCompetition(competitionId);

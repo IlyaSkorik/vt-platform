@@ -71,7 +71,8 @@ export function AdmissionRulesSection({
   onAutosaveStateChange,
   onNavigateSection,
 }: AdmissionRulesSectionProps): React.JSX.Element {
-  const isReadOnly = competition.status === "ARCHIVED";
+  const isConfigurable = competition.status === "DRAFT" || competition.status === "CONFIGURED";
+  const isReadOnly = !isConfigurable;
 
   const addRule = useAddAdmissionRuleMutation();
   const removeRule = useRemoveAdmissionRuleMutation();
@@ -227,8 +228,8 @@ export function AdmissionRulesSection({
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-6">
           {isReadOnly ? (
-            <Alert variant="warning" title="Фестиваль в архиве">
-              Правила допуска доступны только для просмотра.
+            <Alert variant="warning" title="Раздел только для просмотра">
+              Правила допуска можно изменять только в статусах «Черновик» и «Настроен».
             </Alert>
           ) : null}
 

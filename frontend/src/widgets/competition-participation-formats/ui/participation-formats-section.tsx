@@ -80,7 +80,8 @@ export function ParticipationFormatsSection({
   onAutosaveStateChange,
   onNavigateSection,
 }: ParticipationFormatsSectionProps): React.JSX.Element {
-  const isReadOnly = competition.status === "ARCHIVED";
+  const isConfigurable = competition.status === "DRAFT" || competition.status === "CONFIGURED";
+  const isReadOnly = !isConfigurable;
 
   const addFormat = useAddParticipationFormatMutation();
   const updateFormat = useUpdateParticipationFormatMutation();
@@ -231,8 +232,8 @@ export function ParticipationFormatsSection({
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-6">
           {isReadOnly ? (
-            <Alert variant="warning" title="Фестиваль в архиве">
-              Форматы участия доступны только для просмотра.
+            <Alert variant="warning" title="Раздел только для просмотра">
+              Форматы участия можно изменять только в статусах «Черновик» и «Настроен».
             </Alert>
           ) : null}
 
