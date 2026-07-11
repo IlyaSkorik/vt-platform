@@ -117,21 +117,33 @@ class UpdateBrandingCommand:
 
 @dataclass(frozen=True, slots=True)
 class UpdateSettingsCommand:
-    """Replace the competition's behaviour settings wholesale (all flags supplied)."""
+    """Replace the competition's behaviour settings wholesale."""
 
     competition_id: str
     allow_multiple_applications: bool
     allow_application_editing: bool
-    allow_music_replacement: bool
-    allow_video_replacement: bool
-    allow_participant_changes: bool
-    require_music_upload: bool
-    require_video_upload: bool
-    require_photo_upload: bool
-    require_identity_document: bool
-    require_parent_consent: bool
+    allow_withdrawing_applications: bool
+    allow_copying_previous_applications: bool
     require_teacher: bool
-    require_comment_for_application: bool
+    require_parent_guardian: bool
+    participant_comment_enabled: bool
+    require_document_upload: bool
+    allow_additional_documents_later: bool
+    allow_replacing_documents: bool
+    payment_required: bool
+    payment_timing: str
+    payment_methods: list[str]
+    require_personal_data_consent: bool
+    require_media_consent: bool
+    require_regulations_acceptance: bool
+    email_notifications: bool
+    cabinet_notifications: bool
+    sms_notifications: bool
+    push_notifications: bool
+    manual_application_approval: bool
+    automatic_approval_after_payment: bool
+    allow_returning_for_correction: bool
+    format_requirements: list[dict[str, object]]
 
 
 @dataclass(frozen=True, slots=True)

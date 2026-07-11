@@ -26,7 +26,7 @@ from apps.competitions.domain.entities import (
     ParticipantGroup,
     ParticipationFormat,
 )
-from apps.competitions.domain.value_objects import AdmissionRule, PricingRule
+from apps.competitions.domain.value_objects import AdmissionRule, CompetitionSettings, PricingRule
 
 __all__ = [
     "AddedChildResult",
@@ -82,19 +82,111 @@ class DeadlinesView:
 
 
 @dataclass(frozen=True, slots=True)
+class MusicRequirementsView:
+    require_upload: bool
+    allow_replacement: bool
+    allowed_formats: tuple[str, ...]
+    max_upload_size_mb: int
+
+
+@dataclass(frozen=True, slots=True)
+class VideoRequirementsView:
+    mode: str
+    allowed_providers: tuple[str, ...]
+    allow_replacement: bool
+
+
+@dataclass(frozen=True, slots=True)
+class PaymentReceiptRequirementsView:
+    require_receipt: bool
+    allow_upload_later: bool
+    allow_replacement: bool
+
+
+@dataclass(frozen=True, slots=True)
+class FormatRequirementsView:
+    participation_format_id: str
+    music: MusicRequirementsView
+    video: VideoRequirementsView
+    payment_receipt: PaymentReceiptRequirementsView
+
+
+@dataclass(frozen=True, slots=True)
 class SettingsView:
     allow_multiple_applications: bool
     allow_application_editing: bool
-    allow_music_replacement: bool
-    allow_video_replacement: bool
-    allow_participant_changes: bool
-    require_music_upload: bool
-    require_video_upload: bool
-    require_photo_upload: bool
-    require_identity_document: bool
-    require_parent_consent: bool
+    allow_withdrawing_applications: bool
+    allow_copying_previous_applications: bool
     require_teacher: bool
-    require_comment_for_application: bool
+    require_parent_guardian: bool
+    participant_comment_enabled: bool
+    require_document_upload: bool
+    allow_additional_documents_later: bool
+    allow_replacing_documents: bool
+    payment_required: bool
+    payment_timing: str
+    payment_methods: tuple[str, ...]
+    require_personal_data_consent: bool
+    require_media_consent: bool
+    require_regulations_acceptance: bool
+    email_notifications: bool
+    cabinet_notifications: bool
+    sms_notifications: bool
+    push_notifications: bool
+    manual_application_approval: bool
+    automatic_approval_after_payment: bool
+    allow_returning_for_correction: bool
+    format_requirements: tuple[FormatRequirementsView, ...]
+
+    @classmethod
+    def of(cls, settings: CompetitionSettings) -> SettingsView:
+        return cls(
+            allow_multiple_applications=settings.allow_multiple_applications,
+            allow_application_editing=settings.allow_application_editing,
+            allow_withdrawing_applications=settings.allow_withdrawing_applications,
+            allow_copying_previous_applications=settings.allow_copying_previous_applications,
+            require_teacher=settings.require_teacher,
+            require_parent_guardian=settings.require_parent_guardian,
+            participant_comment_enabled=settings.participant_comment_enabled,
+            require_document_upload=settings.require_document_upload,
+            allow_additional_documents_later=settings.allow_additional_documents_later,
+            allow_replacing_documents=settings.allow_replacing_documents,
+            payment_required=settings.payment_required,
+            payment_timing=settings.payment_timing.value,
+            payment_methods=tuple(method.value for method in settings.payment_methods),
+            require_personal_data_consent=settings.require_personal_data_consent,
+            require_media_consent=settings.require_media_consent,
+            require_regulations_acceptance=settings.require_regulations_acceptance,
+            email_notifications=settings.email_notifications,
+            cabinet_notifications=settings.cabinet_notifications,
+            sms_notifications=settings.sms_notifications,
+            push_notifications=settings.push_notifications,
+            manual_application_approval=settings.manual_application_approval,
+            automatic_approval_after_payment=settings.automatic_approval_after_payment,
+            allow_returning_for_correction=settings.allow_returning_for_correction,
+            format_requirements=tuple(
+                FormatRequirementsView(
+                    participation_format_id=item.participation_format_id.json(),
+                    music=MusicRequirementsView(
+                        require_upload=item.music.require_upload,
+                        allow_replacement=item.music.allow_replacement,
+                        allowed_formats=item.music.allowed_formats,
+                        max_upload_size_mb=item.music.max_upload_size_mb,
+                    ),
+                    video=VideoRequirementsView(
+                        mode=item.video.mode.value,
+                        allowed_providers=tuple(provider.value for provider in item.video.allowed_providers),
+                        allow_replacement=item.video.allow_replacement,
+                    ),
+                    payment_receipt=PaymentReceiptRequirementsView(
+                        require_receipt=item.payment_receipt.require_receipt,
+                        allow_upload_later=item.payment_receipt.allow_upload_later,
+                        allow_replacement=item.payment_receipt.allow_replacement,
+                    ),
+                )
+                for item in settings.format_requirements
+            ),
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -463,20 +555,7 @@ class CompetitionDetailView:
             venue=VenueView(name=venue.name, address=venue.address) if venue is not None else None,
             registration_period=PeriodView(start=registration.start, end=registration.end) if registration is not None else None,
             competition_period=PeriodView(start=period.start, end=period.end) if period is not None else None,
-            settings=SettingsView(
-                allow_multiple_applications=settings.allow_multiple_applications,
-                allow_application_editing=settings.allow_application_editing,
-                allow_music_replacement=settings.allow_music_replacement,
-                allow_video_replacement=settings.allow_video_replacement,
-                allow_participant_changes=settings.allow_participant_changes,
-                require_music_upload=settings.require_music_upload,
-                require_video_upload=settings.require_video_upload,
-                require_photo_upload=settings.require_photo_upload,
-                require_identity_document=settings.require_identity_document,
-                require_parent_consent=settings.require_parent_consent,
-                require_teacher=settings.require_teacher,
-                require_comment_for_application=settings.require_comment_for_application,
-            ),
+            settings=SettingsView.of(settings),
             deadlines=DeadlinesView(
                 application=deadlines.application,
                 payment=deadlines.payment,

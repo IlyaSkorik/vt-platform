@@ -80,19 +80,66 @@ class UpdateCompetitionBrandingSerializer(serializers.Serializer[dict[str, objec
     poster = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
 
+class _MusicRequirementsInputSerializer(serializers.Serializer[dict[str, object]]):
+    requireUpload = serializers.BooleanField(source="require_upload")
+    allowReplacement = serializers.BooleanField(source="allow_replacement")
+    allowedFormats = serializers.ListField(child=serializers.CharField(), source="allowed_formats")
+    maxUploadSizeMb = serializers.IntegerField(source="max_upload_size_mb", min_value=1, max_value=512)
+
+
+class _VideoRequirementsInputSerializer(serializers.Serializer[dict[str, object]]):
+    mode = serializers.ChoiceField(choices=["NOT_REQUIRED", "URL_ONLY", "FILE_ONLY", "URL_OR_FILE"])
+    allowedProviders = serializers.ListField(
+        child=serializers.ChoiceField(choices=["YOUTUBE", "VK_VIDEO", "RUTUBE", "VIMEO"]),
+        source="allowed_providers",
+    )
+    allowReplacement = serializers.BooleanField(source="allow_replacement")
+
+
+class _PaymentReceiptRequirementsInputSerializer(serializers.Serializer[dict[str, object]]):
+    requireReceipt = serializers.BooleanField(source="require_receipt")
+    allowUploadLater = serializers.BooleanField(source="allow_upload_later")
+    allowReplacement = serializers.BooleanField(source="allow_replacement")
+
+
+class _FormatRequirementsInputSerializer(serializers.Serializer[dict[str, object]]):
+    participationFormatId = serializers.UUIDField(source="participation_format_id")
+    music = _MusicRequirementsInputSerializer()
+    video = _VideoRequirementsInputSerializer()
+    paymentReceipt = _PaymentReceiptRequirementsInputSerializer(source="payment_receipt")
+
+
 class UpdateCompetitionSettingsSerializer(serializers.Serializer[dict[str, object]]):
     allowMultipleApplications = serializers.BooleanField(source="allow_multiple_applications")
     allowApplicationEditing = serializers.BooleanField(source="allow_application_editing")
-    allowMusicReplacement = serializers.BooleanField(source="allow_music_replacement")
-    allowVideoReplacement = serializers.BooleanField(source="allow_video_replacement")
-    allowParticipantChanges = serializers.BooleanField(source="allow_participant_changes")
-    requireMusicUpload = serializers.BooleanField(source="require_music_upload")
-    requireVideoUpload = serializers.BooleanField(source="require_video_upload")
-    requirePhotoUpload = serializers.BooleanField(source="require_photo_upload")
-    requireIdentityDocument = serializers.BooleanField(source="require_identity_document")
-    requireParentConsent = serializers.BooleanField(source="require_parent_consent")
+    allowWithdrawingApplications = serializers.BooleanField(source="allow_withdrawing_applications")
+    allowCopyingPreviousApplications = serializers.BooleanField(source="allow_copying_previous_applications")
     requireTeacher = serializers.BooleanField(source="require_teacher")
-    requireCommentForApplication = serializers.BooleanField(source="require_comment_for_application")
+    requireParentGuardian = serializers.BooleanField(source="require_parent_guardian")
+    participantCommentEnabled = serializers.BooleanField(source="participant_comment_enabled")
+    requireDocumentUpload = serializers.BooleanField(source="require_document_upload")
+    allowAdditionalDocumentsLater = serializers.BooleanField(source="allow_additional_documents_later")
+    allowReplacingDocuments = serializers.BooleanField(source="allow_replacing_documents")
+    paymentRequired = serializers.BooleanField(source="payment_required")
+    paymentTiming = serializers.ChoiceField(
+        source="payment_timing",
+        choices=["BEFORE_REVIEW", "BEFORE_APPROVAL", "BEFORE_COMPETITION"],
+    )
+    paymentMethods = serializers.ListField(
+        child=serializers.ChoiceField(choices=["ONLINE", "BANK_TRANSFER", "CASH"]),
+        source="payment_methods",
+    )
+    requirePersonalDataConsent = serializers.BooleanField(source="require_personal_data_consent")
+    requireMediaConsent = serializers.BooleanField(source="require_media_consent")
+    requireRegulationsAcceptance = serializers.BooleanField(source="require_regulations_acceptance")
+    emailNotifications = serializers.BooleanField(source="email_notifications")
+    cabinetNotifications = serializers.BooleanField(source="cabinet_notifications")
+    smsNotifications = serializers.BooleanField(source="sms_notifications", required=False, default=False)
+    pushNotifications = serializers.BooleanField(source="push_notifications", required=False, default=False)
+    manualApplicationApproval = serializers.BooleanField(source="manual_application_approval")
+    automaticApprovalAfterPayment = serializers.BooleanField(source="automatic_approval_after_payment")
+    allowReturningForCorrection = serializers.BooleanField(source="allow_returning_for_correction")
+    formatRequirements = _FormatRequirementsInputSerializer(source="format_requirements", many=True)
 
 
 class UpdateCompetitionDeadlinesSerializer(serializers.Serializer[dict[str, object]]):
@@ -408,19 +455,57 @@ class _DeadlinesSerializer(serializers.Serializer[dict[str, object]]):
     correction = serializers.DateTimeField(allow_null=True)
 
 
+class _MusicRequirementsSerializer(serializers.Serializer[dict[str, object]]):
+    requireUpload = serializers.BooleanField(source="require_upload")
+    allowReplacement = serializers.BooleanField(source="allow_replacement")
+    allowedFormats = serializers.ListField(child=serializers.CharField(), source="allowed_formats")
+    maxUploadSizeMb = serializers.IntegerField(source="max_upload_size_mb")
+
+
+class _VideoRequirementsSerializer(serializers.Serializer[dict[str, object]]):
+    mode = serializers.CharField()
+    allowedProviders = serializers.ListField(child=serializers.CharField(), source="allowed_providers")
+    allowReplacement = serializers.BooleanField(source="allow_replacement")
+
+
+class _PaymentReceiptRequirementsSerializer(serializers.Serializer[dict[str, object]]):
+    requireReceipt = serializers.BooleanField(source="require_receipt")
+    allowUploadLater = serializers.BooleanField(source="allow_upload_later")
+    allowReplacement = serializers.BooleanField(source="allow_replacement")
+
+
+class _FormatRequirementsSerializer(serializers.Serializer[dict[str, object]]):
+    participationFormatId = serializers.CharField(source="participation_format_id")
+    music = _MusicRequirementsSerializer()
+    video = _VideoRequirementsSerializer()
+    paymentReceipt = _PaymentReceiptRequirementsSerializer(source="payment_receipt")
+
+
 class _SettingsSerializer(serializers.Serializer[dict[str, object]]):
     allowMultipleApplications = serializers.BooleanField(source="allow_multiple_applications")
     allowApplicationEditing = serializers.BooleanField(source="allow_application_editing")
-    allowMusicReplacement = serializers.BooleanField(source="allow_music_replacement")
-    allowVideoReplacement = serializers.BooleanField(source="allow_video_replacement")
-    allowParticipantChanges = serializers.BooleanField(source="allow_participant_changes")
-    requireMusicUpload = serializers.BooleanField(source="require_music_upload")
-    requireVideoUpload = serializers.BooleanField(source="require_video_upload")
-    requirePhotoUpload = serializers.BooleanField(source="require_photo_upload")
-    requireIdentityDocument = serializers.BooleanField(source="require_identity_document")
-    requireParentConsent = serializers.BooleanField(source="require_parent_consent")
+    allowWithdrawingApplications = serializers.BooleanField(source="allow_withdrawing_applications")
+    allowCopyingPreviousApplications = serializers.BooleanField(source="allow_copying_previous_applications")
     requireTeacher = serializers.BooleanField(source="require_teacher")
-    requireCommentForApplication = serializers.BooleanField(source="require_comment_for_application")
+    requireParentGuardian = serializers.BooleanField(source="require_parent_guardian")
+    participantCommentEnabled = serializers.BooleanField(source="participant_comment_enabled")
+    requireDocumentUpload = serializers.BooleanField(source="require_document_upload")
+    allowAdditionalDocumentsLater = serializers.BooleanField(source="allow_additional_documents_later")
+    allowReplacingDocuments = serializers.BooleanField(source="allow_replacing_documents")
+    paymentRequired = serializers.BooleanField(source="payment_required")
+    paymentTiming = serializers.CharField(source="payment_timing")
+    paymentMethods = serializers.ListField(child=serializers.CharField(), source="payment_methods")
+    requirePersonalDataConsent = serializers.BooleanField(source="require_personal_data_consent")
+    requireMediaConsent = serializers.BooleanField(source="require_media_consent")
+    requireRegulationsAcceptance = serializers.BooleanField(source="require_regulations_acceptance")
+    emailNotifications = serializers.BooleanField(source="email_notifications")
+    cabinetNotifications = serializers.BooleanField(source="cabinet_notifications")
+    smsNotifications = serializers.BooleanField(source="sms_notifications")
+    pushNotifications = serializers.BooleanField(source="push_notifications")
+    manualApplicationApproval = serializers.BooleanField(source="manual_application_approval")
+    automaticApprovalAfterPayment = serializers.BooleanField(source="automatic_approval_after_payment")
+    allowReturningForCorrection = serializers.BooleanField(source="allow_returning_for_correction")
+    formatRequirements = _FormatRequirementsSerializer(source="format_requirements", many=True)
 
 
 class _CategorySerializer(serializers.Serializer[dict[str, object]]):

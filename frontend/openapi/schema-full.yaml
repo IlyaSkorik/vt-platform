@@ -5594,6 +5594,80 @@ components:
           - string
           - 'null'
           format: date-time
+    _FormatMusicRequirements:
+      type: object
+      properties:
+        requireUpload:
+          type: boolean
+        allowReplacement:
+          type: boolean
+        allowedFormats:
+          type: array
+          items:
+            type: string
+        maxUploadSizeMb:
+          type:
+          - integer
+          - 'null'
+      required:
+      - requireUpload
+      - allowReplacement
+      - allowedFormats
+      - maxUploadSizeMb
+    _FormatVideoRequirements:
+      type: object
+      properties:
+        mode:
+          type: string
+          enum:
+          - NOT_REQUIRED
+          - URL_ONLY
+          - FILE_ONLY
+          - URL_OR_FILE
+        allowedProviders:
+          type: array
+          items:
+            type: string
+            enum:
+            - YOUTUBE
+            - VK_VIDEO
+            - RUTUBE
+            - VIMEO
+        allowReplacement:
+          type: boolean
+      required:
+      - mode
+      - allowedProviders
+      - allowReplacement
+    _FormatPaymentReceiptRequirements:
+      type: object
+      properties:
+        requireReceipt:
+          type: boolean
+        allowUploadLater:
+          type: boolean
+        allowReplacement:
+          type: boolean
+      required:
+      - requireReceipt
+      - allowUploadLater
+      - allowReplacement
+    _FormatRequirements:
+      type: object
+      properties:
+        participationFormatId:
+          type: string
+        music:
+          $ref: '#/components/schemas/_FormatMusicRequirements'
+        video:
+          $ref: '#/components/schemas/_FormatVideoRequirements'
+        paymentReceipt:
+          $ref: '#/components/schemas/_FormatPaymentReceiptRequirements'
+      required:
+      - participationFormatId
+      - music
+      - video
+      - paymentReceipt
     UpdateCompetitionSettings:
       type: object
       properties:
@@ -5601,39 +5675,87 @@ components:
           type: boolean
         allowApplicationEditing:
           type: boolean
-        allowMusicReplacement:
+        allowWithdrawingApplications:
           type: boolean
-        allowVideoReplacement:
-          type: boolean
-        allowParticipantChanges:
-          type: boolean
-        requireMusicUpload:
-          type: boolean
-        requireVideoUpload:
-          type: boolean
-        requirePhotoUpload:
-          type: boolean
-        requireIdentityDocument:
-          type: boolean
-        requireParentConsent:
+        allowCopyingPreviousApplications:
           type: boolean
         requireTeacher:
           type: boolean
-        requireCommentForApplication:
+        requireParentGuardian:
           type: boolean
+        participantCommentEnabled:
+          type: boolean
+        requireDocumentUpload:
+          type: boolean
+        allowAdditionalDocumentsLater:
+          type: boolean
+        allowReplacingDocuments:
+          type: boolean
+        paymentRequired:
+          type: boolean
+        paymentTiming:
+          type: string
+          enum:
+          - BEFORE_REVIEW
+          - BEFORE_APPROVAL
+          - BEFORE_COMPETITION
+        paymentMethods:
+          type: array
+          items:
+            type: string
+            enum:
+            - ONLINE
+            - BANK_TRANSFER
+            - CASH
+        requirePersonalDataConsent:
+          type: boolean
+        requireMediaConsent:
+          type: boolean
+        requireRegulationsAcceptance:
+          type: boolean
+        emailNotifications:
+          type: boolean
+        cabinetNotifications:
+          type: boolean
+        smsNotifications:
+          type: boolean
+        pushNotifications:
+          type: boolean
+        manualApplicationApproval:
+          type: boolean
+        automaticApprovalAfterPayment:
+          type: boolean
+        allowReturningForCorrection:
+          type: boolean
+        formatRequirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/_FormatRequirements'
       required:
-      - allowApplicationEditing
       - allowMultipleApplications
-      - allowMusicReplacement
-      - allowParticipantChanges
-      - allowVideoReplacement
-      - requireCommentForApplication
-      - requireIdentityDocument
-      - requireMusicUpload
-      - requireParentConsent
-      - requirePhotoUpload
+      - allowApplicationEditing
+      - allowWithdrawingApplications
+      - allowCopyingPreviousApplications
       - requireTeacher
-      - requireVideoUpload
+      - requireParentGuardian
+      - participantCommentEnabled
+      - requireDocumentUpload
+      - allowAdditionalDocumentsLater
+      - allowReplacingDocuments
+      - paymentRequired
+      - paymentTiming
+      - paymentMethods
+      - requirePersonalDataConsent
+      - requireMediaConsent
+      - requireRegulationsAcceptance
+      - emailNotifications
+      - cabinetNotifications
+      - smsNotifications
+      - pushNotifications
+      - manualApplicationApproval
+      - automaticApprovalAfterPayment
+      - allowReturningForCorrection
+      - formatRequirements
     UserResource:
       type: object
       description: A user account resource (API-001 §4.1, §4.8).
@@ -6094,39 +6216,87 @@ components:
           type: boolean
         allowApplicationEditing:
           type: boolean
-        allowMusicReplacement:
+        allowWithdrawingApplications:
           type: boolean
-        allowVideoReplacement:
-          type: boolean
-        allowParticipantChanges:
-          type: boolean
-        requireMusicUpload:
-          type: boolean
-        requireVideoUpload:
-          type: boolean
-        requirePhotoUpload:
-          type: boolean
-        requireIdentityDocument:
-          type: boolean
-        requireParentConsent:
+        allowCopyingPreviousApplications:
           type: boolean
         requireTeacher:
           type: boolean
-        requireCommentForApplication:
+        requireParentGuardian:
           type: boolean
+        participantCommentEnabled:
+          type: boolean
+        requireDocumentUpload:
+          type: boolean
+        allowAdditionalDocumentsLater:
+          type: boolean
+        allowReplacingDocuments:
+          type: boolean
+        paymentRequired:
+          type: boolean
+        paymentTiming:
+          type: string
+          enum:
+          - BEFORE_REVIEW
+          - BEFORE_APPROVAL
+          - BEFORE_COMPETITION
+        paymentMethods:
+          type: array
+          items:
+            type: string
+            enum:
+            - ONLINE
+            - BANK_TRANSFER
+            - CASH
+        requirePersonalDataConsent:
+          type: boolean
+        requireMediaConsent:
+          type: boolean
+        requireRegulationsAcceptance:
+          type: boolean
+        emailNotifications:
+          type: boolean
+        cabinetNotifications:
+          type: boolean
+        smsNotifications:
+          type: boolean
+        pushNotifications:
+          type: boolean
+        manualApplicationApproval:
+          type: boolean
+        automaticApprovalAfterPayment:
+          type: boolean
+        allowReturningForCorrection:
+          type: boolean
+        formatRequirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/_FormatRequirements'
       required:
-      - allowApplicationEditing
       - allowMultipleApplications
-      - allowMusicReplacement
-      - allowParticipantChanges
-      - allowVideoReplacement
-      - requireCommentForApplication
-      - requireIdentityDocument
-      - requireMusicUpload
-      - requireParentConsent
-      - requirePhotoUpload
+      - allowApplicationEditing
+      - allowWithdrawingApplications
+      - allowCopyingPreviousApplications
       - requireTeacher
-      - requireVideoUpload
+      - requireParentGuardian
+      - participantCommentEnabled
+      - requireDocumentUpload
+      - allowAdditionalDocumentsLater
+      - allowReplacingDocuments
+      - paymentRequired
+      - paymentTiming
+      - paymentMethods
+      - requirePersonalDataConsent
+      - requireMediaConsent
+      - requireRegulationsAcceptance
+      - emailNotifications
+      - cabinetNotifications
+      - smsNotifications
+      - pushNotifications
+      - manualApplicationApproval
+      - automaticApprovalAfterPayment
+      - allowReturningForCorrection
+      - formatRequirements
     _Venue:
       type: object
       properties:

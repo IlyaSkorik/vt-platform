@@ -233,6 +233,8 @@ def _command_kwargs(serializer: Serializer[Any]) -> dict[str, Any]:
             return [coerce(item) for item in value]
         if isinstance(value, tuple):
             return tuple(coerce(item) for item in value)
+        if isinstance(value, dict):
+            return {key: coerce(item) for key, item in value.items()}
         return value
 
     return {key: coerce(value) for key, value in serializer.validated_data.items()}

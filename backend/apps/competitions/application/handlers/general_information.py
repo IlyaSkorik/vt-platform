@@ -17,9 +17,18 @@ from apps.competitions.domain.value_objects import (
     CompetitionTitle,
     DateRange,
     FileReference,
+    MusicRequirements,
+    ParticipationFormatId,
+    ParticipationFormatRequirements,
+    PaymentMethod,
+    PaymentReceiptRequirements,
+    PaymentTiming,
     RegistrationDeadlines,
     Season,
     Venue,
+    VideoProvider,
+    VideoRequirements,
+    VideoSubmissionMode,
 )
 
 from ._support import CompetitionCommandHandler
@@ -40,6 +49,75 @@ def _date_range(start: date | None, end: date | None) -> DateRange | None:
 
 def _file(value: str | None) -> FileReference | None:
     return FileReference(value) if value else None
+
+
+def _format_requirements(raw_items: list[dict[str, object]]) -> tuple[ParticipationFormatRequirements, ...]:
+    result: list[ParticipationFormatRequirements] = []
+    for raw in raw_items:
+        format_id = ParticipationFormatId.from_string(str(raw["participation_format_id"]))
+        music_raw = raw.get("music") if isinstance(raw.get("music"), dict) else {}
+        video_raw = raw.get("video") if isinstance(raw.get("video"), dict) else {}
+        receipt_raw = raw.get("payment_receipt") if isinstance(raw.get("payment_receipt"), dict) else {}
+        assert isinstance(music_raw, dict)
+        assert isinstance(video_raw, dict)
+        assert isinstance(receipt_raw, dict)
+
+        formats = music_raw.get("allowed_formats", [])
+        allowed_formats = tuple(str(item) for item in formats) if isinstance(formats, list) else ()
+        providers_raw = video_raw.get("allowed_providers", [])
+        providers = tuple(VideoProvider(str(item)) for item in providers_raw) if isinstance(providers_raw, list) else ()
+
+        result.append(
+            ParticipationFormatRequirements(
+                participation_format_id=format_id,
+                music=MusicRequirements(
+                    require_upload=bool(music_raw.get("require_upload", False)),
+                    allow_replacement=bool(music_raw.get("allow_replacement", True)),
+                    allowed_formats=allowed_formats,
+                    max_upload_size_mb=int(music_raw.get("max_upload_size_mb", 25)),  # type: ignore[arg-type]
+                ),
+                video=VideoRequirements(
+                    mode=VideoSubmissionMode(str(video_raw.get("mode", VideoSubmissionMode.NOT_REQUIRED.value))),
+                    allowed_providers=providers,
+                    allow_replacement=bool(video_raw.get("allow_replacement", True)),
+                ),
+                payment_receipt=PaymentReceiptRequirements(
+                    require_receipt=bool(receipt_raw.get("require_receipt", False)),
+                    allow_upload_later=bool(receipt_raw.get("allow_upload_later", True)),
+                    allow_replacement=bool(receipt_raw.get("allow_replacement", True)),
+                ),
+            )
+        )
+    return tuple(result)
+
+
+def _settings_from_command(command: UpdateSettingsCommand) -> CompetitionSettings:
+    return CompetitionSettings(
+        allow_multiple_applications=command.allow_multiple_applications,
+        allow_application_editing=command.allow_application_editing,
+        allow_withdrawing_applications=command.allow_withdrawing_applications,
+        allow_copying_previous_applications=command.allow_copying_previous_applications,
+        require_teacher=command.require_teacher,
+        require_parent_guardian=command.require_parent_guardian,
+        participant_comment_enabled=command.participant_comment_enabled,
+        require_document_upload=command.require_document_upload,
+        allow_additional_documents_later=command.allow_additional_documents_later,
+        allow_replacing_documents=command.allow_replacing_documents,
+        payment_required=command.payment_required,
+        payment_timing=PaymentTiming(command.payment_timing),
+        payment_methods=tuple(PaymentMethod(item) for item in command.payment_methods),
+        require_personal_data_consent=command.require_personal_data_consent,
+        require_media_consent=command.require_media_consent,
+        require_regulations_acceptance=command.require_regulations_acceptance,
+        email_notifications=command.email_notifications,
+        cabinet_notifications=command.cabinet_notifications,
+        sms_notifications=command.sms_notifications,
+        push_notifications=command.push_notifications,
+        manual_application_approval=command.manual_application_approval,
+        automatic_approval_after_payment=command.automatic_approval_after_payment,
+        allow_returning_for_correction=command.allow_returning_for_correction,
+        format_requirements=_format_requirements(command.format_requirements),
+    )
 
 
 class UpdateCompetitionGeneralInformationHandler(CompetitionCommandHandler):
@@ -97,27 +175,10 @@ class UpdateCompetitionSettingsHandler(CompetitionCommandHandler):
 
     def handle(self, command: UpdateSettingsCommand) -> CompetitionDetailView:
         competition = self._require(command.competition_id)
-
-        settings = CompetitionSettings(
-            allow_multiple_applications=command.allow_multiple_applications,
-            allow_application_editing=command.allow_application_editing,
-            allow_music_replacement=command.allow_music_replacement,
-            allow_video_replacement=command.allow_video_replacement,
-            allow_participant_changes=command.allow_participant_changes,
-            require_music_upload=command.require_music_upload,
-            require_video_upload=command.require_video_upload,
-            require_photo_upload=command.require_photo_upload,
-            require_identity_document=command.require_identity_document,
-            require_parent_consent=command.require_parent_consent,
-            require_teacher=command.require_teacher,
-            require_comment_for_application=command.require_comment_for_application,
-        )
-
         events = competition.update_settings(
-            settings=settings,
+            settings=_settings_from_command(command),
             now=self._clock.utcnow(),
         )
-
         return self._persist(competition, events)
 
 
