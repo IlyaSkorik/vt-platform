@@ -45,7 +45,9 @@ from typing import Final
 
 from .exceptions import (
     InvalidAgeCategoryIdError,
+    InvalidAgeCategoryNameError,
     InvalidAgeRangeError,
+    InvalidCategoryDescriptionError,
     InvalidCategoryIdError,
     InvalidCategoryNameError,
     InvalidCompetitionDescriptionError,
@@ -85,7 +87,10 @@ __all__ = [
     "AdmissionCombination",
     "AdmissionRule",
     "AgeCategoryId",
+    "AgeCategoryName",
+    "AgeCategoryType",
     "AgeRange",
+    "CategoryDescription",
     "CategoryId",
     "CategoryName",
     "CompetitionBranding",
@@ -111,6 +116,7 @@ __all__ = [
     "FileReference",
     "InformationBlockId",
     "InformationBlockTitle",
+    "MixedAgeCalculationMethod",
     "Money",
     "OrganizerId",
     "ParticipantCountRange",
@@ -776,6 +782,7 @@ _NAME_MAX: Final = 120
 _REGULATION_TITLE_MAX: Final = 200
 _REGULATION_VERSION_MAX: Final = 50
 _DOCUMENT_TITLE_MAX: Final = 200
+_CATEGORY_DESCRIPTION_MAX: Final = 2_000
 _DOCUMENT_DESCRIPTION_MAX: Final = 2_000
 
 
@@ -867,6 +874,37 @@ class CategoryName:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "value", _validate_name(self.value, error=InvalidCategoryNameError, label="Category name", maximum=_NAME_MAX))
+
+    def __str__(self) -> str:
+        return self.value
+
+
+@dataclass(frozen=True, slots=True)
+class CategoryDescription:
+    """A length-bounded category description (may be blank)."""
+
+    value: str
+
+    def __post_init__(self) -> None:
+        stripped = self.value.strip()
+        if len(stripped) > _CATEGORY_DESCRIPTION_MAX:
+            raise InvalidCategoryDescriptionError(f"Category description must be at most {_CATEGORY_DESCRIPTION_MAX} characters.")
+        object.__setattr__(self, "value", stripped)
+
+    def __str__(self) -> str:
+        return self.value
+
+
+@dataclass(frozen=True, slots=True)
+class AgeCategoryName:
+    """A non-empty, length-bounded age-category name (e.g. "Juniors", "3-5")."""
+
+    value: str
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self, "value", _validate_name(self.value, error=InvalidAgeCategoryNameError, label="Age category name", maximum=_NAME_MAX)
+        )
 
     def __str__(self) -> str:
         return self.value
@@ -1077,6 +1115,21 @@ class DocumentVisibility(StrEnum):
     PUBLIC = "PUBLIC"
     PARTICIPANTS = "PARTICIPANTS"
     STAFF = "STAFF"
+
+
+class AgeCategoryType(StrEnum):
+    """Whether an age category applies to a single standard age band or a mixed group."""
+
+    STANDARD = "STANDARD"
+    MIXED = "MIXED"
+
+
+class MixedAgeCalculationMethod(StrEnum):
+    """How the age of a mixed-age group is calculated for placement purposes."""
+
+    AVERAGE = "AVERAGE"
+    OLDEST = "OLDEST"
+    YOUNGEST = "YOUNGEST"
 
 
 class Currency(StrEnum):

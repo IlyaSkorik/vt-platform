@@ -47,6 +47,7 @@ from .exceptions import (
     DisciplineInUseError,
     DisciplineNotFoundError,
     DuplicateAdmissionRuleError,
+    DuplicateAgeCategoryNameError,
     DuplicateCategoryError,
     DuplicateDisciplineError,
     DuplicateParticipantGroupError,
@@ -60,12 +61,15 @@ from .value_objects import (
     AdmissionCombination,
     AdmissionRule,
     AgeCategoryId,
+    AgeCategoryName,
+    AgeCategoryType,
     AgeRange,
     CategoryId,
     CategoryName,
     CompetitionDescription,
     DisciplineId,
     DisciplineName,
+    MixedAgeCalculationMethod,
     Money,
     ParticipantCountRange,
     ParticipantGroupId,
@@ -228,6 +232,8 @@ class CompetitionTemplate:
         self._require_category(category_id)
         if any(d.category_id == category_id for d in self._disciplines.values()):
             raise CategoryInUseError("The category still has disciplines.")
+        if any(a.category_id == category_id for a in self._age_categories.values()):
+            raise CategoryInUseError("The category still has age categories.")
         if any(g.category_id == category_id for g in self._participant_groups.values()):
             raise CategoryInUseError("The category still has participant groups.")
         if any(c.category_id == category_id for c in self._admission_rules):
@@ -255,9 +261,29 @@ class CompetitionTemplate:
         del self._disciplines[discipline_id]
         self._touch(now)
 
-    def add_age_category(self, *, age_category_id: AgeCategoryId, age_range: AgeRange, now: datetime) -> AgeCategory:
-        ensure_age_range_free(self._age_categories, age_range)
-        age_category = AgeCategory.create(age_category_id=age_category_id, age_range=age_range)
+    def add_age_category(
+        self,
+        *,
+        age_category_id: AgeCategoryId,
+        category_id: CategoryId,
+        name: AgeCategoryName,
+        age_range: AgeRange,
+        now: datetime,
+        age_category_type: AgeCategoryType = AgeCategoryType.STANDARD,
+        mixed_calculation_method: MixedAgeCalculationMethod | None = None,
+    ) -> AgeCategory:
+        self._require_category(category_id)
+        ensure_age_range_free(self._age_categories, age_range, category_id=category_id)
+        if any(a.category_id == category_id and a.name == name for a in self._age_categories.values()):
+            raise DuplicateAgeCategoryNameError(f"An age category named {name.value!r} already exists in this nomination.")
+        age_category = AgeCategory.create(
+            age_category_id=age_category_id,
+            category_id=category_id,
+            name=name,
+            age_range=age_range,
+            age_category_type=age_category_type,
+            mixed_calculation_method=mixed_calculation_method,
+        )
         self._age_categories[age_category_id] = age_category
         self._touch(now)
         return age_category

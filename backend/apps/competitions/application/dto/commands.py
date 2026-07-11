@@ -60,6 +60,7 @@ __all__ = [
     "StartCompetitionCommand",
     "UnpublishDocumentCommand",
     "UpdateAdditionalServiceCommand",
+    "UpdateAgeCategoryCommand",
     "UpdateBrandingCommand",
     "UpdateDeadlinesCommand",
     "UpdateDocumentCommand",
@@ -152,13 +153,17 @@ class UpdateDeadlinesCommand:
 class AddCategoryCommand:
     competition_id: str
     name: str
+    description: str | None = None
+    sort_order: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class RenameCategoryCommand:
     competition_id: str
     category_id: str
-    name: str
+    name: str | None = None
+    description: str | None = None
+    sort_order: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -172,13 +177,15 @@ class AddDisciplineCommand:
     competition_id: str
     category_id: str
     name: str
+    sort_order: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class RenameDisciplineCommand:
     competition_id: str
     discipline_id: str
-    name: str
+    name: str | None = None
+    sort_order: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -190,8 +197,25 @@ class RemoveDisciplineCommand:
 @dataclass(frozen=True, slots=True)
 class AddAgeCategoryCommand:
     competition_id: str
+    category_id: str
+    name: str
     min_age: int
     max_age: int
+    age_category_type: str = "STANDARD"
+    mixed_calculation_method: str | None = None
+    sort_order: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class UpdateAgeCategoryCommand:
+    competition_id: str
+    age_category_id: str
+    name: str | None = None
+    min_age: int | None = None
+    max_age: int | None = None
+    age_category_type: str | None = None
+    mixed_calculation_method: str | None = None
+    sort_order: int | None = None
 
 
 @dataclass(frozen=True, slots=True)

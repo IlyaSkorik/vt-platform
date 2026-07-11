@@ -16,7 +16,7 @@ export function CompetitionsEmptyState({
     <EmptyState
       icon={<Medal aria-hidden="true" />}
       title="Пока нет фестивалей"
-      description="Создайте первый фестиваль, чтобы настроить категории, цены и регистрацию."
+      description="Создайте первый фестиваль, чтобы настроить номинации, цены и регистрацию."
       action={
         <Button onClick={onCreate} loading={creating} disabled={creating}>
           Создать фестиваль

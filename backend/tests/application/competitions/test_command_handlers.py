@@ -105,7 +105,7 @@ def _configure_publishable(deps: _Deps, competition_id: str) -> CompetitionDetai
     view = deps.build(AddCategoryHandler).handle(AddCategoryCommand(competition_id=competition_id, name="Vocal"))
     category_id = view.categories[0].id
     view = deps.build(AddDisciplineHandler).handle(AddDisciplineCommand(competition_id=competition_id, category_id=category_id, name="Solo Singing"))
-    view = deps.build(AddAgeCategoryHandler).handle(AddAgeCategoryCommand(competition_id=competition_id, min_age=7, max_age=10))
+    view = deps.build(AddAgeCategoryHandler).handle(AddAgeCategoryCommand(competition_id=competition_id, category_id=category_id, name="7-10", min_age=7, max_age=10))
     view = deps.build(AddParticipantGroupHandler).handle(
         AddParticipantGroupCommand(competition_id=competition_id, category_id=category_id, name="Solo", min_count=1, max_count=1)
     )

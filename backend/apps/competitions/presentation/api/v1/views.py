@@ -75,6 +75,7 @@ from apps.competitions.application.dto.commands import (
     StartCompetitionCommand,
     UnpublishDocumentCommand,
     UpdateAdditionalServiceCommand,
+    UpdateAgeCategoryCommand,
     UpdateBrandingCommand,
     UpdateDeadlinesCommand,
     UpdateDocumentCommand,
@@ -130,6 +131,7 @@ from apps.competitions.application.handlers import (
     RenameCategoryHandler,
     RenameDisciplineHandler,
     RevertCompetitionToConfiguredHandler,
+    UpdateAgeCategoryHandler,
     RevertCompetitionToDraftHandler,
     SetPrimaryContactHandler,
     StartCompetitionHandler,
@@ -179,6 +181,7 @@ from .serializers import (
     RenameCategorySerializer,
     RenameDisciplineSerializer,
     UpdateAdditionalServiceSerializer,
+    UpdateAgeCategorySerializer,
     UpdateCompetitionBrandingSerializer,
     UpdateCompetitionDeadlinesSerializer,
     UpdateCompetitionGeneralInformationSerializer,
@@ -515,10 +518,17 @@ class CompetitionViewSet(viewsets.ViewSet):
         assert kwargs is not None
         return self._run(AddAgeCategoryHandler, AddAgeCategoryCommand(competition_id=pk, **kwargs), request, success=status.HTTP_201_CREATED)
 
-    @extend_schema(tags=[_TAG], operation_id="removeAgeCategory", request=None, responses=_detail_ok())
-    @action(detail=True, methods=["delete"], url_path=r"age-categories/(?P<age_category_id>[^/.]+)")
+    @extend_schema(methods=["PATCH"], tags=[_TAG], operation_id="updateAgeCategory", request=UpdateAgeCategorySerializer, responses=_detail_ok())
+    @extend_schema(methods=["DELETE"], tags=[_TAG], operation_id="removeAgeCategory", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["patch", "delete"], url_path=r"age-categories/(?P<age_category_id>[^/.]+)")
     def age_category_detail(self, request: Request, pk: str, age_category_id: str) -> Response:
-        return self._run(RemoveAgeCategoryHandler, RemoveAgeCategoryCommand(competition_id=pk, age_category_id=age_category_id), request)
+        if request.method == "DELETE":
+            return self._run(RemoveAgeCategoryHandler, RemoveAgeCategoryCommand(competition_id=pk, age_category_id=age_category_id), request)
+        kwargs, problem = self._body(UpdateAgeCategorySerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(UpdateAgeCategoryHandler, UpdateAgeCategoryCommand(competition_id=pk, age_category_id=age_category_id, **kwargs), request)
 
     # ------------------------------------------------------------------
     # Participant groups

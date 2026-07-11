@@ -82,6 +82,7 @@ from .taxonomy import (
     RemoveParticipantGroupHandler,
     RenameCategoryHandler,
     RenameDisciplineHandler,
+    UpdateAgeCategoryHandler,
 )
 
 __all__ = [
@@ -137,6 +138,7 @@ __all__ = [
     "UpdateCompetitionBrandingHandler",
     "UpdateCompetitionDeadlinesHandler",
     "UpdateCompetitionGeneralInformationHandler",
+    "UpdateAgeCategoryHandler",
     "UpdateCompetitionSettingsHandler",
     "UpdateDocumentHandler",
     "UpdateInformationBlockHandler",

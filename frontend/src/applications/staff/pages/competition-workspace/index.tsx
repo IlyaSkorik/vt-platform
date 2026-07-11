@@ -16,6 +16,8 @@ import {
 import { ApiError } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
 import { Alert, Button, EmptyState, PageContainer, Skeleton, toast } from "@/shared/ui";
+import { AgeCategoriesSection } from "@/widgets/competition-age-categories";
+import { CategoriesSection } from "@/widgets/competition-categories";
 import { DocumentsSection } from "@/widgets/competition-documents";
 import { GeneralSection } from "@/widgets/competition-general";
 import { RegulationsSection } from "@/widgets/competition-regulations";
@@ -174,6 +176,22 @@ export function StaffCompetitionWorkspacePage(): React.JSX.Element {
           />
         ) : section.id === "documents" ? (
           <DocumentsSection
+            competition={competition}
+            checklist={checklist}
+            isLoading={detailQuery.isFetching && !detailQuery.isFetched}
+            onAutosaveStateChange={setAutosaveState}
+            onNavigateSection={handleSectionChange}
+          />
+        ) : section.id === "categories" ? (
+          <CategoriesSection
+            competition={competition}
+            checklist={checklist}
+            isLoading={detailQuery.isFetching && !detailQuery.isFetched}
+            onAutosaveStateChange={setAutosaveState}
+            onNavigateSection={handleSectionChange}
+          />
+        ) : section.id === "age-categories" ? (
+          <AgeCategoriesSection
             competition={competition}
             checklist={checklist}
             isLoading={detailQuery.isFetching && !detailQuery.isFetched}

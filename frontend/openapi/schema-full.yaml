@@ -632,6 +632,72 @@ paths:
                 $ref: '#/components/schemas/CompetitionProblemDetail'
           description: Business rule violation.
   /api/v1/competitions/{id}/age-categories/{age_category_id}:
+    patch:
+      operationId: updateAgeCategory
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: age_category_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateAgeCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateAgeCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateAgeCategory'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
     delete:
       operationId: removeAgeCategory
       description: Organizer Competition API — staff-only.
@@ -761,6 +827,68 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedUpdateCompetitionBranding'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/branding/poster:
+    post:
+      operationId: uploadCompetitionPoster
+      description: Upload a competition poster image and store its media reference.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
       security:
       - jwtAuth: []
       responses:
@@ -3420,6 +3548,98 @@ paths:
               schema:
                 $ref: '#/components/schemas/CompetitionProblemDetail'
           description: Business rule violation.
+  /api/v1/competitions/{id}/uploads/document:
+    post:
+      operationId: uploadDocumentFile
+      description: Upload a competition document file and return a media file reference.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Document file uploaded; body contains data.fileReference.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+  /api/v1/competitions/{id}/uploads/regulation:
+    post:
+      operationId: uploadRegulationFile
+      description: Upload a regulation PDF and return a media file reference for drafting.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: PDF uploaded; body contains data.fileReference.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
   /api/v1/participants:
     post:
       operationId: participants_create
@@ -3872,21 +4092,52 @@ components:
     AddAgeCategory:
       type: object
       properties:
+        categoryId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 120
         minAge:
           type: integer
           minimum: 0
         maxAge:
           type: integer
           minimum: 0
+        sortOrder:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+        type:
+          allOf:
+          - $ref: '#/components/schemas/TypeEnum'
+          default: STANDARD
+        mixedCalculationMethod:
+          oneOf:
+          - $ref: '#/components/schemas/MixedCalculationMethodEnum'
+          - $ref: '#/components/schemas/NullEnum'
       required:
+      - categoryId
       - maxAge
       - minAge
+      - name
     AddCategory:
       type: object
       properties:
         name:
           type: string
           maxLength: 120
+        description:
+          type:
+          - string
+          - 'null'
+          maxLength: 2000
+        sortOrder:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
       required:
       - name
     AddContact:
@@ -3913,6 +4164,11 @@ components:
         name:
           type: string
           maxLength: 120
+        sortOrder:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
       required:
       - categoryId
       - name
@@ -4473,6 +4729,18 @@ components:
           type: string
       required:
       - requestId
+    MixedCalculationMethodEnum:
+      enum:
+      - AVERAGE
+      - OLDEST
+      - YOUNGEST
+      type: string
+      description: |-
+        * `AVERAGE` - AVERAGE
+        * `OLDEST` - OLDEST
+        * `YOUNGEST` - YOUNGEST
+    NullEnum:
+      type: 'null'
     ParticipantMeta:
       type: object
       description: |-
@@ -4610,14 +4878,33 @@ components:
       type: object
       properties:
         name:
-          type: string
+          type:
+          - string
+          - 'null'
           maxLength: 120
+        description:
+          type:
+          - string
+          - 'null'
+          maxLength: 2000
+        sortOrder:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
     PatchedRenameDiscipline:
       type: object
       properties:
         name:
-          type: string
+          type:
+          - string
+          - 'null'
           maxLength: 120
+        sortOrder:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
     PatchedUpdateAdditionalService:
       type: object
       properties:
@@ -4636,6 +4923,37 @@ components:
           type:
           - string
           - 'null'
+    PatchedUpdateAgeCategory:
+      type: object
+      properties:
+        name:
+          type:
+          - string
+          - 'null'
+          maxLength: 120
+        minAge:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+        maxAge:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+        sortOrder:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+        type:
+          oneOf:
+          - $ref: '#/components/schemas/TypeEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        mixedCalculationMethod:
+          oneOf:
+          - $ref: '#/components/schemas/MixedCalculationMethodEnum'
+          - $ref: '#/components/schemas/NullEnum'
     PatchedUpdateCompetitionBranding:
       type: object
       properties:
@@ -4983,6 +5301,14 @@ components:
       required:
       - accessToken
       - expiresIn
+    TypeEnum:
+      enum:
+      - STANDARD
+      - MIXED
+      type: string
+      description: |-
+        * `STANDARD` - STANDARD
+        * `MIXED` - MIXED
     UpdateCompetitionDeadlines:
       type: object
       properties:
@@ -5184,14 +5510,31 @@ components:
       properties:
         id:
           type: string
+        categoryId:
+          type: string
+        name:
+          type: string
         minAge:
           type: integer
         maxAge:
           type: integer
+        sortOrder:
+          type: integer
+        type:
+          type: string
+        mixedCalculationMethod:
+          type:
+          - string
+          - 'null'
       required:
+      - categoryId
       - id
       - maxAge
       - minAge
+      - mixedCalculationMethod
+      - name
+      - sortOrder
+      - type
     _Branding:
       type: object
       properties:
@@ -5218,9 +5561,17 @@ components:
           type: string
         name:
           type: string
+        description:
+          type:
+          - string
+          - 'null'
+        sortOrder:
+          type: integer
       required:
+      - description
       - id
       - name
+      - sortOrder
     _Contact:
       type: object
       properties:
@@ -5280,10 +5631,13 @@ components:
           type: string
         name:
           type: string
+        sortOrder:
+          type: integer
       required:
       - categoryId
       - id
       - name
+      - sortOrder
     _Document:
       type: object
       properties:

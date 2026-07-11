@@ -32,6 +32,8 @@ class CategoryModel(BasePersistenceModel):
         related_name="categories",
     )
     name = models.CharField(max_length=120)
+    description = models.TextField(null=True, blank=True, default=None)
+    sort_order = models.PositiveIntegerField(default=0)
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "competitions_category"
@@ -56,6 +58,7 @@ class DisciplineModel(BasePersistenceModel):
     )
     category_id = models.UUIDField()
     name = models.CharField(max_length=120)
+    sort_order = models.PositiveIntegerField(default=0)
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "competitions_discipline"
@@ -75,23 +78,36 @@ class DisciplineModel(BasePersistenceModel):
 
 
 class AgeCategoryModel(BasePersistenceModel):
-    """Database row for an age band (persistence only)."""
+    """Database row for an age band scoped to a nomination (persistence only)."""
 
     competition = models.ForeignKey(
         "competitions.CompetitionModel",
         on_delete=models.CASCADE,
         related_name="age_categories",
     )
+    category_id = models.UUIDField()
+    name = models.CharField(max_length=120)
     min_age = models.PositiveSmallIntegerField()
     max_age = models.PositiveSmallIntegerField()
+    sort_order = models.PositiveIntegerField(default=0)
+    type = models.CharField(max_length=16, default="STANDARD")
+    mixed_calculation_method = models.CharField(max_length=16, null=True, blank=True, default=None)
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "competitions_age_category"
         verbose_name = "age category"
         verbose_name_plural = "age categories"
+        indexes = [
+            *BasePersistenceModel.Meta.indexes,
+            models.Index(fields=["category_id"]),
+        ]
+        constraints = [
+            *BasePersistenceModel.Meta.constraints,
+            models.UniqueConstraint(fields=["competition", "category_id", "name"], name="competitions_unique_age_category_name"),
+        ]
 
     def __str__(self) -> str:
-        return f"{self.min_age}-{self.max_age}"
+        return self.name
 
 
 class ParticipantGroupModel(BasePersistenceModel):

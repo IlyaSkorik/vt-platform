@@ -95,10 +95,12 @@ from .events import (
 from .exceptions import (
     AdmissionRuleInUseError,
     AdmissionRuleNotFoundError,
+    AgeCategoryCategoryMismatchError,
     AgeCategoryInUseError,
     AgeCategoryNotFoundError,
     CategoryInUseError,
     CategoryNotFoundError,
+    DuplicateAgeCategoryNameError,
     CompetitionAlreadyArchivedError,
     ConfigurationLockedError,
     ContactNotFoundError,
@@ -133,7 +135,10 @@ from .value_objects import (
     AdmissionCombination,
     AdmissionRule,
     AgeCategoryId,
+    AgeCategoryName,
+    AgeCategoryType,
     AgeRange,
+    CategoryDescription,
     CategoryId,
     CategoryName,
     CompetitionBranding,
@@ -158,6 +163,7 @@ from .value_objects import (
     FileReference,
     InformationBlockId,
     InformationBlockTitle,
+    MixedAgeCalculationMethod,
     Money,
     OrganizerId,
     ParticipantCountRange,
@@ -197,6 +203,9 @@ __all__ = [
 
 #: Opaque capability token proving the root's construction went through a factory.
 _CREATION_TOKEN: Final = object()
+
+#: Sentinel for distinguishing "not supplied" from ``None`` in partial updates.
+_SENTINEL: Final = object()
 
 #: The lifecycle transitions the aggregate permits. ``ARCHIVED`` is terminal, and
 #: any non-archived status may transition to ``ARCHIVED`` (see :meth:`Competition.archive`).
@@ -244,8 +253,11 @@ def ensure_admission_combination_valid(
         raise DisciplineNotFoundError(f"No discipline {combination.discipline_id} in this configuration.")
     if discipline.category_id != combination.category_id:
         raise DisciplineCategoryMismatchError("The discipline does not belong to the stated category.")
-    if combination.age_category_id not in age_categories:
+    age_category = age_categories.get(combination.age_category_id)
+    if age_category is None:
         raise AgeCategoryNotFoundError(f"No age category {combination.age_category_id} in this configuration.")
+    if age_category.category_id != combination.category_id:
+        raise AgeCategoryCategoryMismatchError("The age category does not belong to the stated category.")
     group = participant_groups.get(combination.participant_group_id)
     if group is None:
         raise ParticipantGroupNotFoundError(f"No participant group {combination.participant_group_id} in this configuration.")
@@ -259,11 +271,14 @@ def ensure_age_range_free(
     age_categories: Mapping[AgeCategoryId, AgeCategory],
     age_range: AgeRange,
     *,
+    category_id: CategoryId,
     exclude: AgeCategoryId | None = None,
 ) -> None:
-    """Assert ``age_range`` does not overlap any existing age category (invariant: no overlaps)."""
+    """Assert ``age_range`` does not overlap any existing age category within the same nomination."""
     for aid, existing in age_categories.items():
         if aid == exclude:
+            continue
+        if existing.category_id != category_id:
             continue
         if existing.age_range.overlaps(age_range):
             raise OverlappingAgeRangeError(f"Age range {age_range} overlaps existing range {existing.age_range}.")
@@ -304,14 +319,30 @@ class Category:
 
     _id: CategoryId
     _name: CategoryName
+    _description: CategoryDescription | None = None
+    _sort_order: int = 0
 
     @classmethod
-    def create(cls, *, category_id: CategoryId, name: CategoryName) -> Category:
-        return cls(_id=category_id, _name=name)
+    def create(
+        cls,
+        *,
+        category_id: CategoryId,
+        name: CategoryName,
+        description: CategoryDescription | None = None,
+        sort_order: int = 0,
+    ) -> Category:
+        return cls(_id=category_id, _name=name, _description=description, _sort_order=_validate_sort_order(sort_order))
 
     @classmethod
-    def rehydrate(cls, *, category_id: CategoryId, name: CategoryName) -> Category:
-        return cls(_id=category_id, _name=name)
+    def rehydrate(
+        cls,
+        *,
+        category_id: CategoryId,
+        name: CategoryName,
+        description: CategoryDescription | None = None,
+        sort_order: int = 0,
+    ) -> Category:
+        return cls(_id=category_id, _name=name, _description=description, _sort_order=sort_order)
 
     @property
     def id(self) -> CategoryId:
@@ -321,8 +352,30 @@ class Category:
     def name(self) -> CategoryName:
         return self._name
 
+    @property
+    def description(self) -> CategoryDescription | None:
+        return self._description
+
+    @property
+    def sort_order(self) -> int:
+        return self._sort_order
+
     def rename(self, name: CategoryName) -> None:
         self._name = name
+
+    def update(
+        self,
+        *,
+        name: CategoryName | None = None,
+        description: CategoryDescription | None = _SENTINEL,
+        sort_order: int | None = None,
+    ) -> None:
+        if name is not None:
+            self._name = name
+        if description is not _SENTINEL:
+            self._description = description
+        if sort_order is not None:
+            self._sort_order = _validate_sort_order(sort_order)
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Category) and other._id == self._id
@@ -341,14 +394,29 @@ class Discipline:
     _id: DisciplineId
     _category_id: CategoryId
     _name: DisciplineName
+    _sort_order: int = 0
 
     @classmethod
-    def create(cls, *, discipline_id: DisciplineId, category_id: CategoryId, name: DisciplineName) -> Discipline:
-        return cls(_id=discipline_id, _category_id=category_id, _name=name)
+    def create(
+        cls,
+        *,
+        discipline_id: DisciplineId,
+        category_id: CategoryId,
+        name: DisciplineName,
+        sort_order: int = 0,
+    ) -> Discipline:
+        return cls(_id=discipline_id, _category_id=category_id, _name=name, _sort_order=_validate_sort_order(sort_order))
 
     @classmethod
-    def rehydrate(cls, *, discipline_id: DisciplineId, category_id: CategoryId, name: DisciplineName) -> Discipline:
-        return cls(_id=discipline_id, _category_id=category_id, _name=name)
+    def rehydrate(
+        cls,
+        *,
+        discipline_id: DisciplineId,
+        category_id: CategoryId,
+        name: DisciplineName,
+        sort_order: int = 0,
+    ) -> Discipline:
+        return cls(_id=discipline_id, _category_id=category_id, _name=name, _sort_order=sort_order)
 
     @property
     def id(self) -> DisciplineId:
@@ -362,8 +430,18 @@ class Discipline:
     def name(self) -> DisciplineName:
         return self._name
 
+    @property
+    def sort_order(self) -> int:
+        return self._sort_order
+
     def rename(self, name: DisciplineName) -> None:
         self._name = name
+
+    def update(self, *, name: DisciplineName | None = None, sort_order: int | None = None) -> None:
+        if name is not None:
+            self._name = name
+        if sort_order is not None:
+            self._sort_order = _validate_sort_order(sort_order)
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Discipline) and other._id == self._id
@@ -377,29 +455,112 @@ class Discipline:
 
 @dataclass(slots=True, eq=False, repr=False)
 class AgeCategory:
-    """An age band configured for this competition (e.g. 3-5, 6-8, 9-11)."""
+    """An age band configured for this competition, scoped to a nomination (category)."""
 
     _id: AgeCategoryId
+    _category_id: CategoryId
+    _name: AgeCategoryName
     _age_range: AgeRange
+    _type: AgeCategoryType = AgeCategoryType.STANDARD
+    _mixed_calculation_method: MixedAgeCalculationMethod | None = None
+    _sort_order: int = 0
 
     @classmethod
-    def create(cls, *, age_category_id: AgeCategoryId, age_range: AgeRange) -> AgeCategory:
-        return cls(_id=age_category_id, _age_range=age_range)
+    def create(
+        cls,
+        *,
+        age_category_id: AgeCategoryId,
+        category_id: CategoryId,
+        name: AgeCategoryName,
+        age_range: AgeRange,
+        age_category_type: AgeCategoryType = AgeCategoryType.STANDARD,
+        mixed_calculation_method: MixedAgeCalculationMethod | None = None,
+        sort_order: int = 0,
+    ) -> AgeCategory:
+        _validate_type_method_consistency(age_category_type, mixed_calculation_method)
+        return cls(
+            _id=age_category_id,
+            _category_id=category_id,
+            _name=name,
+            _age_range=age_range,
+            _type=age_category_type,
+            _mixed_calculation_method=mixed_calculation_method,
+            _sort_order=_validate_sort_order(sort_order),
+        )
 
     @classmethod
-    def rehydrate(cls, *, age_category_id: AgeCategoryId, age_range: AgeRange) -> AgeCategory:
-        return cls(_id=age_category_id, _age_range=age_range)
+    def rehydrate(
+        cls,
+        *,
+        age_category_id: AgeCategoryId,
+        category_id: CategoryId,
+        name: AgeCategoryName,
+        age_range: AgeRange,
+        age_category_type: AgeCategoryType = AgeCategoryType.STANDARD,
+        mixed_calculation_method: MixedAgeCalculationMethod | None = None,
+        sort_order: int = 0,
+    ) -> AgeCategory:
+        return cls(
+            _id=age_category_id,
+            _category_id=category_id,
+            _name=name,
+            _age_range=age_range,
+            _type=age_category_type,
+            _mixed_calculation_method=mixed_calculation_method,
+            _sort_order=sort_order,
+        )
 
     @property
     def id(self) -> AgeCategoryId:
         return self._id
 
     @property
+    def category_id(self) -> CategoryId:
+        return self._category_id
+
+    @property
+    def name(self) -> AgeCategoryName:
+        return self._name
+
+    @property
     def age_range(self) -> AgeRange:
         return self._age_range
 
+    @property
+    def type(self) -> AgeCategoryType:
+        return self._type
+
+    @property
+    def mixed_calculation_method(self) -> MixedAgeCalculationMethod | None:
+        return self._mixed_calculation_method
+
+    @property
+    def sort_order(self) -> int:
+        return self._sort_order
+
     def redefine(self, age_range: AgeRange) -> None:
         self._age_range = age_range
+
+    def update(
+        self,
+        *,
+        name: AgeCategoryName | None = None,
+        age_range: AgeRange | None = None,
+        age_category_type: AgeCategoryType | None = None,
+        mixed_calculation_method: MixedAgeCalculationMethod | None = _SENTINEL,
+        sort_order: int | None = None,
+    ) -> None:
+        if name is not None:
+            self._name = name
+        if age_range is not None:
+            self._age_range = age_range
+        if age_category_type is not None:
+            self._type = age_category_type
+        if mixed_calculation_method is not _SENTINEL:
+            self._mixed_calculation_method = mixed_calculation_method
+        _validate_type_method_consistency(self._type, self._mixed_calculation_method)
+        if sort_order is not None:
+            self._sort_order = _validate_sort_order(sort_order)
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, AgeCategory) and other._id == self._id
@@ -408,7 +569,7 @@ class AgeCategory:
         return hash(self._id)
 
     def __repr__(self) -> str:
-        return f"AgeCategory(id={self._id!r}, range={self._age_range})"
+        return f"AgeCategory(id={self._id!r}, category_id={self._category_id!r}, name={self._name.value!r}, range={self._age_range})"
 
 
 @dataclass(slots=True, eq=False, repr=False)
@@ -554,6 +715,17 @@ def _validate_sort_order(value: int) -> int:
     if value < 0:
         raise InvalidSortOrderError(f"Sort order must be non-negative, got {value}.")
     return value
+
+
+def _validate_type_method_consistency(
+    age_category_type: AgeCategoryType,
+    mixed_calculation_method: MixedAgeCalculationMethod | None,
+) -> None:
+    """MIXED requires a method; STANDARD requires method is None."""
+    if age_category_type is AgeCategoryType.MIXED and mixed_calculation_method is None:
+        raise ValueError("mixed_calculation_method is required when type is MIXED.")
+    if age_category_type is AgeCategoryType.STANDARD and mixed_calculation_method is not None:
+        raise ValueError("mixed_calculation_method must be null when type is STANDARD.")
 
 
 @dataclass(slots=True, eq=False, repr=False)
@@ -1127,17 +1299,33 @@ class Competition:
         for category in template.categories:
             new_category_id = CategoryId.generate()
             category_map[category.id] = new_category_id
-            self._categories[new_category_id] = Category.create(category_id=new_category_id, name=category.name)
+            self._categories[new_category_id] = Category.create(
+                category_id=new_category_id,
+                name=category.name,
+                description=category.description,
+                sort_order=category.sort_order,
+            )
         for discipline in template.disciplines:
             new_discipline_id = DisciplineId.generate()
             discipline_map[discipline.id] = new_discipline_id
             self._disciplines[new_discipline_id] = Discipline.create(
-                discipline_id=new_discipline_id, category_id=category_map[discipline.category_id], name=discipline.name
+                discipline_id=new_discipline_id,
+                category_id=category_map[discipline.category_id],
+                name=discipline.name,
+                sort_order=discipline.sort_order,
             )
         for age_category in template.age_categories:
             new_age_id = AgeCategoryId.generate()
             age_map[age_category.id] = new_age_id
-            self._age_categories[new_age_id] = AgeCategory.create(age_category_id=new_age_id, age_range=age_category.age_range)
+            self._age_categories[new_age_id] = AgeCategory.create(
+                age_category_id=new_age_id,
+                category_id=category_map[age_category.category_id],
+                name=age_category.name,
+                age_range=age_category.age_range,
+                age_category_type=age_category.type,
+                mixed_calculation_method=age_category.mixed_calculation_method,
+                sort_order=age_category.sort_order,
+            )
         for group in template.participant_groups:
             new_group_id = ParticipantGroupId.generate()
             group_map[group.id] = new_group_id
@@ -1318,6 +1506,10 @@ class Competition:
         """All disciplines belonging to ``category_id``."""
         return tuple(d for d in self._disciplines.values() if d.category_id == category_id)
 
+    def age_categories_of(self, category_id: CategoryId) -> tuple[AgeCategory, ...]:
+        """All age categories belonging to ``category_id``."""
+        return tuple(a for a in self._age_categories.values() if a.category_id == category_id)
+
     def participant_groups_of(self, category_id: CategoryId) -> tuple[ParticipantGroup, ...]:
         """All participant groups belonging to ``category_id``."""
         return tuple(g for g in self._participant_groups.values() if g.category_id == category_id)
@@ -1401,30 +1593,50 @@ class Competition:
     # Taxonomy configuration (DRAFT-only)
     # ------------------------------------------------------------------
 
-    def add_category(self, *, category_id: CategoryId, name: CategoryName, now: datetime) -> Category:
+    def add_category(
+        self,
+        *,
+        category_id: CategoryId,
+        name: CategoryName,
+        now: datetime,
+        description: CategoryDescription | None = None,
+        sort_order: int | None = None,
+    ) -> Category:
         """Add a category. Names are unique within the competition."""
         self._ensure_configurable()
         if any(c.name == name for c in self._categories.values()):
             raise DuplicateCategoryError(f"A category named {name.value!r} already exists.")
-        category = Category.create(category_id=category_id, name=name)
+        if sort_order is None:
+            sort_order = self._next_category_sort_order()
+        category = Category.create(category_id=category_id, name=name, description=description, sort_order=sort_order)
         self._categories[category_id] = category
         self._touch(now)
         return category
 
-    def rename_category(self, *, category_id: CategoryId, name: CategoryName, now: datetime) -> None:
+    def rename_category(
+        self,
+        *,
+        category_id: CategoryId,
+        now: datetime,
+        name: CategoryName | None = None,
+        description: CategoryDescription | None = _SENTINEL,
+        sort_order: int | None = None,
+    ) -> None:
         self._ensure_configurable()
         category = self._require_category(category_id)
-        if any(cid != category_id and c.name == name for cid, c in self._categories.items()):
+        if name is not None and any(cid != category_id and c.name == name for cid, c in self._categories.items()):
             raise DuplicateCategoryError(f"A category named {name.value!r} already exists.")
-        category.rename(name)
+        category.update(name=name, description=description, sort_order=sort_order)
         self._touch(now)
 
     def remove_category(self, *, category_id: CategoryId, now: datetime) -> None:
-        """Remove a category. Refused while any discipline, group, or rule references it."""
+        """Remove a category. Refused while any discipline, group, age category, or rule references it."""
         self._ensure_configurable()
         self._require_category(category_id)
         if any(d.category_id == category_id for d in self._disciplines.values()):
             raise CategoryInUseError("The category still has disciplines.")
+        if any(a.category_id == category_id for a in self._age_categories.values()):
+            raise CategoryInUseError("The category still has age categories.")
         if any(g.category_id == category_id for g in self._participant_groups.values()):
             raise CategoryInUseError("The category still has participant groups.")
         if any(c.category_id == category_id for c in self._admission_rules):
@@ -1434,23 +1646,42 @@ class Competition:
         del self._categories[category_id]
         self._touch(now)
 
-    def add_discipline(self, *, discipline_id: DisciplineId, category_id: CategoryId, name: DisciplineName, now: datetime) -> Discipline:
+    def add_discipline(
+        self,
+        *,
+        discipline_id: DisciplineId,
+        category_id: CategoryId,
+        name: DisciplineName,
+        now: datetime,
+        sort_order: int | None = None,
+    ) -> Discipline:
         """Add a discipline to a category. Names are unique within that category."""
         self._ensure_configurable()
         self._require_category(category_id)
         if any(d.category_id == category_id and d.name == name for d in self._disciplines.values()):
             raise DuplicateDisciplineError(f"A discipline named {name.value!r} already exists in this category.")
-        discipline = Discipline.create(discipline_id=discipline_id, category_id=category_id, name=name)
+        if sort_order is None:
+            sort_order = self._next_discipline_sort_order(category_id)
+        discipline = Discipline.create(discipline_id=discipline_id, category_id=category_id, name=name, sort_order=sort_order)
         self._disciplines[discipline_id] = discipline
         self._touch(now)
         return discipline
 
-    def rename_discipline(self, *, discipline_id: DisciplineId, name: DisciplineName, now: datetime) -> None:
+    def rename_discipline(
+        self,
+        *,
+        discipline_id: DisciplineId,
+        now: datetime,
+        name: DisciplineName | None = None,
+        sort_order: int | None = None,
+    ) -> None:
         self._ensure_configurable()
         discipline = self._require_discipline(discipline_id)
-        if any(did != discipline_id and d.category_id == discipline.category_id and d.name == name for did, d in self._disciplines.items()):
+        if name is not None and any(
+            did != discipline_id and d.category_id == discipline.category_id and d.name == name for did, d in self._disciplines.items()
+        ):
             raise DuplicateDisciplineError(f"A discipline named {name.value!r} already exists in this category.")
-        discipline.rename(name)
+        discipline.update(name=name, sort_order=sort_order)
         self._touch(now)
 
     def remove_discipline(self, *, discipline_id: DisciplineId, now: datetime) -> None:
@@ -1463,14 +1694,68 @@ class Competition:
         del self._disciplines[discipline_id]
         self._touch(now)
 
-    def add_age_category(self, *, age_category_id: AgeCategoryId, age_range: AgeRange, now: datetime) -> AgeCategory:
-        """Add an age band. Overlapping ranges are refused (age bands must be disjoint)."""
+    def add_age_category(
+        self,
+        *,
+        age_category_id: AgeCategoryId,
+        category_id: CategoryId,
+        name: AgeCategoryName,
+        age_range: AgeRange,
+        now: datetime,
+        age_category_type: AgeCategoryType = AgeCategoryType.STANDARD,
+        mixed_calculation_method: MixedAgeCalculationMethod | None = None,
+        sort_order: int | None = None,
+    ) -> AgeCategory:
+        """Add an age band to a nomination. Overlapping ranges are refused within the nomination."""
         self._ensure_configurable()
-        ensure_age_range_free(self._age_categories, age_range)
-        age_category = AgeCategory.create(age_category_id=age_category_id, age_range=age_range)
+        self._require_category(category_id)
+        ensure_age_range_free(self._age_categories, age_range, category_id=category_id)
+        if any(a.category_id == category_id and a.name == name for a in self._age_categories.values()):
+            raise DuplicateAgeCategoryNameError(f"An age category named {name.value!r} already exists in this nomination.")
+        if sort_order is None:
+            sort_order = self._next_age_category_sort_order(category_id)
+        age_category = AgeCategory.create(
+            age_category_id=age_category_id,
+            category_id=category_id,
+            name=name,
+            age_range=age_range,
+            age_category_type=age_category_type,
+            mixed_calculation_method=mixed_calculation_method,
+            sort_order=sort_order,
+        )
         self._age_categories[age_category_id] = age_category
         self._touch(now)
         return age_category
+
+    def update_age_category(
+        self,
+        *,
+        age_category_id: AgeCategoryId,
+        now: datetime,
+        name: AgeCategoryName | None = None,
+        age_range: AgeRange | None = None,
+        age_category_type: AgeCategoryType | None = None,
+        mixed_calculation_method: MixedAgeCalculationMethod | None = _SENTINEL,
+        sort_order: int | None = None,
+    ) -> None:
+        """Partial update of an age category (name, age_range, type, method, sort_order)."""
+        self._ensure_configurable()
+        age_category = self._require_age_category(age_category_id)
+        cat_id = age_category.category_id
+        if name is not None and any(
+            aid != age_category_id and a.category_id == cat_id and a.name == name for aid, a in self._age_categories.items()
+        ):
+            raise DuplicateAgeCategoryNameError(f"An age category named {name.value!r} already exists in this nomination.")
+        if age_range is not None:
+            ensure_age_range_free(self._age_categories, age_range, category_id=cat_id, exclude=age_category_id)
+        age_category.update(
+            name=name,
+            age_range=age_range,
+            age_category_type=age_category_type,
+            mixed_calculation_method=mixed_calculation_method,
+            sort_order=sort_order,
+        )
+        self._touch(now)
 
     def remove_age_category(self, *, age_category_id: AgeCategoryId, now: datetime) -> None:
         self._ensure_configurable()
@@ -2179,6 +2464,23 @@ class Competition:
             participant_groups=self._participant_groups,
             formats=self._formats,
         )
+
+    def _next_category_sort_order(self) -> int:
+        if not self._categories:
+            return 0
+        return max(c.sort_order for c in self._categories.values()) + 1
+
+    def _next_age_category_sort_order(self, category_id: CategoryId) -> int:
+        siblings = [a for a in self._age_categories.values() if a.category_id == category_id]
+        if not siblings:
+            return 0
+        return max(a.sort_order for a in siblings) + 1
+
+    def _next_discipline_sort_order(self, category_id: CategoryId) -> int:
+        siblings = [d for d in self._disciplines.values() if d.category_id == category_id]
+        if not siblings:
+            return 0
+        return max(d.sort_order for d in siblings) + 1
 
     def _touch(self, now: datetime) -> None:
         """Advance the change timestamp and optimistic-concurrency version once."""

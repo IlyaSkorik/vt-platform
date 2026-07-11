@@ -13,15 +13,20 @@ from apps.competitions.application.dto.commands import (
     RemoveParticipantGroupCommand,
     RenameCategoryCommand,
     RenameDisciplineCommand,
+    UpdateAgeCategoryCommand,
 )
 from apps.competitions.application.dto.views import CompetitionDetailView
 from apps.competitions.domain.value_objects import (
     AgeCategoryId,
+    AgeCategoryName,
+    AgeCategoryType,
     AgeRange,
+    CategoryDescription,
     CategoryId,
     CategoryName,
     DisciplineId,
     DisciplineName,
+    MixedAgeCalculationMethod,
     ParticipantCountRange,
     ParticipantGroupId,
     ParticipantGroupName,
@@ -40,6 +45,7 @@ __all__ = (
     "RemoveParticipantGroupHandler",
     "RenameCategoryHandler",
     "RenameDisciplineHandler",
+    "UpdateAgeCategoryHandler",
 )
 
 
@@ -56,13 +62,15 @@ class AddCategoryHandler(CompetitionCommandHandler):
             category_id=CategoryId.from_uuid(self._uuids.new()),
             name=CategoryName(command.name),
             now=self._clock.utcnow(),
+            description=CategoryDescription(command.description) if command.description is not None else None,
+            sort_order=command.sort_order,
         )
 
         return self._persist(competition)
 
 
 class RenameCategoryHandler(CompetitionCommandHandler):
-    """Rename a category."""
+    """Update a category (partial: name, description, sort_order)."""
 
     def handle(
         self,
@@ -72,7 +80,9 @@ class RenameCategoryHandler(CompetitionCommandHandler):
 
         competition.rename_category(
             category_id=CategoryId.from_string(command.category_id),
-            name=CategoryName(command.name),
+            name=CategoryName(command.name) if command.name is not None else None,
+            description=CategoryDescription(command.description) if command.description is not None else None,
+            sort_order=command.sort_order,
             now=self._clock.utcnow(),
         )
 
@@ -110,13 +120,14 @@ class AddDisciplineHandler(CompetitionCommandHandler):
             category_id=CategoryId.from_string(command.category_id),
             name=DisciplineName(command.name),
             now=self._clock.utcnow(),
+            sort_order=command.sort_order,
         )
 
         return self._persist(competition)
 
 
 class RenameDisciplineHandler(CompetitionCommandHandler):
-    """Rename a discipline."""
+    """Update a discipline (partial: name, sort_order)."""
 
     def handle(
         self,
@@ -126,7 +137,8 @@ class RenameDisciplineHandler(CompetitionCommandHandler):
 
         competition.rename_discipline(
             discipline_id=DisciplineId.from_string(command.discipline_id),
-            name=DisciplineName(command.name),
+            name=DisciplineName(command.name) if command.name is not None else None,
+            sort_order=command.sort_order,
             now=self._clock.utcnow(),
         )
 
@@ -161,12 +173,54 @@ class AddAgeCategoryHandler(CompetitionCommandHandler):
 
         competition.add_age_category(
             age_category_id=AgeCategoryId.from_uuid(self._uuids.new()),
+            category_id=CategoryId.from_string(command.category_id),
+            name=AgeCategoryName(command.name),
             age_range=AgeRange(
                 min_age=command.min_age,
                 max_age=command.max_age,
             ),
             now=self._clock.utcnow(),
+            age_category_type=AgeCategoryType(command.age_category_type),
+            mixed_calculation_method=(
+                MixedAgeCalculationMethod(command.mixed_calculation_method)
+                if command.mixed_calculation_method is not None
+                else None
+            ),
+            sort_order=command.sort_order,
         )
+
+        return self._persist(competition)
+
+
+class UpdateAgeCategoryHandler(CompetitionCommandHandler):
+    """Update an age category (partial: name, age_range, type, method, sort_order)."""
+
+    def handle(
+        self,
+        command: UpdateAgeCategoryCommand,
+    ) -> CompetitionDetailView:
+        competition = self._require(command.competition_id)
+
+        age_range: AgeRange | None = None
+        if command.min_age is not None and command.max_age is not None:
+            age_range = AgeRange(min_age=command.min_age, max_age=command.max_age)
+
+        kwargs: dict = dict(
+            age_category_id=AgeCategoryId.from_string(command.age_category_id),
+            name=AgeCategoryName(command.name) if command.name is not None else None,
+            age_range=age_range,
+            age_category_type=AgeCategoryType(command.age_category_type) if command.age_category_type is not None else None,
+            sort_order=command.sort_order,
+            now=self._clock.utcnow(),
+        )
+        if command.age_category_type is not None or command.mixed_calculation_method is not None:
+            kwargs["mixed_calculation_method"] = (
+                MixedAgeCalculationMethod(command.mixed_calculation_method)
+                if command.mixed_calculation_method is not None
+                else None
+            )
+
+        competition.update_age_category(**kwargs)
 
         return self._persist(competition)
 

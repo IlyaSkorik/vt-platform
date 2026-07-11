@@ -7,7 +7,10 @@ import {
 } from "@tanstack/react-query";
 import { type ApiError, apiClient, toApiError } from "@/shared/api";
 import {
+  addAgeCategory,
+  addCategory,
   addContact,
+  addDiscipline,
   addDocument,
   addRegulation,
   archiveCompetition,
@@ -20,21 +23,33 @@ import {
   postCompetition,
   publishCompetition,
   publishDocument,
+  removeAgeCategory,
+  removeCategory,
   removeContact,
+  removeDiscipline,
   removeDocument,
   removeRegulation,
+  renameCategory,
+  renameDiscipline,
   unpublishDocument,
+  updateAgeCategory,
   updateBranding,
   updateCompetition,
   updateDocument,
 } from "@/shared/api/generated/competitions/competitions";
 import type {
+  AddAgeCategory,
+  AddCategory,
   AddContact,
+  AddDiscipline,
   AddDocument,
   AddRegulation,
   CompetitionDetail,
   CompetitionSummary,
   CreateCompetition,
+  PatchedRenameCategory,
+  PatchedRenameDiscipline,
+  PatchedUpdateAgeCategory,
   PatchedUpdateCompetitionBranding,
   PatchedUpdateCompetitionGeneralInformation,
   PatchedUpdateDocument,
@@ -242,6 +257,81 @@ async function createContact(
 
 async function deleteContact(competitionId: string, contactId: string): Promise<CompetitionDetail> {
   const response = await removeContact(competitionId, contactId);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function createCategory(
+  competitionId: string,
+  payload: AddCategory,
+): Promise<CompetitionDetail> {
+  const response = await addCategory(competitionId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function patchCategory(
+  competitionId: string,
+  categoryId: string,
+  payload: PatchedRenameCategory,
+): Promise<CompetitionDetail> {
+  const response = await renameCategory(competitionId, categoryId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function deleteCategory(
+  competitionId: string,
+  categoryId: string,
+): Promise<CompetitionDetail> {
+  const response = await removeCategory(competitionId, categoryId);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function createDiscipline(
+  competitionId: string,
+  payload: AddDiscipline,
+): Promise<CompetitionDetail> {
+  const response = await addDiscipline(competitionId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function patchDiscipline(
+  competitionId: string,
+  disciplineId: string,
+  payload: PatchedRenameDiscipline,
+): Promise<CompetitionDetail> {
+  const response = await renameDiscipline(competitionId, disciplineId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function deleteDiscipline(
+  competitionId: string,
+  disciplineId: string,
+): Promise<CompetitionDetail> {
+  const response = await removeDiscipline(competitionId, disciplineId);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function createAgeCategory(
+  competitionId: string,
+  payload: AddAgeCategory,
+): Promise<CompetitionDetail> {
+  const response = await addAgeCategory(competitionId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function patchAgeCategory(
+  competitionId: string,
+  ageCategoryId: string,
+  payload: PatchedUpdateAgeCategory,
+): Promise<CompetitionDetail> {
+  const response = await updateAgeCategory(competitionId, ageCategoryId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function deleteAgeCategory(
+  competitionId: string,
+  ageCategoryId: string,
+): Promise<CompetitionDetail> {
+  const response = await removeAgeCategory(competitionId, ageCategoryId);
   return unwrapCompetitionDetail(response.data);
 }
 
@@ -678,6 +768,257 @@ export function useReorderDocumentsMutation(): UseMutationResult<
       let latest: CompetitionDetail | null = null;
       for (const update of updates) {
         latest = await patchDocument(competitionId, update.documentId, update.payload);
+      }
+      if (!latest) {
+        return fetchCompetition(competitionId);
+      }
+      return latest;
+    },
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useAddCategoryMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; payload: AddCategory }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<CompetitionDetail, ApiError, { competitionId: string; payload: AddCategory }>({
+    mutationFn: ({ competitionId, payload }) => createCategory(competitionId, payload),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useUpdateCategoryMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; categoryId: string; payload: PatchedRenameCategory }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; categoryId: string; payload: PatchedRenameCategory }
+  >({
+    mutationFn: ({ competitionId, categoryId, payload }) =>
+      patchCategory(competitionId, categoryId, payload),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useRemoveCategoryMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; categoryId: string }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<CompetitionDetail, ApiError, { competitionId: string; categoryId: string }>({
+    mutationFn: ({ competitionId, categoryId }) => deleteCategory(competitionId, categoryId),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useReorderCategoriesMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  {
+    competitionId: string;
+    updates: Array<{ categoryId: string; payload: PatchedRenameCategory }>;
+  }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    {
+      competitionId: string;
+      updates: Array<{ categoryId: string; payload: PatchedRenameCategory }>;
+    }
+  >({
+    mutationFn: async ({ competitionId, updates }) => {
+      let latest: CompetitionDetail | null = null;
+      for (const update of updates) {
+        latest = await patchCategory(competitionId, update.categoryId, update.payload);
+      }
+      if (!latest) {
+        return fetchCompetition(competitionId);
+      }
+      return latest;
+    },
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useAddDisciplineMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; payload: AddDiscipline }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; payload: AddDiscipline }
+  >({
+    mutationFn: ({ competitionId, payload }) => createDiscipline(competitionId, payload),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useUpdateDisciplineMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; disciplineId: string; payload: PatchedRenameDiscipline }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; disciplineId: string; payload: PatchedRenameDiscipline }
+  >({
+    mutationFn: ({ competitionId, disciplineId, payload }) =>
+      patchDiscipline(competitionId, disciplineId, payload),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useRemoveDisciplineMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; disciplineId: string }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<CompetitionDetail, ApiError, { competitionId: string; disciplineId: string }>({
+    mutationFn: ({ competitionId, disciplineId }) => deleteDiscipline(competitionId, disciplineId),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useReorderDisciplinesMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  {
+    competitionId: string;
+    updates: Array<{ disciplineId: string; payload: PatchedRenameDiscipline }>;
+  }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    {
+      competitionId: string;
+      updates: Array<{ disciplineId: string; payload: PatchedRenameDiscipline }>;
+    }
+  >({
+    mutationFn: async ({ competitionId, updates }) => {
+      let latest: CompetitionDetail | null = null;
+      for (const update of updates) {
+        latest = await patchDiscipline(competitionId, update.disciplineId, update.payload);
+      }
+      if (!latest) {
+        return fetchCompetition(competitionId);
+      }
+      return latest;
+    },
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useAddAgeCategoryMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; payload: AddAgeCategory }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; payload: AddAgeCategory }
+  >({
+    mutationFn: ({ competitionId, payload }) => createAgeCategory(competitionId, payload),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useUpdateAgeCategoryMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; ageCategoryId: string; payload: PatchedUpdateAgeCategory }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; ageCategoryId: string; payload: PatchedUpdateAgeCategory }
+  >({
+    mutationFn: ({ competitionId, ageCategoryId, payload }) =>
+      patchAgeCategory(competitionId, ageCategoryId, payload),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useRemoveAgeCategoryMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; ageCategoryId: string }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<CompetitionDetail, ApiError, { competitionId: string; ageCategoryId: string }>(
+    {
+      mutationFn: ({ competitionId, ageCategoryId }) =>
+        deleteAgeCategory(competitionId, ageCategoryId),
+      onSuccess: (detail) => {
+        setCompetitionCache(queryClient, detail);
+      },
+    },
+  );
+}
+
+export function useReorderAgeCategoriesMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  {
+    competitionId: string;
+    updates: Array<{ ageCategoryId: string; payload: PatchedUpdateAgeCategory }>;
+  }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    {
+      competitionId: string;
+      updates: Array<{ ageCategoryId: string; payload: PatchedUpdateAgeCategory }>;
+    }
+  >({
+    mutationFn: async ({ competitionId, updates }) => {
+      let latest: CompetitionDetail | null = null;
+      for (const update of updates) {
+        latest = await patchAgeCategory(competitionId, update.ageCategoryId, update.payload);
       }
       if (!latest) {
         return fetchCompetition(competitionId);

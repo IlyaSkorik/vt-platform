@@ -66,9 +66,20 @@ describe("buildPublicationChecklist", () => {
   it("is publishable when taxonomy requirements are met", () => {
     const checklist = buildPublicationChecklist(
       baseCompetition({
-        categories: [{ id: "c1", name: "Dance" }],
-        disciplines: [{ id: "d1", categoryId: "c1", name: "Ballet" }],
-        ageCategories: [{ id: "a1", minAge: 5, maxAge: 12 }],
+        categories: [{ id: "c1", name: "Dance", description: null, sortOrder: 0 }],
+        disciplines: [{ id: "d1", categoryId: "c1", name: "Ballet", sortOrder: 0 }],
+        ageCategories: [
+          {
+            id: "a1",
+            categoryId: "c1",
+            name: "5–12 лет",
+            minAge: 5,
+            maxAge: 12,
+            sortOrder: 0,
+            type: "STANDARD",
+            mixedCalculationMethod: null,
+          },
+        ],
         participantGroups: [{ id: "g1", categoryId: "c1", name: "Solo", minCount: 1, maxCount: 1 }],
         enabledFormats: ["SOLO"],
         admissionRules: [

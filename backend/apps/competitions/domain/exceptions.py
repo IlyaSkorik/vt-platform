@@ -23,6 +23,7 @@ edge (ARCH-001 §7.6). No Django/DRF imports.
     │   ├── InvalidAgeRangeError
     │   ├── InvalidParticipantCountRangeError
     │   ├── InvalidCategoryNameError
+    │   ├── InvalidCategoryDescriptionError
     │   ├── InvalidDisciplineNameError
     │   ├── InvalidParticipantGroupNameError
     │   ├── InvalidRegulationTitleError
@@ -210,6 +211,10 @@ class InvalidServiceNameError(ValueObjectValidationError):
     """The provided value is not a valid additional-service name (empty or too long)."""
 
 
+class InvalidCategoryDescriptionError(ValueObjectValidationError):
+    """The provided value is not a valid category description (too long)."""
+
+
 class InvalidServiceDescriptionError(ValueObjectValidationError):
     """The provided value is not a valid additional-service description (too long)."""
 
@@ -232,6 +237,10 @@ class InvalidContactValueError(ValueObjectValidationError):
 
 class InvalidInformationBlockTitleError(ValueObjectValidationError):
     """The provided value is not a valid information-block title (empty or too long)."""
+
+
+class InvalidAgeCategoryNameError(ValueObjectValidationError):
+    """The provided value is not a valid age-category name (empty or too long)."""
 
 
 class InvalidRegistrationDeadlinesError(ValueObjectValidationError):
@@ -355,6 +364,10 @@ class DisciplineCategoryMismatchError(ConfigurationReferenceError):
     """The referenced discipline belongs to a different category than stated."""
 
 
+class AgeCategoryCategoryMismatchError(ConfigurationReferenceError):
+    """The referenced age category belongs to a different category than stated."""
+
+
 class ParticipantGroupCategoryMismatchError(ConfigurationReferenceError):
     """The referenced participant group belongs to a different category than stated."""
 
@@ -378,6 +391,10 @@ class DuplicateDisciplineError(ConfigurationConflictError):
 
 class DuplicateAgeCategoryError(ConfigurationConflictError):
     """An age category with the same range already exists in this competition."""
+
+
+class DuplicateAgeCategoryNameError(ConfigurationConflictError):
+    """An age category with the same name already exists in this nomination (category)."""
 
 
 class OverlappingAgeRangeError(ConfigurationConflictError):

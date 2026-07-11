@@ -56,9 +56,60 @@ const competitionDetail = {
       correction: null,
     },
     enabledFormats: [],
-    categories: [],
-    disciplines: [],
-    ageCategories: [],
+    categories: [
+      {
+        id: "cat-1",
+        name: "Вокал",
+        description: "Сольные и ансамблевые вокальные направления",
+        sortOrder: 0,
+      },
+      {
+        id: "cat-2",
+        name: "Хореография",
+        description: null,
+        sortOrder: 1,
+      },
+    ],
+    disciplines: [
+      { id: "dis-1", categoryId: "cat-1", name: "Эстрадный вокал", sortOrder: 0 },
+      { id: "dis-2", categoryId: "cat-1", name: "Академический вокал", sortOrder: 1 },
+      { id: "dis-3", categoryId: "cat-1", name: "Народный вокал", sortOrder: 2 },
+      { id: "dis-4", categoryId: "cat-2", name: "Классика", sortOrder: 0 },
+      { id: "dis-5", categoryId: "cat-2", name: "Contemporary", sortOrder: 1 },
+      { id: "dis-6", categoryId: "cat-2", name: "Народный танец", sortOrder: 2 },
+    ],
+    ageCategories: [
+      {
+        id: "a1",
+        categoryId: "cat-1",
+        name: "4–6 лет",
+        minAge: 4,
+        maxAge: 6,
+        sortOrder: 0,
+        type: "STANDARD",
+        mixedCalculationMethod: null,
+      },
+      {
+        id: "a2",
+        categoryId: "cat-1",
+        name: "7–9 лет",
+        minAge: 7,
+        maxAge: 9,
+        sortOrder: 1,
+        type: "STANDARD",
+        mixedCalculationMethod: null,
+      },
+      {
+        id: "a3",
+        categoryId: "cat-2",
+        name: "10–12 лет",
+        minAge: 10,
+        maxAge: 12,
+        sortOrder: 2,
+        type: "STANDARD",
+        mixedCalculationMethod: null,
+      },
+    ],
     participantGroups: [],
     admissionRules: [],
     pricingRules: [],
@@ -193,6 +244,47 @@ test.describe("Organizer workspace screenshots", () => {
     await expect(page.getByLabel("Название фестиваля")).toHaveValue("Spring Talent Festival");
     await page.screenshot({
       path: path.join(screenshotDir, "04-general-section.png"),
+      fullPage: true,
+    });
+
+    await page.goto("/staff/competitions/comp-1?section=categories");
+    await expect(page.getByRole("heading", { name: "Номинации и дисциплины" })).toBeVisible();
+    await expect(page.getByText("Вокал")).toBeVisible();
+    await page.screenshot({
+      path: path.join(screenshotDir, "05-categories-desktop.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 820, height: 1180 });
+    await page.screenshot({
+      path: path.join(screenshotDir, "05-categories-tablet.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({
+      path: path.join(screenshotDir, "05-categories-mobile.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/staff/competitions/comp-1?section=age-categories");
+    await expect(page.getByRole("heading", { name: "Возрастные категории" })).toBeVisible();
+    await expect(page.getByText("4–6 лет")).toBeVisible();
+    await page.screenshot({
+      path: path.join(screenshotDir, "06-age-categories-desktop.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 820, height: 1180 });
+    await page.screenshot({
+      path: path.join(screenshotDir, "06-age-categories-tablet.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({
+      path: path.join(screenshotDir, "06-age-categories-mobile.png"),
       fullPage: true,
     });
   });

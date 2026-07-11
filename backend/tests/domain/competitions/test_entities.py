@@ -57,6 +57,7 @@ from apps.competitions.domain.exceptions import (
 from apps.competitions.domain.value_objects import (
     AdmissionCombination,
     AgeCategoryId,
+    AgeCategoryName,
     AgeRange,
     CategoryId,
     CategoryName,
@@ -132,7 +133,7 @@ def _configured(*, priced: bool = True, with_regulation: bool = True) -> Fixture
     c = _draft()
     cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
     disc = c.add_discipline(discipline_id=DisciplineId.generate(), category_id=cat.id, name=DisciplineName("Pop"), now=NOW)
-    age = c.add_age_category(age_category_id=AgeCategoryId.generate(), age_range=AgeRange(6, 8), now=NOW)
+    age = c.add_age_category(age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW)
     grp = c.add_participant_group(
         participant_group_id=ParticipantGroupId.generate(),
         category_id=cat.id,
@@ -205,14 +206,16 @@ class TestTaxonomyInvariants:
 
     def test_overlapping_age_range_rejected(self) -> None:
         c = _draft()
-        c.add_age_category(age_category_id=AgeCategoryId.generate(), age_range=AgeRange(6, 8), now=NOW)
+        cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
+        c.add_age_category(age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW)
         with pytest.raises(OverlappingAgeRangeError):
-            c.add_age_category(age_category_id=AgeCategoryId.generate(), age_range=AgeRange(8, 10), now=NOW)
+            c.add_age_category(age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("8-10"), age_range=AgeRange(8, 10), now=NOW)
 
     def test_non_overlapping_age_range_allowed(self) -> None:
         c = _draft()
-        c.add_age_category(age_category_id=AgeCategoryId.generate(), age_range=AgeRange(6, 8), now=NOW)
-        c.add_age_category(age_category_id=AgeCategoryId.generate(), age_range=AgeRange(9, 11), now=NOW)
+        cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
+        c.add_age_category(age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW)
+        c.add_age_category(age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("9-11"), age_range=AgeRange(9, 11), now=NOW)
         assert len(c.age_categories) == 2
 
     def test_overlapping_participant_range_within_category_rejected(self) -> None:
@@ -254,7 +257,7 @@ class TestAdmissionAndPricing:
         c = _draft()
         cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
         disc = c.add_discipline(discipline_id=DisciplineId.generate(), category_id=cat.id, name=DisciplineName("Pop"), now=NOW)
-        age = c.add_age_category(age_category_id=AgeCategoryId.generate(), age_range=AgeRange(6, 8), now=NOW)
+        age = c.add_age_category(age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW)
         grp = c.add_participant_group(
             participant_group_id=ParticipantGroupId.generate(),
             category_id=cat.id,
@@ -280,7 +283,7 @@ class TestAdmissionAndPricing:
         c = _draft()
         cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
         disc = c.add_discipline(discipline_id=DisciplineId.generate(), category_id=cat.id, name=DisciplineName("Pop"), now=NOW)
-        age = c.add_age_category(age_category_id=AgeCategoryId.generate(), age_range=AgeRange(6, 8), now=NOW)
+        age = c.add_age_category(age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW)
         grp = c.add_participant_group(
             participant_group_id=ParticipantGroupId.generate(),
             category_id=cat.id,

@@ -99,10 +99,17 @@ class SettingsView:
 class CategoryView:
     id: str
     name: str
+    description: str | None
+    sort_order: int
 
     @classmethod
     def of(cls, category: Category) -> CategoryView:
-        return cls(id=category.id.json(), name=category.name.value)
+        return cls(
+            id=category.id.json(),
+            name=category.name.value,
+            description=category.description.value if category.description is not None else None,
+            sort_order=category.sort_order,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -110,21 +117,41 @@ class DisciplineView:
     id: str
     category_id: str
     name: str
+    sort_order: int
 
     @classmethod
     def of(cls, discipline: Discipline) -> DisciplineView:
-        return cls(id=discipline.id.json(), category_id=discipline.category_id.json(), name=discipline.name.value)
+        return cls(
+            id=discipline.id.json(),
+            category_id=discipline.category_id.json(),
+            name=discipline.name.value,
+            sort_order=discipline.sort_order,
+        )
 
 
 @dataclass(frozen=True, slots=True)
 class AgeCategoryView:
     id: str
+    category_id: str
+    name: str
     min_age: int
     max_age: int
+    sort_order: int
+    type: str
+    mixed_calculation_method: str | None
 
     @classmethod
     def of(cls, age_category: AgeCategory) -> AgeCategoryView:
-        return cls(id=age_category.id.json(), min_age=age_category.age_range.min_age, max_age=age_category.age_range.max_age)
+        return cls(
+            id=age_category.id.json(),
+            category_id=age_category.category_id.json(),
+            name=age_category.name.value,
+            min_age=age_category.age_range.min_age,
+            max_age=age_category.age_range.max_age,
+            sort_order=age_category.sort_order,
+            type=age_category.type.value,
+            mixed_calculation_method=age_category.mixed_calculation_method.value if age_category.mixed_calculation_method is not None else None,
+        )
 
 
 @dataclass(frozen=True, slots=True)

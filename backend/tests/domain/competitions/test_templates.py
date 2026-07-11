@@ -18,6 +18,7 @@ from apps.competitions.domain.templates import CompetitionTemplate
 from apps.competitions.domain.value_objects import (
     AdmissionCombination,
     AgeCategoryId,
+    AgeCategoryName,
     AgeRange,
     CategoryId,
     CategoryName,
@@ -54,7 +55,7 @@ def _template() -> TemplateFixture:
     t = CompetitionTemplate.create(template_id=TemplateId.generate(), name=TemplateName("Standard Vocal"), now=NOW)
     cat = t.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
     disc = t.add_discipline(discipline_id=DisciplineId.generate(), category_id=cat.id, name=DisciplineName("Pop"), now=NOW)
-    age = t.add_age_category(age_category_id=AgeCategoryId.generate(), age_range=AgeRange(6, 8), now=NOW)
+    age = t.add_age_category(age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW)
     grp = t.add_participant_group(
         participant_group_id=ParticipantGroupId.generate(),
         category_id=cat.id,
@@ -80,19 +81,19 @@ class TestTemplateInvariants:
 
     def test_same_invariants_as_competition(self) -> None:
         t = CompetitionTemplate.create(template_id=TemplateId.generate(), name=TemplateName("t"), now=NOW)
-        t.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
+        cat = t.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
         with pytest.raises(DuplicateCategoryError):
             t.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
-        t.add_age_category(age_category_id=AgeCategoryId.generate(), age_range=AgeRange(6, 8), now=NOW)
+        t.add_age_category(age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW)
         with pytest.raises(OverlappingAgeRangeError):
-            t.add_age_category(age_category_id=AgeCategoryId.generate(), age_range=AgeRange(7, 9), now=NOW)
+            t.add_age_category(age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("7-9"), age_range=AgeRange(7, 9), now=NOW)
 
     def test_admission_reference_validated(self) -> None:
         t = CompetitionTemplate.create(template_id=TemplateId.generate(), name=TemplateName("t"), now=NOW)
         cat = t.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
         other = t.add_category(category_id=CategoryId.generate(), name=CategoryName("Dance"), now=NOW)
         disc = t.add_discipline(discipline_id=DisciplineId.generate(), category_id=cat.id, name=DisciplineName("Pop"), now=NOW)
-        age = t.add_age_category(age_category_id=AgeCategoryId.generate(), age_range=AgeRange(6, 8), now=NOW)
+        age = t.add_age_category(age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW)
         grp = t.add_participant_group(
             participant_group_id=ParticipantGroupId.generate(),
             category_id=cat.id,

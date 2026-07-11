@@ -152,7 +152,7 @@ def test_full_organizer_workflow(staff_client: APIClient) -> None:
     category_id = cat.data["data"]["categories"][0]["id"]
 
     staff_client.post(f"{detail}/disciplines", {"categoryId": category_id, "name": "Solo"}, format="json")
-    staff_client.post(f"{detail}/age-categories", {"minAge": 7, "maxAge": 10}, format="json")
+    staff_client.post(f"{detail}/age-categories", {"categoryId": category_id, "name": "7-10", "minAge": 7, "maxAge": 10}, format="json")
     staff_client.post(f"{detail}/participant-groups", {"categoryId": category_id, "name": "Solo", "minCount": 1, "maxCount": 1}, format="json")
     view = staff_client.post(f"{detail}/participation-formats", {"participationFormat": "OFFLINE"}, format="json").data["data"]
 

@@ -36,6 +36,7 @@ __all__ = [
     "RenameCategorySerializer",
     "RenameDisciplineSerializer",
     "UpdateAdditionalServiceSerializer",
+    "UpdateAgeCategorySerializer",
     "UpdateCompetitionBrandingSerializer",
     "UpdateCompetitionDeadlinesSerializer",
     "UpdateCompetitionGeneralInformationSerializer",
@@ -102,28 +103,94 @@ class UpdateCompetitionDeadlinesSerializer(serializers.Serializer[dict[str, obje
 
 class AddCategorySerializer(serializers.Serializer[dict[str, object]]):
     name = serializers.CharField(max_length=120)
+    description = serializers.CharField(required=False, allow_blank=True, allow_null=True, max_length=2000)
+    sortOrder = serializers.IntegerField(source="sort_order", required=False, allow_null=True, min_value=0)
 
 
 class RenameCategorySerializer(serializers.Serializer[dict[str, object]]):
-    name = serializers.CharField(max_length=120)
+    name = serializers.CharField(required=False, allow_null=True, max_length=120)
+    description = serializers.CharField(required=False, allow_blank=True, allow_null=True, max_length=2000)
+    sortOrder = serializers.IntegerField(source="sort_order", required=False, allow_null=True, min_value=0)
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        if not any(k in attrs for k in ("name", "description", "sort_order")):
+            raise serializers.ValidationError("At least one of name, description, or sortOrder must be provided.")
+        return attrs
 
 
 class AddDisciplineSerializer(serializers.Serializer[dict[str, object]]):
     categoryId = serializers.UUIDField(source="category_id")
     name = serializers.CharField(max_length=120)
+    sortOrder = serializers.IntegerField(source="sort_order", required=False, allow_null=True, min_value=0)
 
 
 class RenameDisciplineSerializer(serializers.Serializer[dict[str, object]]):
-    name = serializers.CharField(max_length=120)
+    name = serializers.CharField(required=False, allow_null=True, max_length=120)
+    sortOrder = serializers.IntegerField(source="sort_order", required=False, allow_null=True, min_value=0)
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        if not any(k in attrs for k in ("name", "sort_order")):
+            raise serializers.ValidationError("At least one of name or sortOrder must be provided.")
+        return attrs
 
 
 class AddAgeCategorySerializer(serializers.Serializer[dict[str, object]]):
+    categoryId = serializers.UUIDField(source="category_id")
+    name = serializers.CharField(max_length=120)
     minAge = serializers.IntegerField(source="min_age", min_value=0)
     maxAge = serializers.IntegerField(source="max_age", min_value=0)
+    sortOrder = serializers.IntegerField(source="sort_order", required=False, allow_null=True, min_value=0)
+    type = serializers.ChoiceField(source="age_category_type", choices=["STANDARD", "MIXED"], default="STANDARD")
+    mixedCalculationMethod = serializers.ChoiceField(
+        source="mixed_calculation_method",
+        choices=["AVERAGE", "OLDEST", "YOUNGEST"],
+        required=False,
+        allow_null=True,
+        default=None,
+    )
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if attrs["min_age"] > attrs["max_age"]:
             raise serializers.ValidationError("minAge must not exceed maxAge.")
+        ac_type = attrs.get("age_category_type", "STANDARD")
+        method = attrs.get("mixed_calculation_method")
+        if ac_type == "MIXED" and method is None:
+            raise serializers.ValidationError("mixedCalculationMethod is required when type is MIXED.")
+        if ac_type == "STANDARD" and method is not None:
+            raise serializers.ValidationError("mixedCalculationMethod must be null when type is STANDARD.")
+        return attrs
+
+
+class UpdateAgeCategorySerializer(serializers.Serializer[dict[str, object]]):
+    name = serializers.CharField(required=False, allow_null=True, max_length=120)
+    minAge = serializers.IntegerField(source="min_age", required=False, allow_null=True, min_value=0)
+    maxAge = serializers.IntegerField(source="max_age", required=False, allow_null=True, min_value=0)
+    sortOrder = serializers.IntegerField(source="sort_order", required=False, allow_null=True, min_value=0)
+    type = serializers.ChoiceField(source="age_category_type", choices=["STANDARD", "MIXED"], required=False, allow_null=True)
+    mixedCalculationMethod = serializers.ChoiceField(
+        source="mixed_calculation_method",
+        choices=["AVERAGE", "OLDEST", "YOUNGEST"],
+        required=False,
+        allow_null=True,
+    )
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        if not any(k in attrs for k in ("name", "min_age", "max_age", "sort_order", "age_category_type", "mixed_calculation_method")):
+            raise serializers.ValidationError(
+                "At least one of name, minAge, maxAge, sortOrder, type, or mixedCalculationMethod must be provided."
+            )
+        has_min = attrs.get("min_age") is not None
+        has_max = attrs.get("max_age") is not None
+        if has_min != has_max:
+            raise serializers.ValidationError("Both minAge and maxAge must be provided together.")
+        if has_min and has_max and attrs["min_age"] > attrs["max_age"]:
+            raise serializers.ValidationError("minAge must not exceed maxAge.")
+        ac_type = attrs.get("age_category_type")
+        method = attrs.get("mixed_calculation_method")
+        if ac_type == "MIXED" and method is None:
+            raise serializers.ValidationError("mixedCalculationMethod is required when type is MIXED.")
+        if ac_type == "STANDARD" and method is not None:
+            raise serializers.ValidationError("mixedCalculationMethod must be null when type is STANDARD.")
         return attrs
 
 
@@ -275,18 +342,26 @@ class _SettingsSerializer(serializers.Serializer[dict[str, object]]):
 class _CategorySerializer(serializers.Serializer[dict[str, object]]):
     id = serializers.CharField()
     name = serializers.CharField()
+    description = serializers.CharField(allow_null=True)
+    sortOrder = serializers.IntegerField(source="sort_order")
 
 
 class _DisciplineSerializer(serializers.Serializer[dict[str, object]]):
     id = serializers.CharField()
     categoryId = serializers.CharField(source="category_id")
     name = serializers.CharField()
+    sortOrder = serializers.IntegerField(source="sort_order")
 
 
 class _AgeCategorySerializer(serializers.Serializer[dict[str, object]]):
     id = serializers.CharField()
+    categoryId = serializers.CharField(source="category_id")
+    name = serializers.CharField()
     minAge = serializers.IntegerField(source="min_age")
     maxAge = serializers.IntegerField(source="max_age")
+    sortOrder = serializers.IntegerField(source="sort_order")
+    type = serializers.CharField()
+    mixedCalculationMethod = serializers.CharField(source="mixed_calculation_method", allow_null=True)
 
 
 class _ParticipantGroupSerializer(serializers.Serializer[dict[str, object]]):

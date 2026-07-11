@@ -22,6 +22,7 @@ from apps.competitions.domain.entities import Competition
 from apps.competitions.domain.value_objects import (
     AdmissionCombination,
     AgeCategoryId,
+    AgeCategoryName,
     AgeRange,
     CategoryId,
     CategoryName,
@@ -80,7 +81,7 @@ def _fully_configured() -> Competition:
     competition = _draft()
     category = competition.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=_NOW)
     discipline = competition.add_discipline(discipline_id=DisciplineId.generate(), category_id=category.id, name=DisciplineName("Pop"), now=_NOW)
-    age = competition.add_age_category(age_category_id=AgeCategoryId.generate(), age_range=AgeRange(6, 8), now=_NOW)
+    age = competition.add_age_category(age_category_id=AgeCategoryId.generate(), category_id=category.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=_NOW)
     group = competition.add_participant_group(
         participant_group_id=ParticipantGroupId.generate(),
         category_id=category.id,

@@ -42,7 +42,10 @@ from apps.competitions.domain.value_objects import (
     AdmissionCombination,
     AdmissionRule,
     AgeCategoryId,
+    AgeCategoryName,
+    AgeCategoryType,
     AgeRange,
+    CategoryDescription,
     CategoryId,
     CategoryName,
     CompetitionBranding,
@@ -66,6 +69,7 @@ from apps.competitions.domain.value_objects import (
     FileReference,
     InformationBlockId,
     InformationBlockTitle,
+    MixedAgeCalculationMethod,
     Money,
     OrganizerId,
     ParticipantCountRange,
@@ -226,17 +230,36 @@ class CompetitionMapper:
                 document_upload=model.deadline_document_upload,
                 correction=model.deadline_correction,
             ),
-            categories=[Category.rehydrate(category_id=CategoryId.from_uuid(row.id), name=CategoryName(row.name)) for row in categories],
+            categories=[
+                Category.rehydrate(
+                    category_id=CategoryId.from_uuid(row.id),
+                    name=CategoryName(row.name),
+                    description=CategoryDescription(row.description) if row.description else None,
+                    sort_order=row.sort_order,
+                )
+                for row in categories
+            ],
             disciplines=[
                 Discipline.rehydrate(
                     discipline_id=DisciplineId.from_uuid(row.id),
                     category_id=CategoryId.from_uuid(row.category_id),
                     name=DisciplineName(row.name),
+                    sort_order=row.sort_order,
                 )
                 for row in disciplines
             ],
             age_categories=[
-                AgeCategory.rehydrate(age_category_id=AgeCategoryId.from_uuid(row.id), age_range=AgeRange(row.min_age, row.max_age))
+                AgeCategory.rehydrate(
+                    age_category_id=AgeCategoryId.from_uuid(row.id),
+                    category_id=CategoryId.from_uuid(row.category_id),
+                    name=AgeCategoryName(row.name),
+                    age_range=AgeRange(row.min_age, row.max_age),
+                    age_category_type=AgeCategoryType(row.type) if row.type else AgeCategoryType.STANDARD,
+                    mixed_calculation_method=(
+                        MixedAgeCalculationMethod(row.mixed_calculation_method) if row.mixed_calculation_method else None
+                    ),
+                    sort_order=row.sort_order,
+                )
                 for row in age_categories
             ],
             participant_groups=[
@@ -368,13 +391,38 @@ class CompetitionMapper:
         """Build every unsaved child row of ``entity``, keyed to the competition."""
         competition_id = entity.id.value
         return CompetitionChildRows(
-            categories=[CategoryModel(id=c.id.value, competition_id=competition_id, name=c.name.value) for c in entity.categories],
+            categories=[
+                CategoryModel(
+                    id=c.id.value,
+                    competition_id=competition_id,
+                    name=c.name.value,
+                    description=c.description.value if c.description is not None else None,
+                    sort_order=c.sort_order,
+                )
+                for c in entity.categories
+            ],
             disciplines=[
-                DisciplineModel(id=d.id.value, competition_id=competition_id, category_id=d.category_id.value, name=d.name.value)
+                DisciplineModel(
+                    id=d.id.value,
+                    competition_id=competition_id,
+                    category_id=d.category_id.value,
+                    name=d.name.value,
+                    sort_order=d.sort_order,
+                )
                 for d in entity.disciplines
             ],
             age_categories=[
-                AgeCategoryModel(id=a.id.value, competition_id=competition_id, min_age=a.age_range.min_age, max_age=a.age_range.max_age)
+                AgeCategoryModel(
+                    id=a.id.value,
+                    competition_id=competition_id,
+                    category_id=a.category_id.value,
+                    name=a.name.value,
+                    min_age=a.age_range.min_age,
+                    max_age=a.age_range.max_age,
+                    sort_order=a.sort_order,
+                    type=a.type.value,
+                    mixed_calculation_method=a.mixed_calculation_method.value if a.mixed_calculation_method is not None else None,
+                )
                 for a in entity.age_categories
             ],
             participant_groups=[
