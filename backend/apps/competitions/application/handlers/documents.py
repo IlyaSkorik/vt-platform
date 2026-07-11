@@ -23,10 +23,10 @@ from ._support import CompetitionCommandHandler
 
 __all__ = (
     "AddDocumentHandler",
-    "UpdateDocumentHandler",
     "PublishDocumentHandler",
-    "UnpublishDocumentHandler",
     "RemoveDocumentHandler",
+    "UnpublishDocumentHandler",
+    "UpdateDocumentHandler",
 )
 
 
@@ -46,12 +46,8 @@ class AddDocumentHandler(CompetitionCommandHandler):
             title=DocumentTitle(command.title),
             category=DocumentCategory(command.category),
             visibility=DocumentVisibility(command.visibility),
-            file=FileReference(command.file),
-            description=(
-                DocumentDescription(command.description)
-                if command.description
-                else None
-            ),
+            file=FileReference(command.file_reference),
+            description=(DocumentDescription(command.description) if command.description else None),
             sort_order=command.sort_order,
             published=command.published,
             now=self._clock.utcnow(),
@@ -76,12 +72,8 @@ class UpdateDocumentHandler(CompetitionCommandHandler):
             title=DocumentTitle(command.title),
             category=DocumentCategory(command.category),
             visibility=DocumentVisibility(command.visibility),
-            file=FileReference(command.file),
-            description=(
-                DocumentDescription(command.description)
-                if command.description
-                else None
-            ),
+            file=FileReference(command.file_reference),
+            description=(DocumentDescription(command.description) if command.description else None),
             sort_order=command.sort_order,
             now=self._clock.utcnow(),
         )

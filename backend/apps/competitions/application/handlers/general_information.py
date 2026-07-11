@@ -25,10 +25,10 @@ from apps.competitions.domain.value_objects import (
 from ._support import CompetitionCommandHandler
 
 __all__ = [
-    "UpdateCompetitionGeneralInformationHandler",
     "UpdateCompetitionBrandingHandler",
-    "UpdateCompetitionSettingsHandler",
     "UpdateCompetitionDeadlinesHandler",
+    "UpdateCompetitionGeneralInformationHandler",
+    "UpdateCompetitionSettingsHandler",
 ]
 
 
@@ -52,9 +52,7 @@ class UpdateCompetitionGeneralInformationHandler(CompetitionCommandHandler):
             now=self._clock.utcnow(),
             title=CompetitionTitle(command.title),
             season=Season(command.season),
-            description=CompetitionDescription(command.description)
-            if command.description
-            else None,
+            description=CompetitionDescription(command.description) if command.description else None,
             logo=_file(command.logo),
             banner=_file(command.banner),
             venue=(
@@ -130,11 +128,11 @@ class UpdateCompetitionDeadlinesHandler(CompetitionCommandHandler):
         competition = self._require(command.competition_id)
 
         deadlines = RegistrationDeadlines(
-            application=command.application_deadline,
-            payment=command.payment_deadline,
-            music_upload=command.music_upload_deadline,
-            document_upload=command.document_upload_deadline,
-            correction=command.correction_deadline,
+            application=command.application,
+            payment=command.payment,
+            music_upload=command.music_upload,
+            document_upload=command.document_upload,
+            correction=command.correction,
         )
 
         events = competition.update_deadlines(

@@ -45,7 +45,7 @@ class AddRegulationHandler(CompetitionCommandHandler):
             ),
             publication_date=command.publication_date,
             file=FileReference(
-                command.file,
+                command.file_reference,
             ),
             now=self._clock.utcnow(),
         )

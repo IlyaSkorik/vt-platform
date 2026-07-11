@@ -13,7 +13,6 @@ from apps.competitions.domain.value_objects import (
 
 from ._support import CompetitionCommandHandler
 
-
 __all__ = ["CreateCompetitionHandler"]
 
 
@@ -30,11 +29,7 @@ class CreateCompetitionHandler(CompetitionCommandHandler):
             season=Season(command.season),
             organizer_id=OrganizerId.from_string(command.organizer_id),
             now=self._clock.utcnow(),
-            description=(
-                CompetitionDescription(command.description)
-                if command.description
-                else None
-            ),
+            description=(CompetitionDescription(command.description) if command.description else None),
         )
 
         return self._persist(competition, events)

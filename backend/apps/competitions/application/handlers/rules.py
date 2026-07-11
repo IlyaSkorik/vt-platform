@@ -15,9 +15,9 @@ from ._support import CompetitionCommandHandler
 
 __all__ = (
     "AddAdmissionRuleHandler",
-    "RemoveAdmissionRuleHandler",
     "AddPricingRuleHandler",
     "ChangePriceHandler",
+    "RemoveAdmissionRuleHandler",
     "RemovePricingRuleHandler",
 )
 

@@ -30,16 +30,16 @@ from apps.competitions.domain.value_objects import (
 from ._support import CompetitionCommandHandler
 
 __all__ = (
-    "AddCategoryHandler",
-    "RenameCategoryHandler",
-    "RemoveCategoryHandler",
-    "AddDisciplineHandler",
-    "RenameDisciplineHandler",
-    "RemoveDisciplineHandler",
     "AddAgeCategoryHandler",
-    "RemoveAgeCategoryHandler",
+    "AddCategoryHandler",
+    "AddDisciplineHandler",
     "AddParticipantGroupHandler",
+    "RemoveAgeCategoryHandler",
+    "RemoveCategoryHandler",
+    "RemoveDisciplineHandler",
     "RemoveParticipantGroupHandler",
+    "RenameCategoryHandler",
+    "RenameDisciplineHandler",
 )
 
 
@@ -149,6 +149,7 @@ class RemoveDisciplineHandler(CompetitionCommandHandler):
 
         return self._persist(competition)
 
+
 class AddAgeCategoryHandler(CompetitionCommandHandler):
     """Add an age category."""
 
@@ -209,8 +210,8 @@ class AddParticipantGroupHandler(CompetitionCommandHandler):
                 command.name,
             ),
             count_range=ParticipantCountRange(
-                minimum=command.minimum_participants,
-                maximum=command.maximum_participants,
+                min_count=command.min_count,
+                max_count=command.max_count,
             ),
             now=self._clock.utcnow(),
         )
@@ -235,5 +236,3 @@ class RemoveParticipantGroupHandler(CompetitionCommandHandler):
         )
 
         return self._persist(competition)
-    
-

@@ -20,10 +20,10 @@ from ._support import CompetitionCommandHandler
 
 __all__ = (
     "AddAdditionalServiceHandler",
-    "UpdateAdditionalServiceHandler",
-    "EnableAdditionalServiceHandler",
     "DisableAdditionalServiceHandler",
+    "EnableAdditionalServiceHandler",
     "RemoveAdditionalServiceHandler",
+    "UpdateAdditionalServiceHandler",
 )
 
 
@@ -47,11 +47,7 @@ class AddAdditionalServiceHandler(CompetitionCommandHandler):
                 amount=command.amount,
                 currency=command.currency,
             ),
-            description=(
-                ServiceDescription(command.description)
-                if command.description
-                else None
-            ),
+            description=(ServiceDescription(command.description) if command.description else None),
             enabled=command.enabled,
             now=self._clock.utcnow(),
         )
@@ -79,11 +75,7 @@ class UpdateAdditionalServiceHandler(CompetitionCommandHandler):
                 amount=command.amount,
                 currency=command.currency,
             ),
-            description=(
-                ServiceDescription(command.description)
-                if command.description
-                else None
-            ),
+            description=(ServiceDescription(command.description) if command.description else None),
             now=self._clock.utcnow(),
         )
 

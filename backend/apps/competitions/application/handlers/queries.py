@@ -10,6 +10,7 @@ from apps.competitions.application.dto.views import (
     CompetitionDetailView,
     CompetitionSummaryView,
 )
+from apps.competitions.application.exceptions import CompetitionNotFoundError
 from apps.competitions.application.interfaces import CompetitionRepository
 from apps.competitions.domain.value_objects import CompetitionId, Season
 
@@ -34,8 +35,8 @@ class GetCompetitionHandler:
         )
 
         if competition is None:
-            raise LookupError(
-                f"Competition {query.competition_id} not found.",
+            raise CompetitionNotFoundError(
+                f"No competition {query.competition_id}.",
             )
 
         return CompetitionDetailView.of(
@@ -53,12 +54,7 @@ class ListCompetitionsHandler:
         self,
         query: ListCompetitionsQuery,
     ) -> list[CompetitionSummaryView]:
-        if query.season is None:
-            competitions = self._repository.list_all()
-        else:
-            competitions = self._repository.list_by_season(
-                Season(query.season),
-            )
+        competitions = self._repository.list_all() if query.season is None else self._repository.list_by_season(Season(query.season))
 
         return [
             CompetitionSummaryView.of(

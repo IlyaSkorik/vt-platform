@@ -1,1089 +1,719 @@
-"""REST API for Competition management."""
+"""REST API for Competition management (the organizer control panel).
+
+A single :class:`CompetitionViewSet` exposing every organizer use case. Each
+action validates its request with a serializer, assembles the framework-free
+command/query via the composition root, invokes the handler, and renders the
+result as a camelCase ``{data, meta}`` envelope (API-000 §7). Application and
+domain errors are funnelled through :mod:`.problems` into RFC 9457 Problem
+Details — views never hand-assemble an error body. The whole surface is
+staff-only (:class:`IsOrganizationStaff`); participants cannot reach it.
+"""
 
 from __future__ import annotations
 
+import uuid
+from decimal import Decimal
+from typing import Any, Protocol, cast
+
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import BasePermission, IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.serializers import Serializer
+from rest_framework_simplejwt.authentication import JWTStatelessUserAuthentication
 
 from apps.competitions.application.dto.commands import (
+    AddAdditionalServiceCommand,
+    AddAdmissionRuleCommand,
+    AddAgeCategoryCommand,
+    AddCategoryCommand,
+    AddContactCommand,
+    AddDisciplineCommand,
+    AddDocumentCommand,
+    AddInformationBlockCommand,
+    AddParticipantGroupCommand,
+    AddPricingRuleCommand,
+    AddRegulationCommand,
     ArchiveCompetitionCommand,
+    ChangePriceCommand,
     CloseRegistrationCommand,
+    CompleteCompetitionCommand,
     CreateCompetitionCommand,
+    DisableAdditionalServiceCommand,
+    DisableFormatCommand,
+    EnableAdditionalServiceCommand,
+    EnableFormatCommand,
+    HideInformationBlockCommand,
+    MakeRegulationCurrentCommand,
+    MarkConfiguredCommand,
+    MarkReadyCommand,
     OpenRegistrationCommand,
     PublishCompetitionCommand,
+    PublishDocumentCommand,
+    PublishInformationBlockCommand,
+    RemoveAdditionalServiceCommand,
+    RemoveAdmissionRuleCommand,
+    RemoveAgeCategoryCommand,
+    RemoveCategoryCommand,
+    RemoveContactCommand,
+    RemoveDisciplineCommand,
+    RemoveDocumentCommand,
+    RemoveInformationBlockCommand,
+    RemoveParticipantGroupCommand,
+    RemovePricingRuleCommand,
+    RemoveRegulationCommand,
+    RenameCategoryCommand,
+    RenameDisciplineCommand,
+    RevertToConfiguredCommand,
+    RevertToDraftCommand,
+    SetPrimaryContactCommand,
+    StartCompetitionCommand,
+    UnpublishDocumentCommand,
+    UpdateAdditionalServiceCommand,
+    UpdateBrandingCommand,
+    UpdateDeadlinesCommand,
+    UpdateDocumentCommand,
     UpdateGeneralInformationCommand,
+    UpdateInformationBlockCommand,
+    UpdateSettingsCommand,
 )
 from apps.competitions.application.dto.queries import (
     GetCompetitionQuery,
     ListCompetitionsQuery,
 )
-from apps.competitions.application.handlers import (
-    ArchiveCompetitionHandler,
-    CloseRegistrationHandler,
-    CreateCompetitionHandler,
-    GetCompetitionHandler,
-    ListCompetitionsHandler,
-    OpenRegistrationHandler,
-    PublishCompetitionHandler,
-    UpdateCompetitionGeneralInformationHandler,
-)
-
-from .serializers import (
-    CreateCompetitionSerializer,
-    PublishCompetitionSerializer,
-    UpdateCompetitionGeneralInformationSerializer,
-)
-
-from apps.competitions.application.dto.commands import (
-    AddCategoryCommand,
-    RenameCategoryCommand,
-    RemoveCategoryCommand,
-    AddDisciplineCommand,
-    RenameDisciplineCommand,
-    RemoveDisciplineCommand,
-)
-
-from apps.competitions.application.handlers import (
-    AddCategoryHandler,
-    RenameCategoryHandler,
-    RemoveCategoryHandler,
-    AddDisciplineHandler,
-    RenameDisciplineHandler,
-    RemoveDisciplineHandler,
-)
-
-from .serializers import (
-    AddCategorySerializer,
-    RenameCategorySerializer,
-    AddDisciplineSerializer,
-    RenameDisciplineSerializer,
-)
-
-from apps.competitions.application.dto.commands import (
-    AddAgeCategoryCommand,
-    RemoveAgeCategoryCommand,
-    AddParticipantGroupCommand,
-    RemoveParticipantGroupCommand,
-    EnableFormatCommand,
-    DisableFormatCommand,
-)
-
-from apps.competitions.application.handlers import (
-    AddAgeCategoryHandler,
-    RemoveAgeCategoryHandler,
-    AddParticipantGroupHandler,
-    RemoveParticipantGroupHandler,
-    EnableFormatHandler,
-    DisableFormatHandler,
-)
-
-from .serializers import (
-    AddAgeCategorySerializer,
-    AddParticipantGroupSerializer,
-    EnableParticipationFormatSerializer,
-    DisableParticipationFormatSerializer,
-)
-
-from apps.competitions.application.dto.commands import (
-    AddAdmissionRuleCommand,
-    RemoveAdmissionRuleCommand,
-    AddPricingRuleCommand,
-    ChangePriceCommand,
-    RemovePricingRuleCommand,
-)
-
-from apps.competitions.application.handlers import (
-    AddAdmissionRuleHandler,
-    RemoveAdmissionRuleHandler,
-    AddPricingRuleHandler,
-    ChangePriceHandler,
-    RemovePricingRuleHandler,
-)
-
-from .serializers import (
-    AddAdmissionRuleSerializer,
-    AddPricingRuleSerializer,
-    ChangePriceSerializer,
-    RemoveAdmissionRuleSerializer,
-    RemovePricingRuleSerializer,
-)
-
-from apps.competitions.application.dto.commands import (
-    AddRegulationCommand,
-    MakeRegulationCurrentCommand,
-    RemoveRegulationCommand,
-    AddDocumentCommand,
-    UpdateDocumentCommand,
-    PublishDocumentCommand,
-    UnpublishDocumentCommand,
-    RemoveDocumentCommand,
-)
-
-from apps.competitions.application.handlers import (
-    AddRegulationHandler,
-    MakeRegulationCurrentHandler,
-    RemoveRegulationHandler,
-    AddDocumentHandler,
-    UpdateDocumentHandler,
-    PublishDocumentHandler,
-    UnpublishDocumentHandler,
-    RemoveDocumentHandler,
-)
-
-from .serializers import (
-    AddRegulationSerializer,
-    AddDocumentSerializer,
-    UpdateDocumentSerializer,
-    PublishDocumentSerializer,
-    UnpublishDocumentSerializer,
-)
-
-from apps.competitions.application.dto.commands import (
-    AddAdditionalServiceCommand,
-    UpdateAdditionalServiceCommand,
-    EnableAdditionalServiceCommand,
-    DisableAdditionalServiceCommand,
-    RemoveAdditionalServiceCommand,
-    AddContactCommand,
-    SetPrimaryContactCommand,
-    RemoveContactCommand,
-    AddInformationBlockCommand,
-    UpdateInformationBlockCommand,
-    PublishInformationBlockCommand,
-    HideInformationBlockCommand,
-    RemoveInformationBlockCommand,
-)
-
+from apps.competitions.application.exceptions import ApplicationError
 from apps.competitions.application.handlers import (
     AddAdditionalServiceHandler,
-    UpdateAdditionalServiceHandler,
-    EnableAdditionalServiceHandler,
-    DisableAdditionalServiceHandler,
-    RemoveAdditionalServiceHandler,
+    AddAdmissionRuleHandler,
+    AddAgeCategoryHandler,
+    AddCategoryHandler,
     AddContactHandler,
-    SetPrimaryContactHandler,
-    RemoveContactHandler,
+    AddDisciplineHandler,
+    AddDocumentHandler,
     AddInformationBlockHandler,
-    UpdateInformationBlockHandler,
-    PublishInformationBlockHandler,
+    AddParticipantGroupHandler,
+    AddPricingRuleHandler,
+    AddRegulationHandler,
+    ArchiveCompetitionHandler,
+    ChangePriceHandler,
+    CloseRegistrationHandler,
+    CompleteCompetitionHandler,
+    CreateCompetitionHandler,
+    DisableAdditionalServiceHandler,
+    DisableFormatHandler,
+    EnableAdditionalServiceHandler,
+    EnableFormatHandler,
     HideInformationBlockHandler,
+    MakeRegulationCurrentHandler,
+    MarkCompetitionConfiguredHandler,
+    MarkCompetitionReadyHandler,
+    OpenRegistrationHandler,
+    PublishCompetitionHandler,
+    PublishDocumentHandler,
+    PublishInformationBlockHandler,
+    RemoveAdditionalServiceHandler,
+    RemoveAdmissionRuleHandler,
+    RemoveAgeCategoryHandler,
+    RemoveCategoryHandler,
+    RemoveContactHandler,
+    RemoveDisciplineHandler,
+    RemoveDocumentHandler,
     RemoveInformationBlockHandler,
+    RemoveParticipantGroupHandler,
+    RemovePricingRuleHandler,
+    RemoveRegulationHandler,
+    RenameCategoryHandler,
+    RenameDisciplineHandler,
+    RevertCompetitionToConfiguredHandler,
+    RevertCompetitionToDraftHandler,
+    SetPrimaryContactHandler,
+    StartCompetitionHandler,
+    UnpublishDocumentHandler,
+    UpdateAdditionalServiceHandler,
+    UpdateCompetitionBrandingHandler,
+    UpdateCompetitionDeadlinesHandler,
+    UpdateCompetitionGeneralInformationHandler,
+    UpdateCompetitionSettingsHandler,
+    UpdateDocumentHandler,
+    UpdateInformationBlockHandler,
 )
+from apps.competitions.application.handlers._support import CompetitionCommandHandler
+from apps.competitions.composition import (
+    build_command_handler,
+    build_get_competition_handler,
+    build_list_competitions_handler,
+)
+from apps.competitions.domain.exceptions import CompetitionDomainError
+from apps.competitions.presentation.api.v1.problems import (
+    competition_problem,
+    request_id,
+    validation_problem,
+)
+from apps.competitions.presentation.permissions import IsOrganizationStaff
 
 from .serializers import (
     AddAdditionalServiceSerializer,
-    UpdateAdditionalServiceSerializer,
+    AddAdmissionRuleSerializer,
+    AddAgeCategorySerializer,
+    AddCategorySerializer,
     AddContactSerializer,
+    AddDisciplineSerializer,
+    AddDocumentSerializer,
     AddInformationBlockSerializer,
+    AddParticipantGroupSerializer,
+    AddPricingRuleSerializer,
+    AddRegulationSerializer,
+    ChangePriceSerializer,
+    CompetitionDetailEnvelopeSerializer,
+    CompetitionDetailSerializer,
+    CompetitionListEnvelopeSerializer,
+    CompetitionSummarySerializer,
+    CreateCompetitionSerializer,
+    ParticipationFormatSerializer,
+    ProblemDetailSerializer,
+    RenameCategorySerializer,
+    RenameDisciplineSerializer,
+    UpdateAdditionalServiceSerializer,
+    UpdateCompetitionBrandingSerializer,
+    UpdateCompetitionDeadlinesSerializer,
+    UpdateCompetitionGeneralInformationSerializer,
+    UpdateCompetitionSettingsSerializer,
+    UpdateDocumentSerializer,
     UpdateInformationBlockSerializer,
+    _AdmissionCombinationSerializer,
 )
 
-__all__ = [
-    "CompetitionViewSet",
-]
+_TAG = "Competitions"
+
+
+class _CommandRunner(Protocol):
+    """Structural view of a command handler for the presentation edge."""
+
+    def handle(self, command: Any, /) -> Any: ...
+
+
+def _error_responses(success: dict[int, Any]) -> dict[int | str, Any]:
+    """Shared response schema: the success entries plus the standard problems."""
+    responses: dict[int | str, Any] = {}
+    for code, schema in success.items():
+        responses[code] = schema
+    responses[400] = OpenApiResponse(ProblemDetailSerializer, description="Validation failed.")
+    responses[403] = OpenApiResponse(ProblemDetailSerializer, description="Not organization staff.")
+    responses[404] = OpenApiResponse(ProblemDetailSerializer, description="Competition or element not found.")
+    responses[409] = OpenApiResponse(ProblemDetailSerializer, description="Lifecycle or configuration conflict.")
+    responses[422] = OpenApiResponse(ProblemDetailSerializer, description="Business rule violation.")
+    return responses
+
+
+def _detail_ok(status_code: int = status.HTTP_200_OK) -> dict[int | str, Any]:
+    return _error_responses({status_code: CompetitionDetailEnvelopeSerializer})
+
+
+def _command_kwargs(serializer: Serializer[Any]) -> dict[str, Any]:
+    """Coerce validated data into command-friendly primitives (UUID/Decimal → str)."""
+    cleaned: dict[str, Any] = {}
+    for key, value in serializer.validated_data.items():
+        if isinstance(value, uuid.UUID | Decimal):
+            cleaned[key] = str(value)
+        else:
+            cleaned[key] = value
+    return cleaned
 
 
 class CompetitionViewSet(viewsets.ViewSet):
-    """Organizer Competition API."""
+    """Organizer Competition API — staff-only."""
 
-    create_handler: CreateCompetitionHandler
-    list_handler: ListCompetitionsHandler
-    retrieve_handler: GetCompetitionHandler
-    update_handler: UpdateCompetitionGeneralInformationHandler
+    authentication_classes = (JWTStatelessUserAuthentication,)
+    permission_classes: tuple[type[BasePermission], ...] = (IsAuthenticated, IsOrganizationStaff)
 
-    publish_handler: PublishCompetitionHandler
-    open_registration_handler: OpenRegistrationHandler
-    close_registration_handler: CloseRegistrationHandler
-    archive_handler: ArchiveCompetitionHandler
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
 
-    add_category_handler: AddCategoryHandler
-    rename_category_handler: RenameCategoryHandler
-    remove_category_handler: RemoveCategoryHandler
+    def _body(
+        self,
+        serializer_cls: type[Serializer[Any]],
+        request: Request,
+    ) -> tuple[dict[str, Any] | None, Response | None]:
+        """Validate a request body; return (kwargs, None) or (None, problem)."""
+        serializer = serializer_cls(data=request.data)
+        if not serializer.is_valid():
+            return None, validation_problem(serializer.errors, instance=request.path, request=request)
+        return _command_kwargs(serializer), None
 
-    add_discipline_handler: AddDisciplineHandler
-    rename_discipline_handler: RenameDisciplineHandler
-    remove_discipline_handler: RemoveDisciplineHandler
+    def _run(
+        self,
+        handler_cls: type[CompetitionCommandHandler],
+        command: Any,
+        request: Request,
+        *,
+        success: int = status.HTTP_200_OK,
+    ) -> Response:
+        """Execute a command handler and render the refreshed competition (or a problem)."""
+        handler = cast("_CommandRunner", build_command_handler(handler_cls))
+        try:
+            result = handler.handle(command)
+        except (ApplicationError, CompetitionDomainError) as exc:
+            return competition_problem(exc, instance=request.path, request=request)
+        return self._detail(result, request, success)
 
-    add_age_category_handler: AddAgeCategoryHandler
-    remove_age_category_handler: RemoveAgeCategoryHandler
-
-    add_participant_group_handler: AddParticipantGroupHandler
-    remove_participant_group_handler: RemoveParticipantGroupHandler
-
-    enable_format_handler: EnableFormatHandler
-    disable_format_handler: DisableFormatHandler
-
-    add_admission_rule_handler: AddAdmissionRuleHandler
-    remove_admission_rule_handler: RemoveAdmissionRuleHandler
-
-    add_pricing_rule_handler: AddPricingRuleHandler
-    change_price_handler: ChangePriceHandler
-    remove_pricing_rule_handler: RemovePricingRuleHandler
-
-    add_regulation_handler: AddRegulationHandler
-    make_regulation_current_handler: MakeRegulationCurrentHandler
-    remove_regulation_handler: RemoveRegulationHandler
-
-    add_document_handler: AddDocumentHandler
-    update_document_handler: UpdateDocumentHandler
-    publish_document_handler: PublishDocumentHandler
-    unpublish_document_handler: UnpublishDocumentHandler
-    remove_document_handler: RemoveDocumentHandler
-
-    add_service_handler: AddAdditionalServiceHandler
-    update_service_handler: UpdateAdditionalServiceHandler
-    enable_service_handler: EnableAdditionalServiceHandler
-    disable_service_handler: DisableAdditionalServiceHandler
-    remove_service_handler: RemoveAdditionalServiceHandler
-
-    add_contact_handler: AddContactHandler
-    set_primary_contact_handler: SetPrimaryContactHandler
-    remove_contact_handler: RemoveContactHandler
-
-    add_information_block_handler: AddInformationBlockHandler
-    update_information_block_handler: UpdateInformationBlockHandler
-    publish_information_block_handler: PublishInformationBlockHandler
-    hide_information_block_handler: HideInformationBlockHandler
-    remove_information_block_handler: RemoveInformationBlockHandler
+    def _detail(self, view: Any, request: Request, status_code: int) -> Response:
+        correlation_id = request_id(request)
+        body = {"data": CompetitionDetailSerializer(view).data, "meta": {"requestId": correlation_id}}
+        return Response(body, status=status_code, headers={"X-Request-ID": correlation_id})
 
     # ------------------------------------------------------------------
     # CRUD
     # ------------------------------------------------------------------
 
-    def list(self, request):
-        """GET /competitions"""
+    @extend_schema(tags=[_TAG], operation_id="listCompetitions", responses=_error_responses({200: CompetitionListEnvelopeSerializer}))
+    def list(self, request: Request) -> Response:
+        query = ListCompetitionsQuery(season=request.query_params.get("season"))
+        try:
+            result = build_list_competitions_handler().handle(query)
+        except (ApplicationError, CompetitionDomainError) as exc:
+            return competition_problem(exc, instance=request.path, request=request)
+        correlation_id = request_id(request)
+        data = CompetitionSummarySerializer(cast("Any", result), many=True).data
+        return Response({"data": data, "meta": {"requestId": correlation_id}}, status=status.HTTP_200_OK, headers={"X-Request-ID": correlation_id})
 
-        result = self.list_handler.handle(
-            ListCompetitionsQuery(
-                season=request.query_params.get("season"),
-            )
-        )
+    @extend_schema(tags=[_TAG], operation_id="getCompetition", responses=_detail_ok())
+    def retrieve(self, request: Request, pk: str) -> Response:
+        query = GetCompetitionQuery(competition_id=pk)
+        try:
+            result = build_get_competition_handler().handle(query)
+        except (ApplicationError, CompetitionDomainError) as exc:
+            return competition_problem(exc, instance=request.path, request=request)
+        return self._detail(result, request, status.HTTP_200_OK)
 
-        return Response(
-            result,
-            status=status.HTTP_200_OK,
-        )
+    @extend_schema(tags=[_TAG], operation_id="createCompetition", request=CreateCompetitionSerializer, responses=_detail_ok(status.HTTP_201_CREATED))
+    def create(self, request: Request) -> Response:
+        kwargs, problem = self._body(CreateCompetitionSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(CreateCompetitionHandler, CreateCompetitionCommand(**kwargs), request, success=status.HTTP_201_CREATED)
 
-    def retrieve(self, request, pk: str):
-        """GET /competitions/{id}"""
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="updateCompetition",
+        request=UpdateCompetitionGeneralInformationSerializer,
+        responses=_detail_ok(),
+    )
+    def partial_update(self, request: Request, pk: str) -> Response:
+        kwargs, problem = self._body(UpdateCompetitionGeneralInformationSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(UpdateCompetitionGeneralInformationHandler, UpdateGeneralInformationCommand(competition_id=pk, **kwargs), request)
 
-        result = self.retrieve_handler.handle(
-            GetCompetitionQuery(
-                competition_id=pk,
-            )
-        )
+    @extend_schema(tags=[_TAG], operation_id="updateBranding", request=UpdateCompetitionBrandingSerializer, responses=_detail_ok())
+    @action(detail=True, methods=["patch"], url_path="branding")
+    def branding(self, request: Request, pk: str) -> Response:
+        kwargs, problem = self._body(UpdateCompetitionBrandingSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(UpdateCompetitionBrandingHandler, UpdateBrandingCommand(competition_id=pk, **kwargs), request)
 
-        return Response(
-            result,
-            status=status.HTTP_200_OK,
-        )
+    @extend_schema(tags=[_TAG], operation_id="updateSettings", request=UpdateCompetitionSettingsSerializer, responses=_detail_ok())
+    @action(detail=True, methods=["put"], url_path="settings")
+    def configure_settings(self, request: Request, pk: str) -> Response:
+        kwargs, problem = self._body(UpdateCompetitionSettingsSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(UpdateCompetitionSettingsHandler, UpdateSettingsCommand(competition_id=pk, **kwargs), request)
 
-    def create(self, request):
-        """POST /competitions"""
+    @extend_schema(tags=[_TAG], operation_id="updateDeadlines", request=UpdateCompetitionDeadlinesSerializer, responses=_detail_ok())
+    @action(detail=True, methods=["put"], url_path="deadlines")
+    def deadlines(self, request: Request, pk: str) -> Response:
+        kwargs, problem = self._body(UpdateCompetitionDeadlinesSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(UpdateCompetitionDeadlinesHandler, UpdateDeadlinesCommand(competition_id=pk, **kwargs), request)
 
-        serializer = CreateCompetitionSerializer(
-            data=request.data,
-        )
-
-        serializer.is_valid(
-            raise_exception=True,
-        )
-
-        result = self.create_handler.handle(
-            CreateCompetitionCommand(
-                **serializer.validated_data,
-            )
-        )
-
-        return Response(
-            result,
-            status=status.HTTP_201_CREATED,
-        )
-
-    def partial_update(self, request, pk: str):
-        """PATCH /competitions/{id}"""
-
-        serializer = UpdateCompetitionGeneralInformationSerializer(
-            data=request.data,
-        )
-
-        serializer.is_valid(
-            raise_exception=True,
-        )
-
-        result = self.update_handler.handle(
-            UpdateGeneralInformationCommand(
-                competition_id=pk,
-                **serializer.validated_data,
-            )
-        )
-
-        return Response(
-            result,
-            status=status.HTTP_200_OK,
-        )
-    
     # ------------------------------------------------------------------
     # Lifecycle
     # ------------------------------------------------------------------
 
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="publish",
-    )
-    def publish(self, request, pk: str):
-        """POST /competitions/{id}/publish"""
+    @extend_schema(tags=[_TAG], operation_id="markCompetitionConfigured", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["post"], url_path="configured")
+    def mark_configured(self, request: Request, pk: str) -> Response:
+        return self._run(MarkCompetitionConfiguredHandler, MarkConfiguredCommand(competition_id=pk), request)
 
-        PublishCompetitionSerializer(
-            data=request.data,
-        ).is_valid(
-            raise_exception=True,
-        )
+    @extend_schema(tags=[_TAG], operation_id="revertCompetitionToDraft", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["post"], url_path="revert-to-draft")
+    def revert_to_draft(self, request: Request, pk: str) -> Response:
+        return self._run(RevertCompetitionToDraftHandler, RevertToDraftCommand(competition_id=pk), request)
 
-        result = self.publish_handler.handle(
-            PublishCompetitionCommand(
-                competition_id=pk,
-            )
-        )
+    @extend_schema(tags=[_TAG], operation_id="markCompetitionReady", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["post"], url_path="ready")
+    def mark_ready(self, request: Request, pk: str) -> Response:
+        return self._run(MarkCompetitionReadyHandler, MarkReadyCommand(competition_id=pk), request)
 
-        return Response(
-            result,
-            status=status.HTTP_200_OK,
-        )
+    @extend_schema(tags=[_TAG], operation_id="revertCompetitionToConfigured", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["post"], url_path="revert-to-configured")
+    def revert_to_configured(self, request: Request, pk: str) -> Response:
+        return self._run(RevertCompetitionToConfiguredHandler, RevertToConfiguredCommand(competition_id=pk), request)
 
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="registration/open",
-    )
-    def open_registration(self, request, pk: str):
-        """POST /competitions/{id}/registration/open"""
+    @extend_schema(tags=[_TAG], operation_id="publishCompetition", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["post"], url_path="publish")
+    def publish(self, request: Request, pk: str) -> Response:
+        return self._run(PublishCompetitionHandler, PublishCompetitionCommand(competition_id=pk), request)
 
-        result = self.open_registration_handler.handle(
-            OpenRegistrationCommand(
-                competition_id=pk,
-            )
-        )
+    @extend_schema(tags=[_TAG], operation_id="openRegistration", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["post"], url_path="registration/open")
+    def open_registration(self, request: Request, pk: str) -> Response:
+        return self._run(OpenRegistrationHandler, OpenRegistrationCommand(competition_id=pk), request)
 
-        return Response(
-            result,
-            status=status.HTTP_200_OK,
-        )
+    @extend_schema(tags=[_TAG], operation_id="closeRegistration", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["post"], url_path="registration/close")
+    def close_registration(self, request: Request, pk: str) -> Response:
+        return self._run(CloseRegistrationHandler, CloseRegistrationCommand(competition_id=pk), request)
 
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="registration/close",
-    )
-    def close_registration(self, request, pk: str):
-        """POST /competitions/{id}/registration/close"""
+    @extend_schema(tags=[_TAG], operation_id="startCompetition", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["post"], url_path="start")
+    def start(self, request: Request, pk: str) -> Response:
+        return self._run(StartCompetitionHandler, StartCompetitionCommand(competition_id=pk), request)
 
-        result = self.close_registration_handler.handle(
-            CloseRegistrationCommand(
-                competition_id=pk,
-            )
-        )
+    @extend_schema(tags=[_TAG], operation_id="completeCompetition", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["post"], url_path="complete")
+    def complete(self, request: Request, pk: str) -> Response:
+        return self._run(CompleteCompetitionHandler, CompleteCompetitionCommand(competition_id=pk), request)
 
-        return Response(
-            result,
-            status=status.HTTP_200_OK,
-        )
+    @extend_schema(tags=[_TAG], operation_id="archiveCompetition", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["post"], url_path="archive")
+    def archive(self, request: Request, pk: str) -> Response:
+        return self._run(ArchiveCompetitionHandler, ArchiveCompetitionCommand(competition_id=pk), request)
 
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="archive",
-    )
-    def archive(self, request, pk: str):
-        """POST /competitions/{id}/archive"""
-
-        result = self.archive_handler.handle(
-            ArchiveCompetitionCommand(
-                competition_id=pk,
-            )
-        )
-
-        return Response(
-            result,
-            status=status.HTTP_200_OK,
-        )
-    
-
-        # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
     # Categories
     # ------------------------------------------------------------------
 
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="categories",
-    )
-    def add_category(self, request, pk: str):
-        serializer = AddCategorySerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    @extend_schema(tags=[_TAG], operation_id="addCategory", request=AddCategorySerializer, responses=_detail_ok(status.HTTP_201_CREATED))
+    @action(detail=True, methods=["post"], url_path="categories")
+    def categories(self, request: Request, pk: str) -> Response:
+        kwargs, problem = self._body(AddCategorySerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(AddCategoryHandler, AddCategoryCommand(competition_id=pk, **kwargs), request, success=status.HTTP_201_CREATED)
 
-        result = self.add_category_handler.handle(
-            AddCategoryCommand(
-                competition_id=pk,
-                **serializer.validated_data,
-            )
-        )
+    @extend_schema(methods=["PATCH"], tags=[_TAG], operation_id="renameCategory", request=RenameCategorySerializer, responses=_detail_ok())
+    @extend_schema(methods=["DELETE"], tags=[_TAG], operation_id="removeCategory", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["patch", "delete"], url_path=r"categories/(?P<category_id>[^/.]+)")
+    def category_detail(self, request: Request, pk: str, category_id: str) -> Response:
+        if request.method == "DELETE":
+            return self._run(RemoveCategoryHandler, RemoveCategoryCommand(competition_id=pk, category_id=category_id), request)
+        kwargs, problem = self._body(RenameCategorySerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(RenameCategoryHandler, RenameCategoryCommand(competition_id=pk, category_id=category_id, **kwargs), request)
 
-        return Response(result, status=status.HTTP_200_OK)
-
-    @action(
-        detail=True,
-        methods=["patch"],
-        url_path=r"categories/(?P<category_id>[^/.]+)",
-    )
-    def rename_category(self, request, pk: str, category_id: str):
-        serializer = RenameCategorySerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        result = self.rename_category_handler.handle(
-            RenameCategoryCommand(
-                competition_id=pk,
-                category_id=category_id,
-                **serializer.validated_data,
-            )
-        )
-
-        return Response(result)
-
-    @action(
-        detail=True,
-        methods=["delete"],
-        url_path=r"categories/(?P<category_id>[^/.]+)",
-    )
-    def remove_category(self, request, pk: str, category_id: str):
-        result = self.remove_category_handler.handle(
-            RemoveCategoryCommand(
-                competition_id=pk,
-                category_id=category_id,
-            )
-        )
-
-        return Response(result)
-    
-        # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
     # Disciplines
     # ------------------------------------------------------------------
 
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="disciplines",
-    )
-    def add_discipline(self, request, pk: str):
-        serializer = AddDisciplineSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    @extend_schema(tags=[_TAG], operation_id="addDiscipline", request=AddDisciplineSerializer, responses=_detail_ok(status.HTTP_201_CREATED))
+    @action(detail=True, methods=["post"], url_path="disciplines")
+    def disciplines(self, request: Request, pk: str) -> Response:
+        kwargs, problem = self._body(AddDisciplineSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(AddDisciplineHandler, AddDisciplineCommand(competition_id=pk, **kwargs), request, success=status.HTTP_201_CREATED)
 
-        result = self.add_discipline_handler.handle(
-            AddDisciplineCommand(
-                competition_id=pk,
-                **serializer.validated_data,
-            )
-        )
+    @extend_schema(methods=["PATCH"], tags=[_TAG], operation_id="renameDiscipline", request=RenameDisciplineSerializer, responses=_detail_ok())
+    @extend_schema(methods=["DELETE"], tags=[_TAG], operation_id="removeDiscipline", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["patch", "delete"], url_path=r"disciplines/(?P<discipline_id>[^/.]+)")
+    def discipline_detail(self, request: Request, pk: str, discipline_id: str) -> Response:
+        if request.method == "DELETE":
+            return self._run(RemoveDisciplineHandler, RemoveDisciplineCommand(competition_id=pk, discipline_id=discipline_id), request)
+        kwargs, problem = self._body(RenameDisciplineSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(RenameDisciplineHandler, RenameDisciplineCommand(competition_id=pk, discipline_id=discipline_id, **kwargs), request)
 
-        return Response(result, status=status.HTTP_200_OK)
-
-    @action(
-        detail=True,
-        methods=["patch"],
-        url_path=r"disciplines/(?P<discipline_id>[^/.]+)",
-    )
-    def rename_discipline(self, request, pk: str, discipline_id: str):
-        serializer = RenameDisciplineSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        result = self.rename_discipline_handler.handle(
-            RenameDisciplineCommand(
-                competition_id=pk,
-                discipline_id=discipline_id,
-                **serializer.validated_data,
-            )
-        )
-
-        return Response(result)
-
-    @action(
-        detail=True,
-        methods=["delete"],
-        url_path=r"disciplines/(?P<discipline_id>[^/.]+)",
-    )
-    def remove_discipline(self, request, pk: str, discipline_id: str):
-        result = self.remove_discipline_handler.handle(
-            RemoveDisciplineCommand(
-                competition_id=pk,
-                discipline_id=discipline_id,
-            )
-        )
-
-        return Response(result)
-    
-        # ------------------------------------------------------------------
-    # Age Categories
+    # ------------------------------------------------------------------
+    # Age categories
     # ------------------------------------------------------------------
 
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="age-categories",
-    )
-    def add_age_category(self, request, pk: str):
-        serializer = AddAgeCategorySerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    @extend_schema(tags=[_TAG], operation_id="addAgeCategory", request=AddAgeCategorySerializer, responses=_detail_ok(status.HTTP_201_CREATED))
+    @action(detail=True, methods=["post"], url_path="age-categories")
+    def age_categories(self, request: Request, pk: str) -> Response:
+        kwargs, problem = self._body(AddAgeCategorySerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(AddAgeCategoryHandler, AddAgeCategoryCommand(competition_id=pk, **kwargs), request, success=status.HTTP_201_CREATED)
 
-        result = self.add_age_category_handler.handle(
-            AddAgeCategoryCommand(
-                competition_id=pk,
-                **serializer.validated_data,
-            )
-        )
+    @extend_schema(tags=[_TAG], operation_id="removeAgeCategory", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["delete"], url_path=r"age-categories/(?P<age_category_id>[^/.]+)")
+    def age_category_detail(self, request: Request, pk: str, age_category_id: str) -> Response:
+        return self._run(RemoveAgeCategoryHandler, RemoveAgeCategoryCommand(competition_id=pk, age_category_id=age_category_id), request)
 
-        return Response(result, status=status.HTTP_200_OK)
-
-    @action(
-        detail=True,
-        methods=["delete"],
-        url_path=r"age-categories/(?P<age_category_id>[^/.]+)",
-    )
-    def remove_age_category(
-        self,
-        request,
-        pk: str,
-        age_category_id: str,
-    ):
-        result = self.remove_age_category_handler.handle(
-            RemoveAgeCategoryCommand(
-                competition_id=pk,
-                age_category_id=age_category_id,
-            )
-        )
-
-        return Response(result)
-    
-        # ------------------------------------------------------------------
-    # Participant Groups
+    # ------------------------------------------------------------------
+    # Participant groups
     # ------------------------------------------------------------------
 
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="participant-groups",
+    @extend_schema(
+        tags=[_TAG], operation_id="addParticipantGroup", request=AddParticipantGroupSerializer, responses=_detail_ok(status.HTTP_201_CREATED)
     )
-    def add_participant_group(self, request, pk: str):
-        serializer = AddParticipantGroupSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        result = self.add_participant_group_handler.handle(
-            AddParticipantGroupCommand(
-                competition_id=pk,
-                **serializer.validated_data,
-            )
+    @action(detail=True, methods=["post"], url_path="participant-groups")
+    def participant_groups(self, request: Request, pk: str) -> Response:
+        kwargs, problem = self._body(AddParticipantGroupSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(
+            AddParticipantGroupHandler, AddParticipantGroupCommand(competition_id=pk, **kwargs), request, success=status.HTTP_201_CREATED
         )
 
-        return Response(result, status=status.HTTP_200_OK)
-
-    @action(
-        detail=True,
-        methods=["delete"],
-        url_path=r"participant-groups/(?P<participant_group_id>[^/.]+)",
-    )
-    def remove_participant_group(
-        self,
-        request,
-        pk: str,
-        participant_group_id: str,
-    ):
-        result = self.remove_participant_group_handler.handle(
-            RemoveParticipantGroupCommand(
-                competition_id=pk,
-                participant_group_id=participant_group_id,
-            )
+    @extend_schema(tags=[_TAG], operation_id="removeParticipantGroup", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["delete"], url_path=r"participant-groups/(?P<participant_group_id>[^/.]+)")
+    def participant_group_detail(self, request: Request, pk: str, participant_group_id: str) -> Response:
+        return self._run(
+            RemoveParticipantGroupHandler, RemoveParticipantGroupCommand(competition_id=pk, participant_group_id=participant_group_id), request
         )
 
-        return Response(result)
-    
-        # ------------------------------------------------------------------
-    # Participation Formats
+    # ------------------------------------------------------------------
+    # Participation formats
     # ------------------------------------------------------------------
 
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="participation-formats",
+    @extend_schema(
+        tags=[_TAG], operation_id="enableParticipationFormat", request=ParticipationFormatSerializer, responses=_detail_ok(status.HTTP_201_CREATED)
     )
-    def enable_participation_format(self, request, pk: str):
-        serializer = EnableParticipationFormatSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    @action(detail=True, methods=["post"], url_path="participation-formats")
+    def participation_formats(self, request: Request, pk: str) -> Response:
+        kwargs, problem = self._body(ParticipationFormatSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(EnableFormatHandler, EnableFormatCommand(competition_id=pk, **kwargs), request, success=status.HTTP_201_CREATED)
 
-        result = self.enable_format_handler.handle(
-            EnableFormatCommand(
-                competition_id=pk,
-                **serializer.validated_data,
-            )
-        )
+    @extend_schema(tags=[_TAG], operation_id="disableParticipationFormat", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["delete"], url_path=r"participation-formats/(?P<participation_format>[^/.]+)")
+    def participation_format_detail(self, request: Request, pk: str, participation_format: str) -> Response:
+        return self._run(DisableFormatHandler, DisableFormatCommand(competition_id=pk, participation_format=participation_format), request)
 
-        return Response(result)
-
-    @action(
-        detail=True,
-        methods=["delete"],
-        url_path="participation-formats",
-    )
-    def disable_participation_format(self, request, pk: str):
-        serializer = DisableParticipationFormatSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        result = self.disable_format_handler.handle(
-            DisableFormatCommand(
-                competition_id=pk,
-                **serializer.validated_data,
-            )
-        )
-
-        return Response(result)
-    
-        # ------------------------------------------------------------------
-    # Admission Rules
+    # ------------------------------------------------------------------
+    # Admission rules
     # ------------------------------------------------------------------
 
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="admission-rules",
-    )
-    def add_admission_rule(self, request, pk: str):
-        serializer = AddAdmissionRuleSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    @extend_schema(tags=[_TAG], operation_id="addAdmissionRule", request=AddAdmissionRuleSerializer, responses=_detail_ok(status.HTTP_201_CREATED))
+    @action(detail=True, methods=["post"], url_path="admission-rules")
+    def admission_rules(self, request: Request, pk: str) -> Response:
+        kwargs, problem = self._body(AddAdmissionRuleSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(AddAdmissionRuleHandler, AddAdmissionRuleCommand(competition_id=pk, **kwargs), request, success=status.HTTP_201_CREATED)
 
-        result = self.add_admission_rule_handler.handle(
-            AddAdmissionRuleCommand(
-                competition_id=pk,
-                **serializer.validated_data,
-            )
-        )
+    @extend_schema(tags=[_TAG], operation_id="removeAdmissionRule", request=_AdmissionCombinationSerializer, responses=_detail_ok())
+    @action(detail=True, methods=["post"], url_path="admission-rules/remove")
+    def remove_admission_rule(self, request: Request, pk: str) -> Response:
+        kwargs, problem = self._body(_AdmissionCombinationSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(RemoveAdmissionRuleHandler, RemoveAdmissionRuleCommand(competition_id=pk, **kwargs), request)
 
-        return Response(result)
-
-    @action(
-        detail=True,
-        methods=["delete"],
-        url_path="admission-rules",
-    )
-    def remove_admission_rule(self, request, pk: str):
-        serializer = RemoveAdmissionRuleSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        result = self.remove_admission_rule_handler.handle(
-            RemoveAdmissionRuleCommand(
-                competition_id=pk,
-                **serializer.validated_data,
-            )
-        )
-
-        return Response(result)
-    
-        # ------------------------------------------------------------------
-    # Pricing Rules
+    # ------------------------------------------------------------------
+    # Pricing rules
     # ------------------------------------------------------------------
 
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="pricing-rules",
+    @extend_schema(
+        methods=["POST"], tags=[_TAG], operation_id="addPricingRule", request=AddPricingRuleSerializer, responses=_detail_ok(status.HTTP_201_CREATED)
     )
-    def add_pricing_rule(self, request, pk: str):
-        serializer = AddPricingRuleSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    @extend_schema(methods=["PATCH"], tags=[_TAG], operation_id="changePrice", request=ChangePriceSerializer, responses=_detail_ok())
+    @action(detail=True, methods=["post", "patch"], url_path="pricing-rules")
+    def pricing_rules(self, request: Request, pk: str) -> Response:
+        if request.method == "PATCH":
+            kwargs, problem = self._body(ChangePriceSerializer, request)
+            if problem is not None:
+                return problem
+            assert kwargs is not None
+            return self._run(ChangePriceHandler, ChangePriceCommand(competition_id=pk, **kwargs), request)
+        kwargs, problem = self._body(AddPricingRuleSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(AddPricingRuleHandler, AddPricingRuleCommand(competition_id=pk, **kwargs), request, success=status.HTTP_201_CREATED)
 
-        result = self.add_pricing_rule_handler.handle(
-            AddPricingRuleCommand(
-                competition_id=pk,
-                **serializer.validated_data,
-            )
-        )
+    @extend_schema(tags=[_TAG], operation_id="removePricingRule", request=_AdmissionCombinationSerializer, responses=_detail_ok())
+    @action(detail=True, methods=["post"], url_path="pricing-rules/remove")
+    def remove_pricing_rule(self, request: Request, pk: str) -> Response:
+        kwargs, problem = self._body(_AdmissionCombinationSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(RemovePricingRuleHandler, RemovePricingRuleCommand(competition_id=pk, **kwargs), request)
 
-        return Response(result)
-
-    @action(
-        detail=True,
-        methods=["patch"],
-        url_path="pricing-rules",
-    )
-    def change_price(self, request, pk: str):
-        serializer = ChangePriceSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        result = self.change_price_handler.handle(
-            ChangePriceCommand(
-                competition_id=pk,
-                **serializer.validated_data,
-            )
-        )
-
-        return Response(result)
-
-    @action(
-        detail=True,
-        methods=["delete"],
-        url_path="pricing-rules",
-    )
-    def remove_pricing_rule(self, request, pk: str):
-        serializer = RemovePricingRuleSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        result = self.remove_pricing_rule_handler.handle(
-            RemovePricingRuleCommand(
-                competition_id=pk,
-                **serializer.validated_data,
-            )
-        )
-
-        return Response(result)
-    
-        # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
     # Regulations
     # ------------------------------------------------------------------
 
+    @extend_schema(tags=[_TAG], operation_id="addRegulation", request=AddRegulationSerializer, responses=_detail_ok(status.HTTP_201_CREATED))
     @action(detail=True, methods=["post"], url_path="regulations")
-    def add_regulation(self, request, pk: str):
-        serializer = AddRegulationSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    def regulations(self, request: Request, pk: str) -> Response:
+        kwargs, problem = self._body(AddRegulationSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(AddRegulationHandler, AddRegulationCommand(competition_id=pk, **kwargs), request, success=status.HTTP_201_CREATED)
 
-        result = self.add_regulation_handler.handle(
-            AddRegulationCommand(
-                competition_id=pk,
-                **serializer.validated_data,
-            )
-        )
+    @extend_schema(tags=[_TAG], operation_id="makeRegulationCurrent", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["post"], url_path=r"regulations/(?P<regulation_id>[^/.]+)/current")
+    def make_regulation_current(self, request: Request, pk: str, regulation_id: str) -> Response:
+        return self._run(MakeRegulationCurrentHandler, MakeRegulationCurrentCommand(competition_id=pk, regulation_id=regulation_id), request)
 
-        return Response(result)
+    @extend_schema(tags=[_TAG], operation_id="removeRegulation", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["delete"], url_path=r"regulations/(?P<regulation_id>[^/.]+)")
+    def regulation_detail(self, request: Request, pk: str, regulation_id: str) -> Response:
+        return self._run(RemoveRegulationHandler, RemoveRegulationCommand(competition_id=pk, regulation_id=regulation_id), request)
 
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path=r"regulations/(?P<regulation_id>[^/.]+)/current",
-    )
-    def make_regulation_current(
-        self,
-        request,
-        pk: str,
-        regulation_id: str,
-    ):
-        result = self.make_regulation_current_handler.handle(
-            MakeRegulationCurrentCommand(
-                competition_id=pk,
-                regulation_id=regulation_id,
-            )
-        )
-
-        return Response(result)
-
-    @action(
-        detail=True,
-        methods=["delete"],
-        url_path=r"regulations/(?P<regulation_id>[^/.]+)",
-    )
-    def remove_regulation(
-        self,
-        request,
-        pk: str,
-        regulation_id: str,
-    ):
-        result = self.remove_regulation_handler.handle(
-            RemoveRegulationCommand(
-                competition_id=pk,
-                regulation_id=regulation_id,
-            )
-        )
-
-        return Response(result)
-    
-
-        # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
     # Documents
     # ------------------------------------------------------------------
 
+    @extend_schema(tags=[_TAG], operation_id="addDocument", request=AddDocumentSerializer, responses=_detail_ok(status.HTTP_201_CREATED))
     @action(detail=True, methods=["post"], url_path="documents")
-    def add_document(self, request, pk: str):
-        serializer = AddDocumentSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    def documents(self, request: Request, pk: str) -> Response:
+        kwargs, problem = self._body(AddDocumentSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(AddDocumentHandler, AddDocumentCommand(competition_id=pk, **kwargs), request, success=status.HTTP_201_CREATED)
 
-        result = self.add_document_handler.handle(
-            AddDocumentCommand(
-                competition_id=pk,
-                **serializer.validated_data,
-            )
-        )
+    @extend_schema(methods=["PATCH"], tags=[_TAG], operation_id="updateDocument", request=UpdateDocumentSerializer, responses=_detail_ok())
+    @extend_schema(methods=["DELETE"], tags=[_TAG], operation_id="removeDocument", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["patch", "delete"], url_path=r"documents/(?P<document_id>[^/.]+)")
+    def document_detail(self, request: Request, pk: str, document_id: str) -> Response:
+        if request.method == "DELETE":
+            return self._run(RemoveDocumentHandler, RemoveDocumentCommand(competition_id=pk, document_id=document_id), request)
+        kwargs, problem = self._body(UpdateDocumentSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(UpdateDocumentHandler, UpdateDocumentCommand(competition_id=pk, document_id=document_id, **kwargs), request)
 
-        return Response(result)
+    @extend_schema(tags=[_TAG], operation_id="publishDocument", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["post"], url_path=r"documents/(?P<document_id>[^/.]+)/publish")
+    def publish_document(self, request: Request, pk: str, document_id: str) -> Response:
+        return self._run(PublishDocumentHandler, PublishDocumentCommand(competition_id=pk, document_id=document_id), request)
 
-    @action(
-        detail=True,
-        methods=["patch"],
-        url_path=r"documents/(?P<document_id>[^/.]+)",
-    )
-    def update_document(
-        self,
-        request,
-        pk: str,
-        document_id: str,
-    ):
-        serializer = UpdateDocumentSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    @extend_schema(tags=[_TAG], operation_id="unpublishDocument", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["post"], url_path=r"documents/(?P<document_id>[^/.]+)/unpublish")
+    def unpublish_document(self, request: Request, pk: str, document_id: str) -> Response:
+        return self._run(UnpublishDocumentHandler, UnpublishDocumentCommand(competition_id=pk, document_id=document_id), request)
 
-        result = self.update_document_handler.handle(
-            UpdateDocumentCommand(
-                competition_id=pk,
-                document_id=document_id,
-                **serializer.validated_data,
-            )
-        )
-
-        return Response(result)
-
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path=r"documents/(?P<document_id>[^/.]+)/publish",
-    )
-    def publish_document(
-        self,
-        request,
-        pk: str,
-        document_id: str,
-    ):
-        PublishDocumentSerializer(data=request.data).is_valid(
-            raise_exception=True,
-        )
-
-        result = self.publish_document_handler.handle(
-            PublishDocumentCommand(
-                competition_id=pk,
-                document_id=document_id,
-            )
-        )
-
-        return Response(result)
-
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path=r"documents/(?P<document_id>[^/.]+)/unpublish",
-    )
-    def unpublish_document(
-        self,
-        request,
-        pk: str,
-        document_id: str,
-    ):
-        UnpublishDocumentSerializer(data=request.data).is_valid(
-            raise_exception=True,
-        )
-
-        result = self.unpublish_document_handler.handle(
-            UnpublishDocumentCommand(
-                competition_id=pk,
-                document_id=document_id,
-            )
-        )
-
-        return Response(result)
-
-    @action(
-        detail=True,
-        methods=["delete"],
-        url_path=r"documents/(?P<document_id>[^/.]+)",
-    )
-    def remove_document(
-        self,
-        request,
-        pk: str,
-        document_id: str,
-    ):
-        result = self.remove_document_handler.handle(
-            RemoveDocumentCommand(
-                competition_id=pk,
-                document_id=document_id,
-            )
-        )
-
-        return Response(result)
-
-
-        # ------------------------------------------------------------------
-    # Additional Services
+    # ------------------------------------------------------------------
+    # Additional services
     # ------------------------------------------------------------------
 
+    @extend_schema(
+        tags=[_TAG], operation_id="addAdditionalService", request=AddAdditionalServiceSerializer, responses=_detail_ok(status.HTTP_201_CREATED)
+    )
     @action(detail=True, methods=["post"], url_path="services")
-    def add_service(self, request, pk: str):
-        serializer = AddAdditionalServiceSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        result = self.add_service_handler.handle(
-            AddAdditionalServiceCommand(
-                competition_id=pk,
-                **serializer.validated_data,
-            )
+    def services(self, request: Request, pk: str) -> Response:
+        kwargs, problem = self._body(AddAdditionalServiceSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(
+            AddAdditionalServiceHandler, AddAdditionalServiceCommand(competition_id=pk, **kwargs), request, success=status.HTTP_201_CREATED
         )
 
-        return Response(result)
+    @extend_schema(
+        methods=["PATCH"], tags=[_TAG], operation_id="updateAdditionalService", request=UpdateAdditionalServiceSerializer, responses=_detail_ok()
+    )
+    @extend_schema(methods=["DELETE"], tags=[_TAG], operation_id="removeAdditionalService", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["patch", "delete"], url_path=r"services/(?P<service_id>[^/.]+)")
+    def service_detail(self, request: Request, pk: str, service_id: str) -> Response:
+        if request.method == "DELETE":
+            return self._run(RemoveAdditionalServiceHandler, RemoveAdditionalServiceCommand(competition_id=pk, service_id=service_id), request)
+        kwargs, problem = self._body(UpdateAdditionalServiceSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(UpdateAdditionalServiceHandler, UpdateAdditionalServiceCommand(competition_id=pk, service_id=service_id, **kwargs), request)
 
-    @action(detail=True, methods=["patch"], url_path=r"services/(?P<service_id>[^/.]+)")
-    def update_service(self, request, pk: str, service_id: str):
-        serializer = UpdateAdditionalServiceSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        result = self.update_service_handler.handle(
-            UpdateAdditionalServiceCommand(
-                competition_id=pk,
-                service_id=service_id,
-                **serializer.validated_data,
-            )
-        )
-
-        return Response(result)
-
+    @extend_schema(tags=[_TAG], operation_id="enableAdditionalService", request=None, responses=_detail_ok())
     @action(detail=True, methods=["post"], url_path=r"services/(?P<service_id>[^/.]+)/enable")
-    def enable_service(self, request, pk: str, service_id: str):
-        return Response(
-            self.enable_service_handler.handle(
-                EnableAdditionalServiceCommand(
-                    competition_id=pk,
-                    service_id=service_id,
-                )
-            )
-        )
+    def enable_service(self, request: Request, pk: str, service_id: str) -> Response:
+        return self._run(EnableAdditionalServiceHandler, EnableAdditionalServiceCommand(competition_id=pk, service_id=service_id), request)
 
+    @extend_schema(tags=[_TAG], operation_id="disableAdditionalService", request=None, responses=_detail_ok())
     @action(detail=True, methods=["post"], url_path=r"services/(?P<service_id>[^/.]+)/disable")
-    def disable_service(self, request, pk: str, service_id: str):
-        return Response(
-            self.disable_service_handler.handle(
-                DisableAdditionalServiceCommand(
-                    competition_id=pk,
-                    service_id=service_id,
-                )
-            )
-        )
+    def disable_service(self, request: Request, pk: str, service_id: str) -> Response:
+        return self._run(DisableAdditionalServiceHandler, DisableAdditionalServiceCommand(competition_id=pk, service_id=service_id), request)
 
-    @action(detail=True, methods=["delete"], url_path=r"services/(?P<service_id>[^/.]+)")
-    def remove_service(self, request, pk: str, service_id: str):
-        return Response(
-            self.remove_service_handler.handle(
-                RemoveAdditionalServiceCommand(
-                    competition_id=pk,
-                    service_id=service_id,
-                )
-            )
-        )
-    
-
-        # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
     # Contacts
     # ------------------------------------------------------------------
 
+    @extend_schema(tags=[_TAG], operation_id="addContact", request=AddContactSerializer, responses=_detail_ok(status.HTTP_201_CREATED))
     @action(detail=True, methods=["post"], url_path="contacts")
-    def add_contact(self, request, pk: str):
-        serializer = AddContactSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    def contacts(self, request: Request, pk: str) -> Response:
+        kwargs, problem = self._body(AddContactSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(AddContactHandler, AddContactCommand(competition_id=pk, **kwargs), request, success=status.HTTP_201_CREATED)
 
-        return Response(
-            self.add_contact_handler.handle(
-                AddContactCommand(
-                    competition_id=pk,
-                    **serializer.validated_data,
-                )
-            )
-        )
-
+    @extend_schema(tags=[_TAG], operation_id="setPrimaryContact", request=None, responses=_detail_ok())
     @action(detail=True, methods=["post"], url_path=r"contacts/(?P<contact_id>[^/.]+)/primary")
-    def set_primary_contact(self, request, pk: str, contact_id: str):
-        return Response(
-            self.set_primary_contact_handler.handle(
-                SetPrimaryContactCommand(
-                    competition_id=pk,
-                    contact_id=contact_id,
-                )
-            )
-        )
+    def set_primary_contact(self, request: Request, pk: str, contact_id: str) -> Response:
+        return self._run(SetPrimaryContactHandler, SetPrimaryContactCommand(competition_id=pk, contact_id=contact_id), request)
 
+    @extend_schema(tags=[_TAG], operation_id="removeContact", request=None, responses=_detail_ok())
     @action(detail=True, methods=["delete"], url_path=r"contacts/(?P<contact_id>[^/.]+)")
-    def remove_contact(self, request, pk: str, contact_id: str):
-        return Response(
-            self.remove_contact_handler.handle(
-                RemoveContactCommand(
-                    competition_id=pk,
-                    contact_id=contact_id,
-                )
-            )
-        )
-    
-        # ------------------------------------------------------------------
-    # Information Blocks
+    def contact_detail(self, request: Request, pk: str, contact_id: str) -> Response:
+        return self._run(RemoveContactHandler, RemoveContactCommand(competition_id=pk, contact_id=contact_id), request)
+
+    # ------------------------------------------------------------------
+    # Public information blocks
     # ------------------------------------------------------------------
 
+    @extend_schema(
+        tags=[_TAG], operation_id="addInformationBlock", request=AddInformationBlockSerializer, responses=_detail_ok(status.HTTP_201_CREATED)
+    )
     @action(detail=True, methods=["post"], url_path="information-blocks")
-    def add_information_block(self, request, pk: str):
-        serializer = AddInformationBlockSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        return Response(
-            self.add_information_block_handler.handle(
-                AddInformationBlockCommand(
-                    competition_id=pk,
-                    **serializer.validated_data,
-                )
-            )
+    def information_blocks(self, request: Request, pk: str) -> Response:
+        kwargs, problem = self._body(AddInformationBlockSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(
+            AddInformationBlockHandler, AddInformationBlockCommand(competition_id=pk, **kwargs), request, success=status.HTTP_201_CREATED
         )
 
-    @action(detail=True, methods=["patch"], url_path=r"information-blocks/(?P<block_id>[^/.]+)")
-    def update_information_block(self, request, pk: str, block_id: str):
-        serializer = UpdateInformationBlockSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    @extend_schema(
+        methods=["PATCH"], tags=[_TAG], operation_id="updateInformationBlock", request=UpdateInformationBlockSerializer, responses=_detail_ok()
+    )
+    @extend_schema(methods=["DELETE"], tags=[_TAG], operation_id="removeInformationBlock", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["patch", "delete"], url_path=r"information-blocks/(?P<block_id>[^/.]+)")
+    def information_block_detail(self, request: Request, pk: str, block_id: str) -> Response:
+        if request.method == "DELETE":
+            return self._run(RemoveInformationBlockHandler, RemoveInformationBlockCommand(competition_id=pk, block_id=block_id), request)
+        kwargs, problem = self._body(UpdateInformationBlockSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(UpdateInformationBlockHandler, UpdateInformationBlockCommand(competition_id=pk, block_id=block_id, **kwargs), request)
 
-        return Response(
-            self.update_information_block_handler.handle(
-                UpdateInformationBlockCommand(
-                    competition_id=pk,
-                    block_id=block_id,
-                    **serializer.validated_data,
-                )
-            )
-        )
-
+    @extend_schema(tags=[_TAG], operation_id="publishInformationBlock", request=None, responses=_detail_ok())
     @action(detail=True, methods=["post"], url_path=r"information-blocks/(?P<block_id>[^/.]+)/publish")
-    def publish_information_block(self, request, pk: str, block_id: str):
-        return Response(
-            self.publish_information_block_handler.handle(
-                PublishInformationBlockCommand(
-                    competition_id=pk,
-                    block_id=block_id,
-                )
-            )
-        )
+    def publish_information_block(self, request: Request, pk: str, block_id: str) -> Response:
+        return self._run(PublishInformationBlockHandler, PublishInformationBlockCommand(competition_id=pk, block_id=block_id), request)
 
+    @extend_schema(tags=[_TAG], operation_id="hideInformationBlock", request=None, responses=_detail_ok())
     @action(detail=True, methods=["post"], url_path=r"information-blocks/(?P<block_id>[^/.]+)/hide")
-    def hide_information_block(self, request, pk: str, block_id: str):
-        return Response(
-            self.hide_information_block_handler.handle(
-                HideInformationBlockCommand(
-                    competition_id=pk,
-                    block_id=block_id,
-                )
-            )
-        )
-
-    @action(detail=True, methods=["delete"], url_path=r"information-blocks/(?P<block_id>[^/.]+)")
-    def remove_information_block(self, request, pk: str, block_id: str):
-        return Response(
-            self.remove_information_block_handler.handle(
-                RemoveInformationBlockCommand(
-                    competition_id=pk,
-                    block_id=block_id,
-                )
-            )
-        )
+    def hide_information_block(self, request: Request, pk: str, block_id: str) -> Response:
+        return self._run(HideInformationBlockHandler, HideInformationBlockCommand(competition_id=pk, block_id=block_id), request)

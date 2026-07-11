@@ -9,9 +9,9 @@ from .api.v1.views import CompetitionViewSet
 
 app_name = "competitions"
 
-router = DefaultRouter()
+router = DefaultRouter(trailing_slash=False)
 router.register(
-    r"",
+    r"competitions",
     CompetitionViewSet,
     basename="competition",
 )

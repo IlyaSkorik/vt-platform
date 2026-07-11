@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from abc import ABC
+from collections.abc import Sequence
 
 from apps.competitions.application.dto.views import CompetitionDetailView
+from apps.competitions.application.exceptions import CompetitionNotFoundError
 from apps.competitions.application.interfaces import (
     Clock,
     CompetitionRepository,
@@ -11,16 +12,33 @@ from apps.competitions.application.interfaces import (
 )
 from apps.competitions.domain.entities import Competition
 from apps.competitions.domain.events import DomainEvent
-from apps.competitions.domain.value_objects import AdmissionCombination, AgeCategoryId, CategoryId, DisciplineId, ParticipantGroupId, ParticipationFormat
+from apps.competitions.domain.value_objects import (
+    AdmissionCombination,
+    AgeCategoryId,
+    CategoryId,
+    CompetitionId,
+    Currency,
+    DisciplineId,
+    Money,
+    ParticipantGroupId,
+    ParticipationFormat,
+)
 
 
-class CompetitionCommandHandler(ABC):
-    """Base class for Competition command handlers."""
+class CompetitionCommandHandler:
+    """Base class for Competition command handlers.
+
+    Centralises the boilerplate every command use case shares: constructor
+    injection of the outbound ports, loading the aggregate (``_require``),
+    building common value objects, and persisting-then-publishing (``_persist``).
+    Concrete handlers depend only on the ports; the composition root binds the
+    adapters. Structurally there is no framework here.
+    """
 
     __slots__ = (
-        "_repository",
         "_clock",
         "_publisher",
+        "_repository",
         "_uuids",
     )
 
@@ -37,10 +55,17 @@ class CompetitionCommandHandler(ABC):
         self._publisher = publisher
         self._uuids = uuids
 
+    def _require(self, competition_id: str) -> Competition:
+        """Load the competition or raise :class:`CompetitionNotFoundError`."""
+        competition = self._repository.get(CompetitionId.from_string(competition_id))
+        if competition is None:
+            raise CompetitionNotFoundError(f"No competition {competition_id}.")
+        return competition
+
     def _persist(
         self,
         competition: Competition,
-        events: list[DomainEvent],
+        events: Sequence[DomainEvent] = (),
     ) -> CompetitionDetailView:
         self._repository.save(competition)
 
@@ -48,7 +73,10 @@ class CompetitionCommandHandler(ABC):
             self._publisher.publish(events)
 
         return CompetitionDetailView.of(competition)
-    
+
+    def _money(self, *, amount: str, currency: str) -> Money:
+        return Money.of(amount, Currency(currency))
+
     def _combination(
         self,
         *,

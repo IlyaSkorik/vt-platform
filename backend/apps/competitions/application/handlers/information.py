@@ -20,10 +20,10 @@ from ._support import CompetitionCommandHandler
 
 __all__ = (
     "AddInformationBlockHandler",
-    "UpdateInformationBlockHandler",
-    "PublishInformationBlockHandler",
     "HideInformationBlockHandler",
+    "PublishInformationBlockHandler",
     "RemoveInformationBlockHandler",
+    "UpdateInformationBlockHandler",
 )
 
 

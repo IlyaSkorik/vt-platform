@@ -5,30 +5,30 @@ from __future__ import annotations
 from apps.competitions.application.dto.commands import (
     ArchiveCompetitionCommand,
     CloseRegistrationCommand,
+    CompleteCompetitionCommand,
     MarkConfiguredCommand,
     MarkReadyCommand,
     OpenRegistrationCommand,
     PublishCompetitionCommand,
     RevertToConfiguredCommand,
-     RevertToDraftCommand,
+    RevertToDraftCommand,
     StartCompetitionCommand,
-    CompleteCompetitionCommand,
 )
 from apps.competitions.application.dto.views import CompetitionDetailView
 
 from ._support import CompetitionCommandHandler
 
 __all__ = (
-    "MarkCompetitionConfiguredHandler",
-    "RevertCompetitionToDraftHandler",
-    "MarkCompetitionReadyHandler",
-    "RevertCompetitionToConfiguredHandler",
-    "PublishCompetitionHandler",
-    "OpenRegistrationHandler",
-    "CloseRegistrationHandler",
-    "StartCompetitionHandler",
-    "CompleteCompetitionHandler",
     "ArchiveCompetitionHandler",
+    "CloseRegistrationHandler",
+    "CompleteCompetitionHandler",
+    "MarkCompetitionConfiguredHandler",
+    "MarkCompetitionReadyHandler",
+    "OpenRegistrationHandler",
+    "PublishCompetitionHandler",
+    "RevertCompetitionToConfiguredHandler",
+    "RevertCompetitionToDraftHandler",
+    "StartCompetitionHandler",
 )
 
 
@@ -53,7 +53,7 @@ class RevertCompetitionToDraftHandler(CompetitionCommandHandler):
 
     def handle(
         self,
-        command:  RevertToDraftCommand,
+        command: RevertToDraftCommand,
     ) -> CompetitionDetailView:
         competition = self._require(command.competition_id)
 

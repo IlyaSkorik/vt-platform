@@ -51,5 +51,5 @@ urlpatterns = [
     path("api/v1/", include("apps.participants.presentation.urls")),
     # Composition edge (owned by no single context — e.g. GET /users/me).
     path("api/v1/", include("apps.composition.presentation.urls")),
-    path("api/v1/", include("apps.competitions.presentation.urls"))
+    path("api/v1/", include("apps.competitions.presentation.urls")),
 ]

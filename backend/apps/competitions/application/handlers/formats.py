@@ -12,8 +12,8 @@ from apps.competitions.domain.value_objects import ParticipationFormat
 from ._support import CompetitionCommandHandler
 
 __all__ = (
-    "EnableFormatHandler",
     "DisableFormatHandler",
+    "EnableFormatHandler",
 )
 
 

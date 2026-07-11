@@ -1,8 +1,11 @@
-"""Domain-event handlers for the Competitions bounded context.
+"""Command and query handlers (use cases) for the Competitions bounded context.
 
-React to events from this and other contexts (ARCH-001 §4.8).
-Structure only at bootstrap.
+Each handler orchestrates a single use case: load the aggregate, invoke one
+domain operation, persist, and project a view DTO (ARCH-001 §7.2). This package
+is the application layer's public surface — the composition root and the
+presentation edge import handlers from here.
 """
+
 from .contacts import (
     AddContactHandler,
     RemoveContactHandler,
@@ -80,3 +83,61 @@ from .taxonomy import (
     RenameCategoryHandler,
     RenameDisciplineHandler,
 )
+
+__all__ = [
+    "AddAdditionalServiceHandler",
+    "AddAdmissionRuleHandler",
+    "AddAgeCategoryHandler",
+    "AddCategoryHandler",
+    "AddContactHandler",
+    "AddDisciplineHandler",
+    "AddDocumentHandler",
+    "AddInformationBlockHandler",
+    "AddParticipantGroupHandler",
+    "AddPricingRuleHandler",
+    "AddRegulationHandler",
+    "ArchiveCompetitionHandler",
+    "ChangePriceHandler",
+    "CloseRegistrationHandler",
+    "CompleteCompetitionHandler",
+    "CreateCompetitionHandler",
+    "DisableAdditionalServiceHandler",
+    "DisableFormatHandler",
+    "EnableAdditionalServiceHandler",
+    "EnableFormatHandler",
+    "GetCompetitionHandler",
+    "HideInformationBlockHandler",
+    "ListCompetitionsHandler",
+    "MakeRegulationCurrentHandler",
+    "MarkCompetitionConfiguredHandler",
+    "MarkCompetitionReadyHandler",
+    "OpenRegistrationHandler",
+    "PublishCompetitionHandler",
+    "PublishDocumentHandler",
+    "PublishInformationBlockHandler",
+    "RemoveAdditionalServiceHandler",
+    "RemoveAdmissionRuleHandler",
+    "RemoveAgeCategoryHandler",
+    "RemoveCategoryHandler",
+    "RemoveContactHandler",
+    "RemoveDisciplineHandler",
+    "RemoveDocumentHandler",
+    "RemoveInformationBlockHandler",
+    "RemoveParticipantGroupHandler",
+    "RemovePricingRuleHandler",
+    "RemoveRegulationHandler",
+    "RenameCategoryHandler",
+    "RenameDisciplineHandler",
+    "RevertCompetitionToConfiguredHandler",
+    "RevertCompetitionToDraftHandler",
+    "SetPrimaryContactHandler",
+    "StartCompetitionHandler",
+    "UnpublishDocumentHandler",
+    "UpdateAdditionalServiceHandler",
+    "UpdateCompetitionBrandingHandler",
+    "UpdateCompetitionDeadlinesHandler",
+    "UpdateCompetitionGeneralInformationHandler",
+    "UpdateCompetitionSettingsHandler",
+    "UpdateDocumentHandler",
+    "UpdateInformationBlockHandler",
+]
