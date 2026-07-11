@@ -15,9 +15,12 @@ import uuid
 from decimal import Decimal
 from typing import Any, Protocol, cast
 
+from django.conf import settings
+from django.core.files.storage import default_storage
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -318,6 +321,65 @@ class CompetitionViewSet(viewsets.ViewSet):
         assert kwargs is not None
         return self._run(UpdateCompetitionBrandingHandler, UpdateBrandingCommand(competition_id=pk, **kwargs), request)
 
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="uploadCompetitionPoster",
+        request={
+            "multipart/form-data": {
+                "type": "object",
+                "properties": {"file": {"type": "string", "format": "binary"}},
+                "required": ["file"],
+            }
+        },
+        responses=_detail_ok(),
+    )
+    @action(detail=True, methods=["post"], url_path="branding/poster", parser_classes=[MultiPartParser, FormParser])
+    def upload_poster(self, request: Request, pk: str) -> Response:
+        """Upload a competition poster image and store its media reference."""
+        uploaded = request.FILES.get("file")
+        if uploaded is None:
+            return validation_problem(
+                {"file": ["Выберите файл афиши."]},
+                instance=request.path,
+                request=request,
+            )
+
+        content_type = (uploaded.content_type or "").lower()
+        allowed = {"image/jpeg", "image/png", "image/webp"}
+        if content_type not in allowed:
+            return validation_problem(
+                {"file": ["Допустимы только JPEG, PNG или WebP."]},
+                instance=request.path,
+                request=request,
+            )
+
+        if uploaded.size > 5 * 1024 * 1024:
+            return validation_problem(
+                {"file": ["Размер файла не должен превышать 5 МБ."]},
+                instance=request.path,
+                request=request,
+            )
+
+        extension_by_type = {
+            "image/jpeg": ".jpg",
+            "image/png": ".png",
+            "image/webp": ".webp",
+        }
+        extension = extension_by_type[content_type]
+        relative_path = default_storage.save(f"competitions/{pk}/poster{extension}", uploaded)
+        poster_ref = f"/{settings.MEDIA_URL.strip('/')}/{relative_path}"
+
+        return self._run(
+            UpdateCompetitionBrandingHandler,
+            UpdateBrandingCommand(
+                competition_id=pk,
+                logo=None,
+                banner=None,
+                poster=poster_ref,
+            ),
+            request,
+        )
+
     @extend_schema(tags=[_TAG], operation_id="updateSettings", request=UpdateCompetitionSettingsSerializer, responses=_detail_ok())
     @action(detail=True, methods=["put"], url_path="settings")
     def configure_settings(self, request: Request, pk: str) -> Response:
@@ -558,6 +620,76 @@ class CompetitionViewSet(viewsets.ViewSet):
     # ------------------------------------------------------------------
     # Regulations
     # ------------------------------------------------------------------
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="uploadRegulationFile",
+        request={
+            "multipart/form-data": {
+                "type": "object",
+                "properties": {"file": {"type": "string", "format": "binary"}},
+                "required": ["file"],
+            }
+        },
+        responses={
+            200: OpenApiResponse(description="PDF uploaded; body contains data.fileReference."),
+            400: OpenApiResponse(ProblemDetailSerializer, description="Validation failed."),
+            403: OpenApiResponse(ProblemDetailSerializer, description="Not organization staff."),
+            404: OpenApiResponse(ProblemDetailSerializer, description="Competition or element not found."),
+        },
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        # Outside `regulations/<id>` so the delete route cannot claim this path.
+        url_path="uploads/regulation",
+        parser_classes=[MultiPartParser, FormParser],
+    )
+    def upload_regulation_file(self, request: Request, pk: str) -> Response:
+        """Upload a regulation PDF and return a media file reference for drafting."""
+        # Ensure the competition exists before accepting an orphan upload.
+        try:
+            build_get_competition_handler().handle(GetCompetitionQuery(competition_id=pk))
+        except (ApplicationError, CompetitionDomainError) as exc:
+            return competition_problem(exc, instance=request.path, request=request)
+
+        uploaded = request.FILES.get("file")
+        if uploaded is None:
+            return validation_problem(
+                {"file": ["Выберите PDF-файл положения."]},
+                instance=request.path,
+                request=request,
+            )
+
+        content_type = (uploaded.content_type or "").lower()
+        if content_type not in {"application/pdf"}:
+            return validation_problem(
+                {"file": ["Допустим только PDF."]},
+                instance=request.path,
+                request=request,
+            )
+
+        if uploaded.size > 20 * 1024 * 1024:
+            return validation_problem(
+                {"file": ["Размер файла не должен превышать 20 МБ."]},
+                instance=request.path,
+                request=request,
+            )
+
+        relative_path = default_storage.save(
+            f"competitions/{pk}/regulations/{uuid.uuid4().hex}.pdf",
+            uploaded,
+        )
+        file_reference = f"/{settings.MEDIA_URL.strip('/')}/{relative_path}"
+        correlation_id = request_id(request)
+        return Response(
+            {
+                "data": {"fileReference": file_reference},
+                "meta": {"requestId": correlation_id},
+            },
+            status=status.HTTP_200_OK,
+            headers={"X-Request-ID": correlation_id},
+        )
 
     @extend_schema(tags=[_TAG], operation_id="addRegulation", request=AddRegulationSerializer, responses=_detail_ok(status.HTTP_201_CREATED))
     @action(detail=True, methods=["post"], url_path="regulations")
