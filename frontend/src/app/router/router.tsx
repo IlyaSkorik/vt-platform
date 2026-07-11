@@ -160,10 +160,30 @@ const routes: RouteObject[] = [
               },
               {
                 path: ROUTES.cabinetCompetitions.slice(1),
-                lazy: workspacePlaceholder(
-                  participantItem(ROUTES.cabinetCompetitions),
-                  "participant",
-                ),
+                element: <Outlet />,
+                children: [
+                  {
+                    index: true,
+                    lazy: lazyPage(
+                      () => import("@/applications/participant/pages/festivals"),
+                      "FestivalCatalogPage",
+                    ),
+                  },
+                  {
+                    path: ":festivalId",
+                    lazy: lazyPage(
+                      () => import("@/applications/participant/pages/festivals"),
+                      "FestivalLandingPlaceholderPage",
+                    ),
+                  },
+                  {
+                    path: ":festivalId/apply",
+                    lazy: lazyPage(
+                      () => import("@/applications/participant/pages/festivals"),
+                      "FestivalApplyPlaceholderPage",
+                    ),
+                  },
+                ],
               },
               {
                 path: ROUTES.cabinetDocuments.slice(1),

@@ -13,6 +13,8 @@ export const ROUTES = {
   cabinetParticipants: "/cabinet/participants",
   cabinetApplications: "/cabinet/applications",
   cabinetCompetitions: "/cabinet/competitions",
+  cabinetFestival: "/cabinet/competitions/:festivalId",
+  cabinetFestivalApply: "/cabinet/competitions/:festivalId/apply",
   cabinetDocuments: "/cabinet/documents",
   cabinetNotifications: "/cabinet/notifications",
   cabinetSettings: "/cabinet/settings",
