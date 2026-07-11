@@ -31,8 +31,9 @@ ignore = [
 # to nullable columns, where NULL means "absent" — distinct from "" (DJ001).
 "apps/*/infrastructure/models/*.py" = ["RUF012", "DJ001"]
 # REST serializers: field names are the API's camelCase wire keys (API-000 §7),
-# which the platform contract mandates over pep8 snake_case (N815).
-"apps/*/presentation/**/serializers.py" = ["N815"]
+# which the platform contract mandates over pep8 snake_case (N815). Matches any
+# serializer module (e.g. `serializers.py`, `public_serializers.py`).
+"apps/*/presentation/**/*serializers.py" = ["N815"]
 # Localized transactional-email copy is Russian (the platform's primary language,
 # ARCH-001): Cyrillic letters that resemble Latin ones are intentional, not typos.
 "apps/*/infrastructure/messaging/email_gateway.py" = ["RUF001"]
