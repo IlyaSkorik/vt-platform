@@ -161,6 +161,8 @@ class ParticipantGroupView:
     name: str
     min_count: int
     max_count: int | None
+    description: str | None
+    sort_order: int
 
     @classmethod
     def of(cls, group: ParticipantGroup) -> ParticipantGroupView:
@@ -170,6 +172,8 @@ class ParticipantGroupView:
             name=group.name.value,
             min_count=group.count_range.min_count,
             max_count=group.count_range.max_count,
+            description=group.description.value if group.description is not None else None,
+            sort_order=group.sort_order,
         )
 
 

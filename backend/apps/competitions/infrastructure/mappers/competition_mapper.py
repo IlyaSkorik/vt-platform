@@ -73,6 +73,7 @@ from apps.competitions.domain.value_objects import (
     Money,
     OrganizerId,
     ParticipantCountRange,
+    ParticipantGroupDescription,
     ParticipantGroupId,
     ParticipantGroupName,
     ParticipationFormat,
@@ -268,6 +269,8 @@ class CompetitionMapper:
                     category_id=CategoryId.from_uuid(row.category_id),
                     name=ParticipantGroupName(row.name),
                     count_range=ParticipantCountRange(row.min_count, row.max_count),
+                    description=ParticipantGroupDescription(row.description) if row.description else None,
+                    sort_order=row.sort_order,
                 )
                 for row in participant_groups
             ],
@@ -433,6 +436,8 @@ class CompetitionMapper:
                     name=g.name.value,
                     min_count=g.count_range.min_count,
                     max_count=g.count_range.max_count,
+                    description=g.description.value if g.description is not None else None,
+                    sort_order=g.sort_order,
                 )
                 for g in entity.participant_groups
             ],

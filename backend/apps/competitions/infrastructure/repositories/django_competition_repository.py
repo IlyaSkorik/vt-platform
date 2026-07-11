@@ -144,7 +144,7 @@ class DjangoCompetitionRepository:
             categories=CategoryModel.objects.filter(competition_id=pk).order_by("sort_order", "created_at", "id"),
             disciplines=DisciplineModel.objects.filter(competition_id=pk).order_by("sort_order", "created_at", "id"),
             age_categories=AgeCategoryModel.objects.filter(competition_id=pk).order_by("sort_order", "min_age", "id"),
-            participant_groups=ParticipantGroupModel.objects.filter(competition_id=pk).order_by("created_at", "id"),
+            participant_groups=ParticipantGroupModel.objects.filter(competition_id=pk).order_by("sort_order", "created_at", "id"),
             admission_rules=AdmissionRuleModel.objects.filter(competition_id=pk).order_by("created_at", "id"),
             pricing_rules=PricingRuleModel.objects.filter(competition_id=pk).order_by("created_at", "id"),
             regulations=RegulationModel.objects.filter(competition_id=pk).order_by("publication_date", "id"),

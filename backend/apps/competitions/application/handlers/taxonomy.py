@@ -14,6 +14,7 @@ from apps.competitions.application.dto.commands import (
     RenameCategoryCommand,
     RenameDisciplineCommand,
     UpdateAgeCategoryCommand,
+    UpdateParticipantGroupCommand,
 )
 from apps.competitions.application.dto.views import CompetitionDetailView
 from apps.competitions.domain.value_objects import (
@@ -28,6 +29,7 @@ from apps.competitions.domain.value_objects import (
     DisciplineName,
     MixedAgeCalculationMethod,
     ParticipantCountRange,
+    ParticipantGroupDescription,
     ParticipantGroupId,
     ParticipantGroupName,
 )
@@ -46,6 +48,7 @@ __all__ = (
     "RenameCategoryHandler",
     "RenameDisciplineHandler",
     "UpdateAgeCategoryHandler",
+    "UpdateParticipantGroupHandler",
 )
 
 
@@ -253,6 +256,10 @@ class AddParticipantGroupHandler(CompetitionCommandHandler):
     ) -> CompetitionDetailView:
         competition = self._require(command.competition_id)
 
+        description = None
+        if command.description is not None and command.description.strip():
+            description = ParticipantGroupDescription(command.description)
+
         competition.add_participant_group(
             participant_group_id=ParticipantGroupId.from_uuid(
                 self._uuids.new(),
@@ -267,6 +274,46 @@ class AddParticipantGroupHandler(CompetitionCommandHandler):
                 min_count=command.min_count,
                 max_count=command.max_count,
             ),
+            now=self._clock.utcnow(),
+            description=description,
+            sort_order=command.sort_order,
+        )
+
+        return self._persist(competition)
+
+
+class UpdateParticipantGroupHandler(CompetitionCommandHandler):
+    """Update a participant group (partial: name, range, description, sort_order)."""
+
+    def handle(
+        self,
+        command: UpdateParticipantGroupCommand,
+    ) -> CompetitionDetailView:
+        from apps.competitions.domain.entities import _SENTINEL
+
+        competition = self._require(command.competition_id)
+
+        count_range: ParticipantCountRange | None = None
+        if command.min_count is not None:
+            count_range = ParticipantCountRange(
+                min_count=command.min_count,
+                max_count=command.max_count,
+            )
+
+        description: object = _SENTINEL
+        if command.update_description:
+            description = (
+                ParticipantGroupDescription(command.description)
+                if command.description is not None and command.description.strip()
+                else None
+            )
+
+        competition.update_participant_group(
+            participant_group_id=ParticipantGroupId.from_string(command.participant_group_id),
+            name=ParticipantGroupName(command.name) if command.name is not None else None,
+            count_range=count_range,
+            description=description,  # type: ignore[arg-type]
+            sort_order=command.sort_order,
             now=self._clock.utcnow(),
         )
 

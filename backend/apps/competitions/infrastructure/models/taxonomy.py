@@ -122,6 +122,8 @@ class ParticipantGroupModel(BasePersistenceModel):
     name = models.CharField(max_length=120)
     min_count = models.PositiveIntegerField()
     max_count = models.PositiveIntegerField(null=True, blank=True, default=None)
+    description = models.TextField(null=True, blank=True, default=None)
+    sort_order = models.PositiveIntegerField(default=0)
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "competitions_participant_group"

@@ -66,6 +66,7 @@ __all__ = [
     "UpdateDocumentCommand",
     "UpdateGeneralInformationCommand",
     "UpdateInformationBlockCommand",
+    "UpdateParticipantGroupCommand",
     "UpdateSettingsCommand",
 ]
 
@@ -231,6 +232,20 @@ class AddParticipantGroupCommand:
     name: str
     min_count: int
     max_count: int | None = None
+    description: str | None = None
+    sort_order: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class UpdateParticipantGroupCommand:
+    competition_id: str
+    participant_group_id: str
+    name: str | None = None
+    min_count: int | None = None
+    max_count: int | None = None
+    description: str | None = None
+    sort_order: int | None = None
+    update_description: bool = False
 
 
 @dataclass(frozen=True, slots=True)
