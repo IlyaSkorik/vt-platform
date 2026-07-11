@@ -1,6 +1,7 @@
 export type { BulkPricingResult, PricingUpsertPayload } from "./api";
 export {
   competitionKeys,
+  type OrganizationProfile,
   useAddAdditionalServiceMutation,
   useAddAdmissionRuleMutation,
   useAddAgeCategoryMutation,
@@ -20,6 +21,7 @@ export {
   useMarkConfiguredMutation,
   useMarkReadyMutation,
   useOpenRegistrationMutation,
+  useOrganizationProfileQuery,
   usePublishCompetitionMutation,
   useRemoveAdditionalServiceMutation,
   useRemoveAdmissionRuleMutation,
@@ -46,6 +48,7 @@ export {
   useUpdateBrandingMutation,
   useUpdateCategoryMutation,
   useUpdateCompetitionSettingsMutation,
+  useUpdateContactsConfigurationMutation,
   useUpdateDisciplineMutation,
   useUpdateDocumentMutation,
   useUpdateGeneralInformationMutation,
@@ -131,6 +134,19 @@ export {
   suggestAgeCategoryName,
   updateAgeCategoryPayload,
 } from "./lib/age-categories";
+export {
+  buildContactsSummary,
+  type ContactsSummary,
+  contactsConfigToPayload,
+  createTeamContactDraft,
+  defaultContactsConfig,
+  emptyEmergency,
+  emptyOverride,
+  emptyVenueDetails,
+  moveTeamContactBefore,
+  resolveContactsConfig,
+  sortTeamContacts,
+} from "./lib/contacts";
 export {
   buildReorderedSortUpdates,
   createEmptyDocumentForm,

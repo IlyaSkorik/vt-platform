@@ -45,6 +45,7 @@ export {
   useUpdateBrandingMutation,
   useUpdateCategoryMutation,
   useUpdateCompetitionSettingsMutation,
+  useUpdateContactsConfigurationMutation,
   useUpdateDisciplineMutation,
   useUpdateDocumentMutation,
   useUpdateGeneralInformationMutation,
@@ -56,3 +57,9 @@ export {
   useUpsertPricingRuleMutation,
 } from "./competitions-api";
 export { competitionKeys } from "./keys";
+export {
+  fetchOrganizationProfile,
+  type OrganizationProfile,
+  organizationKeys,
+  useOrganizationProfileQuery,
+} from "./organization-profile";

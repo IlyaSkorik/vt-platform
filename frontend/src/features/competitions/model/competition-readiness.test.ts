@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CompetitionDetail } from "@/shared/api/generated/model-competitions";
+import { defaultContactsConfig } from "../lib/contacts";
 import { buildCompetitionReadiness } from "./competition-readiness";
 import { buildPublicationChecklist } from "./publication-checklist";
 
@@ -59,6 +60,28 @@ function baseCompetition(overrides: Partial<CompetitionDetail> = {}): Competitio
     currentRegulationId: null,
     documents: [],
     additionalServices: [],
+    contactsConfig: {
+      useOrganizationContacts: true,
+      override: {
+        organizationName: null,
+        phone: null,
+        email: null,
+        website: null,
+        address: null,
+        vk: null,
+        instagram: null,
+        telegram: null,
+      },
+      teamContacts: [],
+      emergency: { phone: null, email: null, notes: null },
+      venueDetails: {
+        city: null,
+        country: null,
+        googleMapsUrl: null,
+        yandexMapsUrl: null,
+        directions: null,
+      },
+    },
     contacts: [],
     informationBlocks: [],
     createdAt: "2026-01-01T10:00:00.000Z",
@@ -84,16 +107,23 @@ describe("buildCompetitionReadiness", () => {
     expect(readiness.incomplete).toBeGreaterThan(0);
   });
 
-  it("marks contacts done when present", () => {
+  it("marks contacts done when team contacts or venue exist", () => {
     const competition = baseCompetition({
-      contacts: [
-        {
-          id: "c1",
-          type: "email",
-          value: "a@b.c",
-          isPrimary: true,
-        },
-      ],
+      venue: { name: "Grand Hall", address: null },
+      contactsConfig: {
+        ...defaultContactsConfig(),
+        teamContacts: [
+          {
+            id: "11111111-1111-7111-8111-111111111111",
+            name: "Anna",
+            position: "Coordinator",
+            phone: null,
+            email: "a@b.c",
+            description: null,
+            sortOrder: 0,
+          },
+        ],
+      },
     });
     const checklist = buildPublicationChecklist(competition);
     const readiness = buildCompetitionReadiness(competition, checklist);

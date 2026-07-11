@@ -49,6 +49,7 @@ import {
   updateAgeCategory,
   updateBranding,
   updateCompetition,
+  updateContactsConfiguration,
   updateDocument,
   updateParticipantGroup,
   updateParticipationFormat,
@@ -80,6 +81,7 @@ import type {
   PatchedUpdateParticipantGroup,
   PatchedUpdateParticipationFormat,
   UpdateCompetitionSettings,
+  UpdateContactsConfiguration,
 } from "@/shared/api/generated/model-competitions";
 import { cacheOrganizerId } from "../lib/organizer-id";
 import { unwrapCompetitionDetail, unwrapCompetitionList } from "./envelope";
@@ -1792,6 +1794,32 @@ export function useUpdateCompetitionSettingsMutation(): UseMutationResult<
     { competitionId: string; payload: UpdateCompetitionSettings }
   >({
     mutationFn: ({ competitionId, payload }) => putSettings(competitionId, payload),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+async function putContactsConfiguration(
+  competitionId: string,
+  payload: UpdateContactsConfiguration,
+): Promise<CompetitionDetail> {
+  const response = await updateContactsConfiguration(competitionId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
+
+export function useUpdateContactsConfigurationMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; payload: UpdateContactsConfiguration }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; payload: UpdateContactsConfiguration }
+  >({
+    mutationFn: ({ competitionId, payload }) => putContactsConfiguration(competitionId, payload),
     onSuccess: (detail) => {
       setCompetitionCache(queryClient, detail);
     },

@@ -59,8 +59,23 @@ export function buildCompetitionReadiness(
       case "additional-services":
       case "settings":
         return true;
-      case "contacts":
-        return competition.contacts.length > 0;
+      case "contacts": {
+        const config = competition.contactsConfig;
+        const hasVenueExtras =
+          Boolean(config.venueDetails.city?.trim()) ||
+          Boolean(config.venueDetails.country?.trim()) ||
+          Boolean(config.venueDetails.googleMapsUrl?.trim()) ||
+          Boolean(config.venueDetails.yandexMapsUrl?.trim()) ||
+          Boolean(config.venueDetails.directions?.trim());
+        return (
+          config.teamContacts.length > 0 ||
+          hasVenueExtras ||
+          Boolean(config.emergency.phone?.trim()) ||
+          Boolean(config.emergency.email?.trim()) ||
+          Boolean(config.emergency.notes?.trim()) ||
+          !config.useOrganizationContacts
+        );
+      }
       case "public-information":
         return competition.informationBlocks.length > 0;
       default:

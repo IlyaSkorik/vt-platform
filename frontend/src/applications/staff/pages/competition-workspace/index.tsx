@@ -20,6 +20,7 @@ import { AdditionalServicesSection } from "@/widgets/competition-additional-serv
 import { AdmissionRulesSection } from "@/widgets/competition-admission-rules";
 import { AgeCategoriesSection } from "@/widgets/competition-age-categories";
 import { CategoriesSection } from "@/widgets/competition-categories";
+import { ContactsSection } from "@/widgets/competition-contacts";
 import { DocumentsSection } from "@/widgets/competition-documents";
 import { GeneralSection } from "@/widgets/competition-general";
 import { ParticipantGroupsSection } from "@/widgets/competition-participant-groups";
@@ -246,6 +247,14 @@ export function StaffCompetitionWorkspacePage(): React.JSX.Element {
           />
         ) : section.id === "settings" ? (
           <SettingsSection
+            competition={competition}
+            checklist={checklist}
+            isLoading={detailQuery.isFetching && !detailQuery.isFetched}
+            onAutosaveStateChange={setAutosaveState}
+            onNavigateSection={handleSectionChange}
+          />
+        ) : section.id === "contacts" ? (
+          <ContactsSection
             competition={competition}
             checklist={checklist}
             isLoading={detailQuery.isFetching && !detailQuery.isFetched}

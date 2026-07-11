@@ -332,6 +332,38 @@ const competitionDetail = {
       { id: "c1", type: "WEBSITE", value: "https://example.com", isPrimary: true },
       { id: "c2", type: "VK", value: "https://vk.com/example", isPrimary: false },
     ],
+    contactsConfig: {
+      useOrganizationContacts: true,
+      override: {
+        organizationName: null,
+        phone: null,
+        email: null,
+        website: null,
+        address: null,
+        vk: null,
+        instagram: null,
+        telegram: null,
+      },
+      teamContacts: [
+        {
+          id: "11111111-1111-7111-8111-111111111111",
+          name: "Анна Координатор",
+          position: "Координатор фестиваля",
+          phone: "+375 29 111-11-11",
+          email: "anna@example.com",
+          description: "Основной контакт по заявкам",
+          sortOrder: 0,
+        },
+      ],
+      emergency: { phone: "112", email: null, notes: "Дежурный на площадке" },
+      venueDetails: {
+        city: "Минск",
+        country: "Беларусь",
+        googleMapsUrl: "https://maps.google.com/?q=Minsk",
+        yandexMapsUrl: null,
+        directions: "Вход со стороны парка",
+      },
+    },
     informationBlocks: [],
     createdAt: "2026-01-01T10:00:00.000Z",
     updatedAt: "2026-01-10T12:00:00.000Z",
@@ -413,6 +445,29 @@ async function mockStaffApi(
       body: JSON.stringify(competitionDetail),
     });
   });
+  await page.route("**/api/v1/organization/profile", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        data: {
+          id: "org-1",
+          name: "Взлёт талантов",
+          slug: "vzlyot-talantov",
+          phone: "+375 17 000-00-00",
+          email: "hello@vzlyot.example",
+          website: "https://example.com",
+          address: "Минск",
+          logo: null,
+          vk: "https://vk.com/example",
+          instagram: null,
+          telegram: null,
+          legalInformation: null,
+        },
+        meta: { requestId: "req-org" },
+      }),
+    });
+  });
 }
 
 test.describe("Organizer workspace screenshots", () => {
@@ -459,7 +514,9 @@ test.describe("Organizer workspace screenshots", () => {
     });
 
     await page.goto("/staff/competitions/comp-1?section=categories");
-    await expect(page.getByRole("heading", { name: "Номинации и дисциплины", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Номинации и дисциплины", exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole("button", { name: /^Вокал$/ })).toBeVisible();
     await page.screenshot({
       path: path.join(screenshotDir, "05-categories-desktop.png"),
@@ -480,7 +537,9 @@ test.describe("Organizer workspace screenshots", () => {
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/staff/competitions/comp-1?section=age-categories");
-    await expect(page.getByRole("heading", { name: "Возрастные категории", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Возрастные категории", exact: true }),
+    ).toBeVisible();
     await expect(page.getByText("4–6 лет")).toBeVisible();
     await page.screenshot({
       path: path.join(screenshotDir, "06-age-categories-desktop.png"),
@@ -501,7 +560,9 @@ test.describe("Organizer workspace screenshots", () => {
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/staff/competitions/comp-1?section=participant-groups");
-    await expect(page.getByRole("heading", { name: "Группы участников", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Группы участников", exact: true }),
+    ).toBeVisible();
     await expect(page.getByText("Ensemble")).toBeVisible();
     await page.screenshot({
       path: path.join(screenshotDir, "07-participant-groups-desktop.png"),
@@ -652,6 +713,33 @@ test.describe("Organizer workspace screenshots", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.screenshot({
       path: path.join(screenshotDir, "12-participation-rules-mobile.png"),
+      fullPage: true,
+    });
+  });
+
+  test("capture contacts screens", async ({ page }) => {
+    await mockStaffApi(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/staff/competitions/comp-1?section=contacts");
+    await expect(page.getByRole("heading", { name: "Контакты", exact: true })).toBeVisible();
+    await expect(page.getByText("Источник контактов")).toBeVisible();
+    await expect(page.getByText("Взлёт талантов").first()).toBeVisible();
+    await expect(page.getByText("Анна Координатор")).toBeVisible();
+    await expect(page.getByText("Сводка контактов")).toBeVisible();
+    await page.screenshot({
+      path: path.join(screenshotDir, "13-contacts-desktop.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 820, height: 1180 });
+    await page.screenshot({
+      path: path.join(screenshotDir, "13-contacts-tablet.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({
+      path: path.join(screenshotDir, "13-contacts-mobile.png"),
       fullPage: true,
     });
   });

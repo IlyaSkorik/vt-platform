@@ -59,7 +59,7 @@ export const COMPETITION_SECTIONS: readonly CompetitionSection[] = [
     implemented: true,
   },
   { id: "settings", title: "Правила участия", icon: Settings, implemented: true },
-  { id: "contacts", title: "Контакты", icon: Phone, implemented: false },
+  { id: "contacts", title: "Контакты", icon: Phone, implemented: true },
   { id: "public-information", title: "Публичная информация", icon: Globe, implemented: false },
 ];
 
