@@ -5,7 +5,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { type ApiError, apiClient, toApiError } from "@/shared/api";
+import { ApiError, apiClient, toApiError } from "@/shared/api";
 import {
   addAgeCategory,
   addCategory,
@@ -13,6 +13,7 @@ import {
   addDiscipline,
   addDocument,
   addParticipantGroup,
+  addParticipationFormat,
   addRegulation,
   archiveCompetition,
   getCompetition,
@@ -30,6 +31,7 @@ import {
   removeDiscipline,
   removeDocument,
   removeParticipantGroup,
+  removeParticipationFormat,
   removeRegulation,
   renameCategory,
   renameDiscipline,
@@ -39,6 +41,7 @@ import {
   updateCompetition,
   updateDocument,
   updateParticipantGroup,
+  updateParticipationFormat,
 } from "@/shared/api/generated/competitions/competitions";
 import type {
   AddAgeCategory,
@@ -47,6 +50,7 @@ import type {
   AddDiscipline,
   AddDocument,
   AddParticipantGroup,
+  AddParticipationFormat,
   AddRegulation,
   CompetitionDetail,
   CompetitionSummary,
@@ -58,6 +62,7 @@ import type {
   PatchedUpdateCompetitionGeneralInformation,
   PatchedUpdateDocument,
   PatchedUpdateParticipantGroup,
+  PatchedUpdateParticipationFormat,
 } from "@/shared/api/generated/model-competitions";
 import { cacheOrganizerId } from "../lib/organizer-id";
 import { unwrapCompetitionDetail, unwrapCompetitionList } from "./envelope";
@@ -364,6 +369,32 @@ async function deleteParticipantGroup(
   const response = await removeParticipantGroup(competitionId, participantGroupId);
   return unwrapCompetitionDetail(response.data);
 }
+
+async function createParticipationFormat(
+  competitionId: string,
+  payload: AddParticipationFormat,
+): Promise<CompetitionDetail> {
+  const response = await addParticipationFormat(competitionId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function patchParticipationFormat(
+  competitionId: string,
+  formatId: string,
+  payload: PatchedUpdateParticipationFormat,
+): Promise<CompetitionDetail> {
+  const response = await updateParticipationFormat(competitionId, formatId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function deleteParticipationFormat(
+  competitionId: string,
+  formatId: string,
+): Promise<CompetitionDetail> {
+  const response = await removeParticipationFormat(competitionId, formatId);
+  return unwrapCompetitionDetail(response.data);
+}
+
 
 function upsertListItem(
   queryClient: ReturnType<typeof useQueryClient>,
@@ -1161,3 +1192,88 @@ export function useReorderParticipantGroupsMutation(): UseMutationResult<
     },
   });
 }
+
+export function useAddParticipationFormatMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; payload: AddParticipationFormat }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; payload: AddParticipationFormat }
+  >({
+    mutationFn: ({ competitionId, payload }) => createParticipationFormat(competitionId, payload),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useUpdateParticipationFormatMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; formatId: string; payload: PatchedUpdateParticipationFormat }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; formatId: string; payload: PatchedUpdateParticipationFormat }
+  >({
+    mutationFn: ({ competitionId, formatId, payload }) =>
+      patchParticipationFormat(competitionId, formatId, payload),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useRemoveParticipationFormatMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; formatId: string }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<CompetitionDetail, ApiError, { competitionId: string; formatId: string }>({
+    mutationFn: ({ competitionId, formatId }) => deleteParticipationFormat(competitionId, formatId),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useReorderParticipationFormatsMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  {
+    competitionId: string;
+    updates: Array<{ formatId: string; payload: PatchedUpdateParticipationFormat }>;
+  }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    {
+      competitionId: string;
+      updates: Array<{ formatId: string; payload: PatchedUpdateParticipationFormat }>;
+    }
+  >({
+    mutationFn: async ({ competitionId, updates }) => {
+      let latest: CompetitionDetail | null = null;
+      for (const update of updates) {
+        latest = await patchParticipationFormat(competitionId, update.formatId, update.payload);
+      }
+      if (!latest) {
+        return fetchCompetition(competitionId);
+      }
+      return latest;
+    },
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+

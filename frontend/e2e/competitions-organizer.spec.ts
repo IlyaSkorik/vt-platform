@@ -55,7 +55,29 @@ const competitionDetail = {
       documentUpload: null,
       correction: null,
     },
-    enabledFormats: [],
+    participationFormats: [
+      {
+        id: "fmt-1",
+        name: "Очно",
+        description: "Выступление на площадке фестиваля",
+        enabled: true,
+        sortOrder: 0,
+      },
+      {
+        id: "fmt-2",
+        name: "Онлайн",
+        description: "Удалённое участие",
+        enabled: true,
+        sortOrder: 1,
+      },
+      {
+        id: "fmt-3",
+        name: "Video Submission",
+        description: "Запись заранее",
+        enabled: false,
+        sortOrder: 2,
+      },
+    ],
     categories: [
       {
         id: "cat-1",
@@ -354,5 +376,27 @@ test.describe("Organizer workspace screenshots", () => {
       path: path.join(screenshotDir, "07-participant-groups-mobile.png"),
       fullPage: true,
     });
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/staff/competitions/comp-1?section=participation-formats");
+    await expect(page.getByRole("heading", { name: "Форматы участия" })).toBeVisible();
+    await expect(page.getByText("Video Submission")).toBeVisible();
+    await page.screenshot({
+      path: path.join(screenshotDir, "08-participation-formats-desktop.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 820, height: 1180 });
+    await page.screenshot({
+      path: path.join(screenshotDir, "08-participation-formats-tablet.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({
+      path: path.join(screenshotDir, "08-participation-formats-mobile.png"),
+      fullPage: true,
+    });
+
   });
 });

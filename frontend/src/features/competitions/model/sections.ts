@@ -48,7 +48,7 @@ export const COMPETITION_SECTIONS: readonly CompetitionSection[] = [
     id: "participation-formats",
     title: "Форматы участия",
     icon: ClipboardCheck,
-    implemented: false,
+    implemented: true,
   },
   { id: "admission-rules", title: "Правила допуска", icon: ShieldCheck, implemented: false },
   { id: "pricing", title: "Цены", icon: CircleDollarSign, implemented: false },

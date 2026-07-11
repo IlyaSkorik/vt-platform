@@ -35,7 +35,7 @@ function baseCompetition(overrides: Partial<CompetitionDetail> = {}): Competitio
       documentUpload: null,
       correction: null,
     },
-    enabledFormats: [],
+    participationFormats: [],
     categories: [],
     disciplines: [],
     ageCategories: [],
@@ -91,14 +91,22 @@ describe("buildPublicationChecklist", () => {
             sortOrder: 0,
           },
         ],
-        enabledFormats: ["SOLO"],
+        participationFormats: [
+          {
+            id: "f1",
+            name: "Очно",
+            description: null,
+            enabled: true,
+            sortOrder: 0,
+          },
+        ],
         admissionRules: [
           {
             categoryId: "c1",
             disciplineId: "d1",
             ageCategoryId: "a1",
             participantGroupId: "g1",
-            participationFormat: "SOLO",
+            participationFormatId: "f1",
           },
         ],
         pricingRules: [
@@ -107,7 +115,7 @@ describe("buildPublicationChecklist", () => {
             disciplineId: "d1",
             ageCategoryId: "a1",
             participantGroupId: "g1",
-            participationFormat: "SOLO",
+            participationFormatId: "f1",
             amount: "1000.00",
             currency: "RUB",
           },

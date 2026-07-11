@@ -104,7 +104,7 @@ export function buildPublicationChecklist(competition: CompetitionDetail): Publi
     {
       id: "formats",
       label: "Хотя бы один формат участия",
-      done: competition.enabledFormats.length > 0,
+      done: competition.participationFormats.some((format) => format.enabled),
       sectionId: "participation-formats",
       blocking: true,
     },
@@ -127,7 +127,7 @@ export function buildPublicationChecklist(competition: CompetitionDetail): Publi
               price.disciplineId === rule.disciplineId &&
               price.ageCategoryId === rule.ageCategoryId &&
               price.participantGroupId === rule.participantGroupId &&
-              price.participationFormat === rule.participationFormat,
+              price.participationFormatId === rule.participationFormatId,
           ),
         ),
       sectionId: "pricing",
