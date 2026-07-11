@@ -52,9 +52,11 @@ export {
   useUpdateDisciplineMutation,
   useUpdateDocumentMutation,
   useUpdateGeneralInformationMutation,
+  useUpdateLandingConfigurationMutation,
   useUpdateParticipantGroupMutation,
   useUpdateParticipationFormatMutation,
   useUploadDocumentFileMutation,
+  useUploadLandingImageMutation,
   useUploadPosterMutation,
   useUploadRegulationFileMutation,
   useUpsertPricingRuleMutation,
@@ -171,6 +173,27 @@ export {
   contactSyncTargets,
   generalValuesToPayload,
 } from "./lib/general-mapper";
+export {
+  blockDisplayTitle,
+  buildLandingStructure,
+  createContentBlock,
+  createFaqItem,
+  createGalleryImage,
+  createJuryCard,
+  createPartnerCard,
+  defaultLandingConfig,
+  emptyBlock,
+  isSystemBlock,
+  LANDING_BLOCK_TYPE_LABELS,
+  type LandingBlockType,
+  type LandingStructureItem,
+  landingConfigToPayload,
+  moveLandingBlockBefore,
+  resolveLandingConfig,
+  SYSTEM_BLOCK_IDS,
+  sanitizeLandingBlock,
+  sortLandingBlocks,
+} from "./lib/landing";
 export { resolveMediaUrl } from "./lib/media-url";
 export { cacheOrganizerId, resolveOrganizerId } from "./lib/organizer-id";
 export {

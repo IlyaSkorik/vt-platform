@@ -1,6 +1,37 @@
-import type { CompetitionDetail } from "@/shared/api/generated/model-competitions";
+import type { _LandingBlock, CompetitionDetail } from "@/shared/api/generated/model-competitions";
+import { resolveLandingConfig } from "../lib/landing";
 import type { PublicationChecklist } from "./publication-checklist";
 import { COMPETITION_SECTIONS, type CompetitionSectionId } from "./sections";
+
+function landingBlockHasItems(block: _LandingBlock): boolean {
+  switch (block.type) {
+    case "JURY":
+      return (block.cards ?? []).length > 0;
+    case "PARTNERS":
+      return (block.partners ?? []).length > 0;
+    case "GALLERY":
+      return (block.images ?? []).length > 0;
+    case "FAQ":
+      return (block.faqItems ?? []).length > 0;
+    default:
+      return false;
+  }
+}
+
+function isPublicInformationDone(competition: CompetitionDetail): boolean {
+  const { blocks } = resolveLandingConfig(competition);
+  if (blocks.some((block) => block.type === "CONTENT")) return true;
+  if (blocks.some((block) => block.type === "HERO" && Boolean(block.title?.trim()))) return true;
+  return blocks.some(
+    (block) =>
+      (block.type === "JURY" ||
+        block.type === "PARTNERS" ||
+        block.type === "GALLERY" ||
+        block.type === "FAQ") &&
+      block.enabled &&
+      landingBlockHasItems(block),
+  );
+}
 
 export interface CompetitionReadinessItem {
   sectionId: CompetitionSectionId;
@@ -77,7 +108,7 @@ export function buildCompetitionReadiness(
         );
       }
       case "public-information":
-        return competition.informationBlocks.length > 0;
+        return isPublicInformationDone(competition);
       default:
         return false;
     }

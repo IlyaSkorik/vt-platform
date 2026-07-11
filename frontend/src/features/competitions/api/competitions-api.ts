@@ -51,6 +51,7 @@ import {
   updateCompetition,
   updateContactsConfiguration,
   updateDocument,
+  updateLandingConfiguration,
   updateParticipantGroup,
   updateParticipationFormat,
   updateSettings,
@@ -82,6 +83,7 @@ import type {
   PatchedUpdateParticipationFormat,
   UpdateCompetitionSettings,
   UpdateContactsConfiguration,
+  UpdateLandingConfiguration,
 } from "@/shared/api/generated/model-competitions";
 import { cacheOrganizerId } from "../lib/organizer-id";
 import { unwrapCompetitionDetail, unwrapCompetitionList } from "./envelope";
@@ -167,6 +169,23 @@ async function uploadRegulationPdf(competitionId: string, file: File): Promise<s
     const fileReference = response.data?.fileReference?.trim();
     if (!fileReference) {
       throw new Error("Unexpected regulation upload response.");
+    }
+    return fileReference;
+  } catch (error) {
+    throw await toApiError(error);
+  }
+}
+
+async function uploadLandingImage(competitionId: string, file: File): Promise<string> {
+  const body = new FormData();
+  body.append("file", file);
+  try {
+    const response = await apiClient
+      .post(`competitions/${competitionId}/uploads/landing-image`, { body })
+      .json<{ data?: { fileReference?: string } }>();
+    const fileReference = response.data?.fileReference?.trim();
+    if (!fileReference) {
+      throw new Error("Unexpected landing image upload response.");
     }
     return fileReference;
   } catch (error) {
@@ -829,6 +848,16 @@ export function useSyncContactMutation(): UseMutationResult<
     onSuccess: (detail) => {
       setCompetitionCache(queryClient, detail);
     },
+  });
+}
+
+export function useUploadLandingImageMutation(): UseMutationResult<
+  string,
+  ApiError,
+  { competitionId: string; file: File }
+> {
+  return useMutation<string, ApiError, { competitionId: string; file: File }>({
+    mutationFn: ({ competitionId, file }) => uploadLandingImage(competitionId, file),
   });
 }
 
@@ -1820,6 +1849,32 @@ export function useUpdateContactsConfigurationMutation(): UseMutationResult<
     { competitionId: string; payload: UpdateContactsConfiguration }
   >({
     mutationFn: ({ competitionId, payload }) => putContactsConfiguration(competitionId, payload),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+async function putLandingConfiguration(
+  competitionId: string,
+  payload: UpdateLandingConfiguration,
+): Promise<CompetitionDetail> {
+  const response = await updateLandingConfiguration(competitionId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
+
+export function useUpdateLandingConfigurationMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; payload: UpdateLandingConfiguration }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; payload: UpdateLandingConfiguration }
+  >({
+    mutationFn: ({ competitionId, payload }) => putLandingConfiguration(competitionId, payload),
     onSuccess: (detail) => {
       setCompetitionCache(queryClient, detail);
     },
