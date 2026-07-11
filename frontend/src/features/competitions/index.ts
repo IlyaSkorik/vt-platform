@@ -14,6 +14,7 @@ export {
   useArchiveCompetitionMutation,
   useBulkAddAdmissionRulesMutation,
   useBulkPricingMutation,
+  useCloseRegistrationMutation,
   useCompetitionDetail,
   useCompetitionsList,
   useCreateCompetitionMutation,

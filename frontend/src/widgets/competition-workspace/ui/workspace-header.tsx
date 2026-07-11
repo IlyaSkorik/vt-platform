@@ -1,4 +1,4 @@
-import { Archive, CheckCircle2, ChevronDown, Megaphone, UserPlus } from "lucide-react";
+import { Archive, CheckCircle2, ChevronDown, Megaphone, UserMinus, UserPlus } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import type { AutosaveState, PublicationChecklist } from "@/features/competitions";
 import { competitionStatusLabel, competitionStatusVariant } from "@/features/competitions";
@@ -23,15 +23,23 @@ interface WorkspaceHeaderProps {
   onMarkConfigured: () => void;
   onMarkReady: () => void;
   onOpenRegistration: () => void;
+  onCloseRegistration: () => void;
   onArchive: () => void;
   publishing?: boolean;
   markingConfigured?: boolean;
   markingReady?: boolean;
   openingRegistration?: boolean;
+  closingRegistration?: boolean;
   archiving?: boolean;
 }
 
-type ConfirmAction = "publish" | "mark-configured" | "mark-ready" | "open-registration" | null;
+type ConfirmAction =
+  | "publish"
+  | "mark-configured"
+  | "mark-ready"
+  | "open-registration"
+  | "close-registration"
+  | null;
 
 export function WorkspaceHeader({
   competition,
@@ -41,11 +49,13 @@ export function WorkspaceHeader({
   onMarkConfigured,
   onMarkReady,
   onOpenRegistration,
+  onCloseRegistration,
   onArchive,
   publishing = false,
   markingConfigured = false,
   markingReady = false,
   openingRegistration = false,
+  closingRegistration = false,
   archiving = false,
 }: WorkspaceHeaderProps): React.JSX.Element {
   const menuId = useId();
@@ -59,6 +69,7 @@ export function WorkspaceHeader({
   const canMarkReady = competition.status === "CONFIGURED" && checklist.isPublishable;
   const canPublish = competition.status === "READY";
   const canOpenRegistration = competition.status === "PUBLISHED";
+  const canCloseRegistration = competition.status === "REGISTRATION_OPEN";
 
   useEffect(() => {
     if (!menuOpen) {
@@ -116,13 +127,20 @@ export function WorkspaceHeader({
       confirmLabel: "Открыть регистрацию",
       onConfirm: onOpenRegistration,
     },
+    "close-registration": {
+      title: "Закрыть регистрацию?",
+      description: "Новые заявки больше не будут приниматься.",
+      confirmLabel: "Закрыть регистрацию",
+      onConfirm: onCloseRegistration,
+    },
   };
 
   const confirmBusy =
     (confirmAction === "publish" && publishing) ||
     (confirmAction === "mark-configured" && markingConfigured) ||
     (confirmAction === "mark-ready" && markingReady) ||
-    (confirmAction === "open-registration" && openingRegistration);
+    (confirmAction === "open-registration" && openingRegistration) ||
+    (confirmAction === "close-registration" && closingRegistration);
 
   return (
     <header className="sticky top-0 z-[calc(var(--z-sticky) -1 )] border-border border-b bg-background/95 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:px-6">
@@ -189,6 +207,16 @@ export function WorkspaceHeader({
               >
                 <UserPlus className="size-4" aria-hidden="true" />
                 Открыть регистрацию
+              </Button>
+            ) : null}
+            {canCloseRegistration ? (
+              <Button
+                variant="outline"
+                onClick={() => setConfirmAction("close-registration")}
+                loading={closingRegistration}
+              >
+                <UserMinus className="size-4" aria-hidden="true" />
+                Закрыть регистрацию
               </Button>
             ) : null}
 

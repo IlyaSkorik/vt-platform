@@ -18,11 +18,13 @@ interface CompetitionWorkspaceLayoutProps {
   onMarkConfigured: () => void;
   onMarkReady: () => void;
   onOpenRegistration: () => void;
+  onCloseRegistration: () => void;
   onArchive: () => void;
   publishing?: boolean;
   markingConfigured?: boolean;
   markingReady?: boolean;
   openingRegistration?: boolean;
+  closingRegistration?: boolean;
   archiving?: boolean;
   children: ReactNode;
 }
@@ -37,11 +39,13 @@ export function CompetitionWorkspaceLayout({
   onMarkConfigured,
   onMarkReady,
   onOpenRegistration,
+  onCloseRegistration,
   onArchive,
   publishing,
   markingConfigured,
   markingReady,
   openingRegistration,
+  closingRegistration,
   archiving,
   children,
 }: CompetitionWorkspaceLayoutProps): React.JSX.Element {
@@ -55,11 +59,13 @@ export function CompetitionWorkspaceLayout({
         onMarkConfigured={onMarkConfigured}
         onMarkReady={onMarkReady}
         onOpenRegistration={onOpenRegistration}
+        onCloseRegistration={onCloseRegistration}
         onArchive={onArchive}
         {...(publishing !== undefined ? { publishing } : {})}
         {...(markingConfigured !== undefined ? { markingConfigured } : {})}
         {...(markingReady !== undefined ? { markingReady } : {})}
         {...(openingRegistration !== undefined ? { openingRegistration } : {})}
+        {...(closingRegistration !== undefined ? { closingRegistration } : {})}
         {...(archiving !== undefined ? { archiving } : {})}
       />
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">

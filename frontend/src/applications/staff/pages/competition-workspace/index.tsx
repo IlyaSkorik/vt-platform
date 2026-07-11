@@ -7,6 +7,7 @@ import {
   DEFAULT_COMPETITION_SECTION,
   findCompetitionSection,
   useArchiveCompetitionMutation,
+  useCloseRegistrationMutation,
   useCompetitionDetail,
   useMarkConfiguredMutation,
   useMarkReadyMutation,
@@ -57,6 +58,7 @@ export function StaffCompetitionWorkspacePage(): React.JSX.Element {
   const markConfigured = useMarkConfiguredMutation();
   const markReady = useMarkReadyMutation();
   const openRegistration = useOpenRegistrationMutation();
+  const closeRegistration = useCloseRegistrationMutation();
   const archive = useArchiveCompetitionMutation();
 
   const checklist = useMemo(
@@ -155,6 +157,13 @@ export function StaffCompetitionWorkspacePage(): React.JSX.Element {
             "Не удалось открыть регистрацию",
           )
         }
+        onCloseRegistration={() =>
+          void runLifecycleAction(
+            () => closeRegistration.mutateAsync(competition.id),
+            "Регистрация закрыта",
+            "Не удалось закрыть регистрацию",
+          )
+        }
         onArchive={() =>
           void runLifecycleAction(
             () => archive.mutateAsync(competition.id),
@@ -166,6 +175,7 @@ export function StaffCompetitionWorkspacePage(): React.JSX.Element {
         markingConfigured={markConfigured.isPending}
         markingReady={markReady.isPending}
         openingRegistration={openRegistration.isPending}
+        closingRegistration={closeRegistration.isPending}
         archiving={archive.isPending}
       >
         {section.id === "general" ? (

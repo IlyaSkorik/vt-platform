@@ -290,6 +290,17 @@ async function openCompetitionRegistration(competitionId: string): Promise<Compe
   return unwrapCompetitionDetail(response.data);
 }
 
+async function closeCompetitionRegistration(competitionId: string): Promise<CompetitionDetail> {
+  try {
+    const response = await apiClient
+      .post(`competitions/${competitionId}/registration/close`)
+      .json<unknown>();
+    return unwrapCompetitionDetail(response);
+  } catch (error) {
+    throw await toApiError(error);
+  }
+}
+
 async function archive(competitionId: string): Promise<CompetitionDetail> {
   const response = await archiveCompetition(competitionId);
   return unwrapCompetitionDetail(response.data);
@@ -782,6 +793,20 @@ export function useOpenRegistrationMutation(): UseMutationResult<
   const queryClient = useQueryClient();
   return useMutation<CompetitionDetail, ApiError, string>({
     mutationFn: openCompetitionRegistration,
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useCloseRegistrationMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  string
+> {
+  const queryClient = useQueryClient();
+  return useMutation<CompetitionDetail, ApiError, string>({
+    mutationFn: closeCompetitionRegistration,
     onSuccess: (detail) => {
       setCompetitionCache(queryClient, detail);
     },
