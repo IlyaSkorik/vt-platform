@@ -132,6 +132,7 @@ __all__ = [
     "ParticipationFormatDescription",
     "ParticipationFormatId",
     "ParticipationFormatName",
+    "PricingCalculationType",
     "PricingRule",
     "PublicationIssue",
     "PublicationIssueCode",
@@ -1226,6 +1227,18 @@ class Currency(StrEnum):
     BYN = "BYN"
 
 
+class PricingCalculationType(StrEnum):
+    """How a pricing rule's unit amount becomes an application total.
+
+    ``PER_PARTICIPANT`` — total = unit price × participant count.
+    ``PER_PERFORMANCE`` — total = unit price (fixed), independent of headcount.
+    Applies to every participation format.
+    """
+
+    PER_PARTICIPANT = "PER_PARTICIPANT"
+    PER_PERFORMANCE = "PER_PERFORMANCE"
+
+
 # ---------------------------------------------------------------------------
 # Pricing & admissibility
 # ---------------------------------------------------------------------------
@@ -1326,25 +1339,45 @@ class AdmissionRule:
 
 @dataclass(frozen=True, slots=True)
 class PricingRule:
-    """The price **per participant** for one admissible combination.
+    """The list price for one admissible combination.
 
-    Offline and online prices differ naturally because ``participation_format_id``
-    is part of the combination, so two rules (one per format) express two prices.
-    Like :class:`AdmissionRule` this is an immutable configuration fact keyed by
-    its combination.
+    The ``price_per_participant`` field holds the configured unit amount. How that
+    amount becomes an application total is governed by ``calculation_type``:
+
+    * :attr:`PricingCalculationType.PER_PARTICIPANT` — total = unit × headcount
+    * :attr:`PricingCalculationType.PER_PERFORMANCE` — total = unit (fixed)
+
+    Offline/online (and any other format) differ naturally because
+    ``participation_format_id`` is part of the combination. Like
+    :class:`AdmissionRule` this is an immutable configuration fact keyed by its
+    combination.
 
     **Future extension points (not implemented):** *promo codes*, *discounts* and
     *coupons* are deliberately absent — they belong to a pricing/checkout stage
     (likely the future Applications/Payments contexts), computed *from* this base
-    price rather than stored on it. This value object stays the immutable list
-    price; a discount engine would consume it, not mutate it.
+    price rather than stored on it.
     """
 
     combination: AdmissionCombination
     price_per_participant: Money
+    calculation_type: PricingCalculationType = PricingCalculationType.PER_PARTICIPANT
+
+    def total_for(self, participant_count: int) -> Money:
+        """Compute the application total for ``participant_count`` participants."""
+        if participant_count < 1:
+            raise InvalidMoneyError("Participant count must be at least 1 to compute a total.")
+        if self.calculation_type is PricingCalculationType.PER_PERFORMANCE:
+            return self.price_per_participant
+        return Money.of(
+            self.price_per_participant.amount * participant_count,
+            self.price_per_participant.currency,
+        )
 
     def __str__(self) -> str:
-        return f"PricingRule({self.combination} @ {self.price_per_participant})"
+        return (
+            f"PricingRule({self.combination} @ {self.price_per_participant} "
+            f"[{self.calculation_type.value}])"
+        )
 
 
 # ---------------------------------------------------------------------------

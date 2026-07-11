@@ -175,6 +175,7 @@ from .value_objects import (
     ParticipationFormatDescription,
     ParticipationFormatId,
     ParticipationFormatName,
+    PricingCalculationType,
     PricingRule,
     PublicationIssue,
     PublicationIssueCode,
@@ -1525,7 +1526,11 @@ class Competition:
             self._admission_rules[remapped] = AdmissionRule(combination=remapped)
         for pricing in template.pricing_rules:
             remapped = _remap(pricing.combination)
-            self._pricing_rules[remapped] = PricingRule(combination=remapped, price_per_participant=pricing.price_per_participant)
+            self._pricing_rules[remapped] = PricingRule(
+                combination=remapped,
+                price_per_participant=pricing.price_per_participant,
+                calculation_type=pricing.calculation_type,
+            )
 
     # ------------------------------------------------------------------
     # Properties (read-only views)
@@ -1705,9 +1710,20 @@ class Competition:
         return combination in self._admission_rules
 
     def price_for(self, combination: AdmissionCombination) -> Money | None:
-        """The price per participant for ``combination``, or ``None`` if unpriced."""
+        """The unit list price for ``combination``, or ``None`` if unpriced."""
         rule = self._pricing_rules.get(combination)
         return rule.price_per_participant if rule is not None else None
+
+    def pricing_rule_for(self, combination: AdmissionCombination) -> PricingRule | None:
+        """The pricing rule for ``combination``, or ``None`` if unpriced."""
+        return self._pricing_rules.get(combination)
+
+    def calculate_price_for(self, combination: AdmissionCombination, participant_count: int) -> Money | None:
+        """Application total for ``combination`` given ``participant_count``, or ``None`` if unpriced."""
+        rule = self._pricing_rules.get(combination)
+        if rule is None:
+            return None
+        return rule.total_for(participant_count)
 
     # ------------------------------------------------------------------
     # Deadline queries (answer "is X still allowed at `now`?")
@@ -2138,30 +2154,55 @@ class Competition:
             )
         ]
 
-    def add_pricing_rule(self, *, combination: AdmissionCombination, price_per_participant: Money, now: datetime) -> list[DomainEvent]:
-        """Set the per-participant price for a combination. Requires an admission rule to exist."""
+    def add_pricing_rule(
+        self,
+        *,
+        combination: AdmissionCombination,
+        price_per_participant: Money,
+        now: datetime,
+        calculation_type: PricingCalculationType = PricingCalculationType.PER_PARTICIPANT,
+    ) -> list[DomainEvent]:
+        """Set the list price for a combination. Requires an admission rule to exist."""
         self._ensure_configurable()
         self._validate_combination(combination)
         if combination not in self._admission_rules:
             raise AdmissionRuleNotFoundError("Cannot price a combination that is not admissible.")
         if combination in self._pricing_rules:
             raise DuplicatePricingRuleError("A pricing rule for this combination already exists.")
-        self._pricing_rules[combination] = PricingRule(combination=combination, price_per_participant=price_per_participant)
+        self._pricing_rules[combination] = PricingRule(
+            combination=combination,
+            price_per_participant=price_per_participant,
+            calculation_type=calculation_type,
+        )
         self._touch(now)
-        return [self._pricing_added_event(combination, price_per_participant)]
+        return [self._pricing_added_event(combination, price_per_participant, calculation_type)]
 
-    def change_price(self, *, combination: AdmissionCombination, price_per_participant: Money, now: datetime) -> list[DomainEvent]:
-        """Change the per-participant price of an existing pricing rule.
+    def change_price(
+        self,
+        *,
+        combination: AdmissionCombination,
+        price_per_participant: Money,
+        now: datetime,
+        calculation_type: PricingCalculationType | None = None,
+    ) -> list[DomainEvent]:
+        """Change the list price (and optionally calculation type) of an existing pricing rule.
 
         Emits :class:`~apps.competitions.domain.events.PricingRuleAdded` — the event
         records that a price is now set for the combination, whether first set or changed.
+        When ``calculation_type`` is omitted, the existing type is preserved.
         """
         self._ensure_configurable()
-        if combination not in self._pricing_rules:
+        existing = self._pricing_rules.get(combination)
+        if existing is None:
             raise PricingRuleNotFoundError("No pricing rule exists for this combination.")
-        self._pricing_rules[combination] = PricingRule(combination=combination, price_per_participant=price_per_participant)
+        next_type = calculation_type if calculation_type is not None else existing.calculation_type
+        self._pricing_rules[combination] = PricingRule(
+            combination=combination,
+            price_per_participant=price_per_participant,
+            calculation_type=next_type,
+        )
         self._touch(now)
-        return [self._pricing_added_event(combination, price_per_participant)]
+        return [self._pricing_added_event(combination, price_per_participant, next_type)]
 
     def remove_pricing_rule(self, *, combination: AdmissionCombination, now: datetime) -> list[DomainEvent]:
         self._ensure_configurable()
@@ -2684,7 +2725,12 @@ class Competition:
         self._status = target
         self._touch(now)
 
-    def _pricing_added_event(self, combination: AdmissionCombination, price: Money) -> PricingRuleAdded:
+    def _pricing_added_event(
+        self,
+        combination: AdmissionCombination,
+        price: Money,
+        calculation_type: PricingCalculationType = PricingCalculationType.PER_PARTICIPANT,
+    ) -> PricingRuleAdded:
         return PricingRuleAdded(
             aggregate_id=self._id.value,
             category_id=combination.category_id,
@@ -2694,6 +2740,7 @@ class Competition:
             participation_format_id=combination.participation_format_id,
             amount=str(price.amount),
             currency=price.currency,
+            calculation_type=calculation_type,
         )
 
     def _require_category(self, category_id: CategoryId) -> Category:

@@ -82,6 +82,7 @@ from .value_objects import (
     ParticipationFormatDescription,
     ParticipationFormatId,
     ParticipationFormatName,
+    PricingCalculationType,
     PricingRule,
     TemplateId,
     TemplateName,
@@ -420,13 +421,24 @@ class CompetitionTemplate:
         del self._admission_rules[combination]
         self._touch(now)
 
-    def add_pricing_rule(self, *, combination: AdmissionCombination, price_per_participant: Money, now: datetime) -> PricingRule:
+    def add_pricing_rule(
+        self,
+        *,
+        combination: AdmissionCombination,
+        price_per_participant: Money,
+        now: datetime,
+        calculation_type: PricingCalculationType = PricingCalculationType.PER_PARTICIPANT,
+    ) -> PricingRule:
         self._validate_combination(combination)
         if combination not in self._admission_rules:
             raise AdmissionRuleNotFoundError("Cannot price a combination that is not admissible.")
         if combination in self._pricing_rules:
             raise DuplicatePricingRuleError("A pricing rule for this combination already exists.")
-        rule = PricingRule(combination=combination, price_per_participant=price_per_participant)
+        rule = PricingRule(
+            combination=combination,
+            price_per_participant=price_per_participant,
+            calculation_type=calculation_type,
+        )
         self._pricing_rules[combination] = rule
         self._touch(now)
         return rule

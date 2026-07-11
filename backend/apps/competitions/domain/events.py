@@ -49,6 +49,7 @@ from .value_objects import (
     OrganizerId,
     ParticipantGroupId,
     ParticipationFormatId,
+    PricingCalculationType,
     RegulationId,
     RegulationTitle,
     RegulationVersion,
@@ -242,7 +243,7 @@ class AdmissionRuleRemoved(DomainEvent):
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class PricingRuleAdded(DomainEvent):
-    """A per-participant price was set for a combination."""
+    """A unit price was set for a combination."""
 
     category_id: CategoryId
     discipline_id: DisciplineId
@@ -251,6 +252,7 @@ class PricingRuleAdded(DomainEvent):
     participation_format_id: ParticipationFormatId
     amount: str
     currency: Currency
+    calculation_type: PricingCalculationType = PricingCalculationType.PER_PARTICIPANT
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
