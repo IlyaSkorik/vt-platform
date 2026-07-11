@@ -2418,7 +2418,7 @@ paths:
           description: Business rule violation.
   /api/v1/competitions/{id}/participation-formats:
     post:
-      operationId: enableParticipationFormat
+      operationId: addParticipationFormat
       description: Organizer Competition API — staff-only.
       parameters:
       - in: path
@@ -2432,13 +2432,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ParticipationFormat'
+              $ref: '#/components/schemas/AddParticipationFormat'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ParticipationFormat'
+              $ref: '#/components/schemas/AddParticipationFormat'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ParticipationFormat'
+              $ref: '#/components/schemas/AddParticipationFormat'
         required: true
       security:
       - jwtAuth: []
@@ -2479,18 +2479,84 @@ paths:
               schema:
                 $ref: '#/components/schemas/CompetitionProblemDetail'
           description: Business rule violation.
-  /api/v1/competitions/{id}/participation-formats/{participation_format}:
-    delete:
-      operationId: disableParticipationFormat
+  /api/v1/competitions/{id}/participation-formats/{format_id}:
+    patch:
+      operationId: updateParticipationFormat
       description: Organizer Competition API — staff-only.
       parameters:
+      - in: path
+        name: format_id
+        schema:
+          type: string
+        required: true
       - in: path
         name: id
         schema:
           type: string
         required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateParticipationFormat'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateParticipationFormat'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateParticipationFormat'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+    delete:
+      operationId: removeParticipationFormat
+      description: Organizer Competition API — staff-only.
+      parameters:
       - in: path
-        name: participation_format
+        name: format_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
         schema:
           type: string
         required: true
@@ -4146,15 +4212,15 @@ components:
         participantGroupId:
           type: string
           format: uuid
-        participationFormat:
+        participationFormatId:
           type: string
-          maxLength: 32
+          format: uuid
       required:
       - ageCategoryId
       - categoryId
       - disciplineId
       - participantGroupId
-      - participationFormat
+      - participationFormatId
     AddAgeCategory:
       type: object
       properties:
@@ -4322,6 +4388,27 @@ components:
       - categoryId
       - minCount
       - name
+    AddParticipationFormat:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 120
+        description:
+          type:
+          - string
+          - 'null'
+          maxLength: 2000
+        enabled:
+          type: boolean
+          default: true
+        sortOrder:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+      required:
+      - name
     AddPricingRule:
       type: object
       properties:
@@ -4337,9 +4424,9 @@ components:
         participantGroupId:
           type: string
           format: uuid
-        participationFormat:
+        participationFormatId:
           type: string
-          maxLength: 32
+          format: uuid
         amount:
           type: string
           format: decimal
@@ -4354,7 +4441,7 @@ components:
       - categoryId
       - disciplineId
       - participantGroupId
-      - participationFormat
+      - participationFormatId
     AddRegulation:
       type: object
       properties:
@@ -4410,10 +4497,10 @@ components:
           $ref: '#/components/schemas/_Settings'
         deadlines:
           $ref: '#/components/schemas/_Deadlines'
-        enabledFormats:
+        participationFormats:
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/_ParticipationFormat'
         categories:
           type: array
           items:
@@ -4484,11 +4571,11 @@ components:
       - description
       - disciplines
       - documents
-      - enabledFormats
       - id
       - informationBlocks
       - organizerId
       - participantGroups
+      - participationFormats
       - pricingRules
       - registrationPeriod
       - regulations
@@ -4916,14 +5003,6 @@ components:
       - status
       - title
       - type
-    ParticipationFormat:
-      type: object
-      properties:
-        participationFormat:
-          type: string
-          maxLength: 32
-      required:
-      - participationFormat
     PatchedChangePrice:
       type: object
       properties:
@@ -4939,9 +5018,9 @@ components:
         participantGroupId:
           type: string
           format: uuid
-        participationFormat:
+        participationFormatId:
           type: string
-          maxLength: 32
+          format: uuid
         amount:
           type: string
           format: decimal
@@ -5156,6 +5235,28 @@ components:
           - string
           - 'null'
           maxLength: 2000
+        sortOrder:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+    PatchedUpdateParticipationFormat:
+      type: object
+      properties:
+        name:
+          type:
+          - string
+          - 'null'
+          maxLength: 120
+        description:
+          type:
+          - string
+          - 'null'
+          maxLength: 2000
+        enabled:
+          type:
+          - boolean
+          - 'null'
         sortOrder:
           type:
           - integer
@@ -5581,15 +5682,15 @@ components:
         participantGroupId:
           type: string
           format: uuid
-        participationFormat:
+        participationFormatId:
           type: string
-          maxLength: 32
+          format: uuid
       required:
       - ageCategoryId
       - categoryId
       - disciplineId
       - participantGroupId
-      - participationFormat
+      - participationFormatId
     _AdmissionRule:
       type: object
       properties:
@@ -5601,14 +5702,14 @@ components:
           type: string
         participantGroupId:
           type: string
-        participationFormat:
+        participationFormatId:
           type: string
       required:
       - ageCategoryId
       - categoryId
       - disciplineId
       - participantGroupId
-      - participationFormat
+      - participationFormatId
     _AgeCategory:
       type: object
       properties:
@@ -5830,6 +5931,27 @@ components:
       - minCount
       - name
       - sortOrder
+    _ParticipationFormat:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type:
+          - string
+          - 'null'
+        enabled:
+          type: boolean
+        sortOrder:
+          type: integer
+      required:
+      - description
+      - enabled
+      - id
+      - name
+      - sortOrder
     _Period:
       type: object
       properties:
@@ -5853,7 +5975,7 @@ components:
           type: string
         participantGroupId:
           type: string
-        participationFormat:
+        participationFormatId:
           type: string
         amount:
           type: string
@@ -5866,7 +5988,7 @@ components:
       - currency
       - disciplineId
       - participantGroupId
-      - participationFormat
+      - participationFormatId
     _Regulation:
       type: object
       properties:

@@ -25,14 +25,13 @@ __all__ = [
     "AddDocumentSerializer",
     "AddInformationBlockSerializer",
     "AddParticipantGroupSerializer",
-    "UpdateParticipantGroupSerializer",
+    "AddParticipationFormatSerializer",
     "AddPricingRuleSerializer",
     "AddRegulationSerializer",
     "ChangePriceSerializer",
     "CompetitionDetailEnvelopeSerializer",
     "CompetitionListEnvelopeSerializer",
     "CreateCompetitionSerializer",
-    "ParticipationFormatSerializer",
     "ProblemDetailSerializer",
     "RenameCategorySerializer",
     "RenameDisciplineSerializer",
@@ -44,6 +43,8 @@ __all__ = [
     "UpdateCompetitionSettingsSerializer",
     "UpdateDocumentSerializer",
     "UpdateInformationBlockSerializer",
+    "UpdateParticipantGroupSerializer",
+    "UpdateParticipationFormatSerializer",
 ]
 
 
@@ -233,8 +234,25 @@ class UpdateParticipantGroupSerializer(serializers.Serializer[dict[str, object]]
         return attrs
 
 
-class ParticipationFormatSerializer(serializers.Serializer[dict[str, object]]):
-    participationFormat = serializers.CharField(source="participation_format", max_length=32)
+class AddParticipationFormatSerializer(serializers.Serializer[dict[str, object]]):
+    name = serializers.CharField(max_length=120)
+    description = serializers.CharField(required=False, allow_blank=True, allow_null=True, max_length=2000)
+    enabled = serializers.BooleanField(required=False, default=True)
+    sortOrder = serializers.IntegerField(source="sort_order", required=False, allow_null=True, min_value=0)
+
+
+class UpdateParticipationFormatSerializer(serializers.Serializer[dict[str, object]]):
+    name = serializers.CharField(required=False, allow_null=True, max_length=120)
+    description = serializers.CharField(required=False, allow_blank=True, allow_null=True, max_length=2000)
+    enabled = serializers.BooleanField(required=False, allow_null=True)
+    sortOrder = serializers.IntegerField(source="sort_order", required=False, allow_null=True, min_value=0)
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        if not any(k in attrs for k in ("name", "description", "enabled", "sort_order")):
+            raise serializers.ValidationError(
+                "At least one of name, description, enabled, or sortOrder must be provided."
+            )
+        return attrs
 
 
 class _AdmissionCombinationSerializer(serializers.Serializer[dict[str, object]]):
@@ -242,7 +260,7 @@ class _AdmissionCombinationSerializer(serializers.Serializer[dict[str, object]])
     disciplineId = serializers.UUIDField(source="discipline_id")
     ageCategoryId = serializers.UUIDField(source="age_category_id")
     participantGroupId = serializers.UUIDField(source="participant_group_id")
-    participationFormat = serializers.CharField(source="participation_format", max_length=32)
+    participationFormatId = serializers.UUIDField(source="participation_format_id")
 
 
 class AddAdmissionRuleSerializer(_AdmissionCombinationSerializer):
@@ -400,12 +418,20 @@ class _ParticipantGroupSerializer(serializers.Serializer[dict[str, object]]):
     sortOrder = serializers.IntegerField(source="sort_order")
 
 
+class _ParticipationFormatSerializer(serializers.Serializer[dict[str, object]]):
+    id = serializers.CharField()
+    name = serializers.CharField()
+    description = serializers.CharField(allow_null=True)
+    enabled = serializers.BooleanField()
+    sortOrder = serializers.IntegerField(source="sort_order")
+
+
 class _AdmissionRuleSerializer(serializers.Serializer[dict[str, object]]):
     categoryId = serializers.CharField(source="category_id")
     disciplineId = serializers.CharField(source="discipline_id")
     ageCategoryId = serializers.CharField(source="age_category_id")
     participantGroupId = serializers.CharField(source="participant_group_id")
-    participationFormat = serializers.CharField(source="participation_format")
+    participationFormatId = serializers.CharField(source="participation_format_id")
 
 
 class _PricingRuleSerializer(_AdmissionRuleSerializer):
@@ -483,7 +509,7 @@ class CompetitionDetailSerializer(serializers.Serializer[dict[str, object]]):
     competitionPeriod = _PeriodSerializer(source="competition_period", allow_null=True)
     settings = _SettingsSerializer()
     deadlines = _DeadlinesSerializer()
-    enabledFormats = serializers.ListField(source="enabled_formats", child=serializers.CharField())
+    participationFormats = _ParticipationFormatSerializer(source="participation_formats", many=True)
     categories = _CategorySerializer(many=True)
     disciplines = _DisciplineSerializer(many=True)
     ageCategories = _AgeCategorySerializer(source="age_categories", many=True)

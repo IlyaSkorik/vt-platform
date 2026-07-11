@@ -22,6 +22,7 @@ __all__ = [
     "AddDocumentCommand",
     "AddInformationBlockCommand",
     "AddParticipantGroupCommand",
+    "AddParticipationFormatCommand",
     "AddPricingRuleCommand",
     "AddRegulationCommand",
     "ArchiveCompetitionCommand",
@@ -30,9 +31,7 @@ __all__ = [
     "CompleteCompetitionCommand",
     "CreateCompetitionCommand",
     "DisableAdditionalServiceCommand",
-    "DisableFormatCommand",
     "EnableAdditionalServiceCommand",
-    "EnableFormatCommand",
     "HideInformationBlockCommand",
     "MakeRegulationCurrentCommand",
     "MarkConfiguredCommand",
@@ -50,6 +49,7 @@ __all__ = [
     "RemoveDocumentCommand",
     "RemoveInformationBlockCommand",
     "RemoveParticipantGroupCommand",
+    "RemoveParticipationFormatCommand",
     "RemovePricingRuleCommand",
     "RemoveRegulationCommand",
     "RenameCategoryCommand",
@@ -67,6 +67,7 @@ __all__ = [
     "UpdateGeneralInformationCommand",
     "UpdateInformationBlockCommand",
     "UpdateParticipantGroupCommand",
+    "UpdateParticipationFormatCommand",
     "UpdateSettingsCommand",
 ]
 
@@ -260,15 +261,29 @@ class RemoveParticipantGroupCommand:
 
 
 @dataclass(frozen=True, slots=True)
-class EnableFormatCommand:
+class AddParticipationFormatCommand:
     competition_id: str
-    participation_format: str
+    name: str
+    description: str | None = None
+    enabled: bool = True
+    sort_order: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
-class DisableFormatCommand:
+class UpdateParticipationFormatCommand:
     competition_id: str
-    participation_format: str
+    format_id: str
+    name: str | None = None
+    description: str | None = None
+    enabled: bool | None = None
+    sort_order: int | None = None
+    update_description: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class RemoveParticipationFormatCommand:
+    competition_id: str
+    format_id: str
 
 
 # ---------------------------------------------------------------------------
@@ -283,7 +298,7 @@ class AddAdmissionRuleCommand:
     discipline_id: str
     age_category_id: str
     participant_group_id: str
-    participation_format: str
+    participation_format_id: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -293,7 +308,7 @@ class RemoveAdmissionRuleCommand:
     discipline_id: str
     age_category_id: str
     participant_group_id: str
-    participation_format: str
+    participation_format_id: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -303,7 +318,7 @@ class AddPricingRuleCommand:
     discipline_id: str
     age_category_id: str
     participant_group_id: str
-    participation_format: str
+    participation_format_id: str
     amount: str
     currency: str = "BYN"
 
@@ -315,7 +330,7 @@ class ChangePriceCommand:
     discipline_id: str
     age_category_id: str
     participant_group_id: str
-    participation_format: str
+    participation_format_id: str
     amount: str
     currency: str = "BYN"
 
@@ -327,7 +342,7 @@ class RemovePricingRuleCommand:
     discipline_id: str
     age_category_id: str
     participant_group_id: str
-    participation_format: str
+    participation_format_id: str
 
 
 # ---------------------------------------------------------------------------

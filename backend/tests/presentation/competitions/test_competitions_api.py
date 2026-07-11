@@ -154,14 +154,14 @@ def test_full_organizer_workflow(staff_client: APIClient) -> None:
     staff_client.post(f"{detail}/disciplines", {"categoryId": category_id, "name": "Solo"}, format="json")
     staff_client.post(f"{detail}/age-categories", {"categoryId": category_id, "name": "7-10", "minAge": 7, "maxAge": 10}, format="json")
     staff_client.post(f"{detail}/participant-groups", {"categoryId": category_id, "name": "Solo", "minCount": 1, "maxCount": 1}, format="json")
-    view = staff_client.post(f"{detail}/participation-formats", {"participationFormat": "OFFLINE"}, format="json").data["data"]
+    view = staff_client.post(f"{detail}/participation-formats", {"name": "Очно"}, format="json").data["data"]
 
     combination = {
         "categoryId": view["categories"][0]["id"],
         "disciplineId": view["disciplines"][0]["id"],
         "ageCategoryId": view["ageCategories"][0]["id"],
         "participantGroupId": view["participantGroups"][0]["id"],
-        "participationFormat": "OFFLINE",
+        "participationFormatId": view["participationFormats"][0]["id"],
     }
     staff_client.post(f"{detail}/admission-rules", combination, format="json")
     staff_client.post(f"{detail}/pricing-rules", {**combination, "amount": "50.00", "currency": "BYN"}, format="json")

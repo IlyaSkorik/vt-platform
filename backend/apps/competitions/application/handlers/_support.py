@@ -21,7 +21,7 @@ from apps.competitions.domain.value_objects import (
     DisciplineId,
     Money,
     ParticipantGroupId,
-    ParticipationFormat,
+    ParticipationFormatId,
 )
 
 
@@ -84,12 +84,12 @@ class CompetitionCommandHandler:
         discipline_id: str,
         age_category_id: str,
         participant_group_id: str,
-        participation_format: str,
+        participation_format_id: str,
     ) -> AdmissionCombination:
         return AdmissionCombination(
             category_id=CategoryId.from_string(category_id),
             discipline_id=DisciplineId.from_string(discipline_id),
             age_category_id=AgeCategoryId.from_string(age_category_id),
             participant_group_id=ParticipantGroupId.from_string(participant_group_id),
-            participation_format=ParticipationFormat(participation_format),
+            participation_format_id=ParticipationFormatId.from_string(participation_format_id),
         )

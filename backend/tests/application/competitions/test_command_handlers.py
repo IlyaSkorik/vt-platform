@@ -23,7 +23,7 @@ from apps.competitions.application.dto.commands import (
     AddPricingRuleCommand,
     AddRegulationCommand,
     CreateCompetitionCommand,
-    EnableFormatCommand,
+    AddParticipationFormatCommand,
     MakeRegulationCurrentCommand,
     MarkConfiguredCommand,
     MarkReadyCommand,
@@ -42,7 +42,7 @@ from apps.competitions.application.handlers import (
     AddPricingRuleHandler,
     AddRegulationHandler,
     CreateCompetitionHandler,
-    EnableFormatHandler,
+    AddParticipationFormatHandler,
     MakeRegulationCurrentHandler,
     MarkCompetitionConfiguredHandler,
     MarkCompetitionReadyHandler,
@@ -109,13 +109,15 @@ def _configure_publishable(deps: _Deps, competition_id: str) -> CompetitionDetai
     view = deps.build(AddParticipantGroupHandler).handle(
         AddParticipantGroupCommand(competition_id=competition_id, category_id=category_id, name="Solo", min_count=1, max_count=1)
     )
-    view = deps.build(EnableFormatHandler).handle(EnableFormatCommand(competition_id=competition_id, participation_format="OFFLINE"))
+    view = deps.build(AddParticipationFormatHandler).handle(
+        AddParticipationFormatCommand(competition_id=competition_id, name="Очно")
+    )
     combination = {
         "category_id": view.categories[0].id,
         "discipline_id": view.disciplines[0].id,
         "age_category_id": view.age_categories[0].id,
         "participant_group_id": view.participant_groups[0].id,
-        "participation_format": "OFFLINE",
+        "participation_format_id": view.participation_formats[0].id,
     }
     view = deps.build(AddAdmissionRuleHandler).handle(AddAdmissionRuleCommand(competition_id=competition_id, **combination))
     view = deps.build(AddPricingRuleHandler).handle(

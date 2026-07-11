@@ -24,6 +24,7 @@ from apps.competitions.domain.entities import (
     Discipline,
     InformationBlock,
     ParticipantGroup,
+    ParticipationFormat,
 )
 from apps.competitions.domain.value_objects import AdmissionRule, PricingRule
 
@@ -42,6 +43,7 @@ __all__ = [
     "DocumentView",
     "InformationBlockView",
     "ParticipantGroupView",
+    "ParticipationFormatView",
     "PeriodView",
     "PricingRuleView",
     "PublicationReportView",
@@ -178,12 +180,31 @@ class ParticipantGroupView:
 
 
 @dataclass(frozen=True, slots=True)
+class ParticipationFormatView:
+    id: str
+    name: str
+    description: str | None
+    enabled: bool
+    sort_order: int
+
+    @classmethod
+    def of(cls, participation_format: ParticipationFormat) -> ParticipationFormatView:
+        return cls(
+            id=participation_format.id.json(),
+            name=participation_format.name.value,
+            description=participation_format.description.value if participation_format.description is not None else None,
+            enabled=participation_format.enabled,
+            sort_order=participation_format.sort_order,
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class AdmissionRuleView:
     category_id: str
     discipline_id: str
     age_category_id: str
     participant_group_id: str
-    participation_format: str
+    participation_format_id: str
 
     @classmethod
     def of(cls, rule: AdmissionRule) -> AdmissionRuleView:
@@ -193,7 +214,7 @@ class AdmissionRuleView:
             discipline_id=c.discipline_id.json(),
             age_category_id=c.age_category_id.json(),
             participant_group_id=c.participant_group_id.json(),
-            participation_format=c.participation_format.value,
+            participation_format_id=c.participation_format_id.json(),
         )
 
 
@@ -203,7 +224,7 @@ class PricingRuleView:
     discipline_id: str
     age_category_id: str
     participant_group_id: str
-    participation_format: str
+    participation_format_id: str
     amount: str
     currency: str
 
@@ -215,7 +236,7 @@ class PricingRuleView:
             discipline_id=c.discipline_id.json(),
             age_category_id=c.age_category_id.json(),
             participant_group_id=c.participant_group_id.json(),
-            participation_format=c.participation_format.value,
+            participation_format_id=c.participation_format_id.json(),
             amount=str(rule.price_per_participant.amount),
             currency=rule.price_per_participant.currency.value,
         )
@@ -388,7 +409,7 @@ class CompetitionDetailView:
     competition_period: PeriodView | None
     settings: SettingsView
     deadlines: DeadlinesView
-    enabled_formats: tuple[str, ...]
+    participation_formats: tuple[ParticipationFormatView, ...]
     categories: tuple[CategoryView, ...]
     disciplines: tuple[DisciplineView, ...]
     age_categories: tuple[AgeCategoryView, ...]
@@ -451,11 +472,12 @@ class CompetitionDetailView:
                 document_upload=deadlines.document_upload,
                 correction=deadlines.correction,
             ),
-            enabled_formats=tuple(sorted(fmt.value for fmt in competition.participation_formats)),
+            participation_formats=tuple(ParticipationFormatView.of(f) for f in competition.participation_formats),
             categories=tuple(CategoryView.of(c) for c in competition.categories),
             disciplines=tuple(DisciplineView.of(d) for d in competition.disciplines),
             age_categories=tuple(AgeCategoryView.of(a) for a in competition.age_categories),
             participant_groups=tuple(ParticipantGroupView.of(g) for g in competition.participant_groups),
+
             admission_rules=tuple(AdmissionRuleView.of(r) for r in competition.admission_rules),
             pricing_rules=tuple(PricingRuleView.of(p) for p in competition.pricing_rules),
             regulations=tuple(RegulationView.of(r, is_current=r.id == current_id) for r in competition.regulations),

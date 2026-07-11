@@ -20,8 +20,9 @@ from .documents import (
     UpdateDocumentHandler,
 )
 from .formats import (
-    DisableFormatHandler,
-    EnableFormatHandler,
+    AddParticipationFormatHandler,
+    RemoveParticipationFormatHandler,
+    UpdateParticipationFormatHandler,
 )
 from .general_information import (
     UpdateCompetitionBrandingHandler,
@@ -104,10 +105,9 @@ __all__ = [
     "CompleteCompetitionHandler",
     "CreateCompetitionHandler",
     "DisableAdditionalServiceHandler",
-    "DisableFormatHandler",
+    "AddParticipationFormatHandler",
     "EnableAdditionalServiceHandler",
-    "EnableFormatHandler",
-    "GetCompetitionHandler",
+        "GetCompetitionHandler",
     "HideInformationBlockHandler",
     "ListCompetitionsHandler",
     "MakeRegulationCurrentHandler",
@@ -126,6 +126,7 @@ __all__ = [
     "RemoveDocumentHandler",
     "RemoveInformationBlockHandler",
     "RemoveParticipantGroupHandler",
+    "RemoveParticipationFormatHandler",
     "RemovePricingRuleHandler",
     "RemoveRegulationHandler",
     "RenameCategoryHandler",
@@ -144,4 +145,5 @@ __all__ = [
     "UpdateDocumentHandler",
     "UpdateInformationBlockHandler",
     "UpdateParticipantGroupHandler",
+    "UpdateParticipationFormatHandler",
 ]

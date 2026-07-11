@@ -45,9 +45,8 @@ from apps.competitions.application.dto.commands import (
     CompleteCompetitionCommand,
     CreateCompetitionCommand,
     DisableAdditionalServiceCommand,
-    DisableFormatCommand,
     EnableAdditionalServiceCommand,
-    EnableFormatCommand,
+    AddParticipationFormatCommand,
     HideInformationBlockCommand,
     MakeRegulationCurrentCommand,
     MarkConfiguredCommand,
@@ -65,6 +64,7 @@ from apps.competitions.application.dto.commands import (
     RemoveDocumentCommand,
     RemoveInformationBlockCommand,
     RemoveParticipantGroupCommand,
+    RemoveParticipationFormatCommand,
     RemovePricingRuleCommand,
     RemoveRegulationCommand,
     RenameCategoryCommand,
@@ -82,6 +82,7 @@ from apps.competitions.application.dto.commands import (
     UpdateGeneralInformationCommand,
     UpdateInformationBlockCommand,
     UpdateParticipantGroupCommand,
+    UpdateParticipationFormatCommand,
     UpdateSettingsCommand,
 )
 from apps.competitions.application.dto.queries import (
@@ -107,9 +108,8 @@ from apps.competitions.application.handlers import (
     CompleteCompetitionHandler,
     CreateCompetitionHandler,
     DisableAdditionalServiceHandler,
-    DisableFormatHandler,
     EnableAdditionalServiceHandler,
-    EnableFormatHandler,
+    AddParticipationFormatHandler,
     HideInformationBlockHandler,
     MakeRegulationCurrentHandler,
     MarkCompetitionConfiguredHandler,
@@ -127,6 +127,7 @@ from apps.competitions.application.handlers import (
     RemoveDocumentHandler,
     RemoveInformationBlockHandler,
     RemoveParticipantGroupHandler,
+    RemoveParticipationFormatHandler,
     RemovePricingRuleHandler,
     RemoveRegulationHandler,
     RenameCategoryHandler,
@@ -145,6 +146,7 @@ from apps.competitions.application.handlers import (
     UpdateDocumentHandler,
     UpdateInformationBlockHandler,
     UpdateParticipantGroupHandler,
+    UpdateParticipationFormatHandler,
 )
 from apps.competitions.application.handlers._support import CompetitionCommandHandler
 from apps.competitions.composition import (
@@ -170,6 +172,7 @@ from .serializers import (
     AddDocumentSerializer,
     AddInformationBlockSerializer,
     AddParticipantGroupSerializer,
+    AddParticipationFormatSerializer,
     AddPricingRuleSerializer,
     AddRegulationSerializer,
     ChangePriceSerializer,
@@ -178,7 +181,7 @@ from .serializers import (
     CompetitionListEnvelopeSerializer,
     CompetitionSummarySerializer,
     CreateCompetitionSerializer,
-    ParticipationFormatSerializer,
+    UpdateParticipationFormatSerializer,
     ProblemDetailSerializer,
     RenameCategorySerializer,
     RenameDisciplineSerializer,
@@ -581,20 +584,43 @@ class CompetitionViewSet(viewsets.ViewSet):
     # ------------------------------------------------------------------
 
     @extend_schema(
-        tags=[_TAG], operation_id="enableParticipationFormat", request=ParticipationFormatSerializer, responses=_detail_ok(status.HTTP_201_CREATED)
+        tags=[_TAG], operation_id="addParticipationFormat", request=AddParticipationFormatSerializer, responses=_detail_ok(status.HTTP_201_CREATED)
     )
     @action(detail=True, methods=["post"], url_path="participation-formats")
     def participation_formats(self, request: Request, pk: str) -> Response:
-        kwargs, problem = self._body(ParticipationFormatSerializer, request)
+        kwargs, problem = self._body(AddParticipationFormatSerializer, request)
         if problem is not None:
             return problem
         assert kwargs is not None
-        return self._run(EnableFormatHandler, EnableFormatCommand(competition_id=pk, **kwargs), request, success=status.HTTP_201_CREATED)
+        return self._run(
+            AddParticipationFormatHandler, AddParticipationFormatCommand(competition_id=pk, **kwargs), request, success=status.HTTP_201_CREATED
+        )
 
-    @extend_schema(tags=[_TAG], operation_id="disableParticipationFormat", request=None, responses=_detail_ok())
-    @action(detail=True, methods=["delete"], url_path=r"participation-formats/(?P<participation_format>[^/.]+)")
-    def participation_format_detail(self, request: Request, pk: str, participation_format: str) -> Response:
-        return self._run(DisableFormatHandler, DisableFormatCommand(competition_id=pk, participation_format=participation_format), request)
+    @extend_schema(methods=["PATCH"], tags=[_TAG], operation_id="updateParticipationFormat", request=UpdateParticipationFormatSerializer, responses=_detail_ok())
+    @extend_schema(methods=["DELETE"], tags=[_TAG], operation_id="removeParticipationFormat", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["patch", "delete"], url_path=r"participation-formats/(?P<format_id>[^/.]+)")
+    def participation_format_detail(self, request: Request, pk: str, format_id: str) -> Response:
+        if request.method == "DELETE":
+            return self._run(
+                RemoveParticipationFormatHandler,
+                RemoveParticipationFormatCommand(competition_id=pk, format_id=format_id),
+                request,
+            )
+        kwargs, problem = self._body(UpdateParticipationFormatSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        update_description = "description" in kwargs
+        return self._run(
+            UpdateParticipationFormatHandler,
+            UpdateParticipationFormatCommand(
+                competition_id=pk,
+                format_id=format_id,
+                update_description=update_description,
+                **kwargs,
+            ),
+            request,
+        )
 
     # ------------------------------------------------------------------
     # Admission rules

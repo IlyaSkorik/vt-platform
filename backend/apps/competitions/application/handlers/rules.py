@@ -37,7 +37,7 @@ class AddAdmissionRuleHandler(CompetitionCommandHandler):
                 discipline_id=command.discipline_id,
                 age_category_id=command.age_category_id,
                 participant_group_id=command.participant_group_id,
-                participation_format=command.participation_format,
+                participation_format_id=command.participation_format_id,
             ),
             now=self._clock.utcnow(),
         )
@@ -60,7 +60,7 @@ class RemoveAdmissionRuleHandler(CompetitionCommandHandler):
                 discipline_id=command.discipline_id,
                 age_category_id=command.age_category_id,
                 participant_group_id=command.participant_group_id,
-                participation_format=command.participation_format,
+                participation_format_id=command.participation_format_id,
             ),
             now=self._clock.utcnow(),
         )
@@ -83,7 +83,7 @@ class AddPricingRuleHandler(CompetitionCommandHandler):
                 discipline_id=command.discipline_id,
                 age_category_id=command.age_category_id,
                 participant_group_id=command.participant_group_id,
-                participation_format=command.participation_format,
+                participation_format_id=command.participation_format_id,
             ),
             price_per_participant=self._money(
                 amount=command.amount,
@@ -110,7 +110,7 @@ class ChangePriceHandler(CompetitionCommandHandler):
                 discipline_id=command.discipline_id,
                 age_category_id=command.age_category_id,
                 participant_group_id=command.participant_group_id,
-                participation_format=command.participation_format,
+                participation_format_id=command.participation_format_id,
             ),
             price_per_participant=self._money(
                 amount=command.amount,
@@ -137,7 +137,7 @@ class RemovePricingRuleHandler(CompetitionCommandHandler):
                 discipline_id=command.discipline_id,
                 age_category_id=command.age_category_id,
                 participant_group_id=command.participant_group_id,
-                participation_format=command.participation_format,
+                participation_format_id=command.participation_format_id,
             ),
             now=self._clock.utcnow(),
         )
