@@ -38,6 +38,7 @@ from .information import (
     RemoveInformationBlockHandler,
     UpdateInformationBlockHandler,
 )
+from .landing import UpdateLandingConfigHandler
 from .lifecycle import (
     ArchiveCompetitionHandler,
     CloseRegistrationHandler,
@@ -146,6 +147,7 @@ __all__ = [
     "UpdateContactsConfigHandler",
     "UpdateDocumentHandler",
     "UpdateInformationBlockHandler",
+    "UpdateLandingConfigHandler",
     "UpdateParticipantGroupHandler",
     "UpdateParticipationFormatHandler",
 ]

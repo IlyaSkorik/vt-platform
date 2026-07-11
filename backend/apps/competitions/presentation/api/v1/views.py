@@ -85,6 +85,7 @@ from apps.competitions.application.dto.commands import (
     UpdateParticipationFormatCommand,
     UpdateSettingsCommand,
     UpdateContactsConfigCommand,
+    UpdateLandingConfigCommand,
 )
 from apps.competitions.application.dto.queries import (
     GetCompetitionQuery,
@@ -147,6 +148,7 @@ from apps.competitions.application.handlers import (
     UpdateContactsConfigHandler,
     UpdateDocumentHandler,
     UpdateInformationBlockHandler,
+    UpdateLandingConfigHandler,
     UpdateParticipantGroupHandler,
     UpdateParticipationFormatHandler,
 )
@@ -196,6 +198,7 @@ from .serializers import (
     UpdateContactsConfigSerializer,
     UpdateDocumentSerializer,
     UpdateInformationBlockSerializer,
+    UpdateLandingConfigSerializer,
     UpdateParticipantGroupSerializer,
     _AdmissionCombinationSerializer,
 )
@@ -433,6 +436,49 @@ class CompetitionViewSet(viewsets.ViewSet):
                 emergency=kwargs.get("emergency", {}),
                 venue_details=kwargs.get("venue_details", {}),
             ),
+            request,
+        )
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="updateLandingConfiguration",
+        request=UpdateLandingConfigSerializer,
+        responses=_detail_ok(),
+    )
+    @action(detail=True, methods=["put"], url_path="landing-configuration")
+    def configure_landing(self, request: Request, pk: str) -> Response:
+        kwargs, problem = self._body(UpdateLandingConfigSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+
+        def _normalize_uuid_fields(item: dict[str, object], *keys: str) -> dict[str, object]:
+            out = dict(item)
+            for key in keys:
+                if key in out and out[key] is not None:
+                    out[key] = str(out[key])
+            return out
+
+        blocks: list[dict[str, object]] = []
+        for raw in kwargs.get("blocks", []):
+            block = _normalize_uuid_fields(raw, "id")
+            block["cards"] = [
+                _normalize_uuid_fields(card, "id") for card in block.get("cards", [])
+            ]
+            block["partners"] = [
+                _normalize_uuid_fields(card, "id") for card in block.get("partners", [])
+            ]
+            block["images"] = [
+                _normalize_uuid_fields(image, "id") for image in block.get("images", [])
+            ]
+            block["faq_items"] = [
+                _normalize_uuid_fields(item, "id") for item in block.get("faq_items", [])
+            ]
+            blocks.append(block)
+
+        return self._run(
+            UpdateLandingConfigHandler,
+            UpdateLandingConfigCommand(competition_id=pk, blocks=blocks),
             request,
         )
 
@@ -809,6 +855,80 @@ class CompetitionViewSet(viewsets.ViewSet):
     # ------------------------------------------------------------------
     # Documents
     # ------------------------------------------------------------------
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="uploadLandingImage",
+        request={
+            "multipart/form-data": {
+                "type": "object",
+                "properties": {"file": {"type": "string", "format": "binary"}},
+                "required": ["file"],
+            }
+        },
+        responses={
+            200: OpenApiResponse(description="Landing image uploaded; body contains data.fileReference."),
+            400: OpenApiResponse(ProblemDetailSerializer, description="Validation failed."),
+            403: OpenApiResponse(ProblemDetailSerializer, description="Not organization staff."),
+            404: OpenApiResponse(ProblemDetailSerializer, description="Competition or element not found."),
+        },
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="uploads/landing-image",
+        parser_classes=[MultiPartParser, FormParser],
+    )
+    def upload_landing_image(self, request: Request, pk: str) -> Response:
+        """Upload an image for the public landing builder and return a media file reference."""
+        try:
+            build_get_competition_handler().handle(GetCompetitionQuery(competition_id=pk))
+        except (ApplicationError, CompetitionDomainError) as exc:
+            return competition_problem(exc, instance=request.path, request=request)
+
+        uploaded = request.FILES.get("file")
+        if uploaded is None:
+            return validation_problem(
+                {"file": ["Выберите изображение."]},
+                instance=request.path,
+                request=request,
+            )
+
+        content_type = (uploaded.content_type or "").lower()
+        extension_by_type = {
+            "image/jpeg": ".jpg",
+            "image/png": ".png",
+            "image/webp": ".webp",
+        }
+        if content_type not in extension_by_type:
+            return validation_problem(
+                {"file": ["Допустимы только JPEG, PNG или WebP."]},
+                instance=request.path,
+                request=request,
+            )
+
+        if uploaded.size > 5 * 1024 * 1024:
+            return validation_problem(
+                {"file": ["Размер файла не должен превышать 5 МБ."]},
+                instance=request.path,
+                request=request,
+            )
+
+        extension = extension_by_type[content_type]
+        relative_path = default_storage.save(
+            f"competitions/{pk}/landing/{uuid.uuid4().hex}{extension}",
+            uploaded,
+        )
+        file_reference = f"/{settings.MEDIA_URL.strip('/')}/{relative_path}"
+        correlation_id = request_id(request)
+        return Response(
+            {
+                "data": {"fileReference": file_reference},
+                "meta": {"requestId": correlation_id},
+            },
+            status=status.HTTP_200_OK,
+            headers={"X-Request-ID": correlation_id},
+        )
 
     @extend_schema(
         tags=[_TAG],

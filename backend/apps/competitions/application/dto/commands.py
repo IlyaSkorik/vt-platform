@@ -69,6 +69,7 @@ __all__ = [
     "UpdateParticipantGroupCommand",
     "UpdateParticipationFormatCommand",
     "UpdateContactsConfigCommand",
+    "UpdateLandingConfigCommand",
     "UpdateSettingsCommand",
 ]
 
@@ -169,6 +170,14 @@ class UpdateContactsConfigCommand:
     team_contacts: list[dict[str, object]]
     emergency: dict[str, object]
     venue_details: dict[str, object]
+
+
+@dataclass(frozen=True, slots=True)
+class UpdateLandingConfigCommand:
+    """Replace the competition's public-landing configuration wholesale."""
+
+    competition_id: str
+    blocks: list[dict[str, object]]
 
 
 # ---------------------------------------------------------------------------

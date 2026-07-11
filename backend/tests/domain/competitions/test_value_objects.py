@@ -269,6 +269,116 @@ class TestContactsConfiguration:
         assert config.venue_details.city == "Minsk"
 
 
+class TestLandingConfiguration:
+    def test_default(self) -> None:
+        from apps.competitions.domain.landing_configuration import (
+            LandingBlockType,
+            LandingConfiguration,
+            SYSTEM_BLOCK_HERO_ID,
+            SYSTEM_BLOCK_VENUE_ID,
+        )
+        from apps.competitions.infrastructure.mappers.landing_config_json import (
+            landing_config_from_json,
+            landing_config_to_json,
+        )
+
+        config = LandingConfiguration.default()
+        types = [b.type for b in config.blocks]
+        assert types == [
+            LandingBlockType.HERO,
+            LandingBlockType.VENUE,
+            LandingBlockType.JURY,
+            LandingBlockType.PARTNERS,
+            LandingBlockType.GALLERY,
+            LandingBlockType.FAQ,
+        ]
+        assert config.blocks[0].id == SYSTEM_BLOCK_HERO_ID
+        assert config.blocks[0].enabled is True
+        assert config.blocks[1].id == SYSTEM_BLOCK_VENUE_ID
+        assert config.blocks[1].enabled is True
+        assert all(b.enabled is False for b in config.blocks[2:])
+        assert LandingBlockType.CONTENT not in types
+
+        roundtrip = landing_config_from_json(landing_config_to_json(config))
+        assert roundtrip == config
+
+    def test_from_json_empty_uses_defaults(self) -> None:
+        from apps.competitions.domain.landing_configuration import LandingConfiguration
+        from apps.competitions.infrastructure.mappers.landing_config_json import landing_config_from_json
+
+        assert landing_config_from_json(None) == LandingConfiguration.default()
+        assert landing_config_from_json({}) == LandingConfiguration.default()
+
+    def test_requires_hero_and_venue(self) -> None:
+        from apps.competitions.domain.exceptions import InvalidLandingConfigurationError
+        from apps.competitions.domain.landing_configuration import (
+            LandingBlock,
+            LandingBlockType,
+            LandingConfiguration,
+            SYSTEM_BLOCK_HERO_ID,
+        )
+
+        with pytest.raises(InvalidLandingConfigurationError):
+            LandingConfiguration(
+                blocks=(
+                    LandingBlock(
+                        id=SYSTEM_BLOCK_HERO_ID,
+                        type=LandingBlockType.HERO,
+                        enabled=True,
+                        sort_order=0,
+                    ),
+                )
+            )
+
+    def test_content_requires_title(self) -> None:
+        from apps.competitions.domain.exceptions import InvalidLandingConfigurationError
+        from apps.competitions.domain.landing_configuration import LandingBlock, LandingBlockType
+
+        with pytest.raises(InvalidLandingConfigurationError):
+            LandingBlock(
+                id="01900000-0000-7000-8000-000000000099",
+                type=LandingBlockType.CONTENT,
+                enabled=True,
+                sort_order=10,
+                title="",
+                body="",
+            )
+
+    def test_duplicate_card_ids_rejected(self) -> None:
+        from apps.competitions.domain.exceptions import InvalidLandingConfigurationError
+        from apps.competitions.domain.landing_configuration import (
+            JuryCard,
+            LandingBlock,
+            LandingBlockType,
+            SYSTEM_BLOCK_JURY_ID,
+        )
+
+        with pytest.raises(InvalidLandingConfigurationError):
+            LandingBlock(
+                id=SYSTEM_BLOCK_JURY_ID,
+                type=LandingBlockType.JURY,
+                enabled=True,
+                sort_order=2,
+                cards=(
+                    JuryCard(id="01900000-0000-7000-8000-0000000000aa", name="A"),
+                    JuryCard(id="01900000-0000-7000-8000-0000000000aa", name="B"),
+                ),
+            )
+
+    def test_content_defaults_format_and_empty_body(self) -> None:
+        from apps.competitions.domain.landing_configuration import LandingBlock, LandingBlockType
+
+        block = LandingBlock(
+            id="01900000-0000-7000-8000-000000000099",
+            type=LandingBlockType.CONTENT,
+            enabled=True,
+            sort_order=10,
+            title="About",
+        )
+        assert block.body == ""
+        assert block.content_format == "PLAIN"
+
+
 class TestRegistrationDeadlines:
     def test_empty_is_always_open(self) -> None:
         d = RegistrationDeadlines()

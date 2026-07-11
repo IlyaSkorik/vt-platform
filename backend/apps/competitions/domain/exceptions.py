@@ -278,6 +278,10 @@ class InvalidContactsConfigurationError(ValueObjectValidationError):
     """The competition contacts configuration is invalid."""
 
 
+class InvalidLandingConfigurationError(ValueObjectValidationError):
+    """The competition public-landing configuration is invalid."""
+
+
 class InvalidCompetitionSettingsError(ValueObjectValidationError):
     """Competition settings payload is malformed or violates invariants."""
 

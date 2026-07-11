@@ -44,6 +44,7 @@ __all__ = [
     "UpdateContactsConfigSerializer",
     "UpdateDocumentSerializer",
     "UpdateInformationBlockSerializer",
+    "UpdateLandingConfigSerializer",
     "UpdateParticipantGroupSerializer",
     "UpdateParticipationFormatSerializer",
 ]
@@ -194,6 +195,57 @@ class UpdateContactsConfigSerializer(serializers.Serializer[dict[str, object]]):
     teamContacts = _TeamContactInputSerializer(source="team_contacts", many=True)
     emergency = _EmergencyContactsInputSerializer()
     venueDetails = _VenueDetailsInputSerializer(source="venue_details")
+
+
+class _JuryCardInputSerializer(serializers.Serializer[dict[str, object]]):
+    id = serializers.UUIDField()
+    name = serializers.CharField(max_length=200)
+    photo = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    position = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    description = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    sortOrder = serializers.IntegerField(source="sort_order", required=False, default=0, min_value=0)
+
+
+class _PartnerCardInputSerializer(serializers.Serializer[dict[str, object]]):
+    id = serializers.UUIDField()
+    name = serializers.CharField(max_length=200)
+    logo = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    website = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    sortOrder = serializers.IntegerField(source="sort_order", required=False, default=0, min_value=0)
+
+
+class _GalleryImageInputSerializer(serializers.Serializer[dict[str, object]]):
+    id = serializers.UUIDField()
+    url = serializers.CharField(max_length=2000)
+    caption = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    sortOrder = serializers.IntegerField(source="sort_order", required=False, default=0, min_value=0)
+
+
+class _FaqItemInputSerializer(serializers.Serializer[dict[str, object]]):
+    id = serializers.UUIDField()
+    question = serializers.CharField(max_length=500)
+    answer = serializers.CharField(max_length=5000)
+    sortOrder = serializers.IntegerField(source="sort_order", required=False, default=0, min_value=0)
+
+
+class _LandingBlockInputSerializer(serializers.Serializer[dict[str, object]]):
+    id = serializers.UUIDField()
+    type = serializers.ChoiceField(choices=["HERO", "VENUE", "JURY", "PARTNERS", "GALLERY", "FAQ", "CONTENT"])
+    enabled = serializers.BooleanField()
+    sortOrder = serializers.IntegerField(source="sort_order", min_value=0)
+    title = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    subtitle = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    coverImage = serializers.CharField(source="cover_image", required=False, allow_blank=True, allow_null=True)
+    body = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    contentFormat = serializers.CharField(source="content_format", required=False, allow_blank=True, allow_null=True)
+    cards = _JuryCardInputSerializer(many=True, required=False, default=list)
+    partners = _PartnerCardInputSerializer(many=True, required=False, default=list)
+    images = _GalleryImageInputSerializer(many=True, required=False, default=list)
+    faqItems = _FaqItemInputSerializer(source="faq_items", many=True, required=False, default=list)
+
+
+class UpdateLandingConfigSerializer(serializers.Serializer[dict[str, object]]):
+    blocks = _LandingBlockInputSerializer(many=True)
 
 
 class AddCategorySerializer(serializers.Serializer[dict[str, object]]):
@@ -597,6 +649,57 @@ class _ContactsConfigSerializer(serializers.Serializer[dict[str, object]]):
     venueDetails = _VenueDetailsSerializer(source="venue_details")
 
 
+class _JuryCardSerializer(serializers.Serializer[dict[str, object]]):
+    id = serializers.CharField()
+    photo = serializers.CharField(allow_null=True)
+    name = serializers.CharField()
+    position = serializers.CharField(allow_null=True)
+    description = serializers.CharField(allow_null=True)
+    sortOrder = serializers.IntegerField(source="sort_order")
+
+
+class _PartnerCardSerializer(serializers.Serializer[dict[str, object]]):
+    id = serializers.CharField()
+    logo = serializers.CharField(allow_null=True)
+    name = serializers.CharField()
+    website = serializers.CharField(allow_null=True)
+    sortOrder = serializers.IntegerField(source="sort_order")
+
+
+class _GalleryImageSerializer(serializers.Serializer[dict[str, object]]):
+    id = serializers.CharField()
+    url = serializers.CharField()
+    caption = serializers.CharField(allow_null=True)
+    sortOrder = serializers.IntegerField(source="sort_order")
+
+
+class _FaqItemSerializer(serializers.Serializer[dict[str, object]]):
+    id = serializers.CharField()
+    question = serializers.CharField()
+    answer = serializers.CharField()
+    sortOrder = serializers.IntegerField(source="sort_order")
+
+
+class _LandingBlockSerializer(serializers.Serializer[dict[str, object]]):
+    id = serializers.CharField()
+    type = serializers.CharField()
+    enabled = serializers.BooleanField()
+    sortOrder = serializers.IntegerField(source="sort_order")
+    title = serializers.CharField(allow_null=True)
+    subtitle = serializers.CharField(allow_null=True)
+    coverImage = serializers.CharField(source="cover_image", allow_null=True)
+    body = serializers.CharField(allow_null=True)
+    contentFormat = serializers.CharField(source="content_format", allow_null=True)
+    cards = _JuryCardSerializer(many=True)
+    partners = _PartnerCardSerializer(many=True)
+    images = _GalleryImageSerializer(many=True)
+    faqItems = _FaqItemSerializer(source="faq_items", many=True)
+
+
+class _LandingConfigSerializer(serializers.Serializer[dict[str, object]]):
+    blocks = _LandingBlockSerializer(many=True)
+
+
 class _CategorySerializer(serializers.Serializer[dict[str, object]]):
     id = serializers.CharField()
     name = serializers.CharField()
@@ -728,6 +831,7 @@ class CompetitionDetailSerializer(serializers.Serializer[dict[str, object]]):
     competitionPeriod = _PeriodSerializer(source="competition_period", allow_null=True)
     settings = _SettingsSerializer()
     contactsConfig = _ContactsConfigSerializer(source="contacts_config")
+    landingConfig = _LandingConfigSerializer(source="landing_config")
     deadlines = _DeadlinesSerializer()
     participationFormats = _ParticipationFormatSerializer(source="participation_formats", many=True)
     categories = _CategorySerializer(many=True)

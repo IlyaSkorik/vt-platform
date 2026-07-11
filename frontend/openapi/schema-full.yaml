@@ -3692,6 +3692,69 @@ paths:
               schema:
                 $ref: '#/components/schemas/CompetitionProblemDetail'
           description: Business rule violation.
+  /api/v1/competitions/{id}/landing-configuration:
+    put:
+      operationId: updateLandingConfiguration
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLandingConfiguration'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateLandingConfiguration'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateLandingConfiguration'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
   /api/v1/competitions/{id}/start:
     post:
       operationId: startCompetition
@@ -3743,6 +3806,52 @@ paths:
               schema:
                 $ref: '#/components/schemas/CompetitionProblemDetail'
           description: Business rule violation.
+  /api/v1/competitions/{id}/uploads/landing-image:
+    post:
+      operationId: uploadLandingImage
+      description: Upload an image for the public landing builder and return a media file reference.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Landing image uploaded; body contains data.fileReference.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
   /api/v1/competitions/{id}/uploads/document:
     post:
       operationId: uploadDocumentFile
@@ -4614,6 +4723,8 @@ components:
           $ref: '#/components/schemas/_Settings'
         contactsConfig:
           $ref: '#/components/schemas/_ContactsConfig'
+        landingConfig:
+          $ref: '#/components/schemas/_LandingConfig'
         deadlines:
           $ref: '#/components/schemas/_Deadlines'
         participationFormats:
@@ -4693,6 +4804,7 @@ components:
       - documents
       - id
       - informationBlocks
+      - landingConfig
       - organizerId
       - participantGroups
       - participationFormats
@@ -5930,6 +6042,178 @@ components:
       - teamContacts
       - emergency
       - venueDetails
+    _JuryCard:
+      type: object
+      properties:
+        id:
+          type: string
+        photo:
+          type:
+          - string
+          - 'null'
+        name:
+          type: string
+        position:
+          type:
+          - string
+          - 'null'
+        description:
+          type:
+          - string
+          - 'null'
+        sortOrder:
+          type: integer
+      required:
+      - id
+      - photo
+      - name
+      - position
+      - description
+      - sortOrder
+    _PartnerCard:
+      type: object
+      properties:
+        id:
+          type: string
+        logo:
+          type:
+          - string
+          - 'null'
+        name:
+          type: string
+        website:
+          type:
+          - string
+          - 'null'
+        sortOrder:
+          type: integer
+      required:
+      - id
+      - logo
+      - name
+      - website
+      - sortOrder
+    _GalleryImage:
+      type: object
+      properties:
+        id:
+          type: string
+        url:
+          type: string
+        caption:
+          type:
+          - string
+          - 'null'
+        sortOrder:
+          type: integer
+      required:
+      - id
+      - url
+      - caption
+      - sortOrder
+    _FaqItem:
+      type: object
+      properties:
+        id:
+          type: string
+        question:
+          type: string
+        answer:
+          type: string
+        sortOrder:
+          type: integer
+      required:
+      - id
+      - question
+      - answer
+      - sortOrder
+    _LandingBlock:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum:
+          - HERO
+          - VENUE
+          - JURY
+          - PARTNERS
+          - GALLERY
+          - FAQ
+          - CONTENT
+        enabled:
+          type: boolean
+        sortOrder:
+          type: integer
+        title:
+          type:
+          - string
+          - 'null'
+        subtitle:
+          type:
+          - string
+          - 'null'
+        coverImage:
+          type:
+          - string
+          - 'null'
+        body:
+          type:
+          - string
+          - 'null'
+        contentFormat:
+          type:
+          - string
+          - 'null'
+        cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/_JuryCard'
+        partners:
+          type: array
+          items:
+            $ref: '#/components/schemas/_PartnerCard'
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/_GalleryImage'
+        faqItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/_FaqItem'
+      required:
+      - id
+      - type
+      - enabled
+      - sortOrder
+      - title
+      - subtitle
+      - coverImage
+      - body
+      - contentFormat
+      - cards
+      - partners
+      - images
+      - faqItems
+    _LandingConfig:
+      type: object
+      properties:
+        blocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/_LandingBlock'
+      required:
+      - blocks
+    UpdateLandingConfiguration:
+      type: object
+      properties:
+        blocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/_LandingBlock'
+      required:
+      - blocks
     OrganizationProfile:
       type: object
       properties:

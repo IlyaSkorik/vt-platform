@@ -97,6 +97,10 @@ from apps.competitions.infrastructure.mappers.contacts_config_json import (
     contacts_config_from_json,
     contacts_config_to_json,
 )
+from apps.competitions.infrastructure.mappers.landing_config_json import (
+    landing_config_from_json,
+    landing_config_to_json,
+)
 from apps.competitions.infrastructure.mappers.settings_json import settings_from_json, settings_to_json
 from apps.competitions.infrastructure.models import (
     AdditionalServiceModel,
@@ -217,6 +221,7 @@ class CompetitionMapper:
             ),
             settings=settings_from_json(model.settings),
             contacts_config=contacts_config_from_json(model.contacts_config),
+            landing_config=landing_config_from_json(model.landing_config),
             deadlines=RegistrationDeadlines(
                 application=model.deadline_application,
                 payment=model.deadline_payment,
@@ -390,6 +395,7 @@ class CompetitionMapper:
             "deadline_correction": deadlines.correction,
             "settings": settings_to_json(entity.settings),
             "contacts_config": contacts_config_to_json(entity.contacts_config),
+            "landing_config": landing_config_to_json(entity.landing_config),
             "current_regulation_id": current_regulation.id.value if current_regulation is not None else None,
             "created_at": entity.created_at,
             "updated_at": entity.updated_at,

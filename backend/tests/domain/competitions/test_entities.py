@@ -783,6 +783,82 @@ class TestContactsConfig:
             c.update_contacts_config(config=ContactsConfiguration.default(), now=NOW)
 
 
+class TestLandingConfig:
+    def test_default_landing_config_present(self) -> None:
+        from apps.competitions.domain.landing_configuration import LandingConfiguration
+
+        assert _draft().landing_config == LandingConfiguration.default()
+
+    def test_update_landing_config_emits_event(self) -> None:
+        from apps.competitions.domain.events import CompetitionLandingConfigurationChanged
+        from apps.competitions.domain.landing_configuration import (
+            LandingBlock,
+            LandingBlockType,
+            LandingConfiguration,
+            SYSTEM_BLOCK_FAQ_ID,
+            SYSTEM_BLOCK_GALLERY_ID,
+            SYSTEM_BLOCK_HERO_ID,
+            SYSTEM_BLOCK_JURY_ID,
+            SYSTEM_BLOCK_PARTNERS_ID,
+            SYSTEM_BLOCK_VENUE_ID,
+        )
+
+        c = _draft()
+        new = LandingConfiguration(
+            blocks=(
+                LandingBlock(
+                    id=SYSTEM_BLOCK_HERO_ID,
+                    type=LandingBlockType.HERO,
+                    enabled=True,
+                    sort_order=0,
+                    title="Spring Festival",
+                    subtitle="Join us",
+                ),
+                LandingBlock(
+                    id=SYSTEM_BLOCK_VENUE_ID,
+                    type=LandingBlockType.VENUE,
+                    enabled=True,
+                    sort_order=1,
+                ),
+                LandingBlock(
+                    id=SYSTEM_BLOCK_JURY_ID,
+                    type=LandingBlockType.JURY,
+                    enabled=False,
+                    sort_order=2,
+                ),
+                LandingBlock(
+                    id=SYSTEM_BLOCK_PARTNERS_ID,
+                    type=LandingBlockType.PARTNERS,
+                    enabled=False,
+                    sort_order=3,
+                ),
+                LandingBlock(
+                    id=SYSTEM_BLOCK_GALLERY_ID,
+                    type=LandingBlockType.GALLERY,
+                    enabled=False,
+                    sort_order=4,
+                ),
+                LandingBlock(
+                    id=SYSTEM_BLOCK_FAQ_ID,
+                    type=LandingBlockType.FAQ,
+                    enabled=False,
+                    sort_order=5,
+                ),
+            )
+        )
+        events = c.update_landing_config(config=new, now=NOW)
+        assert isinstance(events[0], CompetitionLandingConfigurationChanged)
+        assert c.landing_config.blocks[0].title == "Spring Festival"
+
+    def test_landing_config_locked_after_archive(self) -> None:
+        from apps.competitions.domain.landing_configuration import LandingConfiguration
+
+        c = _draft()
+        c.archive(now=NOW)
+        with pytest.raises(CompetitionAlreadyArchivedError):
+            c.update_landing_config(config=LandingConfiguration.default(), now=NOW)
+
+
 class TestDeadlines:
     def test_update_deadlines_and_queries(self) -> None:
         c = _draft()

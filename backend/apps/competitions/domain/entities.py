@@ -67,6 +67,7 @@ from datetime import date, datetime
 from typing import TYPE_CHECKING, Final
 
 from .contacts_configuration import ContactsConfiguration
+from .landing_configuration import LandingConfiguration
 from .events import (
     AdditionalServiceAdded,
     AdmissionRuleAdded,
@@ -85,6 +86,7 @@ from .events import (
     CompetitionRegistrationClosed,
     CompetitionRegistrationOpened,
     CompetitionContactsConfigChanged,
+    CompetitionLandingConfigurationChanged,
     CompetitionSettingsChanged,
     CompetitionStarted,
     DomainEvent,
@@ -1360,6 +1362,7 @@ class Competition:
     _deadlines: RegistrationDeadlines = field(default_factory=RegistrationDeadlines)
     _settings: CompetitionSettings = field(default_factory=CompetitionSettings.default)
     _contacts_config: ContactsConfiguration = field(default_factory=ContactsConfiguration.default)
+    _landing_config: LandingConfiguration = field(default_factory=LandingConfiguration.default)
     _categories: dict[CategoryId, Category] = field(default_factory=dict)
     _disciplines: dict[DisciplineId, Discipline] = field(default_factory=dict)
     _age_categories: dict[AgeCategoryId, AgeCategory] = field(default_factory=dict)
@@ -1404,6 +1407,7 @@ class Competition:
         competition_period: DateRange | None = None,
         settings: CompetitionSettings | None = None,
         contacts_config: ContactsConfiguration | None = None,
+        landing_config: LandingConfiguration | None = None,
         deadlines: RegistrationDeadlines | None = None,
     ) -> tuple[Competition, list[DomainEvent]]:
         """Create a brand-new competition in the DRAFT state.
@@ -1428,6 +1432,7 @@ class Competition:
             _competition_period=competition_period,
             _settings=settings if settings is not None else CompetitionSettings.default(),
             _contacts_config=contacts_config if contacts_config is not None else ContactsConfiguration.default(),
+            _landing_config=landing_config if landing_config is not None else LandingConfiguration.default(),
             _deadlines=deadlines if deadlines is not None else RegistrationDeadlines(),
         )
         event = CompetitionCreated(aggregate_id=competition_id.value, title=title, season=season, organizer_id=organizer_id)
@@ -1454,6 +1459,7 @@ class Competition:
         competition_period: DateRange | None = None,
         settings: CompetitionSettings | None = None,
         contacts_config: ContactsConfiguration | None = None,
+        landing_config: LandingConfiguration | None = None,
         deadlines: RegistrationDeadlines | None = None,
         categories: Sequence[Category] = (),
         disciplines: Sequence[Discipline] = (),
@@ -1492,6 +1498,7 @@ class Competition:
             _competition_period=competition_period,
             _settings=settings if settings is not None else CompetitionSettings.default(),
             _contacts_config=contacts_config if contacts_config is not None else ContactsConfiguration.default(),
+            _landing_config=landing_config if landing_config is not None else LandingConfiguration.default(),
             _deadlines=deadlines if deadlines is not None else RegistrationDeadlines(),
             _categories={c.id: c for c in categories},
             _disciplines={d.id: d for d in disciplines},
@@ -1682,6 +1689,10 @@ class Competition:
     @property
     def contacts_config(self) -> ContactsConfiguration:
         return self._contacts_config
+
+    @property
+    def landing_config(self) -> LandingConfiguration:
+        return self._landing_config
 
     @property
     def deadlines(self) -> RegistrationDeadlines:
@@ -2571,6 +2582,13 @@ class Competition:
         self._contacts_config = config
         self._touch(now)
         return [CompetitionContactsConfigChanged(aggregate_id=self._id.value)]
+
+    def update_landing_config(self, *, config: LandingConfiguration, now: datetime) -> list[DomainEvent]:
+        """Replace the competition's public-landing configuration wholesale."""
+        self._ensure_not_archived()
+        self._landing_config = config
+        self._touch(now)
+        return [CompetitionLandingConfigurationChanged(aggregate_id=self._id.value)]
 
     # ------------------------------------------------------------------
     # Registration deadlines (allowed unless ARCHIVED)

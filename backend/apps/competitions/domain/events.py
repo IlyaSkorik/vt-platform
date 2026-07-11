@@ -78,6 +78,7 @@ __all__ = [
     "CompetitionRegistrationClosed",
     "CompetitionRegistrationOpened",
     "CompetitionContactsConfigChanged",
+    "CompetitionLandingConfigurationChanged",
     "CompetitionSettingsChanged",
     "CompetitionStarted",
     "DomainEvent",
@@ -309,6 +310,11 @@ class CompetitionSettingsChanged(DomainEvent):
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CompetitionContactsConfigChanged(DomainEvent):
     """The competition's contacts-module configuration was replaced."""
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetitionLandingConfigurationChanged(DomainEvent):
+    """The competition's public-landing configuration was replaced."""
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

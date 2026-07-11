@@ -27,6 +27,7 @@ from apps.competitions.domain.entities import (
     ParticipationFormat,
 )
 from apps.competitions.domain.contacts_configuration import ContactsConfiguration
+from apps.competitions.domain.landing_configuration import LandingConfiguration
 from apps.competitions.domain.value_objects import AdmissionRule, CompetitionSettings, PricingRule
 
 __all__ = [
@@ -45,9 +46,15 @@ __all__ = [
     "DisciplineView",
     "DocumentView",
     "EmergencyContactsView",
+    "FaqItemView",
+    "GalleryImageView",
     "InformationBlockView",
+    "JuryCardView",
+    "LandingBlockView",
+    "LandingConfigView",
     "ParticipantGroupView",
     "ParticipationFormatView",
+    "PartnerCardView",
     "PeriodView",
     "PricingRuleView",
     "PublicationReportView",
@@ -520,6 +527,121 @@ class ContactsConfigView:
 
 
 @dataclass(frozen=True, slots=True)
+class JuryCardView:
+    id: str
+    photo: str | None
+    name: str
+    position: str | None
+    description: str | None
+    sort_order: int
+
+
+@dataclass(frozen=True, slots=True)
+class PartnerCardView:
+    id: str
+    logo: str | None
+    name: str
+    website: str | None
+    sort_order: int
+
+
+@dataclass(frozen=True, slots=True)
+class GalleryImageView:
+    id: str
+    url: str
+    caption: str | None
+    sort_order: int
+
+
+@dataclass(frozen=True, slots=True)
+class FaqItemView:
+    id: str
+    question: str
+    answer: str
+    sort_order: int
+
+
+@dataclass(frozen=True, slots=True)
+class LandingBlockView:
+    id: str
+    type: str
+    enabled: bool
+    sort_order: int
+    title: str | None
+    subtitle: str | None
+    cover_image: str | None
+    body: str | None
+    content_format: str | None
+    cards: tuple[JuryCardView, ...]
+    partners: tuple[PartnerCardView, ...]
+    images: tuple[GalleryImageView, ...]
+    faq_items: tuple[FaqItemView, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class LandingConfigView:
+    blocks: tuple[LandingBlockView, ...]
+
+    @classmethod
+    def of(cls, config: LandingConfiguration) -> LandingConfigView:
+        return cls(
+            blocks=tuple(
+                LandingBlockView(
+                    id=block.id,
+                    type=block.type.value,
+                    enabled=block.enabled,
+                    sort_order=block.sort_order,
+                    title=block.title,
+                    subtitle=block.subtitle,
+                    cover_image=block.cover_image,
+                    body=block.body,
+                    content_format=block.content_format,
+                    cards=tuple(
+                        JuryCardView(
+                            id=card.id,
+                            photo=card.photo,
+                            name=card.name,
+                            position=card.position,
+                            description=card.description,
+                            sort_order=card.sort_order,
+                        )
+                        for card in block.cards
+                    ),
+                    partners=tuple(
+                        PartnerCardView(
+                            id=card.id,
+                            logo=card.logo,
+                            name=card.name,
+                            website=card.website,
+                            sort_order=card.sort_order,
+                        )
+                        for card in block.partners
+                    ),
+                    images=tuple(
+                        GalleryImageView(
+                            id=image.id,
+                            url=image.url,
+                            caption=image.caption,
+                            sort_order=image.sort_order,
+                        )
+                        for image in block.images
+                    ),
+                    faq_items=tuple(
+                        FaqItemView(
+                            id=item.id,
+                            question=item.question,
+                            answer=item.answer,
+                            sort_order=item.sort_order,
+                        )
+                        for item in block.faq_items
+                    ),
+                )
+                for block in config.blocks
+            )
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class InformationBlockView:
     id: str
     title: str
@@ -607,6 +729,7 @@ class CompetitionDetailView:
     competition_period: PeriodView | None
     settings: SettingsView
     contacts_config: ContactsConfigView
+    landing_config: LandingConfigView
     deadlines: DeadlinesView
     participation_formats: tuple[ParticipationFormatView, ...]
     categories: tuple[CategoryView, ...]
@@ -652,6 +775,7 @@ class CompetitionDetailView:
             competition_period=PeriodView(start=period.start, end=period.end) if period is not None else None,
             settings=SettingsView.of(settings),
             contacts_config=ContactsConfigView.of(competition.contacts_config),
+            landing_config=LandingConfigView.of(competition.landing_config),
             deadlines=DeadlinesView(
                 application=deadlines.application,
                 payment=deadlines.payment,
