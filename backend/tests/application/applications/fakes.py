@@ -16,8 +16,10 @@ from apps.applications.domain.entities import Submission
 from apps.applications.domain.events import DomainEvent
 from apps.applications.domain.value_objects import (
     CompetitionId,
+    CompetitionPriceQuote,
     Money,
     ParticipantCountRange,
+    PriceCalculationType,
     ReviewerId,
     SubmissionId,
     SubmissionParticipationPolicy,
@@ -93,6 +95,7 @@ class FakeCompetitionCatalog:
         open_for_submissions: bool = True,
         policy: SubmissionParticipationPolicy | None = None,
         price: Money | None = None,
+        calculation_type: PriceCalculationType = PriceCalculationType.PER_PARTICIPANT,
     ) -> None:
         self.known = known
         self.open_for_submissions = open_for_submissions
@@ -105,6 +108,7 @@ class FakeCompetitionCatalog:
             )
         )
         self.price: Money | None = price if price is not None else Money.of("500.00")
+        self.calculation_type = calculation_type
 
     def exists(self, competition_id: CompetitionId) -> bool:
         return self.known
@@ -124,7 +128,7 @@ class FakeCompetitionCatalog:
     ) -> SubmissionParticipationPolicy | None:
         return self.policy
 
-    def price_per_participant(
+    def price_quote(
         self,
         *,
         competition_id: CompetitionId,
@@ -133,8 +137,10 @@ class FakeCompetitionCatalog:
         age_category_id: object,
         participant_group_id: object,
         participation_format_id: object,
-    ) -> Money | None:
-        return self.price
+    ) -> CompetitionPriceQuote | None:
+        if self.price is None:
+            return None
+        return CompetitionPriceQuote(unit_price=self.price, calculation_type=self.calculation_type)
 
 
 class FakeOrganizationReadModel:

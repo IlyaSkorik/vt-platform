@@ -71,7 +71,7 @@ from apps.applications.application.queries import (
     ListCompetitionSubmissionsHandler,
     ListMySubmissionsHandler,
 )
-from apps.applications.domain.value_objects import Money, SubmissionStatus
+from apps.applications.domain.value_objects import Money, PriceCalculationType, SubmissionStatus
 
 from .fakes import (
     FakeClock,
@@ -353,6 +353,24 @@ class TestPricing:
 
         assert result.submission.price is not None
         assert result.submission.price.amount == "600.00"
+
+    def test_price_is_fixed_for_per_performance(self) -> None:
+        env = Env(
+            catalog=FakeCompetitionCatalog(
+                price=Money.of("300.00"),
+                calculation_type=PriceCalculationType.PER_PERFORMANCE,
+            )
+        )
+        owner = uuid7_str()
+        submission_id = _create(env, competition_id=uuid7_str(), applicant_id=owner)
+        _set_performance(env, submission_id=submission_id, owner=owner)
+        _add_participant(env, submission_id=submission_id, owner=owner, first="Anna")
+        _add_participant(env, submission_id=submission_id, owner=owner, first="Bella")
+
+        result = env.calculate_price().handle(CalculatePriceCommand(submission_id=submission_id, requested_by=owner))
+
+        assert result.submission.price is not None
+        assert result.submission.price.amount == "300.00"
 
     def test_price_without_performance_is_rejected(self) -> None:
         env = Env()

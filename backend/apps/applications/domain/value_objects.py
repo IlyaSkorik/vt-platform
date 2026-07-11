@@ -89,7 +89,9 @@ __all__ = [
     "ParticipationFormatId",
     "Performance",
     "PersonName",
+    "PriceCalculationType",
     "PriceSnapshot",
+    "CompetitionPriceQuote",
     "ReviewComment",
     "ReviewId",
     "ReviewerId",
@@ -972,6 +974,28 @@ class Money:
 
     def __str__(self) -> str:
         return f"{self.amount} {self.currency.value}"
+
+
+class PriceCalculationType(StrEnum):
+    """How a competition unit price becomes a submission total (ACL projection)."""
+
+    PER_PARTICIPANT = "PER_PARTICIPANT"
+    PER_PERFORMANCE = "PER_PERFORMANCE"
+
+
+@dataclass(frozen=True, slots=True)
+class CompetitionPriceQuote:
+    """Competition list price for one combination, projected into this context."""
+
+    unit_price: Money
+    calculation_type: PriceCalculationType = PriceCalculationType.PER_PARTICIPANT
+
+    def total_for(self, participant_count: int) -> Money:
+        if participant_count < 1:
+            raise InvalidMoneyError("Participant count must be at least 1 to compute a total.")
+        if self.calculation_type is PriceCalculationType.PER_PERFORMANCE:
+            return self.unit_price
+        return Money.of(self.unit_price.amount * participant_count, self.unit_price.currency)
 
 
 @dataclass(frozen=True, slots=True)

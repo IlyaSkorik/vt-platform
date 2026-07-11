@@ -47,8 +47,8 @@ from apps.applications.domain.events import DomainEvent
 from apps.applications.domain.value_objects import (
     AgeCategoryId,
     CompetitionId,
+    CompetitionPriceQuote,
     DisciplineId,
-    Money,
     NominationId,
     ParticipantGroupId,
     ParticipationFormatId,
@@ -62,6 +62,7 @@ __all__ = [
     "ApplicantInfo",
     "Clock",
     "CompetitionCatalog",
+    "CompetitionPriceQuote",
     "EventPublisher",
     "IdentityReadModel",
     "OrganizationReadModel",
@@ -164,7 +165,7 @@ class CompetitionCatalog(Protocol):
         """
         ...
 
-    def price_per_participant(
+    def price_quote(
         self,
         *,
         competition_id: CompetitionId,
@@ -173,11 +174,12 @@ class CompetitionCatalog(Protocol):
         age_category_id: AgeCategoryId,
         participant_group_id: ParticipantGroupId,
         participation_format_id: ParticipationFormatId,
-    ) -> Money | None:
-        """Return the per-participant price for a combination, or ``None`` if unknown.
+    ) -> CompetitionPriceQuote | None:
+        """Return the list-price quote for a combination, or ``None`` if unknown.
 
-        The Competition owns pricing; the use case multiplies this by the
-        participant count and freezes the total as an immutable ``PriceSnapshot``.
+        The Competition owns pricing and calculation type; the use case turns the
+        quote into a total (per participant or fixed per performance) and freezes
+        it as an immutable ``PriceSnapshot``.
         """
         ...
 

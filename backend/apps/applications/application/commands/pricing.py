@@ -15,7 +15,7 @@ from apps.applications.application.interfaces import (
     EventPublisher,
     SubmissionRepository,
 )
-from apps.applications.domain.value_objects import Money, PriceSnapshot
+from apps.applications.domain.value_objects import PriceSnapshot
 
 from ._support import ensure_owner, load_submission, parse_submission_id, parse_user_id
 
@@ -25,12 +25,11 @@ __all__ = ["CalculatePriceHandler"]
 class CalculatePriceHandler:
     """Use case: price the performance combination and freeze an immutable snapshot.
 
-    The Competition owns pricing: this use case asks the catalog for the
-    per-participant price of the performance's combination, multiplies it by the
-    current participant count (the one calculation the application layer is
-    explicitly responsible for), and hands the total to the domain to freeze. The
-    domain forbids replacing the snapshot once the submission leaves the editable
-    states.
+    The Competition owns pricing: this use case asks the catalog for the list-price
+    quote of the performance's combination, applies the calculation type (per
+    participant or fixed per performance), and hands the total to the domain to
+    freeze. The domain forbids replacing the snapshot once the submission leaves
+    the editable states.
     """
 
     def __init__(
@@ -58,7 +57,7 @@ class CalculatePriceHandler:
                 domain_code="performance_not_set",
             )
 
-        per_participant = self._catalog.price_per_participant(
+        quote = self._catalog.price_quote(
             competition_id=submission.competition_id,
             nomination_id=performance.nomination_id,
             discipline_id=performance.discipline_id,
@@ -66,10 +65,10 @@ class CalculatePriceHandler:
             participant_group_id=performance.participant_group_id,
             participation_format_id=performance.participation_format_id,
         )
-        if per_participant is None:
+        if quote is None:
             raise CompetitionCombinationNotFoundError("The competition has no pricing for this combination.")
 
-        total = Money.of(per_participant.amount * submission.participant_count, per_participant.currency)
+        total = quote.total_for(submission.participant_count)
         snapshot = PriceSnapshot(price=total, calculated_at=now)
         with translate_domain_errors():
             domain_events = submission.set_price_snapshot(price_snapshot=snapshot, now=now)
