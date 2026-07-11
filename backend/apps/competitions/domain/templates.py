@@ -72,6 +72,7 @@ from .value_objects import (
     MixedAgeCalculationMethod,
     Money,
     ParticipantCountRange,
+    ParticipantGroupDescription,
     ParticipantGroupId,
     ParticipantGroupName,
     ParticipationFormat,
@@ -305,12 +306,21 @@ class CompetitionTemplate:
         name: ParticipantGroupName,
         count_range: ParticipantCountRange,
         now: datetime,
+        description: ParticipantGroupDescription | None = None,
+        sort_order: int = 0,
     ) -> ParticipantGroup:
         self._require_category(category_id)
         if any(g.category_id == category_id and g.name == name for g in self._participant_groups.values()):
             raise DuplicateParticipantGroupError(f"A participant group named {name.value!r} already exists in this category.")
         ensure_participant_range_free(self._participant_groups, category_id, count_range)
-        group = ParticipantGroup.create(participant_group_id=participant_group_id, category_id=category_id, name=name, count_range=count_range)
+        group = ParticipantGroup.create(
+            participant_group_id=participant_group_id,
+            category_id=category_id,
+            name=name,
+            count_range=count_range,
+            description=description,
+            sort_order=sort_order,
+        )
         self._participant_groups[participant_group_id] = group
         self._touch(now)
         return group

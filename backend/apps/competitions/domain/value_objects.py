@@ -48,6 +48,7 @@ from .exceptions import (
     InvalidAgeCategoryNameError,
     InvalidAgeRangeError,
     InvalidCategoryDescriptionError,
+    InvalidParticipantGroupDescriptionError,
     InvalidCategoryIdError,
     InvalidCategoryNameError,
     InvalidCompetitionDescriptionError,
@@ -120,6 +121,7 @@ __all__ = [
     "Money",
     "OrganizerId",
     "ParticipantCountRange",
+    "ParticipantGroupDescription",
     "ParticipantGroupId",
     "ParticipantGroupName",
     "ParticipationFormat",
@@ -933,6 +935,24 @@ class ParticipantGroupName:
         object.__setattr__(
             self, "value", _validate_name(self.value, error=InvalidParticipantGroupNameError, label="Participant group name", maximum=_NAME_MAX)
         )
+
+    def __str__(self) -> str:
+        return self.value
+
+
+@dataclass(frozen=True, slots=True)
+class ParticipantGroupDescription:
+    """A length-bounded participant-group description (may be blank)."""
+
+    value: str
+
+    def __post_init__(self) -> None:
+        stripped = self.value.strip()
+        if len(stripped) > _CATEGORY_DESCRIPTION_MAX:
+            raise InvalidParticipantGroupDescriptionError(
+                f"Participant group description must be at most {_CATEGORY_DESCRIPTION_MAX} characters."
+            )
+        object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:
         return self.value

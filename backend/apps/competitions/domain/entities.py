@@ -167,6 +167,7 @@ from .value_objects import (
     Money,
     OrganizerId,
     ParticipantCountRange,
+    ParticipantGroupDescription,
     ParticipantGroupId,
     ParticipantGroupName,
     ParticipationFormat,
@@ -584,6 +585,8 @@ class ParticipantGroup:
     _category_id: CategoryId
     _name: ParticipantGroupName
     _count_range: ParticipantCountRange
+    _description: ParticipantGroupDescription | None = None
+    _sort_order: int = 0
 
     @classmethod
     def create(
@@ -593,8 +596,17 @@ class ParticipantGroup:
         category_id: CategoryId,
         name: ParticipantGroupName,
         count_range: ParticipantCountRange,
+        description: ParticipantGroupDescription | None = None,
+        sort_order: int = 0,
     ) -> ParticipantGroup:
-        return cls(_id=participant_group_id, _category_id=category_id, _name=name, _count_range=count_range)
+        return cls(
+            _id=participant_group_id,
+            _category_id=category_id,
+            _name=name,
+            _count_range=count_range,
+            _description=description,
+            _sort_order=_validate_sort_order(sort_order),
+        )
 
     @classmethod
     def rehydrate(
@@ -604,8 +616,17 @@ class ParticipantGroup:
         category_id: CategoryId,
         name: ParticipantGroupName,
         count_range: ParticipantCountRange,
+        description: ParticipantGroupDescription | None = None,
+        sort_order: int = 0,
     ) -> ParticipantGroup:
-        return cls(_id=participant_group_id, _category_id=category_id, _name=name, _count_range=count_range)
+        return cls(
+            _id=participant_group_id,
+            _category_id=category_id,
+            _name=name,
+            _count_range=count_range,
+            _description=description,
+            _sort_order=sort_order,
+        )
 
     @property
     def id(self) -> ParticipantGroupId:
@@ -623,11 +644,36 @@ class ParticipantGroup:
     def count_range(self) -> ParticipantCountRange:
         return self._count_range
 
+    @property
+    def description(self) -> ParticipantGroupDescription | None:
+        return self._description
+
+    @property
+    def sort_order(self) -> int:
+        return self._sort_order
+
     def rename(self, name: ParticipantGroupName) -> None:
         self._name = name
 
     def resize(self, count_range: ParticipantCountRange) -> None:
         self._count_range = count_range
+
+    def update(
+        self,
+        *,
+        name: ParticipantGroupName | None = None,
+        count_range: ParticipantCountRange | None = None,
+        description: ParticipantGroupDescription | None = _SENTINEL,
+        sort_order: int | None = None,
+    ) -> None:
+        if name is not None:
+            self._name = name
+        if count_range is not None:
+            self._count_range = count_range
+        if description is not _SENTINEL:
+            self._description = description
+        if sort_order is not None:
+            self._sort_order = _validate_sort_order(sort_order)
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, ParticipantGroup) and other._id == self._id
@@ -1330,7 +1376,12 @@ class Competition:
             new_group_id = ParticipantGroupId.generate()
             group_map[group.id] = new_group_id
             self._participant_groups[new_group_id] = ParticipantGroup.create(
-                participant_group_id=new_group_id, category_id=category_map[group.category_id], name=group.name, count_range=group.count_range
+                participant_group_id=new_group_id,
+                category_id=category_map[group.category_id],
+                name=group.name,
+                count_range=group.count_range,
+                description=group.description,
+                sort_order=group.sort_order,
             )
         self._formats.update(template.participation_formats)
 
@@ -1775,6 +1826,8 @@ class Competition:
         name: ParticipantGroupName,
         count_range: ParticipantCountRange,
         now: datetime,
+        description: ParticipantGroupDescription | None = None,
+        sort_order: int | None = None,
     ) -> ParticipantGroup:
         """Add a participant group to a category.
 
@@ -1786,10 +1839,47 @@ class Competition:
         if any(g.category_id == category_id and g.name == name for g in self._participant_groups.values()):
             raise DuplicateParticipantGroupError(f"A participant group named {name.value!r} already exists in this category.")
         ensure_participant_range_free(self._participant_groups, category_id, count_range)
-        group = ParticipantGroup.create(participant_group_id=participant_group_id, category_id=category_id, name=name, count_range=count_range)
+        if sort_order is None:
+            sort_order = self._next_participant_group_sort_order(category_id)
+        group = ParticipantGroup.create(
+            participant_group_id=participant_group_id,
+            category_id=category_id,
+            name=name,
+            count_range=count_range,
+            description=description,
+            sort_order=sort_order,
+        )
         self._participant_groups[participant_group_id] = group
         self._touch(now)
         return group
+
+    def update_participant_group(
+        self,
+        *,
+        participant_group_id: ParticipantGroupId,
+        now: datetime,
+        name: ParticipantGroupName | None = None,
+        count_range: ParticipantCountRange | None = None,
+        description: ParticipantGroupDescription | None = _SENTINEL,
+        sort_order: int | None = None,
+    ) -> None:
+        """Partial update of a participant group (name, range, description, sort_order)."""
+        self._ensure_configurable()
+        group = self._require_participant_group(participant_group_id)
+        cat_id = group.category_id
+        if name is not None and any(
+            gid != participant_group_id and g.category_id == cat_id and g.name == name for gid, g in self._participant_groups.items()
+        ):
+            raise DuplicateParticipantGroupError(f"A participant group named {name.value!r} already exists in this category.")
+        if count_range is not None:
+            ensure_participant_range_free(self._participant_groups, cat_id, count_range, exclude=participant_group_id)
+        group.update(
+            name=name,
+            count_range=count_range,
+            description=description,
+            sort_order=sort_order,
+        )
+        self._touch(now)
 
     def remove_participant_group(self, *, participant_group_id: ParticipantGroupId, now: datetime) -> None:
         self._ensure_configurable()
@@ -2475,6 +2565,12 @@ class Competition:
         if not siblings:
             return 0
         return max(a.sort_order for a in siblings) + 1
+
+    def _next_participant_group_sort_order(self, category_id: CategoryId) -> int:
+        siblings = [g for g in self._participant_groups.values() if g.category_id == category_id]
+        if not siblings:
+            return 0
+        return max(g.sort_order for g in siblings) + 1
 
     def _next_discipline_sort_order(self, category_id: CategoryId) -> int:
         siblings = [d for d in self._disciplines.values() if d.category_id == category_id]

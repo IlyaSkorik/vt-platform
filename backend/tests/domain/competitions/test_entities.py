@@ -250,6 +250,57 @@ class TestTaxonomyInvariants:
         )
         assert len(c.participant_groups) == 2
 
+    def test_update_participant_group_renames_and_resizes(self) -> None:
+        from apps.competitions.domain.value_objects import ParticipantGroupDescription
+
+        c = _draft()
+        cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
+        group = c.add_participant_group(
+            participant_group_id=ParticipantGroupId.generate(),
+            category_id=cat.id,
+            name=ParticipantGroupName("Solo"),
+            count_range=ParticipantCountRange(1, 1),
+            now=NOW,
+        )
+        c.update_participant_group(
+            participant_group_id=group.id,
+            name=ParticipantGroupName("Duet"),
+            count_range=ParticipantCountRange(2, 2),
+            description=ParticipantGroupDescription("Two performers"),
+            sort_order=3,
+            now=NOW,
+        )
+        updated = c.participant_groups[0]
+        assert updated.name.value == "Duet"
+        assert updated.count_range.min_count == 2
+        assert updated.description is not None
+        assert updated.description.value == "Two performers"
+        assert updated.sort_order == 3
+
+    def test_update_participant_group_rejects_overlapping_range(self) -> None:
+        c = _draft()
+        cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
+        c.add_participant_group(
+            participant_group_id=ParticipantGroupId.generate(),
+            category_id=cat.id,
+            name=ParticipantGroupName("Solo"),
+            count_range=ParticipantCountRange(1, 1),
+            now=NOW,
+        )
+        duet = c.add_participant_group(
+            participant_group_id=ParticipantGroupId.generate(),
+            category_id=cat.id,
+            name=ParticipantGroupName("Duet"),
+            count_range=ParticipantCountRange(2, 2),
+            now=NOW,
+        )
+        with pytest.raises(OverlappingParticipantRangeError):
+            c.update_participant_group(
+                participant_group_id=duet.id,
+                count_range=ParticipantCountRange(1, 2),
+                now=NOW,
+            )
+
 
 class TestAdmissionAndPricing:
     def test_admission_rule_added_event(self) -> None:

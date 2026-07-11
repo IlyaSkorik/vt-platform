@@ -26,6 +26,7 @@ edge (ARCH-001 §7.6). No Django/DRF imports.
     │   ├── InvalidCategoryDescriptionError
     │   ├── InvalidDisciplineNameError
     │   ├── InvalidParticipantGroupNameError
+    │   ├── InvalidParticipantGroupDescriptionError
     │   ├── InvalidRegulationTitleError
     │   ├── InvalidRegulationVersionError
     │   ├── InvalidDocumentTitleError
@@ -213,6 +214,10 @@ class InvalidServiceNameError(ValueObjectValidationError):
 
 class InvalidCategoryDescriptionError(ValueObjectValidationError):
     """The provided value is not a valid category description (too long)."""
+
+
+class InvalidParticipantGroupDescriptionError(ValueObjectValidationError):
+    """The provided value is not a valid participant-group description (too long)."""
 
 
 class InvalidServiceDescriptionError(ValueObjectValidationError):
