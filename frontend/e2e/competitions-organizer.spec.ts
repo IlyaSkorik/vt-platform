@@ -179,7 +179,29 @@ const competitionDetail = {
         sortOrder: 1,
       },
     ],
-    admissionRules: [],
+    admissionRules: [
+      {
+        categoryId: "cat-1",
+        disciplineId: "dis-1",
+        ageCategoryId: "a1",
+        participantGroupId: "pg-1",
+        participationFormatId: "fmt-1",
+      },
+      {
+        categoryId: "cat-1",
+        disciplineId: "dis-1",
+        ageCategoryId: "a2",
+        participantGroupId: "pg-1",
+        participationFormatId: "fmt-1",
+      },
+      {
+        categoryId: "cat-1",
+        disciplineId: "dis-1",
+        ageCategoryId: "a2",
+        participantGroupId: "pg-2",
+        participationFormatId: "fmt-2",
+      },
+    ],
     pricingRules: [],
     regulations: [],
     currentRegulationId: null,
@@ -398,5 +420,25 @@ test.describe("Organizer workspace screenshots", () => {
       fullPage: true,
     });
 
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/staff/competitions/comp-1?section=admission-rules");
+    await expect(page.getByRole("heading", { name: "Правила допуска" })).toBeVisible();
+    await expect(page.getByText("Эстрадный вокал")).toBeVisible();
+    await page.screenshot({
+      path: path.join(screenshotDir, "09-admission-rules-desktop.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 820, height: 1180 });
+    await page.screenshot({
+      path: path.join(screenshotDir, "09-admission-rules-tablet.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({
+      path: path.join(screenshotDir, "09-admission-rules-mobile.png"),
+      fullPage: true,
+    });
   });
 });

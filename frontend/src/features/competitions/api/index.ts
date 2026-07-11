@@ -1,4 +1,5 @@
 export {
+  useAddAdmissionRuleMutation,
   useAddAgeCategoryMutation,
   useAddCategoryMutation,
   useAddDisciplineMutation,
@@ -7,6 +8,7 @@ export {
   useAddParticipationFormatMutation,
   useAddRegulationMutation,
   useArchiveCompetitionMutation,
+  useBulkAddAdmissionRulesMutation,
   useCompetitionDetail,
   useCompetitionsList,
   useCreateCompetitionMutation,
@@ -15,6 +17,7 @@ export {
   useMarkReadyMutation,
   useOpenRegistrationMutation,
   usePublishCompetitionMutation,
+  useRemoveAdmissionRuleMutation,
   useRemoveAgeCategoryMutation,
   useRemoveCategoryMutation,
   useRemoveDisciplineMutation,

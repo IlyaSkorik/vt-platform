@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { ApiError, apiClient, toApiError } from "@/shared/api";
 import {
+  addAdmissionRule,
   addAgeCategory,
   addCategory,
   addContact,
@@ -25,6 +26,7 @@ import {
   postCompetition,
   publishCompetition,
   publishDocument,
+  removeAdmissionRule,
   removeAgeCategory,
   removeCategory,
   removeContact,
@@ -44,6 +46,7 @@ import {
   updateParticipationFormat,
 } from "@/shared/api/generated/competitions/competitions";
 import type {
+  AddAdmissionRule,
   AddAgeCategory,
   AddCategory,
   AddContact,
@@ -395,6 +398,21 @@ async function deleteParticipationFormat(
   return unwrapCompetitionDetail(response.data);
 }
 
+async function createAdmissionRule(
+  competitionId: string,
+  payload: AddAdmissionRule,
+): Promise<CompetitionDetail> {
+  const response = await addAdmissionRule(competitionId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function deleteAdmissionRule(
+  competitionId: string,
+  payload: AddAdmissionRule,
+): Promise<CompetitionDetail> {
+  const response = await removeAdmissionRule(competitionId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
 
 function upsertListItem(
   queryClient: ReturnType<typeof useQueryClient>,
@@ -1277,3 +1295,90 @@ export function useReorderParticipationFormatsMutation(): UseMutationResult<
   });
 }
 
+export function useAddAdmissionRuleMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; payload: AddAdmissionRule }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; payload: AddAdmissionRule }
+  >({
+    mutationFn: ({ competitionId, payload }) => createAdmissionRule(competitionId, payload),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useRemoveAdmissionRuleMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; payload: AddAdmissionRule }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; payload: AddAdmissionRule }
+  >({
+    mutationFn: ({ competitionId, payload }) => deleteAdmissionRule(competitionId, payload),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export interface BulkAdmissionRulesResult {
+  detail: CompetitionDetail;
+  created: number;
+  skipped: number;
+}
+
+export function useBulkAddAdmissionRulesMutation(): UseMutationResult<
+  BulkAdmissionRulesResult,
+  ApiError,
+  { competitionId: string; payloads: AddAdmissionRule[]; skippedExisting?: number }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    BulkAdmissionRulesResult,
+    ApiError,
+    { competitionId: string; payloads: AddAdmissionRule[]; skippedExisting?: number }
+  >({
+    mutationFn: async ({ competitionId, payloads, skippedExisting = 0 }) => {
+      let latest: CompetitionDetail | null = null;
+      let created = 0;
+      let skipped = skippedExisting;
+
+      for (const payload of payloads) {
+        try {
+          latest = await createAdmissionRule(competitionId, payload);
+          created += 1;
+        } catch (error) {
+          // Duplicate combinations may race; treat conflict as skipped.
+          if (error instanceof ApiError && error.isConflict) {
+            skipped += 1;
+            continue;
+          }
+          throw error;
+        }
+      }
+
+      if (!latest) {
+        latest = await fetchCompetition(competitionId);
+      }
+
+      return {
+        detail: latest,
+        created,
+        skipped,
+      };
+    },
+    onSuccess: (result) => {
+      setCompetitionCache(queryClient, result.detail);
+    },
+  });
+}

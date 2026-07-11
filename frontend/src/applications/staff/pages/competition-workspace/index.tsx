@@ -16,6 +16,7 @@ import {
 import { ApiError } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
 import { Alert, Button, EmptyState, PageContainer, Skeleton, toast } from "@/shared/ui";
+import { AdmissionRulesSection } from "@/widgets/competition-admission-rules";
 import { AgeCategoriesSection } from "@/widgets/competition-age-categories";
 import { CategoriesSection } from "@/widgets/competition-categories";
 import { DocumentsSection } from "@/widgets/competition-documents";
@@ -210,6 +211,14 @@ export function StaffCompetitionWorkspacePage(): React.JSX.Element {
           />
         ) : section.id === "participation-formats" ? (
           <ParticipationFormatsSection
+            competition={competition}
+            checklist={checklist}
+            isLoading={detailQuery.isFetching && !detailQuery.isFetched}
+            onAutosaveStateChange={setAutosaveState}
+            onNavigateSection={handleSectionChange}
+          />
+        ) : section.id === "admission-rules" ? (
+          <AdmissionRulesSection
             competition={competition}
             checklist={checklist}
             isLoading={detailQuery.isFetching && !detailQuery.isFetched}
