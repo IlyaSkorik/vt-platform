@@ -227,7 +227,56 @@ const competitionDetail = {
     regulations: [],
     currentRegulationId: null,
     documents: [],
-    additionalServices: [],
+    additionalServices: [
+      {
+        id: "svc-1",
+        name: "Медаль",
+        amount: "25.00",
+        currency: "BYN",
+        description: "Памятная медаль участника",
+        billingModel: "PER_PERFORMANCE",
+        participationFormatIds: ["fmt-1"],
+        required: false,
+        enabled: true,
+        sortOrder: 0,
+      },
+      {
+        id: "svc-2",
+        name: "Доставка",
+        amount: "15.00",
+        currency: "BYN",
+        description: "Отправка диплома почтой",
+        billingModel: "PER_PARTICIPANT",
+        participationFormatIds: ["fmt-2"],
+        required: false,
+        enabled: true,
+        sortOrder: 1,
+      },
+      {
+        id: "svc-3",
+        name: "Электронный диплом",
+        amount: "10.00",
+        currency: "BYN",
+        description: null,
+        billingModel: "PER_PERFORMANCE",
+        participationFormatIds: ["fmt-2"],
+        required: true,
+        enabled: true,
+        sortOrder: 2,
+      },
+      {
+        id: "svc-4",
+        name: "Видеозапись",
+        amount: "40.00",
+        currency: "BYN",
+        description: "Запись выступления на площадке",
+        billingModel: "PER_PERFORMANCE",
+        participationFormatIds: ["fmt-1"],
+        required: false,
+        enabled: false,
+        sortOrder: 3,
+      },
+    ],
     contacts: [
       { id: "c1", type: "WEBSITE", value: "https://example.com", isPrimary: true },
       { id: "c2", type: "VK", value: "https://vk.com/example", isPrimary: false },
@@ -480,6 +529,27 @@ test.describe("Organizer workspace screenshots", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.screenshot({
       path: path.join(screenshotDir, "10-pricing-mobile.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/staff/competitions/comp-1?section=additional-services");
+    await expect(page.getByRole("heading", { name: "Доп. услуги" })).toBeVisible();
+    await expect(page.getByText("Медаль").first()).toBeVisible();
+    await page.screenshot({
+      path: path.join(screenshotDir, "11-additional-services-desktop.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 820, height: 1180 });
+    await page.screenshot({
+      path: path.join(screenshotDir, "11-additional-services-tablet.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({
+      path: path.join(screenshotDir, "11-additional-services-mobile.png"),
       fullPage: true,
     });
   });

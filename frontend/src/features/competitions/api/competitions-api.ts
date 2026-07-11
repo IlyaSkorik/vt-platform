@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { ApiError, apiClient, toApiError } from "@/shared/api";
 import {
+  addAdditionalService,
   addAdmissionRule,
   addAgeCategory,
   addCategory,
@@ -19,6 +20,8 @@ import {
   addRegulation,
   archiveCompetition,
   changePrice,
+  disableAdditionalService,
+  enableAdditionalService,
   getCompetition,
   listCompetitions,
   makeRegulationCurrent,
@@ -28,6 +31,7 @@ import {
   postCompetition,
   publishCompetition,
   publishDocument,
+  removeAdditionalService,
   removeAdmissionRule,
   removeAgeCategory,
   removeCategory,
@@ -41,6 +45,7 @@ import {
   renameCategory,
   renameDiscipline,
   unpublishDocument,
+  updateAdditionalService,
   updateAgeCategory,
   updateBranding,
   updateCompetition,
@@ -49,6 +54,7 @@ import {
   updateParticipationFormat,
 } from "@/shared/api/generated/competitions/competitions";
 import type {
+  AddAdditionalService,
   AddAdmissionRule,
   AddAgeCategory,
   AddCategory,
@@ -65,6 +71,7 @@ import type {
   PatchedChangePrice,
   PatchedRenameCategory,
   PatchedRenameDiscipline,
+  PatchedUpdateAdditionalService,
   PatchedUpdateAgeCategory,
   PatchedUpdateCompetitionBranding,
   PatchedUpdateCompetitionGeneralInformation,
@@ -446,6 +453,42 @@ async function deletePricingRule(
   },
 ): Promise<CompetitionDetail> {
   const response = await removePricingRule(competitionId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function createAdditionalService(
+  competitionId: string,
+  payload: AddAdditionalService,
+): Promise<CompetitionDetail> {
+  const response = await addAdditionalService(competitionId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function patchAdditionalService(
+  competitionId: string,
+  serviceId: string,
+  payload: PatchedUpdateAdditionalService,
+): Promise<CompetitionDetail> {
+  const response = await updateAdditionalService(competitionId, serviceId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function deleteAdditionalService(
+  competitionId: string,
+  serviceId: string,
+): Promise<CompetitionDetail> {
+  const response = await removeAdditionalService(competitionId, serviceId);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function setAdditionalServiceEnabled(
+  competitionId: string,
+  serviceId: string,
+  enabled: boolean,
+): Promise<CompetitionDetail> {
+  const response = enabled
+    ? await enableAdditionalService(competitionId, serviceId)
+    : await disableAdditionalService(competitionId, serviceId);
   return unwrapCompetitionDetail(response.data);
 }
 
@@ -1653,6 +1696,109 @@ export function useBulkPricingMutation(): UseMutationResult<
     },
     onSuccess: (result) => {
       setCompetitionCache(queryClient, result.detail);
+    },
+  });
+}
+
+export function useAddAdditionalServiceMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; payload: AddAdditionalService }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; payload: AddAdditionalService }
+  >({
+    mutationFn: ({ competitionId, payload }) => createAdditionalService(competitionId, payload),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useUpdateAdditionalServiceMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; serviceId: string; payload: PatchedUpdateAdditionalService }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; serviceId: string; payload: PatchedUpdateAdditionalService }
+  >({
+    mutationFn: ({ competitionId, serviceId, payload }) =>
+      patchAdditionalService(competitionId, serviceId, payload),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useRemoveAdditionalServiceMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; serviceId: string }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<CompetitionDetail, ApiError, { competitionId: string; serviceId: string }>({
+    mutationFn: ({ competitionId, serviceId }) => deleteAdditionalService(competitionId, serviceId),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useSetAdditionalServiceEnabledMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; serviceId: string; enabled: boolean }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; serviceId: string; enabled: boolean }
+  >({
+    mutationFn: ({ competitionId, serviceId, enabled }) =>
+      setAdditionalServiceEnabled(competitionId, serviceId, enabled),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useReorderAdditionalServicesMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  {
+    competitionId: string;
+    updates: Array<{ serviceId: string; payload: PatchedUpdateAdditionalService }>;
+  }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    {
+      competitionId: string;
+      updates: Array<{ serviceId: string; payload: PatchedUpdateAdditionalService }>;
+    }
+  >({
+    mutationFn: async ({ competitionId, updates }) => {
+      let latest: CompetitionDetail | null = null;
+      for (const update of updates) {
+        latest = await patchAdditionalService(competitionId, update.serviceId, update.payload);
+      }
+      if (!latest) {
+        return fetchCompetition(competitionId);
+      }
+      return latest;
+    },
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
     },
   });
 }

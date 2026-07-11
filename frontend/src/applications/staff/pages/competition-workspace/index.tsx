@@ -16,6 +16,7 @@ import {
 import { ApiError } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
 import { Alert, Button, EmptyState, PageContainer, Skeleton, toast } from "@/shared/ui";
+import { AdditionalServicesSection } from "@/widgets/competition-additional-services";
 import { AdmissionRulesSection } from "@/widgets/competition-admission-rules";
 import { AgeCategoriesSection } from "@/widgets/competition-age-categories";
 import { CategoriesSection } from "@/widgets/competition-categories";
@@ -228,6 +229,14 @@ export function StaffCompetitionWorkspacePage(): React.JSX.Element {
           />
         ) : section.id === "pricing" ? (
           <PricingSection
+            competition={competition}
+            checklist={checklist}
+            isLoading={detailQuery.isFetching && !detailQuery.isFetched}
+            onAutosaveStateChange={setAutosaveState}
+            onNavigateSection={handleSectionChange}
+          />
+        ) : section.id === "additional-services" ? (
+          <AdditionalServicesSection
             competition={competition}
             checklist={checklist}
             isLoading={detailQuery.isFetching && !detailQuery.isFetched}

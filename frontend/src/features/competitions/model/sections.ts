@@ -56,7 +56,7 @@ export const COMPETITION_SECTIONS: readonly CompetitionSection[] = [
     id: "additional-services",
     title: "Доп. услуги",
     icon: Sparkles,
-    implemented: false,
+    implemented: true,
   },
   { id: "settings", title: "Настройки", icon: Settings, implemented: false },
   { id: "contacts", title: "Контакты", icon: Phone, implemented: false },
