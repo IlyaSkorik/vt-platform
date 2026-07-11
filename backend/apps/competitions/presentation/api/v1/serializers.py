@@ -270,11 +270,23 @@ class AddAdmissionRuleSerializer(_AdmissionCombinationSerializer):
 class AddPricingRuleSerializer(_AdmissionCombinationSerializer):
     amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0)
     currency = serializers.CharField(max_length=3, required=False, default="BYN")
+    calculationType = serializers.ChoiceField(
+        source="calculation_type",
+        choices=["PER_PARTICIPANT", "PER_PERFORMANCE"],
+        required=False,
+        default="PER_PARTICIPANT",
+    )
 
 
 class ChangePriceSerializer(_AdmissionCombinationSerializer):
     amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0)
     currency = serializers.CharField(max_length=3, required=False, default="BYN")
+    calculationType = serializers.ChoiceField(
+        source="calculation_type",
+        choices=["PER_PARTICIPANT", "PER_PERFORMANCE"],
+        required=False,
+        allow_null=True,
+    )
 
 
 class AddRegulationSerializer(serializers.Serializer[dict[str, object]]):
@@ -437,6 +449,7 @@ class _AdmissionRuleSerializer(serializers.Serializer[dict[str, object]]):
 class _PricingRuleSerializer(_AdmissionRuleSerializer):
     amount = serializers.CharField()
     currency = serializers.CharField()
+    calculationType = serializers.CharField(source="calculation_type")
 
 
 class _RegulationSerializer(serializers.Serializer[dict[str, object]]):

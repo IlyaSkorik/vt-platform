@@ -4435,6 +4435,12 @@ components:
           type: string
           default: BYN
           maxLength: 3
+        calculationType:
+          type: string
+          default: PER_PARTICIPANT
+          enum:
+          - PER_PARTICIPANT
+          - PER_PERFORMANCE
       required:
       - ageCategoryId
       - amount
@@ -5029,6 +5035,13 @@ components:
           type: string
           default: BYN
           maxLength: 3
+        calculationType:
+          type: string
+          enum:
+          - PER_PARTICIPANT
+          - PER_PERFORMANCE
+          - null
+          nullable: true
     PatchedRenameCategory:
       type: object
       properties:
@@ -5981,9 +5994,15 @@ components:
           type: string
         currency:
           type: string
+        calculationType:
+          type: string
+          enum:
+          - PER_PARTICIPANT
+          - PER_PERFORMANCE
       required:
       - ageCategoryId
       - amount
+      - calculationType
       - categoryId
       - currency
       - disciplineId

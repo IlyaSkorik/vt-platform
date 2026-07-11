@@ -22,6 +22,7 @@ from apps.competitions.domain.value_objects import (
     Money,
     ParticipantGroupId,
     ParticipationFormatId,
+    PricingCalculationType,
 )
 
 
@@ -76,6 +77,11 @@ class CompetitionCommandHandler:
 
     def _money(self, *, amount: str, currency: str) -> Money:
         return Money.of(amount, Currency(currency))
+
+    def _pricing_calculation_type(self, value: str | None) -> PricingCalculationType | None:
+        if value is None:
+            return None
+        return PricingCalculationType(value)
 
     def _combination(
         self,

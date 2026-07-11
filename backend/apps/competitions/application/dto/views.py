@@ -227,6 +227,7 @@ class PricingRuleView:
     participation_format_id: str
     amount: str
     currency: str
+    calculation_type: str
 
     @classmethod
     def of(cls, rule: PricingRule) -> PricingRuleView:
@@ -239,6 +240,7 @@ class PricingRuleView:
             participation_format_id=c.participation_format_id.json(),
             amount=str(rule.price_per_participant.amount),
             currency=rule.price_per_participant.currency.value,
+            calculation_type=rule.calculation_type.value,
         )
 
 

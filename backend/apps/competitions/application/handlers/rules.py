@@ -11,7 +11,8 @@ from apps.competitions.application.dto.commands import (
 )
 from apps.competitions.application.dto.views import CompetitionDetailView
 
-from ._support import CompetitionCommandHandler
+from apps.competitions.application.handlers._support import CompetitionCommandHandler
+from apps.competitions.domain.value_objects import PricingCalculationType
 
 __all__ = (
     "AddAdmissionRuleHandler",
@@ -89,6 +90,8 @@ class AddPricingRuleHandler(CompetitionCommandHandler):
                 amount=command.amount,
                 currency=command.currency,
             ),
+            calculation_type=self._pricing_calculation_type(command.calculation_type)
+            or PricingCalculationType.PER_PARTICIPANT,
             now=self._clock.utcnow(),
         )
 
@@ -116,6 +119,7 @@ class ChangePriceHandler(CompetitionCommandHandler):
                 amount=command.amount,
                 currency=command.currency,
             ),
+            calculation_type=self._pricing_calculation_type(command.calculation_type),
             now=self._clock.utcnow(),
         )
 

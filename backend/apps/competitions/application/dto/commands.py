@@ -321,6 +321,7 @@ class AddPricingRuleCommand:
     participation_format_id: str
     amount: str
     currency: str = "BYN"
+    calculation_type: str = "PER_PARTICIPANT"
 
 
 @dataclass(frozen=True, slots=True)
@@ -333,6 +334,7 @@ class ChangePriceCommand:
     participation_format_id: str
     amount: str
     currency: str = "BYN"
+    calculation_type: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
