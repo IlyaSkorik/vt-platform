@@ -274,6 +274,10 @@ class InvalidRegistrationDeadlinesError(ValueObjectValidationError):
     """The provided registration deadlines contradict one another."""
 
 
+class InvalidContactsConfigurationError(ValueObjectValidationError):
+    """The competition contacts configuration is invalid."""
+
+
 class InvalidCompetitionSettingsError(ValueObjectValidationError):
     """Competition settings payload is malformed or violates invariants."""
 

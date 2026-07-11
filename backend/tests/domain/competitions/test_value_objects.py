@@ -217,6 +217,58 @@ class TestCompetitionSettings:
             CompetitionSettings(payment_required=True, payment_methods=())
 
 
+class TestContactsConfiguration:
+    def test_default(self) -> None:
+        from apps.competitions.domain.contacts_configuration import ContactsConfiguration
+        from apps.competitions.infrastructure.mappers.contacts_config_json import (
+            contacts_config_from_json,
+            contacts_config_to_json,
+        )
+
+        config = ContactsConfiguration.default()
+        assert config.use_organization_contacts is True
+        assert config.team_contacts == ()
+        assert config.override.phone is None
+        assert config.emergency.notes is None
+        assert config.venue_details.city is None
+
+        roundtrip = contacts_config_from_json(contacts_config_to_json(config))
+        assert roundtrip == config
+
+    def test_from_json_empty_uses_defaults(self) -> None:
+        from apps.competitions.domain.contacts_configuration import ContactsConfiguration
+        from apps.competitions.infrastructure.mappers.contacts_config_json import contacts_config_from_json
+
+        assert contacts_config_from_json(None) == ContactsConfiguration.default()
+        assert contacts_config_from_json({}) == ContactsConfiguration.default()
+
+    def test_from_json_parses_team_and_overrides(self) -> None:
+        from apps.competitions.infrastructure.mappers.contacts_config_json import contacts_config_from_json
+
+        config = contacts_config_from_json(
+            {
+                "use_organization_contacts": False,
+                "override": {"phone": "+375 29 000-00-00", "email": "org@example.com"},
+                "team_contacts": [
+                    {
+                        "id": "01900000-0000-7000-8000-000000000001",
+                        "name": "Anna",
+                        "position": "Coordinator",
+                        "sort_order": 1,
+                    }
+                ],
+                "emergency": {"phone": "112"},
+                "venue_details": {"city": "Minsk", "country": "BY"},
+            }
+        )
+        assert config.use_organization_contacts is False
+        assert config.override.phone == "+375 29 000-00-00"
+        assert len(config.team_contacts) == 1
+        assert config.team_contacts[0].name == "Anna"
+        assert config.emergency.phone == "112"
+        assert config.venue_details.city == "Minsk"
+
+
 class TestRegistrationDeadlines:
     def test_empty_is_always_open(self) -> None:
         d = RegistrationDeadlines()

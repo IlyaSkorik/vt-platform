@@ -66,6 +66,7 @@ from dataclasses import InitVar, dataclass, field
 from datetime import date, datetime
 from typing import TYPE_CHECKING, Final
 
+from .contacts_configuration import ContactsConfiguration
 from .events import (
     AdditionalServiceAdded,
     AdmissionRuleAdded,
@@ -83,6 +84,7 @@ from .events import (
     CompetitionPublished,
     CompetitionRegistrationClosed,
     CompetitionRegistrationOpened,
+    CompetitionContactsConfigChanged,
     CompetitionSettingsChanged,
     CompetitionStarted,
     DomainEvent,
@@ -1357,6 +1359,7 @@ class Competition:
     _competition_period: DateRange | None = None
     _deadlines: RegistrationDeadlines = field(default_factory=RegistrationDeadlines)
     _settings: CompetitionSettings = field(default_factory=CompetitionSettings.default)
+    _contacts_config: ContactsConfiguration = field(default_factory=ContactsConfiguration.default)
     _categories: dict[CategoryId, Category] = field(default_factory=dict)
     _disciplines: dict[DisciplineId, Discipline] = field(default_factory=dict)
     _age_categories: dict[AgeCategoryId, AgeCategory] = field(default_factory=dict)
@@ -1400,6 +1403,7 @@ class Competition:
         registration_period: DateRange | None = None,
         competition_period: DateRange | None = None,
         settings: CompetitionSettings | None = None,
+        contacts_config: ContactsConfiguration | None = None,
         deadlines: RegistrationDeadlines | None = None,
     ) -> tuple[Competition, list[DomainEvent]]:
         """Create a brand-new competition in the DRAFT state.
@@ -1423,6 +1427,7 @@ class Competition:
             _registration_period=registration_period,
             _competition_period=competition_period,
             _settings=settings if settings is not None else CompetitionSettings.default(),
+            _contacts_config=contacts_config if contacts_config is not None else ContactsConfiguration.default(),
             _deadlines=deadlines if deadlines is not None else RegistrationDeadlines(),
         )
         event = CompetitionCreated(aggregate_id=competition_id.value, title=title, season=season, organizer_id=organizer_id)
@@ -1448,6 +1453,7 @@ class Competition:
         registration_period: DateRange | None = None,
         competition_period: DateRange | None = None,
         settings: CompetitionSettings | None = None,
+        contacts_config: ContactsConfiguration | None = None,
         deadlines: RegistrationDeadlines | None = None,
         categories: Sequence[Category] = (),
         disciplines: Sequence[Discipline] = (),
@@ -1485,6 +1491,7 @@ class Competition:
             _registration_period=registration_period,
             _competition_period=competition_period,
             _settings=settings if settings is not None else CompetitionSettings.default(),
+            _contacts_config=contacts_config if contacts_config is not None else ContactsConfiguration.default(),
             _deadlines=deadlines if deadlines is not None else RegistrationDeadlines(),
             _categories={c.id: c for c in categories},
             _disciplines={d.id: d for d in disciplines},
@@ -1671,6 +1678,10 @@ class Competition:
     @property
     def settings(self) -> CompetitionSettings:
         return self._settings
+
+    @property
+    def contacts_config(self) -> ContactsConfiguration:
+        return self._contacts_config
 
     @property
     def deadlines(self) -> RegistrationDeadlines:
@@ -2553,6 +2564,13 @@ class Competition:
         self._settings = settings
         self._touch(now)
         return [CompetitionSettingsChanged(aggregate_id=self._id.value)]
+
+    def update_contacts_config(self, *, config: ContactsConfiguration, now: datetime) -> list[DomainEvent]:
+        """Replace the competition's contacts-module configuration wholesale."""
+        self._ensure_not_archived()
+        self._contacts_config = config
+        self._touch(now)
+        return [CompetitionContactsConfigChanged(aggregate_id=self._id.value)]
 
     # ------------------------------------------------------------------
     # Registration deadlines (allowed unless ARCHIVED)

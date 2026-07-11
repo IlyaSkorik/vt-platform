@@ -16,6 +16,7 @@ from apps.competitions.domain.events import (
     CompetitionCompleted,
     CompetitionContactAdded,
     CompetitionContactRemoved,
+    CompetitionContactsConfigChanged,
     CompetitionCreated,
     CompetitionDeadlineChanged,
     CompetitionInformationHidden,
@@ -740,6 +741,46 @@ class TestSettings:
         c.archive(now=NOW)
         with pytest.raises(CompetitionAlreadyArchivedError):
             c.update_settings(settings=CompetitionSettings.default(), now=NOW)
+
+
+class TestContactsConfig:
+    def test_default_contacts_config_present(self) -> None:
+        from apps.competitions.domain.contacts_configuration import ContactsConfiguration
+
+        assert _draft().contacts_config == ContactsConfiguration.default()
+
+    def test_update_contacts_config_emits_event(self) -> None:
+        from apps.competitions.domain.contacts_configuration import (
+            ContactProfileOverride,
+            ContactsConfiguration,
+            TeamContact,
+        )
+
+        c = _draft()
+        new = ContactsConfiguration(
+            use_organization_contacts=False,
+            override=ContactProfileOverride(phone="+375 29 111-11-11"),
+            team_contacts=(
+                TeamContact(
+                    id="01900000-0000-7000-8000-000000000099",
+                    name="Ivan",
+                    position="Manager",
+                ),
+            ),
+        )
+        events = c.update_contacts_config(config=new, now=NOW)
+        assert isinstance(events[0], CompetitionContactsConfigChanged)
+        assert c.contacts_config.use_organization_contacts is False
+        assert c.contacts_config.override.phone == "+375 29 111-11-11"
+        assert c.contacts_config.team_contacts[0].name == "Ivan"
+
+    def test_contacts_config_locked_after_archive(self) -> None:
+        from apps.competitions.domain.contacts_configuration import ContactsConfiguration
+
+        c = _draft()
+        c.archive(now=NOW)
+        with pytest.raises(CompetitionAlreadyArchivedError):
+            c.update_contacts_config(config=ContactsConfiguration.default(), now=NOW)
 
 
 class TestDeadlines:
