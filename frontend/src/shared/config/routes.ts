@@ -28,6 +28,8 @@ export const ROUTES = {
   settings: "/settings",
   staff: "/staff",
   staffCompetitions: "/staff/competitions",
+  staffCompetitionsNew: "/staff/competitions/new",
+  staffCompetitionDetail: "/staff/competitions/:competitionId",
   staffApplications: "/staff/applications",
   staffParticipants: "/staff/participants",
   staffJudges: "/staff/judges",

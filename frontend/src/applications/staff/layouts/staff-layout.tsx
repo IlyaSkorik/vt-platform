@@ -73,6 +73,10 @@ function StaffNav({
 function StaffBreadcrumbs(): React.JSX.Element {
   const { pathname } = useLocation();
   const item = findStaffItem(pathname);
+  const competitionMatch = pathname.match(/^\/staff\/competitions\/([^/]+)/);
+  const competitionId = competitionMatch?.[1];
+  const isCompetitionWorkspace =
+    competitionId != null && competitionId !== "new" && item.path === ROUTES.staffCompetitions;
 
   return (
     <nav aria-label="Хлебные крошки панели управления" className="min-w-0">
@@ -91,12 +95,45 @@ function StaffBreadcrumbs(): React.JSX.Element {
               /
             </li>
             <li className="min-w-0">
-              <span aria-current="page" className="block truncate font-medium text-foreground">
-                {item.title}
-              </span>
+              {isCompetitionWorkspace ? (
+                <Link
+                  to={ROUTES.staffCompetitions}
+                  className="block truncate text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {item.title}
+                </Link>
+              ) : (
+                <span aria-current="page" className="block truncate font-medium text-foreground">
+                  {item.title}
+                </span>
+              )}
             </li>
           </>
         )}
+        {isCompetitionWorkspace ? (
+          <>
+            <li aria-hidden="true" className="text-muted-foreground">
+              /
+            </li>
+            <li className="min-w-0">
+              <span aria-current="page" className="block truncate font-medium text-foreground">
+                Рабочее пространство
+              </span>
+            </li>
+          </>
+        ) : null}
+        {pathname === ROUTES.staffCompetitionsNew ? (
+          <>
+            <li aria-hidden="true" className="text-muted-foreground">
+              /
+            </li>
+            <li className="min-w-0">
+              <span aria-current="page" className="block truncate font-medium text-foreground">
+                Создание
+              </span>
+            </li>
+          </>
+        ) : null}
       </ol>
     </nav>
   );

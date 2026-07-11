@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate, type RouteObject } from "react-router";
+import { createBrowserRouter, Navigate, Outlet, type RouteObject } from "react-router";
 import { AuthLayout } from "@/app/layouts/auth-layout";
 import { MinimalLayout } from "@/app/layouts/minimal-layout";
 import { NotFoundLayout } from "@/app/layouts/not-found-layout";
@@ -17,9 +17,14 @@ import { RouteError } from "./route-error";
 
 /** Lazily import a page module, mapping its named export to `Component`. */
 const lazyPage =
-  (loader: () => Promise<Record<string, React.ComponentType>>, name: string) => async () => ({
-    Component: (await loader())[name] as React.ComponentType,
-  });
+  (loader: () => Promise<Record<string, React.ComponentType>>, name: string) => async () => {
+    const module = await loader();
+    const Component = module[name];
+    if (Component == null) {
+      throw new Error(`Page export "${name}" was not found in lazy route module.`);
+    }
+    return { Component };
+  };
 
 const workspacePlaceholder =
   (item: ParticipantNavItem | StaffNavItem, tone: "participant" | "staff") => async () => {
@@ -215,7 +220,30 @@ const routes: RouteObject[] = [
               },
               {
                 path: ROUTES.staffCompetitions.slice(1),
-                lazy: workspacePlaceholder(staffItem(ROUTES.staffCompetitions), "staff"),
+                element: <Outlet />,
+                children: [
+                  {
+                    index: true,
+                    lazy: lazyPage(
+                      () => import("@/applications/staff/pages/competitions"),
+                      "StaffCompetitionsPage",
+                    ),
+                  },
+                  {
+                    path: "new",
+                    lazy: lazyPage(
+                      () => import("@/applications/staff/pages/competitions/new"),
+                      "StaffCreateCompetitionPage",
+                    ),
+                  },
+                  {
+                    path: ":competitionId",
+                    lazy: lazyPage(
+                      () => import("@/applications/staff/pages/competition-workspace"),
+                      "StaffCompetitionWorkspacePage",
+                    ),
+                  },
+                ],
               },
               {
                 path: ROUTES.staffApplications.slice(1),
