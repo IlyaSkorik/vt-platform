@@ -202,7 +202,28 @@ const competitionDetail = {
         participationFormatId: "fmt-2",
       },
     ],
-    pricingRules: [],
+    pricingRules: [
+      {
+        categoryId: "cat-1",
+        disciplineId: "dis-1",
+        ageCategoryId: "a1",
+        participantGroupId: "pg-1",
+        participationFormatId: "fmt-1",
+        amount: "50.00",
+        currency: "BYN",
+        calculationType: "PER_PARTICIPANT",
+      },
+      {
+        categoryId: "cat-1",
+        disciplineId: "dis-1",
+        ageCategoryId: "a2",
+        participantGroupId: "pg-1",
+        participationFormatId: "fmt-1",
+        amount: "45.00",
+        currency: "BYN",
+        calculationType: "PER_PERFORMANCE",
+      },
+    ],
     regulations: [],
     currentRegulationId: null,
     documents: [],
@@ -438,6 +459,27 @@ test.describe("Organizer workspace screenshots", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.screenshot({
       path: path.join(screenshotDir, "09-admission-rules-mobile.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/staff/competitions/comp-1?section=pricing");
+    await expect(page.getByRole("heading", { name: "Цены" })).toBeVisible();
+    await expect(page.getByText("Цена за участника").first()).toBeVisible();
+    await page.screenshot({
+      path: path.join(screenshotDir, "10-pricing-desktop.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 820, height: 1180 });
+    await page.screenshot({
+      path: path.join(screenshotDir, "10-pricing-tablet.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({
+      path: path.join(screenshotDir, "10-pricing-mobile.png"),
       fullPage: true,
     });
   });

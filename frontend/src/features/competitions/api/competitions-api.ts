@@ -15,8 +15,10 @@ import {
   addDocument,
   addParticipantGroup,
   addParticipationFormat,
+  addPricingRule,
   addRegulation,
   archiveCompetition,
+  changePrice,
   getCompetition,
   listCompetitions,
   makeRegulationCurrent,
@@ -34,6 +36,7 @@ import {
   removeDocument,
   removeParticipantGroup,
   removeParticipationFormat,
+  removePricingRule,
   removeRegulation,
   renameCategory,
   renameDiscipline,
@@ -54,10 +57,12 @@ import type {
   AddDocument,
   AddParticipantGroup,
   AddParticipationFormat,
+  AddPricingRule,
   AddRegulation,
   CompetitionDetail,
   CompetitionSummary,
   CreateCompetition,
+  PatchedChangePrice,
   PatchedRenameCategory,
   PatchedRenameDiscipline,
   PatchedUpdateAgeCategory,
@@ -411,6 +416,36 @@ async function deleteAdmissionRule(
   payload: AddAdmissionRule,
 ): Promise<CompetitionDetail> {
   const response = await removeAdmissionRule(competitionId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function createPricingRule(
+  competitionId: string,
+  payload: AddPricingRule,
+): Promise<CompetitionDetail> {
+  const response = await addPricingRule(competitionId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function patchPrice(
+  competitionId: string,
+  payload: PatchedChangePrice,
+): Promise<CompetitionDetail> {
+  const response = await changePrice(competitionId, payload);
+  return unwrapCompetitionDetail(response.data);
+}
+
+async function deletePricingRule(
+  competitionId: string,
+  payload: {
+    categoryId: string;
+    disciplineId: string;
+    ageCategoryId: string;
+    participantGroupId: string;
+    participationFormatId: string;
+  },
+): Promise<CompetitionDetail> {
+  const response = await removePricingRule(competitionId, payload);
   return unwrapCompetitionDetail(response.data);
 }
 
@@ -1376,6 +1411,245 @@ export function useBulkAddAdmissionRulesMutation(): UseMutationResult<
         created,
         skipped,
       };
+    },
+    onSuccess: (result) => {
+      setCompetitionCache(queryClient, result.detail);
+    },
+  });
+}
+
+export type PricingUpsertPayload = AddPricingRule & { mode: "add" | "change" };
+
+export interface BulkPricingResult {
+  detail: CompetitionDetail;
+  updated: number;
+  removed: number;
+  failed: number;
+}
+
+async function upsertPricingRule(
+  competitionId: string,
+  payload: PricingUpsertPayload,
+): Promise<CompetitionDetail> {
+  const body: AddPricingRule = {
+    categoryId: payload.categoryId,
+    disciplineId: payload.disciplineId,
+    ageCategoryId: payload.ageCategoryId,
+    participantGroupId: payload.participantGroupId,
+    participationFormatId: payload.participationFormatId,
+    amount: payload.amount,
+  };
+  if (payload.currency) {
+    body.currency = payload.currency;
+  }
+  if (payload.calculationType) {
+    body.calculationType = payload.calculationType;
+  }
+  if (payload.mode === "change") {
+    return patchPrice(competitionId, body);
+  }
+  return createPricingRule(competitionId, body);
+}
+
+export function useUpsertPricingRuleMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; payload: PricingUpsertPayload },
+  { previous?: CompetitionDetail }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; payload: PricingUpsertPayload },
+    { previous?: CompetitionDetail }
+  >({
+    mutationFn: ({ competitionId, payload }) => upsertPricingRule(competitionId, payload),
+    onMutate: async ({ competitionId, payload }) => {
+      await queryClient.cancelQueries({ queryKey: competitionKeys.detail(competitionId) });
+      const previous = queryClient.getQueryData<CompetitionDetail>(
+        competitionKeys.detail(competitionId),
+      );
+      if (previous) {
+        const key = [
+          payload.categoryId,
+          payload.disciplineId,
+          payload.ageCategoryId,
+          payload.participantGroupId,
+          payload.participationFormatId,
+        ].join("|");
+        const nextRules = previous.pricingRules.filter(
+          (rule) =>
+            [
+              rule.categoryId,
+              rule.disciplineId,
+              rule.ageCategoryId,
+              rule.participantGroupId,
+              rule.participationFormatId,
+            ].join("|") !== key,
+        );
+        nextRules.push({
+          categoryId: payload.categoryId,
+          disciplineId: payload.disciplineId,
+          ageCategoryId: payload.ageCategoryId,
+          participantGroupId: payload.participantGroupId,
+          participationFormatId: payload.participationFormatId,
+          amount: payload.amount,
+          currency: payload.currency ?? "BYN",
+          calculationType: payload.calculationType ?? "PER_PARTICIPANT",
+        });
+        queryClient.setQueryData(competitionKeys.detail(competitionId), {
+          ...previous,
+          pricingRules: nextRules,
+        });
+        return { previous };
+      }
+      return {};
+    },
+    onError: (_error, variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(competitionKeys.detail(variables.competitionId), context.previous);
+      }
+    },
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useRemovePricingRuleMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  {
+    competitionId: string;
+    payload: {
+      categoryId: string;
+      disciplineId: string;
+      ageCategoryId: string;
+      participantGroupId: string;
+      participationFormatId: string;
+    };
+  },
+  { previous?: CompetitionDetail }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    {
+      competitionId: string;
+      payload: {
+        categoryId: string;
+        disciplineId: string;
+        ageCategoryId: string;
+        participantGroupId: string;
+        participationFormatId: string;
+      };
+    },
+    { previous?: CompetitionDetail }
+  >({
+    mutationFn: ({ competitionId, payload }) => deletePricingRule(competitionId, payload),
+    onMutate: async ({ competitionId, payload }) => {
+      await queryClient.cancelQueries({ queryKey: competitionKeys.detail(competitionId) });
+      const previous = queryClient.getQueryData<CompetitionDetail>(
+        competitionKeys.detail(competitionId),
+      );
+      if (previous) {
+        const key = [
+          payload.categoryId,
+          payload.disciplineId,
+          payload.ageCategoryId,
+          payload.participantGroupId,
+          payload.participationFormatId,
+        ].join("|");
+        queryClient.setQueryData(competitionKeys.detail(competitionId), {
+          ...previous,
+          pricingRules: previous.pricingRules.filter(
+            (rule) =>
+              [
+                rule.categoryId,
+                rule.disciplineId,
+                rule.ageCategoryId,
+                rule.participantGroupId,
+                rule.participationFormatId,
+              ].join("|") !== key,
+          ),
+        });
+        return { previous };
+      }
+      return {};
+    },
+    onError: (_error, variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(competitionKeys.detail(variables.competitionId), context.previous);
+      }
+    },
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useBulkPricingMutation(): UseMutationResult<
+  BulkPricingResult,
+  ApiError,
+  {
+    competitionId: string;
+    upserts: PricingUpsertPayload[];
+    removes: Array<{
+      categoryId: string;
+      disciplineId: string;
+      ageCategoryId: string;
+      participantGroupId: string;
+      participationFormatId: string;
+    }>;
+  }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    BulkPricingResult,
+    ApiError,
+    {
+      competitionId: string;
+      upserts: PricingUpsertPayload[];
+      removes: Array<{
+        categoryId: string;
+        disciplineId: string;
+        ageCategoryId: string;
+        participantGroupId: string;
+        participationFormatId: string;
+      }>;
+    }
+  >({
+    mutationFn: async ({ competitionId, upserts, removes }) => {
+      let latest: CompetitionDetail | null = null;
+      let updated = 0;
+      let removed = 0;
+      let failed = 0;
+
+      for (const payload of upserts) {
+        try {
+          latest = await upsertPricingRule(competitionId, payload);
+          updated += 1;
+        } catch {
+          failed += 1;
+        }
+      }
+
+      for (const payload of removes) {
+        try {
+          latest = await deletePricingRule(competitionId, payload);
+          removed += 1;
+        } catch {
+          failed += 1;
+        }
+      }
+
+      if (!latest) {
+        latest = await fetchCompetition(competitionId);
+      }
+
+      return { detail: latest, updated, removed, failed };
     },
     onSuccess: (result) => {
       setCompetitionCache(queryClient, result.detail);

@@ -118,6 +118,7 @@ describe("buildPublicationChecklist", () => {
             participationFormatId: "f1",
             amount: "1000.00",
             currency: "RUB",
+            calculationType: "PER_PARTICIPANT",
           },
         ],
         regulations: [

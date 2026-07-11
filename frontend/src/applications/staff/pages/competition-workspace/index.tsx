@@ -23,6 +23,7 @@ import { DocumentsSection } from "@/widgets/competition-documents";
 import { GeneralSection } from "@/widgets/competition-general";
 import { ParticipantGroupsSection } from "@/widgets/competition-participant-groups";
 import { ParticipationFormatsSection } from "@/widgets/competition-participation-formats";
+import { PricingSection } from "@/widgets/competition-pricing";
 import { RegulationsSection } from "@/widgets/competition-regulations";
 import { CompetitionWorkspaceLayout, SectionPlaceholder } from "@/widgets/competition-workspace";
 
@@ -219,6 +220,14 @@ export function StaffCompetitionWorkspacePage(): React.JSX.Element {
           />
         ) : section.id === "admission-rules" ? (
           <AdmissionRulesSection
+            competition={competition}
+            checklist={checklist}
+            isLoading={detailQuery.isFetching && !detailQuery.isFetched}
+            onAutosaveStateChange={setAutosaveState}
+            onNavigateSection={handleSectionChange}
+          />
+        ) : section.id === "pricing" ? (
+          <PricingSection
             competition={competition}
             checklist={checklist}
             isLoading={detailQuery.isFetching && !detailQuery.isFetched}

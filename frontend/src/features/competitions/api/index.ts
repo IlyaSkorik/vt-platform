@@ -1,3 +1,4 @@
+export type { BulkPricingResult, PricingUpsertPayload } from "./competitions-api";
 export {
   useAddAdmissionRuleMutation,
   useAddAgeCategoryMutation,
@@ -9,6 +10,7 @@ export {
   useAddRegulationMutation,
   useArchiveCompetitionMutation,
   useBulkAddAdmissionRulesMutation,
+  useBulkPricingMutation,
   useCompetitionDetail,
   useCompetitionsList,
   useCreateCompetitionMutation,
@@ -24,6 +26,7 @@ export {
   useRemoveDocumentMutation,
   useRemoveParticipantGroupMutation,
   useRemoveParticipationFormatMutation,
+  useRemovePricingRuleMutation,
   useRemoveRegulationMutation,
   useReorderAgeCategoriesMutation,
   useReorderCategoriesMutation,
@@ -44,5 +47,6 @@ export {
   useUploadDocumentFileMutation,
   useUploadPosterMutation,
   useUploadRegulationFileMutation,
+  useUpsertPricingRuleMutation,
 } from "./competitions-api";
 export { competitionKeys } from "./keys";
