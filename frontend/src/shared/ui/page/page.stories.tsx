@@ -72,7 +72,7 @@ export const HeaderWithActions: Story = {
             </PageActions>
           }
         >
-          <PageTitle>Настройки конкурса</PageTitle>
+          <PageTitle>Настройки фестиваля</PageTitle>
           <PageDescription>Основные параметры и расписание.</PageDescription>
         </PageHeader>
       </PageContainer>

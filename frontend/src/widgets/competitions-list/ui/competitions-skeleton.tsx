@@ -2,7 +2,7 @@ import { Skeleton } from "@/shared/ui";
 
 export function CompetitionsListSkeleton(): React.JSX.Element {
   return (
-    <div role="status" aria-label="Загрузка конкурсов" className="space-y-4">
+    <div role="status" aria-label="Загрузка фестивалей" className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Skeleton className="h-9 w-full max-w-sm" />
         <Skeleton className="h-9 w-40" />

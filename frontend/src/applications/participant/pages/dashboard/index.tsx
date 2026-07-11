@@ -17,8 +17,8 @@ import {
 
 const personalCards = [
   {
-    title: "Ближайшие конкурсы",
-    description: "Подходящие события появятся здесь после подключения конкурсного модуля.",
+    title: "Ближайшие фестивали",
+    description: "Подходящие события появятся здесь после подключения фестивального модуля.",
     icon: Medal,
   },
   {
@@ -47,7 +47,7 @@ export function ParticipantDashboardPage(): React.JSX.Element {
       <PageHeader>
         <PageTitle>{firstName}, добро пожаловать</PageTitle>
         <PageDescription>
-          Личный кабинет собирает ваши конкурсы, участников, заявки и уведомления без
+          Личный кабинет собирает ваши фестивали, участников, заявки и уведомления без
           административных данных.
         </PageDescription>
       </PageHeader>

@@ -29,10 +29,10 @@ export const PARTICIPANT_NAVIGATION: ParticipantNavItem[] = [
     description: "Заявки и статусы подачи.",
   },
   {
-    title: "Конкурсы",
+    title: "Фестивали",
     path: ROUTES.cabinetCompetitions,
     icon: Medal,
-    description: "Конкурсы, доступные для участия.",
+    description: "Фестивали, доступные для участия.",
   },
   {
     title: "Документы",

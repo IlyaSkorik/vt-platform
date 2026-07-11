@@ -30,10 +30,10 @@ export const STAFF_NAVIGATION: StaffNavItem[] = [
     description: "Операционная сводка организации.",
   },
   {
-    title: "Конкурсы",
+    title: "Фестивали",
     path: ROUTES.staffCompetitions,
     icon: Medal,
-    description: "Управление конкурсами и сезонами.",
+    description: "Управление фестивалями и сезонами.",
   },
   {
     title: "Заявки",

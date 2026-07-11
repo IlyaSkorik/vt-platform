@@ -37,15 +37,15 @@ export function StaffCreateCompetitionPage(): React.JSX.Element {
       try {
         const created = await createCompetition.mutateAsync({
           organizerId,
-          title: "Новый конкурс",
+          title: "Новый фестиваль",
           season: defaultSeason(),
         });
         navigate(`${ROUTES.staffCompetitions}/${created.id}`, { replace: true });
       } catch (error) {
         const message =
           error instanceof ApiError
-            ? (error.problem?.detail ?? "Не удалось создать конкурс")
-            : "Не удалось создать конкурс";
+            ? (error.problem?.detail ?? "Не удалось создать фестиваль")
+            : "Не удалось создать фестиваль";
         toast.error(message);
       }
     })();
@@ -54,17 +54,17 @@ export function StaffCreateCompetitionPage(): React.JSX.Element {
   return (
     <PageContainer size="narrow">
       <PageHeader>
-        <PageTitle>Создание конкурса</PageTitle>
+        <PageTitle>Создание фестиваля</PageTitle>
         <PageDescription>Создаём черновик и открываем рабочее пространство…</PageDescription>
       </PageHeader>
       <PageContent className="space-y-4">
-        <div role="status" aria-label="Создание конкурса" className="space-y-3">
+        <div role="status" aria-label="Создание фестиваля" className="space-y-3">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-40 w-full" />
         </div>
         {createCompetition.isError ? (
           <Button asChild variant="outline">
-            <Link to={ROUTES.staffCompetitions}>К списку конкурсов</Link>
+            <Link to={ROUTES.staffCompetitions}>К списку фестивалей</Link>
           </Button>
         ) : null}
       </PageContent>

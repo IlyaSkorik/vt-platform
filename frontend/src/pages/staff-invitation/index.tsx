@@ -26,7 +26,7 @@ const ROLE_LABELS: Record<StaffInvitationRole, string> = {
   OWNER: "Владелец",
   DIRECTOR: "Директор",
   FINANCE: "Финансы",
-  COMPETITION_MANAGER: "Менеджер конкурсов",
+  COMPETITION_MANAGER: "Менеджер фестивалей",
   CONTENT_MANAGER: "Контент-менеджер",
   MODERATOR: "Модератор",
   SUPPORT: "Поддержка",

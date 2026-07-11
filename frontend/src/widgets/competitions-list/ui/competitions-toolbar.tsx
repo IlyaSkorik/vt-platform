@@ -29,10 +29,10 @@ export function CompetitionsToolbar({
       <Input
         value={search}
         onChange={(event) => onSearchChange(event.target.value)}
-        placeholder="Поиск конкурсов…"
+        placeholder="Поиск фестивалей…"
         leadingIcon={<Search aria-hidden="true" />}
         containerClassName="w-full lg:max-w-sm"
-        aria-label="Поиск конкурсов"
+        aria-label="Поиск фестивалей"
       />
       <div className="grid gap-3 sm:grid-cols-2 lg:ml-auto lg:flex lg:items-center">
         <Select

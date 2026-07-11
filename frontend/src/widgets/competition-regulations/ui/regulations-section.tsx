@@ -216,7 +216,7 @@ export function RegulationsSection({
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-6">
           {isReadOnly ? (
-            <Alert variant="warning" title="Конкурс в архиве">
+            <Alert variant="warning" title="Фестиваль в архиве">
               Положение доступно только для просмотра.
             </Alert>
           ) : (
@@ -227,7 +227,7 @@ export function RegulationsSection({
           )}
 
           <PageSection
-            title="Положение конкурса"
+            title="Положение фестиваля"
             description="Черновик готовится локально; публикация создаёт неизменяемую версию на сервере."
           >
             <CurrentRegulationCard
@@ -374,7 +374,7 @@ export function RegulationsSection({
           <DialogHeader>
             <DialogTitle>Опубликовать версию {watchedValues.version}?</DialogTitle>
             <DialogDescription>
-              После публикации документ нельзя изменить. Новая версия станет текущей для конкурса.
+              После публикации документ нельзя изменить. Новая версия станет текущей для фестиваля.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

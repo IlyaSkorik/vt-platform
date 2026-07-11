@@ -56,7 +56,7 @@ const ACTIVITY_META: Record<ActivityKind, { icon: LucideIcon; className: string;
   competition_published: {
     icon: Megaphone,
     className: "bg-info-surface text-info",
-    verb: "конкурс опубликован",
+    verb: "фестиваль опубликован",
   },
 };
 

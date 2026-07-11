@@ -1,6 +1,6 @@
 # DATA-002 — Business Rules Catalog v1.0
 
-**Project:** «Взлёт талантов» — цифровая экосистема для организации детских творческих конкурсов
+**Project:** «Взлёт талантов» — цифровая экосистема для организации детских творческих фестивалей
 **Document type:** Business Rules Catalog (business language only)
 **Status:** Draft for review (v1.0)
 **Owner:** Domain Architecture Group

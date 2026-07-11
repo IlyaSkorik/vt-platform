@@ -73,7 +73,7 @@ export function GeneralLivePreview({
             </dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Конкурс</dt>
+            <dt className="text-muted-foreground">Фестиваль</dt>
             <dd className="font-medium">
               {periodLabel(values.competitionStart, values.competitionEnd)}
             </dd>

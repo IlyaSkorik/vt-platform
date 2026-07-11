@@ -90,9 +90,9 @@ export function WorkspaceHeader({
     { title: string; description: string; confirmLabel: string; onConfirm: () => void }
   > = {
     publish: {
-      title: "Опубликовать конкурс?",
+      title: "Опубликовать фестиваль?",
       description:
-        "Конкурс станет доступен согласно настройкам публикации. После этого можно открыть регистрацию.",
+        "Фестиваль станет доступен согласно настройкам публикации. После этого можно открыть регистрацию.",
       confirmLabel: "Опубликовать",
       onConfirm: onPublish,
     },
@@ -265,9 +265,9 @@ export function WorkspaceHeader({
       <Dialog open={archiveOpen} onOpenChange={setArchiveOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Архивировать конкурс?</DialogTitle>
+            <DialogTitle>Архивировать фестиваль?</DialogTitle>
             <DialogDescription>
-              Архивированный конкурс станет только для чтения: конфигурацию можно смотреть, но
+              Архивированный фестиваль станет только для чтения: конфигурацию можно смотреть, но
               редактировать и принимать заявки уже нельзя.
             </DialogDescription>
           </DialogHeader>

@@ -37,7 +37,7 @@ export const MOCK_STATS: readonly StatMetric[] = [
 export const MOCK_COMPETITIONS: readonly CompetitionSummary[] = [
   {
     id: "c-1",
-    title: "Весенний вокальный конкурс",
+    title: "Весенний вокальный фестиваль",
     status: "submission",
     applicationCount: 214,
     closesAt: at(6 * DAY),
@@ -76,7 +76,7 @@ export const MOCK_APPLICATIONS: readonly ApplicationSummary[] = [
   {
     id: "a-1",
     participantAlias: "Участник #A19F",
-    competitionTitle: "Весенний вокальный конкурс",
+    competitionTitle: "Весенний вокальный фестиваль",
     nomination: "Эстрадный вокал",
     status: "under_review",
     submittedAt: at(-35 * MINUTE),
@@ -108,7 +108,7 @@ export const MOCK_APPLICATIONS: readonly ApplicationSummary[] = [
   {
     id: "a-5",
     participantAlias: "Участник #E3A7",
-    competitionTitle: "Весенний вокальный конкурс",
+    competitionTitle: "Весенний вокальный фестиваль",
     nomination: "Народный вокал",
     status: "rejected",
     submittedAt: at(-2 * DAY),
@@ -155,7 +155,7 @@ export const MOCK_EVENTS: readonly UpcomingEvent[] = [
     id: "e-1",
     kind: "submission_deadline",
     title: "Закрытие приёма заявок",
-    competitionTitle: "Весенний вокальный конкурс",
+    competitionTitle: "Весенний вокальный фестиваль",
     startsAt: at(6 * DAY),
   },
   {

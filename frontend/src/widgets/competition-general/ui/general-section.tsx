@@ -161,7 +161,7 @@ export function GeneralSection({
         if (afterBranding.version < baselineVersion) {
           onAutosaveStateChange("error");
           setFormError(
-            "На сервере есть более новая версия конкурса. Обновите страницу и попробуйте снова.",
+            "На сервере есть более новая версия фестиваля. Обновите страницу и попробуйте снова.",
           );
           toast.error("Не удалось сохранить — на сервере более новые данные");
           return;
@@ -218,7 +218,7 @@ export function GeneralSection({
           setFormError(message);
         }
         toast.error(
-          mode === "manual" ? "Не удалось сохранить конкурс" : "Автосохранение не удалось",
+          mode === "manual" ? "Не удалось сохранить фестиваль" : "Автосохранение не удалось",
         );
         throw error;
       } finally {
@@ -322,8 +322,8 @@ export function GeneralSection({
           ) : null}
 
           {isReadOnly ? (
-            <Alert variant="warning" title="Конкурс в архиве">
-              Этот конкурс доступен только для просмотра. Перед редактированием его нужно вывести из
+            <Alert variant="warning" title="Фестиваль в архиве">
+              Этот фестиваль доступен только для просмотра. Перед редактированием его нужно вывести из
               архива.
             </Alert>
           ) : null}
@@ -363,7 +363,7 @@ export function GeneralSection({
 
           <PageSection
             title="Брендинг"
-            description="Афиша конкурса для карточек и публичных страниц."
+            description="Афиша фестиваля для карточек и публичных страниц."
           >
             <Card className="shadow-none">
               <CardContent className="pt-6">
@@ -379,7 +379,7 @@ export function GeneralSection({
             </Card>
           </PageSection>
 
-          <PageSection title="Даты конкурса" description="Периоды регистрации и проведения.">
+          <PageSection title="Даты фестиваля" description="Периоды регистрации и проведения.">
             <Card className="shadow-none">
               <CardHeader className="pb-0">
                 <CardTitle className="text-base">Регистрация</CardTitle>
@@ -403,18 +403,18 @@ export function GeneralSection({
               </CardContent>
               <CardHeader className="pb-0">
                 <CardTitle className="text-base">Проведение</CardTitle>
-                <CardDescription>Когда проходит конкурс.</CardDescription>
+                <CardDescription>Когда проходит фестиваль.</CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 pt-4 md:grid-cols-2">
                 <Input
-                  label="Начало конкурса"
+                  label="Начало фестиваля"
                   type="date"
                   error={errors.competitionStart?.message}
                   disabled={isReadOnly}
                   {...register("competitionStart")}
                 />
                 <Input
-                  label="Окончание конкурса"
+                  label="Окончание фестиваля"
                   type="date"
                   error={errors.competitionEnd?.message}
                   disabled={isReadOnly}

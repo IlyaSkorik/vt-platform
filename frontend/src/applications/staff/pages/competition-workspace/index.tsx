@@ -23,7 +23,7 @@ import { CompetitionWorkspaceLayout, SectionPlaceholder } from "@/widgets/compet
 
 function WorkspaceSkeleton(): React.JSX.Element {
   return (
-    <div role="status" aria-label="Загрузка рабочего пространства конкурса" className="space-y-4">
+    <div role="status" aria-label="Загрузка рабочего пространства фестиваля" className="space-y-4">
       <Skeleton className="h-20 w-full" />
       <div className="grid gap-4 lg:grid-cols-[16rem_1fr]">
         <Skeleton className="h-96 w-full" />
@@ -85,13 +85,13 @@ export function StaffCompetitionWorkspacePage(): React.JSX.Element {
     return (
       <PageContainer size="narrow">
         <EmptyState
-          title="Не удалось открыть конкурс"
-          description="Конкурс мог быть удалён, либо у вас нет доступа."
+          title="Не удалось открыть фестиваль"
+          description="Фестиваль мог быть удалён, либо у вас нет доступа."
           action={
             <div className="flex flex-wrap gap-2">
               <Button onClick={() => void detailQuery.refetch()}>Повторить</Button>
               <Button asChild variant="outline">
-                <Link to={ROUTES.staffCompetitions}>К списку конкурсов</Link>
+                <Link to={ROUTES.staffCompetitions}>К списку фестивалей</Link>
               </Button>
             </div>
           }
@@ -104,7 +104,7 @@ export function StaffCompetitionWorkspacePage(): React.JSX.Element {
   if (!competition || !checklist) {
     return (
       <PageContainer size="narrow">
-        <Alert variant="danger" title="Конкурс не найден" />
+        <Alert variant="danger" title="Фестиваль не найден" />
       </PageContainer>
     );
   }
@@ -120,22 +120,22 @@ export function StaffCompetitionWorkspacePage(): React.JSX.Element {
         onPublish={() =>
           void runLifecycleAction(
             () => publish.mutateAsync(competition.id),
-            "Конкурс опубликован",
-            "Не удалось опубликовать конкурс",
+            "Фестиваль опубликован",
+            "Не удалось опубликовать фестиваль",
           )
         }
         onMarkConfigured={() =>
           void runLifecycleAction(
             () => markConfigured.mutateAsync(competition.id),
-            "Конкурс отмечен как настроенный",
-            "Не удалось отметить конкурс как настроенный",
+            "Фестиваль отмечен как настроенный",
+            "Не удалось отметить фестиваль как настроенный",
           )
         }
         onMarkReady={() =>
           void runLifecycleAction(
             () => markReady.mutateAsync(competition.id),
-            "Конкурс отмечен как готовый",
-            "Не удалось отметить конкурс как готовый",
+            "Фестиваль отмечен как готовый",
+            "Не удалось отметить фестиваль как готовый",
           )
         }
         onOpenRegistration={() =>
@@ -148,8 +148,8 @@ export function StaffCompetitionWorkspacePage(): React.JSX.Element {
         onArchive={() =>
           void runLifecycleAction(
             () => archive.mutateAsync(competition.id),
-            "Конкурс архивирован",
-            "Не удалось архивировать конкурс",
+            "Фестиваль архивирован",
+            "Не удалось архивировать фестиваль",
           )
         }
         publishing={publish.isPending}

@@ -62,16 +62,16 @@ export function StaffCompetitionsPage(): React.JSX.Element {
     try {
       const created = await createCompetition.mutateAsync({
         organizerId,
-        title: "Новый конкурс",
+        title: "Новый фестиваль",
         season: defaultSeason(),
       });
-      toast.success("Черновик конкурса создан");
+      toast.success("Черновик фестиваля создан");
       navigate(`${ROUTES.staffCompetitions}/${created.id}`);
     } catch (error) {
       const message =
         error instanceof ApiError
-          ? (error.problem?.detail ?? "Не удалось создать конкурс")
-          : "Не удалось создать конкурс";
+          ? (error.problem?.detail ?? "Не удалось создать фестиваль")
+          : "Не удалось создать фестиваль";
       toast.error(message);
     }
   };
@@ -82,13 +82,13 @@ export function StaffCompetitionsPage(): React.JSX.Element {
     }
     try {
       await archiveCompetition.mutateAsync(archiveTargetId);
-      toast.success("Конкурс архивирован");
+      toast.success("Фестиваль архивирован");
       setArchiveTargetId(null);
     } catch (error) {
       const message =
         error instanceof ApiError
-          ? (error.problem?.detail ?? "Не удалось архивировать конкурс")
-          : "Не удалось архивировать конкурс";
+          ? (error.problem?.detail ?? "Не удалось архивировать фестиваль")
+          : "Не удалось архивировать фестиваль";
       toast.error(message);
     }
   };
@@ -104,12 +104,12 @@ export function StaffCompetitionsPage(): React.JSX.Element {
               disabled={createCompetition.isPending}
               leftIcon={<Plus aria-hidden="true" />}
             >
-              Создать конкурс
+              Создать фестиваль
             </Button>
           </PageActions>
         }
       >
-        <PageTitle>Конкурсы</PageTitle>
+        <PageTitle>Фестивали</PageTitle>
         <PageDescription>
           Управляйте черновиками, публикацией и регистрацией в одном рабочем пространстве.
         </PageDescription>
@@ -171,9 +171,9 @@ export function StaffCompetitionsPage(): React.JSX.Element {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Архивировать конкурс?</DialogTitle>
+            <DialogTitle>Архивировать фестиваль?</DialogTitle>
             <DialogDescription>
-              Архивированный конкурс станет только для чтения и скроется из активных операций.
+              Архивированный фестиваль станет только для чтения и скроется из активных операций.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

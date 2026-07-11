@@ -39,7 +39,7 @@ export const NAVIGATION: NavModel = [
       { id: "participants", label: "Участники", to: ROUTES.participants, icon: Users },
       {
         id: "competitions",
-        label: "Конкурсы",
+        label: "Фестивали",
         to: ROUTES.competitions,
         icon: Trophy,
         children: [

@@ -1,6 +1,6 @@
 # API-000 — REST API Standards v1.0
 
-**Project:** «Взлёт талантов» — цифровая экосистема для организации детских творческих конкурсов
+**Project:** «Взлёт талантов» — цифровая экосистема для организации детских творческих фестивалей
 **Document type:** Official Platform API Standard (normative)
 **Status:** Approved baseline (v1.0)
 **Owner:** API Architecture Group

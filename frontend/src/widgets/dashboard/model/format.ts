@@ -85,7 +85,7 @@ export const TREND_GLYPH: Record<TrendDirection, string> = {
 /** Russian labels for the five headline metrics. */
 export const STAT_LABELS: Record<StatKey, string> = {
   participants: "Участники",
-  competitions: "Конкурсы",
+  competitions: "Фестивали",
   applications: "Заявки",
   results: "Результаты",
   finance: "Финансы",

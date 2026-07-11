@@ -158,7 +158,7 @@ test.describe("Organizer workspace screenshots", () => {
     await mockStaffApi(page);
 
     await page.goto("/staff/competitions");
-    await expect(page.getByRole("heading", { name: "Конкурсы", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Фестивали", level: 1 })).toBeVisible();
     await page.screenshot({
       path: path.join(screenshotDir, "01-competitions-page.png"),
       fullPage: true,
@@ -177,7 +177,7 @@ test.describe("Organizer workspace screenshots", () => {
       });
     });
     await page.reload();
-    await expect(page.getByText("Пока нет конкурсов")).toBeVisible();
+    await expect(page.getByText("Пока нет фестивалей")).toBeVisible();
     await page.screenshot({ path: path.join(screenshotDir, "02-empty-state.png"), fullPage: true });
 
     await mockStaffApi(page);

@@ -37,7 +37,7 @@ export function buildPublicationChecklist(competition: CompetitionDetail): Publi
       label: "Название фестиваля",
       done:
         hasText(competition.title) &&
-        competition.title.trim() !== "Новый конкурс" &&
+        competition.title.trim() !== "Новый фестиваль" &&
         competition.title.trim() !== "New Competition",
       sectionId: "general",
       blocking: false,
@@ -58,7 +58,7 @@ export function buildPublicationChecklist(competition: CompetitionDetail): Publi
     },
     {
       id: "competition-period",
-      label: "Даты конкурса",
+      label: "Даты фестиваля",
       done: hasPeriod(competition.competitionPeriod),
       sectionId: "general",
       blocking: false,

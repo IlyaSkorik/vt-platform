@@ -15,19 +15,19 @@ function renderView(props: Parameters<typeof RecentCompetitionsView>[0]) {
 describe("RecentCompetitionsView", () => {
   it("lists competitions with their status labels on success", () => {
     renderView({ status: "success", competitions: MOCK_COMPETITIONS });
-    expect(screen.getByText("Весенний вокальный конкурс")).toBeInTheDocument();
+    expect(screen.getByText("Весенний вокальный фестиваль")).toBeInTheDocument();
     // "submission" status maps to the "Приём заявок" badge label.
     expect(screen.getByText("Приём заявок")).toBeInTheDocument();
   });
 
   it("renders the empty state when there are no competitions", () => {
     renderView({ status: "empty", competitions: [] });
-    expect(screen.getByText("Нет конкурсов")).toBeInTheDocument();
+    expect(screen.getByText("Нет фестивалей")).toBeInTheDocument();
   });
 
   it("renders an accessible link to the full registry", () => {
     renderView({ status: "success", competitions: MOCK_COMPETITIONS });
-    expect(screen.getByRole("link", { name: "Все конкурсы" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Все фестивали" })).toHaveAttribute(
       "href",
       "/competitions",
     );

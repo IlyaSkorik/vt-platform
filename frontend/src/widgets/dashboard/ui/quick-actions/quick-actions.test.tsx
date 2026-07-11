@@ -15,7 +15,7 @@ describe("QuickActions", () => {
       "href",
       "/participants",
     );
-    expect(screen.getByRole("link", { name: /Создать конкурс/ })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /Создать фестиваль/ })).toHaveAttribute(
       "href",
       "/competitions",
     );

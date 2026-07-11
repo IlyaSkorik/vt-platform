@@ -42,7 +42,7 @@ export const generalInformationSchema = z
       context.addIssue({
         code: "custom",
         path: ["competitionEnd"],
-        message: "Дата окончания конкурса не может быть раньше начала",
+        message: "Дата окончания фестиваля не может быть раньше начала",
       });
     }
   });

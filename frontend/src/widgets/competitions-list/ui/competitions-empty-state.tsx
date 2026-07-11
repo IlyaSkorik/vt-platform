@@ -15,11 +15,11 @@ export function CompetitionsEmptyState({
   return (
     <EmptyState
       icon={<Medal aria-hidden="true" />}
-      title="Пока нет конкурсов"
-      description="Создайте первый конкурс, чтобы настроить категории, цены и регистрацию."
+      title="Пока нет фестивалей"
+      description="Создайте первый фестиваль, чтобы настроить категории, цены и регистрацию."
       action={
         <Button onClick={onCreate} loading={creating} disabled={creating}>
-          Создать конкурс
+          Создать фестиваль
         </Button>
       }
     />
@@ -29,7 +29,7 @@ export function CompetitionsEmptyState({
 export function CompetitionsErrorState({ onRetry }: { onRetry: () => void }): React.JSX.Element {
   return (
     <EmptyState
-      title="Не удалось загрузить конкурсы"
+      title="Не удалось загрузить фестивали"
       description="Проверьте соединение и попробуйте снова."
       action={
         <div className="flex flex-wrap gap-2">

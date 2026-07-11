@@ -1,6 +1,6 @@
 # DATA-001 — Business Data Model v1.0
 
-**Project:** «Взлёт талантов» — цифровая экосистема для организации детских творческих конкурсов
+**Project:** «Взлёт талантов» — цифровая экосистема для организации детских творческих фестивалей
 **Document type:** Business Domain & Data Model (business language only)
 **Status:** Draft for review (v1.0)
 **Owner:** Enterprise Data Architecture Group

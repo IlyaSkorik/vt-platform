@@ -22,7 +22,7 @@ const operationalCards = [
     icon: ClipboardList,
   },
   {
-    title: "Ближайшие конкурсы",
+    title: "Ближайшие фестивали",
     value: "—",
     description: "План событий подключается отдельным модулем.",
     icon: Medal,
@@ -47,7 +47,7 @@ export function StaffDashboardPage(): React.JSX.Element {
       <PageHeader>
         <PageTitle>Панель управления</PageTitle>
         <PageDescription>
-          Операционное пространство организации: заявки, конкурсы, расписание, команда и доступы.
+          Операционное пространство организации: заявки, фестивали, расписание, команда и доступы.
         </PageDescription>
       </PageHeader>
       <PageContent>

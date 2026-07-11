@@ -61,7 +61,7 @@ describe("AppShell — navigation rendering", () => {
     const sidebar = screen.getByRole("complementary", { name: "Боковая навигация" });
     expect(within(sidebar).getByRole("link", { name: "Кабинет" })).toBeInTheDocument();
     expect(within(sidebar).getByRole("link", { name: "Участники" })).toBeInTheDocument();
-    expect(within(sidebar).getByRole("button", { name: "Конкурсы" })).toBeInTheDocument();
+    expect(within(sidebar).getByRole("button", { name: "Фестивали" })).toBeInTheDocument();
   });
 
   it("renders group headings", () => {
@@ -125,7 +125,7 @@ describe("AppShell — nested navigation & keyboard", () => {
     const user = userEvent.setup();
     renderShell();
 
-    const branch = screen.getByRole("button", { name: "Конкурсы" });
+    const branch = screen.getByRole("button", { name: "Фестивали" });
     expect(branch).toHaveAttribute("aria-expanded", "false");
 
     await user.click(branch);
@@ -137,7 +137,7 @@ describe("AppShell — nested navigation & keyboard", () => {
   it("auto-expands the branch containing the active route", () => {
     setViewport(false);
     renderShell("/applications");
-    expect(screen.getByRole("button", { name: "Конкурсы" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Фестивали" })).toHaveAttribute(
       "aria-expanded",
       "true",
     );
@@ -171,7 +171,7 @@ describe("AppShell — breadcrumbs", () => {
     setViewport(false);
     renderShell("/applications");
     const crumbs = screen.getByRole("navigation", { name: "Хлебные крошки" });
-    expect(within(crumbs).getByRole("link", { name: "Конкурсы" })).toBeInTheDocument();
+    expect(within(crumbs).getByRole("link", { name: "Фестивали" })).toBeInTheDocument();
     expect(within(crumbs).getByText("Заявки")).toHaveAttribute("aria-current", "page");
   });
 

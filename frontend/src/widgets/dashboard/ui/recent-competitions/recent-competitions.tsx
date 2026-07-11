@@ -60,16 +60,16 @@ export function RecentCompetitionsView({
 }: RecentCompetitionsViewProps): React.JSX.Element {
   return (
     <WidgetCard
-      title="Последние конкурсы"
+      title="Последние фестивали"
       status={status}
       loadingSkeleton={<CompetitionsSkeleton />}
       emptyIcon={<Trophy />}
-      emptyTitle="Нет конкурсов"
-      emptyDescription="Созданные конкурсы появятся здесь."
+      emptyTitle="Нет фестивалей"
+      emptyDescription="Созданные фестивали появятся здесь."
       {...(onRetry ? { onRetry } : {})}
       headerAction={
         <Button asChild variant="ghost" size="sm">
-          <Link to={ROUTES.competitions}>Все конкурсы</Link>
+          <Link to={ROUTES.competitions}>Все фестивали</Link>
         </Button>
       }
     >

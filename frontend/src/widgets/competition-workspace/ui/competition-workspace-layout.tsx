@@ -66,7 +66,7 @@ export function CompetitionWorkspaceLayout({
         <WorkspaceSidebar activeSection={activeSection} onSectionChange={onSectionChange} />
         <section
           className="min-w-0 flex-1 overflow-y-auto p-4 md:p-6"
-          aria-label="Содержимое раздела конкурса"
+          aria-label="Содержимое раздела фестиваля"
         >
           {children}
         </section>

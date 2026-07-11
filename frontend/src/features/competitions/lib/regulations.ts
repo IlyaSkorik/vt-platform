@@ -54,7 +54,7 @@ export function createEmptyRegulationDraft(
   base?: _Regulation | null,
 ): RegulationDraftValues {
   return {
-    title: base?.title ?? "Положение конкурса",
+    title: base?.title ?? "Положение фестиваля",
     version: suggestNextRegulationVersion(regulations),
     publicationDate: todayIsoDate(),
     fileReference: "",

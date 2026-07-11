@@ -59,7 +59,7 @@ function DemoPage({ title }: { title: string }): React.JSX.Element {
       </PageHeader>
       <PageContent>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {["Конкурсы", "Заявки", "Судейство"].map((c) => (
+          {["Фестивали", "Заявки", "Судейство"].map((c) => (
             <Card key={c}>
               <CardContent className="pt-6">
                 <h2 className="font-medium text-sm">{c}</h2>

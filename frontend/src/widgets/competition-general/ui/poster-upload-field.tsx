@@ -54,7 +54,7 @@ export function PosterUploadField({
   return (
     <div className="space-y-2">
       <p className="text-sm font-medium text-foreground" id={`${inputId}-label`}>
-        Афиша конкурса
+        Афиша фестиваля
       </p>
 
       <fieldset
@@ -86,7 +86,7 @@ export function PosterUploadField({
       >
         {previewUrl ? (
           <div className="relative aspect-[3/4] max-h-80 w-full bg-muted/30">
-            <img src={previewUrl} alt="Афиша конкурса" className="size-full object-contain" />
+            <img src={previewUrl} alt="Афиша фестиваля" className="size-full object-contain" />
             {!disabled ? (
               <div className="absolute top-2 right-2 flex gap-2">
                 <Button

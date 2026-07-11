@@ -56,13 +56,13 @@ describe("Dashboard (integration)", () => {
 
   it("renders the quick-action shortcuts immediately", () => {
     renderDashboard();
-    expect(screen.getByRole("link", { name: /Создать конкурс/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Создать фестиваль/ })).toBeInTheDocument();
   });
 
   it("renders all widget regions", () => {
     renderDashboard();
     // Widget regions are labelled Cards; they exist even while their data loads.
-    expect(screen.getByLabelText("Последние конкурсы")).toBeInTheDocument();
+    expect(screen.getByLabelText("Последние фестивали")).toBeInTheDocument();
     expect(screen.getByLabelText("Последние заявки")).toBeInTheDocument();
     expect(screen.getByLabelText("Уведомления")).toBeInTheDocument();
     expect(screen.getByLabelText("Ближайшие события")).toBeInTheDocument();
@@ -74,7 +74,7 @@ describe("Dashboard (integration)", () => {
     // Statistics tile value appears once the stats query settles.
     expect(await screen.findByText("1 284")).toBeInTheDocument();
     // A competition row appears once that query settles.
-    expect(await screen.findByText("Весенний вокальный конкурс")).toBeInTheDocument();
+    expect(await screen.findByText("Весенний вокальный фестиваль")).toBeInTheDocument();
     // An unread notifications badge appears once notifications settle.
     expect(await screen.findByLabelText("3 непрочитанных")).toBeInTheDocument();
   });

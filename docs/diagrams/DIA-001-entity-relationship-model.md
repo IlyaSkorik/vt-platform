@@ -1,6 +1,6 @@
 # DIA-001 — Entity Relationship Model v1.0 (Logical Data Model)
 
-**Project:** «Взлёт талантов» — цифровая экосистема для организации детских творческих конкурсов
+**Project:** «Взлёт талантов» — цифровая экосистема для организации детских творческих фестивалей
 **Document type:** Logical Data Model / Entity-Relationship Model (business & logical level)
 **Status:** Draft for review (v1.0)
 **Owner:** Data Architecture Group

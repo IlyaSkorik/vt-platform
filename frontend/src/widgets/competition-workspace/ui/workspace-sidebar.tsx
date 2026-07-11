@@ -12,7 +12,7 @@ export function WorkspaceSidebar({
 }: WorkspaceSidebarProps): React.JSX.Element {
   return (
     <aside
-      aria-label="Разделы конкурса"
+      aria-label="Разделы фестиваля"
       className="w-full shrink-0 border-border border-b bg-card md:w-64 md:overflow-y-auto md:border-r md:border-b-0"
     >
       <nav className="flex gap-1 overflow-x-auto p-2 md:flex-col md:overflow-visible">

@@ -1,6 +1,6 @@
 # API-001 — Identity API v1.0
 
-**Project:** «Взлёт талантов» — цифровая экосистема для организации детских творческих конкурсов
+**Project:** «Взлёт талантов» — цифровая экосистема для организации детских творческих фестивалей
 **Document type:** REST API Contract — Identity domain (design only)
 **Status:** Draft for review (v1.0)
 **Owner:** Backend / API Architecture Group

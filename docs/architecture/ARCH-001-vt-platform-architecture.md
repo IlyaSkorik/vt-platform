@@ -1,6 +1,6 @@
 # VT Platform Architecture v1.0
 
-**Project:** «Взлёт талантов» — цифровая экосистема для организации детских творческих конкурсов
+**Project:** «Взлёт талантов» — цифровая экосистема для организации детских творческих фестивалей
 **Document type:** Principal Technical Architecture Document
 **Status:** Approved baseline (v1.0)
 **Owner:** Platform Architecture Group

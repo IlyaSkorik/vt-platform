@@ -23,8 +23,8 @@ const ACTIONS: readonly QuickAction[] = [
   },
   {
     id: "create-competition",
-    label: "Создать конкурс",
-    description: "Настроить новый конкурс и номинации",
+    label: "Создать фестиваль",
+    description: "Настроить новый фестиваль и номинации",
     to: ROUTES.competitions,
     icon: PlusCircle,
   },

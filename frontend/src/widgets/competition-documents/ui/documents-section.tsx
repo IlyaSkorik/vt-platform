@@ -223,7 +223,7 @@ export function DocumentsSection({
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-6">
           {isReadOnly ? (
-            <Alert variant="warning" title="Конкурс в архиве">
+            <Alert variant="warning" title="Фестиваль в архиве">
               Документы доступны только для просмотра.
             </Alert>
           ) : null}
@@ -235,7 +235,7 @@ export function DocumentsSection({
           ) : null}
 
           <PageSection
-            title="Документы конкурса"
+            title="Документы фестиваля"
             description="Загружайте файлы для участников и публичных страниц. Порядок можно менять перетаскиванием."
           >
             <Card className="shadow-none">
@@ -295,7 +295,7 @@ export function DocumentsSection({
                     }
                   />
                 ) : (
-                  <ul className="space-y-3" aria-label="Список документов конкурса">
+                  <ul className="space-y-3" aria-label="Список документов фестиваля">
                     {visibleDocuments.map((document) => {
                       const fileUrl = resolveMediaUrl(document.fileReference);
                       const uploadedAt = documentUploadDate(document);
@@ -464,8 +464,8 @@ export function DocumentsSection({
           <DialogHeader>
             <DialogTitle>Удалить документ?</DialogTitle>
             <DialogDescription>
-              «{deleteTarget?.title}» будет удалён из конкурса. Файл останется в хранилище, но
-              ссылка из конкурса исчезнет.
+              «{deleteTarget?.title}» будет удалён из фестиваля. Файл останется в хранилище, но
+              ссылка из фестиваля исчезнет.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
