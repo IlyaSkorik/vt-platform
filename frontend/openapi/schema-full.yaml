@@ -4231,6 +4231,34 @@ paths:
               schema:
                 $ref: '#/components/schemas/PublicFestivalListEnvelope'
           description: ''
+  /api/v1/public/festivals/{festival_id}:
+    get:
+      operationId: getPublicFestival
+      description: |-
+        The public landing view of a single competition.
+
+        Powers the participant-facing Competition Landing Page: the hero facts, the
+        organizer's Landing Builder blocks (enabled, in order) and the reused
+        Competition Contacts. Unpublished, draft or archived competitions are
+        indistinguishable from a missing id — both return a 404 problem, never
+        leaking their existence.
+      parameters:
+      - in: path
+        name: festival_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Public Catalog
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicFestivalDetailEnvelope'
+          description: ''
   /api/v1/staff/invitations:
     post:
       operationId: createStaffInvitation
@@ -5818,6 +5846,213 @@ components:
       - updatedAt
       - venueAddress
       - venueName
+    PublicFestivalContacts:
+      type: object
+      description: 'The public contacts module: organizer identity, channels, team,
+        venue.'
+      properties:
+        organizationName:
+          type:
+          - string
+          - 'null'
+        phone:
+          type:
+          - string
+          - 'null'
+        email:
+          type:
+          - string
+          - 'null'
+        website:
+          type:
+          - string
+          - 'null'
+        address:
+          type:
+          - string
+          - 'null'
+        social:
+          $ref: '#/components/schemas/PublicFestivalSocialLinks'
+        team:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicFestivalTeamMember'
+        emergency:
+          $ref: '#/components/schemas/PublicFestivalEmergency'
+        venue:
+          $ref: '#/components/schemas/PublicFestivalVenue'
+      required:
+      - address
+      - email
+      - emergency
+      - organizationName
+      - phone
+      - social
+      - team
+      - venue
+      - website
+    PublicFestivalDetail:
+      type: object
+      description: One competition's full public landing view (catalog facts + landing
+        + contacts).
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        season:
+          type: string
+        description:
+          type:
+          - string
+          - 'null'
+        status:
+          type: string
+        organizer:
+          $ref: '#/components/schemas/PublicFestivalOrganizer'
+        city:
+          type:
+          - string
+          - 'null'
+        venueName:
+          type:
+          - string
+          - 'null'
+        venueAddress:
+          type:
+          - string
+          - 'null'
+        coverImage:
+          type:
+          - string
+          - 'null'
+        competitionStart:
+          type:
+          - string
+          - 'null'
+          format: date
+        competitionEnd:
+          type:
+          - string
+          - 'null'
+          format: date
+        registrationStart:
+          type:
+          - string
+          - 'null'
+          format: date
+        registrationEnd:
+          type:
+          - string
+          - 'null'
+          format: date
+        applicationDeadline:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        pricing:
+          $ref: '#/components/schemas/PublicFestivalPricing'
+        formats:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicFestivalFormat'
+        modes:
+          type: array
+          items:
+            type: string
+        categories:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        updatedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        landing:
+          $ref: '#/components/schemas/PublicFestivalLanding'
+        contacts:
+          $ref: '#/components/schemas/PublicFestivalContacts'
+        regulation:
+          oneOf:
+          - $ref: '#/components/schemas/PublicFestivalRegulation'
+          - type: 'null'
+      required:
+      - applicationDeadline
+      - categories
+      - city
+      - competitionEnd
+      - competitionStart
+      - contacts
+      - coverImage
+      - createdAt
+      - description
+      - formats
+      - id
+      - landing
+      - modes
+      - organizer
+      - pricing
+      - registrationEnd
+      - registrationStart
+      - regulation
+      - season
+      - status
+      - title
+      - updatedAt
+      - venueAddress
+      - venueName
+    PublicFestivalDetailEnvelope:
+      type: object
+      description: The full ``GET /public/festivals/{id}`` response envelope.
+      properties:
+        data:
+          $ref: '#/components/schemas/PublicFestivalDetail'
+        meta:
+          $ref: '#/components/schemas/PublicCatalogMeta'
+      required:
+      - data
+      - meta
+    PublicFestivalEmergency:
+      type: object
+      description: Optional emergency/urgent contact line.
+      properties:
+        phone:
+          type:
+          - string
+          - 'null'
+        email:
+          type:
+          - string
+          - 'null'
+        notes:
+          type:
+          - string
+          - 'null'
+      required:
+      - email
+      - notes
+      - phone
+    PublicFestivalFaqItem:
+      type: object
+      description: A question/answer pair in a landing FAQ block.
+      properties:
+        id:
+          type: string
+        question:
+          type: string
+        answer:
+          type: string
+      required:
+      - answer
+      - id
+      - question
     PublicFestivalFormat:
       type: object
       description: A participation format with its normalized display mode.
@@ -5831,6 +6066,117 @@ components:
       required:
       - mode
       - name
+    PublicFestivalGalleryImage:
+      type: object
+      description: An image in a landing GALLERY block.
+      properties:
+        id:
+          type: string
+        url:
+          type: string
+        caption:
+          type:
+          - string
+          - 'null'
+      required:
+      - caption
+      - id
+      - url
+    PublicFestivalJuryCard:
+      type: object
+      description: A jury/expert card in a landing JURY block.
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        photo:
+          type:
+          - string
+          - 'null'
+        position:
+          type:
+          - string
+          - 'null'
+        description:
+          type:
+          - string
+          - 'null'
+      required:
+      - description
+      - id
+      - name
+      - photo
+      - position
+    PublicFestivalLanding:
+      type: object
+      description: 'The public landing page: enabled blocks in display order.'
+      properties:
+        blocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicFestivalLandingBlock'
+      required:
+      - blocks
+    PublicFestivalLandingBlock:
+      type: object
+      description: One enabled landing block, in display order, with its typed payload.
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        sortOrder:
+          type: integer
+        title:
+          type:
+          - string
+          - 'null'
+        subtitle:
+          type:
+          - string
+          - 'null'
+        coverImage:
+          type:
+          - string
+          - 'null'
+        body:
+          type:
+          - string
+          - 'null'
+        contentFormat:
+          type:
+          - string
+          - 'null'
+        jury:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicFestivalJuryCard'
+        partners:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicFestivalPartnerCard'
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicFestivalGalleryImage'
+        faq:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicFestivalFaqItem'
+      required:
+      - body
+      - contentFormat
+      - coverImage
+      - faq
+      - id
+      - images
+      - jury
+      - partners
+      - sortOrder
+      - subtitle
+      - title
+      - type
     PublicFestivalListEnvelope:
       type: object
       description: The full ``GET /public/festivals`` response envelope.
@@ -5860,6 +6206,27 @@ components:
       - id
       - logo
       - name
+    PublicFestivalPartnerCard:
+      type: object
+      description: A partner/sponsor card in a landing PARTNERS block.
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        logo:
+          type:
+          - string
+          - 'null'
+        website:
+          type:
+          - string
+          - 'null'
+      required:
+      - id
+      - logo
+      - name
+      - website
     PublicFestivalPricing:
       type: object
       description: The "from X" price summary.
@@ -5880,6 +6247,115 @@ components:
       - amountFrom
       - currency
       - multiple
+    PublicFestivalRegulation:
+      type: object
+      description: The competition's current regulation ("Положение фестиваля").
+      properties:
+        title:
+          type: string
+        version:
+          type: string
+        publicationDate:
+          type: string
+          format: date
+        fileReference:
+          type: string
+      required:
+      - fileReference
+      - publicationDate
+      - title
+      - version
+    PublicFestivalSocialLinks:
+      type: object
+      description: Public social links for the footer.
+      properties:
+        vk:
+          type:
+          - string
+          - 'null'
+        instagram:
+          type:
+          - string
+          - 'null'
+        telegram:
+          type:
+          - string
+          - 'null'
+      required:
+      - instagram
+      - telegram
+      - vk
+    PublicFestivalTeamMember:
+      type: object
+      description: A named contact person shown on the public page.
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        position:
+          type:
+          - string
+          - 'null'
+        phone:
+          type:
+          - string
+          - 'null'
+        email:
+          type:
+          - string
+          - 'null'
+        description:
+          type:
+          - string
+          - 'null'
+      required:
+      - description
+      - email
+      - id
+      - name
+      - phone
+      - position
+    PublicFestivalVenue:
+      type: object
+      description: The venue section — competition venue merged with contact details.
+      properties:
+        name:
+          type:
+          - string
+          - 'null'
+        address:
+          type:
+          - string
+          - 'null'
+        city:
+          type:
+          - string
+          - 'null'
+        country:
+          type:
+          - string
+          - 'null'
+        googleMapsUrl:
+          type:
+          - string
+          - 'null'
+        yandexMapsUrl:
+          type:
+          - string
+          - 'null'
+        directions:
+          type:
+          - string
+          - 'null'
+      required:
+      - address
+      - city
+      - country
+      - directions
+      - googleMapsUrl
+      - name
+      - yandexMapsUrl
     RegistrationRequest:
       type: object
       description: Validate a new-account registration request body (API-001 §4.1).
