@@ -66,6 +66,22 @@ const detail = {
       publicationDate: "2026-05-15",
       fileReference: "/media/regulations/vzlyot-2026.pdf",
     },
+    documents: [
+      {
+        id: "doc-1",
+        title: "Программа фестиваля",
+        category: "PROGRAM",
+        description: "Расписание выступлений по дням",
+        fileReference: "/media/documents/program.pdf",
+      },
+      {
+        id: "doc-2",
+        title: "Реквизиты для оплаты",
+        category: "REQUISITES",
+        description: null,
+        fileReference: "/media/documents/requisites.pdf",
+      },
+    ],
     landing: {
       blocks: [
         {
@@ -97,9 +113,23 @@ const detail = {
           faq: [],
         },
         {
+          id: "documents",
+          type: "DOCUMENTS",
+          sortOrder: 2,
+          title: null,
+          subtitle: null,
+          coverImage: null,
+          body: null,
+          contentFormat: null,
+          jury: [],
+          partners: [],
+          images: [],
+          faq: [],
+        },
+        {
           id: "about",
           type: "CONTENT",
-          sortOrder: 2,
+          sortOrder: 3,
           title: "О фестивале",
           subtitle: null,
           coverImage: null,
