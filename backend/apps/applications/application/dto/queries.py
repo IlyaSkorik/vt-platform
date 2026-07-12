@@ -10,11 +10,36 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 __all__ = [
+    "GetApplicationQuery",
     "GetSubmissionHistoryQuery",
     "GetSubmissionQuery",
+    "ListApplicationsQuery",
     "ListCompetitionSubmissionsQuery",
+    "ListDraftApplicationsQuery",
     "ListMySubmissionsQuery",
 ]
+
+
+@dataclass(frozen=True, slots=True)
+class GetApplicationQuery:
+    """Fetch one application (order) in full - only its owner may view it."""
+
+    application_id: str
+    requested_by: str
+
+
+@dataclass(frozen=True, slots=True)
+class ListApplicationsQuery:
+    """List all applications owned by the current applicant."""
+
+    applicant_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class ListDraftApplicationsQuery:
+    """List the current applicant's DRAFT applications."""
+
+    applicant_id: str
 
 
 @dataclass(frozen=True, slots=True)

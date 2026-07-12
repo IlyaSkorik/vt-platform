@@ -34,6 +34,7 @@ __all__ = [
     "UpdateParticipantCommand",
     "UpdatePerformanceCommand",
     "UpdateTeacherCommand",
+    "UploadAttachmentCommand",
 ]
 
 
@@ -297,3 +298,21 @@ class AcceptSubmissionCommand:
 
     submission_id: str
     reviewer_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class UploadAttachmentCommand:
+    """Upload and attach a file to the submission (owner, editable states only).
+
+    Carries the raw uploaded bytes plus its declared filename and content type; the
+    handler validates them against the competition's upload constraints, stores the
+    bytes, and attaches the resulting reference.
+    """
+
+    submission_id: str
+    requested_by: str
+    attachment_type: str
+    filename: str
+    content_type: str
+    content: bytes
+    caption: str | None = None

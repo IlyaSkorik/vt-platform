@@ -11,16 +11,24 @@ import uuid
 from collections.abc import Sequence
 from datetime import UTC, datetime
 
-from apps.applications.application.interfaces import ApplicantInfo
-from apps.applications.domain.entities import Submission
+from apps.applications.application.interfaces import (
+    AdditionalServiceQuote,
+    ApplicantInfo,
+    EducationalOrganizationInfo,
+    UploadConstraints,
+)
+from apps.applications.domain.entities import Application, Submission
 from apps.applications.domain.events import DomainEvent
 from apps.applications.domain.value_objects import (
+    ApplicationId,
     CompetitionId,
     CompetitionPriceQuote,
+    EducationalOrganizationId,
     Money,
     ParticipantCountRange,
     PriceCalculationType,
     ReviewerId,
+    ServiceId,
     SubmissionId,
     SubmissionParticipationPolicy,
     UserId,
@@ -170,3 +178,88 @@ class FakeIdentityReadModel:
         if not self._known:
             return None
         return ApplicantInfo(user_id=user_id.json(), display_name="Test Applicant", email="applicant@example.com")
+
+
+class FakeApplicationRepository:
+    """In-memory :class:`ApplicationRepository` keyed by :class:`ApplicationId`."""
+
+    def __init__(self) -> None:
+        self._by_id: dict[ApplicationId, Application] = {}
+        self.saved: list[Application] = []
+
+    def get(self, application_id: ApplicationId) -> Application | None:
+        return self._by_id.get(application_id)
+
+    def list_by_applicant(self, applicant_id: UserId) -> Sequence[Application]:
+        entries = [a for a in self._by_id.values() if a.applicant_id == applicant_id and not a.is_deleted]
+        return sorted(entries, key=lambda a: a.created_at, reverse=True)
+
+    def save(self, application: Application) -> None:
+        self._by_id[application.id] = application
+        self.saved.append(application)
+
+
+class FakeCompetitionServiceCatalog:
+    """Configurable Competition additional-service & consent ACL stand-in."""
+
+    def __init__(
+        self,
+        *,
+        service_price: Money | None = None,
+        service_known: bool = True,
+        required_consents: frozenset[str] = frozenset(),
+    ) -> None:
+        self._service_price = service_price if service_price is not None else Money.of("25.00")
+        self._service_known = service_known
+        self._required = required_consents
+
+    def get_additional_service(self, *, competition_id: CompetitionId, service_id: ServiceId) -> AdditionalServiceQuote | None:
+        if not self._service_known:
+            return None
+        return AdditionalServiceQuote(service_id=service_id, name="Commemorative T-shirt", unit_price=self._service_price)
+
+    def required_consent_codes(self, *, competition_id: CompetitionId) -> frozenset[str]:
+        return self._required
+
+
+class FakeEducationalOrganizationDirectory:
+    """Institutions ACL stand-in; resolves any id to a fixed org unless set unknown."""
+
+    def __init__(self, *, known: bool = True, name: str = "Music School No.1") -> None:
+        self._known = known
+        self._name = name
+
+    def get(self, *, organization_id: EducationalOrganizationId) -> EducationalOrganizationInfo | None:
+        if not self._known:
+            return None
+        return EducationalOrganizationInfo(organization_id=organization_id.json(), name=self._name)
+
+
+class FakeFileStorage:
+    """In-memory :class:`FileStorage`; records saved objects, returns a fake key."""
+
+    def __init__(self) -> None:
+        self.saved: dict[str, bytes] = {}
+        self.deleted: list[str] = []
+        self._seq = 0
+
+    def save(self, *, content: bytes, filename: str, content_type: str) -> str:
+        self._seq += 1
+        reference = f"applications/attachments/fake-{self._seq}/{filename}"
+        self.saved[reference] = content
+        return reference
+
+    def delete(self, *, reference: str) -> None:
+        self.deleted.append(reference)
+        self.saved.pop(reference, None)
+
+
+class FakeCompetitionUploadPolicy:
+    """Configurable :class:`CompetitionUploadPolicy` stand-in (one constraint for all kinds)."""
+
+    def __init__(self, *, max_bytes: int = 25 * 1024 * 1024, allowed_extensions: frozenset[str] = frozenset({"mp3", "pdf", "mp4", "png"})) -> None:
+        self._max_bytes = max_bytes
+        self._allowed = allowed_extensions
+
+    def limits_for(self, *, competition_id: CompetitionId, attachment_kind: str) -> UploadConstraints:
+        return UploadConstraints(max_bytes=self._max_bytes, allowed_extensions=self._allowed)
