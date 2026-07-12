@@ -84,15 +84,16 @@ export function makeFestivalDetail(overrides: Partial<FestivalDetail> = {}): Fes
     landing: {
       blocks: [
         makeBlock({ id: "hero", type: "HERO", sortOrder: 0, title: "Взлёт талантов" }),
+        makeBlock({ id: "regulation", type: "REGULATION", sortOrder: 1 }),
         makeBlock({
           id: "about",
           type: "CONTENT",
-          sortOrder: 1,
+          sortOrder: 2,
           title: "О фестивале",
           body: "Ежегодный праздник детского творчества.",
           contentFormat: "PLAIN",
         }),
-        makeBlock({ id: "venue", type: "VENUE", sortOrder: 2 }),
+        makeBlock({ id: "venue", type: "VENUE", sortOrder: 3 }),
       ],
       ...landing,
     },

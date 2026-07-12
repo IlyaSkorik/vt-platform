@@ -9,7 +9,6 @@ import { LandingSections } from "./landing-sections";
 import { LandingSkeleton } from "./landing-skeleton";
 import { LandingError, LandingNotFound } from "./landing-states";
 import { LandingSummary } from "./landing-summary";
-import { RegulationSection } from "./regulation-section";
 
 interface FestivalLandingProps {
   festivalId: string | undefined;
@@ -34,8 +33,7 @@ function LandingContent({ festival }: { festival: FestivalDetail }): React.JSX.E
         <aside className="lg:sticky lg:top-6 lg:order-2 lg:self-start">
           <LandingSummary festival={festival} applyPath={applyPath} />
         </aside>
-        <main className="min-w-0 space-y-14 lg:order-1">
-          {festival.regulation ? <RegulationSection regulation={festival.regulation} /> : null}
+        <main className="min-w-0 lg:order-1">
           <LandingSections festival={festival} />
         </main>
       </div>

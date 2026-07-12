@@ -132,6 +132,18 @@ describe("FestivalLanding", () => {
     expect(screen.getByText("Как принять участие?")).toBeInTheDocument();
   });
 
+  it("omits the regulation section when its block is disabled/absent", () => {
+    mockQuery({
+      data: makeFestivalDetail({
+        // A regulation exists, but the organizer's config has no REGULATION block.
+        landing: { blocks: [makeBlock({ id: "hero", type: "HERO", sortOrder: 0 })] },
+      }),
+    });
+    renderLanding();
+
+    expect(screen.queryByRole("heading", { name: "Положение фестиваля" })).not.toBeInTheDocument();
+  });
+
   it("opens a gallery photo in a lightbox on click", async () => {
     mockQuery({
       data: makeFestivalDetail({

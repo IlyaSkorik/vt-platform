@@ -2,7 +2,7 @@ import { Download, FileText } from "lucide-react";
 import { formatDate, resolveMediaUrl } from "@/features/festival-catalog";
 import type { Regulation } from "@/features/festival-landing";
 import { Button } from "@/shared/ui";
-import { LandingSection } from "./landing-section";
+import { LandingSection } from "../landing-section";
 
 interface RegulationSectionProps {
   regulation: Regulation;

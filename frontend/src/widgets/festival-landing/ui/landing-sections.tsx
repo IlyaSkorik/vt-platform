@@ -4,6 +4,7 @@ import { FaqSection } from "./blocks/faq-section";
 import { GallerySection } from "./blocks/gallery-section";
 import { JurySection } from "./blocks/jury-section";
 import { PartnersSection } from "./blocks/partners-section";
+import { RegulationSection } from "./blocks/regulation-section";
 import { VenueSection } from "./blocks/venue-section";
 
 interface LandingSectionsProps {
@@ -41,6 +42,12 @@ export function LandingSections({ festival }: LandingSectionsProps): React.JSX.E
                 venue={festival.contacts.venue}
               />
             );
+          case LANDING_BLOCK_TYPES.REGULATION:
+            // Positional marker: renders the competition's current regulation at
+            // the organizer's chosen spot (nothing if no regulation is set).
+            return festival.regulation ? (
+              <RegulationSection key={block.id} regulation={festival.regulation} />
+            ) : null;
           default:
             return null;
         }

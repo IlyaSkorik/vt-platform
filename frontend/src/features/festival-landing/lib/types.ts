@@ -47,6 +47,7 @@ export const LANDING_BLOCK_TYPES = {
   GALLERY: "GALLERY",
   FAQ: "FAQ",
   CONTENT: "CONTENT",
+  REGULATION: "REGULATION",
 } as const;
 
 export type LandingBlockType = (typeof LANDING_BLOCK_TYPES)[keyof typeof LANDING_BLOCK_TYPES];
