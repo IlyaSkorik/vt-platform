@@ -1,0 +1,411 @@
+"""Application (order) controllers for the Applications REST API v1.
+
+Noun-resource endpoints for the applicant's order: the application collection/detail,
+its submission and service sub-collections, the consents and educational-organization
+sub-resources, and the lifecycle transitions (placement, payment-request, payment,
+cancellation) modelled as sub-resources (API-000 §3.3). Each view is a thin adapter:
+
+    HTTP request -> serializer (validate) -> command -> handler -> DTO -> HTTP response
+
+Every endpoint is authenticated (deny-by-default): the acting applicant is the JWT
+subject and owns the order being read or modified.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTStatelessUserAuthentication
+
+from apps.applications.application.dto.order_commands import (
+    AddSubmissionToApplicationCommand,
+    CancelApplicationCommand,
+    ConsentInput,
+    CreateApplicationCommand,
+    MarkApplicationPaidCommand,
+    RecordConsentsCommand,
+    RemoveAdditionalServiceCommand,
+    RemoveSubmissionFromApplicationCommand,
+    RequestApplicationPaymentCommand,
+    SelectAdditionalServiceCommand,
+    SelectEducationalOrganizationCommand,
+    SubmitApplicationCommand,
+)
+from apps.applications.application.dto.orders import ApplicationSummaryView, ApplicationView
+from apps.applications.application.dto.queries import (
+    GetApplicationQuery,
+    ListApplicationsQuery,
+    ListDraftApplicationsQuery,
+)
+from apps.applications.application.exceptions import ApplicationError
+from apps.applications.presentation.api.v1 import problems
+from apps.applications.presentation.api.v1.orders import composition
+from apps.applications.presentation.api.v1.orders.serializers import (
+    ApplicationDirectoryResponseSerializer,
+    ApplicationResponseSerializer,
+    CreateApplicationRequestSerializer,
+    ProblemDetailSerializer,
+    RecordConsentsRequestSerializer,
+    SelectEducationalOrganizationRequestSerializer,
+    SelectServiceRequestSerializer,
+)
+
+_TAG = "Applications"
+
+
+def _iso(value: Any) -> Any:
+    if value is None:
+        return None
+    return value.isoformat().replace("+00:00", "Z")
+
+
+def _application_resource(dto: ApplicationView) -> dict[str, Any]:
+    total = dto.total_price
+    return {
+        "id": dto.id,
+        "type": "application",
+        "competitionId": dto.competition_id,
+        "applicantId": dto.applicant_id,
+        "status": dto.status,
+        "educationalOrganizationId": dto.educational_organization_id,
+        "organizationName": dto.organization_name,
+        "submissions": [
+            {
+                "submissionId": ref.submission_id,
+                "performanceTitle": ref.performance_title,
+                "participantDisplayName": ref.participant_display_name,
+                "nomination": ref.nomination,
+                "discipline": ref.discipline,
+                "status": ref.status,
+                "priceAmount": ref.price_amount,
+                "currency": ref.currency,
+            }
+            for ref in dto.submissions
+        ],
+        "services": [
+            {
+                "serviceId": line.service_id,
+                "name": line.name,
+                "unitAmount": line.unit_amount,
+                "quantity": line.quantity,
+                "lineAmount": line.line_amount,
+                "currency": line.currency,
+            }
+            for line in dto.services
+        ],
+        "consents": [{"code": c.code, "version": c.version, "acceptedAt": _iso(c.accepted_at)} for c in dto.consents],
+        "totalPrice": (
+            {
+                "totalAmount": total.total_amount,
+                "submissionsAmount": total.submissions_amount,
+                "servicesAmount": total.services_amount,
+                "currency": total.currency,
+                "calculatedAt": _iso(total.calculated_at),
+            }
+            if total is not None
+            else None
+        ),
+        "statusHistory": [
+            {"fromStatus": change.from_status, "toStatus": change.to_status, "occurredAt": _iso(change.occurred_at)} for change in dto.status_history
+        ],
+        "paidAt": _iso(dto.paid_at),
+        "createdAt": _iso(dto.created_at),
+        "updatedAt": _iso(dto.updated_at),
+    }
+
+
+def _summary_resource(dto: ApplicationSummaryView) -> dict[str, Any]:
+    return {
+        "id": dto.id,
+        "type": "application",
+        "competitionId": dto.competition_id,
+        "status": dto.status,
+        "submissionCount": dto.submission_count,
+        "totalAmount": dto.total_amount,
+        "currency": dto.currency,
+        "createdAt": _iso(dto.created_at),
+        "updatedAt": _iso(dto.updated_at),
+    }
+
+
+def _envelope(request: Request, data: Any, *, status: int) -> Response:
+    correlation_id = problems.request_id(request)
+    return Response({"data": data, "meta": {"requestId": correlation_id}}, status=status, headers={"X-Request-ID": correlation_id})
+
+
+def _uid(request: Request) -> str:
+    return str(request.user.id)
+
+
+class _AuthenticatedView(APIView):
+    authentication_classes = (JWTStatelessUserAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+
+class ApplicationCollectionView(_AuthenticatedView):
+    """GET/POST /api/v1/applications - list the applicant's orders or create one."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="applications_list",
+        summary="List my applications",
+        parameters=[OpenApiParameter(name="status", type=str, required=False, description="Filter to a status, e.g. DRAFT.")],
+        request=None,
+        responses={200: ApplicationDirectoryResponseSerializer},
+    )
+    def get(self, request: Request) -> Response:
+        status_filter = str(request.query_params.get("status", "")).upper()
+        try:
+            if status_filter == "DRAFT":
+                entries = composition.build_list_drafts_handler().handle(ListDraftApplicationsQuery(applicant_id=_uid(request)))
+            else:
+                entries = composition.build_list_applications_handler().handle(ListApplicationsQuery(applicant_id=_uid(request)))
+        except ApplicationError as exc:
+            return problems.application_problem(exc, instance=request.path, request=request)
+        return _envelope(request, [_summary_resource(dto) for dto in entries], status=200)
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="applications_create",
+        summary="Create an application",
+        request=CreateApplicationRequestSerializer,
+        responses={
+            201: ApplicationResponseSerializer,
+            400: OpenApiResponse(ProblemDetailSerializer, description="Malformed request."),
+            404: OpenApiResponse(ProblemDetailSerializer, description="Competition/applicant not found."),
+            409: OpenApiResponse(ProblemDetailSerializer, description="Competition not accepting applications."),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        serializer = CreateApplicationRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return problems.validation_problem(serializer.errors, instance=request.path, request=request)
+        command = CreateApplicationCommand(requested_by=_uid(request), competition_id=str(serializer.validated_data["competitionId"]))
+        try:
+            result = composition.build_create_application_handler().handle(command)
+        except ApplicationError as exc:
+            return problems.application_problem(exc, instance=request.path, request=request)
+        response = _envelope(request, _application_resource(result.application), status=201)
+        response["Location"] = f"/api/v1/applications/{result.application.id}"
+        return response
+
+
+class ApplicationDetailView(_AuthenticatedView):
+    """GET /api/v1/applications/{id} - retrieve one order in full."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="applications_retrieve",
+        summary="Retrieve an application",
+        request=None,
+        responses={200: ApplicationResponseSerializer, 404: OpenApiResponse(ProblemDetailSerializer, description="Not found.")},
+    )
+    def get(self, request: Request, application_id: str) -> Response:
+        try:
+            dto = composition.build_get_application_handler().handle(GetApplicationQuery(application_id=application_id, requested_by=_uid(request)))
+        except ApplicationError as exc:
+            return problems.application_problem(exc, instance=request.path, request=request)
+        return _envelope(request, _application_resource(dto), status=200)
+
+
+class ApplicationSubmissionsView(_AuthenticatedView):
+    """POST /api/v1/applications/{id}/submissions - add a performance (submission) to the order."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="applications_add_submission",
+        summary="Add a submission",
+        request=None,
+        responses={201: ApplicationResponseSerializer},
+    )
+    def post(self, request: Request, application_id: str) -> Response:
+        command = AddSubmissionToApplicationCommand(requested_by=_uid(request), application_id=application_id)
+        try:
+            result = composition.build_add_submission_handler().handle(command)
+        except ApplicationError as exc:
+            return problems.application_problem(exc, instance=request.path, request=request)
+        return _envelope(request, _application_resource(result.application), status=201)
+
+
+class ApplicationSubmissionDetailView(_AuthenticatedView):
+    """DELETE /api/v1/applications/{id}/submissions/{submissionId} - detach and cancel a submission."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="applications_remove_submission",
+        summary="Remove a submission",
+        request=None,
+        responses={200: ApplicationResponseSerializer},
+    )
+    def delete(self, request: Request, application_id: str, submission_id: str) -> Response:
+        command = RemoveSubmissionFromApplicationCommand(requested_by=_uid(request), application_id=application_id, submission_id=submission_id)
+        try:
+            result = composition.build_remove_submission_handler().handle(command)
+        except ApplicationError as exc:
+            return problems.application_problem(exc, instance=request.path, request=request)
+        return _envelope(request, _application_resource(result.application), status=200)
+
+
+class ApplicationServicesView(_AuthenticatedView):
+    """POST /api/v1/applications/{id}/services - select an additional service."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="applications_select_service",
+        summary="Select an additional service",
+        request=SelectServiceRequestSerializer,
+        responses={200: ApplicationResponseSerializer},
+    )
+    def post(self, request: Request, application_id: str) -> Response:
+        serializer = SelectServiceRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return problems.validation_problem(serializer.errors, instance=request.path, request=request)
+        data = serializer.validated_data
+        command = SelectAdditionalServiceCommand(
+            requested_by=_uid(request), application_id=application_id, service_id=str(data["serviceId"]), quantity=int(data["quantity"])
+        )
+        try:
+            result = composition.build_select_service_handler().handle(command)
+        except ApplicationError as exc:
+            return problems.application_problem(exc, instance=request.path, request=request)
+        return _envelope(request, _application_resource(result.application), status=200)
+
+
+class ApplicationServiceDetailView(_AuthenticatedView):
+    """DELETE /api/v1/applications/{id}/services/{serviceId} - remove an additional service."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="applications_remove_service",
+        summary="Remove an additional service",
+        request=None,
+        responses={200: ApplicationResponseSerializer},
+    )
+    def delete(self, request: Request, application_id: str, service_id: str) -> Response:
+        command = RemoveAdditionalServiceCommand(requested_by=_uid(request), application_id=application_id, service_id=service_id)
+        try:
+            result = composition.build_remove_service_handler().handle(command)
+        except ApplicationError as exc:
+            return problems.application_problem(exc, instance=request.path, request=request)
+        return _envelope(request, _application_resource(result.application), status=200)
+
+
+class ApplicationConsentsView(_AuthenticatedView):
+    """PUT /api/v1/applications/{id}/consents - record the accepted consents."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="applications_record_consents",
+        summary="Record consents",
+        request=RecordConsentsRequestSerializer,
+        responses={200: ApplicationResponseSerializer},
+    )
+    def put(self, request: Request, application_id: str) -> Response:
+        serializer = RecordConsentsRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return problems.validation_problem(serializer.errors, instance=request.path, request=request)
+        consents = tuple(ConsentInput(code=str(item["code"]), version=str(item["version"])) for item in serializer.validated_data["consents"])
+        command = RecordConsentsCommand(requested_by=_uid(request), application_id=application_id, consents=consents)
+        try:
+            result = composition.build_record_consents_handler().handle(command)
+        except ApplicationError as exc:
+            return problems.application_problem(exc, instance=request.path, request=request)
+        return _envelope(request, _application_resource(result.application), status=200)
+
+
+class ApplicationEducationalOrganizationView(_AuthenticatedView):
+    """PUT /api/v1/applications/{id}/educational-organization - select the educational organization."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="applications_select_organization",
+        summary="Select educational organization",
+        request=SelectEducationalOrganizationRequestSerializer,
+        responses={200: ApplicationResponseSerializer},
+    )
+    def put(self, request: Request, application_id: str) -> Response:
+        serializer = SelectEducationalOrganizationRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return problems.validation_problem(serializer.errors, instance=request.path, request=request)
+        command = SelectEducationalOrganizationCommand(
+            requested_by=_uid(request),
+            application_id=application_id,
+            educational_organization_id=str(serializer.validated_data["educationalOrganizationId"]),
+        )
+        try:
+            result = composition.build_select_educational_organization_handler().handle(command)
+        except ApplicationError as exc:
+            return problems.application_problem(exc, instance=request.path, request=request)
+        return _envelope(request, _application_resource(result.application), status=200)
+
+
+class _TransitionView(_AuthenticatedView):
+    """Base for the lifecycle-transition sub-resources (each a bodyless POST)."""
+
+    def _run(self, request: Request, application_id: str, command: Any, handler: Any) -> Response:
+        try:
+            result = handler.handle(command)
+        except ApplicationError as exc:
+            return problems.application_problem(exc, instance=request.path, request=request)
+        return _envelope(request, _application_resource(result.application), status=200)
+
+
+class ApplicationPlacementView(_TransitionView):
+    """POST /api/v1/applications/{id}/placement - submit the order."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="applications_submit",
+        summary="Submit the application",
+        request=None,
+        responses={200: ApplicationResponseSerializer},
+    )
+    def post(self, request: Request, application_id: str) -> Response:
+        command = SubmitApplicationCommand(requested_by=_uid(request), application_id=application_id)
+        return self._run(request, application_id, command, composition.build_submit_application_handler())
+
+
+class ApplicationPaymentRequestView(_TransitionView):
+    """POST /api/v1/applications/{id}/payment-request - move to awaiting payment."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="applications_request_payment",
+        summary="Request payment",
+        request=None,
+        responses={200: ApplicationResponseSerializer},
+    )
+    def post(self, request: Request, application_id: str) -> Response:
+        command = RequestApplicationPaymentCommand(requested_by=_uid(request), application_id=application_id)
+        return self._run(request, application_id, command, composition.build_request_payment_handler())
+
+
+class ApplicationPaymentView(_TransitionView):
+    """POST /api/v1/applications/{id}/payment - record payment."""
+
+    @extend_schema(
+        tags=[_TAG], operation_id="applications_mark_paid", summary="Mark paid", request=None, responses={200: ApplicationResponseSerializer}
+    )
+    def post(self, request: Request, application_id: str) -> Response:
+        command = MarkApplicationPaidCommand(requested_by=_uid(request), application_id=application_id)
+        return self._run(request, application_id, command, composition.build_mark_paid_handler())
+
+
+class ApplicationCancellationView(_TransitionView):
+    """POST /api/v1/applications/{id}/cancellation - cancel the order."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="applications_cancel",
+        summary="Cancel the application",
+        request=None,
+        responses={200: ApplicationResponseSerializer},
+    )
+    def post(self, request: Request, application_id: str) -> Response:
+        command = CancelApplicationCommand(requested_by=_uid(request), application_id=application_id)
+        return self._run(request, application_id, command, composition.build_cancel_application_handler())

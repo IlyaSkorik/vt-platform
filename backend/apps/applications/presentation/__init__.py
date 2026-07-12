@@ -1,1 +1,1 @@
-"""Presentation layer (REST edge) for Applications."""
+"""Presentation layer (REST API) for the Applications bounded context."""
