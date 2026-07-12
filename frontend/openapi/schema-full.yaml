@@ -5983,6 +5983,10 @@ components:
           oneOf:
           - $ref: '#/components/schemas/PublicFestivalRegulation'
           - type: 'null'
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicFestivalDocument'
       required:
       - applicationDeadline
       - categories
@@ -5993,6 +5997,7 @@ components:
       - coverImage
       - createdAt
       - description
+      - documents
       - formats
       - id
       - landing
@@ -6019,6 +6024,29 @@ components:
       required:
       - data
       - meta
+    PublicFestivalDocument:
+      type: object
+      description: One publicly-visible competition document shown on the landing
+        page.
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        category:
+          type: string
+        description:
+          type:
+          - string
+          - 'null'
+        fileReference:
+          type: string
+      required:
+      - category
+      - description
+      - fileReference
+      - id
+      - title
     PublicFestivalEmergency:
       type: object
       description: Optional emergency/urgent contact line.
@@ -7453,6 +7481,7 @@ components:
       - FAQ
       - CONTENT
       - REGULATION
+      - DOCUMENTS
       type: string
       description: |-
         * `HERO` - HERO
@@ -7463,6 +7492,7 @@ components:
         * `FAQ` - FAQ
         * `CONTENT` - CONTENT
         * `REGULATION` - REGULATION
+        * `DOCUMENTS` - DOCUMENTS
     _LandingConfig:
       type: object
       properties:
