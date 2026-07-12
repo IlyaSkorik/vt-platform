@@ -10,10 +10,12 @@ from __future__ import annotations
 
 from apps.competitions.application.read_models.public_catalog import (
     PUBLIC_CATALOG_DOMAIN_STATUSES,
+    PUBLIC_DOCUMENT_VISIBILITIES,
     ParticipationMode,
     PublicCatalogReadService,
     PublicFestivalContactsView,
     PublicFestivalDetailView,
+    PublicFestivalDocumentView,
     PublicFestivalEmergencyView,
     PublicFestivalFaqItemView,
     PublicFestivalFormatView,
@@ -30,6 +32,7 @@ from apps.competitions.application.read_models.public_catalog import (
     PublicFestivalView,
     aggregate_pricing,
     classify_participation_mode,
+    is_public_document_visibility,
     project_contacts,
     project_landing,
     public_status_for,
@@ -39,10 +42,12 @@ from apps.competitions.application.read_models.public_catalog import (
 
 __all__ = [
     "PUBLIC_CATALOG_DOMAIN_STATUSES",
+    "PUBLIC_DOCUMENT_VISIBILITIES",
     "ParticipationMode",
     "PublicCatalogReadService",
     "PublicFestivalContactsView",
     "PublicFestivalDetailView",
+    "PublicFestivalDocumentView",
     "PublicFestivalEmergencyView",
     "PublicFestivalFaqItemView",
     "PublicFestivalFormatView",
@@ -59,6 +64,7 @@ __all__ = [
     "PublicFestivalView",
     "aggregate_pricing",
     "classify_participation_mode",
+    "is_public_document_visibility",
     "project_contacts",
     "project_landing",
     "public_status_for",

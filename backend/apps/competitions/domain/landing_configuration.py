@@ -15,6 +15,7 @@ from enum import StrEnum
 from .exceptions import InvalidLandingConfigurationError
 
 __all__ = [
+    "SYSTEM_BLOCK_DOCUMENTS_ID",
     "SYSTEM_BLOCK_FAQ_ID",
     "SYSTEM_BLOCK_GALLERY_ID",
     "SYSTEM_BLOCK_HERO_ID",
@@ -39,6 +40,7 @@ SYSTEM_BLOCK_PARTNERS_ID: str = "01900000-0000-7000-8000-000000000004"
 SYSTEM_BLOCK_GALLERY_ID: str = "01900000-0000-7000-8000-000000000005"
 SYSTEM_BLOCK_FAQ_ID: str = "01900000-0000-7000-8000-000000000006"
 SYSTEM_BLOCK_REGULATION_ID: str = "01900000-0000-7000-8000-000000000007"
+SYSTEM_BLOCK_DOCUMENTS_ID: str = "01900000-0000-7000-8000-000000000008"
 
 class LandingBlockType(StrEnum):
     """Block kinds available on the public competition landing page."""
@@ -50,9 +52,11 @@ class LandingBlockType(StrEnum):
     GALLERY = "GALLERY"
     FAQ = "FAQ"
     CONTENT = "CONTENT"
-    # Positional marker (like VENUE): carries no payload of its own, marks where
-    # the competition's current regulation ("Положение фестиваля") is rendered.
+    # Positional markers (like VENUE): carry no payload of their own; they mark
+    # where the competition's current regulation ("Положение фестиваля") and its
+    # public documents are rendered.
     REGULATION = "REGULATION"
+    DOCUMENTS = "DOCUMENTS"
 
 
 def _optional_str(value: str | None) -> str | None:
@@ -218,9 +222,14 @@ class LandingBlock:
         self._validate_unique_child_ids(self.faq_items, label="FAQ item")
 
         block_type = self.type
-        if block_type is LandingBlockType.VENUE or block_type is LandingBlockType.REGULATION:
+        if block_type in (
+            LandingBlockType.VENUE,
+            LandingBlockType.REGULATION,
+            LandingBlockType.DOCUMENTS,
+        ):
             # Positional markers: their content comes from the competition
-            # (contacts venue / current regulation), so they carry no payload.
+            # (contacts venue / current regulation / public documents), so they
+            # carry no payload.
             self._assert_no_payload(allow_collections=False)
         elif block_type is LandingBlockType.HERO:
             if self.cards or self.partners or self.images or self.faq_items:
@@ -316,9 +325,10 @@ class LandingConfiguration:
             LandingBlockType.PARTNERS,
             LandingBlockType.GALLERY,
             LandingBlockType.FAQ,
-            # REGULATION is at-most-one (not required): configs persisted before
-            # it existed simply have none, and stay valid.
+            # REGULATION and DOCUMENTS are at-most-one (not required): configs
+            # persisted before they existed simply have none, and stay valid.
             LandingBlockType.REGULATION,
+            LandingBlockType.DOCUMENTS,
         ):
             if type_counts.get(system_type, 0) > 1:
                 raise InvalidLandingConfigurationError(
@@ -329,9 +339,9 @@ class LandingConfiguration:
     def default(cls) -> LandingConfiguration:
         """Seed the system blocks (CONTENT starts empty).
 
-        HERO, REGULATION and VENUE ship enabled (the official facts a visitor
-        expects up front); the rest start disabled. The organizer can toggle any
-        of them and reorder freely — REGULATION included.
+        HERO, REGULATION, DOCUMENTS and VENUE ship enabled (the official facts a
+        visitor expects up front); the rest start disabled. The organizer can
+        toggle any of them and reorder freely — REGULATION and DOCUMENTS included.
         """
         return cls(
             blocks=(
@@ -348,34 +358,40 @@ class LandingConfiguration:
                     sort_order=1,
                 ),
                 LandingBlock(
+                    id=SYSTEM_BLOCK_DOCUMENTS_ID,
+                    type=LandingBlockType.DOCUMENTS,
+                    enabled=True,
+                    sort_order=2,
+                ),
+                LandingBlock(
                     id=SYSTEM_BLOCK_VENUE_ID,
                     type=LandingBlockType.VENUE,
                     enabled=True,
-                    sort_order=2,
+                    sort_order=3,
                 ),
                 LandingBlock(
                     id=SYSTEM_BLOCK_JURY_ID,
                     type=LandingBlockType.JURY,
                     enabled=False,
-                    sort_order=3,
+                    sort_order=4,
                 ),
                 LandingBlock(
                     id=SYSTEM_BLOCK_PARTNERS_ID,
                     type=LandingBlockType.PARTNERS,
                     enabled=False,
-                    sort_order=4,
+                    sort_order=5,
                 ),
                 LandingBlock(
                     id=SYSTEM_BLOCK_GALLERY_ID,
                     type=LandingBlockType.GALLERY,
                     enabled=False,
-                    sort_order=5,
+                    sort_order=6,
                 ),
                 LandingBlock(
                     id=SYSTEM_BLOCK_FAQ_ID,
                     type=LandingBlockType.FAQ,
                     enabled=False,
-                    sort_order=6,
+                    sort_order=7,
                 ),
             )
         )

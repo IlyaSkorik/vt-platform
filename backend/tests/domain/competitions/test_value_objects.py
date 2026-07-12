@@ -286,6 +286,7 @@ class TestLandingConfiguration:
         assert types == [
             LandingBlockType.HERO,
             LandingBlockType.REGULATION,
+            LandingBlockType.DOCUMENTS,
             LandingBlockType.VENUE,
             LandingBlockType.JURY,
             LandingBlockType.PARTNERS,
@@ -293,8 +294,8 @@ class TestLandingConfiguration:
             LandingBlockType.FAQ,
         ]
         assert config.blocks[0].id == SYSTEM_BLOCK_HERO_ID
-        # HERO, REGULATION and VENUE ship enabled; the rest start disabled.
-        assert [b.enabled for b in config.blocks] == [True, True, True, False, False, False, False]
+        # HERO, REGULATION, DOCUMENTS and VENUE ship enabled; the rest start disabled.
+        assert [b.enabled for b in config.blocks] == [True] * 4 + [False] * 4
         assert LandingBlockType.CONTENT not in types
 
         roundtrip = landing_config_from_json(landing_config_to_json(config))

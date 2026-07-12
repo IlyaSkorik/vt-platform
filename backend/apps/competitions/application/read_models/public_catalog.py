@@ -33,10 +33,12 @@ from apps.competitions.domain.landing_configuration import LandingBlock, Landing
 
 __all__ = [
     "PUBLIC_CATALOG_DOMAIN_STATUSES",
+    "PUBLIC_DOCUMENT_VISIBILITIES",
     "ParticipationMode",
     "PublicCatalogReadService",
     "PublicFestivalContactsView",
     "PublicFestivalDetailView",
+    "PublicFestivalDocumentView",
     "PublicFestivalEmergencyView",
     "PublicFestivalFaqItemView",
     "PublicFestivalFormatView",
@@ -54,6 +56,7 @@ __all__ = [
     "PublicFestivalView",
     "aggregate_pricing",
     "classify_participation_mode",
+    "is_public_document_visibility",
     "project_contacts",
     "project_landing",
     "public_status_for",
@@ -601,6 +604,35 @@ class PublicFestivalRegulationView:
     file_reference: str
 
 
+# --- Documents ----------------------------------------------------------------
+
+
+#: Document visibility values a public visitor may see (public page / everyone).
+PUBLIC_DOCUMENT_VISIBILITIES: tuple[str, ...] = ("PUBLIC", "ALL")
+
+
+@dataclass(frozen=True, slots=True)
+class PublicFestivalDocumentView:
+    """One publicly-visible competition document shown on the landing page.
+
+    Only published documents whose visibility is public-facing are projected;
+    participant-only and staff-only documents never surface here.
+    ``file_reference`` is an opaque storage reference the frontend resolves to a
+    downloadable URL.
+    """
+
+    id: str
+    title: str
+    category: str
+    description: str | None
+    file_reference: str
+
+
+def is_public_document_visibility(visibility: str) -> bool:
+    """Whether a document with this visibility may appear on the public page."""
+    return visibility in PUBLIC_DOCUMENT_VISIBILITIES
+
+
 # --- Detail view DTO ----------------------------------------------------------
 
 
@@ -635,6 +667,7 @@ class PublicFestivalDetailView:
     landing: PublicFestivalLandingView
     contacts: PublicFestivalContactsView
     regulation: PublicFestivalRegulationView | None = None
+    documents: tuple[PublicFestivalDocumentView, ...] = ()
     created_at: datetime | None = None
     updated_at: datetime | None = None
 

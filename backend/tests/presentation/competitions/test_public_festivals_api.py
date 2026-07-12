@@ -57,6 +57,7 @@ class TestPublicFestivalDetailEndpoint:
         assert [block["type"] for block in data["landing"]["blocks"]] == [
             "HERO",
             "REGULATION",
+            "DOCUMENTS",
             "VENUE",
         ]
         assert data["contacts"]["organizationName"] == "Оргкомитет"
@@ -94,6 +95,41 @@ class TestPublicFestivalDetailEndpoint:
             "publicationDate": "2026-06-01",
             "fileReference": "/media/regulations/fest-2026.pdf",
         }
+
+    def test_exposes_public_documents(self) -> None:
+        from apps.competitions.infrastructure.models import DocumentModel
+
+        org = _organization()
+        competition = _competition(
+            organizer_id=org.id, status="REGISTRATION_OPEN", title="Фестиваль документов"
+        )
+        DocumentModel.objects.create(
+            competition=competition,
+            title="Программа фестиваля",
+            category="PROGRAM",
+            visibility="PUBLIC",
+            file_reference="/media/program.pdf",
+            description="Расписание по дням",
+            published=True,
+            sort_order=0,
+        )
+        DocumentModel.objects.create(
+            competition=competition,
+            title="Служебная записка",
+            category="MEMO",
+            visibility="STAFF",
+            file_reference="/media/staff.pdf",
+            published=True,
+            sort_order=1,
+        )
+
+        response = APIClient().get(f"/api/v1/public/festivals/{competition.id}")
+
+        assert response.status_code == 200
+        documents = response.data["data"]["documents"]
+        assert [doc["title"] for doc in documents] == ["Программа фестиваля"]
+        assert documents[0]["fileReference"] == "/media/program.pdf"
+        assert documents[0]["description"] == "Расписание по дням"
 
     def test_regulation_is_null_when_absent(self) -> None:
         org = _organization()

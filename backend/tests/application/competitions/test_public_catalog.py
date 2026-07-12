@@ -272,9 +272,14 @@ class TestLandingProjection:
 
         landing = project_landing(LandingConfiguration.default())
 
-        # HERO + REGULATION + VENUE ship enabled by default; the rest start disabled.
-        assert [block.type for block in landing.blocks] == ["HERO", "REGULATION", "VENUE"]
-        assert [block.sort_order for block in landing.blocks] == [0, 1, 2]
+        # HERO + REGULATION + DOCUMENTS + VENUE ship enabled by default.
+        assert [block.type for block in landing.blocks] == [
+            "HERO",
+            "REGULATION",
+            "DOCUMENTS",
+            "VENUE",
+        ]
+        assert [block.sort_order for block in landing.blocks] == [0, 1, 2, 3]
 
     def test_projects_content_jury_partners_and_sorts_children(self) -> None:
         from apps.competitions.application.read_models import project_landing
@@ -444,8 +449,13 @@ class TestDjangoPublicCatalogReaderDetail:
 
         assert detail is not None
         assert detail.status == "REGISTRATION_OPEN"
-        # Default landing config seeds an enabled HERO + REGULATION + VENUE.
-        assert [block.type for block in detail.landing.blocks] == ["HERO", "REGULATION", "VENUE"]
+        # Default landing config seeds enabled HERO + REGULATION + DOCUMENTS + VENUE.
+        assert [block.type for block in detail.landing.blocks] == [
+            "HERO",
+            "REGULATION",
+            "DOCUMENTS",
+            "VENUE",
+        ]
         assert detail.contacts.organization_name == "Оргкомитет"
         assert detail.contacts.email == "hi@fest.by"
         assert detail.contacts.venue.name == "Дворец культуры"
@@ -469,7 +479,7 @@ class TestDjangoPublicCatalogReaderDetail:
 
     def test_default_config_shows_regulation_block(self) -> None:
         org = self._organization()
-        competition = self._competition(organizer_id=org.id, status="RUNNING", title="Конкурс с блоком")
+        competition = self._competition(organizer_id=org.id, status="RUNNING", title="Показ положения")
         self._with_regulation(competition)
 
         detail = self._reader().get_festival(str(competition.id))
@@ -511,6 +521,57 @@ class TestDjangoPublicCatalogReaderDetail:
         # Organizer disabled the block: it is respected even though a regulation exists.
         assert "REGULATION" not in [block.type for block in detail.landing.blocks]
         assert detail.regulation is not None
+
+    def test_projects_only_public_published_documents(self) -> None:
+        from apps.competitions.infrastructure.models import DocumentModel
+
+        org = self._organization()
+        competition = self._competition(
+            organizer_id=org.id, status="RUNNING", title="Документный конкурс"
+        )
+        DocumentModel.objects.create(
+            competition=competition,
+            title="Программа",
+            category="PROGRAM",
+            visibility="PUBLIC",
+            file_reference="/media/program.pdf",
+            published=True,
+            sort_order=1,
+        )
+        DocumentModel.objects.create(
+            competition=competition,
+            title="Для всех",
+            category="OTHER",
+            visibility="ALL",
+            file_reference="/media/all.pdf",
+            published=True,
+            sort_order=0,
+        )
+        DocumentModel.objects.create(
+            competition=competition,
+            title="Только участникам",
+            category="MEMO",
+            visibility="PARTICIPANTS",
+            file_reference="/media/memo.pdf",
+            published=True,
+            sort_order=2,
+        )
+        DocumentModel.objects.create(
+            competition=competition,
+            title="Черновик",
+            category="OTHER",
+            visibility="PUBLIC",
+            file_reference="/media/draft.pdf",
+            published=False,
+            sort_order=3,
+        )
+
+        detail = self._reader().get_festival(str(competition.id))
+
+        assert detail is not None
+        # PUBLIC + ALL, published only, sorted by sort_order; hidden ones excluded.
+        assert [doc.title for doc in detail.documents] == ["Для всех", "Программа"]
+        assert "DOCUMENTS" in [block.type for block in detail.landing.blocks]
 
     def test_injects_regulation_marker_for_legacy_config(self) -> None:
         from apps.competitions.domain.landing_configuration import (

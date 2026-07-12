@@ -204,12 +204,23 @@ class PublicFestivalRegulationSerializer(serializers.Serializer):
     fileReference = serializers.CharField(source="file_reference")
 
 
+class PublicFestivalDocumentSerializer(serializers.Serializer):
+    """One publicly-visible competition document shown on the landing page."""
+
+    id = serializers.CharField()
+    title = serializers.CharField()
+    category = serializers.CharField()
+    description = serializers.CharField(allow_null=True)
+    fileReference = serializers.CharField(source="file_reference")
+
+
 class PublicFestivalDetailSerializer(PublicFestivalSerializer):
     """One competition's full public landing view (catalog facts + landing + contacts)."""
 
     landing = PublicFestivalLandingSerializer()
     contacts = PublicFestivalContactsSerializer()
     regulation = PublicFestivalRegulationSerializer(allow_null=True)
+    documents = PublicFestivalDocumentSerializer(many=True)
 
 
 class PublicFestivalDetailEnvelopeSerializer(serializers.Serializer):

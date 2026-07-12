@@ -16,6 +16,7 @@ import uuid
 from apps.competitions.application.read_models.public_catalog import (
     PUBLIC_CATALOG_DOMAIN_STATUSES,
     PublicFestivalDetailView,
+    PublicFestivalDocumentView,
     PublicFestivalFormatView,
     PublicFestivalLandingBlockView,
     PublicFestivalLandingView,
@@ -25,6 +26,7 @@ from apps.competitions.application.read_models.public_catalog import (
     PublicFestivalView,
     aggregate_pricing,
     classify_participation_mode,
+    is_public_document_visibility,
     project_contacts,
     project_landing,
     public_status_for,
@@ -32,6 +34,7 @@ from apps.competitions.application.read_models.public_catalog import (
     resolve_cover_image,
 )
 from apps.competitions.domain.landing_configuration import (
+    SYSTEM_BLOCK_DOCUMENTS_ID,
     SYSTEM_BLOCK_REGULATION_ID,
     LandingBlockType,
     LandingConfiguration,
@@ -81,7 +84,7 @@ class DjangoPublicCatalogReader:
                 status__in=PUBLIC_CATALOG_DOMAIN_STATUSES,
                 deleted_at__isnull=True,
             )
-            .prefetch_related("participation_formats", "pricing_rules", "categories")
+            .prefetch_related("participation_formats", "pricing_rules", "categories", "documents")
             .first()
         )
         if competition is None:
@@ -142,7 +145,8 @@ class DjangoPublicCatalogReader:
 
         config = landing_config_from_json(competition.landing_config)
         regulation = self._regulation(competition)
-        landing = self._landing_with_regulation(project_landing(config), config, regulation)
+        documents = self._documents(competition)
+        landing = self._landing_with_markers(project_landing(config), config, regulation, documents)
         contacts = project_contacts(
             contacts_config_from_json(competition.contacts_config),
             organizer_name=organizer.name,
@@ -177,32 +181,45 @@ class DjangoPublicCatalogReader:
             landing=landing,
             contacts=contacts,
             regulation=regulation,
+            documents=tuple(documents),
             created_at=competition.created_at,
             updated_at=competition.updated_at,
         )
 
-    @staticmethod
-    def _landing_with_regulation(
+    @classmethod
+    def _landing_with_markers(
+        cls,
         landing: PublicFestivalLandingView,
         config: LandingConfiguration,
         regulation: PublicFestivalRegulationView | None,
+        documents: list[PublicFestivalDocumentView],
     ) -> PublicFestivalLandingView:
-        """Guarantee a REGULATION marker for configs that predate the block type.
+        """Guarantee REGULATION / DOCUMENTS markers for configs that predate them.
 
-        The organizer controls the regulation block like any other (enable /
-        disable / reorder). But competitions whose landing config was persisted
-        before REGULATION existed have no such block, so their regulation would
-        silently vanish. When a regulation exists yet no REGULATION block is
+        The organizer controls both blocks like any other (enable / disable /
+        reorder). But competitions whose landing config was persisted before the
+        block types existed have none, so their regulation / public documents
+        would silently vanish. When such content exists yet no matching block is
         configured at all, prepend a synthetic enabled marker — matching the old
         top-of-page placement — without touching organizer-authored configs.
         """
-        if regulation is None:
-            return landing
-        if any(block.type is LandingBlockType.REGULATION for block in config.blocks):
-            return landing
-        marker = PublicFestivalLandingBlockView(
-            id=SYSTEM_BLOCK_REGULATION_ID,
-            type=LandingBlockType.REGULATION.value,
+        blocks = list(landing.blocks)
+        # Prepend in reverse priority so the final order is REGULATION, DOCUMENTS, …
+        if documents and not cls._has_block(config, LandingBlockType.DOCUMENTS):
+            blocks.insert(0, cls._marker(SYSTEM_BLOCK_DOCUMENTS_ID, LandingBlockType.DOCUMENTS))
+        if regulation is not None and not cls._has_block(config, LandingBlockType.REGULATION):
+            blocks.insert(0, cls._marker(SYSTEM_BLOCK_REGULATION_ID, LandingBlockType.REGULATION))
+        return PublicFestivalLandingView(blocks=tuple(blocks))
+
+    @staticmethod
+    def _has_block(config: LandingConfiguration, block_type: LandingBlockType) -> bool:
+        return any(block.type is block_type for block in config.blocks)
+
+    @staticmethod
+    def _marker(block_id: str, block_type: LandingBlockType) -> PublicFestivalLandingBlockView:
+        return PublicFestivalLandingBlockView(
+            id=block_id,
+            type=block_type.value,
             sort_order=0,
             title=None,
             subtitle=None,
@@ -210,7 +227,25 @@ class DjangoPublicCatalogReader:
             body=None,
             content_format=None,
         )
-        return PublicFestivalLandingView(blocks=(marker, *landing.blocks))
+
+    @staticmethod
+    def _documents(competition: CompetitionModel) -> list[PublicFestivalDocumentView]:
+        published_public = [
+            document
+            for document in competition.documents.all()
+            if document.published and is_public_document_visibility(document.visibility)
+        ]
+        published_public.sort(key=lambda document: (document.sort_order, document.title))
+        return [
+            PublicFestivalDocumentView(
+                id=str(document.id),
+                title=document.title,
+                category=document.category,
+                description=document.description,
+                file_reference=document.file_reference,
+            )
+            for document in published_public
+        ]
 
     @staticmethod
     def _regulation(competition: CompetitionModel) -> PublicFestivalRegulationView | None:
