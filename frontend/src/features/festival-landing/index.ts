@@ -13,6 +13,7 @@ export {
   type FaqItem,
   type FestivalContacts,
   type FestivalDetail,
+  type FestivalDocument,
   type FestivalVenue,
   formatFromPrice,
   type GalleryImage,

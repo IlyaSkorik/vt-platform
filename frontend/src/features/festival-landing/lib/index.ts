@@ -5,6 +5,7 @@ export {
   type FaqItem,
   type FestivalContacts,
   type FestivalDetail,
+  type FestivalDocument,
   type FestivalVenue,
   type GalleryImage,
   type JuryCard,

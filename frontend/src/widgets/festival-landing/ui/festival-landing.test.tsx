@@ -68,6 +68,8 @@ describe("FestivalLanding", () => {
     expect(screen.getByRole("heading", { name: "Место проведения" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Положение фестиваля" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /скачать положение/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Документы" })).toBeInTheDocument();
+    expect(screen.getByText("Программа фестиваля")).toBeInTheDocument();
     expect(screen.getByText("Оргкомитет фестиваля")).toBeInTheDocument();
 
     const apply = screen.getAllByRole("link", { name: /подать заявку/i });

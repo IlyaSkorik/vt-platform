@@ -1,5 +1,6 @@
 import { bodyBlocks, type FestivalDetail, LANDING_BLOCK_TYPES } from "@/features/festival-landing";
 import { ContentSection } from "./blocks/content-section";
+import { DocumentsSection } from "./blocks/documents-section";
 import { FaqSection } from "./blocks/faq-section";
 import { GallerySection } from "./blocks/gallery-section";
 import { JurySection } from "./blocks/jury-section";
@@ -48,6 +49,9 @@ export function LandingSections({ festival }: LandingSectionsProps): React.JSX.E
             return festival.regulation ? (
               <RegulationSection key={block.id} regulation={festival.regulation} />
             ) : null;
+          case LANDING_BLOCK_TYPES.DOCUMENTS:
+            // Positional marker: renders the public documents (nothing if none).
+            return <DocumentsSection key={block.id} documents={festival.documents} />;
           default:
             return null;
         }

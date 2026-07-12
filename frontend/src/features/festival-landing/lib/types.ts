@@ -1,6 +1,7 @@
 import type {
   PublicFestivalContacts,
   PublicFestivalDetail,
+  PublicFestivalDocument,
   PublicFestivalFaqItem,
   PublicFestivalGalleryImage,
   PublicFestivalJuryCard,
@@ -29,6 +30,7 @@ export type GalleryImage = PublicFestivalGalleryImage;
 export type FaqItem = PublicFestivalFaqItem;
 export type TeamMember = PublicFestivalTeamMember;
 export type Regulation = PublicFestivalRegulation;
+export type FestivalDocument = PublicFestivalDocument;
 
 /** Public lifecycle status projected by the backend read model. */
 export type PublicStatus =
@@ -48,6 +50,7 @@ export const LANDING_BLOCK_TYPES = {
   FAQ: "FAQ",
   CONTENT: "CONTENT",
   REGULATION: "REGULATION",
+  DOCUMENTS: "DOCUMENTS",
 } as const;
 
 export type LandingBlockType = (typeof LANDING_BLOCK_TYPES)[keyof typeof LANDING_BLOCK_TYPES];

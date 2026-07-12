@@ -79,21 +79,31 @@ export function makeFestivalDetail(overrides: Partial<FestivalDetail> = {}): Fes
       publicationDate: "2026-05-15",
       fileReference: "/media/regulations/fest.pdf",
     },
+    documents: [
+      {
+        id: "doc-1",
+        title: "Программа фестиваля",
+        category: "PROGRAM",
+        description: "Расписание по дням",
+        fileReference: "/media/documents/program.pdf",
+      },
+    ],
     ...rest,
     pricing: { amountFrom: "30.00", currency: "BYN", multiple: true, ...pricing },
     landing: {
       blocks: [
         makeBlock({ id: "hero", type: "HERO", sortOrder: 0, title: "Взлёт талантов" }),
         makeBlock({ id: "regulation", type: "REGULATION", sortOrder: 1 }),
+        makeBlock({ id: "documents", type: "DOCUMENTS", sortOrder: 2 }),
         makeBlock({
           id: "about",
           type: "CONTENT",
-          sortOrder: 2,
+          sortOrder: 3,
           title: "О фестивале",
           body: "Ежегодный праздник детского творчества.",
           contentFormat: "PLAIN",
         }),
-        makeBlock({ id: "venue", type: "VENUE", sortOrder: 3 }),
+        makeBlock({ id: "venue", type: "VENUE", sortOrder: 4 }),
       ],
       ...landing,
     },
