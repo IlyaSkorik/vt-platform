@@ -272,10 +272,9 @@ class TestContactsConfiguration:
 class TestLandingConfiguration:
     def test_default(self) -> None:
         from apps.competitions.domain.landing_configuration import (
+            SYSTEM_BLOCK_HERO_ID,
             LandingBlockType,
             LandingConfiguration,
-            SYSTEM_BLOCK_HERO_ID,
-            SYSTEM_BLOCK_VENUE_ID,
         )
         from apps.competitions.infrastructure.mappers.landing_config_json import (
             landing_config_from_json,
@@ -286,6 +285,7 @@ class TestLandingConfiguration:
         types = [b.type for b in config.blocks]
         assert types == [
             LandingBlockType.HERO,
+            LandingBlockType.REGULATION,
             LandingBlockType.VENUE,
             LandingBlockType.JURY,
             LandingBlockType.PARTNERS,
@@ -293,10 +293,8 @@ class TestLandingConfiguration:
             LandingBlockType.FAQ,
         ]
         assert config.blocks[0].id == SYSTEM_BLOCK_HERO_ID
-        assert config.blocks[0].enabled is True
-        assert config.blocks[1].id == SYSTEM_BLOCK_VENUE_ID
-        assert config.blocks[1].enabled is True
-        assert all(b.enabled is False for b in config.blocks[2:])
+        # HERO, REGULATION and VENUE ship enabled; the rest start disabled.
+        assert [b.enabled for b in config.blocks] == [True, True, True, False, False, False, False]
         assert LandingBlockType.CONTENT not in types
 
         roundtrip = landing_config_from_json(landing_config_to_json(config))
@@ -312,10 +310,10 @@ class TestLandingConfiguration:
     def test_requires_hero_and_venue(self) -> None:
         from apps.competitions.domain.exceptions import InvalidLandingConfigurationError
         from apps.competitions.domain.landing_configuration import (
+            SYSTEM_BLOCK_HERO_ID,
             LandingBlock,
             LandingBlockType,
             LandingConfiguration,
-            SYSTEM_BLOCK_HERO_ID,
         )
 
         with pytest.raises(InvalidLandingConfigurationError):
@@ -347,10 +345,10 @@ class TestLandingConfiguration:
     def test_duplicate_card_ids_rejected(self) -> None:
         from apps.competitions.domain.exceptions import InvalidLandingConfigurationError
         from apps.competitions.domain.landing_configuration import (
+            SYSTEM_BLOCK_JURY_ID,
             JuryCard,
             LandingBlock,
             LandingBlockType,
-            SYSTEM_BLOCK_JURY_ID,
         )
 
         with pytest.raises(InvalidLandingConfigurationError):

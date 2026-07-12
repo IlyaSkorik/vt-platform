@@ -54,7 +54,11 @@ class TestPublicFestivalDetailEndpoint:
         data = response.data["data"]
         assert data["title"] == "Весенний вокал"
         assert data["status"] == "REGISTRATION_OPEN"
-        assert [block["type"] for block in data["landing"]["blocks"]] == ["HERO", "VENUE"]
+        assert [block["type"] for block in data["landing"]["blocks"]] == [
+            "HERO",
+            "REGULATION",
+            "VENUE",
+        ]
         assert data["contacts"]["organizationName"] == "Оргкомитет"
         assert data["contacts"]["website"] == "https://fest.by"
         assert data["contacts"]["venue"]["name"] == "Дворец культуры"

@@ -17,6 +17,8 @@ from apps.competitions.application.read_models.public_catalog import (
     PUBLIC_CATALOG_DOMAIN_STATUSES,
     PublicFestivalDetailView,
     PublicFestivalFormatView,
+    PublicFestivalLandingBlockView,
+    PublicFestivalLandingView,
     PublicFestivalOrganizerView,
     PublicFestivalPricingView,
     PublicFestivalRegulationView,
@@ -28,6 +30,11 @@ from apps.competitions.application.read_models.public_catalog import (
     public_status_for,
     resolve_city,
     resolve_cover_image,
+)
+from apps.competitions.domain.landing_configuration import (
+    SYSTEM_BLOCK_REGULATION_ID,
+    LandingBlockType,
+    LandingConfiguration,
 )
 from apps.competitions.infrastructure.mappers.contacts_config_json import contacts_config_from_json
 from apps.competitions.infrastructure.mappers.landing_config_json import landing_config_from_json
@@ -133,7 +140,9 @@ class DjangoPublicCatalogReader:
         public_status = public_status_for(competition.status)
         assert public_status is not None
 
-        landing = project_landing(landing_config_from_json(competition.landing_config))
+        config = landing_config_from_json(competition.landing_config)
+        regulation = self._regulation(competition)
+        landing = self._landing_with_regulation(project_landing(config), config, regulation)
         contacts = project_contacts(
             contacts_config_from_json(competition.contacts_config),
             organizer_name=organizer.name,
@@ -167,10 +176,41 @@ class DjangoPublicCatalogReader:
             categories=tuple(self._categories(competition)),
             landing=landing,
             contacts=contacts,
-            regulation=self._regulation(competition),
+            regulation=regulation,
             created_at=competition.created_at,
             updated_at=competition.updated_at,
         )
+
+    @staticmethod
+    def _landing_with_regulation(
+        landing: PublicFestivalLandingView,
+        config: LandingConfiguration,
+        regulation: PublicFestivalRegulationView | None,
+    ) -> PublicFestivalLandingView:
+        """Guarantee a REGULATION marker for configs that predate the block type.
+
+        The organizer controls the regulation block like any other (enable /
+        disable / reorder). But competitions whose landing config was persisted
+        before REGULATION existed have no such block, so their regulation would
+        silently vanish. When a regulation exists yet no REGULATION block is
+        configured at all, prepend a synthetic enabled marker — matching the old
+        top-of-page placement — without touching organizer-authored configs.
+        """
+        if regulation is None:
+            return landing
+        if any(block.type is LandingBlockType.REGULATION for block in config.blocks):
+            return landing
+        marker = PublicFestivalLandingBlockView(
+            id=SYSTEM_BLOCK_REGULATION_ID,
+            type=LandingBlockType.REGULATION.value,
+            sort_order=0,
+            title=None,
+            subtitle=None,
+            cover_image=None,
+            body=None,
+            content_format=None,
+        )
+        return PublicFestivalLandingView(blocks=(marker, *landing.blocks))
 
     @staticmethod
     def _regulation(competition: CompetitionModel) -> PublicFestivalRegulationView | None:

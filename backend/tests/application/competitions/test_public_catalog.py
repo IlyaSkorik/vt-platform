@@ -272,9 +272,9 @@ class TestLandingProjection:
 
         landing = project_landing(LandingConfiguration.default())
 
-        # HERO + VENUE ship enabled by default; the rest start disabled.
-        assert [block.type for block in landing.blocks] == ["HERO", "VENUE"]
-        assert [block.sort_order for block in landing.blocks] == [0, 1]
+        # HERO + REGULATION + VENUE ship enabled by default; the rest start disabled.
+        assert [block.type for block in landing.blocks] == ["HERO", "REGULATION", "VENUE"]
+        assert [block.sort_order for block in landing.blocks] == [0, 1, 2]
 
     def test_projects_content_jury_partners_and_sorts_children(self) -> None:
         from apps.competitions.application.read_models import project_landing
@@ -444,12 +444,99 @@ class TestDjangoPublicCatalogReaderDetail:
 
         assert detail is not None
         assert detail.status == "REGISTRATION_OPEN"
-        # Default landing config seeds an enabled HERO + VENUE.
-        assert [block.type for block in detail.landing.blocks] == ["HERO", "VENUE"]
+        # Default landing config seeds an enabled HERO + REGULATION + VENUE.
+        assert [block.type for block in detail.landing.blocks] == ["HERO", "REGULATION", "VENUE"]
         assert detail.contacts.organization_name == "Оргкомитет"
         assert detail.contacts.email == "hi@fest.by"
         assert detail.contacts.venue.name == "Дворец культуры"
         assert detail.contacts.venue.city == "Минск"
+
+    def _with_regulation(self, competition):
+        import datetime
+
+        from apps.competitions.infrastructure.models import CompetitionModel, RegulationModel
+
+        regulation = RegulationModel.objects.create(
+            competition=competition,
+            title="Положение",
+            document_version="v1",
+            publication_date=datetime.date(2026, 5, 1),
+            file_reference="/media/reg.pdf",
+        )
+        CompetitionModel.objects.filter(pk=competition.pk).update(
+            current_regulation_id=regulation.id
+        )
+
+    def test_default_config_shows_regulation_block(self) -> None:
+        org = self._organization()
+        competition = self._competition(organizer_id=org.id, status="RUNNING", title="Конкурс с блоком")
+        self._with_regulation(competition)
+
+        detail = self._reader().get_festival(str(competition.id))
+
+        assert detail is not None
+        assert "REGULATION" in [block.type for block in detail.landing.blocks]
+        assert detail.regulation is not None
+
+    def test_disabled_regulation_block_is_hidden(self) -> None:
+        from apps.competitions.domain.landing_configuration import (
+            SYSTEM_BLOCK_HERO_ID,
+            SYSTEM_BLOCK_REGULATION_ID,
+            SYSTEM_BLOCK_VENUE_ID,
+        )
+
+        org = self._organization()
+        competition = self._competition(
+            organizer_id=org.id,
+            status="RUNNING",
+            title="Выключен",
+            landing_config={
+                "blocks": [
+                    {"id": SYSTEM_BLOCK_HERO_ID, "type": "HERO", "enabled": True, "sort_order": 0},
+                    {
+                        "id": SYSTEM_BLOCK_REGULATION_ID,
+                        "type": "REGULATION",
+                        "enabled": False,
+                        "sort_order": 1,
+                    },
+                    {"id": SYSTEM_BLOCK_VENUE_ID, "type": "VENUE", "enabled": True, "sort_order": 2},
+                ]
+            },
+        )
+        self._with_regulation(competition)
+
+        detail = self._reader().get_festival(str(competition.id))
+
+        assert detail is not None
+        # Organizer disabled the block: it is respected even though a regulation exists.
+        assert "REGULATION" not in [block.type for block in detail.landing.blocks]
+        assert detail.regulation is not None
+
+    def test_injects_regulation_marker_for_legacy_config(self) -> None:
+        from apps.competitions.domain.landing_configuration import (
+            SYSTEM_BLOCK_HERO_ID,
+            SYSTEM_BLOCK_VENUE_ID,
+        )
+
+        org = self._organization()
+        competition = self._competition(
+            organizer_id=org.id,
+            status="RUNNING",
+            title="Старый конфиг",
+            landing_config={
+                "blocks": [
+                    {"id": SYSTEM_BLOCK_HERO_ID, "type": "HERO", "enabled": True, "sort_order": 0},
+                    {"id": SYSTEM_BLOCK_VENUE_ID, "type": "VENUE", "enabled": True, "sort_order": 1},
+                ]
+            },
+        )
+        self._with_regulation(competition)
+
+        detail = self._reader().get_festival(str(competition.id))
+
+        assert detail is not None
+        # Config predates the REGULATION block, so a marker is injected to keep it visible.
+        assert "REGULATION" in [block.type for block in detail.landing.blocks]
 
     def test_none_for_hidden_state(self) -> None:
         org = self._organization()

@@ -230,7 +230,9 @@ class _FaqItemInputSerializer(serializers.Serializer[dict[str, object]]):
 
 class _LandingBlockInputSerializer(serializers.Serializer[dict[str, object]]):
     id = serializers.UUIDField()
-    type = serializers.ChoiceField(choices=["HERO", "VENUE", "JURY", "PARTNERS", "GALLERY", "FAQ", "CONTENT"])
+    type = serializers.ChoiceField(
+        choices=["HERO", "VENUE", "JURY", "PARTNERS", "GALLERY", "FAQ", "CONTENT", "REGULATION"]
+    )
     enabled = serializers.BooleanField()
     sortOrder = serializers.IntegerField(source="sort_order", min_value=0)
     title = serializers.CharField(required=False, allow_blank=True, allow_null=True)
