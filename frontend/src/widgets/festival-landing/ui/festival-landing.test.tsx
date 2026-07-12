@@ -1,5 +1,6 @@
 import type { UseQueryResult } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { type FestivalDetail, usePublicFestival } from "@/features/festival-landing";
@@ -129,5 +130,35 @@ describe("FestivalLanding", () => {
     expect(screen.getByRole("img", { name: "Гала-концерт" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Частые вопросы" })).toBeInTheDocument();
     expect(screen.getByText("Как принять участие?")).toBeInTheDocument();
+  });
+
+  it("opens a gallery photo in a lightbox on click", async () => {
+    mockQuery({
+      data: makeFestivalDetail({
+        landing: {
+          blocks: [
+            makeBlock({ id: "hero", type: "HERO", sortOrder: 0 }),
+            makeBlock({
+              id: "gallery",
+              type: "GALLERY",
+              sortOrder: 1,
+              images: [
+                { id: "g1", url: "https://cdn.example/1.jpg", caption: "Гала-концерт" },
+                { id: "g2", url: "https://cdn.example/2.jpg", caption: "Финал" },
+              ],
+            }),
+          ],
+        },
+      }),
+    });
+    renderLanding();
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /открыть фото: гала-концерт/i }));
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByRole("img", { name: "Гала-концерт" })).toBeInTheDocument();
+    // A multi-image gallery offers in-lightbox navigation.
+    expect(within(dialog).getByRole("button", { name: /следующее фото/i })).toBeInTheDocument();
   });
 });
