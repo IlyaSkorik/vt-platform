@@ -152,6 +152,14 @@ const routes: RouteObject[] = [
                 lazy: lazyPage(() => import("@/pages/participants"), "ParticipantsPage"),
               },
               {
+                path: ROUTES.cabinetParticipantNew.slice(1),
+                lazy: lazyPage(() => import("@/pages/participants"), "ParticipantsProfilePage"),
+              },
+              {
+                path: ROUTES.cabinetParticipantProfile.slice(1),
+                lazy: lazyPage(() => import("@/pages/participants"), "ParticipantsProfilePage"),
+              },
+              {
                 path: ROUTES.cabinetApplications.slice(1),
                 lazy: workspacePlaceholder(
                   participantItem(ROUTES.cabinetApplications),
