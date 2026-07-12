@@ -337,11 +337,18 @@ export function ParticipantsPage(): React.JSX.Element {
               className="w-full"
               leadingIcon={<Search aria-hidden="true" />}
             />
-            <div className="flex items-center justify-end gap-2">
-              <Button variant="outline" onClick={() => setOrganizationDialogOpen(true)}>
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+              <Button
+                className="w-full sm:w-auto"
+                variant="outline"
+                onClick={() => setOrganizationDialogOpen(true)}
+              >
                 Справочник организаций
               </Button>
-              <Button onClick={() => navigate(ROUTES.cabinetParticipantNew)}>
+              <Button
+                className="w-full sm:w-auto"
+                onClick={() => navigate(ROUTES.cabinetParticipantNew)}
+              >
                 <Plus aria-hidden="true" /> Добавить участника
               </Button>
             </div>
@@ -645,7 +652,7 @@ export function ParticipantsProfilePage(): React.JSX.Element {
       <PageContent>
         {isCreateMode ? (
           <Tabs defaultValue="general" className="space-y-4">
-            <TabsList>
+            <TabsList className="w-full justify-start overflow-x-auto">
               <TabsTrigger value="general">Общее</TabsTrigger>
               <TabsTrigger value="organizations">Образовательные организации</TabsTrigger>
               <TabsTrigger value="history">История</TabsTrigger>
@@ -810,7 +817,7 @@ export function ParticipantsProfilePage(): React.JSX.Element {
           />
         ) : (
           <Tabs defaultValue="general" className="space-y-4">
-            <TabsList>
+            <TabsList className="w-full justify-start overflow-x-auto">
               <TabsTrigger value="general">Общее</TabsTrigger>
               <TabsTrigger value="organizations">Образовательные организации</TabsTrigger>
               <TabsTrigger value="history">История</TabsTrigger>
