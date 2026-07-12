@@ -9,5 +9,6 @@ from __future__ import annotations
 from django.urls import include, path
 
 urlpatterns = [
+    path("", include("apps.participants.presentation.api.v1.registry.urls")),
     path("", include("apps.participants.presentation.api.v1.participants.urls")),
 ]

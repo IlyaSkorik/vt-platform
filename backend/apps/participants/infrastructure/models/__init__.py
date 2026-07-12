@@ -14,10 +14,18 @@ from __future__ import annotations
 from .base import BasePersistenceModel, uuid7
 from .guardian_link import GuardianLinkModel
 from .participant import ParticipantModel
+from .registry import (
+    EducationalOrganizationModel,
+    ParticipantOrganizationMembershipModel,
+    ParticipantRegistryModel,
+)
 
 __all__ = [
     "BasePersistenceModel",
+    "EducationalOrganizationModel",
     "GuardianLinkModel",
+    "ParticipantOrganizationMembershipModel",
     "ParticipantModel",
+    "ParticipantRegistryModel",
     "uuid7",
 ]
