@@ -4,6 +4,375 @@ info:
   version: 1.0.0
   description: «Взлёт талантов» — REST API for children's creative competitions.
 paths:
+  /api/v1/applications:
+    get:
+      operationId: applications_list
+      description: GET/POST /api/v1/applications - list the applicant's orders or
+        create one.
+      summary: List my applications
+      parameters:
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: Filter to a status, e.g. DRAFT.
+      tags:
+      - Applications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationListResponse'
+          description: ''
+    post:
+      operationId: applications_create
+      description: GET/POST /api/v1/applications - list the applicant's orders or
+        create one.
+      summary: Create an application
+      tags:
+      - Applications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApplicationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateApplicationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateApplicationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationsProblemDetail'
+          description: Malformed request.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationsProblemDetail'
+          description: Competition/applicant not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationsProblemDetail'
+          description: Competition not accepting applications.
+  /api/v1/applications/{application_id}:
+    get:
+      operationId: applications_retrieve
+      description: GET /api/v1/applications/{id} - retrieve one order in full.
+      summary: Retrieve an application
+      parameters:
+      - in: path
+        name: application_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Applications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationsProblemDetail'
+          description: Not found.
+  /api/v1/applications/{application_id}/cancellation:
+    post:
+      operationId: applications_cancel
+      description: POST /api/v1/applications/{id}/cancellation - cancel the order.
+      summary: Cancel the application
+      parameters:
+      - in: path
+        name: application_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Applications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+          description: ''
+  /api/v1/applications/{application_id}/consents:
+    put:
+      operationId: applications_record_consents
+      description: PUT /api/v1/applications/{id}/consents - record the accepted consents.
+      summary: Record consents
+      parameters:
+      - in: path
+        name: application_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Applications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordConsentsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecordConsentsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecordConsentsRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+          description: ''
+  /api/v1/applications/{application_id}/educational-organization:
+    put:
+      operationId: applications_select_organization
+      description: PUT /api/v1/applications/{id}/educational-organization - select
+        the educational organization.
+      summary: Select educational organization
+      parameters:
+      - in: path
+        name: application_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Applications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SelectEducationalOrganizationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SelectEducationalOrganizationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SelectEducationalOrganizationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+          description: ''
+  /api/v1/applications/{application_id}/payment:
+    post:
+      operationId: applications_mark_paid
+      description: POST /api/v1/applications/{id}/payment - record payment.
+      summary: Mark paid
+      parameters:
+      - in: path
+        name: application_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Applications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+          description: ''
+  /api/v1/applications/{application_id}/payment-request:
+    post:
+      operationId: applications_request_payment
+      description: POST /api/v1/applications/{id}/payment-request - move to awaiting
+        payment.
+      summary: Request payment
+      parameters:
+      - in: path
+        name: application_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Applications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+          description: ''
+  /api/v1/applications/{application_id}/placement:
+    post:
+      operationId: applications_submit
+      description: POST /api/v1/applications/{id}/placement - submit the order.
+      summary: Submit the application
+      parameters:
+      - in: path
+        name: application_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Applications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+          description: ''
+  /api/v1/applications/{application_id}/services:
+    post:
+      operationId: applications_select_service
+      description: POST /api/v1/applications/{id}/services - select an additional
+        service.
+      summary: Select an additional service
+      parameters:
+      - in: path
+        name: application_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Applications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SelectServiceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SelectServiceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SelectServiceRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+          description: ''
+  /api/v1/applications/{application_id}/services/{service_id}:
+    delete:
+      operationId: applications_remove_service
+      description: DELETE /api/v1/applications/{id}/services/{serviceId} - remove
+        an additional service.
+      summary: Remove an additional service
+      parameters:
+      - in: path
+        name: application_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: service_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Applications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+          description: ''
+  /api/v1/applications/{application_id}/submissions:
+    post:
+      operationId: applications_add_submission
+      description: POST /api/v1/applications/{id}/submissions - add a performance
+        (submission) to the order.
+      summary: Add a submission
+      parameters:
+      - in: path
+        name: application_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Applications
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+          description: ''
+  /api/v1/applications/{application_id}/submissions/{submission_id}:
+    delete:
+      operationId: applications_remove_submission
+      description: DELETE /api/v1/applications/{id}/submissions/{submissionId} - detach
+        and cancel a submission.
+      summary: Remove a submission
+      parameters:
+      - in: path
+        name: application_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: submission_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Applications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+          description: ''
   /api/v1/auth/email-verification/confirmations:
     post:
       operationId: confirmEmailVerification
@@ -4216,6 +4585,242 @@ paths:
               schema:
                 $ref: '#/components/schemas/ParticipantsProblemDetail'
           description: Invalid transition.
+  /api/v1/participants/organizations:
+    get:
+      operationId: participants_organizations_retrieve
+      tags:
+      - Participants
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: participants_organizations_create
+      tags:
+      - Participants
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrganizationWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OrganizationWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OrganizationWrite'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/participants/organizations/{organization_id}:
+    patch:
+      operationId: participants_organizations_partial_update
+      parameters:
+      - in: path
+        name: organization_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Participants
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOrganizationWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedOrganizationWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOrganizationWrite'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/participants/organizations/{organization_id}/archive:
+    post:
+      operationId: participants_organizations_archive_create
+      parameters:
+      - in: path
+        name: organization_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Participants
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/participants/registry:
+    get:
+      operationId: participant_registry_list
+      parameters:
+      - in: query
+        name: ageMax
+        schema:
+          type: integer
+      - in: query
+        name: ageMin
+        schema:
+          type: integer
+      - in: query
+        name: archived
+        schema:
+          type: boolean
+      - in: query
+        name: city
+        schema:
+          type: string
+      - in: query
+        name: gender
+        schema:
+          type: string
+      - in: query
+        name: organizationId
+        schema:
+          type: string
+      - in: query
+        name: q
+        schema:
+          type: string
+      tags:
+      - Participants
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: participants_registry_create
+      tags:
+      - Participants
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParticipantRegistryWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ParticipantRegistryWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ParticipantRegistryWrite'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/participants/registry/{participant_id}:
+    get:
+      operationId: participants_registry_retrieve
+      parameters:
+      - in: path
+        name: participant_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Participants
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: participants_registry_partial_update
+      parameters:
+      - in: path
+        name: participant_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Participants
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedParticipantRegistryWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedParticipantRegistryWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedParticipantRegistryWrite'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: participants_registry_destroy
+      parameters:
+      - in: path
+        name: participant_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Participants
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: Deleted
+  /api/v1/participants/registry/{participant_id}/archive:
+    post:
+      operationId: participants_registry_archive_create
+      parameters:
+      - in: path
+        name: participant_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Participants
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/public/competitions/{competition_id}/registration:
+    get:
+      operationId: getRegistration
+      description: |-
+        The single Registration projection for the wizard (participant-facing).
+
+        ``GET /api/v1/public/competitions/{competition_id}/registration`` returns
+        everything the Registration Wizard needs to render — competition summary,
+        the full configuration taxonomy, admission rules, additional services,
+        required consents, per-format upload requirements, deadlines and registration
+        availability — assembled from the Competition aggregate in one read. Draft or
+        archived competitions return a 404 problem, never leaking their existence.
+      parameters:
+      - in: path
+        name: competition_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Public Catalog
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationEnvelope'
+          description: ''
   /api/v1/public/festivals:
     get:
       operationId: listPublicFestivals
@@ -4389,6 +4994,546 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: Invitation not found.
+  /api/v1/submissions/{submission_id}:
+    get:
+      operationId: submissions_retrieve
+      description: GET /api/v1/submissions/{id} - retrieve one submission in full.
+      summary: Retrieve a submission
+      parameters:
+      - in: path
+        name: submission_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Submissions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionProblemDetail'
+          description: Not found.
+  /api/v1/submissions/{submission_id}/attachments:
+    post:
+      operationId: submissions_upload_attachment
+      description: POST /api/v1/submissions/{id}/attachments - upload and attach a
+        file.
+      summary: Upload an attachment
+      parameters:
+      - in: path
+        name: submission_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Submission Attachments
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadAttachmentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionAttachmentResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionAttachmentProblemDetail'
+          description: Malformed request.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionAttachmentProblemDetail'
+          description: Submission not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionAttachmentProblemDetail'
+          description: Submission not editable.
+        '413':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionAttachmentProblemDetail'
+          description: File too large.
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionAttachmentProblemDetail'
+          description: Unsupported file type.
+  /api/v1/submissions/{submission_id}/attachments/{attachment_id}:
+    delete:
+      operationId: submissions_remove_attachment
+      description: DELETE /api/v1/submissions/{id}/attachments/{attachmentId} - remove
+        an attachment.
+      summary: Remove an attachment
+      parameters:
+      - in: path
+        name: attachment_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: submission_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Submission Attachments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionAttachmentResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionAttachmentProblemDetail'
+          description: Not found.
+  /api/v1/submissions/{submission_id}/participants:
+    post:
+      operationId: submissions_add_participant
+      description: POST /api/v1/submissions/{id}/participants - add a participant.
+      summary: Add a participant
+      parameters:
+      - in: path
+        name: submission_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Submissions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddParticipantRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddParticipantRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddParticipantRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionProblemDetail'
+          description: Malformed.
+  /api/v1/submissions/{submission_id}/participants/{participant_id}:
+    delete:
+      operationId: submissions_remove_participant
+      description: DELETE /api/v1/submissions/{id}/participants/{participantId} -
+        remove a participant.
+      summary: Remove a participant
+      parameters:
+      - in: path
+        name: participant_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: submission_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Submissions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionProblemDetail'
+          description: Not found.
+  /api/v1/submissions/{submission_id}/performance:
+    put:
+      operationId: submissions_set_performance
+      description: PUT /api/v1/submissions/{id}/performance - set or replace the performance.
+      summary: Set the performance
+      parameters:
+      - in: path
+        name: submission_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Submissions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetPerformanceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SetPerformanceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SetPerformanceRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionProblemDetail'
+          description: Malformed.
+  /api/v1/submissions/{submission_id}/price:
+    post:
+      operationId: submissions_calculate_price
+      description: POST /api/v1/submissions/{id}/price - calculate and freeze the
+        price snapshot.
+      summary: Calculate the price
+      parameters:
+      - in: path
+        name: submission_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Submissions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+          description: ''
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionProblemDetail'
+          description: No pricing.
+  /api/v1/submissions/{submission_id}/teachers:
+    post:
+      operationId: submissions_add_teacher
+      description: POST /api/v1/submissions/{id}/teachers - credit a teacher.
+      summary: Credit a teacher
+      parameters:
+      - in: path
+        name: submission_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Submissions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreditTeacherRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreditTeacherRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreditTeacherRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionProblemDetail'
+          description: Malformed.
+  /api/v1/submissions/{submission_id}/teachers/{teacher_id}:
+    delete:
+      operationId: submissions_remove_teacher
+      description: DELETE /api/v1/submissions/{id}/teachers/{teacherId} - remove a
+        credited teacher.
+      summary: Remove a teacher
+      parameters:
+      - in: path
+        name: submission_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: teacher_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Submissions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionProblemDetail'
+          description: Not found.
+  /api/v1/teachers:
+    get:
+      operationId: teachers_list
+      description: GET/POST /api/v1/teachers - list the directory or add a teacher.
+      summary: List the personal teacher directory
+      parameters:
+      - in: query
+        name: includeArchived
+        schema:
+          type: boolean
+        description: Include archived teachers.
+      tags:
+      - Teacher Directory
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherDirectoryResponse'
+          description: ''
+    post:
+      operationId: teachers_create
+      description: GET/POST /api/v1/teachers - list the directory or add a teacher.
+      summary: Add a teacher to the directory
+      tags:
+      - Teacher Directory
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddTeacherRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddTeacherRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddTeacherRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeachersProblemDetail'
+          description: Malformed request.
+  /api/v1/teachers/{teacher_id}:
+    get:
+      operationId: teachers_retrieve
+      description: GET/PATCH /api/v1/teachers/{id} - retrieve or update a teacher.
+      summary: Retrieve a teacher
+      parameters:
+      - in: path
+        name: teacher_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Teacher Directory
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeachersProblemDetail'
+          description: Not found.
+    patch:
+      operationId: teachers_update
+      description: GET/PATCH /api/v1/teachers/{id} - retrieve or update a teacher.
+      summary: Update a teacher
+      parameters:
+      - in: path
+        name: teacher_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Teacher Directory
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateTeacherRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateTeacherRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateTeacherRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeachersProblemDetail'
+          description: Malformed request.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeachersProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeachersProblemDetail'
+          description: Teacher is archived.
+  /api/v1/teachers/{teacher_id}/archival:
+    post:
+      operationId: teachers_archive
+      description: POST /api/v1/teachers/{id}/archival - archive a teacher.
+      summary: Archive a teacher
+      parameters:
+      - in: path
+        name: teacher_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Teacher Directory
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeachersProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeachersProblemDetail'
+          description: Invalid transition.
+  /api/v1/teachers/{teacher_id}/reactivation:
+    post:
+      operationId: teachers_reactivate
+      description: POST /api/v1/teachers/{id}/reactivation - reactivate an archived
+        teacher.
+      summary: Reactivate a teacher
+      parameters:
+      - in: path
+        name: teacher_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Teacher Directory
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeachersProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeachersProblemDetail'
+          description: Invalid transition.
   /api/v1/users/me:
     get:
       operationId: getCurrentUser
@@ -4651,6 +5796,36 @@ components:
       - categoryId
       - minCount
       - name
+    AddParticipantRequest:
+      type: object
+      description: Validate an add-participant request body.
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        middleName:
+          type:
+          - string
+          - 'null'
+        birthDate:
+          type: string
+          format: date
+        gender:
+          $ref: '#/components/schemas/AddParticipantRequestGenderEnum'
+      required:
+      - birthDate
+      - firstName
+      - gender
+      - lastName
+    AddParticipantRequestGenderEnum:
+      enum:
+      - MALE
+      - FEMALE
+      type: string
+      description: |-
+        * `MALE` - MALE
+        * `FEMALE` - FEMALE
     AddParticipationFormat:
       type: object
       properties:
@@ -4729,6 +5904,32 @@ components:
       - publicationDate
       - title
       - version
+    AddTeacherRequest:
+      type: object
+      description: Validate an add-teacher request body.
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        middleName:
+          type:
+          - string
+          - 'null'
+        role:
+          type: string
+        email:
+          type:
+          - string
+          - 'null'
+        phone:
+          type:
+          - string
+          - 'null'
+      required:
+      - firstName
+      - lastName
+      - role
     AllowedProvidersEnum:
       enum:
       - YOUTUBE
@@ -4741,6 +5942,184 @@ components:
         * `VK_VIDEO` - VK_VIDEO
         * `RUTUBE` - RUTUBE
         * `VIMEO` - VIMEO
+    ApplicationListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApplicationSummaryResource'
+        meta:
+          $ref: '#/components/schemas/ApplicationMeta'
+      required:
+      - data
+      - meta
+    ApplicationMeta:
+      type: object
+      description: The ``meta`` envelope block, named to avoid a component clash.
+      properties:
+        requestId:
+          type: string
+      required:
+      - requestId
+    ApplicationResource:
+      type: object
+      description: An application (order) resource.
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          default: application
+        competitionId:
+          type: string
+          format: uuid
+        applicantId:
+          type: string
+          format: uuid
+        status:
+          type: string
+        educationalOrganizationId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        organizationName:
+          type:
+          - string
+          - 'null'
+        submissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/_SubmissionRef'
+        services:
+          type: array
+          items:
+            $ref: '#/components/schemas/_ServiceLine'
+        consents:
+          type: array
+          items:
+            $ref: '#/components/schemas/_ConsentView'
+        totalPrice:
+          oneOf:
+          - $ref: '#/components/schemas/_TotalPrice'
+          - type: 'null'
+        paidAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - applicantId
+      - competitionId
+      - consents
+      - createdAt
+      - educationalOrganizationId
+      - id
+      - organizationName
+      - paidAt
+      - services
+      - status
+      - submissions
+      - totalPrice
+      - updatedAt
+    ApplicationResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ApplicationResource'
+        meta:
+          $ref: '#/components/schemas/ApplicationMeta'
+      required:
+      - data
+      - meta
+    ApplicationSummaryResource:
+      type: object
+      description: A compact application summary for listing screens.
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          default: application
+        competitionId:
+          type: string
+          format: uuid
+        status:
+          type: string
+        submissionCount:
+          type: integer
+        totalAmount:
+          type:
+          - string
+          - 'null'
+        currency:
+          type:
+          - string
+          - 'null'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - competitionId
+      - createdAt
+      - currency
+      - id
+      - status
+      - submissionCount
+      - totalAmount
+      - updatedAt
+    ApplicationsProblemDetail:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        requestId:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - detail
+      - instance
+      - requestId
+      - status
+      - title
+      - type
+    AttachmentTypeEnum:
+      enum:
+      - MUSIC
+      - VIDEO
+      - IMAGE
+      - DOCUMENT
+      type: string
+      description: |-
+        * `MUSIC` - MUSIC
+        * `VIDEO` - VIDEO
+        * `IMAGE` - IMAGE
+        * `DOCUMENT` - DOCUMENT
     BillingModelEnum:
       enum:
       - PER_PARTICIPANT
@@ -4969,6 +6348,15 @@ components:
       - title
       - updatedAt
       - version
+    CreateApplicationRequest:
+      type: object
+      description: Validate a create-application request body.
+      properties:
+        competitionId:
+          type: string
+          format: uuid
+      required:
+      - competitionId
     CreateCompetition:
       type: object
       properties:
@@ -5023,6 +6411,24 @@ components:
       description: |-
         * `guardian` - guardian
         * `teacher` - teacher
+    CreditTeacherRequest:
+      type: object
+      description: Validate an add-teacher request body.
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        middleName:
+          type:
+          - string
+          - 'null'
+        role:
+          type: string
+      required:
+      - firstName
+      - lastName
+      - role
     CurrentUser:
       type: object
       properties:
@@ -5292,6 +6698,60 @@ components:
       required:
       - data
       - meta
+    OrganizationWrite:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/OrganizationWriteTypeEnum'
+        country:
+          type:
+          - string
+          - 'null'
+        city:
+          type:
+          - string
+          - 'null'
+        address:
+          type:
+          - string
+          - 'null'
+        website:
+          oneOf:
+          - type:
+            - string
+            - 'null'
+            format: uri
+          - type: string
+            maxLength: 0
+      required:
+      - name
+      - type
+    OrganizationWriteTypeEnum:
+      enum:
+      - school
+      - music_school
+      - dance_studio
+      - art_school
+      - college
+      - university
+      - cultural_center
+      - creative_center
+      - private_studio
+      - other
+      type: string
+      description: |-
+        * `school` - school
+        * `music_school` - music_school
+        * `dance_studio` - dance_studio
+        * `art_school` - art_school
+        * `college` - college
+        * `university` - university
+        * `cultural_center` - cultural_center
+        * `creative_center` - creative_center
+        * `private_studio` - private_studio
+        * `other` - other
     ParticipantMeta:
       type: object
       description: |-
@@ -5304,6 +6764,67 @@ components:
           type: string
       required:
       - requestId
+    ParticipantOrganizationLink:
+      type: object
+      properties:
+        organizationId:
+          type: string
+          format: uuid
+        isPrimary:
+          type: boolean
+      required:
+      - isPrimary
+      - organizationId
+    ParticipantRegistryWrite:
+      type: object
+      properties:
+        participantType:
+          allOf:
+          - $ref: '#/components/schemas/ParticipantTypeEnum'
+          default: solo
+        collectiveName:
+          type:
+          - string
+          - 'null'
+        firstName:
+          type: string
+        lastName:
+          type: string
+        middleName:
+          type:
+          - string
+          - 'null'
+        birthDate:
+          type:
+          - string
+          - 'null'
+          format: date
+        gender:
+          oneOf:
+          - $ref: '#/components/schemas/ParticipantRegistryWriteGenderEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        avatarUrl:
+          type:
+          - string
+          - 'null'
+        notes:
+          type: string
+        organizations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParticipantOrganizationLink'
+      required:
+      - organizations
+    ParticipantRegistryWriteGenderEnum:
+      enum:
+      - female
+      - male
+      - other
+      type: string
+      description: |-
+        * `female` - female
+        * `male` - male
+        * `other` - other
     ParticipantResource:
       type: object
       description: A participant resource (DIA-001 §4.2).
@@ -5361,6 +6882,14 @@ components:
       required:
       - data
       - meta
+    ParticipantTypeEnum:
+      enum:
+      - solo
+      - collective
+      type: string
+      description: |-
+        * `solo` - solo
+        * `collective` - collective
     ParticipantsProblemDetail:
       type: object
       properties:
@@ -5421,6 +6950,71 @@ components:
           oneOf:
           - $ref: '#/components/schemas/CalculationTypeEnum'
           - $ref: '#/components/schemas/NullEnum'
+    PatchedOrganizationWrite:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/OrganizationWriteTypeEnum'
+        country:
+          type:
+          - string
+          - 'null'
+        city:
+          type:
+          - string
+          - 'null'
+        address:
+          type:
+          - string
+          - 'null'
+        website:
+          oneOf:
+          - type:
+            - string
+            - 'null'
+            format: uri
+          - type: string
+            maxLength: 0
+    PatchedParticipantRegistryWrite:
+      type: object
+      properties:
+        participantType:
+          allOf:
+          - $ref: '#/components/schemas/ParticipantTypeEnum'
+          default: solo
+        collectiveName:
+          type:
+          - string
+          - 'null'
+        firstName:
+          type: string
+        lastName:
+          type: string
+        middleName:
+          type:
+          - string
+          - 'null'
+        birthDate:
+          type:
+          - string
+          - 'null'
+          format: date
+        gender:
+          oneOf:
+          - $ref: '#/components/schemas/ParticipantRegistryWriteGenderEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        avatarUrl:
+          type:
+          - string
+          - 'null'
+        notes:
+          type: string
+        organizations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParticipantOrganizationLink'
     PatchedRenameCategory:
       type: object
       properties:
@@ -5671,6 +7265,28 @@ components:
           - integer
           - 'null'
           minimum: 0
+    PatchedUpdateTeacherRequest:
+      type: object
+      description: Validate an update-teacher request body (same shape as add).
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        middleName:
+          type:
+          - string
+          - 'null'
+        role:
+          type: string
+        email:
+          type:
+          - string
+          - 'null'
+        phone:
+          type:
+          - string
+          - 'null'
     PaymentMethodsEnum:
       enum:
       - ONLINE
@@ -6384,6 +8000,273 @@ components:
       - googleMapsUrl
       - name
       - yandexMapsUrl
+    RecordConsentsRequest:
+      type: object
+      description: Validate a record-consents request body.
+      properties:
+        consents:
+          type: array
+          items:
+            $ref: '#/components/schemas/_ConsentItem'
+      required:
+      - consents
+    Registration:
+      type: object
+      description: The single Registration projection consumed by the wizard.
+      properties:
+        competition:
+          $ref: '#/components/schemas/RegistrationCompetition'
+        registrationOpen:
+          type: boolean
+        deadlines:
+          $ref: '#/components/schemas/RegistrationDeadlines'
+        nominations:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegistrationNomination'
+        disciplines:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegistrationDiscipline'
+        ageCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegistrationAgeCategory'
+        participantGroups:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegistrationParticipantGroup'
+        participationFormats:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegistrationFormat'
+        admissionRules:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegistrationAdmissionRule'
+        additionalServices:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegistrationService'
+        requiredConsents:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegistrationConsentRequirement'
+        uploadRequirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegistrationUploadRequirement'
+      required:
+      - additionalServices
+      - admissionRules
+      - ageCategories
+      - competition
+      - deadlines
+      - disciplines
+      - nominations
+      - participantGroups
+      - participationFormats
+      - registrationOpen
+      - requiredConsents
+      - uploadRequirements
+    RegistrationAdmissionRule:
+      type: object
+      properties:
+        nominationId:
+          type: string
+        disciplineId:
+          type: string
+        ageCategoryId:
+          type: string
+        participantGroupId:
+          type: string
+        participationFormatId:
+          type: string
+      required:
+      - ageCategoryId
+      - disciplineId
+      - nominationId
+      - participantGroupId
+      - participationFormatId
+    RegistrationAgeCategory:
+      type: object
+      properties:
+        id:
+          type: string
+        nominationId:
+          type: string
+        name:
+          type: string
+        minAge:
+          type: integer
+        maxAge:
+          type: integer
+        sortOrder:
+          type: integer
+      required:
+      - id
+      - maxAge
+      - minAge
+      - name
+      - nominationId
+      - sortOrder
+    RegistrationCompetition:
+      type: object
+      description: Competition summary for the registration flow.
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        season:
+          type: string
+        status:
+          type: string
+        venueName:
+          type:
+          - string
+          - 'null'
+        venueAddress:
+          type:
+          - string
+          - 'null'
+      required:
+      - id
+      - season
+      - status
+      - title
+      - venueAddress
+      - venueName
+    RegistrationConsentRequirement:
+      type: object
+      properties:
+        code:
+          type: string
+        label:
+          type: string
+        required:
+          type: boolean
+      required:
+      - code
+      - label
+      - required
+    RegistrationDeadlines:
+      type: object
+      description: Independent registration deadlines (null = no cut-off).
+      properties:
+        application:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        payment:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        musicUpload:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        documentUpload:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        correction:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - application
+      - correction
+      - documentUpload
+      - musicUpload
+      - payment
+    RegistrationDiscipline:
+      type: object
+      properties:
+        id:
+          type: string
+        nominationId:
+          type: string
+        name:
+          type: string
+        sortOrder:
+          type: integer
+      required:
+      - id
+      - name
+      - nominationId
+      - sortOrder
+    RegistrationEnvelope:
+      type: object
+      description: The ``{data, meta}`` envelope for the registration projection.
+      properties:
+        data:
+          $ref: '#/components/schemas/Registration'
+        meta:
+          $ref: '#/components/schemas/PublicCatalogMeta'
+      required:
+      - data
+      - meta
+    RegistrationFormat:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        sortOrder:
+          type: integer
+      required:
+      - id
+      - name
+      - sortOrder
+    RegistrationNomination:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type:
+          - string
+          - 'null'
+        sortOrder:
+          type: integer
+      required:
+      - description
+      - id
+      - name
+      - sortOrder
+    RegistrationParticipantGroup:
+      type: object
+      properties:
+        id:
+          type: string
+        nominationId:
+          type: string
+        name:
+          type: string
+        minCount:
+          type: integer
+        maxCount:
+          type:
+          - integer
+          - 'null'
+        sortOrder:
+          type: integer
+      required:
+      - id
+      - maxCount
+      - minCount
+      - name
+      - nominationId
+      - sortOrder
     RegistrationRequest:
       type: object
       description: Validate a new-account registration request body (API-001 §4.1).
@@ -6429,6 +8312,62 @@ components:
       required:
       - data
       - meta
+    RegistrationService:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        amount:
+          type: string
+        currency:
+          type: string
+        billingModel:
+          type: string
+        required:
+          type: boolean
+        availableFormatIds:
+          type: array
+          items:
+            type: string
+        description:
+          type:
+          - string
+          - 'null'
+      required:
+      - amount
+      - availableFormatIds
+      - billingModel
+      - currency
+      - description
+      - id
+      - name
+      - required
+    RegistrationUploadRequirement:
+      type: object
+      properties:
+        participationFormatId:
+          type: string
+        musicRequired:
+          type: boolean
+        musicAllowedFormats:
+          type: array
+          items:
+            type: string
+        musicMaxUploadSizeMb:
+          type: integer
+        videoMode:
+          type: string
+        receiptRequired:
+          type: boolean
+      required:
+      - musicAllowedFormats
+      - musicMaxUploadSizeMb
+      - musicRequired
+      - participationFormatId
+      - receiptRequired
+      - videoMode
     RelationshipTypeEnum:
       enum:
       - mother
@@ -6459,6 +8398,28 @@ components:
         * `CONTENT_MANAGER` - CONTENT_MANAGER
         * `MODERATOR` - MODERATOR
         * `SUPPORT` - SUPPORT
+    SelectEducationalOrganizationRequest:
+      type: object
+      description: Validate a select-educational-organization request body.
+      properties:
+        educationalOrganizationId:
+          type: string
+          format: uuid
+      required:
+      - educationalOrganizationId
+    SelectServiceRequest:
+      type: object
+      description: Validate a select-additional-service request body.
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          minimum: 1
+          default: 1
+      required:
+      - serviceId
     SessionCreateRequest:
       type: object
       description: Validate a login (session-creation) request body (API-001 §4.4).
@@ -6507,6 +8468,38 @@ components:
       required:
       - data
       - meta
+    SetPerformanceRequest:
+      type: object
+      description: Validate a set-performance request body.
+      properties:
+        title:
+          type: string
+        durationSeconds:
+          type: integer
+          minimum: 1
+        nominationId:
+          type: string
+          format: uuid
+        disciplineId:
+          type: string
+          format: uuid
+        ageCategoryId:
+          type: string
+          format: uuid
+        participantGroupId:
+          type: string
+          format: uuid
+        participationFormatId:
+          type: string
+          format: uuid
+      required:
+      - ageCategoryId
+      - disciplineId
+      - durationSeconds
+      - nominationId
+      - participantGroupId
+      - participationFormatId
+      - title
     StaffInvitationDetail:
       type: object
       description: Serialize an invitation-detail resource.
@@ -6547,6 +8540,270 @@ components:
         * `PENDING` - PENDING
         * `ACTIVE` - ACTIVE
         * `REVOKED` - REVOKED
+    SubmissionAttachmentProblemDetail:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        requestId:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - detail
+      - instance
+      - requestId
+      - status
+      - title
+      - type
+    SubmissionAttachmentResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/SubmissionAttachmentsResource'
+        meta:
+          $ref: '#/components/schemas/_SubmissionAttachmentMeta'
+      required:
+      - data
+      - meta
+    SubmissionAttachmentsResource:
+      type: object
+      description: A compact submission view focused on its attachments.
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/_AttachmentResource'
+      required:
+      - attachments
+      - id
+      - status
+    SubmissionProblemDetail:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        requestId:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - detail
+      - instance
+      - requestId
+      - status
+      - title
+      - type
+    SubmissionResource:
+      type: object
+      description: The full submission resource (root + child graph).
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          default: submission
+        competitionId:
+          type: string
+          format: uuid
+        status:
+          type: string
+        performance:
+          oneOf:
+          - $ref: '#/components/schemas/_PerformanceResource'
+          - type: 'null'
+        participants:
+          type: array
+          items:
+            $ref: '#/components/schemas/_ParticipantResource'
+        teachers:
+          type: array
+          items:
+            $ref: '#/components/schemas/_TeacherResource'
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/_SubmissionAttachmentResource'
+        price:
+          oneOf:
+          - $ref: '#/components/schemas/_SubmissionPrice'
+          - type: 'null'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - attachments
+      - competitionId
+      - createdAt
+      - id
+      - participants
+      - performance
+      - price
+      - status
+      - teachers
+      - updatedAt
+    SubmissionResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/SubmissionResource'
+        meta:
+          $ref: '#/components/schemas/_SubmissionMeta'
+      required:
+      - data
+      - meta
+    TeacherDirectoryResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeacherResource'
+        meta:
+          $ref: '#/components/schemas/TeacherMeta'
+      required:
+      - data
+      - meta
+    TeacherMeta:
+      type: object
+      description: The ``meta`` envelope block (API-000 §7.3), named to avoid a component
+        clash.
+      properties:
+        requestId:
+          type: string
+      required:
+      - requestId
+    TeacherResource:
+      type: object
+      description: A teacher directory resource.
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          default: teacher
+        ownerId:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        middleName:
+          type:
+          - string
+          - 'null'
+        displayName:
+          type: string
+        role:
+          type: string
+        email:
+          type:
+          - string
+          - 'null'
+        phone:
+          type:
+          - string
+          - 'null'
+        status:
+          type: string
+        archivedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - archivedAt
+      - createdAt
+      - displayName
+      - email
+      - firstName
+      - id
+      - lastName
+      - middleName
+      - ownerId
+      - phone
+      - role
+      - status
+      - updatedAt
+    TeacherResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/TeacherResource'
+        meta:
+          $ref: '#/components/schemas/TeacherMeta'
+      required:
+      - data
+      - meta
+    TeachersProblemDetail:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        requestId:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - detail
+      - instance
+      - requestId
+      - status
+      - title
+      - type
     TokenRefreshRequest:
       type: object
       description: |-
@@ -6732,6 +8989,22 @@ components:
             $ref: '#/components/schemas/_LandingBlockInput'
       required:
       - blocks
+    UploadAttachmentRequest:
+      type: object
+      description: Validate a multipart upload request.
+      properties:
+        file:
+          type: string
+          format: uri
+        attachmentType:
+          $ref: '#/components/schemas/AttachmentTypeEnum'
+        caption:
+          type:
+          - string
+          - 'null'
+      required:
+      - attachmentType
+      - file
     UserResource:
       type: object
       description: A user account resource (API-001 §4.1, §4.8).
@@ -6904,6 +9177,25 @@ components:
       - name
       - sortOrder
       - type
+    _AttachmentResource:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        fileReference:
+          type: string
+        caption:
+          type:
+          - string
+          - 'null'
+      required:
+      - caption
+      - fileReference
+      - id
+      - type
     _Branding:
       type: object
       properties:
@@ -6941,6 +9233,31 @@ components:
       - id
       - name
       - sortOrder
+    _ConsentItem:
+      type: object
+      description: One accepted consent (code + accepted text version).
+      properties:
+        code:
+          type: string
+        version:
+          type: string
+      required:
+      - code
+      - version
+    _ConsentView:
+      type: object
+      properties:
+        code:
+          type: string
+        version:
+          type: string
+        acceptedAt:
+          type: string
+          format: date-time
+      required:
+      - acceptedAt
+      - code
+      - version
     _Contact:
       type: object
       properties:
@@ -7576,6 +9893,32 @@ components:
       - minCount
       - name
       - sortOrder
+    _ParticipantResource:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        middleName:
+          type:
+          - string
+          - 'null'
+        birthDate:
+          type: string
+          format: date
+        gender:
+          type: string
+      required:
+      - birthDate
+      - firstName
+      - gender
+      - id
+      - lastName
+      - middleName
     _ParticipationFormat:
       type: object
       properties:
@@ -7670,6 +10013,36 @@ components:
       - allowReplacement
       - allowUploadLater
       - requireReceipt
+    _PerformanceResource:
+      type: object
+      properties:
+        title:
+          type: string
+        durationSeconds:
+          type: integer
+        nominationId:
+          type: string
+          format: uuid
+        disciplineId:
+          type: string
+          format: uuid
+        ageCategoryId:
+          type: string
+          format: uuid
+        participantGroupId:
+          type: string
+          format: uuid
+        participationFormatId:
+          type: string
+          format: uuid
+      required:
+      - ageCategoryId
+      - disciplineId
+      - durationSeconds
+      - nominationId
+      - participantGroupId
+      - participationFormatId
+      - title
     _Period:
       type: object
       properties:
@@ -7733,6 +10106,29 @@ components:
       - publicationDate
       - title
       - version
+    _ServiceLine:
+      type: object
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        unitAmount:
+          type: string
+        quantity:
+          type: integer
+        lineAmount:
+          type: string
+        currency:
+          type: string
+      required:
+      - currency
+      - lineAmount
+      - name
+      - quantity
+      - serviceId
+      - unitAmount
     _Settings:
       type: object
       properties:
@@ -7813,6 +10209,108 @@ components:
       - requireRegulationsAcceptance
       - requireTeacher
       - smsNotifications
+    _SubmissionAttachmentMeta:
+      type: object
+      properties:
+        requestId:
+          type: string
+      required:
+      - requestId
+    _SubmissionAttachmentResource:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        fileReference:
+          type: string
+        caption:
+          type:
+          - string
+          - 'null'
+      required:
+      - caption
+      - fileReference
+      - id
+      - type
+    _SubmissionMeta:
+      type: object
+      properties:
+        requestId:
+          type: string
+      required:
+      - requestId
+    _SubmissionPrice:
+      type: object
+      properties:
+        amount:
+          type: string
+        currency:
+          type: string
+        calculatedAt:
+          type: string
+          format: date-time
+      required:
+      - amount
+      - calculatedAt
+      - currency
+    _SubmissionRef:
+      type: object
+      properties:
+        submissionId:
+          type: string
+          format: uuid
+        performanceTitle:
+          type: string
+        participantDisplayName:
+          type: string
+        nomination:
+          type: string
+        discipline:
+          type: string
+        status:
+          type: string
+        priceAmount:
+          type:
+          - string
+          - 'null'
+        currency:
+          type:
+          - string
+          - 'null'
+      required:
+      - currency
+      - discipline
+      - nomination
+      - participantDisplayName
+      - performanceTitle
+      - priceAmount
+      - status
+      - submissionId
+    _TeacherResource:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        middleName:
+          type:
+          - string
+          - 'null'
+        role:
+          type: string
+      required:
+      - firstName
+      - id
+      - lastName
+      - middleName
+      - role
     _TeamContact:
       type: object
       properties:
@@ -7878,6 +10376,26 @@ components:
       required:
       - id
       - name
+    _TotalPrice:
+      type: object
+      properties:
+        totalAmount:
+          type: string
+        submissionsAmount:
+          type: string
+        servicesAmount:
+          type: string
+        currency:
+          type: string
+        calculatedAt:
+          type: string
+          format: date-time
+      required:
+      - calculatedAt
+      - currency
+      - servicesAmount
+      - submissionsAmount
+      - totalAmount
     _Venue:
       type: object
       properties:

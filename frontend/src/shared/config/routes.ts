@@ -14,6 +14,7 @@ export const ROUTES = {
   cabinetParticipantNew: "/cabinet/participants/new",
   cabinetParticipantProfile: "/cabinet/participants/:participantId",
   cabinetApplications: "/cabinet/applications",
+  cabinetApplication: "/cabinet/applications/:applicationId",
   cabinetCompetitions: "/cabinet/competitions",
   cabinetFestival: "/cabinet/competitions/:festivalId",
   cabinetFestivalApply: "/cabinet/competitions/:festivalId/apply",
