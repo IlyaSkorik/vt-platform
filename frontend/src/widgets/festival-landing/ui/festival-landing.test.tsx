@@ -106,9 +106,15 @@ describe("FestivalLanding", () => {
               ],
             }),
             makeBlock({
+              id: "gallery",
+              type: "GALLERY",
+              sortOrder: 2,
+              images: [{ id: "g1", url: "https://cdn.example/1.jpg", caption: "Гала-концерт" }],
+            }),
+            makeBlock({
               id: "faq",
               type: "FAQ",
-              sortOrder: 2,
+              sortOrder: 3,
               faq: [{ id: "q1", question: "Как принять участие?", answer: "Подайте заявку." }],
             }),
           ],
@@ -119,6 +125,8 @@ describe("FestivalLanding", () => {
 
     expect(screen.getByRole("heading", { name: "Жюри и эксперты" })).toBeInTheDocument();
     expect(screen.getByText("Анна Петрова")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Галерея" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Гала-концерт" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Частые вопросы" })).toBeInTheDocument();
     expect(screen.getByText("Как принять участие?")).toBeInTheDocument();
   });
