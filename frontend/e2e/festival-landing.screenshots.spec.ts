@@ -303,4 +303,17 @@ test.describe("Festival landing screenshots", () => {
       });
     });
   }
+
+  test("opens a gallery photo in the lightbox", async ({ page }) => {
+    await mockLanding(page);
+    await page.setViewportSize({ width: 1440, height: 960 });
+    await page.goto(`/cabinet/competitions/${FESTIVAL_ID}`);
+
+    await page.getByRole("button", { name: /Открыть фото: Гала-концерт 2025/ }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Следующее фото" })).toBeVisible();
+
+    await page.screenshot({ path: path.join(screenshotDir, "lightbox.png") });
+  });
 });
