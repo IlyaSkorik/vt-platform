@@ -22,7 +22,8 @@ from apps.competitions.application.read_models import (
     classify_participation_mode,
     public_status_for,
     resolve_city,
-    resolve_cover_image,
+    resolve_landing_cover,
+    resolve_poster_image,
 )
 
 # ---------------------------------------------------------------------------
@@ -105,21 +106,27 @@ class TestPricingAggregation:
         assert pricing.currency == "BYN"
 
 
-class TestCoverResolution:
-    def test_prefers_landing_hero_cover(self) -> None:
+class TestPosterResolution:
+    def test_prefers_poster_over_banner(self) -> None:
+        assert resolve_poster_image("/p.jpg", "/b.jpg") == "/p.jpg"
+
+    def test_falls_back_to_banner_when_no_poster(self) -> None:
+        assert resolve_poster_image(None, "/b.jpg") == "/b.jpg"
+        assert resolve_poster_image("  ", "/b.jpg") == "/b.jpg"
+
+    def test_none_when_neither_set(self) -> None:
+        assert resolve_poster_image(None, None) is None
+
+
+class TestLandingCoverResolution:
+    def test_reads_hero_block_cover(self) -> None:
         config = {"blocks": [{"type": "HERO", "cover_image": "/media/hero.jpg"}]}
-        assert resolve_cover_image(config, poster="/p.jpg", banner="/b.jpg") == "/media/hero.jpg"
+        assert resolve_landing_cover(config) == "/media/hero.jpg"
 
-    def test_falls_back_to_poster_then_banner(self) -> None:
-        assert resolve_cover_image({}, poster="/p.jpg", banner="/b.jpg") == "/p.jpg"
-        assert resolve_cover_image(None, poster=None, banner="/b.jpg") == "/b.jpg"
-
-    def test_none_when_nothing_configured(self) -> None:
-        assert resolve_cover_image({"blocks": []}, poster=None, banner=None) is None
-
-    def test_ignores_blank_hero_cover(self) -> None:
-        config = {"blocks": [{"type": "HERO", "cover_image": "  "}]}
-        assert resolve_cover_image(config, poster="/p.jpg", banner=None) == "/p.jpg"
+    def test_none_when_no_hero_cover(self) -> None:
+        assert resolve_landing_cover({"blocks": []}) is None
+        assert resolve_landing_cover(None) is None
+        assert resolve_landing_cover({"blocks": [{"type": "HERO", "cover_image": "  "}]}) is None
 
 
 class TestCityResolution:
@@ -460,6 +467,40 @@ class TestDjangoPublicCatalogReaderDetail:
         assert detail.contacts.email == "hi@fest.by"
         assert detail.contacts.venue.name == "Дворец культуры"
         assert detail.contacts.venue.city == "Минск"
+
+    def test_card_uses_poster_landing_uses_hero_cover(self) -> None:
+        from apps.competitions.domain.landing_configuration import (
+            SYSTEM_BLOCK_HERO_ID,
+            SYSTEM_BLOCK_VENUE_ID,
+        )
+
+        org = self._organization()
+        competition = self._competition(
+            organizer_id=org.id,
+            status="RUNNING",
+            title="Проверка изображений",
+            poster="/media/afisha.jpg",
+            banner="/media/banner.jpg",
+            landing_config={
+                "blocks": [
+                    {
+                        "id": SYSTEM_BLOCK_HERO_ID,
+                        "type": "HERO",
+                        "enabled": True,
+                        "sort_order": 0,
+                        "cover_image": "/media/cover.jpg",
+                    },
+                    {"id": SYSTEM_BLOCK_VENUE_ID, "type": "VENUE", "enabled": True, "sort_order": 1},
+                ]
+            },
+        )
+
+        detail = self._reader().get_festival(str(competition.id))
+        [card] = self._reader().list_festivals()
+
+        assert detail is not None
+        assert card.cover_image == "/media/afisha.jpg"  # Афиша — на карточке каталога
+        assert detail.cover_image == "/media/cover.jpg"  # Обложка — на лендинге
 
     def _with_regulation(self, competition):
         import datetime

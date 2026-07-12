@@ -61,7 +61,8 @@ __all__ = [
     "project_landing",
     "public_status_for",
     "resolve_city",
-    "resolve_cover_image",
+    "resolve_landing_cover",
+    "resolve_poster_image",
 ]
 
 
@@ -147,28 +148,36 @@ def classify_participation_mode(name: str) -> ParticipationMode | None:
 
 
 # --- Cover image resolution ---------------------------------------------------
+#
+# Two distinct images, two distinct places (organizer intent, confirmed with the
+# product): the catalog card always shows the festival **poster** ("Афиша") — the
+# asset explicitly meant "для карточек" — while the landing page hero shows the
+# HERO block's **cover** ("Обложка"). They never substitute for one another.
 
 _HERO_BLOCK_TYPE = "HERO"
 
 
-def resolve_cover_image(
-    landing_config: dict[str, object] | None,
-    *,
-    poster: str | None,
-    banner: str | None,
-) -> str | None:
-    """Pick the best available cover reference for a catalog card.
+def resolve_poster_image(poster: str | None, banner: str | None) -> str | None:
+    """Pick the catalog-card image: the festival poster ("Афиша").
 
-    Preference order: the public landing page's hero image (the asset the
-    organizer curated for the public face of the competition), then the poster,
-    then the banner. Returns ``None`` when nothing is set.
+    Falls back to the banner only when no poster is uploaded, so an older
+    competition without a poster still shows something. The landing hero cover is
+    deliberately *not* considered here. Returns ``None`` when neither is set.
     """
-    hero_cover = _hero_cover_image(landing_config)
-    for candidate in (hero_cover, poster, banner):
+    for candidate in (poster, banner):
         value = (candidate or "").strip() if isinstance(candidate, str) else None
         if value:
             return value
     return None
+
+
+def resolve_landing_cover(landing_config: dict[str, object] | None) -> str | None:
+    """Pick the landing hero image: the HERO block's cover ("Обложка").
+
+    Used only on the public landing page, never on the catalog card. Returns
+    ``None`` when the organizer set no hero cover.
+    """
+    return _hero_cover_image(landing_config)
 
 
 def resolve_city(contacts_config: dict[str, object] | None) -> str | None:

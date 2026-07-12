@@ -37,7 +37,8 @@ from apps.competitions.application.read_models.public_catalog import (
     project_landing,
     public_status_for,
     resolve_city,
-    resolve_cover_image,
+    resolve_landing_cover,
+    resolve_poster_image,
 )
 
 __all__ = [
@@ -69,5 +70,6 @@ __all__ = [
     "project_landing",
     "public_status_for",
     "resolve_city",
-    "resolve_cover_image",
+    "resolve_landing_cover",
+    "resolve_poster_image",
 ]

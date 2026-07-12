@@ -31,7 +31,8 @@ from apps.competitions.application.read_models.public_catalog import (
     project_landing,
     public_status_for,
     resolve_city,
-    resolve_cover_image,
+    resolve_landing_cover,
+    resolve_poster_image,
 )
 from apps.competitions.domain.landing_configuration import (
     SYSTEM_BLOCK_DOCUMENTS_ID,
@@ -114,11 +115,8 @@ class DjangoPublicCatalogReader:
             city=resolve_city(competition.contacts_config),
             venue_name=competition.venue_name,
             venue_address=competition.venue_address,
-            cover_image=resolve_cover_image(
-                competition.landing_config,
-                poster=competition.poster,
-                banner=competition.banner,
-            ),
+            # Catalog card → the festival poster ("Афиша"), never the hero cover.
+            cover_image=resolve_poster_image(competition.poster, competition.banner),
             competition_start=competition.competition_start,
             competition_end=competition.competition_end,
             registration_start=competition.registration_start,
@@ -164,11 +162,8 @@ class DjangoPublicCatalogReader:
             city=resolve_city(competition.contacts_config),
             venue_name=competition.venue_name,
             venue_address=competition.venue_address,
-            cover_image=resolve_cover_image(
-                competition.landing_config,
-                poster=competition.poster,
-                banner=competition.banner,
-            ),
+            # Landing hero → the HERO block cover ("Обложка"), never the poster.
+            cover_image=resolve_landing_cover(competition.landing_config),
             competition_start=competition.competition_start,
             competition_end=competition.competition_end,
             registration_start=competition.registration_start,
