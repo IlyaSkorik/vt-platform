@@ -28,16 +28,34 @@ from decimal import Decimal
 from enum import StrEnum
 from typing import Protocol, runtime_checkable
 
+from apps.competitions.domain.contacts_configuration import ContactsConfiguration
+from apps.competitions.domain.landing_configuration import LandingBlock, LandingConfiguration
+
 __all__ = [
     "PUBLIC_CATALOG_DOMAIN_STATUSES",
     "ParticipationMode",
     "PublicCatalogReadService",
+    "PublicFestivalContactsView",
+    "PublicFestivalDetailView",
+    "PublicFestivalEmergencyView",
+    "PublicFestivalFaqItemView",
     "PublicFestivalFormatView",
+    "PublicFestivalGalleryImageView",
+    "PublicFestivalJuryCardView",
+    "PublicFestivalLandingBlockView",
+    "PublicFestivalLandingView",
     "PublicFestivalOrganizerView",
+    "PublicFestivalPartnerCardView",
     "PublicFestivalPricingView",
+    "PublicFestivalRegulationView",
+    "PublicFestivalSocialLinksView",
+    "PublicFestivalTeamMemberView",
+    "PublicFestivalVenueView",
     "PublicFestivalView",
     "aggregate_pricing",
     "classify_participation_mode",
+    "project_contacts",
+    "project_landing",
     "public_status_for",
     "resolve_city",
     "resolve_cover_image",
@@ -272,19 +290,377 @@ class PublicFestivalView:
     updated_at: datetime | None = None
 
 
+# --- Landing-page projection --------------------------------------------------
+#
+# The public landing page renders the organizer-curated Landing Builder
+# configuration. The catalog card only needs the hero cover; the landing page
+# needs the full, ordered set of *enabled* blocks with their typed payloads. The
+# projection below narrows the domain :class:`LandingConfiguration` value object
+# (parsed by the infrastructure adapter from the persisted JSON) into flat,
+# serializable view DTOs — dropping disabled blocks and sorting everything the
+# same way the organizer configured it. The VENUE block carries no payload of its
+# own: it is a positional marker telling the frontend where to render the shared
+# venue/contacts data (Competition stays the single source of truth).
+
+
+@dataclass(frozen=True, slots=True)
+class PublicFestivalJuryCardView:
+    """One jury/expert card in a landing JURY block."""
+
+    id: str
+    name: str
+    photo: str | None
+    position: str | None
+    description: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class PublicFestivalPartnerCardView:
+    """One partner/sponsor card in a landing PARTNERS block."""
+
+    id: str
+    name: str
+    logo: str | None
+    website: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class PublicFestivalGalleryImageView:
+    """One image in a landing GALLERY block."""
+
+    id: str
+    url: str
+    caption: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class PublicFestivalFaqItemView:
+    """One question/answer pair in a landing FAQ block."""
+
+    id: str
+    question: str
+    answer: str
+
+
+@dataclass(frozen=True, slots=True)
+class PublicFestivalLandingBlockView:
+    """One enabled landing block, in display order, with its typed payload.
+
+    Only the fields relevant to the block ``type`` are populated; the rest stay
+    empty/``None``. ``enabled`` is intentionally absent — disabled blocks are
+    dropped by the projection, so every block that reaches the frontend renders.
+    """
+
+    id: str
+    type: str
+    sort_order: int
+    title: str | None
+    subtitle: str | None
+    cover_image: str | None
+    body: str | None
+    content_format: str | None
+    jury: tuple[PublicFestivalJuryCardView, ...] = ()
+    partners: tuple[PublicFestivalPartnerCardView, ...] = ()
+    images: tuple[PublicFestivalGalleryImageView, ...] = ()
+    faq: tuple[PublicFestivalFaqItemView, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class PublicFestivalLandingView:
+    """The public landing page: enabled blocks in display order."""
+
+    blocks: tuple[PublicFestivalLandingBlockView, ...] = ()
+
+
+class _SortableChild(Protocol):
+    """Structural type for a landing block's ordered children (jury/partners/…).
+
+    Read-only properties so the frozen-dataclass children satisfy it (mutable
+    attribute annotations would be invariant and reject them).
+    """
+
+    @property
+    def id(self) -> str: ...
+
+    @property
+    def sort_order(self) -> int: ...
+
+
+def _sorted_children[T: _SortableChild](items: tuple[T, ...]) -> list[T]:
+    return sorted(items, key=lambda item: (item.sort_order, item.id))
+
+
+def _project_block(block: LandingBlock) -> PublicFestivalLandingBlockView:
+    return PublicFestivalLandingBlockView(
+        id=block.id,
+        type=block.type.value,
+        sort_order=block.sort_order,
+        title=block.title,
+        subtitle=block.subtitle,
+        cover_image=block.cover_image,
+        body=block.body,
+        content_format=block.content_format,
+        jury=tuple(
+            PublicFestivalJuryCardView(
+                id=card.id,
+                name=card.name,
+                photo=card.photo,
+                position=card.position,
+                description=card.description,
+            )
+            for card in _sorted_children(block.cards)
+        ),
+        partners=tuple(
+            PublicFestivalPartnerCardView(
+                id=card.id,
+                name=card.name,
+                logo=card.logo,
+                website=card.website,
+            )
+            for card in _sorted_children(block.partners)
+        ),
+        images=tuple(
+            PublicFestivalGalleryImageView(id=image.id, url=image.url, caption=image.caption)
+            for image in _sorted_children(block.images)
+        ),
+        faq=tuple(
+            PublicFestivalFaqItemView(id=item.id, question=item.question, answer=item.answer)
+            for item in _sorted_children(block.faq_items)
+        ),
+    )
+
+
+def project_landing(config: LandingConfiguration) -> PublicFestivalLandingView:
+    """Project a competition's landing configuration for public display.
+
+    Keeps only enabled blocks, ordered by the organizer's sort order, each with
+    its child collections sorted the same way. The HERO block is included (the
+    frontend renders it as the page hero); the VENUE block is included as a
+    positional marker only — its content is the shared venue/contacts data.
+    """
+    enabled = tuple(block for block in config.sorted_blocks() if block.enabled)
+    return PublicFestivalLandingView(blocks=tuple(_project_block(block) for block in enabled))
+
+
+# --- Contacts projection ------------------------------------------------------
+#
+# The public footer/venue reuse the Competition Contacts module verbatim — the
+# organizer configures it once and it is the single source of truth. Organization
+# profile reuse (``use_organization_contacts``) resolves the organizer *name*
+# through the Organization directory (the only cross-context contact fact
+# published today); the remaining reach-out channels (phone/email/website/social)
+# come from the competition's own contact override, since the Organization
+# aggregate does not yet model them (the same documented gap as the organizer
+# ``logo``). Venue merges the competition's own venue columns with the contacts
+# venue detail (city/country/maps/directions).
+
+
+@dataclass(frozen=True, slots=True)
+class PublicFestivalSocialLinksView:
+    """Public social links for the footer."""
+
+    vk: str | None
+    instagram: str | None
+    telegram: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class PublicFestivalTeamMemberView:
+    """A named contact person shown on the public page."""
+
+    id: str
+    name: str
+    position: str | None
+    phone: str | None
+    email: str | None
+    description: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class PublicFestivalEmergencyView:
+    """Optional emergency/urgent contact line."""
+
+    phone: str | None
+    email: str | None
+    notes: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class PublicFestivalVenueView:
+    """The venue section — competition venue columns merged with contact details."""
+
+    name: str | None
+    address: str | None
+    city: str | None
+    country: str | None
+    google_maps_url: str | None
+    yandex_maps_url: str | None
+    directions: str | None
+
+    @property
+    def has_content(self) -> bool:
+        return any(
+            (
+                self.name,
+                self.address,
+                self.city,
+                self.country,
+                self.google_maps_url,
+                self.yandex_maps_url,
+                self.directions,
+            )
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class PublicFestivalContactsView:
+    """The public contacts module: organizer identity, channels, team, venue."""
+
+    organization_name: str | None
+    phone: str | None
+    email: str | None
+    website: str | None
+    address: str | None
+    social: PublicFestivalSocialLinksView
+    team: tuple[PublicFestivalTeamMemberView, ...]
+    emergency: PublicFestivalEmergencyView
+    venue: PublicFestivalVenueView
+
+
+def project_contacts(
+    config: ContactsConfiguration,
+    *,
+    organizer_name: str,
+    venue_name: str | None,
+    venue_address: str | None,
+) -> PublicFestivalContactsView:
+    """Project a competition's contacts configuration for public display.
+
+    ``organization_name`` prefers the organizer's explicit override, falling back
+    to the resolved organizer directory name; the remaining channels come from the
+    override. Team members are sorted by the organizer's order. Venue merges the
+    competition's own venue columns with the contacts venue detail.
+    """
+    override = config.override
+    team = sorted(config.team_contacts, key=lambda member: (member.sort_order, member.name))
+    return PublicFestivalContactsView(
+        organization_name=override.organization_name or organizer_name,
+        phone=override.phone,
+        email=override.email,
+        website=override.website,
+        address=override.address,
+        social=PublicFestivalSocialLinksView(
+            vk=override.vk,
+            instagram=override.instagram,
+            telegram=override.telegram,
+        ),
+        team=tuple(
+            PublicFestivalTeamMemberView(
+                id=member.id,
+                name=member.name,
+                position=member.position,
+                phone=member.phone,
+                email=member.email,
+                description=member.description,
+            )
+            for member in team
+        ),
+        emergency=PublicFestivalEmergencyView(
+            phone=config.emergency.phone,
+            email=config.emergency.email,
+            notes=config.emergency.notes,
+        ),
+        venue=PublicFestivalVenueView(
+            name=venue_name,
+            address=venue_address,
+            city=config.venue_details.city,
+            country=config.venue_details.country,
+            google_maps_url=config.venue_details.google_maps_url,
+            yandex_maps_url=config.venue_details.yandex_maps_url,
+            directions=config.venue_details.directions,
+        ),
+    )
+
+
+# --- Regulation ---------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class PublicFestivalRegulationView:
+    """The competition's current regulation ("Положение фестиваля").
+
+    The single official rules document a visitor should read before applying.
+    Only the *current* version is exposed publicly — superseded versions stay
+    private. ``file_reference`` is an opaque storage reference the frontend
+    resolves to a downloadable URL.
+    """
+
+    title: str
+    version: str
+    publication_date: date
+    file_reference: str
+
+
+# --- Detail view DTO ----------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class PublicFestivalDetailView:
+    """A single competition's full public landing view.
+
+    Carries everything the catalog card view does (the hero/summary facts) plus
+    the rendered landing blocks and the resolved contacts module. It is a
+    superset so the frontend can reuse the same formatting for the shared facts.
+    """
+
+    id: str
+    title: str
+    season: str
+    description: str | None
+    status: str
+    organizer: PublicFestivalOrganizerView
+    city: str | None
+    venue_name: str | None
+    venue_address: str | None
+    cover_image: str | None
+    competition_start: date | None
+    competition_end: date | None
+    registration_start: date | None
+    registration_end: date | None
+    application_deadline: datetime | None
+    pricing: PublicFestivalPricingView
+    formats: tuple[PublicFestivalFormatView, ...]
+    modes: tuple[str, ...]
+    categories: tuple[str, ...]
+    landing: PublicFestivalLandingView
+    contacts: PublicFestivalContactsView
+    regulation: PublicFestivalRegulationView | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
 # --- Read-service port --------------------------------------------------------
 
 
 @runtime_checkable
 class PublicCatalogReadService(Protocol):
-    """Port: return the public catalog, newest first.
+    """Port: read the public catalog and individual public competitions.
 
     The presentation edge depends on this port; the composition root wires it to
     the concrete ORM-backed reader. Filtering/sorting/search beyond "public and
     newest-first" is performed client-side by the SPA (live filtering), so the
-    port stays a single, cacheable read.
+    list stays a single, cacheable read.
     """
 
     def list_festivals(self) -> list[PublicFestivalView]:
         """Return every publicly-visible competition, newest first."""
+        ...
+
+    def get_festival(self, festival_id: str) -> PublicFestivalDetailView | None:
+        """Return one publicly-visible competition's full landing view.
+
+        ``None`` when no competition matches the id *or* it is not in a publicly
+        visible lifecycle state — the edge renders a 404 either way, never leaking
+        the existence of a draft/archived competition.
+        """
         ...

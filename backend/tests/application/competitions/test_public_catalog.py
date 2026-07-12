@@ -94,9 +94,7 @@ class TestPricingAggregation:
         assert pricing.multiple is False
 
     def test_multiple_prices_pick_cheapest_and_flag(self) -> None:
-        pricing = aggregate_pricing(
-            [(Decimal("80.00"), "BYN"), (Decimal("30.00"), "BYN"), (Decimal("55.00"), "BYN")]
-        )
+        pricing = aggregate_pricing([(Decimal("80.00"), "BYN"), (Decimal("30.00"), "BYN"), (Decimal("55.00"), "BYN")])
         assert pricing.amount_from == Decimal("30.00")
         assert pricing.currency == "BYN"
         assert pricing.multiple is True
@@ -214,9 +212,7 @@ class TestDjangoPublicCatalogReader:
         )
         ParticipationFormatModel.objects.create(competition=competition, name="Очно", sort_order=0)
         ParticipationFormatModel.objects.create(competition=competition, name="Онлайн", sort_order=1)
-        ParticipationFormatModel.objects.create(
-            competition=competition, name="Скрытый", enabled=False, sort_order=2
-        )
+        ParticipationFormatModel.objects.create(competition=competition, name="Скрытый", enabled=False, sort_order=2)
         CategoryModel.objects.create(competition=competition, name="Вокал", sort_order=0)
         import uuid
 
@@ -262,3 +258,207 @@ class TestDjangoPublicCatalogReader:
 
     def test_empty_catalog(self) -> None:
         assert self._reader().list_festivals() == []
+
+
+# ---------------------------------------------------------------------------
+# Landing & contacts projections (pure)
+# ---------------------------------------------------------------------------
+
+
+class TestLandingProjection:
+    def test_default_config_projects_only_enabled_blocks_in_order(self) -> None:
+        from apps.competitions.application.read_models import project_landing
+        from apps.competitions.domain.landing_configuration import LandingConfiguration
+
+        landing = project_landing(LandingConfiguration.default())
+
+        # HERO + VENUE ship enabled by default; the rest start disabled.
+        assert [block.type for block in landing.blocks] == ["HERO", "VENUE"]
+        assert [block.sort_order for block in landing.blocks] == [0, 1]
+
+    def test_projects_content_jury_partners_and_sorts_children(self) -> None:
+        from apps.competitions.application.read_models import project_landing
+        from apps.competitions.domain.landing_configuration import (
+            SYSTEM_BLOCK_HERO_ID,
+            SYSTEM_BLOCK_VENUE_ID,
+            JuryCard,
+            LandingBlock,
+            LandingBlockType,
+            LandingConfiguration,
+        )
+
+        content = LandingBlock(
+            id="01900000-0000-7000-8000-0000000000a1",
+            type=LandingBlockType.CONTENT,
+            enabled=True,
+            sort_order=2,
+            title="Про фестиваль",
+            body="Программа",
+        )
+        jury = LandingBlock(
+            id="01900000-0000-7000-8000-0000000000a2",
+            type=LandingBlockType.JURY,
+            enabled=True,
+            sort_order=3,
+            cards=(
+                JuryCard(id="01900000-0000-7000-8000-0000000000b2", name="Второй", sort_order=1),
+                JuryCard(id="01900000-0000-7000-8000-0000000000b1", name="Первый", sort_order=0),
+            ),
+        )
+        hidden = LandingBlock(
+            id="01900000-0000-7000-8000-0000000000a3",
+            type=LandingBlockType.FAQ,
+            enabled=False,
+            sort_order=4,
+        )
+        config = LandingConfiguration(
+            blocks=(
+                LandingBlock(
+                    id=SYSTEM_BLOCK_HERO_ID,
+                    type=LandingBlockType.HERO,
+                    enabled=True,
+                    sort_order=0,
+                    title="Заголовок",
+                ),
+                LandingBlock(
+                    id=SYSTEM_BLOCK_VENUE_ID,
+                    type=LandingBlockType.VENUE,
+                    enabled=True,
+                    sort_order=1,
+                ),
+                content,
+                jury,
+                hidden,
+            )
+        )
+
+        landing = project_landing(config)
+
+        assert [block.type for block in landing.blocks] == ["HERO", "VENUE", "CONTENT", "JURY"]
+        content_view = landing.blocks[2]
+        assert content_view.title == "Про фестиваль"
+        assert content_view.body == "Программа"
+        jury_view = landing.blocks[3]
+        assert [card.name for card in jury_view.jury] == ["Первый", "Второй"]
+
+
+class TestContactsProjection:
+    def test_prefers_override_name_and_merges_venue(self) -> None:
+        from apps.competitions.application.read_models import project_contacts
+        from apps.competitions.domain.contacts_configuration import (
+            ContactProfileOverride,
+            ContactsConfiguration,
+            TeamContact,
+            VenueDetails,
+        )
+
+        config = ContactsConfiguration(
+            override=ContactProfileOverride(
+                organization_name="Оргкомитет фестиваля",
+                phone="+375291234567",
+                website="https://fest.by",
+                vk="https://vk.com/fest",
+            ),
+            team_contacts=(
+                TeamContact(id="01900000-0000-7000-8000-0000000000c2", name="Женя", sort_order=1),
+                TeamContact(id="01900000-0000-7000-8000-0000000000c1", name="Дина", sort_order=0),
+            ),
+            venue_details=VenueDetails(city="Минск", google_maps_url="https://maps.example/x"),
+        )
+
+        contacts = project_contacts(
+            config,
+            organizer_name="Дом талантов",
+            venue_name="Дворец культуры",
+            venue_address="ул. Ленина, 1",
+        )
+
+        assert contacts.organization_name == "Оргкомитет фестиваля"
+        assert contacts.phone == "+375291234567"
+        assert contacts.website == "https://fest.by"
+        assert contacts.social.vk == "https://vk.com/fest"
+        assert [member.name for member in contacts.team] == ["Дина", "Женя"]
+        assert contacts.venue.name == "Дворец культуры"
+        assert contacts.venue.city == "Минск"
+        assert contacts.venue.has_content is True
+
+    def test_falls_back_to_organizer_name(self) -> None:
+        from apps.competitions.application.read_models import project_contacts
+        from apps.competitions.domain.contacts_configuration import ContactsConfiguration
+
+        contacts = project_contacts(
+            ContactsConfiguration.default(),
+            organizer_name="Дом талантов",
+            venue_name=None,
+            venue_address=None,
+        )
+
+        assert contacts.organization_name == "Дом талантов"
+        assert contacts.venue.has_content is False
+
+
+# ---------------------------------------------------------------------------
+# ORM-backed reader — get_festival (detail)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestDjangoPublicCatalogReaderDetail:
+    @staticmethod
+    def _organization(name: str = "Дом талантов"):
+        from apps.organization.infrastructure.models import OrganizationModel
+
+        return OrganizationModel.objects.create(name=name, slug="dom-talantov")
+
+    @staticmethod
+    def _competition(*, organizer_id, status: str, title: str, **extra):
+        from apps.competitions.infrastructure.models import CompetitionModel
+
+        return CompetitionModel.objects.create(
+            organizer_id=organizer_id,
+            status=status,
+            title=title,
+            season="2025/2026",
+            **extra,
+        )
+
+    def _reader(self):
+        from apps.competitions.composition import build_public_catalog_read_service
+
+        return build_public_catalog_read_service()
+
+    def test_returns_detail_with_landing_and_contacts(self) -> None:
+        org = self._organization(name="Дом талантов")
+        competition = self._competition(
+            organizer_id=org.id,
+            status="REGISTRATION_OPEN",
+            title="Весенний вокал",
+            venue_name="Дворец культуры",
+            contacts_config={
+                "override": {"organization_name": "Оргкомитет", "email": "hi@fest.by"},
+                "venue_details": {"city": "Минск"},
+            },
+        )
+
+        detail = self._reader().get_festival(str(competition.id))
+
+        assert detail is not None
+        assert detail.status == "REGISTRATION_OPEN"
+        # Default landing config seeds an enabled HERO + VENUE.
+        assert [block.type for block in detail.landing.blocks] == ["HERO", "VENUE"]
+        assert detail.contacts.organization_name == "Оргкомитет"
+        assert detail.contacts.email == "hi@fest.by"
+        assert detail.contacts.venue.name == "Дворец культуры"
+        assert detail.contacts.venue.city == "Минск"
+
+    def test_none_for_hidden_state(self) -> None:
+        org = self._organization()
+        competition = self._competition(organizer_id=org.id, status="DRAFT", title="Черновик")
+
+        assert self._reader().get_festival(str(competition.id)) is None
+
+    def test_none_for_missing_and_malformed_id(self) -> None:
+        import uuid
+
+        assert self._reader().get_festival(str(uuid.uuid4())) is None
+        assert self._reader().get_festival("not-a-uuid") is None

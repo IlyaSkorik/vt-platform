@@ -19,8 +19,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.competitions.composition import build_public_catalog_read_service
-from apps.competitions.presentation.api.v1.problems import request_id
+from apps.competitions.presentation.api.v1.problems import problem_response, request_id
 from apps.competitions.presentation.api.v1.public_serializers import (
+    PublicFestivalDetailEnvelopeSerializer,
+    PublicFestivalDetailSerializer,
     PublicFestivalListEnvelopeSerializer,
     PublicFestivalSerializer,
 )
@@ -46,6 +48,45 @@ class PublicFestivalCatalogView(APIView):
         festivals = build_public_catalog_read_service().list_festivals()
         correlation_id = request_id(request)
         data = PublicFestivalSerializer(festivals, many=True).data
+        return Response(
+            {"data": data, "meta": {"requestId": correlation_id}},
+            status=status.HTTP_200_OK,
+            headers={"X-Request-ID": correlation_id},
+        )
+
+
+class PublicFestivalDetailView(APIView):
+    """The public landing view of a single competition.
+
+    Powers the participant-facing Competition Landing Page: the hero facts, the
+    organizer's Landing Builder blocks (enabled, in order) and the reused
+    Competition Contacts. Unpublished, draft or archived competitions are
+    indistinguishable from a missing id — both return a 404 problem, never
+    leaking their existence.
+    """
+
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="getPublicFestival",
+        responses={status.HTTP_200_OK: PublicFestivalDetailEnvelopeSerializer},
+    )
+    def get(self, request: Request, festival_id: str) -> Response:
+        correlation_id = request_id(request)
+        festival = build_public_catalog_read_service().get_festival(festival_id)
+        if festival is None:
+            return problem_response(
+                status=status.HTTP_404_NOT_FOUND,
+                type_suffix="not-found",
+                title="Resource not found",
+                detail="No publicly available festival matches this identifier.",
+                instance=request.get_full_path(),
+                correlation_id=correlation_id,
+                code="festival_not_found",
+            )
+        data = PublicFestivalDetailSerializer(festival).data
         return Response(
             {"data": data, "meta": {"requestId": correlation_id}},
             status=status.HTTP_200_OK,
