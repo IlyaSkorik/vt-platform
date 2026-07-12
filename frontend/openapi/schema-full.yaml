@@ -7452,6 +7452,7 @@ components:
       - GALLERY
       - FAQ
       - CONTENT
+      - REGULATION
       type: string
       description: |-
         * `HERO` - HERO
@@ -7461,6 +7462,7 @@ components:
         * `GALLERY` - GALLERY
         * `FAQ` - FAQ
         * `CONTENT` - CONTENT
+        * `REGULATION` - REGULATION
     _LandingConfig:
       type: object
       properties:
