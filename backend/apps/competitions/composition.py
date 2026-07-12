@@ -20,7 +20,7 @@ from apps.competitions.application.handlers import (
 )
 from apps.competitions.application.handlers._support import CompetitionCommandHandler
 from apps.competitions.infrastructure.messaging import EventDispatcher
-from apps.competitions.infrastructure.read_models import DjangoPublicCatalogReader
+from apps.competitions.infrastructure.read_models import DjangoPublicCatalogReader, DjangoRegistrationReader
 from apps.competitions.infrastructure.repositories import DjangoCompetitionRepository
 from apps.competitions.infrastructure.system import SystemClock, Uuid7Generator
 from apps.organization.composition import build_organization_directory
@@ -30,6 +30,7 @@ __all__ = [
     "build_get_competition_handler",
     "build_list_competitions_handler",
     "build_public_catalog_read_service",
+    "build_registration_read_service",
 ]
 
 
@@ -60,3 +61,8 @@ def build_public_catalog_read_service() -> DjangoPublicCatalogReader:
     can render organizer identities without importing that context's aggregate.
     """
     return DjangoPublicCatalogReader(directory=build_organization_directory())
+
+
+def build_registration_read_service() -> DjangoRegistrationReader:
+    """Assemble the Registration read model (the wizard's single projection)."""
+    return DjangoRegistrationReader()

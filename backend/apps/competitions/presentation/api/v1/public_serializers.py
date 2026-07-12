@@ -16,6 +16,8 @@ __all__ = [
     "PublicFestivalDetailSerializer",
     "PublicFestivalListEnvelopeSerializer",
     "PublicFestivalSerializer",
+    "RegistrationEnvelopeSerializer",
+    "RegistrationSerializer",
 ]
 
 
@@ -227,4 +229,126 @@ class PublicFestivalDetailEnvelopeSerializer(serializers.Serializer):
     """The full ``GET /public/festivals/{id}`` response envelope."""
 
     data = PublicFestivalDetailSerializer()
+    meta = PublicCatalogMetaSerializer()
+
+
+# ---------------------------------------------------------------------------
+# Registration read model (the Registration Wizard's single projection)
+# ---------------------------------------------------------------------------
+
+
+class RegistrationCompetitionSerializer(serializers.Serializer):
+    """Competition summary for the registration flow."""
+
+    id = serializers.CharField()
+    title = serializers.CharField()
+    season = serializers.CharField()
+    status = serializers.CharField()
+    venueName = serializers.CharField(source="venue_name", allow_null=True)
+    venueAddress = serializers.CharField(source="venue_address", allow_null=True)
+
+
+class RegistrationDeadlinesSerializer(serializers.Serializer):
+    """Independent registration deadlines (null = no cut-off)."""
+
+    application = serializers.DateTimeField(allow_null=True)
+    payment = serializers.DateTimeField(allow_null=True)
+    musicUpload = serializers.DateTimeField(source="music_upload", allow_null=True)
+    documentUpload = serializers.DateTimeField(source="document_upload", allow_null=True)
+    correction = serializers.DateTimeField(allow_null=True)
+
+
+class RegistrationNominationSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name = serializers.CharField()
+    description = serializers.CharField(allow_null=True)
+    sortOrder = serializers.IntegerField(source="sort_order")
+
+
+class RegistrationDisciplineSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    nominationId = serializers.CharField(source="nomination_id")
+    name = serializers.CharField()
+    sortOrder = serializers.IntegerField(source="sort_order")
+
+
+class RegistrationAgeCategorySerializer(serializers.Serializer):
+    id = serializers.CharField()
+    nominationId = serializers.CharField(source="nomination_id")
+    name = serializers.CharField()
+    minAge = serializers.IntegerField(source="min_age")
+    maxAge = serializers.IntegerField(source="max_age")
+    sortOrder = serializers.IntegerField(source="sort_order")
+
+
+class RegistrationParticipantGroupSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    nominationId = serializers.CharField(source="nomination_id")
+    name = serializers.CharField()
+    minCount = serializers.IntegerField(source="min_count")
+    maxCount = serializers.IntegerField(source="max_count", allow_null=True)
+    sortOrder = serializers.IntegerField(source="sort_order")
+
+
+class RegistrationFormatSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name = serializers.CharField()
+    sortOrder = serializers.IntegerField(source="sort_order")
+
+
+class RegistrationAdmissionRuleSerializer(serializers.Serializer):
+    nominationId = serializers.CharField(source="nomination_id")
+    disciplineId = serializers.CharField(source="discipline_id")
+    ageCategoryId = serializers.CharField(source="age_category_id")
+    participantGroupId = serializers.CharField(source="participant_group_id")
+    participationFormatId = serializers.CharField(source="participation_format_id")
+
+
+class RegistrationServiceSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name = serializers.CharField()
+    amount = serializers.CharField()
+    currency = serializers.CharField()
+    billingModel = serializers.CharField(source="billing_model")
+    required = serializers.BooleanField()
+    availableFormatIds = serializers.ListField(source="available_format_ids", child=serializers.CharField())
+    description = serializers.CharField(allow_null=True)
+
+
+class RegistrationConsentRequirementSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    label = serializers.CharField()
+    required = serializers.BooleanField()
+
+
+class RegistrationUploadRequirementSerializer(serializers.Serializer):
+    participationFormatId = serializers.CharField(source="participation_format_id")
+    musicRequired = serializers.BooleanField(source="music_required")
+    musicAllowedFormats = serializers.ListField(source="music_allowed_formats", child=serializers.CharField())
+    musicMaxUploadSizeMb = serializers.IntegerField(source="music_max_upload_size_mb")
+    videoMode = serializers.CharField(source="video_mode")
+    receiptRequired = serializers.BooleanField(source="receipt_required")
+
+
+class RegistrationSerializer(serializers.Serializer):
+    """The single Registration projection consumed by the wizard."""
+
+    competition = RegistrationCompetitionSerializer()
+    registrationOpen = serializers.BooleanField(source="registration_open")
+    deadlines = RegistrationDeadlinesSerializer()
+    nominations = RegistrationNominationSerializer(many=True)
+    disciplines = RegistrationDisciplineSerializer(many=True)
+    ageCategories = RegistrationAgeCategorySerializer(source="age_categories", many=True)
+    participantGroups = RegistrationParticipantGroupSerializer(source="participant_groups", many=True)
+    participationFormats = RegistrationFormatSerializer(source="participation_formats", many=True)
+    admissionRules = RegistrationAdmissionRuleSerializer(source="admission_rules", many=True)
+    additionalServices = RegistrationServiceSerializer(source="additional_services", many=True)
+    requiredConsents = RegistrationConsentRequirementSerializer(source="required_consents", many=True)
+    uploadRequirements = RegistrationUploadRequirementSerializer(source="upload_requirements", many=True)
+
+
+class RegistrationEnvelopeSerializer(serializers.Serializer):
+    """The ``{data, meta}`` envelope for the registration projection."""
+
+    data = RegistrationSerializer()
     meta = PublicCatalogMetaSerializer()

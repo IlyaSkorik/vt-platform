@@ -9,7 +9,11 @@ from __future__ import annotations
 
 from django.urls import path
 
-from .api.v1.public_views import PublicFestivalCatalogView, PublicFestivalDetailView
+from .api.v1.public_views import (
+    PublicFestivalCatalogView,
+    PublicFestivalDetailView,
+    PublicRegistrationView,
+)
 
 app_name = "public_catalog"
 
@@ -19,5 +23,10 @@ urlpatterns = [
         "public/festivals/<str:festival_id>",
         PublicFestivalDetailView.as_view(),
         name="festival-detail",
+    ),
+    path(
+        "public/competitions/<str:competition_id>/registration",
+        PublicRegistrationView.as_view(),
+        name="registration",
     ),
 ]

@@ -1,0 +1,82 @@
+"""Integration tests for the public Registration read projection.
+
+``GET /api/v1/public/competitions/{id}/registration`` — the single, unauthenticated
+projection the Registration Wizard consumes. Exercised end to end against real
+PostgreSQL: a seeded competition is projected through the Competition aggregate.
+"""
+
+from __future__ import annotations
+
+import uuid
+
+import pytest
+from rest_framework.test import APIClient
+
+from apps.competitions.infrastructure.models.base import uuid7
+
+pytestmark = pytest.mark.django_db
+
+
+def _seed_competition(*, status: str = "REGISTRATION_OPEN") -> str:
+    from apps.competitions.infrastructure.models import CompetitionModel
+
+    competition = CompetitionModel.objects.create(organizer_id=uuid7(), status=status, title="Spring Festival", season="2025/2026")
+    return str(competition.id)
+
+
+def _url(competition_id: str) -> str:
+    return f"/api/v1/public/competitions/{competition_id}/registration"
+
+
+def test_returns_single_projection_for_open_competition() -> None:
+    competition_id = _seed_competition()
+    response = APIClient().get(_url(competition_id))
+    assert response.status_code == 200, response.data
+    data = response.data["data"]
+    assert data["competition"]["id"] == competition_id
+    assert data["competition"]["title"] == "Spring Festival"
+    assert data["registrationOpen"] is True
+    # Every config axis the wizard needs is present as a (possibly empty) list.
+    for key in (
+        "nominations",
+        "disciplines",
+        "ageCategories",
+        "participantGroups",
+        "participationFormats",
+        "admissionRules",
+        "additionalServices",
+        "requiredConsents",
+        "uploadRequirements",
+    ):
+        assert key in data
+        assert isinstance(data[key], list)
+    # Required consents are projected from the competition's own settings defaults.
+    codes = {consent["code"]: consent["required"] for consent in data["requiredConsents"]}
+    assert codes["personal_data"] is True
+    assert "regulations" in codes
+
+
+def test_unauthenticated_access_is_allowed() -> None:
+    competition_id = _seed_competition()
+    # No Authorization header at all.
+    assert APIClient().get(_url(competition_id)).status_code == 200
+
+
+def test_unknown_competition_is_404_problem() -> None:
+    response = APIClient().get(_url(str(uuid7())))
+    assert response.status_code == 404
+    assert response["Content-Type"] == "application/problem+json"
+
+
+def test_malformed_id_is_404_not_500() -> None:
+    assert APIClient().get(_url("not-a-uuid")).status_code == 404
+
+
+def test_draft_competition_is_hidden() -> None:
+    competition_id = _seed_competition(status="DRAFT")
+    assert APIClient().get(_url(competition_id)).status_code == 404
+
+
+def test_v4_uuid_is_hidden() -> None:
+    # A well-formed but non-v7 id never matches a real competition id.
+    assert APIClient().get(_url(str(uuid.uuid4()))).status_code == 404
