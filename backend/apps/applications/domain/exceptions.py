@@ -279,3 +279,165 @@ class CombinationNotAdmissibleError(SubmissionInvariantError):
 
 class ParticipantCountMismatchError(SubmissionInvariantError):
     """The participant count does not match the configured participant group's range."""
+
+
+# ===========================================================================
+# Application aggregate (order-level) errors
+# ===========================================================================
+#
+# The Application is the *order* aggregate: it references its Submissions by id
+# (never contains them) and owns the educational organization, additional
+# services, consents, total price snapshot and payment state. Its error tree is
+# kept independent of the Submission tree above so the two aggregates stay
+# decoupled even though they share this bounded context.
+#
+#     ApplicationDomainError                          - base for every Application error
+#     ├── ApplicationValueError                       - an Application value object rejected its input
+#     │   ├── InvalidApplicationIdError
+#     │   ├── InvalidEducationalOrganizationIdError
+#     │   ├── InvalidServiceIdError
+#     │   ├── InvalidOrganizationNameError
+#     │   ├── InvalidServiceLineError
+#     │   ├── InvalidConsentError
+#     │   ├── InvalidSubmissionRefError
+#     │   ├── InvalidTotalPriceSnapshotError
+#     │   └── InvalidApplicationStatusChangeError
+#     ├── DirectApplicationConstructionError          - the root was built bypassing its factories
+#     ├── ApplicationStateError                       - an operation illegal in the order lifecycle
+#     │   ├── ApplicationNotEditableError
+#     │   ├── IllegalApplicationStatusTransitionError
+#     │   └── TotalPriceLockedError
+#     ├── ApplicationReferenceError                   - a referenced line/ref is absent
+#     │   ├── SubmissionRefNotFoundError
+#     │   └── ServiceLineNotFoundError
+#     ├── ApplicationConflictError                    - a line/ref would duplicate one present
+#     │   ├── DuplicateSubmissionRefError
+#     │   └── DuplicateServiceLineError
+#     └── ApplicationInvariantError                   - an order invariant would be violated
+#         ├── NoSubmissionsError
+#         ├── MissingRequiredConsentError
+#         └── NotAllSubmissionsApprovedError
+
+
+class ApplicationDomainError(Exception):
+    """Base class for all errors raised by the Application (order) aggregate."""
+
+
+class ApplicationValueError(ApplicationDomainError, ValueError):
+    """Raised when an Application value object is constructed from invalid input.
+
+    Subclasses :class:`ValueError` so callers treating construction like value
+    parsing keep working, while still being catchable as a domain-specific error.
+    """
+
+
+class InvalidApplicationIdError(ApplicationValueError):
+    """The provided value is not a valid ``ApplicationId`` (must be a UUID v7)."""
+
+
+class InvalidEducationalOrganizationIdError(ApplicationValueError):
+    """The provided value is not a valid ``EducationalOrganizationId`` reference (must be a UUID v7)."""
+
+
+class InvalidServiceIdError(ApplicationValueError):
+    """The provided value is not a valid ``ServiceId`` reference (must be a UUID v7)."""
+
+
+class InvalidOrganizationNameError(ApplicationValueError):
+    """The provided value is not a valid educational-organization name (empty or too long)."""
+
+
+class InvalidServiceLineError(ApplicationValueError):
+    """The provided value is not a valid additional-service line (bad quantity or currency mismatch)."""
+
+
+class InvalidConsentError(ApplicationValueError):
+    """The provided value is not a valid consent record (empty code/version or too long)."""
+
+
+class InvalidSubmissionRefError(ApplicationValueError):
+    """The provided value is not a valid submission reference (over-long display fields)."""
+
+
+class InvalidTotalPriceSnapshotError(ApplicationValueError):
+    """The provided value is not a valid total price snapshot (missing/ mismatched money)."""
+
+
+class InvalidApplicationStatusChangeError(ApplicationValueError):
+    """The provided value is not a valid application status-history entry."""
+
+
+class DirectApplicationConstructionError(ApplicationDomainError):
+    """Raised when the Application root is built directly instead of via its factories.
+
+    The :class:`~apps.applications.domain.entities.Application` aggregate root must
+    be created through its ``create`` factory (a new instance) or ``rehydrate``
+    (reconstruction from persistence). Calling the dataclass constructor directly
+    bypasses the creation invariants and is refused.
+    """
+
+
+class ApplicationStateError(ApplicationDomainError):
+    """Base for an operation illegal in the ``Application`` aggregate's lifecycle state."""
+
+
+class ApplicationNotEditableError(ApplicationStateError):
+    """Content was edited while the application is not editable.
+
+    An application's content (educational organization, submission references,
+    additional services, consents) is mutable only while ``DRAFT``. Once it is
+    ``SUBMITTED`` the composition is frozen; per-performance corrections happen on
+    the individual Submissions, never by reopening the order.
+    """
+
+
+class IllegalApplicationStatusTransitionError(ApplicationStateError):
+    """The requested order-lifecycle transition is not legal from the current status."""
+
+
+class TotalPriceLockedError(ApplicationStateError):
+    """The total price snapshot was changed after the application left ``DRAFT``.
+
+    Once an application is submitted the total is permanent: future Competition
+    pricing changes must never alter the price of an application already placed.
+    """
+
+
+class ApplicationReferenceError(ApplicationDomainError):
+    """Base: an operation references a line/ref that does not exist in this application."""
+
+
+class SubmissionRefNotFoundError(ApplicationReferenceError):
+    """The referenced submission is not attached to this application."""
+
+
+class ServiceLineNotFoundError(ApplicationReferenceError):
+    """The referenced additional-service line is not selected on this application."""
+
+
+class ApplicationConflictError(ApplicationDomainError):
+    """Base: a line/ref would duplicate one already present on this application."""
+
+
+class DuplicateSubmissionRefError(ApplicationConflictError):
+    """The submission is already attached to this application."""
+
+
+class DuplicateServiceLineError(ApplicationConflictError):
+    """The additional service is already selected on this application."""
+
+
+class ApplicationInvariantError(ApplicationDomainError):
+    """Base: an operation would leave the application in an invalid state."""
+
+
+class NoSubmissionsError(ApplicationInvariantError):
+    """The application references no submissions and cannot be submitted."""
+
+
+class MissingRequiredConsentError(ApplicationInvariantError):
+    """A consent the competition requires has not been recorded on the application."""
+
+
+class NotAllSubmissionsApprovedError(ApplicationInvariantError):
+    """The application is not ready for payment because not all its submissions are approved."""

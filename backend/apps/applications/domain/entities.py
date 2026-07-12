@@ -62,12 +62,23 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime
+from decimal import Decimal
 from typing import Final
 
 from .events import (
+    AdditionalServiceRemoved,
+    AdditionalServiceSelected,
+    ApplicationAwaitingPayment,
+    ApplicationCancelled,
+    ApplicationCompleted,
+    ApplicationCreated,
+    ApplicationPaid,
+    ApplicationSubmitted,
     AttachmentAdded,
     AttachmentRemoved,
+    ConsentsRecorded,
     DomainEvent,
+    EducationalOrganizationSelected,
     ParticipantAdded,
     ParticipantRemoved,
     PerformanceDefined,
@@ -75,10 +86,12 @@ from .events import (
     ReviewAdded,
     SubmissionAccepted,
     SubmissionApproved,
+    SubmissionAttachedToApplication,
     SubmissionAwaitingPayment,
     SubmissionCancelled,
     SubmissionCompleted,
     SubmissionCreated,
+    SubmissionDetachedFromApplication,
     SubmissionPaid,
     SubmissionReturnedForCorrection,
     SubmissionReviewStarted,
@@ -88,30 +101,49 @@ from .events import (
     TeacherRemoved,
 )
 from .exceptions import (
+    ApplicationNotEditableError,
     AttachmentNotFoundError,
     CannotRemoveLastParticipantError,
     CombinationNotAdmissibleError,
+    DirectApplicationConstructionError,
     DirectConstructionError,
     DuplicateAttachmentError,
     DuplicateParticipantError,
+    DuplicateServiceLineError,
+    DuplicateSubmissionRefError,
+    IllegalApplicationStatusTransitionError,
     IllegalStatusTransitionError,
     InvalidBirthDateError,
+    MissingRequiredConsentError,
+    NoSubmissionsError,
+    NotAllSubmissionsApprovedError,
     ParticipantCountMismatchError,
     ParticipantNotFoundError,
     ParticipantRequiredError,
     PerformanceRequiredError,
     PriceSnapshotLockedError,
     PriceSnapshotRequiredError,
+    ServiceLineNotFoundError,
     SubmissionNotEditableError,
+    SubmissionRefNotFoundError,
     TeacherNotFoundError,
+    TotalPriceLockedError,
 )
 from .value_objects import (
+    ApplicationId,
+    ApplicationStatus,
+    ApplicationStatusChange,
     AttachmentId,
     AttachmentType,
     BirthDate,
     CompetitionId,
+    Consent,
+    Currency,
+    EducationalOrganizationId,
     FileReference,
     Gender,
+    Money,
+    OrganizationName,
     ParticipantId,
     Performance,
     PersonName,
@@ -119,11 +151,15 @@ from .value_objects import (
     ReviewComment,
     ReviewerId,
     ReviewId,
+    ServiceId,
+    ServiceLine,
     SubmissionId,
     SubmissionParticipationPolicy,
+    SubmissionRef,
     SubmissionStatus,
     TeacherId,
     TeacherRole,
+    TotalPriceSnapshot,
     UserId,
 )
 
@@ -833,7 +869,438 @@ class Submission:
         return f"Submission(id={self._id!r}, status={self._status.value!r}, participants={len(self._participants)})"
 
 
+# ===========================================================================
+# Application aggregate root (the order grouping one applicant's submissions)
+# ===========================================================================
+#
+# The **Application** is a *second, independent* aggregate root in this bounded
+# context. It is the order the applicant places for one competition: it groups
+# their Submissions, owns the educational-organization reference, the selected
+# additional services, the recorded consents, the immutable total price and the
+# payment state, and guards the order-level lifecycle.
+#
+# It references its Submissions **by id only** - it never contains or imports a
+# Submission object. Each reference caches a display snapshot
+# (:class:`~apps.applications.domain.value_objects.SubmissionRef`) refreshed by an
+# application-layer projection reacting to Submission events, so listing an order
+# never touches Submission storage. Crucially, the Application does **not** run its
+# own review workflow: approval lives on the Submissions, and the order *derives*
+# its readiness for payment from their cached statuses (all approved -> payable).
+
+#: The order-lifecycle transitions the Application permits. ``COMPLETED`` and
+#: ``CANCELLED`` are terminal. Cancellation is possible until payment settles.
+_LEGAL_APPLICATION_TRANSITIONS: Final[dict[ApplicationStatus, frozenset[ApplicationStatus]]] = {
+    ApplicationStatus.DRAFT: frozenset({ApplicationStatus.SUBMITTED, ApplicationStatus.CANCELLED}),
+    ApplicationStatus.SUBMITTED: frozenset({ApplicationStatus.WAITING_PAYMENT, ApplicationStatus.CANCELLED}),
+    ApplicationStatus.WAITING_PAYMENT: frozenset({ApplicationStatus.PAID, ApplicationStatus.CANCELLED}),
+    ApplicationStatus.PAID: frozenset({ApplicationStatus.COMPLETED}),
+    ApplicationStatus.COMPLETED: frozenset(),
+    ApplicationStatus.CANCELLED: frozenset(),
+}
+
+#: The only status in which the order's composition (educational organization,
+#: submission references, additional services, consents) may be edited.
+_APPLICATION_EDITABLE_STATUSES: Final = frozenset({ApplicationStatus.DRAFT})
+
+#: Statuses in which a submission reference's cached snapshot may still be
+#: refreshed by the projection. Past payment the order is settled and its lines
+#: are historical, so refreshes are ignored rather than mutating a settled order.
+_APPLICATION_REFRESHABLE_STATUSES: Final = frozenset({ApplicationStatus.DRAFT, ApplicationStatus.SUBMITTED, ApplicationStatus.WAITING_PAYMENT})
+
+
+@dataclass(slots=True, eq=False, repr=False)
+class Application:
+    """The Application aggregate root - the order grouping one applicant's submissions.
+
+    Guards the order lifecycle (``DRAFT -> SUBMITTED -> WAITING_PAYMENT -> PAID ->
+    COMPLETED``, plus ``CANCELLED`` until payment) and the order-level invariants
+    (at least one submission and every required consent before it may be submitted;
+    all submissions approved before it may be billed). Equality/hashing is by
+    :class:`ApplicationId`.
+    """
+
+    _token: InitVar[object]
+    _id: ApplicationId
+    _competition_id: CompetitionId
+    _applicant_id: UserId
+    _status: ApplicationStatus
+    _created_at: datetime
+    _updated_at: datetime
+    _educational_organization_id: EducationalOrganizationId | None = None
+    _organization_name: OrganizationName | None = None
+    _submission_refs: dict[SubmissionId, SubmissionRef] = field(default_factory=dict)
+    _service_lines: dict[ServiceId, ServiceLine] = field(default_factory=dict)
+    _consents: tuple[Consent, ...] = ()
+    _total_price: TotalPriceSnapshot | None = None
+    _status_history: list[ApplicationStatusChange] = field(default_factory=list)
+    _paid_at: datetime | None = None
+    _deleted_at: datetime | None = None
+    _version: int = 1
+
+    def __post_init__(self, _token: object) -> None:
+        if _token is not _CREATION_TOKEN:
+            raise DirectApplicationConstructionError(
+                "Application must be created via Application.create() or Application.rehydrate(), not by calling the constructor directly."
+            )
+
+    # ------------------------------------------------------------------
+    # Factories
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        application_id: ApplicationId,
+        competition_id: CompetitionId,
+        applicant_id: UserId,
+        now: datetime,
+    ) -> tuple[Application, list[DomainEvent]]:
+        """Create a brand-new empty application (order) in the DRAFT state."""
+        application = cls(
+            _token=_CREATION_TOKEN,
+            _id=application_id,
+            _competition_id=competition_id,
+            _applicant_id=applicant_id,
+            _status=ApplicationStatus.DRAFT,
+            _created_at=now,
+            _updated_at=now,
+            _total_price=cls._zero_total(now),
+            _status_history=[ApplicationStatusChange(from_status=None, to_status=ApplicationStatus.DRAFT, occurred_at=now)],
+        )
+        events: list[DomainEvent] = [ApplicationCreated(aggregate_id=application_id.value, competition_id=competition_id, applicant_id=applicant_id)]
+        return application, events
+
+    @classmethod
+    def rehydrate(
+        cls,
+        *,
+        application_id: ApplicationId,
+        competition_id: CompetitionId,
+        applicant_id: UserId,
+        status: ApplicationStatus,
+        created_at: datetime,
+        updated_at: datetime,
+        educational_organization_id: EducationalOrganizationId | None = None,
+        organization_name: OrganizationName | None = None,
+        submission_refs: Sequence[SubmissionRef] = (),
+        service_lines: Sequence[ServiceLine] = (),
+        consents: Sequence[Consent] = (),
+        total_price: TotalPriceSnapshot | None = None,
+        status_history: Sequence[ApplicationStatusChange] = (),
+        paid_at: datetime | None = None,
+        deleted_at: datetime | None = None,
+        version: int = 1,
+    ) -> Application:
+        """Reconstruct the aggregate from persistence (no re-validation, no events)."""
+        return cls(
+            _token=_CREATION_TOKEN,
+            _id=application_id,
+            _competition_id=competition_id,
+            _applicant_id=applicant_id,
+            _status=status,
+            _created_at=created_at,
+            _updated_at=updated_at,
+            _educational_organization_id=educational_organization_id,
+            _organization_name=organization_name,
+            _submission_refs={ref.submission_id: ref for ref in submission_refs},
+            _service_lines={line.service_id: line for line in service_lines},
+            _consents=tuple(consents),
+            _total_price=total_price,
+            _status_history=list(status_history),
+            _paid_at=paid_at,
+            _deleted_at=deleted_at,
+            _version=version,
+        )
+
+    # ------------------------------------------------------------------
+    # Read-only views
+    # ------------------------------------------------------------------
+
+    @property
+    def id(self) -> ApplicationId:
+        return self._id
+
+    @property
+    def competition_id(self) -> CompetitionId:
+        return self._competition_id
+
+    @property
+    def applicant_id(self) -> UserId:
+        return self._applicant_id
+
+    @property
+    def status(self) -> ApplicationStatus:
+        return self._status
+
+    @property
+    def educational_organization_id(self) -> EducationalOrganizationId | None:
+        return self._educational_organization_id
+
+    @property
+    def organization_name(self) -> OrganizationName | None:
+        return self._organization_name
+
+    @property
+    def submission_refs(self) -> tuple[SubmissionRef, ...]:
+        return tuple(self._submission_refs.values())
+
+    @property
+    def submission_count(self) -> int:
+        return len(self._submission_refs)
+
+    @property
+    def service_lines(self) -> tuple[ServiceLine, ...]:
+        return tuple(self._service_lines.values())
+
+    @property
+    def consents(self) -> tuple[Consent, ...]:
+        return self._consents
+
+    @property
+    def total_price(self) -> TotalPriceSnapshot | None:
+        return self._total_price
+
+    @property
+    def status_history(self) -> tuple[ApplicationStatusChange, ...]:
+        """The order's status history, in the order it was recorded."""
+        return tuple(self._status_history)
+
+    @property
+    def paid_at(self) -> datetime | None:
+        return self._paid_at
+
+    @property
+    def created_at(self) -> datetime:
+        return self._created_at
+
+    @property
+    def updated_at(self) -> datetime:
+        return self._updated_at
+
+    @property
+    def version(self) -> int:
+        return self._version
+
+    @property
+    def is_deleted(self) -> bool:
+        return self._deleted_at is not None
+
+    def is_draft(self) -> bool:
+        return self._status is ApplicationStatus.DRAFT
+
+    def is_editable(self) -> bool:
+        """Whether the order's composition may currently be changed (DRAFT only)."""
+        return self._status in _APPLICATION_EDITABLE_STATUSES
+
+    def is_ready_for_payment(self) -> bool:
+        """Whether every referenced submission is approved (the derived payment gate)."""
+        return bool(self._submission_refs) and all(ref.is_approved for ref in self._submission_refs.values())
+
+    # ------------------------------------------------------------------
+    # Composition (editable in DRAFT only)
+    # ------------------------------------------------------------------
+
+    def select_educational_organization(
+        self,
+        *,
+        educational_organization_id: EducationalOrganizationId,
+        organization_name: OrganizationName,
+        now: datetime,
+    ) -> list[DomainEvent]:
+        """Select (or change) the educational organization, freezing its display name."""
+        self._ensure_editable()
+        self._educational_organization_id = educational_organization_id
+        self._organization_name = organization_name
+        self._touch(now)
+        return [EducationalOrganizationSelected(aggregate_id=self._id.value, educational_organization_id=educational_organization_id)]
+
+    def attach_submission(self, *, ref: SubmissionRef, now: datetime) -> list[DomainEvent]:
+        """Attach a submission reference to the order (add a performance to it)."""
+        self._ensure_editable()
+        if ref.submission_id in self._submission_refs:
+            raise DuplicateSubmissionRefError(f"Submission {ref.submission_id.json()} is already attached to this application.")
+        self._submission_refs[ref.submission_id] = ref
+        self._recalculate_total(now)
+        self._touch(now)
+        return [SubmissionAttachedToApplication(aggregate_id=self._id.value, submission_id=ref.submission_id)]
+
+    def detach_submission(self, *, submission_id: SubmissionId, now: datetime) -> list[DomainEvent]:
+        """Remove a submission reference from the order (draft only).
+
+        Detaching only drops the *reference* from the order; the underlying
+        Submission is never physically deleted here - the application layer archives
+        or cancels it through its own aggregate. The order simply stops billing it.
+        """
+        self._ensure_editable()
+        if submission_id not in self._submission_refs:
+            raise SubmissionRefNotFoundError(f"Submission {submission_id.json()} is not attached to this application.")
+        del self._submission_refs[submission_id]
+        self._recalculate_total(now)
+        self._touch(now)
+        return [SubmissionDetachedFromApplication(aggregate_id=self._id.value, submission_id=submission_id)]
+
+    def refresh_submission_ref(self, *, ref: SubmissionRef, now: datetime) -> list[DomainEvent]:
+        """Refresh the cached snapshot of an attached submission (projection hook).
+
+        Called by the application-layer projection when a referenced submission
+        changes (priced, approved, returned for correction, ...). It updates the
+        cached status/price/display, and recomputes the order total **only while the
+        order is still a draft** - once submitted the total is frozen and a later
+        submission change must never move it. Refreshes past payment are ignored.
+        """
+        if self._status not in _APPLICATION_REFRESHABLE_STATUSES:
+            return []
+        if ref.submission_id not in self._submission_refs:
+            raise SubmissionRefNotFoundError(f"Submission {ref.submission_id.json()} is not attached to this application.")
+        self._submission_refs[ref.submission_id] = ref
+        if self._status is ApplicationStatus.DRAFT:
+            self._recalculate_total(now)
+        self._touch(now)
+        return []
+
+    def add_service(self, *, service_line: ServiceLine, now: datetime) -> list[DomainEvent]:
+        """Select an additional service on the order."""
+        self._ensure_editable()
+        if service_line.service_id in self._service_lines:
+            raise DuplicateServiceLineError(f"Service {service_line.service_id.json()} is already selected on this application.")
+        self._service_lines[service_line.service_id] = service_line
+        self._recalculate_total(now)
+        self._touch(now)
+        return [AdditionalServiceSelected(aggregate_id=self._id.value, service_id=service_line.service_id)]
+
+    def remove_service(self, *, service_id: ServiceId, now: datetime) -> list[DomainEvent]:
+        """Remove a previously selected additional service from the order."""
+        self._ensure_editable()
+        if service_id not in self._service_lines:
+            raise ServiceLineNotFoundError(f"Service {service_id.json()} is not selected on this application.")
+        del self._service_lines[service_id]
+        self._recalculate_total(now)
+        self._touch(now)
+        return [AdditionalServiceRemoved(aggregate_id=self._id.value, service_id=service_id)]
+
+    def record_consents(self, *, consents: Sequence[Consent], now: datetime) -> list[DomainEvent]:
+        """Record the set of accepted consents (replaces any previously recorded set)."""
+        self._ensure_editable()
+        self._consents = tuple(consents)
+        self._touch(now)
+        return [ConsentsRecorded(aggregate_id=self._id.value, consent_count=len(self._consents))]
+
+    # ------------------------------------------------------------------
+    # Lifecycle transitions
+    # ------------------------------------------------------------------
+
+    def submit(self, *, required_consent_codes: frozenset[str] = frozenset(), now: datetime) -> list[DomainEvent]:
+        """Submit the order (DRAFT -> SUBMITTED), freezing its total price.
+
+        Enforces the order invariants: at least one submission is attached and every
+        consent the competition requires has been recorded. The total price is
+        recomputed once and then frozen - future Competition pricing changes can
+        never alter an order already placed. Submitting the individual Submissions
+        for review is an application-layer concern (orchestrated over their own
+        aggregate); this transition governs only the order.
+        """
+        if not self._submission_refs:
+            raise NoSubmissionsError("An application must reference at least one submission before it can be submitted.")
+        recorded = {consent.code for consent in self._consents}
+        missing = required_consent_codes - recorded
+        if missing:
+            raise MissingRequiredConsentError(f"The following required consents were not recorded: {', '.join(sorted(missing))}.")
+        total = self._recalculate_total(now)
+        self._transition_to(ApplicationStatus.SUBMITTED, now=now)
+        return [ApplicationSubmitted(aggregate_id=self._id.value, amount=str(total.amount), currency=total.currency)]
+
+    def request_payment(self, *, now: datetime) -> list[DomainEvent]:
+        """Move the order to awaiting payment (SUBMITTED -> WAITING_PAYMENT).
+
+        The derived readiness gate: allowed only once **every** referenced
+        submission is approved. Readiness is read from the cached submission
+        statuses (kept fresh by the projection); the Application never runs its own
+        review.
+        """
+        if not self.is_ready_for_payment():
+            raise NotAllSubmissionsApprovedError("The application is not ready for payment: not all submissions are approved.")
+        self._transition_to(ApplicationStatus.WAITING_PAYMENT, now=now)
+        return [ApplicationAwaitingPayment(aggregate_id=self._id.value)]
+
+    def mark_paid(self, *, now: datetime) -> list[DomainEvent]:
+        """Record that the order's total was paid (WAITING_PAYMENT -> PAID)."""
+        self._transition_to(ApplicationStatus.PAID, now=now)
+        self._paid_at = now
+        return [ApplicationPaid(aggregate_id=self._id.value)]
+
+    def complete(self, *, now: datetime) -> list[DomainEvent]:
+        """Mark the order as fully settled (PAID -> COMPLETED)."""
+        self._transition_to(ApplicationStatus.COMPLETED, now=now)
+        return [ApplicationCompleted(aggregate_id=self._id.value)]
+
+    def cancel(self, *, now: datetime) -> list[DomainEvent]:
+        """Cancel the order (withdraw or reject). Not possible once paid."""
+        previous = self._status
+        self._transition_to(ApplicationStatus.CANCELLED, now=now)
+        return [ApplicationCancelled(aggregate_id=self._id.value, previous_status=previous)]
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _zero_total(now: datetime) -> TotalPriceSnapshot:
+        zero = Money.of("0.00", Currency.BYN)
+        return TotalPriceSnapshot(total=zero, submissions_total=zero, services_total=zero, calculated_at=now)
+
+    def _recalculate_total(self, now: datetime) -> TotalPriceSnapshot:
+        """Recompute and freeze the total = sum of submission price lines + sum of service lines.
+
+        Called only while the order is a draft (submit calls it while still DRAFT,
+        before transitioning), so the frozen total can never shift under a placed
+        order; calling it after the order leaves DRAFT is refused. All money is
+        single-currency (``BYN``) today.
+        """
+        if self._status not in _APPLICATION_EDITABLE_STATUSES:
+            raise TotalPriceLockedError(f"The total price is frozen and cannot be recomputed while the application is {self._status.value}.")
+        currency = Currency.BYN
+        submissions_amount = sum((ref.price_line.amount for ref in self._submission_refs.values()), Decimal("0"))
+        services_amount = sum((line.line_total.amount for line in self._service_lines.values()), Decimal("0"))
+        total = TotalPriceSnapshot(
+            total=Money.of(submissions_amount + services_amount, currency),
+            submissions_total=Money.of(submissions_amount, currency),
+            services_total=Money.of(services_amount, currency),
+            calculated_at=now,
+        )
+        self._total_price = total
+        return total
+
+    def _ensure_editable(self) -> None:
+        if self._status not in _APPLICATION_EDITABLE_STATUSES:
+            raise ApplicationNotEditableError(f"An application's composition can only be changed while DRAFT, not while {self._status.value}.")
+
+    def _transition_to(self, target: ApplicationStatus, *, now: datetime) -> None:
+        """Move to ``target`` if the transition is legal, recording it in the history."""
+        if target not in _LEGAL_APPLICATION_TRANSITIONS[self._status]:
+            raise IllegalApplicationStatusTransitionError(f"Cannot transition from {self._status.value} to {target.value}.")
+        previous = self._status
+        self._status = target
+        self._status_history.append(ApplicationStatusChange(from_status=previous, to_status=target, occurred_at=now))
+        self._touch(now)
+
+    def _touch(self, now: datetime) -> None:
+        """Advance the change timestamp and optimistic-concurrency version once."""
+        self._updated_at = now
+        self._version += 1
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, Application) and other._id == self._id
+
+    def __hash__(self) -> int:
+        return hash(self._id)
+
+    def __repr__(self) -> str:
+        return f"Application(id={self._id!r}, status={self._status.value!r}, submissions={len(self._submission_refs)})"
+
+
 __all__ = [
+    "Application",
     "Attachment",
     "Participant",
     "Review",

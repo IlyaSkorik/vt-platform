@@ -46,14 +46,19 @@ from typing import Final
 
 from .exceptions import (
     InvalidAgeCategoryIdError,
+    InvalidApplicationIdError,
+    InvalidApplicationStatusChangeError,
     InvalidAttachmentIdError,
     InvalidBirthDateError,
     InvalidCompetitionIdError,
+    InvalidConsentError,
     InvalidDisciplineIdError,
     InvalidDurationError,
+    InvalidEducationalOrganizationIdError,
     InvalidFileReferenceError,
     InvalidMoneyError,
     InvalidNominationIdError,
+    InvalidOrganizationNameError,
     InvalidParticipantCountRangeError,
     InvalidParticipantGroupIdError,
     InvalidParticipantIdError,
@@ -64,25 +69,36 @@ from .exceptions import (
     InvalidReviewCommentError,
     InvalidReviewerIdError,
     InvalidReviewIdError,
+    InvalidServiceIdError,
+    InvalidServiceLineError,
     InvalidSubmissionIdError,
+    InvalidSubmissionRefError,
     InvalidTeacherIdError,
     InvalidTeacherRoleError,
+    InvalidTotalPriceSnapshotError,
     InvalidUserIdError,
 )
 
 __all__ = [
     "AgeCategoryId",
+    "ApplicationId",
+    "ApplicationStatus",
+    "ApplicationStatusChange",
     "AttachmentId",
     "AttachmentType",
     "BirthDate",
     "CompetitionId",
+    "CompetitionPriceQuote",
+    "Consent",
     "Currency",
     "DisciplineId",
     "Duration",
+    "EducationalOrganizationId",
     "FileReference",
     "Gender",
     "Money",
     "NominationId",
+    "OrganizationName",
     "ParticipantCountRange",
     "ParticipantGroupId",
     "ParticipantId",
@@ -91,15 +107,18 @@ __all__ = [
     "PersonName",
     "PriceCalculationType",
     "PriceSnapshot",
-    "CompetitionPriceQuote",
     "ReviewComment",
     "ReviewId",
     "ReviewerId",
+    "ServiceId",
+    "ServiceLine",
     "SubmissionId",
     "SubmissionParticipationPolicy",
+    "SubmissionRef",
     "SubmissionStatus",
     "TeacherId",
     "TeacherRole",
+    "TotalPriceSnapshot",
     "UserId",
 ]
 
@@ -1088,3 +1107,370 @@ class SubmissionParticipationPolicy:
     def allows_participant_count(self, count: int) -> bool:
         """Whether ``count`` matches the configured participant group's band."""
         return self.participant_count_range.contains(count)
+
+
+# ===========================================================================
+# Application aggregate (order-level) value objects
+# ===========================================================================
+#
+# Value objects for the sibling :class:`~apps.applications.domain.entities.
+# Application` aggregate - the *order* that groups one applicant's Submissions
+# for one competition. The Application references its Submissions by id and caches
+# a display snapshot of each (:class:`SubmissionRef`); it owns the educational
+# organization reference, the selected additional services, the recorded consents,
+# and the immutable total price. Shared value objects (:class:`Money`,
+# :class:`Currency`, :class:`SubmissionId`, :class:`CompetitionId`,
+# :class:`UserId`, :class:`PriceSnapshot`) are reused, never duplicated.
+
+_ORGANIZATION_NAME_MAX: Final = 300
+_CONSENT_CODE_MAX: Final = 120
+_CONSENT_VERSION_MAX: Final = 40
+_SERVICE_NAME_MAX: Final = 300
+_SUBMISSION_REF_LABEL_MAX: Final = 300
+_SERVICE_QUANTITY_MAX: Final = 1_000
+
+
+@dataclass(frozen=True, slots=True, repr=False)
+class ApplicationId:
+    """The globally unique identity of an :class:`Application` aggregate (UUID v7)."""
+
+    value: uuid.UUID
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.value, uuid.UUID):
+            raise InvalidApplicationIdError(f"ApplicationId must wrap a uuid.UUID, got {type(self.value)!r}.")
+        if self.value.version != _UUID_V7_VERSION:
+            raise InvalidApplicationIdError(f"ApplicationId must be a UUID v7, got version {self.value.version}.")
+
+    @classmethod
+    def generate(cls) -> ApplicationId:
+        """Create a brand-new identity backed by a fresh UUID v7."""
+        return cls(_generate_uuid7())
+
+    @classmethod
+    def from_uuid(cls, value: uuid.UUID) -> ApplicationId:
+        return cls(value)
+
+    @classmethod
+    def from_string(cls, value: str) -> ApplicationId:
+        try:
+            parsed = uuid.UUID(value)
+        except (ValueError, AttributeError, TypeError) as exc:
+            raise InvalidApplicationIdError(f"{value!r} is not a valid UUID string.") from exc
+        return cls(parsed)
+
+    def json(self) -> str:
+        return str(self.value)
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+    def __repr__(self) -> str:
+        return f"ApplicationId({str(self.value)!r})"
+
+
+@dataclass(frozen=True, slots=True, repr=False)
+class EducationalOrganizationId:
+    """A reference to the applicant's educational organization, held by id only (UUID v7).
+
+    A separate type from any Institutions-context id so the two contexts share no
+    import edge (ARCH-001 §14). The Application resolves the organization's display
+    name through an ACL and freezes it as a snapshot; it never imports the aggregate.
+    """
+
+    value: uuid.UUID
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.value, uuid.UUID):
+            raise InvalidEducationalOrganizationIdError(f"EducationalOrganizationId must wrap a uuid.UUID, got {type(self.value)!r}.")
+        if self.value.version != _UUID_V7_VERSION:
+            raise InvalidEducationalOrganizationIdError(f"EducationalOrganizationId must be a UUID v7, got version {self.value.version}.")
+
+    @classmethod
+    def from_uuid(cls, value: uuid.UUID) -> EducationalOrganizationId:
+        return cls(value)
+
+    @classmethod
+    def from_string(cls, value: str) -> EducationalOrganizationId:
+        try:
+            parsed = uuid.UUID(value)
+        except (ValueError, AttributeError, TypeError) as exc:
+            raise InvalidEducationalOrganizationIdError(f"{value!r} is not a valid UUID string.") from exc
+        return cls(parsed)
+
+    def json(self) -> str:
+        return str(self.value)
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+    def __repr__(self) -> str:
+        return f"EducationalOrganizationId({str(self.value)!r})"
+
+
+@dataclass(frozen=True, slots=True, repr=False)
+class ServiceId:
+    """A reference to a Competition additional service, held by id only (UUID v7)."""
+
+    value: uuid.UUID
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.value, uuid.UUID):
+            raise InvalidServiceIdError(f"ServiceId must wrap a uuid.UUID, got {type(self.value)!r}.")
+        if self.value.version != _UUID_V7_VERSION:
+            raise InvalidServiceIdError(f"ServiceId must be a UUID v7, got version {self.value.version}.")
+
+    @classmethod
+    def from_uuid(cls, value: uuid.UUID) -> ServiceId:
+        return cls(value)
+
+    @classmethod
+    def from_string(cls, value: str) -> ServiceId:
+        try:
+            parsed = uuid.UUID(value)
+        except (ValueError, AttributeError, TypeError) as exc:
+            raise InvalidServiceIdError(f"{value!r} is not a valid UUID string.") from exc
+        return cls(parsed)
+
+    def json(self) -> str:
+        return str(self.value)
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+    def __repr__(self) -> str:
+        return f"ServiceId({str(self.value)!r})"
+
+
+class ApplicationStatus(StrEnum):
+    """The application's (order) lifecycle state.
+
+    ``DRAFT``           - the applicant is assembling the order; composition is mutable.
+    ``SUBMITTED``       - the order was placed; its Submissions are under per-performance review.
+    ``WAITING_PAYMENT`` - all referenced submissions are approved; the order awaits payment.
+    ``PAID``            - the order's total was paid.
+    ``COMPLETED``       - the order is fully settled.
+    ``CANCELLED``       - the order was withdrawn or rejected; terminal.
+
+    The Application deliberately carries **no** review states of its own: approval
+    lives on the individual Submissions, and the order derives its readiness for
+    payment from their statuses. Legal transitions are enforced by the
+    :class:`~apps.applications.domain.entities.Application` aggregate.
+    """
+
+    DRAFT = "DRAFT"
+    SUBMITTED = "SUBMITTED"
+    WAITING_PAYMENT = "WAITING_PAYMENT"
+    PAID = "PAID"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
+
+
+@dataclass(frozen=True, slots=True)
+class OrganizationName:
+    """A frozen snapshot of an educational organization's display name.
+
+    Stored on the Application at selection time so listing an application never has
+    to resolve the Institutions context; the reference id is kept alongside for
+    navigation.
+    """
+
+    value: str
+
+    def __post_init__(self) -> None:
+        stripped = self.value.strip()
+        if not stripped:
+            raise InvalidOrganizationNameError("Organization name must not be empty.")
+        if len(stripped) > _ORGANIZATION_NAME_MAX:
+            raise InvalidOrganizationNameError(f"Organization name must be at most {_ORGANIZATION_NAME_MAX} characters.")
+        object.__setattr__(self, "value", stripped)
+
+    def __str__(self) -> str:
+        return self.value
+
+
+@dataclass(frozen=True, slots=True)
+class Consent:
+    """A single consent the applicant accepted, captured as an immutable snapshot.
+
+    The ``code`` identifies the consent (e.g. ``personal_data``, ``media_release``)
+    and ``version`` records which revision of the consent text was accepted, so the
+    application preserves *what* was agreed even if the wording later changes.
+    """
+
+    code: str
+    version: str
+    accepted_at: datetime
+
+    def __post_init__(self) -> None:
+        code = self.code.strip()
+        version = self.version.strip()
+        if not code:
+            raise InvalidConsentError("Consent code must not be empty.")
+        if len(code) > _CONSENT_CODE_MAX:
+            raise InvalidConsentError(f"Consent code must be at most {_CONSENT_CODE_MAX} characters.")
+        if not version:
+            raise InvalidConsentError("Consent version must not be empty.")
+        if len(version) > _CONSENT_VERSION_MAX:
+            raise InvalidConsentError(f"Consent version must be at most {_CONSENT_VERSION_MAX} characters.")
+        if not isinstance(self.accepted_at, datetime):
+            raise InvalidConsentError(f"Consent accepted_at must be a datetime, got {type(self.accepted_at)!r}.")
+        object.__setattr__(self, "code", code)
+        object.__setattr__(self, "version", version)
+
+    def __str__(self) -> str:
+        return f"{self.code}@{self.version}"
+
+
+@dataclass(frozen=True, slots=True)
+class ServiceLine:
+    """A selected additional service on the application: what, how many, at what price.
+
+    Prices originate from the Competition (via an ACL) and are snapshotted here at
+    selection time; ``name`` is a display snapshot so listing the order needs no
+    Competition lookup. The line total is ``unit_price x quantity`` in the unit
+    price's currency.
+    """
+
+    service_id: ServiceId
+    name: str
+    unit_price: Money
+    quantity: int
+
+    def __post_init__(self) -> None:
+        name = self.name.strip()
+        if not name:
+            raise InvalidServiceLineError("Service name must not be empty.")
+        if len(name) > _SERVICE_NAME_MAX:
+            raise InvalidServiceLineError(f"Service name must be at most {_SERVICE_NAME_MAX} characters.")
+        if not isinstance(self.unit_price, Money):
+            raise InvalidServiceLineError(f"Service unit price must be Money, got {type(self.unit_price)!r}.")
+        if not isinstance(self.quantity, int) or isinstance(self.quantity, bool):
+            raise InvalidServiceLineError(f"Service quantity must be an int, got {type(self.quantity)!r}.")
+        if self.quantity < 1:
+            raise InvalidServiceLineError(f"Service quantity must be at least 1, got {self.quantity}.")
+        if self.quantity > _SERVICE_QUANTITY_MAX:
+            raise InvalidServiceLineError(f"Service quantity must be at most {_SERVICE_QUANTITY_MAX}.")
+        object.__setattr__(self, "name", name)
+
+    @property
+    def line_total(self) -> Money:
+        """The line's total cost - ``unit_price x quantity``."""
+        return Money.of(self.unit_price.amount * self.quantity, self.unit_price.currency)
+
+    def __str__(self) -> str:
+        return f"{self.name} x{self.quantity} ({self.line_total})"
+
+
+@dataclass(frozen=True, slots=True)
+class SubmissionRef:
+    """A reference to a Submission plus the display snapshot the order UI needs.
+
+    The Application never loads its Submissions to render a summary: it caches here
+    exactly what the "my applications" screens show - the performance title, the
+    lead participant's display name, the nomination and discipline labels, the
+    frozen per-performance :class:`PriceSnapshot` (``None`` until the submission is
+    priced), and the submission's current :class:`SubmissionStatus`. The status and
+    price are kept fresh by an application-layer projection reacting to Submission
+    events; the Application derives its readiness for payment from these statuses.
+    """
+
+    submission_id: SubmissionId
+    performance_title: str
+    participant_display_name: str
+    nomination: str
+    discipline: str
+    status: SubmissionStatus
+    price: PriceSnapshot | None = None
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.submission_id, SubmissionId):
+            raise InvalidSubmissionRefError(f"SubmissionRef submission_id must be a SubmissionId, got {type(self.submission_id)!r}.")
+        if not isinstance(self.status, SubmissionStatus):
+            raise InvalidSubmissionRefError(f"SubmissionRef status must be a SubmissionStatus, got {type(self.status)!r}.")
+        if self.price is not None and not isinstance(self.price, PriceSnapshot):
+            raise InvalidSubmissionRefError(f"SubmissionRef price must be a PriceSnapshot or None, got {type(self.price)!r}.")
+        for label_name in ("performance_title", "participant_display_name", "nomination", "discipline"):
+            raw = getattr(self, label_name)
+            if not isinstance(raw, str):
+                raise InvalidSubmissionRefError(f"SubmissionRef {label_name} must be a str, got {type(raw)!r}.")
+            trimmed = raw.strip()
+            if len(trimmed) > _SUBMISSION_REF_LABEL_MAX:
+                raise InvalidSubmissionRefError(f"SubmissionRef {label_name} must be at most {_SUBMISSION_REF_LABEL_MAX} characters.")
+            object.__setattr__(self, label_name, trimmed)
+
+    @property
+    def is_approved(self) -> bool:
+        """Whether the referenced submission is approved (the payment-readiness signal)."""
+        return self.status is SubmissionStatus.APPROVED
+
+    @property
+    def price_line(self) -> Money:
+        """The submission's contribution to the order total (zero until it is priced)."""
+        return self.price.price if self.price is not None else Money.of("0.00")
+
+    def __str__(self) -> str:
+        return f"{self.performance_title or self.submission_id.json()} [{self.status.value}]"
+
+
+@dataclass(frozen=True, slots=True)
+class TotalPriceSnapshot:
+    """The immutable total price of an application, frozen when it leaves ``DRAFT``.
+
+    ``total`` is ``submissions_total + services_total``. As a value object it cannot
+    be mutated; the aggregate additionally forbids *recomputing* it once the
+    application is submitted, so later Competition pricing changes can never alter
+    the price of an order already placed.
+    """
+
+    total: Money
+    submissions_total: Money
+    services_total: Money
+    calculated_at: datetime
+
+    def __post_init__(self) -> None:
+        for money_name in ("total", "submissions_total", "services_total"):
+            money = getattr(self, money_name)
+            if not isinstance(money, Money):
+                raise InvalidTotalPriceSnapshotError(f"TotalPriceSnapshot {money_name} must be Money, got {type(money)!r}.")
+        if not isinstance(self.calculated_at, datetime):
+            raise InvalidTotalPriceSnapshotError(f"TotalPriceSnapshot calculated_at must be a datetime, got {type(self.calculated_at)!r}.")
+        if not (self.total.currency == self.submissions_total.currency == self.services_total.currency):
+            raise InvalidTotalPriceSnapshotError("TotalPriceSnapshot components must share one currency.")
+
+    @property
+    def amount(self) -> Decimal:
+        return self.total.amount
+
+    @property
+    def currency(self) -> Currency:
+        return self.total.currency
+
+    def __str__(self) -> str:
+        return f"{self.total} @ {self.calculated_at.isoformat()}"
+
+
+@dataclass(frozen=True, slots=True)
+class ApplicationStatusChange:
+    """One entry in an application's status history - a past transition, timestamped.
+
+    Recorded append-only by the aggregate on every lifecycle transition (including
+    the initial ``None -> DRAFT``), so the whole order history can be shown without
+    a separate audit store.
+    """
+
+    from_status: ApplicationStatus | None
+    to_status: ApplicationStatus
+    occurred_at: datetime
+
+    def __post_init__(self) -> None:
+        if self.from_status is not None and not isinstance(self.from_status, ApplicationStatus):
+            raise InvalidApplicationStatusChangeError(f"from_status must be an ApplicationStatus or None, got {type(self.from_status)!r}.")
+        if not isinstance(self.to_status, ApplicationStatus):
+            raise InvalidApplicationStatusChangeError(f"to_status must be an ApplicationStatus, got {type(self.to_status)!r}.")
+        if not isinstance(self.occurred_at, datetime):
+            raise InvalidApplicationStatusChangeError(f"occurred_at must be a datetime, got {type(self.occurred_at)!r}.")
+
+    def __str__(self) -> str:
+        origin = self.from_status.value if self.from_status is not None else "(none)"
+        return f"{origin} -> {self.to_status.value}"

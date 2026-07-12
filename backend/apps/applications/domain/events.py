@@ -33,13 +33,17 @@ from datetime import UTC, datetime
 from enum import StrEnum
 
 from .value_objects import (
+    ApplicationStatus,
     AttachmentId,
     AttachmentType,
     CompetitionId,
     Currency,
+    EducationalOrganizationId,
     ParticipantId,
     ReviewerId,
     ReviewId,
+    ServiceId,
+    SubmissionId,
     SubmissionStatus,
     TeacherId,
     TeacherRole,
@@ -48,9 +52,19 @@ from .value_objects import (
 )
 
 __all__ = [
+    "AdditionalServiceRemoved",
+    "AdditionalServiceSelected",
+    "ApplicationAwaitingPayment",
+    "ApplicationCancelled",
+    "ApplicationCompleted",
+    "ApplicationCreated",
+    "ApplicationPaid",
+    "ApplicationSubmitted",
     "AttachmentAdded",
     "AttachmentRemoved",
+    "ConsentsRecorded",
     "DomainEvent",
+    "EducationalOrganizationSelected",
     "ParticipantAdded",
     "ParticipantRemoved",
     "PerformanceDefined",
@@ -58,10 +72,12 @@ __all__ = [
     "ReviewAdded",
     "SubmissionAccepted",
     "SubmissionApproved",
+    "SubmissionAttachedToApplication",
     "SubmissionAwaitingPayment",
     "SubmissionCancelled",
     "SubmissionCompleted",
     "SubmissionCreated",
+    "SubmissionDetachedFromApplication",
     "SubmissionPaid",
     "SubmissionReturnedForCorrection",
     "SubmissionReviewStarted",
@@ -95,7 +111,18 @@ def _serialize(value: object) -> object:
             return value.isoformat()
         case uuid.UUID():
             return str(value)
-        case CompetitionId() | UserId() | ReviewerId() | ParticipantId() | TeacherId() | AttachmentId() | ReviewId():
+        case (
+            CompetitionId()
+            | UserId()
+            | ReviewerId()
+            | ParticipantId()
+            | TeacherId()
+            | AttachmentId()
+            | ReviewId()
+            | SubmissionId()
+            | EducationalOrganizationId()
+            | ServiceId()
+        ):
             return value.json()
         case TeacherRole():
             return str(value)
@@ -261,3 +288,92 @@ class SubmissionCancelled(DomainEvent):
     """The submission was cancelled (withdrawn or rejected)."""
 
     previous_status: SubmissionStatus
+
+
+# ===========================================================================
+# Application aggregate (order-level) events
+# ===========================================================================
+#
+# Facts about the sibling :class:`~apps.applications.domain.entities.Application`
+# aggregate - the order grouping one applicant's Submissions for one competition.
+# The ``aggregate_id`` on these events is the ``ApplicationId``.
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ApplicationCreated(DomainEvent):
+    """An application (order) was created as a DRAFT by an applicant for a competition."""
+
+    competition_id: CompetitionId
+    applicant_id: UserId
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class SubmissionAttachedToApplication(DomainEvent):
+    """A submission was attached to the application (a performance added to the order)."""
+
+    submission_id: SubmissionId
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class SubmissionDetachedFromApplication(DomainEvent):
+    """A submission reference was removed from the application (while still a draft)."""
+
+    submission_id: SubmissionId
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class EducationalOrganizationSelected(DomainEvent):
+    """The applicant selected the educational organization for the application."""
+
+    educational_organization_id: EducationalOrganizationId
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AdditionalServiceSelected(DomainEvent):
+    """An additional service was selected on the application."""
+
+    service_id: ServiceId
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AdditionalServiceRemoved(DomainEvent):
+    """An additional service was removed from the application."""
+
+    service_id: ServiceId
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ConsentsRecorded(DomainEvent):
+    """The set of accepted consents was recorded on the application."""
+
+    consent_count: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ApplicationSubmitted(DomainEvent):
+    """The application (order) was submitted; its total price was frozen."""
+
+    amount: str
+    currency: Currency
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ApplicationAwaitingPayment(DomainEvent):
+    """All referenced submissions are approved; the application awaits payment."""
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ApplicationPaid(DomainEvent):
+    """The application's total was paid."""
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ApplicationCompleted(DomainEvent):
+    """The application (order) was fully settled."""
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ApplicationCancelled(DomainEvent):
+    """The application (order) was cancelled (withdrawn or rejected)."""
+
+    previous_status: ApplicationStatus
