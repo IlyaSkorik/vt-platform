@@ -17,12 +17,16 @@ export const SYSTEM_BLOCK_IDS = {
   PARTNERS: "01900000-0000-7000-8000-000000000004",
   GALLERY: "01900000-0000-7000-8000-000000000005",
   FAQ: "01900000-0000-7000-8000-000000000006",
+  REGULATION: "01900000-0000-7000-8000-000000000007",
+  DOCUMENTS: "01900000-0000-7000-8000-000000000008",
 } as const;
 
 export type LandingBlockType = _LandingBlock["type"];
 
 export const LANDING_BLOCK_TYPE_LABELS: Record<LandingBlockType, string> = {
   HERO: "Hero",
+  REGULATION: "Положение",
+  DOCUMENTS: "Документы",
   VENUE: "Площадка",
   JURY: "Жюри",
   PARTNERS: "Партнёры",
@@ -35,11 +39,13 @@ export function defaultLandingConfig(): _LandingConfig {
   return {
     blocks: [
       emptyBlock(SYSTEM_BLOCK_IDS.HERO, "HERO", 0, true),
-      emptyBlock(SYSTEM_BLOCK_IDS.VENUE, "VENUE", 1, true),
-      emptyBlock(SYSTEM_BLOCK_IDS.JURY, "JURY", 2, false),
-      emptyBlock(SYSTEM_BLOCK_IDS.PARTNERS, "PARTNERS", 3, false),
-      emptyBlock(SYSTEM_BLOCK_IDS.GALLERY, "GALLERY", 4, false),
-      emptyBlock(SYSTEM_BLOCK_IDS.FAQ, "FAQ", 5, false),
+      emptyBlock(SYSTEM_BLOCK_IDS.REGULATION, "REGULATION", 1, true),
+      emptyBlock(SYSTEM_BLOCK_IDS.DOCUMENTS, "DOCUMENTS", 2, true),
+      emptyBlock(SYSTEM_BLOCK_IDS.VENUE, "VENUE", 3, true),
+      emptyBlock(SYSTEM_BLOCK_IDS.JURY, "JURY", 4, false),
+      emptyBlock(SYSTEM_BLOCK_IDS.PARTNERS, "PARTNERS", 5, false),
+      emptyBlock(SYSTEM_BLOCK_IDS.GALLERY, "GALLERY", 6, false),
+      emptyBlock(SYSTEM_BLOCK_IDS.FAQ, "FAQ", 7, false),
     ],
   };
 }
@@ -173,6 +179,9 @@ export function sanitizeLandingBlock(block: _LandingBlock): _LandingBlock {
         coverImage: blankToNull(block.coverImage),
       };
     case "VENUE":
+    case "REGULATION":
+    case "DOCUMENTS":
+      // Positional markers: no payload of their own.
       return base;
     case "JURY":
       return {

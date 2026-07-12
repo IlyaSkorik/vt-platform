@@ -13,11 +13,13 @@ import {
 } from "./landing";
 
 describe("landing helpers", () => {
-  it("seeds six system blocks by default", () => {
+  it("seeds the system blocks by default", () => {
     const config = defaultLandingConfig();
-    expect(config.blocks).toHaveLength(6);
+    expect(config.blocks).toHaveLength(8);
     expect(config.blocks.map((block) => block.type)).toEqual([
       "HERO",
+      "REGULATION",
+      "DOCUMENTS",
       "VENUE",
       "JURY",
       "PARTNERS",
@@ -46,7 +48,7 @@ describe("landing helpers", () => {
     const faq = blocks[5];
     if (!hero || !faq) throw new Error("missing blocks");
     const next = moveLandingBlockBefore(blocks, hero.id, faq.id);
-    expect(next.map((block) => block.type)[0]).toBe("VENUE");
+    expect(next.map((block) => block.type)[0]).toBe("REGULATION");
     expect(next.find((block) => block.id === hero.id)?.sortOrder).toBeLessThan(
       next.find((block) => block.id === faq.id)?.sortOrder ?? 99,
     );

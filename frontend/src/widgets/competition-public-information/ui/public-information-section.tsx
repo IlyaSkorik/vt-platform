@@ -603,6 +603,70 @@ function BlockEditor({
           />
         </div>
       );
+    case "REGULATION": {
+      const current = (competition.regulations ?? []).find((item) => item.isCurrent);
+      return (
+        <div className="space-y-4">
+          <Alert variant="info" title="Данные из раздела «Положение»">
+            На лендинге показывается текущее положение фестиваля. Загрузите или обновите его в
+            соответствующем разделе. Здесь блоком можно управлять: включить, выключить и
+            переставить.
+            <div className="mt-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => onNavigateSection("regulations")}
+              >
+                Открыть положение
+              </Button>
+            </div>
+          </Alert>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <ReadOnlyField label="Текущее положение" value={current?.title} />
+            <ReadOnlyField label="Версия" value={current?.version} />
+          </div>
+        </div>
+      );
+    }
+    case "DOCUMENTS": {
+      const publicDocuments = (competition.documents ?? []).filter(
+        (item) => item.published && (item.visibility === "PUBLIC" || item.visibility === "ALL"),
+      );
+      return (
+        <div className="space-y-4">
+          <Alert variant="info" title="Данные из раздела «Документы»">
+            На лендинге показываются опубликованные документы с видимостью «Публичная страница».
+            Управляйте документами в соответствующем разделе; здесь блок можно включить, выключить и
+            переставить.
+            <div className="mt-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => onNavigateSection("documents")}
+              >
+                Открыть документы
+              </Button>
+            </div>
+          </Alert>
+          {publicDocuments.length === 0 ? (
+            <EmptyState
+              title="Нет публичных документов"
+              description="Добавьте документы с видимостью «Публичная страница», чтобы они появились на лендинге."
+            />
+          ) : (
+            <ul className="space-y-1.5">
+              {publicDocuments.map((document) => (
+                <li key={document.id} className="text-sm">
+                  {document.title}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      );
+    }
     default:
       return <Alert variant="warning" title="Неизвестный тип блока" />;
   }

@@ -55,6 +55,38 @@ function PreviewHero({ block }: { block: _LandingBlock }): React.JSX.Element {
   );
 }
 
+function PreviewRegulation({ competition }: { competition: CompetitionDetail }): React.JSX.Element {
+  const current = (competition.regulations ?? []).find((item) => item.isCurrent);
+  return (
+    <section className="space-y-1 border-border border-b pb-4">
+      <h3 className="font-semibold text-sm">Положение фестиваля</h3>
+      <p className="text-muted-foreground text-sm">
+        {current ? current.title : "Положение ещё не загружено"}
+      </p>
+    </section>
+  );
+}
+
+function PreviewDocuments({ competition }: { competition: CompetitionDetail }): React.JSX.Element {
+  const documents = (competition.documents ?? []).filter(
+    (item) => item.published && (item.visibility === "PUBLIC" || item.visibility === "ALL"),
+  );
+  return (
+    <section className="space-y-1 border-border border-b pb-4">
+      <h3 className="font-semibold text-sm">Документы</h3>
+      {documents.length > 0 ? (
+        documents.map((document) => (
+          <p key={document.id} className="text-muted-foreground text-sm">
+            {document.title}
+          </p>
+        ))
+      ) : (
+        <p className="text-muted-foreground text-sm">Нет публичных документов</p>
+      )}
+    </section>
+  );
+}
+
 function PreviewVenue({ competition }: { competition: CompetitionDetail }): React.JSX.Element {
   const contacts = resolveContactsConfig(competition);
   const venue = competition.venue;
@@ -222,6 +254,10 @@ function PreviewBlock({
   switch (block.type) {
     case "HERO":
       return <PreviewHero block={block} />;
+    case "REGULATION":
+      return <PreviewRegulation competition={competition} />;
+    case "DOCUMENTS":
+      return <PreviewDocuments competition={competition} />;
     case "VENUE":
       return <PreviewVenue competition={competition} />;
     case "JURY":
