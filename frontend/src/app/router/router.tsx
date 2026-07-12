@@ -173,7 +173,7 @@ const routes: RouteObject[] = [
                     path: ":festivalId",
                     lazy: lazyPage(
                       () => import("@/applications/participant/pages/festivals"),
-                      "FestivalLandingPlaceholderPage",
+                      "FestivalLandingPage",
                     ),
                   },
                   {

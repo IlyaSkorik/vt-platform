@@ -1,5 +1,3 @@
 export { FestivalCatalogPage } from "./festival-catalog-page";
-export {
-  FestivalApplyPlaceholderPage,
-  FestivalLandingPlaceholderPage,
-} from "./festival-placeholder-pages";
+export { FestivalLandingPage } from "./festival-landing-page";
+export { FestivalApplyPlaceholderPage } from "./festival-placeholder-pages";
