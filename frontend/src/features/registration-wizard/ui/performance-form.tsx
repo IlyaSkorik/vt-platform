@@ -147,6 +147,41 @@ function PerformanceFormInner({
   const admissible = isFullyAdmissible(rules, selection);
   const canSave = admissible && title.trim().length > 0 && durationSeconds > 0;
 
+  // Autosave: persist the performance whenever a complete, admissible combination
+  // differs from what is stored. Seed the ref with the mounted (persisted) state so
+  // an unchanged form never re-saves, and debounce so typing does not save per key.
+  const saveSignature = canSave
+    ? [
+        title.trim(),
+        durationSeconds,
+        selection.nominationId,
+        selection.disciplineId,
+        selection.ageCategoryId,
+        selection.participantGroupId,
+        selection.participationFormatId,
+      ].join("|")
+    : null;
+  const savedSignature = useRef<string | null>(saveSignature);
+  const { mutate: savePerformance } = setPerformance;
+  useEffect(() => {
+    if (!saveSignature || savedSignature.current === saveSignature) {
+      return;
+    }
+    const handle = setTimeout(() => {
+      savedSignature.current = saveSignature;
+      savePerformance({
+        title: title.trim(),
+        durationSeconds,
+        nominationId: selection.nominationId as string,
+        disciplineId: selection.disciplineId as string,
+        ageCategoryId: selection.ageCategoryId as string,
+        participantGroupId: selection.participantGroupId as string,
+        participationFormatId: selection.participationFormatId as string,
+      });
+    }, 700);
+    return () => clearTimeout(handle);
+  }, [saveSignature, savePerformance, title, durationSeconds, selection]);
+
   return (
     <div className="flex flex-col gap-4">
       <div className="grid gap-3 sm:grid-cols-2">
@@ -230,26 +265,13 @@ function PerformanceFormInner({
         </Alert>
       ) : null}
 
-      <div>
-        <Button
-          size="sm"
-          disabled={!canSave}
-          loading={setPerformance.isPending}
-          onClick={() =>
-            setPerformance.mutate({
-              title: title.trim(),
-              durationSeconds,
-              nominationId: selection.nominationId as string,
-              disciplineId: selection.disciplineId as string,
-              ageCategoryId: selection.ageCategoryId as string,
-              participantGroupId: selection.participantGroupId as string,
-              participationFormatId: selection.participationFormatId as string,
-            })
-          }
-        >
-          Сохранить номер
-        </Button>
-      </div>
+      <p className="text-xs text-muted-foreground">
+        {setPerformance.isPending
+          ? "Сохранение…"
+          : canSave
+            ? "Изменения сохраняются автоматически"
+            : "Заполните номинацию, название и длительность номера"}
+      </p>
 
       <Divider />
       <ParticipantsSection
@@ -274,11 +296,7 @@ function PerformanceFormInner({
       </div>
 
       <Divider />
-      <PriceSection
-        submissionId={submissionId}
-        submission={submission}
-        canPrice={submission.performance != null}
-      />
+      <PriceSection submissionId={submissionId} submission={submission} />
     </div>
   );
 }
@@ -492,34 +510,51 @@ function TeachersSection({
 function PriceSection({
   submissionId,
   submission,
-  canPrice,
 }: {
   submissionId: string;
   submission: SubmissionResource;
-  canPrice: boolean;
 }): React.JSX.Element {
   const calculate = useCalculatePrice(submissionId);
+  const { mutate } = calculate;
+  const performance = submission.performance;
+  const participantCount = submission.participants.length;
+
+  // The price is computed by the backend from the performance combination and the
+  // participant count. Recalculate automatically whenever those change, so the
+  // total stays live without a manual "calculate" step.
+  const signature =
+    performance && participantCount > 0
+      ? [
+          performance.nominationId,
+          performance.disciplineId,
+          performance.ageCategoryId,
+          performance.participantGroupId,
+          performance.participationFormatId,
+          participantCount,
+        ].join("|")
+      : null;
+  const lastPriced = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (signature && lastPriced.current !== signature) {
+      lastPriced.current = signature;
+      // A combination with no configured price simply leaves the total blank.
+      mutate();
+    }
+  }, [signature, mutate]);
+
   return (
-    <div className="flex items-center justify-between gap-3">
-      <div className="text-sm">
-        Стоимость номера:{" "}
-        {submission.price ? (
-          <Badge variant="success">
-            {submission.price.amount} {submission.price.currency}
-          </Badge>
-        ) : (
-          <span className="text-muted-foreground">не рассчитана</span>
-        )}
-      </div>
-      <Button
-        variant="secondary"
-        size="sm"
-        disabled={!canPrice}
-        loading={calculate.isPending}
-        onClick={() => calculate.mutate()}
-      >
-        Рассчитать стоимость
-      </Button>
+    <div className="text-sm">
+      Стоимость номера:{" "}
+      {calculate.isPending ? (
+        <span className="text-muted-foreground">рассчитывается…</span>
+      ) : submission.price ? (
+        <Badge variant="success">
+          {submission.price.amount} {submission.price.currency}
+        </Badge>
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      )}
     </div>
   );
 }
