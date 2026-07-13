@@ -113,6 +113,7 @@ from .exceptions import (
     IllegalApplicationStatusTransitionError,
     IllegalStatusTransitionError,
     InvalidBirthDateError,
+    InvalidParticipantMemberCountError,
     InvalidPersonNameError,
     MissingRequiredConsentError,
     MissingRequiredServiceError,
@@ -229,6 +230,7 @@ class Participant:
     _birth_date: BirthDate | None = None
     _gender: Gender | None = None
     _registry_participant_id: RegistryParticipantId | None = None
+    _member_count: int = 1
 
     @classmethod
     def create(
@@ -240,6 +242,7 @@ class Participant:
         gender: Gender | None = None,
         display_name: str | None = None,
         registry_participant_id: RegistryParticipantId | None = None,
+        member_count: int = 1,
     ) -> Participant:
         resolved = cls._resolve_display_name(display_name, name)
         return cls(
@@ -249,6 +252,7 @@ class Participant:
             _birth_date=birth_date,
             _gender=gender,
             _registry_participant_id=registry_participant_id,
+            _member_count=cls._validate_member_count(member_count),
         )
 
     @classmethod
@@ -261,6 +265,7 @@ class Participant:
         birth_date: BirthDate | None = None,
         gender: Gender | None = None,
         registry_participant_id: RegistryParticipantId | None = None,
+        member_count: int = 1,
     ) -> Participant:
         return cls(
             _id=participant_id,
@@ -269,7 +274,15 @@ class Participant:
             _birth_date=birth_date,
             _gender=gender,
             _registry_participant_id=registry_participant_id,
+            _member_count=cls._validate_member_count(member_count),
         )
+
+    @staticmethod
+    def _validate_member_count(member_count: int) -> int:
+        """A solo entry counts as one; a collective carries its headcount (>= 1)."""
+        if not isinstance(member_count, int) or isinstance(member_count, bool) or member_count < 1:
+            raise InvalidParticipantMemberCountError(f"Participant member count must be an integer >= 1, got {member_count!r}.")
+        return member_count
 
     @staticmethod
     def _resolve_display_name(display_name: str | None, name: PersonName | None) -> str:
@@ -301,6 +314,11 @@ class Participant:
     @property
     def registry_participant_id(self) -> RegistryParticipantId | None:
         return self._registry_participant_id
+
+    @property
+    def member_count(self) -> int:
+        """How many people this entry represents: 1 for a solo, the headcount for a collective."""
+        return self._member_count
 
     @property
     def identity_key(self) -> tuple[str, ...]:
@@ -639,7 +657,8 @@ class Submission:
 
     @property
     def participant_count(self) -> int:
-        return len(self._participants)
+        """Total headcount across all entries - each solo counts as one, a collective as its member count."""
+        return sum(participant.member_count for participant in self._participants.values())
 
     @property
     def teachers(self) -> tuple[Teacher, ...]:
@@ -710,13 +729,16 @@ class Submission:
         gender: Gender | None = None,
         display_name: str | None = None,
         registry_participant_id: RegistryParticipantId | None = None,
+        member_count: int = 1,
         now: datetime,
     ) -> list[DomainEvent]:
         """Add a participant (a Participant Registry snapshot: solo or collective).
 
-        Rejects a future birth date and a duplicate (the same registry participant,
-        or - for manual entries - the same display name and birth date, already on
-        this submission).
+        ``member_count`` is the headcount this entry represents: 1 for a solo person,
+        the number of people for a collective/ensemble - it drives the participant-count
+        band check and per-participant pricing. Rejects a future birth date and a
+        duplicate (the same registry participant, or - for manual entries - the same
+        display name and birth date, already on this submission).
         """
         self._ensure_editable()
         if birth_date is not None and birth_date.value > now.date():
@@ -728,6 +750,7 @@ class Submission:
             gender=gender,
             display_name=display_name,
             registry_participant_id=registry_participant_id,
+            member_count=member_count,
         )
         if any(p.identity_key == candidate.identity_key for p in self._participants.values()):
             raise DuplicateParticipantError(f"Participant {candidate.display_name!r} is already in this submission.")
@@ -959,9 +982,9 @@ class Submission:
             raise PriceSnapshotRequiredError("A submission must have an immutable price snapshot before it can be submitted.")
         if not policy.is_admissible:
             raise CombinationNotAdmissibleError("The performance's configuration combination is not admissible in this competition.")
-        if not policy.allows_participant_count(len(self._participants)):
+        if not policy.allows_participant_count(self.participant_count):
             raise ParticipantCountMismatchError(
-                f"Participant count {len(self._participants)} does not match the configured group range {policy.participant_count_range}."
+                f"Participant count {self.participant_count} does not match the configured group range {policy.participant_count_range}."
             )
         if policy.requires_teacher and not self._teachers:
             raise TeacherRequiredError("This competition requires a teacher to be credited before the submission can be submitted.")

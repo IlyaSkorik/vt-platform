@@ -358,6 +358,25 @@ class TestPricing:
         assert result.submission.price is not None
         assert result.submission.price.amount == "600.00"
 
+    def test_price_counts_collective_member_headcount(self) -> None:
+        # A collective is a single entry carrying its headcount; per-participant
+        # pricing bills the whole ensemble (8 x 300.00), not one line.
+        env = Env(catalog=FakeCompetitionCatalog(price=Money.of("300.00")))
+        owner = uuid7_str()
+        submission_id = _create(env, competition_id=uuid7_str(), applicant_id=owner)
+        _set_performance(env, submission_id=submission_id, owner=owner)
+        env.add_participant().handle(
+            AddParticipantCommand(
+                submission_id=submission_id,
+                requested_by=owner,
+                display_name="Choir Aurora",
+                member_count=8,
+            )
+        )
+        result = env.calculate_price().handle(CalculatePriceCommand(submission_id=submission_id, requested_by=owner))
+        assert result.submission.price is not None
+        assert result.submission.price.amount == "2400.00"
+
     def test_price_is_fixed_for_per_performance(self) -> None:
         env = Env(
             catalog=FakeCompetitionCatalog(

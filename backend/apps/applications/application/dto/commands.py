@@ -105,8 +105,10 @@ class AddParticipantCommand:
 
     Normally a Participant Registry entry is selected: ``registry_participant_id``
     links it and the name/birth-date/gender are its snapshot. A collective carries
-    only ``display_name``. All person fields are optional so both solo and
-    collective registry participants (and a manual entry) are expressible.
+    only ``display_name`` plus a ``member_count`` (its headcount). All person fields
+    are optional so both solo and collective registry participants (and a manual
+    entry) are expressible. ``member_count`` is 1 for a solo, the number of people
+    for a collective; it drives the count-band check and per-participant pricing.
     """
 
     submission_id: str
@@ -118,6 +120,7 @@ class AddParticipantCommand:
     middle_name: str | None = None
     display_name: str | None = None
     registry_participant_id: str | None = None
+    member_count: int = 1
 
 
 @dataclass(frozen=True, slots=True)

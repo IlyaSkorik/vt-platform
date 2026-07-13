@@ -107,6 +107,7 @@ class AddParticipantHandler:
                 gender=gender,
                 display_name=display_name,
                 registry_participant_id=registry_id,
+                member_count=command.member_count,
                 now=now,
             )
         self._submissions.save(submission)

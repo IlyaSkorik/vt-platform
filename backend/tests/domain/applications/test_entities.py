@@ -27,6 +27,7 @@ from apps.applications.domain.exceptions import (
     DuplicateParticipantError,
     IllegalStatusTransitionError,
     InvalidBirthDateError,
+    InvalidParticipantMemberCountError,
     InvalidPersonNameError,
     ParticipantCountMismatchError,
     ParticipantNotFoundError,
@@ -222,6 +223,18 @@ class TestContentEditing:
         s.add_participant(participant_id=pid, name=_person(), birth_date=BirthDate(date(2012, 5, 1)), gender=Gender.FEMALE, now=NOW)
         s.remove_participant(participant_id=pid, now=NOW)
         assert s.participant_count == 0
+
+    def test_collective_member_count_drives_participant_count(self) -> None:
+        # One collective entry with a headcount counts as that many participants.
+        s = _draft()
+        s.add_participant(participant_id=ParticipantId.generate(), display_name="Choir Aurora", member_count=8, now=NOW)
+        assert s.participant_count == 8
+        assert s.participants[0].member_count == 8
+
+    def test_member_count_must_be_a_positive_integer(self) -> None:
+        s = _draft()
+        with pytest.raises(InvalidParticipantMemberCountError):
+            s.add_participant(participant_id=ParticipantId.generate(), display_name="Choir", member_count=0, now=NOW)
 
     def test_remove_participant_when_more_than_one(self) -> None:
         s = _draft()

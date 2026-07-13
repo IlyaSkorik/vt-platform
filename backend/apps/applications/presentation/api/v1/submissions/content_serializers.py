@@ -46,6 +46,7 @@ class AddParticipantRequestSerializer(serializers.Serializer[dict[str, object]])
     middleName = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     birthDate = serializers.DateField(required=False, allow_null=True)
     gender = serializers.ChoiceField(choices=["MALE", "FEMALE", "OTHER"], required=False, allow_null=True)
+    memberCount = serializers.IntegerField(required=False, allow_null=True, min_value=1)
 
 
 class CreditTeacherRequestSerializer(serializers.Serializer[dict[str, object]]):
@@ -81,6 +82,7 @@ class _ParticipantResourceSerializer(serializers.Serializer[dict[str, object]]):
     middleName = serializers.CharField(allow_null=True)
     birthDate = serializers.DateField(allow_null=True)
     gender = serializers.CharField(allow_null=True)
+    memberCount = serializers.IntegerField()
 
 
 class _TeacherResourceSerializer(serializers.Serializer[dict[str, object]]):

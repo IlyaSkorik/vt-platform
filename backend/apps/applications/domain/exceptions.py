@@ -23,6 +23,7 @@ objects) and mapped to RFC 9457 Problem Details at the presentation edge
     │   ├── InvalidDurationError
     │   ├── InvalidPersonNameError
     │   ├── InvalidBirthDateError
+    │   ├── InvalidParticipantMemberCountError
     │   ├── InvalidTeacherRoleError
     │   ├── InvalidFileReferenceError
     │   ├── InvalidReviewCommentError
@@ -145,6 +146,10 @@ class InvalidPersonNameError(ValueObjectValidationError):
 
 class InvalidBirthDateError(ValueObjectValidationError):
     """The provided value is not a valid birth date (not a date, out of bounds, or in the future)."""
+
+
+class InvalidParticipantMemberCountError(ValueObjectValidationError):
+    """The provided participant member count is not a valid headcount (not an integer >= 1)."""
 
 
 class InvalidTeacherRoleError(ValueObjectValidationError):

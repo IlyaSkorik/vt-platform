@@ -81,6 +81,7 @@ class ParticipantView:
     birth_date: date | None
     gender: str | None
     registry_participant_id: str | None
+    member_count: int
 
     @classmethod
     def from_participant(cls, participant: Participant) -> ParticipantView:
@@ -98,6 +99,7 @@ class ParticipantView:
             birth_date=birth_date.value if birth_date is not None else None,
             gender=gender.value if gender is not None else None,
             registry_participant_id=registry_id.json() if registry_id is not None else None,
+            member_count=participant.member_count,
         )
 
 

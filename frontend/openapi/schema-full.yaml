@@ -5835,6 +5835,11 @@ components:
           oneOf:
           - $ref: '#/components/schemas/AddParticipantRequestGenderEnum'
           - $ref: '#/components/schemas/NullEnum'
+        memberCount:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
     AddParticipantRequestGenderEnum:
       enum:
       - MALE
@@ -9955,6 +9960,8 @@ components:
           type:
           - string
           - 'null'
+        memberCount:
+          type: integer
       required:
       - birthDate
       - displayName
@@ -9962,6 +9969,7 @@ components:
       - gender
       - id
       - lastName
+      - memberCount
       - middleName
       - registryParticipantId
     _ParticipationFormat:

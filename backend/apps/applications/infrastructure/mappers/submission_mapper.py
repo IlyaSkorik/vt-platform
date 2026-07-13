@@ -159,6 +159,7 @@ class SubmissionMapper:
             "birth_date": birth_date.value.isoformat() if birth_date is not None else None,
             "gender": gender.value if gender is not None else None,
             "registry_participant_id": registry_id.json() if registry_id is not None else None,
+            "member_count": participant.member_count,
         }
 
     @staticmethod
@@ -176,6 +177,7 @@ class SubmissionMapper:
             birth_date=BirthDate(date.fromisoformat(birth_date_raw)) if birth_date_raw else None,
             gender=Gender(gender_raw) if gender_raw else None,
             registry_participant_id=RegistryParticipantId.from_string(registry_raw) if registry_raw else None,
+            member_count=int(data.get("member_count", 1)),
         )
 
     @staticmethod

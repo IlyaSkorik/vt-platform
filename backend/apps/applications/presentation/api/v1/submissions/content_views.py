@@ -77,6 +77,7 @@ def _submission_resource(dto: SubmissionView) -> dict[str, Any]:
                 "middleName": p.middle_name,
                 "birthDate": p.birth_date.isoformat() if p.birth_date is not None else None,
                 "gender": p.gender,
+                "memberCount": p.member_count,
             }
             for p in dto.participants
         ],
@@ -187,6 +188,7 @@ class SubmissionParticipantsView(_AuthenticatedView):
             value = data.get(key)
             return str(value) if value else None
 
+        member_count = data.get("memberCount")
         command = AddParticipantCommand(
             submission_id=submission_id,
             requested_by=_uid(request),
@@ -197,6 +199,7 @@ class SubmissionParticipantsView(_AuthenticatedView):
             middle_name=_opt("middleName"),
             birth_date=_opt("birthDate"),
             gender=_opt("gender"),
+            member_count=int(member_count) if member_count else 1,
         )
         try:
             result = composition.build_add_participant_handler().handle(command)
