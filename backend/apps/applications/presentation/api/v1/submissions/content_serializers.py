@@ -31,18 +31,31 @@ class SetPerformanceRequestSerializer(serializers.Serializer[dict[str, object]])
 
 
 class AddParticipantRequestSerializer(serializers.Serializer[dict[str, object]]):
-    """Validate an add-participant request body."""
+    """Validate an add-participant request body.
 
-    firstName = serializers.CharField()
-    lastName = serializers.CharField()
+    A participant is normally chosen from the Participant Registry: send
+    ``participantRegistryId`` plus a snapshot. A solo carries the structured name +
+    birth date + gender; a collective carries only ``displayName``. All person
+    fields are optional so both shapes (and legacy manual entry) validate.
+    """
+
+    participantRegistryId = serializers.UUIDField(required=False, allow_null=True)
+    displayName = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    firstName = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    lastName = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     middleName = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    birthDate = serializers.DateField()
-    gender = serializers.ChoiceField(choices=["MALE", "FEMALE"])
+    birthDate = serializers.DateField(required=False, allow_null=True)
+    gender = serializers.ChoiceField(choices=["MALE", "FEMALE", "OTHER"], required=False, allow_null=True)
 
 
 class CreditTeacherRequestSerializer(serializers.Serializer[dict[str, object]]):
-    """Validate an add-teacher request body."""
+    """Validate an add-teacher request body.
 
+    A teacher is normally chosen from the Teacher Directory: send
+    ``teacherDirectoryId`` plus the name/role snapshot preserved on the submission.
+    """
+
+    teacherDirectoryId = serializers.UUIDField(required=False, allow_null=True)
     firstName = serializers.CharField()
     lastName = serializers.CharField()
     middleName = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -61,15 +74,18 @@ class _PerformanceResourceSerializer(serializers.Serializer[dict[str, object]]):
 
 class _ParticipantResourceSerializer(serializers.Serializer[dict[str, object]]):
     id = serializers.UUIDField()
-    firstName = serializers.CharField()
-    lastName = serializers.CharField()
+    registryParticipantId = serializers.UUIDField(allow_null=True)
+    displayName = serializers.CharField()
+    firstName = serializers.CharField(allow_null=True)
+    lastName = serializers.CharField(allow_null=True)
     middleName = serializers.CharField(allow_null=True)
-    birthDate = serializers.DateField()
-    gender = serializers.CharField()
+    birthDate = serializers.DateField(allow_null=True)
+    gender = serializers.CharField(allow_null=True)
 
 
 class _TeacherResourceSerializer(serializers.Serializer[dict[str, object]]):
     id = serializers.UUIDField()
+    teacherDirectoryId = serializers.UUIDField(allow_null=True)
     firstName = serializers.CharField()
     lastName = serializers.CharField()
     middleName = serializers.CharField(allow_null=True)

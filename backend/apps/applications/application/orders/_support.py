@@ -71,7 +71,7 @@ def ref_from_submission(submission: Submission) -> SubmissionRef:
     """
     performance = submission.performance
     participants = submission.participants
-    lead_name = participants[0].name.full_name if participants else ""
+    lead_name = participants[0].display_name if participants else ""
     return SubmissionRef(
         submission_id=submission.id,
         performance_title=performance.title.value if performance is not None else "",

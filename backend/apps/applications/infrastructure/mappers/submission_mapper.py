@@ -20,6 +20,7 @@ from apps.applications.domain.value_objects import (
     BirthDate,
     CompetitionId,
     Currency,
+    DirectoryTeacherId,
     DisciplineId,
     Duration,
     FileReference,
@@ -33,6 +34,7 @@ from apps.applications.domain.value_objects import (
     PerformanceTitle,
     PersonName,
     PriceSnapshot,
+    RegistryParticipantId,
     ReviewComment,
     ReviewerId,
     ReviewId,
@@ -144,40 +146,58 @@ class SubmissionMapper:
 
     @staticmethod
     def _participant_to_json(participant: Participant) -> dict[str, Any]:
+        name = participant.name
+        birth_date = participant.birth_date
+        gender = participant.gender
+        registry_id = participant.registry_participant_id
         return {
             "id": participant.id.json(),
-            "first_name": participant.name.first_name,
-            "last_name": participant.name.last_name,
-            "middle_name": participant.name.middle_name,
-            "birth_date": participant.birth_date.value.isoformat(),
-            "gender": participant.gender.value,
+            "display_name": participant.display_name,
+            "first_name": name.first_name if name is not None else None,
+            "last_name": name.last_name if name is not None else None,
+            "middle_name": name.middle_name if name is not None else None,
+            "birth_date": birth_date.value.isoformat() if birth_date is not None else None,
+            "gender": gender.value if gender is not None else None,
+            "registry_participant_id": registry_id.json() if registry_id is not None else None,
         }
 
     @staticmethod
     def _participant_from_json(data: dict[str, Any]) -> Participant:
+        first_name = data.get("first_name")
+        last_name = data.get("last_name")
+        name = PersonName(first_name=first_name, last_name=last_name, middle_name=data.get("middle_name")) if first_name and last_name else None
+        birth_date_raw = data.get("birth_date")
+        gender_raw = data.get("gender")
+        registry_raw = data.get("registry_participant_id")
         return Participant.rehydrate(
             participant_id=ParticipantId.from_string(data["id"]),
-            name=PersonName(first_name=data["first_name"], last_name=data["last_name"], middle_name=data["middle_name"]),
-            birth_date=BirthDate(date.fromisoformat(data["birth_date"])),
-            gender=Gender(data["gender"]),
+            display_name=data.get("display_name"),
+            name=name,
+            birth_date=BirthDate(date.fromisoformat(birth_date_raw)) if birth_date_raw else None,
+            gender=Gender(gender_raw) if gender_raw else None,
+            registry_participant_id=RegistryParticipantId.from_string(registry_raw) if registry_raw else None,
         )
 
     @staticmethod
     def _teacher_to_json(teacher: Teacher) -> dict[str, Any]:
+        directory_id = teacher.directory_teacher_id
         return {
             "id": teacher.id.json(),
             "first_name": teacher.name.first_name,
             "last_name": teacher.name.last_name,
             "middle_name": teacher.name.middle_name,
             "role": teacher.role.value,
+            "directory_teacher_id": directory_id.json() if directory_id is not None else None,
         }
 
     @staticmethod
     def _teacher_from_json(data: dict[str, Any]) -> Teacher:
+        directory_raw = data.get("directory_teacher_id")
         return Teacher.rehydrate(
             teacher_id=TeacherId.from_string(data["id"]),
             name=PersonName(first_name=data["first_name"], last_name=data["last_name"], middle_name=data["middle_name"]),
             role=TeacherRole(data["role"]),
+            directory_teacher_id=DirectoryTeacherId.from_string(directory_raw) if directory_raw else None,
         )
 
     @staticmethod

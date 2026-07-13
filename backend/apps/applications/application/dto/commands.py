@@ -101,15 +101,23 @@ class UpdatePerformanceCommand:
 
 @dataclass(frozen=True, slots=True)
 class AddParticipantCommand:
-    """Add a participant to the submission (owner, editable states only)."""
+    """Add a participant to the submission (owner, editable states only).
+
+    Normally a Participant Registry entry is selected: ``registry_participant_id``
+    links it and the name/birth-date/gender are its snapshot. A collective carries
+    only ``display_name``. All person fields are optional so both solo and
+    collective registry participants (and a manual entry) are expressible.
+    """
 
     submission_id: str
     requested_by: str
-    first_name: str
-    last_name: str
-    birth_date: str
-    gender: str
+    first_name: str | None = None
+    last_name: str | None = None
+    birth_date: str | None = None
+    gender: str | None = None
     middle_name: str | None = None
+    display_name: str | None = None
+    registry_participant_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -155,6 +163,7 @@ class AddTeacherCommand:
     last_name: str
     role: str
     middle_name: str | None = None
+    directory_teacher_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

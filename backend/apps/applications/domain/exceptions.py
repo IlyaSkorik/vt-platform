@@ -78,8 +78,16 @@ class InvalidParticipantIdError(ValueObjectValidationError):
     """The provided value is not a valid ``ParticipantId`` (must be a UUID v7)."""
 
 
+class InvalidRegistryParticipantIdError(ValueObjectValidationError):
+    """The provided value is not a valid ``RegistryParticipantId`` reference (must be a UUID v7)."""
+
+
 class InvalidTeacherIdError(ValueObjectValidationError):
     """The provided value is not a valid ``TeacherId`` (must be a UUID v7)."""
+
+
+class InvalidDirectoryTeacherIdError(ValueObjectValidationError):
+    """The provided value is not a valid ``DirectoryTeacherId`` reference (must be a UUID v7)."""
 
 
 class InvalidAttachmentIdError(ValueObjectValidationError):

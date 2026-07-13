@@ -114,6 +114,7 @@ from .exceptions import (
     IllegalApplicationStatusTransitionError,
     IllegalStatusTransitionError,
     InvalidBirthDateError,
+    InvalidPersonNameError,
     MissingRequiredConsentError,
     NoSubmissionsError,
     NotAllSubmissionsApprovedError,
@@ -139,6 +140,7 @@ from .value_objects import (
     CompetitionId,
     Consent,
     Currency,
+    DirectoryTeacherId,
     EducationalOrganizationId,
     FileReference,
     Gender,
@@ -148,6 +150,7 @@ from .value_objects import (
     Performance,
     PersonName,
     PriceSnapshot,
+    RegistryParticipantId,
     ReviewComment,
     ReviewerId,
     ReviewId,
@@ -204,46 +207,111 @@ _REVIEWABLE_STATUSES: Final = frozenset({SubmissionStatus.SUBMITTED, SubmissionS
 
 @dataclass(slots=True, eq=False, repr=False)
 class Participant:
-    """A person taking part in the performance.
+    """A participant on the performance - a snapshot of a Participant Registry entry.
 
-    **Documented extension points (deliberately NOT implemented):** citizenship,
-    identity document, disability, achievements. Each would land as a new optional
-    value object on this entity without changing the aggregate shape.
+    A participant is normally selected from the applicant's reusable Participant
+    Registry, so it links back to that record by :class:`RegistryParticipantId` and
+    carries a denormalized snapshot for display and records. It represents either a
+    **solo** person (structured ``name`` + ``birth_date`` + ``gender``) or a
+    **collective/ensemble** (only a ``display_name``, no birth date or gender). The
+    ``display_name`` is always present; the structured fields are optional so a
+    collective - and a registry gender the flat model does not carry - fit cleanly.
+
+    Manual, registry-less entry is still supported (``registry_participant_id`` is
+    ``None``) for backward compatibility.
     """
 
     _id: ParticipantId
-    _name: PersonName
-    _birth_date: BirthDate
-    _gender: Gender
+    _display_name: str
+    _name: PersonName | None = None
+    _birth_date: BirthDate | None = None
+    _gender: Gender | None = None
+    _registry_participant_id: RegistryParticipantId | None = None
 
     @classmethod
-    def create(cls, *, participant_id: ParticipantId, name: PersonName, birth_date: BirthDate, gender: Gender) -> Participant:
-        return cls(_id=participant_id, _name=name, _birth_date=birth_date, _gender=gender)
+    def create(
+        cls,
+        *,
+        participant_id: ParticipantId,
+        name: PersonName | None = None,
+        birth_date: BirthDate | None = None,
+        gender: Gender | None = None,
+        display_name: str | None = None,
+        registry_participant_id: RegistryParticipantId | None = None,
+    ) -> Participant:
+        resolved = cls._resolve_display_name(display_name, name)
+        return cls(
+            _id=participant_id,
+            _display_name=resolved,
+            _name=name,
+            _birth_date=birth_date,
+            _gender=gender,
+            _registry_participant_id=registry_participant_id,
+        )
 
     @classmethod
-    def rehydrate(cls, *, participant_id: ParticipantId, name: PersonName, birth_date: BirthDate, gender: Gender) -> Participant:
-        return cls(_id=participant_id, _name=name, _birth_date=birth_date, _gender=gender)
+    def rehydrate(
+        cls,
+        *,
+        participant_id: ParticipantId,
+        display_name: str | None = None,
+        name: PersonName | None = None,
+        birth_date: BirthDate | None = None,
+        gender: Gender | None = None,
+        registry_participant_id: RegistryParticipantId | None = None,
+    ) -> Participant:
+        return cls(
+            _id=participant_id,
+            _display_name=cls._resolve_display_name(display_name, name),
+            _name=name,
+            _birth_date=birth_date,
+            _gender=gender,
+            _registry_participant_id=registry_participant_id,
+        )
+
+    @staticmethod
+    def _resolve_display_name(display_name: str | None, name: PersonName | None) -> str:
+        candidate = (display_name or "").strip() or (name.full_name if name is not None else "")
+        if not candidate:
+            raise InvalidPersonNameError("A participant must have a display name (or a structured name to derive one from).")
+        return candidate
 
     @property
     def id(self) -> ParticipantId:
         return self._id
 
     @property
-    def name(self) -> PersonName:
+    def display_name(self) -> str:
+        return self._display_name
+
+    @property
+    def name(self) -> PersonName | None:
         return self._name
 
     @property
-    def birth_date(self) -> BirthDate:
+    def birth_date(self) -> BirthDate | None:
         return self._birth_date
 
     @property
-    def gender(self) -> Gender:
+    def gender(self) -> Gender | None:
         return self._gender
 
     @property
-    def identity_key(self) -> tuple[PersonName, BirthDate]:
-        """The natural key used to detect duplicate participants (name + birth date)."""
-        return (self._name, self._birth_date)
+    def registry_participant_id(self) -> RegistryParticipantId | None:
+        return self._registry_participant_id
+
+    @property
+    def identity_key(self) -> tuple[str, ...]:
+        """The natural key used to detect duplicate participants in one submission.
+
+        A registry-linked participant is keyed by its registry id (the same registry
+        participant may not be added to one submission twice); a manually-entered one
+        falls back to its display name plus birth date.
+        """
+        if self._registry_participant_id is not None:
+            return ("registry", self._registry_participant_id.json())
+        birth = self._birth_date.value.isoformat() if self._birth_date is not None else ""
+        return ("person", self._display_name.casefold(), birth)
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Participant) and other._id == self._id
@@ -252,7 +320,7 @@ class Participant:
         return hash(self._id)
 
     def __repr__(self) -> str:
-        return f"Participant(id={self._id!r}, name={self._name.full_name!r})"
+        return f"Participant(id={self._id!r}, name={self._display_name!r})"
 
 
 @dataclass(slots=True, eq=False, repr=False)
@@ -268,14 +336,29 @@ class Teacher:
     _id: TeacherId
     _name: PersonName
     _role: TeacherRole
+    _directory_teacher_id: DirectoryTeacherId | None = None
 
     @classmethod
-    def create(cls, *, teacher_id: TeacherId, name: PersonName, role: TeacherRole) -> Teacher:
-        return cls(_id=teacher_id, _name=name, _role=role)
+    def create(
+        cls,
+        *,
+        teacher_id: TeacherId,
+        name: PersonName,
+        role: TeacherRole,
+        directory_teacher_id: DirectoryTeacherId | None = None,
+    ) -> Teacher:
+        return cls(_id=teacher_id, _name=name, _role=role, _directory_teacher_id=directory_teacher_id)
 
     @classmethod
-    def rehydrate(cls, *, teacher_id: TeacherId, name: PersonName, role: TeacherRole) -> Teacher:
-        return cls(_id=teacher_id, _name=name, _role=role)
+    def rehydrate(
+        cls,
+        *,
+        teacher_id: TeacherId,
+        name: PersonName,
+        role: TeacherRole,
+        directory_teacher_id: DirectoryTeacherId | None = None,
+    ) -> Teacher:
+        return cls(_id=teacher_id, _name=name, _role=role, _directory_teacher_id=directory_teacher_id)
 
     @property
     def id(self) -> TeacherId:
@@ -288,6 +371,10 @@ class Teacher:
     @property
     def role(self) -> TeacherRole:
         return self._role
+
+    @property
+    def directory_teacher_id(self) -> DirectoryTeacherId | None:
+        return self._directory_teacher_id
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Teacher) and other._id == self._id
@@ -434,6 +521,11 @@ class Submission:
     _price_snapshot: PriceSnapshot | None = None
     _deleted_at: datetime | None = None
     _version: int = 1
+    #: The version this aggregate was loaded at - the optimistic-concurrency
+    #: pre-image the repository writes against. Transient (never persisted); a use
+    #: case may bump ``_version`` several times before one save, so the pre-image
+    #: must be the loaded version, not ``_version - 1``.
+    _initial_version: int = 1
 
     def __post_init__(self, _token: object) -> None:
         if _token is not _CREATION_TOKEN:
@@ -512,6 +604,7 @@ class Submission:
             _price_snapshot=price_snapshot,
             _deleted_at=deleted_at,
             _version=version,
+            _initial_version=version,
         )
 
     # ------------------------------------------------------------------
@@ -576,6 +669,11 @@ class Submission:
         return self._version
 
     @property
+    def initial_version(self) -> int:
+        """The version this aggregate was loaded at (the optimistic-concurrency pre-image)."""
+        return self._initial_version
+
+    @property
     def is_deleted(self) -> bool:
         return self._deleted_at is not None
 
@@ -605,20 +703,33 @@ class Submission:
         self,
         *,
         participant_id: ParticipantId,
-        name: PersonName,
-        birth_date: BirthDate,
-        gender: Gender,
+        name: PersonName | None = None,
+        birth_date: BirthDate | None = None,
+        gender: Gender | None = None,
+        display_name: str | None = None,
+        registry_participant_id: RegistryParticipantId | None = None,
         now: datetime,
     ) -> list[DomainEvent]:
-        """Add a participant. Rejects duplicates (same name + birth date) and future birth dates."""
+        """Add a participant (a Participant Registry snapshot: solo or collective).
+
+        Rejects a future birth date and a duplicate (the same registry participant,
+        or - for manual entries - the same display name and birth date, already on
+        this submission).
+        """
         self._ensure_editable()
-        if birth_date.value > now.date():
+        if birth_date is not None and birth_date.value > now.date():
             raise InvalidBirthDateError(f"Birth date {birth_date} must not be in the future.")
-        key = (name, birth_date)
-        if any(p.identity_key == key for p in self._participants.values()):
-            raise DuplicateParticipantError(f"Participant {name.full_name!r} ({birth_date}) is already in this submission.")
-        participant = Participant.create(participant_id=participant_id, name=name, birth_date=birth_date, gender=gender)
-        self._participants[participant_id] = participant
+        candidate = Participant.create(
+            participant_id=participant_id,
+            name=name,
+            birth_date=birth_date,
+            gender=gender,
+            display_name=display_name,
+            registry_participant_id=registry_participant_id,
+        )
+        if any(p.identity_key == candidate.identity_key for p in self._participants.values()):
+            raise DuplicateParticipantError(f"Participant {candidate.display_name!r} is already in this submission.")
+        self._participants[participant_id] = candidate
         self._touch(now)
         return [ParticipantAdded(aggregate_id=self._id.value, participant_id=participant_id)]
 
@@ -643,11 +754,17 @@ class Submission:
         teacher_id: TeacherId,
         name: PersonName,
         role: TeacherRole,
+        directory_teacher_id: DirectoryTeacherId | None = None,
         now: datetime,
     ) -> list[DomainEvent]:
-        """Add a teacher in a configurable role."""
+        """Credit a teacher in a configurable role.
+
+        ``directory_teacher_id`` links a teacher chosen from the reusable Teacher
+        Directory; ``name``/``role`` are the immutable snapshot preserved on the
+        submission so later directory edits never rewrite it.
+        """
         self._ensure_editable()
-        teacher = Teacher.create(teacher_id=teacher_id, name=name, role=role)
+        teacher = Teacher.create(teacher_id=teacher_id, name=name, role=role, directory_teacher_id=directory_teacher_id)
         self._teachers[teacher_id] = teacher
         self._touch(now)
         return [TeacherAdded(aggregate_id=self._id.value, teacher_id=teacher_id, role=role)]
@@ -859,6 +976,16 @@ class Submission:
         self._updated_at = now
         self._version += 1
 
+    def mark_persisted(self) -> None:
+        """Mark this in-memory instance as clean at its current version.
+
+        Called by the repository after a successful write so the next save uses the
+        just-persisted version as its optimistic-concurrency pre-image. This lets one
+        use case bump the version several times before a single save, and lets the
+        same instance be saved more than once, without a false conflict.
+        """
+        self._initial_version = self._version
+
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Submission) and other._id == self._id
 
@@ -936,6 +1063,11 @@ class Application:
     _paid_at: datetime | None = None
     _deleted_at: datetime | None = None
     _version: int = 1
+    #: The version this aggregate was loaded at - the optimistic-concurrency
+    #: pre-image the repository writes against. Transient (never persisted); a use
+    #: case may bump ``_version`` several times before one save, so the pre-image
+    #: must be the loaded version, not ``_version - 1``.
+    _initial_version: int = 1
 
     def __post_init__(self, _token: object) -> None:
         if _token is not _CREATION_TOKEN:
@@ -1011,6 +1143,7 @@ class Application:
             _paid_at=paid_at,
             _deleted_at=deleted_at,
             _version=version,
+            _initial_version=version,
         )
 
     # ------------------------------------------------------------------
@@ -1081,6 +1214,11 @@ class Application:
     @property
     def version(self) -> int:
         return self._version
+
+    @property
+    def initial_version(self) -> int:
+        """The version this aggregate was loaded at (the optimistic-concurrency pre-image)."""
+        return self._initial_version
 
     @property
     def is_deleted(self) -> bool:
@@ -1288,6 +1426,16 @@ class Application:
         """Advance the change timestamp and optimistic-concurrency version once."""
         self._updated_at = now
         self._version += 1
+
+    def mark_persisted(self) -> None:
+        """Mark this in-memory instance as clean at its current version.
+
+        Called by the repository after a successful write so the next save uses the
+        just-persisted version as its optimistic-concurrency pre-image. This lets one
+        use case bump the version several times before a single save, and lets the
+        same instance be saved more than once, without a false conflict.
+        """
+        self._initial_version = self._version
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Application) and other._id == self._id

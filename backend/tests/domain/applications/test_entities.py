@@ -28,6 +28,7 @@ from apps.applications.domain.exceptions import (
     DuplicateParticipantError,
     IllegalStatusTransitionError,
     InvalidBirthDateError,
+    InvalidPersonNameError,
     ParticipantCountMismatchError,
     ParticipantNotFoundError,
     ParticipantRequiredError,
@@ -42,6 +43,7 @@ from apps.applications.domain.value_objects import (
     AttachmentType,
     BirthDate,
     CompetitionId,
+    DirectoryTeacherId,
     DisciplineId,
     Duration,
     FileReference,
@@ -56,6 +58,7 @@ from apps.applications.domain.value_objects import (
     PerformanceTitle,
     PersonName,
     PriceSnapshot,
+    RegistryParticipantId,
     ReviewComment,
     ReviewerId,
     ReviewId,
@@ -439,3 +442,103 @@ class TestConcurrencyAndIdentity:
         )
         assert same == fx.submission
         assert hash(same) == hash(fx.submission)
+
+
+class TestRegistryLinkedParticipants:
+    """The submission participant is a Participant Registry snapshot (solo or collective)."""
+
+    def test_solo_registry_participant_carries_link_and_snapshot(self) -> None:
+        submission = _draft()
+        registry_id = RegistryParticipantId.from_uuid(_new_id())
+        submission.add_participant(
+            participant_id=ParticipantId.generate(),
+            name=_person("Sofia", "Petrova"),
+            birth_date=BirthDate(date(2013, 3, 4)),
+            gender=Gender.FEMALE,
+            registry_participant_id=registry_id,
+            now=NOW,
+        )
+        participant = submission.participants[0]
+        assert participant.registry_participant_id == registry_id
+        assert participant.display_name == "Petrova Sofia"
+        assert participant.gender is Gender.FEMALE
+
+    def test_collective_has_display_name_only(self) -> None:
+        submission = _draft()
+        submission.add_participant(
+            participant_id=ParticipantId.generate(),
+            display_name='Ensemble "Constellation"',
+            registry_participant_id=RegistryParticipantId.from_uuid(_new_id()),
+            now=NOW,
+        )
+        participant = submission.participants[0]
+        assert participant.display_name == 'Ensemble "Constellation"'
+        assert participant.name is None
+        assert participant.birth_date is None
+        assert participant.gender is None
+
+    def test_other_gender_is_accepted(self) -> None:
+        submission = _draft()
+        submission.add_participant(
+            participant_id=ParticipantId.generate(),
+            name=_person(),
+            birth_date=BirthDate(date(2012, 1, 1)),
+            gender=Gender.OTHER,
+            now=NOW,
+        )
+        assert submission.participants[0].gender is Gender.OTHER
+
+    def test_same_registry_participant_cannot_be_added_twice(self) -> None:
+        submission = _draft()
+        registry_id = RegistryParticipantId.from_uuid(_new_id())
+        submission.add_participant(
+            participant_id=ParticipantId.generate(),
+            display_name="Sofia",
+            registry_participant_id=registry_id,
+            now=NOW,
+        )
+        with pytest.raises(DuplicateParticipantError):
+            submission.add_participant(
+                participant_id=ParticipantId.generate(),
+                display_name="Sofia (again)",
+                registry_participant_id=registry_id,
+                now=NOW,
+            )
+
+    def test_collective_requires_a_display_name(self) -> None:
+        submission = _draft()
+        with pytest.raises(InvalidPersonNameError):
+            submission.add_participant(
+                participant_id=ParticipantId.generate(),
+                registry_participant_id=RegistryParticipantId.from_uuid(_new_id()),
+                now=NOW,
+            )
+
+
+class TestDirectoryLinkedTeachers:
+    """A credited teacher links to the Teacher Directory and keeps a name/role snapshot."""
+
+    def test_teacher_carries_directory_link_and_snapshot(self) -> None:
+        submission = _draft()
+        directory_id = DirectoryTeacherId.from_uuid(_new_id())
+        submission.add_teacher(
+            teacher_id=TeacherId.generate(),
+            name=_person("Elena", "Sokolova"),
+            role=TeacherRole("Choreographer"),
+            directory_teacher_id=directory_id,
+            now=NOW,
+        )
+        teacher = submission.teachers[0]
+        assert teacher.directory_teacher_id == directory_id
+        assert teacher.name.full_name == "Sokolova Elena"
+        assert teacher.role == TeacherRole("Choreographer")
+
+    def test_manual_teacher_has_no_directory_link(self) -> None:
+        submission = _draft()
+        submission.add_teacher(
+            teacher_id=TeacherId.generate(),
+            name=_person("Elena", "Sokolova"),
+            role=TeacherRole("Teacher"),
+            now=NOW,
+        )
+        assert submission.teachers[0].directory_teacher_id is None

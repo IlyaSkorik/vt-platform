@@ -52,6 +52,7 @@ from .exceptions import (
     InvalidBirthDateError,
     InvalidCompetitionIdError,
     InvalidConsentError,
+    InvalidDirectoryTeacherIdError,
     InvalidDisciplineIdError,
     InvalidDurationError,
     InvalidEducationalOrganizationIdError,
@@ -66,6 +67,7 @@ from .exceptions import (
     InvalidPerformanceTitleError,
     InvalidPersonNameError,
     InvalidPriceSnapshotError,
+    InvalidRegistryParticipantIdError,
     InvalidReviewCommentError,
     InvalidReviewerIdError,
     InvalidReviewIdError,
@@ -91,6 +93,7 @@ __all__ = [
     "CompetitionPriceQuote",
     "Consent",
     "Currency",
+    "DirectoryTeacherId",
     "DisciplineId",
     "Duration",
     "EducationalOrganizationId",
@@ -107,6 +110,7 @@ __all__ = [
     "PersonName",
     "PriceCalculationType",
     "PriceSnapshot",
+    "RegistryParticipantId",
     "ReviewComment",
     "ReviewId",
     "ReviewerId",
@@ -632,6 +636,88 @@ class ParticipationFormatId:
         return f"ParticipationFormatId({str(self.value)!r})"
 
 
+@dataclass(frozen=True, slots=True, repr=False)
+class RegistryParticipantId:
+    """A reference to the applicant's Participant Registry entry, held by id only (UUID v7).
+
+    The submission's :class:`~apps.applications.domain.entities.Participant` links to
+    a reusable registry participant (solo or collective) by this opaque id; the
+    participant's name/birth-date/gender fields are a denormalized snapshot of that
+    registry record. A separate type from the Participants context's own id so the
+    two contexts share no import edge (ARCH-001 §14).
+    """
+
+    value: uuid.UUID
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.value, uuid.UUID):
+            raise InvalidRegistryParticipantIdError(f"RegistryParticipantId must wrap a uuid.UUID, got {type(self.value)!r}.")
+        if self.value.version != _UUID_V7_VERSION:
+            raise InvalidRegistryParticipantIdError(f"RegistryParticipantId must be a UUID v7, got version {self.value.version}.")
+
+    @classmethod
+    def from_uuid(cls, value: uuid.UUID) -> RegistryParticipantId:
+        return cls(value)
+
+    @classmethod
+    def from_string(cls, value: str) -> RegistryParticipantId:
+        try:
+            parsed = uuid.UUID(value)
+        except (ValueError, AttributeError, TypeError) as exc:
+            raise InvalidRegistryParticipantIdError(f"{value!r} is not a valid UUID string.") from exc
+        return cls(parsed)
+
+    def json(self) -> str:
+        return str(self.value)
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+    def __repr__(self) -> str:
+        return f"RegistryParticipantId({str(self.value)!r})"
+
+
+@dataclass(frozen=True, slots=True, repr=False)
+class DirectoryTeacherId:
+    """A reference to the applicant's Teacher Directory entry, held by id only (UUID v7).
+
+    A submission credits a teacher chosen from the reusable, user-owned Teacher
+    Directory; the credited :class:`~apps.applications.domain.entities.Teacher`
+    keeps this link plus a denormalized name/role snapshot. A separate type from the
+    Teachers context's own id so the two contexts share no import edge (ARCH-001
+    §14). Manual, directory-less credits leave this ``None``.
+    """
+
+    value: uuid.UUID
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.value, uuid.UUID):
+            raise InvalidDirectoryTeacherIdError(f"DirectoryTeacherId must wrap a uuid.UUID, got {type(self.value)!r}.")
+        if self.value.version != _UUID_V7_VERSION:
+            raise InvalidDirectoryTeacherIdError(f"DirectoryTeacherId must be a UUID v7, got version {self.value.version}.")
+
+    @classmethod
+    def from_uuid(cls, value: uuid.UUID) -> DirectoryTeacherId:
+        return cls(value)
+
+    @classmethod
+    def from_string(cls, value: str) -> DirectoryTeacherId:
+        try:
+            parsed = uuid.UUID(value)
+        except (ValueError, AttributeError, TypeError) as exc:
+            raise InvalidDirectoryTeacherIdError(f"{value!r} is not a valid UUID string.") from exc
+        return cls(parsed)
+
+    def json(self) -> str:
+        return str(self.value)
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+    def __repr__(self) -> str:
+        return f"DirectoryTeacherId({str(self.value)!r})"
+
+
 # ---------------------------------------------------------------------------
 # Enumerations
 # ---------------------------------------------------------------------------
@@ -672,13 +758,14 @@ class SubmissionStatus(StrEnum):
 class Gender(StrEnum):
     """A participant's gender.
 
-    A deliberately small, fixed vocabulary for the competition domain today.
-    Additional members (e.g. ``UNSPECIFIED``) are the extension point and would be
-    added here without touching the aggregate.
+    ``OTHER`` accommodates participants whose Participant Registry record uses a
+    non-binary value; it also lets a collective (which has no single gender) be
+    represented without a gender at all (the field is optional on the participant).
     """
 
     MALE = "MALE"
     FEMALE = "FEMALE"
+    OTHER = "OTHER"
 
 
 class AttachmentType(StrEnum):

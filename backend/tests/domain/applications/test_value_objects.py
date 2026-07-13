@@ -233,4 +233,4 @@ class TestEnums:
         assert {a.value for a in AttachmentType} == {"MUSIC", "VIDEO", "IMAGE", "DOCUMENT"}
 
     def test_gender_members(self) -> None:
-        assert {g.value for g in Gender} == {"MALE", "FEMALE"}
+        assert {g.value for g in Gender} == {"MALE", "FEMALE", "OTHER"}

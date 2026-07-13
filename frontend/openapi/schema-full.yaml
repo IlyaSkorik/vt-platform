@@ -5139,7 +5139,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/AddParticipantRequest'
-        required: true
       security:
       - jwtAuth: []
       responses:
@@ -5798,34 +5797,54 @@ components:
       - name
     AddParticipantRequest:
       type: object
-      description: Validate an add-participant request body.
+      description: |-
+        Validate an add-participant request body.
+
+        A participant is normally chosen from the Participant Registry: send
+        ``participantRegistryId`` plus a snapshot. A solo carries the structured name +
+        birth date + gender; a collective carries only ``displayName``. All person
+        fields are optional so both shapes (and legacy manual entry) validate.
       properties:
+        participantRegistryId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        displayName:
+          type:
+          - string
+          - 'null'
         firstName:
-          type: string
+          type:
+          - string
+          - 'null'
         lastName:
-          type: string
+          type:
+          - string
+          - 'null'
         middleName:
           type:
           - string
           - 'null'
         birthDate:
-          type: string
+          type:
+          - string
+          - 'null'
           format: date
         gender:
-          $ref: '#/components/schemas/AddParticipantRequestGenderEnum'
-      required:
-      - birthDate
-      - firstName
-      - gender
-      - lastName
+          oneOf:
+          - $ref: '#/components/schemas/AddParticipantRequestGenderEnum'
+          - $ref: '#/components/schemas/NullEnum'
     AddParticipantRequestGenderEnum:
       enum:
       - MALE
       - FEMALE
+      - OTHER
       type: string
       description: |-
         * `MALE` - MALE
         * `FEMALE` - FEMALE
+        * `OTHER` - OTHER
     AddParticipationFormat:
       type: object
       properties:
@@ -6413,8 +6432,17 @@ components:
         * `teacher` - teacher
     CreditTeacherRequest:
       type: object
-      description: Validate an add-teacher request body.
+      description: |-
+        Validate an add-teacher request body.
+
+        A teacher is normally chosen from the Teacher Directory: send
+        ``teacherDirectoryId`` plus the name/role snapshot preserved on the submission.
       properties:
+        teacherDirectoryId:
+          type:
+          - string
+          - 'null'
+          format: uuid
         firstName:
           type: string
         lastName:
@@ -9899,26 +9927,43 @@ components:
         id:
           type: string
           format: uuid
+        registryParticipantId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        displayName:
+          type: string
         firstName:
-          type: string
+          type:
+          - string
+          - 'null'
         lastName:
-          type: string
+          type:
+          - string
+          - 'null'
         middleName:
           type:
           - string
           - 'null'
         birthDate:
-          type: string
+          type:
+          - string
+          - 'null'
           format: date
         gender:
-          type: string
+          type:
+          - string
+          - 'null'
       required:
       - birthDate
+      - displayName
       - firstName
       - gender
       - id
       - lastName
       - middleName
+      - registryParticipantId
     _ParticipationFormat:
       type: object
       properties:
@@ -10295,6 +10340,11 @@ components:
         id:
           type: string
           format: uuid
+        teacherDirectoryId:
+          type:
+          - string
+          - 'null'
+          format: uuid
         firstName:
           type: string
         lastName:
@@ -10311,6 +10361,7 @@ components:
       - lastName
       - middleName
       - role
+      - teacherDirectoryId
     _TeamContact:
       type: object
       properties:

@@ -70,16 +70,26 @@ def _submission_resource(dto: SubmissionView) -> dict[str, Any]:
         "participants": [
             {
                 "id": p.id,
+                "registryParticipantId": p.registry_participant_id,
+                "displayName": p.display_name,
                 "firstName": p.first_name,
                 "lastName": p.last_name,
                 "middleName": p.middle_name,
-                "birthDate": p.birth_date.isoformat(),
+                "birthDate": p.birth_date.isoformat() if p.birth_date is not None else None,
                 "gender": p.gender,
             }
             for p in dto.participants
         ],
         "teachers": [
-            {"id": t.id, "firstName": t.first_name, "lastName": t.last_name, "middleName": t.middle_name, "role": t.role} for t in dto.teachers
+            {
+                "id": t.id,
+                "teacherDirectoryId": t.directory_teacher_id,
+                "firstName": t.first_name,
+                "lastName": t.last_name,
+                "middleName": t.middle_name,
+                "role": t.role,
+            }
+            for t in dto.teachers
         ],
         "attachments": [{"id": a.id, "type": a.type, "fileReference": a.file_reference, "caption": a.caption} for a in dto.attachments],
         "price": ({"amount": price.amount, "currency": price.currency, "calculatedAt": _iso(price.calculated_at)} if price is not None else None),
@@ -172,15 +182,21 @@ class SubmissionParticipantsView(_AuthenticatedView):
         if not serializer.is_valid():
             return problems.validation_problem(serializer.errors, instance=request.path, request=request)
         data = serializer.validated_data
-        middle = data.get("middleName")
+
+        def _opt(key: str) -> str | None:
+            value = data.get(key)
+            return str(value) if value else None
+
         command = AddParticipantCommand(
             submission_id=submission_id,
             requested_by=_uid(request),
-            first_name=str(data["firstName"]),
-            last_name=str(data["lastName"]),
-            middle_name=str(middle) if middle else None,
-            birth_date=str(data["birthDate"]),
-            gender=str(data["gender"]),
+            registry_participant_id=_opt("participantRegistryId"),
+            display_name=_opt("displayName"),
+            first_name=_opt("firstName"),
+            last_name=_opt("lastName"),
+            middle_name=_opt("middleName"),
+            birth_date=_opt("birthDate"),
+            gender=_opt("gender"),
         )
         try:
             result = composition.build_add_participant_handler().handle(command)
@@ -224,6 +240,7 @@ class SubmissionTeachersView(_AuthenticatedView):
             return problems.validation_problem(serializer.errors, instance=request.path, request=request)
         data = serializer.validated_data
         middle = data.get("middleName")
+        directory_teacher_id = data.get("teacherDirectoryId")
         command = AddTeacherCommand(
             submission_id=submission_id,
             requested_by=_uid(request),
@@ -231,6 +248,7 @@ class SubmissionTeachersView(_AuthenticatedView):
             last_name=str(data["lastName"]),
             middle_name=str(middle) if middle else None,
             role=str(data["role"]),
+            directory_teacher_id=str(directory_teacher_id) if directory_teacher_id else None,
         )
         try:
             result = composition.build_add_teacher_handler().handle(command)
