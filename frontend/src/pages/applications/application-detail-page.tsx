@@ -1,5 +1,5 @@
-import { ArrowLeft } from "lucide-react";
-import { Link, useParams } from "react-router";
+import { ArrowLeft, Pencil } from "lucide-react";
+import { generatePath, Link, useParams } from "react-router";
 
 import {
   applicationStatusPresentation,
@@ -48,16 +48,30 @@ export function ApplicationDetailPage(): React.JSX.Element {
     <PageContainer>
       <PageHeader
         actions={
-          CANCELLABLE.has(application.status) ? (
-            <Button
-              variant="danger"
-              size="sm"
-              loading={cancel.isPending}
-              onClick={() => cancel.mutate()}
-            >
-              Отменить заявку
-            </Button>
-          ) : undefined
+          <div className="flex gap-2">
+            {application.status === "DRAFT" ? (
+              <Button asChild variant="secondary" size="sm">
+                <Link
+                  to={generatePath(ROUTES.cabinetFestivalApply, {
+                    festivalId: application.competitionId,
+                  })}
+                >
+                  <Pencil className="size-4" />
+                  Продолжить заполнение
+                </Link>
+              </Button>
+            ) : null}
+            {CANCELLABLE.has(application.status) ? (
+              <Button
+                variant="danger"
+                size="sm"
+                loading={cancel.isPending}
+                onClick={() => cancel.mutate()}
+              >
+                Отменить заявку
+              </Button>
+            ) : null}
+          </div>
         }
       >
         <Button asChild variant="ghost" size="sm">
