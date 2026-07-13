@@ -45,19 +45,28 @@ describe("toAddParticipantRequest", () => {
     expect(toAddParticipantRequest(participant({ gender: "other" })).gender).toBe("OTHER");
   });
 
-  it("maps a collective to only the registry link and display name", () => {
+  it("maps a collective to the registry link, display name, and headcount", () => {
     const request = toAddParticipantRequest(
       participant({
         participantType: "collective",
         collectiveName: 'Ensemble "Constellation"',
         fullName: 'Ensemble "Constellation"',
       }),
+      8,
     );
     expect(request).toEqual({
       participantRegistryId: "01900000-0000-7000-8000-000000000001",
       displayName: 'Ensemble "Constellation"',
+      memberCount: 8,
     });
     expect(request.birthDate).toBeUndefined();
     expect(request.gender).toBeUndefined();
+  });
+
+  it("defaults a collective's headcount to 1 when none is supplied", () => {
+    const request = toAddParticipantRequest(
+      participant({ participantType: "collective", collectiveName: "Choir", fullName: "Choir" }),
+    );
+    expect(request.memberCount).toBe(1);
   });
 });

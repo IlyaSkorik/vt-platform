@@ -313,7 +313,8 @@ function ParticipantsSection({
   const add = useAddParticipant(submissionId);
   const remove = useRemoveParticipant(submissionId);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const count = submission.participants.length;
+  // The band counts people, not entries: a collective contributes its headcount.
+  const count = submission.participants.reduce((total, p) => total + (p.memberCount ?? 1), 0);
   const bandLabel = group
     ? group.maxCount == null
       ? `${group.minCount}+`
@@ -327,8 +328,8 @@ function ParticipantsSection({
   const [searchParams, setSearchParams] = useSearchParams();
   const handledPick = useRef<string | null>(null);
 
-  const attach = (participant: Participant) => {
-    add.mutate(toAddParticipantRequest(participant), {
+  const attach = (participant: Participant, memberCount?: number) => {
+    add.mutate(toAddParticipantRequest(participant, memberCount), {
       onSuccess: () => setPickerOpen(false),
       onError: () => toast.error("Не удалось добавить участника"),
     });
@@ -345,7 +346,7 @@ function ParticipantsSection({
     }
     handledPick.current = pickedId;
     void fetchParticipant(pickedId)
-      .then((participant) => add.mutateAsync(toAddParticipantRequest(participant)))
+      .then((participant) => add.mutateAsync(toAddParticipantRequest(participant, group?.minCount)))
       .catch(() => toast.error("Не удалось добавить созданного участника"))
       .finally(() => {
         setSearchParams(
@@ -357,7 +358,7 @@ function ParticipantsSection({
           { replace: true },
         );
       });
-  }, [searchParams, setSearchParams, submissionId, add]);
+  }, [searchParams, setSearchParams, submissionId, add, group?.minCount]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -392,6 +393,7 @@ function ParticipantsSection({
             <span className="text-sm">
               {participant.displayName}
               {participant.birthDate ? ` · ${participant.birthDate}` : ""}
+              {participant.memberCount > 1 ? ` · ${participant.memberCount} чел.` : ""}
             </span>
             <Button
               variant="ghost"
@@ -416,6 +418,7 @@ function ParticipantsSection({
         submissionId={submissionId}
         returnTo={location.pathname}
         isAttaching={add.isPending}
+        {...(group?.minCount ? { collectiveDefaultCount: group.minCount } : {})}
       />
     </div>
   );

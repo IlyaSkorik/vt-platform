@@ -20,19 +20,24 @@ const GENDER_MAP: Record<Participant["gender"], AddParticipantRequestGenderEnum>
 
 /**
  * Build the add-participant request for a chosen registry participant. Solo
- * participants contribute their full structured snapshot; collectives contribute
- * only a display name (the registry link is authoritative for their members).
+ * participants contribute their full structured snapshot and count as one person;
+ * a collective contributes only a display name plus its headcount (`memberCount`),
+ * which drives the count-band check and per-participant pricing.
  */
-export function toAddParticipantRequest(participant: Participant): AddParticipantRequest {
-  const base: AddParticipantRequest = {
-    participantRegistryId: participant.id,
-    displayName: participantDisplayName(participant),
-  };
+export function toAddParticipantRequest(
+  participant: Participant,
+  memberCount?: number,
+): AddParticipantRequest {
   if (isCollective(participant)) {
-    return base;
+    return {
+      participantRegistryId: participant.id,
+      displayName: participantDisplayName(participant),
+      memberCount: memberCount && memberCount > 0 ? memberCount : 1,
+    };
   }
   return {
-    ...base,
+    participantRegistryId: participant.id,
+    displayName: participantDisplayName(participant),
     firstName: participant.firstName,
     lastName: participant.lastName,
     middleName: participant.middleName,

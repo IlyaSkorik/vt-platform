@@ -41,13 +41,16 @@ export function ParticipantPicker({
   submissionId,
   returnTo,
   isAttaching,
+  collectiveDefaultCount,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelect: (participant: Participant) => void;
+  onSelect: (participant: Participant, memberCount?: number) => void;
   submissionId: string;
   returnTo: string;
   isAttaching?: boolean;
+  /** Seed value for the collective headcount input (usually the group's minimum). */
+  collectiveDefaultCount?: number;
 }): React.JSX.Element {
   const [search, setSearch] = useState("");
   const { data: participants, isLoading } = useParticipants(search);
@@ -94,7 +97,8 @@ export function ParticipantPicker({
                   key={participant.id}
                   participant={participant}
                   disabled={isAttaching ?? false}
-                  onSelect={() => onSelect(participant)}
+                  {...(collectiveDefaultCount ? { collectiveDefaultCount } : {})}
+                  onSelect={(memberCount) => onSelect(participant, memberCount)}
                 />
               ))
             )}
@@ -128,15 +132,22 @@ function ParticipantRow({
   participant,
   onSelect,
   disabled,
+  collectiveDefaultCount,
 }: {
   participant: Participant;
-  onSelect: () => void;
+  onSelect: (memberCount?: number) => void;
   disabled?: boolean;
+  collectiveDefaultCount?: number;
 }): React.JSX.Element {
   const collective = isCollective(participant);
   const name = participantDisplayName(participant);
   const meta = collective ? "Коллектив" : `${participant.age} лет`;
   const organization = participant.primaryOrganization?.name;
+  const [count, setCount] = useState(
+    collectiveDefaultCount && collectiveDefaultCount > 0 ? String(collectiveDefaultCount) : "",
+  );
+  const memberCount = Number(count) || 0;
+  const canSelectCollective = memberCount > 0;
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
       <div className="flex min-w-0 items-center gap-3">
@@ -154,10 +165,31 @@ function ParticipantRow({
         </div>
       </div>
       <div className="flex items-center gap-2">
-        {collective ? <Badge variant="secondary">Коллектив</Badge> : null}
-        <Button size="xs" disabled={disabled} onClick={onSelect}>
-          Выбрать
-        </Button>
+        {collective ? (
+          <>
+            <Badge variant="secondary">Коллектив</Badge>
+            <Input
+              type="number"
+              min={1}
+              className="w-20"
+              placeholder="Чел."
+              aria-label="Число человек в коллективе"
+              value={count}
+              onChange={(event) => setCount(event.target.value)}
+            />
+            <Button
+              size="xs"
+              disabled={disabled || !canSelectCollective}
+              onClick={() => onSelect(memberCount)}
+            >
+              Выбрать
+            </Button>
+          </>
+        ) : (
+          <Button size="xs" disabled={disabled} onClick={() => onSelect()}>
+            Выбрать
+          </Button>
+        )}
       </div>
     </div>
   );
