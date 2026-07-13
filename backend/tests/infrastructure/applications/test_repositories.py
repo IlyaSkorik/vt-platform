@@ -233,3 +233,31 @@ class TestApplicationRepository:
         second.record_consents(consents=[Consent(code="other", version="v1", accepted_at=NOW)], now=NOW)
         with pytest.raises(ConcurrencyConflictError):
             repo.save(second)
+
+    def test_many_mutations_in_one_unit_of_work_save_without_false_conflict(self) -> None:
+        """Regression: submitting an order bumps the version several times before one
+        save (refresh refs + submit); the optimistic-concurrency pre-image must be the
+        loaded version, not ``version - 1``."""
+        repo = DjangoApplicationRepository()
+        application = _build_application()
+        repo.save(application)
+        loaded = repo.get(application.id)
+        assert loaded is not None
+        base_version = loaded.version
+
+        loaded.add_service(
+            service_line=ServiceLine(
+                service_id=ServiceId.from_uuid(SubmissionId.generate().value), name="Badge", unit_price=Money.of("5.00"), quantity=1
+            ),
+            now=NOW,
+        )
+        loaded.record_consents(consents=[Consent(code="media", version="v1", accepted_at=NOW)], now=NOW)
+        loaded.submit(now=NOW)
+        assert loaded.version >= base_version + 2  # several bumps before one save
+
+        repo.save(loaded)  # must not raise ConcurrencyConflictError
+
+        reloaded = repo.get(application.id)
+        assert reloaded is not None
+        assert reloaded.status.value == "SUBMITTED"
+        assert reloaded.version == loaded.version

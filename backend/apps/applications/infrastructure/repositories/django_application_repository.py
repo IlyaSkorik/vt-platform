@@ -45,16 +45,20 @@ class DjangoApplicationRepository:
         model = ApplicationMapper.to_model(application)
         values = self._column_values(model)
         update_values = {name: value for name, value in values.items() if name != "id"}
-        previous_version = application.version - 1
+        # Match on the version the aggregate was loaded at, not ``version - 1``: a
+        # single use case may bump the version several times before one save, so the
+        # pre-image is the loaded version and the new value is the current version.
+        expected_version = application.initial_version
         try:
             with transaction.atomic():
-                updated = ApplicationModel.objects.filter(pk=application.id.value, version=previous_version).update(**update_values)
+                updated = ApplicationModel.objects.filter(pk=application.id.value, version=expected_version).update(**update_values)
                 if not updated:
                     if ApplicationModel.objects.filter(pk=application.id.value).exists():
                         raise ConcurrencyConflictError(
-                            f"Application {application.id} was modified concurrently; expected version {previous_version}."
+                            f"Application {application.id} was modified concurrently; expected version {expected_version}."
                         )
                     ApplicationModel.objects.create(**values)
+            application.mark_persisted()
         except IntegrityError as exc:
             raise IntegrityViolationError(f"Failed to persist application {application.id}.") from exc
         except DatabaseError as exc:  # pragma: no cover - defensive
