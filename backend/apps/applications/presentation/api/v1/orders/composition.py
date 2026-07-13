@@ -138,7 +138,7 @@ def build_cancel_application_handler() -> CancelApplicationHandler:
 
 
 def build_get_application_handler() -> GetApplicationHandler:
-    return GetApplicationHandler(applications=_applications())
+    return GetApplicationHandler(applications=_applications(), submissions=_submissions(), clock=SystemClock())
 
 
 def build_list_applications_handler() -> ListApplicationsHandler:

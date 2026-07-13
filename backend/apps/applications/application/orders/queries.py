@@ -12,10 +12,20 @@ from apps.applications.application.dto.queries import (
     ListApplicationsQuery,
     ListDraftApplicationsQuery,
 )
-from apps.applications.application.interfaces import ApplicationRepository
+from apps.applications.application.interfaces import (
+    ApplicationRepository,
+    Clock,
+    SubmissionRepository,
+)
 from apps.applications.domain.value_objects import ApplicationStatus
 
-from ._support import ensure_owner, load_application, parse_application_id, parse_user_id
+from ._support import (
+    ensure_owner,
+    load_application,
+    parse_application_id,
+    parse_user_id,
+    refresh_submission_refs,
+)
 
 __all__ = [
     "GetApplicationHandler",
@@ -25,14 +35,27 @@ __all__ = [
 
 
 class GetApplicationHandler:
-    """Read use case: retrieve one application in full (owner only)."""
+    """Read use case: retrieve one application in full (owner only).
 
-    def __init__(self, *, applications: ApplicationRepository) -> None:
+    While the order is still a DRAFT its cached submission snapshots (status, price,
+    display) can lag behind the live submissions the applicant is still editing in
+    the wizard - a performance may have been priced after it was attached. To keep
+    the previewed total honest, the refs are refreshed in memory before the view is
+    built. This is a read-time projection: the aggregate is never saved, so no version
+    is bumped and concurrent edits cannot conflict. Once submitted the total is frozen
+    and left untouched.
+    """
+
+    def __init__(self, *, applications: ApplicationRepository, submissions: SubmissionRepository, clock: Clock) -> None:
         self._applications = applications
+        self._submissions = submissions
+        self._clock = clock
 
     def handle(self, query: GetApplicationQuery) -> ApplicationView:
         application = load_application(self._applications, parse_application_id(query.application_id))
         ensure_owner(application, parse_user_id(query.requested_by))
+        if application.status is ApplicationStatus.DRAFT:
+            refresh_submission_refs(application, self._submissions, now=self._clock.utcnow())
         return ApplicationView.from_application(application)
 
 

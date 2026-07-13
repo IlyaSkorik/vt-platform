@@ -155,7 +155,7 @@ class Env:
         return CancelApplicationHandler(applications=self.applications, submissions=self.submissions, clock=self.clock, events=self.events)
 
     def get(self) -> GetApplicationHandler:
-        return GetApplicationHandler(applications=self.applications)
+        return GetApplicationHandler(applications=self.applications, submissions=self.submissions, clock=self.clock)
 
     def list(self) -> ListApplicationsHandler:
         return ListApplicationsHandler(applications=self.applications)
@@ -245,6 +245,20 @@ class TestComposition:
         app_id, _ = _create_app(env)
         with pytest.raises(PermissionDeniedError):
             env.add_submission().handle(AddSubmissionToApplicationCommand(requested_by=uuid7_str(), application_id=app_id))
+
+    def test_draft_read_reflects_price_calculated_after_attach(self) -> None:
+        # In the wizard a performance is attached before it is priced, so its ref
+        # caches a zero price. Reading the DRAFT order must refresh the ref from the
+        # now-priced submission, so the previewed total includes the org fee - not
+        # only the services.
+        env = Env()
+        app_id, applicant = _create_app(env)
+        submission_id = _add_submission(env, app_id, applicant)
+        env.build_submittable(submission_id)  # prices the submission at 300.00 after attach
+        view = env.get().handle(GetApplicationQuery(application_id=app_id, requested_by=applicant))
+        assert view.total_price is not None
+        assert view.total_price.submissions_amount == "300.00"
+        assert view.total_price.total_amount == "300.00"
 
     def test_select_service_derives_quantity_from_billing_model(self) -> None:
         # PER_PARTICIPANT: the billed quantity is the participant count across the
