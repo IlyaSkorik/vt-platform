@@ -160,6 +160,18 @@ const routes: RouteObject[] = [
                 lazy: lazyPage(() => import("@/pages/participants"), "ParticipantsProfilePage"),
               },
               {
+                path: ROUTES.cabinetTeachers.slice(1),
+                lazy: lazyPage(() => import("@/pages/teachers"), "TeachersPage"),
+              },
+              {
+                path: ROUTES.cabinetTeacherNew.slice(1),
+                lazy: lazyPage(() => import("@/pages/teachers"), "TeacherProfilePage"),
+              },
+              {
+                path: ROUTES.cabinetTeacherProfile.slice(1),
+                lazy: lazyPage(() => import("@/pages/teachers"), "TeacherProfilePage"),
+              },
+              {
                 path: ROUTES.cabinetApplications.slice(1),
                 element: <Outlet />,
                 children: [
