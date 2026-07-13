@@ -1,8 +1,25 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useSearchParams } from "react-router";
 
+import {
+  fetchParticipant,
+  type Participant,
+  toAddParticipantRequest,
+} from "@/entities/participant";
+import { type DirectoryTeacher, fetchTeacher, toCreditTeacherRequest } from "@/entities/teacher";
 import type { SubmissionResource } from "@/shared/api/generated/model-applications";
 import type { Registration } from "@/shared/api/generated/model-public-catalog";
-import { Alert, Badge, Button, Divider, Input, LoadingState, Select } from "@/shared/ui";
+import {
+  Alert,
+  Badge,
+  Button,
+  Divider,
+  EmptyState,
+  Input,
+  LoadingState,
+  Select,
+  toast,
+} from "@/shared/ui";
 
 import {
   useAddParticipant,
@@ -21,6 +38,8 @@ import {
   type PerformanceSelection,
   recommendedAgeCategoryId,
 } from "../lib/admission";
+import { ParticipantPicker } from "./participant-picker";
+import { TeacherPicker } from "./teacher-picker";
 import { UploadControls } from "./upload-controls";
 
 type NamedItem = { id: string; name: string; sortOrder: number };
@@ -269,83 +288,84 @@ function ParticipantsSection({
 }): React.JSX.Element {
   const add = useAddParticipant(submissionId);
   const remove = useRemoveParticipant(submissionId);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [birthDate, setBirthDate] = useState("");
-  const [gender, setGender] = useState("FEMALE");
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const handledPick = useRef<string | null>(null);
 
-  const reset = () => {
-    setFirstName("");
-    setLastName("");
-    setBirthDate("");
+  const attach = (participant: Participant) => {
+    add.mutate(toAddParticipantRequest(participant), {
+      onSuccess: () => setPickerOpen(false),
+      onError: () => toast.error("Не удалось добавить участника"),
+    });
   };
+
+  // Returning from "create participant" (the reusable registry page): the new
+  // participant's id arrives as a query param — attach it to this performance and
+  // clear the param so it is handled exactly once.
+  useEffect(() => {
+    const pickedId = searchParams.get("pickedParticipantId");
+    const forSubmission = searchParams.get("submissionId");
+    if (!pickedId || forSubmission !== submissionId || handledPick.current === pickedId) {
+      return;
+    }
+    handledPick.current = pickedId;
+    void fetchParticipant(pickedId)
+      .then((participant) => add.mutateAsync(toAddParticipantRequest(participant)))
+      .catch(() => toast.error("Не удалось добавить созданного участника"))
+      .finally(() => {
+        setSearchParams(
+          (params) => {
+            params.delete("pickedParticipantId");
+            params.delete("submissionId");
+            return params;
+          },
+          { replace: true },
+        );
+      });
+  }, [searchParams, setSearchParams, submissionId, add]);
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm font-medium">Участники</p>
-      {submission.participants.map((participant) => (
-        <div key={participant.id} className="flex items-center justify-between gap-2">
-          <span className="text-sm">
-            {participant.lastName} {participant.firstName} · {participant.birthDate}
-          </span>
-          <Button
-            variant="ghost"
-            size="xs"
-            loading={remove.isPending}
-            onClick={() => remove.mutate(participant.id)}
-          >
-            Удалить
-          </Button>
-        </div>
-      ))}
-      <div className="grid items-end gap-2 sm:grid-cols-4">
-        <Input
-          label="Имя"
-          value={firstName}
-          onChange={(event) => setFirstName(event.target.value)}
-        />
-        <Input
-          label="Фамилия"
-          value={lastName}
-          onChange={(event) => setLastName(event.target.value)}
-        />
-        <Input
-          label="Дата рождения"
-          type="date"
-          value={birthDate}
-          onChange={(event) => setBirthDate(event.target.value)}
-        />
-        <Select
-          label="Пол"
-          options={[
-            { value: "FEMALE", label: "Жен." },
-            { value: "MALE", label: "Муж." },
-          ]}
-          value={gender}
-          onValueChange={setGender}
-        />
-      </div>
-      <div>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!firstName.trim() || !lastName.trim() || !birthDate}
-          loading={add.isPending}
-          onClick={() =>
-            add.mutate(
-              {
-                firstName: firstName.trim(),
-                lastName: lastName.trim(),
-                birthDate,
-                gender: gender as "MALE" | "FEMALE",
-              },
-              { onSuccess: reset },
-            )
-          }
-        >
-          Добавить участника
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-medium">Участники</p>
+        <Button variant="outline" size="sm" onClick={() => setPickerOpen(true)}>
+          Выбрать участника
         </Button>
       </div>
+
+      {submission.participants.length === 0 ? (
+        <EmptyState
+          title="Участник не выбран"
+          description="Выберите участника из вашего реестра — его данные подставятся автоматически."
+        />
+      ) : (
+        submission.participants.map((participant) => (
+          <div key={participant.id} className="flex items-center justify-between gap-2">
+            <span className="text-sm">
+              {participant.displayName}
+              {participant.birthDate ? ` · ${participant.birthDate}` : ""}
+            </span>
+            <Button
+              variant="ghost"
+              size="xs"
+              loading={remove.isPending}
+              onClick={() => remove.mutate(participant.id)}
+            >
+              Удалить
+            </Button>
+          </div>
+        ))
+      )}
+
+      <ParticipantPicker
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        onSelect={attach}
+        submissionId={submissionId}
+        returnTo={location.pathname}
+        isAttaching={add.isPending}
+      />
     </div>
   );
 }
@@ -359,63 +379,83 @@ function TeachersSection({
 }): React.JSX.Element {
   const add = useAddTeacher(submissionId);
   const remove = useRemoveTeacher(submissionId);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [role, setRole] = useState("");
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const handledPick = useRef<string | null>(null);
+
+  const credit = (teacher: DirectoryTeacher) => {
+    add.mutate(toCreditTeacherRequest(teacher), {
+      onSuccess: () => setPickerOpen(false),
+      onError: () => toast.error("Не удалось добавить педагога"),
+    });
+  };
+
+  // Returning from "create teacher" (the reusable directory page): the new
+  // teacher's id arrives as a query param — credit it to this performance and clear
+  // the param so it is handled exactly once.
+  useEffect(() => {
+    const pickedId = searchParams.get("pickedTeacherId");
+    const forSubmission = searchParams.get("submissionId");
+    if (!pickedId || forSubmission !== submissionId || handledPick.current === pickedId) {
+      return;
+    }
+    handledPick.current = pickedId;
+    void fetchTeacher(pickedId)
+      .then((teacher) => add.mutateAsync(toCreditTeacherRequest(teacher)))
+      .catch(() => toast.error("Не удалось добавить созданного педагога"))
+      .finally(() => {
+        setSearchParams(
+          (params) => {
+            params.delete("pickedTeacherId");
+            params.delete("submissionId");
+            return params;
+          },
+          { replace: true },
+        );
+      });
+  }, [searchParams, setSearchParams, submissionId, add]);
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm font-medium">Педагоги</p>
-      {submission.teachers.map((teacher) => (
-        <div key={teacher.id} className="flex items-center justify-between gap-2">
-          <span className="text-sm">
-            {teacher.lastName} {teacher.firstName} · {teacher.role}
-          </span>
-          <Button
-            variant="ghost"
-            size="xs"
-            loading={remove.isPending}
-            onClick={() => remove.mutate(teacher.id)}
-          >
-            Удалить
-          </Button>
-        </div>
-      ))}
-      <div className="grid items-end gap-2 sm:grid-cols-3">
-        <Input
-          label="Имя"
-          value={firstName}
-          onChange={(event) => setFirstName(event.target.value)}
-        />
-        <Input
-          label="Фамилия"
-          value={lastName}
-          onChange={(event) => setLastName(event.target.value)}
-        />
-        <Input label="Роль" value={role} onChange={(event) => setRole(event.target.value)} />
-      </div>
-      <div>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!firstName.trim() || !lastName.trim() || !role.trim()}
-          loading={add.isPending}
-          onClick={() =>
-            add.mutate(
-              { firstName: firstName.trim(), lastName: lastName.trim(), role: role.trim() },
-              {
-                onSuccess: () => {
-                  setFirstName("");
-                  setLastName("");
-                  setRole("");
-                },
-              },
-            )
-          }
-        >
-          Добавить педагога
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-medium">Педагоги</p>
+        <Button variant="outline" size="sm" onClick={() => setPickerOpen(true)}>
+          Выбрать педагога
         </Button>
       </div>
+
+      {submission.teachers.length === 0 ? (
+        <EmptyState
+          title="Педагог не выбран"
+          description="Выберите педагога из вашего справочника — его данные подставятся автоматически."
+        />
+      ) : (
+        submission.teachers.map((teacher) => (
+          <div key={teacher.id} className="flex items-center justify-between gap-2">
+            <span className="text-sm">
+              {teacher.lastName} {teacher.firstName} · {teacher.role}
+            </span>
+            <Button
+              variant="ghost"
+              size="xs"
+              loading={remove.isPending}
+              onClick={() => remove.mutate(teacher.id)}
+            >
+              Удалить
+            </Button>
+          </div>
+        ))
+      )}
+
+      <TeacherPicker
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        onSelect={credit}
+        submissionId={submissionId}
+        returnTo={location.pathname}
+        isCrediting={add.isPending}
+      />
     </div>
   );
 }
