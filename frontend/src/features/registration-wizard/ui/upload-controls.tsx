@@ -2,11 +2,16 @@ import { useRef } from "react";
 
 import type { SubmissionResource } from "@/shared/api/generated/model-applications";
 import type { RegistrationUploadRequirement } from "@/shared/api/generated/model-public-catalog";
-import { Badge, Button } from "@/shared/ui";
+import { Badge, Button, toast } from "@/shared/ui";
 
 import { useRemoveAttachment, useUploadAttachment } from "../api/hooks";
 
-type UploadKind = { attachmentType: "MUSIC" | "VIDEO" | "DOCUMENT"; label: string; hint: string };
+type UploadKind = {
+  attachmentType: "MUSIC" | "VIDEO" | "DOCUMENT";
+  label: string;
+  hint: string;
+  accept: string;
+};
 
 /** Which upload controls to show for a format, per its upload requirement. */
 function uploadKinds(requirement: RegistrationUploadRequirement | undefined): UploadKind[] {
@@ -19,16 +24,23 @@ function uploadKinds(requirement: RegistrationUploadRequirement | undefined): Up
       attachmentType: "MUSIC",
       label: requirement.musicRequired ? "Фонограмма (обязательно)" : "Фонограмма",
       hint: `${requirement.musicAllowedFormats.join(", ")} · до ${requirement.musicMaxUploadSizeMb} МБ`,
+      accept: requirement.musicAllowedFormats.map((ext) => `.${ext}`).join(",") || "audio/*",
     });
   }
   if (requirement.videoMode === "FILE_ONLY" || requirement.videoMode === "URL_OR_FILE") {
-    kinds.push({ attachmentType: "VIDEO", label: "Видео", hint: "Видеофайл выступления" });
+    kinds.push({
+      attachmentType: "VIDEO",
+      label: "Видео",
+      hint: "Видеофайл выступления",
+      accept: "video/*",
+    });
   }
   if (requirement.receiptRequired) {
     kinds.push({
       attachmentType: "DOCUMENT",
       label: "Квитанция об оплате",
       hint: "PDF или изображение",
+      accept: ".pdf,image/*",
     });
   }
   return kinds;
@@ -50,6 +62,24 @@ function UploadRow({
     (attachment) => attachment.type === kind.attachmentType,
   );
 
+  const onFileChosen = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+    upload.mutate(
+      { file, attachmentType: kind.attachmentType },
+      {
+        onError: () => toast.error(`Не удалось загрузить: ${kind.label}`),
+        onSettled: () => {
+          if (inputRef.current) {
+            inputRef.current.value = "";
+          }
+        },
+      },
+    );
+  };
+
   return (
     <div className="flex flex-col gap-2 rounded-md border border-border p-3">
       <div className="flex items-center justify-between gap-2">
@@ -57,7 +87,18 @@ function UploadRow({
           <p className="text-sm font-medium">{kind.label}</p>
           <p className="text-xs text-muted-foreground">{kind.hint}</p>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          loading={upload.isPending}
+          onClick={() => inputRef.current?.click()}
+        >
+          {existing.length > 0 ? "Заменить" : "Загрузить"}
+        </Button>
       </div>
+      {existing.length === 0 ? (
+        <p className="text-xs text-muted-foreground">Файл не выбран</p>
+      ) : null}
       {existing.map((attachment) => (
         <div key={attachment.id} className="flex items-center justify-between gap-2">
           <Badge variant="success">{attachment.caption || "Загружено"}</Badge>
@@ -71,30 +112,14 @@ function UploadRow({
           </Button>
         </div>
       ))}
-      <div className="flex items-center gap-2">
-        <input ref={inputRef} type="file" className="text-sm" aria-label={kind.label} />
-        <Button
-          variant="outline"
-          size="sm"
-          loading={upload.isPending}
-          onClick={() => {
-            const input = inputRef.current;
-            const file = input?.files?.[0];
-            if (file) {
-              upload.mutate(
-                { file, attachmentType: kind.attachmentType },
-                {
-                  onSuccess: () => {
-                    input.value = "";
-                  },
-                },
-              );
-            }
-          }}
-        >
-          Загрузить
-        </Button>
-      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept={kind.accept}
+        className="hidden"
+        aria-label={kind.label}
+        onChange={onFileChosen}
+      />
     </div>
   );
 }
