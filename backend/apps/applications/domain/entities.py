@@ -103,7 +103,6 @@ from .events import (
 from .exceptions import (
     ApplicationNotEditableError,
     AttachmentNotFoundError,
-    CannotRemoveLastParticipantError,
     CombinationNotAdmissibleError,
     DirectApplicationConstructionError,
     DirectConstructionError,
@@ -737,12 +736,16 @@ class Submission:
         return [ParticipantAdded(aggregate_id=self._id.value, participant_id=participant_id)]
 
     def remove_participant(self, *, participant_id: ParticipantId, now: datetime) -> list[DomainEvent]:
-        """Remove a participant. The last remaining participant cannot be removed."""
+        """Remove a participant.
+
+        A DRAFT (or REQUIRES_CORRECTION) submission may be left temporarily without
+        participants so the applicant can freely swap the sole one; the "at least one
+        participant" invariant is enforced when the submission is submitted, not while
+        it is being edited.
+        """
         self._ensure_editable()
         if participant_id not in self._participants:
             raise ParticipantNotFoundError(f"No participant {participant_id} in this submission.")
-        if len(self._participants) == 1:
-            raise CannotRemoveLastParticipantError("Cannot remove the only remaining participant; add another first.")
         del self._participants[participant_id]
         self._touch(now)
         return [ParticipantRemoved(aggregate_id=self._id.value, participant_id=participant_id)]

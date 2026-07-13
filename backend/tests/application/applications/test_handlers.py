@@ -331,13 +331,17 @@ class TestContentEditing:
         assert replacement.first_name == "Anna"
         assert replacement.id != original_id
 
-    def test_remove_last_participant_is_rejected(self) -> None:
+    def test_remove_last_participant_leaves_draft_empty(self) -> None:
+        # Removing the sole participant is allowed while DRAFT so it can be swapped;
+        # submit re-enforces the "at least one participant" invariant.
         env = Env()
         owner = uuid7_str()
         submission_id = _create(env, competition_id=uuid7_str(), applicant_id=owner)
         participant_id = _add_participant(env, submission_id=submission_id, owner=owner)
-        with pytest.raises(SubmissionInvariantViolationError):
-            env.remove_participant().handle(RemoveParticipantCommand(submission_id=submission_id, requested_by=owner, participant_id=participant_id))
+        result = env.remove_participant().handle(
+            RemoveParticipantCommand(submission_id=submission_id, requested_by=owner, participant_id=participant_id)
+        )
+        assert len(result.submission.participants) == 0
 
 
 class TestPricing:

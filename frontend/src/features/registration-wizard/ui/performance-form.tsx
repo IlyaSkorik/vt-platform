@@ -397,7 +397,11 @@ function ParticipantsSection({
               variant="ghost"
               size="xs"
               loading={remove.isPending}
-              onClick={() => remove.mutate(participant.id)}
+              onClick={() =>
+                remove.mutate(participant.id, {
+                  onError: () => toast.error("Не удалось удалить участника"),
+                })
+              }
             >
               Удалить
             </Button>

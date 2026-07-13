@@ -47,7 +47,6 @@ objects) and mapped to RFC 9457 Problem Details at the presentation edge
         ├── TeacherRequiredError
         ├── RequiredAttachmentMissingError
         ├── PriceSnapshotRequiredError
-        ├── CannotRemoveLastParticipantError
         ├── CombinationNotAdmissibleError
         └── ParticipantCountMismatchError
 """
@@ -285,10 +284,6 @@ class RequiredAttachmentMissingError(SubmissionInvariantError):
 
 class PriceSnapshotRequiredError(SubmissionInvariantError):
     """The submission has no immutable price snapshot and cannot be submitted."""
-
-
-class CannotRemoveLastParticipantError(SubmissionInvariantError):
-    """Removing the only remaining participant is not allowed."""
 
 
 class CombinationNotAdmissibleError(SubmissionInvariantError):

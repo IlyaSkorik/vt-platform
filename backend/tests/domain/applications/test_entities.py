@@ -21,7 +21,6 @@ from apps.applications.domain.events import (
     SubmissionSubmitted,
 )
 from apps.applications.domain.exceptions import (
-    CannotRemoveLastParticipantError,
     CombinationNotAdmissibleError,
     DirectConstructionError,
     DuplicateAttachmentError,
@@ -215,12 +214,14 @@ class TestContentEditing:
         )
         assert isinstance(events[0], ParticipantAdded)
 
-    def test_cannot_remove_last_participant(self) -> None:
+    def test_remove_last_participant_leaves_draft_empty(self) -> None:
+        # A DRAFT may be left without participants so the sole one can be swapped;
+        # the "at least one participant" rule is enforced only at submit time.
         s = _draft()
         pid = ParticipantId.generate()
         s.add_participant(participant_id=pid, name=_person(), birth_date=BirthDate(date(2012, 5, 1)), gender=Gender.FEMALE, now=NOW)
-        with pytest.raises(CannotRemoveLastParticipantError):
-            s.remove_participant(participant_id=pid, now=NOW)
+        s.remove_participant(participant_id=pid, now=NOW)
+        assert s.participant_count == 0
 
     def test_remove_participant_when_more_than_one(self) -> None:
         s = _draft()
