@@ -252,7 +252,11 @@ function PerformanceFormInner({
       </div>
 
       <Divider />
-      <ParticipantsSection submissionId={submissionId} submission={submission} />
+      <ParticipantsSection
+        submissionId={submissionId}
+        submission={submission}
+        group={registration.participantGroups.find((g) => g.id === selection.participantGroupId)}
+      />
 
       <Divider />
       <TeachersSection submissionId={submissionId} submission={submission} />
@@ -282,13 +286,25 @@ function PerformanceFormInner({
 function ParticipantsSection({
   submissionId,
   submission,
+  group,
 }: {
   submissionId: string;
   submission: SubmissionResource;
+  group: Registration["participantGroups"][number] | undefined;
 }): React.JSX.Element {
   const add = useAddParticipant(submissionId);
   const remove = useRemoveParticipant(submissionId);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const count = submission.participants.length;
+  const bandLabel = group
+    ? group.maxCount == null
+      ? `${group.minCount}+`
+      : `${group.minCount}–${group.maxCount}`
+    : null;
+  const outOfBand =
+    group != null &&
+    count > 0 &&
+    (count < group.minCount || (group.maxCount != null && count > group.maxCount));
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const handledPick = useRef<string | null>(null);
@@ -328,11 +344,24 @@ function ParticipantsSection({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-medium">Участники</p>
+        <p className="text-sm font-medium">
+          Участники
+          {bandLabel ? (
+            <span className="ml-2 text-xs font-normal text-muted-foreground">
+              (состав: {bandLabel})
+            </span>
+          ) : null}
+        </p>
         <Button variant="outline" size="sm" onClick={() => setPickerOpen(true)}>
           Выбрать участника
         </Button>
       </div>
+
+      {outOfBand && group ? (
+        <Alert variant="warning">
+          Для выбранного состава требуется {bandLabel} участник(ов); сейчас выбрано {count}.
+        </Alert>
+      ) : null}
 
       {submission.participants.length === 0 ? (
         <EmptyState

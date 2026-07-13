@@ -166,7 +166,13 @@ function WizardBody({
             registration={registration}
           />
         ) : null}
-        {step === 3 ? <ReviewStep applicationId={applicationId} application={application} /> : null}
+        {step === 3 ? (
+          <ReviewStep
+            applicationId={applicationId}
+            application={application}
+            registration={registration}
+          />
+        ) : null}
 
         <div className="mt-6 flex justify-between">
           <Button
@@ -268,6 +274,7 @@ function ServicesStep({
                   <Button
                     variant="outline"
                     size="sm"
+                    disabled={service.required}
                     loading={removeService.isPending}
                     onClick={() => removeService.mutate(service.id)}
                   >
@@ -355,11 +362,36 @@ function ConsentsStep({
 function ReviewStep({
   applicationId,
   application,
+  registration,
 }: {
   applicationId: string;
   application: ApplicationResource;
+  registration: Registration;
 }): React.JSX.Element {
   const submit = useSubmitApplication(applicationId);
+
+  // Proactively mirror the backend's submit invariants so the applicant sees what
+  // the festival requires before the request is rejected.
+  const recordedConsents = new Set(application.consents.map((consent) => consent.code));
+  const selectedServices = new Set(application.services.map((service) => service.serviceId));
+  const missingConsents = registration.requiredConsents
+    .filter((consent) => consent.required && !recordedConsents.has(consent.code))
+    .map((consent) => consent.label);
+  const missingServices = registration.additionalServices
+    .filter((service) => service.required && !selectedServices.has(service.id))
+    .map((service) => service.name);
+  const blockers: string[] = [];
+  if (application.submissions.length === 0) {
+    blockers.push("Добавьте хотя бы одно выступление");
+  }
+  for (const consent of missingConsents) {
+    blockers.push(`Требуется согласие: ${consent}`);
+  }
+  for (const service of missingServices) {
+    blockers.push(`Требуется услуга: ${service}`);
+  }
+  const canSubmit = blockers.length === 0;
+
   return (
     <Card>
       <CardHeader>
@@ -388,10 +420,23 @@ function ReviewStep({
               : "—"}
           </span>
         </div>
+        {application.status === "DRAFT" && blockers.length > 0 ? (
+          <Alert variant="warning">
+            <ul className="list-disc pl-4">
+              {blockers.map((blocker) => (
+                <li key={blocker}>{blocker}</li>
+              ))}
+            </ul>
+          </Alert>
+        ) : null}
         {submit.isError ? <Alert variant="danger">{errorMessage(submit.error)}</Alert> : null}
         {application.status === "DRAFT" ? (
           <div>
-            <Button loading={submit.isPending} onClick={() => submit.mutate()}>
+            <Button
+              disabled={!canSubmit}
+              loading={submit.isPending}
+              onClick={() => submit.mutate()}
+            >
               Подать заявку
             </Button>
           </div>
