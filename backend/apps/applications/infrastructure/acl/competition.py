@@ -39,6 +39,7 @@ from apps.applications.domain.value_objects import (
 from apps.competitions.domain.entities import Competition
 from apps.competitions.domain.value_objects import (
     AdmissionCombination,
+    VideoSubmissionMode,
 )
 from apps.competitions.domain.value_objects import (
     AgeCategoryId as CompAgeCategoryId,
@@ -105,6 +106,20 @@ class DjangoCompetitionCatalog:
         competition = self._load(competition_id)
         return competition is not None and competition.is_application_allowed(now)
 
+    def accepts_payment(self, *, competition_id: CompetitionId, now: datetime) -> bool:
+        competition = self._load(competition_id)
+        return competition is not None and competition.is_payment_allowed(now)
+
+    def accepts_upload(self, *, competition_id: CompetitionId, attachment_kind: str, now: datetime) -> bool:
+        competition = self._load(competition_id)
+        if competition is None:
+            return False
+        if attachment_kind == "MUSIC":
+            return competition.is_music_upload_allowed(now)
+        if attachment_kind == "DOCUMENT":
+            return competition.is_document_upload_allowed(now)
+        return competition.is_application_allowed(now)
+
     def participation_policy(
         self,
         *,
@@ -129,7 +144,21 @@ class DjangoCompetitionCatalog:
             participation_format_id=participation_format_id,
         )
         count_range = ParticipantCountRange(min_count=group.count_range.min_count, max_count=group.count_range.max_count)
-        return SubmissionParticipationPolicy(participant_count_range=count_range, is_admissible=competition.is_admissible(combination))
+        settings = competition.settings
+        requirements = settings.requirements_for(CompParticipationFormatId.from_uuid(participation_format_id.value))
+        receipt = requirements.payment_receipt
+        return SubmissionParticipationPolicy(
+            participant_count_range=count_range,
+            is_admissible=competition.is_admissible(combination),
+            requires_teacher=settings.require_teacher,
+            requires_music=requirements.music.require_upload,
+            # A URL-mode video cannot be satisfied by an uploaded file, so only a
+            # file-only requirement is enforced as a required attachment.
+            requires_video_file=requirements.video.mode is VideoSubmissionMode.FILE_ONLY,
+            # A receipt that may be uploaded later must not block submission.
+            requires_receipt=receipt.require_receipt and not receipt.allow_upload_later,
+            requires_document=settings.require_document_upload,
+        )
 
     def price_quote(
         self,
@@ -172,9 +201,42 @@ class DjangoCompetitionServiceCatalog:
         service = next((s for s in competition.additional_services if s.id.value == service_id.value), None)
         if service is None or not service.is_enabled:
             return None
-        return AdditionalServiceQuote(service_id=service_id, name=service.name.value, unit_price=_to_money(service.price))
+        return AdditionalServiceQuote(
+            service_id=service_id,
+            name=service.name.value,
+            unit_price=_to_money(service.price),
+            billing_model=PriceCalculationType(service.billing_model.value),
+            available_format_ids=frozenset(fid.json() for fid in service.available_format_ids),
+            required=service.required,
+        )
+
+    def required_service_ids(self, *, competition_id: CompetitionId, participation_format_ids: frozenset[str]) -> frozenset[str]:
+        competition = self._repo.get(CompCompetitionId.from_uuid(competition_id.value))
+        if competition is None:
+            return frozenset()
+        formats = {CompParticipationFormatId.from_string(fid) for fid in participation_format_ids}
+        return frozenset(
+            service.id.json()
+            for service in competition.additional_services
+            if service.is_enabled and service.required and any(service.is_available_for(fid) for fid in formats)
+        )
 
     def required_consent_codes(self, *, competition_id: CompetitionId) -> frozenset[str]:
-        # The Competition context does not model required consents yet; none are
-        # mandated. Consents recorded on an application are still preserved.
-        return frozenset()
+        """The consent codes the competition's settings mandate before submission.
+
+        Mirrors the codes the public Registration read model projects
+        (``personal_data`` / ``media`` / ``regulations``), so what the wizard shows
+        as required is exactly what the order aggregate enforces at submit.
+        """
+        competition = self._repo.get(CompCompetitionId.from_uuid(competition_id.value))
+        if competition is None:
+            return frozenset()
+        settings = competition.settings
+        codes: set[str] = set()
+        if settings.require_personal_data_consent:
+            codes.add("personal_data")
+        if settings.require_media_consent:
+            codes.add("media")
+        if settings.require_regulations_acceptance:
+            codes.add("regulations")
+        return frozenset(codes)

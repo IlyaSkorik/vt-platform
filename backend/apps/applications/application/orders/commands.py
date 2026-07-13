@@ -32,11 +32,13 @@ from apps.applications.application.dto.order_commands import (
 )
 from apps.applications.application.dto.orders import ApplicationOperationResultDto
 from apps.applications.application.exceptions import (
+    AdditionalServiceNotAvailableError,
     AdditionalServiceNotFoundError,
     ApplicantNotFoundError,
     CompetitionClosedError,
     CompetitionCombinationNotFoundError,
     CompetitionNotFoundError,
+    DeadlinePassedError,
     EducationalOrganizationNotFoundError,
     SubmissionInvariantViolationError,
     translate_application_domain_errors,
@@ -60,6 +62,7 @@ from apps.applications.domain.value_objects import (
     Consent,
     EducationalOrganizationId,
     OrganizationName,
+    PriceCalculationType,
     ServiceId,
     ServiceLine,
     SubmissionId,
@@ -69,6 +72,8 @@ from apps.applications.domain.value_objects import (
 from ._support import (
     ensure_owner,
     load_application,
+    load_order_submissions,
+    order_participation_format_ids,
     parse_application_id,
     parse_user_id,
     ref_from_submission,
@@ -93,6 +98,21 @@ __all__ = [
 
 #: Submission statuses that are terminal (no cancellation possible / meaningful).
 _TERMINAL_SUBMISSION_STATUSES = frozenset({SubmissionStatus.CANCELLED, SubmissionStatus.COMPLETED})
+
+
+def _applicable_submissions(order_submissions: list[Submission], available_format_ids: frozenset[str]) -> list[Submission]:
+    """The order's performances a service applies to (all with a format if unscoped)."""
+    with_performance = [s for s in order_submissions if s.performance is not None]
+    if not available_format_ids:
+        return with_performance
+    return [s for s in with_performance if s.performance is not None and s.performance.participation_format_id.json() in available_format_ids]
+
+
+def _billed_quantity(billing_model: PriceCalculationType, applicable: list[Submission]) -> int:
+    """Derive the service's billed quantity from its billing model (never trusted from the client)."""
+    if billing_model is PriceCalculationType.PER_PERFORMANCE:
+        return max(1, len(applicable))
+    return max(1, sum(submission.participant_count for submission in applicable))
 
 
 class CreateApplicationHandler:
@@ -212,16 +232,24 @@ class RemoveSubmissionFromApplicationHandler:
 
 
 class SelectAdditionalServiceHandler:
-    """Use case: select a competition additional service on the order."""
+    """Use case: select a competition additional service on the order.
+
+    Enforces the organizer's configuration: the service must be available for at
+    least one of the order's chosen participation formats, and the billed quantity
+    is derived from its ``billing_model`` (per participant across the applicable
+    performances, or per performance) rather than trusted from the client.
+    """
 
     def __init__(
         self,
         *,
         applications: ApplicationRepository,
+        submissions: SubmissionRepository,
         services: CompetitionServiceCatalog,
         clock: Clock,
     ) -> None:
         self._applications = applications
+        self._submissions = submissions
         self._services = services
         self._clock = clock
 
@@ -236,8 +264,22 @@ class SelectAdditionalServiceHandler:
         if quote is None:
             raise AdditionalServiceNotFoundError(f"No additional service {service_id.json()} in this competition.")
 
+        order_submissions = load_order_submissions(application, self._submissions)
+        applicable = _applicable_submissions(order_submissions, quote.available_format_ids)
+        if quote.available_format_ids and not applicable:
+            raise AdditionalServiceNotAvailableError(
+                f"Service {service_id.json()} is not available for any participation format in this application."
+            )
+        quantity = _billed_quantity(quote.billing_model, applicable or order_submissions)
+
         with translate_application_domain_errors():
-            line = ServiceLine(service_id=service_id, name=quote.name, unit_price=quote.unit_price, quantity=command.quantity)
+            line = ServiceLine(
+                service_id=service_id,
+                name=quote.name,
+                unit_price=quote.unit_price,
+                quantity=quantity,
+                billing_model=quote.billing_model,
+            )
             order_events = application.add_service(service_line=line, now=now)
         self._applications.save(application)
         return ApplicationOperationResultDto.of(application, tuple(order_events))
@@ -353,9 +395,11 @@ class SubmitApplicationHandler:
             self._submit_one(submission, now=now)
 
         refresh_submission_refs(application, self._submissions, now=now)
-        required = self._services.required_consent_codes(competition_id=application.competition_id)
+        format_ids = order_participation_format_ids(load_order_submissions(application, self._submissions))
+        required_consents = self._services.required_consent_codes(competition_id=application.competition_id)
+        required_services = self._services.required_service_ids(competition_id=application.competition_id, participation_format_ids=format_ids)
         with translate_application_domain_errors():
-            order_events = application.submit(required_consent_codes=required, now=now)
+            order_events = application.submit(required_consent_codes=required_consents, required_service_ids=required_services, now=now)
         self._applications.save(application)
         return ApplicationOperationResultDto.of(application, tuple(order_events))
 
@@ -415,11 +459,13 @@ class MarkApplicationPaidHandler:
         *,
         applications: ApplicationRepository,
         submissions: SubmissionRepository,
+        catalog: CompetitionCatalog,
         clock: Clock,
         events: EventPublisher,
     ) -> None:
         self._applications = applications
         self._submissions = submissions
+        self._catalog = catalog
         self._clock = clock
         self._events = events
 
@@ -427,6 +473,8 @@ class MarkApplicationPaidHandler:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
+        if not self._catalog.accepts_payment(competition_id=application.competition_id, now=now):
+            raise DeadlinePassedError("The payment deadline for this competition has passed.")
         with translate_application_domain_errors():
             order_events = application.mark_paid(now=now)
 

@@ -31,11 +31,13 @@ from apps.applications.application.dto.queries import (
     ListDraftApplicationsQuery,
 )
 from apps.applications.application.exceptions import (
+    AdditionalServiceNotAvailableError,
     AdditionalServiceNotFoundError,
     ApplicantNotFoundError,
     ApplicationInvariantViolationError,
     CompetitionClosedError,
     CompetitionNotFoundError,
+    DeadlinePassedError,
     EducationalOrganizationNotFoundError,
     PermissionDeniedError,
 )
@@ -123,7 +125,7 @@ class Env:
         )
 
     def select_service(self) -> SelectAdditionalServiceHandler:
-        return SelectAdditionalServiceHandler(applications=self.applications, services=self.services, clock=self.clock)
+        return SelectAdditionalServiceHandler(applications=self.applications, submissions=self.submissions, services=self.services, clock=self.clock)
 
     def record_consents(self) -> RecordConsentsHandler:
         return RecordConsentsHandler(applications=self.applications, clock=self.clock)
@@ -145,7 +147,9 @@ class Env:
         return RequestApplicationPaymentHandler(applications=self.applications, submissions=self.submissions, clock=self.clock)
 
     def mark_paid(self) -> MarkApplicationPaidHandler:
-        return MarkApplicationPaidHandler(applications=self.applications, submissions=self.submissions, clock=self.clock, events=self.events)
+        return MarkApplicationPaidHandler(
+            applications=self.applications, submissions=self.submissions, catalog=self.catalog, clock=self.clock, events=self.events
+        )
 
     def cancel(self) -> CancelApplicationHandler:
         return CancelApplicationHandler(applications=self.applications, submissions=self.submissions, clock=self.clock, events=self.events)
@@ -242,14 +246,25 @@ class TestComposition:
         with pytest.raises(PermissionDeniedError):
             env.add_submission().handle(AddSubmissionToApplicationCommand(requested_by=uuid7_str(), application_id=app_id))
 
-    def test_select_service_adds_line_and_updates_total(self) -> None:
+    def test_select_service_derives_quantity_from_billing_model(self) -> None:
+        # PER_PARTICIPANT: the billed quantity is the participant count across the
+        # order's applicable performances, not the client-supplied number.
         env = Env(services=FakeCompetitionServiceCatalog(service_price=Money.of("25.00")))
         app_id, applicant = _create_app(env)
+        for _ in range(2):
+            env.build_submittable(_add_submission(env, app_id, applicant))
         result = env.select_service().handle(
-            SelectAdditionalServiceCommand(requested_by=applicant, application_id=app_id, service_id=uuid7_str(), quantity=2)
+            SelectAdditionalServiceCommand(requested_by=applicant, application_id=app_id, service_id=uuid7_str(), quantity=99)
         )
         assert result.application.total_price is not None
+        assert result.application.services[0].quantity == 2  # two participants, client's 99 ignored
         assert result.application.total_price.services_amount == "50.00"
+
+    def test_service_not_available_for_order_formats_is_rejected(self) -> None:
+        env = Env(services=FakeCompetitionServiceCatalog(available_format_ids=frozenset({uuid7_str()})))
+        app_id, applicant = _create_app(env)
+        with pytest.raises(AdditionalServiceNotAvailableError):
+            env.select_service().handle(SelectAdditionalServiceCommand(requested_by=applicant, application_id=app_id, service_id=uuid7_str()))
 
     def test_unknown_service_rejected(self) -> None:
         env = Env(services=FakeCompetitionServiceCatalog(service_known=False))
@@ -315,6 +330,13 @@ class TestSubmitAndPay:
         assert result.application.total_price is not None
         assert result.application.total_price.submissions_amount == "300.00"
 
+    def test_submit_enforces_required_services(self) -> None:
+        env = Env(services=FakeCompetitionServiceCatalog(required_services=frozenset({uuid7_str()})))
+        app_id, applicant = _create_app(env)
+        env.build_submittable(_add_submission(env, app_id, applicant))
+        with pytest.raises(ApplicationInvariantViolationError):
+            env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
+
     def test_request_payment_requires_all_approved(self) -> None:
         env = Env()
         app_id, applicant = _create_app(env)
@@ -323,6 +345,17 @@ class TestSubmitAndPay:
         env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
         with pytest.raises(ApplicationInvariantViolationError):
             env.request_payment().handle(RequestApplicationPaymentCommand(requested_by=applicant, application_id=app_id))
+
+    def test_mark_paid_rejected_after_payment_deadline(self) -> None:
+        env = Env(catalog=FakeCompetitionCatalog(accepts_payment=False))
+        app_id, applicant = _create_app(env)
+        submission_id = _add_submission(env, app_id, applicant)
+        env.build_submittable(submission_id)
+        env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
+        env.approve(submission_id)
+        env.request_payment().handle(RequestApplicationPaymentCommand(requested_by=applicant, application_id=app_id))
+        with pytest.raises(DeadlinePassedError):
+            env.mark_paid().handle(MarkApplicationPaidCommand(requested_by=applicant, application_id=app_id))
 
     def test_full_flow_to_paid_accepts_submissions(self) -> None:
         env = Env()

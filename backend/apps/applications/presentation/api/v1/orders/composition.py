@@ -87,7 +87,9 @@ def build_remove_submission_handler() -> RemoveSubmissionFromApplicationHandler:
 
 
 def build_select_service_handler() -> SelectAdditionalServiceHandler:
-    return SelectAdditionalServiceHandler(applications=_applications(), services=DjangoCompetitionServiceCatalog(), clock=SystemClock())
+    return SelectAdditionalServiceHandler(
+        applications=_applications(), submissions=_submissions(), services=DjangoCompetitionServiceCatalog(), clock=SystemClock()
+    )
 
 
 def build_remove_service_handler() -> RemoveAdditionalServiceHandler:
@@ -118,7 +120,13 @@ def build_request_payment_handler() -> RequestApplicationPaymentHandler:
 
 
 def build_mark_paid_handler() -> MarkApplicationPaidHandler:
-    return MarkApplicationPaidHandler(applications=_applications(), submissions=_submissions(), clock=SystemClock(), events=NullEventPublisher())
+    return MarkApplicationPaidHandler(
+        applications=_applications(),
+        submissions=_submissions(),
+        catalog=DjangoCompetitionCatalog(),
+        clock=SystemClock(),
+        events=NullEventPublisher(),
+    )
 
 
 def build_complete_application_handler() -> CompleteApplicationHandler:

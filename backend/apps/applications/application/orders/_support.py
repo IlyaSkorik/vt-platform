@@ -83,6 +83,21 @@ def ref_from_submission(submission: Submission) -> SubmissionRef:
     )
 
 
+def load_order_submissions(application: Application, submissions: SubmissionRepository) -> list[Submission]:
+    """Load the live Submission aggregates the order references (skipping any gone)."""
+    loaded: list[Submission] = []
+    for ref in application.submission_refs:
+        submission = submissions.get(ref.submission_id)
+        if submission is not None:
+            loaded.append(submission)
+    return loaded
+
+
+def order_participation_format_ids(order_submissions: list[Submission]) -> frozenset[str]:
+    """The set of participation-format ids used across the order's performances."""
+    return frozenset(submission.performance.participation_format_id.json() for submission in order_submissions if submission.performance is not None)
+
+
 def refresh_submission_refs(application: Application, submissions: SubmissionRepository, *, now: datetime) -> None:
     """Refresh every attached submission's cached snapshot from its live aggregate.
 

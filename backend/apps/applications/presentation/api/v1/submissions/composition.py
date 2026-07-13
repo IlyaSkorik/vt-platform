@@ -73,6 +73,7 @@ def build_upload_attachment_handler() -> UploadAttachmentHandler:
         submissions=DjangoSubmissionRepository(),
         storage=DjangoFileStorage(),
         upload_policy=DjangoCompetitionUploadPolicy(),
+        catalog=DjangoCompetitionCatalog(),
         clock=SystemClock(),
         uuids=Uuid7Generator(),
         events=NullEventPublisher(),

@@ -7,6 +7,7 @@ import pytest
 from apps.applications.application.commands.attachments import UploadAttachmentHandler
 from apps.applications.application.dto.commands import UploadAttachmentCommand
 from apps.applications.application.exceptions import (
+    DeadlinePassedError,
     FileTooLargeError,
     SubmissionNotFoundError,
     UnsupportedFileTypeError,
@@ -17,6 +18,7 @@ from apps.applications.domain.value_objects import CompetitionId, SubmissionId, 
 from .fakes import (
     NOW,
     FakeClock,
+    FakeCompetitionCatalog,
     FakeCompetitionUploadPolicy,
     FakeFileStorage,
     FakeSubmissionRepository,
@@ -37,14 +39,16 @@ def _draft_submission(applicant: UserId) -> Submission:
 
 
 class _Env:
-    def __init__(self, *, policy: FakeCompetitionUploadPolicy | None = None) -> None:
+    def __init__(self, *, policy: FakeCompetitionUploadPolicy | None = None, accepts_upload: bool = True) -> None:
         self.submissions = FakeSubmissionRepository()
         self.storage = FakeFileStorage()
         self.policy = policy or FakeCompetitionUploadPolicy()
+        self.catalog = FakeCompetitionCatalog(accepts_upload=accepts_upload)
         self.handler = UploadAttachmentHandler(
             submissions=self.submissions,
             storage=self.storage,
             upload_policy=self.policy,
+            catalog=self.catalog,
             clock=FakeClock(),
             uuids=SequenceUuidGenerator(),
             events=RecordingEventPublisher(),
@@ -93,6 +97,16 @@ def test_upload_rejects_unsupported_extension() -> None:
     env.submissions.save(submission)
     with pytest.raises(UnsupportedFileTypeError):
         env.handler.handle(_command(submission.id.json(), applicant.json(), filename="virus.exe"))
+    assert env.storage.saved == {}
+
+
+def test_upload_rejected_after_upload_deadline() -> None:
+    applicant = UserId.from_uuid(SubmissionId.generate().value)
+    env = _Env(accepts_upload=False)
+    submission = _draft_submission(applicant)
+    env.submissions.save(submission)
+    with pytest.raises(DeadlinePassedError):
+        env.handler.handle(_command(submission.id.json(), applicant.json()))
     assert env.storage.saved == {}
 
 

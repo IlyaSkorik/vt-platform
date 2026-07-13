@@ -1190,6 +1190,29 @@ class SubmissionParticipationPolicy:
 
     participant_count_range: ParticipantCountRange
     is_admissible: bool = True
+    #: Competition requirements for the chosen participation format, projected so the
+    #: submission can enforce them at submit without importing the Competition.
+    requires_teacher: bool = False
+    requires_music: bool = False
+    requires_video_file: bool = False
+    requires_receipt: bool = False
+    requires_document: bool = False
+
+    def required_attachment_types(self) -> frozenset[AttachmentType]:
+        """The attachment kinds this competition requires before submission.
+
+        Music maps to :attr:`AttachmentType.MUSIC`, a file-mode video to
+        :attr:`AttachmentType.VIDEO`, and a payment receipt or a required document to
+        :attr:`AttachmentType.DOCUMENT` (there is no dedicated receipt kind).
+        """
+        required: set[AttachmentType] = set()
+        if self.requires_music:
+            required.add(AttachmentType.MUSIC)
+        if self.requires_video_file:
+            required.add(AttachmentType.VIDEO)
+        if self.requires_receipt or self.requires_document:
+            required.add(AttachmentType.DOCUMENT)
+        return frozenset(required)
 
     def allows_participant_count(self, count: int) -> bool:
         """Whether ``count`` matches the configured participant group's band."""
@@ -1423,11 +1446,14 @@ class ServiceLine:
     name: str
     unit_price: Money
     quantity: int
+    billing_model: PriceCalculationType = PriceCalculationType.PER_PARTICIPANT
 
     def __post_init__(self) -> None:
         name = self.name.strip()
         if not name:
             raise InvalidServiceLineError("Service name must not be empty.")
+        if not isinstance(self.billing_model, PriceCalculationType):
+            raise InvalidServiceLineError(f"Service billing model must be a PriceCalculationType, got {type(self.billing_model)!r}.")
         if len(name) > _SERVICE_NAME_MAX:
             raise InvalidServiceLineError(f"Service name must be at most {_SERVICE_NAME_MAX} characters.")
         if not isinstance(self.unit_price, Money):

@@ -55,6 +55,7 @@ from apps.applications.domain.value_objects import (
     NominationId,
     ParticipantGroupId,
     ParticipationFormatId,
+    PriceCalculationType,
     ReviewerId,
     ServiceId,
     SubmissionId,
@@ -156,6 +157,18 @@ class CompetitionCatalog(Protocol):
 
         Folds the competition's status and its submission deadlines into a single
         answer, so the use case need not know the Competition's lifecycle model.
+        """
+        ...
+
+    def accepts_payment(self, *, competition_id: CompetitionId, now: datetime) -> bool:
+        """Whether the competition's payment window is still open at ``now``."""
+        ...
+
+    def accepts_upload(self, *, competition_id: CompetitionId, attachment_kind: str, now: datetime) -> bool:
+        """Whether uploads of ``attachment_kind`` are still allowed at ``now``.
+
+        Honours the music-upload and document-upload deadlines; kinds without a
+        dedicated deadline follow the application deadline.
         """
         ...
 
@@ -323,11 +336,19 @@ class ApplicationRepository(Protocol):
 
 @dataclass(frozen=True, slots=True)
 class AdditionalServiceQuote:
-    """A Competition additional service projected into this context (name + unit price)."""
+    """A Competition additional service projected into this context.
+
+    Carries the full organizer configuration the order needs: the unit price, how it
+    is billed (``billing_model``), the participation formats it is scoped to
+    (``available_format_ids``) and whether it is mandatory (``required``).
+    """
 
     service_id: ServiceId
     name: str
     unit_price: Money
+    billing_model: PriceCalculationType = PriceCalculationType.PER_PARTICIPANT
+    available_format_ids: frozenset[str] = frozenset()
+    required: bool = False
 
 
 @runtime_checkable
@@ -345,6 +366,14 @@ class CompetitionServiceCatalog(Protocol):
 
     def required_consent_codes(self, *, competition_id: CompetitionId) -> frozenset[str]:
         """Return the consent codes the competition requires before an application may be submitted."""
+        ...
+
+    def required_service_ids(self, *, competition_id: CompetitionId, participation_format_ids: frozenset[str]) -> frozenset[str]:
+        """Return the ids of services the competition mandates for the given formats.
+
+        A service is required when it is enabled, marked ``required``, and available
+        for at least one of the order's chosen participation formats.
+        """
         ...
 
 
@@ -415,6 +444,11 @@ class CompetitionUploadPolicy(Protocol):
     competition's configuration rather than hard-coding limits at the edge.
     """
 
-    def limits_for(self, *, competition_id: CompetitionId, attachment_kind: str) -> UploadConstraints:
-        """Return the upload constraints for ``attachment_kind`` in this competition."""
+    def limits_for(self, *, competition_id: CompetitionId, attachment_kind: str, participation_format_id: str | None = None) -> UploadConstraints:
+        """Return the upload constraints for ``attachment_kind`` in this competition.
+
+        When ``participation_format_id`` is given, the constraints reflect that
+        format's configured requirements (e.g. the organizer's allowed audio formats
+        and maximum music size); otherwise the platform defaults apply.
+        """
         ...

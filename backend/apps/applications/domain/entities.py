@@ -116,6 +116,7 @@ from .exceptions import (
     InvalidBirthDateError,
     InvalidPersonNameError,
     MissingRequiredConsentError,
+    MissingRequiredServiceError,
     NoSubmissionsError,
     NotAllSubmissionsApprovedError,
     ParticipantCountMismatchError,
@@ -124,10 +125,12 @@ from .exceptions import (
     PerformanceRequiredError,
     PriceSnapshotLockedError,
     PriceSnapshotRequiredError,
+    RequiredAttachmentMissingError,
     ServiceLineNotFoundError,
     SubmissionNotEditableError,
     SubmissionRefNotFoundError,
     TeacherNotFoundError,
+    TeacherRequiredError,
     TotalPriceLockedError,
 )
 from .value_objects import (
@@ -957,6 +960,13 @@ class Submission:
             raise ParticipantCountMismatchError(
                 f"Participant count {len(self._participants)} does not match the configured group range {policy.participant_count_range}."
             )
+        if policy.requires_teacher and not self._teachers:
+            raise TeacherRequiredError("This competition requires a teacher to be credited before the submission can be submitted.")
+        present_types = {attachment.type for attachment in self._attachments.values()}
+        missing = policy.required_attachment_types() - present_types
+        if missing:
+            kinds = ", ".join(sorted(kind.value for kind in missing))
+            raise RequiredAttachmentMissingError(f"This competition requires the following uploads before submission: {kinds}.")
 
     def _ensure_editable(self) -> None:
         if self._status not in _EDITABLE_STATUSES:
@@ -1328,11 +1338,18 @@ class Application:
     # Lifecycle transitions
     # ------------------------------------------------------------------
 
-    def submit(self, *, required_consent_codes: frozenset[str] = frozenset(), now: datetime) -> list[DomainEvent]:
+    def submit(
+        self,
+        *,
+        required_consent_codes: frozenset[str] = frozenset(),
+        required_service_ids: frozenset[str] = frozenset(),
+        now: datetime,
+    ) -> list[DomainEvent]:
         """Submit the order (DRAFT -> SUBMITTED), freezing its total price.
 
-        Enforces the order invariants: at least one submission is attached and every
-        consent the competition requires has been recorded. The total price is
+        Enforces the order invariants: at least one submission is attached, every
+        consent the competition requires has been recorded, and every additional
+        service the competition mandates has been selected. The total price is
         recomputed once and then frozen - future Competition pricing changes can
         never alter an order already placed. Submitting the individual Submissions
         for review is an application-layer concern (orchestrated over their own
@@ -1341,9 +1358,13 @@ class Application:
         if not self._submission_refs:
             raise NoSubmissionsError("An application must reference at least one submission before it can be submitted.")
         recorded = {consent.code for consent in self._consents}
-        missing = required_consent_codes - recorded
-        if missing:
-            raise MissingRequiredConsentError(f"The following required consents were not recorded: {', '.join(sorted(missing))}.")
+        missing_consents = required_consent_codes - recorded
+        if missing_consents:
+            raise MissingRequiredConsentError(f"The following required consents were not recorded: {', '.join(sorted(missing_consents))}.")
+        selected_services = {line.service_id.json() for line in self._service_lines.values()}
+        missing_services = required_service_ids - selected_services
+        if missing_services:
+            raise MissingRequiredServiceError(f"The following required services were not selected: {', '.join(sorted(missing_services))}.")
         total = self._recalculate_total(now)
         self._transition_to(ApplicationStatus.SUBMITTED, now=now)
         return [ApplicationSubmitted(aggregate_id=self._id.value, amount=str(total.amount), currency=total.currency)]

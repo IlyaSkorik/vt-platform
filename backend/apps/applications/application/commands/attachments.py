@@ -11,6 +11,7 @@ from apps.applications.application.dto.commands import (
     UploadAttachmentCommand,
 )
 from apps.applications.application.exceptions import (
+    DeadlinePassedError,
     FileTooLargeError,
     InvalidInputError,
     UnsupportedFileTypeError,
@@ -18,6 +19,7 @@ from apps.applications.application.exceptions import (
 )
 from apps.applications.application.interfaces import (
     Clock,
+    CompetitionCatalog,
     CompetitionUploadPolicy,
     EventPublisher,
     FileStorage,
@@ -119,6 +121,7 @@ class UploadAttachmentHandler:
         submissions: SubmissionRepository,
         storage: FileStorage,
         upload_policy: CompetitionUploadPolicy,
+        catalog: CompetitionCatalog,
         clock: Clock,
         uuids: UuidGenerator,
         events: EventPublisher,
@@ -126,6 +129,7 @@ class UploadAttachmentHandler:
         self._submissions = submissions
         self._storage = storage
         self._upload_policy = upload_policy
+        self._catalog = catalog
         self._clock = clock
         self._uuids = uuids
         self._events = events
@@ -136,7 +140,16 @@ class UploadAttachmentHandler:
         ensure_owner(submission, parse_user_id(command.requested_by))
         attachment_type = _parse_attachment_type(command.attachment_type)
 
-        constraints = self._upload_policy.limits_for(competition_id=submission.competition_id, attachment_kind=attachment_type.value)
+        if not self._catalog.accepts_upload(competition_id=submission.competition_id, attachment_kind=attachment_type.value, now=now):
+            raise DeadlinePassedError(f"The upload deadline for {attachment_type.value} in this competition has passed.")
+
+        performance = submission.performance
+        participation_format_id = performance.participation_format_id.json() if performance is not None else None
+        constraints = self._upload_policy.limits_for(
+            competition_id=submission.competition_id,
+            attachment_kind=attachment_type.value,
+            participation_format_id=participation_format_id,
+        )
         if len(command.content) > constraints.max_bytes:
             raise FileTooLargeError(
                 f"The file is {len(command.content)} bytes; the maximum for {attachment_type.value} is {constraints.max_bytes} bytes."

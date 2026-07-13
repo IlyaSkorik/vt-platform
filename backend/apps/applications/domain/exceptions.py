@@ -44,6 +44,8 @@ objects) and mapped to RFC 9457 Problem Details at the presentation edge
     └── SubmissionInvariantError                - an aggregate invariant would be violated
         ├── PerformanceRequiredError
         ├── ParticipantRequiredError
+        ├── TeacherRequiredError
+        ├── RequiredAttachmentMissingError
         ├── PriceSnapshotRequiredError
         ├── CannotRemoveLastParticipantError
         ├── CombinationNotAdmissibleError
@@ -273,6 +275,14 @@ class ParticipantRequiredError(SubmissionInvariantError):
     """The submission has no participants and cannot be submitted."""
 
 
+class TeacherRequiredError(SubmissionInvariantError):
+    """The competition requires a teacher, but the submission credits none."""
+
+
+class RequiredAttachmentMissingError(SubmissionInvariantError):
+    """A file the competition requires for this format (music/video/receipt) is missing."""
+
+
 class PriceSnapshotRequiredError(SubmissionInvariantError):
     """The submission has no immutable price snapshot and cannot be submitted."""
 
@@ -445,6 +455,10 @@ class NoSubmissionsError(ApplicationInvariantError):
 
 class MissingRequiredConsentError(ApplicationInvariantError):
     """A consent the competition requires has not been recorded on the application."""
+
+
+class MissingRequiredServiceError(ApplicationInvariantError):
+    """An additional service the competition mandates has not been selected."""
 
 
 class NotAllSubmissionsApprovedError(ApplicationInvariantError):

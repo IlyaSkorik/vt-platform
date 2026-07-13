@@ -101,12 +101,16 @@ class FakeCompetitionCatalog:
         *,
         known: bool = True,
         open_for_submissions: bool = True,
+        accepts_payment: bool = True,
+        accepts_upload: bool = True,
         policy: SubmissionParticipationPolicy | None = None,
         price: Money | None = None,
         calculation_type: PriceCalculationType = PriceCalculationType.PER_PARTICIPANT,
     ) -> None:
         self.known = known
         self.open_for_submissions = open_for_submissions
+        self.accepts_payment_flag = accepts_payment
+        self.accepts_upload_flag = accepts_upload
         self.policy: SubmissionParticipationPolicy | None = (
             policy
             if policy is not None
@@ -123,6 +127,12 @@ class FakeCompetitionCatalog:
 
     def accepts_submissions(self, *, competition_id: CompetitionId, now: datetime) -> bool:
         return self.open_for_submissions
+
+    def accepts_payment(self, *, competition_id: CompetitionId, now: datetime) -> bool:
+        return self.accepts_payment_flag
+
+    def accepts_upload(self, *, competition_id: CompetitionId, attachment_kind: str, now: datetime) -> bool:
+        return self.accepts_upload_flag
 
     def participation_policy(
         self,
@@ -208,18 +218,36 @@ class FakeCompetitionServiceCatalog:
         service_price: Money | None = None,
         service_known: bool = True,
         required_consents: frozenset[str] = frozenset(),
+        required_services: frozenset[str] = frozenset(),
+        billing_model: PriceCalculationType = PriceCalculationType.PER_PARTICIPANT,
+        available_format_ids: frozenset[str] = frozenset(),
+        required_service: bool = False,
     ) -> None:
         self._service_price = service_price if service_price is not None else Money.of("25.00")
         self._service_known = service_known
         self._required = required_consents
+        self._required_services = required_services
+        self._billing_model = billing_model
+        self._available_format_ids = available_format_ids
+        self._required_service = required_service
 
     def get_additional_service(self, *, competition_id: CompetitionId, service_id: ServiceId) -> AdditionalServiceQuote | None:
         if not self._service_known:
             return None
-        return AdditionalServiceQuote(service_id=service_id, name="Commemorative T-shirt", unit_price=self._service_price)
+        return AdditionalServiceQuote(
+            service_id=service_id,
+            name="Commemorative T-shirt",
+            unit_price=self._service_price,
+            billing_model=self._billing_model,
+            available_format_ids=self._available_format_ids,
+            required=self._required_service,
+        )
 
     def required_consent_codes(self, *, competition_id: CompetitionId) -> frozenset[str]:
         return self._required
+
+    def required_service_ids(self, *, competition_id: CompetitionId, participation_format_ids: frozenset[str]) -> frozenset[str]:
+        return self._required_services
 
 
 class FakeEducationalOrganizationDirectory:
@@ -261,5 +289,5 @@ class FakeCompetitionUploadPolicy:
         self._max_bytes = max_bytes
         self._allowed = allowed_extensions
 
-    def limits_for(self, *, competition_id: CompetitionId, attachment_kind: str) -> UploadConstraints:
+    def limits_for(self, *, competition_id: CompetitionId, attachment_kind: str, participation_format_id: str | None = None) -> UploadConstraints:
         return UploadConstraints(max_bytes=self._max_bytes, allowed_extensions=self._allowed)

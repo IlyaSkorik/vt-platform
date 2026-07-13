@@ -35,7 +35,9 @@ from apps.applications.domain.exceptions import (
     PerformanceRequiredError,
     PriceSnapshotLockedError,
     PriceSnapshotRequiredError,
+    RequiredAttachmentMissingError,
     SubmissionNotEditableError,
+    TeacherRequiredError,
 )
 from apps.applications.domain.value_objects import (
     AgeCategoryId,
@@ -542,3 +544,53 @@ class TestDirectoryLinkedTeachers:
             now=NOW,
         )
         assert submission.teachers[0].directory_teacher_id is None
+
+
+def _policy(**flags: bool) -> SubmissionParticipationPolicy:
+    return SubmissionParticipationPolicy(participant_count_range=ParticipantCountRange(1, 1), **flags)
+
+
+class TestSubmitRequirements:
+    """Submit enforces the competition-configured requirements carried on the policy."""
+
+    def test_requires_teacher_when_policy_requires(self) -> None:
+        submission = _solo_ready().submission
+        with pytest.raises(TeacherRequiredError):
+            submission.submit(policy=_policy(requires_teacher=True), now=NOW)
+
+    def test_credited_teacher_satisfies_requirement(self) -> None:
+        submission = _solo_ready().submission
+        submission.add_teacher(teacher_id=TeacherId.generate(), name=_person("Elena", "Sokolova"), role=TeacherRole("Teacher"), now=NOW)
+        submission.submit(policy=_policy(requires_teacher=True), now=NOW)
+        assert submission.status is SubmissionStatus.SUBMITTED
+
+    def test_requires_music_upload(self) -> None:
+        submission = _solo_ready().submission
+        with pytest.raises(RequiredAttachmentMissingError):
+            submission.submit(policy=_policy(requires_music=True), now=NOW)
+
+    def test_music_attachment_satisfies_requirement(self) -> None:
+        submission = _solo_ready().submission
+        submission.add_attachment(
+            attachment_id=AttachmentId.generate(), attachment_type=AttachmentType.MUSIC, file=FileReference("s3://music.mp3"), now=NOW
+        )
+        submission.submit(policy=_policy(requires_music=True), now=NOW)
+        assert submission.status is SubmissionStatus.SUBMITTED
+
+    def test_requires_video_file(self) -> None:
+        submission = _solo_ready().submission
+        with pytest.raises(RequiredAttachmentMissingError):
+            submission.submit(policy=_policy(requires_video_file=True), now=NOW)
+
+    def test_requires_receipt_as_document(self) -> None:
+        submission = _solo_ready().submission
+        with pytest.raises(RequiredAttachmentMissingError):
+            submission.submit(policy=_policy(requires_receipt=True), now=NOW)
+
+    def test_receipt_document_attachment_satisfies_requirement(self) -> None:
+        submission = _solo_ready().submission
+        submission.add_attachment(
+            attachment_id=AttachmentId.generate(), attachment_type=AttachmentType.DOCUMENT, file=FileReference("s3://receipt.pdf"), now=NOW
+        )
+        submission.submit(policy=_policy(requires_receipt=True), now=NOW)
+        assert submission.status is SubmissionStatus.SUBMITTED

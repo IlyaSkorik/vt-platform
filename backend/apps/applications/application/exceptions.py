@@ -46,6 +46,7 @@ from apps.applications.domain.exceptions import (
 )
 
 __all__ = [
+    "AdditionalServiceNotAvailableError",
     "AdditionalServiceNotFoundError",
     "ApplicantNotFoundError",
     "ApplicationConflictError",
@@ -57,6 +58,7 @@ __all__ = [
     "CompetitionClosedError",
     "CompetitionCombinationNotFoundError",
     "CompetitionNotFoundError",
+    "DeadlinePassedError",
     "DuplicateChildError",
     "EducationalOrganizationNotFoundError",
     "FileTooLargeError",
@@ -226,6 +228,18 @@ class AdditionalServiceNotFoundError(ApplicationError):
     """The competition has no additional service with the requested id."""
 
     code: ClassVar[str] = "additional_service_not_found"
+
+
+class AdditionalServiceNotAvailableError(ApplicationError):
+    """The additional service is not available for any of the order's chosen formats."""
+
+    code: ClassVar[str] = "additional_service_not_available"
+
+
+class DeadlinePassedError(ApplicationError):
+    """A competition deadline for the requested operation (payment/upload) has passed."""
+
+    code: ClassVar[str] = "deadline_passed"
 
 
 class ApplicationStateConflictError(ApplicationError):
