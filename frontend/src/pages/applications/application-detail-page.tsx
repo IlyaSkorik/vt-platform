@@ -1,5 +1,4 @@
-import { ArrowLeft, CheckCircle2, Pencil } from "lucide-react";
-import { useRef } from "react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import { generatePath, Link, useParams } from "react-router";
 
 import {
@@ -7,9 +6,8 @@ import {
   submissionStatusPresentation,
   useApplication,
   useCancelApplication,
-  useUploadReceipt,
 } from "@/entities/application";
-import type { ApplicationResource } from "@/shared/api/generated/model-applications";
+import { ReceiptCard } from "@/features/application-receipt";
 import { ROUTES } from "@/shared/config";
 import {
   Badge,
@@ -26,12 +24,9 @@ import {
   PageDescription,
   PageHeader,
   PageTitle,
-  toast,
 } from "@/shared/ui";
 
 const CANCELLABLE = new Set(["DRAFT", "SUBMITTED", "WAITING_PAYMENT"]);
-const RECEIPT_STATUSES = new Set(["SUBMITTED", "WAITING_PAYMENT"]);
-const RECEIPT_ACCEPT = ".pdf,image/*";
 
 export function ApplicationDetailPage(): React.JSX.Element {
   const { applicationId } = useParams<{ applicationId: string }>();
@@ -147,9 +142,7 @@ export function ApplicationDetailPage(): React.JSX.Element {
             </CardContent>
           </Card>
 
-          {RECEIPT_STATUSES.has(application.status) || application.paymentReceipt ? (
-            <ReceiptCard application={application} />
-          ) : null}
+          <ReceiptCard application={application} />
 
           {application.organizationName ? (
             <Card>
@@ -164,78 +157,5 @@ export function ApplicationDetailPage(): React.JSX.Element {
         </div>
       </PageContent>
     </PageContainer>
-  );
-}
-
-function ReceiptCard({ application }: { application: ApplicationResource }): React.JSX.Element {
-  const upload = useUploadReceipt(application.id);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const receipt = application.paymentReceipt;
-  const canUpload = RECEIPT_STATUSES.has(application.status);
-
-  const onFileChosen = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
-    upload.mutate(file, {
-      onSuccess: () => toast.success("Квитанция загружена"),
-      onError: () => toast.error("Не удалось загрузить квитанцию"),
-      onSettled: () => {
-        if (inputRef.current) {
-          inputRef.current.value = "";
-        }
-      },
-    });
-  };
-
-  const badge = receipt
-    ? ({ label: "Квитанция загружена", variant: "success" } as const)
-    : canUpload
-      ? ({ label: "Ожидает квитанцию", variant: "warning" } as const)
-      : ({ label: "Квитанция не загружена", variant: "neutral" } as const);
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between gap-2">
-          <CardTitle>Квитанция об оплате</CardTitle>
-          <Badge variant={badge.variant}>{badge.label}</Badge>
-        </div>
-        <CardDescription>
-          Загрузите подтверждение оплаты организационного взноса (PDF или изображение).
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        {receipt ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <CheckCircle2 className="size-4 text-success" />
-            Квитанция загружена {new Date(receipt.uploadedAt).toLocaleDateString("ru-RU")}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">Квитанция ещё не загружена.</p>
-        )}
-        {canUpload ? (
-          <div>
-            <Button
-              variant="outline"
-              size="sm"
-              loading={upload.isPending}
-              onClick={() => inputRef.current?.click()}
-            >
-              {receipt ? "Заменить квитанцию" : "Загрузить квитанцию"}
-            </Button>
-            <input
-              ref={inputRef}
-              type="file"
-              accept={RECEIPT_ACCEPT}
-              className="hidden"
-              aria-label="Квитанция об оплате"
-              onChange={onFileChosen}
-            />
-          </div>
-        ) : null}
-      </CardContent>
-    </Card>
   );
 }

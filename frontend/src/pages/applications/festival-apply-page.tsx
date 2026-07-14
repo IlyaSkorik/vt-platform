@@ -11,6 +11,7 @@ import {
   useSelectService,
   useSubmitApplication,
 } from "@/entities/application";
+import { ReceiptCard } from "@/features/application-receipt";
 import { PerformanceBuilder } from "@/features/registration-wizard";
 import type { ApplicationResource } from "@/shared/api/generated/model-applications";
 import type { Registration } from "@/shared/api/generated/model-public-catalog";
@@ -393,59 +394,63 @@ function ReviewStep({
   const canSubmit = blockers.length === 0;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Проверка и подача</CardTitle>
-        <CardDescription>Итоговую сумму рассчитывает система.</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-2 text-sm">
-        <div className="flex justify-between">
-          <span>Выступлений</span>
-          <span>{application.submissions.length}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Услуг выбрано</span>
-          <span>{application.services.length}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Согласий записано</span>
-          <span>{application.consents.length}</span>
-        </div>
-        <Divider />
-        <div className="flex justify-between font-semibold">
-          <span>Итого</span>
-          <span>
-            {application.totalPrice
-              ? `${application.totalPrice.totalAmount} ${application.totalPrice.currency}`
-              : "—"}
-          </span>
-        </div>
-        {application.status === "DRAFT" && blockers.length > 0 ? (
-          <Alert variant="warning">
-            <ul className="list-disc pl-4">
-              {blockers.map((blocker) => (
-                <li key={blocker}>{blocker}</li>
-              ))}
-            </ul>
-          </Alert>
-        ) : null}
-        {submit.isError ? <Alert variant="danger">{errorMessage(submit.error)}</Alert> : null}
-        {application.status === "DRAFT" ? (
-          <div>
-            <Button
-              disabled={!canSubmit}
-              loading={submit.isPending}
-              onClick={() => submit.mutate()}
-            >
-              Подать заявку
-            </Button>
+    <div className="flex flex-col gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Проверка и подача</CardTitle>
+          <CardDescription>Итоговую сумму рассчитывает система.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-2 text-sm">
+          <div className="flex justify-between">
+            <span>Выступлений</span>
+            <span>{application.submissions.length}</span>
           </div>
-        ) : (
-          <Alert variant="success">
-            Заявка отправлена. <Link to={ROUTES.cabinetApplications}>Перейти к моим заявкам</Link>.
-          </Alert>
-        )}
-      </CardContent>
-    </Card>
+          <div className="flex justify-between">
+            <span>Услуг выбрано</span>
+            <span>{application.services.length}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Согласий записано</span>
+            <span>{application.consents.length}</span>
+          </div>
+          <Divider />
+          <div className="flex justify-between font-semibold">
+            <span>Итого</span>
+            <span>
+              {application.totalPrice
+                ? `${application.totalPrice.totalAmount} ${application.totalPrice.currency}`
+                : "—"}
+            </span>
+          </div>
+          {application.status === "DRAFT" && blockers.length > 0 ? (
+            <Alert variant="warning">
+              <ul className="list-disc pl-4">
+                {blockers.map((blocker) => (
+                  <li key={blocker}>{blocker}</li>
+                ))}
+              </ul>
+            </Alert>
+          ) : null}
+          {submit.isError ? <Alert variant="danger">{errorMessage(submit.error)}</Alert> : null}
+          {application.status === "DRAFT" ? (
+            <div>
+              <Button
+                disabled={!canSubmit}
+                loading={submit.isPending}
+                onClick={() => submit.mutate()}
+              >
+                Подать заявку
+              </Button>
+            </div>
+          ) : (
+            <Alert variant="success">
+              Заявка отправлена. <Link to={ROUTES.cabinetApplications}>Перейти к моим заявкам</Link>
+              .
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+      <ReceiptCard application={application} />
+    </div>
   );
 }
