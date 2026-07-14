@@ -35,6 +35,7 @@ class ApplicationModel(BasePersistenceModel):
     consents = models.JSONField(default=list, blank=True)
     total_price = models.JSONField(null=True, blank=True, default=None)
     status_history = models.JSONField(default=list, blank=True)
+    payment_receipt = models.JSONField(null=True, blank=True, default=None)
 
     paid_at = models.DateTimeField(null=True, blank=True, default=None)
 

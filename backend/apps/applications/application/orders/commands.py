@@ -14,6 +14,8 @@ Two aggregates, two error trees: order-aggregate calls run inside
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import PurePosixPath
+from typing import Final
 
 from apps.applications.application.dto.order_commands import (
     AddSubmissionToApplicationCommand,
@@ -29,18 +31,22 @@ from apps.applications.application.dto.order_commands import (
     SelectEducationalOrganizationCommand,
     SubmitApplicationCommand,
     SyncApplicationCommand,
+    UploadApplicationReceiptCommand,
 )
 from apps.applications.application.dto.orders import ApplicationOperationResultDto
 from apps.applications.application.exceptions import (
     AdditionalServiceNotAvailableError,
     AdditionalServiceNotFoundError,
     ApplicantNotFoundError,
+    ApplicationStateConflictError,
     CompetitionClosedError,
     CompetitionCombinationNotFoundError,
     CompetitionNotFoundError,
     DeadlinePassedError,
     EducationalOrganizationNotFoundError,
+    FileTooLargeError,
     SubmissionInvariantViolationError,
+    UnsupportedFileTypeError,
     translate_application_domain_errors,
     translate_domain_errors,
 )
@@ -51,6 +57,7 @@ from apps.applications.application.interfaces import (
     CompetitionServiceCatalog,
     EducationalOrganizationDirectory,
     EventPublisher,
+    FileStorage,
     IdentityReadModel,
     SubmissionRepository,
     UuidGenerator,
@@ -61,6 +68,7 @@ from apps.applications.domain.value_objects import (
     CompetitionId,
     Consent,
     EducationalOrganizationId,
+    FileReference,
     OrganizationName,
     PriceCalculationType,
     ServiceId,
@@ -94,10 +102,17 @@ __all__ = [
     "SelectEducationalOrganizationHandler",
     "SubmitApplicationHandler",
     "SyncApplicationHandler",
+    "UploadApplicationReceiptHandler",
 ]
 
 #: Submission statuses that are terminal (no cancellation possible / meaningful).
 _TERMINAL_SUBMISSION_STATUSES = frozenset({SubmissionStatus.CANCELLED, SubmissionStatus.COMPLETED})
+
+#: Fixed constraints for the order-level payment receipt (a PDF or an image scan).
+#: Unlike per-performance uploads there is no competition format to key off, so the
+#: platform applies one sensible limit for proof-of-payment documents.
+_RECEIPT_MAX_BYTES: Final = 15 * 1024 * 1024
+_RECEIPT_ALLOWED_EXTENSIONS: Final = frozenset({"pdf", "jpg", "jpeg", "png", "webp", "heic"})
 
 
 def _applicable_submissions(order_submissions: list[Submission], available_format_ids: frozenset[str]) -> list[Submission]:
@@ -564,3 +579,45 @@ class SyncApplicationHandler:
         refresh_submission_refs(application, self._submissions, now=now)
         self._applications.save(application)
         return ApplicationOperationResultDto.of(application, ())
+
+
+class UploadApplicationReceiptHandler:
+    """Use case: validate, store and attach the applicant's order-level payment receipt.
+
+    The receipt proves payment for the whole order, so it lives on the Application
+    (not a submission). The file is validated against the fixed receipt constraints,
+    stored, and attached; the domain enforces that a receipt may only be attached
+    while the order awaits payment.
+    """
+
+    def __init__(self, *, applications: ApplicationRepository, storage: FileStorage, clock: Clock, events: EventPublisher) -> None:
+        self._applications = applications
+        self._storage = storage
+        self._clock = clock
+        self._events = events
+
+    def handle(self, command: UploadApplicationReceiptCommand) -> ApplicationOperationResultDto:
+        now = self._clock.utcnow()
+        application = load_application(self._applications, parse_application_id(command.application_id))
+        ensure_owner(application, parse_user_id(command.requested_by))
+
+        if len(command.content) > _RECEIPT_MAX_BYTES:
+            raise FileTooLargeError(f"The receipt is {len(command.content)} bytes; the maximum is {_RECEIPT_MAX_BYTES} bytes.")
+        extension = PurePosixPath(command.filename).suffix.lstrip(".").lower()
+        if extension not in _RECEIPT_ALLOWED_EXTENSIONS:
+            raise UnsupportedFileTypeError(f"Files of type {extension or '(none)'!r} are not allowed for a payment receipt.")
+        # Reject a wrong-state upload before storing so no orphan file is written; the
+        # aggregate re-checks the same invariant when the receipt is actually attached.
+        if not application.accepts_payment_receipt():
+            raise ApplicationStateConflictError(
+                f"A payment receipt can only be attached while the application awaits payment, not while {application.status.value}.",
+                domain_code="PaymentReceiptNotAllowedError",
+            )
+
+        reference = self._storage.save(content=command.content, filename=command.filename, content_type=command.content_type)
+        with translate_application_domain_errors():
+            file_reference = FileReference(reference)
+            order_events = application.upload_payment_receipt(file=file_reference, now=now)
+        self._applications.save(application)
+        self._events.publish(order_events)
+        return ApplicationOperationResultDto.of(application, tuple(order_events))

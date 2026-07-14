@@ -20,8 +20,10 @@ from apps.applications.domain.value_objects import (
     Consent,
     Currency,
     EducationalOrganizationId,
+    FileReference,
     Money,
     OrganizationName,
+    PaymentReceipt,
     PriceSnapshot,
     ServiceId,
     ServiceLine,
@@ -58,6 +60,7 @@ class ApplicationMapper:
             consents=[ApplicationMapper._consent_from_json(row) for row in model.consents],
             total_price=ApplicationMapper._total_from_json(model.total_price),
             status_history=[ApplicationMapper._change_from_json(row) for row in model.status_history],
+            payment_receipt=ApplicationMapper._receipt_from_json(model.payment_receipt),
             paid_at=model.paid_at,
             deleted_at=model.deleted_at,
             version=model.version,
@@ -90,6 +93,7 @@ class ApplicationMapper:
             "consents": [ApplicationMapper._consent_to_json(consent) for consent in entity.consents],
             "total_price": ApplicationMapper._total_to_json(entity.total_price),
             "status_history": [ApplicationMapper._change_to_json(change) for change in entity.status_history],
+            "payment_receipt": ApplicationMapper._receipt_to_json(entity.payment_receipt),
             "paid_at": entity.paid_at,
             "created_at": entity.created_at,
             "updated_at": entity.updated_at,
@@ -212,3 +216,15 @@ class ApplicationMapper:
             to_status=ApplicationStatus(data["to_status"]),
             occurred_at=datetime.fromisoformat(data["occurred_at"]),
         )
+
+    @staticmethod
+    def _receipt_to_json(receipt: PaymentReceipt | None) -> dict[str, Any] | None:
+        if receipt is None:
+            return None
+        return {"file_reference": receipt.file.value, "uploaded_at": receipt.uploaded_at.isoformat()}
+
+    @staticmethod
+    def _receipt_from_json(data: dict[str, Any] | None) -> PaymentReceipt | None:
+        if not data:
+            return None
+        return PaymentReceipt(file=FileReference(data["file_reference"]), uploaded_at=datetime.fromisoformat(data["uploaded_at"]))

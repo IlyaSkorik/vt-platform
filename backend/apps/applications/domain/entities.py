@@ -81,6 +81,7 @@ from .events import (
     EducationalOrganizationSelected,
     ParticipantAdded,
     ParticipantRemoved,
+    PaymentReceiptUploaded,
     PerformanceDefined,
     PriceSnapshotCreated,
     ReviewAdded,
@@ -122,6 +123,7 @@ from .exceptions import (
     ParticipantCountMismatchError,
     ParticipantNotFoundError,
     ParticipantRequiredError,
+    PaymentReceiptNotAllowedError,
     PerformanceRequiredError,
     PriceSnapshotLockedError,
     PriceSnapshotRequiredError,
@@ -150,6 +152,7 @@ from .value_objects import (
     Money,
     OrganizationName,
     ParticipantId,
+    PaymentReceipt,
     Performance,
     PersonName,
     PriceSnapshot,
@@ -1065,6 +1068,11 @@ _LEGAL_APPLICATION_TRANSITIONS: Final[dict[ApplicationStatus, frozenset[Applicat
 #: submission references, additional services, consents) may be edited.
 _APPLICATION_EDITABLE_STATUSES: Final = frozenset({ApplicationStatus.DRAFT})
 
+#: Statuses in which the applicant may attach (or replace) the payment receipt:
+#: after the order is placed and before it is settled. A draft has nothing to pay
+#: for; a paid/completed/cancelled order is settled.
+_APPLICATION_RECEIPT_STATUSES: Final = frozenset({ApplicationStatus.SUBMITTED, ApplicationStatus.WAITING_PAYMENT})
+
 #: Statuses in which a submission reference's cached snapshot may still be
 #: refreshed by the projection. Past payment the order is settled and its lines
 #: are historical, so refreshes are ignored rather than mutating a settled order.
@@ -1096,6 +1104,7 @@ class Application:
     _consents: tuple[Consent, ...] = ()
     _total_price: TotalPriceSnapshot | None = None
     _status_history: list[ApplicationStatusChange] = field(default_factory=list)
+    _payment_receipt: PaymentReceipt | None = None
     _paid_at: datetime | None = None
     _deleted_at: datetime | None = None
     _version: int = 1
@@ -1156,6 +1165,7 @@ class Application:
         consents: Sequence[Consent] = (),
         total_price: TotalPriceSnapshot | None = None,
         status_history: Sequence[ApplicationStatusChange] = (),
+        payment_receipt: PaymentReceipt | None = None,
         paid_at: datetime | None = None,
         deleted_at: datetime | None = None,
         version: int = 1,
@@ -1176,6 +1186,7 @@ class Application:
             _consents=tuple(consents),
             _total_price=total_price,
             _status_history=list(status_history),
+            _payment_receipt=payment_receipt,
             _paid_at=paid_at,
             _deleted_at=deleted_at,
             _version=version,
@@ -1236,6 +1247,10 @@ class Application:
         return tuple(self._status_history)
 
     @property
+    def payment_receipt(self) -> PaymentReceipt | None:
+        return self._payment_receipt
+
+    @property
     def paid_at(self) -> datetime | None:
         return self._paid_at
 
@@ -1270,6 +1285,10 @@ class Application:
     def is_ready_for_payment(self) -> bool:
         """Whether every referenced submission is approved (the derived payment gate)."""
         return bool(self._submission_refs) and all(ref.is_approved for ref in self._submission_refs.values())
+
+    def accepts_payment_receipt(self) -> bool:
+        """Whether a payment receipt may currently be attached (placed, not yet settled)."""
+        return self._status in _APPLICATION_RECEIPT_STATUSES
 
     # ------------------------------------------------------------------
     # Composition (editable in DRAFT only)
@@ -1407,6 +1426,22 @@ class Application:
             raise NotAllSubmissionsApprovedError("The application is not ready for payment: not all submissions are approved.")
         self._transition_to(ApplicationStatus.WAITING_PAYMENT, now=now)
         return [ApplicationAwaitingPayment(aggregate_id=self._id.value)]
+
+    def upload_payment_receipt(self, *, file: FileReference, now: datetime) -> list[DomainEvent]:
+        """Attach (or replace) the applicant's proof of payment for the order.
+
+        Allowed only once the order is placed and before it is settled (``SUBMITTED``
+        or ``WAITING_PAYMENT``): a draft has nothing to pay for, and a paid/closed
+        order is final. This does not change the order status; the organizer still
+        confirms payment separately. Re-uploading replaces the previous receipt.
+        """
+        if self._status not in _APPLICATION_RECEIPT_STATUSES:
+            raise PaymentReceiptNotAllowedError(
+                f"A payment receipt can only be attached while the application awaits payment, not while {self._status.value}."
+            )
+        self._payment_receipt = PaymentReceipt(file=file, uploaded_at=now)
+        self._touch(now)
+        return [PaymentReceiptUploaded(aggregate_id=self._id.value)]
 
     def mark_paid(self, *, now: datetime) -> list[DomainEvent]:
         """Record that the order's total was paid (WAITING_PAYMENT -> PAID)."""

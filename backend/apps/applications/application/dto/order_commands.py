@@ -25,6 +25,7 @@ __all__ = [
     "SelectEducationalOrganizationCommand",
     "SubmitApplicationCommand",
     "SyncApplicationCommand",
+    "UploadApplicationReceiptCommand",
 ]
 
 
@@ -144,3 +145,19 @@ class SyncApplicationCommand:
 
     requested_by: str
     application_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class UploadApplicationReceiptCommand:
+    """Upload (or replace) the applicant's payment receipt for the whole order.
+
+    Carries the raw uploaded bytes plus its declared filename and content type; the
+    handler validates them against the fixed receipt constraints, stores the bytes,
+    and attaches the resulting reference to the order.
+    """
+
+    requested_by: str
+    application_id: str
+    filename: str
+    content_type: str
+    content: bytes

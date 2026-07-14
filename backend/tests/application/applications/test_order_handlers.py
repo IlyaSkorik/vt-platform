@@ -24,6 +24,7 @@ from apps.applications.application.dto.order_commands import (
     SelectAdditionalServiceCommand,
     SelectEducationalOrganizationCommand,
     SubmitApplicationCommand,
+    UploadApplicationReceiptCommand,
 )
 from apps.applications.application.dto.queries import (
     GetApplicationQuery,
@@ -35,11 +36,14 @@ from apps.applications.application.exceptions import (
     AdditionalServiceNotFoundError,
     ApplicantNotFoundError,
     ApplicationInvariantViolationError,
+    ApplicationStateConflictError,
     CompetitionClosedError,
     CompetitionNotFoundError,
     DeadlinePassedError,
     EducationalOrganizationNotFoundError,
+    FileTooLargeError,
     PermissionDeniedError,
+    UnsupportedFileTypeError,
 )
 from apps.applications.application.orders import (
     AddSubmissionToApplicationHandler,
@@ -55,6 +59,7 @@ from apps.applications.application.orders import (
     SelectAdditionalServiceHandler,
     SelectEducationalOrganizationHandler,
     SubmitApplicationHandler,
+    UploadApplicationReceiptHandler,
 )
 from apps.applications.domain.value_objects import (
     AgeCategoryId,
@@ -82,6 +87,7 @@ from .fakes import (
     FakeCompetitionCatalog,
     FakeCompetitionServiceCatalog,
     FakeEducationalOrganizationDirectory,
+    FakeFileStorage,
     FakeIdentityReadModel,
     FakeSubmissionRepository,
     RecordingEventPublisher,
@@ -108,6 +114,7 @@ class Env:
         self.clock = FakeClock()
         self.uuids = SequenceUuidGenerator()
         self.events = RecordingEventPublisher()
+        self.storage = FakeFileStorage()
 
     def create(self) -> CreateApplicationHandler:
         return CreateApplicationHandler(
@@ -153,6 +160,9 @@ class Env:
 
     def cancel(self) -> CancelApplicationHandler:
         return CancelApplicationHandler(applications=self.applications, submissions=self.submissions, clock=self.clock, events=self.events)
+
+    def upload_receipt(self) -> UploadApplicationReceiptHandler:
+        return UploadApplicationReceiptHandler(applications=self.applications, storage=self.storage, clock=self.clock, events=self.events)
 
     def get(self) -> GetApplicationHandler:
         return GetApplicationHandler(applications=self.applications, submissions=self.submissions, clock=self.clock)
@@ -420,3 +430,66 @@ class TestQueries:
         drafts = env.drafts().handle(ListDraftApplicationsQuery(applicant_id=applicant))
         assert len(drafts) == 1
         assert drafts[0].status == "DRAFT"
+
+
+def _reach_submitted(env: Env) -> tuple[str, str, str]:
+    """Create an application with one priced, submitted submission (order SUBMITTED)."""
+    app_id, applicant = _create_app(env)
+    submission_id = _add_submission(env, app_id, applicant)
+    env.build_submittable(submission_id)
+    env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
+    return app_id, applicant, submission_id
+
+
+def _receipt_command(app_id: str, applicant: str, *, filename: str = "receipt.pdf", content: bytes = b"%PDF-1.4 paid") -> UploadApplicationReceiptCommand:
+    return UploadApplicationReceiptCommand(
+        requested_by=applicant,
+        application_id=app_id,
+        filename=filename,
+        content_type="application/pdf",
+        content=content,
+    )
+
+
+class TestPaymentReceipt:
+    def test_upload_stores_and_attaches_receipt_after_submission(self) -> None:
+        env = Env()
+        app_id, applicant, _ = _reach_submitted(env)
+        result = env.upload_receipt().handle(_receipt_command(app_id, applicant))
+        assert result.application.payment_receipt is not None
+        assert len(env.storage.saved) == 1
+
+    def test_upload_allowed_while_awaiting_payment(self) -> None:
+        env = Env()
+        app_id, applicant, submission_id = _reach_submitted(env)
+        env.approve(submission_id)
+        env.request_payment().handle(RequestApplicationPaymentCommand(requested_by=applicant, application_id=app_id))
+        result = env.upload_receipt().handle(_receipt_command(app_id, applicant))
+        assert result.application.payment_receipt is not None
+
+    def test_upload_rejected_while_draft(self) -> None:
+        env = Env()
+        app_id, applicant = _create_app(env)
+        with pytest.raises(ApplicationStateConflictError):
+            env.upload_receipt().handle(_receipt_command(app_id, applicant))
+        assert env.storage.saved == {}
+
+    def test_upload_rejects_unsupported_type(self) -> None:
+        env = Env()
+        app_id, applicant, _ = _reach_submitted(env)
+        with pytest.raises(UnsupportedFileTypeError):
+            env.upload_receipt().handle(_receipt_command(app_id, applicant, filename="virus.exe"))
+        assert env.storage.saved == {}
+
+    def test_upload_rejects_oversized_file(self) -> None:
+        env = Env()
+        app_id, applicant, _ = _reach_submitted(env)
+        with pytest.raises(FileTooLargeError):
+            env.upload_receipt().handle(_receipt_command(app_id, applicant, content=b"x" * (15 * 1024 * 1024 + 1)))
+        assert env.storage.saved == {}
+
+    def test_upload_requires_owner(self) -> None:
+        env = Env()
+        app_id, _, _ = _reach_submitted(env)
+        with pytest.raises(PermissionDeniedError):
+            env.upload_receipt().handle(_receipt_command(app_id, uuid7_str()))

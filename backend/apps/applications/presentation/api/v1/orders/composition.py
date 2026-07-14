@@ -26,6 +26,7 @@ from apps.applications.application.orders import (
     SelectAdditionalServiceHandler,
     SelectEducationalOrganizationHandler,
     SubmitApplicationHandler,
+    UploadApplicationReceiptHandler,
 )
 from apps.applications.infrastructure.acl import (
     DjangoCompetitionCatalog,
@@ -35,6 +36,7 @@ from apps.applications.infrastructure.acl import (
 )
 from apps.applications.infrastructure.messaging import NullEventPublisher
 from apps.applications.infrastructure.repositories import DjangoApplicationRepository, DjangoSubmissionRepository
+from apps.applications.infrastructure.storage import DjangoFileStorage
 from apps.applications.infrastructure.system import SystemClock, Uuid7Generator
 
 __all__ = [
@@ -53,6 +55,7 @@ __all__ = [
     "build_select_educational_organization_handler",
     "build_select_service_handler",
     "build_submit_application_handler",
+    "build_upload_receipt_handler",
 ]
 
 
@@ -135,6 +138,12 @@ def build_complete_application_handler() -> CompleteApplicationHandler:
 
 def build_cancel_application_handler() -> CancelApplicationHandler:
     return CancelApplicationHandler(applications=_applications(), submissions=_submissions(), clock=SystemClock(), events=NullEventPublisher())
+
+
+def build_upload_receipt_handler() -> UploadApplicationReceiptHandler:
+    return UploadApplicationReceiptHandler(
+        applications=_applications(), storage=DjangoFileStorage(), clock=SystemClock(), events=NullEventPublisher()
+    )
 
 
 def build_get_application_handler() -> GetApplicationHandler:

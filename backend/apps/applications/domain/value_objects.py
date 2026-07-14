@@ -64,6 +64,7 @@ from .exceptions import (
     InvalidParticipantGroupIdError,
     InvalidParticipantIdError,
     InvalidParticipationFormatIdError,
+    InvalidPaymentReceiptError,
     InvalidPerformanceTitleError,
     InvalidPersonNameError,
     InvalidPriceSnapshotError,
@@ -106,6 +107,7 @@ __all__ = [
     "ParticipantGroupId",
     "ParticipantId",
     "ParticipationFormatId",
+    "PaymentReceipt",
     "Performance",
     "PersonName",
     "PriceCalculationType",
@@ -1136,6 +1138,29 @@ class PriceSnapshot:
 
     def __str__(self) -> str:
         return f"{self.price} @ {self.calculated_at.isoformat()}"
+
+
+@dataclass(frozen=True, slots=True)
+class PaymentReceipt:
+    """The applicant's proof of payment for the whole order.
+
+    Unlike a submission attachment (which belongs to one performance), the receipt
+    is an **order-level** artifact: a single payment settles the application total,
+    so one receipt is kept on the Application. It pairs the stored file reference with
+    the instant it was uploaded; re-uploading replaces it.
+    """
+
+    file: FileReference
+    uploaded_at: datetime
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.file, FileReference):
+            raise InvalidPaymentReceiptError(f"PaymentReceipt file must be a FileReference, got {type(self.file)!r}.")
+        if not isinstance(self.uploaded_at, datetime):
+            raise InvalidPaymentReceiptError(f"PaymentReceipt uploaded_at must be a datetime, got {type(self.uploaded_at)!r}.")
+
+    def __str__(self) -> str:
+        return f"{self.file} @ {self.uploaded_at.isoformat()}"
 
 
 @dataclass(frozen=True, slots=True)

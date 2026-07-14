@@ -67,6 +67,7 @@ __all__ = [
     "EducationalOrganizationSelected",
     "ParticipantAdded",
     "ParticipantRemoved",
+    "PaymentReceiptUploaded",
     "PerformanceDefined",
     "PriceSnapshotCreated",
     "ReviewAdded",
@@ -377,3 +378,8 @@ class ApplicationCancelled(DomainEvent):
     """The application (order) was cancelled (withdrawn or rejected)."""
 
     previous_status: ApplicationStatus
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class PaymentReceiptUploaded(DomainEvent):
+    """The applicant attached (or replaced) the payment receipt for the order."""

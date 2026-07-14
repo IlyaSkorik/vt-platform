@@ -29,6 +29,7 @@ __all__ = [
     "ApplicationSummaryView",
     "ApplicationView",
     "ConsentView",
+    "PaymentReceiptView",
     "ServiceLineView",
     "SubmissionRefView",
     "TotalPriceView",
@@ -137,6 +138,14 @@ class ApplicationStatusChangeView:
 
 
 @dataclass(frozen=True, slots=True)
+class PaymentReceiptView:
+    """A flat read view of the applicant's order-level payment receipt."""
+
+    file_reference: str
+    uploaded_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
 class ApplicationView:
     """A flat, immutable read view of the whole :class:`Application` aggregate."""
 
@@ -151,6 +160,7 @@ class ApplicationView:
     consents: tuple[ConsentView, ...]
     total_price: TotalPriceView | None
     status_history: tuple[ApplicationStatusChangeView, ...]
+    payment_receipt: PaymentReceiptView | None
     paid_at: datetime | None
     created_at: datetime
     updated_at: datetime
@@ -160,6 +170,7 @@ class ApplicationView:
     def from_application(cls, application: Application) -> ApplicationView:
         org = application.organization_name
         total = application.total_price
+        receipt = application.payment_receipt
         return cls(
             id=application.id.json(),
             competition_id=application.competition_id.json(),
@@ -174,6 +185,9 @@ class ApplicationView:
             consents=tuple(ConsentView.from_consent(consent) for consent in application.consents),
             total_price=TotalPriceView.from_snapshot(total) if total is not None else None,
             status_history=tuple(ApplicationStatusChangeView.from_change(change) for change in application.status_history),
+            payment_receipt=(
+                PaymentReceiptView(file_reference=receipt.file.value, uploaded_at=receipt.uploaded_at) if receipt is not None else None
+            ),
             paid_at=application.paid_at,
             created_at=application.created_at,
             updated_at=application.updated_at,

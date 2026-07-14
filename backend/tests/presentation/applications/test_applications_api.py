@@ -133,6 +133,20 @@ def test_cancel(auth_client: APIClient) -> None:
     assert response.data["data"]["status"] == "CANCELLED"
 
 
+def test_receipt_upload_on_draft_is_conflict(auth_client: APIClient) -> None:
+    # End-to-end wiring of the receipt endpoint: a DRAFT order has nothing to pay
+    # for, so uploading a receipt is a 409 (problem+json). The happy path is covered
+    # by the handler tests, which can reach the awaiting-payment state cheaply.
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    competition_id = _seed_open_competition()
+    app_id = _create(auth_client, competition_id).data["data"]["id"]
+    receipt = SimpleUploadedFile("receipt.pdf", b"%PDF-1.4 paid", content_type="application/pdf")
+    response = auth_client.post(f"/api/v1/applications/{app_id}/receipt", {"file": receipt}, format="multipart")
+    assert response.status_code == 409, response.data
+    assert response["Content-Type"] == "application/problem+json"
+
+
 def test_ownership_isolation() -> None:
     competition_id = _seed_open_competition()
     owner = _auth(APIClient(), email="owner-a@example.com")

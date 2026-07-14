@@ -16,6 +16,7 @@ from __future__ import annotations
 from typing import Any
 
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -35,6 +36,7 @@ from apps.applications.application.dto.order_commands import (
     SelectAdditionalServiceCommand,
     SelectEducationalOrganizationCommand,
     SubmitApplicationCommand,
+    UploadApplicationReceiptCommand,
 )
 from apps.applications.application.dto.orders import ApplicationSummaryView, ApplicationView
 from apps.applications.application.dto.queries import (
@@ -53,6 +55,7 @@ from apps.applications.presentation.api.v1.orders.serializers import (
     RecordConsentsRequestSerializer,
     SelectEducationalOrganizationRequestSerializer,
     SelectServiceRequestSerializer,
+    UploadReceiptRequestSerializer,
 )
 
 _TAG = "Applications"
@@ -113,6 +116,11 @@ def _application_resource(dto: ApplicationView) -> dict[str, Any]:
         "statusHistory": [
             {"fromStatus": change.from_status, "toStatus": change.to_status, "occurredAt": _iso(change.occurred_at)} for change in dto.status_history
         ],
+        "paymentReceipt": (
+            {"fileReference": dto.payment_receipt.file_reference, "uploadedAt": _iso(dto.payment_receipt.uploaded_at)}
+            if dto.payment_receipt is not None
+            else None
+        ),
         "paidAt": _iso(dto.paid_at),
         "createdAt": _iso(dto.created_at),
         "updatedAt": _iso(dto.updated_at),
@@ -409,3 +417,41 @@ class ApplicationCancellationView(_TransitionView):
     def post(self, request: Request, application_id: str) -> Response:
         command = CancelApplicationCommand(requested_by=_uid(request), application_id=application_id)
         return self._run(request, application_id, command, composition.build_cancel_application_handler())
+
+
+class ApplicationReceiptView(_AuthenticatedView):
+    """POST /api/v1/applications/{id}/receipt - upload the order's payment receipt."""
+
+    parser_classes = (MultiPartParser, FormParser)
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="applications_upload_receipt",
+        summary="Upload the payment receipt",
+        request={"multipart/form-data": UploadReceiptRequestSerializer},
+        responses={
+            200: ApplicationResponseSerializer,
+            400: OpenApiResponse(ProblemDetailSerializer, description="Malformed request."),
+            404: OpenApiResponse(ProblemDetailSerializer, description="Application not found."),
+            409: OpenApiResponse(ProblemDetailSerializer, description="Not awaiting payment."),
+            413: OpenApiResponse(ProblemDetailSerializer, description="File too large."),
+            415: OpenApiResponse(ProblemDetailSerializer, description="Unsupported file type."),
+        },
+    )
+    def post(self, request: Request, application_id: str) -> Response:
+        serializer = UploadReceiptRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return problems.validation_problem(serializer.errors, instance=request.path, request=request)
+        upload = serializer.validated_data["file"]
+        command = UploadApplicationReceiptCommand(
+            requested_by=_uid(request),
+            application_id=application_id,
+            filename=str(upload.name),
+            content_type=str(getattr(upload, "content_type", "") or "application/octet-stream"),
+            content=upload.read(),
+        )
+        try:
+            result = composition.build_upload_receipt_handler().handle(command)
+        except ApplicationError as exc:
+            return problems.application_problem(exc, instance=request.path, request=request)
+        return _envelope(request, _application_resource(result.application), status=200)

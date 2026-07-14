@@ -29,6 +29,7 @@ objects) and mapped to RFC 9457 Problem Details at the presentation edge
     │   ├── InvalidReviewCommentError
     │   ├── InvalidMoneyError
     │   ├── InvalidPriceSnapshotError
+    │   ├── InvalidPaymentReceiptError
     │   └── InvalidParticipantCountRangeError
     ├── DirectConstructionError                 - an aggregate was built bypassing its factories
     ├── SubmissionStateError                    - an operation illegal in the Submission's lifecycle
@@ -170,6 +171,10 @@ class InvalidMoneyError(ValueObjectValidationError):
 
 class InvalidPriceSnapshotError(ValueObjectValidationError):
     """The provided value is not a valid price snapshot (missing price or timestamp)."""
+
+
+class InvalidPaymentReceiptError(ValueObjectValidationError):
+    """The provided value is not a valid payment receipt (missing file reference or timestamp)."""
 
 
 class InvalidParticipantCountRangeError(ValueObjectValidationError):
@@ -324,6 +329,7 @@ class ParticipantCountMismatchError(SubmissionInvariantError):
 #     ├── ApplicationStateError                       - an operation illegal in the order lifecycle
 #     │   ├── ApplicationNotEditableError
 #     │   ├── IllegalApplicationStatusTransitionError
+#     │   ├── PaymentReceiptNotAllowedError
 #     │   └── TotalPriceLockedError
 #     ├── ApplicationReferenceError                   - a referenced line/ref is absent
 #     │   ├── SubmissionRefNotFoundError
@@ -411,6 +417,16 @@ class ApplicationNotEditableError(ApplicationStateError):
 
 class IllegalApplicationStatusTransitionError(ApplicationStateError):
     """The requested order-lifecycle transition is not legal from the current status."""
+
+
+class PaymentReceiptNotAllowedError(ApplicationStateError):
+    """A payment receipt was uploaded while the order is not awaiting payment.
+
+    The receipt is proof of payment for a placed order, so it may be attached only
+    after submission and before the order is settled (``SUBMITTED`` or
+    ``WAITING_PAYMENT``); a draft has nothing to pay for and a paid/closed order is
+    settled.
+    """
 
 
 class TotalPriceLockedError(ApplicationStateError):

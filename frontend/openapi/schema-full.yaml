@@ -259,6 +259,65 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApplicationResponse'
           description: ''
+  /api/v1/applications/{application_id}/receipt:
+    post:
+      operationId: applications_upload_receipt
+      description: POST /api/v1/applications/{id}/receipt - upload the order's payment
+        receipt.
+      summary: Upload the payment receipt
+      parameters:
+      - in: path
+        name: application_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Applications
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadReceiptRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationsProblemDetail'
+          description: Malformed request.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationsProblemDetail'
+          description: Application not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationsProblemDetail'
+          description: Not awaiting payment.
+        '413':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationsProblemDetail'
+          description: File too large.
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationsProblemDetail'
+          description: Unsupported file type.
   /api/v1/applications/{application_id}/services:
     post:
       operationId: applications_select_service
@@ -6029,6 +6088,10 @@ components:
           oneOf:
           - $ref: '#/components/schemas/_TotalPrice'
           - type: 'null'
+        paymentReceipt:
+          oneOf:
+          - $ref: '#/components/schemas/_PaymentReceipt'
+          - type: 'null'
         paidAt:
           type:
           - string
@@ -6049,6 +6112,7 @@ components:
       - id
       - organizationName
       - paidAt
+      - paymentReceipt
       - services
       - status
       - submissions
@@ -9038,6 +9102,16 @@ components:
       required:
       - attachmentType
       - file
+    UploadReceiptRequest:
+      type: object
+      description: Validate a payment-receipt upload (a ``multipart/form-data`` file
+        part).
+      properties:
+        file:
+          type: string
+          format: uri
+      required:
+      - file
     UserResource:
       type: object
       description: A user account resource (API-001 §4.1, §4.8).
@@ -10040,6 +10114,17 @@ components:
       required:
       - id
       - name
+    _PaymentReceipt:
+      type: object
+      properties:
+        fileReference:
+          type: string
+        uploadedAt:
+          type: string
+          format: date-time
+      required:
+      - fileReference
+      - uploadedAt
     _PaymentReceiptRequirements:
       type: object
       properties:

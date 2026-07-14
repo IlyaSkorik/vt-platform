@@ -20,6 +20,7 @@ from apps.applications.application.orders.commands import (
     SelectEducationalOrganizationHandler,
     SubmitApplicationHandler,
     SyncApplicationHandler,
+    UploadApplicationReceiptHandler,
 )
 from apps.applications.application.orders.queries import (
     GetApplicationHandler,
@@ -44,4 +45,5 @@ __all__ = [
     "SelectEducationalOrganizationHandler",
     "SubmitApplicationHandler",
     "SyncApplicationHandler",
+    "UploadApplicationReceiptHandler",
 ]
