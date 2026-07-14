@@ -21,6 +21,7 @@ import {
   applicationsSelectOrganization,
   applicationsSelectService,
   applicationsSubmit,
+  applicationsUploadReceipt,
 } from "@/shared/api/generated/applications/applications";
 import type {
   ApplicationResource,
@@ -196,6 +197,22 @@ export function useRequestPayment(applicationId: string) {
   return useMutation({
     mutationFn: async (): Promise<ApplicationResource> => {
       const response = await applicationsRequestPayment(applicationId);
+      return unwrap<ApplicationResource>(response);
+    },
+    onSuccess: () => invalidate(applicationId),
+  });
+}
+
+/** Upload (or replace) the order-level payment receipt (multipart). */
+export function useUploadReceipt(applicationId: string) {
+  const invalidate = useInvalidateApplication();
+  return useMutation({
+    mutationFn: async (file: File): Promise<ApplicationResource> => {
+      // The generated multipart contract types `file` as `string`; a real File is
+      // appended to FormData verbatim, so it is correct at runtime.
+      const response = await applicationsUploadReceipt(applicationId, {
+        file: file as unknown as string,
+      });
       return unwrap<ApplicationResource>(response);
     },
     onSuccess: () => invalidate(applicationId),
