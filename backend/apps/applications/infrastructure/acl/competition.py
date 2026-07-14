@@ -146,7 +146,6 @@ class DjangoCompetitionCatalog:
         count_range = ParticipantCountRange(min_count=group.count_range.min_count, max_count=group.count_range.max_count)
         settings = competition.settings
         requirements = settings.requirements_for(CompParticipationFormatId.from_uuid(participation_format_id.value))
-        receipt = requirements.payment_receipt
         return SubmissionParticipationPolicy(
             participant_count_range=count_range,
             is_admissible=competition.is_admissible(combination),
@@ -155,8 +154,9 @@ class DjangoCompetitionCatalog:
             # A URL-mode video cannot be satisfied by an uploaded file, so only a
             # file-only requirement is enforced as a required attachment.
             requires_video_file=requirements.video.mode is VideoSubmissionMode.FILE_ONLY,
-            # A receipt that may be uploaded later must not block submission.
-            requires_receipt=receipt.require_receipt and not receipt.allow_upload_later,
+            # The payment receipt is an order-level artifact uploaded after submission
+            # (see the Application's PaymentReceipt), so it is not a submit-time
+            # submission attachment; only genuine supporting documents are.
             requires_document=settings.require_document_upload,
         )
 

@@ -7,7 +7,7 @@ import { Badge, Button, toast } from "@/shared/ui";
 import { useRemoveAttachment, useUploadAttachment } from "../api/hooks";
 
 type UploadKind = {
-  attachmentType: "MUSIC" | "VIDEO" | "DOCUMENT";
+  attachmentType: "MUSIC" | "VIDEO";
   label: string;
   hint: string;
   accept: string;
@@ -35,14 +35,8 @@ function uploadKinds(requirement: RegistrationUploadRequirement | undefined): Up
       accept: "video/*",
     });
   }
-  if (requirement.receiptRequired) {
-    kinds.push({
-      attachmentType: "DOCUMENT",
-      label: "Квитанция об оплате",
-      hint: "PDF или изображение",
-      accept: ".pdf,image/*",
-    });
-  }
+  // The payment receipt is no longer a per-performance upload: it proves payment of
+  // the whole order and is uploaded once on the application card after submission.
   return kinds;
 }
 

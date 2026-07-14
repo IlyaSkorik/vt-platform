@@ -1220,22 +1220,24 @@ class SubmissionParticipationPolicy:
     requires_teacher: bool = False
     requires_music: bool = False
     requires_video_file: bool = False
-    requires_receipt: bool = False
     requires_document: bool = False
 
     def required_attachment_types(self) -> frozenset[AttachmentType]:
         """The attachment kinds this competition requires before submission.
 
         Music maps to :attr:`AttachmentType.MUSIC`, a file-mode video to
-        :attr:`AttachmentType.VIDEO`, and a payment receipt or a required document to
-        :attr:`AttachmentType.DOCUMENT` (there is no dedicated receipt kind).
+        :attr:`AttachmentType.VIDEO`, and a required supporting document to
+        :attr:`AttachmentType.DOCUMENT`. The **payment receipt is deliberately not
+        here**: it proves payment of the order and is attached to the Application
+        after submission (see :class:`PaymentReceipt`), never as a submission
+        attachment at submit time.
         """
         required: set[AttachmentType] = set()
         if self.requires_music:
             required.add(AttachmentType.MUSIC)
         if self.requires_video_file:
             required.add(AttachmentType.VIDEO)
-        if self.requires_receipt or self.requires_document:
+        if self.requires_document:
             required.add(AttachmentType.DOCUMENT)
         return frozenset(required)
 

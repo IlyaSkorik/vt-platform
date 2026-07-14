@@ -596,15 +596,15 @@ class TestSubmitRequirements:
         with pytest.raises(RequiredAttachmentMissingError):
             submission.submit(policy=_policy(requires_video_file=True), now=NOW)
 
-    def test_requires_receipt_as_document(self) -> None:
+    def test_requires_document(self) -> None:
         submission = _solo_ready().submission
         with pytest.raises(RequiredAttachmentMissingError):
-            submission.submit(policy=_policy(requires_receipt=True), now=NOW)
+            submission.submit(policy=_policy(requires_document=True), now=NOW)
 
-    def test_receipt_document_attachment_satisfies_requirement(self) -> None:
+    def test_document_attachment_satisfies_requirement(self) -> None:
         submission = _solo_ready().submission
         submission.add_attachment(
-            attachment_id=AttachmentId.generate(), attachment_type=AttachmentType.DOCUMENT, file=FileReference("s3://receipt.pdf"), now=NOW
+            attachment_id=AttachmentId.generate(), attachment_type=AttachmentType.DOCUMENT, file=FileReference("s3://document.pdf"), now=NOW
         )
-        submission.submit(policy=_policy(requires_receipt=True), now=NOW)
+        submission.submit(policy=_policy(requires_document=True), now=NOW)
         assert submission.status is SubmissionStatus.SUBMITTED
