@@ -189,10 +189,19 @@ function ReceiptCard({ application }: { application: ApplicationResource }): Rea
     });
   };
 
+  const badge = receipt
+    ? ({ label: "Квитанция загружена", variant: "success" } as const)
+    : canUpload
+      ? ({ label: "Ожидает квитанцию", variant: "warning" } as const)
+      : ({ label: "Квитанция не загружена", variant: "neutral" } as const);
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Квитанция об оплате</CardTitle>
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle>Квитанция об оплате</CardTitle>
+          <Badge variant={badge.variant}>{badge.label}</Badge>
+        </div>
         <CardDescription>
           Загрузите подтверждение оплаты организационного взноса (PDF или изображение).
         </CardDescription>
