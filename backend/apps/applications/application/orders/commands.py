@@ -610,7 +610,7 @@ class UploadApplicationReceiptHandler:
         # aggregate re-checks the same invariant when the receipt is actually attached.
         if not application.accepts_payment_receipt():
             raise ApplicationStateConflictError(
-                f"A payment receipt can only be attached while the application awaits payment, not while {application.status.value}.",
+                f"A payment receipt cannot be attached once the application is settled ({application.status.value}).",
                 domain_code="PaymentReceiptNotAllowedError",
             )
 

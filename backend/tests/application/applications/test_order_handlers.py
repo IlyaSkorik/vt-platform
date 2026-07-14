@@ -467,9 +467,18 @@ class TestPaymentReceipt:
         result = env.upload_receipt().handle(_receipt_command(app_id, applicant))
         assert result.application.payment_receipt is not None
 
-    def test_upload_rejected_while_draft(self) -> None:
+    def test_upload_allowed_while_draft(self) -> None:
+        # Upfront-payment festivals: the receipt may be attached while still a draft.
         env = Env()
         app_id, applicant = _create_app(env)
+        result = env.upload_receipt().handle(_receipt_command(app_id, applicant))
+        assert result.application.payment_receipt is not None
+        assert len(env.storage.saved) == 1
+
+    def test_upload_rejected_once_settled(self) -> None:
+        env = Env()
+        app_id, applicant = _create_app(env)
+        env.cancel().handle(CancelApplicationCommand(requested_by=applicant, application_id=app_id))
         with pytest.raises(ApplicationStateConflictError):
             env.upload_receipt().handle(_receipt_command(app_id, applicant))
         assert env.storage.saved == {}

@@ -420,12 +420,11 @@ class IllegalApplicationStatusTransitionError(ApplicationStateError):
 
 
 class PaymentReceiptNotAllowedError(ApplicationStateError):
-    """A payment receipt was uploaded while the order is not awaiting payment.
+    """A payment receipt was uploaded after the order was already settled.
 
-    The receipt is proof of payment for a placed order, so it may be attached only
-    after submission and before the order is settled (``SUBMITTED`` or
-    ``WAITING_PAYMENT``); a draft has nothing to pay for and a paid/closed order is
-    settled.
+    The receipt is proof of payment for the order and may be attached any time
+    before it settles (while ``DRAFT``, ``SUBMITTED`` or ``WAITING_PAYMENT``); once
+    the order is ``PAID``, ``COMPLETED`` or ``CANCELLED`` it is final.
     """
 
 

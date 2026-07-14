@@ -1069,9 +1069,12 @@ _LEGAL_APPLICATION_TRANSITIONS: Final[dict[ApplicationStatus, frozenset[Applicat
 _APPLICATION_EDITABLE_STATUSES: Final = frozenset({ApplicationStatus.DRAFT})
 
 #: Statuses in which the applicant may attach (or replace) the payment receipt:
-#: after the order is placed and before it is settled. A draft has nothing to pay
-#: for; a paid/completed/cancelled order is settled.
-_APPLICATION_RECEIPT_STATUSES: Final = frozenset({ApplicationStatus.SUBMITTED, ApplicationStatus.WAITING_PAYMENT})
+#: any time before the order is settled. Some festivals require payment upfront, so
+#: a receipt may be uploaded while the order is still a DRAFT in the wizard, through
+#: submission and while awaiting payment; a paid/completed/cancelled order is settled.
+_APPLICATION_RECEIPT_STATUSES: Final = frozenset(
+    {ApplicationStatus.DRAFT, ApplicationStatus.SUBMITTED, ApplicationStatus.WAITING_PAYMENT}
+)
 
 #: Statuses in which a submission reference's cached snapshot may still be
 #: refreshed by the projection. Past payment the order is settled and its lines
@@ -1287,7 +1290,7 @@ class Application:
         return bool(self._submission_refs) and all(ref.is_approved for ref in self._submission_refs.values())
 
     def accepts_payment_receipt(self) -> bool:
-        """Whether a payment receipt may currently be attached (placed, not yet settled)."""
+        """Whether a payment receipt may currently be attached (any time before settled)."""
         return self._status in _APPLICATION_RECEIPT_STATUSES
 
     # ------------------------------------------------------------------
@@ -1430,14 +1433,15 @@ class Application:
     def upload_payment_receipt(self, *, file: FileReference, now: datetime) -> list[DomainEvent]:
         """Attach (or replace) the applicant's proof of payment for the order.
 
-        Allowed only once the order is placed and before it is settled (``SUBMITTED``
-        or ``WAITING_PAYMENT``): a draft has nothing to pay for, and a paid/closed
-        order is final. This does not change the order status; the organizer still
-        confirms payment separately. Re-uploading replaces the previous receipt.
+        Allowed any time before the order is settled (``DRAFT``, ``SUBMITTED`` or
+        ``WAITING_PAYMENT``) - festivals that require upfront payment let the applicant
+        attach the receipt while still filling in the draft; a paid/closed order is
+        final. This does not change the order status; the organizer still confirms
+        payment separately. Re-uploading replaces the previous receipt.
         """
         if self._status not in _APPLICATION_RECEIPT_STATUSES:
             raise PaymentReceiptNotAllowedError(
-                f"A payment receipt can only be attached while the application awaits payment, not while {self._status.value}."
+                f"A payment receipt cannot be attached once the application is settled ({self._status.value})."
             )
         self._payment_receipt = PaymentReceipt(file=file, uploaded_at=now)
         self._touch(now)
