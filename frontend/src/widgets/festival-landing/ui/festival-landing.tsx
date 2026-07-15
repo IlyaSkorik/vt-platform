@@ -37,7 +37,7 @@ function LandingContent({
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
         {/* Summary sits after the hero on mobile/tablet and becomes the sticky
             right rail on desktop (order swap keeps a single DOM source). */}
-        <aside className="lg:sticky lg:top-6 lg:order-2 lg:self-start">
+        <aside className="lg:sticky lg:top-18 lg:order-2 lg:self-start">
           <LandingSummary festival={festival} applyPath={applyPath} />
         </aside>
         <main className="min-w-0 lg:order-1">

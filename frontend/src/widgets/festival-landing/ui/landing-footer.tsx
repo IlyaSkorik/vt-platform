@@ -100,7 +100,7 @@ export function LandingFooter({ contacts }: LandingFooterProps): React.JSX.Eleme
                 </ContactLink>
               ) : null}
               {social.map((link) => (
-                <ContactLink key={link.href} icon={ExternalLink} href={link.href} external>
+                <ContactLink key={`${link.label}-${link.href}`} icon={ExternalLink} href={link.href} external>
                   {link.label}
                 </ContactLink>
               ))}
