@@ -7,14 +7,20 @@ const GRID_CLASS = "grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3";
 interface FestivalGridProps {
   festivals: Festival[];
   now: Date;
+  detailBasePath: string;
 }
 
 /** Responsive card grid: 1 column on mobile, 2 on tablet, 3 on desktop. */
-export function FestivalGrid({ festivals, now }: FestivalGridProps): React.JSX.Element {
+export function FestivalGrid({ festivals, now, detailBasePath }: FestivalGridProps): React.JSX.Element {
   return (
     <div className={GRID_CLASS}>
       {festivals.map((festival) => (
-        <FestivalCard key={festival.id} festival={festival} now={now} />
+        <FestivalCard
+          key={festival.id}
+          festival={festival}
+          now={now}
+          detailBasePath={detailBasePath}
+        />
       ))}
     </div>
   );

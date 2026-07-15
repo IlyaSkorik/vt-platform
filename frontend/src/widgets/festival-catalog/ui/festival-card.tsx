@@ -1,5 +1,6 @@
 import { ArrowRight, CalendarDays, Clock3, MapPin, Ticket } from "lucide-react";
 import { Link } from "react-router";
+import { useAuth } from "@/app/providers";
 import {
   catalogStatusConfig,
   type Festival,
@@ -16,6 +17,7 @@ import { Avatar, Badge, Button, Card, CardContent, CardFooter } from "@/shared/u
 interface FestivalCardProps {
   festival: Festival;
   now: Date;
+  detailBasePath?: string;
 }
 
 function organizerInitials(name: string): string {
@@ -30,7 +32,12 @@ function organizerInitials(name: string): string {
 }
 
 /** A single competition tile — the atom of the catalog grid. */
-export function FestivalCard({ festival, now }: FestivalCardProps): React.JSX.Element {
+export function FestivalCard({
+  festival,
+  now,
+  detailBasePath = ROUTES.cabinetCompetitions,
+}: FestivalCardProps): React.JSX.Element {
+  const { isAuthenticated } = useAuth();
   const status = catalogStatusConfig(festival.status);
   const cover = resolveMediaUrl(festival.coverImage);
   const price = formatPrice(festival);
@@ -39,8 +46,11 @@ export function FestivalCard({ festival, now }: FestivalCardProps): React.JSX.El
   const closingSoon = isClosingSoon(festival, now);
   const logo = resolveMediaUrl(festival.organizer.logo);
 
-  const detailPath = `${ROUTES.cabinetCompetitions}/${festival.id}`;
-  const applyPath = `${detailPath}/apply`;
+  const detailPath = `${detailBasePath}/${festival.id}`;
+  const cabinetApplyPath = `${ROUTES.cabinetCompetitions}/${festival.id}/apply`;
+  const applyPath = isAuthenticated
+    ? cabinetApplyPath
+    : `${ROUTES.login}?next=${encodeURIComponent(cabinetApplyPath)}`;
 
   return (
     <Card className="group flex h-full flex-col overflow-hidden transition-shadow hover:shadow-md">

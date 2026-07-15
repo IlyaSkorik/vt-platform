@@ -76,7 +76,23 @@ const routes: RouteObject[] = [
     children: [
       {
         element: <PublicLayout />,
-        children: [{ index: true, lazy: lazyPage(() => import("@/pages/home"), "HomePage") }],
+        children: [
+          { index: true, lazy: lazyPage(() => import("@/pages/home"), "HomePage") },
+          {
+            path: ROUTES.competitions.slice(1),
+            element: <Outlet />,
+            children: [
+              {
+                index: true,
+                lazy: lazyPage(() => import("@/pages/festivals"), "PublicFestivalCatalogPage"),
+              },
+              {
+                path: ":festivalId",
+                lazy: lazyPage(() => import("@/pages/festivals"), "PublicFestivalLandingPage"),
+              },
+            ],
+          },
+        ],
       },
       {
         element: <MinimalLayout />,
