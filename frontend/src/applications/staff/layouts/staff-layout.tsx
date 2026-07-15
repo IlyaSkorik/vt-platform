@@ -57,8 +57,8 @@ function StaffNav({
                 "flex min-h-9 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
                 collapsed && "justify-center px-2",
                 isActive
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-accent/70 hover:text-accent-foreground",
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
               )
             }
           >
@@ -168,7 +168,7 @@ function StaffSidebar({
         >
           <span
             aria-hidden="true"
-            className="flex size-8 shrink-0 items-center justify-center rounded-md bg-foreground font-bold text-background text-sm"
+            className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary font-bold text-primary-foreground text-sm"
           >
             VT
           </span>
@@ -254,7 +254,7 @@ export function StaffLayout(): React.JSX.Element {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex min-h-svh bg-muted/20 text-foreground">
+    <div className="flex min-h-svh bg-background text-foreground">
       <a
         href={`#${SKIP_TARGET_ID}`}
         className="sr-only rounded-md bg-primary px-4 py-2 text-primary-foreground focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[var(--z-toast)]"

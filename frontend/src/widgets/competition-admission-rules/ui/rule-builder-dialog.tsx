@@ -279,7 +279,7 @@ export function RuleBuilderDialog({
                   </div>
                   <div>
                     <dt className="text-muted-foreground">Будет создано</dt>
-                    <dd className="font-semibold text-lg text-green-700">{plan.toCreate.length}</dd>
+                    <dd className="font-semibold text-lg text-success">{plan.toCreate.length}</dd>
                   </div>
                   <div>
                     <dt className="text-muted-foreground">Уже есть</dt>
@@ -293,7 +293,7 @@ export function RuleBuilderDialog({
                 форматов
               </p>
               {plan.toCreate.length === 0 ? (
-                <p className="text-amber-700 text-sm">
+                <p className="text-warning text-sm">
                   Все выбранные комбинации уже существуют. Измените выбор или закройте конструктор.
                 </p>
               ) : null}

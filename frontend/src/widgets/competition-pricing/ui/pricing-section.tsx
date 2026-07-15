@@ -448,7 +448,7 @@ export function PricingSection({
             <Card className="shadow-none">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <AlertTriangle className="size-4 text-amber-600" aria-hidden="true" />
+                  <AlertTriangle className="size-4 text-warning" aria-hidden="true" />
                   Предупреждения
                   <Badge variant="warning" size="sm">
                     {warnings.length}
@@ -460,7 +460,7 @@ export function PricingSection({
                   <button
                     key={warning.id}
                     type="button"
-                    className="w-full rounded-md border border-amber-200/80 bg-amber-50/50 px-2.5 py-2 text-left text-amber-950 text-xs transition-colors hover:bg-amber-50"
+                    className="w-full rounded-md border border-warning/35 bg-warning-surface/40 px-2.5 py-2 text-left text-warning-foreground text-xs transition-colors hover:bg-warning-surface/60"
                     onClick={() => {
                       if (warning.sectionId) onNavigateSection(warning.sectionId);
                     }}

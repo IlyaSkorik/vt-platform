@@ -513,7 +513,7 @@ export function AgeCategoriesSection({
                               className="flex items-center gap-2 text-muted-foreground"
                             >
                               <Check
-                                className="size-3.5 shrink-0 text-green-600"
+                                className="size-3.5 shrink-0 text-success"
                                 aria-hidden="true"
                               />
                               <span>{formatAgeRange(item.minAge, item.maxAge)}</span>
