@@ -1,4 +1,6 @@
+import { UserCircle2 } from "lucide-react";
 import { Link, Outlet } from "react-router";
+import { useAuth } from "@/app/providers";
 import { APP_NAME, ROUTES } from "@/shared/config";
 import { Button } from "@/shared/ui";
 import { ThemeToggle } from "./theme-toggle";
@@ -12,6 +14,7 @@ import { ThemeToggle } from "./theme-toggle";
  * not app surfaces.
  */
 export function PublicLayout(): React.JSX.Element {
+  const { isAuthenticated } = useAuth();
   const entrepreneurName = "Скорик Илья Андреевич";
   const legalStatus = "Самозанятый";
   const unp = "УНП: ..";
@@ -19,7 +22,7 @@ export function PublicLayout(): React.JSX.Element {
   return (
     <div className="flex min-h-svh flex-col bg-background">
       <header className="sticky top-0 z-[var(--z-sticky)] border-border border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-3 px-4 md:px-8">
+        <div className="mx-auto flex h-16 w-full max-w-336 items-center justify-between gap-3 px-4 md:px-8">
           <div className="flex min-w-0 items-center gap-3 md:gap-5">
             <Link
               to={ROUTES.home}
@@ -48,12 +51,22 @@ export function PublicLayout(): React.JSX.Element {
 
           <div className="flex shrink-0 items-center gap-2">
             <ThemeToggle />
-            <Button asChild variant="ghost" size="sm">
-              <Link to={ROUTES.login}>Войти</Link>
-            </Button>
-            <Button asChild size="sm" className="hidden sm:inline-flex">
-              <Link to={ROUTES.register}>Регистрация</Link>
-            </Button>
+            {isAuthenticated ? (
+              <Button asChild iconOnly variant="ghost" size="sm" aria-label="Профиль">
+                <Link to={ROUTES.cabinetProfile}>
+                  <UserCircle2 className="size-5" aria-hidden="true" />
+                </Link>
+              </Button>
+            ) : (
+              <>
+                <Button asChild variant="ghost" size="sm">
+                  <Link to={ROUTES.login}>Войти</Link>
+                </Button>
+                <Button asChild size="sm" className="hidden sm:inline-flex">
+                  <Link to={ROUTES.register}>Регистрация</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>
