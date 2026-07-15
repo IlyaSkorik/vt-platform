@@ -79,7 +79,7 @@ export function HomePage(): React.JSX.Element {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2.5 pt-1">
-              <Button asChild size="lg" className="min-w-[13.5rem]">
+              <Button asChild size="lg" className="min-w-[13.5rem] text-foreground hover:text-foreground">
                 <a href="#active-events">Найти мероприятие</a>
               </Button>
               <Button asChild size="lg" variant="outline" className="min-w-[9rem]">
@@ -150,7 +150,7 @@ export function HomePage(): React.JSX.Element {
                           {festival.description || "Подробности доступны на странице мероприятия."}
                         </p>
                         <div className="grid gap-2">
-                          <Button asChild size="sm" className="w-full">
+                          <Button asChild size="sm" className="w-full text-inverse">
                             <Link to={detailPath}>Открыть мероприятие</Link>
                           </Button>
                           {status.apply.visible ? (
@@ -284,7 +284,7 @@ export function HomePage(): React.JSX.Element {
                 Проводите собственные конкурсы или фестивали? Используйте платформу «Взлёт талантов»
                 для автоматизации проведения мероприятий.
               </p>
-              <Button asChild size="lg">
+              <Button asChild size="lg" className="text-foreground hover:text-foreground">
                 <Link to="mailto:hello@vzlet-talantov.by">Свяжитесь с нами</Link>
               </Button>
             </div>

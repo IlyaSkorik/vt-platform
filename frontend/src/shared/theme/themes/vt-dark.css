@@ -1,69 +1,68 @@
 /**
- * Theme: VT Dark.
+ * Theme: Vision Glass
  *
- * The dark counterpart to `vt-light.css`. It declares the SAME semantic tokens
- * with dark-appropriate values — the only difference between the two themes.
- * React components are entirely unaware which theme is active.
- *
- * Applied via the `.dark` class (toggled by the ThemeProvider on <html>) and,
- * for completeness, the `[data-theme="dark"]` attribute.
+ * Glassmorphism + Apple Vision Pro inspired.
  */
+
 .dark,
 :root[data-theme="dark"] {
   color-scheme: dark;
 
   /* Backgrounds */
-  --background-primary: var(--neutral-950);
-  --background-secondary: var(--neutral-900);
-  --background-tertiary: var(--neutral-800);
+  --background-primary: oklch(0.095 0.006 240);
+  --background-secondary: oklch(0.125 0.008 240);
+  --background-tertiary: oklch(0.155 0.010 240);
 
   /* Surfaces */
-  --surface-primary: var(--neutral-900);
-  --surface-secondary: var(--neutral-800);
-  --surface-elevated: var(--neutral-800);
-  --surface-overlay: var(--neutral-800);
+  --surface-primary: oklch(0.135 0.008 240);
+  --surface-secondary: oklch(0.170 0.010 240);
+  --surface-elevated: oklch(0.205 0.012 240);
+  --surface-overlay: oklch(0.205 0.012 240);
 
   /* Text */
-  --text-primary: var(--neutral-50);
-  --text-secondary: var(--neutral-300);
-  --text-muted: var(--neutral-400);
-  --text-inverse: var(--neutral-950);
-  --text-on-brand: var(--neutral-0);
+  --text-primary: oklch(0.985 0.002 240);
+  --text-secondary: oklch(0.850 0.006 240);
+  --text-muted: oklch(0.700 0.008 240);
+  --text-inverse: oklch(10.79% 0.01025 174.842);
+  --text-on-brand: oklch(0.995 0 0);
 
   /* Borders & focus */
-  --border-subtle: var(--neutral-800);
-  --border-default: var(--neutral-700);
-  --border-strong: var(--neutral-600);
-  --border-focus: var(--rocket-400);
+  --border-subtle: oklch(0.215 0.010 240);
+  --border-default: oklch(0.285 0.012 240);
+  --border-strong: oklch(0.365 0.014 240);
+  --border-focus: oklch(0.79 0.16 220);
 
-  /* Interactive — brightened brand colours for contrast on dark surfaces. */
-  --interactive-primary: var(--rocket-500);
-  --interactive-primary-hover: var(--rocket-400);
-  --interactive-secondary: var(--gold-300);
-  --interactive-accent: var(--rocket-400);
+  /* Interactive */
+  --interactive-primary: oklch(0.74 0.17 220);
+  --interactive-primary-hover: oklch(0.81 0.17 220);
+  --interactive-secondary: oklch(0.78 0.14 190);
+  --interactive-accent: oklch(0.70 0.16 255);
 
   /* Status */
-  --success: var(--green-400);
-  --success-surface: color-mix(in oklab, var(--green-500) 24%, transparent);
-  --success-foreground: var(--neutral-950);
-  --warning: var(--amber-400);
-  --warning-surface: color-mix(in oklab, var(--amber-500) 24%, transparent);
-  --warning-foreground: var(--neutral-950);
-  --danger: var(--red-400);
-  --danger-surface: color-mix(in oklab, var(--red-500) 24%, transparent);
-  --danger-foreground: var(--neutral-950);
-  --info: var(--sky-400);
-  --info-surface: color-mix(in oklab, var(--sky-500) 24%, transparent);
-  --info-foreground: var(--neutral-950);
+  --success: oklch(0.74 0.17 150);
+  --success-surface: color-mix(in oklab, var(--success) 20%, transparent);
+  --success-foreground: oklch(0.98 0 0);
 
-  /* Elevation colour — deeper, near-black on dark surfaces. */
-  --shadow-color: color-mix(in oklab, var(--black) 45%, transparent);
-  --shadow-color-strong: color-mix(in oklab, var(--black) 60%, transparent);
+  --warning: oklch(0.82 0.17 85);
+  --warning-surface: color-mix(in oklab, var(--warning) 20%, transparent);
+  --warning-foreground: oklch(0.98 0 0);
 
-  /* Data-visualisation series. */
-  --chart-1: var(--rocket-400);
-  --chart-2: var(--blue-600);
-  --chart-3: var(--gold-300);
-  --chart-4: var(--flame-300);
-  --chart-5: var(--green-400);
+  --danger: oklch(0.68 0.22 25);
+  --danger-surface: color-mix(in oklab, var(--danger) 20%, transparent);
+  --danger-foreground: oklch(0.98 0 0);
+
+  --info: oklch(0.77 0.15 220);
+  --info-surface: color-mix(in oklab, var(--info) 20%, transparent);
+  --info-foreground: oklch(0.98 0 0);
+
+  /* Shadows */
+  --shadow-color: oklch(0 0 0 / 0.32);
+  --shadow-color-strong: oklch(0 0 0 / 0.55);
+
+  /* Charts */
+  --chart-1: oklch(0.74 0.17 220);
+  --chart-2: oklch(0.78 0.14 190);
+  --chart-3: oklch(0.70 0.16 255);
+  --chart-4: oklch(0.74 0.17 150);
+  --chart-5: oklch(0.82 0.17 85);
 }
