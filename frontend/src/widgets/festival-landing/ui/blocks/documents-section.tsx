@@ -59,7 +59,7 @@ export function DocumentsSection({ documents }: DocumentsSectionProps): React.JS
   }
   return (
     <LandingSection id="documents" title="Документы">
-      <ul className="max-w-3xl space-y-3">
+      <ul className="space-y-3">
         {documents.map((document) => (
           <DocumentRow key={document.id} document={document} />
         ))}

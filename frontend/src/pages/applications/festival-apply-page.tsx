@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { generatePath, Link, useParams } from "react-router";
+import { generatePath, Link, useNavigate, useParams } from "react-router";
 
 import {
   useApplication,
@@ -324,6 +324,7 @@ function ReviewStep({
   registration: Registration;
 }): React.JSX.Element {
   const submit = useSubmitApplication(applicationId);
+  const navigate = useNavigate();
 
   // Proactively mirror the backend's submit invariants so the applicant sees what
   // the festival requires before the request is rejected.
@@ -391,7 +392,13 @@ function ReviewStep({
               <Button
                 disabled={!canSubmit}
                 loading={submit.isPending}
-                onClick={() => submit.mutate()}
+                onClick={() =>
+                  submit.mutate(undefined, {
+                    onSuccess: () => {
+                      void navigate(ROUTES.cabinetApplications);
+                    },
+                  })
+                }
               >
                 Подать заявку
               </Button>
