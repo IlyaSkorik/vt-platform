@@ -27,6 +27,8 @@ export const ROUTES = {
   dashboard: "/dashboard",
   participants: "/participants",
   competitions: "/competitions",
+  privacyPolicy: "/privacy-policy",
+  cookiesPolicy: "/cookies",
   applications: "/applications",
   performances: "/performances",
   judging: "/judging",
