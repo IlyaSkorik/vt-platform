@@ -71,7 +71,7 @@ export function ReceiptCard({
           прикрепить сразу при подаче заявки.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-3">
+      <CardContent className="flex flex-row justify-between">
         {receipt ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <CheckCircle2 className="size-4 text-success" />

@@ -387,7 +387,7 @@ function ReviewStep({
           ) : null}
           {submit.isError ? <Alert variant="danger">{errorMessage(submit.error)}</Alert> : null}
           {application.status === "DRAFT" ? (
-            <div>
+            <div className="flex justify-end">
               <Button
                 disabled={!canSubmit}
                 loading={submit.isPending}
