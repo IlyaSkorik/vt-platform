@@ -3,6 +3,7 @@ import { Link, Outlet } from "react-router";
 import { useAuth } from "@/app/providers";
 import { APP_NAME, ROUTES } from "@/shared/config";
 import { Button } from "@/shared/ui";
+import { SiteFooter } from "./site-footer";
 import { ThemeToggle } from "./theme-toggle";
 
 /**
@@ -15,9 +16,6 @@ import { ThemeToggle } from "./theme-toggle";
  */
 export function PublicLayout(): React.JSX.Element {
   const { isAuthenticated } = useAuth();
-  const entrepreneurName = "Скорик Илья Андреевич";
-  const legalStatus = "Самозанятый";
-  const unp = "УНП: ..";
 
   return (
     <div className="flex min-h-svh flex-col bg-background">
@@ -75,36 +73,7 @@ export function PublicLayout(): React.JSX.Element {
         <Outlet />
       </main>
 
-      <footer className="border-border border-t bg-background/80 px-4 pt-8 pb-4 md:px-8">
-        <div className="mx-auto grid w-full max-w-7xl gap-6 text-sm text-muted-foreground md:grid-cols-3">
-          <div className="space-y-2">
-            <p className="font-medium text-foreground">{APP_NAME}</p>
-            <p>Платформа фестивалей и онлайн-подачи заявок.</p>
-          </div>
-
-          <div className="space-y-2">
-            <p className="font-medium text-foreground">Документы</p>
-            <div className="flex flex-col items-start gap-1">
-              <Link to={ROUTES.privacyPolicy} className="hover:text-foreground hover:underline">
-                Политика обработки персональных данных
-              </Link>
-              <Link to={ROUTES.cookiesPolicy} className="hover:text-foreground hover:underline">
-                Политика обработки файлов cookies
-              </Link>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <p className="font-medium text-foreground">Реквизиты</p>
-            <p>{entrepreneurName}</p>
-            <p>{legalStatus}</p>
-            <p>{unp}</p>
-          </div>
-        </div>
-        <div className="mx-auto mt-6 w-full max-w-7xl border-border border-t pt-4 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} {APP_NAME}
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

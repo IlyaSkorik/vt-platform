@@ -4,6 +4,7 @@ import { Link, NavLink, Outlet, useLocation } from "react-router";
 
 import { ThemeToggle } from "@/app/layouts/theme-toggle";
 import { UserMenu } from "@/app/layouts/user-menu";
+import { SiteFooter } from "@/app/layouts/site-footer";
 import { useAuth } from "@/app/providers";
 import {
   PARTICIPANT_NAVIGATION,
@@ -254,16 +255,14 @@ export function ParticipantLayout(): React.JSX.Element {
           </div>
         </header>
         {staffMembership ? (
-          <div className="border-border border-b bg-muted/30 px-4 py-2 xl:hidden">
+          <div className="bg-muted/20 px-4 py-2 xl:hidden">
             <WorkspaceSwitcher />
           </div>
         ) : null}
         <main id={SKIP_TARGET_ID} tabIndex={-1} className="flex-1 p-4 outline-none md:p-6 lg:p-8">
           <Outlet />
         </main>
-        <footer className="border-border border-t px-4 py-4 text-muted-foreground text-xs md:px-8">
-          Личный кабинет · {APP_NAME}
-        </footer>
+        <SiteFooter />
       </div>
     </div>
   );
