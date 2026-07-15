@@ -59,7 +59,7 @@ export const Checkbox = forwardRef<React.ElementRef<typeof CheckboxPrimitive.Roo
             {...(required != null ? { required } : {})}
             {...(checked != null ? { checked } : {})}
             className={cn(
-              "peer shrink-0 rounded-sm border border-input bg-background shadow-elevation-1 outline-none transition-colors",
+              "peer shrink-0 cursor-pointer rounded-sm border border-input bg-background shadow-elevation-1 outline-none transition-colors",
               "focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring",
               "data-[state=checked]:bg-primary data-[state=checked]:border-primary data-[state=checked]:text-primary-foreground",
               "data-[state=indeterminate]:bg-primary data-[state=indeterminate]:border-primary data-[state=indeterminate]:text-primary-foreground",
@@ -83,7 +83,7 @@ export const Checkbox = forwardRef<React.ElementRef<typeof CheckboxPrimitive.Roo
             <label
               htmlFor={checkboxId}
               className={cn(
-                "text-sm font-medium text-foreground select-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
+                "cursor-pointer text-sm font-medium text-foreground select-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
                 size === "md" && "leading-5",
               )}
             >

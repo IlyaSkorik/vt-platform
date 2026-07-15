@@ -33,7 +33,7 @@ export const SelectTrigger = forwardRef<
       data-slot="select-trigger"
       aria-invalid={invalid || undefined}
       className={cn(
-        "flex w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 text-foreground shadow-elevation-1 outline-none transition-colors",
+        "flex w-full cursor-pointer items-center justify-between gap-2 rounded-md border border-input bg-background px-3 text-foreground shadow-elevation-1 outline-none transition-colors",
         "focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring",
         "data-[placeholder]:text-muted-foreground",
         "disabled:cursor-not-allowed disabled:opacity-50",
@@ -93,7 +93,7 @@ export const SelectItem = forwardRef<
       ref={ref}
       data-slot="select-item"
       className={cn(
-        "relative flex w-full cursor-default select-none items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm text-popover-foreground outline-none",
+        "relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm text-popover-foreground outline-none",
         "focus:bg-accent focus:text-accent-foreground data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         className,

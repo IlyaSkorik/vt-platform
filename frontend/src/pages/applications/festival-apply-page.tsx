@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { generatePath, Link, useParams } from "react-router";
 
 import {
@@ -18,7 +18,6 @@ import type { Registration } from "@/shared/api/generated/model-public-catalog";
 import { ROUTES } from "@/shared/config";
 import {
   Alert,
-  Badge,
   Button,
   Card,
   CardContent,
@@ -34,8 +33,6 @@ import {
   PageHeader,
   PageTitle,
 } from "@/shared/ui";
-
-const STEPS = ["Выступления", "Услуги", "Согласия", "Проверка"] as const;
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Произошла ошибка. Попробуйте ещё раз.";
@@ -113,7 +110,6 @@ function WizardBody({
 }): React.JSX.Element {
   const { data: application, isLoading: applicationLoading } = useApplication(applicationId);
   const { data: registration, isLoading: registrationLoading } = useRegistration(competitionId);
-  const [step, setStep] = useState(0);
 
   if (applicationLoading || registrationLoading || !application || !registration) {
     return (
@@ -130,71 +126,16 @@ function WizardBody({
       <PageHeader>
         <PageTitle>{registration.competition.title}</PageTitle>
         <PageDescription>
-          Шаг {step + 1} из {STEPS.length}: {STEPS[step]}
-          {registration.registrationOpen ? "" : " · регистрация закрыта"}
+          Заполните заявку последовательно на одной странице.
+          {registration.registrationOpen ? "" : " Регистрация закрыта."}
         </PageDescription>
       </PageHeader>
-      <PageContent>
-        <div className="mb-6 flex flex-wrap gap-2">
-          {STEPS.map((label, index) => (
-            <Badge
-              key={label}
-              variant={index === step ? "primary" : index < step ? "success" : "neutral"}
-            >
-              {index + 1}. {label}
-            </Badge>
-          ))}
-        </div>
-
-        {step === 0 ? (
-          <PerformancesStep
-            applicationId={applicationId}
-            application={application}
-            registration={registration}
-          />
-        ) : null}
-        {step === 1 ? (
-          <ServicesStep
-            applicationId={applicationId}
-            application={application}
-            registration={registration}
-          />
-        ) : null}
-        {step === 2 ? (
-          <ConsentsStep
-            applicationId={applicationId}
-            application={application}
-            registration={registration}
-          />
-        ) : null}
-        {step === 3 ? (
-          <ReviewStep
-            applicationId={applicationId}
-            application={application}
-            registration={registration}
-          />
-        ) : null}
-
-        <div className="mt-6 flex justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={step === 0}
-            onClick={() => setStep((value) => Math.max(0, value - 1))}
-          >
-            Назад
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={step === STEPS.length - 1}
-            onClick={() => setStep((value) => Math.min(STEPS.length - 1, value + 1))}
-          >
-            Далее
-          </Button>
-        </div>
-
-        <p className="mt-6 text-sm">
+      <PageContent className="flex flex-col gap-6">
+        <PerformancesStep applicationId={applicationId} application={application} registration={registration} />
+        <ServicesStep applicationId={applicationId} application={application} registration={registration} />
+        <ConsentsStep applicationId={applicationId} application={application} registration={registration} />
+        <ReviewStep applicationId={applicationId} application={application} registration={registration} />
+        <p className="text-sm">
           <Link to={generatePath(ROUTES.cabinetApplication, { applicationId })}>
             Открыть карточку заявки
           </Link>
@@ -312,17 +253,43 @@ function ConsentsStep({
   const recordConsents = useRecordConsents(applicationId);
   const required = registration.requiredConsents.filter((consent) => consent.required);
   const recordedCodes = new Set(application.consents.map((consent) => consent.code));
-  const [accepted, setAccepted] = useState<Record<string, boolean>>({});
-
-  const allChecked = required.every(
-    (consent) => accepted[consent.code] || recordedCodes.has(consent.code),
+  const [accepted, setAccepted] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(required.map((consent) => [consent.code, recordedCodes.has(consent.code)])),
   );
+  const autosavedSignature = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (required.length === 0 || recordConsents.isPending) {
+      return;
+    }
+    const signature = required
+      .map((consent) => `${consent.code}:${accepted[consent.code] === true ? "1" : "0"}`)
+      .sort()
+      .join("|");
+    if (autosavedSignature.current === signature) {
+      return;
+    }
+    autosavedSignature.current = signature;
+    const handle = setTimeout(() => {
+      recordConsents.mutate({
+        consents: required
+          .filter((consent) => accepted[consent.code] === true)
+          .map((consent) => ({ code: consent.code, version: "v1" })),
+      });
+    }, 250);
+    return () => clearTimeout(handle);
+  }, [accepted, recordConsents, required]);
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Согласия</CardTitle>
-        <CardDescription>Обязательные согласия определяются фестивалем.</CardDescription>
+      <CardHeader className="flex flex-row items-start justify-between gap-3">
+        <div>
+          <CardTitle>Согласия</CardTitle>
+          <CardDescription>Обязательные согласия определяются фестивалем.</CardDescription>
+        </div>
+        <span className="min-h-5 text-xs text-muted-foreground">
+          {recordConsents.isPending ? "Сохраняем…" : ""}
+        </span>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {required.length === 0 ? (
@@ -331,7 +298,7 @@ function ConsentsStep({
           required.map((consent) => (
             <Checkbox
               key={consent.code}
-              checked={accepted[consent.code] || recordedCodes.has(consent.code)}
+              checked={accepted[consent.code] === true}
               onCheckedChange={(checked) =>
                 setAccepted((prev) => ({ ...prev, [consent.code]: checked === true }))
               }
@@ -339,21 +306,8 @@ function ConsentsStep({
             />
           ))
         )}
-        {required.length > 0 ? (
-          <div>
-            <Button
-              size="sm"
-              disabled={!allChecked}
-              loading={recordConsents.isPending}
-              onClick={() =>
-                recordConsents.mutate({
-                  consents: required.map((consent) => ({ code: consent.code, version: "v1" })),
-                })
-              }
-            >
-              Сохранить согласия
-            </Button>
-          </div>
+        {recordConsents.isError ? (
+          <Alert variant="danger">{errorMessage(recordConsents.error)}</Alert>
         ) : null}
       </CardContent>
     </Card>

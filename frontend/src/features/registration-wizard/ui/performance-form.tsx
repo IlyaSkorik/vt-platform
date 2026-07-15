@@ -524,7 +524,10 @@ function PriceSection({
   const calculate = useCalculatePrice(submissionId);
   const { mutate } = calculate;
   const performance = submission.performance;
-  const participantCount = submission.participants.length;
+  const participantCount = submission.participants.reduce(
+    (total, participant) => total + (participant.memberCount ?? 1),
+    0,
+  );
 
   // The price is computed by the backend from the performance combination and the
   // participant count. Recalculate automatically whenever those change, so the

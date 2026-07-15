@@ -44,7 +44,7 @@ export function PerformanceBuilder({
           />
         ))
       )}
-      <div>
+      <div className="flex justify-end">
         <Button
           variant="outline"
           size="sm"

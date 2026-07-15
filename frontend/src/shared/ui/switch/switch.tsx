@@ -54,7 +54,7 @@ export const Switch = forwardRef<React.ElementRef<typeof SwitchPrimitive.Root>, 
             disabled={disabled}
             aria-describedby={describedBy}
             className={cn(
-              "peer inline-flex shrink-0 items-center rounded-full border border-transparent p-0.5 shadow-elevation-1 outline-none transition-colors",
+              "peer inline-flex shrink-0 cursor-pointer items-center rounded-full border border-transparent p-0.5 shadow-elevation-1 outline-none transition-colors",
               "focus-visible:ring-[3px] focus-visible:ring-ring/50",
               "data-[state=checked]:bg-primary data-[state=unchecked]:bg-input",
               "disabled:cursor-not-allowed disabled:opacity-50",
@@ -74,7 +74,7 @@ export const Switch = forwardRef<React.ElementRef<typeof SwitchPrimitive.Root>, 
           {label != null && (
             <label
               htmlFor={switchId}
-              className="text-sm font-medium text-foreground select-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
+              className="cursor-pointer text-sm font-medium text-foreground select-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
             >
               {label}
             </label>

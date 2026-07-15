@@ -15,6 +15,25 @@ function nameById(
   return id ? items.find((item) => item.id === id)?.name : undefined;
 }
 
+function nonEmptyText(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+function leadLabel(lead: unknown): string | undefined {
+  if (!lead || typeof lead !== "object") {
+    return undefined;
+  }
+  const record = lead as Record<string, unknown>;
+  const displayName = nonEmptyText(record.displayName);
+  if (displayName) {
+    return displayName;
+  }
+  const firstName = nonEmptyText(record.firstName);
+  const lastName = nonEmptyText(record.lastName);
+  const fullName = [lastName, firstName].filter(Boolean).join(" ").trim();
+  return fullName.length > 0 ? fullName : undefined;
+}
+
 export function PerformanceCard({
   submissionId,
   index,
@@ -52,7 +71,7 @@ export function PerformanceCard({
       <div className="flex items-center justify-between gap-3 p-4">
         <button
           type="button"
-          className="flex flex-1 items-center gap-3 text-left"
+          className="flex flex-1 items-center gap-3 text-left cursor-pointer"
           onClick={() => setOpen((value) => !value)}
         >
           {open ? (
@@ -67,7 +86,7 @@ export function PerformanceCard({
             </p>
             <p className="text-sm text-muted-foreground">
               {[
-                lead ? `${lead.lastName} ${lead.firstName}` : null,
+                leadLabel(lead),
                 nameById(registration.nominations, performance?.nominationId),
                 nameById(registration.participationFormats, performance?.participationFormatId),
               ]
