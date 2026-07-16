@@ -112,8 +112,16 @@ async function runAction(submissionId: string, action: string, comment: string):
   } catch (error) {
     const response = (error as { response?: Response })?.response;
     if (response) {
-      const body = (await response.json().catch(() => null)) as { detail?: string } | null;
-      throw new Error(body?.detail ?? "Не удалось выполнить действие.");
+      const body = (await response.json().catch(() => null)) as
+        | { detail?: string; title?: string; message?: string; error?: string }
+        | null;
+      throw new Error(
+        body?.detail ??
+          body?.message ??
+          body?.error ??
+          body?.title ??
+          `Не удалось выполнить действие (HTTP ${response.status}).`,
+      );
     }
     throw error;
   }

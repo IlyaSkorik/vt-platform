@@ -29,7 +29,7 @@ from apps.applications.domain.value_objects import (
     PerformanceTitle,
 )
 
-from ._support import ensure_owner, load_submission, parse_submission_id, parse_user_id
+from ._support import ensure_owner, load_submission, parse_submission_id, parse_user_id, try_resubmit_after_correction_edit
 
 __all__ = ["SetPerformanceHandler", "UpdatePerformanceHandler"]
 
@@ -91,6 +91,7 @@ class SetPerformanceHandler:
         )
         with translate_domain_errors():
             domain_events = submission.set_performance(performance=performance, now=now)
+        domain_events += try_resubmit_after_correction_edit(submission=submission, catalog=self._catalog, now=now)
         self._submissions.save(submission)
         self._events.publish(domain_events)
         return SubmissionOperationResultDto.of(submission, tuple(domain_events))
@@ -140,6 +141,7 @@ class UpdatePerformanceHandler:
         )
         with translate_domain_errors():
             domain_events = submission.set_performance(performance=performance, now=now)
+        domain_events += try_resubmit_after_correction_edit(submission=submission, catalog=self._catalog, now=now)
         self._submissions.save(submission)
         self._events.publish(domain_events)
         return SubmissionOperationResultDto.of(submission, tuple(domain_events))

@@ -91,6 +91,30 @@ def _submission_ids_for_application(application_id: str | None) -> list[str]:
     return [str(ref.get("submission_id") or "").strip() for ref in refs if str(ref.get("submission_id") or "").strip()]
 
 
+def _application_urls(application_id: str | None) -> tuple[str, str]:
+    base = str(getattr(settings, "FRONTEND_BASE_URL", "") or "").rstrip("/")
+    cabinet_url = f"{base}/cabinet/applications" if base else "/cabinet/applications"
+    if application_id:
+        return cabinet_url, f"{cabinet_url}/{application_id}"
+    return cabinet_url, cabinet_url
+
+
+def _email_html(*, title: str, intro: str, comment: str, button_label: str, button_url: str) -> str:
+    return (
+        "<div style=\"font-family:Arial,sans-serif;line-height:1.5;color:#111\">"
+        f"<h2 style=\"margin:0 0 12px\">{title}</h2>"
+        f"<p style=\"margin:0 0 12px\">{intro}</p>"
+        f"<p style=\"margin:0 0 8px\"><strong>Комментарий организатора:</strong></p>"
+        f"<p style=\"margin:0 0 18px;white-space:pre-line\">{comment}</p>"
+        f"<p style=\"margin:0 0 20px\"><a href=\"{button_url}\" "
+        "style=\"display:inline-block;background:#1d4ed8;color:#fff;text-decoration:none;"
+        "padding:10px 14px;border-radius:8px;font-weight:600\">"
+        f"{button_label}</a></p>"
+        "<p style=\"margin:0;color:#6b7280\">С уважением,<br/>Оргкомитет конкурса</p>"
+        "</div>"
+    )
+
+
 def _capabilities(status: str) -> list[dict[str, str]]:
     mapping: dict[str, list[tuple[str, str]]] = {
         "SUBMITTED": [("approve", "Одобрить"), ("return_for_correction", "Вернуть на исправление"), ("cancel", "Отменить")],
@@ -467,8 +491,25 @@ class OrganizerProcessingActionView(_StaffView):
                     StartReviewCommand(submission_id=submission_id, reviewer_id=user_id)
                 )
             elif action == "approve":
-                result = composition.build_approve_submission_handler().handle(
-                    ApproveSubmissionCommand(submission_id=submission_id, reviewer_id=user_id)
+                application_id, _, _ = _application_meta_for_submission(submission_id)
+                target_submission_ids = _submission_ids_for_application(application_id) or [submission_id]
+                processed_ids: list[str] = []
+                for target_id in target_submission_ids:
+                    model = SubmissionModel.objects.get(id=target_id, deleted_at__isnull=True)
+                    if model.status not in {"SUBMITTED", "UNDER_REVIEW"}:
+                        continue
+                    if model.status == "SUBMITTED":
+                        composition.build_start_review_handler().handle(
+                            StartReviewCommand(submission_id=target_id, reviewer_id=user_id)
+                        )
+                    composition.build_approve_submission_handler().handle(
+                        ApproveSubmissionCommand(submission_id=target_id, reviewer_id=user_id)
+                    )
+                    processed_ids.append(target_id)
+                if not processed_ids:
+                    return Response({"detail": "Нет выступлений, доступных для одобрения."}, status=409)
+                result = composition.build_get_submission_handler().handle(
+                    GetSubmissionQuery(submission_id=processed_ids[0], requested_by=user_id)
                 )
             elif action == "return_for_correction":
                 if not comment:
@@ -494,7 +535,9 @@ class OrganizerProcessingActionView(_StaffView):
                     processed_ids.append(target_id)
                 if not processed_ids:
                     return Response({"detail": "Нет выступлений, доступных для возврата на исправление."}, status=409)
-                result = composition.build_get_submission_handler().handle(GetSubmissionQuery(submission_id=processed_ids[0]))
+                result = composition.build_get_submission_handler().handle(
+                    GetSubmissionQuery(submission_id=processed_ids[0], requested_by=user_id)
+                )
                 primary_model = SubmissionModel.objects.get(id=processed_ids[0], deleted_at__isnull=True)
                 recipient = UserModel.objects.filter(id=primary_model.applicant_id, deleted_at__isnull=True).first()
                 if recipient is not None and recipient.email:
@@ -505,13 +548,15 @@ class OrganizerProcessingActionView(_StaffView):
                     )
                     application_number = (application_id or submission_id)[:8].upper()
                     subject = f"Заявка #{application_number} возвращена на исправление"
+                    cabinet_url, detail_url = _application_urls(application_id)
                     body_text = (
                         f"Здравствуйте, {recipient.first_name}!\n\n"
                         f"Организатор вернул заявку #{application_number}"
                         f"{f' ({competition_title})' if competition_title else ''} на исправление.\n"
                         f"Возвращено выступлений: {len(processed_ids)}.\n\n"
                         f"Комментарий организатора:\n{comment}\n\n"
-                        "Откройте заявку в личном кабинете, внесите исправления и отправьте повторно.\n\n"
+                        f"Откройте заявку в личном кабинете: {detail_url}\n"
+                        f"Список заявок: {cabinet_url}\n\n"
                         "С уважением,\nОргкомитет конкурса"
                     )
                     send_mail(
@@ -520,6 +565,17 @@ class OrganizerProcessingActionView(_StaffView):
                         from_email=settings.DEFAULT_FROM_EMAIL,
                         recipient_list=[recipient.email],
                         fail_silently=False,
+                        html_message=_email_html(
+                            title=subject,
+                            intro=(
+                                f"Организатор вернул заявку #{application_number}"
+                                f"{f' ({competition_title})' if competition_title else ''} на исправление."
+                                f" Возвращено выступлений: {len(processed_ids)}."
+                            ),
+                            comment=comment,
+                            button_label="Открыть заявку в ЛК",
+                            button_url=detail_url,
+                        ),
                     )
                     for target_id in processed_ids:
                         target_model = SubmissionModel.objects.get(id=target_id, deleted_at__isnull=True)
@@ -605,13 +661,15 @@ class OrganizerProcessingActionView(_StaffView):
                     application_number = (application_id or submission_id)[:8].upper()
                     requested_types = ", ".join(str(item).upper() for item in missing_types)
                     subject = f"По заявке #{application_number} запрошены недостающие файлы"
+                    cabinet_url, detail_url = _application_urls(application_id)
                     body_text = (
                         f"Здравствуйте, {recipient.first_name}!\n\n"
                         f"Организатор запросил дополнительные файлы по заявке #{application_number}"
                         f"{f' ({competition_title})' if competition_title else ''}.\n"
                         f"Что нужно прикрепить: {requested_types}.\n\n"
                         f"Комментарий организатора:\n{comment}\n\n"
-                        "Пожалуйста, загрузите файлы в личном кабинете.\n\n"
+                        f"Откройте заявку в личном кабинете: {detail_url}\n"
+                        f"Список заявок: {cabinet_url}\n\n"
                         "С уважением,\nОргкомитет конкурса"
                     )
                     send_mail(
@@ -620,6 +678,17 @@ class OrganizerProcessingActionView(_StaffView):
                         from_email=settings.DEFAULT_FROM_EMAIL,
                         recipient_list=[recipient.email],
                         fail_silently=False,
+                        html_message=_email_html(
+                            title=subject,
+                            intro=(
+                                f"Организатор запросил дополнительные файлы по заявке #{application_number}"
+                                f"{f' ({competition_title})' if competition_title else ''}. "
+                                f"Нужно прикрепить: {requested_types}."
+                            ),
+                            comment=comment,
+                            button_label="Загрузить файлы в ЛК",
+                            button_url=detail_url,
+                        ),
                     )
                     messages = list(model.participant_messages or [])
                     messages.append(
@@ -680,15 +749,27 @@ class OrganizerProcessingActionView(_StaffView):
                     f"Здравствуйте, {recipient.first_name}!\n\n"
                     f"Пожалуйста, прикрепите квитанцию об оплате по заявке #{application_number}"
                     f"{f' ({competition_title})' if competition_title else ''}.\n"
+                    f"Откройте заявку: {_application_urls(application_id)[1]}\n"
                     "После прикрепления квитанции заявка будет готова к дальнейшей обработке.\n\n"
                     "С уважением,\nОргкомитет конкурса"
                 )
+                _, detail_url = _application_urls(application_id)
                 send_mail(
                     subject=subject,
                     message=body_text,
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[recipient.email],
                     fail_silently=False,
+                    html_message=_email_html(
+                        title=subject,
+                        intro=(
+                            f"Пожалуйста, прикрепите квитанцию об оплате по заявке #{application_number}"
+                            f"{f' ({competition_title})' if competition_title else ''}."
+                        ),
+                        comment="После прикрепления квитанции заявка будет готова к дальнейшей обработке.",
+                        button_label="Открыть заявку в ЛК",
+                        button_url=detail_url,
+                    ),
                 )
                 messages = list(model.participant_messages or [])
                 messages.append(

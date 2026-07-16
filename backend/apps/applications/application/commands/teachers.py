@@ -23,7 +23,7 @@ from apps.applications.application.interfaces import (
 from apps.applications.domain.events import DomainEvent
 from apps.applications.domain.value_objects import DirectoryTeacherId, PersonName, TeacherId, TeacherRole
 
-from ._support import ensure_owner, load_submission, parse_submission_id, parse_user_id
+from ._support import ensure_owner, load_submission, parse_submission_id, parse_user_id, try_resubmit_after_correction_edit
 
 __all__ = ["AddTeacherHandler", "RemoveTeacherHandler", "UpdateTeacherHandler"]
 
@@ -71,6 +71,7 @@ class AddTeacherHandler:
         with translate_domain_errors():
             role = TeacherRole(command.role)
             domain_events = submission.add_teacher(teacher_id=teacher_id, name=name, role=role, directory_teacher_id=directory_teacher_id, now=now)
+        domain_events += try_resubmit_after_correction_edit(submission=submission, catalog=self._catalog, now=now)
         self._submissions.save(submission)
         self._events.publish(domain_events)
         return SubmissionOperationResultDto.of(submission, tuple(domain_events))
@@ -124,6 +125,7 @@ class UpdateTeacherHandler:
                 teacher_id=new_id, name=name, role=role, directory_teacher_id=target.directory_teacher_id, now=now
             )
             domain_events += submission.remove_teacher(teacher_id=target_id, now=now)
+        domain_events += try_resubmit_after_correction_edit(submission=submission, catalog=self._catalog, now=now)
         self._submissions.save(submission)
         self._events.publish(domain_events)
         return SubmissionOperationResultDto.of(submission, tuple(domain_events))
@@ -154,6 +156,7 @@ class RemoveTeacherHandler:
         with translate_domain_errors():
             teacher_id = TeacherId.from_string(command.teacher_id)
             domain_events = submission.remove_teacher(teacher_id=teacher_id, now=now)
+        domain_events += try_resubmit_after_correction_edit(submission=submission, catalog=self._catalog, now=now)
         self._submissions.save(submission)
         self._events.publish(domain_events)
         return SubmissionOperationResultDto.of(submission, tuple(domain_events))

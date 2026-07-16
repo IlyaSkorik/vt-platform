@@ -149,6 +149,14 @@ function WizardBody({
         </PageDescription>
       </PageHeader>
       <PageContent className="flex flex-col gap-6">
+        {application.hasCorrections ? (
+          <Alert variant="warning">
+            <p className="font-medium">Требуется исправление</p>
+            <p className="mt-1 text-sm">
+              Комментарий организатора: {application.correctionComment?.trim() || "не указан"}
+            </p>
+          </Alert>
+        ) : null}
         <PerformancesStep applicationId={applicationId} application={application} registration={registration} />
         <ServicesStep applicationId={applicationId} application={application} registration={registration} />
         <ConsentsStep applicationId={applicationId} application={application} registration={registration} />

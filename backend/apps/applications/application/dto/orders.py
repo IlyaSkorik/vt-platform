@@ -202,6 +202,7 @@ class ApplicationSummaryView:
     id: str
     competition_id: str
     status: str
+    has_corrections: bool
     submission_count: int
     total_amount: str | None
     currency: str | None
@@ -215,6 +216,7 @@ class ApplicationSummaryView:
             id=application.id.json(),
             competition_id=application.competition_id.json(),
             status=application.status.value,
+            has_corrections=any(ref.status.value == "REQUIRES_CORRECTION" for ref in application.submission_refs),
             submission_count=application.submission_count,
             total_amount=str(total.total.amount) if total is not None else None,
             currency=total.total.currency.value if total is not None else None,

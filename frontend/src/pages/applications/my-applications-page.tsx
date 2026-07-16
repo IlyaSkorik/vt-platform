@@ -1,5 +1,5 @@
 import { ClipboardList, Plus } from "lucide-react";
-import { createSearchParams, generatePath, Link } from "react-router";
+import { generatePath, Link } from "react-router";
 import { applicationStatusPresentation, useMyApplications } from "@/entities/application";
 import type { ApplicationSummaryResource } from "@/shared/api/generated/model-applications";
 import { ROUTES } from "@/shared/config";
@@ -44,12 +44,9 @@ function ApplicationCard({
 }: {
   application: ApplicationSummaryResource;
 }): React.JSX.Element {
-  const status = applicationStatusPresentation(application.status);
-  const isDraft = application.status === "DRAFT";
-  const continueTo = generatePath(ROUTES.cabinetFestivalApply, {
-    festivalId: application.competitionId,
-  });
-  const openInCabinetTo = `${continueTo}?${createSearchParams({ applicationId: application.id }).toString()}`;
+  const status = application.hasCorrections
+    ? { label: "Требуется исправление", variant: "warning" as const }
+    : applicationStatusPresentation(application.status);
   const detailTo = generatePath(ROUTES.cabinetApplication, { applicationId: application.id });
 
   return (
@@ -57,7 +54,9 @@ function ApplicationCard({
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <CardTitle>Заявка от {formatDate(application.createdAt)}</CardTitle>
+            <CardTitle>
+              #{application.id.slice(0, 8).toUpperCase()} от {formatDate(application.createdAt)}
+            </CardTitle>
             <CardDescription>
               Выступлений: {application.submissionCount} · Сумма: {formatTotal(application)}
             </CardDescription>
@@ -66,16 +65,9 @@ function ApplicationCard({
         </div>
       </CardHeader>
       <CardContent>
-        <Button asChild variant={isDraft ? "primary" : "outline"} size="sm">
-          <Link to={isDraft ? continueTo : openInCabinetTo}>
-            {isDraft ? "Продолжить заполнение" : "Открыть"}
-          </Link>
+        <Button asChild variant="outline" size="sm">
+          <Link to={detailTo}>Открыть</Link>
         </Button>
-        {!isDraft ? (
-          <Button asChild variant="ghost" size="sm" className="ml-2">
-            <Link to={detailTo}>Открыть карточку</Link>
-          </Button>
-        ) : null}
       </CardContent>
     </Card>
   );

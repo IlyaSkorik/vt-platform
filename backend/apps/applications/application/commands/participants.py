@@ -32,7 +32,7 @@ from apps.applications.domain.value_objects import (
     RegistryParticipantId,
 )
 
-from ._support import ensure_owner, load_submission, parse_submission_id, parse_user_id
+from ._support import ensure_owner, load_submission, parse_submission_id, parse_user_id, try_resubmit_after_correction_edit
 
 __all__ = [
     "AddParticipantHandler",
@@ -116,6 +116,7 @@ class AddParticipantHandler:
                 member_count=command.member_count,
                 now=now,
             )
+        domain_events += try_resubmit_after_correction_edit(submission=submission, catalog=self._catalog, now=now)
         self._submissions.save(submission)
         self._events.publish(domain_events)
         return SubmissionOperationResultDto.of(submission, tuple(domain_events))
@@ -176,6 +177,7 @@ class UpdateParticipantHandler:
                 now=now,
             )
             domain_events += submission.remove_participant(participant_id=target_id, now=now)
+        domain_events += try_resubmit_after_correction_edit(submission=submission, catalog=self._catalog, now=now)
         self._submissions.save(submission)
         self._events.publish(domain_events)
         return SubmissionOperationResultDto.of(submission, tuple(domain_events))
@@ -206,6 +208,7 @@ class RemoveParticipantHandler:
         with translate_domain_errors():
             participant_id = ParticipantId.from_string(command.participant_id)
             domain_events = submission.remove_participant(participant_id=participant_id, now=now)
+        domain_events += try_resubmit_after_correction_edit(submission=submission, catalog=self._catalog, now=now)
         self._submissions.save(submission)
         self._events.publish(domain_events)
         return SubmissionOperationResultDto.of(submission, tuple(domain_events))

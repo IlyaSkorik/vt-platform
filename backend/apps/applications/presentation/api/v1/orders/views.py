@@ -45,6 +45,7 @@ from apps.applications.application.dto.queries import (
     ListDraftApplicationsQuery,
 )
 from apps.applications.application.exceptions import ApplicationError
+from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.applications.presentation.api.v1 import problems
 from apps.applications.presentation.api.v1.orders import composition
 from apps.applications.presentation.api.v1.orders.serializers import (
@@ -68,6 +69,26 @@ def _iso(value: Any) -> Any:
 
 
 def _application_resource(dto: ApplicationView) -> dict[str, Any]:
+    submission_ids = [ref.submission_id for ref in dto.submissions]
+    latest_correction_comment: str | None = None
+    has_corrections = any(ref.status == "REQUIRES_CORRECTION" for ref in dto.submissions)
+    if submission_ids:
+        review_rows = (
+            SubmissionModel.objects.filter(id__in=submission_ids, deleted_at__isnull=True)
+            .values_list("reviews", flat=True)
+        )
+        latest_at: str = ""
+        for reviews in review_rows:
+            for review in reviews or []:
+                if str(review.get("decision") or "").upper() != "RETURN_FOR_CORRECTION":
+                    continue
+                comment = str(review.get("comment") or "").strip()
+                if not comment:
+                    continue
+                decided_at = str(review.get("decided_at") or "")
+                if decided_at >= latest_at:
+                    latest_at = decided_at
+                    latest_correction_comment = comment
     total = dto.total_price
     return {
         "id": dto.id,
@@ -75,6 +96,8 @@ def _application_resource(dto: ApplicationView) -> dict[str, Any]:
         "competitionId": dto.competition_id,
         "applicantId": dto.applicant_id,
         "status": dto.status,
+        "hasCorrections": has_corrections,
+        "correctionComment": latest_correction_comment,
         "educationalOrganizationId": dto.educational_organization_id,
         "organizationName": dto.organization_name,
         "submissions": [
@@ -133,6 +156,7 @@ def _summary_resource(dto: ApplicationSummaryView) -> dict[str, Any]:
         "type": "application",
         "competitionId": dto.competition_id,
         "status": dto.status,
+        "hasCorrections": dto.has_corrections,
         "submissionCount": dto.submission_count,
         "totalAmount": dto.total_amount,
         "currency": dto.currency,

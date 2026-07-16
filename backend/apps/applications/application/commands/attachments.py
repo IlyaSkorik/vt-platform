@@ -28,7 +28,13 @@ from apps.applications.application.interfaces import (
 )
 from apps.applications.domain.value_objects import AttachmentId, AttachmentType, FileReference
 
-from ._support import ensure_owner, load_submission, parse_submission_id, parse_user_id
+from ._support import (
+    ensure_owner,
+    load_submission,
+    parse_submission_id,
+    parse_user_id,
+    try_resubmit_after_correction_edit,
+)
 
 __all__ = ["AttachFileHandler", "RemoveAttachmentHandler", "UploadAttachmentHandler"]
 
@@ -169,6 +175,7 @@ class UploadAttachmentHandler:
                 now=now,
                 caption=command.caption,
             )
+        domain_events += try_resubmit_after_correction_edit(submission=submission, catalog=self._catalog, now=now)
         self._submissions.save(submission)
         self._events.publish(domain_events)
         return SubmissionOperationResultDto.of(submission, tuple(domain_events))

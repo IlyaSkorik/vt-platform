@@ -1,5 +1,5 @@
 import { ArrowLeft, Pencil } from "lucide-react";
-import { generatePath, Link, useParams } from "react-router";
+import { createSearchParams, generatePath, Link, useParams } from "react-router";
 
 import {
   applicationStatusPresentation,
@@ -27,6 +27,7 @@ import {
 } from "@/shared/ui";
 
 const CANCELLABLE = new Set(["DRAFT", "SUBMITTED", "WAITING_PAYMENT"]);
+const EDITABLE = new Set(["DRAFT", "SUBMITTED"]);
 
 export function ApplicationDetailPage(): React.JSX.Element {
   const { applicationId } = useParams<{ applicationId: string }>();
@@ -44,21 +45,20 @@ export function ApplicationDetailPage(): React.JSX.Element {
   }
 
   const status = applicationStatusPresentation(application.status);
+  const editTo = `${generatePath(ROUTES.cabinetFestivalApply, {
+    festivalId: application.competitionId,
+  })}?${createSearchParams({ applicationId: application.id }).toString()}`;
 
   return (
     <PageContainer>
       <PageHeader
         actions={
           <div className="flex gap-2">
-            {application.status === "DRAFT" ? (
+            {EDITABLE.has(application.status) ? (
               <Button asChild variant="secondary" size="sm">
-                <Link
-                  to={generatePath(ROUTES.cabinetFestivalApply, {
-                    festivalId: application.competitionId,
-                  })}
-                >
+                <Link to={editTo}>
                   <Pencil className="size-4" />
-                  Продолжить заполнение
+                  Редактировать
                 </Link>
               </Button>
             ) : null}
@@ -87,6 +87,16 @@ export function ApplicationDetailPage(): React.JSX.Element {
       </PageHeader>
       <PageContent>
         <div className="flex flex-col gap-6">
+          {application.hasCorrections ? (
+            <Card className="border-warning/40 bg-warning/10">
+              <CardHeader>
+                <CardTitle>Требуется исправление</CardTitle>
+                <CardDescription>
+                  Комментарий организатора: {application.correctionComment?.trim() || "не указан"}
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ) : null}
           <Card>
             <CardHeader>
               <CardTitle>Выступления</CardTitle>
