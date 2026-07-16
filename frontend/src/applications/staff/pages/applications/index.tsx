@@ -89,11 +89,13 @@ type Workspace = {
 async function fetchWorkspace(
   queue: string,
   q: string,
+  selected: string | null,
   filters: Record<string, string>,
 ): Promise<Workspace> {
   const search = new URLSearchParams();
   if (queue) search.set("queue", queue);
   if (q) search.set("q", q);
+  if (selected) search.set("selected", selected);
   for (const [key, value] of Object.entries(filters)) {
     if (value) search.set(key, value);
   }
@@ -230,10 +232,11 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
       "workspace",
       queue,
       q,
+      selected,
       competitionId,
     ],
     queryFn: () =>
-      fetchWorkspace(queue, q, {
+      fetchWorkspace(queue, q, selected, {
         competitionId,
       }),
     placeholderData: (previousData) => previousData,
@@ -414,7 +417,7 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                   key={item.id}
                   type="button"
                   onClick={() => setSelected(item.id)}
-                  className="w-full rounded-md border p-3 text-left transition hover:border-primary/50"
+                  className="w-full cursor-pointer rounded-md border p-3 text-left transition hover:border-primary/50"
                 >
                   <div className="flex items-center justify-between">
                     <p className="font-medium">#{item.applicationNumber}</p>
