@@ -703,8 +703,8 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                     </TabsContent>
                     <TabsContent value="timeline" className="space-y-2">
                       <p className="font-medium text-sm">Таймлайн</p>
-                      {workspace.data.detail.timeline.map((event) => (
-                        <div key={`${event.kind}-${event.at}`} className="rounded-md border p-2 text-sm">
+                      {workspace.data.detail.timeline.map((event, index) => (
+                        <div key={`${event.kind}-${event.at}-${index}`} className="rounded-md border p-2 text-sm">
                           <p>{event.label}</p>
                           <p className="text-muted-foreground text-xs">{new Date(event.at).toLocaleString()}</p>
                         </div>
@@ -713,8 +713,8 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                       {(workspace.data.detail.audit ?? []).length === 0 ? (
                         <p className="text-sm text-muted-foreground">Записей пока нет.</p>
                       ) : (
-                        (workspace.data.detail.audit ?? []).map((event) => (
-                          <div key={`${event.by}-${event.at}`} className="rounded-md border p-2 text-sm">
+                        (workspace.data.detail.audit ?? []).map((event, index) => (
+                          <div key={`${event.by}-${event.at}-${index}`} className="rounded-md border p-2 text-sm">
                             <p>{event.reason}</p>
                             <p className="text-muted-foreground text-xs">{event.by}</p>
                           </div>
@@ -723,16 +723,18 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                     </TabsContent>
                     <TabsContent value="communication" className="space-y-2">
                       <p className="font-medium text-sm">Внутренние заметки</p>
-                      {(workspace.data.detail.internalNotes ?? []).map((entry: { text: string; created_at: string }) => (
-                        <div key={`${entry.created_at}-${entry.text}`} className="rounded-md border p-2 text-sm">
+                      {(workspace.data.detail.internalNotes ?? []).map(
+                        (entry: { text: string; created_at: string }, index) => (
+                        <div key={`${entry.created_at}-${entry.text}-${index}`} className="rounded-md border p-2 text-sm">
                           <p>{entry.text}</p>
                           <p className="text-muted-foreground text-xs">{new Date(entry.created_at).toLocaleString()}</p>
                         </div>
-                      ))}
+                        ),
+                      )}
                       <p className="pt-2 font-medium text-sm">Сообщения участнику</p>
                       {(workspace.data.detail.participantMessages ?? []).map(
-                        (entry: { text: string; created_at: string }) => (
-                          <div key={`${entry.created_at}-${entry.text}`} className="rounded-md border p-2 text-sm">
+                        (entry: { text: string; created_at: string }, index) => (
+                          <div key={`${entry.created_at}-${entry.text}-${index}`} className="rounded-md border p-2 text-sm">
                             <p>{entry.text}</p>
                             <p className="text-muted-foreground text-xs">{new Date(entry.created_at).toLocaleString()}</p>
                           </div>

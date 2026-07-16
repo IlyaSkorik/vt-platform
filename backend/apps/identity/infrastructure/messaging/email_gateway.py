@@ -21,8 +21,9 @@ from datetime import datetime
 from typing import Final
 
 from django.conf import settings
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMultiAlternatives
 
+from apps.emailing import render_transactional_email_html
 from apps.identity.domain.value_objects import Email, FullName, Locale
 
 __all__ = ["DjangoEmailGateway"]
@@ -70,9 +71,18 @@ class DjangoEmailGateway:
 
     def send_verification_email(self, *, email: Email, full_name: FullName, verification_url: str, locale: Locale) -> None:
         """Send an email-ownership verification link to ``email``."""
+        body = _verification_body(full_name=full_name, verification_url=verification_url)
         self._send(
             subject=_VERIFICATION_SUBJECT,
-            body=_verification_body(full_name=full_name, verification_url=verification_url),
+            body=body,
+            html_body=render_transactional_email_html(
+                title=_VERIFICATION_SUBJECT,
+                intro=f"Здравствуйте, {full_name.first_name}! Благодарим за регистрацию на платформе «Взлет талантов».",
+                details_label="Действие",
+                details="Подтвердите адрес электронной почты, чтобы завершить регистрацию.",
+                button_label="Подтвердить email",
+                button_url=verification_url,
+            ),
             to=email.value,
         )
 
@@ -86,13 +96,23 @@ class DjangoEmailGateway:
         locale: Locale,
     ) -> None:
         """Send a password-reset link to ``email``, valid until ``expires_at``."""
+        body = _reset_body(full_name=full_name, reset_url=reset_url, expires_at=expires_at)
         self._send(
             subject=_RESET_SUBJECT,
-            body=_reset_body(full_name=full_name, reset_url=reset_url, expires_at=expires_at),
+            body=body,
+            html_body=render_transactional_email_html(
+                title=_RESET_SUBJECT,
+                intro=f"Здравствуйте, {full_name.first_name}! Мы получили запрос на восстановление пароля.",
+                details_label="Срок действия ссылки",
+                details=f"Ссылка действительна до {expires_at.isoformat()}.",
+                button_label="Сбросить пароль",
+                button_url=reset_url,
+            ),
             to=email.value,
         )
 
-    def _send(self, *, subject: str, body: str, to: str) -> None:
+    def _send(self, *, subject: str, body: str, html_body: str, to: str) -> None:
         """Hand a single message to the configured email backend."""
-        message = EmailMessage(subject=subject, body=body, from_email=self._from_email, to=[to])
+        message = EmailMultiAlternatives(subject=subject, body=body, from_email=self._from_email, to=[to])
+        message.attach_alternative(html_body, "text/html")
         message.send(fail_silently=False)

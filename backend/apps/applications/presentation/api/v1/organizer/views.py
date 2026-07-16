@@ -31,6 +31,7 @@ from apps.applications.infrastructure.models.application import ApplicationModel
 from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.applications.presentation.api.v1 import problems
 from apps.applications.presentation.api.v1.submissions import composition
+from apps.emailing import render_transactional_email_html
 from apps.competitions.infrastructure.models.competition import CompetitionModel
 from apps.competitions.infrastructure.models.taxonomy import (
     AgeCategoryModel,
@@ -96,22 +97,6 @@ def _application_urls(application_id: str | None) -> tuple[str, str]:
     if application_id:
         return cabinet_url, f"{cabinet_url}/{application_id}"
     return cabinet_url, cabinet_url
-
-
-def _email_html(*, title: str, intro: str, comment: str, button_label: str, button_url: str) -> str:
-    return (
-        "<div style=\"font-family:Arial,sans-serif;line-height:1.5;color:#111\">"
-        f"<h2 style=\"margin:0 0 12px\">{title}</h2>"
-        f"<p style=\"margin:0 0 12px\">{intro}</p>"
-        f"<p style=\"margin:0 0 8px\"><strong>Комментарий организатора:</strong></p>"
-        f"<p style=\"margin:0 0 18px;white-space:pre-line\">{comment}</p>"
-        f"<p style=\"margin:0 0 20px\"><a href=\"{button_url}\" "
-        "style=\"display:inline-block;background:#1d4ed8;color:#fff;text-decoration:none;"
-        "padding:10px 14px;border-radius:8px;font-weight:600\">"
-        f"{button_label}</a></p>"
-        "<p style=\"margin:0;color:#6b7280\">С уважением,<br/>Оргкомитет конкурса</p>"
-        "</div>"
-    )
 
 
 def _missing_type_label(raw: str) -> str:
@@ -575,14 +560,15 @@ class OrganizerProcessingActionView(_StaffView):
                         from_email=settings.DEFAULT_FROM_EMAIL,
                         recipient_list=[recipient.email],
                         fail_silently=False,
-                        html_message=_email_html(
+                        html_message=render_transactional_email_html(
                             title=subject,
                             intro=(
                                 f"Организатор вернул заявку #{application_number}"
                                 f"{f' ({competition_title})' if competition_title else ''} на исправление."
                                 f" Возвращено выступлений: {len(processed_ids)}."
                             ),
-                            comment=comment,
+                            details_label="Комментарий организатора",
+                            details=comment,
                             button_label="Открыть заявку в ЛК",
                             button_url=detail_url,
                         ),
@@ -684,14 +670,15 @@ class OrganizerProcessingActionView(_StaffView):
                         from_email=settings.DEFAULT_FROM_EMAIL,
                         recipient_list=[recipient.email],
                         fail_silently=False,
-                        html_message=_email_html(
+                        html_message=render_transactional_email_html(
                             title=subject,
                             intro=(
                                 f"Организатор запросил дополнительные файлы по заявке #{application_number}"
                                 f"{f' ({competition_title})' if competition_title else ''}. "
                                 f"Нужно прикрепить: {requested_types}."
                             ),
-                            comment=comment,
+                            details_label="Комментарий организатора",
+                            details=comment,
                             button_label="Загрузить файлы в ЛК",
                             button_url=detail_url,
                         ),
@@ -766,13 +753,14 @@ class OrganizerProcessingActionView(_StaffView):
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[recipient.email],
                     fail_silently=False,
-                    html_message=_email_html(
+                    html_message=render_transactional_email_html(
                         title=subject,
                         intro=(
                             f"Пожалуйста, прикрепите квитанцию об оплате по заявке #{application_number}"
                             f"{f' ({competition_title})' if competition_title else ''}."
                         ),
-                        comment="После прикрепления квитанции заявка будет готова к дальнейшей обработке.",
+                        details_label="Что нужно сделать",
+                        details="После прикрепления квитанции заявка будет готова к дальнейшей обработке.",
                         button_label="Открыть заявку в ЛК",
                         button_url=detail_url,
                     ),

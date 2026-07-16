@@ -16,8 +16,9 @@ from __future__ import annotations
 from datetime import datetime
 
 from django.conf import settings
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMultiAlternatives
 
+from apps.emailing import render_transactional_email_html
 from apps.organization.application.handlers import (
     AcceptStaffInvitationHandler,
     GetOrganizationProfileHandler,
@@ -122,12 +123,22 @@ class DjangoStaffInvitationEmailGateway:
             f"Ссылка для принятия приглашения: {token}\n\n"
             f"Ссылка действительна до {expires_at.isoformat()}."
         )
-        EmailMessage(
+        html_body = render_transactional_email_html(
+            title=subject,
+            intro=f"Вас пригласили в команду {organization_name.value} с ролью {role.value}.",
+            details_label="Срок действия ссылки",
+            details=f"До {expires_at.isoformat()}",
+            button_label="Принять приглашение",
+            button_url=token,
+        )
+        message = EmailMultiAlternatives(
             subject=subject,
             body=body,
             from_email=self._from_email,
             to=[recipient_email.value],
-        ).send(fail_silently=False)
+        )
+        message.attach_alternative(html_body, "text/html")
+        message.send(fail_silently=False)
 
 
 def _build_email_gateway() -> EmailGateway:
