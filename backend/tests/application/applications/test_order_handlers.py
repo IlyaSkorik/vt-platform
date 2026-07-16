@@ -441,7 +441,13 @@ def _reach_submitted(env: Env) -> tuple[str, str, str]:
     return app_id, applicant, submission_id
 
 
-def _receipt_command(app_id: str, applicant: str, *, filename: str = "receipt.pdf", content: bytes = b"%PDF-1.4 paid") -> UploadApplicationReceiptCommand:
+def _receipt_command(
+    app_id: str,
+    applicant: str,
+    *,
+    filename: str = "receipt.pdf",
+    content: bytes = b"%PDF-1.4 paid",
+) -> UploadApplicationReceiptCommand:
     return UploadApplicationReceiptCommand(
         requested_by=applicant,
         application_id=app_id,
