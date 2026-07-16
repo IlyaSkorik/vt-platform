@@ -77,6 +77,20 @@ def _application_meta_for_submission(submission_id: str) -> tuple[str | None, st
     return None, None, None
 
 
+def _submission_ids_for_application(application_id: str | None) -> list[str]:
+    if not application_id:
+        return []
+    row = (
+        ApplicationModel.objects.filter(id=application_id, deleted_at__isnull=True)
+        .values("submission_refs")
+        .first()
+    )
+    if not row:
+        return []
+    refs = row.get("submission_refs") or []
+    return [str(ref.get("submission_id") or "").strip() for ref in refs if str(ref.get("submission_id") or "").strip()]
+
+
 def _capabilities(status: str) -> list[dict[str, str]]:
     mapping: dict[str, list[tuple[str, str]]] = {
         "SUBMITTED": [("approve", "Одобрить"), ("return_for_correction", "Вернуть на исправление"), ("cancel", "Отменить")],
@@ -459,13 +473,67 @@ class OrganizerProcessingActionView(_StaffView):
             elif action == "return_for_correction":
                 if not comment:
                     return Response({"detail": "Укажите комментарий для участника перед возвратом на исправление."}, status=400)
-                result = composition.build_return_for_correction_handler().handle(
-                    ReturnSubmissionForCorrectionCommand(
-                        submission_id=submission_id,
-                        reviewer_id=user_id,
-                        comment=comment,
+                application_id, _, competition_id = _application_meta_for_submission(submission_id)
+                target_submission_ids = _submission_ids_for_application(application_id) or [submission_id]
+                processed_ids: list[str] = []
+                for target_id in target_submission_ids:
+                    model = SubmissionModel.objects.get(id=target_id, deleted_at__isnull=True)
+                    if model.status not in {"SUBMITTED", "UNDER_REVIEW"}:
+                        continue
+                    if model.status == "SUBMITTED":
+                        composition.build_start_review_handler().handle(
+                            StartReviewCommand(submission_id=target_id, reviewer_id=user_id)
+                        )
+                    composition.build_return_for_correction_handler().handle(
+                        ReturnSubmissionForCorrectionCommand(
+                            submission_id=target_id,
+                            reviewer_id=user_id,
+                            comment=comment,
+                        )
                     )
-                )
+                    processed_ids.append(target_id)
+                if not processed_ids:
+                    return Response({"detail": "Нет выступлений, доступных для возврата на исправление."}, status=409)
+                result = composition.build_get_submission_handler().handle(GetSubmissionQuery(submission_id=processed_ids[0]))
+                primary_model = SubmissionModel.objects.get(id=processed_ids[0], deleted_at__isnull=True)
+                recipient = UserModel.objects.filter(id=primary_model.applicant_id, deleted_at__isnull=True).first()
+                if recipient is not None and recipient.email:
+                    competition_title = (
+                        CompetitionModel.objects.filter(id=competition_id).values_list("title", flat=True).first()
+                        if competition_id
+                        else None
+                    )
+                    application_number = (application_id or submission_id)[:8].upper()
+                    subject = f"Заявка #{application_number} возвращена на исправление"
+                    body_text = (
+                        f"Здравствуйте, {recipient.first_name}!\n\n"
+                        f"Организатор вернул заявку #{application_number}"
+                        f"{f' ({competition_title})' if competition_title else ''} на исправление.\n"
+                        f"Возвращено выступлений: {len(processed_ids)}.\n\n"
+                        f"Комментарий организатора:\n{comment}\n\n"
+                        "Откройте заявку в личном кабинете, внесите исправления и отправьте повторно.\n\n"
+                        "С уважением,\nОргкомитет конкурса"
+                    )
+                    send_mail(
+                        subject=subject,
+                        message=body_text,
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[recipient.email],
+                        fail_silently=False,
+                    )
+                    for target_id in processed_ids:
+                        target_model = SubmissionModel.objects.get(id=target_id, deleted_at__isnull=True)
+                        messages = list(target_model.participant_messages or [])
+                        messages.append(
+                            {
+                                "text": f"Email участнику: заявка #{application_number} возвращена на исправление ({recipient.email})",
+                                "created_by": user_id,
+                                "created_at": _now().isoformat(),
+                            }
+                        )
+                        target_model.participant_messages = messages
+                        target_model.updated_at = _now()
+                        target_model.save(update_fields=["participant_messages", "updated_at"])
             elif action == "request_payment":
                 result = composition.build_mark_waiting_payment_handler().handle(
                     MarkWaitingPaymentCommand(submission_id=submission_id, reviewer_id=user_id)
@@ -526,6 +594,44 @@ class OrganizerProcessingActionView(_StaffView):
                 model.missing_files_requests = requests
                 model.updated_at = _now()
                 model.save(update_fields=["missing_files_requests", "updated_at"])
+                recipient = UserModel.objects.filter(id=model.applicant_id, deleted_at__isnull=True).first()
+                if recipient is not None and recipient.email:
+                    application_id, _, competition_id = _application_meta_for_submission(submission_id)
+                    competition_title = (
+                        CompetitionModel.objects.filter(id=competition_id).values_list("title", flat=True).first()
+                        if competition_id
+                        else None
+                    )
+                    application_number = (application_id or submission_id)[:8].upper()
+                    requested_types = ", ".join(str(item).upper() for item in missing_types)
+                    subject = f"По заявке #{application_number} запрошены недостающие файлы"
+                    body_text = (
+                        f"Здравствуйте, {recipient.first_name}!\n\n"
+                        f"Организатор запросил дополнительные файлы по заявке #{application_number}"
+                        f"{f' ({competition_title})' if competition_title else ''}.\n"
+                        f"Что нужно прикрепить: {requested_types}.\n\n"
+                        f"Комментарий организатора:\n{comment}\n\n"
+                        "Пожалуйста, загрузите файлы в личном кабинете.\n\n"
+                        "С уважением,\nОргкомитет конкурса"
+                    )
+                    send_mail(
+                        subject=subject,
+                        message=body_text,
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[recipient.email],
+                        fail_silently=False,
+                    )
+                    messages = list(model.participant_messages or [])
+                    messages.append(
+                        {
+                            "text": f"Email участнику: запрос недостающих файлов по заявке #{application_number} ({recipient.email})",
+                            "created_by": user_id,
+                            "created_at": _now().isoformat(),
+                        }
+                    )
+                    model.participant_messages = messages
+                    model.updated_at = _now()
+                    model.save(update_fields=["participant_messages", "updated_at"])
                 body = {"id": submission_id, "status": model.status, "capabilities": _capabilities(model.status)}
                 rid = problems.request_id(request)
                 return Response({"data": body, "meta": {"requestId": rid}}, headers={"X-Request-ID": rid})

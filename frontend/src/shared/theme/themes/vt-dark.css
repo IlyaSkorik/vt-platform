@@ -14,9 +14,9 @@
   --background-tertiary: oklch(0.155 0.010 240);
 
   /* Surfaces */
-  --surface-primary: oklch(0.135 0.008 240);
-  --surface-secondary: oklch(0.170 0.010 240);
-  --surface-elevated: oklch(0.205 0.012 240);
+  --surface-primary: oklch(0.135 0.012 245);
+  --surface-secondary: oklch(0.170 0.015 245);
+  --surface-elevated: oklch(0.205 0.018 245);
   --surface-overlay: oklch(0.205 0.012 240);
 
   /* Text */
@@ -24,19 +24,19 @@
   --text-secondary: oklch(0.850 0.006 240);
   --text-muted: oklch(0.700 0.008 240);
   --text-inverse: oklch(10.79% 0.01025 174.842);
-  --text-on-brand: oklch(0.995 0 0);
+  --text-on-brand: oklch(10.79% 0.01025 174.842);
 
   /* Borders & focus */
-  --border-subtle: oklch(0.215 0.010 240);
-  --border-default: oklch(0.285 0.012 240);
-  --border-strong: oklch(0.365 0.014 240);
+  --border-subtle: oklch(0.22 0.008 240);
+  --border-default: oklch(0.30 0.010 240);
+  --border-strong: oklch(0.40 0.012 240);
   --border-focus: oklch(0.79 0.16 220);
 
   /* Interactive */
-  --interactive-primary: oklch(0.74 0.17 220);
-  --interactive-primary-hover: oklch(0.81 0.17 220);
+  --interactive-primary: oklch(65.084% 0.122 225.028);
+  --interactive-primary-hover: oklch(0.75 0.18 225);
   --interactive-secondary: oklch(0.78 0.14 190);
-  --interactive-accent: oklch(0.70 0.16 255);
+  --interactive-accent: oklch(0.76 0.14 195);
 
   /* Status */
   --success: oklch(0.74 0.17 150);

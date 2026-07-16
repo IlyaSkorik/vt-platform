@@ -103,8 +103,12 @@ async function fetchWorkspace(
 }
 
 async function runAction(submissionId: string, action: string, comment: string): Promise<void> {
+  const payload: Record<string, unknown> = { comment };
+  if (action === "request_missing_files") {
+    payload.types = ["MUSIC", "VIDEO", "DOCUMENT", "RECEIPT", "OTHER"];
+  }
   try {
-    await apiClient.post(`staff/applications/${submissionId}/actions/${action}`, { json: { comment } });
+    await apiClient.post(`staff/applications/${submissionId}/actions/${action}`, { json: payload });
   } catch (error) {
     const response = (error as { response?: Response })?.response;
     if (response) {
@@ -288,13 +292,10 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
     const requiresComment =
       actionKey === "return_for_correction" ||
       actionKey === "request_missing_files" ||
-      actionKey === "add_internal_note" ||
-      actionKey === "send_participant_message";
+      actionKey === "add_internal_note";
     if (requiresComment && !comment.trim()) {
       if (actionKey === "add_internal_note") {
         setActionError("Введите текст внутренней заметки.");
-      } else if (actionKey === "send_participant_message") {
-        setActionError("Введите текст сообщения участнику.");
       } else {
         setActionError("Введите комментарий для участника перед выполнением действия.");
       }
@@ -490,14 +491,6 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                       onClick={() => executeAction("add_internal_note")}
                     >
                       Добавить внутреннюю заметку
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      loading={action.isPending}
-                      onClick={() => executeAction("send_participant_message")}
-                    >
-                      Сообщение участнику
                     </Button>
                   </div>
                   <Tabs defaultValue="overview">
