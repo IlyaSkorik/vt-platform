@@ -19,6 +19,8 @@ from apps.participants.infrastructure.models import (
     ParticipantOrganizationMembershipModel,
     ParticipantRegistryModel,
 )
+from apps.applications.infrastructure.models.application import ApplicationModel
+from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.participants.presentation.api.v1 import problems
 from apps.participants.presentation.api.v1.registry.serializers import (
     OrganizationWriteSerializer,
@@ -62,7 +64,7 @@ def _organization_resource(model: EducationalOrganizationModel) -> dict[str, Any
     }
 
 
-def _participant_resource(model: ParticipantRegistryModel) -> dict[str, Any]:
+def _participant_resource(model: ParticipantRegistryModel, *, applications_count: int = 0) -> dict[str, Any]:
     memberships = list(
         model.organization_memberships.select_related("organization")
         .filter(deleted_at__isnull=True, organization__deleted_at__isnull=True)
@@ -88,7 +90,7 @@ def _participant_resource(model: ParticipantRegistryModel) -> dict[str, Any]:
         "avatarUrl": model.avatar_url,
         "notes": model.notes,
         "archived": model.archived,
-        "applicationsCount": 0,
+        "applicationsCount": applications_count,
         "primaryOrganization": _organization_resource(primary_membership.organization)
         if primary_membership is not None
         else None,
@@ -111,6 +113,42 @@ def _envelope(request: Request, data: Any, *, status: int = 200) -> Response:
         status=status,
         headers={"X-Request-ID": request_id},
     )
+
+
+def _applications_count_by_participant(*, owner_id: uuid.UUID, participant_ids: set[str]) -> dict[str, int]:
+    if not participant_ids:
+        return {}
+
+    submission_participants: dict[str, set[str]] = {}
+    submissions = SubmissionModel.objects.filter(
+        deleted_at__isnull=True,
+        applicant_id=owner_id,
+    ).values("id", "participants")
+    for row in submissions:
+        submission_id = str(row.get("id"))
+        participant_refs = {
+            str(item.get("registry_participant_id") or "").strip()
+            for item in (row.get("participants") or [])
+            if str(item.get("registry_participant_id") or "").strip()
+        }
+        if participant_refs:
+            submission_participants[submission_id] = participant_refs
+
+    counts = {participant_id: 0 for participant_id in participant_ids}
+    applications = ApplicationModel.objects.filter(
+        deleted_at__isnull=True,
+        applicant_id=owner_id,
+    ).exclude(status="DRAFT").values("submission_refs")
+    for row in applications:
+        refs = row.get("submission_refs") or []
+        touched: set[str] = set()
+        for ref in refs:
+            submission_id = str(ref.get("submission_id") or "")
+            touched.update(submission_participants.get(submission_id, set()))
+        for participant_id in touched:
+            if participant_id in counts:
+                counts[participant_id] += 1
+    return counts
 
 
 def _save_memberships(
@@ -304,7 +342,15 @@ class ParticipantRegistryCollectionView(_AuthView):
             min_birth = date(today.year - age_max - 1, today.month, today.day)
             qs = qs.filter(birth_date__gte=min_birth)
 
-        data = [_participant_resource(model) for model in qs.distinct()]
+        models = list(qs.distinct())
+        app_counts = _applications_count_by_participant(
+            owner_id=owner_id,
+            participant_ids={str(model.id) for model in models},
+        )
+        data = [
+            _participant_resource(model, applications_count=app_counts.get(str(model.id), 0))
+            for model in models
+        ]
         return _envelope(request, data)
 
     @extend_schema(tags=[_TAG], request=ParticipantRegistryWriteSerializer)
@@ -346,7 +392,12 @@ class ParticipantRegistryCollectionView(_AuthView):
                 transaction.set_rollback(True)
                 return membership_problem
         participant.refresh_from_db()
-        return _envelope(request, _participant_resource(participant), status=201)
+        app_counts = _applications_count_by_participant(owner_id=owner_id, participant_ids={str(participant.id)})
+        return _envelope(
+            request,
+            _participant_resource(participant, applications_count=app_counts.get(str(participant.id), 0)),
+            status=201,
+        )
 
 
 class ParticipantRegistryDetailView(_AuthView):
@@ -369,7 +420,9 @@ class ParticipantRegistryDetailView(_AuthView):
                 instance=request.path,
                 correlation_id=problems.request_id(request),
             )
-        return _envelope(request, _participant_resource(participant))
+        owner_id = _owner_uuid(request.user.id)
+        app_counts = _applications_count_by_participant(owner_id=owner_id, participant_ids={str(participant.id)})
+        return _envelope(request, _participant_resource(participant, applications_count=app_counts.get(str(participant.id), 0)))
 
     @extend_schema(tags=[_TAG], request=ParticipantRegistryWriteSerializer)
     def patch(self, request: Request, participant_id: str) -> Response:
@@ -417,7 +470,8 @@ class ParticipantRegistryDetailView(_AuthView):
                 transaction.set_rollback(True)
                 return membership_problem
         participant.refresh_from_db()
-        return _envelope(request, _participant_resource(participant))
+        app_counts = _applications_count_by_participant(owner_id=owner_id, participant_ids={str(participant.id)})
+        return _envelope(request, _participant_resource(participant, applications_count=app_counts.get(str(participant.id), 0)))
 
     @extend_schema(tags=[_TAG], request=None, responses={204: OpenApiResponse(description="Deleted")})
     def delete(self, request: Request, participant_id: str) -> Response:
@@ -452,9 +506,11 @@ class ParticipantArchiveView(_AuthView):
                 instance=request.path,
                 correlation_id=problems.request_id(request),
             )
+        owner_id = _owner_uuid(request.user.id)
         participant.archived = not participant.archived
         participant.save(update_fields=["archived", "updated_at"])
-        return _envelope(request, _participant_resource(participant))
+        app_counts = _applications_count_by_participant(owner_id=owner_id, participant_ids={str(participant.id)})
+        return _envelope(request, _participant_resource(participant, applications_count=app_counts.get(str(participant.id), 0)))
 
 
 class EducationalOrganizationCollectionView(_AuthView):
