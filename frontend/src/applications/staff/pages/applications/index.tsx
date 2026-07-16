@@ -79,6 +79,7 @@ type Detail = {
 };
 type Workspace = {
   queues: Queue[];
+  competitions?: Array<{ id: string; title: string; status: string }>;
   applications: Item[];
   selected: string | null;
   detail: Detail | null;
@@ -102,7 +103,20 @@ async function fetchWorkspace(
 }
 
 async function runAction(submissionId: string, action: string, comment: string): Promise<void> {
-  await apiClient.post(`staff/applications/${submissionId}/actions/${action}`, { json: { comment } });
+  try {
+    await apiClient.post(`staff/applications/${submissionId}/actions/${action}`, { json: { comment } });
+  } catch (error) {
+    const response = (error as { response?: Response })?.response;
+    if (response) {
+      const body = (await response.json().catch(() => null)) as { detail?: string } | null;
+      throw new Error(body?.detail ?? "Не удалось выполнить действие.");
+    }
+    throw error;
+  }
+}
+
+async function runBulk(action: string, ids: string[], comment: string): Promise<void> {
+  await apiClient.post("staff/applications/bulk", { json: { action, ids, comment } });
 }
 
 function primaryAction(capabilities: Capability[]): Capability | null {
@@ -186,14 +200,9 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [comment, setComment] = useState("");
-  const [teacher, setTeacher] = useState("");
-  const [organization, setOrganization] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [hasCorrections, setHasCorrections] = useState("");
-  const [hasMissingFiles, setHasMissingFiles] = useState("");
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [competitionId, setCompetitionId] = useState("");
   const [openPerformances, setOpenPerformances] = useState<Record<string, boolean>>({});
+  const [actionError, setActionError] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const workspace = useQuery({
@@ -203,22 +212,13 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
       "workspace",
       queue,
       q,
-      teacher,
-      organization,
-      dateFrom,
-      dateTo,
-      hasCorrections,
-      hasMissingFiles,
+      competitionId,
     ],
     queryFn: () =>
       fetchWorkspace(queue, q, {
-        teacher,
-        organization,
-        from: dateFrom,
-        to: dateTo,
-        hasCorrections,
-        hasMissingFiles,
+        competitionId,
       }),
+    placeholderData: (previousData) => previousData,
   });
 
   const selectedItem = useMemo(
@@ -252,7 +252,17 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
     onSuccess: async () => {
       const next = nextId(groupedInbox, selectedItem?.id ?? null);
       setComment("");
+      setActionError(null);
       setSelected(next);
+      await queryClient.invalidateQueries({ queryKey: ["staff", "applications", "workspace"] });
+    },
+    onError: (error) => {
+      setActionError(error instanceof Error ? error.message : "Не удалось выполнить действие.");
+    },
+  });
+  const bulkReminder = useMutation({
+    mutationFn: ({ ids, actionKey }: { ids: string[]; actionKey: string }) => runBulk(actionKey, ids, comment),
+    onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["staff", "applications", "workspace"] });
     },
   });
@@ -272,7 +282,28 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
     setOpenPerformances({});
   }, [selected]);
 
-  if (workspace.isLoading || !workspace.data) {
+  function executeAction(actionKey: string): void {
+    const requiresComment =
+      actionKey === "return_for_correction" ||
+      actionKey === "request_missing_files" ||
+      actionKey === "add_internal_note" ||
+      actionKey === "send_participant_message";
+    if (requiresComment && !comment.trim()) {
+      if (actionKey === "add_internal_note") {
+        setActionError("Введите текст внутренней заметки.");
+      } else if (actionKey === "send_participant_message") {
+        setActionError("Введите текст сообщения участнику.");
+      } else {
+        setActionError("Введите комментарий для участника перед выполнением действия.");
+      }
+      return;
+    }
+    if (!selectedItem) return;
+    setActionError(null);
+    action.mutate({ submissionId: selectedItem.id, actionKey });
+  }
+
+  if (!workspace.data) {
     return <LoadingState label="Загружаем пространство обработки заявок..." />;
   }
 
@@ -285,14 +316,18 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
       <PageContent>
         <div className="space-y-3">
           <Card>
-            <CardContent className="pt-4">
+            <CardContent className="pt-6  ">
               <div className="flex flex-wrap gap-2">
                 {workspace.data.queues.map((item) => (
                   <button
                     key={item.key}
                     type="button"
                     onClick={() => setQueue(item.key)}
-                    className="flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-sm transition hover:border-primary/50"
+                    className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-sm transition ${
+                      queue === item.key
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "hover:border-primary/50"
+                    }`}
                   >
                     <span>{item.label}</span>
                     <Badge>{item.count}</Badge>
@@ -306,6 +341,39 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                 >
                   Следующая заявка
                 </Button>
+                {queue === "WAITING_PAYMENT" ? (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={groupedInbox.length === 0}
+                    loading={bulkReminder.isPending}
+                    onClick={() =>
+                      bulkReminder.mutate({
+                        ids: groupedInbox.map((item) => item.id),
+                        actionKey: "send_payment_reminder",
+                      })
+                    }
+                  >
+                    Отправить всем напоминание об оплате
+                  </Button>
+                ) : null}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4">
+              <div className="grid gap-2 md:grid-cols-2">
+                <Input
+                  value={q}
+                  onChange={(event) => setQ(event.target.value)}
+                  placeholder="Поиск по номеру/заявителю"
+                />
+                <Select
+                  placeholder="Фильтр по конкурсу"
+                  value={competitionId}
+                  onValueChange={(value) => setCompetitionId(value)}
+                  options={(workspace.data.competitions ?? []).map((item) => ({ value: item.id, label: item.title }))}
+                />
               </div>
             </CardContent>
           </Card>
@@ -317,40 +385,6 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
               <CardDescription>
                 {groupedInbox.length === 0 ? "Очередь пуста" : `Всего заявок в очереди: ${groupedInbox.length}`}
               </CardDescription>
-              <Input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Поиск по номеру/конкурсу/заявителю" />
-              <Button size="sm" variant="ghost" className="w-fit px-0" onClick={() => setFiltersOpen((value) => !value)}>
-                {filtersOpen ? "Скрыть фильтры" : "Показать фильтры"}
-              </Button>
-              {filtersOpen ? (
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <Input value={teacher} onChange={(event) => setTeacher(event.target.value)} placeholder="Фильтр по педагогу" />
-                  <Input
-                    value={organization}
-                    onChange={(event) => setOrganization(event.target.value)}
-                    placeholder="Фильтр по организации"
-                  />
-                  <Input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} />
-                  <Input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} />
-                  <Select
-                    placeholder="Есть исправления?"
-                    value={hasCorrections}
-                    onValueChange={(value) => setHasCorrections(value)}
-                    options={[
-                      { value: "true", label: "Да" },
-                      { value: "false", label: "Нет" },
-                    ]}
-                  />
-                  <Select
-                    placeholder="Есть недостающие файлы?"
-                    value={hasMissingFiles}
-                    onValueChange={(value) => setHasMissingFiles(value)}
-                    options={[
-                      { value: "true", label: "Да" },
-                      { value: "false", label: "Нет" },
-                    ]}
-                  />
-                </div>
-              ) : null}
             </CardHeader>
             <CardContent className="max-h-[65vh] space-y-2 overflow-auto">
               {groupedInbox.map((item) => (
@@ -403,7 +437,7 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                         : ""}
                     </p>
                     {receiptDownloadUrl(workspace.data.detail.receiptFileReference ?? selectedItem.receiptFileReference) ? (
-                      <div className="mt-2">
+                      <div className="mt-2 flex justify-end">
                         <Button asChild size="sm" variant="outline">
                           <a
                             href={receiptDownloadUrl(
@@ -426,9 +460,7 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                         size="sm"
                         variant={capability.key === selectedPrimaryAction?.key ? "primary" : capability.key === "cancel" ? "danger" : "secondary"}
                         loading={action.isPending}
-                        onClick={() =>
-                          action.mutate({ submissionId: selectedItem.id, actionKey: capability.key })
-                        }
+                        onClick={() => executeAction(capability.key)}
                       >
                         {capability.label}
                       </Button>
@@ -439,17 +471,13 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                     onChange={(event) => setComment(event.target.value)}
                     placeholder="Комментарий к текущему действию"
                   />
-                  <div className="flex flex-wrap gap-2">
+                  {actionError ? <p className="text-sm text-danger">{actionError}</p> : null}
+                  <div className="flex flex-wrap justify-end gap-2">
                     <Button
                       size="sm"
                       variant="outline"
                       loading={action.isPending}
-                      onClick={() =>
-                        action.mutate({
-                          submissionId: selectedItem.id,
-                          actionKey: "request_missing_files",
-                        })
-                      }
+                      onClick={() => executeAction("request_missing_files")}
                     >
                       Запросить недостающие файлы
                     </Button>
@@ -457,12 +485,7 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                       size="sm"
                       variant="outline"
                       loading={action.isPending}
-                      onClick={() =>
-                        action.mutate({
-                          submissionId: selectedItem.id,
-                          actionKey: "add_internal_note",
-                        })
-                      }
+                      onClick={() => executeAction("add_internal_note")}
                     >
                       Добавить внутреннюю заметку
                     </Button>
@@ -470,12 +493,7 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                       size="sm"
                       variant="outline"
                       loading={action.isPending}
-                      onClick={() =>
-                        action.mutate({
-                          submissionId: selectedItem.id,
-                          actionKey: "send_participant_message",
-                        })
-                      }
+                      onClick={() => executeAction("send_participant_message")}
                     >
                       Сообщение участнику
                     </Button>
@@ -598,7 +616,7 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                             : "не рассчитана"}
                         </p>
                         {receiptDownloadUrl(workspace.data.detail.receiptFileReference ?? selectedItem.receiptFileReference) ? (
-                          <div className="mt-2">
+                          <div className="mt-2 flex justify-end">
                             <Button asChild size="sm" variant="outline">
                               <a
                                 href={receiptDownloadUrl(

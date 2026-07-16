@@ -7,6 +7,8 @@ from decimal import Decimal, InvalidOperation
 from io import StringIO
 from typing import Any
 
+from django.conf import settings
+from django.core.mail import send_mail
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -38,6 +40,7 @@ from apps.competitions.infrastructure.models.taxonomy import (
     ParticipantGroupModel,
     ParticipationFormatModel,
 )
+from apps.identity.infrastructure.models.user import UserModel
 from apps.organization.presentation.permissions import IsOrganizationStaff
 
 _QUEUE_BY_STATUS = {
@@ -58,9 +61,25 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
+def _application_meta_for_submission(submission_id: str) -> tuple[str | None, str | None, str | None]:
+    app_rows = ApplicationModel.objects.filter(deleted_at__isnull=True).values(
+        "id", "submission_refs", "payment_receipt", "competition_id"
+    )
+    for row in app_rows:
+        refs = row.get("submission_refs") or []
+        if any(str(ref.get("submission_id") or "") == submission_id for ref in refs):
+            receipt = row.get("payment_receipt") or {}
+            return (
+                str(row.get("id") or "") or None,
+                str(receipt.get("file_reference") or "").strip() or None,
+                str(row.get("competition_id") or "") or None,
+            )
+    return None, None, None
+
+
 def _capabilities(status: str) -> list[dict[str, str]]:
     mapping: dict[str, list[tuple[str, str]]] = {
-        "SUBMITTED": [("start_review", "Начать проверку"), ("cancel", "Отменить")],
+        "SUBMITTED": [("approve", "Одобрить"), ("return_for_correction", "Вернуть на исправление"), ("cancel", "Отменить")],
         "UNDER_REVIEW": [("approve", "Одобрить"), ("return_for_correction", "Вернуть на исправление"), ("cancel", "Отменить")],
         "REQUIRES_CORRECTION": [],
         "APPROVED": [("confirm_participation", "Подтвердить участие"), ("cancel", "Отменить")],
@@ -234,7 +253,12 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                 continue
             rows.append(row)
 
-        queue_counts = Counter(item["queue"] for item in all_rows)
+        queue_source = (
+            [item for item in all_rows if item.get("competitionId") == competition_filter]
+            if competition_filter
+            else all_rows
+        )
+        queue_counts = Counter(item["queue"] for item in queue_source)
         selected = next((item for item in rows if item["id"] == selected_id), rows[0] if rows else None)
         detail: dict[str, Any] | None = None
         if selected is not None:
@@ -433,11 +457,13 @@ class OrganizerProcessingActionView(_StaffView):
                     ApproveSubmissionCommand(submission_id=submission_id, reviewer_id=user_id)
                 )
             elif action == "return_for_correction":
+                if not comment:
+                    return Response({"detail": "Укажите комментарий для участника перед возвратом на исправление."}, status=400)
                 result = composition.build_return_for_correction_handler().handle(
                     ReturnSubmissionForCorrectionCommand(
                         submission_id=submission_id,
                         reviewer_id=user_id,
-                        comment=comment or "Требуется исправление",
+                        comment=comment,
                     )
                 )
             elif action == "request_payment":
@@ -451,14 +477,8 @@ class OrganizerProcessingActionView(_StaffView):
             elif action == "confirm_participation":
                 model = SubmissionModel.objects.get(id=submission_id, deleted_at__isnull=True)
                 if model.status in {"APPROVED", "WAITING_PAYMENT"}:
-                    has_receipt = False
-                    app_rows = ApplicationModel.objects.filter(deleted_at__isnull=True).values("submission_refs", "payment_receipt")
-                    for row in app_rows:
-                        refs = row.get("submission_refs") or []
-                        if any(str(ref.get("submission_id") or "") == submission_id for ref in refs):
-                            payment_receipt = row.get("payment_receipt") or {}
-                            has_receipt = bool(str(payment_receipt.get("file_reference") or "").strip())
-                            break
+                    _, receipt_ref, _ = _application_meta_for_submission(submission_id)
+                    has_receipt = bool(receipt_ref)
                     if not has_receipt:
                         return Response({"detail": "Для подтверждения участия нужно прикрепить квитанцию."}, status=400)
                     if model.status == "APPROVED":
@@ -487,13 +507,17 @@ class OrganizerProcessingActionView(_StaffView):
                 missing_types = request.data.get("types") or []
                 if not isinstance(missing_types, list):
                     return Response({"detail": "types must be list"}, status=400)
+                if not comment:
+                    return Response({"detail": "Добавьте комментарий для участника к запросу недостающих файлов."}, status=400)
+                if not missing_types:
+                    return Response({"detail": "Укажите хотя бы один тип недостающего файла."}, status=400)
                 model = SubmissionModel.objects.get(id=submission_id, deleted_at__isnull=True)
                 requests = list(model.missing_files_requests or [])
                 requests.append(
                     {
                         "id": f"mf-{len(requests) + 1}",
                         "types": [str(item).upper() for item in missing_types],
-                        "message": comment or None,
+                        "message": comment,
                         "created_by": user_id,
                         "created_at": _now().isoformat(),
                         "resolved_at": None,
@@ -506,6 +530,8 @@ class OrganizerProcessingActionView(_StaffView):
                 rid = problems.request_id(request)
                 return Response({"data": body, "meta": {"requestId": rid}}, headers={"X-Request-ID": rid})
             elif action == "add_internal_note":
+                if not comment:
+                    return Response({"detail": "Введите текст внутренней заметки."}, status=400)
                 model = SubmissionModel.objects.get(id=submission_id, deleted_at__isnull=True)
                 notes = list(model.organizer_notes or [])
                 notes.append({"text": comment, "created_by": user_id, "created_at": _now().isoformat()})
@@ -516,9 +542,56 @@ class OrganizerProcessingActionView(_StaffView):
                 rid = problems.request_id(request)
                 return Response({"data": body, "meta": {"requestId": rid}}, headers={"X-Request-ID": rid})
             elif action == "send_participant_message":
+                if not comment:
+                    return Response({"detail": "Введите текст сообщения участнику."}, status=400)
                 model = SubmissionModel.objects.get(id=submission_id, deleted_at__isnull=True)
                 messages = list(model.participant_messages or [])
                 messages.append({"text": comment, "created_by": user_id, "created_at": _now().isoformat()})
+                model.participant_messages = messages
+                model.updated_at = _now()
+                model.save(update_fields=["participant_messages", "updated_at"])
+                body = {"id": submission_id, "status": model.status, "capabilities": _capabilities(model.status)}
+                rid = problems.request_id(request)
+                return Response({"data": body, "meta": {"requestId": rid}}, headers={"X-Request-ID": rid})
+            elif action == "send_payment_reminder":
+                model = SubmissionModel.objects.get(id=submission_id, deleted_at__isnull=True)
+                if model.status in {"COMPLETED", "CANCELLED", "SCHEDULED"}:
+                    return Response({"detail": "Напоминание об оплате доступно только для активных заявок."}, status=400)
+                application_id, receipt_ref, competition_id = _application_meta_for_submission(submission_id)
+                if receipt_ref:
+                    return Response({"detail": "Квитанция уже прикреплена, напоминание не требуется."}, status=400)
+                recipient = UserModel.objects.filter(id=model.applicant_id, deleted_at__isnull=True).first()
+                if recipient is None:
+                    return Response({"detail": "Не найден получатель напоминания."}, status=400)
+                competition_title = (
+                    CompetitionModel.objects.filter(id=competition_id).values_list("title", flat=True).first()
+                    if competition_id
+                    else None
+                )
+                application_number = (application_id or submission_id)[:8].upper()
+                subject = f"Напоминание об оплате заявки #{application_number}"
+                body_text = (
+                    f"Здравствуйте, {recipient.first_name}!\n\n"
+                    f"Пожалуйста, прикрепите квитанцию об оплате по заявке #{application_number}"
+                    f"{f' ({competition_title})' if competition_title else ''}.\n"
+                    "После прикрепления квитанции заявка будет готова к дальнейшей обработке.\n\n"
+                    "С уважением,\nОргкомитет конкурса"
+                )
+                send_mail(
+                    subject=subject,
+                    message=body_text,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[recipient.email],
+                    fail_silently=False,
+                )
+                messages = list(model.participant_messages or [])
+                messages.append(
+                    {
+                        "text": f"Отправлено напоминание об оплате на {recipient.email}",
+                        "created_by": user_id,
+                        "created_at": _now().isoformat(),
+                    }
+                )
                 model.participant_messages = messages
                 model.updated_at = _now()
                 model.save(update_fields=["participant_messages", "updated_at"])
