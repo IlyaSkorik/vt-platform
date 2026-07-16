@@ -411,7 +411,7 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                 {groupedInbox.length === 0 ? "Очередь пуста" : `Всего заявок в очереди: ${groupedInbox.length}`}
               </CardDescription>
             </CardHeader>
-            <CardContent className="max-h-[65vh] space-y-2 overflow-auto">
+            <CardContent className="max-h-[65vh] space-y-2 overflow-auto [scrollbar-color:var(--border-default)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:w-2">
               {groupedInbox.map((item) => (
                 <button
                   key={item.id}
@@ -517,7 +517,9 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                             )
                           }
                           className={`rounded-md border px-2 py-1 text-xs transition ${
-                            selected ? "border-primary bg-primary/10 text-primary" : "hover:border-primary/50"
+                            selected
+                              ? "cursor-pointer border-primary bg-primary/10 text-primary"
+                              : "cursor-pointer hover:border-primary/50"
                           }`}
                         >
                           {type.label}

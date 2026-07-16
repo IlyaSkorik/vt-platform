@@ -114,6 +114,18 @@ def _email_html(*, title: str, intro: str, comment: str, button_label: str, butt
     )
 
 
+def _missing_type_label(raw: str) -> str:
+    labels = {
+        "MUSIC": "Музыка",
+        "VIDEO": "Видео",
+        "DOCUMENT": "Документы",
+        "RECEIPT": "Квитанция",
+        "OTHER": "Другое",
+    }
+    key = str(raw or "").upper()
+    return labels.get(key, key)
+
+
 def _capabilities(status: str) -> list[dict[str, str]]:
     mapping: dict[str, list[tuple[str, str]]] = {
         "SUBMITTED": [("approve", "Одобрить"), ("return_for_correction", "Вернуть на исправление"), ("cancel", "Отменить")],
@@ -653,7 +665,7 @@ class OrganizerProcessingActionView(_StaffView):
                         else None
                     )
                     application_number = (application_id or submission_id)[:8].upper()
-                    requested_types = ", ".join(str(item).upper() for item in missing_types)
+                    requested_types = ", ".join(_missing_type_label(str(item)) for item in missing_types)
                     subject = f"По заявке #{application_number} запрошены недостающие файлы"
                     cabinet_url, detail_url = _application_urls(application_id)
                     body_text = (
