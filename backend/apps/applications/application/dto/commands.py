@@ -19,7 +19,9 @@ __all__ = [
     "ApproveSubmissionCommand",
     "AttachFileCommand",
     "CalculatePriceCommand",
+    "CancelSubmissionByReviewerCommand",
     "CancelSubmissionCommand",
+    "CompleteSubmissionCommand",
     "CreateSubmissionCommand",
     "DeleteDraftSubmissionCommand",
     "MarkPaidCommand",
@@ -28,6 +30,7 @@ __all__ = [
     "RemoveParticipantCommand",
     "RemoveTeacherCommand",
     "ReturnSubmissionForCorrectionCommand",
+    "ScheduleSubmissionCommand",
     "SetPerformanceCommand",
     "StartReviewCommand",
     "SubmitSubmissionCommand",
@@ -307,6 +310,30 @@ class MarkPaidCommand:
 @dataclass(frozen=True, slots=True)
 class AcceptSubmissionCommand:
     """Accept the paid submission into the competition (organizer); content then freezes."""
+
+    submission_id: str
+    reviewer_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class ScheduleSubmissionCommand:
+    """Move an accepted submission into running competition (organizer)."""
+
+    submission_id: str
+    reviewer_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class CompleteSubmissionCommand:
+    """Mark a running submission as completed (organizer)."""
+
+    submission_id: str
+    reviewer_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class CancelSubmissionByReviewerCommand:
+    """Cancel a submission by organizer decision (organizer)."""
 
     submission_id: str
     reviewer_id: str

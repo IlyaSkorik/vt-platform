@@ -35,6 +35,10 @@ class SubmissionModel(BasePersistenceModel):
     attachments = models.JSONField(default=list, blank=True)
     reviews = models.JSONField(default=list, blank=True)
     price_snapshot = models.JSONField(null=True, blank=True, default=None)
+    status_history = models.JSONField(default=list, blank=True)
+    missing_files_requests = models.JSONField(default=list, blank=True)
+    organizer_notes = models.JSONField(default=list, blank=True)
+    participant_messages = models.JSONField(default=list, blank=True)
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "applications_submission"

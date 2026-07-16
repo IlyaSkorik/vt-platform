@@ -11,4 +11,5 @@ from django.urls import include, path
 urlpatterns = [
     path("", include("apps.applications.presentation.api.v1.orders.urls")),
     path("", include("apps.applications.presentation.api.v1.submissions.urls")),
+    path("", include("apps.applications.presentation.api.v1.organizer.urls")),
 ]

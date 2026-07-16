@@ -76,6 +76,7 @@ from .exceptions import (
     InvalidServiceLineError,
     InvalidSubmissionIdError,
     InvalidSubmissionRefError,
+    InvalidSubmissionStatusChangeError,
     InvalidTeacherIdError,
     InvalidTeacherRoleError,
     InvalidTotalPriceSnapshotError,
@@ -122,6 +123,7 @@ __all__ = [
     "SubmissionParticipationPolicy",
     "SubmissionRef",
     "SubmissionStatus",
+    "SubmissionStatusChange",
     "TeacherId",
     "TeacherRole",
     "TotalPriceSnapshot",
@@ -755,6 +757,29 @@ class SubmissionStatus(StrEnum):
     SCHEDULED = "SCHEDULED"
     COMPLETED = "COMPLETED"
     CANCELLED = "CANCELLED"
+
+
+@dataclass(frozen=True, slots=True)
+class SubmissionStatusChange:
+    """One entry in a submission's status history - a past transition, timestamped."""
+
+    from_status: SubmissionStatus | None
+    to_status: SubmissionStatus
+    occurred_at: datetime
+
+    def __post_init__(self) -> None:
+        if self.from_status is not None and not isinstance(self.from_status, SubmissionStatus):
+            raise InvalidSubmissionStatusChangeError(
+                f"from_status must be a SubmissionStatus or None, got {type(self.from_status)!r}."
+            )
+        if not isinstance(self.to_status, SubmissionStatus):
+            raise InvalidSubmissionStatusChangeError(
+                f"to_status must be a SubmissionStatus, got {type(self.to_status)!r}."
+            )
+        if not isinstance(self.occurred_at, datetime):
+            raise InvalidSubmissionStatusChangeError(
+                f"occurred_at must be a datetime, got {type(self.occurred_at)!r}."
+            )
 
 
 class Gender(StrEnum):

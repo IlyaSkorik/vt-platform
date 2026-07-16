@@ -107,6 +107,12 @@ class _SubmissionPriceSerializer(serializers.Serializer[dict[str, object]]):
     calculatedAt = serializers.DateTimeField()
 
 
+class _SubmissionStatusHistorySerializer(serializers.Serializer[dict[str, object]]):
+    fromStatus = serializers.CharField(allow_null=True)
+    toStatus = serializers.CharField()
+    occurredAt = serializers.DateTimeField()
+
+
 class SubmissionResourceSerializer(serializers.Serializer[dict[str, object]]):
     """The full submission resource (root + child graph)."""
 
@@ -118,6 +124,7 @@ class SubmissionResourceSerializer(serializers.Serializer[dict[str, object]]):
     participants = _ParticipantResourceSerializer(many=True)
     teachers = _TeacherResourceSerializer(many=True)
     attachments = _SubmissionAttachmentResourceSerializer(many=True)
+    statusHistory = _SubmissionStatusHistorySerializer(many=True)
     price = _SubmissionPriceSerializer(allow_null=True)
     createdAt = serializers.DateTimeField()
     updatedAt = serializers.DateTimeField()

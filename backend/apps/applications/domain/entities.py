@@ -166,6 +166,7 @@ from .value_objects import (
     SubmissionParticipationPolicy,
     SubmissionRef,
     SubmissionStatus,
+    SubmissionStatusChange,
     TeacherId,
     TeacherRole,
     TotalPriceSnapshot,
@@ -542,6 +543,7 @@ class Submission:
     _attachments: dict[AttachmentId, Attachment] = field(default_factory=dict)
     _reviews: list[Review] = field(default_factory=list)
     _price_snapshot: PriceSnapshot | None = None
+    _status_history: list[SubmissionStatusChange] = field(default_factory=list)
     _deleted_at: datetime | None = None
     _version: int = 1
     #: The version this aggregate was loaded at - the optimistic-concurrency
@@ -585,6 +587,7 @@ class Submission:
             _created_at=now,
             _updated_at=now,
             _performance=performance,
+            _status_history=[SubmissionStatusChange(from_status=None, to_status=SubmissionStatus.DRAFT, occurred_at=now)],
         )
         events: list[DomainEvent] = [SubmissionCreated(aggregate_id=submission_id.value, competition_id=competition_id, applicant_id=applicant_id)]
         if performance is not None:
@@ -607,6 +610,7 @@ class Submission:
         attachments: Sequence[Attachment] = (),
         reviews: Sequence[Review] = (),
         price_snapshot: PriceSnapshot | None = None,
+        status_history: Sequence[SubmissionStatusChange] = (),
         deleted_at: datetime | None = None,
         version: int = 1,
     ) -> Submission:
@@ -625,6 +629,7 @@ class Submission:
             _attachments={a.id: a for a in attachments},
             _reviews=list(reviews),
             _price_snapshot=price_snapshot,
+            _status_history=list(status_history),
             _deleted_at=deleted_at,
             _version=version,
             _initial_version=version,
@@ -679,6 +684,11 @@ class Submission:
     @property
     def price_snapshot(self) -> PriceSnapshot | None:
         return self._price_snapshot
+
+    @property
+    def status_history(self) -> tuple[SubmissionStatusChange, ...]:
+        """The submission's status history, in the order it was recorded."""
+        return tuple(self._status_history)
 
     @property
     def created_at(self) -> datetime:
@@ -1007,7 +1017,9 @@ class Submission:
         """Move to ``target`` if the transition is legal from the current status."""
         if target not in _LEGAL_TRANSITIONS[self._status]:
             raise IllegalStatusTransitionError(f"Cannot transition from {self._status.value} to {target.value}.")
+        previous = self._status
         self._status = target
+        self._status_history.append(SubmissionStatusChange(from_status=previous, to_status=target, occurred_at=now))
         self._touch(now)
 
     def _touch(self, now: datetime) -> None:

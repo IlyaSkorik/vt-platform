@@ -93,6 +93,10 @@ def _submission_resource(dto: SubmissionView) -> dict[str, Any]:
             for t in dto.teachers
         ],
         "attachments": [{"id": a.id, "type": a.type, "fileReference": a.file_reference, "caption": a.caption} for a in dto.attachments],
+        "statusHistory": [
+            {"fromStatus": from_status, "toStatus": to_status, "occurredAt": _iso(occurred_at)}
+            for from_status, to_status, occurred_at in dto.status_history
+        ],
         "price": ({"amount": price.amount, "currency": price.currency, "calculatedAt": _iso(price.calculated_at)} if price is not None else None),
         "createdAt": _iso(dto.created_at),
         "updatedAt": _iso(dto.updated_at),

@@ -181,6 +181,10 @@ class InvalidParticipantCountRangeError(ValueObjectValidationError):
     """The provided counts do not form a valid participant-count range."""
 
 
+class InvalidSubmissionStatusChangeError(ValueObjectValidationError):
+    """The provided value is not a valid submission status-history entry."""
+
+
 # ---------------------------------------------------------------------------
 # Construction
 # ---------------------------------------------------------------------------

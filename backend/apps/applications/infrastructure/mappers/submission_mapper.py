@@ -40,6 +40,7 @@ from apps.applications.domain.value_objects import (
     ReviewId,
     SubmissionId,
     SubmissionStatus,
+    SubmissionStatusChange,
     TeacherId,
     TeacherRole,
     UserId,
@@ -68,6 +69,7 @@ class SubmissionMapper:
             attachments=[SubmissionMapper._attachment_from_json(row) for row in model.attachments],
             reviews=[SubmissionMapper._review_from_json(row) for row in model.reviews],
             price_snapshot=SubmissionMapper._price_from_json(model.price_snapshot),
+            status_history=[SubmissionMapper._status_change_from_json(row) for row in model.status_history],
             deleted_at=model.deleted_at,
             version=model.version,
         )
@@ -103,6 +105,7 @@ class SubmissionMapper:
             "attachments": [SubmissionMapper._attachment_to_json(a) for a in entity.attachments],
             "reviews": [SubmissionMapper._review_to_json(r) for r in entity.reviews],
             "price_snapshot": SubmissionMapper._price_to_json(price),
+            "status_history": [SubmissionMapper._status_change_to_json(change) for change in entity.status_history],
             "created_at": entity.created_at,
             "updated_at": entity.updated_at,
             "version": entity.version,
@@ -255,4 +258,20 @@ class SubmissionMapper:
         return PriceSnapshot(
             price=Money.of(data["amount"], Currency(data["currency"])),
             calculated_at=datetime.fromisoformat(data["calculated_at"]),
+        )
+
+    @staticmethod
+    def _status_change_to_json(change: SubmissionStatusChange) -> dict[str, Any]:
+        return {
+            "from_status": change.from_status.value if change.from_status is not None else None,
+            "to_status": change.to_status.value,
+            "occurred_at": change.occurred_at.isoformat(),
+        }
+
+    @staticmethod
+    def _status_change_from_json(data: dict[str, Any]) -> SubmissionStatusChange:
+        return SubmissionStatusChange(
+            from_status=SubmissionStatus(data["from_status"]) if data["from_status"] is not None else None,
+            to_status=SubmissionStatus(data["to_status"]),
+            occurred_at=datetime.fromisoformat(data["occurred_at"]),
         )

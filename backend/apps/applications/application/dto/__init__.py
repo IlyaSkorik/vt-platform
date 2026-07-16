@@ -199,6 +199,7 @@ class SubmissionView:
     teachers: tuple[TeacherView, ...]
     attachments: tuple[AttachmentView, ...]
     reviews: tuple[ReviewView, ...]
+    status_history: tuple[tuple[str | None, str, datetime], ...]
     price: PriceView | None
     created_at: datetime
     updated_at: datetime
@@ -219,6 +220,14 @@ class SubmissionView:
             teachers=tuple(TeacherView.from_teacher(t) for t in submission.teachers),
             attachments=tuple(AttachmentView.from_attachment(a) for a in submission.attachments),
             reviews=tuple(ReviewView.from_review(r) for r in submission.reviews),
+            status_history=tuple(
+                (
+                    change.from_status.value if change.from_status is not None else None,
+                    change.to_status.value,
+                    change.occurred_at,
+                )
+                for change in submission.status_history
+            ),
             price=PriceView.from_snapshot(price) if price is not None else None,
             created_at=submission.created_at,
             updated_at=submission.updated_at,
