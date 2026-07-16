@@ -86,6 +86,7 @@ export function defaultCompetitionSettings(): _Settings {
     paymentRequired: false,
     paymentTiming: "BEFORE_APPROVAL",
     paymentMethods: [],
+    additionalPerformanceDiscountPercent: 0,
     requirePersonalDataConsent: true,
     requireMediaConsent: false,
     requireRegulationsAcceptance: true,
@@ -132,6 +133,10 @@ export function settingsToUpdatePayload(settings: _Settings): UpdateCompetitionS
     // payload uses the enum unions. Same wire values — narrow at the boundary.
     paymentTiming: settings.paymentTiming as PaymentTimingEnum,
     paymentMethods: settings.paymentMethods as PaymentMethodsEnum[],
+    additionalPerformanceDiscountPercent: Math.max(
+      0,
+      Math.min(100, Math.round(settings.additionalPerformanceDiscountPercent ?? 0)),
+    ),
     requirePersonalDataConsent: settings.requirePersonalDataConsent,
     requireMediaConsent: settings.requireMediaConsent,
     requireRegulationsAcceptance: settings.requireRegulationsAcceptance,

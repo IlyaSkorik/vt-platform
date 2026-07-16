@@ -34,6 +34,7 @@ function baseCompetition(overrides: Partial<CompetitionDetail> = {}): Competitio
       paymentRequired: false,
       paymentTiming: "BEFORE_APPROVAL",
       paymentMethods: [],
+      additionalPerformanceDiscountPercent: 0,
       requirePersonalDataConsent: true,
       requireMediaConsent: false,
       requireRegulationsAcceptance: true,

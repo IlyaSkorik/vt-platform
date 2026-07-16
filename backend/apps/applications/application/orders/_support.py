@@ -10,6 +10,7 @@ demand rather than by an event subscriber).
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 
 from apps.applications.application.exceptions import (
     ApplicationNotFoundError,
@@ -19,7 +20,7 @@ from apps.applications.application.exceptions import (
 )
 from apps.applications.application.interfaces import ApplicationRepository, SubmissionRepository
 from apps.applications.domain.entities import Application, Submission
-from apps.applications.domain.value_objects import ApplicationId, SubmissionRef, UserId
+from apps.applications.domain.value_objects import ApplicationId, Money, PriceSnapshot, SubmissionRef, UserId
 
 __all__ = [
     "ensure_owner",
@@ -83,6 +84,39 @@ def ref_from_submission(submission: Submission) -> SubmissionRef:
     )
 
 
+def _apply_additional_performance_discount(
+    refs: list[SubmissionRef],
+    *,
+    discount_percent: int,
+) -> list[SubmissionRef]:
+    if discount_percent <= 0:
+        return refs
+    factor = Decimal("1") - (Decimal(discount_percent) / Decimal("100"))
+    if factor < Decimal("0"):
+        factor = Decimal("0")
+    discounted: list[SubmissionRef] = []
+    for index, ref in enumerate(refs):
+        if index == 0 or ref.price is None:
+            discounted.append(ref)
+            continue
+        new_amount = (ref.price.amount * factor).quantize(Decimal("0.01"))
+        discounted.append(
+            SubmissionRef(
+                submission_id=ref.submission_id,
+                performance_title=ref.performance_title,
+                participant_display_name=ref.participant_display_name,
+                nomination=ref.nomination,
+                discipline=ref.discipline,
+                status=ref.status,
+                price=PriceSnapshot(
+                    price=Money.of(new_amount, ref.price.currency),
+                    calculated_at=ref.price.calculated_at,
+                ),
+            )
+        )
+    return discounted
+
+
 def load_order_submissions(application: Application, submissions: SubmissionRepository) -> list[Submission]:
     """Load the live Submission aggregates the order references (skipping any gone)."""
     loaded: list[Submission] = []
@@ -98,7 +132,13 @@ def order_participation_format_ids(order_submissions: list[Submission]) -> froze
     return frozenset(submission.performance.participation_format_id.json() for submission in order_submissions if submission.performance is not None)
 
 
-def refresh_submission_refs(application: Application, submissions: SubmissionRepository, *, now: datetime) -> None:
+def refresh_submission_refs(
+    application: Application,
+    submissions: SubmissionRepository,
+    *,
+    now: datetime,
+    additional_performance_discount_percent: int = 0,
+) -> None:
     """Refresh every attached submission's cached snapshot from its live aggregate.
 
     A pull-based projection: for each reference, the current Submission is loaded and
@@ -106,9 +146,15 @@ def refresh_submission_refs(application: Application, submissions: SubmissionRep
     such as payment-readiness reads current data. A reference whose submission can no
     longer be loaded is left as-is.
     """
+    refreshed_refs: list[SubmissionRef] = []
     for ref in application.submission_refs:
         submission = submissions.get(ref.submission_id)
         if submission is None:
             continue
+        refreshed_refs.append(ref_from_submission(submission))
+    for ref in _apply_additional_performance_discount(
+        refreshed_refs,
+        discount_percent=additional_performance_discount_percent,
+    ):
         with translate_application_domain_errors():
-            application.refresh_submission_ref(ref=ref_from_submission(submission), now=now)
+            application.refresh_submission_ref(ref=ref, now=now)

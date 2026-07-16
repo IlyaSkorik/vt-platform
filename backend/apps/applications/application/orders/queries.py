@@ -76,7 +76,14 @@ class GetApplicationHandler:
                     continue
                 self._try_submit_submission(submission, now=now)
         if application.status in {ApplicationStatus.DRAFT, ApplicationStatus.SUBMITTED}:
-            refresh_submission_refs(application, self._submissions, now=now)
+            refresh_submission_refs(
+                application,
+                self._submissions,
+                now=now,
+                additional_performance_discount_percent=self._catalog.additional_performance_discount_percent(
+                    competition_id=application.competition_id
+                ),
+            )
         return ApplicationView.from_application(application)
 
     def _try_submit_submission(self, submission: Submission, *, now) -> None:
@@ -128,7 +135,14 @@ class ListApplicationsHandler:
                         continue
                     self._try_submit_submission(submission, now=now)
             if app.status in {ApplicationStatus.DRAFT, ApplicationStatus.SUBMITTED}:
-                refresh_submission_refs(app, self._submissions, now=now)
+                refresh_submission_refs(
+                    app,
+                    self._submissions,
+                    now=now,
+                    additional_performance_discount_percent=self._catalog.additional_performance_discount_percent(
+                        competition_id=app.competition_id
+                    ),
+                )
         return tuple(ApplicationSummaryView.from_application(app) for app in apps)
 
     def _try_submit_submission(self, submission: Submission, *, now) -> None:
@@ -155,9 +169,17 @@ class ListApplicationsHandler:
 class ListDraftApplicationsHandler:
     """Read use case: list the current applicant's DRAFT applications."""
 
-    def __init__(self, *, applications: ApplicationRepository, submissions: SubmissionRepository, clock: Clock) -> None:
+    def __init__(
+        self,
+        *,
+        applications: ApplicationRepository,
+        submissions: SubmissionRepository,
+        catalog: CompetitionCatalog,
+        clock: Clock,
+    ) -> None:
         self._applications = applications
         self._submissions = submissions
+        self._catalog = catalog
         self._clock = clock
 
     def handle(self, query: ListDraftApplicationsQuery) -> tuple[ApplicationSummaryView, ...]:
@@ -165,5 +187,12 @@ class ListDraftApplicationsHandler:
         now = self._clock.utcnow()
         apps = [app for app in self._applications.list_by_applicant(applicant_id) if app.status is ApplicationStatus.DRAFT]
         for app in apps:
-            refresh_submission_refs(app, self._submissions, now=now)
+            refresh_submission_refs(
+                app,
+                self._submissions,
+                now=now,
+                additional_performance_discount_percent=self._catalog.additional_performance_discount_percent(
+                    competition_id=app.competition_id
+                ),
+            )
         return tuple(ApplicationSummaryView.from_application(app) for app in apps)

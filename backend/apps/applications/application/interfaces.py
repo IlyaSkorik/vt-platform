@@ -164,6 +164,10 @@ class CompetitionCatalog(Protocol):
         """Whether the competition's payment window is still open at ``now``."""
         ...
 
+    def additional_performance_discount_percent(self, *, competition_id: CompetitionId) -> int:
+        """Organizer-configured discount percent applied to 2nd+ performances in one application."""
+        ...
+
     def accepts_upload(self, *, competition_id: CompetitionId, attachment_kind: str, now: datetime) -> bool:
         """Whether uploads of ``attachment_kind`` are still allowed at ``now``.
 

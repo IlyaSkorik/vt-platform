@@ -135,6 +135,7 @@ class UpdateSettingsCommand:
     payment_required: bool
     payment_timing: str
     payment_methods: list[str]
+    additional_performance_discount_percent: int
     require_personal_data_consent: bool
     require_media_consent: bool
     require_regulations_acceptance: bool

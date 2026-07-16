@@ -1781,6 +1781,7 @@ class CompetitionSettings:
     payment_required: bool = False
     payment_timing: PaymentTiming = PaymentTiming.BEFORE_APPROVAL
     payment_methods: tuple[PaymentMethod, ...] = ()
+    additional_performance_discount_percent: int = 0
 
     # Consents
     require_personal_data_consent: bool = True
@@ -1808,6 +1809,8 @@ class CompetitionSettings:
         if self.payment_required and not methods:
             raise InvalidCompetitionSettingsError("At least one payment method is required when payment is required.")
         object.__setattr__(self, "payment_methods", methods)
+        if self.additional_performance_discount_percent < 0 or self.additional_performance_discount_percent > 100:
+            raise InvalidCompetitionSettingsError("Additional performance discount must be between 0 and 100 percent.")
 
         seen: set[ParticipationFormatId] = set()
         for item in self.format_requirements:

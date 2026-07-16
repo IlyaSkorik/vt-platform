@@ -431,7 +431,14 @@ class SubmitApplicationHandler:
                 continue
             self._submit_one(submission, now=now)
 
-        refresh_submission_refs(application, self._submissions, now=now)
+        refresh_submission_refs(
+            application,
+            self._submissions,
+            now=now,
+            additional_performance_discount_percent=self._catalog.additional_performance_discount_percent(
+                competition_id=application.competition_id
+            ),
+        )
         format_ids = order_participation_format_ids(load_order_submissions(application, self._submissions))
         required_consents = self._services.required_consent_codes(competition_id=application.competition_id)
         required_services = self._services.required_service_ids(competition_id=application.competition_id, participation_format_ids=format_ids)
@@ -475,7 +482,14 @@ class RequestApplicationPaymentHandler:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
-        refresh_submission_refs(application, self._submissions, now=now)
+        refresh_submission_refs(
+            application,
+            self._submissions,
+            now=now,
+            additional_performance_discount_percent=self._catalog.additional_performance_discount_percent(
+                competition_id=application.competition_id
+            ),
+        )
         with translate_application_domain_errors():
             order_events = application.request_payment(now=now)
         self._applications.save(application)

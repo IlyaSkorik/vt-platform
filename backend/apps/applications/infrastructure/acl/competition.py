@@ -110,6 +110,12 @@ class DjangoCompetitionCatalog:
         competition = self._load(competition_id)
         return competition is not None and competition.is_payment_allowed(now)
 
+    def additional_performance_discount_percent(self, *, competition_id: CompetitionId) -> int:
+        competition = self._load(competition_id)
+        if competition is None:
+            return 0
+        return int(competition.settings.additional_performance_discount_percent)
+
     def accepts_upload(self, *, competition_id: CompetitionId, attachment_kind: str, now: datetime) -> bool:
         competition = self._load(competition_id)
         if competition is None:

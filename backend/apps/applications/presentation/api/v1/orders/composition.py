@@ -183,4 +183,9 @@ def build_list_applications_handler() -> ListApplicationsHandler:
 
 
 def build_list_drafts_handler() -> ListDraftApplicationsHandler:
-    return ListDraftApplicationsHandler(applications=_applications(), submissions=_submissions(), clock=SystemClock())
+    return ListDraftApplicationsHandler(
+        applications=_applications(),
+        submissions=_submissions(),
+        catalog=DjangoCompetitionCatalog(),
+        clock=SystemClock(),
+    )
