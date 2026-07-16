@@ -19,7 +19,6 @@ from apps.applications.application.dto.commands import (
     AcceptSubmissionCommand,
     ApproveSubmissionCommand,
     CancelSubmissionByReviewerCommand,
-    CompleteSubmissionCommand,
     MarkPaidCommand,
     MarkWaitingPaymentCommand,
     ReturnSubmissionForCorrectionCommand,
@@ -52,7 +51,7 @@ _QUEUE_BY_STATUS = {
     "PAID": "READY",
     "ACCEPTED": "READY",
     "SCHEDULED": "RUNNING",
-    "COMPLETED": "COMPLETED",
+    "COMPLETED": "RUNNING",
     "CANCELLED": "ARCHIVE",
 }
 
@@ -124,7 +123,7 @@ def _capabilities(status: str) -> list[dict[str, str]]:
         "WAITING_PAYMENT": [("confirm_participation", "Подтвердить участие"), ("cancel", "Отменить")],
         "PAID": [("confirm_participation", "Подтвердить участие"), ("cancel", "Отменить")],
         "ACCEPTED": [("move_to_running", "Перевести в конкурс")],
-        "SCHEDULED": [("mark_completed", "Завершить")],
+        "SCHEDULED": [],
         "COMPLETED": [],
         "CANCELLED": [],
     }
@@ -461,7 +460,6 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                 {"key": "WAITING_PAYMENT", "label": "Ожидают оплату", "count": queue_counts.get("WAITING_PAYMENT", 0)},
                 {"key": "READY", "label": "Готовы к конкурсу", "count": queue_counts.get("READY", 0)},
                 {"key": "RUNNING", "label": "Назначены в конкурс", "count": queue_counts.get("RUNNING", 0)},
-                {"key": "COMPLETED", "label": "Завершены", "count": queue_counts.get("COMPLETED", 0)},
                 {"key": "ARCHIVE", "label": "Отменены", "count": queue_counts.get("ARCHIVE", 0)},
             ],
             "metrics": {
@@ -470,7 +468,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                 "needPayment": queue_counts.get("WAITING_PAYMENT", 0),
                 "ready": queue_counts.get("READY", 0),
                 "running": queue_counts.get("RUNNING", 0),
-                "completed": queue_counts.get("COMPLETED", 0),
+                "completed": 0,
             },
             "competitions": [{"id": str(row["id"]), "title": row["title"], "status": row["status"]} for row in competitions],
             "applications": rows,
@@ -618,10 +616,6 @@ class OrganizerProcessingActionView(_StaffView):
             elif action == "move_to_running":
                 result = composition.build_schedule_submission_handler().handle(
                     ScheduleSubmissionCommand(submission_id=submission_id, reviewer_id=user_id)
-                )
-            elif action == "mark_completed":
-                result = composition.build_complete_submission_handler().handle(
-                    CompleteSubmissionCommand(submission_id=submission_id, reviewer_id=user_id)
                 )
             elif action == "cancel":
                 result = composition.build_cancel_submission_by_reviewer_handler().handle(

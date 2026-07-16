@@ -102,10 +102,15 @@ async function fetchWorkspace(
   return body.data;
 }
 
-async function runAction(submissionId: string, action: string, comment: string): Promise<void> {
+async function runAction(
+  submissionId: string,
+  action: string,
+  comment: string,
+  missingTypes: string[] = [],
+): Promise<void> {
   const payload: Record<string, unknown> = { comment };
   if (action === "request_missing_files") {
-    payload.types = ["MUSIC", "VIDEO", "DOCUMENT", "RECEIPT", "OTHER"];
+    payload.types = missingTypes;
   }
   try {
     await apiClient.post(`staff/applications/${submissionId}/actions/${action}`, { json: payload });
@@ -212,6 +217,7 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [comment, setComment] = useState("");
+  const [selectedMissingTypes, setSelectedMissingTypes] = useState<string[]>([]);
   const [competitionId, setCompetitionId] = useState("");
   const [openPerformances, setOpenPerformances] = useState<Record<string, boolean>>({});
   const [actionError, setActionError] = useState<string | null>(null);
@@ -262,10 +268,11 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
 
   const action = useMutation({
     mutationFn: ({ submissionId, actionKey }: { submissionId: string; actionKey: string }) =>
-      runAction(submissionId, actionKey, comment),
+      runAction(submissionId, actionKey, comment, selectedMissingTypes),
     onSuccess: async () => {
       const next = nextId(groupedInbox, selectedItem?.id ?? null);
       setComment("");
+      setSelectedMissingTypes([]);
       setActionError(null);
       setSelected(next);
       await queryClient.invalidateQueries({ queryKey: ["staff", "applications", "workspace"] });
@@ -307,6 +314,10 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
       } else {
         setActionError("Введите комментарий для участника перед выполнением действия.");
       }
+      return;
+    }
+    if (actionKey === "request_missing_files" && selectedMissingTypes.length === 0) {
+      setActionError("Выберите, какие именно файлы нужно прикрепить.");
       return;
     }
     if (!selectedItem) return;
@@ -482,6 +493,35 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                     onChange={(event) => setComment(event.target.value)}
                     placeholder="Комментарий к текущему действию"
                   />
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { key: "MUSIC", label: "Музыка" },
+                      { key: "VIDEO", label: "Видео" },
+                      { key: "DOCUMENT", label: "Документы" },
+                      { key: "RECEIPT", label: "Квитанция" },
+                      { key: "OTHER", label: "Другое" },
+                    ].map((type) => {
+                      const selected = selectedMissingTypes.includes(type.key);
+                      return (
+                        <button
+                          key={type.key}
+                          type="button"
+                          onClick={() =>
+                            setSelectedMissingTypes((prev) =>
+                              prev.includes(type.key)
+                                ? prev.filter((item) => item !== type.key)
+                                : [...prev, type.key],
+                            )
+                          }
+                          className={`rounded-md border px-2 py-1 text-xs transition ${
+                            selected ? "border-primary bg-primary/10 text-primary" : "hover:border-primary/50"
+                          }`}
+                        >
+                          {type.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                   {actionError ? <p className="text-sm text-danger">{actionError}</p> : null}
                   <div className="flex flex-wrap justify-end gap-2">
                     <Button
