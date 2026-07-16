@@ -1,5 +1,6 @@
+import { RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { generatePath, Link, useNavigate, useParams } from "react-router";
+import { Navigate, generatePath, Link, useNavigate, useParams, useSearchParams } from "react-router";
 
 import {
   useApplication,
@@ -47,18 +48,27 @@ function errorMessage(error: unknown): string {
  */
 export function FestivalApplyPage(): React.JSX.Element {
   const { festivalId = "" } = useParams<{ festivalId: string }>();
+  const [searchParams] = useSearchParams();
   const { data: applications, isLoading: listLoading } = useMyApplications();
   const createApplication = useCreateApplication();
   const [createdId, setCreatedId] = useState<string | null>(null);
+  const targetApplicationId = searchParams.get("applicationId");
 
-  const existingDraft = useMemo(
-    () =>
-      applications?.find(
-        (application) => application.competitionId === festivalId && application.status === "DRAFT",
-      ),
-    [applications, festivalId],
-  );
-  const applicationId = createdId ?? existingDraft?.id ?? null;
+  const selectedApplication = useMemo(() => {
+    if (!applications) return null;
+    if (targetApplicationId) {
+      const exact = applications.find((application) => application.id === targetApplicationId && application.competitionId === festivalId);
+      if (exact) return exact;
+    }
+    return (
+      applications.find(
+        (application) =>
+          application.competitionId === festivalId &&
+          (application.status === "DRAFT" || application.status === "SUBMITTED"),
+      ) ?? null
+    );
+  }, [applications, festivalId, targetApplicationId]);
+  const applicationId = createdId ?? selectedApplication?.id ?? null;
 
   if (listLoading) {
     return (
@@ -108,8 +118,12 @@ function WizardBody({
   applicationId: string;
   competitionId: string;
 }): React.JSX.Element {
-  const { data: application, isLoading: applicationLoading } = useApplication(applicationId);
-  const { data: registration, isLoading: registrationLoading } = useRegistration(competitionId);
+  const { data: application, isLoading: applicationLoading, refetch: refetchApplication, isFetching: isFetchingApplication } = useApplication(applicationId);
+  const { data: registration, isLoading: registrationLoading, refetch: refetchRegistration, isFetching: isFetchingRegistration } =
+    useRegistration(competitionId);
+  const [refreshNotice, setRefreshNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const isEditableStatus = application?.status === "DRAFT" || application?.status === "SUBMITTED";
 
   if (applicationLoading || registrationLoading || !application || !registration) {
     return (
@@ -119,6 +133,10 @@ function WizardBody({
         </PageContent>
       </PageContainer>
     );
+  }
+
+  if (!registration.registrationOpen || !isEditableStatus) {
+    return <Navigate to={generatePath(ROUTES.cabinetApplication, { applicationId })} replace />;
   }
 
   return (
@@ -135,11 +153,41 @@ function WizardBody({
         <ServicesStep applicationId={applicationId} application={application} registration={registration} />
         <ConsentsStep applicationId={applicationId} application={application} registration={registration} />
         <ReviewStep applicationId={applicationId} application={application} registration={registration} />
-        <p className="text-sm">
-          <Link to={generatePath(ROUTES.cabinetApplication, { applicationId })}>
-            Открыть карточку заявки
-          </Link>
-        </p>
+        <div className="flex flex-wrap justify-between gap-2">
+          <p className="text-sm">
+            <Link to={generatePath(ROUTES.cabinetApplication, { applicationId })}>
+              Открыть карточку заявки
+            </Link>
+          </p>
+          <Button
+            size="sm"
+            variant="primary"
+            loading={isFetchingApplication || isFetchingRegistration}
+            onClick={async () => {
+              try {
+                const [applicationResult, registrationResult] = await Promise.all([
+                  refetchApplication(),
+                  refetchRegistration(),
+                ]);
+                if (applicationResult.error || registrationResult.error) {
+                  setRefreshNotice({ type: "error", text: "Не удалось обновить данные заявки" });
+                  return;
+                }
+                setRefreshNotice({ type: "success", text: "Данные заявки обновлены" });
+              } catch {
+                setRefreshNotice({ type: "error", text: "Не удалось обновить данные заявки" });
+              }
+            }}
+          >
+            <RefreshCw className="size-4" />
+            Обновить
+          </Button>
+        </div>
+        {refreshNotice ? (
+          <p className={`text-sm ${refreshNotice.type === "success" ? "text-green-600" : "text-danger"}`}>
+            {refreshNotice.text}
+          </p>
+        ) : null}
       </PageContent>
     </PageContainer>
   );

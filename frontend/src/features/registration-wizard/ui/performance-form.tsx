@@ -168,7 +168,6 @@ function PerformanceFormInner({
       return;
     }
     const handle = setTimeout(() => {
-      savedSignature.current = saveSignature;
       savePerformance({
         title: title.trim(),
         durationSeconds,
@@ -177,6 +176,13 @@ function PerformanceFormInner({
         ageCategoryId: selection.ageCategoryId as string,
         participantGroupId: selection.participantGroupId as string,
         participationFormatId: selection.participationFormatId as string,
+      }, {
+        onSuccess: () => {
+          savedSignature.current = saveSignature;
+        },
+        onError: () => {
+          toast.error("Не удалось сохранить выступление");
+        },
       });
     }, 700);
     return () => clearTimeout(handle);

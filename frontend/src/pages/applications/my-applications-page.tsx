@@ -1,5 +1,5 @@
 import { ClipboardList, Plus } from "lucide-react";
-import { generatePath, Link } from "react-router";
+import { createSearchParams, generatePath, Link } from "react-router";
 import { applicationStatusPresentation, useMyApplications } from "@/entities/application";
 import type { ApplicationSummaryResource } from "@/shared/api/generated/model-applications";
 import { ROUTES } from "@/shared/config";
@@ -49,6 +49,7 @@ function ApplicationCard({
   const continueTo = generatePath(ROUTES.cabinetFestivalApply, {
     festivalId: application.competitionId,
   });
+  const openInCabinetTo = `${continueTo}?${createSearchParams({ applicationId: application.id }).toString()}`;
   const detailTo = generatePath(ROUTES.cabinetApplication, { applicationId: application.id });
 
   return (
@@ -66,10 +67,15 @@ function ApplicationCard({
       </CardHeader>
       <CardContent>
         <Button asChild variant={isDraft ? "primary" : "outline"} size="sm">
-          <Link to={isDraft ? continueTo : detailTo}>
+          <Link to={isDraft ? continueTo : openInCabinetTo}>
             {isDraft ? "Продолжить заполнение" : "Открыть"}
           </Link>
         </Button>
+        {!isDraft ? (
+          <Button asChild variant="ghost" size="sm" className="ml-2">
+            <Link to={detailTo}>Открыть карточку</Link>
+          </Button>
+        ) : null}
       </CardContent>
     </Card>
   );
@@ -124,8 +130,8 @@ export function MyApplicationsPage(): React.JSX.Element {
         ) : (
           <Tabs defaultValue="all">
             <TabsList>
-              <TabsTrigger value="all">Все ({applications.length})</TabsTrigger>
-              <TabsTrigger value="drafts">Черновики ({drafts.length})</TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="all">Все ({applications.length})</TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="drafts">Черновики ({drafts.length})</TabsTrigger>
             </TabsList>
             <TabsContent value="all">
               <ApplicationList applications={applications} />

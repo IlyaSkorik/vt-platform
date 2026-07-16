@@ -179,12 +179,14 @@ class AddSubmissionToApplicationHandler:
         *,
         applications: ApplicationRepository,
         submissions: SubmissionRepository,
+        catalog: CompetitionCatalog,
         clock: Clock,
         uuids: UuidGenerator,
         events: EventPublisher,
     ) -> None:
         self._applications = applications
         self._submissions = submissions
+        self._catalog = catalog
         self._clock = clock
         self._uuids = uuids
         self._events = events
@@ -193,6 +195,8 @@ class AddSubmissionToApplicationHandler:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
+        if not self._catalog.accepts_submissions(competition_id=application.competition_id, now=now):
+            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
 
         submission, submission_events = Submission.draft(
             submission_id=SubmissionId.from_uuid(self._uuids.new()),
@@ -217,11 +221,13 @@ class RemoveSubmissionFromApplicationHandler:
         *,
         applications: ApplicationRepository,
         submissions: SubmissionRepository,
+        catalog: CompetitionCatalog,
         clock: Clock,
         events: EventPublisher,
     ) -> None:
         self._applications = applications
         self._submissions = submissions
+        self._catalog = catalog
         self._clock = clock
         self._events = events
 
@@ -229,6 +235,8 @@ class RemoveSubmissionFromApplicationHandler:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
+        if not self._catalog.accepts_submissions(competition_id=application.competition_id, now=now):
+            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
         with translate_domain_errors():
             submission_id = SubmissionId.from_string(command.submission_id)
 
@@ -260,11 +268,13 @@ class SelectAdditionalServiceHandler:
         *,
         applications: ApplicationRepository,
         submissions: SubmissionRepository,
+        catalog: CompetitionCatalog,
         services: CompetitionServiceCatalog,
         clock: Clock,
     ) -> None:
         self._applications = applications
         self._submissions = submissions
+        self._catalog = catalog
         self._services = services
         self._clock = clock
 
@@ -272,6 +282,8 @@ class SelectAdditionalServiceHandler:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
+        if not self._catalog.accepts_submissions(competition_id=application.competition_id, now=now):
+            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
         with translate_application_domain_errors():
             service_id = ServiceId.from_string(command.service_id)
 
@@ -303,14 +315,17 @@ class SelectAdditionalServiceHandler:
 class RemoveAdditionalServiceHandler:
     """Use case: remove a previously selected additional service from the order."""
 
-    def __init__(self, *, applications: ApplicationRepository, clock: Clock) -> None:
+    def __init__(self, *, applications: ApplicationRepository, catalog: CompetitionCatalog, clock: Clock) -> None:
         self._applications = applications
+        self._catalog = catalog
         self._clock = clock
 
     def handle(self, command: RemoveAdditionalServiceCommand) -> ApplicationOperationResultDto:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
+        if not self._catalog.accepts_submissions(competition_id=application.competition_id, now=now):
+            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
         with translate_application_domain_errors():
             service_id = ServiceId.from_string(command.service_id)
             order_events = application.remove_service(service_id=service_id, now=now)
@@ -321,14 +336,17 @@ class RemoveAdditionalServiceHandler:
 class RecordConsentsHandler:
     """Use case: record the set of accepted consents on the order."""
 
-    def __init__(self, *, applications: ApplicationRepository, clock: Clock) -> None:
+    def __init__(self, *, applications: ApplicationRepository, catalog: CompetitionCatalog, clock: Clock) -> None:
         self._applications = applications
+        self._catalog = catalog
         self._clock = clock
 
     def handle(self, command: RecordConsentsCommand) -> ApplicationOperationResultDto:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
+        if not self._catalog.accepts_submissions(competition_id=application.competition_id, now=now):
+            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
         with translate_application_domain_errors():
             consents = [Consent(code=item.code, version=item.version, accepted_at=now) for item in command.consents]
             order_events = application.record_consents(consents=consents, now=now)
@@ -343,10 +361,12 @@ class SelectEducationalOrganizationHandler:
         self,
         *,
         applications: ApplicationRepository,
+        catalog: CompetitionCatalog,
         directory: EducationalOrganizationDirectory,
         clock: Clock,
     ) -> None:
         self._applications = applications
+        self._catalog = catalog
         self._directory = directory
         self._clock = clock
 
@@ -354,6 +374,8 @@ class SelectEducationalOrganizationHandler:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
+        if not self._catalog.accepts_submissions(competition_id=application.competition_id, now=now):
+            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
         with translate_application_domain_errors():
             organization_id = EducationalOrganizationId.from_string(command.educational_organization_id)
 

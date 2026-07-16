@@ -9,11 +9,13 @@ from apps.applications.application.dto.commands import (
     UpdateTeacherCommand,
 )
 from apps.applications.application.exceptions import (
+    CompetitionClosedError,
     SubmissionChildNotFoundError,
     translate_domain_errors,
 )
 from apps.applications.application.interfaces import (
     Clock,
+    CompetitionCatalog,
     EventPublisher,
     SubmissionRepository,
     UuidGenerator,
@@ -45,11 +47,13 @@ class AddTeacherHandler:
         self,
         *,
         submissions: SubmissionRepository,
+        catalog: CompetitionCatalog,
         clock: Clock,
         uuids: UuidGenerator,
         events: EventPublisher,
     ) -> None:
         self._submissions = submissions
+        self._catalog = catalog
         self._clock = clock
         self._uuids = uuids
         self._events = events
@@ -58,6 +62,8 @@ class AddTeacherHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
+        if not self._catalog.accepts_submissions(competition_id=submission.competition_id, now=now):
+            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
 
         name = _parse_person(first_name=command.first_name, last_name=command.last_name, middle_name=command.middle_name)
         directory_teacher_id = _parse_directory_teacher_id(command.directory_teacher_id)
@@ -81,11 +87,13 @@ class UpdateTeacherHandler:
         self,
         *,
         submissions: SubmissionRepository,
+        catalog: CompetitionCatalog,
         clock: Clock,
         uuids: UuidGenerator,
         events: EventPublisher,
     ) -> None:
         self._submissions = submissions
+        self._catalog = catalog
         self._clock = clock
         self._uuids = uuids
         self._events = events
@@ -94,6 +102,8 @@ class UpdateTeacherHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
+        if not self._catalog.accepts_submissions(competition_id=submission.competition_id, now=now):
+            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
         with translate_domain_errors():
             target_id = TeacherId.from_string(command.teacher_id)
         target = next((t for t in submission.teachers if t.id == target_id), None)
@@ -126,10 +136,12 @@ class RemoveTeacherHandler:
         self,
         *,
         submissions: SubmissionRepository,
+        catalog: CompetitionCatalog,
         clock: Clock,
         events: EventPublisher,
     ) -> None:
         self._submissions = submissions
+        self._catalog = catalog
         self._clock = clock
         self._events = events
 
@@ -137,6 +149,8 @@ class RemoveTeacherHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
+        if not self._catalog.accepts_submissions(competition_id=submission.competition_id, now=now):
+            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
         with translate_domain_errors():
             teacher_id = TeacherId.from_string(command.teacher_id)
             domain_events = submission.remove_teacher(teacher_id=teacher_id, now=now)

@@ -79,32 +79,50 @@ def build_create_application_handler() -> CreateApplicationHandler:
 
 def build_add_submission_handler() -> AddSubmissionToApplicationHandler:
     return AddSubmissionToApplicationHandler(
-        applications=_applications(), submissions=_submissions(), clock=SystemClock(), uuids=Uuid7Generator(), events=NullEventPublisher()
+        applications=_applications(),
+        submissions=_submissions(),
+        catalog=DjangoCompetitionCatalog(),
+        clock=SystemClock(),
+        uuids=Uuid7Generator(),
+        events=NullEventPublisher(),
     )
 
 
 def build_remove_submission_handler() -> RemoveSubmissionFromApplicationHandler:
     return RemoveSubmissionFromApplicationHandler(
-        applications=_applications(), submissions=_submissions(), clock=SystemClock(), events=NullEventPublisher()
+        applications=_applications(),
+        submissions=_submissions(),
+        catalog=DjangoCompetitionCatalog(),
+        clock=SystemClock(),
+        events=NullEventPublisher(),
     )
 
 
 def build_select_service_handler() -> SelectAdditionalServiceHandler:
     return SelectAdditionalServiceHandler(
-        applications=_applications(), submissions=_submissions(), services=DjangoCompetitionServiceCatalog(), clock=SystemClock()
+        applications=_applications(),
+        submissions=_submissions(),
+        catalog=DjangoCompetitionCatalog(),
+        services=DjangoCompetitionServiceCatalog(),
+        clock=SystemClock(),
     )
 
 
 def build_remove_service_handler() -> RemoveAdditionalServiceHandler:
-    return RemoveAdditionalServiceHandler(applications=_applications(), clock=SystemClock())
+    return RemoveAdditionalServiceHandler(applications=_applications(), catalog=DjangoCompetitionCatalog(), clock=SystemClock())
 
 
 def build_record_consents_handler() -> RecordConsentsHandler:
-    return RecordConsentsHandler(applications=_applications(), clock=SystemClock())
+    return RecordConsentsHandler(applications=_applications(), catalog=DjangoCompetitionCatalog(), clock=SystemClock())
 
 
 def build_select_educational_organization_handler() -> SelectEducationalOrganizationHandler:
-    return SelectEducationalOrganizationHandler(applications=_applications(), directory=DjangoEducationalOrganizationDirectory(), clock=SystemClock())
+    return SelectEducationalOrganizationHandler(
+        applications=_applications(),
+        catalog=DjangoCompetitionCatalog(),
+        directory=DjangoEducationalOrganizationDirectory(),
+        clock=SystemClock(),
+    )
 
 
 def build_submit_application_handler() -> SubmitApplicationHandler:
@@ -147,12 +165,22 @@ def build_upload_receipt_handler() -> UploadApplicationReceiptHandler:
 
 
 def build_get_application_handler() -> GetApplicationHandler:
-    return GetApplicationHandler(applications=_applications(), submissions=_submissions(), clock=SystemClock())
+    return GetApplicationHandler(
+        applications=_applications(),
+        submissions=_submissions(),
+        catalog=DjangoCompetitionCatalog(),
+        clock=SystemClock(),
+    )
 
 
 def build_list_applications_handler() -> ListApplicationsHandler:
-    return ListApplicationsHandler(applications=_applications())
+    return ListApplicationsHandler(
+        applications=_applications(),
+        submissions=_submissions(),
+        catalog=DjangoCompetitionCatalog(),
+        clock=SystemClock(),
+    )
 
 
 def build_list_drafts_handler() -> ListDraftApplicationsHandler:
-    return ListDraftApplicationsHandler(applications=_applications())
+    return ListDraftApplicationsHandler(applications=_applications(), submissions=_submissions(), clock=SystemClock())

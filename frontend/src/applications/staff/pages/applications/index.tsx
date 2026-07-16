@@ -219,6 +219,8 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
         competitionId,
       }),
     placeholderData: (previousData) => previousData,
+    refetchInterval: 10_000,
+    refetchIntervalInBackground: false,
   });
 
   const selectedItem = useMemo(

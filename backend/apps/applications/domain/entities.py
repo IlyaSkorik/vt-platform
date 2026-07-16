@@ -194,7 +194,7 @@ _LEGAL_TRANSITIONS: Final[dict[SubmissionStatus, frozenset[SubmissionStatus]]] =
 
 #: Statuses in which the submission's content (performance, participants, teachers,
 #: attachments, price snapshot) may still be edited. Beyond these it is frozen.
-_EDITABLE_STATUSES: Final = frozenset({SubmissionStatus.DRAFT, SubmissionStatus.REQUIRES_CORRECTION})
+_EDITABLE_STATUSES: Final = frozenset({SubmissionStatus.DRAFT, SubmissionStatus.SUBMITTED, SubmissionStatus.REQUIRES_CORRECTION})
 
 #: Statuses in which the organizer may record a review iteration.
 _REVIEWABLE_STATUSES: Final = frozenset({SubmissionStatus.SUBMITTED, SubmissionStatus.UNDER_REVIEW})
@@ -715,7 +715,7 @@ class Submission:
         return self._status is SubmissionStatus.DRAFT
 
     def is_editable(self) -> bool:
-        """Whether content may currently be changed (DRAFT or REQUIRES_CORRECTION)."""
+        """Whether content may currently be changed (DRAFT, SUBMITTED or REQUIRES_CORRECTION)."""
         return self._status in _EDITABLE_STATUSES
 
     # ------------------------------------------------------------------
@@ -1010,7 +1010,7 @@ class Submission:
     def _ensure_editable(self) -> None:
         if self._status not in _EDITABLE_STATUSES:
             raise SubmissionNotEditableError(
-                f"Submission content can only be changed while DRAFT or REQUIRES_CORRECTION, not while {self._status.value}."
+                f"Submission content can only be changed while DRAFT, SUBMITTED or REQUIRES_CORRECTION, not while {self._status.value}."
             )
 
     def _transition_to(self, target: SubmissionStatus, *, now: datetime) -> None:
@@ -1078,7 +1078,7 @@ _LEGAL_APPLICATION_TRANSITIONS: Final[dict[ApplicationStatus, frozenset[Applicat
 
 #: The only status in which the order's composition (educational organization,
 #: submission references, additional services, consents) may be edited.
-_APPLICATION_EDITABLE_STATUSES: Final = frozenset({ApplicationStatus.DRAFT})
+_APPLICATION_EDITABLE_STATUSES: Final = frozenset({ApplicationStatus.DRAFT, ApplicationStatus.SUBMITTED})
 
 #: Statuses in which the applicant may attach (or replace) the payment receipt:
 #: any time before the order is settled. Some festivals require payment upfront, so
@@ -1353,16 +1353,15 @@ class Application:
 
         Called by the application-layer projection when a referenced submission
         changes (priced, approved, returned for correction, ...). It updates the
-        cached status/price/display, and recomputes the order total **only while the
-        order is still a draft** - once submitted the total is frozen and a later
-        submission change must never move it. Refreshes past payment are ignored.
+        cached status/price/display, and recomputes the order total while the order
+        is still editable (DRAFT/SUBMITTED). Refreshes past payment are ignored.
         """
         if self._status not in _APPLICATION_REFRESHABLE_STATUSES:
             return []
         if ref.submission_id not in self._submission_refs:
             raise SubmissionRefNotFoundError(f"Submission {ref.submission_id.json()} is not attached to this application.")
         self._submission_refs[ref.submission_id] = ref
-        if self._status is ApplicationStatus.DRAFT:
+        if self._status in _APPLICATION_EDITABLE_STATUSES:
             self._recalculate_total(now)
         self._touch(now)
         return []
@@ -1509,7 +1508,9 @@ class Application:
 
     def _ensure_editable(self) -> None:
         if self._status not in _APPLICATION_EDITABLE_STATUSES:
-            raise ApplicationNotEditableError(f"An application's composition can only be changed while DRAFT, not while {self._status.value}.")
+            raise ApplicationNotEditableError(
+                f"An application's composition can only be changed while DRAFT or SUBMITTED, not while {self._status.value}."
+            )
 
     def _transition_to(self, target: ApplicationStatus, *, now: datetime) -> None:
         """Move to ``target`` if the transition is legal, recording it in the history."""

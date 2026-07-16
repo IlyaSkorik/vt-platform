@@ -73,23 +73,50 @@ def build_list_competition_submissions_handler() -> ListCompetitionSubmissionsHa
 
 
 def build_set_performance_handler() -> SetPerformanceHandler:
-    return SetPerformanceHandler(submissions=_submissions(), clock=SystemClock(), events=NullEventPublisher())
+    return SetPerformanceHandler(
+        submissions=_submissions(),
+        catalog=DjangoCompetitionCatalog(),
+        clock=SystemClock(),
+        events=NullEventPublisher(),
+    )
 
 
 def build_add_participant_handler() -> AddParticipantHandler:
-    return AddParticipantHandler(submissions=_submissions(), clock=SystemClock(), uuids=Uuid7Generator(), events=NullEventPublisher())
+    return AddParticipantHandler(
+        submissions=_submissions(),
+        catalog=DjangoCompetitionCatalog(),
+        clock=SystemClock(),
+        uuids=Uuid7Generator(),
+        events=NullEventPublisher(),
+    )
 
 
 def build_remove_participant_handler() -> RemoveParticipantHandler:
-    return RemoveParticipantHandler(submissions=_submissions(), clock=SystemClock(), events=NullEventPublisher())
+    return RemoveParticipantHandler(
+        submissions=_submissions(),
+        catalog=DjangoCompetitionCatalog(),
+        clock=SystemClock(),
+        events=NullEventPublisher(),
+    )
 
 
 def build_add_teacher_handler() -> AddTeacherHandler:
-    return AddTeacherHandler(submissions=_submissions(), clock=SystemClock(), uuids=Uuid7Generator(), events=NullEventPublisher())
+    return AddTeacherHandler(
+        submissions=_submissions(),
+        catalog=DjangoCompetitionCatalog(),
+        clock=SystemClock(),
+        uuids=Uuid7Generator(),
+        events=NullEventPublisher(),
+    )
 
 
 def build_remove_teacher_handler() -> RemoveTeacherHandler:
-    return RemoveTeacherHandler(submissions=_submissions(), clock=SystemClock(), events=NullEventPublisher())
+    return RemoveTeacherHandler(
+        submissions=_submissions(),
+        catalog=DjangoCompetitionCatalog(),
+        clock=SystemClock(),
+        events=NullEventPublisher(),
+    )
 
 
 def build_calculate_price_handler() -> CalculatePriceHandler:
