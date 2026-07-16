@@ -11,12 +11,14 @@ from apps.applications.application.dto.commands import (
     UpdateParticipantCommand,
 )
 from apps.applications.application.exceptions import (
+    CompetitionClosedError,
     InvalidInputError,
     SubmissionChildNotFoundError,
     translate_domain_errors,
 )
 from apps.applications.application.interfaces import (
     Clock,
+    CompetitionCatalog,
     EventPublisher,
     SubmissionRepository,
     UuidGenerator,
@@ -27,6 +29,7 @@ from apps.applications.domain.value_objects import (
     Gender,
     ParticipantId,
     PersonName,
+    RegistryParticipantId,
 )
 
 from ._support import ensure_owner, load_submission, parse_submission_id, parse_user_id
@@ -59,6 +62,11 @@ def _parse_gender(raw: str) -> Gender:
         raise InvalidInputError(f"{raw!r} is not a valid gender.") from exc
 
 
+def _parse_registry_id(raw: str) -> RegistryParticipantId:
+    with translate_domain_errors():
+        return RegistryParticipantId.from_string(raw)
+
+
 class AddParticipantHandler:
     """Use case: add a participant to the submission."""
 
@@ -66,11 +74,13 @@ class AddParticipantHandler:
         self,
         *,
         submissions: SubmissionRepository,
+        catalog: CompetitionCatalog,
         clock: Clock,
         uuids: UuidGenerator,
         events: EventPublisher,
     ) -> None:
         self._submissions = submissions
+        self._catalog = catalog
         self._clock = clock
         self._uuids = uuids
         self._events = events
@@ -79,10 +89,21 @@ class AddParticipantHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
+        if not self._catalog.accepts_submissions(competition_id=submission.competition_id, now=now):
+            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
 
-        name = _parse_person(first_name=command.first_name, last_name=command.last_name, middle_name=command.middle_name)
-        birth_date = _parse_birth_date(command.birth_date)
-        gender = _parse_gender(command.gender)
+        # A solo participant supplies a structured name; a collective supplies only a
+        # display name. Birth date and gender are present for a solo, absent for a
+        # collective. The registry id links back to the reusable Participant Registry.
+        name = (
+            _parse_person(first_name=command.first_name, last_name=command.last_name, middle_name=command.middle_name)
+            if command.first_name and command.last_name
+            else None
+        )
+        birth_date = _parse_birth_date(command.birth_date) if command.birth_date else None
+        gender = _parse_gender(command.gender) if command.gender else None
+        registry_id = _parse_registry_id(command.registry_participant_id) if command.registry_participant_id else None
+        display_name = command.display_name.strip() if command.display_name else None
         participant_id = ParticipantId.from_uuid(self._uuids.new())
         with translate_domain_errors():
             domain_events = submission.add_participant(
@@ -90,6 +111,9 @@ class AddParticipantHandler:
                 name=name,
                 birth_date=birth_date,
                 gender=gender,
+                display_name=display_name,
+                registry_participant_id=registry_id,
+                member_count=command.member_count,
                 now=now,
             )
         self._submissions.save(submission)
@@ -113,11 +137,13 @@ class UpdateParticipantHandler:
         self,
         *,
         submissions: SubmissionRepository,
+        catalog: CompetitionCatalog,
         clock: Clock,
         uuids: UuidGenerator,
         events: EventPublisher,
     ) -> None:
         self._submissions = submissions
+        self._catalog = catalog
         self._clock = clock
         self._uuids = uuids
         self._events = events
@@ -126,6 +152,8 @@ class UpdateParticipantHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
+        if not self._catalog.accepts_submissions(competition_id=submission.competition_id, now=now):
+            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
         with translate_domain_errors():
             target_id = ParticipantId.from_string(command.participant_id)
         if not any(p.id == target_id for p in submission.participants):
@@ -160,10 +188,12 @@ class RemoveParticipantHandler:
         self,
         *,
         submissions: SubmissionRepository,
+        catalog: CompetitionCatalog,
         clock: Clock,
         events: EventPublisher,
     ) -> None:
         self._submissions = submissions
+        self._catalog = catalog
         self._clock = clock
         self._events = events
 
@@ -171,6 +201,8 @@ class RemoveParticipantHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
+        if not self._catalog.accepts_submissions(competition_id=submission.competition_id, now=now):
+            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
         with translate_domain_errors():
             participant_id = ParticipantId.from_string(command.participant_id)
             domain_events = submission.remove_participant(participant_id=participant_id, now=now)

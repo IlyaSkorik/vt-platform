@@ -40,6 +40,7 @@ def settings_to_json(settings: CompetitionSettings) -> dict[str, object]:
         "payment_required": settings.payment_required,
         "payment_timing": settings.payment_timing.value,
         "payment_methods": [method.value for method in settings.payment_methods],
+        "additional_performance_discount_percent": settings.additional_performance_discount_percent,
         "require_personal_data_consent": settings.require_personal_data_consent,
         "require_media_consent": settings.require_media_consent,
         "require_regulations_acceptance": settings.require_regulations_acceptance,
@@ -123,6 +124,12 @@ def _from_v2(data: dict[str, object], default: CompetitionSettings) -> Competiti
                 if parsed is not None:
                     format_requirements.append(parsed)
 
+    discount_raw = data.get("additional_performance_discount_percent", default.additional_performance_discount_percent)
+    try:
+        discount_percent = int(discount_raw)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        discount_percent = default.additional_performance_discount_percent
+
     return CompetitionSettings(
         allow_multiple_applications=bool(data.get("allow_multiple_applications", default.allow_multiple_applications)),
         allow_application_editing=bool(data.get("allow_application_editing", default.allow_application_editing)),
@@ -145,6 +152,7 @@ def _from_v2(data: dict[str, object], default: CompetitionSettings) -> Competiti
         payment_required=bool(data.get("payment_required", default.payment_required)),
         payment_timing=timing,
         payment_methods=tuple(methods),
+        additional_performance_discount_percent=discount_percent,
         require_personal_data_consent=bool(
             data.get("require_personal_data_consent", default.require_personal_data_consent)
         ),

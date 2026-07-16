@@ -116,7 +116,7 @@ export function PricingCard({
         "rounded-lg border bg-card p-3 transition-[border-color,box-shadow,opacity] duration-200",
         "[content-visibility:auto] [contain-intrinsic-size:auto_16rem]",
         row.status === "missing"
-          ? "border-amber-300/80 shadow-[inset_3px_0_0_0_theme(colors.amber.500)]"
+          ? "border-warning/60 bg-warning-surface/20"
           : "border-border",
         selected && "ring-2 ring-primary/30",
       )}

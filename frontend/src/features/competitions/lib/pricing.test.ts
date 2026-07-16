@@ -38,6 +38,7 @@ function competition(partial: Partial<CompetitionDetail> = {}): CompetitionDetai
       paymentRequired: false,
       paymentTiming: "BEFORE_APPROVAL" as const,
       paymentMethods: ["BANK_TRANSFER" as const],
+      additionalPerformanceDiscountPercent: 0,
       requirePersonalDataConsent: true,
       requireMediaConsent: false,
       requireRegulationsAcceptance: true,

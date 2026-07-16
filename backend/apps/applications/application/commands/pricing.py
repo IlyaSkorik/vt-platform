@@ -5,6 +5,7 @@ from __future__ import annotations
 from apps.applications.application.dto import SubmissionOperationResultDto
 from apps.applications.application.dto.commands import CalculatePriceCommand
 from apps.applications.application.exceptions import (
+    CompetitionClosedError,
     CompetitionCombinationNotFoundError,
     SubmissionStateConflictError,
     translate_domain_errors,
@@ -49,6 +50,8 @@ class CalculatePriceHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
+        if not self._catalog.accepts_submissions(competition_id=submission.competition_id, now=now):
+            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
 
         performance = submission.performance
         if performance is None:

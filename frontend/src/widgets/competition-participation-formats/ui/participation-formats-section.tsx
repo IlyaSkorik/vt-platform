@@ -395,7 +395,7 @@ export function ParticipationFormatsSection({
                 <ul className="space-y-1">
                   {enabledSorted.map((item) => (
                     <li key={item.id} className="flex items-center gap-2 text-muted-foreground">
-                      <Check className="size-3.5 shrink-0 text-green-600" aria-hidden="true" />
+                      <Check className="size-3.5 shrink-0 text-success" aria-hidden="true" />
                       <span>{item.name}</span>
                     </li>
                   ))}

@@ -42,31 +42,44 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol, runtime_checkable
 
-from apps.applications.domain.entities import Submission
+from apps.applications.domain.entities import Application, Submission
 from apps.applications.domain.events import DomainEvent
 from apps.applications.domain.value_objects import (
     AgeCategoryId,
+    ApplicationId,
     CompetitionId,
     CompetitionPriceQuote,
     DisciplineId,
+    EducationalOrganizationId,
+    Money,
     NominationId,
     ParticipantGroupId,
     ParticipationFormatId,
+    PriceCalculationType,
     ReviewerId,
+    ServiceId,
     SubmissionId,
     SubmissionParticipationPolicy,
     UserId,
 )
 
 __all__ = [
+    "AdditionalServiceQuote",
     "ApplicantInfo",
+    "ApplicationRepository",
     "Clock",
     "CompetitionCatalog",
     "CompetitionPriceQuote",
+    "CompetitionServiceCatalog",
+    "CompetitionUploadPolicy",
+    "EducationalOrganizationDirectory",
+    "EducationalOrganizationInfo",
     "EventPublisher",
+    "FileStorage",
     "IdentityReadModel",
     "OrganizationReadModel",
     "SubmissionRepository",
+    "UploadConstraints",
     "UuidGenerator",
 ]
 
@@ -144,6 +157,22 @@ class CompetitionCatalog(Protocol):
 
         Folds the competition's status and its submission deadlines into a single
         answer, so the use case need not know the Competition's lifecycle model.
+        """
+        ...
+
+    def accepts_payment(self, *, competition_id: CompetitionId, now: datetime) -> bool:
+        """Whether the competition's payment window is still open at ``now``."""
+        ...
+
+    def additional_performance_discount_percent(self, *, competition_id: CompetitionId) -> int:
+        """Organizer-configured discount percent applied to 2nd+ performances in one application."""
+        ...
+
+    def accepts_upload(self, *, competition_id: CompetitionId, attachment_kind: str, now: datetime) -> bool:
+        """Whether uploads of ``attachment_kind`` are still allowed at ``now``.
+
+        Honours the music-upload and document-upload deadlines; kinds without a
+        dedicated deadline follow the application deadline.
         """
         ...
 
@@ -272,4 +301,158 @@ class EventPublisher(Protocol):
 
     def publish(self, events: Sequence[DomainEvent]) -> None:
         """Publish ``events`` in order to the platform's event transport."""
+        ...
+
+
+# ---------------------------------------------------------------------------
+# Application (order) repository port
+# ---------------------------------------------------------------------------
+
+
+@runtime_checkable
+class ApplicationRepository(Protocol):
+    """Port: persistence & retrieval of the :class:`Application` aggregate.
+
+    Loads and saves the whole order aggregate (its submission references, service
+    lines, consents, total price and status history) as one unit, honouring the
+    root's optimistic-concurrency ``version``. It never loads the referenced
+    Submissions - those are a separate aggregate reached through
+    :class:`SubmissionRepository`.
+    """
+
+    def get(self, application_id: ApplicationId) -> Application | None:
+        """Return the application with ``application_id``, or ``None``."""
+        ...
+
+    def list_by_applicant(self, applicant_id: UserId) -> Sequence[Application]:
+        """Return all non-deleted applications owned by ``applicant_id`` (newest first)."""
+        ...
+
+    def save(self, application: Application) -> None:
+        """Persist ``application`` and its whole graph (insert or update), honouring its version."""
+        ...
+
+
+# ---------------------------------------------------------------------------
+# Competition additional-service & consent gateway (read model / ACL)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class AdditionalServiceQuote:
+    """A Competition additional service projected into this context.
+
+    Carries the full organizer configuration the order needs: the unit price, how it
+    is billed (``billing_model``), the participation formats it is scoped to
+    (``available_format_ids``) and whether it is mandatory (``required``).
+    """
+
+    service_id: ServiceId
+    name: str
+    unit_price: Money
+    billing_model: PriceCalculationType = PriceCalculationType.PER_PARTICIPANT
+    available_format_ids: frozenset[str] = frozenset()
+    required: bool = False
+
+
+@runtime_checkable
+class CompetitionServiceCatalog(Protocol):
+    """Port: the Competition ACL for additional services and required consents.
+
+    Segregated from :class:`CompetitionCatalog` (which serves the per-submission
+    pricing/policy the domain validates against) so the two evolve independently.
+    Both are backed by the same Competition context at composition time.
+    """
+
+    def get_additional_service(self, *, competition_id: CompetitionId, service_id: ServiceId) -> AdditionalServiceQuote | None:
+        """Return the competition's additional service (name + unit price), or ``None`` if unknown."""
+        ...
+
+    def required_consent_codes(self, *, competition_id: CompetitionId) -> frozenset[str]:
+        """Return the consent codes the competition requires before an application may be submitted."""
+        ...
+
+    def required_service_ids(self, *, competition_id: CompetitionId, participation_format_ids: frozenset[str]) -> frozenset[str]:
+        """Return the ids of services the competition mandates for the given formats.
+
+        A service is required when it is enabled, marked ``required``, and available
+        for at least one of the order's chosen participation formats.
+        """
+        ...
+
+
+# ---------------------------------------------------------------------------
+# Educational-organization directory gateway (read model / ACL)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class EducationalOrganizationInfo:
+    """A flat projection of an educational organization (id + display name)."""
+
+    organization_id: str
+    name: str
+
+
+@runtime_checkable
+class EducationalOrganizationDirectory(Protocol):
+    """Port: the Institutions ACL resolving an educational-organization reference to its name."""
+
+    def get(self, *, organization_id: EducationalOrganizationId) -> EducationalOrganizationInfo | None:
+        """Return the organization's display info, or ``None`` if unknown."""
+        ...
+
+
+# ---------------------------------------------------------------------------
+# File storage & upload-policy ports (attachments)
+# ---------------------------------------------------------------------------
+
+
+@runtime_checkable
+class FileStorage(Protocol):
+    """Port: durable storage for uploaded attachment bytes.
+
+    The application layer hands over raw bytes and receives back an opaque storage
+    reference (a key/URL) to persist on the aggregate as a
+    :class:`~apps.applications.domain.value_objects.FileReference`. Reading the bytes
+    back is a delivery concern outside this port.
+    """
+
+    def save(self, *, content: bytes, filename: str, content_type: str) -> str:
+        """Store ``content`` and return the opaque storage reference."""
+        ...
+
+    def delete(self, *, reference: str) -> None:
+        """Delete the stored object at ``reference`` (best-effort)."""
+        ...
+
+
+@dataclass(frozen=True, slots=True)
+class UploadConstraints:
+    """The validation limits for one kind of upload (max size + allowed extensions)."""
+
+    max_bytes: int
+    allowed_extensions: frozenset[str]
+
+    def allows_extension(self, extension: str) -> bool:
+        """Whether ``extension`` (lower-case, no dot) is permitted."""
+        return extension.lower().lstrip(".") in self.allowed_extensions
+
+
+@runtime_checkable
+class CompetitionUploadPolicy(Protocol):
+    """Port: the Competition ACL for attachment upload limits.
+
+    Projects the competition's media settings (music formats/size, document rules)
+    into the constraints an upload must satisfy, so validation reuses the
+    competition's configuration rather than hard-coding limits at the edge.
+    """
+
+    def limits_for(self, *, competition_id: CompetitionId, attachment_kind: str, participation_format_id: str | None = None) -> UploadConstraints:
+        """Return the upload constraints for ``attachment_kind`` in this competition.
+
+        When ``participation_format_id`` is given, the constraints reflect that
+        format's configured requirements (e.g. the organizer's allowed audio formats
+        and maximum music size); otherwise the platform defaults apply.
+        """
         ...

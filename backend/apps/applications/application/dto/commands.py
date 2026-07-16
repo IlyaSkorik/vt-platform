@@ -19,7 +19,9 @@ __all__ = [
     "ApproveSubmissionCommand",
     "AttachFileCommand",
     "CalculatePriceCommand",
+    "CancelSubmissionByReviewerCommand",
     "CancelSubmissionCommand",
+    "CompleteSubmissionCommand",
     "CreateSubmissionCommand",
     "DeleteDraftSubmissionCommand",
     "MarkPaidCommand",
@@ -28,12 +30,14 @@ __all__ = [
     "RemoveParticipantCommand",
     "RemoveTeacherCommand",
     "ReturnSubmissionForCorrectionCommand",
+    "ScheduleSubmissionCommand",
     "SetPerformanceCommand",
     "StartReviewCommand",
     "SubmitSubmissionCommand",
     "UpdateParticipantCommand",
     "UpdatePerformanceCommand",
     "UpdateTeacherCommand",
+    "UploadAttachmentCommand",
 ]
 
 
@@ -100,15 +104,26 @@ class UpdatePerformanceCommand:
 
 @dataclass(frozen=True, slots=True)
 class AddParticipantCommand:
-    """Add a participant to the submission (owner, editable states only)."""
+    """Add a participant to the submission (owner, editable states only).
+
+    Normally a Participant Registry entry is selected: ``registry_participant_id``
+    links it and the name/birth-date/gender are its snapshot. A collective carries
+    only ``display_name`` plus a ``member_count`` (its headcount). All person fields
+    are optional so both solo and collective registry participants (and a manual
+    entry) are expressible. ``member_count`` is 1 for a solo, the number of people
+    for a collective; it drives the count-band check and per-participant pricing.
+    """
 
     submission_id: str
     requested_by: str
-    first_name: str
-    last_name: str
-    birth_date: str
-    gender: str
+    first_name: str | None = None
+    last_name: str | None = None
+    birth_date: str | None = None
+    gender: str | None = None
     middle_name: str | None = None
+    display_name: str | None = None
+    registry_participant_id: str | None = None
+    member_count: int = 1
 
 
 @dataclass(frozen=True, slots=True)
@@ -154,6 +169,7 @@ class AddTeacherCommand:
     last_name: str
     role: str
     middle_name: str | None = None
+    directory_teacher_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -297,3 +313,45 @@ class AcceptSubmissionCommand:
 
     submission_id: str
     reviewer_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class ScheduleSubmissionCommand:
+    """Move an accepted submission into running competition (organizer)."""
+
+    submission_id: str
+    reviewer_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class CompleteSubmissionCommand:
+    """Mark a running submission as completed (organizer)."""
+
+    submission_id: str
+    reviewer_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class CancelSubmissionByReviewerCommand:
+    """Cancel a submission by organizer decision (organizer)."""
+
+    submission_id: str
+    reviewer_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class UploadAttachmentCommand:
+    """Upload and attach a file to the submission (owner, editable states only).
+
+    Carries the raw uploaded bytes plus its declared filename and content type; the
+    handler validates them against the competition's upload constraints, stores the
+    bytes, and attaches the resulting reference.
+    """
+
+    submission_id: str
+    requested_by: str
+    attachment_type: str
+    filename: str
+    content_type: str
+    content: bytes
+    caption: str | None = None

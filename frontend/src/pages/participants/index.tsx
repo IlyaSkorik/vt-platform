@@ -2,7 +2,18 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Archive, ArrowLeft, Medal, Plus, Search, Trash2, UserPen } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
+import {
+  fetchOrganizations,
+  fetchParticipant,
+  fetchParticipants,
+  type Gender,
+  type Organization,
+  type OrganizationType,
+  type Participant,
+  type ParticipantType,
+  participantRegistryKeys,
+} from "@/entities/participant";
 import { type ApiError, apiClient, toApiError } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
 import {
@@ -43,61 +54,6 @@ import {
   toast,
 } from "@/shared/ui";
 
-type Gender = "female" | "male" | "other";
-type ParticipantType = "solo" | "collective";
-type OrganizationType =
-  | "school"
-  | "music_school"
-  | "dance_studio"
-  | "art_school"
-  | "college"
-  | "university"
-  | "cultural_center"
-  | "creative_center"
-  | "private_studio"
-  | "other";
-
-interface Organization {
-  id: string;
-  name: string;
-  type: OrganizationType;
-  country: string | null;
-  city: string | null;
-  address: string | null;
-  website: string | null;
-  participantsCount?: number;
-  isUsed?: boolean;
-  archived?: boolean;
-}
-
-interface ParticipantOrganization extends Organization {
-  isPrimary: boolean;
-}
-
-interface Participant {
-  id: string;
-  participantType: ParticipantType;
-  collectiveName: string | null;
-  fullName: string;
-  firstName: string;
-  lastName: string;
-  middleName: string | null;
-  birthDate: string;
-  age: number;
-  gender: Gender;
-  avatarUrl: string | null;
-  notes: string;
-  archived: boolean;
-  applicationsCount: number;
-  primaryOrganization: Organization | null;
-  organizations: ParticipantOrganization[];
-  updatedAt: string;
-}
-
-interface Envelope<T> {
-  data: T;
-}
-
 interface ParticipantFormValues {
   participantType: ParticipantType;
   collectiveName: string;
@@ -119,14 +75,6 @@ interface OrganizationFormValues {
   address: string;
   website: string;
 }
-
-const participantRegistryKeys = {
-  participants: (params: URLSearchParams) =>
-    ["participant-registry", "participants", params.toString()] as const,
-  participant: (participantId: string) =>
-    ["participant-registry", "participant", participantId] as const,
-  organizations: ["participant-registry", "organizations"] as const,
-};
 
 const genderOptions = [
   { value: "female", label: "Женский" },
@@ -244,37 +192,6 @@ function toPayload(values: ParticipantFormValues) {
     notes: values.notes.trim(),
     organizations: values.organizations,
   };
-}
-
-async function fetchParticipants(params: URLSearchParams): Promise<Participant[]> {
-  try {
-    const response = await apiClient.get(`participants/registry?${params.toString()}`);
-    const payload = (await response.json()) as Envelope<Participant[]>;
-    return payload.data;
-  } catch (error) {
-    throw await toApiError(error);
-  }
-}
-
-async function fetchParticipant(participantId: string): Promise<Participant> {
-  try {
-    const response = await apiClient.get(`participants/registry/${participantId}`);
-    const payload = (await response.json()) as Envelope<Participant>;
-    return payload.data;
-  } catch (error) {
-    throw await toApiError(error);
-  }
-}
-
-async function fetchOrganizations(includeArchived = false): Promise<Organization[]> {
-  try {
-    const suffix = includeArchived ? "?includeArchived=true" : "";
-    const response = await apiClient.get(`participants/organizations${suffix}`);
-    const payload = (await response.json()) as Envelope<Organization[]>;
-    return payload.data;
-  } catch (error) {
-    throw await toApiError(error);
-  }
 }
 
 export function ParticipantsPage(): React.JSX.Element {
@@ -527,9 +444,16 @@ export function ParticipantsProfilePage(): React.JSX.Element {
   const { participantId } = useParams<{ participantId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [organizationDialogOpen, setOrganizationDialogOpen] = useState(false);
   const autosaveTimer = useRef<number | null>(null);
   const isCreateMode = participantId === "new" || participantId == null;
+
+  // When the Registration Wizard sends the user here to create a participant, it
+  // passes where to return and which submission to attach the result to.
+  const returnTo = searchParams.get("returnTo");
+  const returnSubmissionId = searchParams.get("submissionId");
+  const createKind = searchParams.get("kind");
 
   const participantQuery = useQuery<Participant, ApiError>({
     enabled: !isCreateMode && participantId != null,
@@ -543,7 +467,7 @@ export function ParticipantsProfilePage(): React.JSX.Element {
 
   const form = useForm<ParticipantFormValues>({
     defaultValues: {
-      participantType: "solo",
+      participantType: createKind === "collective" ? "collective" : "solo",
       collectiveName: "",
       firstName: "",
       lastName: "",
@@ -579,12 +503,23 @@ export function ParticipantsProfilePage(): React.JSX.Element {
   }, [participantQuery.data, form.reset]);
 
   const createMutation = useMutation({
-    mutationFn: async (values: ParticipantFormValues) => {
-      await apiClient.post("participants/registry", { json: toPayload(values) });
+    mutationFn: async (values: ParticipantFormValues): Promise<string> => {
+      const response = await apiClient.post("participants/registry", { json: toPayload(values) });
+      const payload = (await response.json()) as { data: { id: string } };
+      return payload.data.id;
     },
-    onSuccess: () => {
+    onSuccess: (createdId) => {
       queryClient.invalidateQueries({ queryKey: ["participant-registry"] });
       toast.success("Участник создан");
+      if (returnTo && returnSubmissionId) {
+        // Return to the wizard, which auto-selects the freshly created participant.
+        const params = new URLSearchParams({
+          pickedParticipantId: createdId,
+          submissionId: returnSubmissionId,
+        });
+        navigate(`${returnTo}?${params.toString()}`);
+        return;
+      }
       navigate(ROUTES.cabinetParticipants);
     },
     onError: async (error) => {

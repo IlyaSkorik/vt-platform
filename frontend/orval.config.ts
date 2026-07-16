@@ -68,6 +68,65 @@ export default defineConfig({
       },
     },
   },
+  vtApplications: {
+    input: {
+      target: "./openapi/schema-full.yaml",
+      override: {
+        transformer: "./openapi/strip-api-version-prefix.ts",
+      },
+      filters: {
+        // The applicant-facing application (order) lifecycle plus its file
+        // attachments — the backend the Registration Wizard is a thin client over.
+        tags: ["Applications", "Submissions", "Submission Attachments"],
+      },
+    },
+    output: {
+      mode: "tags-split",
+      target: "./src/shared/api/generated",
+      schemas: "./src/shared/api/generated/model-applications",
+      client: "react-query",
+      httpClient: "fetch",
+      clean: false,
+      override: {
+        mutator: {
+          path: "./src/shared/api/orval-mutator.ts",
+          name: "customInstance",
+        },
+        query: {
+          useQuery: true,
+        },
+      },
+    },
+  },
+  vtTeachers: {
+    input: {
+      target: "./openapi/schema-full.yaml",
+      override: {
+        transformer: "./openapi/strip-api-version-prefix.ts",
+      },
+      filters: {
+        // The personal, reusable teacher directory owned by the applicant.
+        tags: ["Teacher Directory"],
+      },
+    },
+    output: {
+      mode: "tags-split",
+      target: "./src/shared/api/generated",
+      schemas: "./src/shared/api/generated/model-teachers",
+      client: "react-query",
+      httpClient: "fetch",
+      clean: false,
+      override: {
+        mutator: {
+          path: "./src/shared/api/orval-mutator.ts",
+          name: "customInstance",
+        },
+        query: {
+          useQuery: true,
+        },
+      },
+    },
+  },
   vtPublicCatalog: {
     input: {
       target: "./openapi/schema-full.yaml",

@@ -106,6 +106,7 @@ def _settings_from_command(command: UpdateSettingsCommand) -> CompetitionSetting
         payment_required=command.payment_required,
         payment_timing=PaymentTiming(command.payment_timing),
         payment_methods=tuple(PaymentMethod(item) for item in command.payment_methods),
+        additional_performance_discount_percent=int(command.additional_performance_discount_percent),
         require_personal_data_consent=command.require_personal_data_consent,
         require_media_consent=command.require_media_consent,
         require_regulations_acceptance=command.require_regulations_acceptance,

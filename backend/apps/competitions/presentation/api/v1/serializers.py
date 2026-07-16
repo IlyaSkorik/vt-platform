@@ -131,6 +131,11 @@ class UpdateCompetitionSettingsSerializer(serializers.Serializer[dict[str, objec
         child=serializers.ChoiceField(choices=["ONLINE", "BANK_TRANSFER", "CASH"]),
         source="payment_methods",
     )
+    additionalPerformanceDiscountPercent = serializers.IntegerField(
+        source="additional_performance_discount_percent",
+        min_value=0,
+        max_value=100,
+    )
     requirePersonalDataConsent = serializers.BooleanField(source="require_personal_data_consent")
     requireMediaConsent = serializers.BooleanField(source="require_media_consent")
     requireRegulationsAcceptance = serializers.BooleanField(source="require_regulations_acceptance")
@@ -605,6 +610,7 @@ class _SettingsSerializer(serializers.Serializer[dict[str, object]]):
     paymentRequired = serializers.BooleanField(source="payment_required")
     paymentTiming = serializers.CharField(source="payment_timing")
     paymentMethods = serializers.ListField(child=serializers.CharField(), source="payment_methods")
+    additionalPerformanceDiscountPercent = serializers.IntegerField(source="additional_performance_discount_percent")
     requirePersonalDataConsent = serializers.BooleanField(source="require_personal_data_consent")
     requireMediaConsent = serializers.BooleanField(source="require_media_consent")
     requireRegulationsAcceptance = serializers.BooleanField(source="require_regulations_acceptance")

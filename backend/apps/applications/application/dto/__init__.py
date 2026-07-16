@@ -67,25 +67,39 @@ class PerformanceView:
 
 @dataclass(frozen=True, slots=True)
 class ParticipantView:
-    """A flat read view of a :class:`Participant` child entity."""
+    """A flat read view of a :class:`Participant` child entity.
+
+    Registry-linked participants carry ``registry_participant_id``; a collective has
+    only a ``display_name`` (its structured name/birth-date/gender are ``None``).
+    """
 
     id: str
-    first_name: str
-    last_name: str
+    display_name: str
+    first_name: str | None
+    last_name: str | None
     middle_name: str | None
-    birth_date: date
-    gender: str
+    birth_date: date | None
+    gender: str | None
+    registry_participant_id: str | None
+    member_count: int
 
     @classmethod
     def from_participant(cls, participant: Participant) -> ParticipantView:
         """Project a :class:`Participant` into its read view."""
+        name = participant.name
+        birth_date = participant.birth_date
+        gender = participant.gender
+        registry_id = participant.registry_participant_id
         return cls(
             id=participant.id.json(),
-            first_name=participant.name.first_name,
-            last_name=participant.name.last_name,
-            middle_name=participant.name.middle_name,
-            birth_date=participant.birth_date.value,
-            gender=participant.gender.value,
+            display_name=participant.display_name,
+            first_name=name.first_name if name is not None else None,
+            last_name=name.last_name if name is not None else None,
+            middle_name=name.middle_name if name is not None else None,
+            birth_date=birth_date.value if birth_date is not None else None,
+            gender=gender.value if gender is not None else None,
+            registry_participant_id=registry_id.json() if registry_id is not None else None,
+            member_count=participant.member_count,
         )
 
 
@@ -98,16 +112,19 @@ class TeacherView:
     last_name: str
     middle_name: str | None
     role: str
+    directory_teacher_id: str | None
 
     @classmethod
     def from_teacher(cls, teacher: Teacher) -> TeacherView:
         """Project a :class:`Teacher` into its read view."""
+        directory_id = teacher.directory_teacher_id
         return cls(
             id=teacher.id.json(),
             first_name=teacher.name.first_name,
             last_name=teacher.name.last_name,
             middle_name=teacher.name.middle_name,
             role=teacher.role.value,
+            directory_teacher_id=directory_id.json() if directory_id is not None else None,
         )
 
 
@@ -182,6 +199,7 @@ class SubmissionView:
     teachers: tuple[TeacherView, ...]
     attachments: tuple[AttachmentView, ...]
     reviews: tuple[ReviewView, ...]
+    status_history: tuple[tuple[str | None, str, datetime], ...]
     price: PriceView | None
     created_at: datetime
     updated_at: datetime
@@ -202,6 +220,14 @@ class SubmissionView:
             teachers=tuple(TeacherView.from_teacher(t) for t in submission.teachers),
             attachments=tuple(AttachmentView.from_attachment(a) for a in submission.attachments),
             reviews=tuple(ReviewView.from_review(r) for r in submission.reviews),
+            status_history=tuple(
+                (
+                    change.from_status.value if change.from_status is not None else None,
+                    change.to_status.value,
+                    change.occurred_at,
+                )
+                for change in submission.status_history
+            ),
             price=PriceView.from_snapshot(price) if price is not None else None,
             created_at=submission.created_at,
             updated_at=submission.updated_at,

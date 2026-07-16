@@ -632,6 +632,21 @@ export function SettingsSection({
               </div>
             </>
           ) : null}
+          <Input
+            label="Скидка на 2-е и следующие выступления (%)"
+            type="number"
+            min={0}
+            max={100}
+            value={String(settings.additionalPerformanceDiscountPercent ?? 0)}
+            disabled={isReadOnly}
+            onChange={(event) => {
+              const next = Number(event.target.value);
+              if (!Number.isFinite(next)) return;
+              update({
+                additionalPerformanceDiscountPercent: Math.max(0, Math.min(100, Math.round(next))),
+              });
+            }}
+          />
         </SectionCard>
 
         <SectionCard title="Согласия" description="Что участник подтверждает при подаче заявки.">

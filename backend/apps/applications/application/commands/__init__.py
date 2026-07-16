@@ -10,7 +10,7 @@ domain, then persists the aggregate and publishes the events the domain produced
 from __future__ import annotations
 
 from .attachments import AttachFileHandler, RemoveAttachmentHandler
-from .cancel import CancelSubmissionHandler
+from .cancel import CancelSubmissionByReviewerHandler, CancelSubmissionHandler
 from .draft import CreateSubmissionHandler, DeleteDraftSubmissionHandler
 from .participants import (
     AddParticipantHandler,
@@ -19,8 +19,10 @@ from .participants import (
 )
 from .payment import (
     AcceptSubmissionHandler,
+    CompleteSubmissionHandler,
     MarkPaidHandler,
     MarkWaitingPaymentHandler,
+    ScheduleSubmissionHandler,
 )
 from .performance import SetPerformanceHandler, UpdatePerformanceHandler
 from .pricing import CalculatePriceHandler
@@ -39,7 +41,9 @@ __all__ = [
     "ApproveSubmissionHandler",
     "AttachFileHandler",
     "CalculatePriceHandler",
+    "CancelSubmissionByReviewerHandler",
     "CancelSubmissionHandler",
+    "CompleteSubmissionHandler",
     "CreateSubmissionHandler",
     "DeleteDraftSubmissionHandler",
     "MarkPaidHandler",
@@ -48,6 +52,7 @@ __all__ = [
     "RemoveParticipantHandler",
     "RemoveTeacherHandler",
     "ReturnSubmissionForCorrectionHandler",
+    "ScheduleSubmissionHandler",
     "SetPerformanceHandler",
     "StartReviewHandler",
     "SubmitSubmissionHandler",

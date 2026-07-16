@@ -9,17 +9,19 @@ from apps.applications.application.dto.commands import (
     UpdateTeacherCommand,
 )
 from apps.applications.application.exceptions import (
+    CompetitionClosedError,
     SubmissionChildNotFoundError,
     translate_domain_errors,
 )
 from apps.applications.application.interfaces import (
     Clock,
+    CompetitionCatalog,
     EventPublisher,
     SubmissionRepository,
     UuidGenerator,
 )
 from apps.applications.domain.events import DomainEvent
-from apps.applications.domain.value_objects import PersonName, TeacherId, TeacherRole
+from apps.applications.domain.value_objects import DirectoryTeacherId, PersonName, TeacherId, TeacherRole
 
 from ._support import ensure_owner, load_submission, parse_submission_id, parse_user_id
 
@@ -31,6 +33,13 @@ def _parse_person(*, first_name: str, last_name: str, middle_name: str | None) -
         return PersonName(first_name=first_name, last_name=last_name, middle_name=middle_name)
 
 
+def _parse_directory_teacher_id(raw: str | None) -> DirectoryTeacherId | None:
+    if not raw:
+        return None
+    with translate_domain_errors():
+        return DirectoryTeacherId.from_string(raw)
+
+
 class AddTeacherHandler:
     """Use case: add a teacher in a configurable role."""
 
@@ -38,11 +47,13 @@ class AddTeacherHandler:
         self,
         *,
         submissions: SubmissionRepository,
+        catalog: CompetitionCatalog,
         clock: Clock,
         uuids: UuidGenerator,
         events: EventPublisher,
     ) -> None:
         self._submissions = submissions
+        self._catalog = catalog
         self._clock = clock
         self._uuids = uuids
         self._events = events
@@ -51,12 +62,15 @@ class AddTeacherHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
+        if not self._catalog.accepts_submissions(competition_id=submission.competition_id, now=now):
+            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
 
         name = _parse_person(first_name=command.first_name, last_name=command.last_name, middle_name=command.middle_name)
+        directory_teacher_id = _parse_directory_teacher_id(command.directory_teacher_id)
         teacher_id = TeacherId.from_uuid(self._uuids.new())
         with translate_domain_errors():
             role = TeacherRole(command.role)
-            domain_events = submission.add_teacher(teacher_id=teacher_id, name=name, role=role, now=now)
+            domain_events = submission.add_teacher(teacher_id=teacher_id, name=name, role=role, directory_teacher_id=directory_teacher_id, now=now)
         self._submissions.save(submission)
         self._events.publish(domain_events)
         return SubmissionOperationResultDto.of(submission, tuple(domain_events))
@@ -73,11 +87,13 @@ class UpdateTeacherHandler:
         self,
         *,
         submissions: SubmissionRepository,
+        catalog: CompetitionCatalog,
         clock: Clock,
         uuids: UuidGenerator,
         events: EventPublisher,
     ) -> None:
         self._submissions = submissions
+        self._catalog = catalog
         self._clock = clock
         self._uuids = uuids
         self._events = events
@@ -86,9 +102,12 @@ class UpdateTeacherHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
+        if not self._catalog.accepts_submissions(competition_id=submission.competition_id, now=now):
+            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
         with translate_domain_errors():
             target_id = TeacherId.from_string(command.teacher_id)
-        if not any(t.id == target_id for t in submission.teachers):
+        target = next((t for t in submission.teachers if t.id == target_id), None)
+        if target is None:
             raise SubmissionChildNotFoundError(
                 f"No teacher {target_id.json()} in this submission.",
                 domain_code="TeacherNotFoundError",
@@ -99,7 +118,11 @@ class UpdateTeacherHandler:
         domain_events: list[DomainEvent] = []
         with translate_domain_errors():
             role = TeacherRole(command.role)
-            domain_events += submission.add_teacher(teacher_id=new_id, name=name, role=role, now=now)
+            # Preserve the directory link across the replace so the credit still
+            # points at the same reusable Teacher Directory entry.
+            domain_events += submission.add_teacher(
+                teacher_id=new_id, name=name, role=role, directory_teacher_id=target.directory_teacher_id, now=now
+            )
             domain_events += submission.remove_teacher(teacher_id=target_id, now=now)
         self._submissions.save(submission)
         self._events.publish(domain_events)
@@ -113,10 +136,12 @@ class RemoveTeacherHandler:
         self,
         *,
         submissions: SubmissionRepository,
+        catalog: CompetitionCatalog,
         clock: Clock,
         events: EventPublisher,
     ) -> None:
         self._submissions = submissions
+        self._catalog = catalog
         self._clock = clock
         self._events = events
 
@@ -124,6 +149,8 @@ class RemoveTeacherHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
+        if not self._catalog.accepts_submissions(competition_id=submission.competition_id, now=now):
+            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
         with translate_domain_errors():
             teacher_id = TeacherId.from_string(command.teacher_id)
             domain_events = submission.remove_teacher(teacher_id=teacher_id, now=now)

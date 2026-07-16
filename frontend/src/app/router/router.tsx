@@ -76,7 +76,31 @@ const routes: RouteObject[] = [
     children: [
       {
         element: <PublicLayout />,
-        children: [{ index: true, lazy: lazyPage(() => import("@/pages/home"), "HomePage") }],
+        children: [
+          { index: true, lazy: lazyPage(() => import("@/pages/home"), "HomePage") },
+          {
+            path: ROUTES.competitions.slice(1),
+            element: <Outlet />,
+            children: [
+              {
+                index: true,
+                lazy: lazyPage(() => import("@/pages/festivals"), "PublicFestivalCatalogPage"),
+              },
+              {
+                path: ":festivalId",
+                lazy: lazyPage(() => import("@/pages/festivals"), "PublicFestivalLandingPage"),
+              },
+            ],
+          },
+          {
+            path: ROUTES.privacyPolicy.slice(1),
+            lazy: lazyPage(() => import("@/pages/legal"), "PrivacyPolicyPage"),
+          },
+          {
+            path: ROUTES.cookiesPolicy.slice(1),
+            lazy: lazyPage(() => import("@/pages/legal"), "CookiesPolicyPage"),
+          },
+        ],
       },
       {
         element: <MinimalLayout />,
@@ -160,11 +184,30 @@ const routes: RouteObject[] = [
                 lazy: lazyPage(() => import("@/pages/participants"), "ParticipantsProfilePage"),
               },
               {
+                path: ROUTES.cabinetTeachers.slice(1),
+                lazy: lazyPage(() => import("@/pages/teachers"), "TeachersPage"),
+              },
+              {
+                path: ROUTES.cabinetTeacherNew.slice(1),
+                lazy: lazyPage(() => import("@/pages/teachers"), "TeacherProfilePage"),
+              },
+              {
+                path: ROUTES.cabinetTeacherProfile.slice(1),
+                lazy: lazyPage(() => import("@/pages/teachers"), "TeacherProfilePage"),
+              },
+              {
                 path: ROUTES.cabinetApplications.slice(1),
-                lazy: workspacePlaceholder(
-                  participantItem(ROUTES.cabinetApplications),
-                  "participant",
-                ),
+                element: <Outlet />,
+                children: [
+                  {
+                    index: true,
+                    lazy: lazyPage(() => import("@/pages/applications"), "MyApplicationsPage"),
+                  },
+                  {
+                    path: ":applicationId",
+                    lazy: lazyPage(() => import("@/pages/applications"), "ApplicationDetailPage"),
+                  },
+                ],
               },
               {
                 path: ROUTES.cabinetCompetitions.slice(1),
@@ -186,10 +229,7 @@ const routes: RouteObject[] = [
                   },
                   {
                     path: ":festivalId/apply",
-                    lazy: lazyPage(
-                      () => import("@/applications/participant/pages/festivals"),
-                      "FestivalApplyPlaceholderPage",
-                    ),
+                    lazy: lazyPage(() => import("@/pages/applications"), "FestivalApplyPage"),
                   },
                 ],
               },
@@ -275,7 +315,10 @@ const routes: RouteObject[] = [
               },
               {
                 path: ROUTES.staffApplications.slice(1),
-                lazy: workspacePlaceholder(staffItem(ROUTES.staffApplications), "staff"),
+                lazy: lazyPage(
+                  () => import("@/applications/staff/pages/applications"),
+                  "StaffApplicationsProcessingPage",
+                ),
               },
               {
                 path: ROUTES.staffParticipants.slice(1),

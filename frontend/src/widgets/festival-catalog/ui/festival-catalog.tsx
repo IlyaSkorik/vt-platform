@@ -34,7 +34,13 @@ function countActiveFilters(filters: CatalogFilters): number {
  * the network. Handles loading (skeletons), error (retry), empty and
  * no-results states explicitly.
  */
-export function FestivalCatalog(): React.JSX.Element {
+interface FestivalCatalogProps {
+  detailBasePath?: string;
+}
+
+export function FestivalCatalog({
+  detailBasePath = "/cabinet/competitions",
+}: FestivalCatalogProps): React.JSX.Element {
   const query = usePublicFestivals();
   const festivals = query.data ?? [];
 
@@ -103,7 +109,7 @@ export function FestivalCatalog(): React.JSX.Element {
               reason={state.query.trim() ? "search" : "filters"}
             />
           ) : (
-            <FestivalGrid festivals={visible} now={now} />
+            <FestivalGrid festivals={visible} now={now} detailBasePath={detailBasePath} />
           )}
         </section>
 

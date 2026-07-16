@@ -54,6 +54,10 @@ urlpatterns = [
     # Composition edge (owned by no single context — e.g. GET /users/me).
     path("api/v1/", include("apps.composition.presentation.urls")),
     path("api/v1/", include("apps.competitions.presentation.urls")),
+    # Personal, user-owned teacher directory (reusable across applications).
+    path("api/v1/", include("apps.teachers.presentation.urls")),
+    # Applicant-facing application (order) lifecycle.
+    path("api/v1/", include("apps.applications.presentation.urls")),
     # Public, unauthenticated participant catalog (dedicated read model).
     path("api/v1/", include("apps.competitions.presentation.public_urls")),
 ]

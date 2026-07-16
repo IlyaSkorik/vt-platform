@@ -1,6 +1,9 @@
+import { UserCircle2 } from "lucide-react";
 import { Link, Outlet } from "react-router";
+import { useAuth } from "@/app/providers";
 import { APP_NAME, ROUTES } from "@/shared/config";
 import { Button } from "@/shared/ui";
+import { SiteFooter } from "./site-footer";
 import { ThemeToggle } from "./theme-toggle";
 
 /**
@@ -12,26 +15,57 @@ import { ThemeToggle } from "./theme-toggle";
  * not app surfaces.
  */
 export function PublicLayout(): React.JSX.Element {
+  const { isAuthenticated } = useAuth();
+
   return (
     <div className="flex min-h-svh flex-col bg-background">
-      <header className="sticky top-0 z-[var(--z-sticky)] flex h-16 items-center justify-between border-border border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:px-8">
-        <Link
-          to={ROUTES.home}
-          className="flex items-center gap-2 rounded-md font-semibold text-foreground text-lg tracking-tight outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <span
-            aria-hidden="true"
-            className="flex size-8 items-center justify-center rounded-md bg-primary font-bold text-primary-foreground text-sm"
-          >
-            ВТ
-          </span>
-          {APP_NAME}
-        </Link>
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-          <Button asChild variant="ghost">
-            <Link to={ROUTES.login}>Войти</Link>
-          </Button>
+      <header className="sticky top-0 z-[var(--z-sticky)] border-border border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+        <div className="mx-auto flex h-16 w-full max-w-336 items-center justify-between gap-3 px-4 md:px-8">
+          <div className="flex min-w-0 items-center gap-3 md:gap-5">
+            <Link
+              to={ROUTES.home}
+              className="group inline-flex items-center gap-2 rounded-md pr-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <span
+                aria-hidden="true"
+                className="flex size-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 font-extrabold text-primary-foreground text-sm shadow-sm transition-transform group-hover:scale-105"
+              >
+                ВТ
+              </span>
+              <span className="truncate font-semibold text-foreground text-lg tracking-tight">
+                {APP_NAME}
+              </span>
+            </Link>
+
+            <nav aria-label="Публичная навигация" className="hidden items-center gap-1 md:flex">
+              <Button asChild variant="ghost" size="sm">
+                <Link to={ROUTES.home}>Главная</Link>
+              </Button>
+              <Button asChild variant="ghost" size="sm">
+                <Link to={ROUTES.competitions}>Фестивали</Link>
+              </Button>
+            </nav>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <ThemeToggle />
+            {isAuthenticated ? (
+              <Button asChild iconOnly variant="ghost" size="sm" aria-label="Профиль">
+                <Link to={ROUTES.cabinetProfile}>
+                  <UserCircle2 className="size-5" aria-hidden="true" />
+                </Link>
+              </Button>
+            ) : (
+              <>
+                <Button asChild variant="ghost" size="sm">
+                  <Link to={ROUTES.login}>Войти</Link>
+                </Button>
+                <Button asChild size="sm" className="hidden sm:inline-flex">
+                  <Link to={ROUTES.register}>Регистрация</Link>
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
@@ -39,9 +73,7 @@ export function PublicLayout(): React.JSX.Element {
         <Outlet />
       </main>
 
-      <footer className="border-border border-t px-4 py-6 text-center text-muted-foreground text-xs md:px-8">
-        © {new Date().getFullYear()} {APP_NAME}
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

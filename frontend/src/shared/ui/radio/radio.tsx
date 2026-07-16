@@ -104,7 +104,7 @@ export const Radio = forwardRef<React.ElementRef<typeof RadioGroupPrimitive.Item
           disabled={disabled}
           aria-describedby={description != null ? descriptionId : undefined}
           className={cn(
-            "peer shrink-0 rounded-full border border-input bg-background shadow-elevation-1 outline-none transition-colors",
+            "peer shrink-0 cursor-pointer rounded-full border border-input bg-background shadow-elevation-1 outline-none transition-colors",
             "focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring",
             "data-[state=checked]:border-primary data-[state=checked]:text-primary",
             "disabled:cursor-not-allowed disabled:opacity-50",
@@ -122,7 +122,7 @@ export const Radio = forwardRef<React.ElementRef<typeof RadioGroupPrimitive.Item
           <div className="flex flex-col gap-0.5">
             <label
               htmlFor={radioId}
-              className="text-sm font-medium text-foreground select-none leading-5 peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
+              className="cursor-pointer text-sm font-medium text-foreground select-none leading-5 peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
             >
               {label}
             </label>

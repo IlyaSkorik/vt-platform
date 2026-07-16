@@ -1,1 +1,1 @@
-"""Versioned REST API surface for Applications (API-000 §2)."""
+"""API package for the Applications presentation layer."""
