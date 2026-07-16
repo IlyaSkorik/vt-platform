@@ -482,13 +482,13 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                   </div>
                   <Tabs defaultValue="overview">
                     <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="overview">Обзор</TabsTrigger>
-                      <TabsTrigger value="timeline">История</TabsTrigger>
-                      <TabsTrigger value="communication">Коммуникация</TabsTrigger>
+                      <TabsTrigger value="overview" className="cursor-pointer">Обзор</TabsTrigger>
+                      <TabsTrigger value="timeline" className="cursor-pointer">История</TabsTrigger>
+                      <TabsTrigger value="communication" className="cursor-pointer">Коммуникация</TabsTrigger>
                     </TabsList>
                     <TabsContent value="overview" className="space-y-2">
                       <div className="rounded-md border p-2 text-sm">
-                        <p className="font-medium">Выступления в заявке</p>
+                        <p className="font-medium mb-2">Выступления в заявке</p>
                         {(workspace.data.detail.performances ?? []).length === 0 ? (
                           <p className="text-muted-foreground text-xs">Нет выступлений</p>
                         ) : (
