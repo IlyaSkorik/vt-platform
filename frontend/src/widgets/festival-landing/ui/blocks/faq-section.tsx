@@ -13,7 +13,7 @@ export function FaqSection({ block }: FaqSectionProps): React.JSX.Element | null
   }
   return (
     <LandingSection id={`block-${block.id}`} title="Частые вопросы">
-      <ul className="max-w-3xl space-y-3">
+      <ul className="space-y-3">
         {block.faq.map((item) => (
           <li key={item.id}>
             <details className="group rounded-lg border bg-card px-4 py-3 text-card-foreground shadow-elevation-1">

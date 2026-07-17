@@ -1,10 +1,9 @@
 import { Menu, PanelLeftClose, PanelLeftOpen, Search } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
-
+import { SiteFooter } from "@/app/layouts/site-footer";
 import { ThemeToggle } from "@/app/layouts/theme-toggle";
 import { UserMenu } from "@/app/layouts/user-menu";
-import { SiteFooter } from "@/app/layouts/site-footer";
 import { STAFF_NAVIGATION, type StaffNavItem } from "@/applications/staff/navigation";
 import { WorkspaceSwitcher } from "@/applications/workspace-switcher";
 import { ROUTES } from "@/shared/config";

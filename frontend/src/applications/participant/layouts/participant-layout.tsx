@@ -1,10 +1,9 @@
 import { Bell, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
-
+import { SiteFooter } from "@/app/layouts/site-footer";
 import { ThemeToggle } from "@/app/layouts/theme-toggle";
 import { UserMenu } from "@/app/layouts/user-menu";
-import { SiteFooter } from "@/app/layouts/site-footer";
 import { useAuth } from "@/app/providers";
 import {
   PARTICIPANT_NAVIGATION,

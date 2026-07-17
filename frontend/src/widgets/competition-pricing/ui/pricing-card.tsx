@@ -115,9 +115,7 @@ export function PricingCard({
       className={cn(
         "rounded-lg border bg-card p-3 transition-[border-color,box-shadow,opacity] duration-200",
         "[content-visibility:auto] [contain-intrinsic-size:auto_16rem]",
-        row.status === "missing"
-          ? "border-warning/60 bg-warning-surface/20"
-          : "border-border",
+        row.status === "missing" ? "border-warning/60 bg-warning-surface/20" : "border-border",
         selected && "ring-2 ring-primary/30",
       )}
     >

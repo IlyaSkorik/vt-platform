@@ -122,8 +122,12 @@ export function MyApplicationsPage(): React.JSX.Element {
         ) : (
           <Tabs defaultValue="all">
             <TabsList>
-              <TabsTrigger className="cursor-pointer" value="all">Все ({applications.length})</TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="drafts">Черновики ({drafts.length})</TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="all">
+                Все ({applications.length})
+              </TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="drafts">
+                Черновики ({drafts.length})
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="all">
               <ApplicationList applications={applications} />

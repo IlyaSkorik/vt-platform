@@ -11,7 +11,11 @@ interface FestivalGridProps {
 }
 
 /** Responsive card grid: 1 column on mobile, 2 on tablet, 3 on desktop. */
-export function FestivalGrid({ festivals, now, detailBasePath }: FestivalGridProps): React.JSX.Element {
+export function FestivalGrid({
+  festivals,
+  now,
+  detailBasePath,
+}: FestivalGridProps): React.JSX.Element {
   return (
     <div className={GRID_CLASS}>
       {festivals.map((festival) => (

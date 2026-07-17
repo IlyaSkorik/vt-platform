@@ -168,22 +168,25 @@ function PerformanceFormInner({
       return;
     }
     const handle = setTimeout(() => {
-      savePerformance({
-        title: title.trim(),
-        durationSeconds,
-        nominationId: selection.nominationId as string,
-        disciplineId: selection.disciplineId as string,
-        ageCategoryId: selection.ageCategoryId as string,
-        participantGroupId: selection.participantGroupId as string,
-        participationFormatId: selection.participationFormatId as string,
-      }, {
-        onSuccess: () => {
-          savedSignature.current = saveSignature;
+      savePerformance(
+        {
+          title: title.trim(),
+          durationSeconds,
+          nominationId: selection.nominationId as string,
+          disciplineId: selection.disciplineId as string,
+          ageCategoryId: selection.ageCategoryId as string,
+          participantGroupId: selection.participantGroupId as string,
+          participationFormatId: selection.participationFormatId as string,
         },
-        onError: () => {
-          toast.error("Не удалось сохранить выступление");
+        {
+          onSuccess: () => {
+            savedSignature.current = saveSignature;
+          },
+          onError: () => {
+            toast.error("Не удалось сохранить выступление");
+          },
         },
-      });
+      );
     }, 700);
     return () => clearTimeout(handle);
   }, [saveSignature, savePerformance, title, durationSeconds, selection]);

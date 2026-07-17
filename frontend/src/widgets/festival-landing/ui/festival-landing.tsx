@@ -67,7 +67,9 @@ export function FestivalLanding({
   const applyPath = festivalId
     ? `${ROUTES.cabinetCompetitions}/${festivalId}/apply`
     : ROUTES.cabinetCompetitions;
-  const ctaPath = isAuthenticated ? applyPath : `${ROUTES.login}?next=${encodeURIComponent(applyPath)}`;
+  const ctaPath = isAuthenticated
+    ? applyPath
+    : `${ROUTES.login}?next=${encodeURIComponent(applyPath)}`;
 
   if (!festivalId) {
     return (

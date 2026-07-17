@@ -3,12 +3,12 @@ import { Link } from "react-router";
 import { useAuth } from "@/app/providers";
 import {
   catalogStatusConfig,
+  type Festival,
   formatDate,
   formatPeriod,
   parseApiDate,
   participationModeLabel,
   resolveMediaUrl,
-  type Festival,
   usePublicFestivals,
 } from "@/features/festival-catalog";
 import { ROUTES } from "@/shared/config";
@@ -48,7 +48,10 @@ export function HomePage(): React.JSX.Element {
   const latestResults = festivals
     .filter((festival) => festival.status === "COMPLETED" || festival.status === "RUNNING")
     .slice()
-    .sort((a, b) => (parseApiDate(b.updatedAt)?.getTime() ?? 0) - (parseApiDate(a.updatedAt)?.getTime() ?? 0))
+    .sort(
+      (a, b) =>
+        (parseApiDate(b.updatedAt)?.getTime() ?? 0) - (parseApiDate(a.updatedAt)?.getTime() ?? 0),
+    )
     .slice(0, 5);
   const authPath = isAuthenticated ? ROUTES.cabinet : ROUTES.login;
 
@@ -79,7 +82,11 @@ export function HomePage(): React.JSX.Element {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2.5 pt-1">
-              <Button asChild size="lg" className="min-w-[13.5rem] text-foreground hover:text-foreground">
+              <Button
+                asChild
+                size="lg"
+                className="min-w-[13.5rem] text-foreground hover:text-foreground"
+              >
                 <a href="#active-events">Найти мероприятие</a>
               </Button>
               <Button asChild size="lg" variant="outline" className="min-w-[9rem]">
@@ -217,7 +224,9 @@ export function HomePage(): React.JSX.Element {
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div className="space-y-1">
                 <h2 className="text-3xl font-semibold tracking-tight">Ближайшие мероприятия</h2>
-                <p className="text-muted-foreground">События, которые стартуют в ближайшее время.</p>
+                <p className="text-muted-foreground">
+                  События, которые стартуют в ближайшее время.
+                </p>
               </div>
               <Button asChild variant="outline" size="sm">
                 <Link to={ROUTES.competitions}>Весь календарь</Link>

@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { apiClient } from "@/shared/api";
 import { resolveMediaUrl } from "@/features/competitions/lib/media-url";
+import { apiClient } from "@/shared/api";
 import {
   Badge,
   Button,
@@ -13,16 +13,16 @@ import {
   CardTitle,
   Input,
   LoadingState,
-  Select,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
   PageContainer,
   PageContent,
   PageDescription,
   PageHeader,
   PageTitle,
+  Select,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   Textarea,
 } from "@/shared/ui";
 
@@ -119,9 +119,12 @@ async function runAction(
   } catch (error) {
     const response = (error as { response?: Response })?.response;
     if (response) {
-      const body = (await response.json().catch(() => null)) as
-        | { detail?: string; title?: string; message?: string; error?: string }
-        | null;
+      const body = (await response.json().catch(() => null)) as {
+        detail?: string;
+        title?: string;
+        message?: string;
+        error?: string;
+      } | null;
       throw new Error(
         body?.detail ??
           body?.message ??
@@ -226,15 +229,7 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
   const queryClient = useQueryClient();
 
   const workspace = useQuery({
-    queryKey: [
-      "staff",
-      "applications",
-      "workspace",
-      queue,
-      q,
-      selected,
-      competitionId,
-    ],
+    queryKey: ["staff", "applications", "workspace", queue, q, selected, competitionId],
     queryFn: () =>
       fetchWorkspace(queue, q, selected, {
         competitionId,
@@ -259,7 +254,8 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
         map.set(key, { ...item });
         continue;
       }
-      const better = statusPriority(item.status) < statusPriority(existing.status) ? item : existing;
+      const better =
+        statusPriority(item.status) < statusPriority(existing.status) ? item : existing;
       map.set(key, {
         ...better,
         performancesCount: existing.performancesCount + item.performancesCount,
@@ -285,7 +281,8 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
     },
   });
   const bulkReminder = useMutation({
-    mutationFn: ({ ids, actionKey }: { ids: string[]; actionKey: string }) => runBulk(actionKey, ids, comment),
+    mutationFn: ({ ids, actionKey }: { ids: string[]; actionKey: string }) =>
+      runBulk(actionKey, ids, comment),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["staff", "applications", "workspace"] });
     },
@@ -336,7 +333,9 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
     <PageContainer size="wide">
       <PageHeader>
         <PageTitle>Обработка заявок</PageTitle>
-        <PageDescription>Режим задач: берите следующую заявку, выполняйте действие, переходите дальше.</PageDescription>
+        <PageDescription>
+          Режим задач: берите следующую заявку, выполняйте действие, переходите дальше.
+        </PageDescription>
       </PageHeader>
       <PageContent>
         <div className="space-y-3">
@@ -397,7 +396,10 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                   placeholder="Фильтр по конкурсу"
                   value={competitionId}
                   onValueChange={(value) => setCompetitionId(value)}
-                  options={(workspace.data.competitions ?? []).map((item) => ({ value: item.id, label: item.title }))}
+                  options={(workspace.data.competitions ?? []).map((item) => ({
+                    value: item.id,
+                    label: item.title,
+                  }))}
                 />
               </div>
             </CardContent>
@@ -408,7 +410,9 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
             <CardHeader>
               <CardTitle>Входящие заявки</CardTitle>
               <CardDescription>
-                {groupedInbox.length === 0 ? "Очередь пуста" : `Всего заявок в очереди: ${groupedInbox.length}`}
+                {groupedInbox.length === 0
+                  ? "Очередь пуста"
+                  : `Всего заявок в очереди: ${groupedInbox.length}`}
               </CardDescription>
             </CardHeader>
             <CardContent className="max-h-[65vh] space-y-2 overflow-auto [scrollbar-color:var(--border-default)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:w-2">
@@ -425,7 +429,8 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                   </div>
                   <p className="text-sm text-muted-foreground">{item.competition}</p>
                   <p className="text-sm text-muted-foreground">
-                    {item.applicant} · Номеров: {item.performancesCount} · Участников: {item.participantsCount}
+                    {item.applicant} · Номеров: {item.performancesCount} · Участников:{" "}
+                    {item.participantsCount}
                   </p>
                 </button>
               ))}
@@ -435,7 +440,9 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
           <Card>
             <CardHeader>
               <CardTitle>Рабочая карточка</CardTitle>
-              <CardDescription>Минимум кликов: одно главное действие и контекст рядом.</CardDescription>
+              <CardDescription>
+                Минимум кликов: одно главное действие и контекст рядом.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {!workspace.data.detail || !selectedItem ? (
@@ -450,7 +457,10 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                         : (workspace.data.detail.performance ?? "Без названия номера")}
                     </p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      Статус: <span className="font-medium text-foreground">{statusLabel(selectedItem.status)}</span>
+                      Статус:{" "}
+                      <span className="font-medium text-foreground">
+                        {statusLabel(selectedItem.status)}
+                      </span>
                     </p>
                     <p className="mt-1 text-sm text-muted-foreground">
                       Оплата:{" "}
@@ -461,13 +471,19 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                         ? ` · ${workspace.data.detail.totalPriceAmount} ${workspace.data.detail.totalPriceCurrency ?? "BYN"}`
                         : ""}
                     </p>
-                    {receiptDownloadUrl(workspace.data.detail.receiptFileReference ?? selectedItem.receiptFileReference) ? (
+                    {receiptDownloadUrl(
+                      workspace.data.detail.receiptFileReference ??
+                        selectedItem.receiptFileReference,
+                    ) ? (
                       <div className="mt-2 flex justify-end">
                         <Button asChild size="sm" variant="outline">
                           <a
-                            href={receiptDownloadUrl(
-                              workspace.data.detail.receiptFileReference ?? selectedItem.receiptFileReference,
-                            ) ?? "#"}
+                            href={
+                              receiptDownloadUrl(
+                                workspace.data.detail.receiptFileReference ??
+                                  selectedItem.receiptFileReference,
+                              ) ?? "#"
+                            }
                             target="_blank"
                             rel="noreferrer"
                           >
@@ -477,13 +493,21 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                       </div>
                     ) : null}
                   </div>
-                  {!selectedPrimaryAction ? <Badge variant="outline">Нет доступных действий</Badge> : null}
+                  {!selectedPrimaryAction ? (
+                    <Badge variant="outline">Нет доступных действий</Badge>
+                  ) : null}
                   <div className="flex flex-wrap gap-2">
                     {selectedItem.capabilities.map((capability) => (
                       <Button
                         key={capability.key}
                         size="sm"
-                        variant={capability.key === selectedPrimaryAction?.key ? "primary" : capability.key === "cancel" ? "danger" : "secondary"}
+                        variant={
+                          capability.key === selectedPrimaryAction?.key
+                            ? "primary"
+                            : capability.key === "cancel"
+                              ? "danger"
+                              : "secondary"
+                        }
                         loading={action.isPending}
                         onClick={() => executeAction(capability.key)}
                       >
@@ -548,9 +572,15 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                   </div>
                   <Tabs defaultValue="overview">
                     <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="overview" className="cursor-pointer">Обзор</TabsTrigger>
-                      <TabsTrigger value="timeline" className="cursor-pointer">История</TabsTrigger>
-                      <TabsTrigger value="communication" className="cursor-pointer">Коммуникация</TabsTrigger>
+                      <TabsTrigger value="overview" className="cursor-pointer">
+                        Обзор
+                      </TabsTrigger>
+                      <TabsTrigger value="timeline" className="cursor-pointer">
+                        История
+                      </TabsTrigger>
+                      <TabsTrigger value="communication" className="cursor-pointer">
+                        Коммуникация
+                      </TabsTrigger>
                     </TabsList>
                     <TabsContent value="overview" className="space-y-2">
                       <div className="rounded-md border p-2 text-sm">
@@ -579,71 +609,99 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                                     )}
                                     <div className="min-w-0">
                                       <p className="truncate text-xs font-medium">
-                                        #{performance.submissionId.slice(0, 8).toUpperCase()} · {performance.title}
+                                        #{performance.submissionId.slice(0, 8).toUpperCase()} ·{" "}
+                                        {performance.title}
                                       </p>
                                       <p className="mt-1 text-xs text-muted-foreground">
-                                        Участников: {performance.participantsCount ?? 0} · Педагогов: {performance.teachersCount ?? 0}
+                                        Участников: {performance.participantsCount ?? 0} ·
+                                        Педагогов: {performance.teachersCount ?? 0}
                                       </p>
                                     </div>
                                   </div>
-                                  <Badge variant="secondary">{statusLabel(performance.status)}</Badge>
+                                  <Badge variant="secondary">
+                                    {statusLabel(performance.status)}
+                                  </Badge>
                                 </button>
                                 {openPerformances[performance.submissionId] ? (
                                   <CardContent className="border-t border-border pt-3">
                                     <div className="space-y-1">
-                                  <p className="text-xs text-muted-foreground">
-                                    Номинация: {performance.nominationName ?? "—"} · Дисциплина: {performance.disciplineName ?? "—"}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    Возраст: {performance.ageCategoryName ?? "—"} · Группа: {performance.participantGroupName ?? "—"}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    Формат: {performance.participationFormatName ?? "—"} · Длительность:{" "}
-                                    {performance.durationSeconds ?? 0} сек
-                                  </p>
-                                  <div className="mt-1 space-y-1">
-                                    <p className="text-xs font-medium">Участники</p>
-                                    {(performance.participants ?? []).length === 0 ? (
-                                      <p className="text-xs text-muted-foreground">Нет данных</p>
-                                    ) : (
-                                      (performance.participants ?? []).map((participant) => (
-                                        <p key={participant.id} className="text-xs text-muted-foreground">
-                                          {participant.name} · участников: {participant.memberCount}
+                                      <p className="text-xs text-muted-foreground">
+                                        Номинация: {performance.nominationName ?? "—"} · Дисциплина:{" "}
+                                        {performance.disciplineName ?? "—"}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">
+                                        Возраст: {performance.ageCategoryName ?? "—"} · Группа:{" "}
+                                        {performance.participantGroupName ?? "—"}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">
+                                        Формат: {performance.participationFormatName ?? "—"} ·
+                                        Длительность: {performance.durationSeconds ?? 0} сек
+                                      </p>
+                                      <div className="mt-1 space-y-1">
+                                        <p className="text-xs font-medium">Участники</p>
+                                        {(performance.participants ?? []).length === 0 ? (
+                                          <p className="text-xs text-muted-foreground">
+                                            Нет данных
+                                          </p>
+                                        ) : (
+                                          (performance.participants ?? []).map((participant) => (
+                                            <p
+                                              key={participant.id}
+                                              className="text-xs text-muted-foreground"
+                                            >
+                                              {participant.name} · участников:{" "}
+                                              {participant.memberCount}
+                                            </p>
+                                          ))
+                                        )}
+                                      </div>
+                                      <div className="mt-1 space-y-1">
+                                        <p className="text-xs font-medium">Педагоги</p>
+                                        {(performance.teachers ?? []).length === 0 ? (
+                                          <p className="text-xs text-muted-foreground">
+                                            Нет данных
+                                          </p>
+                                        ) : (
+                                          (performance.teachers ?? []).map((teacher) => (
+                                            <p
+                                              key={teacher.id}
+                                              className="text-xs text-muted-foreground"
+                                            >
+                                              {teacher.name} · {teacher.role}
+                                            </p>
+                                          ))
+                                        )}
+                                      </div>
+                                      <p className="text-xs text-muted-foreground">
+                                        Сумма номера:{" "}
+                                        {performance.priceAmount
+                                          ? `${performance.priceAmount} ${performance.priceCurrency ?? "BYN"}`
+                                          : "не рассчитана"}
+                                      </p>
+                                      {(performance.attachments ?? []).length === 0 ? (
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                          Файлы не загружены
                                         </p>
-                                      ))
-                                    )}
-                                  </div>
-                                  <div className="mt-1 space-y-1">
-                                    <p className="text-xs font-medium">Педагоги</p>
-                                    {(performance.teachers ?? []).length === 0 ? (
-                                      <p className="text-xs text-muted-foreground">Нет данных</p>
-                                    ) : (
-                                      (performance.teachers ?? []).map((teacher) => (
-                                        <p key={teacher.id} className="text-xs text-muted-foreground">
-                                          {teacher.name} · {teacher.role}
-                                        </p>
-                                      ))
-                                    )}
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">
-                                    Сумма номера:{" "}
-                                    {performance.priceAmount
-                                      ? `${performance.priceAmount} ${performance.priceCurrency ?? "BYN"}`
-                                      : "не рассчитана"}
-                                  </p>
-                                  {(performance.attachments ?? []).length === 0 ? (
-                                    <p className="mt-1 text-xs text-muted-foreground">Файлы не загружены</p>
-                                  ) : (
-                                    <div className="mt-2 flex flex-wrap gap-2">
-                                      {(performance.attachments ?? []).map((file) => (
-                                        <Button key={file.id} asChild size="sm" variant="outline">
-                                          <a href={receiptDownloadUrl(file.fileReference) ?? "#"} target="_blank" rel="noreferrer">
-                                            Скачать: {attachmentTypeLabel(file.type)}
-                                          </a>
-                                        </Button>
-                                      ))}
-                                    </div>
-                                  )}
+                                      ) : (
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                          {(performance.attachments ?? []).map((file) => (
+                                            <Button
+                                              key={file.id}
+                                              asChild
+                                              size="sm"
+                                              variant="outline"
+                                            >
+                                              <a
+                                                href={receiptDownloadUrl(file.fileReference) ?? "#"}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                              >
+                                                Скачать: {attachmentTypeLabel(file.type)}
+                                              </a>
+                                            </Button>
+                                          ))}
+                                        </div>
+                                      )}
                                     </div>
                                   </CardContent>
                                 ) : null}
@@ -663,13 +721,19 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                             ? `${workspace.data.detail.totalPriceAmount} ${workspace.data.detail.totalPriceCurrency ?? "BYN"}`
                             : "не рассчитана"}
                         </p>
-                        {receiptDownloadUrl(workspace.data.detail.receiptFileReference ?? selectedItem.receiptFileReference) ? (
+                        {receiptDownloadUrl(
+                          workspace.data.detail.receiptFileReference ??
+                            selectedItem.receiptFileReference,
+                        ) ? (
                           <div className="mt-2 flex justify-end">
                             <Button asChild size="sm" variant="outline">
                               <a
-                                href={receiptDownloadUrl(
-                                  workspace.data.detail.receiptFileReference ?? selectedItem.receiptFileReference,
-                                ) ?? "#"}
+                                href={
+                                  receiptDownloadUrl(
+                                    workspace.data.detail.receiptFileReference ??
+                                      selectedItem.receiptFileReference,
+                                  ) ?? "#"
+                                }
                                 target="_blank"
                                 rel="noreferrer"
                               >
@@ -678,7 +742,9 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                             </Button>
                           </div>
                         ) : (
-                          <p className="mt-1 text-xs text-muted-foreground">Файл квитанции еще не прикреплен.</p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Файл квитанции еще не прикреплен.
+                          </p>
                         )}
                       </div>
                       <div className="rounded-md border p-2 text-sm">
@@ -687,12 +753,19 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                           <p className="text-muted-foreground text-xs">Нет загруженных файлов</p>
                         ) : (
                           (workspace.data.detail.attachments ?? []).map((attachment) => (
-                            <div key={attachment.id} className="flex items-center justify-between gap-2 py-1">
+                            <div
+                              key={attachment.id}
+                              className="flex items-center justify-between gap-2 py-1"
+                            >
                               <p className="text-xs text-muted-foreground">
                                 {attachmentTypeLabel(attachment.type)} · {attachment.fileReference}
                               </p>
                               <Button asChild size="sm" variant="outline">
-                                <a href={receiptDownloadUrl(attachment.fileReference) ?? "#"} target="_blank" rel="noreferrer">
+                                <a
+                                  href={receiptDownloadUrl(attachment.fileReference) ?? "#"}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
                                   Скачать
                                 </a>
                               </Button>
@@ -704,9 +777,14 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                     <TabsContent value="timeline" className="space-y-2">
                       <p className="font-medium text-sm">Таймлайн</p>
                       {workspace.data.detail.timeline.map((event, index) => (
-                        <div key={`${event.kind}-${event.at}-${index}`} className="rounded-md border p-2 text-sm">
+                        <div
+                          key={`${event.kind}-${event.at}-${index}`}
+                          className="rounded-md border p-2 text-sm"
+                        >
                           <p>{event.label}</p>
-                          <p className="text-muted-foreground text-xs">{new Date(event.at).toLocaleString()}</p>
+                          <p className="text-muted-foreground text-xs">
+                            {new Date(event.at).toLocaleString()}
+                          </p>
                         </div>
                       ))}
                       <p className="pt-2 font-medium text-sm">Журнал аудита</p>
@@ -714,7 +792,10 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                         <p className="text-sm text-muted-foreground">Записей пока нет.</p>
                       ) : (
                         (workspace.data.detail.audit ?? []).map((event, index) => (
-                          <div key={`${event.by}-${event.at}-${index}`} className="rounded-md border p-2 text-sm">
+                          <div
+                            key={`${event.by}-${event.at}-${index}`}
+                            className="rounded-md border p-2 text-sm"
+                          >
                             <p>{event.reason}</p>
                             <p className="text-muted-foreground text-xs">{event.by}</p>
                           </div>
@@ -725,18 +806,28 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                       <p className="font-medium text-sm">Внутренние заметки</p>
                       {(workspace.data.detail.internalNotes ?? []).map(
                         (entry: { text: string; created_at: string }, index) => (
-                        <div key={`${entry.created_at}-${entry.text}-${index}`} className="rounded-md border p-2 text-sm">
-                          <p>{entry.text}</p>
-                          <p className="text-muted-foreground text-xs">{new Date(entry.created_at).toLocaleString()}</p>
-                        </div>
+                          <div
+                            key={`${entry.created_at}-${entry.text}-${index}`}
+                            className="rounded-md border p-2 text-sm"
+                          >
+                            <p>{entry.text}</p>
+                            <p className="text-muted-foreground text-xs">
+                              {new Date(entry.created_at).toLocaleString()}
+                            </p>
+                          </div>
                         ),
                       )}
                       <p className="pt-2 font-medium text-sm">Сообщения участнику</p>
                       {(workspace.data.detail.participantMessages ?? []).map(
                         (entry: { text: string; created_at: string }, index) => (
-                          <div key={`${entry.created_at}-${entry.text}-${index}`} className="rounded-md border p-2 text-sm">
+                          <div
+                            key={`${entry.created_at}-${entry.text}-${index}`}
+                            className="rounded-md border p-2 text-sm"
+                          >
                             <p>{entry.text}</p>
-                            <p className="text-muted-foreground text-xs">{new Date(entry.created_at).toLocaleString()}</p>
+                            <p className="text-muted-foreground text-xs">
+                              {new Date(entry.created_at).toLocaleString()}
+                            </p>
                           </div>
                         ),
                       )}

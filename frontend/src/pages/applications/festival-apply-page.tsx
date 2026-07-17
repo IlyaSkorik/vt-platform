@@ -1,6 +1,13 @@
 import { RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Navigate, generatePath, Link, useNavigate, useParams, useSearchParams } from "react-router";
+import {
+  generatePath,
+  Link,
+  Navigate,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router";
 
 import {
   useApplication,
@@ -57,7 +64,10 @@ export function FestivalApplyPage(): React.JSX.Element {
   const selectedApplication = useMemo(() => {
     if (!applications) return null;
     if (targetApplicationId) {
-      const exact = applications.find((application) => application.id === targetApplicationId && application.competitionId === festivalId);
+      const exact = applications.find(
+        (application) =>
+          application.id === targetApplicationId && application.competitionId === festivalId,
+      );
       if (exact) return exact;
     }
     return (
@@ -118,10 +128,22 @@ function WizardBody({
   applicationId: string;
   competitionId: string;
 }): React.JSX.Element {
-  const { data: application, isLoading: applicationLoading, refetch: refetchApplication, isFetching: isFetchingApplication } = useApplication(applicationId);
-  const { data: registration, isLoading: registrationLoading, refetch: refetchRegistration, isFetching: isFetchingRegistration } =
-    useRegistration(competitionId);
-  const [refreshNotice, setRefreshNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const {
+    data: application,
+    isLoading: applicationLoading,
+    refetch: refetchApplication,
+    isFetching: isFetchingApplication,
+  } = useApplication(applicationId);
+  const {
+    data: registration,
+    isLoading: registrationLoading,
+    refetch: refetchRegistration,
+    isFetching: isFetchingRegistration,
+  } = useRegistration(competitionId);
+  const [refreshNotice, setRefreshNotice] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   const isEditableStatus = application?.status === "DRAFT" || application?.status === "SUBMITTED";
 
@@ -135,7 +157,10 @@ function WizardBody({
     );
   }
 
-  if (!registration.registrationOpen || !isEditableStatus) {
+  // Редактирование доступно пока открыта регистрация, а также после её
+  // закрытия — если организатор запросил исправления/недостающие файлы.
+  const canEdit = (registration.registrationOpen || application.hasCorrections) && isEditableStatus;
+  if (!canEdit) {
     return <Navigate to={generatePath(ROUTES.cabinetApplication, { applicationId })} replace />;
   }
 
@@ -157,10 +182,26 @@ function WizardBody({
             </p>
           </Alert>
         ) : null}
-        <PerformancesStep applicationId={applicationId} application={application} registration={registration} />
-        <ServicesStep applicationId={applicationId} application={application} registration={registration} />
-        <ConsentsStep applicationId={applicationId} application={application} registration={registration} />
-        <ReviewStep applicationId={applicationId} application={application} registration={registration} />
+        <PerformancesStep
+          applicationId={applicationId}
+          application={application}
+          registration={registration}
+        />
+        <ServicesStep
+          applicationId={applicationId}
+          application={application}
+          registration={registration}
+        />
+        <ConsentsStep
+          applicationId={applicationId}
+          application={application}
+          registration={registration}
+        />
+        <ReviewStep
+          applicationId={applicationId}
+          application={application}
+          registration={registration}
+        />
         <div className="flex flex-wrap justify-between gap-2">
           <p className="text-sm">
             <Link to={generatePath(ROUTES.cabinetApplication, { applicationId })}>
@@ -192,7 +233,9 @@ function WizardBody({
           </Button>
         </div>
         {refreshNotice ? (
-          <p className={`text-sm ${refreshNotice.type === "success" ? "text-green-600" : "text-danger"}`}>
+          <p
+            className={`text-sm ${refreshNotice.type === "success" ? "text-green-600" : "text-danger"}`}
+          >
             {refreshNotice.text}
           </p>
         ) : null}

@@ -16,9 +16,7 @@ function LegalPage({
         <PageTitle>{title}</PageTitle>
         <PageDescription>{description}</PageDescription>
       </PageHeader>
-      <PageContent className="max-w-4xl space-y-6 text-sm leading-6">
-        {children}
-      </PageContent>
+      <PageContent className="max-w-4xl space-y-6 text-sm leading-6">{children}</PageContent>
     </PageContainer>
   );
 }
@@ -77,8 +75,8 @@ export function CookiesPolicyPage(): React.JSX.Element {
       <section className="space-y-2">
         <h2 className="text-base font-semibold">1. Что такое cookies</h2>
         <p>
-          Cookies — это небольшие файлы, которые сохраняются в браузере и помогают корректной
-          работе сервиса.
+          Cookies — это небольшие файлы, которые сохраняются в браузере и помогают корректной работе
+          сервиса.
         </p>
       </section>
 
