@@ -102,11 +102,11 @@ def _landing_config_from_command(command: UpdateLandingConfigCommand) -> Landing
                 )
 
         body = raw.get("body")
-        body_value: str | None
-        if block_type is LandingBlockType.CONTENT:
-            body_value = "" if body is None else str(body)
-        else:
-            body_value = _optional_str(body)
+        body_value: str | None = (
+            ("" if body is None else str(body))
+            if block_type is LandingBlockType.CONTENT
+            else _optional_str(body)
+        )
 
         blocks.append(
             LandingBlock(

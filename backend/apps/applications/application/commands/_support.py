@@ -24,8 +24,8 @@ from apps.applications.application.interfaces import (
 from apps.applications.domain.entities import Submission
 from apps.applications.domain.value_objects import (
     ReviewerId,
-    SubmissionStatus,
     SubmissionId,
+    SubmissionStatus,
     UserId,
 )
 

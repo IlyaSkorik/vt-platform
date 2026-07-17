@@ -13,6 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime
 
+from apps.competitions.domain.contacts_configuration import ContactsConfiguration
 from apps.competitions.domain.entities import (
     AdditionalService,
     AgeCategory,
@@ -26,7 +27,6 @@ from apps.competitions.domain.entities import (
     ParticipantGroup,
     ParticipationFormat,
 )
-from apps.competitions.domain.contacts_configuration import ContactsConfiguration
 from apps.competitions.domain.landing_configuration import LandingConfiguration
 from apps.competitions.domain.value_objects import AdmissionRule, CompetitionSettings, PricingRule
 
@@ -40,8 +40,8 @@ __all__ = [
     "CompetitionDetailView",
     "CompetitionSummaryView",
     "ContactProfileOverrideView",
-    "ContactsConfigView",
     "ContactView",
+    "ContactsConfigView",
     "DeadlinesView",
     "DisciplineView",
     "DocumentView",

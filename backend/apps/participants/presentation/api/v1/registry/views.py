@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import uuid
 from datetime import date
 from typing import Any
-import uuid
 
 from django.db import transaction
 from django.db.models import Count, Exists, OuterRef, Q
@@ -14,13 +14,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTStatelessUserAuthentication
 
+from apps.applications.infrastructure.models.application import ApplicationModel
+from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.participants.infrastructure.models import (
     EducationalOrganizationModel,
     ParticipantOrganizationMembershipModel,
     ParticipantRegistryModel,
 )
-from apps.applications.infrastructure.models.application import ApplicationModel
-from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.participants.presentation.api.v1 import problems
 from apps.participants.presentation.api.v1.registry.serializers import (
     OrganizationWriteSerializer,
@@ -134,7 +134,7 @@ def _applications_count_by_participant(*, owner_id: uuid.UUID, participant_ids: 
         if participant_refs:
             submission_participants[submission_id] = participant_refs
 
-    counts = {participant_id: 0 for participant_id in participant_ids}
+    counts = dict.fromkeys(participant_ids, 0)
     applications = ApplicationModel.objects.filter(
         deleted_at__isnull=True,
         applicant_id=owner_id,

@@ -10,7 +10,6 @@ from apps.competitions.application.dto.commands import (
     RemovePricingRuleCommand,
 )
 from apps.competitions.application.dto.views import CompetitionDetailView
-
 from apps.competitions.application.handlers._support import CompetitionCommandHandler
 from apps.competitions.domain.value_objects import PricingCalculationType
 

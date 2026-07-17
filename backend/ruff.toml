@@ -20,6 +20,13 @@ select = [
 ]
 ignore = [
     "N999", # allow existing module naming
+    # Russian is the platform's primary language (ARCH-001): Cyrillic letters that
+    # resemble Latin ones in strings/docstrings/comments are intentional, not typos,
+    # as is the mathematical "×" in pricing docstrings. These confusable checks are
+    # pure false positives across a Russian-language codebase.
+    "RUF001", # ambiguous character in string
+    "RUF002", # ambiguous character in docstring
+    "RUF003", # ambiguous character in comment
 ]
 
 [lint.per-file-ignores]
@@ -34,9 +41,6 @@ ignore = [
 # which the platform contract mandates over pep8 snake_case (N815). Matches any
 # serializer module (e.g. `serializers.py`, `public_serializers.py`).
 "apps/*/presentation/**/*serializers.py" = ["N815"]
-# Localized transactional-email copy is Russian (the platform's primary language,
-# ARCH-001): Cyrillic letters that resemble Latin ones are intentional, not typos.
-"apps/*/infrastructure/messaging/email_gateway.py" = ["RUF001"]
 
 [lint.isort]
 known-first-party = ["apps", "config", "shared"]

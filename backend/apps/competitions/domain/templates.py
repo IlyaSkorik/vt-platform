@@ -28,12 +28,12 @@ from datetime import datetime
 from typing import Final
 
 from .entities import (
+    _SENTINEL,
     AgeCategory,
     Category,
     Discipline,
     ParticipantGroup,
     ParticipationFormat,
-    _SENTINEL,
     ensure_admission_combination_valid,
     ensure_age_range_free,
     ensure_participant_range_free,

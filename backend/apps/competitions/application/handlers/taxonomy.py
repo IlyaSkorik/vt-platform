@@ -208,14 +208,16 @@ class UpdateAgeCategoryHandler(CompetitionCommandHandler):
         if command.min_age is not None and command.max_age is not None:
             age_range = AgeRange(min_age=command.min_age, max_age=command.max_age)
 
-        kwargs: dict = dict(
-            age_category_id=AgeCategoryId.from_string(command.age_category_id),
-            name=AgeCategoryName(command.name) if command.name is not None else None,
-            age_range=age_range,
-            age_category_type=AgeCategoryType(command.age_category_type) if command.age_category_type is not None else None,
-            sort_order=command.sort_order,
-            now=self._clock.utcnow(),
-        )
+        kwargs: dict = {
+            "age_category_id": AgeCategoryId.from_string(command.age_category_id),
+            "name": AgeCategoryName(command.name) if command.name is not None else None,
+            "age_range": age_range,
+            "age_category_type": AgeCategoryType(command.age_category_type)
+            if command.age_category_type is not None
+            else None,
+            "sort_order": command.sort_order,
+            "now": self._clock.utcnow(),
+        }
         if command.age_category_type is not None or command.mixed_calculation_method is not None:
             kwargs["mixed_calculation_method"] = (
                 MixedAgeCalculationMethod(command.mixed_calculation_method)

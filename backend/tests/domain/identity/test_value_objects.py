@@ -265,7 +265,7 @@ class TestFullName:
         name = FullName("Иван", "Петров", "Сергеевич")
         assert name.full == "Иван Сергеевич Петров"
         assert name.formal == "Петров Иван Сергеевич"
-        assert name.initials() == "Петров И.С."  # noqa: RUF001 (intentional Cyrillic ES)
+        assert name.initials() == "Петров И.С."
         assert name.short() == "Иван Петров"
         assert str(name) == name.full
 

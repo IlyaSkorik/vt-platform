@@ -119,7 +119,7 @@ class DjangoStaffInvitationEmailGateway:
     ) -> None:
         subject = "Приглашение в команду Взлёт талантов"
         body = (
-            f"Вас пригласили в команду {organization_name.value} c ролью {role.value}.\n\n"  # noqa: RUF001
+            f"Вас пригласили в команду {organization_name.value} c ролью {role.value}.\n\n"
             f"Ссылка для принятия приглашения: {token}\n\n"
             f"Ссылка действительна до {expires_at.isoformat()}."
         )

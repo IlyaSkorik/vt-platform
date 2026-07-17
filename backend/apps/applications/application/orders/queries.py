@@ -12,19 +12,18 @@ from apps.applications.application.dto.queries import (
     ListApplicationsQuery,
     ListDraftApplicationsQuery,
 )
+from apps.applications.application.exceptions import CompetitionCombinationNotFoundError, SubmissionInvariantViolationError
 from apps.applications.application.interfaces import (
     ApplicationRepository,
     Clock,
     CompetitionCatalog,
     SubmissionRepository,
 )
-from apps.applications.application.exceptions import CompetitionCombinationNotFoundError, SubmissionInvariantViolationError
 from apps.applications.domain.entities import Submission
 from apps.applications.domain.value_objects import (
     ApplicationStatus,
     SubmissionStatus,
 )
-from apps.applications.domain.value_objects import ApplicationStatus
 
 from ._support import (
     ensure_owner,

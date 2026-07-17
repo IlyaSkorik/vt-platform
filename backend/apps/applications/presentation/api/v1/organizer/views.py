@@ -31,7 +31,6 @@ from apps.applications.infrastructure.models.application import ApplicationModel
 from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.applications.presentation.api.v1 import problems
 from apps.applications.presentation.api.v1.submissions import composition
-from apps.emailing import render_transactional_email_html
 from apps.competitions.infrastructure.models.competition import CompetitionModel
 from apps.competitions.infrastructure.models.taxonomy import (
     AgeCategoryModel,
@@ -40,6 +39,7 @@ from apps.competitions.infrastructure.models.taxonomy import (
     ParticipantGroupModel,
     ParticipationFormatModel,
 )
+from apps.emailing import render_transactional_email_html
 from apps.identity.infrastructure.models.user import UserModel
 from apps.organization.presentation.permissions import IsOrganizationStaff
 

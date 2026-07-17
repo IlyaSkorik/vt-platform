@@ -37,6 +37,7 @@ from apps.competitions.application.dto.commands import (
     AddDocumentCommand,
     AddInformationBlockCommand,
     AddParticipantGroupCommand,
+    AddParticipationFormatCommand,
     AddPricingRuleCommand,
     AddRegulationCommand,
     ArchiveCompetitionCommand,
@@ -46,7 +47,6 @@ from apps.competitions.application.dto.commands import (
     CreateCompetitionCommand,
     DisableAdditionalServiceCommand,
     EnableAdditionalServiceCommand,
-    AddParticipationFormatCommand,
     HideInformationBlockCommand,
     MakeRegulationCurrentCommand,
     MarkConfiguredCommand,
@@ -77,15 +77,15 @@ from apps.competitions.application.dto.commands import (
     UpdateAdditionalServiceCommand,
     UpdateAgeCategoryCommand,
     UpdateBrandingCommand,
+    UpdateContactsConfigCommand,
     UpdateDeadlinesCommand,
     UpdateDocumentCommand,
     UpdateGeneralInformationCommand,
     UpdateInformationBlockCommand,
+    UpdateLandingConfigCommand,
     UpdateParticipantGroupCommand,
     UpdateParticipationFormatCommand,
     UpdateSettingsCommand,
-    UpdateContactsConfigCommand,
-    UpdateLandingConfigCommand,
 )
 from apps.competitions.application.dto.queries import (
     GetCompetitionQuery,
@@ -102,6 +102,7 @@ from apps.competitions.application.handlers import (
     AddDocumentHandler,
     AddInformationBlockHandler,
     AddParticipantGroupHandler,
+    AddParticipationFormatHandler,
     AddPricingRuleHandler,
     AddRegulationHandler,
     ArchiveCompetitionHandler,
@@ -111,7 +112,6 @@ from apps.competitions.application.handlers import (
     CreateCompetitionHandler,
     DisableAdditionalServiceHandler,
     EnableAdditionalServiceHandler,
-    AddParticipationFormatHandler,
     HideInformationBlockHandler,
     MakeRegulationCurrentHandler,
     MarkCompetitionConfiguredHandler,
@@ -135,12 +135,12 @@ from apps.competitions.application.handlers import (
     RenameCategoryHandler,
     RenameDisciplineHandler,
     RevertCompetitionToConfiguredHandler,
-    UpdateAgeCategoryHandler,
     RevertCompetitionToDraftHandler,
     SetPrimaryContactHandler,
     StartCompetitionHandler,
     UnpublishDocumentHandler,
     UpdateAdditionalServiceHandler,
+    UpdateAgeCategoryHandler,
     UpdateCompetitionBrandingHandler,
     UpdateCompetitionDeadlinesHandler,
     UpdateCompetitionGeneralInformationHandler,
@@ -185,7 +185,6 @@ from .serializers import (
     CompetitionListEnvelopeSerializer,
     CompetitionSummarySerializer,
     CreateCompetitionSerializer,
-    UpdateParticipationFormatSerializer,
     ProblemDetailSerializer,
     RenameCategorySerializer,
     RenameDisciplineSerializer,
@@ -200,6 +199,7 @@ from .serializers import (
     UpdateInformationBlockSerializer,
     UpdateLandingConfigSerializer,
     UpdateParticipantGroupSerializer,
+    UpdateParticipationFormatSerializer,
     _AdmissionCombinationSerializer,
 )
 
@@ -637,7 +637,13 @@ class CompetitionViewSet(viewsets.ViewSet):
             AddParticipantGroupHandler, AddParticipantGroupCommand(competition_id=pk, **kwargs), request, success=status.HTTP_201_CREATED
         )
 
-    @extend_schema(methods=["PATCH"], tags=[_TAG], operation_id="updateParticipantGroup", request=UpdateParticipantGroupSerializer, responses=_detail_ok())
+    @extend_schema(
+        methods=["PATCH"],
+        tags=[_TAG],
+        operation_id="updateParticipantGroup",
+        request=UpdateParticipantGroupSerializer,
+        responses=_detail_ok(),
+    )
     @extend_schema(methods=["DELETE"], tags=[_TAG], operation_id="removeParticipantGroup", request=None, responses=_detail_ok())
     @action(detail=True, methods=["patch", "delete"], url_path=r"participant-groups/(?P<participant_group_id>[^/.]+)")
     def participant_group_detail(self, request: Request, pk: str, participant_group_id: str) -> Response:
@@ -680,7 +686,13 @@ class CompetitionViewSet(viewsets.ViewSet):
             AddParticipationFormatHandler, AddParticipationFormatCommand(competition_id=pk, **kwargs), request, success=status.HTTP_201_CREATED
         )
 
-    @extend_schema(methods=["PATCH"], tags=[_TAG], operation_id="updateParticipationFormat", request=UpdateParticipationFormatSerializer, responses=_detail_ok())
+    @extend_schema(
+        methods=["PATCH"],
+        tags=[_TAG],
+        operation_id="updateParticipationFormat",
+        request=UpdateParticipationFormatSerializer,
+        responses=_detail_ok(),
+    )
     @extend_schema(methods=["DELETE"], tags=[_TAG], operation_id="removeParticipationFormat", request=None, responses=_detail_ok())
     @action(detail=True, methods=["patch", "delete"], url_path=r"participation-formats/(?P<format_id>[^/.]+)")
     def participation_format_detail(self, request: Request, pk: str, format_id: str) -> Response:

@@ -32,7 +32,7 @@ class OrganizationProfileSerializer(serializers.Serializer[dict[str, object]]):
     vk = serializers.CharField(allow_null=True)
     instagram = serializers.CharField(allow_null=True)
     telegram = serializers.CharField(allow_null=True)
-    legalInformation = serializers.CharField(source="legal_information", allow_null=True)
+    legalInformation = serializers.CharField(source="legal_information", allow_null=True)  # noqa: N815  # API camelCase wire key (API-000 §7)
 
 
 OrganizationProfileResponseSerializer = inline_serializer(

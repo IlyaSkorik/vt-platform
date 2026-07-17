@@ -138,7 +138,9 @@ def _configured(*, priced: bool = True, with_regulation: bool = True) -> Fixture
     c = _draft()
     cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
     disc = c.add_discipline(discipline_id=DisciplineId.generate(), category_id=cat.id, name=DisciplineName("Pop"), now=NOW)
-    age = c.add_age_category(age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW)
+    age = c.add_age_category(
+        age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW
+    )
     grp = c.add_participant_group(
         participant_group_id=ParticipantGroupId.generate(),
         category_id=cat.id,
@@ -146,12 +148,8 @@ def _configured(*, priced: bool = True, with_regulation: bool = True) -> Fixture
         count_range=ParticipantCountRange(1, 1),
         now=NOW,
     )
-    c.add_participation_format(
-        format_id=ParticipationFormatId.generate(), name=ParticipationFormatName("Очно"), now=NOW
-    )
-    c.add_participation_format(
-        format_id=ParticipationFormatId.generate(), name=ParticipationFormatName("Онлайн"), now=NOW
-    )
+    c.add_participation_format(format_id=ParticipationFormatId.generate(), name=ParticipationFormatName("Очно"), now=NOW)
+    c.add_participation_format(format_id=ParticipationFormatId.generate(), name=ParticipationFormatName("Онлайн"), now=NOW)
     by_name = {f.name.value: f for f in c.participation_formats}
     offline_fmt = by_name["Очно"]
     online_fmt = by_name["Онлайн"]
@@ -219,15 +217,23 @@ class TestTaxonomyInvariants:
     def test_overlapping_age_range_rejected(self) -> None:
         c = _draft()
         cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
-        c.add_age_category(age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW)
+        c.add_age_category(
+            age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW
+        )
         with pytest.raises(OverlappingAgeRangeError):
-            c.add_age_category(age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("8-10"), age_range=AgeRange(8, 10), now=NOW)
+            c.add_age_category(
+                age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("8-10"), age_range=AgeRange(8, 10), now=NOW
+            )
 
     def test_non_overlapping_age_range_allowed(self) -> None:
         c = _draft()
         cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
-        c.add_age_category(age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW)
-        c.add_age_category(age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("9-11"), age_range=AgeRange(9, 11), now=NOW)
+        c.add_age_category(
+            age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW
+        )
+        c.add_age_category(
+            age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("9-11"), age_range=AgeRange(9, 11), now=NOW
+        )
         assert len(c.age_categories) == 2
 
     def test_overlapping_participant_range_within_category_rejected(self) -> None:
@@ -320,7 +326,9 @@ class TestAdmissionAndPricing:
         c = _draft()
         cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
         disc = c.add_discipline(discipline_id=DisciplineId.generate(), category_id=cat.id, name=DisciplineName("Pop"), now=NOW)
-        age = c.add_age_category(age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW)
+        age = c.add_age_category(
+            age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW
+        )
         grp = c.add_participant_group(
             participant_group_id=ParticipantGroupId.generate(),
             category_id=cat.id,
@@ -347,7 +355,9 @@ class TestAdmissionAndPricing:
         c = _draft()
         cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
         disc = c.add_discipline(discipline_id=DisciplineId.generate(), category_id=cat.id, name=DisciplineName("Pop"), now=NOW)
-        age = c.add_age_category(age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW)
+        age = c.add_age_category(
+            age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW
+        )
         grp = c.add_participant_group(
             participant_group_id=ParticipantGroupId.generate(),
             category_id=cat.id,
@@ -694,9 +704,7 @@ class TestAdditionalServices:
         for combination in (fx.offline, fx.online):
             fx.competition.remove_admission_rule(combination=combination, now=NOW)
         unused = ParticipationFormatId.generate()
-        fx.competition.add_participation_format(
-            format_id=unused, name=ParticipationFormatName("Correspondence"), now=NOW
-        )
+        fx.competition.add_participation_format(format_id=unused, name=ParticipationFormatName("Correspondence"), now=NOW)
         fx.competition.add_additional_service(
             service_id=ServiceId.generate(),
             name=ServiceName("E-diploma"),
@@ -792,15 +800,15 @@ class TestLandingConfig:
     def test_update_landing_config_emits_event(self) -> None:
         from apps.competitions.domain.events import CompetitionLandingConfigurationChanged
         from apps.competitions.domain.landing_configuration import (
-            LandingBlock,
-            LandingBlockType,
-            LandingConfiguration,
             SYSTEM_BLOCK_FAQ_ID,
             SYSTEM_BLOCK_GALLERY_ID,
             SYSTEM_BLOCK_HERO_ID,
             SYSTEM_BLOCK_JURY_ID,
             SYSTEM_BLOCK_PARTNERS_ID,
             SYSTEM_BLOCK_VENUE_ID,
+            LandingBlock,
+            LandingBlockType,
+            LandingConfiguration,
         )
 
         c = _draft()

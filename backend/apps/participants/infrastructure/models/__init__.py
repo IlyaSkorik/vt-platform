@@ -24,8 +24,8 @@ __all__ = [
     "BasePersistenceModel",
     "EducationalOrganizationModel",
     "GuardianLinkModel",
-    "ParticipantOrganizationMembershipModel",
     "ParticipantModel",
+    "ParticipantOrganizationMembershipModel",
     "ParticipantRegistryModel",
     "uuid7",
 ]

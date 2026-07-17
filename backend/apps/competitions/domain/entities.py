@@ -67,7 +67,6 @@ from datetime import date, datetime
 from typing import TYPE_CHECKING, Final
 
 from .contacts_configuration import ContactsConfiguration
-from .landing_configuration import LandingConfiguration
 from .events import (
     AdditionalServiceAdded,
     AdmissionRuleAdded,
@@ -77,16 +76,16 @@ from .events import (
     CompetitionCompleted,
     CompetitionContactAdded,
     CompetitionContactRemoved,
+    CompetitionContactsConfigChanged,
     CompetitionCreated,
     CompetitionDeadlineChanged,
     CompetitionGeneralInformationUpdated,
     CompetitionInformationHidden,
     CompetitionInformationPublished,
+    CompetitionLandingConfigurationChanged,
     CompetitionPublished,
     CompetitionRegistrationClosed,
     CompetitionRegistrationOpened,
-    CompetitionContactsConfigChanged,
-    CompetitionLandingConfigurationChanged,
     CompetitionSettingsChanged,
     CompetitionStarted,
     DomainEvent,
@@ -104,7 +103,6 @@ from .exceptions import (
     AgeCategoryNotFoundError,
     CategoryInUseError,
     CategoryNotFoundError,
-    DuplicateAgeCategoryNameError,
     CompetitionAlreadyArchivedError,
     ConfigurationLockedError,
     ContactNotFoundError,
@@ -114,6 +112,7 @@ from .exceptions import (
     DisciplineNotFoundError,
     DocumentNotFoundError,
     DuplicateAdmissionRuleError,
+    DuplicateAgeCategoryNameError,
     DuplicateCategoryError,
     DuplicateContactError,
     DuplicateDisciplineError,
@@ -139,6 +138,7 @@ from .exceptions import (
     RegulationNotFoundError,
     ServiceNotFoundError,
 )
+from .landing_configuration import LandingConfiguration
 from .value_objects import (
     AdmissionCombination,
     AdmissionRule,

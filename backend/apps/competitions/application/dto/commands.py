@@ -62,14 +62,14 @@ __all__ = [
     "UpdateAdditionalServiceCommand",
     "UpdateAgeCategoryCommand",
     "UpdateBrandingCommand",
+    "UpdateContactsConfigCommand",
     "UpdateDeadlinesCommand",
     "UpdateDocumentCommand",
     "UpdateGeneralInformationCommand",
     "UpdateInformationBlockCommand",
+    "UpdateLandingConfigCommand",
     "UpdateParticipantGroupCommand",
     "UpdateParticipationFormatCommand",
-    "UpdateContactsConfigCommand",
-    "UpdateLandingConfigCommand",
     "UpdateSettingsCommand",
 ]
 
