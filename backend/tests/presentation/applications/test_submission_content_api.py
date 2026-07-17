@@ -13,6 +13,7 @@ import pytest
 from rest_framework.test import APIClient
 
 from apps.applications.infrastructure.models.base import uuid7
+from apps.identity.presentation.api.v1.auth import composition as identity_composition
 
 pytestmark = pytest.mark.django_db
 
@@ -29,13 +30,15 @@ def _seed_open_competition() -> str:
 @pytest.fixture
 def auth_client() -> APIClient:
     client = APIClient()
-    client.post(
+    registration = client.post(
         "/api/v1/auth/registration",
         {"email": "builder@example.com", "password": _PASSWORD, "firstName": "Olga", "lastName": "Petrova"},
         format="json",
     )
-    login = client.post("/api/v1/auth/sessions", {"email": "builder@example.com", "password": _PASSWORD}, format="json")
-    client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['data']['accessToken']}")
+    # Mint the session token directly: the login gate refuses unverified accounts,
+    # and this BC test only needs an authenticated caller, not the verify flow.
+    access = identity_composition.build_token_service().issue(subject=registration.data["data"]["id"]).access_token
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
     return client
 
 
@@ -98,11 +101,11 @@ def test_set_performance_rejects_malformed_id(auth_client: APIClient) -> None:
 def test_get_submission_requires_owner(auth_client: APIClient) -> None:
     submission_id = _submission(auth_client)
     other = APIClient()
-    other.post(
+    registration = other.post(
         "/api/v1/auth/registration",
         {"email": "intruder@example.com", "password": _PASSWORD, "firstName": "X", "lastName": "Y"},
         format="json",
     )
-    login = other.post("/api/v1/auth/sessions", {"email": "intruder@example.com", "password": _PASSWORD}, format="json")
-    other.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['data']['accessToken']}")
+    access = identity_composition.build_token_service().issue(subject=registration.data["data"]["id"]).access_token
+    other.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
     assert other.get(f"/api/v1/submissions/{submission_id}").status_code in (403, 404)

@@ -52,6 +52,7 @@ _PROBLEM_MAP: Final[dict[str, tuple[int, str, str, str | None]]] = {
     "invalid_credentials": (401, "authentication-failed", "Authentication failed", None),
     "invalid_token": (401, "authentication-failed", "Authentication failed", None),
     "account_inactive": (403, "account-suspended", "Account suspended", "IDN-009"),
+    "email_not_verified": (403, "email-not-verified", "Email not verified", "IDN-001"),
     "email_already_in_use": (409, "conflict", "Email already in use", "IDN-003"),
     "phone_already_in_use": (409, "conflict", "Phone number already in use", None),
     "weak_password": (422, "validation-error", "Validation failed", None),

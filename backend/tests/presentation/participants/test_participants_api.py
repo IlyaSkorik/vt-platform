@@ -14,6 +14,7 @@ from typing import Any
 import pytest
 from rest_framework.test import APIClient
 
+from apps.identity.presentation.api.v1.auth import composition
 from apps.participants.infrastructure.repositories import DjangoParticipantRepository
 from apps.participants.infrastructure.system import SystemClock
 
@@ -30,7 +31,7 @@ def client() -> APIClient:
 @pytest.fixture
 def auth_client(client: APIClient) -> APIClient:
     """An APIClient carrying a valid access token from a freshly-registered account."""
-    client.post(
+    registration = client.post(
         "/api/v1/auth/registration",
         {
             "email": "guardian@example.com",
@@ -40,12 +41,9 @@ def auth_client(client: APIClient) -> APIClient:
         },
         format="json",
     )
-    login = client.post(
-        "/api/v1/auth/sessions",
-        {"email": "guardian@example.com", "password": _PASSWORD},
-        format="json",
-    )
-    access = login.data["data"]["accessToken"]
+    # Mint the session token directly: the login gate refuses unverified accounts,
+    # and this BC test only needs an authenticated caller, not the verify flow.
+    access = composition.build_token_service().issue(subject=registration.data["data"]["id"]).access_token
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
     return client
 

@@ -43,6 +43,7 @@ __all__ = [
     "AccountInactiveError",
     "ApplicationError",
     "EmailAlreadyInUseError",
+    "EmailNotVerifiedError",
     "InvalidCredentialsError",
     "InvalidInputError",
     "InvalidTokenError",
@@ -179,6 +180,20 @@ class AccountInactiveError(ApplicationError):
     """
 
     code: ClassVar[str] = "account_inactive"
+
+
+class EmailNotVerifiedError(ApplicationError):
+    """Credentials were correct, but the account's email is not yet verified.
+
+    Raised by the login use case when a verified password belongs to an account
+    that has never confirmed ownership of its email address (IDN-001). Distinct
+    from :class:`AccountInactiveError` (a locked/deleted lifecycle state) and from
+    :class:`InvalidCredentialsError` (the credentials matched): sign-in is refused
+    solely because the address is unconfirmed. Mapped to ``403`` at the edge, with
+    a dedicated problem ``type`` so the client can prompt the user to confirm.
+    """
+
+    code: ClassVar[str] = "email_not_verified"
 
 
 class WeakPasswordError(ApplicationError):

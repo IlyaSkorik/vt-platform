@@ -53,6 +53,7 @@ from apps.identity.application.dto import OperationResultDto, UserDto
 from apps.identity.application.exceptions import (
     AccountInactiveError,
     EmailAlreadyInUseError,
+    EmailNotVerifiedError,
     InvalidCredentialsError,
     InvalidInputError,
     PhoneAlreadyInUseError,
@@ -210,10 +211,11 @@ class AuthenticateUserHandler:
       password all raise the same :class:`InvalidCredentialsError`; the unknown/
       malformed paths still run a verify against a dummy hash so they cost the same
       time as a real one.
-    * **Email verification is not a login gate.** A registered-but-unverified
-      account *can* sign in; ``is_email_verified`` travels out on the DTO so the
-      edge can gate *sensitive* actions later (IDN-001). Only locked/deleted
-      accounts are refused here (:class:`AccountInactiveError`).
+    * **Email verification is a login gate.** A registered-but-unverified account
+      is refused with :class:`EmailNotVerifiedError` (IDN-001) so it cannot
+      establish a session until it confirms its address; ``is_email_verified``
+      still travels out on the DTO for the edge. Locked/deleted accounts are
+      refused separately with :class:`AccountInactiveError`.
     """
 
     def __init__(
@@ -245,6 +247,8 @@ class AuthenticateUserHandler:
             raise InvalidCredentialsError("Invalid email or password.")
         if user.is_deleted() or user.is_locked(now):
             raise AccountInactiveError("This account cannot sign in.")
+        if not user.is_email_verified():
+            raise EmailNotVerifiedError("Please verify your email address before signing in.")
 
         return OperationResultDto(user=UserDto.from_user(user, now=now), events=())
 

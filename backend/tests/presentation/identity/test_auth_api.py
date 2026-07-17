@@ -125,7 +125,7 @@ class TestRegistration:
 
 class TestLogin:
     def test_issues_tokens_and_sets_the_refresh_cookie(self, client: APIClient) -> None:
-        _register(client)
+        _register_and_verify(client)
 
         response = client.post(SESSIONS_URL, {"email": "parent@example.com", "password": _PASSWORD}, format="json")
 
@@ -139,6 +139,19 @@ class TestLogin:
         cookie = response.cookies["refresh_token"]
         assert cookie.value
         assert cookie["httponly"]
+
+    def test_unverified_email_is_forbidden(self, client: APIClient) -> None:
+        # The login gate: correct credentials, but the email is not yet confirmed
+        # (IDN-001). Refused with a dedicated 403 problem type so the client can
+        # prompt the user to verify, distinct from a suspended account.
+        _register(client)
+
+        response = client.post(SESSIONS_URL, {"email": "parent@example.com", "password": _PASSWORD}, format="json")
+
+        assert response.status_code == 403
+        assert response["Content-Type"] == _PROBLEM_CT
+        assert response.data["type"].endswith("/email-not-verified")
+        assert response.data["code"] == "IDN-001"
 
     def test_wrong_password_is_unauthorized(self, client: APIClient) -> None:
         _register(client)
@@ -163,7 +176,7 @@ class TestLogin:
 
 class TestTokenRefresh:
     def _login(self, client: APIClient) -> dict[str, Any]:
-        _register(client)
+        _register_and_verify(client)
         response = client.post(SESSIONS_URL, {"email": "parent@example.com", "password": _PASSWORD}, format="json")
         return cast(dict[str, Any], response.data["data"])
 
@@ -202,7 +215,7 @@ class TestTokenRefresh:
 
 class TestLogout:
     def test_revokes_the_session_and_clears_the_cookie(self, client: APIClient) -> None:
-        _register(client)
+        _register_and_verify(client)
         login = client.post(SESSIONS_URL, {"email": "parent@example.com", "password": _PASSWORD}, format="json")
         access = login.data["data"]["accessToken"]
         refresh = login.data["data"]["refreshToken"]

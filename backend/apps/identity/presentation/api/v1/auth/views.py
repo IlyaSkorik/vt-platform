@@ -286,7 +286,7 @@ class SessionCollectionView(APIView):
             201: SessionResponseSerializer,
             400: OpenApiResponse(ProblemDetailSerializer, description="Malformed request."),
             401: OpenApiResponse(ProblemDetailSerializer, description="Invalid credentials."),
-            403: OpenApiResponse(ProblemDetailSerializer, description="Account suspended."),
+            403: OpenApiResponse(ProblemDetailSerializer, description="Account suspended or email not verified."),
         },
     )
     def post(self, request: Request) -> Response:

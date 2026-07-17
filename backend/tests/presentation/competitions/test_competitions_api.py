@@ -17,6 +17,7 @@ from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
 from apps.competitions.infrastructure.system import Uuid7Generator
+from apps.identity.presentation.api.v1.auth import composition as identity_composition
 from apps.organization.application.dto.commands import ProvisionOwnerCommand
 from apps.organization.composition import build_provision_owner_handler
 
@@ -30,13 +31,14 @@ def _uuid7() -> uuid.UUID:
 
 
 def _register_and_login(client: APIClient, email: str) -> str:
-    client.post(
+    registration = client.post(
         "/api/v1/auth/registration",
         {"email": email, "password": _PASSWORD, "firstName": "Org", "lastName": "Aniser"},
         format="json",
     )
-    login = client.post("/api/v1/auth/sessions", {"email": email, "password": _PASSWORD}, format="json")
-    return str(login.data["data"]["accessToken"])
+    # Mint the session token directly: the login gate refuses unverified accounts,
+    # and this BC test only needs an authenticated caller, not the verify flow.
+    return str(identity_composition.build_token_service().issue(subject=registration.data["data"]["id"]).access_token)
 
 
 @pytest.fixture

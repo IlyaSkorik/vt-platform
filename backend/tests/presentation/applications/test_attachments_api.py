@@ -12,6 +12,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 
 from apps.applications.infrastructure.models.base import uuid7
+from apps.identity.presentation.api.v1.auth import composition as identity_composition
 
 pytestmark = pytest.mark.django_db
 
@@ -26,13 +27,15 @@ def _seed_open_competition() -> str:
 
 
 def _auth(client: APIClient, *, email: str) -> APIClient:
-    client.post(
+    registration = client.post(
         "/api/v1/auth/registration",
         {"email": email, "password": _PASSWORD, "firstName": "Olga", "lastName": "Petrova"},
         format="json",
     )
-    login = client.post("/api/v1/auth/sessions", {"email": email, "password": _PASSWORD}, format="json")
-    client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['data']['accessToken']}")
+    # Mint the session token directly: the login gate refuses unverified accounts,
+    # and this BC test only needs an authenticated caller, not the verify flow.
+    access = identity_composition.build_token_service().issue(subject=registration.data["data"]["id"]).access_token
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
     return client
 
 
