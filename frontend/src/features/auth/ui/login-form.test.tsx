@@ -98,4 +98,59 @@ describe("LoginForm", () => {
     expect(onSuccess).not.toHaveBeenCalled();
     expect(tokenStore.get()).toBeNull();
   });
+
+  it("prompts to confirm the email when login is refused as unverified", async () => {
+    globalThis.fetch = vi.fn(async () =>
+      jsonResponse(403, {
+        type: "https://api.vzlyot-talantov.ru/problems/email-not-verified",
+        title: "Email not verified",
+        status: 403,
+        code: "IDN-001",
+        detail: "Please verify your email address before signing in.",
+      }),
+    ) as unknown as typeof fetch;
+    const user = userEvent.setup();
+    const { onSuccess } = renderForm();
+
+    await user.type(screen.getByLabelText("Email"), "user@example.com");
+    await user.type(screen.getByLabelText("Пароль"), "password123");
+    await user.click(screen.getByRole("button", { name: "Войти" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Подтвердите email");
+    expect(onSuccess).not.toHaveBeenCalled();
+    expect(tokenStore.get()).toBeNull();
+  });
+
+  it("resends the verification link from the unverified-email prompt", async () => {
+    const calls: Array<{ url: string; body: string }> = [];
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const request = input as Request;
+      const url = request.url;
+      calls.push({ url, body: await request.clone().text() });
+      if (url.includes("/auth/email-verification/requests")) {
+        return new Response(null, { status: 202 });
+      }
+      return jsonResponse(403, {
+        type: "https://api.vzlyot-talantov.ru/problems/email-not-verified",
+        title: "Email not verified",
+        status: 403,
+        detail: "Please verify your email address before signing in.",
+      });
+    }) as unknown as typeof fetch;
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(screen.getByLabelText("Email"), "user@example.com");
+    await user.type(screen.getByLabelText("Пароль"), "password123");
+    await user.click(screen.getByRole("button", { name: "Войти" }));
+
+    const resendButton = await screen.findByRole("button", { name: "Выслать письмо повторно" });
+    await user.click(resendButton);
+
+    expect(await screen.findByText(/Письмо отправлено на user@example.com/)).toBeInTheDocument();
+    const resendCall = calls.find((c) => c.url.includes("/auth/email-verification/requests"));
+    expect(resendCall).toBeDefined();
+    expect(JSON.parse(resendCall?.body ?? "{}")).toEqual({ email: "user@example.com" });
+  });
 });

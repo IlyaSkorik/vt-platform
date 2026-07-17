@@ -43,13 +43,23 @@ paths:
     post:
       operationId: requestEmailVerification
       tags: [Identity]
-      summary: (Re)send an email-verification challenge.
+      summary: (Re)send an email-verification challenge to the given address.
+      description: >
+        Public and anti-enumeration: names the address to send a fresh link to.
+        An unknown, deleted, or already-verified address is a silent no-op, so the
+        response is a uniform 202 that never reveals whether the address exists.
+      security: []
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResendVerificationRequest"
       responses:
-        "202": { description: "Verification email dispatched." }
-        "401": { $ref: "#/components/responses/Problem" }
-        "409": { $ref: "#/components/responses/Problem" }
+        "202": { description: "Request accepted (email dispatched if applicable)." }
+        "400": { $ref: "#/components/responses/Problem" }
         "429": { $ref: "#/components/responses/Problem" }
   /auth/email-verification/confirmations:
     post:
@@ -241,6 +251,13 @@ components:
       properties:
         token:
           type: string
+    ResendVerificationRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
     PasswordResetRequest:
       type: object
       required: [email]
