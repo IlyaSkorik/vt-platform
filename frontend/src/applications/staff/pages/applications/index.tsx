@@ -299,6 +299,7 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
     setSelected(groupedInbox[0]?.id ?? null);
   }, [groupedInbox, selected]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: сбрасываем раскрытые выступления при смене выбранной заявки
   useEffect(() => {
     setOpenPerformances({});
   }, [selected]);
@@ -776,9 +777,9 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                     </TabsContent>
                     <TabsContent value="timeline" className="space-y-2">
                       <p className="font-medium text-sm">Таймлайн</p>
-                      {workspace.data.detail.timeline.map((event, index) => (
+                      {workspace.data.detail.timeline.map((event) => (
                         <div
-                          key={`${event.kind}-${event.at}-${index}`}
+                          key={`${event.kind}-${event.at}-${event.label}`}
                           className="rounded-md border p-2 text-sm"
                         >
                           <p>{event.label}</p>
@@ -791,9 +792,9 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                       {(workspace.data.detail.audit ?? []).length === 0 ? (
                         <p className="text-sm text-muted-foreground">Записей пока нет.</p>
                       ) : (
-                        (workspace.data.detail.audit ?? []).map((event, index) => (
+                        (workspace.data.detail.audit ?? []).map((event) => (
                           <div
-                            key={`${event.by}-${event.at}-${index}`}
+                            key={`${event.by}-${event.at}-${event.reason}`}
                             className="rounded-md border p-2 text-sm"
                           >
                             <p>{event.reason}</p>
@@ -805,9 +806,9 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                     <TabsContent value="communication" className="space-y-2">
                       <p className="font-medium text-sm">Внутренние заметки</p>
                       {(workspace.data.detail.internalNotes ?? []).map(
-                        (entry: { text: string; created_at: string }, index) => (
+                        (entry: { text: string; created_at: string }) => (
                           <div
-                            key={`${entry.created_at}-${entry.text}-${index}`}
+                            key={`${entry.created_at}-${entry.text}`}
                             className="rounded-md border p-2 text-sm"
                           >
                             <p>{entry.text}</p>
@@ -819,9 +820,9 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                       )}
                       <p className="pt-2 font-medium text-sm">Сообщения участнику</p>
                       {(workspace.data.detail.participantMessages ?? []).map(
-                        (entry: { text: string; created_at: string }, index) => (
+                        (entry: { text: string; created_at: string }) => (
                           <div
-                            key={`${entry.created_at}-${entry.text}-${index}`}
+                            key={`${entry.created_at}-${entry.text}`}
                             className="rounded-md border p-2 text-sm"
                           >
                             <p>{entry.text}</p>
