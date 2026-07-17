@@ -364,26 +364,37 @@ class TestRequestEmailVerificationHandler:
         repo = FakeUserRepository()
         tokens = FakeVerificationTokenService()
         gateway = FakeEmailGateway()
-        user = repo.seed(make_user())
+        user = repo.seed(make_user(email="member@example.com"))
 
-        self._handler(repo, tokens, gateway).handle(RequestEmailVerificationCommand(user_id=user.id.json()))
+        self._handler(repo, tokens, gateway).handle(RequestEmailVerificationCommand(email="member@example.com"))
 
         assert len(gateway.verification_emails) == 1
         sent = gateway.verification_emails[0]
         assert sent.email == user.email
         assert sent.verification_url == tokens.links[-1]
 
-    def test_refuses_when_already_verified(self) -> None:
+    def test_no_op_when_already_verified(self) -> None:
+        # Anti-enumeration + no-op: a verified address needs no link and must not
+        # error (that would reveal the address is registered).
         repo = FakeUserRepository()
         tokens = FakeVerificationTokenService()
         gateway = FakeEmailGateway()
-        user = make_user()
+        user = make_user(email="member@example.com")
         user.verify_email(policy=EMAIL_POLICY, sent_at=NOW, now=NOW)
         repo.seed(user)
 
-        with pytest.raises(UserStateConflictError) as excinfo:
-            self._handler(repo, tokens, gateway).handle(RequestEmailVerificationCommand(user_id=user.id.json()))
-        assert excinfo.value.domain_code == "EmailAlreadyVerifiedError"
+        self._handler(repo, tokens, gateway).handle(RequestEmailVerificationCommand(email="member@example.com"))
+
+        assert gateway.verification_emails == []
+
+    def test_no_op_for_unknown_email(self) -> None:
+        # Anti-enumeration: an unregistered address is a silent no-op, not an error.
+        repo = FakeUserRepository()
+        tokens = FakeVerificationTokenService()
+        gateway = FakeEmailGateway()
+
+        self._handler(repo, tokens, gateway).handle(RequestEmailVerificationCommand(email="ghost@example.com"))
+
         assert gateway.verification_emails == []
 
 

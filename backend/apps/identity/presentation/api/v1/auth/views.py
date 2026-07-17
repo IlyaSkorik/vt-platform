@@ -43,6 +43,7 @@ from apps.identity.application.exceptions import ApplicationError, InvalidTokenE
 from apps.identity.presentation.api.v1.auth import composition
 from apps.identity.presentation.api.v1.auth.serializers import (
     EmailVerificationConfirmSerializer,
+    EmailVerificationRequestSerializer,
     EmailVerificationResponseSerializer,
     ProblemDetailSerializer,
     RegistrationRequestSerializer,
@@ -232,26 +233,35 @@ class EmailVerificationConfirmationView(APIView):
 
 
 class EmailVerificationRequestView(APIView):
-    """POST /api/v1/auth/email-verification/requests — (re)send the challenge (API-001 §4.2)."""
+    """POST /api/v1/auth/email-verification/requests — (re)send the challenge (API-001 §4.2).
 
-    authentication_classes = (JWTStatelessUserAuthentication,)
-    permission_classes = (IsAuthenticated,)
+    Public: an account gated out of login by an unverified email cannot present a
+    session, so this endpoint takes the target address in the body. The handler is
+    anti-enumeration (API-000 §26) — unknown/deleted/already-verified addresses are
+    silent no-ops — so the response is a uniform ``202`` and never reveals whether
+    the address is registered.
+    """
+
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
 
     @extend_schema(
         tags=[_AUTH_TAG],
         operation_id="requestEmailVerification",
         summary="(Re)send an email-verification challenge",
-        description="Send a fresh verification link to the authenticated account's email.",
-        request=None,
+        description="Send a fresh verification link to the given address (no-op if unknown/verified).",
+        request=EmailVerificationRequestSerializer,
         responses={
-            202: OpenApiResponse(description="Verification email dispatched."),
-            401: OpenApiResponse(ProblemDetailSerializer, description="No valid session."),
-            409: OpenApiResponse(ProblemDetailSerializer, description="Already verified."),
+            202: OpenApiResponse(description="Request accepted (email dispatched if applicable)."),
+            400: OpenApiResponse(ProblemDetailSerializer, description="Malformed request."),
         },
     )
     def post(self, request: Request) -> Response:
         instance = request.path
-        command = RequestEmailVerificationCommand(user_id=str(request.user.id))
+        serializer = EmailVerificationRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return validation_problem(serializer.errors, instance=instance, request=request)
+        command = RequestEmailVerificationCommand(email=str(serializer.validated_data["email"]))
         try:
             composition.build_request_email_verification_handler().handle(command)
         except ApplicationError as exc:

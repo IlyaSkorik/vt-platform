@@ -312,14 +312,19 @@ class ConfirmEmailVerificationHandler:
 
 
 class RequestEmailVerificationHandler:
-    """Use case: (re)send an email-verification link to the account's current address.
+    """Use case: (re)send an email-verification link to the account owning an address.
 
-    Loads the (authenticated) account, refuses if the email is already verified
-    (a domain state error → ``409``), then mints a fresh link and dispatches the
-    email through the :class:`~apps.identity.application.interfaces.EmailGateway`.
-    Sending is a side effect this handler performs directly (rather than returning
-    an event) because it is itself the reaction to a resend *request*, not a state
-    change of the aggregate.
+    Public and unauthenticated (a user gated out of login by an unverified email
+    must still be able to request a fresh link). Looks the account up **by email**
+    and, when it exists and is still unverified, mints a fresh link and dispatches
+    the email through the :class:`~apps.identity.application.interfaces.EmailGateway`.
+
+    Deliberately **anti-enumeration** (API-000 §26): a malformed, unknown, deleted,
+    or already-verified address is a silent no-op that returns ``None`` — never an
+    error — so a caller cannot distinguish "registered & unverified" from any other
+    case by the response. Sending is a side effect this handler performs directly
+    (rather than returning an event) because it is itself the reaction to a resend
+    *request*, not a state change of the aggregate.
     """
 
     def __init__(
@@ -335,11 +340,15 @@ class RequestEmailVerificationHandler:
         self._email_gateway = email_gateway
         self._clock = clock
 
-    def handle(self, command: RequestEmailVerificationCommand) -> OperationResultDto:
+    def handle(self, command: RequestEmailVerificationCommand) -> None:
         now = self._clock.utcnow()
-        user = _load_user(self._users, command.user_id)
-        with translate_domain_errors():
-            user.ensure_email_unverified()
+        try:
+            email = Email(command.email)
+        except ValueObjectValidationError:
+            return  # A malformed address identifies no account; no-op (no enumeration).
+        user = self._users.get_by_email(email)
+        if user is None or user.is_deleted() or user.is_email_verified():
+            return  # Unknown/deleted/already-verified: silent no-op (no enumeration).
         link = self._tokens.issue_link(user_id=user.id, issued_at=now)
         self._email_gateway.send_verification_email(
             email=user.email,
@@ -347,7 +356,6 @@ class RequestEmailVerificationHandler:
             verification_url=link,
             locale=user.locale,
         )
-        return OperationResultDto(user=UserDto.from_user(user, now=now), events=())
 
 
 class ChangeEmailHandler:

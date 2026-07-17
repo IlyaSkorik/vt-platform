@@ -57,6 +57,16 @@ class SessionCreateRequestSerializer(serializers.Serializer[dict[str, object]]):
     password = serializers.CharField(write_only=True, trim_whitespace=False, style={"input_type": "password"})
 
 
+class EmailVerificationRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """Validate a (re)send-verification request body (API-001 §4.2).
+
+    Public: the caller names the address to send a fresh link to. The handler is
+    anti-enumeration, so a well-formed but unregistered address still yields 202.
+    """
+
+    email = serializers.EmailField()
+
+
 class EmailVerificationConfirmSerializer(serializers.Serializer[dict[str, object]]):
     """Validate an email-verification confirmation body (API-001 §4.2).
 

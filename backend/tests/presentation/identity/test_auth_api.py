@@ -51,6 +51,23 @@ def _register(client: APIClient, **overrides: object) -> None:
     assert response.status_code == 201, response.data
 
 
+def _token_from_last_email() -> str:
+    """Extract the ``token`` query parameter from the most recent sent email."""
+    assert len(mail.outbox) >= 1
+    body = str(mail.outbox[-1].body)
+    match = re.search(r"https?://\S+", body)
+    assert match is not None
+    return parse_qs(urlparse(match.group(0)).query)["token"][0]
+
+
+def _register_and_verify(client: APIClient, **overrides: object) -> None:
+    """Register an account and confirm its email so it may sign in (login gate)."""
+    mail.outbox.clear()
+    _register(client, **overrides)
+    confirm = client.post(EMAIL_CONFIRM_URL, {"token": _token_from_last_email()}, format="json")
+    assert confirm.status_code == 200, confirm.data
+
+
 # ---------------------------------------------------------------------------
 # Registration
 # ---------------------------------------------------------------------------
@@ -210,15 +227,6 @@ class TestLogout:
 # ---------------------------------------------------------------------------
 
 
-def _token_from_last_email() -> str:
-    """Extract the ``token`` query parameter from the most recent sent email."""
-    assert len(mail.outbox) >= 1
-    body = str(mail.outbox[-1].body)
-    match = re.search(r"https?://\S+", body)
-    assert match is not None
-    return parse_qs(urlparse(match.group(0)).query)["token"][0]
-
-
 class TestEmailVerification:
     def test_registration_sends_exactly_one_verification_email(self, client: APIClient) -> None:
         mail.outbox.clear()
@@ -296,20 +304,40 @@ class TestEmailVerification:
         assert second["Content-Type"] == _PROBLEM_CT
         assert second.data["type"].endswith("/conflict")
 
-    def test_resend_requires_authentication(self, client: APIClient) -> None:
-        response = client.post(EMAIL_REQUEST_URL)
+    def test_resend_missing_email_is_bad_request(self, client: APIClient) -> None:
+        response = client.post(EMAIL_REQUEST_URL, {}, format="json")
 
-        assert response.status_code == 401
+        assert response.status_code == 400
+        assert response["Content-Type"] == _PROBLEM_CT
+        assert response.data["type"].endswith("/validation-error")
 
     def test_resend_dispatches_a_new_email(self, client: APIClient) -> None:
+        # Public resend: an unverified account (which the login gate blocks) asks
+        # for a fresh link by naming its address — no session required.
         _register(client)
-        login = client.post(SESSIONS_URL, {"email": "parent@example.com", "password": _PASSWORD}, format="json")
-        access = login.data["data"]["accessToken"]
-        client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
         mail.outbox.clear()
 
-        response = client.post(EMAIL_REQUEST_URL)
+        response = client.post(EMAIL_REQUEST_URL, {"email": "parent@example.com"}, format="json")
 
         assert response.status_code == 202
         assert len(mail.outbox) == 1
         assert mail.outbox[0].to == ["parent@example.com"]
+
+    def test_resend_to_unknown_email_is_accepted_but_sends_nothing(self, client: APIClient) -> None:
+        # Anti-enumeration: an unregistered address gets the same 202, no email.
+        mail.outbox.clear()
+
+        response = client.post(EMAIL_REQUEST_URL, {"email": "ghost@example.com"}, format="json")
+
+        assert response.status_code == 202
+        assert mail.outbox == []
+
+    def test_resend_to_verified_account_is_accepted_but_sends_nothing(self, client: APIClient) -> None:
+        # Anti-enumeration + no-op: a verified address needs no link; same 202.
+        _register_and_verify(client)
+        mail.outbox.clear()
+
+        response = client.post(EMAIL_REQUEST_URL, {"email": "parent@example.com"}, format="json")
+
+        assert response.status_code == 202
+        assert mail.outbox == []

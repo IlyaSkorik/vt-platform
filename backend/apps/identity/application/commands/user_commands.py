@@ -104,13 +104,16 @@ class ConfirmEmailVerificationCommand:
 
 @dataclass(frozen=True, slots=True)
 class RequestEmailVerificationCommand:
-    """(Re)send an email-verification link to an account's current address.
+    """(Re)send an email-verification link to the account owning ``email``.
 
-    ``user_id`` identifies the (authenticated) account requesting the challenge;
-    the handler mints a fresh link and dispatches the email.
+    Public and unauthenticated (a user who cannot sign in because their email is
+    unverified must still be able to ask for a fresh link). ``email`` names the
+    target address; the handler is deliberately anti-enumeration — an unknown,
+    deleted, or already-verified address is a silent no-op, so a caller cannot
+    probe which addresses are registered.
     """
 
-    user_id: str
+    email: str
 
 
 @dataclass(frozen=True, slots=True)
