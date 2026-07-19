@@ -43,6 +43,8 @@ from apps.identity.application.commands import (
     LockUserCommand,
     RegisterUserCommand,
     RequestEmailVerificationCommand,
+    RequestPasswordResetCommand,
+    ResetPasswordCommand,
     RestoreUserCommand,
     UnlockUserCommand,
     VerifyEmailCommand,
@@ -56,6 +58,7 @@ from apps.identity.application.exceptions import (
     EmailNotVerifiedError,
     InvalidCredentialsError,
     InvalidInputError,
+    InvalidVerificationTokenError,
     PhoneAlreadyInUseError,
     UserNotFoundError,
     translate_domain_errors,
@@ -75,6 +78,7 @@ from apps.identity.domain.policies import (
     ConsentPolicy,
     EmailVerificationPolicy,
     PasswordPolicy,
+    PasswordResetPolicy,
     PhoneVerificationPolicy,
 )
 from apps.identity.domain.value_objects import (
@@ -99,6 +103,8 @@ __all__ = [
     "LockUserHandler",
     "RegisterUserHandler",
     "RequestEmailVerificationHandler",
+    "RequestPasswordResetHandler",
+    "ResetPasswordHandler",
     "RestoreUserHandler",
     "UnlockUserHandler",
     "VerifyEmailHandler",
@@ -360,6 +366,118 @@ class RequestEmailVerificationHandler:
             verification_url=link,
             locale=user.locale,
         )
+
+
+class RequestPasswordResetHandler:
+    """Use case: begin password recovery by emailing a reset link (IDN-004).
+
+    Public and unauthenticated (a user who forgot their password cannot sign in).
+    Looks the account up **by email** and, when it exists, is active, and has a
+    **verified** address (the reset link must reach a mailbox the platform trusts —
+    IDN-002), mints a fresh, time-stamped link through a
+    :class:`~apps.identity.application.interfaces.VerificationTokenService` and
+    dispatches it via the :class:`~apps.identity.application.interfaces.EmailGateway`,
+    together with the ``expires_at`` deadline the
+    :class:`~apps.identity.domain.policies.PasswordResetPolicy` defines.
+
+    Deliberately **anti-enumeration** (API-000 §26), mirroring
+    :class:`RequestEmailVerificationHandler`: a malformed, unknown, deleted, or
+    unverified-email address is a silent no-op that returns ``None`` — never an
+    error — so a caller cannot distinguish a recoverable account from any other
+    case by the response.
+    """
+
+    def __init__(
+        self,
+        *,
+        users: UserRepository,
+        tokens: VerificationTokenService,
+        email_gateway: EmailGateway,
+        reset_policy: PasswordResetPolicy,
+        clock: Clock,
+    ) -> None:
+        self._users = users
+        self._tokens = tokens
+        self._email_gateway = email_gateway
+        self._reset_policy = reset_policy
+        self._clock = clock
+
+    def handle(self, command: RequestPasswordResetCommand) -> None:
+        now = self._clock.utcnow()
+        try:
+            email = Email(command.email)
+        except ValueObjectValidationError:
+            return  # A malformed address identifies no account; no-op (no enumeration).
+        user = self._users.get_by_email(email)
+        if user is None or user.is_deleted() or not user.is_email_verified():
+            return  # Unknown/deleted/unverified: silent no-op (no enumeration).
+        expires_at = now + self._reset_policy.reset_timeout
+        link = self._tokens.issue_link(user_id=user.id, issued_at=now)
+        self._email_gateway.send_password_reset(
+            email=user.email,
+            full_name=user.full_name,
+            reset_url=link,
+            expires_at=expires_at,
+            locale=user.locale,
+        )
+
+
+class ResetPasswordHandler:
+    """Use case: set a new password from the emailed reset link (IDN-004).
+
+    The unauthenticated counterpart to :class:`ChangePasswordHandler`: it accepts
+    the opaque reset token plus the new password, verifies the token's integrity
+    through the :class:`~apps.identity.application.interfaces.VerificationTokenService`
+    (which yields the account id and the instant the link was issued), enforces
+    password strength (:class:`~apps.identity.domain.policies.PasswordPolicy`),
+    hashes the plaintext, and applies the domain reset — honouring the link timeout
+    owned by :class:`~apps.identity.domain.policies.PasswordResetPolicy` and
+    stamping the account's credential cut-off so every outstanding session is
+    revoked.
+
+    A tampered or malformed token — or one naming an account that no longer exists —
+    raises :class:`~apps.identity.application.exceptions.InvalidVerificationTokenError`
+    (``422``), never revealing whether the account exists; a stale (expired) link
+    surfaces as the domain's verification-expired error (``410``).
+    """
+
+    def __init__(
+        self,
+        *,
+        users: UserRepository,
+        tokens: VerificationTokenService,
+        password_hasher: PasswordHasher,
+        password_policy: PasswordPolicy,
+        reset_policy: PasswordResetPolicy,
+        clock: Clock,
+    ) -> None:
+        self._users = users
+        self._tokens = tokens
+        self._password_hasher = password_hasher
+        self._password_policy = password_policy
+        self._reset_policy = reset_policy
+        self._clock = clock
+
+    def handle(self, command: ResetPasswordCommand) -> OperationResultDto:
+        now = self._clock.utcnow()
+        decoded = self._tokens.verify(command.token)
+        user = self._users.get(decoded.user_id)
+        if user is None:
+            # A valid signature for a vanished account: treat as an unusable token
+            # rather than a 404, so the reset edge never confirms account existence.
+            raise InvalidVerificationTokenError("The password reset token is invalid.")
+        with translate_domain_errors():
+            self._password_policy.enforce(command.new_password)
+        password_hash = self._password_hasher.hash(command.new_password)
+        with translate_domain_errors():
+            events = user.reset_password(
+                password_hash,
+                policy=self._reset_policy,
+                issued_at=decoded.issued_at,
+                now=now,
+            )
+        self._users.save(user)
+        return OperationResultDto(user=UserDto.from_user(user, now=now), events=tuple(events))
 
 
 class ChangeEmailHandler:

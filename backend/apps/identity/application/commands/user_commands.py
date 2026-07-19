@@ -39,6 +39,8 @@ __all__ = [
     "LockUserCommand",
     "RegisterUserCommand",
     "RequestEmailVerificationCommand",
+    "RequestPasswordResetCommand",
+    "ResetPasswordCommand",
     "RestoreUserCommand",
     "UnlockUserCommand",
     "VerifyEmailCommand",
@@ -114,6 +116,34 @@ class RequestEmailVerificationCommand:
     """
 
     email: str
+
+
+@dataclass(frozen=True, slots=True)
+class RequestPasswordResetCommand:
+    """Begin password recovery: email a reset link to the account owning ``email``.
+
+    Public and unauthenticated (a user who forgot their password cannot sign in).
+    Like :class:`RequestEmailVerificationCommand`, the handler is deliberately
+    anti-enumeration — an unknown, deleted, or unverified-email address is a silent
+    no-op — so a caller cannot probe which addresses are registered.
+    """
+
+    email: str
+
+
+@dataclass(frozen=True, slots=True)
+class ResetPasswordCommand:
+    """Set a new password from the signed token carried by the emailed reset link.
+
+    The presentation edge collected only the opaque ``token`` and the new password;
+    the handler verifies the token's integrity through the
+    :class:`~apps.identity.application.interfaces.VerificationTokenService` (which
+    yields the account id and the issue instant), enforces password strength, and
+    applies the domain reset, so the token codec never leaks into presentation.
+    """
+
+    token: str
+    new_password: str
 
 
 @dataclass(frozen=True, slots=True)
