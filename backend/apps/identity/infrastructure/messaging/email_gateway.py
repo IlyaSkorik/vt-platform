@@ -45,6 +45,17 @@ def _verification_body(*, full_name: FullName, verification_url: str) -> str:
     )
 
 
+def _format_expiry(expires_at: datetime) -> str:
+    """Render a reset link's expiry as a human-readable local time.
+
+    Formatted in the (already localized) zone the ``expires_at`` carries — e.g.
+    ``19.07.2026 22:33 (MSK)`` — instead of a raw ISO-8601 string, which reads as
+    an implementation detail to a recipient.
+    """
+    zone = expires_at.tzname() or "UTC"
+    return f"{expires_at:%d.%m.%Y %H:%M} ({zone})"
+
+
 def _reset_body(*, full_name: FullName, reset_url: str, expires_at: datetime) -> str:
     """Render the plain-text password-reset email body."""
     return (
@@ -52,7 +63,7 @@ def _reset_body(*, full_name: FullName, reset_url: str, expires_at: datetime) ->
         "Мы получили запрос на восстановление пароля. "
         "Чтобы задать новый пароль, перейдите по ссылке ниже:\n\n"
         f"{reset_url}\n\n"
-        f"Ссылка действительна до {expires_at.isoformat()}.\n\n"
+        f"Ссылка действительна до {_format_expiry(expires_at)}.\n\n"
         "Если вы не запрашивали восстановление пароля, просто проигнорируйте это письмо.\n\n"
         "С уважением,\nКоманда «Взлёт талантов»"
     )
@@ -104,7 +115,7 @@ class DjangoEmailGateway:
                 title=_RESET_SUBJECT,
                 intro=f"Здравствуйте, {full_name.first_name}! Мы получили запрос на восстановление пароля.",
                 details_label="Срок действия ссылки",
-                details=f"Ссылка действительна до {expires_at.isoformat()}.",
+                details=f"Ссылка действительна до {_format_expiry(expires_at)}.",
                 button_label="Сбросить пароль",
                 button_url=reset_url,
             ),

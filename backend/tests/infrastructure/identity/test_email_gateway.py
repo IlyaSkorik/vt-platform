@@ -49,4 +49,24 @@ class TestDjangoEmailGateway:
         )
 
         assert len(mail.outbox) == 1
-        assert link in mail.outbox[0].body
+        body = mail.outbox[0].body
+        assert link in body
+        # The expiry is rendered as a human-readable local time, not raw ISO-8601.
+        assert "08.07.2026 12:00 (UTC)" in body
+        assert "2026-07-08T12:00" not in body
+
+    def test_password_reset_expiry_uses_the_carried_zone(self) -> None:
+        from zoneinfo import ZoneInfo
+
+        gateway = DjangoEmailGateway(from_email="no-reply@vt.test")
+
+        gateway.send_password_reset(
+            email=Email("recipient@example.com"),
+            full_name=FullName.of("Ada", "Lovelace"),
+            reset_url="https://frontend.test/reset-password?token=xyz",
+            # 12:00 UTC rendered in Moscow (+03:00) → 15:00 MSK.
+            expires_at=datetime(2026, 7, 8, 12, 0, tzinfo=UTC).astimezone(ZoneInfo("Europe/Moscow")),
+            locale=Locale.default(),
+        )
+
+        assert "08.07.2026 15:00 (MSK)" in mail.outbox[0].body

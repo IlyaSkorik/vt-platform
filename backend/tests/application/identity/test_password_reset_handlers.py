@@ -80,6 +80,32 @@ class TestRequestPasswordResetHandler:
         assert sent.reset_url == tokens.links[-1]
         assert sent.expires_at == NOW + RESET_POLICY.reset_timeout
 
+    def test_expiry_is_rendered_in_the_accounts_timezone(self) -> None:
+        from datetime import timedelta as _td
+        from zoneinfo import ZoneInfo
+
+        from apps.identity.domain.value_objects import Timezone
+
+        repo, tokens, gateway = FakeUserRepository(), FakeVerificationTokenService(), FakeEmailGateway()
+        user, _ = User.register(
+            user_id=UserId.generate(),
+            email=Email("moscow@example.com"),
+            full_name=FullName.of("Ivan", "Petrov"),
+            password_hash=VALID_HASH,
+            now=NOW,
+            timezone=Timezone("Europe/Moscow"),
+        )
+        user.verify_email(policy=EMAIL_POLICY, sent_at=NOW, now=NOW)
+        repo.seed(user)
+
+        self._handler(repo, tokens, gateway).handle(RequestPasswordResetCommand(email="moscow@example.com"))
+
+        sent = gateway.password_resets[0]
+        # Same instant as UTC now + TTL, but carried in the account's zone (+03:00).
+        assert sent.expires_at == NOW + RESET_POLICY.reset_timeout
+        assert sent.expires_at.utcoffset() == _td(hours=3)
+        assert sent.expires_at.tzinfo == ZoneInfo("Europe/Moscow")
+
     def test_no_op_for_unknown_email(self) -> None:
         repo, tokens, gateway = FakeUserRepository(), FakeVerificationTokenService(), FakeEmailGateway()
 

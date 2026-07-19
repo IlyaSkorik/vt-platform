@@ -411,7 +411,9 @@ class RequestPasswordResetHandler:
         user = self._users.get_by_email(email)
         if user is None or user.is_deleted() or not user.is_email_verified():
             return  # Unknown/deleted/unverified: silent no-op (no enumeration).
-        expires_at = now + self._reset_policy.reset_timeout
+        # Present the deadline in the account's own zone (storage stays UTC): the
+        # emailed time reads naturally to the recipient rather than as a UTC instant.
+        expires_at = (now + self._reset_policy.reset_timeout).astimezone(user.timezone.zone_info)
         link = self._tokens.issue_link(user_id=user.id, issued_at=now)
         self._email_gateway.send_password_reset(
             email=user.email,
