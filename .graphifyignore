@@ -1,0 +1,81 @@
+# FRONTEND
+# Dependencies
+frontend/node_modules/
+frontend/.pnpm-store/
+
+# Build output
+frontend/dist/
+frontend/dist-ssr/
+frontend/storybook-static/
+
+# Generated API SDK (regenerated from the OpenAPI contract via `pnpm api:generate`)
+frontend/src/shared/api/generated/**
+!frontend/src/shared/api/generated/.gitkeep
+
+# Test / tooling artifacts
+frontend/coverage/
+frontend/playwright-report/
+frontend/test-results/
+frontend/.vitest/
+frontend/*.tsbuildinfo
+frontend/node_modules/.tmp/
+
+# Local environment
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+# Editor / OS
+frontend/.DS_Store
+frontend/*.log
+frontend/.idea/
+frontend/.vscode/*
+!frontend/.vscode/extensions.json
+
+
+# BACKEND
+# --- Environment & secrets ---
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# --- Python ---
+backend/__pycache__/
+backend/*.py[cod]
+backend/*$py.class
+backend/*.egg-info/
+backend/.eggs/
+backend/build/
+backend/dist/
+
+# --- Virtual environments ---
+backend/.venv/
+backend/venv/
+backend/env/
+
+# --- uv ---
+# The lockfile IS committed; the cache is not.
+.backend/uv/
+
+# --- Django ---
+backend/*.log
+backend/*.sqlite3
+backend/staticfiles/
+backend/media/
+backend/local_settings.py
+
+# --- Testing & coverage ---
+backend/.pytest_cache/
+backend/.coverage
+backend/.coverage.*
+backend/htmlcov/
+backend/coverage.xml
+backend/.mypy_cache/
+backend/.ruff_cache/
+
+# --- OS / editor ---
+backend/.DS_Store
+backend/Thumbs.db
+backend/.idea/
+backend/.vscode/
+backend/*.swp
