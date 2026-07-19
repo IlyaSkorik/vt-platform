@@ -79,6 +79,7 @@ class UserMapper:
             phone_verified_at=model.phone_verified_at,
             locked_until=model.locked_until,
             deleted_at=model.deleted_at,
+            credentials_invalidated_at=model.credentials_invalidated_at,
         )
 
     @staticmethod
@@ -129,6 +130,7 @@ class UserMapper:
             "phone_verified_at": entity.phone_verified_at,
             "locked_until": entity.locked_until,
             "deleted_at": entity.deleted_at,
+            "credentials_invalidated_at": entity.credentials_invalidated_at,
             "created_at": entity.created_at,
             "updated_at": entity.updated_at,
             "version": entity.version,

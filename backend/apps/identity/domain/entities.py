@@ -58,6 +58,7 @@ from .events import (
     EmailVerified,
     LocaleChanged,
     PasswordChanged,
+    PasswordResetCompleted,
     PhoneChanged,
     PhoneVerified,
     TimezoneChanged,
@@ -82,7 +83,7 @@ from .exceptions import (
     UserNotLockedError,
     VerificationExpiredError,
 )
-from .policies import ConsentPolicy, EmailVerificationPolicy, PhoneVerificationPolicy
+from .policies import ConsentPolicy, EmailVerificationPolicy, PasswordResetPolicy, PhoneVerificationPolicy
 from .value_objects import (
     ConsentVersion,
     Email,
@@ -141,6 +142,7 @@ class User:
     _phone_verified_at: datetime | None = None
     _locked_until: datetime | None = None
     _deleted_at: datetime | None = None
+    _credentials_invalidated_at: datetime | None = None
     _version: int = 1
 
     def __post_init__(self, _token: object) -> None:
@@ -216,6 +218,7 @@ class User:
         phone_verified_at: datetime | None = None,
         locked_until: datetime | None = None,
         deleted_at: datetime | None = None,
+        credentials_invalidated_at: datetime | None = None,
     ) -> User:
         """Reconstruct an existing aggregate from persisted state.
 
@@ -241,6 +244,7 @@ class User:
             _phone_verified_at=phone_verified_at,
             _locked_until=locked_until,
             _deleted_at=deleted_at,
+            _credentials_invalidated_at=credentials_invalidated_at,
             _version=version,
         )
 
@@ -317,6 +321,17 @@ class User:
     def deleted_at(self) -> datetime | None:
         """When the account was soft-deleted, or ``None`` if active."""
         return self._deleted_at
+
+    @property
+    def credentials_invalidated_at(self) -> datetime | None:
+        """The instant before which issued session tokens are void, or ``None``.
+
+        Set when the account's credentials are forcibly rotated (a completed
+        password reset). Any access/refresh token whose issue time predates this
+        instant must be rejected, which is how a reset revokes every outstanding
+        session. ``None`` means no such cut-off is in force.
+        """
+        return self._credentials_invalidated_at
 
     @property
     def version(self) -> int:
@@ -442,6 +457,36 @@ class User:
         self._ensure_active()
         events: list[DomainEvent] = [PasswordChanged(aggregate_id=self._id, occurred_at=now)]
         self._password_hash = new_password_hash
+        self._touch(now)
+        return events
+
+    def reset_password(
+        self,
+        new_password_hash: PasswordHash,
+        *,
+        policy: PasswordResetPolicy,
+        issued_at: datetime,
+        now: datetime,
+    ) -> list[DomainEvent]:
+        """Set a new password from an unauthenticated reset link, revoking sessions.
+
+        The recovery counterpart to :meth:`change_password`: it honours the reset
+        link's lifetime (owned by :class:`~apps.identity.domain.policies.PasswordResetPolicy`,
+        measured from the ``issued_at`` carried in the signed token) — a lapsed link
+        raises :class:`~apps.identity.domain.exceptions.VerificationExpiredError`
+        (a ``410`` at the edge). On success it stores the new digest **and** stamps
+        :attr:`credentials_invalidated_at`, so every token issued before ``now`` is
+        void, and emits :class:`~apps.identity.domain.events.PasswordResetCompleted`
+        (distinct from :class:`~apps.identity.domain.events.PasswordChanged`, whose
+        flow starts from an authenticated session). Strength is validated on the
+        plaintext upstream, before hashing, as with every credential change.
+        """
+        self._ensure_active()
+        if policy.is_reset_expired(issued_at, now):
+            raise VerificationExpiredError("The password reset link has expired.")
+        events: list[DomainEvent] = [PasswordResetCompleted(aggregate_id=self._id, email=self._email, occurred_at=now)]
+        self._password_hash = new_password_hash
+        self._credentials_invalidated_at = now
         self._touch(now)
         return events
 

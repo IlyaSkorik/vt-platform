@@ -25,6 +25,7 @@ Policies implemented here:
 * :class:`PasswordPolicy`            — strength, forbidden values, reuse port, expiry config.
 * :class:`EmailVerificationPolicy`   — link timeout, resend interval, resend cap.
 * :class:`PhoneVerificationPolicy`   — code lifetime, resend cooldown, attempt cap.
+* :class:`PasswordResetPolicy`       — reset-link timeout.
 * :class:`ConsentPolicy`             — current version, expiry, re-consent decisions.
 * :class:`SessionPolicy`             — concurrency, idle timeout, absolute & remember-me lifetimes.
 * :class:`AccountLockPolicy`         — failed-login threshold, lock duration, permanent escalation.
@@ -49,6 +50,7 @@ __all__ = [
     "LockAction",
     "LockAssessment",
     "PasswordPolicy",
+    "PasswordResetPolicy",
     "PasswordReuseChecker",
     "PasswordValidationResult",
     "PasswordViolation",
@@ -387,6 +389,32 @@ class PhoneVerificationPolicy:
     def evaluate_attempt(self, attempts_made: int) -> AttemptDecision:
         """Whether another code submission is allowed given how many were already made."""
         return AttemptDecision.of(attempts_made, self.max_attempts)
+
+
+# ---------------------------------------------------------------------------
+# PasswordResetPolicy
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class PasswordResetPolicy:
+    """Rules governing password-recovery links (IDN-004).
+
+    A reset link is valid for :attr:`reset_timeout` measured from the instant it was
+    issued (carried in the signed token). Kept deliberately shorter than the
+    email-verification window: a reset link grants credential control and so must
+    lapse quickly. Like the verification policies this is pure configuration plus a
+    single time predicate; expiry is owned here, never by the signing adapter.
+    """
+
+    reset_timeout: timedelta = timedelta(hours=1)
+
+    def __post_init__(self) -> None:
+        _ensure_positive_timedelta(self.reset_timeout, "reset_timeout")
+
+    def is_reset_expired(self, issued_at: datetime, now: datetime) -> bool:
+        """Whether a reset link issued at ``issued_at`` is no longer valid at ``now``."""
+        return now - issued_at >= self.reset_timeout
 
 
 # ---------------------------------------------------------------------------

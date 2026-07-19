@@ -50,6 +50,10 @@ class UserModel(BasePersistenceModel):
     phone_verified_at = models.DateTimeField(null=True, blank=True, default=None)
     locked_until = models.DateTimeField(null=True, blank=True, default=None)
 
+    # Session cut-off: tokens issued before this instant are void (set by a
+    # completed password reset, so recovery revokes every outstanding session).
+    credentials_invalidated_at = models.DateTimeField(null=True, blank=True, default=None)
+
     class Meta(BasePersistenceModel.Meta):
         db_table = "identity_user"
         verbose_name = "user"
