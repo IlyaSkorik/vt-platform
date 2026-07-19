@@ -12,6 +12,7 @@ edge (ARCH-001 §7.6). No Django/DRF imports.
     │   ├── InvalidStaffUserIdError
     │   ├── InvalidOrganizationNameError
     │   ├── InvalidOrganizationSlugError
+    │   ├── InvalidOrganizationProfileError
     │   ├── InvalidStaffEmailError
     │   └── InvalidInvitationTokenHashError
     ├── PolicyConfigurationError            — a policy was injected invalid configuration
@@ -66,6 +67,10 @@ class InvalidOrganizationNameError(ValueObjectValidationError):
 
 class InvalidOrganizationSlugError(ValueObjectValidationError):
     """The provided value is not a valid organization slug (lowercase kebab-case)."""
+
+
+class InvalidOrganizationProfileError(ValueObjectValidationError):
+    """The provided value is not a valid organization profile (a field is too long)."""
 
 
 class InvalidStaffEmailError(ValueObjectValidationError):

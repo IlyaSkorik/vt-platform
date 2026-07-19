@@ -26,13 +26,15 @@ Design contract (identical in spirit to the Identity ``User`` aggregate):
 
 from __future__ import annotations
 
-from dataclasses import InitVar, dataclass
+from dataclasses import InitVar, dataclass, field
 from datetime import datetime
 from typing import Final
 
 from .events import (
     DomainEvent,
+    OrganizationProfileUpdated,
     OrganizationReactivated,
+    OrganizationRenamed,
     OrganizationSeeded,
     OrganizationSuspended,
     StaffInvitationAccepted,
@@ -59,6 +61,7 @@ from .value_objects import (
     MembershipStatus,
     OrganizationId,
     OrganizationName,
+    OrganizationProfile,
     OrganizationSlug,
     OrganizationStatus,
     StaffEmail,
@@ -91,6 +94,7 @@ class Organization:
     _status: OrganizationStatus
     _created_at: datetime
     _updated_at: datetime
+    _profile: OrganizationProfile = field(default_factory=OrganizationProfile.empty)
     _deleted_at: datetime | None = None
     _version: int = 1
 
@@ -140,6 +144,7 @@ class Organization:
         status: OrganizationStatus,
         created_at: datetime,
         updated_at: datetime,
+        profile: OrganizationProfile | None = None,
         deleted_at: datetime | None = None,
         version: int = 1,
     ) -> Organization:
@@ -152,6 +157,7 @@ class Organization:
             _status=status,
             _created_at=created_at,
             _updated_at=updated_at,
+            _profile=profile if profile is not None else OrganizationProfile.empty(),
             _deleted_at=deleted_at,
             _version=version,
         )
@@ -175,6 +181,10 @@ class Organization:
     @property
     def status(self) -> OrganizationStatus:
         return self._status
+
+    @property
+    def profile(self) -> OrganizationProfile:
+        return self._profile
 
     @property
     def created_at(self) -> datetime:
@@ -215,6 +225,37 @@ class Organization:
         self._status = OrganizationStatus.ACTIVE
         self._touch(now)
         return [OrganizationReactivated(aggregate_id=self._id.value)]
+
+    def update_profile(
+        self,
+        profile: OrganizationProfile,
+        *,
+        name: OrganizationName | None = None,
+        now: datetime,
+    ) -> list[DomainEvent]:
+        """Apply the staff edit form: an optional new display name and the profile.
+
+        A full replacement (the form submits the whole editable set), guarded
+        against a suspended organization. ``name`` is optional so a profile-only
+        edit need not pass it; when given and different it renames the organization
+        (the slug — the URL identity — is deliberately not editable here). Applying
+        both changes advances the version exactly **once**. When nothing actually
+        changes it is a no-op: state is untouched, the version does not advance, and
+        no event is emitted.
+        """
+        if self._status is OrganizationStatus.SUSPENDED:
+            raise OrganizationSuspendedError("A suspended organization cannot be edited.")
+        events: list[DomainEvent] = []
+        if name is not None and name != self._name:
+            self._name = name
+            events.append(OrganizationRenamed(aggregate_id=self._id.value, name=name))
+        if profile != self._profile:
+            self._profile = profile
+            events.append(OrganizationProfileUpdated(aggregate_id=self._id.value))
+        if not events:
+            return []
+        self._touch(now)
+        return events
 
     # ------------------------------------------------------------------
     # Internals

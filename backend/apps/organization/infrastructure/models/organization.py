@@ -31,6 +31,17 @@ class OrganizationModel(BasePersistenceModel):
         choices=OrganizationStatusChoices.choices,
         default=OrganizationStatusChoices.ACTIVE,
     )
+    # Optional public contact & legal profile (owned by the domain OrganizationProfile
+    # value object; nullable because a freshly seeded organization has none set).
+    phone = models.CharField(max_length=200, null=True, blank=True, default=None)
+    email = models.CharField(max_length=200, null=True, blank=True, default=None)
+    website = models.CharField(max_length=200, null=True, blank=True, default=None)
+    address = models.CharField(max_length=500, null=True, blank=True, default=None)
+    logo = models.CharField(max_length=200, null=True, blank=True, default=None)
+    vk = models.CharField(max_length=200, null=True, blank=True, default=None)
+    instagram = models.CharField(max_length=200, null=True, blank=True, default=None)
+    telegram = models.CharField(max_length=200, null=True, blank=True, default=None)
+    legal_information = models.TextField(max_length=5000, null=True, blank=True, default=None)
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "organization_organization"

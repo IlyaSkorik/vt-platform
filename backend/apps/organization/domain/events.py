@@ -41,7 +41,9 @@ from .value_objects import (
 
 __all__ = [
     "DomainEvent",
+    "OrganizationProfileUpdated",
     "OrganizationReactivated",
+    "OrganizationRenamed",
     "OrganizationSeeded",
     "OrganizationSuspended",
     "StaffInvitationAccepted",
@@ -125,6 +127,18 @@ class OrganizationSuspended(DomainEvent):
 @dataclass(frozen=True, slots=True, kw_only=True)
 class OrganizationReactivated(DomainEvent):
     """A suspended organization was reactivated."""
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class OrganizationProfileUpdated(DomainEvent):
+    """The organization's public contact & legal profile was edited by staff."""
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class OrganizationRenamed(DomainEvent):
+    """The organization's display name was changed by staff."""
+
+    name: OrganizationName
 
 
 # ---------------------------------------------------------------------------

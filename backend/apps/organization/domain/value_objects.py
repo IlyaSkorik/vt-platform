@@ -38,6 +38,7 @@ from .exceptions import (
     InvalidInvitationTokenHashError,
     InvalidOrganizationIdError,
     InvalidOrganizationNameError,
+    InvalidOrganizationProfileError,
     InvalidOrganizationSlugError,
     InvalidStaffEmailError,
     InvalidStaffInvitationIdError,
@@ -50,6 +51,7 @@ __all__ = [
     "MembershipStatus",
     "OrganizationId",
     "OrganizationName",
+    "OrganizationProfile",
     "OrganizationSlug",
     "OrganizationStatus",
     "StaffEmail",
@@ -295,6 +297,66 @@ class OrganizationSlug:
 
     def __str__(self) -> str:
         return self.value
+
+
+# ---------------------------------------------------------------------------
+# Contact profile
+# ---------------------------------------------------------------------------
+
+_PROFILE_SHORT_MAX: Final = 200
+_PROFILE_ADDRESS_MAX: Final = 500
+_PROFILE_LEGAL_MAX: Final = 5000
+
+
+@dataclass(frozen=True, slots=True)
+class OrganizationProfile:
+    """The organization's optional public contact & legal details.
+
+    A cohesive bundle of the "how to reach and identify us" fields the aggregate
+    exposes alongside its name and slug: contact channels, social links, a logo
+    reference, and legal boilerplate. Every field is optional — a freshly seeded
+    organization has :meth:`empty` — and each is normalized (surrounding
+    whitespace stripped; a blank string collapses to ``None``) and length-bounded
+    on construction. Compares by value, so an unchanged edit is a no-op upstream.
+    """
+
+    phone: str | None = None
+    email: str | None = None
+    website: str | None = None
+    address: str | None = None
+    logo: str | None = None
+    vk: str | None = None
+    instagram: str | None = None
+    telegram: str | None = None
+    legal_information: str | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "phone", self._clean("phone", self.phone, _PROFILE_SHORT_MAX))
+        object.__setattr__(self, "email", self._clean("email", self.email, _PROFILE_SHORT_MAX))
+        object.__setattr__(self, "website", self._clean("website", self.website, _PROFILE_SHORT_MAX))
+        object.__setattr__(self, "address", self._clean("address", self.address, _PROFILE_ADDRESS_MAX))
+        object.__setattr__(self, "logo", self._clean("logo", self.logo, _PROFILE_SHORT_MAX))
+        object.__setattr__(self, "vk", self._clean("vk", self.vk, _PROFILE_SHORT_MAX))
+        object.__setattr__(self, "instagram", self._clean("instagram", self.instagram, _PROFILE_SHORT_MAX))
+        object.__setattr__(self, "telegram", self._clean("telegram", self.telegram, _PROFILE_SHORT_MAX))
+        object.__setattr__(self, "legal_information", self._clean("legal_information", self.legal_information, _PROFILE_LEGAL_MAX))
+
+    @staticmethod
+    def _clean(field_name: str, value: str | None, max_length: int) -> str | None:
+        """Strip surrounding whitespace, collapse blanks to ``None``, and bound length."""
+        if value is None:
+            return None
+        stripped = value.strip()
+        if not stripped:
+            return None
+        if len(stripped) > max_length:
+            raise InvalidOrganizationProfileError(f"Organization profile field {field_name!r} must be at most {max_length} characters.")
+        return stripped
+
+    @classmethod
+    def empty(cls) -> OrganizationProfile:
+        """The profile of an organization that has not filled in any contact details."""
+        return cls()
 
 
 # ---------------------------------------------------------------------------
