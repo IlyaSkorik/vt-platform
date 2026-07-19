@@ -334,7 +334,10 @@ const routes: RouteObject[] = [
               },
               {
                 path: ROUTES.staffOrganization.slice(1),
-                lazy: workspacePlaceholder(staffItem(ROUTES.staffOrganization), "staff"),
+                lazy: lazyPage(
+                  () => import("@/applications/staff/pages/organization"),
+                  "StaffOrganizationPage",
+                ),
               },
               {
                 path: ROUTES.staffUsers.slice(1),
