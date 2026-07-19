@@ -26,6 +26,7 @@ from apps.organization.application.handlers import (
     InviteStaffHandler,
     ProvisionOwnerHandler,
     SendInvitationEmailHandler,
+    UpdateOrganizationProfileHandler,
 )
 from apps.organization.application.interfaces import EmailGateway, InvitationTokenService
 from apps.organization.application.read_models import StaffMembershipReader
@@ -51,6 +52,7 @@ __all__ = [
     "build_organization_directory",
     "build_provision_owner_handler",
     "build_staff_membership_read_service",
+    "build_update_organization_profile_handler",
 ]
 
 
@@ -166,6 +168,15 @@ def build_get_staff_invitation_handler() -> GetStaffInvitationHandler:
 def build_get_organization_profile_handler() -> GetOrganizationProfileHandler:
     """Assemble the organization profile read use case."""
     return GetOrganizationProfileHandler(organizations=DjangoOrganizationRepository())
+
+
+def build_update_organization_profile_handler() -> UpdateOrganizationProfileHandler:
+    """Assemble the organization profile edit use case with its adapters."""
+    return UpdateOrganizationProfileHandler(
+        organizations=DjangoOrganizationRepository(),
+        clock=SystemClock(),
+        events=_build_event_dispatcher(),
+    )
 
 
 def build_staff_membership_read_service() -> StaffMembershipReader:

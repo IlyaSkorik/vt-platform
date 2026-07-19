@@ -14,6 +14,7 @@ __all__ = [
     "InviteStaffCommand",
     "ProvisionOwnerCommand",
     "RevokeStaffMembershipCommand",
+    "UpdateOrganizationProfileCommand",
 ]
 
 
@@ -58,3 +59,27 @@ class RevokeStaffMembershipCommand:
 
     membership_id: str
     revoked_by: str
+
+
+@dataclass(frozen=True, slots=True)
+class UpdateOrganizationProfileCommand:
+    """Replace the organization's public contact & legal profile.
+
+    A full-replacement edit: every field the profile form carries. An omitted /
+    cleared contact field arrives as ``None`` and clears the stored value.
+    ``name`` is the organization's display name — ``None`` means "leave unchanged"
+    (the slug is never editable here). ``updated_by`` is the raw UUID of the
+    authenticated staff member making the change.
+    """
+
+    updated_by: str
+    name: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    website: str | None = None
+    address: str | None = None
+    logo: str | None = None
+    vk: str | None = None
+    instagram: str | None = None
+    telegram: str | None = None
+    legal_information: str | None = None

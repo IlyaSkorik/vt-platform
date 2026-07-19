@@ -6,13 +6,14 @@ from dataclasses import dataclass
 
 from apps.organization.application.exceptions import OrganizationNotFoundError
 from apps.organization.application.interfaces import OrganizationRepository
+from apps.organization.domain.entities import Organization
 
 __all__ = ["GetOrganizationProfileHandler", "OrganizationProfileView"]
 
 
 @dataclass(frozen=True, slots=True)
 class OrganizationProfileView:
-    """Staff-facing organization profile (contact fields stubbed until persisted)."""
+    """Staff-facing, flat read model of the singleton organization's profile."""
 
     id: str
     name: str
@@ -27,6 +28,25 @@ class OrganizationProfileView:
     telegram: str | None
     legal_information: str | None
 
+    @classmethod
+    def from_organization(cls, organization: Organization) -> OrganizationProfileView:
+        """Flatten an :class:`Organization` aggregate into its profile read model."""
+        profile = organization.profile
+        return cls(
+            id=organization.id.json(),
+            name=organization.name.value,
+            slug=organization.slug.value,
+            phone=profile.phone,
+            email=profile.email,
+            website=profile.website,
+            address=profile.address,
+            logo=profile.logo,
+            vk=profile.vk,
+            instagram=profile.instagram,
+            telegram=profile.telegram,
+            legal_information=profile.legal_information,
+        )
+
 
 class GetOrganizationProfileHandler:
     """Return the singleton organization profile for staff."""
@@ -38,17 +58,4 @@ class GetOrganizationProfileHandler:
         organization = self._organizations.get_default()
         if organization is None:
             raise OrganizationNotFoundError("Organization has not been seeded.")
-        return OrganizationProfileView(
-            id=organization.id.json(),
-            name=organization.name.value,
-            slug=organization.slug.value,
-            phone=None,
-            email=None,
-            website=None,
-            address=None,
-            logo=None,
-            vk=None,
-            instagram=None,
-            telegram=None,
-            legal_information=None,
-        )
+        return OrganizationProfileView.from_organization(organization)

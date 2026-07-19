@@ -4,6 +4,7 @@ from .get_organization_profile import GetOrganizationProfileHandler, Organizatio
 from .get_staff_invitation import GetStaffInvitationHandler
 from .provision_owner import ProvisionOwnerHandler
 from .send_invitation_email import SendInvitationEmailHandler
+from .update_organization_profile import UpdateOrganizationProfileHandler
 
 __all__ = [
     "AcceptStaffInvitationHandler",
@@ -13,4 +14,5 @@ __all__ = [
     "OrganizationProfileView",
     "ProvisionOwnerHandler",
     "SendInvitationEmailHandler",
+    "UpdateOrganizationProfileHandler",
 ]
