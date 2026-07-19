@@ -26,6 +26,8 @@ from drf_spectacular.utils import inline_serializer
 from rest_framework import serializers
 
 __all__ = [
+    "PasswordResetConfirmSerializer",
+    "PasswordResetRequestSerializer",
     "RegistrationRequestSerializer",
     "SessionCreateRequestSerializer",
     "TokenRefreshRequestSerializer",
@@ -74,6 +76,29 @@ class EmailVerificationConfirmSerializer(serializers.Serializer[dict[str, object
     """
 
     token = serializers.CharField()
+
+
+class PasswordResetRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """Validate a password-reset request body (API-001 §4.7).
+
+    Public: the caller names the address to email a reset link to. The handler is
+    anti-enumeration, so a well-formed but unregistered/unverified address still
+    yields 202.
+    """
+
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer[dict[str, object]]):
+    """Validate a password-reset confirmation body (API-001 §4.7).
+
+    The emailed token is the proof of ownership; no session is required. Password
+    *strength* is a domain policy enforced by the use case, not here — this only
+    checks field shape.
+    """
+
+    token = serializers.CharField()
+    newPassword = serializers.CharField(write_only=True, trim_whitespace=False, style={"input_type": "password"})
 
 
 class TokenRefreshRequestSerializer(serializers.Serializer[dict[str, object]]):

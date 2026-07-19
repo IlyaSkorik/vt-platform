@@ -20,15 +20,18 @@ from apps.identity.application.handlers import (
     RefreshTokenHandler,
     RegisterUserHandler,
     RequestEmailVerificationHandler,
+    RequestPasswordResetHandler,
+    ResetPasswordHandler,
 )
 from apps.identity.application.handlers.user_handlers import CurrentUserHandler
 from apps.identity.application.interfaces import EventPublisher, TokenService
 from apps.identity.domain.events import UserRegistered
-from apps.identity.domain.policies import EmailVerificationPolicy, PasswordPolicy
+from apps.identity.domain.policies import EmailVerificationPolicy, PasswordPolicy, PasswordResetPolicy
 from apps.identity.infrastructure.auth import Argon2PasswordHasher, JWTService
 from apps.identity.infrastructure.messaging import (
     DjangoEmailGateway,
     EventDispatcher,
+    SignedPasswordResetTokenService,
     SignedVerificationTokenService,
 )
 from apps.identity.infrastructure.repositories import DjangoUserRepository
@@ -43,6 +46,8 @@ __all__ = [
     "build_refresh_token_handler",
     "build_register_user_handler",
     "build_request_email_verification_handler",
+    "build_request_password_reset_handler",
+    "build_reset_password_handler",
     "build_token_service",
 ]
 
@@ -100,6 +105,29 @@ def build_request_email_verification_handler() -> RequestEmailVerificationHandle
     )
 
 
+def build_request_password_reset_handler() -> RequestPasswordResetHandler:
+    """Assemble the begin-password-recovery use case with its adapters."""
+    return RequestPasswordResetHandler(
+        users=DjangoUserRepository(),
+        tokens=SignedPasswordResetTokenService(),
+        email_gateway=DjangoEmailGateway(),
+        reset_policy=PasswordResetPolicy(),
+        clock=SystemClock(),
+    )
+
+
+def build_reset_password_handler() -> ResetPasswordHandler:
+    """Assemble the set-new-password-from-token use case with its adapters."""
+    return ResetPasswordHandler(
+        users=DjangoUserRepository(),
+        tokens=SignedPasswordResetTokenService(),
+        password_hasher=Argon2PasswordHasher(),
+        password_policy=PasswordPolicy(),
+        reset_policy=PasswordResetPolicy(),
+        clock=SystemClock(),
+    )
+
+
 def build_authenticate_user_handler() -> AuthenticateUserHandler:
     """Assemble the login (credential-verification) use case with its adapters."""
     return AuthenticateUserHandler(
@@ -110,8 +138,15 @@ def build_authenticate_user_handler() -> AuthenticateUserHandler:
 
 
 def build_refresh_token_handler(tokens: TokenService | None = None) -> RefreshTokenHandler:
-    """Assemble the refresh use case over the token service."""
-    return RefreshTokenHandler(tokens=tokens if tokens is not None else build_token_service())
+    """Assemble the refresh use case over the token service.
+
+    Injects the user repository so the handler can enforce the account-level
+    credential cut-off (rejecting refresh tokens issued before a password reset).
+    """
+    return RefreshTokenHandler(
+        tokens=tokens if tokens is not None else build_token_service(),
+        users=DjangoUserRepository(),
+    )
 
 
 def build_logout_handler(tokens: TokenService | None = None) -> LogoutHandler:

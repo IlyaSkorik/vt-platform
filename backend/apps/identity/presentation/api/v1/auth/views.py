@@ -27,7 +27,6 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTStatelessUserAuthentication
 from rest_framework_simplejwt.settings import api_settings as jwt_settings
 
 from apps.identity.application.commands import (
@@ -37,14 +36,19 @@ from apps.identity.application.commands import (
     RefreshTokenCommand,
     RegisterUserCommand,
     RequestEmailVerificationCommand,
+    RequestPasswordResetCommand,
+    ResetPasswordCommand,
 )
 from apps.identity.application.dto import TokenPairDto, UserDto
 from apps.identity.application.exceptions import ApplicationError, InvalidTokenError
+from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.identity.presentation.api.v1.auth import composition
 from apps.identity.presentation.api.v1.auth.serializers import (
     EmailVerificationConfirmSerializer,
     EmailVerificationRequestSerializer,
     EmailVerificationResponseSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
     ProblemDetailSerializer,
     RegistrationRequestSerializer,
     RegistrationResponseSerializer,
@@ -270,6 +274,84 @@ class EmailVerificationRequestView(APIView):
         return Response(status=202, headers={"X-Request-ID": correlation_id})
 
 
+class PasswordResetRequestView(APIView):
+    """POST /api/v1/auth/password-reset/requests — begin recovery (API-001 §4.7).
+
+    Public: a user who forgot their password cannot sign in, so the target address
+    is taken in the body. The handler is anti-enumeration (API-000 §26) —
+    unknown/deleted/unverified addresses are silent no-ops — so the response is a
+    uniform ``202`` and never reveals whether the address is registered.
+    """
+
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
+
+    @extend_schema(
+        tags=[_AUTH_TAG],
+        operation_id="requestPasswordReset",
+        summary="Begin password recovery (email a reset link)",
+        description="Send a password-reset link to the given address (no-op if unknown/unverified).",
+        request=PasswordResetRequestSerializer,
+        responses={
+            202: OpenApiResponse(description="Request accepted (email dispatched if applicable)."),
+            400: OpenApiResponse(ProblemDetailSerializer, description="Malformed request."),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        instance = request.path
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return validation_problem(serializer.errors, instance=instance, request=request)
+        command = RequestPasswordResetCommand(email=str(serializer.validated_data["email"]))
+        try:
+            composition.build_request_password_reset_handler().handle(command)
+        except ApplicationError as exc:
+            return application_problem(exc, instance=instance, request=request)
+        correlation_id = request_id(request)
+        return Response(status=202, headers={"X-Request-ID": correlation_id})
+
+
+class PasswordResetConfirmationView(APIView):
+    """POST /api/v1/auth/password-reset/confirmations — set a new password (API-001 §4.7).
+
+    Public: the emailed token is the proof of ownership. On success the new password
+    is stored and every outstanding session is revoked (the account's credential
+    cut-off is stamped), so the user must sign in again — this endpoint issues no
+    session. A malformed/tampered token is ``422``; an expired link is ``410``; a
+    weak password is ``422`` with a field-level checklist.
+    """
+
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
+
+    @extend_schema(
+        tags=[_AUTH_TAG],
+        operation_id="confirmPasswordReset",
+        summary="Set a new password using the reset token",
+        description="Set a new password from the emailed token; revokes all sessions.",
+        request=PasswordResetConfirmSerializer,
+        responses={
+            204: OpenApiResponse(description="Password reset; all sessions revoked."),
+            400: OpenApiResponse(ProblemDetailSerializer, description="Malformed request."),
+            410: OpenApiResponse(ProblemDetailSerializer, description="Reset token expired."),
+            422: OpenApiResponse(ProblemDetailSerializer, description="Invalid token / weak password."),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        instance = request.path
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        if not serializer.is_valid():
+            return validation_problem(serializer.errors, instance=instance, request=request)
+        data = serializer.validated_data
+        command = ResetPasswordCommand(token=str(data["token"]), new_password=str(data["newPassword"]))
+        try:
+            composition.build_reset_password_handler().handle(command)
+        except ApplicationError as exc:
+            return application_problem(exc, instance=instance, request=request)
+        correlation_id = request_id(request)
+        return Response(status=204, headers={"X-Request-ID": correlation_id})
+
+
 class SessionCollectionView(APIView):
     """POST /api/v1/auth/sessions — authenticate and establish a session (API-001 §4.4)."""
 
@@ -344,7 +426,7 @@ class TokenRefreshView(APIView):
 class CurrentSessionView(APIView):
     """DELETE /api/v1/auth/sessions/current — revoke the current session (API-001 §4.6)."""
 
-    authentication_classes = (JWTStatelessUserAuthentication,)
+    authentication_classes = (CredentialAwareJWTAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     @extend_schema(
