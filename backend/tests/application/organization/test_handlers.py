@@ -8,6 +8,7 @@ from apps.organization.application.dto.commands import (
     AcceptStaffInvitationCommand,
     InviteStaffCommand,
     ProvisionOwnerCommand,
+    UpdateOrganizationProfileCommand,
 )
 from apps.organization.application.dto.queries import GetStaffInvitationQuery
 from apps.organization.application.exceptions import (
@@ -16,20 +17,23 @@ from apps.organization.application.exceptions import (
     InvitationConflictError,
     InvitationStateConflictError,
     OrganizationNotFoundError,
+    OrganizationStateConflictError,
     PermissionDeniedError,
     StaffInvitationNotFoundError,
     UserAlreadyStaffError,
 )
 from apps.organization.application.handlers import (
     AcceptStaffInvitationHandler,
+    GetOrganizationProfileHandler,
     GetStaffInvitationHandler,
     InviteStaffHandler,
     ProvisionOwnerHandler,
     SendInvitationEmailHandler,
+    UpdateOrganizationProfileHandler,
 )
 from apps.organization.application.read_models import StaffMembershipReader
 from apps.organization.domain.entities import Organization
-from apps.organization.domain.events import StaffInvitationIssued
+from apps.organization.domain.events import OrganizationProfileUpdated, StaffInvitationIssued
 from apps.organization.domain.policies import InvitationExpiryPolicy
 from apps.organization.domain.value_objects import (
     OrganizationId,
@@ -587,3 +591,122 @@ class TestSendInvitationEmailHandler:
         )
         with pytest.raises(OrganizationNotFoundError):
             handler(event)
+
+
+class TestGetOrganizationProfileHandler:
+    def test_returns_seeded_identity_with_empty_contact_fields(self) -> None:
+        orgs = FakeOrganizationRepository()
+        org = _seeded_org(orgs)
+
+        view = GetOrganizationProfileHandler(organizations=orgs).handle()
+
+        assert view.id == org.id.json()
+        assert view.name == "Взлёт талантов"
+        assert view.slug == "vzlyot-talantov"
+        assert view.phone is None
+        assert view.legal_information is None
+
+    def test_rejects_when_org_not_seeded(self) -> None:
+        with pytest.raises(OrganizationNotFoundError):
+            GetOrganizationProfileHandler(organizations=FakeOrganizationRepository()).handle()
+
+
+class TestUpdateOrganizationProfileHandler:
+    def _handler(
+        self,
+        orgs: FakeOrganizationRepository,
+        events: RecordingEventPublisher,
+    ) -> UpdateOrganizationProfileHandler:
+        return UpdateOrganizationProfileHandler(organizations=orgs, clock=FakeClock(), events=events)
+
+    def test_persists_and_returns_updated_profile(self) -> None:
+        orgs = FakeOrganizationRepository()
+        events = RecordingEventPublisher()
+        _seeded_org(orgs)
+
+        view = self._handler(orgs, events).handle(
+            UpdateOrganizationProfileCommand(
+                updated_by=_new_user_uuid().json(),
+                phone="+7 900 000-00-00",
+                email="hello@vzlet.ru",
+                website="https://vzlet.ru",
+                legal_information="ООО «Взлёт», ИНН 000",
+            )
+        )
+
+        assert view.phone == "+7 900 000-00-00"
+        assert view.email == "hello@vzlet.ru"
+        assert view.website == "https://vzlet.ru"
+        assert view.legal_information == "ООО «Взлёт», ИНН 000"
+        assert len(orgs.saved) == 1
+        assert orgs.saved[0].profile.phone == "+7 900 000-00-00"
+        assert any(isinstance(event, OrganizationProfileUpdated) for event in events.published)
+
+    def test_renames_organization(self) -> None:
+        orgs = FakeOrganizationRepository()
+        events = RecordingEventPublisher()
+        _seeded_org(orgs)
+
+        view = self._handler(orgs, events).handle(
+            UpdateOrganizationProfileCommand(updated_by=_new_user_uuid().json(), name="Новое имя")
+        )
+
+        assert view.name == "Новое имя"
+        assert view.slug == "vzlyot-talantov"  # slug stays fixed
+        assert orgs.saved[0].name.value == "Новое имя"
+
+    def test_rejects_blank_name(self) -> None:
+        orgs = FakeOrganizationRepository()
+        _seeded_org(orgs)
+
+        with pytest.raises(InvalidInputError):
+            self._handler(orgs, RecordingEventPublisher()).handle(
+                UpdateOrganizationProfileCommand(updated_by=_new_user_uuid().json(), name="   ")
+            )
+
+    def test_blank_fields_are_normalized_to_none(self) -> None:
+        orgs = FakeOrganizationRepository()
+        events = RecordingEventPublisher()
+        _seeded_org(orgs)
+
+        view = self._handler(orgs, events).handle(
+            UpdateOrganizationProfileCommand(updated_by=_new_user_uuid().json(), phone="   ", email=None)
+        )
+
+        assert view.phone is None
+        assert view.email is None
+
+    def test_unchanged_profile_is_a_noop_without_event(self) -> None:
+        orgs = FakeOrganizationRepository()
+        events = RecordingEventPublisher()
+        _seeded_org(orgs)
+
+        # Seeded organization already has an empty profile; submitting an empty one changes nothing.
+        self._handler(orgs, events).handle(UpdateOrganizationProfileCommand(updated_by=_new_user_uuid().json()))
+
+        assert events.published == []
+
+    def test_rejects_when_org_not_seeded(self) -> None:
+        with pytest.raises(OrganizationNotFoundError):
+            self._handler(FakeOrganizationRepository(), RecordingEventPublisher()).handle(
+                UpdateOrganizationProfileCommand(updated_by=_new_user_uuid().json(), phone="123")
+            )
+
+    def test_rejects_overlong_field(self) -> None:
+        orgs = FakeOrganizationRepository()
+        _seeded_org(orgs)
+
+        with pytest.raises(InvalidInputError):
+            self._handler(orgs, RecordingEventPublisher()).handle(
+                UpdateOrganizationProfileCommand(updated_by=_new_user_uuid().json(), phone="x" * 201)
+            )
+
+    def test_rejects_update_on_suspended_organization(self) -> None:
+        orgs = FakeOrganizationRepository()
+        org = _seeded_org(orgs)
+        org.suspend(now=NOW)
+
+        with pytest.raises(OrganizationStateConflictError):
+            self._handler(orgs, RecordingEventPublisher()).handle(
+                UpdateOrganizationProfileCommand(updated_by=_new_user_uuid().json(), phone="123")
+            )

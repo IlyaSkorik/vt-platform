@@ -12,6 +12,8 @@ from apps.organization.domain.entities import (
     StaffMembership,
 )
 from apps.organization.domain.events import (
+    OrganizationProfileUpdated,
+    OrganizationRenamed,
     OrganizationSeeded,
     StaffInvitationAccepted,
     StaffMembershipActivated,
@@ -25,6 +27,7 @@ from apps.organization.domain.exceptions import (
     MembershipAlreadyActiveError,
     MembershipAlreadyRevokedError,
     MembershipNotPendingError,
+    OrganizationSuspendedError,
 )
 from apps.organization.domain.policies import InvitationExpiryPolicy
 from apps.organization.domain.value_objects import (
@@ -32,6 +35,7 @@ from apps.organization.domain.value_objects import (
     MembershipStatus,
     OrganizationId,
     OrganizationName,
+    OrganizationProfile,
     OrganizationSlug,
     OrganizationStatus,
     StaffEmail,
@@ -88,6 +92,58 @@ class TestOrganization:
         org.reactivate(now=NOW)
         assert org.is_active()
         assert org.version == 3  # seed=1, suspend=2, reactivate=3
+
+    def test_seeded_organization_has_empty_profile(self) -> None:
+        assert _org().profile == OrganizationProfile.empty()
+
+    def test_update_profile_replaces_and_emits_event(self) -> None:
+        org = _org()
+        events = org.update_profile(OrganizationProfile(phone="+7 900", email="a@b.ru"), now=NOW)
+        assert org.profile.phone == "+7 900"
+        assert org.profile.email == "a@b.ru"
+        assert org.version == 2  # seed=1, update=2
+        assert isinstance(events[0], OrganizationProfileUpdated)
+
+    def test_update_profile_with_unchanged_value_is_noop(self) -> None:
+        org = _org()
+        assert org.update_profile(OrganizationProfile.empty(), now=NOW) == []
+        assert org.version == 1  # unchanged, version not advanced
+
+    def test_update_profile_rejected_when_suspended(self) -> None:
+        org = _org()
+        org.suspend(now=NOW)
+        with pytest.raises(OrganizationSuspendedError):
+            org.update_profile(OrganizationProfile(phone="+7 900"), now=NOW)
+
+    def test_update_profile_renames_and_emits_rename_event(self) -> None:
+        org = _org()
+        events = org.update_profile(
+            OrganizationProfile.empty(),
+            name=OrganizationName("Новое имя"),
+            now=NOW,
+        )
+        assert org.name == OrganizationName("Новое имя")
+        assert org.slug == OrganizationSlug("vzlyot-talantov")  # slug is untouched
+        assert org.version == 2  # a single bump for the edit
+        assert isinstance(events[0], OrganizationRenamed)
+
+    def test_update_profile_renames_and_updates_profile_in_one_bump(self) -> None:
+        org = _org()
+        events = org.update_profile(
+            OrganizationProfile(phone="+7 900"),
+            name=OrganizationName("Новое имя"),
+            now=NOW,
+        )
+        assert org.name == OrganizationName("Новое имя")
+        assert org.profile.phone == "+7 900"
+        assert org.version == 2  # both changes, still one version bump
+        assert {type(event) for event in events} == {OrganizationRenamed, OrganizationProfileUpdated}
+
+    def test_update_profile_with_same_name_emits_no_rename(self) -> None:
+        org = _org()
+        events = org.update_profile(OrganizationProfile.empty(), name=org.name, now=NOW)
+        assert events == []
+        assert org.version == 1
 
 
 class TestStaffMembership:

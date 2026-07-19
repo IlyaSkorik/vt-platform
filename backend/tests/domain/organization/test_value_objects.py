@@ -9,6 +9,7 @@ import pytest
 from apps.organization.domain.exceptions import (
     InvalidInvitationTokenHashError,
     InvalidOrganizationNameError,
+    InvalidOrganizationProfileError,
     InvalidOrganizationSlugError,
     InvalidStaffEmailError,
     InvalidStaffUserIdError,
@@ -18,6 +19,7 @@ from apps.organization.domain.value_objects import (
     MembershipStatus,
     OrganizationId,
     OrganizationName,
+    OrganizationProfile,
     OrganizationSlug,
     OrganizationStatus,
     StaffEmail,
@@ -108,6 +110,36 @@ class TestEnums:
     def test_status_values(self) -> None:
         assert {s.value for s in MembershipStatus} == {"PENDING", "ACTIVE", "REVOKED"}
         assert {s.value for s in OrganizationStatus} == {"ACTIVE", "SUSPENDED"}
+
+
+class TestOrganizationProfile:
+    def test_empty_has_all_none_fields(self) -> None:
+        profile = OrganizationProfile.empty()
+        assert profile.phone is None
+        assert profile.email is None
+        assert profile.legal_information is None
+
+    def test_strips_whitespace_and_collapses_blanks_to_none(self) -> None:
+        profile = OrganizationProfile(phone="  +7 900  ", email="   ")
+        assert profile.phone == "+7 900"
+        assert profile.email is None
+
+    def test_compares_by_value(self) -> None:
+        assert OrganizationProfile(phone="1") == OrganizationProfile(phone="1")
+        assert OrganizationProfile(phone="1") != OrganizationProfile(phone="2")
+
+    def test_rejects_overlong_short_field(self) -> None:
+        with pytest.raises(InvalidOrganizationProfileError):
+            OrganizationProfile(phone="x" * 201)
+
+    def test_rejects_overlong_legal_information(self) -> None:
+        with pytest.raises(InvalidOrganizationProfileError):
+            OrganizationProfile(legal_information="x" * 5001)
+
+    def test_allows_long_address_and_legal(self) -> None:
+        profile = OrganizationProfile(address="x" * 500, legal_information="y" * 5000)
+        assert profile.address is not None
+        assert len(profile.address) == 500
 
 
 def test_generate_uuid7_version() -> None:
