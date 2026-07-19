@@ -22,7 +22,10 @@ from __future__ import annotations
 
 from apps.identity.application.commands import LogoutCommand, RefreshTokenCommand
 from apps.identity.application.dto import TokenPairDto
-from apps.identity.application.interfaces import TokenService
+from apps.identity.application.exceptions import InvalidTokenError
+from apps.identity.application.interfaces import TokenService, UserRepository
+from apps.identity.domain.exceptions import ValueObjectValidationError
+from apps.identity.domain.value_objects import UserId
 
 __all__ = ["LogoutHandler", "RefreshTokenHandler"]
 
@@ -36,13 +39,30 @@ class RefreshTokenHandler:
     :class:`~apps.identity.application.exceptions.InvalidTokenError` (mapped to
     ``401`` at the edge). On success the presented token is invalidated, so it
     cannot be replayed.
+
+    Beyond SimpleJWT's own checks it enforces the account-level credential cut-off:
+    a token issued **before** the owner's ``credentials_invalidated_at`` (stamped by
+    a completed password reset) is rejected, which is how a reset revokes every
+    refresh token outstanding at the time — no per-token bookkeeping required. The
+    account is loaded through the :class:`UserRepository` for that one comparison.
     """
 
-    def __init__(self, *, tokens: TokenService) -> None:
+    def __init__(self, *, tokens: TokenService, users: UserRepository) -> None:
         self._tokens = tokens
+        self._users = users
 
     def handle(self, command: RefreshTokenCommand) -> TokenPairDto:
-        return self._tokens.rotate(refresh_token=command.refresh_token)
+        refresh_token = command.refresh_token
+        subject = self._tokens.subject_of(refresh_token)
+        issued_at = self._tokens.issued_at_of(refresh_token)
+        try:
+            user_id = UserId.from_string(subject)
+        except ValueObjectValidationError as exc:
+            raise InvalidTokenError("The refresh token carries an invalid subject.") from exc
+        user = self._users.get(user_id)
+        if user is not None and user.credentials_invalidated_at is not None and issued_at < user.credentials_invalidated_at:
+            raise InvalidTokenError("The session was revoked by a credential change.")
+        return self._tokens.rotate(refresh_token=refresh_token)
 
 
 class LogoutHandler:

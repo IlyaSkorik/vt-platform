@@ -13,7 +13,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTStatelessUserAuthentication
 
 from apps.applications.application.dto.commands import (
     AcceptSubmissionCommand,
@@ -40,6 +39,7 @@ from apps.competitions.infrastructure.models.taxonomy import (
     ParticipationFormatModel,
 )
 from apps.emailing import render_transactional_email_html
+from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.identity.infrastructure.models.user import UserModel
 from apps.organization.presentation.permissions import IsOrganizationStaff
 
@@ -128,7 +128,7 @@ def _capabilities(status: str) -> list[dict[str, str]]:
 
 
 class _StaffView(APIView):
-    authentication_classes = (JWTStatelessUserAuthentication,)
+    authentication_classes = (CredentialAwareJWTAuthentication,)
     permission_classes = (IsAuthenticated, IsOrganizationStaff)
 
 

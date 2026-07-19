@@ -8,8 +8,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTStatelessUserAuthentication
 
+from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.identity.presentation.api.v1.problems import request_id
 from apps.organization.application.exceptions import ApplicationError
 from apps.organization.composition import build_get_organization_profile_handler
@@ -47,7 +47,7 @@ OrganizationProfileResponseSerializer = inline_serializer(
 class OrganizationProfileView(APIView):
     """GET /api/v1/organization/profile — singleton organization profile (staff-only)."""
 
-    authentication_classes = (JWTStatelessUserAuthentication,)
+    authentication_classes = (CredentialAwareJWTAuthentication,)
     permission_classes = (IsAuthenticated, IsOrganizationStaff)
 
     @extend_schema(

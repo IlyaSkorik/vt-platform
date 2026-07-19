@@ -8,8 +8,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTStatelessUserAuthentication
 
+from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.identity.presentation.api.v1.problems import (
     problem_response,
     request_id,
@@ -101,7 +101,7 @@ class StaffInvitationDetailView(APIView):
 class StaffInvitationCollectionView(APIView):
     """POST /api/v1/staff/invitations — create a staff invitation."""
 
-    authentication_classes = (JWTStatelessUserAuthentication,)
+    authentication_classes = (CredentialAwareJWTAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     @extend_schema(
@@ -153,7 +153,7 @@ class StaffInvitationCollectionView(APIView):
 class StaffInvitationAcceptanceView(APIView):
     """POST /api/v1/staff/invitations/accept — accept a staff invitation."""
 
-    authentication_classes = (JWTStatelessUserAuthentication,)
+    authentication_classes = (CredentialAwareJWTAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     @extend_schema(

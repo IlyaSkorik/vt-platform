@@ -16,7 +16,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTStatelessUserAuthentication
 
 from apps.applications.application.dto import SubmissionOperationResultDto
 from apps.applications.application.dto.commands import RemoveAttachmentCommand, UploadAttachmentCommand
@@ -28,6 +27,7 @@ from apps.applications.presentation.api.v1.submissions.serializers import (
     SubmissionAttachmentResponseSerializer,
     UploadAttachmentRequestSerializer,
 )
+from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 
 _TAG = "Submission Attachments"
 
@@ -47,7 +47,7 @@ def _envelope(request: Request, data: Any, *, status: int) -> Response:
 
 
 class _AuthenticatedView(APIView):
-    authentication_classes = (JWTStatelessUserAuthentication,)
+    authentication_classes = (CredentialAwareJWTAuthentication,)
     permission_classes = (IsAuthenticated,)
 
 

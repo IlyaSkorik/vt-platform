@@ -16,11 +16,12 @@ revoked tokens out of this class.
 
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.utils import datetime_from_epoch
 
 from apps.identity.application.dto import TokenPairDto
 from apps.identity.application.exceptions import InvalidTokenError
@@ -87,6 +88,18 @@ class JWTService:
         if subject is None:
             raise InvalidTokenError("Refresh token is missing its subject.")
         return str(subject)
+
+    def issued_at_of(self, refresh_token: str) -> datetime:
+        """Return the instant ``refresh_token`` was issued, from its ``iat`` claim.
+
+        Raises :class:`InvalidTokenError` if the token is unusable or carries no
+        ``iat`` — the same opaque failure as every other rejection here, so callers
+        cannot probe token internals.
+        """
+        issued_at = self._decode(refresh_token).get("iat")
+        if issued_at is None:
+            raise InvalidTokenError("Refresh token is missing its issue time.")
+        return datetime_from_epoch(issued_at)
 
     def _decode(self, refresh_token: str) -> RefreshToken:
         """Decode and fully verify a refresh token, or raise :class:`InvalidTokenError`.

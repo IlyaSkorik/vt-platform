@@ -26,10 +26,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTStatelessUserAuthentication
 
 from apps.composition.presentation.api.v1.serializers import CurrentUserResponseSerializer
 from apps.identity.application.exceptions import ApplicationError, UserNotFoundError
+from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.identity.presentation.api.v1.auth import composition as identity_composition
 from apps.identity.presentation.api.v1.problems import (
     application_problem,
@@ -53,7 +53,7 @@ def _staff_membership_resource(view: StaffMembershipView | None) -> dict[str, An
 class CurrentUserView(APIView):
     """GET /api/v1/users/me — the composed current-user resource."""
 
-    authentication_classes = (JWTStatelessUserAuthentication,)
+    authentication_classes = (CredentialAwareJWTAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     @extend_schema(

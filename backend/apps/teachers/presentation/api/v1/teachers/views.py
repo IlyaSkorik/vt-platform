@@ -20,8 +20,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTStatelessUserAuthentication
 
+from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.teachers.application.commands import (
     AddTeacherCommand,
     ArchiveTeacherCommand,
@@ -92,7 +92,7 @@ def _envelope(request: Request, data: Any, *, status: int) -> Response:
 class _AuthenticatedView(APIView):
     """Base for the teacher endpoints: stateless JWT auth, deny-by-default."""
 
-    authentication_classes = (JWTStatelessUserAuthentication,)
+    authentication_classes = (CredentialAwareJWTAuthentication,)
     permission_classes = (IsAuthenticated,)
 
 

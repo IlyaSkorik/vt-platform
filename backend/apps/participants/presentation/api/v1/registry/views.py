@@ -12,10 +12,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTStatelessUserAuthentication
 
 from apps.applications.infrastructure.models.application import ApplicationModel
 from apps.applications.infrastructure.models.submission import SubmissionModel
+from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.participants.infrastructure.models import (
     EducationalOrganizationModel,
     ParticipantOrganizationMembershipModel,
@@ -273,7 +273,7 @@ def _validate_participant_payload(payload: dict[str, Any], request: Request) -> 
 
 
 class _AuthView(APIView):
-    authentication_classes = (JWTStatelessUserAuthentication,)
+    authentication_classes = (CredentialAwareJWTAuthentication,)
     permission_classes = (IsAuthenticated,)
 
 

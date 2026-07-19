@@ -456,3 +456,14 @@ class TokenService(Protocol):
     def revoke(self, *, refresh_token: str) -> None:
         """Blacklist ``refresh_token`` so the session can no longer be renewed."""
         ...
+
+    def issued_at_of(self, refresh_token: str) -> datetime:
+        """Return the instant ``refresh_token`` was issued (its ``iat`` claim).
+
+        Lets a use case compare a token's age against an account-level credential
+        cut-off (``credentials_invalidated_at``) so a completed password reset can
+        reject every session established before it. Raises
+        :class:`~apps.identity.application.exceptions.InvalidTokenError` for a token
+        that cannot be decoded or carries no issue time.
+        """
+        ...

@@ -25,7 +25,6 @@ from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
-from rest_framework_simplejwt.authentication import JWTStatelessUserAuthentication
 
 from apps.competitions.application.dto.commands import (
     AddAdditionalServiceCommand,
@@ -165,6 +164,7 @@ from apps.competitions.presentation.api.v1.problems import (
     validation_problem,
 )
 from apps.competitions.presentation.permissions import IsOrganizationStaff
+from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 
 from .serializers import (
     AddAdditionalServiceSerializer,
@@ -249,7 +249,7 @@ def _command_kwargs(serializer: Serializer[Any]) -> dict[str, Any]:
 class CompetitionViewSet(viewsets.ViewSet):
     """Organizer Competition API — staff-only."""
 
-    authentication_classes = (JWTStatelessUserAuthentication,)
+    authentication_classes = (CredentialAwareJWTAuthentication,)
     permission_classes: tuple[type[BasePermission], ...] = (IsAuthenticated, IsOrganizationStaff)
 
     # ------------------------------------------------------------------
