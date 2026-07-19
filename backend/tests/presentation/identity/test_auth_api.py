@@ -25,6 +25,8 @@ CURRENT_SESSION_URL = "/api/v1/auth/sessions/current"
 REFRESH_URL = "/api/v1/auth/token/refresh"
 EMAIL_CONFIRM_URL = "/api/v1/auth/email-verification/confirmations"
 EMAIL_REQUEST_URL = "/api/v1/auth/email-verification/requests"
+PASSWORD_RESET_REQUEST_URL = "/api/v1/auth/password-reset/requests"
+PASSWORD_RESET_CONFIRM_URL = "/api/v1/auth/password-reset/confirmations"
 
 _PASSWORD = "Str0ngPass!word"
 _PROBLEM_CT = "application/problem+json"
@@ -294,6 +296,91 @@ class TestEmailVerification:
         assert second.status_code == 409
         assert second["Content-Type"] == _PROBLEM_CT
         assert second.data["type"].endswith("/conflict")
+
+
+# ---------------------------------------------------------------------------
+# Password reset (recovery)
+# ---------------------------------------------------------------------------
+
+_NEW_PASSWORD = "N3w$ecurePass!word"
+
+
+class TestPasswordReset:
+    def test_request_sends_a_reset_link_for_a_verified_account(self, client: APIClient) -> None:
+        _register_and_verify(client)
+        mail.outbox.clear()
+
+        response = client.post(PASSWORD_RESET_REQUEST_URL, {"email": "parent@example.com"}, format="json")
+
+        assert response.status_code == 202
+        assert len(mail.outbox) == 1
+        assert "reset-password?token=" in mail.outbox[-1].body
+
+    def test_request_is_accepted_but_silent_for_unknown_email(self, client: APIClient) -> None:
+        # Anti-enumeration: unknown address still yields 202, and sends nothing.
+        mail.outbox.clear()
+
+        response = client.post(PASSWORD_RESET_REQUEST_URL, {"email": "ghost@example.com"}, format="json")
+
+        assert response.status_code == 202
+        assert mail.outbox == []
+
+    def test_malformed_email_is_a_bad_request(self, client: APIClient) -> None:
+        response = client.post(PASSWORD_RESET_REQUEST_URL, {"email": "not-an-email"}, format="json")
+
+        assert response.status_code == 400
+        assert response["Content-Type"] == _PROBLEM_CT
+
+    def test_confirm_sets_a_new_password_that_can_log_in(self, client: APIClient) -> None:
+        _register_and_verify(client)
+        mail.outbox.clear()
+        client.post(PASSWORD_RESET_REQUEST_URL, {"email": "parent@example.com"}, format="json")
+        token = _token_from_last_email()
+
+        confirm = client.post(PASSWORD_RESET_CONFIRM_URL, {"token": token, "newPassword": _NEW_PASSWORD}, format="json")
+
+        assert confirm.status_code == 204
+        # The new password works; the old one no longer does.
+        new_login = client.post(SESSIONS_URL, {"email": "parent@example.com", "password": _NEW_PASSWORD}, format="json")
+        assert new_login.status_code == 201
+        old_login = client.post(SESSIONS_URL, {"email": "parent@example.com", "password": _PASSWORD}, format="json")
+        assert old_login.status_code == 401
+
+    def test_confirm_revokes_existing_sessions(self, client: APIClient) -> None:
+        _register_and_verify(client)
+        login = client.post(SESSIONS_URL, {"email": "parent@example.com", "password": _PASSWORD}, format="json")
+        refresh = login.data["data"]["refreshToken"]
+        mail.outbox.clear()
+        client.post(PASSWORD_RESET_REQUEST_URL, {"email": "parent@example.com"}, format="json")
+        token = _token_from_last_email()
+
+        reset = client.post(PASSWORD_RESET_CONFIRM_URL, {"token": token, "newPassword": _NEW_PASSWORD}, format="json")
+        assert reset.status_code == 204
+
+        # A refresh token issued before the reset can no longer be rotated.
+        client.credentials()
+        replay = client.post(REFRESH_URL, {"refreshToken": refresh}, format="json")
+        assert replay.status_code == 401
+
+    def test_garbage_token_is_unprocessable(self, client: APIClient) -> None:
+        response = client.post(PASSWORD_RESET_CONFIRM_URL, {"token": "not-a-token", "newPassword": _NEW_PASSWORD}, format="json")
+
+        assert response.status_code == 422
+        assert response["Content-Type"] == _PROBLEM_CT
+        assert response.data["type"].endswith("/validation-error")
+
+    def test_weak_new_password_is_unprocessable(self, client: APIClient) -> None:
+        _register_and_verify(client)
+        mail.outbox.clear()
+        client.post(PASSWORD_RESET_REQUEST_URL, {"email": "parent@example.com"}, format="json")
+        token = _token_from_last_email()
+
+        response = client.post(PASSWORD_RESET_CONFIRM_URL, {"token": token, "newPassword": "weak"}, format="json")
+
+        assert response.status_code == 422
+        assert response["Content-Type"] == _PROBLEM_CT
+        pointers = {err["pointer"] for err in response.data["errors"]}
+        assert "/password" in pointers
 
     def test_new_account_is_unverified_then_first_confirm_200_second_409(self, client: APIClient) -> None:
         # Regression: a brand-new account must NOT be pre-verified. The FIRST

@@ -127,18 +127,24 @@ class FakeTokenService:
     would (raising :class:`InvalidTokenError`).
     """
 
-    def __init__(self) -> None:
+    def __init__(self, *, rotated_subject: str = "rotated", issued_at: datetime = NOW) -> None:
         self.issued: list[str] = []
         self.rotated: list[str] = []
         self.revoked: list[str] = []
         self._valid: set[str] = set()
+        self._subjects: dict[str, str] = {}
+        self._issued_at: dict[str, datetime] = {}
         self._counter = 0
+        self._rotated_subject = rotated_subject
+        self._issued_at_value = issued_at
 
     def issue(self, *, subject: str) -> TokenPairDto:
         self._counter += 1
         refresh = f"refresh-{subject}-{self._counter}"
         access = f"access-{subject}-{self._counter}"
         self._valid.add(refresh)
+        self._subjects[refresh] = subject
+        self._issued_at[refresh] = self._issued_at_value
         self.issued.append(subject)
         return TokenPairDto(access_token=access, refresh_token=refresh, token_type="Bearer", expires_in=900)
 
@@ -147,13 +153,25 @@ class FakeTokenService:
             raise InvalidTokenError("The refresh token is invalid or expired.")
         self._valid.discard(refresh_token)
         self.rotated.append(refresh_token)
-        return self.issue(subject="rotated")
+        return self.issue(subject=self._subjects.get(refresh_token, self._rotated_subject))
 
     def revoke(self, *, refresh_token: str) -> None:
         if refresh_token not in self._valid:
             raise InvalidTokenError("The refresh token is invalid or expired.")
         self._valid.discard(refresh_token)
         self.revoked.append(refresh_token)
+
+    def subject_of(self, refresh_token: str) -> str:
+        subject = self._subjects.get(refresh_token)
+        if subject is None:
+            raise InvalidTokenError("The refresh token is invalid or expired.")
+        return subject
+
+    def issued_at_of(self, refresh_token: str) -> datetime:
+        issued_at = self._issued_at.get(refresh_token)
+        if issued_at is None:
+            raise InvalidTokenError("The refresh token is invalid or expired.")
+        return issued_at
 
 
 @dataclass(frozen=True, slots=True)
@@ -166,12 +184,23 @@ class SentEmail:
     locale: Locale
 
 
+@dataclass(frozen=True, slots=True)
+class SentPasswordReset:
+    """A password-reset email a :class:`FakeEmailGateway` recorded."""
+
+    email: Email
+    full_name: FullName
+    reset_url: str
+    expires_at: datetime
+    locale: Locale
+
+
 class FakeEmailGateway:
     """Recording :class:`EmailGateway` fake — captures calls, sends nothing."""
 
     def __init__(self) -> None:
         self.verification_emails: list[SentEmail] = []
-        self.password_resets: list[Email] = []
+        self.password_resets: list[SentPasswordReset] = []
 
     def send_verification_email(self, *, email: Email, full_name: FullName, verification_url: str, locale: Locale) -> None:
         self.verification_emails.append(
@@ -192,7 +221,15 @@ class FakeEmailGateway:
         expires_at: datetime,
         locale: Locale,
     ) -> None:
-        self.password_resets.append(email)
+        self.password_resets.append(
+            SentPasswordReset(
+                email=email,
+                full_name=full_name,
+                reset_url=reset_url,
+                expires_at=expires_at,
+                locale=locale,
+            )
+        )
 
 
 class FakeVerificationTokenService:
