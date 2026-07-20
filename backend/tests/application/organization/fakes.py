@@ -161,6 +161,9 @@ class FakeStaffInvitationRepository:
             None,
         )
 
+    def list_by_organization(self, organization_id: OrganizationId) -> Sequence[StaffInvitation]:
+        return [i for i in self._by_id.values() if i.organization_id == organization_id]
+
     def save(self, invitation: StaffInvitation) -> None:
         self._by_id[invitation.id] = invitation
         self.saved.append(invitation)
@@ -174,6 +177,32 @@ class RecordingEmailGateway:
         self, *, recipient_email: StaffEmail, organization_name: OrganizationName, role: StaffRole, expires_at: datetime, token: str
     ) -> None:
         self.sent.append((recipient_email, organization_name, role, expires_at, token))
+
+
+class FakeUserDirectory:
+    """In-memory :class:`UserDirectory` mapping user uuids to their card view."""
+
+    def __init__(self) -> None:
+        from apps.identity.application.read_models import UserCardView
+
+        self._card_cls = UserCardView
+        self._by_id: dict[uuid.UUID, object] = {}
+
+    def add(
+        self,
+        user_id: uuid.UUID,
+        *,
+        email: str = "member@example.com",
+        display_name: str = "Иван Иванов",
+        status: str = "active",
+    ) -> None:
+        self._by_id[user_id] = self._card_cls(
+            id=str(user_id), email=email, display_name=display_name, status=status
+        )
+
+    def resolve(self, user_ids: object) -> dict[uuid.UUID, object]:
+        ids = {uid for uid in user_ids if uid is not None}
+        return {uid: card for uid, card in self._by_id.items() if uid in ids}
 
 
 class FakeTokenHasher:
