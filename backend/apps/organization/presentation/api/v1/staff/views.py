@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from typing import Any
 
 from django.contrib.auth.models import AnonymousUser
@@ -11,6 +12,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.identity.composition import build_user_directory
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.identity.presentation.api.v1.problems import (
     problem_response,
@@ -29,7 +31,7 @@ from apps.organization.application.dto.queries import (
     ListStaffInvitationsQuery,
     ListStaffMembersQuery,
 )
-from apps.organization.application.exceptions import ApplicationError
+from apps.organization.application.exceptions import ApplicationError, PermissionDeniedError
 from apps.organization.composition import (
     build_accept_staff_invitation_handler,
     build_change_staff_role_handler,
@@ -255,11 +257,30 @@ class StaffInvitationAcceptanceView(APIView):
                 request=request,
             )
 
+        # The stateless JWT carries only the subject id, not the email — resolve
+        # the accepting user's email from Identity so the handler can verify the
+        # invitation belongs to this person.
+        try:
+            user_uuid = uuid.UUID(str(request.user.id))
+        except (ValueError, TypeError):
+            return application_problem(
+                PermissionDeniedError("The authenticated user is invalid."),
+                instance=request.path,
+                request=request,
+            )
+        card = build_user_directory().resolve({user_uuid}).get(user_uuid)
+        if card is None:
+            return application_problem(
+                PermissionDeniedError("The authenticated user account was not found."),
+                instance=request.path,
+                request=request,
+            )
+
         data = serializer.validated_data
         command = AcceptStaffInvitationCommand(
             raw_token=str(data["token"]),
             accepted_by=str(request.user.id),
-            email=str(request.user.email),
+            email=card.email,
         )
         try:
             result = build_accept_staff_invitation_handler().handle(command)

@@ -14,8 +14,8 @@ from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
 from apps.identity.presentation.api.v1.auth import composition as identity_composition
-from apps.organization.application.dto.commands import ProvisionOwnerCommand
-from apps.organization.composition import build_provision_owner_handler
+from apps.organization.application.dto.commands import InviteStaffCommand, ProvisionOwnerCommand
+from apps.organization.composition import build_invite_staff_handler, build_provision_owner_handler
 from apps.organization.domain.entities import StaffMembership
 from apps.organization.domain.value_objects import StaffMembershipId, StaffRole, StaffUserId
 from apps.organization.infrastructure.repositories import (
@@ -221,3 +221,49 @@ def test_change_role_invalid_role_is_400(owner_client: APIClient) -> None:
         f"{_MEMBERS_URL}/{membership_id}", {"role": "SUPREME_LEADER"}, format="json"
     )
     assert response.status_code == 400
+
+
+# ---------------------------------------------------------------------------
+# Acceptance (email resolved from Identity, not the JWT)
+# ---------------------------------------------------------------------------
+
+
+def _issue_invitation(owner_user_id: str, email: str, role: StaffRole) -> str:
+    """Issue an invitation via the composition root; return its raw token."""
+    result = build_invite_staff_handler().handle(
+        InviteStaffCommand(email=email, role=role.value, invited_by=owner_user_id)
+    )
+    return result.raw_token
+
+
+def test_invitee_accepts_invitation_and_becomes_active() -> None:
+    owner = APIClient()
+    _owner_access, owner_id = _register_and_login(owner, "owner@example.com")
+    build_provision_owner_handler().handle(ProvisionOwnerCommand(user_id=owner_id))
+
+    raw_token = _issue_invitation(owner_id, "newbie@example.com", StaffRole.SUPPORT)
+
+    invitee = APIClient()
+    invitee_access, _ = _register_and_login(invitee, "newbie@example.com")
+    invitee.credentials(HTTP_AUTHORIZATION=f"Bearer {invitee_access}")
+
+    response = invitee.post(f"{_INVITATIONS_URL}/accept", {"token": raw_token}, format="json")
+    assert response.status_code == 200
+    assert response.data["data"]["role"] == "SUPPORT"
+    assert response.data["data"]["status"] == "ACTIVE"
+
+
+def test_accept_by_wrong_account_is_forbidden() -> None:
+    owner = APIClient()
+    _owner_access, owner_id = _register_and_login(owner, "owner@example.com")
+    build_provision_owner_handler().handle(ProvisionOwnerCommand(user_id=owner_id))
+
+    raw_token = _issue_invitation(owner_id, "intended@example.com", StaffRole.SUPPORT)
+
+    # A different authenticated user (not the invited email) may not accept.
+    intruder = APIClient()
+    intruder_access, _ = _register_and_login(intruder, "someone-else@example.com")
+    intruder.credentials(HTTP_AUTHORIZATION=f"Bearer {intruder_access}")
+
+    response = intruder.post(f"{_INVITATIONS_URL}/accept", {"token": raw_token}, format="json")
+    assert response.status_code == 403
