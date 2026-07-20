@@ -553,7 +553,11 @@ class TestSendInvitationEmailHandler:
         organization = orgs.get_default()
         assert organization is not None
 
-        handler = SendInvitationEmailHandler(emails=email_gateway, organizations=orgs)
+        handler = SendInvitationEmailHandler(
+            emails=email_gateway,
+            organizations=orgs,
+            token_service=RecordingTokenService(),
+        )
 
         event = StaffInvitationIssued(
             aggregate_id=OrganizationId.generate().value,
@@ -572,13 +576,18 @@ class TestSendInvitationEmailHandler:
         assert sent_org_name == organization.name
         assert sent_role == StaffRole.SUPPORT
         assert sent_expires_at == NOW
-        assert sent_token == "some-raw-token"
+        # The email carries the full acceptance link, not the bare token secret.
+        assert sent_token == "https://example.test/invite?token=some-raw-token"
 
     def test_raises_error_if_organization_not_found(self) -> None:
         orgs = FakeOrganizationRepository()
         email_gateway = RecordingEmailGateway()
 
-        handler = SendInvitationEmailHandler(emails=email_gateway, organizations=orgs)
+        handler = SendInvitationEmailHandler(
+            emails=email_gateway,
+            organizations=orgs,
+            token_service=RecordingTokenService(),
+        )
 
         event = StaffInvitationIssued(
             aggregate_id=OrganizationId.generate().value,

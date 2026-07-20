@@ -6,10 +6,14 @@ from django.conf import settings
 
 __all__ = ["InvitationTokenService"]
 
+# The web-client route that accepts an invitation (token as a path segment):
+# ``/staff/invitations/:token`` (see the SPA router).
+_ACCEPT_PATH = "/staff/invitations"
+
 
 class InvitationTokenService:
     """Build the full invitation-acceptance URL for the web client."""
 
     def build_accept_url(self, *, raw_token: str) -> str:
-        base_url = getattr(settings, "STAFF_INVITATION_ACCEPT_URL_BASE", "https://app.vzlyot-talantov.by")
-        return f"{base_url.rstrip('/')}/staff/invitations/accept?token={raw_token}"
+        base_url = getattr(settings, "FRONTEND_BASE_URL", "https://app.vzlyot-talantov.by")
+        return f"{base_url.rstrip('/')}{_ACCEPT_PATH}/{raw_token}"

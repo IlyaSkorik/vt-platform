@@ -14,6 +14,7 @@ per call; there is no shared mutable state.
 from __future__ import annotations
 
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -74,6 +75,7 @@ def _build_event_dispatcher() -> EventDispatcher:
         SendInvitationEmailHandler(
             emails=_build_email_gateway(),
             organizations=DjangoOrganizationRepository(),
+            token_service=_build_invitation_token_service(),
         ),
     )
     return dispatcher
@@ -165,6 +167,29 @@ def build_revoke_staff_membership_handler() -> RevokeStaffMembershipHandler:
     )
 
 
+_MINSK_TZ = ZoneInfo("Europe/Minsk")
+_RU_MONTHS = (
+    "января",
+    "февраля",
+    "марта",
+    "апреля",
+    "мая",
+    "июня",
+    "июля",
+    "августа",
+    "сентября",
+    "октября",
+    "ноября",
+    "декабря",
+)
+
+
+def _format_minsk(moment: datetime) -> str:
+    """Render an instant as a human-readable Minsk-local date/time (Europe/Minsk)."""
+    local = moment.astimezone(_MINSK_TZ)
+    return f"{local.day} {_RU_MONTHS[local.month - 1]} {local.year} г. в {local:%H:%M} (Минск)"
+
+
 class DjangoStaffInvitationEmailGateway:
     def __init__(self, *, from_email: str | None = None) -> None:
         self._from_email = from_email if from_email is not None else settings.DEFAULT_FROM_EMAIL
@@ -179,16 +204,17 @@ class DjangoStaffInvitationEmailGateway:
         token: str,
     ) -> None:
         subject = "Приглашение в команду Взлёт талантов"
+        expires_text = _format_minsk(expires_at)
         body = (
             f"Вас пригласили в команду {organization_name.value} c ролью {role.value}.\n\n"
             f"Ссылка для принятия приглашения: {token}\n\n"
-            f"Ссылка действительна до {expires_at.isoformat()}."
+            f"Ссылка действительна до {expires_text}."
         )
         html_body = render_transactional_email_html(
             title=subject,
             intro=f"Вас пригласили в команду {organization_name.value} с ролью {role.value}.",
             details_label="Срок действия ссылки",
-            details=f"До {expires_at.isoformat()}",
+            details=f"До {expires_text}",
             button_label="Принять приглашение",
             button_url=token,
         )
