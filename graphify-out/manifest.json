@@ -6885,8 +6885,8 @@
     "semantic_hash": ""
   },
   "backend/apps/applications/infrastructure/read_models.py": {
-    "mtime": 1784564819.6504843,
-    "ast_hash": "2c25581c20a128daae0aaee97e1901a3",
+    "mtime": 1784574308.8682606,
+    "ast_hash": "9980c5d771a72f05d3e6a69ba6ae3e57",
     "semantic_hash": ""
   },
   "backend/apps/applications/presentation/api/v1/organizer/composition.py": {
@@ -6900,8 +6900,8 @@
     "semantic_hash": ""
   },
   "backend/tests/infrastructure/applications/test_organizer_participant_registry.py": {
-    "mtime": 1784565078.3284638,
-    "ast_hash": "e86a35fca958ef1fa1cee794c1b408b1",
+    "mtime": 1784574238.6570146,
+    "ast_hash": "0b742ec06195fde908969d17ec5ef8c6",
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/participants/index.test.tsx": {
@@ -6910,8 +6910,8 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/participants/index.tsx": {
-    "mtime": 1784573769.1494741,
-    "ast_hash": "09a776a677ea1c7208cce3b9fe2eeffc",
+    "mtime": 1784574037.0644681,
+    "ast_hash": "fd06f6cb57406ec7548ba47fc8fa7328",
     "semantic_hash": ""
   },
   "frontend/src/features/staff-participants/api.test.ts": {
