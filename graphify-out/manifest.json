@@ -2140,9 +2140,9 @@
     "semantic_hash": "447af00d3a0e31b1376c60da60f00fdd"
   },
   "backend/apps/organization/application/handlers/send_invitation_email.py": {
-    "mtime": 1783623083.6256998,
-    "ast_hash": "9b82f19feac28a3d9551ba08b498def2",
-    "semantic_hash": "9b82f19feac28a3d9551ba08b498def2"
+    "mtime": 1784542408.523542,
+    "ast_hash": "3a025156de25a577c6d86209bb6d19fa",
+    "semantic_hash": ""
   },
   "backend/apps/organization/application/interfaces.py": {
     "mtime": 1784540145.821127,
@@ -2160,8 +2160,8 @@
     "semantic_hash": "487b25684440af01c453a755d3aa4f25"
   },
   "backend/apps/organization/composition.py": {
-    "mtime": 1784540377.4156792,
-    "ast_hash": "dc48d95bc05807b0c6aae56b68ea7fca",
+    "mtime": 1784542447.7439837,
+    "ast_hash": "4649686ec30d80da14954d003eea4aa2",
     "semantic_hash": ""
   },
   "backend/apps/organization/domain/__init__.py": {
@@ -2240,9 +2240,9 @@
     "semantic_hash": "a75f820eca174610fcdee62a3870f5ee"
   },
   "backend/apps/organization/infrastructure/messaging/token_service.py": {
-    "mtime": 1783602462.079287,
-    "ast_hash": "8d3244822a40ba441d4aea504ee6d18f",
-    "semantic_hash": "8d3244822a40ba441d4aea504ee6d18f"
+    "mtime": 1784542396.6617267,
+    "ast_hash": "7dcb66157fa93a441d7a61cde6048802",
+    "semantic_hash": ""
   },
   "backend/apps/organization/infrastructure/migrations/0001_initial.py": {
     "mtime": 1783591680.5795574,
@@ -3360,8 +3360,8 @@
     "semantic_hash": ""
   },
   "backend/tests/application/organization/test_handlers.py": {
-    "mtime": 1784490313.624353,
-    "ast_hash": "1a40378816500989dd5e81eaecf90856",
+    "mtime": 1784542468.653286,
+    "ast_hash": "7bf6938b21d8157e18a497f51f3a845b",
     "semantic_hash": ""
   },
   "backend/tests/application/participants/__init__.py": {
