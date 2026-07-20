@@ -6,11 +6,24 @@ from drf_spectacular.utils import inline_serializer
 from rest_framework import serializers
 
 __all__ = [
+    "ChangeStaffRoleRequestSerializer",
+    "InvitationListResponseSerializer",
     "InvitationResponseSerializer",
     "InviteStaffRequestSerializer",
     "MembershipResponseSerializer",
     "ProblemDetailSerializer",
     "StaffInvitationDetailSerializer",
+    "StaffMemberListResponseSerializer",
+]
+
+_ROLE_CHOICES = [
+    "OWNER",
+    "DIRECTOR",
+    "FINANCE",
+    "COMPETITION_MANAGER",
+    "CONTENT_MANAGER",
+    "MODERATOR",
+    "SUPPORT",
 ]
 
 
@@ -18,7 +31,13 @@ class InviteStaffRequestSerializer(serializers.Serializer[dict[str, object]]):
     """Validate a staff-invitation creation request."""
 
     email = serializers.EmailField()
-    role = serializers.ChoiceField(choices=["OWNER", "DIRECTOR", "FINANCE", "COMPETITION_MANAGER", "CONTENT_MANAGER", "MODERATOR", "SUPPORT"])
+    role = serializers.ChoiceField(choices=_ROLE_CHOICES)
+
+
+class ChangeStaffRoleRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """Validate a staff-role-change request."""
+
+    role = serializers.ChoiceField(choices=_ROLE_CHOICES)
 
 
 class AcceptInvitationRequestSerializer(serializers.Serializer[dict[str, object]]):
@@ -40,6 +59,7 @@ class InvitationResourceSerializer(serializers.Serializer[dict[str, object]]):
     organizationId = serializers.UUIDField(source="organization_id")
     email = serializers.EmailField()
     role = serializers.CharField()
+    status = serializers.CharField()
     expiresAt = serializers.DateTimeField(source="expires_at")
     invitedBy = serializers.UUIDField(source="invited_by")
     acceptedAt = serializers.DateTimeField(source="accepted_at", allow_null=True)
@@ -53,6 +73,20 @@ class MembershipResourceSerializer(serializers.Serializer[dict[str, object]]):
     role = serializers.CharField()
     status = serializers.CharField()
     organizationId = serializers.UUIDField(source="organization_id")
+
+
+class StaffMemberResourceSerializer(serializers.Serializer[dict[str, object]]):
+    """Serialize a staff-member resource (membership joined to its user card)."""
+
+    id = serializers.UUIDField()
+    userId = serializers.UUIDField(source="user_id")
+    email = serializers.EmailField(allow_null=True)
+    displayName = serializers.CharField(source="display_name", allow_null=True)
+    role = serializers.CharField()
+    status = serializers.CharField()
+    invitedAt = serializers.DateTimeField(source="invited_at", allow_null=True)
+    acceptedAt = serializers.DateTimeField(source="accepted_at", allow_null=True)
+    createdAt = serializers.DateTimeField(source="created_at")
 
 
 class StaffInvitationDetailSerializer(serializers.Serializer[dict[str, object]]):
@@ -69,9 +103,19 @@ InvitationResponseSerializer = inline_serializer(
     fields={"data": InvitationResourceSerializer(), "meta": MetaSerializer()},
 )
 
+InvitationListResponseSerializer = inline_serializer(
+    name="InvitationListResponse",
+    fields={"data": InvitationResourceSerializer(many=True), "meta": MetaSerializer()},
+)
+
 MembershipResponseSerializer = inline_serializer(
     name="MembershipResponse",
     fields={"data": MembershipResourceSerializer(), "meta": MetaSerializer()},
+)
+
+StaffMemberListResponseSerializer = inline_serializer(
+    name="StaffMemberListResponse",
+    fields={"data": StaffMemberResourceSerializer(many=True), "meta": MetaSerializer()},
 )
 
 ProblemDetailSerializer = inline_serializer(

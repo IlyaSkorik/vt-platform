@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from django.contrib.auth.models import AnonymousUser
 from drf_spectacular.utils import OpenApiResponse, extend_schema
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -17,35 +19,54 @@ from apps.identity.presentation.api.v1.problems import (
 )
 from apps.organization.application.dto.commands import (
     AcceptStaffInvitationCommand,
+    ChangeStaffRoleCommand,
     InviteStaffCommand,
+    RevokeStaffInvitationCommand,
+    RevokeStaffMembershipCommand,
 )
-from apps.organization.application.dto.queries import GetStaffInvitationQuery
+from apps.organization.application.dto.queries import (
+    GetStaffInvitationQuery,
+    ListStaffInvitationsQuery,
+    ListStaffMembersQuery,
+)
 from apps.organization.application.exceptions import ApplicationError
 from apps.organization.composition import (
     build_accept_staff_invitation_handler,
+    build_change_staff_role_handler,
     build_get_staff_invitation_handler,
     build_invite_staff_handler,
+    build_list_staff_invitations_handler,
+    build_list_staff_members_handler,
+    build_revoke_staff_invitation_handler,
+    build_revoke_staff_membership_handler,
 )
 from apps.organization.presentation.api.v1.staff.serializers import (
     AcceptInvitationRequestSerializer,
+    ChangeStaffRoleRequestSerializer,
+    InvitationListResponseSerializer,
     InvitationResponseSerializer,
     InviteStaffRequestSerializer,
     MembershipResponseSerializer,
     ProblemDetailSerializer,
     StaffInvitationDetailSerializer,
+    StaffMemberListResponseSerializer,
 )
+from apps.organization.presentation.permissions import IsOrganizationAdmin, IsOrganizationStaff
 
 _TAG = "Organization"
 
 _PROBLEM_MAP = {
     "organization_not_found": (404, "not-found", "Resource not found", None),
     "staff_invitation_not_found": (404, "not-found", "Resource not found", None),
+    "staff_membership_not_found": (404, "not-found", "Resource not found", None),
     "invalid_input": (400, "validation-error", "Validation failed", None),
     "invalid_invitation_token": (410, "token-expired", "Invitation token expired", None),
     "user_already_staff": (409, "conflict", "Conflict", None),
     "permission_denied": (403, "forbidden", "Forbidden", None),
     "invitation_conflict": (409, "conflict", "Conflict", None),
     "invitation_state_conflict": (409, "conflict", "Conflict", None),
+    "membership_state_conflict": (409, "conflict", "Conflict", None),
+    "last_owner": (409, "conflict", "Conflict", None),
 }
 
 
@@ -60,6 +81,39 @@ def application_problem(exc: ApplicationError, *, instance: str, request: Reques
         correlation_id=request_id(request),
         code=code,
     )
+
+
+def _invitation_data(invitation: object) -> dict[str, object]:
+    """Project an :class:`InvitationView` into its camelCase wire resource."""
+    inv: Any = invitation
+    return {
+        "id": inv.id,
+        "organizationId": inv.organization_id,
+        "email": inv.email,
+        "role": inv.role,
+        "status": inv.status,
+        "expiresAt": inv.expires_at,
+        "invitedBy": inv.invited_by,
+        "acceptedAt": inv.accepted_at,
+        "revokedAt": inv.revoked_at,
+        "createdAt": inv.created_at,
+    }
+
+
+def _member_data(member: object) -> dict[str, object]:
+    """Project a :class:`StaffMemberView` into its camelCase wire resource."""
+    m: Any = member
+    return {
+        "id": m.id,
+        "userId": m.user_id,
+        "email": m.email,
+        "displayName": m.display_name,
+        "role": m.role,
+        "status": m.status,
+        "invitedAt": m.invited_at,
+        "acceptedAt": m.accepted_at,
+        "createdAt": m.created_at,
+    }
 
 
 class StaffInvitationDetailView(APIView):
@@ -99,10 +153,40 @@ class StaffInvitationDetailView(APIView):
 
 
 class StaffInvitationCollectionView(APIView):
-    """POST /api/v1/staff/invitations — create a staff invitation."""
+    """GET/POST /api/v1/staff/invitations — list or create staff invitations.
+
+    Reading the roster is open to any active staff member; creating an invitation
+    is restricted to owners/directors (:class:`IsOrganizationAdmin`).
+    """
 
     authentication_classes = (CredentialAwareJWTAuthentication,)
-    permission_classes = (IsAuthenticated,)
+
+    def get_permissions(self) -> list[BasePermission]:
+        gate = IsOrganizationStaff if self.request.method == "GET" else IsOrganizationAdmin
+        return [IsAuthenticated(), gate()]
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="listStaffInvitations",
+        summary="List staff invitations",
+        description="List every invitation of the organization with its lifecycle status.",
+        responses={
+            200: InvitationListResponseSerializer,
+            403: OpenApiResponse(ProblemDetailSerializer, description="Not organization staff."),
+            404: OpenApiResponse(ProblemDetailSerializer, description="Organization not seeded."),
+        },
+    )
+    def get(self, request: Request) -> Response:
+        try:
+            invitations = build_list_staff_invitations_handler().handle(ListStaffInvitationsQuery())
+        except ApplicationError as exc:
+            return application_problem(exc, instance=request.path, request=request)
+
+        body = {
+            "data": [_invitation_data(invitation) for invitation in invitations],
+            "meta": {"requestId": request_id(request)},
+        }
+        return Response(body, status=200)
 
     @extend_schema(
         tags=[_TAG],
@@ -134,17 +218,7 @@ class StaffInvitationCollectionView(APIView):
             return application_problem(exc, instance=request.path, request=request)
 
         body = {
-            "data": {
-                "id": result.invitation.id,
-                "organizationId": result.invitation.organization_id,
-                "email": result.invitation.email,
-                "role": result.invitation.role,
-                "expiresAt": result.invitation.expires_at,
-                "invitedBy": result.invitation.invited_by,
-                "acceptedAt": result.invitation.accepted_at,
-                "revokedAt": result.invitation.revoked_at,
-                "createdAt": result.invitation.created_at,
-            },
+            "data": _invitation_data(result.invitation),
             "meta": {"requestId": request_id(request)},
         }
         return Response(body, status=201)
@@ -197,6 +271,155 @@ class StaffInvitationAcceptanceView(APIView):
                 "role": result.membership.role,
                 "status": result.membership.status,
                 "organizationId": result.membership.organization_id,
+            },
+            "meta": {"requestId": request_id(request)},
+        }
+        return Response(body, status=200)
+
+
+class StaffInvitationRevokeView(APIView):
+    """POST /api/v1/staff/invitations/{invitation_id}/revoke — revoke an invitation."""
+
+    authentication_classes = (CredentialAwareJWTAuthentication,)
+    permission_classes = (IsAuthenticated, IsOrganizationAdmin)
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="revokeStaffInvitation",
+        summary="Revoke a staff invitation",
+        description="Revoke a still-pending staff invitation before it is accepted.",
+        request=None,
+        responses={
+            200: InvitationResponseSerializer,
+            403: OpenApiResponse(ProblemDetailSerializer, description="Not organization staff."),
+            404: OpenApiResponse(ProblemDetailSerializer, description="Invitation not found."),
+            409: OpenApiResponse(ProblemDetailSerializer, description="Invitation already accepted/revoked."),
+        },
+    )
+    def post(self, request: Request, invitation_id: str) -> Response:
+        command = RevokeStaffInvitationCommand(
+            invitation_id=str(invitation_id),
+            revoked_by=str(request.user.id),
+        )
+        try:
+            invitation = build_revoke_staff_invitation_handler().handle(command)
+        except ApplicationError as exc:
+            return application_problem(exc, instance=request.path, request=request)
+
+        body = {"data": _invitation_data(invitation), "meta": {"requestId": request_id(request)}}
+        return Response(body, status=200)
+
+
+class StaffMemberCollectionView(APIView):
+    """GET /api/v1/staff/members — list the organization's staff roster."""
+
+    authentication_classes = (CredentialAwareJWTAuthentication,)
+    permission_classes = (IsAuthenticated, IsOrganizationStaff)
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="listStaffMembers",
+        summary="List staff members",
+        description="List every staff member with their role, status and Identity user card.",
+        responses={
+            200: StaffMemberListResponseSerializer,
+            403: OpenApiResponse(ProblemDetailSerializer, description="Not organization staff."),
+            404: OpenApiResponse(ProblemDetailSerializer, description="Organization not seeded."),
+        },
+    )
+    def get(self, request: Request) -> Response:
+        try:
+            members = build_list_staff_members_handler().handle(ListStaffMembersQuery())
+        except ApplicationError as exc:
+            return application_problem(exc, instance=request.path, request=request)
+
+        body = {
+            "data": [_member_data(member) for member in members],
+            "meta": {"requestId": request_id(request)},
+        }
+        return Response(body, status=200)
+
+
+class StaffMemberDetailView(APIView):
+    """PATCH /api/v1/staff/members/{membership_id} — change a member's role."""
+
+    authentication_classes = (CredentialAwareJWTAuthentication,)
+    permission_classes = (IsAuthenticated, IsOrganizationAdmin)
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="changeStaffRole",
+        summary="Change a staff member's role",
+        description="Change the role of an active staff membership. The last active owner cannot be demoted.",
+        request=ChangeStaffRoleRequestSerializer,
+        responses={
+            200: MembershipResponseSerializer,
+            400: OpenApiResponse(ProblemDetailSerializer, description="Malformed request."),
+            403: OpenApiResponse(ProblemDetailSerializer, description="Not organization staff."),
+            404: OpenApiResponse(ProblemDetailSerializer, description="Membership not found."),
+            409: OpenApiResponse(ProblemDetailSerializer, description="Last owner or invalid state."),
+        },
+    )
+    def patch(self, request: Request, membership_id: str) -> Response:
+        serializer = ChangeStaffRoleRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return validation_problem(serializer.errors, instance=request.path, request=request)
+
+        command = ChangeStaffRoleCommand(
+            membership_id=str(membership_id),
+            new_role=str(serializer.validated_data["role"]),
+            changed_by=str(request.user.id),
+        )
+        try:
+            membership = build_change_staff_role_handler().handle(command)
+        except ApplicationError as exc:
+            return application_problem(exc, instance=request.path, request=request)
+
+        body = {
+            "data": {
+                "role": membership.role,
+                "status": membership.status,
+                "organizationId": membership.organization_id,
+            },
+            "meta": {"requestId": request_id(request)},
+        }
+        return Response(body, status=200)
+
+
+class StaffMemberRevokeView(APIView):
+    """POST /api/v1/staff/members/{membership_id}/revoke — revoke staff access."""
+
+    authentication_classes = (CredentialAwareJWTAuthentication,)
+    permission_classes = (IsAuthenticated, IsOrganizationAdmin)
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="revokeStaffMembership",
+        summary="Revoke a staff member's access",
+        description="Revoke an active staff membership. The last active owner cannot be revoked.",
+        request=None,
+        responses={
+            200: MembershipResponseSerializer,
+            403: OpenApiResponse(ProblemDetailSerializer, description="Not organization staff."),
+            404: OpenApiResponse(ProblemDetailSerializer, description="Membership not found."),
+            409: OpenApiResponse(ProblemDetailSerializer, description="Last owner or already revoked."),
+        },
+    )
+    def post(self, request: Request, membership_id: str) -> Response:
+        command = RevokeStaffMembershipCommand(
+            membership_id=str(membership_id),
+            revoked_by=str(request.user.id),
+        )
+        try:
+            membership = build_revoke_staff_membership_handler().handle(command)
+        except ApplicationError as exc:
+            return application_problem(exc, instance=request.path, request=request)
+
+        body = {
+            "data": {
+                "role": membership.role,
+                "status": membership.status,
+                "organizationId": membership.organization_id,
             },
             "meta": {"requestId": request_id(request)},
         }
