@@ -125,7 +125,7 @@ describe("StaffInvitationPage", () => {
     const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
     await screen.findByText("Взлёт талантов");
-    await userEvent.click(screen.getByRole("button", { name: /Accept invitation/i }));
+    await userEvent.click(screen.getByRole("button", { name: /Принять приглашение/i }));
 
     await screen.findByText("Панель кабинета");
     expect(authState.refresh).toHaveBeenCalledTimes(1);
@@ -170,7 +170,7 @@ describe("StaffInvitationPage", () => {
 
     renderPage();
     await screen.findByText("Взлёт талантов");
-    await userEvent.click(screen.getByRole("button", { name: /Accept invitation/i }));
+    await userEvent.click(screen.getByRole("button", { name: /Принять приглашение/i }));
 
     expect(await screen.findByText("Вы вошли под другой учетной записью.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Logout" })).toBeInTheDocument();

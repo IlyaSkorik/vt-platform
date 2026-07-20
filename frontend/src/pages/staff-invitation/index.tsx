@@ -205,7 +205,7 @@ export function StaffInvitationPage(): React.JSX.Element {
               disabled={accept.isPending}
               rightIcon={<ArrowRight />}
             >
-              Accept invitation
+              Принять приглашение
             </Button>
           )}
         </CardFooter>
