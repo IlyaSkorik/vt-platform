@@ -194,13 +194,33 @@ class TestDjangoPublicCatalogReader:
         assert festival.organizer.logo is None
 
     def test_unknown_organizer_gets_fallback_name(self) -> None:
+        # No organization at all (the seeded singleton removed) → fixed fallback.
         import uuid
 
+        from apps.organization.infrastructure.models import OrganizationModel
+
+        OrganizationModel.objects.all().delete()
         self._competition(organizer_id=uuid.uuid4(), status="RUNNING", title="Сиротский фестиваль")
 
         [festival] = self._reader().list_festivals()
 
         assert festival.organizer.name == "Организатор"
+
+    def test_dangling_organizer_falls_back_to_singleton_org(self) -> None:
+        # The organizer_id points at no row (the common case — it is a free-form
+        # client id), but the seeded singleton organization is the source of truth.
+        import uuid
+
+        from apps.organization.infrastructure.models import OrganizationModel
+
+        org = OrganizationModel.objects.order_by("created_at").first()
+        assert org is not None
+        self._competition(organizer_id=uuid.uuid4(), status="PUBLISHED", title="Скоро")
+
+        [festival] = self._reader().list_festivals()
+
+        assert festival.organizer.name == org.name
+        assert festival.organizer.id == str(org.id)
 
     def test_projects_formats_modes_pricing_and_categories(self) -> None:
         from apps.competitions.infrastructure.models import (
@@ -355,8 +375,8 @@ class TestLandingProjection:
 
 
 class TestContactsProjection:
-    def test_prefers_override_name_and_merges_venue(self) -> None:
-        from apps.competitions.application.read_models import project_contacts
+    def test_override_supplies_channels_when_not_deferring_to_organization(self) -> None:
+        from apps.competitions.application.read_models import OrganizerContactFacts, project_contacts
         from apps.competitions.domain.contacts_configuration import (
             ContactProfileOverride,
             ContactsConfiguration,
@@ -365,6 +385,7 @@ class TestContactsProjection:
         )
 
         config = ContactsConfiguration(
+            use_organization_contacts=False,
             override=ContactProfileOverride(
                 organization_name="Оргкомитет фестиваля",
                 phone="+375291234567",
@@ -380,13 +401,20 @@ class TestContactsProjection:
 
         contacts = project_contacts(
             config,
-            organizer_name="Дом талантов",
+            organizer=OrganizerContactFacts(
+                name="Дом талантов",
+                phone="+375170000000",
+                legal_information="ООО «Дом талантов», УНП 100200300",
+            ),
             venue_name="Дворец культуры",
             venue_address="ул. Ленина, 1",
         )
 
         assert contacts.organization_name == "Оргкомитет фестиваля"
+        # Override wins over the organization's channel in custom mode.
         assert contacts.phone == "+375291234567"
+        # Legal information always comes from the organization (no override field).
+        assert contacts.legal_information == "ООО «Дом талантов», УНП 100200300"
         assert contacts.website == "https://fest.by"
         assert contacts.social.vk == "https://vk.com/fest"
         assert [member.name for member in contacts.team] == ["Дина", "Женя"]
@@ -394,18 +422,58 @@ class TestContactsProjection:
         assert contacts.venue.city == "Минск"
         assert contacts.venue.has_content is True
 
-    def test_falls_back_to_organizer_name(self) -> None:
-        from apps.competitions.application.read_models import project_contacts
-        from apps.competitions.domain.contacts_configuration import ContactsConfiguration
+    def test_sources_channels_from_organization_when_deferring(self) -> None:
+        from apps.competitions.application.read_models import OrganizerContactFacts, project_contacts
+        from apps.competitions.domain.contacts_configuration import (
+            ContactProfileOverride,
+            ContactsConfiguration,
+        )
+
+        # A stale override is present but ignored because the festival defers to
+        # the organization (the default source).
+        config = ContactsConfiguration(
+            use_organization_contacts=True,
+            override=ContactProfileOverride(phone="+000000000", email="stale@fest.by"),
+        )
 
         contacts = project_contacts(
-            ContactsConfiguration.default(),
-            organizer_name="Дом талантов",
+            config,
+            organizer=OrganizerContactFacts(
+                name="Дом талантов",
+                phone="+375291234567",
+                email="hello@dom.by",
+                website="https://dom.by",
+                address="ул. Ленина, 1",
+                vk="https://vk.com/dom",
+                telegram="https://t.me/dom",
+                legal_information="ООО «Дом талантов», УНП 100200300",
+            ),
             venue_name=None,
             venue_address=None,
         )
 
         assert contacts.organization_name == "Дом талантов"
+        assert contacts.phone == "+375291234567"
+        assert contacts.email == "hello@dom.by"
+        assert contacts.website == "https://dom.by"
+        assert contacts.address == "ул. Ленина, 1"
+        assert contacts.social.vk == "https://vk.com/dom"
+        assert contacts.social.telegram == "https://t.me/dom"
+        assert contacts.legal_information == "ООО «Дом талантов», УНП 100200300"
+
+    def test_falls_back_to_organizer_name(self) -> None:
+        from apps.competitions.application.read_models import OrganizerContactFacts, project_contacts
+        from apps.competitions.domain.contacts_configuration import ContactsConfiguration
+
+        contacts = project_contacts(
+            ContactsConfiguration.default(),
+            organizer=OrganizerContactFacts(name="Дом талантов"),
+            venue_name=None,
+            venue_address=None,
+        )
+
+        assert contacts.organization_name == "Дом талантов"
+        assert contacts.phone is None
         assert contacts.venue.has_content is False
 
 
@@ -447,6 +515,7 @@ class TestDjangoPublicCatalogReaderDetail:
             title="Весенний вокал",
             venue_name="Дворец культуры",
             contacts_config={
+                "use_organization_contacts": False,
                 "override": {"organization_name": "Оргкомитет", "email": "hi@fest.by"},
                 "venue_details": {"city": "Минск"},
             },
@@ -467,6 +536,40 @@ class TestDjangoPublicCatalogReaderDetail:
         assert detail.contacts.email == "hi@fest.by"
         assert detail.contacts.venue.name == "Дворец культуры"
         assert detail.contacts.venue.city == "Минск"
+
+    def test_contacts_default_to_organization_profile(self) -> None:
+        # The competition defers to the organization (the default source): the
+        # footer channels come from the organization profile, not the override.
+        # organizer_id deliberately does NOT match the org row (the real-world
+        # case) — the seeded singleton organization is still resolved as the source.
+        import uuid
+
+        from apps.organization.infrastructure.models import OrganizationModel
+
+        org = OrganizationModel.objects.order_by("created_at").first()
+        assert org is not None
+        org.phone = "+375291234567"
+        org.email = "hello@dom.by"
+        org.website = "https://dom.by"
+        org.vk = "https://vk.com/dom"
+        org.legal_information = "ООО «Взлёт», УНП 100200300"
+        org.save()
+        competition = self._competition(
+            organizer_id=uuid.uuid4(),
+            status="REGISTRATION_OPEN",
+            title="Весенний вокал",
+            contacts_config={"venue_details": {"city": "Минск"}},
+        )
+
+        detail = self._reader().get_festival(str(competition.id))
+
+        assert detail is not None
+        assert detail.contacts.organization_name == org.name
+        assert detail.contacts.phone == "+375291234567"
+        assert detail.contacts.legal_information == "ООО «Взлёт», УНП 100200300"
+        assert detail.contacts.email == "hello@dom.by"
+        assert detail.contacts.website == "https://dom.by"
+        assert detail.contacts.social.vk == "https://vk.com/dom"
 
     def test_card_uses_poster_landing_uses_hero_cover(self) -> None:
         from apps.competitions.domain.landing_configuration import (

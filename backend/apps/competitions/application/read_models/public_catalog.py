@@ -34,6 +34,7 @@ from apps.competitions.domain.landing_configuration import LandingBlock, Landing
 __all__ = [
     "PUBLIC_CATALOG_DOMAIN_STATUSES",
     "PUBLIC_DOCUMENT_VISIBILITIES",
+    "OrganizerContactFacts",
     "ParticipationMode",
     "PublicCatalogReadService",
     "PublicFestivalContactsView",
@@ -456,15 +457,20 @@ def project_landing(config: LandingConfiguration) -> PublicFestivalLandingView:
 
 # --- Contacts projection ------------------------------------------------------
 #
-# The public footer/venue reuse the Competition Contacts module verbatim — the
-# organizer configures it once and it is the single source of truth. Organization
-# profile reuse (``use_organization_contacts``) resolves the organizer *name*
-# through the Organization directory (the only cross-context contact fact
-# published today); the remaining reach-out channels (phone/email/website/social)
-# come from the competition's own contact override, since the Organization
-# aggregate does not yet model them (the same documented gap as the organizer
-# ``logo``). Venue merges the competition's own venue columns with the contacts
-# venue detail (city/country/maps/directions).
+# The public footer/venue reuse the Competition Contacts module. The organizer
+# picks the *source* of the reach-out channels via ``use_organization_contacts``:
+#
+# * True  — the Organization profile is the single source of truth; every channel
+#           (name/phone/email/website/address/social) is resolved from the
+#           organizer facts published by the Organization directory.
+# * False — the competition overrides them for this festival only; every channel
+#           comes from ``config.override`` (the organizer name still falls back to
+#           the organization's when the override leaves it blank).
+#
+# Channels are primitive-only here (:class:`OrganizerContactFacts`) so this module
+# stays decoupled from the Organization read model — the infrastructure adapter
+# maps its ``OrganizerCardView`` into these facts. Venue merges the competition's
+# own venue columns with the contacts venue detail (city/country/maps/directions).
 
 
 @dataclass(frozen=True, slots=True)
@@ -525,6 +531,30 @@ class PublicFestivalVenueView:
 
 
 @dataclass(frozen=True, slots=True)
+class OrganizerContactFacts:
+    """The organizer's own contact channels, resolved from the Organization profile.
+
+    A flat, primitive-only carrier passed into :func:`project_contacts` so the
+    public footer can source its channels from the organization when the
+    competition defers to it (``use_organization_contacts``). Kept local to this
+    module — rather than importing the Organization ``OrganizerCardView`` — so the
+    read model stays framework- and cross-context-decoupled; the infrastructure
+    adapter maps the card into these facts. ``name`` is the organizer's resolved
+    display name (already carrying the directory fallback).
+    """
+
+    name: str
+    phone: str | None = None
+    email: str | None = None
+    website: str | None = None
+    address: str | None = None
+    vk: str | None = None
+    instagram: str | None = None
+    telegram: str | None = None
+    legal_information: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class PublicFestivalContactsView:
     """The public contacts module: organizer identity, channels, team, venue."""
 
@@ -537,34 +567,58 @@ class PublicFestivalContactsView:
     team: tuple[PublicFestivalTeamMemberView, ...]
     emergency: PublicFestivalEmergencyView
     venue: PublicFestivalVenueView
+    legal_information: str | None
 
 
 def project_contacts(
     config: ContactsConfiguration,
     *,
-    organizer_name: str,
+    organizer: OrganizerContactFacts,
     venue_name: str | None,
     venue_address: str | None,
 ) -> PublicFestivalContactsView:
     """Project a competition's contacts configuration for public display.
 
-    ``organization_name`` prefers the organizer's explicit override, falling back
-    to the resolved organizer directory name; the remaining channels come from the
-    override. Team members are sorted by the organizer's order. Venue merges the
-    competition's own venue columns with the contacts venue detail.
+    The channel *source* follows ``config.use_organization_contacts``: when the
+    competition defers to the organization (the default), every channel comes from
+    the resolved ``organizer`` facts (the Organization profile is the single source
+    of truth); otherwise the per-festival ``override`` supplies them and the
+    display name still falls back to the organizer's when left blank. Legal
+    information always comes from the organization (the override has no legal
+    field — legal identity is the organizing entity's, not per-festival). Team
+    members are sorted by the organizer's order. Venue merges the competition's
+    own venue columns with the contacts venue detail.
     """
     override = config.override
     team = sorted(config.team_contacts, key=lambda member: (member.sort_order, member.name))
+    if config.use_organization_contacts:
+        organization_name = organizer.name
+        phone = organizer.phone
+        email = organizer.email
+        website = organizer.website
+        address = organizer.address
+        vk = organizer.vk
+        instagram = organizer.instagram
+        telegram = organizer.telegram
+    else:
+        organization_name = override.organization_name or organizer.name
+        phone = override.phone
+        email = override.email
+        website = override.website
+        address = override.address
+        vk = override.vk
+        instagram = override.instagram
+        telegram = override.telegram
     return PublicFestivalContactsView(
-        organization_name=override.organization_name or organizer_name,
-        phone=override.phone,
-        email=override.email,
-        website=override.website,
-        address=override.address,
+        organization_name=organization_name,
+        phone=phone,
+        email=email,
+        website=website,
+        address=address,
         social=PublicFestivalSocialLinksView(
-            vk=override.vk,
-            instagram=override.instagram,
-            telegram=override.telegram,
+            vk=vk,
+            instagram=instagram,
+            telegram=telegram,
         ),
         team=tuple(
             PublicFestivalTeamMemberView(
@@ -591,6 +645,7 @@ def project_contacts(
             yandex_maps_url=config.venue_details.yandex_maps_url,
             directions=config.venue_details.directions,
         ),
+        legal_information=organizer.legal_information,
     )
 
 

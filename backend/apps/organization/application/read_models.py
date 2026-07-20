@@ -37,15 +37,28 @@ class OrganizerCardView:
     """Published read model of an organizer's public identity.
 
     The *entire* contract other contexts see when they need to render "who runs
-    this competition" — flat and primitive-only. ``logo`` is part of the shape
-    from day one even though the Organization aggregate does not persist one yet
-    (it resolves to ``None``); consumers render an initials fallback and gain the
-    real asset for free once branding lands, with no contract change.
+    this competition" — flat and primitive-only. ``logo`` resolves to the
+    organization's stored logo reference (``None`` until one is uploaded);
+    consumers render an initials fallback when it is absent.
+
+    The contact channels (phone/email/website/address/social) mirror the
+    :class:`~apps.organization.domain.value_objects.OrganizationProfile` and are
+    the organization's role as the "single source of truth" for competitions that
+    defer to it (``use_organization_contacts``). Every channel is optional — an
+    organization that has not filled in its profile resolves them all to ``None``.
     """
 
     id: str
     name: str
     logo: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    website: str | None = None
+    address: str | None = None
+    vk: str | None = None
+    instagram: str | None = None
+    telegram: str | None = None
+    legal_information: str | None = None
 
 
 @runtime_checkable
@@ -60,6 +73,17 @@ class OrganizationDirectory(Protocol):
 
     def resolve(self, organizer_ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, OrganizerCardView]:
         """Return a mapping of the given ids to their organizer card view."""
+        ...
+
+    def default_organizer(self) -> OrganizerCardView | None:
+        """Return the singleton organization's card, or ``None`` if unseeded.
+
+        The platform runs a single active organization, and a competition's
+        ``organizer_id`` is not guaranteed to point at it (it is a free-form
+        client-supplied grouping id). Consumers use this as the fallback identity
+        and contact source when :meth:`resolve` finds no matching row, so the
+        organization stays the single source of truth for the public page.
+        """
         ...
 
 

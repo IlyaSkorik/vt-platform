@@ -11,6 +11,7 @@ from __future__ import annotations
 from apps.competitions.application.read_models.public_catalog import (
     PUBLIC_CATALOG_DOMAIN_STATUSES,
     PUBLIC_DOCUMENT_VISIBILITIES,
+    OrganizerContactFacts,
     ParticipationMode,
     PublicCatalogReadService,
     PublicFestivalContactsView,
@@ -44,6 +45,7 @@ from apps.competitions.application.read_models.public_catalog import (
 __all__ = [
     "PUBLIC_CATALOG_DOMAIN_STATUSES",
     "PUBLIC_DOCUMENT_VISIBILITIES",
+    "OrganizerContactFacts",
     "ParticipationMode",
     "PublicCatalogReadService",
     "PublicFestivalContactsView",

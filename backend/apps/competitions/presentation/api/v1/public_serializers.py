@@ -195,6 +195,7 @@ class PublicFestivalContactsSerializer(serializers.Serializer):
     team = PublicFestivalTeamMemberSerializer(many=True)
     emergency = PublicFestivalEmergencySerializer()
     venue = PublicFestivalVenueSerializer()
+    legalInformation = serializers.CharField(source="legal_information", allow_null=True)
 
 
 class PublicFestivalRegulationSerializer(serializers.Serializer):

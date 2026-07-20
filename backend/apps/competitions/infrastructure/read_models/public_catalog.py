@@ -15,6 +15,7 @@ import uuid
 
 from apps.competitions.application.read_models.public_catalog import (
     PUBLIC_CATALOG_DOMAIN_STATUSES,
+    OrganizerContactFacts,
     PublicFestivalDetailView,
     PublicFestivalDocumentView,
     PublicFestivalFormatView,
@@ -67,7 +68,7 @@ class DjangoPublicCatalogReader:
         )
 
         organizer_ids = {competition.organizer_id for competition in competitions}
-        organizers = self._directory.resolve(organizer_ids)
+        organizers = self._resolve_organizers(organizer_ids)
 
         return [self._project(competition, organizers) for competition in competitions]
 
@@ -91,8 +92,30 @@ class DjangoPublicCatalogReader:
         if competition is None:
             return None
 
-        organizers = self._directory.resolve({competition.organizer_id})
+        organizers = self._resolve_organizers({competition.organizer_id})
         return self._project_detail(competition, organizers)
+
+    def _resolve_organizers(
+        self,
+        organizer_ids: set[uuid.UUID],
+    ) -> dict[uuid.UUID, OrganizerCardView]:
+        """Resolve organizer cards, backfilling misses with the singleton org.
+
+        A competition's ``organizer_id`` is a free-form, client-supplied grouping
+        id that is not guaranteed to point at the (singleton) organization row, so
+        the batch lookup frequently misses. The platform runs a single
+        organization that is the source of truth for the public organizer identity
+        and contacts, so any unresolved id falls back to it — the fixed
+        ``_FALLBACK_ORGANIZER_NAME`` is used only when no organization exists yet.
+        """
+        organizers = self._directory.resolve(organizer_ids)
+        missing = organizer_ids - organizers.keys()
+        if missing:
+            default = self._directory.default_organizer()
+            if default is not None:
+                for organizer_id in missing:
+                    organizers[organizer_id] = default
+        return organizers
 
     def _project(
         self,
@@ -147,7 +170,7 @@ class DjangoPublicCatalogReader:
         landing = self._landing_with_markers(project_landing(config), config, regulation, documents)
         contacts = project_contacts(
             contacts_config_from_json(competition.contacts_config),
-            organizer_name=organizer.name,
+            organizer=self._organizer_contact_facts(competition.organizer_id, organizer, organizers),
             venue_name=competition.venue_name,
             venue_address=competition.venue_address,
         )
@@ -306,3 +329,30 @@ class DjangoPublicCatalogReader:
         if card is None:
             return PublicFestivalOrganizerView(id=str(organizer_id), name=_FALLBACK_ORGANIZER_NAME, logo=None)
         return PublicFestivalOrganizerView(id=card.id, name=card.name, logo=card.logo)
+
+    @staticmethod
+    def _organizer_contact_facts(
+        organizer_id: uuid.UUID,
+        organizer: PublicFestivalOrganizerView,
+        organizers: dict[uuid.UUID, OrganizerCardView],
+    ) -> OrganizerContactFacts:
+        """Map the organizer card into the contact facts the projection consumes.
+
+        ``name`` reuses the already-resolved organizer view (carrying the
+        ``_FALLBACK_ORGANIZER_NAME`` fallback); the channels come from the card
+        when the organization was resolved, and are all ``None`` otherwise.
+        """
+        card = organizers.get(organizer_id)
+        if card is None:
+            return OrganizerContactFacts(name=organizer.name)
+        return OrganizerContactFacts(
+            name=organizer.name,
+            phone=card.phone,
+            email=card.email,
+            website=card.website,
+            address=card.address,
+            vk=card.vk,
+            instagram=card.instagram,
+            telegram=card.telegram,
+            legal_information=card.legal_information,
+        )

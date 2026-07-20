@@ -43,6 +43,7 @@ class TestPublicFestivalDetailEndpoint:
             title="Весенний вокал",
             venue_name="Дворец культуры",
             contacts_config={
+                "use_organization_contacts": False,
                 "override": {"organization_name": "Оргкомитет", "website": "https://fest.by"},
                 "venue_details": {"city": "Минск"},
             },
