@@ -240,6 +240,14 @@ export function ContactsSection({
   const [venueName, setVenueName] = useState(competition.venue?.name ?? "");
   const [venueAddress, setVenueAddress] = useState(competition.venue?.address ?? "");
 
+  // Mirror the committed config so `updateConfigLocal` can compute the next value
+  // (and schedule the save) outside the `setConfig` updater — the updater must be
+  // pure, and scheduling a save touches parent state (autosave status).
+  const configRef = useRef(config);
+  useEffect(() => {
+    configRef.current = config;
+  }, [config]);
+
   useEffect(() => {
     setConfig(effectiveConfig);
   }, [effectiveConfig]);
@@ -292,11 +300,13 @@ export function ContactsSection({
   const updateConfigLocal = useCallback(
     (patch: Partial<_ContactsConfig> | ((prev: _ContactsConfig) => _ContactsConfig)) => {
       if (isReadOnly) return;
-      setConfig((prev) => {
-        const next = typeof patch === "function" ? patch(prev) : { ...prev, ...patch };
-        scheduleConfigSave(next);
-        return next;
-      });
+      const prev = configRef.current;
+      const next = typeof patch === "function" ? patch(prev) : { ...prev, ...patch };
+      // Keep the ref current so back-to-back calls in the same tick see the
+      // latest value before the effect re-syncs it after commit.
+      configRef.current = next;
+      setConfig(next);
+      scheduleConfigSave(next);
     },
     [isReadOnly, scheduleConfigSave],
   );
