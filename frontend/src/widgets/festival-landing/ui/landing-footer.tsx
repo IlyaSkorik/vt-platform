@@ -60,6 +60,7 @@ export function LandingFooter({ contacts }: LandingFooterProps): React.JSX.Eleme
   const social = socialLinks(contacts);
   const hasContacts = Boolean(contacts.phone || contacts.email || contacts.address);
   const hasReach = Boolean(contacts.website) || social.length > 0;
+  const legalInformation = contacts.legalInformation?.trim();
 
   return (
     <footer className="rounded-2xl border bg-muted/40 p-6 sm:p-8">
@@ -141,6 +142,12 @@ export function LandingFooter({ contacts }: LandingFooterProps): React.JSX.Eleme
           </div>
         ) : null}
       </div>
+
+      {legalInformation ? (
+        <p className="mt-8 whitespace-pre-line border-t pt-6 text-muted-foreground text-xs leading-relaxed">
+          {legalInformation}
+        </p>
+      ) : null}
     </footer>
   );
 }

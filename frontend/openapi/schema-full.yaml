@@ -7594,10 +7594,15 @@ components:
           $ref: '#/components/schemas/PublicFestivalEmergency'
         venue:
           $ref: '#/components/schemas/PublicFestivalVenue'
+        legalInformation:
+          type:
+          - string
+          - 'null'
       required:
       - address
       - email
       - emergency
+      - legalInformation
       - organizationName
       - phone
       - social

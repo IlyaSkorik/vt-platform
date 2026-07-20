@@ -42,6 +42,7 @@ export function makeContacts(overrides: Partial<FestivalContacts> = {}): Festiva
       yandexMapsUrl: null,
       directions: null,
     },
+    legalInformation: "ООО «Оргкомитет», УНП 100200300",
     ...overrides,
   };
 }

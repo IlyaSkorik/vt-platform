@@ -13,6 +13,11 @@ vi.mock("@/features/festival-landing", async (importOriginal) => ({
   usePublicFestival: vi.fn(),
 }));
 
+vi.mock("@/app/providers", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/app/providers")>()),
+  useAuth: vi.fn(() => ({ isAuthenticated: true })),
+}));
+
 const mockedHook = vi.mocked(usePublicFestival);
 
 type QueryResult = UseQueryResult<FestivalDetail, ApiError>;
@@ -61,7 +66,7 @@ describe("FestivalLanding", () => {
 
   it("renders the hero, blocks, venue and footer on success", () => {
     mockQuery({ data: makeFestivalDetail() });
-    renderLanding();
+    renderLanding("01900000-0000-7000-8000-000000000001");
 
     expect(screen.getByRole("heading", { level: 1, name: /взлёт талантов/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "О фестивале" })).toBeInTheDocument();
@@ -71,6 +76,7 @@ describe("FestivalLanding", () => {
     expect(screen.getByRole("heading", { name: "Документы" })).toBeInTheDocument();
     expect(screen.getByText("Программа фестиваля")).toBeInTheDocument();
     expect(screen.getByText("Оргкомитет фестиваля")).toBeInTheDocument();
+    expect(screen.getByText(/УНП 100200300/)).toBeInTheDocument();
 
     const apply = screen.getAllByRole("link", { name: /подать заявку/i });
     expect(apply[0]).toHaveAttribute(
