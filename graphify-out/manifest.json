@@ -3950,9 +3950,9 @@
     "semantic_hash": "8b7dfd75050922e5d86bb779b47d1d34"
   },
   "frontend/src/applications/staff/pages/applications/index.tsx": {
-    "mtime": 1784297761.3558722,
-    "ast_hash": "b33d195e0903107c33e2de5065bd6593",
-    "semantic_hash": "b33d195e0903107c33e2de5065bd6593"
+    "mtime": 1784572971.6492698,
+    "ast_hash": "f55f7457505c2e1dd2ea5e2855b97b79",
+    "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/competition-workspace/index.tsx": {
     "mtime": 1783796937.6636784,
@@ -6905,13 +6905,13 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/participants/index.test.tsx": {
-    "mtime": 1784565734.0030484,
-    "ast_hash": "e3b6b9999a2a6ede720b19135844f764",
+    "mtime": 1784573115.1542132,
+    "ast_hash": "b941a4bb86caa99705aa6a83771da545",
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/participants/index.tsx": {
-    "mtime": 1784565653.346141,
-    "ast_hash": "4d5629b0353002b9e6e15db9e5d8f61f",
+    "mtime": 1784573049.603276,
+    "ast_hash": "2e3045fdb0dfcf313e555f73d22e5557",
     "semantic_hash": ""
   },
   "frontend/src/features/staff-participants/api.test.ts": {
