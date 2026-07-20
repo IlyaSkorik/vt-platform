@@ -848,8 +848,13 @@
   "846": "0002_usermodel_credentials_invalidated_at.py",
   "847": ".is_active",
   "848": ".json",
+  "849": "useSetDocumentPublishedMutation",
+  "850": "useUploadPosterMutation",
   "851": "CLAUDE.md",
+  "852": ".is_active",
+  "853": ".json",
+  "854": ".json",
+  "855": ".json",
   "856": "index.tsx",
-  "859": ".json",
   "860": "0003_organization_profile_fields.py"
 }
