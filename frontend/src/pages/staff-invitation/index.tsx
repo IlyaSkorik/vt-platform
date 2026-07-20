@@ -4,7 +4,7 @@ import { Link, Navigate, useLocation, useNavigate, useParams } from "react-route
 import { useAuth } from "@/app/providers";
 import { authKeys } from "@/features/auth";
 import {
-  type StaffInvitationRole,
+  ROLE_LABELS,
   useAcceptStaffInvitation,
   useStaffInvitation,
 } from "@/features/staff-invitations";
@@ -21,16 +21,6 @@ import {
   PageContainer,
   Skeleton,
 } from "@/shared/ui";
-
-const ROLE_LABELS: Record<StaffInvitationRole, string> = {
-  OWNER: "Владелец",
-  DIRECTOR: "Директор",
-  FINANCE: "Финансы",
-  COMPETITION_MANAGER: "Менеджер фестивалей",
-  CONTENT_MANAGER: "Контент-менеджер",
-  MODERATOR: "Модератор",
-  SUPPORT: "Поддержка",
-};
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("ru-RU", {
