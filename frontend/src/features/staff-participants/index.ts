@@ -12,6 +12,7 @@ export {
   formatAge,
   formatDate,
   GENDER_LABELS,
+  genderLabel,
   initialsFromName,
   type ParticipantGender,
   type ParticipantType,

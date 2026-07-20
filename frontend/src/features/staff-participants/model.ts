@@ -8,7 +8,7 @@
  * organizer never creates, edits, imports or deletes participants here.
  */
 
-export type ParticipantGender = "female" | "male" | "other";
+export type ParticipantGender = "MALE" | "FEMALE" | "OTHER";
 export type ParticipantType = "solo" | "collective";
 
 /** An educational organization a participant applied under (name snapshot). */
@@ -155,12 +155,20 @@ export interface RegistryFilters {
   hasDocuments?: boolean;
 }
 
-/** Human-readable Russian labels for gender values. */
+/** Human-readable Russian labels for gender values (backend sends uppercase). */
 export const GENDER_LABELS: Record<ParticipantGender, string> = {
-  female: "Женский",
-  male: "Мужской",
-  other: "Другой",
+  FEMALE: "Женский",
+  MALE: "Мужской",
+  OTHER: "Другой",
 };
+
+/** Safe gender label: tolerant of case/null/unknown, always returns a dash fallback. */
+export function genderLabel(gender: string | null | undefined): string {
+  if (gender == null || gender.length === 0) {
+    return "—";
+  }
+  return GENDER_LABELS[gender.toUpperCase() as ParticipantGender] ?? "—";
+}
 
 /** Human-readable Russian labels for submission statuses shown in the card. */
 export const SUBMISSION_STATUS_LABELS: Record<string, string> = {

@@ -6,7 +6,7 @@ import {
   fetchStaffParticipantsCsv,
   formatAge,
   formatDate,
-  GENDER_LABELS,
+  genderLabel,
   initialsFromName,
   type RegistryApplication,
   type RegistryFilters,
@@ -177,7 +177,7 @@ export function StaffParticipantsPage(): React.JSX.Element {
         typeLabel(row.participantType),
         row.birthDate ?? "",
         row.age ?? "",
-        row.gender ? GENDER_LABELS[row.gender] : "",
+        row.gender ? genderLabel(row.gender) : "",
         row.primaryOrganization?.name ?? "",
         row.teachers.map((teacher) => teacher.name).join("; "),
       ]
@@ -392,7 +392,7 @@ function ParticipantRow({
           <p className="truncate text-muted-foreground text-xs">
             {row.participantType === "collective"
               ? `Коллектив · ${row.memberCount} чел.`
-              : `${formatAge(row.age)}${row.gender ? ` · ${GENDER_LABELS[row.gender]}` : ""}`}
+              : `${formatAge(row.age)}${row.gender ? ` · ${genderLabel(row.gender)}` : ""}`}
             {row.primaryOrganization ? ` · ${row.primaryOrganization.name}` : ""}
           </p>
           <div className="mt-0.5 flex items-center gap-2 text-muted-foreground text-xs">
@@ -459,8 +459,8 @@ function ParticipantDetail({
             </div>
             <p className="text-muted-foreground text-sm">
               {detail.participantType === "collective"
-                ? `Участников в коллективе: ${detail.memberCount}`
-                : `${formatAge(detail.age)} · ${detail.gender ? GENDER_LABELS[detail.gender] : "—"} · ${formatDate(detail.birthDate)}`}
+                ? `Коллектив · ${detail.memberCount} чел.`
+                : `${formatAge(detail.age)} · ${genderLabel(detail.gender)} · ${formatDate(detail.birthDate)}`}
               {detail.primaryOrganization ? ` · ${detail.primaryOrganization.name}` : ""}
               {teacher ? ` · педагог: ${teacher}` : ""}
             </p>
@@ -483,12 +483,22 @@ function ParticipantDetail({
         {/* Always-visible essentials */}
         <div className="grid gap-3 md:grid-cols-2">
           <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm">
-            <Fact label="Фамилия" value={detail.lastName} />
-            <Fact label="Имя" value={detail.firstName} />
-            <Fact label="Отчество" value={detail.middleName} />
-            <Fact label="Дата рождения" value={formatDate(detail.birthDate)} />
-            <Fact label="Возраст" value={formatAge(detail.age)} />
-            <Fact label="Пол" value={detail.gender ? GENDER_LABELS[detail.gender] : "—"} />
+            {detail.participantType === "collective" ? (
+              <>
+                <Fact label="Название" value={detail.displayName} />
+                <Fact label="Тип" value="Коллектив" />
+                <Fact label="Участников" value={String(detail.memberCount)} />
+              </>
+            ) : (
+              <>
+                <Fact label="Фамилия" value={detail.lastName} />
+                <Fact label="Имя" value={detail.firstName} />
+                <Fact label="Отчество" value={detail.middleName} />
+                <Fact label="Дата рождения" value={formatDate(detail.birthDate)} />
+                <Fact label="Возраст" value={formatAge(detail.age)} />
+                <Fact label="Пол" value={genderLabel(detail.gender)} />
+              </>
+            )}
           </dl>
           <div className="space-y-2">
             <MiniSection icon={<Building2 className="size-3.5" />} title="Организации">

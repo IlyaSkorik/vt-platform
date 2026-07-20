@@ -37,7 +37,7 @@ function aParticipant(overrides: Partial<RegistryParticipant> = {}): RegistryPar
     fullName: "Петров Пётр",
     birthDate: "2015-05-01",
     age: 11,
-    gender: "male",
+    gender: "MALE",
     memberCount: 1,
     primaryOrganization: { id: "org-1", name: "Школа №1" },
     organizations: [{ id: "org-1", name: "Школа №1" }],
