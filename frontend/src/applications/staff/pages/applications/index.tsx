@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router";
 import { resolveMediaUrl } from "@/features/competitions/lib/media-url";
 import { apiClient } from "@/shared/api";
 import {
@@ -218,12 +219,15 @@ function statusPriority(status: string): number {
 }
 
 export function StaffApplicationsProcessingPage(): React.JSX.Element {
-  const [queue, setQueue] = useState("NEW");
-  const [q, setQ] = useState("");
-  const [selected, setSelected] = useState<string | null>(null);
+  // A deep link (e.g. "Открыть заявку" from the participant registry) may seed the
+  // queue, competition and preselected submission via the URL; otherwise defaults apply.
+  const [searchParams] = useSearchParams();
+  const [queue, setQueue] = useState(() => searchParams.get("queue") ?? "NEW");
+  const [q, setQ] = useState(() => searchParams.get("q") ?? "");
+  const [selected, setSelected] = useState<string | null>(() => searchParams.get("selected"));
   const [comment, setComment] = useState("");
   const [selectedMissingTypes, setSelectedMissingTypes] = useState<string[]>([]);
-  const [competitionId, setCompetitionId] = useState("");
+  const [competitionId, setCompetitionId] = useState(() => searchParams.get("competitionId") ?? "");
   const [openPerformances, setOpenPerformances] = useState<Record<string, boolean>>({});
   const [actionError, setActionError] = useState<string | null>(null);
   const queryClient = useQueryClient();
