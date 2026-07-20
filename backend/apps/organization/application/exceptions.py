@@ -29,6 +29,7 @@ __all__ = [
     "InvalidInvitationTokenError",
     "InvitationConflictError",
     "InvitationStateConflictError",
+    "LastOwnerError",
     "MembershipConflictError",
     "MembershipStateConflictError",
     "OrganizationNotFoundError",
@@ -91,6 +92,16 @@ class PermissionDeniedError(ApplicationError):
     """The current actor is not permitted to perform the requested action."""
 
     code: ClassVar[str] = "permission_denied"
+
+
+class LastOwnerError(ApplicationError):
+    """The action would leave the organization without an active OWNER.
+
+    Revoking or demoting the sole remaining active owner is refused so an
+    organization can never lock itself out of staff administration.
+    """
+
+    code: ClassVar[str] = "last_owner"
 
 
 class InvitationConflictError(ApplicationError):

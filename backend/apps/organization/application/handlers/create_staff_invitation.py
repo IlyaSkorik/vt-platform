@@ -72,8 +72,8 @@ class InviteStaffHandler:
         invited_by = StaffUserId.from_string(command.invited_by)
 
         inviter_membership = self._memberships.find_active(user_id=invited_by, organization_id=organization.id)
-        if inviter_membership is None or not inviter_membership.has_role(StaffRole.OWNER):
-            raise PermissionDeniedError("Only active owners may issue staff invitations.")
+        if inviter_membership is None or not inviter_membership.has_role(StaffRole.OWNER, StaffRole.DIRECTOR):
+            raise PermissionDeniedError("Only active owners or directors may issue staff invitations.")
 
         if self._invitations.find_pending_by_email(email=email, organization_id=organization.id) is not None:
             raise InvitationConflictError("An open invitation already exists for this email.")

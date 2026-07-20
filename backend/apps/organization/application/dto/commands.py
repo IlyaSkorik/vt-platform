@@ -11,8 +11,10 @@ from dataclasses import dataclass
 
 __all__ = [
     "AcceptStaffInvitationCommand",
+    "ChangeStaffRoleCommand",
     "InviteStaffCommand",
     "ProvisionOwnerCommand",
+    "RevokeStaffInvitationCommand",
     "RevokeStaffMembershipCommand",
     "UpdateOrganizationProfileCommand",
 ]
@@ -51,6 +53,23 @@ class AcceptStaffInvitationCommand:
     raw_token: str
     accepted_by: str
     email: str
+
+
+@dataclass(frozen=True, slots=True)
+class RevokeStaffInvitationCommand:
+    """Revoke a still-pending staff invitation before it is accepted."""
+
+    invitation_id: str
+    revoked_by: str
+
+
+@dataclass(frozen=True, slots=True)
+class ChangeStaffRoleCommand:
+    """Change the role of an active staff membership."""
+
+    membership_id: str
+    new_role: str
+    changed_by: str
 
 
 @dataclass(frozen=True, slots=True)

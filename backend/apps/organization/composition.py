@@ -19,12 +19,18 @@ from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 
 from apps.emailing import render_transactional_email_html
+from apps.identity.composition import build_user_directory
 from apps.organization.application.handlers import (
     AcceptStaffInvitationHandler,
+    ChangeStaffRoleHandler,
     GetOrganizationProfileHandler,
     GetStaffInvitationHandler,
     InviteStaffHandler,
+    ListStaffInvitationsHandler,
+    ListStaffMembersHandler,
     ProvisionOwnerHandler,
+    RevokeStaffInvitationHandler,
+    RevokeStaffMembershipHandler,
     SendInvitationEmailHandler,
     UpdateOrganizationProfileHandler,
 )
@@ -46,11 +52,16 @@ from apps.organization.infrastructure.system import SystemClock, Uuid7Generator
 
 __all__ = [
     "build_accept_staff_invitation_handler",
+    "build_change_staff_role_handler",
     "build_get_organization_profile_handler",
     "build_get_staff_invitation_handler",
     "build_invite_staff_handler",
+    "build_list_staff_invitations_handler",
+    "build_list_staff_members_handler",
     "build_organization_directory",
     "build_provision_owner_handler",
+    "build_revoke_staff_invitation_handler",
+    "build_revoke_staff_membership_handler",
     "build_staff_membership_read_service",
     "build_update_organization_profile_handler",
 ]
@@ -102,6 +113,54 @@ def build_accept_staff_invitation_handler() -> AcceptStaffInvitationHandler:
         clock=SystemClock(),
         uuids=Uuid7Generator(),
         hasher=Sha256InvitationTokenHasher(),
+        events=_build_event_dispatcher(),
+    )
+
+
+def build_list_staff_invitations_handler() -> ListStaffInvitationsHandler:
+    """Assemble the invitation-roster read use case with its adapters."""
+    return ListStaffInvitationsHandler(
+        organizations=DjangoOrganizationRepository(),
+        invitations=DjangoStaffInvitationRepository(),
+        clock=SystemClock(),
+    )
+
+
+def build_revoke_staff_invitation_handler() -> RevokeStaffInvitationHandler:
+    """Assemble the invitation-revocation use case with its adapters."""
+    return RevokeStaffInvitationHandler(
+        organizations=DjangoOrganizationRepository(),
+        invitations=DjangoStaffInvitationRepository(),
+        clock=SystemClock(),
+        events=_build_event_dispatcher(),
+    )
+
+
+def build_list_staff_members_handler() -> ListStaffMembersHandler:
+    """Assemble the staff-roster read use case (joins the Identity directory)."""
+    return ListStaffMembersHandler(
+        organizations=DjangoOrganizationRepository(),
+        memberships=DjangoStaffMembershipRepository(),
+        users=build_user_directory(),
+    )
+
+
+def build_change_staff_role_handler() -> ChangeStaffRoleHandler:
+    """Assemble the staff-role-change use case with its adapters."""
+    return ChangeStaffRoleHandler(
+        organizations=DjangoOrganizationRepository(),
+        memberships=DjangoStaffMembershipRepository(),
+        clock=SystemClock(),
+        events=_build_event_dispatcher(),
+    )
+
+
+def build_revoke_staff_membership_handler() -> RevokeStaffMembershipHandler:
+    """Assemble the staff-membership-revocation use case with its adapters."""
+    return RevokeStaffMembershipHandler(
+        organizations=DjangoOrganizationRepository(),
+        memberships=DjangoStaffMembershipRepository(),
+        clock=SystemClock(),
         events=_build_event_dispatcher(),
     )
 

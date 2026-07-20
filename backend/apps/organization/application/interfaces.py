@@ -114,6 +114,10 @@ class StaffInvitationRepository(Protocol):
         """Return an open invitation for ``email`` in the organization, or ``None``."""
         ...
 
+    def list_by_organization(self, organization_id: OrganizationId) -> Sequence[StaffInvitation]:
+        """Return all non-deleted invitations of the organization."""
+        ...
+
     def save(self, invitation: StaffInvitation) -> None:
         """Persist ``invitation`` (insert or update), honouring its version."""
         ...
