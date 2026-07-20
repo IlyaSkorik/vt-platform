@@ -840,21 +840,14 @@
   "838": "_utcnow",
   "839": "UpdatePerformanceCommand",
   "840": ".from_performance",
-  "841": ".status_history",
   "842": ".status_history",
   "843": ".required_attachment_types",
   "844": ".contains",
   "845": ".overlaps",
   "846": "0002_usermodel_credentials_invalidated_at.py",
   "847": ".is_active",
-  "848": ".json",
-  "849": "useSetDocumentPublishedMutation",
-  "850": "useUploadPosterMutation",
   "851": "CLAUDE.md",
   "855": ".json",
   "856": "index.tsx",
-  "857": ".contains",
-  "860": "0003_organization_profile_fields.py",
-  "862": ".handle",
-  "864": ".requirements_for"
+  "860": "0003_organization_profile_fields.py"
 }
