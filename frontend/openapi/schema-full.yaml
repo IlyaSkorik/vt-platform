@@ -4924,6 +4924,33 @@ paths:
                 $ref: '#/components/schemas/PublicFestivalDetailEnvelope'
           description: ''
   /api/v1/staff/invitations:
+    get:
+      operationId: listStaffInvitations
+      description: List every invitation of the organization with its lifecycle status.
+      summary: List staff invitations
+      tags:
+      - Organization
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationListResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Organization not seeded.
     post:
       operationId: createStaffInvitation
       description: Create an invitation for a person to join the organization as staff.
@@ -5053,6 +5080,177 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: Invitation not found.
+  /api/v1/staff/invitations/{invitation_id}/revoke:
+    post:
+      operationId: revokeStaffInvitation
+      description: Revoke a still-pending staff invitation before it is accepted.
+      summary: Revoke a staff invitation
+      parameters:
+      - in: path
+        name: invitation_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Organization
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invitation not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invitation already accepted/revoked.
+  /api/v1/staff/members:
+    get:
+      operationId: listStaffMembers
+      description: List every staff member with their role, status and Identity user
+        card.
+      summary: List staff members
+      tags:
+      - Organization
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffMemberListResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Organization not seeded.
+  /api/v1/staff/members/{membership_id}:
+    patch:
+      operationId: changeStaffRole
+      description: Change the role of an active staff membership. The last active
+        owner cannot be demoted.
+      summary: Change a staff member's role
+      parameters:
+      - in: path
+        name: membership_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Organization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedChangeStaffRoleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedChangeStaffRoleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedChangeStaffRoleRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Malformed request.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Membership not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Last owner or invalid state.
+  /api/v1/staff/members/{membership_id}/revoke:
+    post:
+      operationId: revokeStaffMembership
+      description: Revoke an active staff membership. The last active owner cannot
+        be revoked.
+      summary: Revoke a staff member's access
+      parameters:
+      - in: path
+        name: membership_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Organization
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Membership not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Last owner or already revoked.
   /api/v1/submissions/{submission_id}:
     get:
       operationId: submissions_retrieve
@@ -6612,6 +6810,8 @@ components:
           format: email
         role:
           type: string
+        status:
+          type: string
         expiresAt:
           type: string
           format: date-time
@@ -6641,6 +6841,19 @@ components:
       - organizationId
       - revokedAt
       - role
+      - status
+    InvitationListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvitationResource'
+        meta:
+          $ref: '#/components/schemas/Meta'
+      required:
+      - data
+      - meta
     InvitationResponse:
       type: object
       properties:
@@ -7047,6 +7260,12 @@ components:
           oneOf:
           - $ref: '#/components/schemas/CalculationTypeEnum'
           - $ref: '#/components/schemas/NullEnum'
+    PatchedChangeStaffRoleRequest:
+      type: object
+      description: Validate a staff-role-change request.
+      properties:
+        role:
+          $ref: '#/components/schemas/RoleEnum'
     PatchedOrganizationWrite:
       type: object
       properties:
@@ -8621,6 +8840,65 @@ components:
       - invitedEmail
       - organizationName
       - role
+    StaffMemberResource:
+      type: object
+      description: Serialize a staff-member resource (membership joined to its user
+        card).
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        email:
+          type:
+          - string
+          - 'null'
+          format: email
+        displayName:
+          type:
+          - string
+          - 'null'
+        role:
+          type: string
+        status:
+          type: string
+        invitedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        acceptedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - acceptedAt
+      - createdAt
+      - displayName
+      - email
+      - id
+      - invitedAt
+      - role
+      - status
+      - userId
+    StaffMemberListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/StaffMemberResource'
+        meta:
+          $ref: '#/components/schemas/Meta'
+      required:
+      - data
+      - meta
     StaffMembership:
       type: object
       description: The compact staff-membership read model (Organization), or null.
