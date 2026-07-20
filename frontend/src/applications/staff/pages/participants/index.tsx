@@ -396,7 +396,12 @@ function ParticipantRow({
             {row.primaryOrganization ? ` · ${row.primaryOrganization.name}` : ""}
           </p>
           <div className="mt-0.5 flex items-center gap-2 text-muted-foreground text-xs">
-            {teacher ? <span className="truncate">👤 {teacher}</span> : null}
+            {teacher ? (
+              <span className="flex min-w-0 items-center gap-1">
+                <GraduationCap className="size-3.5 shrink-0" aria-hidden="true" />
+                <span className="truncate">{teacher}</span>
+              </span>
+            ) : null}
             <span className="ml-auto shrink-0">
               Конкурсов: {row.competitionsCount} · Заявок: {row.applicationsCount}
             </span>

@@ -9,7 +9,7 @@ never surfaced from competitions outside the requested scope.
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 import pytest
 
@@ -17,6 +17,11 @@ from apps.applications.application.read_models import RegistryFilters
 from apps.applications.infrastructure.models.application import ApplicationModel
 from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.applications.infrastructure.read_models import DjangoOrganizerParticipantRegistry
+from apps.participants.infrastructure.models import (
+    EducationalOrganizationModel,
+    ParticipantOrganizationMembershipModel,
+    ParticipantRegistryModel,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -119,16 +124,30 @@ def _seed() -> None:
         participants=[_participant(REGISTRY_P1, first="Пётр", last="Петров", birth="2015-05-01", gender="male")],
         updated=datetime(2026, 7, 14, 10, 0, tzinfo=UTC),
     )
-    # Applications carry the educational organization snapshot per submission.
+    # Applications link submissions to their order id (used for deep links).
     for submission in (s1, s2):
         ApplicationModel.objects.create(
             competition_id=COMP_A,
             applicant_id=submission.applicant_id,
             status="PAID",
-            organization_name="Школа №1",
-            educational_organization_id=uuid.uuid4(),
             submission_refs=[{"submission_id": str(submission.id)}],
         )
+    # A participant's educational organization lives in the Participants registry,
+    # linked by the registry_participant_id the submission denormalizes.
+    org = EducationalOrganizationModel.objects.create(
+        owner_id=uuid.uuid4(), name="Школа №1", organization_type="school"
+    )
+    registry = ParticipantRegistryModel.objects.create(
+        id=uuid.UUID(REGISTRY_P1),
+        owner_id=uuid.uuid4(),
+        first_name="Пётр",
+        last_name="Петров",
+        birth_date=date(2015, 5, 1),
+        gender="male",
+    )
+    ParticipantOrganizationMembershipModel.objects.create(
+        participant=registry, organization=org, is_primary=True
+    )
 
 
 SCOPE = (COMP_A, COMP_B)

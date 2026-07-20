@@ -22,6 +22,7 @@ anything.
 from __future__ import annotations
 
 import contextlib
+import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import date, datetime
@@ -49,6 +50,7 @@ from apps.competitions.infrastructure.models.taxonomy import (
     ParticipantGroupModel,
     ParticipationFormatModel,
 )
+from apps.participants.infrastructure.models import ParticipantOrganizationMembershipModel
 
 __all__ = ["DjangoOrganizerParticipantRegistry"]
 
@@ -205,7 +207,7 @@ class DjangoOrganizerParticipantRegistry:
             ).values("id", "title")
         }
         taxonomy = self._taxonomy_names(scope)
-        org_by_submission = self._organizations_by_submission()
+        application_id_by_submission = self._application_ids_by_submission()
 
         submissions = SubmissionModel.objects.filter(
             deleted_at__isnull=True,
@@ -223,9 +225,7 @@ class DjangoOrganizerParticipantRegistry:
                 for entry in (model.teachers or [])
                 if (name := _teacher_name(entry))
             ]
-            application_id, org_view = org_by_submission.get(
-                str(model.id), (None, None)
-            )
+            application_id = application_id_by_submission.get(str(model.id))
             submitted_at = _iso(model.created_at)
             updated_at = _iso(model.updated_at)
 
@@ -241,10 +241,6 @@ class DjangoOrganizerParticipantRegistry:
                     model.updated_at is not None and model.updated_at > acc.last_activity
                 ):
                     acc.last_activity = model.updated_at
-                    if org_view is not None:
-                        acc.primary_org_key = org_view.id or org_view.name
-                if org_view is not None:
-                    acc.organizations.setdefault(org_view.id or org_view.name, org_view)
                 for teacher in teachers:
                     acc.teachers.setdefault(f"{teacher.name}|{teacher.role}", teacher)
                 acc.applications.append(
@@ -255,7 +251,7 @@ class DjangoOrganizerParticipantRegistry:
                         competition=competition,
                         status=model.status,
                         performance_title=_clean(performance.get("title")),
-                        organization=org_view.name if org_view is not None else None,
+                        organization=None,
                         teachers=tuple(teachers),
                         submitted_at=submitted_at,
                         updated_at=updated_at,
@@ -313,7 +309,43 @@ class DjangoOrganizerParticipantRegistry:
                             created_at=_clean(note.get("created_at")),
                         )
                     )
+        self._attach_organizations(accumulators)
         return accumulators
+
+    @staticmethod
+    def _attach_organizations(accumulators: dict[str, _Accumulator]) -> None:
+        """Resolve each participant's educational organizations from the registry.
+
+        A participant's organization is not carried on the submission or the order
+        (that snapshot is unused); it lives in the Participants context, linked to
+        the ``registry_participant_id`` the submission denormalizes. We read it here
+        for participants that carry a registry link (keys prefixed ``r:``).
+        """
+        registry_ids: list[uuid.UUID] = []
+        for key in accumulators:
+            if key.startswith("r:"):
+                with contextlib.suppress(ValueError):
+                    registry_ids.append(uuid.UUID(key[2:]))
+        if not registry_ids:
+            return
+        memberships = (
+            ParticipantOrganizationMembershipModel.objects.filter(
+                participant_id__in=registry_ids,
+                deleted_at__isnull=True,
+                organization__deleted_at__isnull=True,
+            )
+            .select_related("organization")
+            .order_by("-is_primary", "organization__name")
+        )
+        for membership in memberships:
+            acc = accumulators.get(f"r:{membership.participant_id}")
+            if acc is None:
+                continue
+            organization = membership.organization
+            view = RegistryOrganizationView(id=str(organization.id), name=organization.name)
+            acc.organizations.setdefault(view.id or view.name, view)
+            if membership.is_primary and acc.primary_org_key is None:
+                acc.primary_org_key = view.id or view.name
 
     @staticmethod
     def _identity_key(participant: dict[str, Any], *, submission_id: str) -> str:
@@ -342,20 +374,16 @@ class DjangoOrganizerParticipantRegistry:
         }
 
     @staticmethod
-    def _organizations_by_submission() -> dict[str, tuple[str | None, RegistryOrganizationView | None]]:
-        mapping: dict[str, tuple[str | None, RegistryOrganizationView | None]] = {}
-        rows = ApplicationModel.objects.filter(deleted_at__isnull=True).values(
-            "id", "organization_name", "educational_organization_id", "submission_refs"
-        )
+    def _application_ids_by_submission() -> dict[str, str | None]:
+        """Map each submission to its owning application (order) id, for deep links."""
+        mapping: dict[str, str | None] = {}
+        rows = ApplicationModel.objects.filter(deleted_at__isnull=True).values("id", "submission_refs")
         for row in rows:
             application_id = str(row.get("id") or "") or None
-            name = _clean(row.get("organization_name"))
-            org_id = _clean(row.get("educational_organization_id"))
-            org_view = RegistryOrganizationView(id=org_id, name=name) if name is not None else None
             for ref in row.get("submission_refs") or []:
                 submission_id = _clean(ref.get("submission_id"))
                 if submission_id is not None:
-                    mapping[submission_id] = (application_id, org_view)
+                    mapping[submission_id] = application_id
         return mapping
 
     # ------------------------------------------------------------------
