@@ -6905,13 +6905,13 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/participants/index.test.tsx": {
-    "mtime": 1784573115.1542132,
-    "ast_hash": "b941a4bb86caa99705aa6a83771da545",
+    "mtime": 1784573775.8634841,
+    "ast_hash": "89ee62b30cb31b4ee4eec05af1624beb",
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/participants/index.tsx": {
-    "mtime": 1784573049.603276,
-    "ast_hash": "2e3045fdb0dfcf313e555f73d22e5557",
+    "mtime": 1784573769.1494741,
+    "ast_hash": "09a776a677ea1c7208cce3b9fe2eeffc",
     "semantic_hash": ""
   },
   "frontend/src/features/staff-participants/api.test.ts": {
@@ -6925,13 +6925,18 @@
     "semantic_hash": ""
   },
   "frontend/src/features/staff-participants/index.ts": {
-    "mtime": 1784565601.1715472,
-    "ast_hash": "fceaa3cdf0b70437a7c4b74d6821b93d",
+    "mtime": 1784573724.6150312,
+    "ast_hash": "ddf293b4ab361b051c24bd046afa91ef",
     "semantic_hash": ""
   },
   "frontend/src/features/staff-participants/model.ts": {
-    "mtime": 1784565390.5049987,
-    "ast_hash": "8fb94caec836f0f049958bad7f358790",
+    "mtime": 1784573719.4730031,
+    "ast_hash": "f5c0c5d770c0198a9dcc19b56c7952a9",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/staff-participants/model.test.ts": {
+    "mtime": 1784573835.03512,
+    "ast_hash": "8b1ae4d5e3cd821aeaf9c5d6be3638e6",
     "semantic_hash": ""
   }
 }
