@@ -61,6 +61,16 @@ export function EditAdmissionRuleDialog({
   const ages = participantGroupId ? scopedAgeCategories(competition, participantGroupId) : [];
   const formats = enabledParticipationFormats(competition);
 
+  const ageCountByGroup = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const age of competition.ageCategories) {
+      counts.set(age.participantGroupId, (counts.get(age.participantGroupId) ?? 0) + 1);
+    }
+    return counts;
+  }, [competition.ageCategories]);
+  // A group with no age categories cannot form a rule (a rule always needs an age).
+  const groupHasNoAges = Boolean(participantGroupId) && ages.length === 0;
+
   const nominations = useMemo(
     () =>
       [...competition.categories].sort(
@@ -144,23 +154,38 @@ export function EditAdmissionRuleDialog({
             label="Группа участников"
             value={participantGroupId}
             onValueChange={handleGroupChange}
-            options={groups.map((item) => ({
-              value: item.id,
-              label: `${item.name} (${formatParticipantRange(item.minCount, item.maxCount)})`,
-            }))}
+            options={groups.map((item) => {
+              const ageCount = ageCountByGroup.get(item.id) ?? 0;
+              const range = formatParticipantRange(item.minCount, item.maxCount);
+              return {
+                value: item.id,
+                label:
+                  ageCount === 0
+                    ? `${item.name} (${range}) · нет возрастных`
+                    : `${item.name} (${range})`,
+              };
+            })}
             placeholder="Выберите группу"
           />
-          <Select
-            label="Возрастная категория"
-            value={ageCategoryId}
-            onValueChange={setAgeCategoryId}
-            options={ages.map((item) => ({
-              value: item.id,
-              label: `${item.name} (${formatAgeRangeLabel(item.minAge, item.maxAge)})`,
-            }))}
-            placeholder="Выберите возраст"
-            disabled={!participantGroupId}
-          />
+          <div className="space-y-1">
+            <Select
+              label="Возрастная категория"
+              value={ageCategoryId}
+              onValueChange={setAgeCategoryId}
+              options={ages.map((item) => ({
+                value: item.id,
+                label: `${item.name} (${formatAgeRangeLabel(item.minAge, item.maxAge)})`,
+              }))}
+              placeholder="Выберите возраст"
+              disabled={!participantGroupId || groupHasNoAges}
+            />
+            {groupHasNoAges ? (
+              <p className="text-warning text-xs">
+                В этой группе нет возрастных категорий — добавьте их в разделе «Возрастные
+                категории», чтобы создать правило.
+              </p>
+            ) : null}
+          </div>
           <Select
             label="Формат участия"
             value={participationFormatId}

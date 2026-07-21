@@ -75,6 +75,15 @@ export function RuleBuilderDialog({
   );
 
   const ageGroupOf = useMemo(() => ageCategoryGroupMap(competition), [competition]);
+  // How many age categories each group has — a group without any cannot take part in
+  // an admission rule (a rule always needs an age category), so it is offered disabled.
+  const ageCountByGroup = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const age of competition.ageCategories) {
+      counts.set(age.participantGroupId, (counts.get(age.participantGroupId) ?? 0) + 1);
+    }
+    return counts;
+  }, [competition.ageCategories]);
   const plan = useMemo(
     () => planBulkAdmissionRules(draft, existingKeys, ageGroupOf),
     [draft, existingKeys, ageGroupOf],
@@ -230,10 +239,18 @@ export function RuleBuilderDialog({
             <MultiSelectStep
               title="Группы участников"
               empty="Нет групп участников. Сначала создайте их в разделе «Группы участников»."
-              items={groups.map((item) => ({
-                id: item.id,
-                label: `${item.name} (${formatParticipantRange(item.minCount, item.maxCount)})`,
-              }))}
+              items={groups.map((item) => {
+                const ageCount = ageCountByGroup.get(item.id) ?? 0;
+                return {
+                  id: item.id,
+                  label: `${item.name} (${formatParticipantRange(item.minCount, item.maxCount)})`,
+                  disabled: ageCount === 0,
+                  description:
+                    ageCount === 0
+                      ? "Нет возрастных категорий — добавьте их в разделе «Возрастные категории»"
+                      : `${ageCount} ${pluralAge(ageCount)}`,
+                };
+              })}
               selectedIds={draft.participantGroupIds}
               onChange={(ids) =>
                 setDraft((current) => ({
@@ -356,7 +373,7 @@ export function RuleBuilderDialog({
 interface MultiSelectStepProps {
   title: string;
   empty: string;
-  items: Array<{ id: string; label: string; description?: string }>;
+  items: Array<{ id: string; label: string; description?: string; disabled?: boolean }>;
   selectedIds: string[];
   onChange: (ids: string[]) => void;
 }
@@ -372,7 +389,9 @@ function MultiSelectStep({
     return <p className="text-muted-foreground text-sm">{empty}</p>;
   }
 
-  const allSelected = items.every((item) => selectedIds.includes(item.id));
+  const selectableItems = items.filter((item) => !item.disabled);
+  const allSelected =
+    selectableItems.length > 0 && selectableItems.every((item) => selectedIds.includes(item.id));
 
   return (
     <div className="space-y-3">
@@ -382,8 +401,9 @@ function MultiSelectStep({
           type="button"
           size="sm"
           variant="ghost"
+          disabled={selectableItems.length === 0}
           onClick={() => {
-            onChange(allSelected ? [] : items.map((item) => item.id));
+            onChange(allSelected ? [] : selectableItems.map((item) => item.id));
           }}
         >
           {allSelected ? "Снять все" : "Выбрать все"}
@@ -392,32 +412,47 @@ function MultiSelectStep({
       <ul className="grid gap-2 sm:grid-cols-2">
         {items.map((item) => {
           const checked = selectedIds.includes(item.id);
+          const disabled = item.disabled === true;
           return (
             <li key={item.id}>
               <button
                 type="button"
-                onClick={() => onChange(toggleId(selectedIds, item.id))}
+                disabled={disabled}
+                onClick={() => {
+                  if (!disabled) {
+                    onChange(toggleId(selectedIds, item.id));
+                  }
+                }}
                 className={cn(
                   "flex w-full items-start gap-2 rounded-lg border px-3 py-2.5 text-left transition-colors",
-                  checked ? "border-primary bg-primary/5" : "border-border hover:border-primary/40",
+                  disabled
+                    ? "cursor-not-allowed border-dashed border-border bg-muted/30 opacity-70"
+                    : checked
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/40",
                 )}
                 aria-pressed={checked}
               >
                 <span
                   className={cn(
                     "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border",
-                    checked
+                    checked && !disabled
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-input bg-background",
                   )}
                   aria-hidden="true"
                 >
-                  {checked ? <Check className="size-3" /> : null}
+                  {checked && !disabled ? <Check className="size-3" /> : null}
                 </span>
                 <span className="min-w-0">
                   <span className="block font-medium text-sm">{item.label}</span>
                   {item.description ? (
-                    <span className="mt-0.5 block text-muted-foreground text-xs">
+                    <span
+                      className={cn(
+                        "mt-0.5 block text-xs",
+                        disabled ? "text-warning" : "text-muted-foreground",
+                      )}
+                    >
                       {item.description}
                     </span>
                   ) : null}
@@ -429,4 +464,12 @@ function MultiSelectStep({
       </ul>
     </div>
   );
+}
+
+function pluralAge(count: number): string {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 === 1 && mod100 !== 11) return "возрастная категория";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "возрастные категории";
+  return "возрастных категорий";
 }
