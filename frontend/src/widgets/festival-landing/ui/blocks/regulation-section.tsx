@@ -1,6 +1,7 @@
-import { Download, FileText } from "lucide-react";
+import { Download, ExternalLink, FileText } from "lucide-react";
 import { formatDate, resolveMediaUrl } from "@/features/festival-catalog";
 import type { Regulation } from "@/features/festival-landing";
+import { isExternalDocLink } from "@/shared/lib";
 import { Button } from "@/shared/ui";
 import { LandingSection } from "../landing-section";
 
@@ -17,6 +18,7 @@ interface RegulationSectionProps {
  */
 export function RegulationSection({ regulation }: RegulationSectionProps): React.JSX.Element {
   const href = resolveMediaUrl(regulation.fileReference);
+  const isLink = isExternalDocLink(regulation.fileReference);
   const published = formatDate(regulation.publicationDate);
   return (
     <LandingSection id="regulation" title="Положение фестиваля">
@@ -34,8 +36,12 @@ export function RegulationSection({ regulation }: RegulationSectionProps): React
         {href ? (
           <Button asChild className="shrink-0">
             <a href={href} target="_blank" rel="noopener noreferrer">
-              <Download className="size-4" aria-hidden="true" />
-              Скачать положение
+              {isLink ? (
+                <ExternalLink className="size-4" aria-hidden="true" />
+              ) : (
+                <Download className="size-4" aria-hidden="true" />
+              )}
+              {isLink ? "Открыть положение" : "Скачать положение"}
             </a>
           </Button>
         ) : null}
