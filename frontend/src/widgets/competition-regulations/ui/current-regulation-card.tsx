@@ -1,5 +1,6 @@
-import { formatDate, resolveMediaUrl } from "@/features/competitions";
+import { detectRegulationSource, formatDate, resolveMediaUrl } from "@/features/competitions";
 import type { _Regulation } from "@/shared/api/generated/model-competitions";
+import { toEmbeddableDocUrl } from "@/shared/lib";
 import {
   Badge,
   Button,
@@ -21,7 +22,9 @@ export function CurrentRegulationCard({
   isReadOnly,
   onCreateDraft,
 }: CurrentRegulationCardProps): React.JSX.Element {
-  const previewUrl = resolveMediaUrl(regulation?.fileReference);
+  const openUrl = resolveMediaUrl(regulation?.fileReference);
+  const previewUrl = toEmbeddableDocUrl(openUrl);
+  const isLink = detectRegulationSource(regulation?.fileReference) === "link";
 
   return (
     <Card className="shadow-none">
@@ -52,6 +55,12 @@ export function CurrentRegulationCard({
                 <dt className="text-muted-foreground text-xs">Дата публикации</dt>
                 <dd className="font-medium text-sm">{formatDate(regulation.publicationDate)}</dd>
               </div>
+              <div>
+                <dt className="text-muted-foreground text-xs">Источник</dt>
+                <dd className="font-medium text-sm">
+                  {isLink ? "Ссылка на документ" : "PDF-файл"}
+                </dd>
+              </div>
             </dl>
 
             {previewUrl ? (
@@ -63,8 +72,8 @@ export function CurrentRegulationCard({
                 />
                 <div className="flex flex-wrap gap-2 border-border border-t px-3 py-2">
                   <Button asChild size="sm" variant="outline">
-                    <a href={previewUrl} target="_blank" rel="noreferrer">
-                      Открыть в новой вкладке
+                    <a href={openUrl ?? previewUrl} target="_blank" rel="noreferrer">
+                      {isLink ? "Открыть документ" : "Открыть в новой вкладке"}
                     </a>
                   </Button>
                 </div>

@@ -11,11 +11,13 @@ import {
   buildRegulationChangeLog,
   clearRegulationDraft,
   createEmptyRegulationDraft,
+  detectRegulationSource,
   draftToAddRegulationPayload,
   findCurrentRegulation,
   loadRegulationChangeNotes,
   loadRegulationDraft,
   type RegulationDraftValues,
+  type RegulationSourceType,
   regulationDraftSchema,
   rememberRegulationChangeNote,
   resolveMediaUrl,
@@ -28,6 +30,7 @@ import {
   useUploadRegulationFileMutation,
 } from "@/features/competitions";
 import type { _Regulation, CompetitionDetail } from "@/shared/api/generated/model-competitions";
+import { toEmbeddableDocUrl } from "@/shared/lib";
 import {
   Alert,
   Badge,
@@ -45,6 +48,9 @@ import {
   DialogTitle,
   Input,
   PageSection,
+  Tabs,
+  TabsList,
+  TabsTrigger,
   Textarea,
   toast,
 } from "@/shared/ui";
@@ -52,6 +58,7 @@ import { PublicationChecklistPanel } from "@/widgets/competition-workspace/ui/pu
 import { CurrentRegulationCard } from "./current-regulation-card";
 import { PdfUploadField } from "./pdf-upload-field";
 import { RegulationChangeLog } from "./regulation-change-log";
+import { RegulationLinkField } from "./regulation-link-field";
 import { RegulationVersionHistory } from "./regulation-version-history";
 
 interface RegulationsSectionProps {
@@ -91,6 +98,9 @@ export function RegulationsSection({
   const [previewTarget, setPreviewTarget] = useState<_Regulation | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [changeNotes, setChangeNotes] = useState(() => loadRegulationChangeNotes(competition.id));
+  const [sourceMode, setSourceMode] = useState<RegulationSourceType>(() =>
+    detectRegulationSource(storedDraft?.fileReference),
+  );
 
   const {
     register,
@@ -132,7 +142,9 @@ export function RegulationsSection({
   const openDraft = (fromCurrent = true): void => {
     const next = createEmptyRegulationDraft(competition.regulations, fromCurrent ? current : null);
     const existing = loadRegulationDraft(competition.id);
-    reset(existing ?? next);
+    const values = existing ?? next;
+    reset(values);
+    setSourceMode(detectRegulationSource(values.fileReference));
     setDraftOpen(true);
     setFormError(null);
   };
@@ -140,9 +152,20 @@ export function RegulationsSection({
   const discardDraft = (): void => {
     clearRegulationDraft(competition.id);
     reset(createEmptyRegulationDraft(competition.regulations, current));
+    setSourceMode("file");
     setDraftOpen(competition.regulations.length === 0);
     setFormError(null);
     onAutosaveStateChange("idle");
+  };
+
+  // Switching source resets the reference so a PDF path is never submitted as a
+  // link (or vice versa); each mode owns its own value.
+  const changeSourceMode = (mode: RegulationSourceType): void => {
+    if (mode === sourceMode) {
+      return;
+    }
+    setSourceMode(mode);
+    setValue("fileReference", "", { shouldDirty: true, shouldValidate: false });
   };
 
   const handlePdfUpload = async (file: File): Promise<void> => {
@@ -209,7 +232,10 @@ export function RegulationsSection({
     }
   };
 
-  const previewUrl = resolveMediaUrl(previewTarget?.fileReference ?? watchedValues.fileReference);
+  const draftPreviewUrl = toEmbeddableDocUrl(resolveMediaUrl(watchedValues.fileReference));
+  const previewUrl = toEmbeddableDocUrl(
+    resolveMediaUrl(previewTarget?.fileReference ?? watchedValues.fileReference),
+  );
 
   return (
     <div className="space-y-6">
@@ -221,8 +247,9 @@ export function RegulationsSection({
             </Alert>
           ) : (
             <Alert variant="info" title="Неизменяемые версии">
-              Опубликованное положение нельзя править. Чтобы внести изменения, создайте новую
-              версию, загрузите PDF и опубликуйте её.
+              Опубликованную версию нельзя править. Загрузите PDF или укажите ссылку на документ
+              (например, Google Документ). Ссылка остаётся неизменной, а сам документ можно
+              редактировать в любой момент — участники всегда увидят актуальную версию.
             </Alert>
           )}
 
@@ -240,7 +267,7 @@ export function RegulationsSection({
           {draftOpen && !isReadOnly ? (
             <PageSection
               title="Черновик новой версии"
-              description="Заполните метаданные, загрузите PDF и опубликуйте. До публикации черновик хранится в этой сессии."
+              description="Заполните метаданные, загрузите PDF или укажите ссылку и опубликуйте. До публикации черновик хранится в этой сессии."
             >
               <Card className="shadow-none">
                 <CardHeader className="pb-3">
@@ -290,23 +317,50 @@ export function RegulationsSection({
                     </div>
                   </div>
 
-                  <PdfUploadField
-                    value={watchedValues.fileReference}
-                    uploading={uploadFile.isPending}
-                    {...(errors.fileReference?.message
-                      ? { error: errors.fileReference.message }
-                      : {})}
-                    onUpload={handlePdfUpload}
-                    onClear={() =>
-                      setValue("fileReference", "", { shouldDirty: true, shouldValidate: true })
-                    }
-                  />
+                  <div className="space-y-3">
+                    <Tabs
+                      value={sourceMode}
+                      onValueChange={(value) => changeSourceMode(value as RegulationSourceType)}
+                    >
+                      <TabsList>
+                        <TabsTrigger value="file">PDF-файл</TabsTrigger>
+                        <TabsTrigger value="link">Ссылка на документ</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
 
-                  {resolveMediaUrl(watchedValues.fileReference) ? (
+                    {sourceMode === "file" ? (
+                      <PdfUploadField
+                        value={watchedValues.fileReference}
+                        uploading={uploadFile.isPending}
+                        {...(errors.fileReference?.message
+                          ? { error: errors.fileReference.message }
+                          : {})}
+                        onUpload={handlePdfUpload}
+                        onClear={() =>
+                          setValue("fileReference", "", { shouldDirty: true, shouldValidate: true })
+                        }
+                      />
+                    ) : (
+                      <RegulationLinkField
+                        value={watchedValues.fileReference}
+                        {...(errors.fileReference?.message
+                          ? { error: errors.fileReference.message }
+                          : {})}
+                        onChange={(value) =>
+                          setValue("fileReference", value, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          })
+                        }
+                      />
+                    )}
+                  </div>
+
+                  {draftPreviewUrl ? (
                     <div className="overflow-hidden rounded-md border border-border">
                       <iframe
                         title="Превью черновика положения"
-                        src={resolveMediaUrl(watchedValues.fileReference) ?? undefined}
+                        src={draftPreviewUrl}
                         className="h-72 w-full bg-background"
                       />
                     </div>
@@ -360,9 +414,12 @@ export function RegulationsSection({
               <CardTitle className="text-base">Как это работает</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-muted-foreground text-sm">
-              <p>1. Создайте черновик и загрузите PDF.</p>
+              <p>1. Создайте черновик: загрузите PDF или вставьте ссылку на документ.</p>
               <p>2. Опубликуйте — версия станет текущей и неизменяемой.</p>
-              <p>3. Для правок опубликуйте новую версию или переключите текущую.</p>
+              <p>
+                3. Ссылку менять не нужно — правьте сам документ. Для смены файла опубликуйте новую
+                версию.
+              </p>
             </CardContent>
           </Card>
           <PublicationChecklistPanel checklist={checklist} onNavigateSection={onNavigateSection} />
