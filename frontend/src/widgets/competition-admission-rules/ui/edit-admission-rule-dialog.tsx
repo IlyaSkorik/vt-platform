@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  allParticipantGroups,
   enabledParticipationFormats,
   formatAgeRangeLabel,
   formatParticipantRange,
   scopedAgeCategories,
   scopedDisciplines,
-  scopedParticipantGroups,
 } from "@/features/competitions";
 import type {
   _AdmissionRule,
@@ -56,8 +56,9 @@ export function EditAdmissionRuleDialog({
   }, [open, rule]);
 
   const disciplines = categoryId ? scopedDisciplines(competition, categoryId) : [];
-  const ages = categoryId ? scopedAgeCategories(competition, categoryId) : [];
-  const groups = categoryId ? scopedParticipantGroups(competition, categoryId) : [];
+  const groups = allParticipantGroups(competition);
+  // Age categories belong to a participant group, so scope ages by the chosen group.
+  const ages = participantGroupId ? scopedAgeCategories(competition, participantGroupId) : [];
   const formats = enabledParticipationFormats(competition);
 
   const nominations = useMemo(
@@ -78,9 +79,19 @@ export function EditAdmissionRuleDialog({
 
   const handleCategoryChange = (nextCategoryId: string): void => {
     setCategoryId(nextCategoryId);
+    // Category scopes disciplines only; groups and ages are competition-wide.
     setDisciplineId("");
-    setAgeCategoryId("");
-    setParticipantGroupId("");
+  };
+
+  const handleGroupChange = (nextGroupId: string): void => {
+    setParticipantGroupId(nextGroupId);
+    // The age category must belong to the chosen group; clear it otherwise.
+    const stillValid = competition.ageCategories.some(
+      (item) => item.id === ageCategoryId && item.participantGroupId === nextGroupId,
+    );
+    if (!stillValid) {
+      setAgeCategoryId("");
+    }
   };
 
   const handleSave = async (): Promise<void> => {
@@ -130,6 +141,16 @@ export function EditAdmissionRuleDialog({
             disabled={!categoryId}
           />
           <Select
+            label="Группа участников"
+            value={participantGroupId}
+            onValueChange={handleGroupChange}
+            options={groups.map((item) => ({
+              value: item.id,
+              label: `${item.name} (${formatParticipantRange(item.minCount, item.maxCount)})`,
+            }))}
+            placeholder="Выберите группу"
+          />
+          <Select
             label="Возрастная категория"
             value={ageCategoryId}
             onValueChange={setAgeCategoryId}
@@ -138,18 +159,7 @@ export function EditAdmissionRuleDialog({
               label: `${item.name} (${formatAgeRangeLabel(item.minAge, item.maxAge)})`,
             }))}
             placeholder="Выберите возраст"
-            disabled={!categoryId}
-          />
-          <Select
-            label="Группа участников"
-            value={participantGroupId}
-            onValueChange={setParticipantGroupId}
-            options={groups.map((item) => ({
-              value: item.id,
-              label: `${item.name} (${formatParticipantRange(item.minCount, item.maxCount)})`,
-            }))}
-            placeholder="Выберите группу"
-            disabled={!categoryId}
+            disabled={!participantGroupId}
           />
           <Select
             label="Формат участия"

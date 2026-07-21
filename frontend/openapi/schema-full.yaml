@@ -18,8 +18,6 @@ paths:
         description: Filter to a status, e.g. DRAFT.
       tags:
       - Applications
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -46,8 +44,6 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateApplicationRequest'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '201':
           content:
@@ -86,8 +82,6 @@ paths:
         required: true
       tags:
       - Applications
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -114,8 +108,6 @@ paths:
         required: true
       tags:
       - Applications
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -148,8 +140,6 @@ paths:
             schema:
               $ref: '#/components/schemas/RecordConsentsRequest'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -183,8 +173,6 @@ paths:
             schema:
               $ref: '#/components/schemas/SelectEducationalOrganizationRequest'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -205,8 +193,6 @@ paths:
         required: true
       tags:
       - Applications
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -228,8 +214,6 @@ paths:
         required: true
       tags:
       - Applications
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -250,8 +234,6 @@ paths:
         required: true
       tags:
       - Applications
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -279,8 +261,6 @@ paths:
             schema:
               $ref: '#/components/schemas/UploadReceiptRequest'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -344,8 +324,6 @@ paths:
             schema:
               $ref: '#/components/schemas/SelectServiceRequest'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -372,8 +350,6 @@ paths:
         required: true
       tags:
       - Applications
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -395,8 +371,6 @@ paths:
         required: true
       tags:
       - Applications
-      security:
-      - jwtAuth: []
       responses:
         '201':
           content:
@@ -423,8 +397,6 @@ paths:
         required: true
       tags:
       - Applications
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -488,27 +460,105 @@ paths:
   /api/v1/auth/email-verification/requests:
     post:
       operationId: requestEmailVerification
-      description: Send a fresh verification link to the authenticated account's email.
+      description: Send a fresh verification link to the given address (no-op if unknown/verified).
       summary: (Re)send an email-verification challenge
       tags:
       - Identity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailVerificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmailVerificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmailVerificationRequest'
+        required: true
       security:
-      - jwtAuth: []
+      - {}
       responses:
         '202':
-          description: Verification email dispatched.
-        '401':
+          description: Request accepted (email dispatched if applicable).
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: No valid session.
-        '409':
+          description: Malformed request.
+  /api/v1/auth/password-reset/confirmations:
+    post:
+      operationId: confirmPasswordReset
+      description: Set a new password from the emailed token; revokes all sessions.
+      summary: Set a new password using the reset token
+      tags:
+      - Identity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirm'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirm'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirm'
+        required: true
+      security:
+      - {}
+      responses:
+        '204':
+          description: Password reset; all sessions revoked.
+        '400':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: Already verified.
+          description: Malformed request.
+        '410':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Reset token expired.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invalid token / weak password.
+  /api/v1/auth/password-reset/requests:
+    post:
+      operationId: requestPasswordReset
+      description: Send a password-reset link to the given address (no-op if unknown/unverified).
+      summary: Begin password recovery (email a reset link)
+      tags:
+      - Identity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '202':
+          description: Request accepted (email dispatched if applicable).
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Malformed request.
   /api/v1/auth/registration:
     post:
       operationId: auth_registration_create
@@ -601,7 +651,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-          description: Account suspended.
+          description: Account suspended or email not verified.
   /api/v1/auth/sessions/current:
     delete:
       operationId: auth_session_current_delete
@@ -610,8 +660,6 @@ paths:
       summary: Log out (revoke the current session)
       tags:
       - Identity
-      security:
-      - jwtAuth: []
       responses:
         '204':
           description: Session revoked.
@@ -661,8 +709,6 @@ paths:
       description: Organizer Competition API — staff-only.
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -719,8 +765,6 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateCompetition'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '201':
           content:
@@ -770,8 +814,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -831,8 +873,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedUpdateCompetitionGeneralInformation'
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -894,8 +934,6 @@ paths:
             schema:
               $ref: '#/components/schemas/AddAdmissionRule'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '201':
           content:
@@ -957,8 +995,6 @@ paths:
             schema:
               $ref: '#/components/schemas/_AdmissionCombination'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -1020,8 +1056,6 @@ paths:
             schema:
               $ref: '#/components/schemas/AddAgeCategory'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '201':
           content:
@@ -1087,8 +1121,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedUpdateAgeCategory'
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -1142,8 +1174,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -1193,8 +1223,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -1255,8 +1283,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedUpdateCompetitionBranding'
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -1317,8 +1343,6 @@ paths:
                   format: binary
               required:
               - file
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -1380,8 +1404,6 @@ paths:
             schema:
               $ref: '#/components/schemas/AddCategory'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '201':
           content:
@@ -1447,8 +1469,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedRenameCategory'
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -1502,8 +1522,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -1553,8 +1571,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -1604,8 +1620,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -1667,8 +1681,6 @@ paths:
             schema:
               $ref: '#/components/schemas/AddContact'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '201':
           content:
@@ -1730,8 +1742,6 @@ paths:
             schema:
               $ref: '#/components/schemas/UpdateContactsConfig'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -1786,8 +1796,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -1842,8 +1850,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -1904,8 +1910,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/UpdateCompetitionDeadlines'
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -1967,8 +1971,6 @@ paths:
             schema:
               $ref: '#/components/schemas/AddDiscipline'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '201':
           content:
@@ -2034,8 +2036,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedRenameDiscipline'
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -2089,8 +2089,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -2152,8 +2150,6 @@ paths:
             schema:
               $ref: '#/components/schemas/AddDocument'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '201':
           content:
@@ -2219,8 +2215,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedUpdateDocument'
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -2274,8 +2268,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -2330,8 +2322,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -2386,8 +2376,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -2449,8 +2437,6 @@ paths:
             schema:
               $ref: '#/components/schemas/AddInformationBlock'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '201':
           content:
@@ -2516,8 +2502,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedUpdateInformationBlock'
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -2571,8 +2555,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -2627,8 +2609,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -2683,8 +2663,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -2746,8 +2724,6 @@ paths:
             schema:
               $ref: '#/components/schemas/UpdateLandingConfig'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -2809,8 +2785,6 @@ paths:
             schema:
               $ref: '#/components/schemas/AddParticipantGroup'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '201':
           content:
@@ -2876,8 +2850,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedUpdateParticipantGroup'
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -2931,8 +2903,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -2994,8 +2964,6 @@ paths:
             schema:
               $ref: '#/components/schemas/AddParticipationFormat'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '201':
           content:
@@ -3061,8 +3029,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedUpdateParticipationFormat'
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -3116,8 +3082,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -3179,8 +3143,6 @@ paths:
             schema:
               $ref: '#/components/schemas/AddPricingRule'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '201':
           content:
@@ -3240,8 +3202,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedChangePrice'
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -3303,8 +3263,6 @@ paths:
             schema:
               $ref: '#/components/schemas/_AdmissionCombination'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -3354,8 +3312,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -3405,8 +3361,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -3456,8 +3410,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -3507,8 +3459,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -3570,8 +3520,6 @@ paths:
             schema:
               $ref: '#/components/schemas/AddRegulation'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '201':
           content:
@@ -3626,8 +3574,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -3682,8 +3628,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -3733,8 +3677,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -3784,8 +3726,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -3847,8 +3787,6 @@ paths:
             schema:
               $ref: '#/components/schemas/AddAdditionalService'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '201':
           content:
@@ -3914,8 +3852,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedUpdateAdditionalService'
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -3969,8 +3905,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -4025,8 +3959,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -4081,8 +4013,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -4144,8 +4074,6 @@ paths:
             schema:
               $ref: '#/components/schemas/UpdateCompetitionSettings'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -4195,8 +4123,6 @@ paths:
         required: true
       tags:
       - Competitions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -4257,8 +4183,6 @@ paths:
                   format: binary
               required:
               - file
-      security:
-      - jwtAuth: []
       responses:
         '200':
           description: Document file uploaded; body contains data.fileReference.
@@ -4304,8 +4228,6 @@ paths:
                   format: binary
               required:
               - file
-      security:
-      - jwtAuth: []
       responses:
         '200':
           description: Landing image uploaded; body contains data.fileReference.
@@ -4350,8 +4272,6 @@ paths:
                   format: binary
               required:
               - file
-      security:
-      - jwtAuth: []
       responses:
         '200':
           description: PDF uploaded; body contains data.fileReference.
@@ -4381,8 +4301,6 @@ paths:
       summary: Get organization profile
       tags:
       - Organization
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -4390,6 +4308,49 @@ paths:
               schema:
                 $ref: '#/components/schemas/OrganizationProfileResponse'
           description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Organization not seeded.
+    patch:
+      operationId: updateOrganizationProfile
+      description: 'Replace the organization''s public contact & legal profile. Full-replacement:
+        an omitted field is cleared.'
+      summary: Update organization profile
+      tags:
+      - Organization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOrganizationProfileUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedOrganizationProfileUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOrganizationProfileUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationProfileResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Malformed request.
         '403':
           content:
             application/json:
@@ -4421,8 +4382,6 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateParticipantRequest'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '201':
           content:
@@ -4461,8 +4420,6 @@ paths:
         required: true
       tags:
       - Participants
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -4490,8 +4447,6 @@ paths:
         required: true
       tags:
       - Participants
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -4543,8 +4498,6 @@ paths:
             schema:
               $ref: '#/components/schemas/ProposeGuardianLinkRequest'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '201':
           content:
@@ -4588,8 +4541,6 @@ paths:
         required: true
       tags:
       - Participants
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -4623,8 +4574,6 @@ paths:
         required: true
       tags:
       - Participants
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -4649,8 +4598,6 @@ paths:
       operationId: participants_organizations_retrieve
       tags:
       - Participants
-      security:
-      - jwtAuth: []
       responses:
         '200':
           description: No response body
@@ -4670,8 +4617,6 @@ paths:
             schema:
               $ref: '#/components/schemas/OrganizationWrite'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '200':
           description: No response body
@@ -4697,8 +4642,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedOrganizationWrite'
-      security:
-      - jwtAuth: []
       responses:
         '200':
           description: No response body
@@ -4713,8 +4656,6 @@ paths:
         required: true
       tags:
       - Participants
-      security:
-      - jwtAuth: []
       responses:
         '200':
           description: No response body
@@ -4752,8 +4693,6 @@ paths:
           type: string
       tags:
       - Participants
-      security:
-      - jwtAuth: []
       responses:
         '200':
           description: No response body
@@ -4773,8 +4712,6 @@ paths:
             schema:
               $ref: '#/components/schemas/ParticipantRegistryWrite'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '200':
           description: No response body
@@ -4789,8 +4726,6 @@ paths:
         required: true
       tags:
       - Participants
-      security:
-      - jwtAuth: []
       responses:
         '200':
           description: No response body
@@ -4815,8 +4750,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedParticipantRegistryWrite'
-      security:
-      - jwtAuth: []
       responses:
         '200':
           description: No response body
@@ -4830,8 +4763,6 @@ paths:
         required: true
       tags:
       - Participants
-      security:
-      - jwtAuth: []
       responses:
         '204':
           description: Deleted
@@ -4846,8 +4777,6 @@ paths:
         required: true
       tags:
       - Participants
-      security:
-      - jwtAuth: []
       responses:
         '200':
           description: No response body
@@ -4923,6 +4852,49 @@ paths:
               schema:
                 $ref: '#/components/schemas/PublicFestivalDetailEnvelope'
           description: ''
+  /api/v1/staff/applications/{submission_id}/actions/{action}:
+    post:
+      operationId: staff_applications_actions_create
+      parameters:
+      - in: path
+        name: action
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: submission_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - staff
+      responses:
+        '200':
+          description: No response body
+  /api/v1/staff/applications/bulk:
+    post:
+      operationId: staff_applications_bulk_create
+      tags:
+      - staff
+      responses:
+        '200':
+          description: No response body
+  /api/v1/staff/applications/export:
+    get:
+      operationId: staff_applications_export_retrieve
+      tags:
+      - staff
+      responses:
+        '200':
+          description: No response body
+  /api/v1/staff/applications/workspace:
+    get:
+      operationId: staff_applications_workspace_retrieve
+      tags:
+      - staff
+      responses:
+        '200':
+          description: No response body
   /api/v1/staff/invitations:
     get:
       operationId: listStaffInvitations
@@ -4930,8 +4902,6 @@ paths:
       summary: List staff invitations
       tags:
       - Organization
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -4969,8 +4939,6 @@ paths:
             schema:
               $ref: '#/components/schemas/InviteStaffRequest'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '201':
           content:
@@ -4996,6 +4964,45 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: Invitation conflict.
+  /api/v1/staff/invitations/{invitation_id}/revoke:
+    post:
+      operationId: revokeStaffInvitation
+      description: Revoke a still-pending staff invitation before it is accepted.
+      summary: Revoke a staff invitation
+      parameters:
+      - in: path
+        name: invitation_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Organization
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invitation not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invitation already accepted/revoked.
   /api/v1/staff/invitations/{token}:
     get:
       operationId: getStaffInvitation
@@ -5053,8 +5060,6 @@ paths:
             schema:
               $ref: '#/components/schemas/AcceptInvitationRequest'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -5080,47 +5085,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: Invitation not found.
-  /api/v1/staff/invitations/{invitation_id}/revoke:
-    post:
-      operationId: revokeStaffInvitation
-      description: Revoke a still-pending staff invitation before it is accepted.
-      summary: Revoke a staff invitation
-      parameters:
-      - in: path
-        name: invitation_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - Organization
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvitationResponse'
-          description: ''
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-          description: Not organization staff.
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-          description: Invitation not found.
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-          description: Invitation already accepted/revoked.
   /api/v1/staff/members:
     get:
       operationId: listStaffMembers
@@ -5129,8 +5093,6 @@ paths:
       summary: List staff members
       tags:
       - Organization
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -5176,8 +5138,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedChangeStaffRoleRequest'
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -5224,8 +5184,6 @@ paths:
         required: true
       tags:
       - Organization
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -5251,6 +5209,69 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: Last owner or already revoked.
+  /api/v1/staff/participants:
+    get:
+      operationId: organizer_participant_registry_list
+      parameters:
+      - in: query
+        name: ageMax
+        schema:
+          type: integer
+      - in: query
+        name: ageMin
+        schema:
+          type: integer
+      - in: query
+        name: competitionId
+        schema:
+          type: string
+      - in: query
+        name: gender
+        schema:
+          type: string
+      - in: query
+        name: hasDocuments
+        schema:
+          type: boolean
+      - in: query
+        name: organization
+        schema:
+          type: string
+      - in: query
+        name: participantType
+        schema:
+          type: string
+      - in: query
+        name: q
+        schema:
+          type: string
+      tags:
+      - Organizer Participants
+      responses:
+        '200':
+          description: No response body
+  /api/v1/staff/participants/{participant_key}:
+    get:
+      operationId: organizer_participant_registry_detail
+      parameters:
+      - in: path
+        name: participant_key
+        schema:
+          type: string
+        required: true
+      tags:
+      - Organizer Participants
+      responses:
+        '200':
+          description: No response body
+  /api/v1/staff/participants/export:
+    get:
+      operationId: organizer_participant_registry_export
+      tags:
+      - Organizer Participants
+      responses:
+        '200':
+          description: CSV export of the participant registry
   /api/v1/submissions/{submission_id}:
     get:
       operationId: submissions_retrieve
@@ -5264,8 +5285,6 @@ paths:
         required: true
       tags:
       - Submissions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -5299,8 +5318,6 @@ paths:
             schema:
               $ref: '#/components/schemas/UploadAttachmentRequest'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '201':
           content:
@@ -5357,8 +5374,6 @@ paths:
         required: true
       tags:
       - Submission Attachments
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -5396,8 +5411,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/AddParticipantRequest'
-      security:
-      - jwtAuth: []
       responses:
         '201':
           content:
@@ -5430,8 +5443,6 @@ paths:
         required: true
       tags:
       - Submissions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -5470,8 +5481,6 @@ paths:
             schema:
               $ref: '#/components/schemas/SetPerformanceRequest'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -5499,8 +5508,6 @@ paths:
         required: true
       tags:
       - Submissions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -5539,8 +5546,6 @@ paths:
             schema:
               $ref: '#/components/schemas/CreditTeacherRequest'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '201':
           content:
@@ -5573,8 +5578,6 @@ paths:
         required: true
       tags:
       - Submissions
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -5601,8 +5604,6 @@ paths:
         description: Include archived teachers.
       tags:
       - Teacher Directory
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -5628,8 +5629,6 @@ paths:
             schema:
               $ref: '#/components/schemas/AddTeacherRequest'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '201':
           content:
@@ -5656,8 +5655,6 @@ paths:
         required: true
       tags:
       - Teacher Directory
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -5694,8 +5691,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedUpdateTeacherRequest'
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -5734,8 +5729,6 @@ paths:
         required: true
       tags:
       - Teacher Directory
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -5769,8 +5762,6 @@ paths:
         required: true
       tags:
       - Teacher Directory
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -5798,8 +5789,6 @@ paths:
       summary: Get the current user composed with staff membership
       tags:
       - Identity
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -5888,7 +5877,7 @@ components:
     AddAgeCategory:
       type: object
       properties:
-        categoryId:
+        participantGroupId:
           type: string
           format: uuid
         name:
@@ -5914,10 +5903,10 @@ components:
           - $ref: '#/components/schemas/MixedCalculationMethodEnum'
           - $ref: '#/components/schemas/NullEnum'
       required:
-      - categoryId
       - maxAge
       - minAge
       - name
+      - participantGroupId
     AddCategory:
       type: object
       properties:
@@ -6024,9 +6013,6 @@ components:
     AddParticipantGroup:
       type: object
       properties:
-        categoryId:
-          type: string
-          format: uuid
         name:
           type: string
           maxLength: 120
@@ -6049,7 +6035,6 @@ components:
           - 'null'
           minimum: 0
       required:
-      - categoryId
       - minCount
       - name
     AddParticipantRequest:
@@ -6261,6 +6246,12 @@ components:
           format: uuid
         status:
           type: string
+        hasCorrections:
+          type: boolean
+        correctionComment:
+          type:
+          - string
+          - 'null'
         educationalOrganizationId:
           type:
           - string
@@ -6305,8 +6296,10 @@ components:
       - applicantId
       - competitionId
       - consents
+      - correctionComment
       - createdAt
       - educationalOrganizationId
+      - hasCorrections
       - id
       - organizationName
       - paidAt
@@ -6341,6 +6334,8 @@ components:
           format: uuid
         status:
           type: string
+        hasCorrections:
+          type: boolean
         submissionCount:
           type: integer
         totalAmount:
@@ -6361,6 +6356,7 @@ components:
       - competitionId
       - createdAt
       - currency
+      - hasCorrections
       - id
       - status
       - submissionCount
@@ -6764,6 +6760,19 @@ components:
           type: string
       required:
       - token
+    EmailVerificationRequest:
+      type: object
+      description: |-
+        Validate a (re)send-verification request body (API-001 §4.2).
+
+        Public: the caller names the address to send a fresh link to. The handler is
+        anti-enumeration, so a well-formed but unregistered address still yields 202.
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+      - email
     EmailVerificationResponse:
       type: object
       properties:
@@ -6795,6 +6804,18 @@ components:
       - guardianId
       - relationshipType
       - status
+    InvitationListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvitationResource'
+        meta:
+          $ref: '#/components/schemas/Meta'
+      required:
+      - data
+      - meta
     InvitationResource:
       type: object
       description: Serialize an invitation resource.
@@ -6842,18 +6863,6 @@ components:
       - revokedAt
       - role
       - status
-    InvitationListResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/InvitationResource'
-        meta:
-          $ref: '#/components/schemas/Meta'
-      required:
-      - data
-      - meta
     InvitationResponse:
       type: object
       properties:
@@ -7230,6 +7239,37 @@ components:
       - status
       - title
       - type
+    PasswordResetConfirm:
+      type: object
+      description: |-
+        Validate a password-reset confirmation body (API-001 §4.7).
+
+        The emailed token is the proof of ownership; no session is required. Password
+        *strength* is a domain policy enforced by the use case, not here — this only
+        checks field shape.
+      properties:
+        token:
+          type: string
+        newPassword:
+          type: string
+          writeOnly: true
+      required:
+      - newPassword
+      - token
+    PasswordResetRequest:
+      type: object
+      description: |-
+        Validate a password-reset request body (API-001 §4.7).
+
+        Public: the caller names the address to email a reset link to. The handler is
+        anti-enumeration, so a well-formed but unregistered/unverified address still
+        yields 202.
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+      - email
     PatchedChangePrice:
       type: object
       properties:
@@ -7266,6 +7306,55 @@ components:
       properties:
         role:
           $ref: '#/components/schemas/RoleEnum'
+    PatchedOrganizationProfileUpdate:
+      type: object
+      description: |-
+        Request body for editing the profile — every contact/legal field, all optional.
+
+        A full-replacement edit: an omitted contact field is treated as cleared. Wire
+        keys are camelCase (API-000 §7); the view maps them onto the snake_case
+        command. ``name`` is the display name — omitting it leaves the name unchanged;
+        a blank name is rejected (the domain refuses an empty organization name).
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        phone:
+          type:
+          - string
+          - 'null'
+        email:
+          type:
+          - string
+          - 'null'
+        website:
+          type:
+          - string
+          - 'null'
+        address:
+          type:
+          - string
+          - 'null'
+        logo:
+          type:
+          - string
+          - 'null'
+        vk:
+          type:
+          - string
+          - 'null'
+        instagram:
+          type:
+          - string
+          - 'null'
+        telegram:
+          type:
+          - string
+          - 'null'
+        legalInformation:
+          type:
+          - string
+          - 'null'
     PatchedOrganizationWrite:
       type: object
       properties:
@@ -8414,7 +8503,7 @@ components:
       properties:
         id:
           type: string
-        nominationId:
+        participantGroupId:
           type: string
         name:
           type: string
@@ -8429,7 +8518,7 @@ components:
       - maxAge
       - minAge
       - name
-      - nominationId
+      - participantGroupId
       - sortOrder
     RegistrationCompetition:
       type: object
@@ -8569,8 +8658,6 @@ components:
       properties:
         id:
           type: string
-        nominationId:
-          type: string
         name:
           type: string
         minCount:
@@ -8586,7 +8673,6 @@ components:
       - maxCount
       - minCount
       - name
-      - nominationId
       - sortOrder
     RegistrationRequest:
       type: object
@@ -8840,6 +8926,18 @@ components:
       - invitedEmail
       - organizationName
       - role
+    StaffMemberListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/StaffMemberResource'
+        meta:
+          $ref: '#/components/schemas/Meta'
+      required:
+      - data
+      - meta
     StaffMemberResource:
       type: object
       description: Serialize a staff-member resource (membership joined to its user
@@ -8887,18 +8985,6 @@ components:
       - role
       - status
       - userId
-    StaffMemberListResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/StaffMemberResource'
-        meta:
-          $ref: '#/components/schemas/Meta'
-      required:
-      - data
-      - meta
     StaffMembership:
       type: object
       description: The compact staff-membership read model (Organization), or null.
@@ -9034,6 +9120,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/_SubmissionAttachmentResource'
+        statusHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/_SubmissionStatusHistory'
         price:
           oneOf:
           - $ref: '#/components/schemas/_SubmissionPrice'
@@ -9053,6 +9143,7 @@ components:
       - performance
       - price
       - status
+      - statusHistory
       - teachers
       - updatedAt
     SubmissionResponse:
@@ -9290,6 +9381,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PaymentMethodsEnum'
+        additionalPerformanceDiscountPercent:
+          type: integer
+          maximum: 100
+          minimum: 0
         requirePersonalDataConsent:
           type: boolean
         requireMediaConsent:
@@ -9317,6 +9412,7 @@ components:
           items:
             $ref: '#/components/schemas/_FormatRequirementsInput'
       required:
+      - additionalPerformanceDiscountPercent
       - allowAdditionalDocumentsLater
       - allowApplicationEditing
       - allowCopyingPreviousApplications
@@ -9542,7 +9638,7 @@ components:
       properties:
         id:
           type: string
-        categoryId:
+        participantGroupId:
           type: string
         name:
           type: string
@@ -9559,12 +9655,12 @@ components:
           - string
           - 'null'
       required:
-      - categoryId
       - id
       - maxAge
       - minAge
       - mixedCalculationMethod
       - name
+      - participantGroupId
       - sortOrder
       - type
     _AttachmentResource:
@@ -10259,8 +10355,6 @@ components:
       properties:
         id:
           type: string
-        categoryId:
-          type: string
         name:
           type: string
         minCount:
@@ -10276,7 +10370,6 @@ components:
         sortOrder:
           type: integer
       required:
-      - categoryId
       - description
       - id
       - maxCount
@@ -10581,6 +10674,8 @@ components:
           type: array
           items:
             type: string
+        additionalPerformanceDiscountPercent:
+          type: integer
         requirePersonalDataConsent:
           type: boolean
         requireMediaConsent:
@@ -10606,6 +10701,7 @@ components:
           items:
             $ref: '#/components/schemas/_FormatRequirements'
       required:
+      - additionalPerformanceDiscountPercent
       - allowAdditionalDocumentsLater
       - allowApplicationEditing
       - allowCopyingPreviousApplications
@@ -10710,6 +10806,22 @@ components:
       - priceAmount
       - status
       - submissionId
+    _SubmissionStatusHistory:
+      type: object
+      properties:
+        fromStatus:
+          type:
+          - string
+          - 'null'
+        toStatus:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+      required:
+      - fromStatus
+      - occurredAt
+      - toStatus
     _TeacherResource:
       type: object
       properties:
@@ -10917,8 +11029,3 @@ components:
       - allowReplacement
       - allowedProviders
       - mode
-  securitySchemes:
-    jwtAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT

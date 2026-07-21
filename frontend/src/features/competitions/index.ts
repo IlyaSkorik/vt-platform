@@ -97,6 +97,8 @@ export {
   type AdmissionRuleLabels,
   type AdmissionRulesStats,
   admissionRuleKey,
+  ageCategoryGroupMap,
+  allParticipantGroups,
   type BulkCreatePlan,
   buildAdmissionCoverageWarnings,
   buildAdmissionLookupMaps,
@@ -112,15 +114,14 @@ export {
   resolveAdmissionRuleLabels,
   scopedAgeCategories,
   scopedDisciplines,
-  scopedParticipantGroups,
   sortAdmissionRules,
   toggleId,
 } from "./lib/admission-rules";
 export {
   AGE_CATEGORY_TYPE_LABELS,
   AGE_CATEGORY_TYPE_OPTIONS,
+  type AgeCategoryGroupNode,
   type AgeCategoryKind,
-  type AgeCategoryNominationNode,
   buildAgeCategoryReorderUpdates,
   buildAgeCategoryTree,
   createAgeCategoryPayload,
@@ -199,15 +200,13 @@ export { resolveMediaUrl } from "./lib/media-url";
 export { cacheOrganizerId, resolveOrganizerId } from "./lib/organizer-id";
 export {
   buildParticipantGroupReorderUpdates,
-  buildParticipantGroupTree,
   createParticipantGroupPayload,
   duplicateParticipantGroupDraft,
-  filterParticipantGroupTree,
+  filterParticipantGroups,
   formatParticipantRange,
   formatParticipantRangeLabel,
   moveIdBefore as moveParticipantGroupIdBefore,
   nextParticipantGroupSortOrder,
-  type ParticipantGroupNominationNode,
   sortParticipantGroups,
   updateParticipantGroupPayload,
 } from "./lib/participant-groups";

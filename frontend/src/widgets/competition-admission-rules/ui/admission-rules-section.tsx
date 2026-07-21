@@ -8,6 +8,7 @@ import type {
 } from "@/features/competitions";
 import {
   admissionRuleKey,
+  ageCategoryGroupMap,
   buildAdmissionCoverageWarnings,
   buildAdmissionLookupMaps,
   buildAdmissionRulesStats,
@@ -125,7 +126,7 @@ export function AdmissionRulesSection({
   };
 
   const handleBulkCreate = async (draft: AdmissionRuleDraft): Promise<void> => {
-    const plan = planBulkAdmissionRules(draft, maps.existingKeys);
+    const plan = planBulkAdmissionRules(draft, maps.existingKeys, ageCategoryGroupMap(competition));
     if (plan.toCreate.length === 0) return;
 
     onAutosaveStateChange("saving");
@@ -293,21 +294,19 @@ export function AdmissionRulesSection({
                       {filterSelect(
                         "Возраст",
                         filters.ageCategoryId,
-                        competition.ageCategories
-                          .filter(
-                            (item) => !filters.categoryId || item.categoryId === filters.categoryId,
-                          )
-                          .map((item) => ({ value: item.id, label: item.name })),
+                        competition.ageCategories.map((item) => ({
+                          value: item.id,
+                          label: item.name,
+                        })),
                         (ageCategoryId) => setFilters((current) => ({ ...current, ageCategoryId })),
                       )}
                       {filterSelect(
                         "Группа",
                         filters.participantGroupId,
-                        competition.participantGroups
-                          .filter(
-                            (item) => !filters.categoryId || item.categoryId === filters.categoryId,
-                          )
-                          .map((item) => ({ value: item.id, label: item.name })),
+                        competition.participantGroups.map((item) => ({
+                          value: item.id,
+                          label: item.name,
+                        })),
                         (participantGroupId) =>
                           setFilters((current) => ({ ...current, participantGroupId })),
                       )}

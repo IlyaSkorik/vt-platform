@@ -133,21 +133,41 @@ export function draftFromRule(rule: _AdmissionRule): AdmissionRuleDraft {
   };
 }
 
-export function cartesianCount(draft: AdmissionRuleDraft): number {
+/**
+ * Age categories now belong to a participant group, so a (group, age) pair is only
+ * valid when the age category belongs to that group. When ``ageGroupOf`` (a map of
+ * ageCategoryId → participantGroupId) is provided, invalid pairs are excluded from
+ * counts and plans; otherwise the full cartesian product is used.
+ */
+export function cartesianCount(
+  draft: AdmissionRuleDraft,
+  ageGroupOf?: ReadonlyMap<string, string>,
+): number {
   const disciplines = Math.max(draft.disciplineIds.length, 0);
-  const ages = Math.max(draft.ageCategoryIds.length, 0);
-  const groups = Math.max(draft.participantGroupIds.length, 0);
   const formats = Math.max(draft.participationFormatIds.length, 0);
-  if (disciplines === 0 || ages === 0 || groups === 0 || formats === 0) {
+  let groupAgePairs = 0;
+  if (ageGroupOf) {
+    for (const participantGroupId of draft.participantGroupIds) {
+      for (const ageCategoryId of draft.ageCategoryIds) {
+        if (ageGroupOf.get(ageCategoryId) === participantGroupId) {
+          groupAgePairs += 1;
+        }
+      }
+    }
+  } else {
+    groupAgePairs = draft.participantGroupIds.length * draft.ageCategoryIds.length;
+  }
+  if (disciplines === 0 || groupAgePairs === 0 || formats === 0) {
     return 0;
   }
-  return disciplines * ages * groups * formats;
+  return disciplines * groupAgePairs * formats;
 }
 
 /** Expand builder selection into combinations; skip ones that already exist. */
 export function planBulkAdmissionRules(
   draft: AdmissionRuleDraft,
   existingKeys: Set<AdmissionRuleKey>,
+  ageGroupOf?: ReadonlyMap<string, string>,
 ): BulkCreatePlan {
   const toCreate: AddAdmissionRule[] = [];
   let skippedExisting = 0;
@@ -160,6 +180,11 @@ export function planBulkAdmissionRules(
   for (const disciplineId of draft.disciplineIds) {
     for (const ageCategoryId of draft.ageCategoryIds) {
       for (const participantGroupId of draft.participantGroupIds) {
+        // Skip (group, age) pairs the backend would reject: the age category must
+        // belong to the stated participant group.
+        if (ageGroupOf && ageGroupOf.get(ageCategoryId) !== participantGroupId) {
+          continue;
+        }
         for (const participationFormatId of draft.participationFormatIds) {
           totalRequested += 1;
           const payload: AddAdmissionRule = {
@@ -180,6 +205,11 @@ export function planBulkAdmissionRules(
   }
 
   return { toCreate, skippedExisting, totalRequested };
+}
+
+/** Map ageCategoryId → participantGroupId for the whole competition. */
+export function ageCategoryGroupMap(competition: CompetitionDetail): Map<string, string> {
+  return new Map(competition.ageCategories.map((item) => [item.id, item.participantGroupId]));
 }
 
 export function emptyAdmissionFilters(): AdmissionRuleFilters {
@@ -330,22 +360,20 @@ export function scopedDisciplines(
     .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "ru"));
 }
 
+/** Age categories belong to a participant group, so they are scoped by group. */
 export function scopedAgeCategories(
   competition: CompetitionDetail,
-  categoryId: string,
+  participantGroupId: string,
 ): _AgeCategory[] {
   return competition.ageCategories
-    .filter((item) => item.categoryId === categoryId)
+    .filter((item) => item.participantGroupId === participantGroupId)
     .slice()
     .sort((a, b) => a.sortOrder - b.sortOrder || a.minAge - b.minAge);
 }
 
-export function scopedParticipantGroups(
-  competition: CompetitionDetail,
-  categoryId: string,
-): _ParticipantGroup[] {
+/** Participant groups are competition-wide, so the full list is always in scope. */
+export function allParticipantGroups(competition: CompetitionDetail): _ParticipantGroup[] {
   return competition.participantGroups
-    .filter((item) => item.categoryId === categoryId)
     .slice()
     .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "ru"));
 }
@@ -369,10 +397,11 @@ export function canAdvanceBuilderStep(step: number, draft: AdmissionRuleDraft): 
       return draft.categoryId.length > 0;
     case 2:
       return draft.disciplineIds.length > 0;
+    // Groups are chosen before ages: age categories belong to a participant group.
     case 3:
-      return draft.ageCategoryIds.length > 0;
-    case 4:
       return draft.participantGroupIds.length > 0;
+    case 4:
+      return draft.ageCategoryIds.length > 0;
     case 5:
       return draft.participationFormatIds.length > 0;
     default:

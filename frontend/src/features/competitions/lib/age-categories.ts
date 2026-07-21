@@ -1,6 +1,6 @@
 import type {
   _AgeCategory,
-  _Category,
+  _ParticipantGroup,
   AddAgeCategory,
   MixedCalculationMethodEnum,
   PatchedUpdateAgeCategory,
@@ -36,8 +36,8 @@ export const MIXED_AGE_METHOD_OPTIONS = [
   { value: MixedMethods.YOUNGEST, label: MIXED_AGE_METHOD_LABELS.YOUNGEST },
 ] as const;
 
-export interface AgeCategoryNominationNode {
-  nomination: _Category;
+export interface AgeCategoryGroupNode {
+  group: _ParticipantGroup;
   ageCategories: _AgeCategory[];
 }
 
@@ -53,7 +53,7 @@ export function sortAgeCategories(items: _AgeCategory[]): _AgeCategory[] {
   });
 }
 
-export function sortNominations(items: _Category[]): _Category[] {
+export function sortParticipantGroupsByOrder(items: _ParticipantGroup[]): _ParticipantGroup[] {
   return [...items].sort((left, right) => {
     if (left.sortOrder !== right.sortOrder) {
       return left.sortOrder - right.sortOrder;
@@ -62,22 +62,23 @@ export function sortNominations(items: _Category[]): _Category[] {
   });
 }
 
+/** Group age categories under their participant group (solo/duet/…). */
 export function buildAgeCategoryTree(
-  nominations: _Category[],
+  groups: _ParticipantGroup[],
   ageCategories: _AgeCategory[],
-): AgeCategoryNominationNode[] {
-  return sortNominations(nominations).map((nomination) => ({
-    nomination,
+): AgeCategoryGroupNode[] {
+  return sortParticipantGroupsByOrder(groups).map((group) => ({
+    group,
     ageCategories: sortAgeCategories(
-      ageCategories.filter((item) => item.categoryId === nomination.id),
+      ageCategories.filter((item) => item.participantGroupId === group.id),
     ),
   }));
 }
 
 export function filterAgeCategoryTree(
-  tree: AgeCategoryNominationNode[],
+  tree: AgeCategoryGroupNode[],
   search: string,
-): AgeCategoryNominationNode[] {
+): AgeCategoryGroupNode[] {
   const query = search.trim().toLowerCase();
   if (query.length === 0) {
     return tree;
@@ -85,7 +86,7 @@ export function filterAgeCategoryTree(
 
   return tree
     .map((node) => {
-      const nominationMatches = node.nomination.name.toLowerCase().includes(query);
+      const groupMatches = node.group.name.toLowerCase().includes(query);
       const matched = node.ageCategories.filter((item) => {
         const methodLabel =
           item.mixedCalculationMethod != null
@@ -95,7 +96,7 @@ export function filterAgeCategoryTree(
           `${item.name} ${formatAgeRange(item.minAge, item.maxAge)} ${methodLabel}`.toLowerCase();
         return haystack.includes(query);
       });
-      if (nominationMatches) {
+      if (groupMatches) {
         return node;
       }
       if (matched.length > 0) {
@@ -103,7 +104,7 @@ export function filterAgeCategoryTree(
       }
       return null;
     })
-    .filter((node): node is AgeCategoryNominationNode => node != null);
+    .filter((node): node is AgeCategoryGroupNode => node != null);
 }
 
 export function formatAgeRange(minAge: number, maxAge: number): string {
@@ -120,8 +121,11 @@ export function formatAgeRangeLabel(minAge: number, maxAge: number): string {
   return `${formatAgeRange(minAge, maxAge)} лет`;
 }
 
-export function nextAgeCategorySortOrder(items: _AgeCategory[], categoryId: string): number {
-  const scoped = items.filter((item) => item.categoryId === categoryId);
+export function nextAgeCategorySortOrder(
+  items: _AgeCategory[],
+  participantGroupId: string,
+): number {
+  const scoped = items.filter((item) => item.participantGroupId === participantGroupId);
   if (scoped.length === 0) {
     return 0;
   }
@@ -133,7 +137,7 @@ export function suggestAgeCategoryName(minAge: number, maxAge: number): string {
 }
 
 export function duplicateAgeCategoryDraft(item: _AgeCategory): {
-  categoryId: string;
+  participantGroupId: string;
   name: string;
   minAge: number;
   maxAge: number;
@@ -141,7 +145,7 @@ export function duplicateAgeCategoryDraft(item: _AgeCategory): {
   mixedCalculationMethod: MixedAgeMethod | null;
 } {
   return {
-    categoryId: item.categoryId,
+    participantGroupId: item.participantGroupId,
     name: `${item.name} (копия)`,
     minAge: item.minAge,
     maxAge: item.maxAge,
@@ -169,7 +173,7 @@ export function buildAgeCategoryReorderUpdates(
 }
 
 export function createAgeCategoryPayload(values: {
-  categoryId: string;
+  participantGroupId: string;
   name: string;
   minAge: number;
   maxAge: number;
@@ -178,7 +182,7 @@ export function createAgeCategoryPayload(values: {
   sortOrder?: number;
 }): AddAgeCategory {
   return {
-    categoryId: values.categoryId,
+    participantGroupId: values.participantGroupId,
     name: values.name.trim(),
     minAge: values.minAge,
     maxAge: values.maxAge,

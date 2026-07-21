@@ -80,10 +80,10 @@ export function AgeCategoriesSection({
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
-  const [formNominationName, setFormNominationName] = useState("");
+  const [formGroupName, setFormGroupName] = useState("");
   const [editingItem, setEditingItem] = useState<_AgeCategory | null>(null);
   const [formInitial, setFormInitial] = useState<AgeCategoryFormValues>({
-    categoryId: "",
+    participantGroupId: "",
     name: "",
     minAge: 0,
     maxAge: 0,
@@ -93,12 +93,12 @@ export function AgeCategoriesSection({
   const [deleteTarget, setDeleteTarget] = useState<_AgeCategory | null>(null);
   const [draggedItem, setDraggedItem] = useState<{
     id: string;
-    categoryId: string;
+    participantGroupId: string;
   } | null>(null);
 
   const tree = useMemo(
-    () => buildAgeCategoryTree(competition.categories, competition.ageCategories),
-    [competition.categories, competition.ageCategories],
+    () => buildAgeCategoryTree(competition.participantGroups, competition.ageCategories),
+    [competition.participantGroups, competition.ageCategories],
   );
   const filteredTree = useMemo(() => filterAgeCategoryTree(tree, search), [tree, search]);
 
@@ -113,24 +113,24 @@ export function AgeCategoriesSection({
     return fallback;
   };
 
-  const toggleExpanded = (categoryId: string): void => {
+  const toggleExpanded = (groupId: string): void => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(categoryId)) {
-        next.delete(categoryId);
+      if (next.has(groupId)) {
+        next.delete(groupId);
       } else {
-        next.add(categoryId);
+        next.add(groupId);
       }
       return next;
     });
   };
 
-  const openCreate = (categoryId: string, nominationName: string): void => {
+  const openCreate = (participantGroupId: string, groupName: string): void => {
     setFormMode("create");
     setEditingItem(null);
-    setFormNominationName(nominationName);
+    setFormGroupName(groupName);
     setFormInitial({
-      categoryId,
+      participantGroupId,
       name: "",
       minAge: 0,
       maxAge: 0,
@@ -140,12 +140,12 @@ export function AgeCategoriesSection({
     setFormOpen(true);
   };
 
-  const openEdit = (item: _AgeCategory, nominationName: string): void => {
+  const openEdit = (item: _AgeCategory, groupName: string): void => {
     setFormMode("edit");
     setEditingItem(item);
-    setFormNominationName(nominationName);
+    setFormGroupName(groupName);
     setFormInitial({
-      categoryId: item.categoryId,
+      participantGroupId: item.participantGroupId,
       name: item.name,
       minAge: item.minAge,
       maxAge: item.maxAge,
@@ -155,11 +155,11 @@ export function AgeCategoriesSection({
     setFormOpen(true);
   };
 
-  const openDuplicate = (item: _AgeCategory, nominationName: string): void => {
+  const openDuplicate = (item: _AgeCategory, groupName: string): void => {
     const draft = duplicateAgeCategoryDraft(item);
     setFormMode("create");
     setEditingItem(null);
-    setFormNominationName(nominationName);
+    setFormGroupName(groupName);
     setFormInitial(draft);
     setFormOpen(true);
   };
@@ -184,7 +184,10 @@ export function AgeCategoriesSection({
           competitionId: competition.id,
           payload: createAgeCategoryPayload({
             ...values,
-            sortOrder: nextAgeCategorySortOrder(competition.ageCategories, values.categoryId),
+            sortOrder: nextAgeCategorySortOrder(
+              competition.ageCategories,
+              values.participantGroupId,
+            ),
           }),
         });
         toast.success("Возрастная категория добавлена");
@@ -227,9 +230,15 @@ export function AgeCategoriesSection({
     }
   };
 
-  const handleReorder = async (categoryId: string, fromId: string, toId: string): Promise<void> => {
+  const handleReorder = async (
+    participantGroupId: string,
+    fromId: string,
+    toId: string,
+  ): Promise<void> => {
     if (isReadOnly || fromId === toId) return;
-    const scopedItems = competition.ageCategories.filter((item) => item.categoryId === categoryId);
+    const scopedItems = competition.ageCategories.filter(
+      (item) => item.participantGroupId === participantGroupId,
+    );
     const orderedIds = scopedItems
       .slice()
       .sort((a, b) => a.sortOrder - b.sortOrder)
@@ -249,7 +258,7 @@ export function AgeCategoriesSection({
     }
   };
 
-  const hasNoNominations = competition.categories.length === 0;
+  const hasNoGroups = competition.participantGroups.length === 0;
 
   return (
     <div className="space-y-6">
@@ -263,16 +272,18 @@ export function AgeCategoriesSection({
 
           <PageSection
             title="Возрастные категории"
-            description="Возрастные диапазоны для допуска участников и формирования цен, сгруппированные по номинациям."
+            description="Возрастные диапазоны для допуска участников и формирования цен, сгруппированные по группам участников."
           >
             <Card className="shadow-none">
               <CardHeader className="gap-4 pb-3">
-                <CardTitle className="text-base">Возрастные категории по номинациям</CardTitle>
+                <CardTitle className="text-base">
+                  Возрастные категории по группам участников
+                </CardTitle>
 
-                {!hasNoNominations ? (
+                {!hasNoGroups ? (
                   <Input
                     label="Поиск"
-                    placeholder="Название номинации или категории"
+                    placeholder="Название группы или категории"
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                     leadingIcon={<Search aria-hidden="true" />}
@@ -281,14 +292,17 @@ export function AgeCategoriesSection({
               </CardHeader>
 
               <CardContent className="space-y-3">
-                {hasNoNominations ? (
+                {hasNoGroups ? (
                   <EmptyState
-                    title="Сначала создайте номинации"
-                    description="Возрастные категории привязаны к номинациям. Создайте хотя бы одну номинацию."
+                    title="Сначала создайте группы участников"
+                    description="Возрастные категории привязаны к группам участников. Создайте хотя бы одну группу."
                     action={
                       !isReadOnly ? (
-                        <Button type="button" onClick={() => onNavigateSection("categories")}>
-                          Перейти к номинациям
+                        <Button
+                          type="button"
+                          onClick={() => onNavigateSection("participant-groups")}
+                        >
+                          Перейти к группам участников
                         </Button>
                       ) : undefined
                     }
@@ -296,12 +310,12 @@ export function AgeCategoriesSection({
                 ) : filteredTree.length === 0 ? (
                   <EmptyState title="Ничего не найдено" description="Измените поисковый запрос." />
                 ) : (
-                  <ul className="space-y-3" aria-label="Возрастные категории по номинациям">
+                  <ul className="space-y-3" aria-label="Возрастные категории по группам участников">
                     {filteredTree.map((node) => {
-                      const isExpanded = expandedIds.has(node.nomination.id);
+                      const isExpanded = expandedIds.has(node.group.id);
                       return (
                         <li
-                          key={node.nomination.id}
+                          key={node.group.id}
                           className="rounded-lg border border-border bg-background transition-colors"
                         >
                           <div className="flex items-center gap-2 px-3 py-3">
@@ -309,10 +323,8 @@ export function AgeCategoriesSection({
                               type="button"
                               className="shrink-0 text-muted-foreground transition-transform"
                               aria-expanded={isExpanded}
-                              aria-label={
-                                isExpanded ? "Свернуть номинацию" : "Развернуть номинацию"
-                              }
-                              onClick={() => toggleExpanded(node.nomination.id)}
+                              aria-label={isExpanded ? "Свернуть группу" : "Развернуть группу"}
+                              onClick={() => toggleExpanded(node.group.id)}
                             >
                               <ChevronDown
                                 className={cn(
@@ -326,9 +338,9 @@ export function AgeCategoriesSection({
                               <button
                                 type="button"
                                 className="cursor-default bg-transparent p-0 font-medium text-sm"
-                                onClick={() => toggleExpanded(node.nomination.id)}
+                                onClick={() => toggleExpanded(node.group.id)}
                               >
-                                {node.nomination.name}
+                                {node.group.name}
                               </button>
                             </div>
 
@@ -342,7 +354,7 @@ export function AgeCategoriesSection({
                                 type="button"
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => openCreate(node.nomination.id, node.nomination.name)}
+                                onClick={() => openCreate(node.group.id, node.group.name)}
                               >
                                 <Plus className="size-3.5" aria-hidden="true" />
                                 Добавить
@@ -355,7 +367,7 @@ export function AgeCategoriesSection({
                               {node.ageCategories.length > 0 ? (
                                 <ul
                                   className="space-y-2"
-                                  aria-label={`Возрастные категории номинации ${node.nomination.name}`}
+                                  aria-label={`Возрастные категории группы ${node.group.name}`}
                                 >
                                   {node.ageCategories.map((item) => (
                                     <li
@@ -366,14 +378,14 @@ export function AgeCategoriesSection({
                                         e.dataTransfer.effectAllowed = "move";
                                         setDraggedItem({
                                           id: item.id,
-                                          categoryId: item.categoryId,
+                                          participantGroupId: item.participantGroupId,
                                         });
                                       }}
                                       onDragEnd={() => setDraggedItem(null)}
                                       onDragOver={(e) => {
                                         if (
                                           draggedItem &&
-                                          draggedItem.categoryId === node.nomination.id &&
+                                          draggedItem.participantGroupId === node.group.id &&
                                           search.length === 0
                                         ) {
                                           e.preventDefault();
@@ -385,10 +397,10 @@ export function AgeCategoriesSection({
                                         e.stopPropagation();
                                         if (
                                           draggedItem &&
-                                          draggedItem.categoryId === node.nomination.id
+                                          draggedItem.participantGroupId === node.group.id
                                         ) {
                                           void handleReorder(
-                                            node.nomination.id,
+                                            node.group.id,
                                             draggedItem.id,
                                             item.id,
                                           );
@@ -445,7 +457,7 @@ export function AgeCategoriesSection({
                                             variant="ghost"
                                             aria-label="Редактировать возрастную категорию"
                                             icon={<Pencil className="size-3" aria-hidden="true" />}
-                                            onClick={() => openEdit(item, node.nomination.name)}
+                                            onClick={() => openEdit(item, node.group.name)}
                                           />
                                           <IconButton
                                             type="button"
@@ -453,9 +465,7 @@ export function AgeCategoriesSection({
                                             variant="ghost"
                                             aria-label="Дублировать возрастную категорию"
                                             icon={<Copy className="size-3" aria-hidden="true" />}
-                                            onClick={() =>
-                                              openDuplicate(item, node.nomination.name)
-                                            }
+                                            onClick={() => openDuplicate(item, node.group.name)}
                                           />
                                           <IconButton
                                             type="button"
@@ -472,7 +482,7 @@ export function AgeCategoriesSection({
                                 </ul>
                               ) : (
                                 <p className="py-2 text-center text-muted-foreground text-sm">
-                                  В этой номинации пока нет возрастных категорий.
+                                  В этой группе пока нет возрастных категорий.
                                 </p>
                               )}
                             </div>
@@ -494,7 +504,7 @@ export function AgeCategoriesSection({
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               {tree.length === 0 ? (
-                <p className="text-muted-foreground">Нет номинаций.</p>
+                <p className="text-muted-foreground">Нет групп участников.</p>
               ) : tree.every((node) => node.ageCategories.length === 0) ? (
                 <p className="text-muted-foreground">Нет возрастных категорий.</p>
               ) : (
@@ -502,10 +512,8 @@ export function AgeCategoriesSection({
                   {tree
                     .filter((node) => node.ageCategories.length > 0)
                     .map((node) => (
-                      <div key={node.nomination.id}>
-                        <p className="font-medium text-muted-foreground mb-1">
-                          {node.nomination.name}
-                        </p>
+                      <div key={node.group.id}>
+                        <p className="font-medium text-muted-foreground mb-1">{node.group.name}</p>
                         <ul className="space-y-1">
                           {node.ageCategories.map((item) => (
                             <li
@@ -536,7 +544,7 @@ export function AgeCategoriesSection({
       <AgeCategoryFormDialog
         open={formOpen}
         mode={formMode}
-        nominationName={formNominationName}
+        groupName={formGroupName}
         initialValues={formInitial}
         submitting={addAgeCategory.isPending || updateAgeCategory.isPending}
         onOpenChange={setFormOpen}
@@ -594,22 +602,22 @@ function validateAgeCategoryDraft({
   editingId: string | null;
 }): string | null {
   const normalizedName = values.name.trim().toLocaleLowerCase();
-  const sameNomination = existing.filter(
-    (item) => item.categoryId === values.categoryId && item.id !== editingId,
+  const sameGroup = existing.filter(
+    (item) => item.participantGroupId === values.participantGroupId && item.id !== editingId,
   );
 
-  const hasSameName = sameNomination.some(
+  const hasSameName = sameGroup.some(
     (item) => item.name.trim().toLocaleLowerCase() === normalizedName,
   );
   if (hasSameName) {
-    return "Категория с таким названием уже есть в этой номинации";
+    return "Категория с таким названием уже есть в этой группе участников";
   }
 
-  const hasOverlap = sameNomination.some((item) =>
+  const hasOverlap = sameGroup.some((item) =>
     rangesOverlap(values.minAge, values.maxAge, item.minAge, item.maxAge),
   );
   if (hasOverlap) {
-    return "Возрастной диапазон пересекается с существующей категорией в этой номинации";
+    return "Возрастной диапазон пересекается с существующей категорией в этой группе участников";
   }
 
   return null;

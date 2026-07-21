@@ -308,21 +308,19 @@ export function PricingSection({
                       {filterSelect(
                         "Возраст",
                         filters.ageCategoryId,
-                        competition.ageCategories
-                          .filter(
-                            (item) => !filters.categoryId || item.categoryId === filters.categoryId,
-                          )
-                          .map((item) => ({ value: item.id, label: item.name })),
+                        competition.ageCategories.map((item) => ({
+                          value: item.id,
+                          label: item.name,
+                        })),
                         (ageCategoryId) => setFilters((current) => ({ ...current, ageCategoryId })),
                       )}
                       {filterSelect(
                         "Группа",
                         filters.participantGroupId,
-                        competition.participantGroups
-                          .filter(
-                            (item) => !filters.categoryId || item.categoryId === filters.categoryId,
-                          )
-                          .map((item) => ({ value: item.id, label: item.name })),
+                        competition.participantGroups.map((item) => ({
+                          value: item.id,
+                          label: item.name,
+                        })),
                         (participantGroupId) =>
                           setFilters((current) => ({ ...current, participantGroupId })),
                       )}

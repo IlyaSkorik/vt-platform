@@ -374,10 +374,11 @@ function planCopyNominationPricing(
   const targetDisciplines = competition.disciplines.filter(
     (d) => d.categoryId === targetCategoryId,
   );
-  const targetAges = competition.ageCategories.filter((a) => a.categoryId === targetCategoryId);
-  const targetGroups = competition.participantGroups.filter(
-    (g) => g.categoryId === targetCategoryId,
-  );
+  // Age categories and participant groups are no longer scoped per nomination:
+  // groups are competition-wide and ages belong to a group, so the whole list is
+  // in scope and we match by name (as before) to line up source and target.
+  const targetAges = competition.ageCategories;
+  const targetGroups = competition.participantGroups;
 
   const disciplineByName = new Map(
     targetDisciplines.map((item) => [item.name.toLowerCase(), item.id]),

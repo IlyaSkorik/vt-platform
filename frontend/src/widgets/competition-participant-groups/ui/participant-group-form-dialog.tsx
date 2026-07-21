@@ -9,12 +9,10 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
-  Select,
   Textarea,
 } from "@/shared/ui";
 
 export interface ParticipantGroupFormValues {
-  categoryId: string;
   name: string;
   minCount: number;
   maxCount: number | null;
@@ -22,17 +20,9 @@ export interface ParticipantGroupFormValues {
   openEnded: boolean;
 }
 
-interface NominationOption {
-  value: string;
-  label: string;
-}
-
 interface ParticipantGroupFormDialogProps {
   open: boolean;
   mode: "create" | "edit";
-  nominationName: string;
-  nominationOptions: NominationOption[];
-  allowNominationChange: boolean;
   initialValues: ParticipantGroupFormValues;
   submitting: boolean;
   onOpenChange: (open: boolean) => void;
@@ -42,15 +32,11 @@ interface ParticipantGroupFormDialogProps {
 export function ParticipantGroupFormDialog({
   open,
   mode,
-  nominationName,
-  nominationOptions,
-  allowNominationChange,
   initialValues,
   submitting,
   onOpenChange,
   onSubmit,
 }: ParticipantGroupFormDialogProps): React.JSX.Element {
-  const [categoryId, setCategoryId] = useState(initialValues.categoryId);
   const [name, setName] = useState(initialValues.name);
   const [minCount, setMinCount] = useState(String(initialValues.minCount));
   const [maxCount, setMaxCount] = useState(
@@ -62,7 +48,6 @@ export function ParticipantGroupFormDialog({
 
   useEffect(() => {
     if (open) {
-      setCategoryId(initialValues.categoryId);
       setName(initialValues.name);
       setMinCount(String(initialValues.minCount));
       setMaxCount(initialValues.maxCount != null ? String(initialValues.maxCount) : "");
@@ -74,9 +59,6 @@ export function ParticipantGroupFormDialog({
 
   const validate = (): boolean => {
     const next: Record<string, string> = {};
-    if (!categoryId) {
-      next.categoryId = "Выберите номинацию";
-    }
     if (!name.trim()) {
       next.name = "Обязательное поле";
     }
@@ -100,7 +82,6 @@ export function ParticipantGroupFormDialog({
     event.preventDefault();
     if (!validate()) return;
     await onSubmit({
-      categoryId,
       name: name.trim(),
       minCount: Number(minCount),
       maxCount: openEnded ? null : Number(maxCount),
@@ -117,8 +98,7 @@ export function ParticipantGroupFormDialog({
             {mode === "create" ? "Новая группа участников" : "Редактирование группы участников"}
           </DialogTitle>
           <DialogDescription>
-            Задайте название и диапазон численности. Диапазоны внутри номинации не должны
-            пересекаться.
+            Задайте название и диапазон численности. Диапазоны групп не должны пересекаться.
           </DialogDescription>
         </DialogHeader>
 
@@ -128,22 +108,6 @@ export function ParticipantGroupFormDialog({
           noValidate
         >
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-1">
-            {allowNominationChange && mode === "create" ? (
-              <Select
-                label="Номинация"
-                required
-                options={nominationOptions}
-                value={categoryId}
-                onValueChange={setCategoryId}
-                error={errors.categoryId}
-              />
-            ) : (
-              <div className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium text-foreground">Номинация</span>
-                <span className="text-sm text-muted-foreground">{nominationName}</span>
-              </div>
-            )}
-
             <Input
               label="Название"
               required

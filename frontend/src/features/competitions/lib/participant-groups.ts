@@ -1,14 +1,8 @@
 import type {
-  _Category,
   _ParticipantGroup,
   AddParticipantGroup,
   PatchedUpdateParticipantGroup,
 } from "@/shared/api/generated/model-competitions";
-
-export interface ParticipantGroupNominationNode {
-  nomination: _Category;
-  groups: _ParticipantGroup[];
-}
 
 export function sortParticipantGroups(items: _ParticipantGroup[]): _ParticipantGroup[] {
   return [...items].sort((left, right) => {
@@ -22,51 +16,21 @@ export function sortParticipantGroups(items: _ParticipantGroup[]): _ParticipantG
   });
 }
 
-export function sortNominations(items: _Category[]): _Category[] {
-  return [...items].sort((left, right) => {
-    if (left.sortOrder !== right.sortOrder) {
-      return left.sortOrder - right.sortOrder;
-    }
-    return left.name.localeCompare(right.name, "ru");
-  });
-}
-
-export function buildParticipantGroupTree(
-  nominations: _Category[],
-  groups: _ParticipantGroup[],
-): ParticipantGroupNominationNode[] {
-  return sortNominations(nominations).map((nomination) => ({
-    nomination,
-    groups: sortParticipantGroups(groups.filter((item) => item.categoryId === nomination.id)),
-  }));
-}
-
-export function filterParticipantGroupTree(
-  tree: ParticipantGroupNominationNode[],
+/** Filter the competition-wide group list by a free-text query, keeping sort order. */
+export function filterParticipantGroups(
+  items: _ParticipantGroup[],
   search: string,
-): ParticipantGroupNominationNode[] {
+): _ParticipantGroup[] {
+  const sorted = sortParticipantGroups(items);
   const query = search.trim().toLowerCase();
   if (query.length === 0) {
-    return tree;
+    return sorted;
   }
-
-  return tree
-    .map((node) => {
-      const nominationMatches = node.nomination.name.toLowerCase().includes(query);
-      const matched = node.groups.filter((item) => {
-        const haystack =
-          `${item.name} ${formatParticipantRange(item.minCount, item.maxCount)} ${item.description ?? ""}`.toLowerCase();
-        return haystack.includes(query);
-      });
-      if (nominationMatches) {
-        return node;
-      }
-      if (matched.length > 0) {
-        return { ...node, groups: matched };
-      }
-      return null;
-    })
-    .filter((node): node is ParticipantGroupNominationNode => node != null);
+  return sorted.filter((item) => {
+    const haystack =
+      `${item.name} ${formatParticipantRange(item.minCount, item.maxCount)} ${item.description ?? ""}`.toLowerCase();
+    return haystack.includes(query);
+  });
 }
 
 export function formatParticipantRange(minCount: number, maxCount: number | null): string {
@@ -94,26 +58,20 @@ export function formatParticipantRangeLabel(minCount: number, maxCount: number |
   return `${range} участников`;
 }
 
-export function nextParticipantGroupSortOrder(
-  items: _ParticipantGroup[],
-  categoryId: string,
-): number {
-  const scoped = items.filter((item) => item.categoryId === categoryId);
-  if (scoped.length === 0) {
+export function nextParticipantGroupSortOrder(items: _ParticipantGroup[]): number {
+  if (items.length === 0) {
     return 0;
   }
-  return Math.max(...scoped.map((item) => item.sortOrder)) + 1;
+  return Math.max(...items.map((item) => item.sortOrder)) + 1;
 }
 
 export function duplicateParticipantGroupDraft(item: _ParticipantGroup): {
-  categoryId: string;
   name: string;
   minCount: number;
   maxCount: number | null;
   description: string;
 } {
   return {
-    categoryId: item.categoryId,
     name: `${item.name} (копия)`,
     minCount: item.minCount,
     maxCount: item.maxCount,
@@ -140,7 +98,6 @@ export function buildParticipantGroupReorderUpdates(
 }
 
 export function createParticipantGroupPayload(values: {
-  categoryId: string;
   name: string;
   minCount: number;
   maxCount: number | null;
@@ -149,7 +106,6 @@ export function createParticipantGroupPayload(values: {
 }): AddParticipantGroup {
   const description = values.description?.trim() ?? "";
   return {
-    categoryId: values.categoryId,
     name: values.name.trim(),
     minCount: values.minCount,
     maxCount: values.maxCount,

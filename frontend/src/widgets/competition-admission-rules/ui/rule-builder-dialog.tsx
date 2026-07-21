@@ -2,6 +2,8 @@ import { ArrowLeft, ArrowRight, Check, Layers } from "lucide-react";
 import { useEffect, useId, useMemo, useState } from "react";
 import {
   type AdmissionRuleDraft,
+  ageCategoryGroupMap,
+  allParticipantGroups,
   canAdvanceBuilderStep,
   cartesianCount,
   emptyAdmissionRuleDraft,
@@ -11,7 +13,6 @@ import {
   planBulkAdmissionRules,
   scopedAgeCategories,
   scopedDisciplines,
-  scopedParticipantGroups,
   toggleId,
 } from "@/features/competitions";
 import type { CompetitionDetail } from "@/shared/api/generated/model-competitions";
@@ -29,8 +30,8 @@ import {
 const STEPS = [
   { id: 1, title: "Номинация" },
   { id: 2, title: "Дисциплины" },
-  { id: 3, title: "Возрастные категории" },
-  { id: 4, title: "Группы участников" },
+  { id: 3, title: "Группы участников" },
+  { id: 4, title: "Возрастные категории" },
   { id: 5, title: "Форматы участия" },
   { id: 6, title: "Создание" },
 ] as const;
@@ -73,13 +74,20 @@ export function RuleBuilderDialog({
     [competition.admissionRules],
   );
 
-  const plan = useMemo(() => planBulkAdmissionRules(draft, existingKeys), [draft, existingKeys]);
-  const previewCount = cartesianCount(draft);
+  const ageGroupOf = useMemo(() => ageCategoryGroupMap(competition), [competition]);
+  const plan = useMemo(
+    () => planBulkAdmissionRules(draft, existingKeys, ageGroupOf),
+    [draft, existingKeys, ageGroupOf],
+  );
+  const previewCount = cartesianCount(draft, ageGroupOf);
   const canNext = canAdvanceBuilderStep(step, draft);
 
   const disciplines = draft.categoryId ? scopedDisciplines(competition, draft.categoryId) : [];
-  const ages = draft.categoryId ? scopedAgeCategories(competition, draft.categoryId) : [];
-  const groups = draft.categoryId ? scopedParticipantGroups(competition, draft.categoryId) : [];
+  const groups = allParticipantGroups(competition);
+  // Age categories belong to a group, so only offer ages of the selected group(s).
+  const ages = draft.participantGroupIds.flatMap((groupId) =>
+    scopedAgeCategories(competition, groupId),
+  );
   const formats = enabledParticipationFormats(competition);
 
   const nominations = useMemo(
@@ -220,27 +228,37 @@ export function RuleBuilderDialog({
 
           {step === 3 ? (
             <MultiSelectStep
-              title="Возрастные категории номинации"
-              empty="Нет возрастных категорий для этой номинации."
+              title="Группы участников"
+              empty="Нет групп участников. Сначала создайте их в разделе «Группы участников»."
+              items={groups.map((item) => ({
+                id: item.id,
+                label: `${item.name} (${formatParticipantRange(item.minCount, item.maxCount)})`,
+              }))}
+              selectedIds={draft.participantGroupIds}
+              onChange={(ids) =>
+                setDraft((current) => ({
+                  ...current,
+                  participantGroupIds: ids,
+                  // Drop ages that no longer belong to any selected group.
+                  ageCategoryIds: current.ageCategoryIds.filter((ageId) => {
+                    const groupId = ageGroupOf.get(ageId);
+                    return groupId != null && ids.includes(groupId);
+                  }),
+                }))
+              }
+            />
+          ) : null}
+
+          {step === 4 ? (
+            <MultiSelectStep
+              title="Возрастные категории выбранных групп"
+              empty="Нет возрастных категорий для выбранных групп участников."
               items={ages.map((item) => ({
                 id: item.id,
                 label: `${item.name} (${formatAgeRangeLabel(item.minAge, item.maxAge)})`,
               }))}
               selectedIds={draft.ageCategoryIds}
               onChange={(ids) => setDraft((current) => ({ ...current, ageCategoryIds: ids }))}
-            />
-          ) : null}
-
-          {step === 4 ? (
-            <MultiSelectStep
-              title="Группы участников"
-              empty="Нет групп участников для этой номинации."
-              items={groups.map((item) => ({
-                id: item.id,
-                label: `${item.name} (${formatParticipantRange(item.minCount, item.maxCount)})`,
-              }))}
-              selectedIds={draft.participantGroupIds}
-              onChange={(ids) => setDraft((current) => ({ ...current, participantGroupIds: ids }))}
             />
           ) : null}
 

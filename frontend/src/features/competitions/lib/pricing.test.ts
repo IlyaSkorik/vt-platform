@@ -69,7 +69,7 @@ function competition(partial: Partial<CompetitionDetail> = {}): CompetitionDetai
     ageCategories: [
       {
         id: "a1",
-        categoryId: "cat-1",
+        participantGroupId: "g1",
         name: "7–9",
         minAge: 7,
         maxAge: 9,
@@ -79,7 +79,7 @@ function competition(partial: Partial<CompetitionDetail> = {}): CompetitionDetai
       },
       {
         id: "a2",
-        categoryId: "cat-1",
+        participantGroupId: "g1",
         name: "10–12",
         minAge: 10,
         maxAge: 12,
@@ -89,7 +89,7 @@ function competition(partial: Partial<CompetitionDetail> = {}): CompetitionDetai
       },
       {
         id: "a3",
-        categoryId: "cat-2",
+        participantGroupId: "g3",
         name: "7–9",
         minAge: 7,
         maxAge: 9,
@@ -101,7 +101,6 @@ function competition(partial: Partial<CompetitionDetail> = {}): CompetitionDetai
     participantGroups: [
       {
         id: "g1",
-        categoryId: "cat-1",
         name: "Solo",
         minCount: 1,
         maxCount: 1,
@@ -110,7 +109,6 @@ function competition(partial: Partial<CompetitionDetail> = {}): CompetitionDetai
       },
       {
         id: "g2",
-        categoryId: "cat-1",
         name: "Duet",
         minCount: 2,
         maxCount: 2,
@@ -119,7 +117,6 @@ function competition(partial: Partial<CompetitionDetail> = {}): CompetitionDetai
       },
       {
         id: "g3",
-        categoryId: "cat-2",
         name: "Solo",
         minCount: 1,
         maxCount: 1,

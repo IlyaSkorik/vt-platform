@@ -18,7 +18,7 @@ import {
 } from "@/shared/ui";
 
 export interface AgeCategoryFormValues {
-  categoryId: string;
+  participantGroupId: string;
   name: string;
   minAge: number;
   maxAge: number;
@@ -29,7 +29,7 @@ export interface AgeCategoryFormValues {
 interface AgeCategoryFormDialogProps {
   open: boolean;
   mode: "create" | "edit";
-  nominationName: string;
+  groupName: string;
   initialValues: AgeCategoryFormValues;
   submitting: boolean;
   onOpenChange: (open: boolean) => void;
@@ -39,7 +39,7 @@ interface AgeCategoryFormDialogProps {
 export function AgeCategoryFormDialog({
   open,
   mode,
-  nominationName,
+  groupName,
   initialValues,
   submitting,
   onOpenChange,
@@ -97,7 +97,7 @@ export function AgeCategoryFormDialog({
     setLocalSubmitting(true);
     try {
       await onSubmit({
-        categoryId: initialValues.categoryId,
+        participantGroupId: initialValues.participantGroupId,
         name: name.trim(),
         minAge: Number(minAge),
         maxAge: Number(maxAge),
@@ -139,8 +139,8 @@ export function AgeCategoryFormDialog({
         >
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-1">
             <div className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-foreground">Номинация</span>
-              <span className="text-sm text-muted-foreground">{nominationName}</span>
+              <span className="text-sm font-medium text-foreground">Группа участников</span>
+              <span className="text-sm text-muted-foreground">{groupName}</span>
             </div>
 
             <Input

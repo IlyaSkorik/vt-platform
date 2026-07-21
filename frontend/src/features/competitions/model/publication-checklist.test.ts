@@ -200,7 +200,7 @@ describe("buildPublicationChecklist", () => {
         ageCategories: [
           {
             id: "a1",
-            categoryId: "c1",
+            participantGroupId: "g1",
             name: "5–12 лет",
             minAge: 5,
             maxAge: 12,
@@ -212,7 +212,6 @@ describe("buildPublicationChecklist", () => {
         participantGroups: [
           {
             id: "g1",
-            categoryId: "c1",
             name: "Solo",
             minCount: 1,
             maxCount: 1,

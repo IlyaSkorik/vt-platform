@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { _AgeCategory, _Category } from "@/shared/api/generated/model-competitions";
+import type { _AgeCategory, _ParticipantGroup } from "@/shared/api/generated/model-competitions";
 import {
   buildAgeCategoryReorderUpdates,
   buildAgeCategoryTree,
@@ -10,8 +10,12 @@ import {
   nextAgeCategorySortOrder,
 } from "./age-categories";
 
-function nomination(partial: Partial<_Category> & Pick<_Category, "id" | "name">): _Category {
+function group(
+  partial: Partial<_ParticipantGroup> & Pick<_ParticipantGroup, "id" | "name">,
+): _ParticipantGroup {
   return {
+    minCount: 1,
+    maxCount: 1,
     description: null,
     sortOrder: 0,
     ...partial,
@@ -19,7 +23,7 @@ function nomination(partial: Partial<_Category> & Pick<_Category, "id" | "name">
 }
 
 function age(
-  partial: Partial<_AgeCategory> & Pick<_AgeCategory, "id" | "categoryId" | "name">,
+  partial: Partial<_AgeCategory> & Pick<_AgeCategory, "id" | "participantGroupId" | "name">,
 ): _AgeCategory {
   return {
     minAge: 0,
@@ -32,44 +36,65 @@ function age(
 }
 
 describe("age category helpers", () => {
-  it("builds a nomination → age categories tree", () => {
+  it("builds a participant group → age categories tree", () => {
     const tree = buildAgeCategoryTree(
       [
-        nomination({ id: "n2", name: "Dance", sortOrder: 1 }),
-        nomination({ id: "n1", name: "Vocal", sortOrder: 0 }),
+        group({ id: "g2", name: "Duet", sortOrder: 1 }),
+        group({ id: "g1", name: "Solo", sortOrder: 0 }),
       ],
       [
-        age({ id: "a2", categoryId: "n1", name: "7–9", minAge: 7, maxAge: 9, sortOrder: 1 }),
-        age({ id: "a1", categoryId: "n1", name: "4–6", minAge: 4, maxAge: 6, sortOrder: 0 }),
-        age({ id: "a3", categoryId: "n2", name: "5–7", minAge: 5, maxAge: 7, sortOrder: 0 }),
+        age({
+          id: "a2",
+          participantGroupId: "g1",
+          name: "7–9",
+          minAge: 7,
+          maxAge: 9,
+          sortOrder: 1,
+        }),
+        age({
+          id: "a1",
+          participantGroupId: "g1",
+          name: "4–6",
+          minAge: 4,
+          maxAge: 6,
+          sortOrder: 0,
+        }),
+        age({
+          id: "a3",
+          participantGroupId: "g2",
+          name: "5–7",
+          minAge: 5,
+          maxAge: 7,
+          sortOrder: 0,
+        }),
       ],
     );
-    expect(tree.map((node) => node.nomination.id)).toEqual(["n1", "n2"]);
+    expect(tree.map((node) => node.group.id)).toEqual(["g1", "g2"]);
     expect(tree[0]?.ageCategories.map((item) => item.name)).toEqual(["4–6", "7–9"]);
   });
 
-  it("filters by nomination and age category names", () => {
+  it("filters by participant group and age category names", () => {
     const tree = buildAgeCategoryTree(
-      [nomination({ id: "n1", name: "Vocal" }), nomination({ id: "n2", name: "Dance" })],
+      [group({ id: "g1", name: "Solo" }), group({ id: "g2", name: "Duet" })],
       [
-        age({ id: "a1", categoryId: "n1", name: "Juniors", minAge: 4, maxAge: 6 }),
-        age({ id: "a2", categoryId: "n2", name: "Seniors", minAge: 14, maxAge: 17 }),
+        age({ id: "a1", participantGroupId: "g1", name: "Juniors", minAge: 4, maxAge: 6 }),
+        age({ id: "a2", participantGroupId: "g2", name: "Seniors", minAge: 14, maxAge: 17 }),
       ],
     );
-    expect(filterAgeCategoryTree(tree, "dance").map((node) => node.nomination.id)).toEqual(["n2"]);
+    expect(filterAgeCategoryTree(tree, "duet").map((node) => node.group.id)).toEqual(["g2"]);
     expect(
       filterAgeCategoryTree(tree, "junior")[0]?.ageCategories.map((item) => item.name),
     ).toEqual(["Juniors"]);
   });
 
-  it("scopes next sort order and duplicate draft to nomination", () => {
+  it("scopes next sort order and duplicate draft to participant group", () => {
     expect(
       nextAgeCategorySortOrder(
         [
-          age({ id: "a1", categoryId: "n1", name: "A", sortOrder: 2 }),
-          age({ id: "a2", categoryId: "n2", name: "B", sortOrder: 9 }),
+          age({ id: "a1", participantGroupId: "g1", name: "A", sortOrder: 2 }),
+          age({ id: "a2", participantGroupId: "g2", name: "B", sortOrder: 9 }),
         ],
-        "n1",
+        "g1",
       ),
     ).toBe(3);
 
@@ -77,7 +102,7 @@ describe("age category helpers", () => {
       duplicateAgeCategoryDraft(
         age({
           id: "a1",
-          categoryId: "n1",
+          participantGroupId: "g1",
           name: "7–9 лет",
           minAge: 7,
           maxAge: 9,
@@ -86,7 +111,7 @@ describe("age category helpers", () => {
         }),
       ),
     ).toEqual({
-      categoryId: "n1",
+      participantGroupId: "g1",
       name: "7–9 лет (копия)",
       minAge: 7,
       maxAge: 9,
@@ -98,7 +123,7 @@ describe("age category helpers", () => {
   it("builds create payload and reorder updates", () => {
     expect(
       createAgeCategoryPayload({
-        categoryId: "n1",
+        participantGroupId: "g1",
         name: " 4–6 ",
         minAge: 4,
         maxAge: 6,
@@ -107,7 +132,7 @@ describe("age category helpers", () => {
         sortOrder: 0,
       }),
     ).toEqual({
-      categoryId: "n1",
+      participantGroupId: "g1",
       name: "4–6",
       minAge: 4,
       maxAge: 6,
@@ -121,8 +146,8 @@ describe("age category helpers", () => {
       buildAgeCategoryReorderUpdates(
         ["b", "a"],
         [
-          age({ id: "a", categoryId: "n1", name: "A", sortOrder: 0 }),
-          age({ id: "b", categoryId: "n1", name: "B", sortOrder: 1 }),
+          age({ id: "a", participantGroupId: "g1", name: "A", sortOrder: 0 }),
+          age({ id: "b", participantGroupId: "g1", name: "B", sortOrder: 1 }),
         ],
       ),
     ).toEqual([
