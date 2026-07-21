@@ -1,7 +1,7 @@
 {
   ".claude/settings.local.json": {
-    "mtime": 1784470937.1269987,
-    "ast_hash": "398aacdf868c2469f4a5903f73c0ce27",
+    "mtime": 1784646983.7714932,
+    "ast_hash": "57c03c3bd873a79e8d19f715fd3fb403",
     "semantic_hash": ""
   },
   "backend/apps/__init__.py": {
@@ -4225,8 +4225,8 @@
     "semantic_hash": "b4d5ff4a024a2e0d894f4daa2676ccb9"
   },
   "frontend/src/features/competitions/index.ts": {
-    "mtime": 1784491949.7158813,
-    "ast_hash": "c687bc66136a6174d0ba505e6a4c8244",
+    "mtime": 1784647602.7633767,
+    "ast_hash": "31922d945b7360c61ba0df05815d63f0",
     "semantic_hash": ""
   },
   "frontend/src/features/competitions/lib/additional-services.test.ts": {
@@ -4415,9 +4415,9 @@
     "semantic_hash": "453d7f12c9c7ba9f07ed66eda2686676"
   },
   "frontend/src/features/competitions/model/schemas.ts": {
-    "mtime": 1783771458.810415,
-    "ast_hash": "27c1ed32fb2e2720124dcecb4b5e9ba4",
-    "semantic_hash": "27c1ed32fb2e2720124dcecb4b5e9ba4"
+    "mtime": 1784647602.7671309,
+    "ast_hash": "171e4f761084e8abeba5b0522f7011c7",
+    "semantic_hash": ""
   },
   "frontend/src/features/competitions/model/sections.ts": {
     "mtime": 1783794169.5920432,
@@ -4910,9 +4910,9 @@
     "semantic_hash": "b6a8867840fecbca73857b85d2c87687"
   },
   "frontend/src/shared/lib/index.ts": {
-    "mtime": 1783770475.2433805,
-    "ast_hash": "bf67e54b087a9575eb0707c2341d866b",
-    "semantic_hash": "bf67e54b087a9575eb0707c2341d866b"
+    "mtime": 1784647256.916071,
+    "ast_hash": "82ef85629fb91972b4aced7e0d78f0a2",
+    "semantic_hash": ""
   },
   "frontend/src/shared/lib/uuid.test.ts": {
     "mtime": 1783770706.0113368,
@@ -5925,9 +5925,9 @@
     "semantic_hash": "1d9046ad9c24b2b8cdfb3a5bbe7180bf"
   },
   "frontend/src/widgets/competition-regulations/ui/current-regulation-card.tsx": {
-    "mtime": 1783769519.7617707,
-    "ast_hash": "60a2c8daaa79086e09bf89b0d74213b2",
-    "semantic_hash": "60a2c8daaa79086e09bf89b0d74213b2"
+    "mtime": 1784647602.7671309,
+    "ast_hash": "a3189276761be4a74137a0f3d0f971c1",
+    "semantic_hash": ""
   },
   "frontend/src/widgets/competition-regulations/ui/pdf-upload-field.tsx": {
     "mtime": 1783769424.1216178,
@@ -5945,9 +5945,9 @@
     "semantic_hash": "0808038dedbca04b6382fecfe192a064"
   },
   "frontend/src/widgets/competition-regulations/ui/regulations-section.tsx": {
-    "mtime": 1783771458.7807646,
-    "ast_hash": "7c944221ef9c4b972f136d7b6dc803cd",
-    "semantic_hash": "7c944221ef9c4b972f136d7b6dc803cd"
+    "mtime": 1784647602.7859015,
+    "ast_hash": "5bd773056649f531deba44da759972a7",
+    "semantic_hash": ""
   },
   "frontend/src/widgets/competition-settings/index.ts": {
     "mtime": 1783789222.0112424,
@@ -6360,9 +6360,9 @@
     "semantic_hash": "9ab5c40bff0a3260ff84a357be87a369"
   },
   "frontend/src/widgets/festival-landing/ui/blocks/regulation-section.tsx": {
-    "mtime": 1783845031.3247836,
-    "ast_hash": "3403f8a01e3c6bd1ed0a63182868c092",
-    "semantic_hash": "3403f8a01e3c6bd1ed0a63182868c092"
+    "mtime": 1784647421.3918347,
+    "ast_hash": "0e4a224c53e985dc00c1e78b3b1301e7",
+    "semantic_hash": ""
   },
   "frontend/src/widgets/festival-landing/ui/blocks/venue-section.tsx": {
     "mtime": 1783840975.9584641,
@@ -6937,6 +6937,31 @@
   "frontend/src/features/staff-participants/model.test.ts": {
     "mtime": 1784573835.03512,
     "ast_hash": "8b1ae4d5e3cd821aeaf9c5d6be3638e6",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/competitions/lib/regulation-source.test.ts": {
+    "mtime": 1784647428.886927,
+    "ast_hash": "a8811c269dfb37e5089635d5047a2e5f",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/competitions/lib/regulation-source.ts": {
+    "mtime": 1784647262.6837378,
+    "ast_hash": "7e48742739aebdc910b4099fb630b60f",
+    "semantic_hash": ""
+  },
+  "frontend/src/shared/lib/doc-embed.test.ts": {
+    "mtime": 1784647602.7671309,
+    "ast_hash": "0f0e67642c0c1489d297199b5a135897",
+    "semantic_hash": ""
+  },
+  "frontend/src/shared/lib/doc-embed.ts": {
+    "mtime": 1784647602.7633767,
+    "ast_hash": "da675d2a02db4be9f1dc5ff2e4bfde8d",
+    "semantic_hash": ""
+  },
+  "frontend/src/widgets/competition-regulations/ui/regulation-link-field.tsx": {
+    "mtime": 1784647286.4985871,
+    "ast_hash": "1425c8316993018ddcad18c59e25936d",
     "semantic_hash": ""
   }
 }

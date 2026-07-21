@@ -828,7 +828,6 @@
   "826": "Community 826",
   "827": "MarkCompetitionReadyHandler",
   "828": "RevertCompetitionToConfiguredHandler",
-  "829": ".contains",
   "830": "PublicFestivalFaqItemSerializer",
   "831": "PublicFestivalFormatSerializer",
   "832": ".to_dict",
@@ -838,19 +837,15 @@
   "836": "PublicFestivalOrganizerSerializer",
   "839": "UpdatePerformanceCommand",
   "840": ".from_performance",
-  "841": "event_dispatcher.py",
   "842": ".status_history",
-  "843": ".required_attachment_types",
   "844": ".contains",
   "845": ".overlaps",
   "846": "0002_usermodel_credentials_invalidated_at.py",
   "847": ".is_active",
   "849": ".requirements_for",
   "851": "CLAUDE.md",
-  "852": ".status_history",
   "853": ".required_attachment_types",
   "856": "index.tsx",
   "860": "0003_organization_profile_fields.py",
-  "861": "useSetDocumentPublishedMutation",
-  "862": "useUploadPosterMutation"
+  "861": "useSetDocumentPublishedMutation"
 }
