@@ -14,12 +14,18 @@ export type PerformanceAxis =
   | "participantGroupId"
   | "participationFormatId";
 
-/** The five configuration axes of a performance, in cascade order. */
+/**
+ * The five configuration axes of a performance, in cascade order.
+ *
+ * The participant group (состав) comes before the age category because age
+ * categories belong to a group: choosing the composition narrows which age
+ * bands apply.
+ */
 export const PERFORMANCE_AXES: readonly PerformanceAxis[] = [
   "nominationId",
   "disciplineId",
-  "ageCategoryId",
   "participantGroupId",
+  "ageCategoryId",
   "participationFormatId",
 ];
 

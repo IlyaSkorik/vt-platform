@@ -210,9 +210,17 @@ function PerformanceFormInner({
           onValueChange={(value: string) => setAxis("disciplineId", value)}
         />
         <Select
-          label="Возрастная категория"
+          label="Состав участников"
           placeholder="Выберите"
           disabled={!selection.disciplineId}
+          options={groupOptions}
+          value={selection.participantGroupId ?? ""}
+          onValueChange={(value: string) => setAxis("participantGroupId", value)}
+        />
+        <Select
+          label="Возрастная категория"
+          placeholder="Выберите"
+          disabled={!selection.participantGroupId}
           description={
             recommendedAge && recommendedAge !== selection.ageCategoryId
               ? `Рекомендуется по дате рождения: ${ageOptions.find((band) => band.id === recommendedAge)?.name ?? ""}`
@@ -226,17 +234,9 @@ function PerformanceFormInner({
           onValueChange={(value: string) => setAxis("ageCategoryId", value)}
         />
         <Select
-          label="Состав участников"
-          placeholder="Выберите"
-          disabled={!selection.ageCategoryId}
-          options={groupOptions}
-          value={selection.participantGroupId ?? ""}
-          onValueChange={(value: string) => setAxis("participantGroupId", value)}
-        />
-        <Select
           label="Формат участия"
           placeholder="Выберите"
-          disabled={!selection.participantGroupId}
+          disabled={!selection.ageCategoryId}
           options={formatOptions}
           value={selection.participationFormatId ?? ""}
           onValueChange={(value: string) => setAxis("participationFormatId", value)}
