@@ -46,6 +46,7 @@ from apps.competitions.domain.exceptions import (
     DuplicateContactError,
     DuplicateDisciplineError,
     DuplicateInformationBlockError,
+    DuplicateParticipantGroupError,
     DuplicatePricingRuleError,
     EmptyAdditionalServiceFormatsError,
     IllegalStatusTransitionError,
@@ -138,15 +139,14 @@ def _configured(*, priced: bool = True, with_regulation: bool = True) -> Fixture
     c = _draft()
     cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
     disc = c.add_discipline(discipline_id=DisciplineId.generate(), category_id=cat.id, name=DisciplineName("Pop"), now=NOW)
-    age = c.add_age_category(
-        age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW
-    )
     grp = c.add_participant_group(
         participant_group_id=ParticipantGroupId.generate(),
-        category_id=cat.id,
         name=ParticipantGroupName("Solo"),
         count_range=ParticipantCountRange(1, 1),
         now=NOW,
+    )
+    age = c.add_age_category(
+        age_category_id=AgeCategoryId.generate(), participant_group_id=grp.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW
     )
     c.add_participation_format(format_id=ParticipationFormatId.generate(), name=ParticipationFormatName("Очно"), now=NOW)
     c.add_participation_format(format_id=ParticipationFormatId.generate(), name=ParticipationFormatName("Онлайн"), now=NOW)
@@ -216,32 +216,64 @@ class TestTaxonomyInvariants:
 
     def test_overlapping_age_range_rejected(self) -> None:
         c = _draft()
-        cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
+        grp = c.add_participant_group(
+            participant_group_id=ParticipantGroupId.generate(),
+            name=ParticipantGroupName("Solo"),
+            count_range=ParticipantCountRange(1, 1),
+            now=NOW,
+        )
         c.add_age_category(
-            age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW
+            age_category_id=AgeCategoryId.generate(), participant_group_id=grp.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW
         )
         with pytest.raises(OverlappingAgeRangeError):
             c.add_age_category(
-                age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("8-10"), age_range=AgeRange(8, 10), now=NOW
+                age_category_id=AgeCategoryId.generate(), participant_group_id=grp.id, name=AgeCategoryName("8-10"), age_range=AgeRange(8, 10), now=NOW
             )
 
     def test_non_overlapping_age_range_allowed(self) -> None:
         c = _draft()
-        cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
-        c.add_age_category(
-            age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW
+        grp = c.add_participant_group(
+            participant_group_id=ParticipantGroupId.generate(),
+            name=ParticipantGroupName("Solo"),
+            count_range=ParticipantCountRange(1, 1),
+            now=NOW,
         )
         c.add_age_category(
-            age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("9-11"), age_range=AgeRange(9, 11), now=NOW
+            age_category_id=AgeCategoryId.generate(), participant_group_id=grp.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW
+        )
+        c.add_age_category(
+            age_category_id=AgeCategoryId.generate(), participant_group_id=grp.id, name=AgeCategoryName("9-11"), age_range=AgeRange(9, 11), now=NOW
         )
         assert len(c.age_categories) == 2
 
-    def test_overlapping_participant_range_within_category_rejected(self) -> None:
+    def test_age_range_may_repeat_across_participant_groups(self) -> None:
+        # Age bands are scoped per group, so the same range is fine in a different group.
         c = _draft()
-        cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
+        solo = c.add_participant_group(
+            participant_group_id=ParticipantGroupId.generate(),
+            name=ParticipantGroupName("Solo"),
+            count_range=ParticipantCountRange(1, 1),
+            now=NOW,
+        )
+        duet = c.add_participant_group(
+            participant_group_id=ParticipantGroupId.generate(),
+            name=ParticipantGroupName("Duet"),
+            count_range=ParticipantCountRange(2, 2),
+            now=NOW,
+        )
+        rng = AgeRange(6, 8)
+        c.add_age_category(
+            age_category_id=AgeCategoryId.generate(), participant_group_id=solo.id, name=AgeCategoryName("6-8"), age_range=rng, now=NOW
+        )
+        c.add_age_category(
+            age_category_id=AgeCategoryId.generate(), participant_group_id=duet.id, name=AgeCategoryName("6-8"), age_range=rng, now=NOW
+        )
+        assert len(c.age_categories) == 2
+
+    def test_overlapping_participant_range_rejected(self) -> None:
+        c = _draft()
         c.add_participant_group(
             participant_group_id=ParticipantGroupId.generate(),
-            category_id=cat.id,
             name=ParticipantGroupName("Solo"),
             count_range=ParticipantCountRange(1, 1),
             now=NOW,
@@ -249,33 +281,34 @@ class TestTaxonomyInvariants:
         with pytest.raises(OverlappingParticipantRangeError):
             c.add_participant_group(
                 participant_group_id=ParticipantGroupId.generate(),
-                category_id=cat.id,
                 name=ParticipantGroupName("Duet"),
                 count_range=ParticipantCountRange(1, 2),
                 now=NOW,
             )
 
-    def test_same_participant_range_allowed_in_different_category(self) -> None:
+    def test_participant_groups_are_competition_wide(self) -> None:
+        # Groups are no longer scoped per nomination; a duplicate name is refused globally.
         c = _draft()
-        a = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
-        b = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Dance"), now=NOW)
-        rng = ParticipantCountRange(1, 1)
         c.add_participant_group(
-            participant_group_id=ParticipantGroupId.generate(), category_id=a.id, name=ParticipantGroupName("Solo"), count_range=rng, now=NOW
+            participant_group_id=ParticipantGroupId.generate(),
+            name=ParticipantGroupName("Solo"),
+            count_range=ParticipantCountRange(1, 1),
+            now=NOW,
         )
-        c.add_participant_group(
-            participant_group_id=ParticipantGroupId.generate(), category_id=b.id, name=ParticipantGroupName("Solo"), count_range=rng, now=NOW
-        )
-        assert len(c.participant_groups) == 2
+        with pytest.raises(DuplicateParticipantGroupError):
+            c.add_participant_group(
+                participant_group_id=ParticipantGroupId.generate(),
+                name=ParticipantGroupName("Solo"),
+                count_range=ParticipantCountRange(2, 4),
+                now=NOW,
+            )
 
     def test_update_participant_group_renames_and_resizes(self) -> None:
         from apps.competitions.domain.value_objects import ParticipantGroupDescription
 
         c = _draft()
-        cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
         group = c.add_participant_group(
             participant_group_id=ParticipantGroupId.generate(),
-            category_id=cat.id,
             name=ParticipantGroupName("Solo"),
             count_range=ParticipantCountRange(1, 1),
             now=NOW,
@@ -297,17 +330,14 @@ class TestTaxonomyInvariants:
 
     def test_update_participant_group_rejects_overlapping_range(self) -> None:
         c = _draft()
-        cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
         c.add_participant_group(
             participant_group_id=ParticipantGroupId.generate(),
-            category_id=cat.id,
             name=ParticipantGroupName("Solo"),
             count_range=ParticipantCountRange(1, 1),
             now=NOW,
         )
         duet = c.add_participant_group(
             participant_group_id=ParticipantGroupId.generate(),
-            category_id=cat.id,
             name=ParticipantGroupName("Duet"),
             count_range=ParticipantCountRange(2, 2),
             now=NOW,
@@ -326,15 +356,14 @@ class TestAdmissionAndPricing:
         c = _draft()
         cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
         disc = c.add_discipline(discipline_id=DisciplineId.generate(), category_id=cat.id, name=DisciplineName("Pop"), now=NOW)
-        age = c.add_age_category(
-            age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW
-        )
         grp = c.add_participant_group(
             participant_group_id=ParticipantGroupId.generate(),
-            category_id=cat.id,
             name=ParticipantGroupName("Solo"),
             count_range=ParticipantCountRange(1, 1),
             now=NOW,
+        )
+        age = c.add_age_category(
+            age_category_id=AgeCategoryId.generate(), participant_group_id=grp.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW
         )
         c.add_participation_format(format_id=ParticipationFormatId.generate(), name=ParticipationFormatName("Очно"), now=NOW)
         fmt = c.participation_formats[0]
@@ -355,15 +384,14 @@ class TestAdmissionAndPricing:
         c = _draft()
         cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
         disc = c.add_discipline(discipline_id=DisciplineId.generate(), category_id=cat.id, name=DisciplineName("Pop"), now=NOW)
-        age = c.add_age_category(
-            age_category_id=AgeCategoryId.generate(), category_id=cat.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW
-        )
         grp = c.add_participant_group(
             participant_group_id=ParticipantGroupId.generate(),
-            category_id=cat.id,
             name=ParticipantGroupName("Solo"),
             count_range=ParticipantCountRange(1, 1),
             now=NOW,
+        )
+        age = c.add_age_category(
+            age_category_id=AgeCategoryId.generate(), participant_group_id=grp.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW
         )
         c.add_participation_format(
             format_id=ParticipationFormatId.generate(),
