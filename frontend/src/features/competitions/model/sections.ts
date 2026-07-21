@@ -42,8 +42,8 @@ export const COMPETITION_SECTIONS: readonly CompetitionSection[] = [
   { id: "regulations", title: "Положение", icon: BookOpen, implemented: true },
   { id: "documents", title: "Документы", icon: FileText, implemented: true },
   { id: "categories", title: "Номинации и дисциплины", icon: FolderTree, implemented: true },
-  { id: "age-categories", title: "Возрастные категории", icon: Tags, implemented: true },
   { id: "participant-groups", title: "Группы участников", icon: Users, implemented: true },
+  { id: "age-categories", title: "Возрастные категории", icon: Tags, implemented: true },
   {
     id: "participation-formats",
     title: "Форматы участия",

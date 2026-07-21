@@ -88,17 +88,17 @@ export function buildPublicationChecklist(competition: CompetitionDetail): Publi
       blocking: true,
     },
     {
-      id: "age-categories",
-      label: "Хотя бы одна возрастная категория",
-      done: competition.ageCategories.length > 0,
-      sectionId: "age-categories",
-      blocking: true,
-    },
-    {
       id: "participant-groups",
       label: "Хотя бы одна группа участников",
       done: competition.participantGroups.length > 0,
       sectionId: "participant-groups",
+      blocking: true,
+    },
+    {
+      id: "age-categories",
+      label: "Хотя бы одна возрастная категория",
+      done: competition.ageCategories.length > 0,
+      sectionId: "age-categories",
       blocking: true,
     },
     {
