@@ -240,10 +240,6 @@ class CompetitionTemplate:
         self._require_category(category_id)
         if any(d.category_id == category_id for d in self._disciplines.values()):
             raise CategoryInUseError("The category still has disciplines.")
-        if any(a.category_id == category_id for a in self._age_categories.values()):
-            raise CategoryInUseError("The category still has age categories.")
-        if any(g.category_id == category_id for g in self._participant_groups.values()):
-            raise CategoryInUseError("The category still has participant groups.")
         if any(c.category_id == category_id for c in self._admission_rules):
             raise CategoryInUseError("The category is referenced by admission rules.")
         if any(c.category_id == category_id for c in self._pricing_rules):
@@ -273,20 +269,20 @@ class CompetitionTemplate:
         self,
         *,
         age_category_id: AgeCategoryId,
-        category_id: CategoryId,
+        participant_group_id: ParticipantGroupId,
         name: AgeCategoryName,
         age_range: AgeRange,
         now: datetime,
         age_category_type: AgeCategoryType = AgeCategoryType.STANDARD,
         mixed_calculation_method: MixedAgeCalculationMethod | None = None,
     ) -> AgeCategory:
-        self._require_category(category_id)
-        ensure_age_range_free(self._age_categories, age_range, category_id=category_id)
-        if any(a.category_id == category_id and a.name == name for a in self._age_categories.values()):
-            raise DuplicateAgeCategoryNameError(f"An age category named {name.value!r} already exists in this nomination.")
+        self._require_participant_group(participant_group_id)
+        ensure_age_range_free(self._age_categories, age_range, participant_group_id=participant_group_id)
+        if any(a.participant_group_id == participant_group_id and a.name == name for a in self._age_categories.values()):
+            raise DuplicateAgeCategoryNameError(f"An age category named {name.value!r} already exists in this participant group.")
         age_category = AgeCategory.create(
             age_category_id=age_category_id,
-            category_id=category_id,
+            participant_group_id=participant_group_id,
             name=name,
             age_range=age_range,
             age_category_type=age_category_type,
@@ -309,20 +305,17 @@ class CompetitionTemplate:
         self,
         *,
         participant_group_id: ParticipantGroupId,
-        category_id: CategoryId,
         name: ParticipantGroupName,
         count_range: ParticipantCountRange,
         now: datetime,
         description: ParticipantGroupDescription | None = None,
         sort_order: int = 0,
     ) -> ParticipantGroup:
-        self._require_category(category_id)
-        if any(g.category_id == category_id and g.name == name for g in self._participant_groups.values()):
-            raise DuplicateParticipantGroupError(f"A participant group named {name.value!r} already exists in this category.")
-        ensure_participant_range_free(self._participant_groups, category_id, count_range)
+        if any(g.name == name for g in self._participant_groups.values()):
+            raise DuplicateParticipantGroupError(f"A participant group named {name.value!r} already exists.")
+        ensure_participant_range_free(self._participant_groups, count_range)
         group = ParticipantGroup.create(
             participant_group_id=participant_group_id,
-            category_id=category_id,
             name=name,
             count_range=count_range,
             description=description,
@@ -334,6 +327,8 @@ class CompetitionTemplate:
 
     def remove_participant_group(self, *, participant_group_id: ParticipantGroupId, now: datetime) -> None:
         self._require_participant_group(participant_group_id)
+        if any(a.participant_group_id == participant_group_id for a in self._age_categories.values()):
+            raise ParticipantGroupInUseError("The participant group still has age categories.")
         if any(c.participant_group_id == participant_group_id for c in self._admission_rules):
             raise ParticipantGroupInUseError("The participant group is referenced by admission rules.")
         if any(c.participant_group_id == participant_group_id for c in self._pricing_rules):

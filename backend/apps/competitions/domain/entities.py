@@ -98,7 +98,7 @@ from .events import (
 from .exceptions import (
     AdmissionRuleInUseError,
     AdmissionRuleNotFoundError,
-    AgeCategoryCategoryMismatchError,
+    AgeCategoryGroupMismatchError,
     AgeCategoryInUseError,
     AgeCategoryNotFoundError,
     CategoryInUseError,
@@ -127,7 +127,6 @@ from .exceptions import (
     InvalidSortOrderError,
     OverlappingAgeRangeError,
     OverlappingParticipantRangeError,
-    ParticipantGroupCategoryMismatchError,
     ParticipantGroupInUseError,
     ParticipantGroupNotFoundError,
     ParticipationFormatInUseError,
@@ -266,16 +265,14 @@ def ensure_admission_combination_valid(
         raise DisciplineNotFoundError(f"No discipline {combination.discipline_id} in this configuration.")
     if discipline.category_id != combination.category_id:
         raise DisciplineCategoryMismatchError("The discipline does not belong to the stated category.")
-    age_category = age_categories.get(combination.age_category_id)
-    if age_category is None:
-        raise AgeCategoryNotFoundError(f"No age category {combination.age_category_id} in this configuration.")
-    if age_category.category_id != combination.category_id:
-        raise AgeCategoryCategoryMismatchError("The age category does not belong to the stated category.")
     group = participant_groups.get(combination.participant_group_id)
     if group is None:
         raise ParticipantGroupNotFoundError(f"No participant group {combination.participant_group_id} in this configuration.")
-    if group.category_id != combination.category_id:
-        raise ParticipantGroupCategoryMismatchError("The participant group does not belong to the stated category.")
+    age_category = age_categories.get(combination.age_category_id)
+    if age_category is None:
+        raise AgeCategoryNotFoundError(f"No age category {combination.age_category_id} in this configuration.")
+    if age_category.participant_group_id != combination.participant_group_id:
+        raise AgeCategoryGroupMismatchError("The age category does not belong to the stated participant group.")
     participation_format = formats.get(combination.participation_format_id)
     if participation_format is None:
         raise ParticipationFormatNotFoundError(
@@ -291,14 +288,14 @@ def ensure_age_range_free(
     age_categories: Mapping[AgeCategoryId, AgeCategory],
     age_range: AgeRange,
     *,
-    category_id: CategoryId,
+    participant_group_id: ParticipantGroupId,
     exclude: AgeCategoryId | None = None,
 ) -> None:
-    """Assert ``age_range`` does not overlap any existing age category within the same nomination."""
+    """Assert ``age_range`` does not overlap any existing age category within the same participant group."""
     for aid, existing in age_categories.items():
         if aid == exclude:
             continue
-        if existing.category_id != category_id:
+        if existing.participant_group_id != participant_group_id:
             continue
         if existing.age_range.overlaps(age_range):
             raise OverlappingAgeRangeError(f"Age range {age_range} overlaps existing range {existing.age_range}.")
@@ -306,18 +303,21 @@ def ensure_age_range_free(
 
 def ensure_participant_range_free(
     participant_groups: Mapping[ParticipantGroupId, ParticipantGroup],
-    category_id: CategoryId,
     count_range: ParticipantCountRange,
     *,
     exclude: ParticipantGroupId | None = None,
 ) -> None:
-    """Assert ``count_range`` does not overlap another group's range in the same category."""
+    """Assert ``count_range`` does not overlap another group's range in this competition.
+
+    Participant groups are competition-wide (each headcount maps to a single group),
+    so overlap is checked across all groups, not within a nomination.
+    """
     for gid, existing in participant_groups.items():
-        if gid == exclude or existing.category_id != category_id:
+        if gid == exclude:
             continue
         if existing.count_range.overlaps(count_range):
             raise OverlappingParticipantRangeError(
-                f"Participant range {count_range} overlaps existing range {existing.count_range} in this category."
+                f"Participant range {count_range} overlaps existing range {existing.count_range}."
             )
 
 
@@ -475,10 +475,10 @@ class Discipline:
 
 @dataclass(slots=True, eq=False, repr=False)
 class AgeCategory:
-    """An age band configured for this competition, scoped to a nomination (category)."""
+    """An age band configured for this competition, scoped to a participant group (solo/duet/…)."""
 
     _id: AgeCategoryId
-    _category_id: CategoryId
+    _participant_group_id: ParticipantGroupId
     _name: AgeCategoryName
     _age_range: AgeRange
     _type: AgeCategoryType = AgeCategoryType.STANDARD
@@ -490,7 +490,7 @@ class AgeCategory:
         cls,
         *,
         age_category_id: AgeCategoryId,
-        category_id: CategoryId,
+        participant_group_id: ParticipantGroupId,
         name: AgeCategoryName,
         age_range: AgeRange,
         age_category_type: AgeCategoryType = AgeCategoryType.STANDARD,
@@ -500,7 +500,7 @@ class AgeCategory:
         _validate_type_method_consistency(age_category_type, mixed_calculation_method)
         return cls(
             _id=age_category_id,
-            _category_id=category_id,
+            _participant_group_id=participant_group_id,
             _name=name,
             _age_range=age_range,
             _type=age_category_type,
@@ -513,7 +513,7 @@ class AgeCategory:
         cls,
         *,
         age_category_id: AgeCategoryId,
-        category_id: CategoryId,
+        participant_group_id: ParticipantGroupId,
         name: AgeCategoryName,
         age_range: AgeRange,
         age_category_type: AgeCategoryType = AgeCategoryType.STANDARD,
@@ -522,7 +522,7 @@ class AgeCategory:
     ) -> AgeCategory:
         return cls(
             _id=age_category_id,
-            _category_id=category_id,
+            _participant_group_id=participant_group_id,
             _name=name,
             _age_range=age_range,
             _type=age_category_type,
@@ -535,8 +535,8 @@ class AgeCategory:
         return self._id
 
     @property
-    def category_id(self) -> CategoryId:
-        return self._category_id
+    def participant_group_id(self) -> ParticipantGroupId:
+        return self._participant_group_id
 
     @property
     def name(self) -> AgeCategoryName:
@@ -589,19 +589,22 @@ class AgeCategory:
         return hash(self._id)
 
     def __repr__(self) -> str:
-        return f"AgeCategory(id={self._id!r}, category_id={self._category_id!r}, name={self._name.value!r}, range={self._age_range})"
+        return (
+            f"AgeCategory(id={self._id!r}, participant_group_id={self._participant_group_id!r}, "
+            f"name={self._name.value!r}, range={self._age_range})"
+        )
 
 
 @dataclass(slots=True, eq=False, repr=False)
 class ParticipantGroup:
-    """A participant grouping mapped from a headcount band, scoped to a category.
+    """A participant grouping mapped from a headcount band, configured per competition.
 
-    The mapping is configured per category (Vocal: Solo=1, Duet=2, Ensemble=3-5,
-    Choir=6+; Instrumental: Orchestra=9+; …) — never a hardcoded string.
+    Groups are competition-wide (Solo=1, Duet=2, Ensemble=3-5, Choir=6+; …) — each
+    headcount maps to exactly one group, shared across all nominations. Age bands are
+    scoped to a group, not to a nomination.
     """
 
     _id: ParticipantGroupId
-    _category_id: CategoryId
     _name: ParticipantGroupName
     _count_range: ParticipantCountRange
     _description: ParticipantGroupDescription | None = None
@@ -612,7 +615,6 @@ class ParticipantGroup:
         cls,
         *,
         participant_group_id: ParticipantGroupId,
-        category_id: CategoryId,
         name: ParticipantGroupName,
         count_range: ParticipantCountRange,
         description: ParticipantGroupDescription | None = None,
@@ -620,7 +622,6 @@ class ParticipantGroup:
     ) -> ParticipantGroup:
         return cls(
             _id=participant_group_id,
-            _category_id=category_id,
             _name=name,
             _count_range=count_range,
             _description=description,
@@ -632,7 +633,6 @@ class ParticipantGroup:
         cls,
         *,
         participant_group_id: ParticipantGroupId,
-        category_id: CategoryId,
         name: ParticipantGroupName,
         count_range: ParticipantCountRange,
         description: ParticipantGroupDescription | None = None,
@@ -640,7 +640,6 @@ class ParticipantGroup:
     ) -> ParticipantGroup:
         return cls(
             _id=participant_group_id,
-            _category_id=category_id,
             _name=name,
             _count_range=count_range,
             _description=description,
@@ -650,10 +649,6 @@ class ParticipantGroup:
     @property
     def id(self) -> ParticipantGroupId:
         return self._id
-
-    @property
-    def category_id(self) -> CategoryId:
-        return self._category_id
 
     @property
     def name(self) -> ParticipantGroupName:
@@ -1584,28 +1579,28 @@ class Competition:
                 name=discipline.name,
                 sort_order=discipline.sort_order,
             )
-        for age_category in template.age_categories:
-            new_age_id = AgeCategoryId.generate()
-            age_map[age_category.id] = new_age_id
-            self._age_categories[new_age_id] = AgeCategory.create(
-                age_category_id=new_age_id,
-                category_id=category_map[age_category.category_id],
-                name=age_category.name,
-                age_range=age_category.age_range,
-                age_category_type=age_category.type,
-                mixed_calculation_method=age_category.mixed_calculation_method,
-                sort_order=age_category.sort_order,
-            )
+        # Groups must exist before age categories, which are scoped to a group.
         for group in template.participant_groups:
             new_group_id = ParticipantGroupId.generate()
             group_map[group.id] = new_group_id
             self._participant_groups[new_group_id] = ParticipantGroup.create(
                 participant_group_id=new_group_id,
-                category_id=category_map[group.category_id],
                 name=group.name,
                 count_range=group.count_range,
                 description=group.description,
                 sort_order=group.sort_order,
+            )
+        for age_category in template.age_categories:
+            new_age_id = AgeCategoryId.generate()
+            age_map[age_category.id] = new_age_id
+            self._age_categories[new_age_id] = AgeCategory.create(
+                age_category_id=new_age_id,
+                participant_group_id=group_map[age_category.participant_group_id],
+                name=age_category.name,
+                age_range=age_category.age_range,
+                age_category_type=age_category.type,
+                mixed_calculation_method=age_category.mixed_calculation_method,
+                sort_order=age_category.sort_order,
             )
         for participation_format in template.participation_formats:
             new_format_id = ParticipationFormatId.generate()
@@ -1807,13 +1802,9 @@ class Competition:
         """All disciplines belonging to ``category_id``."""
         return tuple(d for d in self._disciplines.values() if d.category_id == category_id)
 
-    def age_categories_of(self, category_id: CategoryId) -> tuple[AgeCategory, ...]:
-        """All age categories belonging to ``category_id``."""
-        return tuple(a for a in self._age_categories.values() if a.category_id == category_id)
-
-    def participant_groups_of(self, category_id: CategoryId) -> tuple[ParticipantGroup, ...]:
-        """All participant groups belonging to ``category_id``."""
-        return tuple(g for g in self._participant_groups.values() if g.category_id == category_id)
+    def age_categories_of(self, participant_group_id: ParticipantGroupId) -> tuple[AgeCategory, ...]:
+        """All age categories belonging to ``participant_group_id``."""
+        return tuple(a for a in self._age_categories.values() if a.participant_group_id == participant_group_id)
 
     # ------------------------------------------------------------------
     # Admissibility & pricing queries
@@ -1942,15 +1933,11 @@ class Competition:
         self._touch(now)
 
     def remove_category(self, *, category_id: CategoryId, now: datetime) -> None:
-        """Remove a category. Refused while any discipline, group, age category, or rule references it."""
+        """Remove a category. Refused while any discipline or rule references it."""
         self._ensure_configurable()
         self._require_category(category_id)
         if any(d.category_id == category_id for d in self._disciplines.values()):
             raise CategoryInUseError("The category still has disciplines.")
-        if any(a.category_id == category_id for a in self._age_categories.values()):
-            raise CategoryInUseError("The category still has age categories.")
-        if any(g.category_id == category_id for g in self._participant_groups.values()):
-            raise CategoryInUseError("The category still has participant groups.")
         if any(c.category_id == category_id for c in self._admission_rules):
             raise CategoryInUseError("The category is referenced by admission rules.")
         if any(c.category_id == category_id for c in self._pricing_rules):
@@ -2010,7 +1997,7 @@ class Competition:
         self,
         *,
         age_category_id: AgeCategoryId,
-        category_id: CategoryId,
+        participant_group_id: ParticipantGroupId,
         name: AgeCategoryName,
         age_range: AgeRange,
         now: datetime,
@@ -2018,17 +2005,17 @@ class Competition:
         mixed_calculation_method: MixedAgeCalculationMethod | None = None,
         sort_order: int | None = None,
     ) -> AgeCategory:
-        """Add an age band to a nomination. Overlapping ranges are refused within the nomination."""
+        """Add an age band to a participant group. Overlapping ranges are refused within the group."""
         self._ensure_configurable()
-        self._require_category(category_id)
-        ensure_age_range_free(self._age_categories, age_range, category_id=category_id)
-        if any(a.category_id == category_id and a.name == name for a in self._age_categories.values()):
-            raise DuplicateAgeCategoryNameError(f"An age category named {name.value!r} already exists in this nomination.")
+        self._require_participant_group(participant_group_id)
+        ensure_age_range_free(self._age_categories, age_range, participant_group_id=participant_group_id)
+        if any(a.participant_group_id == participant_group_id and a.name == name for a in self._age_categories.values()):
+            raise DuplicateAgeCategoryNameError(f"An age category named {name.value!r} already exists in this participant group.")
         if sort_order is None:
-            sort_order = self._next_age_category_sort_order(category_id)
+            sort_order = self._next_age_category_sort_order(participant_group_id)
         age_category = AgeCategory.create(
             age_category_id=age_category_id,
-            category_id=category_id,
+            participant_group_id=participant_group_id,
             name=name,
             age_range=age_range,
             age_category_type=age_category_type,
@@ -2053,13 +2040,14 @@ class Competition:
         """Partial update of an age category (name, age_range, type, method, sort_order)."""
         self._ensure_configurable()
         age_category = self._require_age_category(age_category_id)
-        cat_id = age_category.category_id
+        group_id = age_category.participant_group_id
         if name is not None and any(
-            aid != age_category_id and a.category_id == cat_id and a.name == name for aid, a in self._age_categories.items()
+            aid != age_category_id and a.participant_group_id == group_id and a.name == name
+            for aid, a in self._age_categories.items()
         ):
-            raise DuplicateAgeCategoryNameError(f"An age category named {name.value!r} already exists in this nomination.")
+            raise DuplicateAgeCategoryNameError(f"An age category named {name.value!r} already exists in this participant group.")
         if age_range is not None:
-            ensure_age_range_free(self._age_categories, age_range, category_id=cat_id, exclude=age_category_id)
+            ensure_age_range_free(self._age_categories, age_range, participant_group_id=group_id, exclude=age_category_id)
         age_category.update(
             name=name,
             age_range=age_range,
@@ -2083,28 +2071,25 @@ class Competition:
         self,
         *,
         participant_group_id: ParticipantGroupId,
-        category_id: CategoryId,
         name: ParticipantGroupName,
         count_range: ParticipantCountRange,
         now: datetime,
         description: ParticipantGroupDescription | None = None,
         sort_order: int | None = None,
     ) -> ParticipantGroup:
-        """Add a participant group to a category.
+        """Add a competition-wide participant group.
 
-        Names are unique within the category, and count ranges must not overlap
-        another group's range in the same category (each headcount maps to one group).
+        Names are unique within the competition, and count ranges must not overlap
+        another group's range (each headcount maps to exactly one group).
         """
         self._ensure_configurable()
-        self._require_category(category_id)
-        if any(g.category_id == category_id and g.name == name for g in self._participant_groups.values()):
-            raise DuplicateParticipantGroupError(f"A participant group named {name.value!r} already exists in this category.")
-        ensure_participant_range_free(self._participant_groups, category_id, count_range)
+        if any(g.name == name for g in self._participant_groups.values()):
+            raise DuplicateParticipantGroupError(f"A participant group named {name.value!r} already exists.")
+        ensure_participant_range_free(self._participant_groups, count_range)
         if sort_order is None:
-            sort_order = self._next_participant_group_sort_order(category_id)
+            sort_order = self._next_participant_group_sort_order()
         group = ParticipantGroup.create(
             participant_group_id=participant_group_id,
-            category_id=category_id,
             name=name,
             count_range=count_range,
             description=description,
@@ -2127,13 +2112,12 @@ class Competition:
         """Partial update of a participant group (name, range, description, sort_order)."""
         self._ensure_configurable()
         group = self._require_participant_group(participant_group_id)
-        cat_id = group.category_id
         if name is not None and any(
-            gid != participant_group_id and g.category_id == cat_id and g.name == name for gid, g in self._participant_groups.items()
+            gid != participant_group_id and g.name == name for gid, g in self._participant_groups.items()
         ):
-            raise DuplicateParticipantGroupError(f"A participant group named {name.value!r} already exists in this category.")
+            raise DuplicateParticipantGroupError(f"A participant group named {name.value!r} already exists.")
         if count_range is not None:
-            ensure_participant_range_free(self._participant_groups, cat_id, count_range, exclude=participant_group_id)
+            ensure_participant_range_free(self._participant_groups, count_range, exclude=participant_group_id)
         group.update(
             name=name,
             count_range=count_range,
@@ -2145,6 +2129,8 @@ class Competition:
     def remove_participant_group(self, *, participant_group_id: ParticipantGroupId, now: datetime) -> None:
         self._ensure_configurable()
         self._require_participant_group(participant_group_id)
+        if any(a.participant_group_id == participant_group_id for a in self._age_categories.values()):
+            raise ParticipantGroupInUseError("The participant group still has age categories.")
         if any(c.participant_group_id == participant_group_id for c in self._admission_rules):
             raise ParticipantGroupInUseError("The participant group is referenced by admission rules.")
         if any(c.participant_group_id == participant_group_id for c in self._pricing_rules):
@@ -2966,17 +2952,16 @@ class Competition:
             return 0
         return max(c.sort_order for c in self._categories.values()) + 1
 
-    def _next_age_category_sort_order(self, category_id: CategoryId) -> int:
-        siblings = [a for a in self._age_categories.values() if a.category_id == category_id]
+    def _next_age_category_sort_order(self, participant_group_id: ParticipantGroupId) -> int:
+        siblings = [a for a in self._age_categories.values() if a.participant_group_id == participant_group_id]
         if not siblings:
             return 0
         return max(a.sort_order for a in siblings) + 1
 
-    def _next_participant_group_sort_order(self, category_id: CategoryId) -> int:
-        siblings = [g for g in self._participant_groups.values() if g.category_id == category_id]
-        if not siblings:
+    def _next_participant_group_sort_order(self) -> int:
+        if not self._participant_groups:
             return 0
-        return max(g.sort_order for g in siblings) + 1
+        return max(g.sort_order for g in self._participant_groups.values()) + 1
 
     def _next_format_sort_order(self) -> int:
         if not self._formats:

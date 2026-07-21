@@ -62,7 +62,7 @@ edge (ARCH-001 §7.6). No Django/DRF imports.
     │   ├── AdmissionRuleNotFoundError
     │   ├── PricingRuleNotFoundError
     │   ├── DisciplineCategoryMismatchError     — discipline belongs to a different category
-    │   └── ParticipantGroupCategoryMismatchError
+    │   └── AgeCategoryGroupMismatchError       — age category belongs to a different participant group
     ├── ConfigurationConflictError              — a config element would duplicate/overlap an existing one
     │   ├── DuplicateCategoryError
     │   ├── DuplicateDisciplineError
@@ -407,12 +407,8 @@ class DisciplineCategoryMismatchError(ConfigurationReferenceError):
     """The referenced discipline belongs to a different category than stated."""
 
 
-class AgeCategoryCategoryMismatchError(ConfigurationReferenceError):
-    """The referenced age category belongs to a different category than stated."""
-
-
-class ParticipantGroupCategoryMismatchError(ConfigurationReferenceError):
-    """The referenced participant group belongs to a different category than stated."""
+class AgeCategoryGroupMismatchError(ConfigurationReferenceError):
+    """The referenced age category belongs to a different participant group than stated."""
 
 
 # ---------------------------------------------------------------------------
