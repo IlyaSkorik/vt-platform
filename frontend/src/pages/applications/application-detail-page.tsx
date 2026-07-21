@@ -5,7 +5,6 @@ import {
   applicationStatusPresentation,
   submissionStatusPresentation,
   useApplication,
-  useCancelApplication,
   useRegistration,
 } from "@/entities/application";
 import { ReceiptCard } from "@/features/application-receipt";
@@ -27,14 +26,12 @@ import {
   PageTitle,
 } from "@/shared/ui";
 
-const CANCELLABLE = new Set(["DRAFT", "SUBMITTED", "WAITING_PAYMENT"]);
 const EDITABLE = new Set(["DRAFT", "SUBMITTED"]);
 
 export function ApplicationDetailPage(): React.JSX.Element {
   const { applicationId } = useParams<{ applicationId: string }>();
   const { data: application, isLoading } = useApplication(applicationId);
   const { data: registration } = useRegistration(application?.competitionId);
-  const cancel = useCancelApplication(applicationId ?? "");
 
   if (isLoading || !application) {
     return (
@@ -47,8 +44,6 @@ export function ApplicationDetailPage(): React.JSX.Element {
   }
 
   const status = applicationStatusPresentation(application.status);
-  // Отменять заявку можно только пока открыта регистрация: после её закрытия
-  // действие недоступно независимо от статуса заявки.
   const registrationOpen = registration?.registrationOpen === true;
   // Редактировать можно пока открыта регистрация, а также после её закрытия —
   // если организатор запросил исправления или недостающие файлы (hasCorrections).
@@ -69,16 +64,6 @@ export function ApplicationDetailPage(): React.JSX.Element {
                   <Pencil className="size-4" />
                   Редактировать
                 </Link>
-              </Button>
-            ) : null}
-            {registrationOpen && CANCELLABLE.has(application.status) ? (
-              <Button
-                variant="danger"
-                size="sm"
-                loading={cancel.isPending}
-                onClick={() => cancel.mutate()}
-              >
-                Отменить заявку
               </Button>
             ) : null}
           </div>
