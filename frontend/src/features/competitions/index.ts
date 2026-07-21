@@ -254,6 +254,7 @@ export {
   planTemplatePricing,
   toAddPricingPayload,
 } from "./lib/pricing";
+export { detectRegulationSource, type RegulationSourceType } from "./lib/regulation-source";
 export {
   buildRegulationChangeLog,
   clearRegulationDraft,

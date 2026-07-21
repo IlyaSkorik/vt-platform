@@ -53,7 +53,7 @@ export const regulationDraftSchema = z.object({
   title: z.string().trim().min(1, "Укажите название положения").max(200),
   version: z.string().trim().min(1, "Укажите версию").max(50),
   publicationDate: z.string().min(1, "Укажите дату публикации"),
-  fileReference: z.string().trim().min(1, "Загрузите PDF-файл положения").max(1024),
+  fileReference: z.string().trim().min(1, "Загрузите PDF или укажите ссылку на документ").max(1024),
   changeNote: z.string().trim().max(500).optional(),
 });
 
