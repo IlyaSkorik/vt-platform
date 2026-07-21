@@ -79,7 +79,7 @@ class RegistrationDisciplineView:
 @dataclass(frozen=True, slots=True)
 class RegistrationAgeCategoryView:
     id: str
-    nomination_id: str
+    participant_group_id: str
     name: str
     min_age: int
     max_age: int
@@ -89,7 +89,6 @@ class RegistrationAgeCategoryView:
 @dataclass(frozen=True, slots=True)
 class RegistrationParticipantGroupView:
     id: str
-    nomination_id: str
     name: str
     min_count: int
     max_count: int | None
@@ -192,7 +191,7 @@ def project_registration(competition: Competition, *, now: datetime) -> Registra
     age_categories = [
         RegistrationAgeCategoryView(
             id=age.id.json(),
-            nomination_id=age.category_id.json(),
+            participant_group_id=age.participant_group_id.json(),
             name=age.name.value,
             min_age=age.age_range.min_age,
             max_age=age.age_range.max_age,
@@ -203,7 +202,6 @@ def project_registration(competition: Competition, *, now: datetime) -> Registra
     participant_groups = [
         RegistrationParticipantGroupView(
             id=group.id.json(),
-            nomination_id=group.category_id.json(),
             name=group.name.value,
             min_count=group.count_range.min_count,
             max_count=group.count_range.max_count,

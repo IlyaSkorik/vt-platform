@@ -79,14 +79,14 @@ class DisciplineModel(BasePersistenceModel):
 
 
 class AgeCategoryModel(BasePersistenceModel):
-    """Database row for an age band scoped to a nomination (persistence only)."""
+    """Database row for an age band scoped to a participant group (persistence only)."""
 
     competition = models.ForeignKey(
         "competitions.CompetitionModel",
         on_delete=models.CASCADE,
         related_name="age_categories",
     )
-    category_id = models.UUIDField()
+    participant_group_id = models.UUIDField()
     name = models.CharField(max_length=120)
     min_age = models.PositiveSmallIntegerField()
     max_age = models.PositiveSmallIntegerField()
@@ -100,11 +100,14 @@ class AgeCategoryModel(BasePersistenceModel):
         verbose_name_plural = "age categories"
         indexes = [
             *BasePersistenceModel.Meta.indexes,
-            models.Index(fields=["category_id"]),
+            models.Index(fields=["participant_group_id"]),
         ]
         constraints = [
             *BasePersistenceModel.Meta.constraints,
-            models.UniqueConstraint(fields=["competition", "category_id", "name"], name="competitions_unique_age_category_name"),
+            models.UniqueConstraint(
+                fields=["competition", "participant_group_id", "name"],
+                name="competitions_unique_age_category_name",
+            ),
         ]
 
     def __str__(self) -> str:
@@ -112,14 +115,13 @@ class AgeCategoryModel(BasePersistenceModel):
 
 
 class ParticipantGroupModel(BasePersistenceModel):
-    """Database row for a participant group (persistence only)."""
+    """Database row for a competition-wide participant group (persistence only)."""
 
     competition = models.ForeignKey(
         "competitions.CompetitionModel",
         on_delete=models.CASCADE,
         related_name="participant_groups",
     )
-    category_id = models.UUIDField()
     name = models.CharField(max_length=120)
     min_count = models.PositiveIntegerField()
     max_count = models.PositiveIntegerField(null=True, blank=True, default=None)
@@ -130,13 +132,9 @@ class ParticipantGroupModel(BasePersistenceModel):
         db_table = "competitions_participant_group"
         verbose_name = "participant group"
         verbose_name_plural = "participant groups"
-        indexes = [
-            *BasePersistenceModel.Meta.indexes,
-            models.Index(fields=["category_id"]),
-        ]
         constraints = [
             *BasePersistenceModel.Meta.constraints,
-            models.UniqueConstraint(fields=["competition", "category_id", "name"], name="competitions_unique_group_name"),
+            models.UniqueConstraint(fields=["competition", "name"], name="competitions_unique_group_name"),
         ]
 
     def __str__(self) -> str:

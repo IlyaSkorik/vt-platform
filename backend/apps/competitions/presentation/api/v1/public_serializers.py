@@ -275,7 +275,7 @@ class RegistrationDisciplineSerializer(serializers.Serializer):
 
 class RegistrationAgeCategorySerializer(serializers.Serializer):
     id = serializers.CharField()
-    nominationId = serializers.CharField(source="nomination_id")
+    participantGroupId = serializers.CharField(source="participant_group_id")
     name = serializers.CharField()
     minAge = serializers.IntegerField(source="min_age")
     maxAge = serializers.IntegerField(source="max_age")
@@ -284,7 +284,6 @@ class RegistrationAgeCategorySerializer(serializers.Serializer):
 
 class RegistrationParticipantGroupSerializer(serializers.Serializer):
     id = serializers.CharField()
-    nominationId = serializers.CharField(source="nomination_id")
     name = serializers.CharField()
     minCount = serializers.IntegerField(source="min_count")
     maxCount = serializers.IntegerField(source="max_count", allow_null=True)

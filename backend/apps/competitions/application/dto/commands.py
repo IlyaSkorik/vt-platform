@@ -234,7 +234,7 @@ class RemoveDisciplineCommand:
 @dataclass(frozen=True, slots=True)
 class AddAgeCategoryCommand:
     competition_id: str
-    category_id: str
+    participant_group_id: str
     name: str
     min_age: int
     max_age: int
@@ -264,7 +264,6 @@ class RemoveAgeCategoryCommand:
 @dataclass(frozen=True, slots=True)
 class AddParticipantGroupCommand:
     competition_id: str
-    category_id: str
     name: str
     min_count: int
     max_count: int | None = None

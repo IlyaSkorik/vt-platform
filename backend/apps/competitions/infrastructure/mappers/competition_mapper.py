@@ -250,7 +250,7 @@ class CompetitionMapper:
             age_categories=[
                 AgeCategory.rehydrate(
                     age_category_id=AgeCategoryId.from_uuid(row.id),
-                    category_id=CategoryId.from_uuid(row.category_id),
+                    participant_group_id=ParticipantGroupId.from_uuid(row.participant_group_id),
                     name=AgeCategoryName(row.name),
                     age_range=AgeRange(row.min_age, row.max_age),
                     age_category_type=AgeCategoryType(row.type) if row.type else AgeCategoryType.STANDARD,
@@ -264,7 +264,6 @@ class CompetitionMapper:
             participant_groups=[
                 ParticipantGroup.rehydrate(
                     participant_group_id=ParticipantGroupId.from_uuid(row.id),
-                    category_id=CategoryId.from_uuid(row.category_id),
                     name=ParticipantGroupName(row.name),
                     count_range=ParticipantCountRange(row.min_count, row.max_count),
                     description=ParticipantGroupDescription(row.description) if row.description else None,
@@ -436,7 +435,7 @@ class CompetitionMapper:
                 AgeCategoryModel(
                     id=a.id.value,
                     competition_id=competition_id,
-                    category_id=a.category_id.value,
+                    participant_group_id=a.participant_group_id.value,
                     name=a.name.value,
                     min_age=a.age_range.min_age,
                     max_age=a.age_range.max_age,
@@ -450,7 +449,6 @@ class CompetitionMapper:
                 ParticipantGroupModel(
                     id=g.id.value,
                     competition_id=competition_id,
-                    category_id=g.category_id.value,
                     name=g.name.value,
                     min_count=g.count_range.min_count,
                     max_count=g.count_range.max_count,

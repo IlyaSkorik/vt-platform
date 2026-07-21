@@ -241,7 +241,7 @@ class DisciplineView:
 @dataclass(frozen=True, slots=True)
 class AgeCategoryView:
     id: str
-    category_id: str
+    participant_group_id: str
     name: str
     min_age: int
     max_age: int
@@ -253,7 +253,7 @@ class AgeCategoryView:
     def of(cls, age_category: AgeCategory) -> AgeCategoryView:
         return cls(
             id=age_category.id.json(),
-            category_id=age_category.category_id.json(),
+            participant_group_id=age_category.participant_group_id.json(),
             name=age_category.name.value,
             min_age=age_category.age_range.min_age,
             max_age=age_category.age_range.max_age,
@@ -266,7 +266,6 @@ class AgeCategoryView:
 @dataclass(frozen=True, slots=True)
 class ParticipantGroupView:
     id: str
-    category_id: str
     name: str
     min_count: int
     max_count: int | None
@@ -277,7 +276,6 @@ class ParticipantGroupView:
     def of(cls, group: ParticipantGroup) -> ParticipantGroupView:
         return cls(
             id=group.id.json(),
-            category_id=group.category_id.json(),
             name=group.name.value,
             min_count=group.count_range.min_count,
             max_count=group.count_range.max_count,

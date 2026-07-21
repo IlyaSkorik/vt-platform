@@ -299,7 +299,7 @@ class RenameDisciplineSerializer(serializers.Serializer[dict[str, object]]):
 
 
 class AddAgeCategorySerializer(serializers.Serializer[dict[str, object]]):
-    categoryId = serializers.UUIDField(source="category_id")
+    participantGroupId = serializers.UUIDField(source="participant_group_id")
     name = serializers.CharField(max_length=120)
     minAge = serializers.IntegerField(source="min_age", min_value=0)
     maxAge = serializers.IntegerField(source="max_age", min_value=0)
@@ -359,7 +359,6 @@ class UpdateAgeCategorySerializer(serializers.Serializer[dict[str, object]]):
 
 
 class AddParticipantGroupSerializer(serializers.Serializer[dict[str, object]]):
-    categoryId = serializers.UUIDField(source="category_id")
     name = serializers.CharField(max_length=120)
     minCount = serializers.IntegerField(source="min_count", min_value=1)
     maxCount = serializers.IntegerField(source="max_count", required=False, allow_null=True, min_value=1)
@@ -734,7 +733,7 @@ class _DisciplineSerializer(serializers.Serializer[dict[str, object]]):
 
 class _AgeCategorySerializer(serializers.Serializer[dict[str, object]]):
     id = serializers.CharField()
-    categoryId = serializers.CharField(source="category_id")
+    participantGroupId = serializers.CharField(source="participant_group_id")
     name = serializers.CharField()
     minAge = serializers.IntegerField(source="min_age")
     maxAge = serializers.IntegerField(source="max_age")
@@ -745,7 +744,6 @@ class _AgeCategorySerializer(serializers.Serializer[dict[str, object]]):
 
 class _ParticipantGroupSerializer(serializers.Serializer[dict[str, object]]):
     id = serializers.CharField()
-    categoryId = serializers.CharField(source="category_id")
     name = serializers.CharField()
     minCount = serializers.IntegerField(source="min_count")
     maxCount = serializers.IntegerField(source="max_count", allow_null=True)

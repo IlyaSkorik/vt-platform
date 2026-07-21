@@ -176,7 +176,7 @@ class AddAgeCategoryHandler(CompetitionCommandHandler):
 
         competition.add_age_category(
             age_category_id=AgeCategoryId.from_uuid(self._uuids.new()),
-            category_id=CategoryId.from_string(command.category_id),
+            participant_group_id=ParticipantGroupId.from_string(command.participant_group_id),
             name=AgeCategoryName(command.name),
             age_range=AgeRange(
                 min_age=command.min_age,
@@ -265,9 +265,6 @@ class AddParticipantGroupHandler(CompetitionCommandHandler):
         competition.add_participant_group(
             participant_group_id=ParticipantGroupId.from_uuid(
                 self._uuids.new(),
-            ),
-            category_id=CategoryId.from_string(
-                command.category_id,
             ),
             name=ParticipantGroupName(
                 command.name,
