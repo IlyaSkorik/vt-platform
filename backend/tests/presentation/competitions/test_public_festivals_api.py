@@ -34,6 +34,20 @@ def _competition(*, organizer_id, status: str, title: str, **extra):
     )
 
 
+def _open_nomination(competition):
+    """Seed a nomination with an open registration window (public status → REGISTRATION_OPEN)."""
+    from datetime import UTC, datetime
+
+    from apps.competitions.infrastructure.models import CategoryModel
+
+    return CategoryModel.objects.create(
+        competition=competition,
+        name="Vocal",
+        registration_opens_at=datetime(2000, 1, 1, tzinfo=UTC),
+        registration_closes_at=datetime(2100, 1, 1, tzinfo=UTC),
+    )
+
+
 class TestPublicFestivalDetailEndpoint:
     def test_returns_landing_view_for_public_competition(self) -> None:
         org = _organization()
@@ -48,6 +62,7 @@ class TestPublicFestivalDetailEndpoint:
                 "venue_details": {"city": "Минск"},
             },
         )
+        _open_nomination(competition)
 
         response = APIClient().get(f"/api/v1/public/festivals/{competition.id}")
 

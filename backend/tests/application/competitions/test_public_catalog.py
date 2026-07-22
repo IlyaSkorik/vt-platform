@@ -42,13 +42,22 @@ class TestPublicStatusProjection:
     @pytest.mark.parametrize(
         ("domain_status", "expected"),
         [
-            ("PUBLISHED", "REGISTRATION_OPEN"),
             ("RUNNING", "RUNNING"),
             ("COMPLETED", "COMPLETED"),
         ],
     )
     def test_maps_public_states(self, domain_status: str, expected: str) -> None:
         assert public_status_for(domain_status) == expected
+
+    def test_published_status_is_refined_by_nomination_windows(self) -> None:
+        # Registration is per nomination: PUBLISHED reads as accepting only while a
+        # nomination is open, coming-soon while one is still upcoming, else closed.
+        assert public_status_for("PUBLISHED", has_open_nomination=True) == "REGISTRATION_OPEN"
+        assert (
+            public_status_for("PUBLISHED", has_open_nomination=False, has_upcoming_nomination=True)
+            == "COMING_SOON"
+        )
+        assert public_status_for("PUBLISHED") == "REGISTRATION_CLOSED"
 
     @pytest.mark.parametrize("hidden", ["DRAFT", "CONFIGURED", "READY"])
     def test_hidden_states_never_map(self, hidden: str) -> None:
@@ -162,6 +171,19 @@ class TestDjangoPublicCatalogReader:
             **extra,
         )
 
+    @staticmethod
+    def _open_nomination(competition):
+        from datetime import UTC, datetime
+
+        from apps.competitions.infrastructure.models import CategoryModel
+
+        return CategoryModel.objects.create(
+            competition=competition,
+            name="Vocal",
+            registration_opens_at=datetime(2000, 1, 1, tzinfo=UTC),
+            registration_closes_at=datetime(2100, 1, 1, tzinfo=UTC),
+        )
+
     def _reader(self):
         from apps.competitions.composition import build_public_catalog_read_service
 
@@ -181,7 +203,8 @@ class TestDjangoPublicCatalogReader:
 
     def test_maps_status_and_organizer_name(self) -> None:
         org = self._organization(name="Дом талантов")
-        self._competition(organizer_id=org.id, status="PUBLISHED", title="Приём заявок")
+        competition = self._competition(organizer_id=org.id, status="PUBLISHED", title="Приём заявок")
+        self._open_nomination(competition)
 
         [festival] = self._reader().list_festivals()
 
@@ -498,6 +521,19 @@ class TestDjangoPublicCatalogReaderDetail:
             **extra,
         )
 
+    @staticmethod
+    def _open_nomination(competition):
+        from datetime import UTC, datetime
+
+        from apps.competitions.infrastructure.models import CategoryModel
+
+        return CategoryModel.objects.create(
+            competition=competition,
+            name="Vocal",
+            registration_opens_at=datetime(2000, 1, 1, tzinfo=UTC),
+            registration_closes_at=datetime(2100, 1, 1, tzinfo=UTC),
+        )
+
     def _reader(self):
         from apps.competitions.composition import build_public_catalog_read_service
 
@@ -516,6 +552,7 @@ class TestDjangoPublicCatalogReaderDetail:
                 "venue_details": {"city": "Минск"},
             },
         )
+        self._open_nomination(competition)
 
         detail = self._reader().get_festival(str(competition.id))
 

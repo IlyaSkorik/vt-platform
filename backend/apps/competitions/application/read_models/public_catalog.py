@@ -76,8 +76,12 @@ __all__ = [
 # per nomination, so a PUBLISHED competition is the "apply" phase (each nomination's
 # window governs actual availability, detailed on the landing). Each domain state
 # maps to a coarse *public status* that tells the frontend which CTA to render.
+# Registration is per nomination, so a PUBLISHED competition's public status is
+# refined by its nominations' windows: it is "accepting applications" only while at
+# least one nomination is open, "coming soon" while all open windows are still in the
+# future, and "registration closed" once every window has passed.
 _PUBLIC_STATUS_BY_DOMAIN: dict[str, str] = {
-    "PUBLISHED": "REGISTRATION_OPEN",  # live; registration runs per nomination → "Apply"
+    "PUBLISHED": "REGISTRATION_OPEN",  # refined by nomination windows (see public_status_for)
     "RUNNING": "RUNNING",  # taking place → "In progress"
     "COMPLETED": "COMPLETED",  # finished → "Completed"
 }
@@ -87,13 +91,28 @@ _PUBLIC_STATUS_BY_DOMAIN: dict[str, str] = {
 PUBLIC_CATALOG_DOMAIN_STATUSES: tuple[str, ...] = tuple(_PUBLIC_STATUS_BY_DOMAIN)
 
 
-def public_status_for(domain_status: str) -> str | None:
+def public_status_for(
+    domain_status: str,
+    *,
+    has_open_nomination: bool = False,
+    has_upcoming_nomination: bool = False,
+) -> str | None:
     """Map a domain :class:`CompetitionStatus` value to its public status.
 
-    Returns ``None`` for states that must never be exposed (DRAFT, CONFIGURED,
-    READY) so callers cannot accidentally leak them.
+    For ``PUBLISHED`` the answer is refined by the nominations' registration windows
+    (``has_open_nomination`` / ``has_upcoming_nomination``): accepting now, opening
+    later, or already closed. Returns ``None`` for states that must never be exposed
+    (DRAFT, CONFIGURED, READY) so callers cannot accidentally leak them.
     """
-    return _PUBLIC_STATUS_BY_DOMAIN.get(domain_status)
+    if domain_status not in _PUBLIC_STATUS_BY_DOMAIN:
+        return None
+    if domain_status == "PUBLISHED":
+        if has_open_nomination:
+            return "REGISTRATION_OPEN"
+        if has_upcoming_nomination:
+            return "COMING_SOON"
+        return "REGISTRATION_CLOSED"
+    return _PUBLIC_STATUS_BY_DOMAIN[domain_status]
 
 
 # --- Participation mode classification ----------------------------------------

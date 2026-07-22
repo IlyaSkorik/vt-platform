@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import uuid
 
+from django.utils import timezone
+
 from apps.competitions.application.read_models.public_catalog import (
     PUBLIC_CATALOG_DOMAIN_STATUSES,
     OrganizerContactFacts,
@@ -125,7 +127,12 @@ class DjangoPublicCatalogReader:
         formats = self._formats(competition)
 
         # PUBLIC_CATALOG_DOMAIN_STATUSES gates the query, so this is never None.
-        public_status = public_status_for(competition.status)
+        has_open, has_upcoming = self._registration_flags(competition)
+        public_status = public_status_for(
+            competition.status,
+            has_open_nomination=has_open,
+            has_upcoming_nomination=has_upcoming,
+        )
         assert public_status is not None
 
         return PublicFestivalView(
@@ -161,7 +168,12 @@ class DjangoPublicCatalogReader:
         formats = self._formats(competition)
         organizer = self._organizer_view(competition.organizer_id, organizers)
 
-        public_status = public_status_for(competition.status)
+        has_open, has_upcoming = self._registration_flags(competition)
+        public_status = public_status_for(
+            competition.status,
+            has_open_nomination=has_open,
+            has_upcoming_nomination=has_upcoming,
+        )
         assert public_status is not None
 
         config = landing_config_from_json(competition.landing_config)
@@ -319,6 +331,32 @@ class DjangoPublicCatalogReader:
                 key=lambda category: (category.sort_order, category.name),
             )
         ]
+
+    @staticmethod
+    def _registration_flags(competition: CompetitionModel) -> tuple[bool, bool]:
+        """Whether any nomination is open now, and whether any is scheduled to open later.
+
+        Registration is per nomination (each with its own window + early-stop flag);
+        these two flags let :func:`public_status_for` refine a PUBLISHED competition's
+        public status into accepting / coming-soon / registration-closed.
+        """
+        now = timezone.now()
+        has_open = False
+        has_upcoming = False
+        for category in competition.categories.all():
+            if category.registration_stopped:
+                continue
+            opens_at = category.registration_opens_at
+            closes_at = category.registration_closes_at
+            if opens_at is None and closes_at is None:
+                continue  # unconfigured window — neither open nor upcoming
+            if opens_at is not None and now < opens_at:
+                has_upcoming = True
+                continue
+            if closes_at is not None and now > closes_at:
+                continue  # window already passed
+            has_open = True
+        return has_open, has_upcoming
 
     @staticmethod
     def _organizer_view(
