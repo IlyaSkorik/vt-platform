@@ -140,7 +140,7 @@ export function NominationRegistration({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 font-medium text-sm">
           <CalendarClock className="size-4 text-muted-foreground" aria-hidden="true" />
-          Регистрация номинации
+          {category.name}
         </div>
         <Badge variant={state.variant} size="sm">
           {state.label}

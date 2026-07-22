@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  CalendarClock,
   CircleDollarSign,
   ClipboardCheck,
   FileText,
@@ -20,6 +21,7 @@ export type CompetitionSectionId =
   | "documents"
   | "categories"
   | "disciplines"
+  | "registration"
   | "age-categories"
   | "participant-groups"
   | "participation-formats"
@@ -52,6 +54,7 @@ export const COMPETITION_SECTIONS: readonly CompetitionSection[] = [
   },
   { id: "admission-rules", title: "Правила допуска", icon: ShieldCheck, implemented: true },
   { id: "pricing", title: "Цены", icon: CircleDollarSign, implemented: true },
+  { id: "registration", title: "Регистрация", icon: CalendarClock, implemented: true },
   {
     id: "additional-services",
     title: "Доп. услуги",
