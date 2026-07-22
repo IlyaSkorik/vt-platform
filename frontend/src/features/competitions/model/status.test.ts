@@ -4,7 +4,8 @@ import { competitionStatusLabel, matchesStatusFilter } from "../model/status";
 describe("competition status helpers", () => {
   it("maps known statuses to labels", () => {
     expect(competitionStatusLabel("DRAFT")).toBe("Черновик");
-    expect(competitionStatusLabel("REGISTRATION_OPEN")).toBe("Регистрация открыта");
+    expect(competitionStatusLabel("RUNNING")).toBe("Идёт");
+    expect(competitionStatusLabel("COMPLETED")).toBe("Завершён");
   });
 
   it("treats configured and ready as published filter matches", () => {

@@ -74,7 +74,7 @@ export function RegulationsSection({
   onAutosaveStateChange,
   onNavigateSection,
 }: RegulationsSectionProps): React.JSX.Element {
-  const isReadOnly = competition.status === "ARCHIVED";
+  const isReadOnly = competition.status === "COMPLETED";
   const addRegulation = useAddRegulationMutation();
   const uploadFile = useUploadRegulationFileMutation();
   const makeCurrent = useMakeRegulationCurrentMutation();

@@ -6,13 +6,12 @@ import {
   type CompetitionSectionId,
   DEFAULT_COMPETITION_SECTION,
   findCompetitionSection,
-  useArchiveCompetitionMutation,
-  useCloseRegistrationMutation,
   useCompetitionDetail,
+  useCompleteCompetitionMutation,
   useMarkConfiguredMutation,
   useMarkReadyMutation,
-  useOpenRegistrationMutation,
   usePublishCompetitionMutation,
+  useStartCompetitionMutation,
 } from "@/features/competitions";
 import { ApiError } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
@@ -58,9 +57,8 @@ export function StaffCompetitionWorkspacePage(): React.JSX.Element {
   const publish = usePublishCompetitionMutation();
   const markConfigured = useMarkConfiguredMutation();
   const markReady = useMarkReadyMutation();
-  const openRegistration = useOpenRegistrationMutation();
-  const closeRegistration = useCloseRegistrationMutation();
-  const archive = useArchiveCompetitionMutation();
+  const startCompetition = useStartCompetitionMutation();
+  const completeCompetition = useCompleteCompetitionMutation();
 
   const checklist = useMemo(
     () => (detailQuery.data ? buildPublicationChecklist(detailQuery.data) : null),
@@ -151,33 +149,25 @@ export function StaffCompetitionWorkspacePage(): React.JSX.Element {
             "Не удалось отметить фестиваль как готовый",
           )
         }
-        onOpenRegistration={() =>
+        onStart={() =>
           void runLifecycleAction(
-            () => openRegistration.mutateAsync(competition.id),
-            "Регистрация открыта",
-            "Не удалось открыть регистрацию",
+            () => startCompetition.mutateAsync(competition.id),
+            "Конкурс начат",
+            "Не удалось начать конкурс",
           )
         }
-        onCloseRegistration={() =>
+        onComplete={() =>
           void runLifecycleAction(
-            () => closeRegistration.mutateAsync(competition.id),
-            "Регистрация закрыта",
-            "Не удалось закрыть регистрацию",
-          )
-        }
-        onArchive={() =>
-          void runLifecycleAction(
-            () => archive.mutateAsync(competition.id),
-            "Фестиваль архивирован",
-            "Не удалось архивировать фестиваль",
+            () => completeCompetition.mutateAsync(competition.id),
+            "Конкурс завершён",
+            "Не удалось завершить конкурс",
           )
         }
         publishing={publish.isPending}
         markingConfigured={markConfigured.isPending}
         markingReady={markReady.isPending}
-        openingRegistration={openRegistration.isPending}
-        closingRegistration={closeRegistration.isPending}
-        archiving={archive.isPending}
+        starting={startCompetition.isPending}
+        completing={completeCompetition.isPending}
       >
         {section.id === "general" ? (
           <GeneralSection

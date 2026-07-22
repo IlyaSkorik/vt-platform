@@ -7,7 +7,6 @@ import {
   defaultSeason,
   filterAndSortCompetitions,
   resolveOrganizerId,
-  useArchiveCompetitionMutation,
   useCompetitionsList,
   useCreateCompetitionMutation,
 } from "@/features/competitions";
@@ -15,12 +14,6 @@ import { ApiError } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
 import {
   Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   EmptyState,
   PageActions,
   PageContainer,
@@ -42,12 +35,10 @@ export function StaffCompetitionsPage(): React.JSX.Element {
   const navigate = useNavigate();
   const competitionsQuery = useCompetitionsList();
   const createCompetition = useCreateCompetitionMutation();
-  const archiveCompetition = useArchiveCompetitionMutation();
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<CompetitionStatusFilter>("ALL");
   const [sort, setSort] = useState<CompetitionSortOption>("NEWEST");
-  const [archiveTargetId, setArchiveTargetId] = useState<string | null>(null);
 
   const competitions = competitionsQuery.data ?? [];
 
@@ -72,23 +63,6 @@ export function StaffCompetitionsPage(): React.JSX.Element {
         error instanceof ApiError
           ? (error.problem?.detail ?? "Не удалось создать фестиваль")
           : "Не удалось создать фестиваль";
-      toast.error(message);
-    }
-  };
-
-  const confirmArchive = async (): Promise<void> => {
-    if (!archiveTargetId) {
-      return;
-    }
-    try {
-      await archiveCompetition.mutateAsync(archiveTargetId);
-      toast.success("Фестиваль архивирован");
-      setArchiveTargetId(null);
-    } catch (error) {
-      const message =
-        error instanceof ApiError
-          ? (error.problem?.detail ?? "Не удалось архивировать фестиваль")
-          : "Не удалось архивировать фестиваль";
       toast.error(message);
     }
   };
@@ -155,41 +129,11 @@ export function StaffCompetitionsPage(): React.JSX.Element {
                 }
               />
             ) : (
-              <CompetitionsGrid
-                competitions={filteredCompetitions}
-                onArchive={setArchiveTargetId}
-                archivingId={archiveCompetition.isPending ? archiveTargetId : null}
-              />
+              <CompetitionsGrid competitions={filteredCompetitions} />
             )}
           </>
         ) : null}
       </PageContent>
-
-      <Dialog
-        open={archiveTargetId != null}
-        onOpenChange={(open) => !open && setArchiveTargetId(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Архивировать фестиваль?</DialogTitle>
-            <DialogDescription>
-              Архивированный фестиваль станет только для чтения и скроется из активных операций.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setArchiveTargetId(null)}>
-              Отмена
-            </Button>
-            <Button
-              variant="danger"
-              loading={archiveCompetition.isPending}
-              onClick={() => void confirmArchive()}
-            >
-              Архивировать
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </PageContainer>
   );
 }

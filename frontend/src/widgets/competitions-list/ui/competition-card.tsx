@@ -1,37 +1,20 @@
-import { Archive, ExternalLink, Medal } from "lucide-react";
+import { ExternalLink, Medal } from "lucide-react";
 import { Link } from "react-router";
 import {
   competitionStatusLabel,
   competitionStatusVariant,
   formatDateTime,
-  registrationStatusLabel,
 } from "@/features/competitions";
 import type { CompetitionSummary } from "@/shared/api/generated/model-competitions";
 import { ROUTES } from "@/shared/config";
-import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-  IconButton,
-} from "@/shared/ui";
+import { Badge, Button, Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/shared/ui";
 
 interface CompetitionCardProps {
   competition: CompetitionSummary;
-  onArchive: (competitionId: string) => void;
-  archiving?: boolean;
 }
 
-export function CompetitionCard({
-  competition,
-  onArchive,
-  archiving = false,
-}: CompetitionCardProps): React.JSX.Element {
+export function CompetitionCard({ competition }: CompetitionCardProps): React.JSX.Element {
   const workspacePath = `${ROUTES.staffCompetitions}/${competition.id}`;
-  const isArchived = competition.status === "ARCHIVED";
 
   return (
     <Card className="flex h-full flex-col shadow-none transition-colors hover:border-border/80">
@@ -52,9 +35,6 @@ export function CompetitionCard({
             <div className="flex flex-wrap gap-2">
               <Badge variant={competitionStatusVariant(competition.status)} size="sm">
                 {competitionStatusLabel(competition.status)}
-              </Badge>
-              <Badge variant="outline" size="sm">
-                Регистрация: {registrationStatusLabel(competition.status)}
               </Badge>
             </div>
           </div>
@@ -84,16 +64,6 @@ export function CompetitionCard({
             <ExternalLink className="size-3.5" aria-hidden="true" />
           </Link>
         </Button>
-        {!isArchived ? (
-          <IconButton
-            variant="ghost"
-            size="sm"
-            aria-label={`Архивировать ${competition.title}`}
-            icon={<Archive aria-hidden="true" />}
-            onClick={() => onArchive(competition.id)}
-            disabled={archiving}
-          />
-        ) : null}
       </CardFooter>
     </Card>
   );

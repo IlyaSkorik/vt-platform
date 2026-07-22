@@ -3,24 +3,13 @@ import { CompetitionCard } from "./competition-card";
 
 interface CompetitionsGridProps {
   competitions: readonly CompetitionSummary[];
-  onArchive: (competitionId: string) => void;
-  archivingId?: string | null;
 }
 
-export function CompetitionsGrid({
-  competitions,
-  onArchive,
-  archivingId = null,
-}: CompetitionsGridProps): React.JSX.Element {
+export function CompetitionsGrid({ competitions }: CompetitionsGridProps): React.JSX.Element {
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {competitions.map((competition) => (
-        <CompetitionCard
-          key={competition.id}
-          competition={competition}
-          onArchive={onArchive}
-          archiving={archivingId === competition.id}
-        />
+        <CompetitionCard key={competition.id} competition={competition} />
       ))}
     </div>
   );

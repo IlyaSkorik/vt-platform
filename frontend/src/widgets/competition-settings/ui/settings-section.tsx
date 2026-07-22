@@ -363,7 +363,7 @@ export function SettingsSection({
   onAutosaveStateChange,
   onNavigateSection,
 }: SettingsSectionProps): React.JSX.Element {
-  const isReadOnly = competition.status === "ARCHIVED";
+  const isReadOnly = competition.status === "COMPLETED";
   const updateSettings = useUpdateCompetitionSettingsMutation();
 
   const effectiveSettings = useMemo(

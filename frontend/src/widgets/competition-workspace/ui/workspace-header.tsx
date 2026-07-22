@@ -1,5 +1,5 @@
-import { Archive, CheckCircle2, ChevronDown, Megaphone, UserMinus, UserPlus } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { CheckCircle2, Flag, Megaphone, PlayCircle } from "lucide-react";
+import { useState } from "react";
 import type { AutosaveState, PublicationChecklist } from "@/features/competitions";
 import { competitionStatusLabel, competitionStatusVariant } from "@/features/competitions";
 import type { CompetitionDetail } from "@/shared/api/generated/model-competitions";
@@ -22,24 +22,16 @@ interface WorkspaceHeaderProps {
   onPublish: () => void;
   onMarkConfigured: () => void;
   onMarkReady: () => void;
-  onOpenRegistration: () => void;
-  onCloseRegistration: () => void;
-  onArchive: () => void;
+  onStart: () => void;
+  onComplete: () => void;
   publishing?: boolean;
   markingConfigured?: boolean;
   markingReady?: boolean;
-  openingRegistration?: boolean;
-  closingRegistration?: boolean;
-  archiving?: boolean;
+  starting?: boolean;
+  completing?: boolean;
 }
 
-type ConfirmAction =
-  | "publish"
-  | "mark-configured"
-  | "mark-ready"
-  | "open-registration"
-  | "close-registration"
-  | null;
+type ConfirmAction = "publish" | "mark-configured" | "mark-ready" | "start" | "complete" | null;
 
 export function WorkspaceHeader({
   competition,
@@ -48,53 +40,22 @@ export function WorkspaceHeader({
   onPublish,
   onMarkConfigured,
   onMarkReady,
-  onOpenRegistration,
-  onCloseRegistration,
-  onArchive,
+  onStart,
+  onComplete,
   publishing = false,
   markingConfigured = false,
   markingReady = false,
-  openingRegistration = false,
-  closingRegistration = false,
-  archiving = false,
+  starting = false,
+  completing = false,
 }: WorkspaceHeaderProps): React.JSX.Element {
-  const menuId = useId();
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [archiveOpen, setArchiveOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
 
-  const isArchived = competition.status === "ARCHIVED";
+  const isCompleted = competition.status === "COMPLETED";
   const canMarkConfigured = competition.status === "DRAFT";
   const canMarkReady = competition.status === "CONFIGURED" && checklist.isPublishable;
   const canPublish = competition.status === "READY";
-  const canOpenRegistration = competition.status === "PUBLISHED";
-  const canCloseRegistration = competition.status === "REGISTRATION_OPEN";
-
-  useEffect(() => {
-    if (!menuOpen) {
-      return;
-    }
-
-    const onPointerDown = (event: MouseEvent): void => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === "Escape") {
-        setMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [menuOpen]);
+  const canStart = competition.status === "PUBLISHED";
+  const canComplete = competition.status === "RUNNING";
 
   const confirmCopy: Record<
     Exclude<ConfirmAction, null>,
@@ -103,7 +64,7 @@ export function WorkspaceHeader({
     publish: {
       title: "Опубликовать фестиваль?",
       description:
-        "Фестиваль станет доступен согласно настройкам публикации. После этого можно открыть регистрацию.",
+        "Фестиваль станет виден участникам. Приём заявок открывается и закрывается по каждой номинации в разделе «Регистрация».",
       confirmLabel: "Опубликовать",
       onConfirm: onPublish,
     },
@@ -121,17 +82,18 @@ export function WorkspaceHeader({
       confirmLabel: "Отметить готовым",
       onConfirm: onMarkReady,
     },
-    "open-registration": {
-      title: "Открыть регистрацию?",
-      description: "Участники смогут подавать заявки, пока регистрация открыта.",
-      confirmLabel: "Открыть регистрацию",
-      onConfirm: onOpenRegistration,
+    start: {
+      title: "Начать конкурс?",
+      description:
+        "Фестиваль перейдёт в статус «Идёт». Приёмом заявок по-прежнему управляют окна номинаций.",
+      confirmLabel: "Начать конкурс",
+      onConfirm: onStart,
     },
-    "close-registration": {
-      title: "Закрыть регистрацию?",
-      description: "Новые заявки больше не будут приниматься.",
-      confirmLabel: "Закрыть регистрацию",
-      onConfirm: onCloseRegistration,
+    complete: {
+      title: "Завершить конкурс?",
+      description: "Фестиваль перейдёт в статус «Завершён» и станет доступен только для чтения.",
+      confirmLabel: "Завершить конкурс",
+      onConfirm: onComplete,
     },
   };
 
@@ -139,8 +101,8 @@ export function WorkspaceHeader({
     (confirmAction === "publish" && publishing) ||
     (confirmAction === "mark-configured" && markingConfigured) ||
     (confirmAction === "mark-ready" && markingReady) ||
-    (confirmAction === "open-registration" && openingRegistration) ||
-    (confirmAction === "close-registration" && closingRegistration);
+    (confirmAction === "start" && starting) ||
+    (confirmAction === "complete" && completing);
 
   return (
     <header className="sticky top-0 z-[calc(var(--z-sticky) -1 )] border-border border-b bg-background/95 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:px-6">
@@ -170,7 +132,7 @@ export function WorkspaceHeader({
           </div>
         </div>
 
-        {!isArchived ? (
+        {!isCompleted ? (
           <div className="flex flex-wrap items-center gap-2">
             {canMarkConfigured ? (
               <Button
@@ -199,59 +161,23 @@ export function WorkspaceHeader({
               </Button>
             ) : null}
 
-            {canOpenRegistration ? (
-              <Button
-                variant="outline"
-                onClick={() => setConfirmAction("open-registration")}
-                loading={openingRegistration}
-              >
-                <UserPlus className="size-4" aria-hidden="true" />
-                Открыть регистрацию
-              </Button>
-            ) : null}
-            {canCloseRegistration ? (
-              <Button
-                variant="outline"
-                onClick={() => setConfirmAction("close-registration")}
-                loading={closingRegistration}
-              >
-                <UserMinus className="size-4" aria-hidden="true" />
-                Закрыть регистрацию
+            {canStart ? (
+              <Button onClick={() => setConfirmAction("start")} loading={starting}>
+                <PlayCircle className="size-4" aria-hidden="true" />
+                Начать конкурс
               </Button>
             ) : null}
 
-            <div className="relative" ref={menuRef}>
+            {canComplete ? (
               <Button
                 variant="outline"
-                onClick={() => setMenuOpen((value) => !value)}
-                aria-expanded={menuOpen}
-                aria-haspopup="menu"
-                aria-controls={menuId}
+                onClick={() => setConfirmAction("complete")}
+                loading={completing}
               >
-                Ещё
-                <ChevronDown className="size-4" aria-hidden="true" />
+                <Flag className="size-4" aria-hidden="true" />
+                Завершить конкурс
               </Button>
-              {menuOpen ? (
-                <div
-                  id={menuId}
-                  role="menu"
-                  className="absolute top-full right-0 z-[var(--z-dropdown)] mt-2 min-w-44 rounded-md border bg-popover p-1 shadow-elevation-2"
-                >
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-left text-sm outline-none hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      setArchiveOpen(true);
-                    }}
-                  >
-                    <Archive className="size-4" aria-hidden="true" />
-                    Архивировать
-                  </button>
-                </div>
-              ) : null}
-            </div>
+            ) : null}
           </div>
         ) : null}
       </div>
@@ -287,33 +213,6 @@ export function WorkspaceHeader({
               </DialogFooter>
             </>
           ) : null}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={archiveOpen} onOpenChange={setArchiveOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Архивировать фестиваль?</DialogTitle>
-            <DialogDescription>
-              Архивированный фестиваль станет только для чтения: конфигурацию можно смотреть, но
-              редактировать и принимать заявки уже нельзя.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setArchiveOpen(false)}>
-              Отмена
-            </Button>
-            <Button
-              variant="danger"
-              loading={archiving}
-              onClick={() => {
-                onArchive();
-                setArchiveOpen(false);
-              }}
-            >
-              Архивировать
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </header>

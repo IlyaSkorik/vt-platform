@@ -83,7 +83,7 @@ export function AdditionalServicesSection({
   onAutosaveStateChange,
   onNavigateSection,
 }: AdditionalServicesSectionProps): React.JSX.Element {
-  const isReadOnly = competition.status === "ARCHIVED";
+  const isReadOnly = competition.status === "COMPLETED";
 
   const addService = useAddAdditionalServiceMutation();
   const updateService = useUpdateAdditionalServiceMutation();

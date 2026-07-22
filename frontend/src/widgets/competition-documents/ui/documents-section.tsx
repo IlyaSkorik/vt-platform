@@ -72,7 +72,7 @@ export function DocumentsSection({
   onAutosaveStateChange,
   onNavigateSection,
 }: DocumentsSectionProps): React.JSX.Element {
-  const isReadOnly = competition.status === "ARCHIVED";
+  const isReadOnly = competition.status === "COMPLETED";
   const uploadFile = useUploadDocumentFileMutation();
   const addDocument = useAddDocumentMutation();
   const updateDocument = useUpdateDocumentMutation();

@@ -31,9 +31,9 @@ export function RegistrationSection({
   checklist,
   onNavigateSection,
 }: RegistrationSectionProps): React.JSX.Element {
-  // Registration control is a live action (available after publication); only an
-  // archived competition freezes it.
-  const isArchived = competition.status === "ARCHIVED";
+  // Registration control is a live action (available after publication); only a
+  // completed competition freezes it.
+  const isCompleted = competition.status === "COMPLETED";
 
   const nominations = useMemo(
     () =>
@@ -47,9 +47,9 @@ export function RegistrationSection({
     <div className="space-y-6">
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-6">
-          {isArchived ? (
-            <Alert variant="warning" title="Фестиваль в архиве">
-              Регистрацию архивного фестиваля изменить нельзя.
+          {isCompleted ? (
+            <Alert variant="warning" title="Фестиваль завершён">
+              Регистрацию завершённого фестиваля изменить нельзя.
             </Alert>
           ) : null}
 
@@ -79,7 +79,7 @@ export function RegistrationSection({
                         <NominationRegistration
                           competitionId={competition.id}
                           category={category}
-                          disabled={isArchived}
+                          disabled={isCompleted}
                         />
                       </li>
                     ))}

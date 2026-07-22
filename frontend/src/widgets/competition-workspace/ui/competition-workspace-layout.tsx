@@ -17,15 +17,13 @@ interface CompetitionWorkspaceLayoutProps {
   onPublish: () => void;
   onMarkConfigured: () => void;
   onMarkReady: () => void;
-  onOpenRegistration: () => void;
-  onCloseRegistration: () => void;
-  onArchive: () => void;
+  onStart: () => void;
+  onComplete: () => void;
   publishing?: boolean;
   markingConfigured?: boolean;
   markingReady?: boolean;
-  openingRegistration?: boolean;
-  closingRegistration?: boolean;
-  archiving?: boolean;
+  starting?: boolean;
+  completing?: boolean;
   children: ReactNode;
 }
 
@@ -38,15 +36,13 @@ export function CompetitionWorkspaceLayout({
   onPublish,
   onMarkConfigured,
   onMarkReady,
-  onOpenRegistration,
-  onCloseRegistration,
-  onArchive,
+  onStart,
+  onComplete,
   publishing,
   markingConfigured,
   markingReady,
-  openingRegistration,
-  closingRegistration,
-  archiving,
+  starting,
+  completing,
   children,
 }: CompetitionWorkspaceLayoutProps): React.JSX.Element {
   return (
@@ -58,15 +54,13 @@ export function CompetitionWorkspaceLayout({
         onPublish={onPublish}
         onMarkConfigured={onMarkConfigured}
         onMarkReady={onMarkReady}
-        onOpenRegistration={onOpenRegistration}
-        onCloseRegistration={onCloseRegistration}
-        onArchive={onArchive}
+        onStart={onStart}
+        onComplete={onComplete}
         {...(publishing !== undefined ? { publishing } : {})}
         {...(markingConfigured !== undefined ? { markingConfigured } : {})}
         {...(markingReady !== undefined ? { markingReady } : {})}
-        {...(openingRegistration !== undefined ? { openingRegistration } : {})}
-        {...(closingRegistration !== undefined ? { closingRegistration } : {})}
-        {...(archiving !== undefined ? { archiving } : {})}
+        {...(starting !== undefined ? { starting } : {})}
+        {...(completing !== undefined ? { completing } : {})}
       />
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <WorkspaceSidebar activeSection={activeSection} onSectionChange={onSectionChange} />

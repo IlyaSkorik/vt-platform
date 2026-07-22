@@ -309,7 +309,7 @@ export function GeneralSection({
     onAutosaveStateChange("dirty");
   };
 
-  const isReadOnly = competition.status === "ARCHIVED";
+  const isReadOnly = competition.status === "COMPLETED";
 
   return (
     <div className="space-y-6">

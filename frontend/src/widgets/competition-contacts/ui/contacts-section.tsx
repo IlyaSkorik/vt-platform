@@ -230,7 +230,7 @@ export function ContactsSection({
   isLoading = false,
   onAutosaveStateChange,
 }: ContactsSectionProps): React.JSX.Element {
-  const isReadOnly = competition.status === "ARCHIVED";
+  const isReadOnly = competition.status === "COMPLETED";
   const orgQuery = useOrganizationProfileQuery();
   const updateConfig = useUpdateContactsConfigurationMutation();
   const updateGeneral = useUpdateGeneralInformationMutation();

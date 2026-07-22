@@ -18,8 +18,8 @@ import {
   addParticipationFormat,
   addPricingRule,
   addRegulation,
-  archiveCompetition,
   changePrice,
+  completeCompetition,
   disableAdditionalService,
   enableAdditionalService,
   getCompetition,
@@ -27,7 +27,6 @@ import {
   makeRegulationCurrent,
   markCompetitionConfigured,
   markCompetitionReady,
-  openRegistration,
   postCompetition,
   publishCompetition,
   publishDocument,
@@ -44,6 +43,7 @@ import {
   removeRegulation,
   renameCategory,
   renameDiscipline,
+  startCompetition,
   unpublishDocument,
   updateAdditionalService,
   updateAgeCategory,
@@ -285,24 +285,13 @@ async function markReady(competitionId: string): Promise<CompetitionDetail> {
   return unwrapCompetitionDetail(response.data);
 }
 
-async function openCompetitionRegistration(competitionId: string): Promise<CompetitionDetail> {
-  const response = await openRegistration(competitionId);
+async function start(competitionId: string): Promise<CompetitionDetail> {
+  const response = await startCompetition(competitionId);
   return unwrapCompetitionDetail(response.data);
 }
 
-async function closeCompetitionRegistration(competitionId: string): Promise<CompetitionDetail> {
-  try {
-    const response = await apiClient
-      .post(`competitions/${competitionId}/registration/close`)
-      .json<unknown>();
-    return unwrapCompetitionDetail(response);
-  } catch (error) {
-    throw await toApiError(error);
-  }
-}
-
-async function archive(competitionId: string): Promise<CompetitionDetail> {
-  const response = await archiveCompetition(competitionId);
+async function complete(competitionId: string): Promise<CompetitionDetail> {
+  const response = await completeCompetition(competitionId);
   return unwrapCompetitionDetail(response.data);
 }
 
@@ -828,89 +817,28 @@ export function usePublishCompetitionMutation(): UseMutationResult<
   });
 }
 
-export function useOpenRegistrationMutation(): UseMutationResult<
+export function useStartCompetitionMutation(): UseMutationResult<
   CompetitionDetail,
   ApiError,
   string
 > {
   const queryClient = useQueryClient();
   return useMutation<CompetitionDetail, ApiError, string>({
-    mutationFn: openCompetitionRegistration,
+    mutationFn: start,
     onSuccess: (detail) => {
       setCompetitionCache(queryClient, detail);
     },
   });
 }
 
-export function useCloseRegistrationMutation(): UseMutationResult<
+export function useCompleteCompetitionMutation(): UseMutationResult<
   CompetitionDetail,
   ApiError,
   string
 > {
   const queryClient = useQueryClient();
   return useMutation<CompetitionDetail, ApiError, string>({
-    mutationFn: closeCompetitionRegistration,
-    onSuccess: (detail) => {
-      setCompetitionCache(queryClient, detail);
-    },
-  });
-}
-
-export function useArchiveCompetitionMutation(): UseMutationResult<
-  CompetitionDetail,
-  ApiError,
-  string,
-  {
-    previousList: CompetitionSummary[] | undefined;
-    previousDetail: CompetitionDetail | undefined;
-  }
-> {
-  const queryClient = useQueryClient();
-  return useMutation<
-    CompetitionDetail,
-    ApiError,
-    string,
-    {
-      previousList: CompetitionSummary[] | undefined;
-      previousDetail: CompetitionDetail | undefined;
-    }
-  >({
-    mutationFn: archive,
-    onMutate: async (competitionId) => {
-      await queryClient.cancelQueries({ queryKey: competitionKeys.list() });
-      await queryClient.cancelQueries({ queryKey: competitionKeys.detail(competitionId) });
-
-      const previousList = queryClient.getQueryData<CompetitionSummary[]>(competitionKeys.list());
-      const previousDetail = queryClient.getQueryData<CompetitionDetail>(
-        competitionKeys.detail(competitionId),
-      );
-
-      if (previousList) {
-        queryClient.setQueryData<CompetitionSummary[]>(
-          competitionKeys.list(),
-          previousList.map((item) =>
-            item.id === competitionId ? { ...item, status: "ARCHIVED" } : item,
-          ),
-        );
-      }
-
-      if (previousDetail) {
-        queryClient.setQueryData<CompetitionDetail>(competitionKeys.detail(competitionId), {
-          ...previousDetail,
-          status: "ARCHIVED",
-        });
-      }
-
-      return { previousList, previousDetail };
-    },
-    onError: (_error, competitionId, context) => {
-      if (context?.previousList) {
-        queryClient.setQueryData(competitionKeys.list(), context.previousList);
-      }
-      if (context?.previousDetail) {
-        queryClient.setQueryData(competitionKeys.detail(competitionId), context.previousDetail);
-      }
-    },
+    mutationFn: complete,
     onSuccess: (detail) => {
       setCompetitionCache(queryClient, detail);
     },

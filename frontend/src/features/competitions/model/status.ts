@@ -1,13 +1,6 @@
 import type { BadgeProps } from "@/shared/ui";
 
-export type CompetitionStatusFilter =
-  | "ALL"
-  | "DRAFT"
-  | "PUBLISHED"
-  | "REGISTRATION_OPEN"
-  | "REGISTRATION_CLOSED"
-  | "COMPLETED"
-  | "ARCHIVED";
+export type CompetitionStatusFilter = "ALL" | "DRAFT" | "PUBLISHED" | "RUNNING" | "COMPLETED";
 
 export type CompetitionSortOption = "NEWEST" | "OLDEST" | "NAME";
 
@@ -18,10 +11,8 @@ export const STATUS_FILTER_OPTIONS: ReadonlyArray<{
   { value: "ALL", label: "Все статусы" },
   { value: "DRAFT", label: "Черновик" },
   { value: "PUBLISHED", label: "Опубликован" },
-  { value: "REGISTRATION_OPEN", label: "Регистрация открыта" },
-  { value: "REGISTRATION_CLOSED", label: "Регистрация закрыта" },
+  { value: "RUNNING", label: "Идёт" },
   { value: "COMPLETED", label: "Завершён" },
-  { value: "ARCHIVED", label: "В архиве" },
 ];
 
 export const SORT_OPTIONS: ReadonlyArray<{ value: CompetitionSortOption; label: string }> = [
@@ -35,11 +26,8 @@ const STATUS_LABELS: Record<string, string> = {
   CONFIGURED: "Настроен",
   READY: "Готов",
   PUBLISHED: "Опубликован",
-  REGISTRATION_OPEN: "Регистрация открыта",
-  REGISTRATION_CLOSED: "Регистрация закрыта",
   RUNNING: "Идёт",
   COMPLETED: "Завершён",
-  ARCHIVED: "В архиве",
 };
 
 const STATUS_VARIANTS: Record<string, NonNullable<BadgeProps["variant"]>> = {
@@ -47,11 +35,8 @@ const STATUS_VARIANTS: Record<string, NonNullable<BadgeProps["variant"]>> = {
   CONFIGURED: "info",
   READY: "info",
   PUBLISHED: "primary",
-  REGISTRATION_OPEN: "success",
-  REGISTRATION_CLOSED: "warning",
-  RUNNING: "warning",
+  RUNNING: "success",
   COMPLETED: "secondary",
-  ARCHIVED: "outline",
 };
 
 export function competitionStatusLabel(status: string): string {
@@ -60,19 +45,6 @@ export function competitionStatusLabel(status: string): string {
 
 export function competitionStatusVariant(status: string): NonNullable<BadgeProps["variant"]> {
   return STATUS_VARIANTS[status] ?? "neutral";
-}
-
-export function registrationStatusLabel(status: string): string {
-  if (status === "REGISTRATION_OPEN") {
-    return "Открыта";
-  }
-  if (status === "REGISTRATION_CLOSED") {
-    return "Закрыта";
-  }
-  if (status === "PUBLISHED") {
-    return "Ещё не открыта";
-  }
-  return "—";
 }
 
 /** Map UI filter values to backend status codes (includes intermediate states). */

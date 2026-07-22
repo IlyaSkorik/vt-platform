@@ -678,7 +678,7 @@ export function PublicInformationSection({
   onAutosaveStateChange,
   onNavigateSection,
 }: PublicInformationSectionProps): React.JSX.Element {
-  const isReadOnly = competition.status === "ARCHIVED";
+  const isReadOnly = competition.status === "COMPLETED";
   const updateLanding = useUpdateLandingConfigurationMutation();
   const uploadLandingImage = useUploadLandingImageMutation();
 
