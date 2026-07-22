@@ -35,6 +35,10 @@ class CategoryModel(BasePersistenceModel):
     name = models.CharField(max_length=120)
     description = models.TextField(null=True, blank=True, default=None)
     sort_order = models.PositiveIntegerField(default=0)
+    # Per-nomination registration schedule (there is no competition-wide application deadline).
+    registration_opens_at = models.DateTimeField(null=True, blank=True, default=None)
+    registration_closes_at = models.DateTimeField(null=True, blank=True, default=None)
+    registration_stopped = models.BooleanField(default=False)
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "competitions_category"

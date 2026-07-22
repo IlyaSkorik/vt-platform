@@ -81,6 +81,7 @@ from apps.competitions.domain.value_objects import (
     PricingCalculationType,
     PricingRule,
     RegistrationDeadlines,
+    RegistrationWindow,
     RegulationId,
     RegulationTitle,
     RegulationVersion,
@@ -235,6 +236,11 @@ class CompetitionMapper:
                     name=CategoryName(row.name),
                     description=CategoryDescription(row.description) if row.description else None,
                     sort_order=row.sort_order,
+                    registration=RegistrationWindow(
+                        opens_at=row.registration_opens_at,
+                        closes_at=row.registration_closes_at,
+                    ),
+                    registration_stopped=row.registration_stopped,
                 )
                 for row in categories
             ],
@@ -418,6 +424,9 @@ class CompetitionMapper:
                     name=c.name.value,
                     description=c.description.value if c.description is not None else None,
                     sort_order=c.sort_order,
+                    registration_opens_at=c.registration.opens_at,
+                    registration_closes_at=c.registration.closes_at,
+                    registration_stopped=c.is_registration_stopped,
                 )
                 for c in entity.categories
             ],
