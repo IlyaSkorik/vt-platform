@@ -38,6 +38,8 @@ class ApplicationModel(BasePersistenceModel):
     payment_receipt = models.JSONField(null=True, blank=True, default=None)
 
     paid_at = models.DateTimeField(null=True, blank=True, default=None)
+    # When the order was submitted; drives the unpaid auto-cancel sweep.
+    submitted_at = models.DateTimeField(null=True, blank=True, default=None)
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "applications_application"
@@ -47,6 +49,7 @@ class ApplicationModel(BasePersistenceModel):
             *BasePersistenceModel.Meta.indexes,
             models.Index(fields=["applicant_id", "status"]),
             models.Index(fields=["competition_id", "status"]),
+            models.Index(fields=["status", "submitted_at"]),
         ]
         constraints = [
             *BasePersistenceModel.Meta.constraints,

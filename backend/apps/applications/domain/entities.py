@@ -1121,6 +1121,7 @@ class Application:
     _status_history: list[ApplicationStatusChange] = field(default_factory=list)
     _payment_receipt: PaymentReceipt | None = None
     _paid_at: datetime | None = None
+    _submitted_at: datetime | None = None
     _deleted_at: datetime | None = None
     _version: int = 1
     #: The version this aggregate was loaded at - the optimistic-concurrency
@@ -1182,6 +1183,7 @@ class Application:
         status_history: Sequence[ApplicationStatusChange] = (),
         payment_receipt: PaymentReceipt | None = None,
         paid_at: datetime | None = None,
+        submitted_at: datetime | None = None,
         deleted_at: datetime | None = None,
         version: int = 1,
     ) -> Application:
@@ -1203,6 +1205,7 @@ class Application:
             _status_history=list(status_history),
             _payment_receipt=payment_receipt,
             _paid_at=paid_at,
+            _submitted_at=submitted_at,
             _deleted_at=deleted_at,
             _version=version,
             _initial_version=version,
@@ -1268,6 +1271,11 @@ class Application:
     @property
     def paid_at(self) -> datetime | None:
         return self._paid_at
+
+    @property
+    def submitted_at(self) -> datetime | None:
+        """When the order was submitted (drives the unpaid auto-cancel deadline)."""
+        return self._submitted_at
 
     @property
     def created_at(self) -> datetime:
@@ -1426,6 +1434,7 @@ class Application:
             raise MissingRequiredServiceError(f"The following required services were not selected: {', '.join(sorted(missing_services))}.")
         total = self._recalculate_total(now)
         self._transition_to(ApplicationStatus.SUBMITTED, now=now)
+        self._submitted_at = now
         return [ApplicationSubmitted(aggregate_id=self._id.value, amount=str(total.amount), currency=total.currency)]
 
     def request_payment(self, *, now: datetime) -> list[DomainEvent]:

@@ -62,6 +62,7 @@ class ApplicationMapper:
             status_history=[ApplicationMapper._change_from_json(row) for row in model.status_history],
             payment_receipt=ApplicationMapper._receipt_from_json(model.payment_receipt),
             paid_at=model.paid_at,
+            submitted_at=model.submitted_at,
             deleted_at=model.deleted_at,
             version=model.version,
         )
@@ -95,6 +96,7 @@ class ApplicationMapper:
             "status_history": [ApplicationMapper._change_to_json(change) for change in entity.status_history],
             "payment_receipt": ApplicationMapper._receipt_to_json(entity.payment_receipt),
             "paid_at": entity.paid_at,
+            "submitted_at": entity.submitted_at,
             "created_at": entity.created_at,
             "updated_at": entity.updated_at,
             "version": entity.version,
