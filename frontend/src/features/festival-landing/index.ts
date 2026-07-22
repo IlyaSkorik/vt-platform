@@ -7,13 +7,14 @@
  * nothing reaches past this barrel. Shared festival formatters (dates, media,
  * modes) are reused from `@/features/festival-catalog`.
  */
-export { festivalLandingKeys, usePublicFestival } from "./api";
+export { festivalLandingKeys, usePublicFestival, usePublicRegistration } from "./api";
 export {
   bodyBlocks,
   type FaqItem,
   type FestivalContacts,
   type FestivalDetail,
   type FestivalDocument,
+  type FestivalRegistration,
   type FestivalVenue,
   formatFromPrice,
   type GalleryImage,
@@ -27,6 +28,7 @@ export {
   landingCta,
   type PartnerCard,
   type PublicStatus,
+  type RegistrationNominationView,
   type Regulation,
   type TeamMember,
 } from "./lib";

@@ -2,4 +2,6 @@
 export const festivalLandingKeys = {
   all: ["festival-landing"] as const,
   detail: (festivalId: string) => [...festivalLandingKeys.all, "detail", festivalId] as const,
+  registration: (festivalId: string) =>
+    [...festivalLandingKeys.all, "registration", festivalId] as const,
 };

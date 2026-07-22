@@ -11,6 +11,9 @@ import { FestivalLanding } from "./festival-landing";
 vi.mock("@/features/festival-landing", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/features/festival-landing")>()),
   usePublicFestival: vi.fn(),
+  // The registration block is a secondary, non-blocking read; the page renders
+  // fine without it, so the tests default it to an empty result.
+  usePublicRegistration: vi.fn(() => ({ data: undefined })),
 }));
 
 vi.mock("@/app/providers", async (importOriginal) => ({

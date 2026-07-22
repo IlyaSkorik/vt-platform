@@ -10,6 +10,8 @@ import type {
   PublicFestivalRegulation,
   PublicFestivalTeamMember,
   PublicFestivalVenue,
+  Registration,
+  RegistrationNomination,
 } from "@/shared/api/generated/model-public-catalog";
 
 /**
@@ -31,6 +33,8 @@ export type FaqItem = PublicFestivalFaqItem;
 export type TeamMember = PublicFestivalTeamMember;
 export type Regulation = PublicFestivalRegulation;
 export type FestivalDocument = PublicFestivalDocument;
+export type FestivalRegistration = Registration;
+export type RegistrationNominationView = RegistrationNomination;
 
 /** Public lifecycle status projected by the backend read model. */
 export type PublicStatus =

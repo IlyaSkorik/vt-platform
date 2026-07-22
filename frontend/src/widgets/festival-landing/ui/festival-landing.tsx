@@ -1,9 +1,15 @@
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router";
 import { useAuth } from "@/app/providers";
-import { type FestivalDetail, usePublicFestival } from "@/features/festival-landing";
+import {
+  type FestivalDetail,
+  type RegistrationNominationView,
+  usePublicFestival,
+  usePublicRegistration,
+} from "@/features/festival-landing";
 import { ROUTES } from "@/shared/config";
 import { Button } from "@/shared/ui";
+import { RegistrationBlock } from "./blocks/registration-block";
 import { LandingFooter } from "./landing-footer";
 import { LandingHero } from "./landing-hero";
 import { LandingSections } from "./landing-sections";
@@ -27,13 +33,16 @@ function BackLink({ to }: { to: string }): React.JSX.Element {
 function LandingContent({
   festival,
   applyPath,
+  nominations,
 }: {
   festival: FestivalDetail;
   applyPath: string;
+  nominations: RegistrationNominationView[];
 }): React.JSX.Element {
   return (
     <div className="space-y-10">
       <LandingHero festival={festival} applyPath={applyPath} />
+      <RegistrationBlock nominations={nominations} />
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
         {/* Summary sits after the hero on mobile/tablet and becomes the sticky
             right rail on desktop (order swap keeps a single DOM source). */}
@@ -64,6 +73,9 @@ export function FestivalLanding({
 }: FestivalLandingProps): React.JSX.Element {
   const { isAuthenticated } = useAuth();
   const query = usePublicFestival(festivalId);
+  // Non-blocking: the registration schedule is a secondary read; the page renders
+  // without it and the block simply stays empty until it arrives.
+  const registrationQuery = usePublicRegistration(festivalId);
   const applyPath = festivalId
     ? `${ROUTES.cabinetCompetitions}/${festivalId}/apply`
     : ROUTES.cabinetCompetitions;
@@ -104,7 +116,11 @@ export function FestivalLanding({
   return (
     <div className="space-y-6">
       <BackLink to={catalogPath} />
-      <LandingContent festival={query.data} applyPath={ctaPath} />
+      <LandingContent
+        festival={query.data}
+        applyPath={ctaPath}
+        nominations={registrationQuery.data?.nominations ?? []}
+      />
     </div>
   );
 }

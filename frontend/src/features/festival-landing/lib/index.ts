@@ -6,6 +6,7 @@ export {
   type FestivalContacts,
   type FestivalDetail,
   type FestivalDocument,
+  type FestivalRegistration,
   type FestivalVenue,
   type GalleryImage,
   type JuryCard,
@@ -14,6 +15,7 @@ export {
   type LandingBlockType,
   type PartnerCard,
   type PublicStatus,
+  type RegistrationNominationView,
   type Regulation,
   type TeamMember,
 } from "./types";
