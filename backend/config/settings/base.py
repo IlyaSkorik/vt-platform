@@ -262,6 +262,16 @@ CELERY_RESULT_BACKEND = str(settings.celery_result_backend)
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TIMEZONE = TIME_ZONE
 
+# Periodic jobs. The unpaid-order sweep is durable: it recomputes overdue orders
+# from the DB each run, so it survives web/worker/beat restarts (unlike per-order
+# ETA jobs). Interval via APPLICATION_PAYMENT_SWEEP_MINUTES (default 15).
+CELERY_BEAT_SCHEDULE = {
+    "sweep-unpaid-applications": {
+        "task": "applications.sweep_unpaid_applications",
+        "schedule": settings.application_payment_sweep_minutes * 60.0,
+    },
+}
+
 # --- Logging: structured, no PII (ARCH-001 §19) ---------------------------
 LOGGING = {
     "version": 1,

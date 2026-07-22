@@ -6,16 +6,38 @@ and run it. Business logic lives in the application layer, never here.
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 from celery import shared_task
+from django.conf import settings
+from django.utils import timezone
 
 
-@shared_task(name="applications.auto_cancel_unpaid_application")
-def auto_cancel_unpaid_application(application_id: str) -> None:
-    """Auto-cancel an order whose payment receipt never arrived within the window.
+@shared_task(name="applications.sweep_unpaid_applications")
+def sweep_unpaid_applications() -> None:
+    """Auto-cancel submitted orders whose payment receipt never arrived in time.
 
-    A no-op if a receipt was attached, the order was paid, or it already left a
-    cancellable state (the handler re-checks), so a late or duplicate run is safe.
+    A durable, restart-proof alternative to per-order ETA jobs: Celery Beat runs this
+    periodically, it recomputes the overdue set from the database (orders submitted
+    longer than the payment window ago, still awaiting payment, with no receipt), and
+    cancels each through the idempotent auto-cancel use case. Nothing is lost if the
+    web app, worker, or beat restarts, because the source of truth is the DB.
     """
+    from apps.applications.infrastructure.models import ApplicationModel
     from apps.applications.presentation.api.v1.orders.composition import build_auto_cancel_unpaid_handler
 
-    build_auto_cancel_unpaid_handler().handle(application_id)
+    cutoff = timezone.now() - timedelta(hours=settings.APPLICATION_PAYMENT_WINDOW_HOURS)
+    overdue_ids = list(
+        ApplicationModel.objects.filter(
+            deleted_at__isnull=True,
+            status__in=["SUBMITTED", "WAITING_PAYMENT"],
+            payment_receipt__isnull=True,
+            submitted_at__isnull=False,
+            submitted_at__lte=cutoff,
+        ).values_list("id", flat=True)
+    )
+    if not overdue_ids:
+        return
+    handler = build_auto_cancel_unpaid_handler()
+    for application_id in overdue_ids:
+        handler.handle(str(application_id))

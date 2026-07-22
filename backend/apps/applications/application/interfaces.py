@@ -294,15 +294,6 @@ class ApplicantNotifier(Protocol):
         ...
 
 
-@runtime_checkable
-class PaymentDeadlineScheduler(Protocol):
-    """Port: schedule the deferred auto-cancellation of an unpaid order."""
-
-    def schedule_auto_cancel(self, *, application_id: str, run_at: datetime) -> None:
-        """Arrange for the order ``application_id`` to be auto-cancelled at ``run_at``."""
-        ...
-
-
 # ---------------------------------------------------------------------------
 # Ambient-dependency ports (time & identity, injected not read globally)
 # ---------------------------------------------------------------------------

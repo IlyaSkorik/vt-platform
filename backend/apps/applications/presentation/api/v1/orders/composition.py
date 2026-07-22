@@ -40,7 +40,6 @@ from apps.applications.infrastructure.acl import (
     DjangoIdentityReadModel,
 )
 from apps.applications.infrastructure.messaging import (
-    CeleryPaymentDeadlineScheduler,
     DjangoApplicantNotifier,
     NullEventPublisher,
 )
@@ -145,7 +144,6 @@ def build_submit_application_handler() -> SubmitApplicationHandler:
         events=NullEventPublisher(),
         identity=DjangoIdentityReadModel(),
         notifier=DjangoApplicantNotifier(),
-        scheduler=CeleryPaymentDeadlineScheduler(),
         payment_window=timedelta(hours=settings.APPLICATION_PAYMENT_WINDOW_HOURS),
     )
 

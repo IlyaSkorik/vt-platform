@@ -60,7 +60,6 @@ from apps.applications.application.interfaces import (
     EventPublisher,
     FileStorage,
     IdentityReadModel,
-    PaymentDeadlineScheduler,
     SubmissionRepository,
     UuidGenerator,
 )
@@ -436,7 +435,6 @@ class SubmitApplicationHandler:
         events: EventPublisher,
         identity: IdentityReadModel | None = None,
         notifier: ApplicantNotifier | None = None,
-        scheduler: PaymentDeadlineScheduler | None = None,
         payment_window: timedelta = _PAYMENT_RECEIPT_WINDOW,
     ) -> None:
         self._applications = applications
@@ -447,7 +445,6 @@ class SubmitApplicationHandler:
         self._events = events
         self._identity = identity
         self._notifier = notifier
-        self._scheduler = scheduler
         self._payment_window = payment_window
 
     def handle(self, command: SubmitApplicationCommand) -> ApplicationOperationResultDto:
@@ -475,12 +472,16 @@ class SubmitApplicationHandler:
         with translate_application_domain_errors():
             order_events = application.submit(required_consent_codes=required_consents, required_service_ids=required_services, now=now)
         self._applications.save(application)
-        self._notify_and_schedule(application, now=now)
+        self._notify_submitted(application, now=now)
         return ApplicationOperationResultDto.of(application, tuple(order_events))
 
-    def _notify_and_schedule(self, application: Application, *, now: datetime) -> None:
-        """Email the applicant that the order is submitted; if no receipt is attached
-        yet, tell them to pay within the window and schedule the auto-cancellation."""
+    def _notify_submitted(self, application: Application, *, now: datetime) -> None:
+        """Email the applicant that the order is submitted.
+
+        With a receipt already attached it is a plain confirmation; otherwise it asks
+        for payment by the deadline. The actual auto-cancellation is handled by the
+        periodic sweep (Celery Beat), not scheduled here — see ``tasks.py``.
+        """
         if self._identity is None or self._notifier is None:
             return
         applicant = self._identity.get_applicant(user_id=application.applicant_id)
@@ -493,8 +494,6 @@ class SubmitApplicationHandler:
         self._notifier.notify_application_awaiting_payment(
             email=applicant.email, applicant_name=applicant.display_name, deadline=deadline
         )
-        if self._scheduler is not None:
-            self._scheduler.schedule_auto_cancel(application_id=application.id.json(), run_at=deadline)
 
     def _submit_one(self, submission: Submission, *, now: datetime) -> None:
         performance = submission.performance

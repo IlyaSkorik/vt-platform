@@ -116,6 +116,14 @@ class Settings(BaseSettings):
         alias="APPLICATION_PAYMENT_WINDOW_HOURS",
     )
 
+    # How often (minutes) the Celery Beat sweep checks for overdue unpaid orders to
+    # auto-cancel. Lower it alongside the window to test the flow quickly.
+    application_payment_sweep_minutes: float = Field(
+        default=15.0,
+        gt=0,
+        alias="APPLICATION_PAYMENT_SWEEP_MINUTES",
+    )
+
     # --- Redis / Celery (ARCH-001 §6.1, §7.5) ---
     redis_url: RedisDsn = Field(
         default="redis://localhost:6379/0",  # type: ignore[assignment]
