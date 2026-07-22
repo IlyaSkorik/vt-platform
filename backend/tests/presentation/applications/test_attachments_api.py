@@ -20,9 +20,18 @@ _PASSWORD = "V3ry$ecurePass!"
 
 
 def _seed_open_competition() -> str:
-    from apps.competitions.infrastructure.models import CompetitionModel
+    from datetime import UTC, datetime
+
+    from apps.competitions.infrastructure.models import CategoryModel, CompetitionModel
 
     competition = CompetitionModel.objects.create(organizer_id=uuid7(), status="REGISTRATION_OPEN", title="Spring", season="2025/2026")
+    # An open nomination window is what admits applications (registration is per nomination).
+    CategoryModel.objects.create(
+        competition=competition,
+        name="Vocal",
+        registration_opens_at=datetime(2000, 1, 1, tzinfo=UTC),
+        registration_closes_at=datetime(2100, 1, 1, tzinfo=UTC),
+    )
     return str(competition.id)
 
 

@@ -125,7 +125,7 @@ class FakeCompetitionCatalog:
     def exists(self, competition_id: CompetitionId) -> bool:
         return self.known
 
-    def accepts_submissions(self, *, competition_id: CompetitionId, now: datetime) -> bool:
+    def accepts_submissions(self, *, competition_id: CompetitionId, nomination_id: object = None, now: datetime) -> bool:
         return self.open_for_submissions
 
     def accepts_payment(self, *, competition_id: CompetitionId, now: datetime) -> bool:

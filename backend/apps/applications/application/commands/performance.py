@@ -77,9 +77,6 @@ class SetPerformanceHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
-        if not self._catalog.accepts_submissions(competition_id=submission.competition_id, now=now):
-            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
-
         performance = _performance_from(
             title=command.title,
             duration_seconds=command.duration_seconds,
@@ -89,6 +86,9 @@ class SetPerformanceHandler:
             participant_group_id=command.participant_group_id,
             participation_format_id=command.participation_format_id,
         )
+        if not self._catalog.accepts_submissions(competition_id=submission.competition_id, nomination_id=performance.nomination_id, now=now):
+            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
+
         with translate_domain_errors():
             domain_events = submission.set_performance(performance=performance, now=now)
         domain_events += try_resubmit_after_correction_edit(submission=submission, catalog=self._catalog, now=now)
@@ -122,8 +122,6 @@ class UpdatePerformanceHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
-        if not self._catalog.accepts_submissions(competition_id=submission.competition_id, now=now):
-            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
         if submission.performance is None:
             raise SubmissionStateConflictError(
                 "There is no performance to update; set one first.",
@@ -139,6 +137,9 @@ class UpdatePerformanceHandler:
             participant_group_id=command.participant_group_id,
             participation_format_id=command.participation_format_id,
         )
+        if not self._catalog.accepts_submissions(competition_id=submission.competition_id, nomination_id=performance.nomination_id, now=now):
+            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
+
         with translate_domain_errors():
             domain_events = submission.set_performance(performance=performance, now=now)
         domain_events += try_resubmit_after_correction_edit(submission=submission, catalog=self._catalog, now=now)

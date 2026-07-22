@@ -102,9 +102,19 @@ class DjangoCompetitionCatalog:
     def exists(self, competition_id: CompetitionId) -> bool:
         return self._repo.exists(CompCompetitionId.from_uuid(competition_id.value))
 
-    def accepts_submissions(self, *, competition_id: CompetitionId, now: datetime) -> bool:
+    def accepts_submissions(
+        self,
+        *,
+        competition_id: CompetitionId,
+        nomination_id: NominationId | None = None,
+        now: datetime,
+    ) -> bool:
         competition = self._load(competition_id)
-        return competition is not None and competition.is_application_allowed(now)
+        if competition is None:
+            return False
+        if nomination_id is None:
+            return competition.is_any_nomination_open(now)
+        return competition.accepts_submissions_for(CompCategoryId.from_uuid(nomination_id.value), now)
 
     def accepts_payment(self, *, competition_id: CompetitionId, now: datetime) -> bool:
         competition = self._load(competition_id)

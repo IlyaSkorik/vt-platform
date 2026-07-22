@@ -89,7 +89,11 @@ class AddParticipantHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
-        if not self._catalog.accepts_submissions(competition_id=submission.competition_id, now=now):
+        if not self._catalog.accepts_submissions(
+            competition_id=submission.competition_id,
+            nomination_id=submission.performance.nomination_id if submission.performance is not None else None,
+            now=now,
+        ):
             raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
 
         # A solo participant supplies a structured name; a collective supplies only a
@@ -153,7 +157,11 @@ class UpdateParticipantHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
-        if not self._catalog.accepts_submissions(competition_id=submission.competition_id, now=now):
+        if not self._catalog.accepts_submissions(
+            competition_id=submission.competition_id,
+            nomination_id=submission.performance.nomination_id if submission.performance is not None else None,
+            now=now,
+        ):
             raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
         with translate_domain_errors():
             target_id = ParticipantId.from_string(command.participant_id)
@@ -203,7 +211,11 @@ class RemoveParticipantHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
-        if not self._catalog.accepts_submissions(competition_id=submission.competition_id, now=now):
+        if not self._catalog.accepts_submissions(
+            competition_id=submission.competition_id,
+            nomination_id=submission.performance.nomination_id if submission.performance is not None else None,
+            now=now,
+        ):
             raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
         with translate_domain_errors():
             participant_id = ParticipantId.from_string(command.participant_id)

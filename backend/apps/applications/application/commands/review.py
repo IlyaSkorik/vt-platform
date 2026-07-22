@@ -85,7 +85,11 @@ class SubmitSubmissionHandler:
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
 
-        if not self._catalog.accepts_submissions(competition_id=submission.competition_id, now=now):
+        if not self._catalog.accepts_submissions(
+            competition_id=submission.competition_id,
+            nomination_id=submission.performance.nomination_id if submission.performance is not None else None,
+            now=now,
+        ):
             raise CompetitionClosedError("This competition is not currently accepting submissions.")
 
         performance = submission.performance

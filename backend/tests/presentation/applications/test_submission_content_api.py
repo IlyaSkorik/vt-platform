@@ -20,11 +20,20 @@ pytestmark = pytest.mark.django_db
 _PASSWORD = "V3ry$ecurePass!"
 
 
-def _seed_open_competition() -> str:
-    from apps.competitions.infrastructure.models import CompetitionModel
+def _seed_open_competition() -> tuple[str, str]:
+    """Seed a competition with one open nomination; return (competition_id, nomination_id)."""
+    from datetime import UTC, datetime
+
+    from apps.competitions.infrastructure.models import CategoryModel, CompetitionModel
 
     competition = CompetitionModel.objects.create(organizer_id=uuid7(), status="REGISTRATION_OPEN", title="Spring", season="2025/2026")
-    return str(competition.id)
+    category = CategoryModel.objects.create(
+        competition=competition,
+        name="Vocal",
+        registration_opens_at=datetime(2000, 1, 1, tzinfo=UTC),
+        registration_closes_at=datetime(2100, 1, 1, tzinfo=UTC),
+    )
+    return str(competition.id), str(category.id)
 
 
 @pytest.fixture
@@ -42,17 +51,19 @@ def auth_client() -> APIClient:
     return client
 
 
-def _submission(client: APIClient) -> str:
-    app_id = client.post("/api/v1/applications", {"competitionId": _seed_open_competition()}, format="json").data["data"]["id"]
+def _submission(client: APIClient) -> tuple[str, str]:
+    """Create an application + submission in an open nomination; return (submission_id, nomination_id)."""
+    competition_id, nomination_id = _seed_open_competition()
+    app_id = client.post("/api/v1/applications", {"competitionId": competition_id}, format="json").data["data"]["id"]
     added = client.post(f"/api/v1/applications/{app_id}/submissions")
-    return str(added.data["data"]["submissions"][0]["submissionId"])
+    return str(added.data["data"]["submissions"][0]["submissionId"]), nomination_id
 
 
-def _performance_body() -> dict[str, Any]:
+def _performance_body(nomination_id: str) -> dict[str, Any]:
     return {
         "title": "Swan Lake",
         "durationSeconds": 210,
-        "nominationId": str(uuid7()),
+        "nominationId": nomination_id,
         "disciplineId": str(uuid7()),
         "ageCategoryId": str(uuid7()),
         "participantGroupId": str(uuid7()),
@@ -61,9 +72,9 @@ def _performance_body() -> dict[str, Any]:
 
 
 def test_build_performance_and_participant(auth_client: APIClient) -> None:
-    submission_id = _submission(auth_client)
+    submission_id, nomination_id = _submission(auth_client)
 
-    perf = auth_client.put(f"/api/v1/submissions/{submission_id}/performance", _performance_body(), format="json")
+    perf = auth_client.put(f"/api/v1/submissions/{submission_id}/performance", _performance_body(nomination_id), format="json")
     assert perf.status_code == 200, perf.data
     assert perf.data["data"]["performance"]["title"] == "Swan Lake"
 
@@ -91,15 +102,15 @@ def test_build_performance_and_participant(auth_client: APIClient) -> None:
 
 
 def test_set_performance_rejects_malformed_id(auth_client: APIClient) -> None:
-    submission_id = _submission(auth_client)
-    body = _performance_body()
+    submission_id, nomination_id = _submission(auth_client)
+    body = _performance_body(nomination_id)
     body["nominationId"] = "not-a-uuid"
     response = auth_client.put(f"/api/v1/submissions/{submission_id}/performance", body, format="json")
     assert response.status_code == 400
 
 
 def test_get_submission_requires_owner(auth_client: APIClient) -> None:
-    submission_id = _submission(auth_client)
+    submission_id, _nomination_id = _submission(auth_client)
     other = APIClient()
     registration = other.post(
         "/api/v1/auth/registration",

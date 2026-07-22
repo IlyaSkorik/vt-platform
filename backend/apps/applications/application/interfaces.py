@@ -152,11 +152,20 @@ class CompetitionCatalog(Protocol):
         """Whether a competition with ``competition_id`` exists."""
         ...
 
-    def accepts_submissions(self, *, competition_id: CompetitionId, now: datetime) -> bool:
+    def accepts_submissions(
+        self,
+        *,
+        competition_id: CompetitionId,
+        nomination_id: NominationId | None = None,
+        now: datetime,
+    ) -> bool:
         """Whether the competition currently accepts new submissions at ``now``.
 
-        Folds the competition's status and its submission deadlines into a single
-        answer, so the use case need not know the Competition's lifecycle model.
+        Registration is scheduled per nomination. When ``nomination_id`` is given,
+        the answer is scoped to that nomination's window (and early-stop flag); when
+        it is ``None`` — an order-level edit or a submission with no performance yet —
+        the answer is "does *any* nomination currently accept applications?". Folds
+        the Competition's lifecycle so the use case need not know its status model.
         """
         ...
 
