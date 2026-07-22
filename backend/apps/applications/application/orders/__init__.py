@@ -8,6 +8,7 @@ between the HTTP edge and the two aggregates.
 
 from apps.applications.application.orders.commands import (
     AddSubmissionToApplicationHandler,
+    AutoCancelUnpaidApplicationHandler,
     CancelApplicationHandler,
     CompleteApplicationHandler,
     CreateApplicationHandler,
@@ -30,6 +31,7 @@ from apps.applications.application.orders.queries import (
 
 __all__ = [
     "AddSubmissionToApplicationHandler",
+    "AutoCancelUnpaidApplicationHandler",
     "CancelApplicationHandler",
     "CompleteApplicationHandler",
     "CreateApplicationHandler",

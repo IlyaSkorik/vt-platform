@@ -277,6 +277,32 @@ class IdentityReadModel(Protocol):
         ...
 
 
+@runtime_checkable
+class ApplicantNotifier(Protocol):
+    """Port: transactional emails sent to an applicant about their order's lifecycle."""
+
+    def notify_application_submitted(self, *, email: str, applicant_name: str) -> None:
+        """The order was submitted with a payment receipt already attached."""
+        ...
+
+    def notify_application_awaiting_payment(self, *, email: str, applicant_name: str, deadline: datetime) -> None:
+        """The order was submitted without a receipt; payment is expected by ``deadline``."""
+        ...
+
+    def notify_application_auto_cancelled(self, *, email: str, applicant_name: str) -> None:
+        """The order was auto-cancelled because no receipt was attached in time."""
+        ...
+
+
+@runtime_checkable
+class PaymentDeadlineScheduler(Protocol):
+    """Port: schedule the deferred auto-cancellation of an unpaid order."""
+
+    def schedule_auto_cancel(self, *, application_id: str, run_at: datetime) -> None:
+        """Arrange for the order ``application_id`` to be auto-cancelled at ``run_at``."""
+        ...
+
+
 # ---------------------------------------------------------------------------
 # Ambient-dependency ports (time & identity, injected not read globally)
 # ---------------------------------------------------------------------------

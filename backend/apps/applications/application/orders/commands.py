@@ -13,7 +13,7 @@ Two aggregates, two error trees: order-aggregate calls run inside
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import PurePosixPath
 from typing import Final
 
@@ -51,6 +51,7 @@ from apps.applications.application.exceptions import (
     translate_domain_errors,
 )
 from apps.applications.application.interfaces import (
+    ApplicantNotifier,
     ApplicationRepository,
     Clock,
     CompetitionCatalog,
@@ -59,12 +60,14 @@ from apps.applications.application.interfaces import (
     EventPublisher,
     FileStorage,
     IdentityReadModel,
+    PaymentDeadlineScheduler,
     SubmissionRepository,
     UuidGenerator,
 )
 from apps.applications.domain.entities import Application, Submission
 from apps.applications.domain.value_objects import (
     ApplicationId,
+    ApplicationStatus,
     CompetitionId,
     Consent,
     EducationalOrganizationId,
@@ -107,6 +110,13 @@ __all__ = [
 
 #: Submission statuses that are terminal (no cancellation possible / meaningful).
 _TERMINAL_SUBMISSION_STATUSES = frozenset({SubmissionStatus.CANCELLED, SubmissionStatus.COMPLETED})
+
+#: How long an applicant has to attach a payment receipt after submitting before the
+#: order is auto-cancelled.
+_PAYMENT_RECEIPT_WINDOW = timedelta(hours=48)
+
+#: Order statuses from which an unpaid order may still be auto-cancelled.
+_AUTO_CANCELLABLE_STATUSES = frozenset({ApplicationStatus.SUBMITTED, ApplicationStatus.WAITING_PAYMENT})
 
 #: Fixed constraints for the order-level payment receipt (a PDF or an image scan).
 #: Unlike per-performance uploads there is no competition format to key off, so the
@@ -412,6 +422,9 @@ class SubmitApplicationHandler:
         services: CompetitionServiceCatalog,
         clock: Clock,
         events: EventPublisher,
+        identity: IdentityReadModel | None = None,
+        notifier: ApplicantNotifier | None = None,
+        scheduler: PaymentDeadlineScheduler | None = None,
     ) -> None:
         self._applications = applications
         self._submissions = submissions
@@ -419,6 +432,9 @@ class SubmitApplicationHandler:
         self._services = services
         self._clock = clock
         self._events = events
+        self._identity = identity
+        self._notifier = notifier
+        self._scheduler = scheduler
 
     def handle(self, command: SubmitApplicationCommand) -> ApplicationOperationResultDto:
         now = self._clock.utcnow()
@@ -445,7 +461,26 @@ class SubmitApplicationHandler:
         with translate_application_domain_errors():
             order_events = application.submit(required_consent_codes=required_consents, required_service_ids=required_services, now=now)
         self._applications.save(application)
+        self._notify_and_schedule(application, now=now)
         return ApplicationOperationResultDto.of(application, tuple(order_events))
+
+    def _notify_and_schedule(self, application: Application, *, now: datetime) -> None:
+        """Email the applicant that the order is submitted; if no receipt is attached
+        yet, tell them to pay within the window and schedule the auto-cancellation."""
+        if self._identity is None or self._notifier is None:
+            return
+        applicant = self._identity.get_applicant(user_id=application.applicant_id)
+        if applicant is None:
+            return
+        if application.payment_receipt is not None:
+            self._notifier.notify_application_submitted(email=applicant.email, applicant_name=applicant.display_name)
+            return
+        deadline = now + _PAYMENT_RECEIPT_WINDOW
+        self._notifier.notify_application_awaiting_payment(
+            email=applicant.email, applicant_name=applicant.display_name, deadline=deadline
+        )
+        if self._scheduler is not None:
+            self._scheduler.schedule_auto_cancel(application_id=application.id.json(), run_at=deadline)
 
     def _submit_one(self, submission: Submission, *, now: datetime) -> None:
         performance = submission.performance
@@ -598,6 +633,64 @@ class CancelApplicationHandler:
 
         self._applications.save(application)
         return ApplicationOperationResultDto.of(application, tuple(order_events))
+
+
+class AutoCancelUnpaidApplicationHandler:
+    """Use case: auto-cancel a submitted order whose payment receipt never arrived.
+
+    Invoked by the deferred payment-deadline job (not by the applicant), so there is
+    no ownership check. It is a safe no-op if the order has since had a receipt
+    attached, been paid, or already left a cancellable state — the timer firing late
+    or twice never cancels a settled order.
+    """
+
+    def __init__(
+        self,
+        *,
+        applications: ApplicationRepository,
+        submissions: SubmissionRepository,
+        clock: Clock,
+        events: EventPublisher,
+        identity: IdentityReadModel | None = None,
+        notifier: ApplicantNotifier | None = None,
+    ) -> None:
+        self._applications = applications
+        self._submissions = submissions
+        self._clock = clock
+        self._events = events
+        self._identity = identity
+        self._notifier = notifier
+
+    def handle(self, application_id: str) -> None:
+        now = self._clock.utcnow()
+        application = self._applications.get(parse_application_id(application_id))
+        if application is None:
+            return
+        # A receipt was attached (payment proof provided) → keep the order.
+        if application.payment_receipt is not None:
+            return
+        # Already paid / completed / cancelled → nothing to do.
+        if application.status not in _AUTO_CANCELLABLE_STATUSES:
+            return
+
+        with translate_application_domain_errors():
+            order_events = application.cancel(now=now)
+        for ref in application.submission_refs:
+            submission = self._submissions.get(ref.submission_id)
+            if submission is None or submission.status in _TERMINAL_SUBMISSION_STATUSES:
+                continue
+            with translate_domain_errors():
+                submission_events = submission.cancel(now=now)
+            self._submissions.save(submission)
+            self._events.publish(submission_events)
+        self._applications.save(application)
+        self._events.publish(order_events)
+
+        if self._identity is None or self._notifier is None:
+            return
+        applicant = self._identity.get_applicant(user_id=application.applicant_id)
+        if applicant is not None:
+            self._notifier.notify_application_auto_cancelled(email=applicant.email, applicant_name=applicant.display_name)
 
 
 class SyncApplicationHandler:

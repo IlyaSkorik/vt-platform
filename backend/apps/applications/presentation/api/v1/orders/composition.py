@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from apps.applications.application.orders import (
     AddSubmissionToApplicationHandler,
+    AutoCancelUnpaidApplicationHandler,
     CancelApplicationHandler,
     CompleteApplicationHandler,
     CreateApplicationHandler,
@@ -34,13 +35,18 @@ from apps.applications.infrastructure.acl import (
     DjangoEducationalOrganizationDirectory,
     DjangoIdentityReadModel,
 )
-from apps.applications.infrastructure.messaging import NullEventPublisher
+from apps.applications.infrastructure.messaging import (
+    CeleryPaymentDeadlineScheduler,
+    DjangoApplicantNotifier,
+    NullEventPublisher,
+)
 from apps.applications.infrastructure.repositories import DjangoApplicationRepository, DjangoSubmissionRepository
 from apps.applications.infrastructure.storage import DjangoFileStorage
 from apps.applications.infrastructure.system import SystemClock, Uuid7Generator
 
 __all__ = [
     "build_add_submission_handler",
+    "build_auto_cancel_unpaid_handler",
     "build_cancel_application_handler",
     "build_complete_application_handler",
     "build_create_application_handler",
@@ -133,6 +139,20 @@ def build_submit_application_handler() -> SubmitApplicationHandler:
         services=DjangoCompetitionServiceCatalog(),
         clock=SystemClock(),
         events=NullEventPublisher(),
+        identity=DjangoIdentityReadModel(),
+        notifier=DjangoApplicantNotifier(),
+        scheduler=CeleryPaymentDeadlineScheduler(),
+    )
+
+
+def build_auto_cancel_unpaid_handler() -> AutoCancelUnpaidApplicationHandler:
+    return AutoCancelUnpaidApplicationHandler(
+        applications=_applications(),
+        submissions=_submissions(),
+        clock=SystemClock(),
+        events=NullEventPublisher(),
+        identity=DjangoIdentityReadModel(),
+        notifier=DjangoApplicantNotifier(),
     )
 
 
