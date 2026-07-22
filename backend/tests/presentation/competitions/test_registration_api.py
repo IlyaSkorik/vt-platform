@@ -17,10 +17,21 @@ from apps.competitions.infrastructure.models.base import uuid7
 pytestmark = pytest.mark.django_db
 
 
-def _seed_competition(*, status: str = "REGISTRATION_OPEN") -> str:
-    from apps.competitions.infrastructure.models import CompetitionModel
+def _seed_competition(*, status: str = "REGISTRATION_OPEN", open_nomination: bool = True) -> str:
+    from datetime import UTC, datetime
+
+    from apps.competitions.infrastructure.models import CategoryModel, CompetitionModel
 
     competition = CompetitionModel.objects.create(organizer_id=uuid7(), status=status, title="Spring Festival", season="2025/2026")
+    if open_nomination:
+        # Registration is scheduled per nomination; an open window makes the competition
+        # accept applications (its top-level registrationOpen becomes true).
+        CategoryModel.objects.create(
+            competition=competition,
+            name="Vocal",
+            registration_opens_at=datetime(2000, 1, 1, tzinfo=UTC),
+            registration_closes_at=datetime(2100, 1, 1, tzinfo=UTC),
+        )
     return str(competition.id)
 
 
@@ -36,6 +47,12 @@ def test_returns_single_projection_for_open_competition() -> None:
     assert data["competition"]["id"] == competition_id
     assert data["competition"]["title"] == "Spring Festival"
     assert data["registrationOpen"] is True
+    # The open nomination is projected with its per-nomination registration state.
+    assert len(data["nominations"]) == 1
+    nomination = data["nominations"][0]
+    assert nomination["registrationOpen"] is True
+    assert nomination["registrationOpensAt"] is not None
+    assert nomination["registrationClosesAt"] is not None
     # Every config axis the wizard needs is present as a (possibly empty) list.
     for key in (
         "nominations",

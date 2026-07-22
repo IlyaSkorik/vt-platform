@@ -68,10 +68,13 @@ from apps.competitions.application.dto.commands import (
     RemoveRegulationCommand,
     RenameCategoryCommand,
     RenameDisciplineCommand,
+    ResumeNominationRegistrationCommand,
     RevertToConfiguredCommand,
     RevertToDraftCommand,
+    ScheduleNominationRegistrationCommand,
     SetPrimaryContactCommand,
     StartCompetitionCommand,
+    StopNominationRegistrationCommand,
     UnpublishDocumentCommand,
     UpdateAdditionalServiceCommand,
     UpdateAgeCategoryCommand,
@@ -133,10 +136,13 @@ from apps.competitions.application.handlers import (
     RemoveRegulationHandler,
     RenameCategoryHandler,
     RenameDisciplineHandler,
+    ResumeNominationRegistrationHandler,
     RevertCompetitionToConfiguredHandler,
     RevertCompetitionToDraftHandler,
+    ScheduleNominationRegistrationHandler,
     SetPrimaryContactHandler,
     StartCompetitionHandler,
+    StopNominationRegistrationHandler,
     UnpublishDocumentHandler,
     UpdateAdditionalServiceHandler,
     UpdateAgeCategoryHandler,
@@ -188,6 +194,7 @@ from .serializers import (
     ProblemDetailSerializer,
     RenameCategorySerializer,
     RenameDisciplineSerializer,
+    ScheduleNominationRegistrationSerializer,
     UpdateAdditionalServiceSerializer,
     UpdateAgeCategorySerializer,
     UpdateCompetitionBrandingSerializer,
@@ -569,6 +576,42 @@ class CompetitionViewSet(viewsets.ViewSet):
             return problem
         assert kwargs is not None
         return self._run(RenameCategoryHandler, RenameCategoryCommand(competition_id=pk, category_id=category_id, **kwargs), request)
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="scheduleNominationRegistration",
+        request=ScheduleNominationRegistrationSerializer,
+        responses=_detail_ok(),
+    )
+    @action(detail=True, methods=["put"], url_path=r"categories/(?P<category_id>[^/.]+)/registration")
+    def nomination_registration(self, request: Request, pk: str, category_id: str) -> Response:
+        kwargs, problem = self._body(ScheduleNominationRegistrationSerializer, request)
+        if problem is not None:
+            return problem
+        assert kwargs is not None
+        return self._run(
+            ScheduleNominationRegistrationHandler,
+            ScheduleNominationRegistrationCommand(competition_id=pk, category_id=category_id, **kwargs),
+            request,
+        )
+
+    @extend_schema(tags=[_TAG], operation_id="stopNominationRegistration", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["post"], url_path=r"categories/(?P<category_id>[^/.]+)/registration/stop")
+    def stop_nomination_registration(self, request: Request, pk: str, category_id: str) -> Response:
+        return self._run(
+            StopNominationRegistrationHandler,
+            StopNominationRegistrationCommand(competition_id=pk, category_id=category_id),
+            request,
+        )
+
+    @extend_schema(tags=[_TAG], operation_id="resumeNominationRegistration", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["post"], url_path=r"categories/(?P<category_id>[^/.]+)/registration/resume")
+    def resume_nomination_registration(self, request: Request, pk: str, category_id: str) -> Response:
+        return self._run(
+            ResumeNominationRegistrationHandler,
+            ResumeNominationRegistrationCommand(competition_id=pk, category_id=category_id),
+            request,
+        )
 
     # ------------------------------------------------------------------
     # Disciplines

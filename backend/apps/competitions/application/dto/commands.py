@@ -54,10 +54,13 @@ __all__ = [
     "RemoveRegulationCommand",
     "RenameCategoryCommand",
     "RenameDisciplineCommand",
+    "ResumeNominationRegistrationCommand",
     "RevertToConfiguredCommand",
     "RevertToDraftCommand",
+    "ScheduleNominationRegistrationCommand",
     "SetPrimaryContactCommand",
     "StartCompetitionCommand",
+    "StopNominationRegistrationCommand",
     "UnpublishDocumentCommand",
     "UpdateAdditionalServiceCommand",
     "UpdateAgeCategoryCommand",
@@ -205,6 +208,26 @@ class RenameCategoryCommand:
 
 @dataclass(frozen=True, slots=True)
 class RemoveCategoryCommand:
+    competition_id: str
+    category_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class ScheduleNominationRegistrationCommand:
+    competition_id: str
+    category_id: str
+    opens_at: datetime | None = None
+    closes_at: datetime | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class StopNominationRegistrationCommand:
+    competition_id: str
+    category_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class ResumeNominationRegistrationCommand:
     competition_id: str
     category_id: str
 

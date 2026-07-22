@@ -35,6 +35,7 @@ __all__ = [
     "ProblemDetailSerializer",
     "RenameCategorySerializer",
     "RenameDisciplineSerializer",
+    "ScheduleNominationRegistrationSerializer",
     "UpdateAdditionalServiceSerializer",
     "UpdateAgeCategorySerializer",
     "UpdateCompetitionBrandingSerializer",
@@ -280,6 +281,11 @@ class RenameCategorySerializer(serializers.Serializer[dict[str, object]]):
         if not any(k in attrs for k in ("name", "description", "sort_order")):
             raise serializers.ValidationError("At least one of name, description, or sortOrder must be provided.")
         return attrs
+
+
+class ScheduleNominationRegistrationSerializer(serializers.Serializer[dict[str, object]]):
+    opensAt = serializers.DateTimeField(source="opens_at", required=False, allow_null=True, default=None)
+    closesAt = serializers.DateTimeField(source="closes_at", required=False, allow_null=True, default=None)
 
 
 class AddDisciplineSerializer(serializers.Serializer[dict[str, object]]):
@@ -722,6 +728,9 @@ class _CategorySerializer(serializers.Serializer[dict[str, object]]):
     name = serializers.CharField()
     description = serializers.CharField(allow_null=True)
     sortOrder = serializers.IntegerField(source="sort_order")
+    registrationOpensAt = serializers.DateTimeField(source="registration_opens_at", allow_null=True)
+    registrationClosesAt = serializers.DateTimeField(source="registration_closes_at", allow_null=True)
+    registrationStopped = serializers.BooleanField(source="registration_stopped")
 
 
 class _DisciplineSerializer(serializers.Serializer[dict[str, object]]):

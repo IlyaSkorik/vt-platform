@@ -13,6 +13,9 @@ from apps.competitions.application.dto.commands import (
     RemoveParticipantGroupCommand,
     RenameCategoryCommand,
     RenameDisciplineCommand,
+    ResumeNominationRegistrationCommand,
+    ScheduleNominationRegistrationCommand,
+    StopNominationRegistrationCommand,
     UpdateAgeCategoryCommand,
     UpdateParticipantGroupCommand,
 )
@@ -47,6 +50,9 @@ __all__ = (
     "RemoveParticipantGroupHandler",
     "RenameCategoryHandler",
     "RenameDisciplineHandler",
+    "ResumeNominationRegistrationHandler",
+    "ScheduleNominationRegistrationHandler",
+    "StopNominationRegistrationHandler",
     "UpdateAgeCategoryHandler",
     "UpdateParticipantGroupHandler",
 )
@@ -107,6 +113,59 @@ class RemoveCategoryHandler(CompetitionCommandHandler):
         )
 
         return self._persist(competition)
+
+
+class ScheduleNominationRegistrationHandler(CompetitionCommandHandler):
+    """Set (or replace) a nomination's registration window (open/close instants)."""
+
+    def handle(
+        self,
+        command: ScheduleNominationRegistrationCommand,
+    ) -> CompetitionDetailView:
+        competition = self._require(command.competition_id)
+
+        events = competition.schedule_nomination_registration(
+            category_id=CategoryId.from_string(command.category_id),
+            opens_at=command.opens_at,
+            closes_at=command.closes_at,
+            now=self._clock.utcnow(),
+        )
+
+        return self._persist(competition, events)
+
+
+class StopNominationRegistrationHandler(CompetitionCommandHandler):
+    """Stop a nomination's registration early."""
+
+    def handle(
+        self,
+        command: StopNominationRegistrationCommand,
+    ) -> CompetitionDetailView:
+        competition = self._require(command.competition_id)
+
+        events = competition.stop_nomination_registration(
+            category_id=CategoryId.from_string(command.category_id),
+            now=self._clock.utcnow(),
+        )
+
+        return self._persist(competition, events)
+
+
+class ResumeNominationRegistrationHandler(CompetitionCommandHandler):
+    """Resume a previously stopped nomination's registration."""
+
+    def handle(
+        self,
+        command: ResumeNominationRegistrationCommand,
+    ) -> CompetitionDetailView:
+        competition = self._require(command.competition_id)
+
+        events = competition.resume_nomination_registration(
+            category_id=CategoryId.from_string(command.category_id),
+            now=self._clock.utcnow(),
+        )
+
+        return self._persist(competition, events)
 
 
 class AddDisciplineHandler(CompetitionCommandHandler):

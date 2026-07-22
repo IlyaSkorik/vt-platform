@@ -210,6 +210,9 @@ class CategoryView:
     name: str
     description: str | None
     sort_order: int
+    registration_opens_at: datetime | None
+    registration_closes_at: datetime | None
+    registration_stopped: bool
 
     @classmethod
     def of(cls, category: Category) -> CategoryView:
@@ -218,6 +221,9 @@ class CategoryView:
             name=category.name.value,
             description=category.description.value if category.description is not None else None,
             sort_order=category.sort_order,
+            registration_opens_at=category.registration.opens_at,
+            registration_closes_at=category.registration.closes_at,
+            registration_stopped=category.is_registration_stopped,
         )
 
 
