@@ -14,6 +14,9 @@ function category(partial: Partial<_Category> & Pick<_Category, "id" | "name">):
   return {
     description: null,
     sortOrder: 0,
+    registrationOpensAt: null,
+    registrationClosesAt: null,
+    registrationStopped: false,
     ...partial,
   };
 }

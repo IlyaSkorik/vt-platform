@@ -59,8 +59,24 @@ function competition(partial: Partial<CompetitionDetail> = {}): CompetitionDetai
       correction: null,
     },
     categories: [
-      { id: "cat-1", name: "Vocal", description: null, sortOrder: 0 },
-      { id: "cat-2", name: "Dance", description: null, sortOrder: 1 },
+      {
+        id: "cat-1",
+        name: "Vocal",
+        description: null,
+        sortOrder: 0,
+        registrationOpensAt: null,
+        registrationClosesAt: null,
+        registrationStopped: false,
+      },
+      {
+        id: "cat-2",
+        name: "Dance",
+        description: null,
+        sortOrder: 1,
+        registrationOpensAt: null,
+        registrationClosesAt: null,
+        registrationStopped: false,
+      },
     ],
     disciplines: [
       { id: "d1", categoryId: "cat-1", name: "Pop", sortOrder: 0 },

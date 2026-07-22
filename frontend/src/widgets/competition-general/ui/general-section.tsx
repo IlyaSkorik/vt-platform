@@ -382,19 +382,22 @@ export function GeneralSection({
           <PageSection title="Даты фестиваля" description="Периоды регистрации и проведения.">
             <Card className="shadow-none">
               <CardHeader className="pb-0">
-                <CardTitle className="text-base">Регистрация</CardTitle>
-                <CardDescription>Когда участники могут подавать заявки.</CardDescription>
+                <CardTitle className="text-base">Период регистрации (анонс)</CardTitle>
+                <CardDescription>
+                  Даты для публичной афиши фестиваля. Фактический приём заявок задаётся по каждой
+                  номинации отдельно в разделе «Номинации» и определяется именно там.
+                </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 pt-4 md:grid-cols-2">
                 <Input
-                  label="Начало регистрации"
+                  label="Начало регистрации (анонс)"
                   type="date"
                   error={errors.registrationStart?.message}
                   disabled={isReadOnly}
                   {...register("registrationStart")}
                 />
                 <Input
-                  label="Окончание регистрации"
+                  label="Окончание регистрации (анонс)"
                   type="date"
                   error={errors.registrationEnd?.message}
                   disabled={isReadOnly}

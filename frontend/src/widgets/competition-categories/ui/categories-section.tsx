@@ -54,6 +54,7 @@ import {
 } from "@/shared/ui";
 import { PublicationChecklistPanel } from "@/widgets/competition-workspace/ui/publication-checklist-panel";
 import { CategoriesSkeleton } from "./categories-skeleton";
+import { NominationRegistration } from "./nomination-registration";
 
 interface CategoriesSectionProps {
   competition: CompetitionDetail;
@@ -72,6 +73,9 @@ export function CategoriesSection({
 }: CategoriesSectionProps): React.JSX.Element {
   const isConfigurable = competition.status === "DRAFT" || competition.status === "CONFIGURED";
   const isReadOnly = !isConfigurable;
+  // Registration scheduling is a live control (available after publication), unlike
+  // taxonomy editing; only an archived competition freezes it.
+  const isArchived = competition.status === "ARCHIVED";
 
   const addCategory = useAddCategoryMutation();
   const updateCategory = useUpdateCategoryMutation();
@@ -568,7 +572,12 @@ export function CategoriesSection({
                           </div>
 
                           {isExpanded ? (
-                            <div className="border-border border-t px-3 py-3">
+                            <div className="space-y-3 border-border border-t px-3 py-3">
+                              <NominationRegistration
+                                competitionId={competition.id}
+                                category={node.category}
+                                disabled={isArchived}
+                              />
                               {node.disciplines.length > 0 ? (
                                 <ul
                                   className="space-y-2"

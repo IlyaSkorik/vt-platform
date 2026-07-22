@@ -344,6 +344,49 @@ async function deleteCategory(
   return unwrapCompetitionDetail(response.data);
 }
 
+async function scheduleNominationRegistration(
+  competitionId: string,
+  categoryId: string,
+  payload: { opensAt: string | null; closesAt: string | null },
+): Promise<CompetitionDetail> {
+  try {
+    const response = await apiClient
+      .put(`competitions/${competitionId}/categories/${categoryId}/registration`, { json: payload })
+      .json<unknown>();
+    return unwrapCompetitionDetail(response);
+  } catch (error) {
+    throw await toApiError(error);
+  }
+}
+
+async function stopNominationRegistration(
+  competitionId: string,
+  categoryId: string,
+): Promise<CompetitionDetail> {
+  try {
+    const response = await apiClient
+      .post(`competitions/${competitionId}/categories/${categoryId}/registration/stop`)
+      .json<unknown>();
+    return unwrapCompetitionDetail(response);
+  } catch (error) {
+    throw await toApiError(error);
+  }
+}
+
+async function resumeNominationRegistration(
+  competitionId: string,
+  categoryId: string,
+): Promise<CompetitionDetail> {
+  try {
+    const response = await apiClient
+      .post(`competitions/${competitionId}/categories/${categoryId}/registration/resume`)
+      .json<unknown>();
+    return unwrapCompetitionDetail(response);
+  } catch (error) {
+    throw await toApiError(error);
+  }
+}
+
 async function createDiscipline(
   competitionId: string,
   payload: AddDiscipline,
@@ -1107,6 +1150,55 @@ export function useReorderCategoriesMutation(): UseMutationResult<
       }
       return latest;
     },
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useScheduleNominationRegistrationMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; categoryId: string; opensAt: string | null; closesAt: string | null }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; categoryId: string; opensAt: string | null; closesAt: string | null }
+  >({
+    mutationFn: ({ competitionId, categoryId, opensAt, closesAt }) =>
+      scheduleNominationRegistration(competitionId, categoryId, { opensAt, closesAt }),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useStopNominationRegistrationMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; categoryId: string }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<CompetitionDetail, ApiError, { competitionId: string; categoryId: string }>({
+    mutationFn: ({ competitionId, categoryId }) =>
+      stopNominationRegistration(competitionId, categoryId),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useResumeNominationRegistrationMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; categoryId: string }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<CompetitionDetail, ApiError, { competitionId: string; categoryId: string }>({
+    mutationFn: ({ competitionId, categoryId }) =>
+      resumeNominationRegistration(competitionId, categoryId),
     onSuccess: (detail) => {
       setCompetitionCache(queryClient, detail);
     },

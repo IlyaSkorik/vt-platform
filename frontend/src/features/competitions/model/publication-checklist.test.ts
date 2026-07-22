@@ -195,7 +195,17 @@ describe("buildPublicationChecklist", () => {
   it("is publishable when taxonomy requirements are met", () => {
     const checklist = buildPublicationChecklist(
       baseCompetition({
-        categories: [{ id: "c1", name: "Dance", description: null, sortOrder: 0 }],
+        categories: [
+          {
+            id: "c1",
+            name: "Dance",
+            description: null,
+            sortOrder: 0,
+            registrationOpensAt: null,
+            registrationClosesAt: null,
+            registrationStopped: false,
+          },
+        ],
         disciplines: [{ id: "d1", categoryId: "c1", name: "Ballet", sortOrder: 0 }],
         ageCategories: [
           {
