@@ -70,7 +70,6 @@ edge (ARCH-001 §7.6). No Django/DRF imports.
     │   ├── OverlappingAgeRangeError
     │   ├── DuplicateParticipantGroupError
     │   ├── DuplicateParticipationFormatError
-    │   ├── OverlappingParticipantRangeError
     │   ├── DuplicateAdmissionRuleError
     │   └── DuplicatePricingRuleError
     └── ConfigurationInUseError                 — a config element cannot be removed while referenced
@@ -442,10 +441,6 @@ class DuplicateAgeCategoryNameError(ConfigurationConflictError):
 
 class OverlappingAgeRangeError(ConfigurationConflictError):
     """An age category whose range overlaps an existing one is not allowed."""
-
-
-class OverlappingParticipantRangeError(ConfigurationConflictError):
-    """A participant group whose count range overlaps another in the same category."""
 
 
 class DuplicateParticipantGroupError(ConfigurationConflictError):

@@ -54,7 +54,6 @@ from apps.competitions.domain.exceptions import (
     IllegalStatusTransitionError,
     InvalidRegistrationWindowError,
     OverlappingAgeRangeError,
-    OverlappingParticipantRangeError,
     ParticipationFormatInUseError,
     ParticipationFormatNotEnabledError,
     PublicationRequirementsNotMetError,
@@ -295,7 +294,9 @@ class TestTaxonomyInvariants:
         )
         assert len(c.age_categories) == 2
 
-    def test_overlapping_participant_range_rejected(self) -> None:
+    def test_overlapping_participant_range_allowed_with_distinct_names(self) -> None:
+        # Two groups may share the same headcount as long as their names differ:
+        # the applicant picks the group explicitly, so ranges need not be disjoint.
         c = _draft()
         c.add_participant_group(
             participant_group_id=ParticipantGroupId.generate(),
@@ -303,13 +304,13 @@ class TestTaxonomyInvariants:
             count_range=ParticipantCountRange(1, 1),
             now=NOW,
         )
-        with pytest.raises(OverlappingParticipantRangeError):
-            c.add_participant_group(
-                participant_group_id=ParticipantGroupId.generate(),
-                name=ParticipantGroupName("Duet"),
-                count_range=ParticipantCountRange(1, 2),
-                now=NOW,
-            )
+        c.add_participant_group(
+            participant_group_id=ParticipantGroupId.generate(),
+            name=ParticipantGroupName("Solo (профи)"),
+            count_range=ParticipantCountRange(1, 1),
+            now=NOW,
+        )
+        assert len(c.participant_groups) == 2
 
     def test_participant_groups_are_competition_wide(self) -> None:
         # Groups are no longer scoped per nomination; a duplicate name is refused globally.
@@ -353,7 +354,7 @@ class TestTaxonomyInvariants:
         assert updated.description.value == "Two performers"
         assert updated.sort_order == 3
 
-    def test_update_participant_group_rejects_overlapping_range(self) -> None:
+    def test_update_participant_group_allows_overlapping_range(self) -> None:
         c = _draft()
         c.add_participant_group(
             participant_group_id=ParticipantGroupId.generate(),
@@ -367,12 +368,13 @@ class TestTaxonomyInvariants:
             count_range=ParticipantCountRange(2, 2),
             now=NOW,
         )
-        with pytest.raises(OverlappingParticipantRangeError):
-            c.update_participant_group(
-                participant_group_id=duet.id,
-                count_range=ParticipantCountRange(1, 2),
-                now=NOW,
-            )
+        c.update_participant_group(
+            participant_group_id=duet.id,
+            count_range=ParticipantCountRange(1, 2),
+            now=NOW,
+        )
+        updated = next(g for g in c.participant_groups if g.id == duet.id)
+        assert updated.count_range == ParticipantCountRange(1, 2)
 
 
 class TestAdmissionAndPricing:

@@ -36,7 +36,6 @@ from .entities import (
     ParticipationFormat,
     ensure_admission_combination_valid,
     ensure_age_range_free,
-    ensure_participant_range_free,
 )
 from .exceptions import (
     AdmissionRuleInUseError,
@@ -313,7 +312,6 @@ class CompetitionTemplate:
     ) -> ParticipantGroup:
         if any(g.name == name for g in self._participant_groups.values()):
             raise DuplicateParticipantGroupError(f"A participant group named {name.value!r} already exists.")
-        ensure_participant_range_free(self._participant_groups, count_range)
         group = ParticipantGroup.create(
             participant_group_id=participant_group_id,
             name=name,

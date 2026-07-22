@@ -126,7 +126,6 @@ from .exceptions import (
     InvalidMoneyError,
     InvalidSortOrderError,
     OverlappingAgeRangeError,
-    OverlappingParticipantRangeError,
     ParticipantGroupInUseError,
     ParticipantGroupNotFoundError,
     ParticipationFormatInUseError,
@@ -303,26 +302,6 @@ def ensure_age_range_free(
             continue
         if existing.age_range.overlaps(age_range):
             raise OverlappingAgeRangeError(f"Age range {age_range} overlaps existing range {existing.age_range}.")
-
-
-def ensure_participant_range_free(
-    participant_groups: Mapping[ParticipantGroupId, ParticipantGroup],
-    count_range: ParticipantCountRange,
-    *,
-    exclude: ParticipantGroupId | None = None,
-) -> None:
-    """Assert ``count_range`` does not overlap another group's range in this competition.
-
-    Participant groups are competition-wide (each headcount maps to a single group),
-    so overlap is checked across all groups, not within a nomination.
-    """
-    for gid, existing in participant_groups.items():
-        if gid == exclude:
-            continue
-        if existing.count_range.overlaps(count_range):
-            raise OverlappingParticipantRangeError(
-                f"Participant range {count_range} overlaps existing range {existing.count_range}."
-            )
 
 
 # ===========================================================================
@@ -2157,13 +2136,13 @@ class Competition:
     ) -> ParticipantGroup:
         """Add a competition-wide participant group.
 
-        Names are unique within the competition, and count ranges must not overlap
-        another group's range (each headcount maps to exactly one group).
+        Names are unique within the competition. Count ranges may overlap: an
+        applicant picks the group explicitly, so two groups can share the same
+        headcount (e.g. two "Solo" variants) as long as their names differ.
         """
         self._ensure_configurable()
         if any(g.name == name for g in self._participant_groups.values()):
             raise DuplicateParticipantGroupError(f"A participant group named {name.value!r} already exists.")
-        ensure_participant_range_free(self._participant_groups, count_range)
         if sort_order is None:
             sort_order = self._next_participant_group_sort_order()
         group = ParticipantGroup.create(
@@ -2194,8 +2173,6 @@ class Competition:
             gid != participant_group_id and g.name == name for gid, g in self._participant_groups.items()
         ):
             raise DuplicateParticipantGroupError(f"A participant group named {name.value!r} already exists.")
-        if count_range is not None:
-            ensure_participant_range_free(self._participant_groups, count_range, exclude=participant_group_id)
         group.update(
             name=name,
             count_range=count_range,
