@@ -245,6 +245,10 @@ DEFAULT_FROM_EMAIL = settings.email.default_from
 # emails (email-verification link, IDN-002). No trailing slash.
 FRONTEND_BASE_URL = settings.frontend_base_url.rstrip("/")
 
+# Hours before an unpaid, submitted order (no payment receipt attached) is
+# auto-cancelled. Configurable via APPLICATION_PAYMENT_WINDOW_HOURS (default 48).
+APPLICATION_PAYMENT_WINDOW_HOURS = settings.application_payment_window_hours
+
 # --- Cache & Celery (Redis; ARCH-001 §6.1, §7.5) --------------------------
 CACHES = {
     "default": {

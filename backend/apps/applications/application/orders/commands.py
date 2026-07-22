@@ -437,6 +437,7 @@ class SubmitApplicationHandler:
         identity: IdentityReadModel | None = None,
         notifier: ApplicantNotifier | None = None,
         scheduler: PaymentDeadlineScheduler | None = None,
+        payment_window: timedelta = _PAYMENT_RECEIPT_WINDOW,
     ) -> None:
         self._applications = applications
         self._submissions = submissions
@@ -447,6 +448,7 @@ class SubmitApplicationHandler:
         self._identity = identity
         self._notifier = notifier
         self._scheduler = scheduler
+        self._payment_window = payment_window
 
     def handle(self, command: SubmitApplicationCommand) -> ApplicationOperationResultDto:
         now = self._clock.utcnow()
@@ -487,7 +489,7 @@ class SubmitApplicationHandler:
         if application.payment_receipt is not None:
             self._notifier.notify_application_submitted(email=applicant.email, applicant_name=applicant.display_name)
             return
-        deadline = now + _PAYMENT_RECEIPT_WINDOW
+        deadline = now + self._payment_window
         self._notifier.notify_application_awaiting_payment(
             email=applicant.email, applicant_name=applicant.display_name, deadline=deadline
         )

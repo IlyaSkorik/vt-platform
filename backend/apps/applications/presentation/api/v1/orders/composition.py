@@ -10,6 +10,10 @@ are assembled per request.
 
 from __future__ import annotations
 
+from datetime import timedelta
+
+from django.conf import settings
+
 from apps.applications.application.orders import (
     AddSubmissionToApplicationHandler,
     AutoCancelUnpaidApplicationHandler,
@@ -142,6 +146,7 @@ def build_submit_application_handler() -> SubmitApplicationHandler:
         identity=DjangoIdentityReadModel(),
         notifier=DjangoApplicantNotifier(),
         scheduler=CeleryPaymentDeadlineScheduler(),
+        payment_window=timedelta(hours=settings.APPLICATION_PAYMENT_WINDOW_HOURS),
     )
 
 

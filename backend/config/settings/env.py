@@ -107,6 +107,15 @@ class Settings(BaseSettings):
         alias="FRONTEND_BASE_URL",
     )
 
+    # Hours an applicant has to attach a payment receipt after submitting before the
+    # order is auto-cancelled. Lower it (e.g. to a fraction of an hour) to exercise the
+    # auto-cancellation flow locally without waiting the production default.
+    application_payment_window_hours: float = Field(
+        default=48.0,
+        gt=0,
+        alias="APPLICATION_PAYMENT_WINDOW_HOURS",
+    )
+
     # --- Redis / Celery (ARCH-001 §6.1, §7.5) ---
     redis_url: RedisDsn = Field(
         default="redis://localhost:6379/0",  # type: ignore[assignment]
