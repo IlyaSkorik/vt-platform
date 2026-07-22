@@ -51,6 +51,7 @@ def test_returns_single_projection_for_open_competition() -> None:
     assert len(data["nominations"]) == 1
     nomination = data["nominations"][0]
     assert nomination["registrationOpen"] is True
+    assert nomination["registrationStopped"] is False
     assert nomination["registrationOpensAt"] is not None
     assert nomination["registrationClosesAt"] is not None
     # Every config axis the wizard needs is present as a (possibly empty) list.

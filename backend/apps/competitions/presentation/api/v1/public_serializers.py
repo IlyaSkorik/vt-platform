@@ -265,6 +265,7 @@ class RegistrationNominationSerializer(serializers.Serializer):
     description = serializers.CharField(allow_null=True)
     sortOrder = serializers.IntegerField(source="sort_order")
     registrationOpen = serializers.BooleanField(source="registration_open")
+    registrationStopped = serializers.BooleanField(source="registration_stopped")
     registrationOpensAt = serializers.DateTimeField(source="registration_opens_at", allow_null=True)
     registrationClosesAt = serializers.DateTimeField(source="registration_closes_at", allow_null=True)
 
