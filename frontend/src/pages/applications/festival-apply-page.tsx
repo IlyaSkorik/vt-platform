@@ -63,6 +63,8 @@ export function FestivalApplyPage(): React.JSX.Element {
 
   const selectedApplication = useMemo(() => {
     if (!applications) return null;
+    // An explicit ?applicationId= (e.g. "edit" from an application card) opens that
+    // exact application regardless of status, so an already-submitted one stays editable.
     if (targetApplicationId) {
       const exact = applications.find(
         (application) =>
@@ -70,11 +72,11 @@ export function FestivalApplyPage(): React.JSX.Element {
       );
       if (exact) return exact;
     }
+    // Otherwise ("Подать заявку" again) only an in-progress DRAFT is resumed; if the
+    // applicant already submitted, a fresh application is started from scratch.
     return (
       applications.find(
-        (application) =>
-          application.competitionId === festivalId &&
-          (application.status === "DRAFT" || application.status === "SUBMITTED"),
+        (application) => application.competitionId === festivalId && application.status === "DRAFT",
       ) ?? null
     );
   }, [applications, festivalId, targetApplicationId]);
