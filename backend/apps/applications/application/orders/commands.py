@@ -111,6 +111,18 @@ __all__ = [
 #: Submission statuses that are terminal (no cancellation possible / meaningful).
 _TERMINAL_SUBMISSION_STATUSES = frozenset({SubmissionStatus.CANCELLED, SubmissionStatus.COMPLETED})
 
+#: Submission statuses from which a submission can no longer be cancelled: the
+#: terminal ones plus those already committed to the competition. Cancelling an
+#: order skips these children instead of attempting an illegal transition.
+_UNCANCELLABLE_SUBMISSION_STATUSES = frozenset(
+    {
+        SubmissionStatus.ACCEPTED,
+        SubmissionStatus.SCHEDULED,
+        SubmissionStatus.COMPLETED,
+        SubmissionStatus.CANCELLED,
+    }
+)
+
 #: How long an applicant has to attach a payment receipt after submitting before the
 #: order is auto-cancelled.
 _PAYMENT_RECEIPT_WINDOW = timedelta(hours=48)
@@ -677,7 +689,9 @@ class AutoCancelUnpaidApplicationHandler:
             order_events = application.cancel(now=now)
         for ref in application.submission_refs:
             submission = self._submissions.get(ref.submission_id)
-            if submission is None or submission.status in _TERMINAL_SUBMISSION_STATUSES:
+            # A submission already committed to the competition (ACCEPTED/SCHEDULED)
+            # or terminal cannot be cancelled — leave it in place.
+            if submission is None or submission.status in _UNCANCELLABLE_SUBMISSION_STATUSES:
                 continue
             with translate_domain_errors():
                 submission_events = submission.cancel(now=now)

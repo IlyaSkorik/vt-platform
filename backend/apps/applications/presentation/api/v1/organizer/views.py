@@ -489,6 +489,7 @@ class OrganizerProcessingActionView(_StaffView):
                 application_id, _, _ = _application_meta_for_submission(submission_id)
                 target_submission_ids = _submission_ids_for_application(application_id) or [submission_id]
                 processed_ids: list[str] = []
+                result = None
                 for target_id in target_submission_ids:
                     model = SubmissionModel.objects.get(id=target_id, deleted_at__isnull=True)
                     if model.status not in {"SUBMITTED", "UNDER_REVIEW"}:
@@ -497,21 +498,36 @@ class OrganizerProcessingActionView(_StaffView):
                         composition.build_start_review_handler().handle(
                             StartReviewCommand(submission_id=target_id, reviewer_id=user_id)
                         )
+                    # Approval takes the submission straight into the running competition
+                    # (UNDER_REVIEW → APPROVED → … → ACCEPTED → SCHEDULED) — no separate
+                    # "confirm participation" / "move to running" steps for the organizer.
                     composition.build_approve_submission_handler().handle(
                         ApproveSubmissionCommand(submission_id=target_id, reviewer_id=user_id)
                     )
+                    composition.build_mark_waiting_payment_handler().handle(
+                        MarkWaitingPaymentCommand(submission_id=target_id, reviewer_id=user_id)
+                    )
+                    composition.build_mark_paid_handler().handle(
+                        MarkPaidCommand(submission_id=target_id, reviewer_id=user_id)
+                    )
+                    composition.build_accept_submission_handler().handle(
+                        AcceptSubmissionCommand(submission_id=target_id, reviewer_id=user_id)
+                    )
+                    scheduled = composition.build_schedule_submission_handler().handle(
+                        ScheduleSubmissionCommand(submission_id=target_id, reviewer_id=user_id)
+                    )
+                    if result is None:
+                        result = scheduled
                     processed_ids.append(target_id)
-                if not processed_ids:
+                if not processed_ids or result is None:
                     return Response({"detail": "Нет выступлений, доступных для одобрения."}, status=409)
-                result = composition.build_get_submission_handler().handle(
-                    GetSubmissionQuery(submission_id=processed_ids[0], requested_by=user_id)
-                )
             elif action == "return_for_correction":
                 if not comment:
                     return Response({"detail": "Укажите комментарий для участника перед возвратом на исправление."}, status=400)
                 application_id, _, competition_id = _application_meta_for_submission(submission_id)
                 target_submission_ids = _submission_ids_for_application(application_id) or [submission_id]
                 processed_ids: list[str] = []
+                result = None
                 for target_id in target_submission_ids:
                     model = SubmissionModel.objects.get(id=target_id, deleted_at__isnull=True)
                     if model.status not in {"SUBMITTED", "UNDER_REVIEW"}:
@@ -520,19 +536,18 @@ class OrganizerProcessingActionView(_StaffView):
                         composition.build_start_review_handler().handle(
                             StartReviewCommand(submission_id=target_id, reviewer_id=user_id)
                         )
-                    composition.build_return_for_correction_handler().handle(
+                    returned = composition.build_return_for_correction_handler().handle(
                         ReturnSubmissionForCorrectionCommand(
                             submission_id=target_id,
                             reviewer_id=user_id,
                             comment=comment,
                         )
                     )
+                    if result is None:
+                        result = returned
                     processed_ids.append(target_id)
-                if not processed_ids:
+                if not processed_ids or result is None:
                     return Response({"detail": "Нет выступлений, доступных для возврата на исправление."}, status=409)
-                result = composition.build_get_submission_handler().handle(
-                    GetSubmissionQuery(submission_id=processed_ids[0], requested_by=user_id)
-                )
                 primary_model = SubmissionModel.objects.get(id=processed_ids[0], deleted_at__isnull=True)
                 recipient = UserModel.objects.filter(id=primary_model.applicant_id, deleted_at__isnull=True).first()
                 if recipient is not None and recipient.email:
