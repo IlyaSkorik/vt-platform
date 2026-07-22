@@ -17,7 +17,7 @@ from apps.competitions.infrastructure.models.base import uuid7
 pytestmark = pytest.mark.django_db
 
 
-def _seed_competition(*, status: str = "REGISTRATION_OPEN", open_nomination: bool = True) -> str:
+def _seed_competition(*, status: str = "PUBLISHED", open_nomination: bool = True) -> str:
     from datetime import UTC, datetime
 
     from apps.competitions.infrastructure.models import CategoryModel, CompetitionModel

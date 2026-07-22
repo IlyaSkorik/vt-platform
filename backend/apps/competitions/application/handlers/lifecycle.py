@@ -3,12 +3,9 @@
 from __future__ import annotations
 
 from apps.competitions.application.dto.commands import (
-    ArchiveCompetitionCommand,
-    CloseRegistrationCommand,
     CompleteCompetitionCommand,
     MarkConfiguredCommand,
     MarkReadyCommand,
-    OpenRegistrationCommand,
     PublishCompetitionCommand,
     RevertToConfiguredCommand,
     RevertToDraftCommand,
@@ -19,12 +16,9 @@ from apps.competitions.application.dto.views import CompetitionDetailView
 from ._support import CompetitionCommandHandler
 
 __all__ = (
-    "ArchiveCompetitionHandler",
-    "CloseRegistrationHandler",
     "CompleteCompetitionHandler",
     "MarkCompetitionConfiguredHandler",
     "MarkCompetitionReadyHandler",
-    "OpenRegistrationHandler",
     "PublishCompetitionHandler",
     "RevertCompetitionToConfiguredHandler",
     "RevertCompetitionToDraftHandler",
@@ -112,38 +106,6 @@ class PublishCompetitionHandler(CompetitionCommandHandler):
         return self._persist(competition, events)
 
 
-class OpenRegistrationHandler(CompetitionCommandHandler):
-    """Open competition registration."""
-
-    def handle(
-        self,
-        command: OpenRegistrationCommand,
-    ) -> CompetitionDetailView:
-        competition = self._require(command.competition_id)
-
-        events = competition.open_registration(
-            now=self._clock.utcnow(),
-        )
-
-        return self._persist(competition, events)
-
-
-class CloseRegistrationHandler(CompetitionCommandHandler):
-    """Close competition registration."""
-
-    def handle(
-        self,
-        command: CloseRegistrationCommand,
-    ) -> CompetitionDetailView:
-        competition = self._require(command.competition_id)
-
-        events = competition.close_registration(
-            now=self._clock.utcnow(),
-        )
-
-        return self._persist(competition, events)
-
-
 class StartCompetitionHandler(CompetitionCommandHandler):
     """Mark competition as running."""
 
@@ -170,22 +132,6 @@ class CompleteCompetitionHandler(CompetitionCommandHandler):
         competition = self._require(command.competition_id)
 
         events = competition.complete(
-            now=self._clock.utcnow(),
-        )
-
-        return self._persist(competition, events)
-
-
-class ArchiveCompetitionHandler(CompetitionCommandHandler):
-    """Archive a competition."""
-
-    def handle(
-        self,
-        command: ArchiveCompetitionCommand,
-    ) -> CompetitionDetailView:
-        competition = self._require(command.competition_id)
-
-        events = competition.archive(
             now=self._clock.utcnow(),
         )
 

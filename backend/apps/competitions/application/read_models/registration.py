@@ -180,7 +180,7 @@ def project_registration(competition: Competition, *, now: datetime) -> Registra
             name=category.name.value,
             description=category.description.value if category.description is not None else None,
             sort_order=category.sort_order,
-            registration_open=not competition.is_archived() and category.accepts_submissions(now),
+            registration_open=competition.accepts_submissions_for(category.id, now),
             registration_stopped=category.is_registration_stopped,
             registration_opens_at=category.registration.opens_at,
             registration_closes_at=category.registration.closes_at,

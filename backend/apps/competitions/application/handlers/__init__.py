@@ -40,12 +40,9 @@ from .information import (
 )
 from .landing import UpdateLandingConfigHandler
 from .lifecycle import (
-    ArchiveCompetitionHandler,
-    CloseRegistrationHandler,
     CompleteCompetitionHandler,
     MarkCompetitionConfiguredHandler,
     MarkCompetitionReadyHandler,
-    OpenRegistrationHandler,
     PublishCompetitionHandler,
     RevertCompetitionToConfiguredHandler,
     RevertCompetitionToDraftHandler,
@@ -105,9 +102,7 @@ __all__ = [
     "AddParticipationFormatHandler",
     "AddPricingRuleHandler",
     "AddRegulationHandler",
-    "ArchiveCompetitionHandler",
     "ChangePriceHandler",
-    "CloseRegistrationHandler",
     "CompleteCompetitionHandler",
     "CreateCompetitionHandler",
     "DisableAdditionalServiceHandler",
@@ -118,7 +113,6 @@ __all__ = [
     "MakeRegulationCurrentHandler",
     "MarkCompetitionConfiguredHandler",
     "MarkCompetitionReadyHandler",
-    "OpenRegistrationHandler",
     "PublishCompetitionHandler",
     "PublishDocumentHandler",
     "PublishInformationBlockHandler",

@@ -64,7 +64,6 @@ __all__ = [
     "AdditionalServiceAdded",
     "AdmissionRuleAdded",
     "AdmissionRuleRemoved",
-    "CompetitionArchived",
     "CompetitionBrandingChanged",
     "CompetitionCompleted",
     "CompetitionContactAdded",
@@ -77,8 +76,6 @@ __all__ = [
     "CompetitionInformationPublished",
     "CompetitionLandingConfigurationChanged",
     "CompetitionPublished",
-    "CompetitionRegistrationClosed",
-    "CompetitionRegistrationOpened",
     "CompetitionSettingsChanged",
     "CompetitionStarted",
     "DomainEvent",
@@ -181,23 +178,6 @@ class CompetitionPublished(DomainEvent):
     """A competition's configuration was finalized and it opened to applicants."""
 
     previous_status: CompetitionStatus
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class CompetitionArchived(DomainEvent):
-    """A competition was archived (retired) and is now read-only."""
-
-    previous_status: CompetitionStatus
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class CompetitionRegistrationOpened(DomainEvent):
-    """Registration opened; the competition now accepts applications."""
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class CompetitionRegistrationClosed(DomainEvent):
-    """Registration closed; the application window is over."""
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

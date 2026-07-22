@@ -119,11 +119,8 @@ class TestEnums:
             "CONFIGURED",
             "READY",
             "PUBLISHED",
-            "REGISTRATION_OPEN",
-            "REGISTRATION_CLOSED",
             "RUNNING",
             "COMPLETED",
-            "ARCHIVED",
         }
 
     def test_document_category_members(self) -> None:

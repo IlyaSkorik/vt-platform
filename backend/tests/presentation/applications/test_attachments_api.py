@@ -24,7 +24,7 @@ def _seed_open_competition() -> str:
 
     from apps.competitions.infrastructure.models import CategoryModel, CompetitionModel
 
-    competition = CompetitionModel.objects.create(organizer_id=uuid7(), status="REGISTRATION_OPEN", title="Spring", season="2025/2026")
+    competition = CompetitionModel.objects.create(organizer_id=uuid7(), status="PUBLISHED", title="Spring", season="2025/2026")
     # An open nomination window is what admits applications (registration is per nomination).
     CategoryModel.objects.create(
         competition=competition,

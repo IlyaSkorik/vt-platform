@@ -26,7 +26,7 @@ def _seed_open_competition() -> tuple[str, str]:
 
     from apps.competitions.infrastructure.models import CategoryModel, CompetitionModel
 
-    competition = CompetitionModel.objects.create(organizer_id=uuid7(), status="REGISTRATION_OPEN", title="Spring", season="2025/2026")
+    competition = CompetitionModel.objects.create(organizer_id=uuid7(), status="PUBLISHED", title="Spring", season="2025/2026")
     category = CategoryModel.objects.create(
         competition=competition,
         name="Vocal",

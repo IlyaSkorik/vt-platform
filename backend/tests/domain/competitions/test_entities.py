@@ -22,8 +22,6 @@ from apps.competitions.domain.events import (
     CompetitionInformationHidden,
     CompetitionInformationPublished,
     CompetitionPublished,
-    CompetitionRegistrationClosed,
-    CompetitionRegistrationOpened,
     CompetitionSettingsChanged,
     CompetitionStarted,
     NominationRegistrationResumed,
@@ -40,7 +38,7 @@ from apps.competitions.domain.exceptions import (
     AdmissionRuleNotFoundError,
     CategoryInUseError,
     CategoryNotFoundError,
-    CompetitionAlreadyArchivedError,
+    CompetitionAlreadyCompletedError,
     ConfigurationLockedError,
     ContactNotFoundError,
     DirectConstructionError,
@@ -177,6 +175,27 @@ def _configured(*, priced: bool = True, with_regulation: bool = True) -> Fixture
             now=NOW,
         )
     return Fixture(c, cat.id, disc.id, age.id, grp.id, offline, online, regulation_id)
+
+
+def _completed() -> Competition:
+    """A publishable competition driven all the way to the terminal COMPLETED state."""
+    c = _configured().competition
+    c.mark_configured(now=NOW)
+    c.mark_ready(now=NOW)
+    c.publish(now=NOW)
+    c.start(now=NOW)
+    c.complete(now=NOW)
+    return c
+
+
+def _published() -> tuple[Competition, CategoryId]:
+    """A publishable competition driven to PUBLISHED; returns it and its nomination id."""
+    fx = _configured()
+    c = fx.competition
+    c.mark_configured(now=NOW)
+    c.mark_ready(now=NOW)
+    c.publish(now=NOW)
+    return c, fx.category_id
 
 
 class TestDraftAndConstruction:
@@ -516,10 +535,9 @@ class TestLifecycle:
         assert c.mark_ready(now=NOW) == []
         assert str(c.status) == "READY"
         assert isinstance(c.publish(now=NOW)[0], CompetitionPublished)
-        assert isinstance(c.open_registration(now=NOW)[0], CompetitionRegistrationOpened)
-        assert c.is_registration_open()
-        assert isinstance(c.close_registration(now=NOW)[0], CompetitionRegistrationClosed)
+        assert str(c.status) == "PUBLISHED"
         assert isinstance(c.start(now=NOW)[0], CompetitionStarted)
+        assert str(c.status) == "RUNNING"
         assert isinstance(c.complete(now=NOW)[0], CompetitionCompleted)
         assert str(c.status) == "COMPLETED"
 
@@ -528,9 +546,9 @@ class TestLifecycle:
         with pytest.raises(IllegalStatusTransitionError):
             fx.competition.publish(now=NOW)  # still DRAFT, not READY
 
-    def test_illegal_transition_open_registration_from_draft(self) -> None:
+    def test_illegal_transition_start_from_draft(self) -> None:
         with pytest.raises(IllegalStatusTransitionError):
-            _draft().open_registration(now=NOW)
+            _draft().start(now=NOW)
 
     def test_mark_ready_refused_when_incomplete(self) -> None:
         c = _draft()
@@ -558,14 +576,13 @@ class TestLifecycle:
         assert fx.competition.status == CompetitionStatus.CONFIGURED
         fx.competition.add_category(category_id=CategoryId.generate(), name=CategoryName("Theatre"), now=NOW)
 
-    def test_archive_from_any_state_and_immutable(self) -> None:
-        fx = _configured()
-        fx.competition.archive(now=NOW)
-        assert fx.competition.is_archived()
-        with pytest.raises(CompetitionAlreadyArchivedError):
-            fx.competition.archive(now=NOW)
-        with pytest.raises(CompetitionAlreadyArchivedError):
-            fx.competition.add_document(
+    def test_completed_is_terminal_and_immutable(self) -> None:
+        c = _completed()
+        assert c.is_completed()
+        with pytest.raises(IllegalStatusTransitionError):
+            c.complete(now=NOW)  # COMPLETED is terminal
+        with pytest.raises(CompetitionAlreadyCompletedError):
+            c.add_document(
                 document_id=DocumentId.generate(),
                 title=DocumentTitle("M"),
                 category=DocumentCategory.MEMO,
@@ -778,10 +795,9 @@ class TestSettings:
         assert c.settings.require_parent_guardian is True
         assert c.settings.allow_multiple_applications is True
 
-    def test_settings_locked_after_archive(self) -> None:
-        c = _draft()
-        c.archive(now=NOW)
-        with pytest.raises(CompetitionAlreadyArchivedError):
+    def test_settings_locked_after_complete(self) -> None:
+        c = _completed()
+        with pytest.raises(CompetitionAlreadyCompletedError):
             c.update_settings(settings=CompetitionSettings.default(), now=NOW)
 
 
@@ -816,12 +832,11 @@ class TestContactsConfig:
         assert c.contacts_config.override.phone == "+375 29 111-11-11"
         assert c.contacts_config.team_contacts[0].name == "Ivan"
 
-    def test_contacts_config_locked_after_archive(self) -> None:
+    def test_contacts_config_locked_after_complete(self) -> None:
         from apps.competitions.domain.contacts_configuration import ContactsConfiguration
 
-        c = _draft()
-        c.archive(now=NOW)
-        with pytest.raises(CompetitionAlreadyArchivedError):
+        c = _completed()
+        with pytest.raises(CompetitionAlreadyCompletedError):
             c.update_contacts_config(config=ContactsConfiguration.default(), now=NOW)
 
 
@@ -892,12 +907,11 @@ class TestLandingConfig:
         assert isinstance(events[0], CompetitionLandingConfigurationChanged)
         assert c.landing_config.blocks[0].title == "Spring Festival"
 
-    def test_landing_config_locked_after_archive(self) -> None:
+    def test_landing_config_locked_after_complete(self) -> None:
         from apps.competitions.domain.landing_configuration import LandingConfiguration
 
-        c = _draft()
-        c.archive(now=NOW)
-        with pytest.raises(CompetitionAlreadyArchivedError):
+        c = _completed()
+        with pytest.raises(CompetitionAlreadyCompletedError):
             c.update_landing_config(config=LandingConfiguration.default(), now=NOW)
 
 
@@ -913,9 +927,8 @@ class TestDeadlines:
         # No payment deadline set -> always allowed (until archived).
         assert c.is_payment_allowed(datetime(2030, 1, 1, tzinfo=UTC))
 
-    def test_all_disallowed_when_archived(self) -> None:
-        c = _draft()
-        c.archive(now=NOW)
+    def test_all_disallowed_when_completed(self) -> None:
+        c = _completed()
         assert not c.is_application_allowed(NOW)
         assert not c.is_payment_allowed(NOW)
         assert not c.is_music_upload_allowed(NOW)
@@ -923,56 +936,58 @@ class TestDeadlines:
 
 class TestNominationRegistration:
     def test_unconfigured_nomination_is_closed(self) -> None:
-        c = _draft()
-        cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
+        c, cat_id = _published()
         # A nomination with no schedule accepts nothing and does not open the competition.
-        assert not c.accepts_submissions_for(cat.id, NOW)
+        assert not c.accepts_submissions_for(cat_id, NOW)
         assert not c.is_any_nomination_open(NOW)
         assert not c.is_application_allowed(NOW)
 
     def test_schedule_window_opens_within_bounds(self) -> None:
-        c = _draft()
-        cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
+        c, cat_id = _published()
         opens = datetime(2026, 8, 1, tzinfo=UTC)
         closes = datetime(2026, 8, 31, tzinfo=UTC)
-        events = c.schedule_nomination_registration(category_id=cat.id, opens_at=opens, closes_at=closes, now=NOW)
+        events = c.schedule_nomination_registration(category_id=cat_id, opens_at=opens, closes_at=closes, now=NOW)
         assert isinstance(events[0], NominationRegistrationScheduled)
-        assert not c.accepts_submissions_for(cat.id, datetime(2026, 7, 20, tzinfo=UTC))  # before open
-        assert c.accepts_submissions_for(cat.id, datetime(2026, 8, 15, tzinfo=UTC))  # within
-        assert not c.accepts_submissions_for(cat.id, datetime(2026, 9, 1, tzinfo=UTC))  # after close
+        assert not c.accepts_submissions_for(cat_id, datetime(2026, 7, 20, tzinfo=UTC))  # before open
+        assert c.accepts_submissions_for(cat_id, datetime(2026, 8, 15, tzinfo=UTC))  # within
+        assert not c.accepts_submissions_for(cat_id, datetime(2026, 9, 1, tzinfo=UTC))  # after close
         assert c.is_any_nomination_open(datetime(2026, 8, 15, tzinfo=UTC))
 
     def test_open_ended_bounds(self) -> None:
-        c = _draft()
-        cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
+        c, cat_id = _published()
         # Only a close instant -> open until then.
-        c.schedule_nomination_registration(category_id=cat.id, closes_at=datetime(2026, 8, 31, tzinfo=UTC), now=NOW)
-        assert c.accepts_submissions_for(cat.id, datetime(2026, 7, 1, tzinfo=UTC))
-        assert not c.accepts_submissions_for(cat.id, datetime(2026, 9, 1, tzinfo=UTC))
+        c.schedule_nomination_registration(category_id=cat_id, closes_at=datetime(2026, 8, 31, tzinfo=UTC), now=NOW)
+        assert c.accepts_submissions_for(cat_id, datetime(2026, 7, 1, tzinfo=UTC))
+        assert not c.accepts_submissions_for(cat_id, datetime(2026, 9, 1, tzinfo=UTC))
 
     def test_stop_and_resume(self) -> None:
-        c = _draft()
-        cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
-        c.schedule_nomination_registration(category_id=cat.id, closes_at=datetime(2026, 12, 31, tzinfo=UTC), now=NOW)
+        c, cat_id = _published()
+        c.schedule_nomination_registration(category_id=cat_id, closes_at=datetime(2026, 12, 31, tzinfo=UTC), now=NOW)
         at = datetime(2026, 8, 15, tzinfo=UTC)
-        assert c.accepts_submissions_for(cat.id, at)
-        stopped = c.stop_nomination_registration(category_id=cat.id, now=NOW)
+        assert c.accepts_submissions_for(cat_id, at)
+        stopped = c.stop_nomination_registration(category_id=cat_id, now=NOW)
         assert isinstance(stopped[0], NominationRegistrationStopped)
-        assert not c.accepts_submissions_for(cat.id, at)  # early-stopped despite an open window
-        resumed = c.resume_nomination_registration(category_id=cat.id, now=NOW)
+        assert not c.accepts_submissions_for(cat_id, at)  # early-stopped despite an open window
+        resumed = c.resume_nomination_registration(category_id=cat_id, now=NOW)
         assert isinstance(resumed[0], NominationRegistrationResumed)
-        assert c.accepts_submissions_for(cat.id, at)
+        assert c.accepts_submissions_for(cat_id, at)
 
-    def test_independent_windows_per_nomination(self) -> None:
-        c = _draft()
-        early = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
-        late = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Dance"), now=NOW)
-        c.schedule_nomination_registration(category_id=early.id, closes_at=datetime(2026, 8, 1, tzinfo=UTC), now=NOW)
-        c.schedule_nomination_registration(category_id=late.id, closes_at=datetime(2026, 12, 1, tzinfo=UTC), now=NOW)
-        at = datetime(2026, 9, 1, tzinfo=UTC)
-        assert not c.accepts_submissions_for(early.id, at)
-        assert c.accepts_submissions_for(late.id, at)
-        assert c.is_any_nomination_open(at)  # at least one still open
+    def test_submissions_gated_by_status(self) -> None:
+        # A wide-open window admits applications only while PUBLISHED or RUNNING —
+        # never in DRAFT/CONFIGURED/READY, and never once COMPLETED.
+        fx = _configured()
+        c = fx.competition
+        at = datetime(2026, 8, 15, tzinfo=UTC)
+        c.schedule_nomination_registration(category_id=fx.category_id, closes_at=datetime(2027, 1, 1, tzinfo=UTC), now=NOW)
+        assert not c.accepts_submissions_for(fx.category_id, at)  # DRAFT
+        c.mark_configured(now=NOW)
+        c.mark_ready(now=NOW)
+        c.publish(now=NOW)
+        assert c.accepts_submissions_for(fx.category_id, at)  # PUBLISHED
+        c.start(now=NOW)
+        assert c.accepts_submissions_for(fx.category_id, at)  # RUNNING
+        c.complete(now=NOW)
+        assert not c.accepts_submissions_for(fx.category_id, at)  # COMPLETED
 
     def test_invalid_window_rejected(self) -> None:
         with pytest.raises(InvalidRegistrationWindowError):
@@ -983,12 +998,10 @@ class TestNominationRegistration:
         with pytest.raises(CategoryNotFoundError):
             c.stop_nomination_registration(category_id=CategoryId.generate(), now=NOW)
 
-    def test_registration_control_refused_after_archive(self) -> None:
-        c = _draft()
-        cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
-        c.archive(now=NOW)
-        with pytest.raises(CompetitionAlreadyArchivedError):
-            c.schedule_nomination_registration(category_id=cat.id, closes_at=datetime(2026, 8, 1, tzinfo=UTC), now=NOW)
+    def test_registration_control_refused_after_complete(self) -> None:
+        c = _completed()
+        with pytest.raises(CompetitionAlreadyCompletedError):
+            c.schedule_nomination_registration(category_id=CategoryId.generate(), closes_at=datetime(2026, 8, 1, tzinfo=UTC), now=NOW)
 
 
 class TestContacts:

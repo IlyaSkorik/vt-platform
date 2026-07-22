@@ -35,8 +35,6 @@ class TestPublicStatusProjection:
     def test_public_statuses_are_exactly_the_showcase_states(self) -> None:
         assert set(PUBLIC_CATALOG_DOMAIN_STATUSES) == {
             "PUBLISHED",
-            "REGISTRATION_OPEN",
-            "REGISTRATION_CLOSED",
             "RUNNING",
             "COMPLETED",
         }
@@ -44,9 +42,7 @@ class TestPublicStatusProjection:
     @pytest.mark.parametrize(
         ("domain_status", "expected"),
         [
-            ("PUBLISHED", "COMING_SOON"),
-            ("REGISTRATION_OPEN", "REGISTRATION_OPEN"),
-            ("REGISTRATION_CLOSED", "REGISTRATION_CLOSED"),
+            ("PUBLISHED", "REGISTRATION_OPEN"),
             ("RUNNING", "RUNNING"),
             ("COMPLETED", "COMPLETED"),
         ],
@@ -54,7 +50,7 @@ class TestPublicStatusProjection:
     def test_maps_public_states(self, domain_status: str, expected: str) -> None:
         assert public_status_for(domain_status) == expected
 
-    @pytest.mark.parametrize("hidden", ["DRAFT", "CONFIGURED", "READY", "ARCHIVED"])
+    @pytest.mark.parametrize("hidden", ["DRAFT", "CONFIGURED", "READY"])
     def test_hidden_states_never_map(self, hidden: str) -> None:
         assert public_status_for(hidden) is None
         assert hidden not in PUBLIC_CATALOG_DOMAIN_STATUSES
@@ -173,8 +169,8 @@ class TestDjangoPublicCatalogReader:
 
     def test_returns_only_publicly_visible_states(self) -> None:
         org = self._organization()
-        visible = ["PUBLISHED", "REGISTRATION_OPEN", "REGISTRATION_CLOSED", "RUNNING", "COMPLETED"]
-        hidden = ["DRAFT", "CONFIGURED", "READY", "ARCHIVED"]
+        visible = ["PUBLISHED", "RUNNING", "COMPLETED"]
+        hidden = ["DRAFT", "CONFIGURED", "READY"]
         for state in visible + hidden:
             self._competition(organizer_id=org.id, status=state, title=f"Fest {state}")
 
@@ -185,11 +181,11 @@ class TestDjangoPublicCatalogReader:
 
     def test_maps_status_and_organizer_name(self) -> None:
         org = self._organization(name="Дом талантов")
-        self._competition(organizer_id=org.id, status="PUBLISHED", title="Скоро")
+        self._competition(organizer_id=org.id, status="PUBLISHED", title="Приём заявок")
 
         [festival] = self._reader().list_festivals()
 
-        assert festival.status == "COMING_SOON"
+        assert festival.status == "REGISTRATION_OPEN"
         assert festival.organizer.name == "Дом талантов"
         assert festival.organizer.logo is None
 
@@ -232,7 +228,7 @@ class TestDjangoPublicCatalogReader:
         org = self._organization()
         competition = self._competition(
             organizer_id=org.id,
-            status="REGISTRATION_OPEN",
+            status="PUBLISHED",
             title="Весенний вокал",
             venue_name="Дворец культуры",
             contacts_config={"venue_details": {"city": "Минск"}},
@@ -511,7 +507,7 @@ class TestDjangoPublicCatalogReaderDetail:
         org = self._organization(name="Дом талантов")
         competition = self._competition(
             organizer_id=org.id,
-            status="REGISTRATION_OPEN",
+            status="PUBLISHED",
             title="Весенний вокал",
             venue_name="Дворец культуры",
             contacts_config={
@@ -556,7 +552,7 @@ class TestDjangoPublicCatalogReaderDetail:
         org.save()
         competition = self._competition(
             organizer_id=uuid.uuid4(),
-            status="REGISTRATION_OPEN",
+            status="PUBLISHED",
             title="Весенний вокал",
             contacts_config={"venue_details": {"city": "Минск"}},
         )

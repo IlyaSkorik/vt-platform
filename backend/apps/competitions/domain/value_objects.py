@@ -1161,15 +1161,13 @@ class ServiceDescription:
 class CompetitionStatus(StrEnum):
     """The competition's lifecycle state.
 
-    ``DRAFT``               — configurator open; configuration is mutable.
-    ``CONFIGURED``          — organizer has signalled configuration is done; still editable.
-    ``READY``               — configuration validated as publishable; frozen (edit by reverting).
-    ``PUBLISHED``           — open to applicants; configuration frozen.
-    ``REGISTRATION_OPEN``   — accepting applications.
-    ``REGISTRATION_CLOSED`` — application window closed.
-    ``RUNNING``             — the competition is taking place.
-    ``COMPLETED``           — the competition has finished.
-    ``ARCHIVED``            — retired; immutable and read-only.
+    ``DRAFT``      — configurator open; configuration is mutable.
+    ``CONFIGURED`` — organizer has signalled configuration is done; still editable.
+    ``READY``      — configuration validated as publishable; frozen (edit by reverting).
+    ``PUBLISHED``  — open to applicants; configuration frozen. Registration is scheduled
+                     per nomination (there is no competition-wide registration state).
+    ``RUNNING``    — the competition is taking place.
+    ``COMPLETED``  — the competition has finished; read-only.
 
     Legal transitions are enforced by the :class:`~apps.competitions.domain.entities.
     Competition` aggregate; this enum only names the states.
@@ -1179,11 +1177,8 @@ class CompetitionStatus(StrEnum):
     CONFIGURED = "CONFIGURED"
     READY = "READY"
     PUBLISHED = "PUBLISHED"
-    REGISTRATION_OPEN = "REGISTRATION_OPEN"
-    REGISTRATION_CLOSED = "REGISTRATION_CLOSED"
     RUNNING = "RUNNING"
     COMPLETED = "COMPLETED"
-    ARCHIVED = "ARCHIVED"
 
 
 class DocumentCategory(StrEnum):

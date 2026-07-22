@@ -25,9 +25,7 @@ __all__ = [
     "AddParticipationFormatCommand",
     "AddPricingRuleCommand",
     "AddRegulationCommand",
-    "ArchiveCompetitionCommand",
     "ChangePriceCommand",
-    "CloseRegistrationCommand",
     "CompleteCompetitionCommand",
     "CreateCompetitionCommand",
     "DisableAdditionalServiceCommand",
@@ -36,7 +34,6 @@ __all__ = [
     "MakeRegulationCurrentCommand",
     "MarkConfiguredCommand",
     "MarkReadyCommand",
-    "OpenRegistrationCommand",
     "PublishCompetitionCommand",
     "PublishDocumentCommand",
     "PublishInformationBlockCommand",
@@ -622,25 +619,10 @@ class PublishCompetitionCommand:
 
 
 @dataclass(frozen=True, slots=True)
-class OpenRegistrationCommand:
-    competition_id: str
-
-
-@dataclass(frozen=True, slots=True)
-class CloseRegistrationCommand:
-    competition_id: str
-
-
-@dataclass(frozen=True, slots=True)
 class StartCompetitionCommand:
     competition_id: str
 
 
 @dataclass(frozen=True, slots=True)
 class CompleteCompetitionCommand:
-    competition_id: str
-
-
-@dataclass(frozen=True, slots=True)
-class ArchiveCompetitionCommand:
     competition_id: str

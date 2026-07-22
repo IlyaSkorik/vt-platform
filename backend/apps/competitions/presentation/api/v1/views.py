@@ -39,9 +39,7 @@ from apps.competitions.application.dto.commands import (
     AddParticipationFormatCommand,
     AddPricingRuleCommand,
     AddRegulationCommand,
-    ArchiveCompetitionCommand,
     ChangePriceCommand,
-    CloseRegistrationCommand,
     CompleteCompetitionCommand,
     CreateCompetitionCommand,
     DisableAdditionalServiceCommand,
@@ -50,7 +48,6 @@ from apps.competitions.application.dto.commands import (
     MakeRegulationCurrentCommand,
     MarkConfiguredCommand,
     MarkReadyCommand,
-    OpenRegistrationCommand,
     PublishCompetitionCommand,
     PublishDocumentCommand,
     PublishInformationBlockCommand,
@@ -107,9 +104,7 @@ from apps.competitions.application.handlers import (
     AddParticipationFormatHandler,
     AddPricingRuleHandler,
     AddRegulationHandler,
-    ArchiveCompetitionHandler,
     ChangePriceHandler,
-    CloseRegistrationHandler,
     CompleteCompetitionHandler,
     CreateCompetitionHandler,
     DisableAdditionalServiceHandler,
@@ -118,7 +113,6 @@ from apps.competitions.application.handlers import (
     MakeRegulationCurrentHandler,
     MarkCompetitionConfiguredHandler,
     MarkCompetitionReadyHandler,
-    OpenRegistrationHandler,
     PublishCompetitionHandler,
     PublishDocumentHandler,
     PublishInformationBlockHandler,
@@ -527,16 +521,6 @@ class CompetitionViewSet(viewsets.ViewSet):
     def publish(self, request: Request, pk: str) -> Response:
         return self._run(PublishCompetitionHandler, PublishCompetitionCommand(competition_id=pk), request)
 
-    @extend_schema(tags=[_TAG], operation_id="openRegistration", request=None, responses=_detail_ok())
-    @action(detail=True, methods=["post"], url_path="registration/open")
-    def open_registration(self, request: Request, pk: str) -> Response:
-        return self._run(OpenRegistrationHandler, OpenRegistrationCommand(competition_id=pk), request)
-
-    @extend_schema(tags=[_TAG], operation_id="closeRegistration", request=None, responses=_detail_ok())
-    @action(detail=True, methods=["post"], url_path="registration/close")
-    def close_registration(self, request: Request, pk: str) -> Response:
-        return self._run(CloseRegistrationHandler, CloseRegistrationCommand(competition_id=pk), request)
-
     @extend_schema(tags=[_TAG], operation_id="startCompetition", request=None, responses=_detail_ok())
     @action(detail=True, methods=["post"], url_path="start")
     def start(self, request: Request, pk: str) -> Response:
@@ -546,11 +530,6 @@ class CompetitionViewSet(viewsets.ViewSet):
     @action(detail=True, methods=["post"], url_path="complete")
     def complete(self, request: Request, pk: str) -> Response:
         return self._run(CompleteCompetitionHandler, CompleteCompetitionCommand(competition_id=pk), request)
-
-    @extend_schema(tags=[_TAG], operation_id="archiveCompetition", request=None, responses=_detail_ok())
-    @action(detail=True, methods=["post"], url_path="archive")
-    def archive(self, request: Request, pk: str) -> Response:
-        return self._run(ArchiveCompetitionHandler, ArchiveCompetitionCommand(competition_id=pk), request)
 
     # ------------------------------------------------------------------
     # Categories

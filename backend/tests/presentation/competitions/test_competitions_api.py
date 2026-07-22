@@ -121,10 +121,10 @@ def test_get_unknown_competition_returns_404(staff_client: APIClient) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_open_registration_from_draft_is_conflict(staff_client: APIClient) -> None:
-    """An illegal lifecycle transition (DRAFT → REGISTRATION_OPEN) is a 409."""
+def test_start_from_draft_is_conflict(staff_client: APIClient) -> None:
+    """An illegal lifecycle transition (DRAFT → RUNNING) is a 409."""
     competition_id = _create_competition(staff_client).data["data"]["id"]
-    response = staff_client.post(f"/api/v1/competitions/{competition_id}/registration/open", {}, format="json")
+    response = staff_client.post(f"/api/v1/competitions/{competition_id}/start", {}, format="json")
     assert response.status_code == 409
     assert response["content-type"] == "application/problem+json"
 
@@ -189,8 +189,8 @@ def test_full_organizer_workflow(staff_client: APIClient) -> None:
     published = staff_client.post(f"{detail}/publish", {}, format="json")
     assert published.status_code == 200
     assert published.data["data"]["status"] == "PUBLISHED"
-    opened = staff_client.post(f"{detail}/registration/open", {}, format="json")
-    assert opened.data["data"]["status"] == "REGISTRATION_OPEN"
+    started = staff_client.post(f"{detail}/start", {}, format="json")
+    assert started.data["data"]["status"] == "RUNNING"
 
 
 # ---------------------------------------------------------------------------

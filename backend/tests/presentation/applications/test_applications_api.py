@@ -29,7 +29,7 @@ def _seed_open_competition() -> str:
 
     competition = CompetitionModel.objects.create(
         organizer_id=uuid7(),
-        status="REGISTRATION_OPEN",
+        status="PUBLISHED",
         title="Spring Festival",
         season="2025/2026",
     )

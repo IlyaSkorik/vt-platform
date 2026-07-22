@@ -70,15 +70,14 @@ __all__ = [
 # --- Public status projection --------------------------------------------------
 #
 # The catalog is a public *showcase*, not merely a registration list: participants
-# discover upcoming, live and past competitions, not only ones currently taking
-# applications. So every published, publicly-visible lifecycle state is exposed —
-# DRAFT / CONFIGURED / READY (pre-publication) and ARCHIVED (retired) are never
-# surfaced. Each domain state maps to a coarse *public status* that tells the
-# frontend which call-to-action to render.
+# discover live and past competitions, not only ones currently taking applications.
+# So every published, publicly-visible lifecycle state is exposed — DRAFT /
+# CONFIGURED / READY (pre-publication) are never surfaced. Registration is scheduled
+# per nomination, so a PUBLISHED competition is the "apply" phase (each nomination's
+# window governs actual availability, detailed on the landing). Each domain state
+# maps to a coarse *public status* that tells the frontend which CTA to render.
 _PUBLIC_STATUS_BY_DOMAIN: dict[str, str] = {
-    "PUBLISHED": "COMING_SOON",  # published & frozen; registration not opened yet
-    "REGISTRATION_OPEN": "REGISTRATION_OPEN",  # accepting applications → "Apply"
-    "REGISTRATION_CLOSED": "REGISTRATION_CLOSED",  # window closed → "Registration closed"
+    "PUBLISHED": "REGISTRATION_OPEN",  # live; registration runs per nomination → "Apply"
     "RUNNING": "RUNNING",  # taking place → "In progress"
     "COMPLETED": "COMPLETED",  # finished → "Completed"
 }
@@ -92,7 +91,7 @@ def public_status_for(domain_status: str) -> str | None:
     """Map a domain :class:`CompetitionStatus` value to its public status.
 
     Returns ``None`` for states that must never be exposed (DRAFT, CONFIGURED,
-    READY, ARCHIVED) so callers cannot accidentally leak them.
+    READY) so callers cannot accidentally leak them.
     """
     return _PUBLIC_STATUS_BY_DOMAIN.get(domain_status)
 

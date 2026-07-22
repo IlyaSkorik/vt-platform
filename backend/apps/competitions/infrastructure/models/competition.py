@@ -30,11 +30,8 @@ class CompetitionStatusChoices(models.TextChoices):
     CONFIGURED = "CONFIGURED", "Configured"
     READY = "READY", "Ready"
     PUBLISHED = "PUBLISHED", "Published"
-    REGISTRATION_OPEN = "REGISTRATION_OPEN", "Registration open"
-    REGISTRATION_CLOSED = "REGISTRATION_CLOSED", "Registration closed"
     RUNNING = "RUNNING", "Running"
     COMPLETED = "COMPLETED", "Completed"
-    ARCHIVED = "ARCHIVED", "Archived"
 
 
 class CompetitionModel(BasePersistenceModel):

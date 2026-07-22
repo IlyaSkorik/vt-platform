@@ -71,7 +71,6 @@ from .events import (
     AdditionalServiceAdded,
     AdmissionRuleAdded,
     AdmissionRuleRemoved,
-    CompetitionArchived,
     CompetitionBrandingChanged,
     CompetitionCompleted,
     CompetitionContactAdded,
@@ -84,8 +83,6 @@ from .events import (
     CompetitionInformationPublished,
     CompetitionLandingConfigurationChanged,
     CompetitionPublished,
-    CompetitionRegistrationClosed,
-    CompetitionRegistrationOpened,
     CompetitionSettingsChanged,
     CompetitionStarted,
     DomainEvent,
@@ -106,7 +103,7 @@ from .exceptions import (
     AgeCategoryNotFoundError,
     CategoryInUseError,
     CategoryNotFoundError,
-    CompetitionAlreadyArchivedError,
+    CompetitionAlreadyCompletedError,
     ConfigurationLockedError,
     ContactNotFoundError,
     DirectConstructionError,
@@ -223,23 +220,26 @@ _CREATION_TOKEN: Final = object()
 #: Sentinel for distinguishing "not supplied" from ``None`` in partial updates.
 _SENTINEL: Final = object()
 
-#: The lifecycle transitions the aggregate permits. ``ARCHIVED`` is terminal, and
-#: any non-archived status may transition to ``ARCHIVED`` (see :meth:`Competition.archive`).
+#: The lifecycle transitions the aggregate permits. ``COMPLETED`` is terminal.
+#: Registration is scheduled per nomination, so there is no competition-wide
+#: registration-open/closed state: a ``PUBLISHED`` competition goes straight to
+#: ``RUNNING`` while its nominations open and close on their own windows.
 _LEGAL_TRANSITIONS: Final[dict[CompetitionStatus, frozenset[CompetitionStatus]]] = {
-    CompetitionStatus.DRAFT: frozenset({CompetitionStatus.CONFIGURED, CompetitionStatus.ARCHIVED}),
-    CompetitionStatus.CONFIGURED: frozenset({CompetitionStatus.DRAFT, CompetitionStatus.READY, CompetitionStatus.ARCHIVED}),
-    CompetitionStatus.READY: frozenset({CompetitionStatus.CONFIGURED, CompetitionStatus.PUBLISHED, CompetitionStatus.ARCHIVED}),
-    CompetitionStatus.PUBLISHED: frozenset({CompetitionStatus.REGISTRATION_OPEN, CompetitionStatus.ARCHIVED}),
-    CompetitionStatus.REGISTRATION_OPEN: frozenset({CompetitionStatus.REGISTRATION_CLOSED, CompetitionStatus.ARCHIVED}),
-    CompetitionStatus.REGISTRATION_CLOSED: frozenset({CompetitionStatus.RUNNING, CompetitionStatus.ARCHIVED}),
-    CompetitionStatus.RUNNING: frozenset({CompetitionStatus.COMPLETED, CompetitionStatus.ARCHIVED}),
-    CompetitionStatus.COMPLETED: frozenset({CompetitionStatus.ARCHIVED}),
-    CompetitionStatus.ARCHIVED: frozenset(),
+    CompetitionStatus.DRAFT: frozenset({CompetitionStatus.CONFIGURED}),
+    CompetitionStatus.CONFIGURED: frozenset({CompetitionStatus.DRAFT, CompetitionStatus.READY}),
+    CompetitionStatus.READY: frozenset({CompetitionStatus.CONFIGURED, CompetitionStatus.PUBLISHED}),
+    CompetitionStatus.PUBLISHED: frozenset({CompetitionStatus.RUNNING}),
+    CompetitionStatus.RUNNING: frozenset({CompetitionStatus.COMPLETED}),
+    CompetitionStatus.COMPLETED: frozenset(),
 }
 
 #: Statuses in which the admissibility configuration (taxonomy, formats, admission
 #: and pricing rules) may still be mutated. Beyond these it is frozen.
 _CONFIGURABLE_STATUSES: Final = frozenset({CompetitionStatus.DRAFT, CompetitionStatus.CONFIGURED})
+
+#: Statuses in which the competition accepts applications (subject to each nomination's
+#: own registration window). Registration is per-nomination, gated by these statuses.
+_SUBMISSION_STATUSES: Final = frozenset({CompetitionStatus.PUBLISHED, CompetitionStatus.RUNNING})
 
 
 # ===========================================================================
@@ -1394,10 +1394,10 @@ class InformationBlock:
 class Competition:
     """The Competition aggregate root — a configurable competition constructor.
 
-    Guards its full lifecycle (``DRAFT → CONFIGURED → READY → PUBLISHED →
-    REGISTRATION_OPEN → REGISTRATION_CLOSED → RUNNING → COMPLETED``, plus
-    ``ARCHIVED`` from any state) and every cross-element invariant of its
-    configuration. Equality/hashing is by :class:`CompetitionId`.
+    Guards its full lifecycle (``DRAFT → CONFIGURED → READY → PUBLISHED → RUNNING →
+    COMPLETED``; registration is scheduled per nomination, not as a competition-wide
+    state) and every cross-element invariant of its configuration. Equality/hashing
+    is by :class:`CompetitionId`.
     """
 
     _token: InitVar[object]
@@ -1851,11 +1851,8 @@ class Competition:
     def is_published(self) -> bool:
         return self._status is CompetitionStatus.PUBLISHED
 
-    def is_archived(self) -> bool:
-        return self._status is CompetitionStatus.ARCHIVED
-
-    def is_registration_open(self) -> bool:
-        return self._status is CompetitionStatus.REGISTRATION_OPEN
+    def is_completed(self) -> bool:
+        return self._status is CompetitionStatus.COMPLETED
 
     def disciplines_of(self, category_id: CategoryId) -> tuple[Discipline, ...]:
         """All disciplines belonging to ``category_id``."""
@@ -1898,9 +1895,9 @@ class Competition:
     # Deadline queries (answer "is X still allowed at `now`?")
     # ------------------------------------------------------------------
     #
-    # These answer the *deadline* question only (and refuse everything once
-    # archived). Layering admission/lifecycle policy on top is the Application
-    # context's job; the Competition merely owns the authoritative cut-off dates.
+    # These answer the *deadline* question only (and refuse everything once the
+    # competition is COMPLETED). Layering admission/lifecycle policy on top is the
+    # Application context's job; the Competition merely owns the cut-off dates.
 
     def is_application_allowed(self, now: datetime) -> bool:
         """Whether the competition accepts applications at ``now`` in *any* nomination.
@@ -1914,29 +1911,30 @@ class Competition:
     def accepts_submissions_for(self, category_id: CategoryId, now: datetime) -> bool:
         """Whether the nomination ``category_id`` accepts applications at ``now``.
 
-        Closed when the competition is archived, the nomination is unknown, its
-        registration was stopped early, or ``now`` falls outside its window.
+        Requires the competition to be PUBLISHED or RUNNING and the nomination's own
+        registration window to be open (not stopped early, within its dates). Closed
+        otherwise, or when the nomination is unknown.
         """
-        if self.is_archived():
+        if self._status not in _SUBMISSION_STATUSES:
             return False
         category = self._categories.get(category_id)
         return category is not None and category.accepts_submissions(now)
 
     def is_any_nomination_open(self, now: datetime) -> bool:
         """Whether at least one nomination currently accepts applications at ``now``."""
-        return not self.is_archived() and any(c.accepts_submissions(now) for c in self._categories.values())
+        return self._status in _SUBMISSION_STATUSES and any(c.accepts_submissions(now) for c in self._categories.values())
 
     def is_payment_allowed(self, now: datetime) -> bool:
-        return not self.is_archived() and self._deadlines.is_open(DeadlineKind.PAYMENT, now)
+        return not self.is_completed() and self._deadlines.is_open(DeadlineKind.PAYMENT, now)
 
     def is_music_upload_allowed(self, now: datetime) -> bool:
-        return not self.is_archived() and self._deadlines.is_open(DeadlineKind.MUSIC_UPLOAD, now)
+        return not self.is_completed() and self._deadlines.is_open(DeadlineKind.MUSIC_UPLOAD, now)
 
     def is_document_upload_allowed(self, now: datetime) -> bool:
-        return not self.is_archived() and self._deadlines.is_open(DeadlineKind.DOCUMENT_UPLOAD, now)
+        return not self.is_completed() and self._deadlines.is_open(DeadlineKind.DOCUMENT_UPLOAD, now)
 
     def is_correction_allowed(self, now: datetime) -> bool:
-        return not self.is_archived() and self._deadlines.is_open(DeadlineKind.CORRECTION, now)
+        return not self.is_completed() and self._deadlines.is_open(DeadlineKind.CORRECTION, now)
 
     # ------------------------------------------------------------------
     # General information
@@ -1955,12 +1953,12 @@ class Competition:
         registration_period: DateRange | None = None,
         competition_period: DateRange | None = None,
     ) -> list[DomainEvent]:
-        """Replace the competition's general information (allowed unless ARCHIVED).
+        """Replace the competition's general information (allowed unless COMPLETED).
 
         General information is presentation, not admissibility configuration, so it
         may be edited even after publication — it cannot invalidate an application.
         """
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         self._title = title
         self._season = season
         self._description = description
@@ -2410,7 +2408,7 @@ class Competition:
         ]
 
     # ------------------------------------------------------------------
-    # Regulations (allowed unless ARCHIVED — content, not admissibility config)
+    # Regulations (allowed unless COMPLETED — content, not admissibility config)
     # ------------------------------------------------------------------
 
     def add_regulation(
@@ -2429,7 +2427,7 @@ class Competition:
         moves. Emits :class:`RegulationPublished`. Invariant: whenever at least one
         regulation exists, exactly one is current.
         """
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         regulation = CompetitionRegulation.create(
             regulation_id=regulation_id, title=title, version=version, publication_date=publication_date, file=file
         )
@@ -2443,7 +2441,7 @@ class Competition:
 
     def make_regulation_current(self, *, regulation_id: RegulationId, now: datetime) -> None:
         """Promote an existing regulation version to be the current one."""
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         if regulation_id not in self._regulations:
             raise RegulationNotFoundError(f"No regulation {regulation_id} in this competition.")
         if self._current_regulation_id == regulation_id:
@@ -2457,7 +2455,7 @@ class Competition:
         Removing the current version promotes the most recently published remaining
         version; removing the last version clears the current pointer.
         """
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         if regulation_id not in self._regulations:
             raise RegulationNotFoundError(f"No regulation {regulation_id} in this competition.")
         del self._regulations[regulation_id]
@@ -2473,7 +2471,7 @@ class Competition:
         return latest.id
 
     # ------------------------------------------------------------------
-    # Documents (allowed unless ARCHIVED — content, not admissibility config)
+    # Documents (allowed unless COMPLETED — content, not admissibility config)
     # ------------------------------------------------------------------
 
     def add_document(
@@ -2489,7 +2487,7 @@ class Competition:
         sort_order: int = 0,
         published: bool = False,
     ) -> CompetitionDocument:
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         document = CompetitionDocument.create(
             document_id=document_id,
             title=title,
@@ -2516,29 +2514,29 @@ class Competition:
         sort_order: int,
         now: datetime,
     ) -> None:
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         document = self._require_document(document_id)
         document.update(title=title, category=category, visibility=visibility, file=file, description=description, sort_order=sort_order)
         self._touch(now)
 
     def publish_document(self, *, document_id: DocumentId, now: datetime) -> None:
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         self._require_document(document_id).publish()
         self._touch(now)
 
     def unpublish_document(self, *, document_id: DocumentId, now: datetime) -> None:
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         self._require_document(document_id).unpublish()
         self._touch(now)
 
     def remove_document(self, *, document_id: DocumentId, now: datetime) -> None:
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         self._require_document(document_id)
         del self._documents[document_id]
         self._touch(now)
 
     # ------------------------------------------------------------------
-    # Additional services (optional paid extras; allowed unless ARCHIVED)
+    # Additional services (optional paid extras; allowed unless COMPLETED)
     # ------------------------------------------------------------------
 
     def add_additional_service(
@@ -2556,7 +2554,7 @@ class Competition:
         sort_order: int = 0,
     ) -> list[DomainEvent]:
         """Add an optional paid service available for the given participation formats."""
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         for format_id in available_format_ids:
             self._require_participation_format(format_id)
         service = AdditionalService.create(
@@ -2599,7 +2597,7 @@ class Competition:
         sort_order: int,
         now: datetime,
     ) -> None:
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         for format_id in available_format_ids:
             self._require_participation_format(format_id)
         self._require_service(service_id).update(
@@ -2614,28 +2612,28 @@ class Competition:
         self._touch(now)
 
     def enable_additional_service(self, *, service_id: ServiceId, now: datetime) -> None:
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         self._require_service(service_id).enable()
         self._touch(now)
 
     def disable_additional_service(self, *, service_id: ServiceId, now: datetime) -> None:
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         self._require_service(service_id).disable()
         self._touch(now)
 
     def remove_additional_service(self, *, service_id: ServiceId, now: datetime) -> None:
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         self._require_service(service_id)
         del self._additional_services[service_id]
         self._touch(now)
 
     # ------------------------------------------------------------------
-    # Settings (behaviour flags; allowed unless ARCHIVED)
+    # Settings (behaviour flags; allowed unless COMPLETED)
     # ------------------------------------------------------------------
 
     def update_settings(self, *, settings: CompetitionSettings, now: datetime) -> list[DomainEvent]:
         """Replace the competition's behaviour settings wholesale."""
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         for item in settings.format_requirements:
             self._require_participation_format(item.participation_format_id)
         self._settings = settings
@@ -2644,31 +2642,31 @@ class Competition:
 
     def update_contacts_config(self, *, config: ContactsConfiguration, now: datetime) -> list[DomainEvent]:
         """Replace the competition's contacts-module configuration wholesale."""
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         self._contacts_config = config
         self._touch(now)
         return [CompetitionContactsConfigChanged(aggregate_id=self._id.value)]
 
     def update_landing_config(self, *, config: LandingConfiguration, now: datetime) -> list[DomainEvent]:
         """Replace the competition's public-landing configuration wholesale."""
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         self._landing_config = config
         self._touch(now)
         return [CompetitionLandingConfigurationChanged(aggregate_id=self._id.value)]
 
     # ------------------------------------------------------------------
-    # Registration deadlines (allowed unless ARCHIVED)
+    # Registration deadlines (allowed unless COMPLETED)
     # ------------------------------------------------------------------
 
     def update_deadlines(self, *, deadlines: RegistrationDeadlines, now: datetime) -> list[DomainEvent]:
         """Replace the registration deadlines (the VO enforces non-contradiction)."""
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         self._deadlines = deadlines
         self._touch(now)
         return [CompetitionDeadlineChanged(aggregate_id=self._id.value)]
 
     # ------------------------------------------------------------------
-    # Branding (allowed unless ARCHIVED)
+    # Branding (allowed unless COMPLETED)
     # ------------------------------------------------------------------
 
     def update_branding(
@@ -2680,13 +2678,13 @@ class Competition:
         now: datetime,
     ) -> list[DomainEvent]:
         """Replace the competition's branding assets (logo, banner, poster)."""
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         self._branding = CompetitionBranding(logo=logo, banner=banner, poster=poster)
         self._touch(now)
         return [CompetitionBrandingChanged(aggregate_id=self._id.value)]
 
     # ------------------------------------------------------------------
-    # Contacts (allowed unless ARCHIVED; exactly one primary)
+    # Contacts (allowed unless COMPLETED; exactly one primary)
     # ------------------------------------------------------------------
 
     def add_contact(
@@ -2704,7 +2702,7 @@ class Competition:
         becomes primary; passing ``is_primary`` (or being first) makes this the
         sole primary, demoting any previous one.
         """
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         if any(c.type is contact_type and c.value == value for c in self._contacts.values()):
             raise DuplicateContactError(f"A {contact_type.value} contact with this value already exists.")
         make_primary = is_primary or not self._contacts
@@ -2725,7 +2723,7 @@ class Competition:
 
     def set_primary_contact(self, *, contact_id: ContactId, now: datetime) -> None:
         """Make ``contact_id`` the sole primary contact."""
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         contact = self._require_contact(contact_id)
         if contact.is_primary:
             return
@@ -2735,7 +2733,7 @@ class Competition:
 
     def remove_contact(self, *, contact_id: ContactId, now: datetime) -> list[DomainEvent]:
         """Remove a contact. If it was primary, promote another (if any remain)."""
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         contact = self._require_contact(contact_id)
         was_primary = contact.is_primary
         del self._contacts[contact_id]
@@ -2752,7 +2750,7 @@ class Competition:
                 existing.unmark_primary()
 
     # ------------------------------------------------------------------
-    # Public information blocks (allowed unless ARCHIVED)
+    # Public information blocks (allowed unless COMPLETED)
     # ------------------------------------------------------------------
 
     def add_information_block(
@@ -2766,7 +2764,7 @@ class Competition:
         sort_order: int = 0,
     ) -> InformationBlock:
         """Add a public-information block. Titles are unique within the competition."""
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         if any(b.title == title for b in self._information_blocks.values()):
             raise DuplicateInformationBlockError(f"An information block titled {title.value!r} already exists.")
         block = InformationBlock.create(block_id=block_id, title=title, content=content, published=published, sort_order=sort_order)
@@ -2783,7 +2781,7 @@ class Competition:
         sort_order: int,
         now: datetime,
     ) -> None:
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         block = self._require_information_block(block_id)
         if any(bid != block_id and b.title == title for bid, b in self._information_blocks.items()):
             raise DuplicateInformationBlockError(f"An information block titled {title.value!r} already exists.")
@@ -2791,7 +2789,7 @@ class Competition:
         self._touch(now)
 
     def publish_information_block(self, *, block_id: InformationBlockId, now: datetime) -> list[DomainEvent]:
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         block = self._require_information_block(block_id)
         if block.is_published:
             return []
@@ -2800,7 +2798,7 @@ class Competition:
         return [CompetitionInformationPublished(aggregate_id=self._id.value, block_id=block_id, title=block.title)]
 
     def hide_information_block(self, *, block_id: InformationBlockId, now: datetime) -> list[DomainEvent]:
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         block = self._require_information_block(block_id)
         if not block.is_published:
             return []
@@ -2809,7 +2807,7 @@ class Competition:
         return [CompetitionInformationHidden(aggregate_id=self._id.value, block_id=block_id)]
 
     def remove_information_block(self, *, block_id: InformationBlockId, now: datetime) -> None:
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         self._require_information_block(block_id)
         del self._information_blocks[block_id]
         self._touch(now)
@@ -2894,24 +2892,14 @@ class Competition:
         self._transition_to(CompetitionStatus.PUBLISHED, now=now)
         return [CompetitionPublished(aggregate_id=self._id.value, previous_status=previous)]
 
-    def open_registration(self, *, now: datetime) -> list[DomainEvent]:
-        """Open registration (``PUBLISHED → REGISTRATION_OPEN``)."""
-        self._transition_to(CompetitionStatus.REGISTRATION_OPEN, now=now)
-        return [CompetitionRegistrationOpened(aggregate_id=self._id.value)]
-
-    def close_registration(self, *, now: datetime) -> list[DomainEvent]:
-        """Close registration (``REGISTRATION_OPEN → REGISTRATION_CLOSED``)."""
-        self._transition_to(CompetitionStatus.REGISTRATION_CLOSED, now=now)
-        return [CompetitionRegistrationClosed(aggregate_id=self._id.value)]
-
     # ------------------------------------------------------------------
     # Per-nomination registration control
     # ------------------------------------------------------------------
     #
     # Registration is scheduled per nomination, not competition-wide. Unlike
     # taxonomy configuration (DRAFT/CONFIGURED only), these are live registration
-    # controls: they are allowed at any time up to archival, so an organizer can set
-    # a nomination's window or stop it early after the competition is published.
+    # controls: they are allowed at any time until the competition is COMPLETED, so
+    # an organizer can set a nomination's window or stop it early after publication.
 
     def schedule_nomination_registration(
         self,
@@ -2922,7 +2910,7 @@ class Competition:
         closes_at: datetime | None = None,
     ) -> list[DomainEvent]:
         """Set (or replace) a nomination's registration window (open/close instants)."""
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         category = self._require_category(category_id)
         category.schedule_registration(RegistrationWindow(opens_at=opens_at, closes_at=closes_at))
         self._touch(now)
@@ -2937,7 +2925,7 @@ class Competition:
 
     def stop_nomination_registration(self, *, category_id: CategoryId, now: datetime) -> list[DomainEvent]:
         """Stop a nomination's registration early (closed regardless of its window)."""
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         category = self._require_category(category_id)
         category.stop_registration()
         self._touch(now)
@@ -2945,37 +2933,29 @@ class Competition:
 
     def resume_nomination_registration(self, *, category_id: CategoryId, now: datetime) -> list[DomainEvent]:
         """Lift a nomination's early stop; its window governs openness again."""
-        self._ensure_not_archived()
+        self._ensure_not_completed()
         category = self._require_category(category_id)
         category.resume_registration()
         self._touch(now)
         return [NominationRegistrationResumed(aggregate_id=self._id.value, category_id=category_id)]
 
     def start(self, *, now: datetime) -> list[DomainEvent]:
-        """Begin running the competition (``REGISTRATION_CLOSED → RUNNING``)."""
+        """Begin running the competition (``PUBLISHED → RUNNING``)."""
         self._transition_to(CompetitionStatus.RUNNING, now=now)
         return [CompetitionStarted(aggregate_id=self._id.value)]
 
     def complete(self, *, now: datetime) -> list[DomainEvent]:
-        """Finish the competition (``RUNNING → COMPLETED``)."""
+        """Finish the competition (``RUNNING → COMPLETED``). It becomes read-only."""
         self._transition_to(CompetitionStatus.COMPLETED, now=now)
         return [CompetitionCompleted(aggregate_id=self._id.value)]
-
-    def archive(self, *, now: datetime) -> list[DomainEvent]:
-        """Retire the competition (any non-archived status → ``ARCHIVED``). It becomes read-only."""
-        if self._status is CompetitionStatus.ARCHIVED:
-            raise CompetitionAlreadyArchivedError("The competition is already archived.")
-        previous = self._status
-        self._transition_to(CompetitionStatus.ARCHIVED, now=now)
-        return [CompetitionArchived(aggregate_id=self._id.value, previous_status=previous)]
 
     # ------------------------------------------------------------------
     # Internal invariants & helpers
     # ------------------------------------------------------------------
 
-    def _ensure_not_archived(self) -> None:
-        if self._status is CompetitionStatus.ARCHIVED:
-            raise CompetitionAlreadyArchivedError("An archived competition is read-only.")
+    def _ensure_not_completed(self) -> None:
+        if self._status is CompetitionStatus.COMPLETED:
+            raise CompetitionAlreadyCompletedError("A completed competition is read-only.")
 
     def _ensure_configurable(self) -> None:
         """Admissibility configuration may change only while DRAFT or CONFIGURED."""

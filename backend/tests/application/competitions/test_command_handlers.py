@@ -27,9 +27,9 @@ from apps.competitions.application.dto.commands import (
     MakeRegulationCurrentCommand,
     MarkConfiguredCommand,
     MarkReadyCommand,
-    OpenRegistrationCommand,
     PublishCompetitionCommand,
     RenameCategoryCommand,
+    StartCompetitionCommand,
 )
 from apps.competitions.application.dto.views import CompetitionDetailView
 from apps.competitions.application.exceptions import CompetitionNotFoundError
@@ -46,9 +46,9 @@ from apps.competitions.application.handlers import (
     MakeRegulationCurrentHandler,
     MarkCompetitionConfiguredHandler,
     MarkCompetitionReadyHandler,
-    OpenRegistrationHandler,
     PublishCompetitionHandler,
     RenameCategoryHandler,
+    StartCompetitionHandler,
 )
 from apps.competitions.application.handlers._support import CompetitionCommandHandler
 from apps.competitions.domain.events import CompetitionCreated, CompetitionPublished
@@ -157,7 +157,7 @@ def test_add_category_is_reflected_in_view(deps: _Deps) -> None:
     assert [c.name for c in updated.categories] == ["Vocal"]
 
 
-def test_full_workflow_reaches_registration_open(deps: _Deps) -> None:
+def test_full_workflow_reaches_running(deps: _Deps) -> None:
     view = _create(deps)
     cid = view.id
 
@@ -168,8 +168,8 @@ def test_full_workflow_reaches_registration_open(deps: _Deps) -> None:
     assert published.status == "PUBLISHED"
     assert any(isinstance(e, CompetitionPublished) for e in deps.publisher.published)
 
-    opened = deps.build(OpenRegistrationHandler).handle(OpenRegistrationCommand(competition_id=cid))
-    assert opened.status == "REGISTRATION_OPEN"
+    running = deps.build(StartCompetitionHandler).handle(StartCompetitionCommand(competition_id=cid))
+    assert running.status == "RUNNING"
 
 
 def test_publish_before_configuration_is_rejected(deps: _Deps) -> None:

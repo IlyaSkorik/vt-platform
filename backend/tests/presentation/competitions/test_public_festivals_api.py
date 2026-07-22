@@ -39,7 +39,7 @@ class TestPublicFestivalDetailEndpoint:
         org = _organization()
         competition = _competition(
             organizer_id=org.id,
-            status="REGISTRATION_OPEN",
+            status="PUBLISHED",
             title="Весенний вокал",
             venue_name="Дворец культуры",
             contacts_config={
@@ -74,7 +74,7 @@ class TestPublicFestivalDetailEndpoint:
 
         org = _organization()
         competition = _competition(
-            organizer_id=org.id, status="REGISTRATION_OPEN", title="Весенний конкурс"
+            organizer_id=org.id, status="PUBLISHED", title="Весенний конкурс"
         )
         regulation = RegulationModel.objects.create(
             competition=competition,
@@ -102,7 +102,7 @@ class TestPublicFestivalDetailEndpoint:
 
         org = _organization()
         competition = _competition(
-            organizer_id=org.id, status="REGISTRATION_OPEN", title="Фестиваль документов"
+            organizer_id=org.id, status="PUBLISHED", title="Фестиваль документов"
         )
         DocumentModel.objects.create(
             competition=competition,
@@ -135,7 +135,7 @@ class TestPublicFestivalDetailEndpoint:
     def test_regulation_is_null_when_absent(self) -> None:
         org = _organization()
         competition = _competition(
-            organizer_id=org.id, status="REGISTRATION_OPEN", title="Без положения"
+            organizer_id=org.id, status="PUBLISHED", title="Без положения"
         )
 
         response = APIClient().get(f"/api/v1/public/festivals/{competition.id}")

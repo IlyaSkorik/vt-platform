@@ -46,7 +46,7 @@ edge (ARCH-001 §7.6). No Django/DRF imports.
     ├── CompetitionStateError                   — an operation illegal in the Competition's lifecycle
     │   ├── ConfigurationLockedError            — configuration edited when not editable (post-CONFIGURED)
     │   ├── CompetitionAlreadyPublishedError
-    │   ├── CompetitionAlreadyArchivedError
+    │   ├── CompetitionAlreadyCompletedError
     │   ├── IllegalStatusTransitionError        — the requested lifecycle transition is not legal
     │   └── PublicationRequirementsNotMetError  — publish attempted on an incomplete configuration
     ├── ConfigurationReferenceError             — a rule/child references a config element that is absent
@@ -328,8 +328,8 @@ class CompetitionAlreadyPublishedError(CompetitionStateError):
     """The competition is already published; it cannot be published again."""
 
 
-class CompetitionAlreadyArchivedError(CompetitionStateError):
-    """The competition is already archived; the operation is not permitted."""
+class CompetitionAlreadyCompletedError(CompetitionStateError):
+    """The competition is already completed; it is read-only and cannot be edited."""
 
 
 class IllegalStatusTransitionError(CompetitionStateError):
