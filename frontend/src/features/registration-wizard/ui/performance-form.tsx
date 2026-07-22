@@ -116,10 +116,13 @@ function PerformanceFormInner({
     setSelection((current) => clearDownstream({ ...current, [axis]: value }, axis));
   };
 
-  const nominationOptions = options(
-    registration.nominations,
-    admissibleValues(rules, {}, "nominationId"),
+  // Only nominations whose registration window is currently open can be applied to;
+  // a closed/not-yet-open nomination would be rejected by the backend on submit.
+  const openNominations = registration.nominations.filter(
+    (nomination) => nomination.registrationOpen,
   );
+  const nominationOptions = options(openNominations, admissibleValues(rules, {}, "nominationId"));
+  const noOpenNominations = openNominations.length === 0;
   const disciplineOptions = options(
     registration.disciplines,
     admissibleValues(rules, selection, "disciplineId"),
@@ -193,6 +196,12 @@ function PerformanceFormInner({
 
   return (
     <div className="flex flex-col gap-4">
+      {noOpenNominations ? (
+        <Alert variant="warning" title="Приём заявок закрыт">
+          Сейчас нет номинаций, открытых для регистрации. Проверьте сроки приёма заявок по
+          номинациям.
+        </Alert>
+      ) : null}
       <div className="grid gap-3 sm:grid-cols-2">
         <Select
           label="Номинация"
