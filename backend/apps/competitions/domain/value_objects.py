@@ -77,6 +77,7 @@ from .exceptions import (
     InvalidParticipationFormatIdError,
     InvalidParticipationFormatNameError,
     InvalidRegistrationDeadlinesError,
+    InvalidRegistrationWindowError,
     InvalidRegulationIdError,
     InvalidRegulationTitleError,
     InvalidRegulationVersionError,
@@ -143,6 +144,7 @@ __all__ = [
     "PublicationIssue",
     "PublicationIssueCode",
     "RegistrationDeadlines",
+    "RegistrationWindow",
     "RegulationId",
     "RegulationTitle",
     "RegulationVersion",
@@ -1628,6 +1630,48 @@ class RegistrationDeadlines:
         """Whether ``kind`` is still open at ``now`` (open when unset or not yet past)."""
         deadline = self._deadline(kind)
         return deadline is None or now <= deadline
+
+
+@dataclass(frozen=True, slots=True)
+class RegistrationWindow:
+    """A single nomination's registration window: an optional open and close instant.
+
+    Registration is configured **per nomination** (there is no competition-wide
+    application deadline): each nomination opens and closes on its own schedule.
+    Both bounds are optional, timezone-aware :class:`~datetime.datetime` instants so
+    they compare directly to ``now``:
+
+    * ``opens_at`` ``None`` — open from the start (no lower bound).
+    * ``closes_at`` ``None`` — never auto-closes (no upper bound).
+
+    A window with **neither** bound set is *unconfigured*: the nomination is
+    considered closed until an organizer schedules it, so an organizer who has set
+    nothing up cannot inadvertently accept applications.
+
+    Invariant: ``closes_at`` must not precede ``opens_at``.
+    """
+
+    opens_at: datetime | None = None
+    closes_at: datetime | None = None
+
+    def __post_init__(self) -> None:
+        if self.opens_at is not None and self.closes_at is not None and self.closes_at < self.opens_at:
+            raise InvalidRegistrationWindowError(
+                f"The registration close instant {self.closes_at} must not precede the open instant {self.opens_at}."
+            )
+
+    @property
+    def is_configured(self) -> bool:
+        """Whether either bound is set (an unconfigured window is always closed)."""
+        return self.opens_at is not None or self.closes_at is not None
+
+    def is_open(self, now: datetime) -> bool:
+        """Whether the window admits applications at ``now`` (closed while unconfigured)."""
+        if not self.is_configured:
+            return False
+        if self.opens_at is not None and now < self.opens_at:
+            return False
+        return self.closes_at is None or now <= self.closes_at
 
 
 # ---------------------------------------------------------------------------

@@ -82,6 +82,9 @@ __all__ = [
     "CompetitionSettingsChanged",
     "CompetitionStarted",
     "DomainEvent",
+    "NominationRegistrationResumed",
+    "NominationRegistrationScheduled",
+    "NominationRegistrationStopped",
     "ParticipationFormatDisabled",
     "ParticipationFormatEnabled",
     "PricingRuleAdded",
@@ -195,6 +198,29 @@ class CompetitionRegistrationOpened(DomainEvent):
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CompetitionRegistrationClosed(DomainEvent):
     """Registration closed; the application window is over."""
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class NominationRegistrationScheduled(DomainEvent):
+    """A nomination's registration window (open/close instants) was set or changed."""
+
+    category_id: CategoryId
+    opens_at: datetime | None
+    closes_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class NominationRegistrationStopped(DomainEvent):
+    """A nomination's registration was stopped early by the organizer."""
+
+    category_id: CategoryId
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class NominationRegistrationResumed(DomainEvent):
+    """A previously stopped nomination's registration was resumed."""
+
+    category_id: CategoryId
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

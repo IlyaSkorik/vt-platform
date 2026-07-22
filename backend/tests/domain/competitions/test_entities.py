@@ -26,6 +26,9 @@ from apps.competitions.domain.events import (
     CompetitionRegistrationOpened,
     CompetitionSettingsChanged,
     CompetitionStarted,
+    NominationRegistrationResumed,
+    NominationRegistrationScheduled,
+    NominationRegistrationStopped,
     ParticipationFormatDisabled,
     ParticipationFormatEnabled,
     PricingRuleAdded,
@@ -36,6 +39,7 @@ from apps.competitions.domain.exceptions import (
     AdmissionRuleInUseError,
     AdmissionRuleNotFoundError,
     CategoryInUseError,
+    CategoryNotFoundError,
     CompetitionAlreadyArchivedError,
     ConfigurationLockedError,
     ContactNotFoundError,
@@ -50,6 +54,7 @@ from apps.competitions.domain.exceptions import (
     DuplicatePricingRuleError,
     EmptyAdditionalServiceFormatsError,
     IllegalStatusTransitionError,
+    InvalidRegistrationWindowError,
     OverlappingAgeRangeError,
     OverlappingParticipantRangeError,
     ParticipationFormatInUseError,
@@ -90,6 +95,7 @@ from apps.competitions.domain.value_objects import (
     ParticipationFormatName,
     PublicationIssueCode,
     RegistrationDeadlines,
+    RegistrationWindow,
     RegulationId,
     RegulationTitle,
     RegulationVersion,
@@ -901,8 +907,8 @@ class TestDeadlines:
         deadline = datetime(2026, 8, 1, tzinfo=UTC)
         events = c.update_deadlines(deadlines=RegistrationDeadlines(application=deadline, music_upload=deadline), now=NOW)
         assert isinstance(events[0], CompetitionDeadlineChanged)
-        assert c.is_application_allowed(datetime(2026, 7, 15, tzinfo=UTC))
-        assert not c.is_application_allowed(datetime(2026, 8, 2, tzinfo=UTC))
+        # Application acceptance is scheduled per nomination (see TestNominationRegistration),
+        # not by a competition-wide application deadline; only the other deadlines gate here.
         assert c.is_music_upload_allowed(datetime(2026, 7, 15, tzinfo=UTC))
         # No payment deadline set -> always allowed (until archived).
         assert c.is_payment_allowed(datetime(2030, 1, 1, tzinfo=UTC))
@@ -913,6 +919,76 @@ class TestDeadlines:
         assert not c.is_application_allowed(NOW)
         assert not c.is_payment_allowed(NOW)
         assert not c.is_music_upload_allowed(NOW)
+
+
+class TestNominationRegistration:
+    def test_unconfigured_nomination_is_closed(self) -> None:
+        c = _draft()
+        cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
+        # A nomination with no schedule accepts nothing and does not open the competition.
+        assert not c.accepts_submissions_for(cat.id, NOW)
+        assert not c.is_any_nomination_open(NOW)
+        assert not c.is_application_allowed(NOW)
+
+    def test_schedule_window_opens_within_bounds(self) -> None:
+        c = _draft()
+        cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
+        opens = datetime(2026, 8, 1, tzinfo=UTC)
+        closes = datetime(2026, 8, 31, tzinfo=UTC)
+        events = c.schedule_nomination_registration(category_id=cat.id, opens_at=opens, closes_at=closes, now=NOW)
+        assert isinstance(events[0], NominationRegistrationScheduled)
+        assert not c.accepts_submissions_for(cat.id, datetime(2026, 7, 20, tzinfo=UTC))  # before open
+        assert c.accepts_submissions_for(cat.id, datetime(2026, 8, 15, tzinfo=UTC))  # within
+        assert not c.accepts_submissions_for(cat.id, datetime(2026, 9, 1, tzinfo=UTC))  # after close
+        assert c.is_any_nomination_open(datetime(2026, 8, 15, tzinfo=UTC))
+
+    def test_open_ended_bounds(self) -> None:
+        c = _draft()
+        cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
+        # Only a close instant -> open until then.
+        c.schedule_nomination_registration(category_id=cat.id, closes_at=datetime(2026, 8, 31, tzinfo=UTC), now=NOW)
+        assert c.accepts_submissions_for(cat.id, datetime(2026, 7, 1, tzinfo=UTC))
+        assert not c.accepts_submissions_for(cat.id, datetime(2026, 9, 1, tzinfo=UTC))
+
+    def test_stop_and_resume(self) -> None:
+        c = _draft()
+        cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
+        c.schedule_nomination_registration(category_id=cat.id, closes_at=datetime(2026, 12, 31, tzinfo=UTC), now=NOW)
+        at = datetime(2026, 8, 15, tzinfo=UTC)
+        assert c.accepts_submissions_for(cat.id, at)
+        stopped = c.stop_nomination_registration(category_id=cat.id, now=NOW)
+        assert isinstance(stopped[0], NominationRegistrationStopped)
+        assert not c.accepts_submissions_for(cat.id, at)  # early-stopped despite an open window
+        resumed = c.resume_nomination_registration(category_id=cat.id, now=NOW)
+        assert isinstance(resumed[0], NominationRegistrationResumed)
+        assert c.accepts_submissions_for(cat.id, at)
+
+    def test_independent_windows_per_nomination(self) -> None:
+        c = _draft()
+        early = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
+        late = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Dance"), now=NOW)
+        c.schedule_nomination_registration(category_id=early.id, closes_at=datetime(2026, 8, 1, tzinfo=UTC), now=NOW)
+        c.schedule_nomination_registration(category_id=late.id, closes_at=datetime(2026, 12, 1, tzinfo=UTC), now=NOW)
+        at = datetime(2026, 9, 1, tzinfo=UTC)
+        assert not c.accepts_submissions_for(early.id, at)
+        assert c.accepts_submissions_for(late.id, at)
+        assert c.is_any_nomination_open(at)  # at least one still open
+
+    def test_invalid_window_rejected(self) -> None:
+        with pytest.raises(InvalidRegistrationWindowError):
+            RegistrationWindow(opens_at=datetime(2026, 9, 1, tzinfo=UTC), closes_at=datetime(2026, 8, 1, tzinfo=UTC))
+
+    def test_schedule_unknown_nomination_rejected(self) -> None:
+        c = _draft()
+        with pytest.raises(CategoryNotFoundError):
+            c.stop_nomination_registration(category_id=CategoryId.generate(), now=NOW)
+
+    def test_registration_control_refused_after_archive(self) -> None:
+        c = _draft()
+        cat = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
+        c.archive(now=NOW)
+        with pytest.raises(CompetitionAlreadyArchivedError):
+            c.schedule_nomination_registration(category_id=cat.id, closes_at=datetime(2026, 8, 1, tzinfo=UTC), now=NOW)
 
 
 class TestContacts:

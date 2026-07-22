@@ -89,6 +89,9 @@ from .events import (
     CompetitionSettingsChanged,
     CompetitionStarted,
     DomainEvent,
+    NominationRegistrationResumed,
+    NominationRegistrationScheduled,
+    NominationRegistrationStopped,
     ParticipationFormatDisabled,
     ParticipationFormatEnabled,
     PricingRuleAdded,
@@ -185,6 +188,7 @@ from .value_objects import (
     PublicationIssue,
     PublicationIssueCode,
     RegistrationDeadlines,
+    RegistrationWindow,
     RegulationId,
     RegulationTitle,
     RegulationVersion,
@@ -335,12 +339,21 @@ def ensure_participant_range_free(
 
 @dataclass(slots=True, eq=False, repr=False)
 class Category:
-    """A competition category — the top of the taxonomy (e.g. Vocal, Choreography)."""
+    """A competition category (a *nomination*) — the top of the taxonomy (e.g. Vocal, Choreography).
+
+    A nomination owns its own registration schedule: a :class:`~apps.competitions.
+    domain.value_objects.RegistrationWindow` (open/close instants) plus an early-stop
+    flag. Registration is decided per nomination — the competition has no single
+    application deadline — so each nomination opens, closes on time, or is stopped
+    early independently of the others.
+    """
 
     _id: CategoryId
     _name: CategoryName
     _description: CategoryDescription | None = None
     _sort_order: int = 0
+    _registration: RegistrationWindow = field(default_factory=RegistrationWindow)
+    _registration_stopped: bool = False
 
     @classmethod
     def create(
@@ -350,8 +363,17 @@ class Category:
         name: CategoryName,
         description: CategoryDescription | None = None,
         sort_order: int = 0,
+        registration: RegistrationWindow | None = None,
+        registration_stopped: bool = False,
     ) -> Category:
-        return cls(_id=category_id, _name=name, _description=description, _sort_order=_validate_sort_order(sort_order))
+        return cls(
+            _id=category_id,
+            _name=name,
+            _description=description,
+            _sort_order=_validate_sort_order(sort_order),
+            _registration=registration if registration is not None else RegistrationWindow(),
+            _registration_stopped=registration_stopped,
+        )
 
     @classmethod
     def rehydrate(
@@ -361,8 +383,17 @@ class Category:
         name: CategoryName,
         description: CategoryDescription | None = None,
         sort_order: int = 0,
+        registration: RegistrationWindow | None = None,
+        registration_stopped: bool = False,
     ) -> Category:
-        return cls(_id=category_id, _name=name, _description=description, _sort_order=sort_order)
+        return cls(
+            _id=category_id,
+            _name=name,
+            _description=description,
+            _sort_order=sort_order,
+            _registration=registration if registration is not None else RegistrationWindow(),
+            _registration_stopped=registration_stopped,
+        )
 
     @property
     def id(self) -> CategoryId:
@@ -379,6 +410,34 @@ class Category:
     @property
     def sort_order(self) -> int:
         return self._sort_order
+
+    @property
+    def registration(self) -> RegistrationWindow:
+        return self._registration
+
+    @property
+    def is_registration_stopped(self) -> bool:
+        return self._registration_stopped
+
+    def schedule_registration(self, window: RegistrationWindow) -> None:
+        """Set (or replace) this nomination's registration window."""
+        self._registration = window
+
+    def stop_registration(self) -> None:
+        """Stop this nomination's registration early (closed regardless of the window)."""
+        self._registration_stopped = True
+
+    def resume_registration(self) -> None:
+        """Lift an early stop; the window's instants govern openness again."""
+        self._registration_stopped = False
+
+    def accepts_submissions(self, now: datetime) -> bool:
+        """Whether this nomination accepts applications at ``now``.
+
+        Open only when not stopped early **and** the configured window admits
+        ``now``; an unscheduled nomination is closed.
+        """
+        return not self._registration_stopped and self._registration.is_open(now)
 
     def rename(self, name: CategoryName) -> None:
         self._name = name
@@ -1844,7 +1903,28 @@ class Competition:
     # context's job; the Competition merely owns the authoritative cut-off dates.
 
     def is_application_allowed(self, now: datetime) -> bool:
-        return not self.is_archived() and self._deadlines.is_open(DeadlineKind.APPLICATION, now)
+        """Whether the competition accepts applications at ``now`` in *any* nomination.
+
+        Registration is scheduled per nomination, so the competition-level answer is
+        "is at least one nomination open?" — used at entry points (creating an
+        application, adding a submission) before a nomination has been chosen.
+        """
+        return self.is_any_nomination_open(now)
+
+    def accepts_submissions_for(self, category_id: CategoryId, now: datetime) -> bool:
+        """Whether the nomination ``category_id`` accepts applications at ``now``.
+
+        Closed when the competition is archived, the nomination is unknown, its
+        registration was stopped early, or ``now`` falls outside its window.
+        """
+        if self.is_archived():
+            return False
+        category = self._categories.get(category_id)
+        return category is not None and category.accepts_submissions(now)
+
+    def is_any_nomination_open(self, now: datetime) -> bool:
+        """Whether at least one nomination currently accepts applications at ``now``."""
+        return not self.is_archived() and any(c.accepts_submissions(now) for c in self._categories.values())
 
     def is_payment_allowed(self, now: datetime) -> bool:
         return not self.is_archived() and self._deadlines.is_open(DeadlineKind.PAYMENT, now)
@@ -2823,6 +2903,53 @@ class Competition:
         """Close registration (``REGISTRATION_OPEN → REGISTRATION_CLOSED``)."""
         self._transition_to(CompetitionStatus.REGISTRATION_CLOSED, now=now)
         return [CompetitionRegistrationClosed(aggregate_id=self._id.value)]
+
+    # ------------------------------------------------------------------
+    # Per-nomination registration control
+    # ------------------------------------------------------------------
+    #
+    # Registration is scheduled per nomination, not competition-wide. Unlike
+    # taxonomy configuration (DRAFT/CONFIGURED only), these are live registration
+    # controls: they are allowed at any time up to archival, so an organizer can set
+    # a nomination's window or stop it early after the competition is published.
+
+    def schedule_nomination_registration(
+        self,
+        *,
+        category_id: CategoryId,
+        now: datetime,
+        opens_at: datetime | None = None,
+        closes_at: datetime | None = None,
+    ) -> list[DomainEvent]:
+        """Set (or replace) a nomination's registration window (open/close instants)."""
+        self._ensure_not_archived()
+        category = self._require_category(category_id)
+        category.schedule_registration(RegistrationWindow(opens_at=opens_at, closes_at=closes_at))
+        self._touch(now)
+        return [
+            NominationRegistrationScheduled(
+                aggregate_id=self._id.value,
+                category_id=category_id,
+                opens_at=opens_at,
+                closes_at=closes_at,
+            )
+        ]
+
+    def stop_nomination_registration(self, *, category_id: CategoryId, now: datetime) -> list[DomainEvent]:
+        """Stop a nomination's registration early (closed regardless of its window)."""
+        self._ensure_not_archived()
+        category = self._require_category(category_id)
+        category.stop_registration()
+        self._touch(now)
+        return [NominationRegistrationStopped(aggregate_id=self._id.value, category_id=category_id)]
+
+    def resume_nomination_registration(self, *, category_id: CategoryId, now: datetime) -> list[DomainEvent]:
+        """Lift a nomination's early stop; its window governs openness again."""
+        self._ensure_not_archived()
+        category = self._require_category(category_id)
+        category.resume_registration()
+        self._touch(now)
+        return [NominationRegistrationResumed(aggregate_id=self._id.value, category_id=category_id)]
 
     def start(self, *, now: datetime) -> list[DomainEvent]:
         """Begin running the competition (``REGISTRATION_CLOSED → RUNNING``)."""

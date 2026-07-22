@@ -274,6 +274,10 @@ class InvalidRegistrationDeadlinesError(ValueObjectValidationError):
     """The provided registration deadlines contradict one another."""
 
 
+class InvalidRegistrationWindowError(ValueObjectValidationError):
+    """A nomination's registration window is invalid (close instant precedes open instant)."""
+
+
 class InvalidContactsConfigurationError(ValueObjectValidationError):
     """The competition contacts configuration is invalid."""
 
