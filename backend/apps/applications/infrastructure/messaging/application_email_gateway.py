@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Final
+from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -23,10 +24,13 @@ _SUBMITTED_SUBJECT: Final = "Заявка подана"
 _AWAITING_PAYMENT_SUBJECT: Final = "Заявка подана — ожидается оплата"
 _CANCELLED_SUBJECT: Final = "Заявка отменена"
 
+#: Deadlines are shown to applicants in Minsk local time, not the stored UTC.
+_DISPLAY_TZ: Final = ZoneInfo("Europe/Minsk")
+
 
 def _format_deadline(deadline: datetime) -> str:
-    zone = deadline.tzname() or "UTC"
-    return f"{deadline:%d.%m.%Y %H:%M} ({zone})"
+    """Render the payment deadline in Minsk local time (e.g. ``24.07.2026 22:17 (Мск)``)."""
+    return f"{deadline.astimezone(_DISPLAY_TZ):%d.%m.%Y %H:%M} (Мск)"
 
 
 class DjangoApplicantNotifier:
@@ -60,7 +64,7 @@ class DjangoApplicantNotifier:
         deadline_text = _format_deadline(deadline)
         body = (
             f"Здравствуйте, {applicant_name}!\n\n"
-            "Ваша заявка подана. Пожалуйста, оплатите её и прикрепите квитанцию в течение 48 часов — "
+            "Ваша заявка подана. Пожалуйста, оплатите её и прикрепите квитанцию "
             f"до {deadline_text}.\n\n"
             "Если квитанция не будет прикреплена в срок, заявка автоматически отменится.\n\n"
             "С уважением,\nКоманда «Взлёт талантов»"
@@ -73,7 +77,7 @@ class DjangoApplicantNotifier:
                 intro=f"Здравствуйте, {applicant_name}! Ваша заявка подана и ожидает оплаты.",
                 details_label="Оплатите до",
                 details=(
-                    f"{deadline_text}. Прикрепите квитанцию об оплате в течение 48 часов, "
+                    f"{deadline_text}. Прикрепите квитанцию об оплате до этого срока, "
                     "иначе заявка автоматически отменится."
                 ),
                 button_label="Прикрепить квитанцию",
@@ -85,7 +89,7 @@ class DjangoApplicantNotifier:
     def notify_application_auto_cancelled(self, *, email: str, applicant_name: str) -> None:
         body = (
             f"Здравствуйте, {applicant_name}!\n\n"
-            "Ваша заявка автоматически отменена: квитанция об оплате не была прикреплена в течение 48 часов.\n\n"
+            "Ваша заявка автоматически отменена: квитанция об оплате не была прикреплена в срок.\n\n"
             "Вы можете подать новую заявку, пока открыта регистрация.\n\n"
             "С уважением,\nКоманда «Взлёт талантов»"
         )
@@ -96,7 +100,7 @@ class DjangoApplicantNotifier:
                 title=_CANCELLED_SUBJECT,
                 intro=f"Здравствуйте, {applicant_name}! Ваша заявка автоматически отменена.",
                 details_label="Причина",
-                details="Квитанция об оплате не была прикреплена в течение 48 часов.",
+                details="Квитанция об оплате не была прикреплена в срок.",
                 button_label="Мои заявки",
                 button_url=self._applications_url,
             ),
