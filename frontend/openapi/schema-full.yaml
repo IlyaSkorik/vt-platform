@@ -7226,6 +7226,10 @@ components:
           minimum: 1
         type:
           $ref: '#/components/schemas/LayoutFieldRequestTypeEnum'
+        binding:
+          type: string
+          default: ''
+          maxLength: 64
         x:
           type: number
           format: double
@@ -9767,6 +9771,8 @@ components:
           type: integer
         type:
           type: string
+        binding:
+          type: string
         x:
           type: number
           format: double
@@ -9793,6 +9799,7 @@ components:
           type: string
           format: date-time
       required:
+      - binding
       - createdAt
       - height
       - id

@@ -160,6 +160,16 @@ def test_layout_persists_field_style() -> None:
     assert saved["style"]["color"] == "#ff0000"
 
 
+def test_layout_persists_field_binding() -> None:
+    template = _template()
+    field = {**_field(), "binding": "participant.display_name"}
+
+    composition.replace_template_layout(template_id=str(template.id), fields=[field])
+
+    saved = composition.get_template_layout(str(template.id))["fields"][0]
+    assert saved["binding"] == "participant.display_name"
+
+
 def test_layout_unknown_template_raises() -> None:
     with pytest.raises(TemplateNotFoundError):
         composition.get_template_layout(str(uuid.uuid4()))
