@@ -154,4 +154,34 @@ export default defineConfig({
       },
     },
   },
+  vtDiplomas: {
+    input: {
+      target: "./openapi/schema-full.yaml",
+      override: {
+        transformer: "./openapi/strip-api-version-prefix.ts",
+      },
+      filters: {
+        // The standalone Diplomas workspace: template library + the assignment
+        // mechanism (competition + nomination -> template).
+        tags: ["Diplomas"],
+      },
+    },
+    output: {
+      mode: "tags-split",
+      target: "./src/shared/api/generated",
+      schemas: "./src/shared/api/generated/model-diplomas",
+      client: "react-query",
+      httpClient: "fetch",
+      clean: false,
+      override: {
+        mutator: {
+          path: "./src/shared/api/orval-mutator.ts",
+          name: "customInstance",
+        },
+        query: {
+          useQuery: true,
+        },
+      },
+    },
+  },
 });

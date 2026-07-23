@@ -1211,55 +1211,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/CompetitionProblemDetail'
           description: Business rule violation.
-  /api/v1/competitions/{id}/archive:
-    post:
-      operationId: archiveCompetition
-      description: Organizer Competition API — staff-only.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - Competitions
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionDetailResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Validation failed.
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Not organization staff.
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Competition or element not found.
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Lifecycle or configuration conflict.
-        '422':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Business rule violation.
   /api/v1/competitions/{id}/branding:
     patch:
       operationId: updateBranding
@@ -1508,6 +1459,179 @@ paths:
           description: Business rule violation.
     delete:
       operationId: removeCategory
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: category_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/categories/{category_id}/registration:
+    put:
+      operationId: scheduleNominationRegistration
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: category_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduleNominationRegistration'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ScheduleNominationRegistration'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ScheduleNominationRegistration'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/categories/{category_id}/registration/resume:
+    post:
+      operationId: resumeNominationRegistration
+      description: Organizer Competition API — staff-only.
+      parameters:
+      - in: path
+        name: category_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+  /api/v1/competitions/{id}/categories/{category_id}/registration/stop:
+    post:
+      operationId: stopNominationRegistration
       description: Organizer Competition API — staff-only.
       parameters:
       - in: path
@@ -3398,104 +3522,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/CompetitionProblemDetail'
           description: Business rule violation.
-  /api/v1/competitions/{id}/registration/close:
-    post:
-      operationId: closeRegistration
-      description: Organizer Competition API — staff-only.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - Competitions
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionDetailResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Validation failed.
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Not organization staff.
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Competition or element not found.
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Lifecycle or configuration conflict.
-        '422':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Business rule violation.
-  /api/v1/competitions/{id}/registration/open:
-    post:
-      operationId: openRegistration
-      description: Organizer Competition API — staff-only.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - Competitions
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionDetailResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Validation failed.
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Not organization staff.
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Competition or element not found.
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Lifecycle or configuration conflict.
-        '422':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Business rule violation.
   /api/v1/competitions/{id}/regulations:
     post:
       operationId: addRegulation
@@ -4895,6 +4921,99 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/staff/diplomas/assignments:
+    get:
+      operationId: diplomas_assignments_list
+      description: List and create template assignments.
+      tags:
+      - Diplomas
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AssignmentResponse'
+          description: ''
+    post:
+      operationId: diplomas_create_assignment
+      description: List and create template assignments.
+      tags:
+      - Diplomas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAssignmentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateAssignmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateAssignmentRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentResponse'
+          description: ''
+  /api/v1/staff/diplomas/assignments/{assignment_id}:
+    delete:
+      operationId: diplomas_delete_assignment
+      description: Delete a single template assignment.
+      parameters:
+      - in: path
+        name: assignment_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Diplomas
+      responses:
+        '204':
+          description: No response body
+  /api/v1/staff/diplomas/templates:
+    get:
+      operationId: diplomas_templates_list
+      description: The reusable template library.
+      tags:
+      - Diplomas
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TemplateResponse'
+          description: ''
+    post:
+      operationId: diplomas_create_template
+      description: The reusable template library.
+      tags:
+      - Diplomas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateTemplateRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateResponse'
+          description: ''
   /api/v1/staff/invitations:
     get:
       operationId: listStaffInvitations
@@ -6390,6 +6509,48 @@ components:
       - status
       - title
       - type
+    AssignmentResponse:
+      type: object
+      description: A template assignment (competition + nomination -> template).
+      properties:
+        id:
+          type: string
+          format: uuid
+        competitionId:
+          type: string
+          format: uuid
+        competition:
+          type:
+          - string
+          - 'null'
+        categoryId:
+          type: string
+          format: uuid
+        nomination:
+          type:
+          - string
+          - 'null'
+        templateId:
+          type: string
+          format: uuid
+        templateName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - categoryId
+      - competition
+      - competitionId
+      - createdAt
+      - id
+      - nomination
+      - templateId
+      - templateName
+      - updatedAt
     AttachmentTypeEnum:
       enum:
       - MUSIC
@@ -6639,6 +6800,23 @@ components:
           format: uuid
       required:
       - competitionId
+    CreateAssignmentRequest:
+      type: object
+      description: Body for creating a template assignment.
+      properties:
+        competitionId:
+          type: string
+          format: uuid
+        categoryId:
+          type: string
+          format: uuid
+        templateId:
+          type: string
+          format: uuid
+      required:
+      - categoryId
+      - competitionId
+      - templateId
     CreateCompetition:
       type: object
       properties:
@@ -6685,6 +6863,19 @@ components:
       - displayAlias
       - firstName
       - lastName
+    CreateTemplateRequest:
+      type: object
+      description: Body for creating a template in the library.
+      properties:
+        name:
+          type: string
+          maxLength: 160
+        description:
+          type: string
+          default: ''
+          maxLength: 500
+      required:
+      - name
     CreatedByTypeEnum:
       enum:
       - guardian
@@ -8648,10 +8839,28 @@ components:
           - 'null'
         sortOrder:
           type: integer
+        registrationOpen:
+          type: boolean
+        registrationStopped:
+          type: boolean
+        registrationOpensAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        registrationClosesAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
       required:
       - description
       - id
       - name
+      - registrationClosesAt
+      - registrationOpen
+      - registrationOpensAt
+      - registrationStopped
       - sortOrder
     RegistrationParticipantGroup:
       type: object
@@ -8805,6 +9014,19 @@ components:
         * `CONTENT_MANAGER` - CONTENT_MANAGER
         * `MODERATOR` - MODERATOR
         * `SUPPORT` - SUPPORT
+    ScheduleNominationRegistration:
+      type: object
+      properties:
+        opensAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        closesAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
     SelectEducationalOrganizationRequest:
       type: object
       description: Validate a select-educational-organization request body.
@@ -9275,6 +9497,28 @@ components:
       - status
       - title
       - type
+    TemplateResponse:
+      type: object
+      description: A diploma template in the library.
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        usageCount:
+          type: integer
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - description
+      - id
+      - name
+      - updatedAt
+      - usageCount
     TokenRefreshRequest:
       type: object
       description: |-
@@ -9714,10 +9958,25 @@ components:
           - 'null'
         sortOrder:
           type: integer
+        registrationOpensAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        registrationClosesAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        registrationStopped:
+          type: boolean
       required:
       - description
       - id
       - name
+      - registrationClosesAt
+      - registrationOpensAt
+      - registrationStopped
       - sortOrder
     _ConsentItem:
       type: object

@@ -1,4 +1,5 @@
 import {
+  Award,
   BarChart3,
   BriefcaseBusiness,
   CalendarDays,
@@ -58,6 +59,12 @@ export const STAFF_NAVIGATION: StaffNavItem[] = [
     path: ROUTES.staffSchedules,
     icon: CalendarDays,
     description: "Сетка событий и выступлений.",
+  },
+  {
+    title: "Дипломы",
+    path: ROUTES.staffDiplomas,
+    icon: Award,
+    description: "Библиотека шаблонов, назначение и выдача дипломов.",
   },
   {
     title: "Организация",

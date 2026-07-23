@@ -44,6 +44,7 @@ export const ROUTES = {
   staffParticipants: "/staff/participants",
   staffJudges: "/staff/judges",
   staffSchedules: "/staff/schedules",
+  staffDiplomas: "/staff/diplomas",
   staffFinance: "/staff/finance",
   staffAnalytics: "/staff/analytics",
   staffOrganization: "/staff/organization",
