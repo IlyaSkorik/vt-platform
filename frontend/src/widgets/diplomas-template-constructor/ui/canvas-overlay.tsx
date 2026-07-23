@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { resolveFieldDisplay } from "@/features/diplomas";
 import { useConstructorFieldsContext } from "../model/fields-context";
 import { usePreviewData } from "../model/preview-context";
 import { FieldObject } from "./field-object";
@@ -37,7 +38,7 @@ export function CanvasOverlay({ pageNumber, scale }: CanvasOverlayProps): React.
           field={field}
           overlayRef={overlayRef}
           scale={scale}
-          displayValue={field.binding ? resolve(field.binding) : (field.value ?? "")}
+          displayValue={resolveFieldDisplay(field, resolve)}
           selected={field.id === selectedId}
           onSelect={() => selectField(field.id)}
           onMove={(x, y) => moveField(field.id, x, y)}

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   type DiplomaTemplate,
   resolveMediaUrl,
@@ -14,6 +14,7 @@ import { ConstructorToolbar } from "./constructor-toolbar";
 import { ElementPalette } from "./element-palette";
 import { FieldShortcuts } from "./field-shortcuts";
 import { PdfCanvas } from "./pdf-canvas";
+import { PreviewDialog } from "./preview-dialog";
 import { PropertiesPanel } from "./properties-panel";
 import { UnsavedChangesGuard } from "./unsaved-changes-guard";
 
@@ -49,6 +50,7 @@ function ConstructorWorkspace({ template }: { template: DiplomaTemplate }): Reac
   const upload = useUploadTemplateDocumentMutation();
   const persistence = useLayoutPersistence(template.id);
   const { fields, dirty, markPristine } = useConstructorFieldsContext();
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const pdfUrl = resolveMediaUrl(template.document?.fileReference);
 
@@ -97,6 +99,13 @@ function ConstructorWorkspace({ template }: { template: DiplomaTemplate }): Reac
         />
         <UnsavedChangesGuard when={dirty} />
         <FieldShortcuts />
+        <PreviewDialog
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+          fields={fields}
+          {...(pdfUrl ? { pdfUrl } : {})}
+        />
+
         <ConstructorToolbar
           templateName={template.name}
           hasDocument={template.document != null}
@@ -105,6 +114,7 @@ function ConstructorWorkspace({ template }: { template: DiplomaTemplate }): Reac
           onSave={() => void handleSave()}
           isSaving={persistence.isSaving}
           dirty={dirty}
+          onPreview={() => setPreviewOpen(true)}
         />
         <div className="flex min-h-0 flex-1 flex-col md:flex-row">
           <ElementPalette />

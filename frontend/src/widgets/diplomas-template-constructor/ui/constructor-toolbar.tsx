@@ -13,6 +13,7 @@ interface ConstructorToolbarProps {
   isSaving: boolean;
   /** Unsaved changes present — enables the Save button. */
   dirty: boolean;
+  onPreview: () => void;
 }
 
 const TEMPLATES_PATH = `${ROUTES.staffDiplomas}?section=templates`;
@@ -25,6 +26,7 @@ export function ConstructorToolbar({
   onSave,
   isSaving,
   dirty,
+  onPreview,
 }: ConstructorToolbarProps): React.JSX.Element {
   return (
     <header className="flex flex-col gap-3 border-border border-b bg-card px-4 py-3 md:flex-row md:items-center md:justify-between md:px-6">
@@ -62,8 +64,7 @@ export function ConstructorToolbar({
           <FileUp className="size-4" aria-hidden="true" />
           {isUploading ? "Загрузка…" : hasDocument ? "Заменить PDF" : "Загрузить PDF"}
         </Button>
-        {/* Preview lands in a later milestone — present but inert. */}
-        <Button variant="outline" size="sm" disabled>
+        <Button variant="outline" size="sm" onClick={onPreview}>
           <Eye className="size-4" aria-hidden="true" />
           Предпросмотр
         </Button>

@@ -1,12 +1,13 @@
-import { useLayoutEffect, useRef } from "react";
+import { useRef } from "react";
 import type { TemplateField } from "@/features/diplomas";
 import { cn } from "@/shared/lib";
+import { fieldTextClassName, fieldTextStyle, useAutoShrinkFont } from "../lib/field-text";
 import type { FieldPointerHandlers } from "../model/use-field-movement";
 
 interface FieldRendererProps {
   field: TemplateField;
   selected: boolean;
-  /** Ready-to-draw text from the PreviewDataProvider — no platform knowledge here. */
+  /** Ready-to-draw text from the display-value layer — no platform knowledge here. */
   displayValue: string;
   /** Current display scale — 1 PDF point renders at `scale` CSS px (pdf.js). */
   scale: number;
@@ -16,13 +17,10 @@ interface FieldRendererProps {
   handles: React.ReactNode;
 }
 
-const MIN_FONT_PX = 4;
-
 /**
- * View layer: draws a field from its normalised geometry (percent box on the
- * overlay) and its appearance. Font size is in PDF points → `fontSize * scale`
- * px, so text tracks zoom exactly. AutoShrink measures the rendered text against
- * its box and reduces the size to fit. The PDF underneath is never touched.
+ * View layer (editable): draws a field from its normalised geometry (percent box
+ * on the overlay) and its appearance. Font sizing/appearance is shared with the
+ * read-only preview via `lib/field-text`. The PDF underneath is never touched.
  */
 export function FieldRenderer({
   field,
@@ -35,45 +33,7 @@ export function FieldRenderer({
   const { style } = field;
   const boxRef = useRef<HTMLButtonElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
-  const basePx = style.fontSize * scale;
-
-  // Font size is applied imperatively (React never sets it) so autoShrink can
-  // measure and reduce it without fighting a controlled style prop. The style /
-  // geometry deps all change the measured fit, so they must retrigger it.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: deps drive text metrics, not the closure
-  useLayoutEffect(() => {
-    const text = textRef.current;
-    const box = boxRef.current;
-    if (!text || !box) {
-      return;
-    }
-    if (!style.autoShrink) {
-      text.style.fontSize = `${basePx}px`;
-      return;
-    }
-    let size = basePx;
-    text.style.fontSize = `${size}px`;
-    let guard = 0;
-    while (
-      (text.scrollWidth > box.clientWidth || text.scrollHeight > box.clientHeight) &&
-      size > MIN_FONT_PX &&
-      guard < 400
-    ) {
-      size -= Math.max(0.5, size * 0.06);
-      text.style.fontSize = `${size}px`;
-      guard += 1;
-    }
-  }, [
-    basePx,
-    style.autoShrink,
-    style.wrapText,
-    style.fontWeight,
-    style.fontStyle,
-    style.lineHeight,
-    style.letterSpacing,
-    field.width,
-    field.height,
-  ]);
+  useAutoShrinkFont(boxRef, textRef, style.fontSize * scale, style, field.width, field.height);
 
   return (
     <div
@@ -103,20 +63,8 @@ export function FieldRenderer({
       >
         <span
           ref={textRef}
-          className={cn(
-            "block w-full",
-            style.wrapText ? "whitespace-pre-wrap break-words" : "truncate",
-            style.underline && "underline",
-          )}
-          style={{
-            fontFamily: style.fontFamily,
-            fontWeight: style.fontWeight === "bold" ? 700 : 400,
-            fontStyle: style.fontStyle,
-            color: style.color,
-            lineHeight: String(style.lineHeight),
-            letterSpacing: `${style.letterSpacing * scale}px`,
-            textAlign: style.textAlign,
-          }}
+          className={fieldTextClassName(style)}
+          style={fieldTextStyle(style, scale)}
         >
           {displayValue}
         </span>
