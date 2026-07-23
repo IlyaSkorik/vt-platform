@@ -5,6 +5,8 @@ from django.urls import path
 from .views import (
     DiplomaAssignmentDetailView,
     DiplomaAssignmentsView,
+    DiplomaPreviewApplicationsView,
+    DiplomaPreviewBindingsView,
     DiplomaTemplateDocumentView,
     DiplomaTemplateLayoutView,
     DiplomaTemplatesView,
@@ -14,6 +16,16 @@ app_name = "diplomas"
 
 urlpatterns = [
     path("staff/diplomas/templates", DiplomaTemplatesView.as_view(), name="templates"),
+    path(
+        "staff/diplomas/preview/applications",
+        DiplomaPreviewApplicationsView.as_view(),
+        name="preview-applications",
+    ),
+    path(
+        "staff/diplomas/preview/bindings",
+        DiplomaPreviewBindingsView.as_view(),
+        name="preview-bindings",
+    ),
     path(
         "staff/diplomas/templates/<str:template_id>/document",
         DiplomaTemplateDocumentView.as_view(),

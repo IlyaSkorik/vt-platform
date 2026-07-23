@@ -15,12 +15,28 @@ __all__ = [
     "CreateAssignmentRequestSerializer",
     "CreateTemplateRequestSerializer",
     "LayoutResponseSerializer",
+    "PreviewApplicationSerializer",
+    "PreviewBindingsSerializer",
     "SaveLayoutRequestSerializer",
     "TemplateDocumentResponseSerializer",
     "TemplateFieldResponseSerializer",
     "TemplateResponseSerializer",
     "UploadTemplateDocumentRequestSerializer",
 ]
+
+
+class PreviewApplicationSerializer(serializers.Serializer[dict[str, object]]):
+    """An application selectable for diploma preview."""
+
+    id = serializers.UUIDField()
+    # "label" shadows the base Field.label attribute name — safe at runtime.
+    label = serializers.CharField(allow_blank=True)  # type: ignore[assignment]
+
+
+class PreviewBindingsSerializer(serializers.Serializer[dict[str, object]]):
+    """Resolved binding→value map for a previewed application."""
+
+    bindings = serializers.DictField(child=serializers.CharField(allow_blank=True))
 
 # Element kinds the editor can place (mirrors the frontend field-type catalogue).
 _FIELD_TYPES = [

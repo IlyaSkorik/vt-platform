@@ -11,7 +11,7 @@ import uuid
 
 from django.conf import settings
 from django.core.files.storage import default_storage
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -20,12 +20,14 @@ from rest_framework.views import APIView
 
 from apps.diplomas.domain.exceptions import DiplomaError
 from apps.diplomas.presentation.api.v1 import problems
-from apps.diplomas.presentation.api.v1.diplomas import composition
+from apps.diplomas.presentation.api.v1.diplomas import composition, preview
 from apps.diplomas.presentation.api.v1.diplomas.serializers import (
     AssignmentResponseSerializer,
     CreateAssignmentRequestSerializer,
     CreateTemplateRequestSerializer,
     LayoutResponseSerializer,
+    PreviewApplicationSerializer,
+    PreviewBindingsSerializer,
     SaveLayoutRequestSerializer,
     TemplateDocumentResponseSerializer,
     TemplateResponseSerializer,
@@ -114,6 +116,48 @@ class DiplomaTemplateDocumentView(_StaffView):
         except DiplomaError as exc:
             return problems.diploma_problem(exc, instance=request.path, request=request)
         return problems.envelope(request, document, status=201)
+
+
+class DiplomaPreviewApplicationsView(_StaffView):
+    """List a competition's applications for the diploma preview picker."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="diplomas_preview_applications",
+        parameters=[OpenApiParameter(name="competitionId", type=str, location=OpenApiParameter.QUERY)],
+        responses={200: PreviewApplicationSerializer(many=True)},
+    )
+    def get(self, request: Request) -> Response:
+        competition_id = (request.query_params.get("competitionId") or "").strip()
+        if not competition_id:
+            return problems.validation_problem(
+                {"competitionId": ["Укажите конкурс."]}, instance=request.path, request=request
+            )
+        return problems.envelope(request, preview.list_preview_applications(competition_id))
+
+
+class DiplomaPreviewBindingsView(_StaffView):
+    """Resolve the binding→value map for one application (the BindingResolver)."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="diplomas_preview_bindings",
+        parameters=[OpenApiParameter(name="applicationId", type=str, location=OpenApiParameter.QUERY)],
+        responses={200: PreviewBindingsSerializer},
+    )
+    def get(self, request: Request) -> Response:
+        application_id = (request.query_params.get("applicationId") or "").strip()
+        bindings = preview.resolve_preview_bindings(application_id) if application_id else None
+        if bindings is None:
+            return problems.problem_response(
+                status=404,
+                type_suffix="not-found",
+                title="Resource not found",
+                detail="Application was not found.",
+                instance=request.path,
+                correlation_id=problems.request_id(request),
+            )
+        return problems.envelope(request, {"bindings": bindings})
 
 
 class DiplomaTemplateLayoutView(_StaffView):

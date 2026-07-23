@@ -4975,6 +4975,44 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/staff/diplomas/preview/applications:
+    get:
+      operationId: diplomas_preview_applications
+      description: List a competition's applications for the diploma preview picker.
+      parameters:
+      - in: query
+        name: competitionId
+        schema:
+          type: string
+      tags:
+      - Diplomas
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PreviewApplication'
+          description: ''
+  /api/v1/staff/diplomas/preview/bindings:
+    get:
+      operationId: diplomas_preview_bindings
+      description: Resolve the binding→value map for one application (the BindingResolver).
+      parameters:
+      - in: query
+        name: applicationId
+        schema:
+          type: string
+      tags:
+      - Diplomas
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreviewBindings'
+          description: ''
   /api/v1/staff/diplomas/templates:
     get:
       operationId: diplomas_templates_list
@@ -8134,6 +8172,28 @@ components:
         * `BEFORE_REVIEW` - BEFORE_REVIEW
         * `BEFORE_APPROVAL` - BEFORE_APPROVAL
         * `BEFORE_COMPETITION` - BEFORE_COMPETITION
+    PreviewApplication:
+      type: object
+      description: An application selectable for diploma preview.
+      properties:
+        id:
+          type: string
+          format: uuid
+        label:
+          type: string
+      required:
+      - id
+      - label
+    PreviewBindings:
+      type: object
+      description: Resolved binding→value map for a previewed application.
+      properties:
+        bindings:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+      - bindings
     ProblemDetail:
       type: object
       properties:
