@@ -44,11 +44,15 @@ function toTemplateLayout(response: LayoutResponse): TemplateLayout {
     revision: response.revision,
     fields: response.fields.map((field) => {
       const type = field.type as TemplateFieldTypeId;
+      // A field is bound if it carries a binding; otherwise it is free text.
+      const binding = field.binding || (type === "free_text" ? "" : defaultBindingForType(type));
+      const bound = binding !== "";
       return {
         id: field.id,
         page: field.page,
         type,
-        binding: field.binding || defaultBindingForType(type),
+        binding: bound ? binding : null,
+        value: bound ? null : (field.value ?? ""),
         x: field.x,
         y: field.y,
         width: field.width,
@@ -65,7 +69,8 @@ function toSaveLayoutRequest(fields: TemplateField[]): SaveLayoutRequest {
     fields: fields.map((field, index) => ({
       page: field.page,
       type: field.type,
-      binding: field.binding,
+      binding: field.binding ?? "",
+      value: field.value ?? "",
       x: field.x,
       y: field.y,
       width: field.width,

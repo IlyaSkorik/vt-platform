@@ -96,6 +96,9 @@ export interface TemplateFieldStyle {
   wrapText: boolean;
 }
 
+/** Initial text of a newly-added free-text field. */
+export const DEFAULT_FREE_TEXT = "Новый текст";
+
 /** Appearance applied to every newly-added field. */
 export const DEFAULT_FIELD_STYLE: TemplateFieldStyle = {
   fontFamily: "Montserrat",
@@ -127,10 +130,12 @@ export interface TemplateField {
   page: number;
   type: TemplateFieldTypeId;
   /**
-   * Reference to the data source resolved at generation (e.g.
-   * `participant.display_name`) — the field stores this, never literal text.
+   * A field is either **data-bound** or **free**:
+   * - bound: `binding` set (e.g. `participant.display_name`), `value` is null;
+   * - free: `value` holds its own text, `binding` is null.
    */
-  binding: TemplateFieldBinding;
+  binding: TemplateFieldBinding | null;
+  value: string | null;
   x: number;
   y: number;
   width: number;

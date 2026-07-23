@@ -20,6 +20,7 @@ export {
 } from "./model/binding";
 export {
   DEFAULT_FIELD_STYLE,
+  DEFAULT_FREE_TEXT,
   FIELD_TYPES,
   type TemplateDocument,
   type TemplateField,
