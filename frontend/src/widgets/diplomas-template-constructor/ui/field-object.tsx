@@ -8,6 +8,8 @@ interface FieldObjectProps {
   field: TemplateField;
   overlayRef: React.RefObject<HTMLDivElement | null>;
   selected: boolean;
+  /** Preview text resolved from the field's binding. */
+  displayValue: string;
   /** Current display scale, forwarded to the renderer for font sizing. */
   scale: number;
   onSelect: () => void;
@@ -24,6 +26,7 @@ export function FieldObject({
   field,
   overlayRef,
   selected,
+  displayValue,
   scale,
   onSelect,
   onMove,
@@ -34,6 +37,7 @@ export function FieldObject({
     <FieldRenderer
       field={field}
       selected={selected}
+      displayValue={displayValue}
       scale={scale}
       bodyProps={bodyProps}
       handles={<ResizeHandles field={field} overlayRef={overlayRef} onResize={onResize} />}

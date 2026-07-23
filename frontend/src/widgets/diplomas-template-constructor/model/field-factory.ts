@@ -1,5 +1,6 @@
 import {
   DEFAULT_FIELD_STYLE,
+  defaultBindingForType,
   type TemplateField,
   type TemplateFieldTypeId,
 } from "@/features/diplomas";
@@ -19,29 +20,13 @@ export const MIN_HEIGHT = 0.025;
 /** Normalised offset a duplicate is nudged by so it doesn't hide the original. */
 export const DUPLICATE_OFFSET = 0.03;
 
-/**
- * Sample text shown for each field kind until real data binding lands. Only
- * `participant_name` is placeable for now; the rest are the type foundation.
- */
-export const FIELD_PLACEHOLDERS: Record<TemplateFieldTypeId, string> = {
-  participant_name: "Иванов Иван Иванович",
-  nomination: "Номинация",
-  work: "Произведение",
-  age_category: "Возрастная категория",
-  teacher: "Педагог",
-  organization: "Организация",
-  date: "01.01.2026",
-  diploma_number: "№ 000",
-  qr: "QR",
-  free_text: "Текст",
-};
-
-/** Create a new field centred on the given page. */
+/** Create a new field centred on the given page, bound to its type's data source. */
 export function createField(type: TemplateFieldTypeId, page: number): TemplateField {
   return {
     id: createUuidV7(),
     page,
     type,
+    binding: defaultBindingForType(type),
     x: (1 - DEFAULT_WIDTH) / 2,
     y: (1 - DEFAULT_HEIGHT) / 2,
     width: DEFAULT_WIDTH,

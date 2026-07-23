@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { useConstructorFieldsContext } from "../model/fields-context";
+import { usePreviewData } from "../model/preview-context";
 import { FieldObject } from "./field-object";
 
 interface CanvasOverlayProps {
@@ -21,6 +22,7 @@ interface CanvasOverlayProps {
 export function CanvasOverlay({ pageNumber, scale }: CanvasOverlayProps): React.JSX.Element {
   const overlayRef = useRef<HTMLDivElement>(null);
   const { fields, selectedId, selectField, moveField, resizeField } = useConstructorFieldsContext();
+  const { resolve } = usePreviewData();
   const pageFields = fields.filter((field) => field.page === pageNumber);
 
   return (
@@ -35,6 +37,7 @@ export function CanvasOverlay({ pageNumber, scale }: CanvasOverlayProps): React.
           field={field}
           overlayRef={overlayRef}
           scale={scale}
+          displayValue={resolve(field.binding)}
           selected={field.id === selectedId}
           onSelect={() => selectField(field.id)}
           onMove={(x, y) => moveField(field.id, x, y)}

@@ -1,12 +1,13 @@
 import { useLayoutEffect, useRef } from "react";
 import type { TemplateField } from "@/features/diplomas";
 import { cn } from "@/shared/lib";
-import { FIELD_PLACEHOLDERS } from "../model/field-factory";
 import type { FieldPointerHandlers } from "../model/use-field-movement";
 
 interface FieldRendererProps {
   field: TemplateField;
   selected: boolean;
+  /** Ready-to-draw text from the PreviewDataProvider — no platform knowledge here. */
+  displayValue: string;
   /** Current display scale — 1 PDF point renders at `scale` CSS px (pdf.js). */
   scale: number;
   /** Body (move + select) pointer handlers from FieldMovement. */
@@ -26,6 +27,7 @@ const MIN_FONT_PX = 4;
 export function FieldRenderer({
   field,
   selected,
+  displayValue,
   scale,
   bodyProps,
   handles,
@@ -87,7 +89,7 @@ export function FieldRenderer({
       <button
         ref={boxRef}
         type="button"
-        aria-label={FIELD_PLACEHOLDERS[field.type]}
+        aria-label={displayValue}
         aria-pressed={selected}
         onPointerDown={bodyProps.onPointerDown}
         onPointerMove={bodyProps.onPointerMove}
@@ -116,7 +118,7 @@ export function FieldRenderer({
             textAlign: style.textAlign,
           }}
         >
-          {FIELD_PLACEHOLDERS[field.type]}
+          {displayValue}
         </span>
       </button>
       {selected ? handles : null}

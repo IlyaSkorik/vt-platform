@@ -4,6 +4,7 @@ import { Document, Page } from "react-pdf";
 import { Button, Spinner } from "@/shared/ui";
 import "../lib/pdf-worker";
 import { useConstructorFieldsContext } from "../model/fields-context";
+import { usePreviewData } from "../model/preview-context";
 import { CanvasOverlay } from "./canvas-overlay";
 
 const MIN_SCALE = 0.25;
@@ -27,6 +28,7 @@ interface PdfViewerProps {
 export function PdfViewer({ url }: PdfViewerProps): React.JSX.Element {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { deselect } = useConstructorFieldsContext();
+  const { mode: previewMode, setMode: setPreviewMode } = usePreviewData();
   const [numPages, setNumPages] = useState(0);
   const [scale, setScale] = useState(1);
   // Native (scale-1) page sizes in PDF points — the coordinate system future
@@ -50,7 +52,7 @@ export function PdfViewer({ url }: PdfViewerProps): React.JSX.Element {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center justify-center gap-1 border-border border-b bg-card/80 px-3 py-1.5 backdrop-blur">
+      <div className="flex items-center gap-1 border-border border-b bg-card/80 px-3 py-1.5 backdrop-blur">
         <Button variant="ghost" size="sm" iconOnly onClick={zoomOut} aria-label="Уменьшить">
           <Minus className="size-4" aria-hidden="true" />
         </Button>
@@ -64,6 +66,24 @@ export function PdfViewer({ url }: PdfViewerProps): React.JSX.Element {
           <Maximize2 className="size-4" aria-hidden="true" />
           По ширине
         </Button>
+        {/* Flip preview data to confirm one field renders both scenarios. */}
+        <div className="ml-auto flex items-center gap-1">
+          <span className="mr-1 text-muted-foreground text-xs">Превью:</span>
+          <Button
+            variant={previewMode === "individual" ? "primary" : "ghost"}
+            size="sm"
+            onClick={() => setPreviewMode("individual")}
+          >
+            Соло
+          </Button>
+          <Button
+            variant={previewMode === "collective" ? "primary" : "ghost"}
+            size="sm"
+            onClick={() => setPreviewMode("collective")}
+          >
+            Коллектив
+          </Button>
+        </div>
       </div>
       {/* Pointerdown on empty space deselects; fields/handles stopPropagation. */}
       <div

@@ -8,6 +8,7 @@ import {
 import { ApiError } from "@/shared/api";
 import { toast } from "@/shared/ui";
 import { ConstructorFieldsProvider, useConstructorFieldsContext } from "../model/fields-context";
+import { PreviewDataProvider } from "../model/preview-context";
 import { useLayoutPersistence } from "../model/use-layout-persistence";
 import { ConstructorToolbar } from "./constructor-toolbar";
 import { ElementPalette } from "./element-palette";
@@ -85,35 +86,37 @@ function ConstructorWorkspace({ template }: { template: DiplomaTemplate }): Reac
   };
 
   return (
-    <div className="-mx-4 -mt-4 flex min-h-[calc(100svh-8rem)] flex-col overflow-hidden rounded-lg border bg-background md:-mx-6 md:-mt-6 lg:-mx-8">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="application/pdf"
-        className="hidden"
-        onChange={(event) => void handleFileChange(event)}
-      />
-      <UnsavedChangesGuard when={dirty} />
-      <FieldShortcuts />
-      <ConstructorToolbar
-        templateName={template.name}
-        hasDocument={template.document != null}
-        onRequestUpload={requestUpload}
-        isUploading={upload.isPending}
-        onSave={() => void handleSave()}
-        isSaving={persistence.isSaving}
-        dirty={dirty}
-      />
-      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-        <ElementPalette />
-        <PdfCanvas
-          {...(pdfUrl ? { pdfUrl } : {})}
+    <PreviewDataProvider>
+      <div className="-mx-4 -mt-4 flex min-h-[calc(100svh-8rem)] flex-col overflow-hidden rounded-lg border bg-background md:-mx-6 md:-mt-6 lg:-mx-8">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/pdf"
+          className="hidden"
+          onChange={(event) => void handleFileChange(event)}
+        />
+        <UnsavedChangesGuard when={dirty} />
+        <FieldShortcuts />
+        <ConstructorToolbar
+          templateName={template.name}
+          hasDocument={template.document != null}
           onRequestUpload={requestUpload}
           isUploading={upload.isPending}
+          onSave={() => void handleSave()}
+          isSaving={persistence.isSaving}
+          dirty={dirty}
         />
-        <PropertiesPanel />
+        <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+          <ElementPalette />
+          <PdfCanvas
+            {...(pdfUrl ? { pdfUrl } : {})}
+            onRequestUpload={requestUpload}
+            isUploading={upload.isPending}
+          />
+          <PropertiesPanel />
+        </div>
       </div>
-    </div>
+    </PreviewDataProvider>
   );
 }
 

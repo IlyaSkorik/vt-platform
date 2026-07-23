@@ -116,6 +116,13 @@ export function FieldInspector({
       </Section>
 
       <Section>
+        <SectionTitle>Источник данных</SectionTitle>
+        {/* Read-only for now — the field is bound to one source. */}
+        <p className="text-foreground text-sm">{typeLabel(field.type)}</p>
+        <p className="font-mono text-muted-foreground text-xs">{field.binding}</p>
+      </Section>
+
+      <Section>
         <SectionTitle>Позиция и размер</SectionTitle>
         <div className="grid grid-cols-2 gap-3">
           <NumberField
