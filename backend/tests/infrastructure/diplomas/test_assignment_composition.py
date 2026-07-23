@@ -109,6 +109,96 @@ def test_deleting_frees_the_nomination_for_reuse() -> None:
     assert second["id"] != first["id"]
 
 
+def _field(page: int = 1, x: float = 0.1, y: float = 0.2) -> dict[str, object]:
+    return {"page": page, "type": "participant_name", "x": x, "y": y, "width": 0.4, "height": 0.08}
+
+
+def test_layout_starts_empty_with_revision() -> None:
+    template = _template()
+    layout = composition.get_template_layout(str(template.id))
+    assert layout["fields"] == []
+    assert layout["revision"] == template.version
+
+
+def test_replace_layout_persists_and_bumps_revision() -> None:
+    template = _template()
+    before = composition.get_template_layout(str(template.id))["revision"]
+
+    saved = composition.replace_template_layout(
+        template_id=str(template.id), fields=[_field(x=0.1), _field(x=0.5)]
+    )
+
+    assert len(saved["fields"]) == 2
+    assert saved["revision"] == before + 1
+    assert saved["fields"][0]["type"] == "participant_name"
+    # Reloading returns the same layout.
+    assert composition.get_template_layout(str(template.id))["fields"][0]["x"] == 0.1
+
+
+def test_replace_layout_is_a_full_replace() -> None:
+    template = _template()
+    composition.replace_template_layout(
+        template_id=str(template.id), fields=[_field(), _field(), _field()]
+    )
+    composition.replace_template_layout(template_id=str(template.id), fields=[_field(x=0.9)])
+
+    layout = composition.get_template_layout(str(template.id))
+    assert len(layout["fields"]) == 1
+    assert layout["fields"][0]["x"] == 0.9
+
+
+def test_layout_persists_field_style() -> None:
+    template = _template()
+    style = {"fontFamily": "Montserrat", "fontSize": 36, "textAlign": "left", "color": "#ff0000"}
+    field = {**_field(), "style": style}
+
+    composition.replace_template_layout(template_id=str(template.id), fields=[field])
+
+    saved = composition.get_template_layout(str(template.id))["fields"][0]
+    assert saved["style"]["fontSize"] == 36
+    assert saved["style"]["textAlign"] == "left"
+    assert saved["style"]["color"] == "#ff0000"
+
+
+def test_layout_unknown_template_raises() -> None:
+    with pytest.raises(TemplateNotFoundError):
+        composition.get_template_layout(str(uuid.uuid4()))
+    with pytest.raises(TemplateNotFoundError):
+        composition.replace_template_layout(template_id=str(uuid.uuid4()), fields=[_field()])
+
+
+def test_set_template_document_attaches_and_replaces() -> None:
+    template = _template()
+    assert composition.list_templates()[0]["document"] is None
+
+    first = composition.set_template_document(
+        template_id=str(template.id),
+        file_reference="/media/diplomas/templates/x/a.pdf",
+        original_filename="a.pdf",
+    )
+    listed = composition.list_templates()[0]
+    assert listed["document"]["id"] == first["id"]
+    assert listed["document"]["fileReference"] == "/media/diplomas/templates/x/a.pdf"
+
+    # Replacing the PDF makes the newest upload the current one.
+    second = composition.set_template_document(
+        template_id=str(template.id),
+        file_reference="/media/diplomas/templates/x/b.pdf",
+        original_filename="b.pdf",
+    )
+    current = composition.list_templates()[0]["document"]
+    assert current["id"] == second["id"]
+    assert current["fileReference"] == "/media/diplomas/templates/x/b.pdf"
+
+
+def test_set_document_unknown_template_raises() -> None:
+    with pytest.raises(TemplateNotFoundError):
+        composition.set_template_document(
+            template_id=str(uuid.uuid4()),
+            file_reference="/media/x.pdf",
+        )
+
+
 def test_create_template_starts_empty_library() -> None:
     assert composition.list_templates() == []
 

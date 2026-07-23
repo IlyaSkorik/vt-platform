@@ -5014,6 +5014,80 @@ paths:
               schema:
                 $ref: '#/components/schemas/TemplateResponse'
           description: ''
+  /api/v1/staff/diplomas/templates/{template_id}/document:
+    post:
+      operationId: diplomas_upload_template_document
+      description: Upload (or replace) the PDF a template is marked up over.
+      parameters:
+      - in: path
+        name: template_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Diplomas
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadTemplateDocumentRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateDocumentResponse'
+          description: ''
+  /api/v1/staff/diplomas/templates/{template_id}/layout:
+    get:
+      operationId: diplomas_get_template_layout
+      description: Read and atomically save a template's field layout (the whole document).
+      parameters:
+      - in: path
+        name: template_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Diplomas
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LayoutResponse'
+          description: ''
+    put:
+      operationId: diplomas_save_template_layout
+      description: Read and atomically save a template's field layout (the whole document).
+      parameters:
+      - in: path
+        name: template_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Diplomas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveLayoutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SaveLayoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SaveLayoutRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LayoutResponse'
+          description: ''
   /api/v1/staff/invitations:
     get:
       operationId: listStaffInvitations
@@ -6974,6 +7048,73 @@ components:
       required:
       - data
       - meta
+    FieldStyle:
+      type: object
+      description: A field's appearance. fontSize/letterSpacing are PDF points.
+      properties:
+        fontFamily:
+          type: string
+          default: Montserrat
+          maxLength: 100
+        fontSize:
+          type: number
+          format: double
+          maximum: 500
+          minimum: 1
+          default: 24.0
+        fontWeight:
+          allOf:
+          - $ref: '#/components/schemas/FontWeightEnum'
+          default: normal
+        fontStyle:
+          allOf:
+          - $ref: '#/components/schemas/FontStyleEnum'
+          default: normal
+        underline:
+          type: boolean
+          default: false
+        textAlign:
+          allOf:
+          - $ref: '#/components/schemas/TextAlignEnum'
+          default: center
+        color:
+          type: string
+          default: '#000000'
+          maxLength: 9
+        lineHeight:
+          type: number
+          format: double
+          maximum: 4
+          minimum: 0.5
+          default: 1.2
+        letterSpacing:
+          type: number
+          format: double
+          maximum: 100
+          minimum: -20
+          default: 0.0
+        autoShrink:
+          type: boolean
+          default: true
+        wrapText:
+          type: boolean
+          default: false
+    FontStyleEnum:
+      enum:
+      - normal
+      - italic
+      type: string
+      description: |-
+        * `normal` - normal
+        * `italic` - italic
+    FontWeightEnum:
+      enum:
+      - normal
+      - bold
+      type: string
+      description: |-
+        * `normal` - normal
+        * `bold` - bold
     GuardianLinkResource:
       type: object
       description: A guardian relationship embedded in a participant resource.
@@ -7076,6 +7217,89 @@ components:
       required:
       - email
       - role
+    LayoutFieldRequest:
+      type: object
+      description: One field in a layout save. Coordinates are normalised (0..1).
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        type:
+          $ref: '#/components/schemas/LayoutFieldRequestTypeEnum'
+        x:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+        y:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+        width:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+        height:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+        rotation:
+          type: number
+          format: double
+          default: 0.0
+        sortOrder:
+          type: integer
+          minimum: 0
+          default: 0
+        style:
+          $ref: '#/components/schemas/FieldStyle'
+      required:
+      - height
+      - page
+      - type
+      - width
+      - x
+      - y
+    LayoutFieldRequestTypeEnum:
+      enum:
+      - participant_name
+      - nomination
+      - work
+      - age_category
+      - teacher
+      - organization
+      - date
+      - diploma_number
+      - qr
+      - free_text
+      type: string
+      description: |-
+        * `participant_name` - participant_name
+        * `nomination` - nomination
+        * `work` - work
+        * `age_category` - age_category
+        * `teacher` - teacher
+        * `organization` - organization
+        * `date` - date
+        * `diploma_number` - diploma_number
+        * `qr` - qr
+        * `free_text` - free_text
+    LayoutResponse:
+      type: object
+      description: A template's saved layout and its revision.
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateFieldResponse'
+        revision:
+          type: integer
+      required:
+      - fields
+      - revision
     MembershipResource:
       type: object
       description: Serialize an accepted-membership resource.
@@ -9014,6 +9238,16 @@ components:
         * `CONTENT_MANAGER` - CONTENT_MANAGER
         * `MODERATOR` - MODERATOR
         * `SUPPORT` - SUPPORT
+    SaveLayoutRequest:
+      type: object
+      description: 'Whole-layout save: the full list of fields, persisted atomically.'
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/LayoutFieldRequest'
+      required:
+      - fields
     ScheduleNominationRegistration:
       type: object
       properties:
@@ -9497,6 +9731,81 @@ components:
       - status
       - title
       - type
+    TemplateDocumentResponse:
+      type: object
+      description: The PDF attached to a template.
+      properties:
+        id:
+          type: string
+          format: uuid
+        fileReference:
+          type: string
+        originalFilename:
+          type: string
+        pageCount:
+          type: integer
+        uploadedAt:
+          type: string
+          format: date-time
+      required:
+      - fileReference
+      - id
+      - originalFilename
+      - pageCount
+      - uploadedAt
+    TemplateFieldResponse:
+      type: object
+      description: A persisted layout field.
+      properties:
+        id:
+          type: string
+          format: uuid
+        templateId:
+          type: string
+          format: uuid
+        page:
+          type: integer
+        type:
+          type: string
+        x:
+          type: number
+          format: double
+        y:
+          type: number
+          format: double
+        width:
+          type: number
+          format: double
+        height:
+          type: number
+          format: double
+        rotation:
+          type: number
+          format: double
+        sortOrder:
+          type: integer
+        style:
+          $ref: '#/components/schemas/FieldStyle'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - createdAt
+      - height
+      - id
+      - page
+      - rotation
+      - sortOrder
+      - style
+      - templateId
+      - type
+      - updatedAt
+      - width
+      - x
+      - y
     TemplateResponse:
       type: object
       description: A diploma template in the library.
@@ -9510,6 +9819,10 @@ components:
           type: string
         usageCount:
           type: integer
+        document:
+          oneOf:
+          - $ref: '#/components/schemas/TemplateDocumentResponse'
+          - type: 'null'
         updatedAt:
           type: string
           format: date-time
@@ -9519,6 +9832,16 @@ components:
       - name
       - updatedAt
       - usageCount
+    TextAlignEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: |-
+        * `left` - left
+        * `center` - center
+        * `right` - right
     TokenRefreshRequest:
       type: object
       description: |-
@@ -9729,6 +10052,15 @@ components:
       type: object
       description: Validate a payment-receipt upload (a ``multipart/form-data`` file
         part).
+      properties:
+        file:
+          type: string
+          format: uri
+      required:
+      - file
+    UploadTemplateDocumentRequest:
+      type: object
+      description: Multipart body for uploading a template's backing PDF.
       properties:
         file:
           type: string

@@ -7,7 +7,12 @@ Generation and archive are future work and have no endpoints yet.
 
 from __future__ import annotations
 
+import uuid
+
+from django.conf import settings
+from django.core.files.storage import default_storage
 from drf_spectacular.utils import extend_schema
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -20,12 +25,17 @@ from apps.diplomas.presentation.api.v1.diplomas.serializers import (
     AssignmentResponseSerializer,
     CreateAssignmentRequestSerializer,
     CreateTemplateRequestSerializer,
+    LayoutResponseSerializer,
+    SaveLayoutRequestSerializer,
+    TemplateDocumentResponseSerializer,
     TemplateResponseSerializer,
+    UploadTemplateDocumentRequestSerializer,
 )
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.organization.presentation.permissions import IsOrganizationStaff
 
 _TAG = "Diplomas"
+_MAX_PDF_BYTES = 20 * 1024 * 1024
 
 
 class _StaffView(APIView):
@@ -60,6 +70,85 @@ class DiplomaTemplatesView(_StaffView):
             description=str(data.get("description") or ""),
         )
         return problems.envelope(request, template, status=201)
+
+
+class DiplomaTemplateDocumentView(_StaffView):
+    """Upload (or replace) the PDF a template is marked up over."""
+
+    parser_classes = (MultiPartParser, FormParser)
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="diplomas_upload_template_document",
+        request={"multipart/form-data": UploadTemplateDocumentRequestSerializer},
+        responses={201: TemplateDocumentResponseSerializer},
+    )
+    def post(self, request: Request, template_id: str) -> Response:
+        uploaded = request.FILES.get("file")
+        if uploaded is None:
+            return problems.validation_problem(
+                {"file": ["Выберите PDF-файл."]}, instance=request.path, request=request
+            )
+        content_type = (uploaded.content_type or "").lower()
+        if content_type != "application/pdf":
+            return problems.validation_problem(
+                {"file": ["Допустим только PDF."]}, instance=request.path, request=request
+            )
+        if uploaded.size > _MAX_PDF_BYTES:
+            return problems.validation_problem(
+                {"file": ["Размер файла не должен превышать 20 МБ."]},
+                instance=request.path,
+                request=request,
+            )
+
+        relative_path = default_storage.save(
+            f"diplomas/templates/{template_id}/{uuid.uuid4().hex}.pdf", uploaded
+        )
+        file_reference = f"/{settings.MEDIA_URL.strip('/')}/{relative_path}"
+        try:
+            document = composition.set_template_document(
+                template_id=template_id,
+                file_reference=file_reference,
+                original_filename=str(uploaded.name or ""),
+            )
+        except DiplomaError as exc:
+            return problems.diploma_problem(exc, instance=request.path, request=request)
+        return problems.envelope(request, document, status=201)
+
+
+class DiplomaTemplateLayoutView(_StaffView):
+    """Read and atomically save a template's field layout (the whole document)."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="diplomas_get_template_layout",
+        responses={200: LayoutResponseSerializer},
+    )
+    def get(self, request: Request, template_id: str) -> Response:
+        try:
+            layout = composition.get_template_layout(template_id)
+        except DiplomaError as exc:
+            return problems.diploma_problem(exc, instance=request.path, request=request)
+        return problems.envelope(request, layout)
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="diplomas_save_template_layout",
+        request=SaveLayoutRequestSerializer,
+        responses={200: LayoutResponseSerializer},
+    )
+    def put(self, request: Request, template_id: str) -> Response:
+        serializer = SaveLayoutRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return problems.validation_problem(serializer.errors, instance=request.path, request=request)
+        try:
+            layout = composition.replace_template_layout(
+                template_id=template_id,
+                fields=list(serializer.validated_data["fields"]),
+            )
+        except DiplomaError as exc:
+            return problems.diploma_problem(exc, instance=request.path, request=request)
+        return problems.envelope(request, layout)
 
 
 class DiplomaAssignmentsView(_StaffView):

@@ -14,8 +14,106 @@ __all__ = [
     "AssignmentResponseSerializer",
     "CreateAssignmentRequestSerializer",
     "CreateTemplateRequestSerializer",
+    "LayoutResponseSerializer",
+    "SaveLayoutRequestSerializer",
+    "TemplateDocumentResponseSerializer",
+    "TemplateFieldResponseSerializer",
     "TemplateResponseSerializer",
+    "UploadTemplateDocumentRequestSerializer",
 ]
+
+# Element kinds the editor can place (mirrors the frontend field-type catalogue).
+_FIELD_TYPES = [
+    "participant_name",
+    "nomination",
+    "work",
+    "age_category",
+    "teacher",
+    "organization",
+    "date",
+    "diploma_number",
+    "qr",
+    "free_text",
+]
+
+
+class FieldStyleSerializer(serializers.Serializer[dict[str, object]]):
+    """A field's appearance. fontSize/letterSpacing are PDF points."""
+
+    fontFamily = serializers.CharField(max_length=100, default="Montserrat")
+    fontSize = serializers.FloatField(min_value=1, max_value=500, default=24)
+    fontWeight = serializers.ChoiceField(choices=["normal", "bold"], default="normal")
+    fontStyle = serializers.ChoiceField(choices=["normal", "italic"], default="normal")
+    underline = serializers.BooleanField(default=False)
+    textAlign = serializers.ChoiceField(choices=["left", "center", "right"], default="center")
+    color = serializers.CharField(max_length=9, default="#000000")
+    lineHeight = serializers.FloatField(min_value=0.5, max_value=4, default=1.2)
+    letterSpacing = serializers.FloatField(min_value=-20, max_value=100, default=0)
+    autoShrink = serializers.BooleanField(default=True)
+    wrapText = serializers.BooleanField(default=False)
+
+
+class LayoutFieldRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """One field in a layout save. Coordinates are normalised (0..1)."""
+
+    page = serializers.IntegerField(min_value=1)
+    type = serializers.ChoiceField(choices=_FIELD_TYPES)
+    x = serializers.FloatField(min_value=0, max_value=1)
+    y = serializers.FloatField(min_value=0, max_value=1)
+    width = serializers.FloatField(min_value=0, max_value=1)
+    height = serializers.FloatField(min_value=0, max_value=1)
+    rotation = serializers.FloatField(required=False, default=0)
+    sortOrder = serializers.IntegerField(required=False, default=0, min_value=0)
+    style = FieldStyleSerializer(required=False)  # type: ignore[assignment]
+
+
+class SaveLayoutRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """Whole-layout save: the full list of fields, persisted atomically."""
+
+    # Declared field named "fields"; DRF's metaclass moves it into
+    # ``_declared_fields`` so the base ``Serializer.fields`` property is intact.
+    fields = LayoutFieldRequestSerializer(many=True)  # type: ignore[assignment]
+
+
+class TemplateFieldResponseSerializer(serializers.Serializer[dict[str, object]]):
+    """A persisted layout field."""
+
+    id = serializers.UUIDField()
+    templateId = serializers.UUIDField()
+    page = serializers.IntegerField()
+    type = serializers.CharField()
+    x = serializers.FloatField()
+    y = serializers.FloatField()
+    width = serializers.FloatField()
+    height = serializers.FloatField()
+    rotation = serializers.FloatField()
+    sortOrder = serializers.IntegerField()
+    style = FieldStyleSerializer()  # type: ignore[assignment]
+    createdAt = serializers.DateTimeField()
+    updatedAt = serializers.DateTimeField()
+
+
+class LayoutResponseSerializer(serializers.Serializer[dict[str, object]]):
+    """A template's saved layout and its revision."""
+
+    fields = TemplateFieldResponseSerializer(many=True)  # type: ignore[assignment]
+    revision = serializers.IntegerField()
+
+
+class UploadTemplateDocumentRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """Multipart body for uploading a template's backing PDF."""
+
+    file = serializers.FileField()
+
+
+class TemplateDocumentResponseSerializer(serializers.Serializer[dict[str, object]]):
+    """The PDF attached to a template."""
+
+    id = serializers.UUIDField()
+    fileReference = serializers.CharField()
+    originalFilename = serializers.CharField(allow_blank=True)
+    pageCount = serializers.IntegerField()
+    uploadedAt = serializers.DateTimeField()
 
 
 class CreateTemplateRequestSerializer(serializers.Serializer[dict[str, object]]):
@@ -42,6 +140,7 @@ class TemplateResponseSerializer(serializers.Serializer[dict[str, object]]):
     name = serializers.CharField()
     description = serializers.CharField(allow_blank=True)
     usageCount = serializers.IntegerField()
+    document = TemplateDocumentResponseSerializer(allow_null=True, required=False)
     updatedAt = serializers.DateTimeField()
 
 

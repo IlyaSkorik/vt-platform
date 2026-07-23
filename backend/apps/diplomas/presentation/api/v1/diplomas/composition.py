@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from django.db import IntegrityError
-from django.db.models import Count, Q
+from django.db import IntegrityError, transaction
+from django.db.models import Count, F, Q
 from django.utils import timezone
 
 from apps.competitions.infrastructure.models.competition import CompetitionModel
@@ -21,40 +21,181 @@ from apps.diplomas.domain.exceptions import (
     AssignmentNotFoundError,
     TemplateNotFoundError,
 )
-from apps.diplomas.infrastructure.models import AssignmentModel, TemplateModel
+from apps.diplomas.infrastructure.models import (
+    AssignmentModel,
+    TemplateDocumentModel,
+    TemplateFieldModel,
+    TemplateModel,
+)
 
 __all__ = [
     "create_assignment",
     "create_template",
     "delete_assignment",
+    "get_template_layout",
     "list_assignments",
     "list_templates",
+    "replace_template_layout",
+    "set_template_document",
 ]
 
-def _template_json(row: TemplateModel, usage: int) -> dict[str, Any]:
+
+def _document_json(row: TemplateDocumentModel) -> dict[str, Any]:
+    return {
+        "id": str(row.id),
+        "fileReference": row.file_reference,
+        "originalFilename": row.original_filename,
+        "pageCount": row.page_count,
+        "uploadedAt": row.created_at,
+    }
+
+
+def _template_json(
+    row: TemplateModel, usage: int, document: TemplateDocumentModel | None
+) -> dict[str, Any]:
     return {
         "id": str(row.id),
         "name": row.name,
         "description": row.description,
         "usageCount": usage,
+        "document": _document_json(document) if document is not None else None,
         "updatedAt": row.updated_at,
     }
 
 
+def _current_documents_by_template(template_ids: list[str]) -> dict[str, TemplateDocumentModel]:
+    """The latest non-deleted document for each template (most recent wins)."""
+    current: dict[str, TemplateDocumentModel] = {}
+    rows = TemplateDocumentModel.objects.filter(
+        template__id__in=template_ids, deleted_at__isnull=True
+    ).order_by("template_id", "-created_at")
+    for row in rows:
+        key = str(row.template_id)
+        if key not in current:
+            current[key] = row
+    return current
+
+
 def list_templates() -> list[dict[str, Any]]:
-    """Every template in the library, with how many assignments use each one."""
-    rows = (
+    """Every template in the library, with usage count and current PDF (if any)."""
+    rows = list(
         TemplateModel.objects.filter(deleted_at__isnull=True)
         .annotate(usage=Count("assignments", filter=Q(assignments__deleted_at__isnull=True)))
         .order_by("name")
     )
-    return [_template_json(row, row.usage) for row in rows]
+    documents = _current_documents_by_template([str(row.id) for row in rows])
+    return [_template_json(row, row.usage, documents.get(str(row.id))) for row in rows]
 
 
 def create_template(*, name: str, description: str = "") -> dict[str, Any]:
     """Add a new, self-contained template to the library (created by the organizer)."""
     row = TemplateModel.objects.create(name=name.strip(), description=description.strip())
-    return _template_json(row, 0)
+    return _template_json(row, 0, None)
+
+
+def _field_json(row: TemplateFieldModel) -> dict[str, Any]:
+    return {
+        "id": str(row.id),
+        "templateId": str(row.template_id),
+        "page": row.page,
+        "type": row.type,
+        "x": row.x,
+        "y": row.y,
+        "width": row.width,
+        "height": row.height,
+        "rotation": row.rotation,
+        "sortOrder": row.sort_order,
+        "style": row.style or {},
+        "createdAt": row.created_at,
+        "updatedAt": row.updated_at,
+    }
+
+
+def _template_revision(template_id: str) -> int:
+    row = TemplateModel.objects.filter(id=template_id).values("version").first()
+    return int(row["version"]) if row else 0
+
+
+def get_template_layout(template_id: str) -> dict[str, Any]:
+    """The template's saved fields plus its layout revision.
+
+    Raises :class:`TemplateNotFoundError` for an unknown template.
+    """
+    if not TemplateModel.objects.filter(id=template_id, deleted_at__isnull=True).exists():
+        raise TemplateNotFoundError("Template was not found.")
+    rows = TemplateFieldModel.objects.filter(
+        template__id=template_id, deleted_at__isnull=True
+    ).order_by("page", "sort_order", "created_at")
+    return {"fields": [_field_json(row) for row in rows], "revision": _template_revision(template_id)}
+
+
+def replace_template_layout(*, template_id: str, fields: list[dict[str, Any]]) -> dict[str, Any]:
+    """Atomically replace the whole layout with `fields` and bump the revision.
+
+    The entire layout is saved as one document (not per-field requests): the prior
+    fields are removed and the new set inserted in a single transaction, so a save
+    is all-or-nothing. Returns the persisted fields (with ids) and the new
+    revision. Raises :class:`TemplateNotFoundError` for an unknown template.
+    """
+    with transaction.atomic():
+        template = (
+            TemplateModel.objects.select_for_update()
+            .filter(id=template_id, deleted_at__isnull=True)
+            .first()
+        )
+        if template is None:
+            raise TemplateNotFoundError("Template was not found.")
+
+        # Hard-delete the previous layout: fields have no history of their own yet
+        # (versioning lives on the template revision), so a clean replace is correct.
+        TemplateFieldModel.objects.filter(template__id=template_id).delete()
+        rows = [
+            TemplateFieldModel(
+                template_id=template_id,
+                page=int(field["page"]),
+                type=str(field["type"]),
+                x=float(field["x"]),
+                y=float(field["y"]),
+                width=float(field["width"]),
+                height=float(field["height"]),
+                rotation=float(field.get("rotation", 0) or 0),
+                # z-order follows array order; the request's sortOrder is advisory.
+                sort_order=index,
+                style=dict(field.get("style") or {}),
+            )
+            for index, field in enumerate(fields)
+        ]
+        TemplateFieldModel.objects.bulk_create(rows)
+
+        template.version = F("version") + 1
+        template.updated_at = timezone.now()
+        template.save(update_fields=["version", "updated_at"])
+
+    return get_template_layout(template_id)
+
+
+def set_template_document(
+    *, template_id: str, file_reference: str, original_filename: str = "", page_count: int = 0
+) -> dict[str, Any]:
+    """Attach (or replace) the template's backing PDF.
+
+    Soft-deletes any current document so the newest upload becomes the current
+    one, then returns the new document. Raises :class:`TemplateNotFoundError` for
+    an unknown template.
+    """
+    if not TemplateModel.objects.filter(id=template_id, deleted_at__isnull=True).exists():
+        raise TemplateNotFoundError("Template was not found.")
+    now = timezone.now()
+    TemplateDocumentModel.objects.filter(template__id=template_id, deleted_at__isnull=True).update(
+        deleted_at=now, updated_at=now
+    )
+    row = TemplateDocumentModel.objects.create(
+        template_id=template_id,
+        file_reference=file_reference,
+        original_filename=original_filename,
+        page_count=page_count,
+    )
+    return _document_json(row)
 
 
 def list_assignments() -> list[dict[str, Any]]:
