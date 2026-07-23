@@ -1,7 +1,7 @@
 {
   ".claude/settings.local.json": {
-    "mtime": 1784646983.7714932,
-    "ast_hash": "57c03c3bd873a79e8d19f715fd3fb403",
+    "mtime": 1784794801.1042132,
+    "ast_hash": "210e32384b833a5b5a66c04d62f21043",
     "semantic_hash": ""
   },
   "backend/apps/__init__.py": {
@@ -180,9 +180,9 @@
     "semantic_hash": "6cca5e1b963da3c983d9d4ece97f3248"
   },
   "backend/apps/applications/application/commands/participants.py": {
-    "mtime": 1784231394.1685295,
-    "ast_hash": "24b147768eb9fe1e14622183b9ba5cad",
-    "semantic_hash": "24b147768eb9fe1e14622183b9ba5cad"
+    "mtime": 1784716809.7399254,
+    "ast_hash": "f744b1335f258dc16ed21aad007b7c69",
+    "semantic_hash": ""
   },
   "backend/apps/applications/application/commands/payment.py": {
     "mtime": 1784227779.463122,
@@ -190,24 +190,24 @@
     "semantic_hash": "dd8916836dabb3f98348fe192deb1bff"
   },
   "backend/apps/applications/application/commands/performance.py": {
-    "mtime": 1784231385.038098,
-    "ast_hash": "093797cff3113c590c4f7f86ee0ffa98",
-    "semantic_hash": "093797cff3113c590c4f7f86ee0ffa98"
+    "mtime": 1784716809.7399254,
+    "ast_hash": "e25d1f295901893de6109d8535194bfd",
+    "semantic_hash": ""
   },
   "backend/apps/applications/application/commands/pricing.py": {
-    "mtime": 1784227779.463122,
-    "ast_hash": "3e075de6956b35ceb89d374029044b61",
-    "semantic_hash": "3e075de6956b35ceb89d374029044b61"
+    "mtime": 1784716809.7399254,
+    "ast_hash": "087daf1cd44776b5005cc217e4613894",
+    "semantic_hash": ""
   },
   "backend/apps/applications/application/commands/review.py": {
-    "mtime": 1783712967.2426972,
-    "ast_hash": "530fd40f626fccf487d9ed27b9ad78d8",
-    "semantic_hash": "530fd40f626fccf487d9ed27b9ad78d8"
+    "mtime": 1784716809.7399254,
+    "ast_hash": "1effc78fb390c4a8812e884e035cbcbe",
+    "semantic_hash": ""
   },
   "backend/apps/applications/application/commands/teachers.py": {
-    "mtime": 1784231401.4017837,
-    "ast_hash": "58ae484b684bf9ae4add238a8d17451a",
-    "semantic_hash": "58ae484b684bf9ae4add238a8d17451a"
+    "mtime": 1784716809.7399254,
+    "ast_hash": "73b620a4bb454d3f82df7fd9054e2691",
+    "semantic_hash": ""
   },
   "backend/apps/applications/application/dto/__init__.py": {
     "mtime": 1784227779.463122,
@@ -245,14 +245,14 @@
     "semantic_hash": "d3b5b5a137b27c60fd402245c05d4424"
   },
   "backend/apps/applications/application/interfaces.py": {
-    "mtime": 1784227779.4667864,
-    "ast_hash": "22771e76393d019d513343fb86a9d0c2",
-    "semantic_hash": "22771e76393d019d513343fb86a9d0c2"
+    "mtime": 1784749105.75899,
+    "ast_hash": "3f81bf0e7b21df9c4a0646974597173a",
+    "semantic_hash": ""
   },
   "backend/apps/applications/application/orders/__init__.py": {
-    "mtime": 1784227779.4667864,
-    "ast_hash": "ab25291b41168f5251096fb5a76169c2",
-    "semantic_hash": "ab25291b41168f5251096fb5a76169c2"
+    "mtime": 1784735847.564042,
+    "ast_hash": "7c80bde320de1f20e0dc010ef180c2b8",
+    "semantic_hash": ""
   },
   "backend/apps/applications/application/orders/_support.py": {
     "mtime": 1784227779.4667864,
@@ -260,9 +260,9 @@
     "semantic_hash": "c1e291d656edb663c5c787f3d13699c6"
   },
   "backend/apps/applications/application/orders/commands.py": {
-    "mtime": 1784227779.4667864,
-    "ast_hash": "f828e4ad5a0300cc1703b3e76940fbca",
-    "semantic_hash": "f828e4ad5a0300cc1703b3e76940fbca"
+    "mtime": 1784749091.7055209,
+    "ast_hash": "c5c5f4ce48a07c075a722158e2c6827c",
+    "semantic_hash": ""
   },
   "backend/apps/applications/application/orders/queries.py": {
     "mtime": 1784299800.8392937,
@@ -295,9 +295,9 @@
     "semantic_hash": "987fe99adc390b99afc2e3a893b1b0bc"
   },
   "backend/apps/applications/domain/entities.py": {
-    "mtime": 1784227779.4667864,
-    "ast_hash": "3443496a691aa46cc00a6d296731f6ae",
-    "semantic_hash": "3443496a691aa46cc00a6d296731f6ae"
+    "mtime": 1784748896.3776314,
+    "ast_hash": "9e51ce7b157a1aab62fd460516ea07a2",
+    "semantic_hash": ""
   },
   "backend/apps/applications/domain/events.py": {
     "mtime": 1784227779.4667864,
@@ -340,9 +340,9 @@
     "semantic_hash": "29dc11868c244939e8eb6ae7dbc265b7"
   },
   "backend/apps/applications/infrastructure/acl/competition.py": {
-    "mtime": 1784227779.4704509,
-    "ast_hash": "9b4ad9d4ee15ed1643161632be80f080",
-    "semantic_hash": "9b4ad9d4ee15ed1643161632be80f080"
+    "mtime": 1784716809.7399254,
+    "ast_hash": "76d728a8dfa1461a078ed62299372b08",
+    "semantic_hash": ""
   },
   "backend/apps/applications/infrastructure/acl/educational_organizations.py": {
     "mtime": 1784227779.4704509,
@@ -375,9 +375,9 @@
     "semantic_hash": "018c306d0aeb71de7645e42d30f27558"
   },
   "backend/apps/applications/infrastructure/mappers/application_mapper.py": {
-    "mtime": 1784227779.4704509,
-    "ast_hash": "6fc59823b8a7ed02bb73947f5bf5b242",
-    "semantic_hash": "6fc59823b8a7ed02bb73947f5bf5b242"
+    "mtime": 1784748939.0187092,
+    "ast_hash": "e3a906f88dac896fa16c173dcc641888",
+    "semantic_hash": ""
   },
   "backend/apps/applications/infrastructure/mappers/submission_mapper.py": {
     "mtime": 1784227779.4704509,
@@ -385,9 +385,9 @@
     "semantic_hash": "a6cee9467182e389b825aa2808b49feb"
   },
   "backend/apps/applications/infrastructure/messaging/__init__.py": {
-    "mtime": 1784227779.4704509,
-    "ast_hash": "051239042f42a17f2babcdf745b2f9d9",
-    "semantic_hash": "051239042f42a17f2babcdf745b2f9d9"
+    "mtime": 1784749131.1816883,
+    "ast_hash": "c776e6a78dbafb039310417ddb8b16cc",
+    "semantic_hash": ""
   },
   "backend/apps/applications/infrastructure/messaging/event_dispatcher.py": {
     "mtime": 1784227779.4704509,
@@ -420,9 +420,9 @@
     "semantic_hash": "d742d3d8e05896e2e661590a158f5223"
   },
   "backend/apps/applications/infrastructure/models/application.py": {
-    "mtime": 1784227779.4704509,
-    "ast_hash": "fb8e89e15267b99383f49be6ac944eff",
-    "semantic_hash": "fb8e89e15267b99383f49be6ac944eff"
+    "mtime": 1784748953.776858,
+    "ast_hash": "1d2e89d6228bb4048fd5594f9d97c58f",
+    "semantic_hash": ""
   },
   "backend/apps/applications/infrastructure/models/base.py": {
     "mtime": 1784227779.4704509,
@@ -500,9 +500,9 @@
     "semantic_hash": "abe80bbb491057a8cd9215897d857587"
   },
   "backend/apps/applications/presentation/api/v1/orders/composition.py": {
-    "mtime": 1784227779.4741154,
-    "ast_hash": "443347c915f4d2da9d61c775215d09e7",
-    "semantic_hash": "443347c915f4d2da9d61c775215d09e7"
+    "mtime": 1784749148.5588677,
+    "ast_hash": "3cc2210a4e88f837d6169ab3c056363c",
+    "semantic_hash": ""
   },
   "backend/apps/applications/presentation/api/v1/orders/serializers.py": {
     "mtime": 1784230283.7559009,
@@ -530,8 +530,8 @@
     "semantic_hash": ""
   },
   "backend/apps/applications/presentation/api/v1/organizer/views.py": {
-    "mtime": 1784485506.6872697,
-    "ast_hash": "53dbe91069de4160df3266dbf3ddfd94",
+    "mtime": 1784747188.0955226,
+    "ast_hash": "6f414e50316f13ad34177ed4ff7ffb1d",
     "semantic_hash": ""
   },
   "backend/apps/applications/presentation/api/v1/problems.py": {
@@ -730,8 +730,8 @@
     "semantic_hash": "b31ba9a6a0898cb268ec0b7ddd178d8b"
   },
   "backend/apps/competitions/application/dto/commands.py": {
-    "mtime": 1784653699.27186,
-    "ast_hash": "eecb109e3ccc645753b30343caf7e5d3",
+    "mtime": 1784723609.324205,
+    "ast_hash": "b13b4a48a858c1a5af2ecddc1045116c",
     "semantic_hash": ""
   },
   "backend/apps/competitions/application/dto/queries.py": {
@@ -740,8 +740,8 @@
     "semantic_hash": "06ac76de2e65d5df2724eb20f2018eab"
   },
   "backend/apps/competitions/application/dto/views.py": {
-    "mtime": 1784653699.27586,
-    "ast_hash": "2b32c0230b2ad181605a610af52e060c",
+    "mtime": 1784716809.7399254,
+    "ast_hash": "13ae7b74570d197591ca148c84fd3424",
     "semantic_hash": ""
   },
   "backend/apps/competitions/application/exceptions.py": {
@@ -750,9 +750,9 @@
     "semantic_hash": "f1e3a85af7b8ede799ff2725107e10de"
   },
   "backend/apps/competitions/application/handlers/__init__.py": {
-    "mtime": 1784299800.8472936,
-    "ast_hash": "258f710d94471517d44fc816b2cde72b",
-    "semantic_hash": "258f710d94471517d44fc816b2cde72b"
+    "mtime": 1784723609.324205,
+    "ast_hash": "8c8e0b70c5ac987dbb6cd4ffb9aa2abb",
+    "semantic_hash": ""
   },
   "backend/apps/competitions/application/handlers/_support.py": {
     "mtime": 1783785588.9425817,
@@ -795,9 +795,9 @@
     "semantic_hash": "e4cac8d6fc3964a6bfedffb0c586b811"
   },
   "backend/apps/competitions/application/handlers/lifecycle.py": {
-    "mtime": 1783758985.790621,
-    "ast_hash": "5351a831b93d8f00374068dfeb8b1b69",
-    "semantic_hash": "5351a831b93d8f00374068dfeb8b1b69"
+    "mtime": 1784723609.3281157,
+    "ast_hash": "da617bdde069125a7dc3c81405654a85",
+    "semantic_hash": ""
   },
   "backend/apps/competitions/application/handlers/queries.py": {
     "mtime": 1783759021.1837442,
@@ -820,8 +820,8 @@
     "semantic_hash": "c0fe66e53c0d9350b1e5455aa48ff656"
   },
   "backend/apps/competitions/application/handlers/taxonomy.py": {
-    "mtime": 1784653699.27586,
-    "ast_hash": "8d04159d2fc34ae3043fcf1a9509a250",
+    "mtime": 1784716809.7399254,
+    "ast_hash": "d162516bceda72a31368e6d0763e4b89",
     "semantic_hash": ""
   },
   "backend/apps/competitions/application/interfaces.py": {
@@ -835,13 +835,13 @@
     "semantic_hash": ""
   },
   "backend/apps/competitions/application/read_models/public_catalog.py": {
-    "mtime": 1784537976.4371006,
-    "ast_hash": "8fcf8b3f13e72ea351cd380f40765f6e",
+    "mtime": 1784726175.3601413,
+    "ast_hash": "94f62f5f71989f978cfa734d14199a99",
     "semantic_hash": ""
   },
   "backend/apps/competitions/application/read_models/registration.py": {
-    "mtime": 1784653699.27586,
-    "ast_hash": "adddb63c8e8355356c042a28acba41d6",
+    "mtime": 1784723609.3281157,
+    "ast_hash": "296d592ec8395d78010d926616193465",
     "semantic_hash": ""
   },
   "backend/apps/competitions/apps.py": {
@@ -865,18 +865,18 @@
     "semantic_hash": "578345e9f6bb73b94e5c260f8784f408"
   },
   "backend/apps/competitions/domain/entities.py": {
-    "mtime": 1784653699.27586,
-    "ast_hash": "5445c17e6ebdba57d53251920f23cd30",
+    "mtime": 1784725438.1934948,
+    "ast_hash": "407cb6685bd92fe3d65330f05534683d",
     "semantic_hash": ""
   },
   "backend/apps/competitions/domain/events.py": {
-    "mtime": 1784299800.8752937,
-    "ast_hash": "4808f4c942d218baf200f7174394c089",
-    "semantic_hash": "4808f4c942d218baf200f7174394c089"
+    "mtime": 1784723609.3281157,
+    "ast_hash": "eb1e45d5ec002786e6cc2d5c1e247d4d",
+    "semantic_hash": ""
   },
   "backend/apps/competitions/domain/exceptions.py": {
-    "mtime": 1784653699.27586,
-    "ast_hash": "5d643123b074aa376cefc5e9462b642f",
+    "mtime": 1784725522.5964925,
+    "ast_hash": "cca8c6d06ea575c7854abd682b52ee0f",
     "semantic_hash": ""
   },
   "backend/apps/competitions/domain/interfaces.py": {
@@ -900,14 +900,14 @@
     "semantic_hash": "1f4f76aadddb8a8dee118b36588c03e4"
   },
   "backend/apps/competitions/domain/templates.py": {
-    "mtime": 1784653699.27586,
-    "ast_hash": "fefd9addc661870f9ddebba62b8b008c",
+    "mtime": 1784725455.3028047,
+    "ast_hash": "663c058080defc4ef2205574cb46d68d",
     "semantic_hash": ""
   },
   "backend/apps/competitions/domain/value_objects.py": {
-    "mtime": 1784299800.8752937,
-    "ast_hash": "4f656835f60d5b23c8f2dbcb13399e20",
-    "semantic_hash": "4f656835f60d5b23c8f2dbcb13399e20"
+    "mtime": 1784723609.3281157,
+    "ast_hash": "9bedb3faf4b3927e62fdb04a5e0730f4",
+    "semantic_hash": ""
   },
   "backend/apps/competitions/infrastructure/__init__.py": {
     "mtime": 1783367029.6761498,
@@ -925,8 +925,8 @@
     "semantic_hash": "ba21178687ef25118ef832da9cff3811"
   },
   "backend/apps/competitions/infrastructure/mappers/competition_mapper.py": {
-    "mtime": 1784653699.27586,
-    "ast_hash": "54fe584e87c806e40270a6ccf888ceb2",
+    "mtime": 1784716809.7437897,
+    "ast_hash": "bd96e02f69cd45ec7e8f70371f13b462",
     "semantic_hash": ""
   },
   "backend/apps/competitions/infrastructure/mappers/contacts_config_json.py": {
@@ -1025,9 +1025,9 @@
     "semantic_hash": "af8373ad16cd4f67c10eb31bae19e1a1"
   },
   "backend/apps/competitions/infrastructure/models/competition.py": {
-    "mtime": 1783793605.952132,
-    "ast_hash": "389351593791c8ce90110302e926ec38",
-    "semantic_hash": "389351593791c8ce90110302e926ec38"
+    "mtime": 1784723609.3281157,
+    "ast_hash": "45c6f9ae2e6bbfdb62c96e4986fcaa7e",
+    "semantic_hash": ""
   },
   "backend/apps/competitions/infrastructure/models/content.py": {
     "mtime": 1783787120.8847263,
@@ -1040,8 +1040,8 @@
     "semantic_hash": "af1e7ba994b0706aa6c63100e9f233a9"
   },
   "backend/apps/competitions/infrastructure/models/taxonomy.py": {
-    "mtime": 1784653699.27586,
-    "ast_hash": "fe707b8f8e2dc1213c886c2f60c91424",
+    "mtime": 1784716809.7437897,
+    "ast_hash": "baf73dabadbd09036677a0bd87a9ee08",
     "semantic_hash": ""
   },
   "backend/apps/competitions/infrastructure/read_models/__init__.py": {
@@ -1050,8 +1050,8 @@
     "semantic_hash": "b7df4493ef0cd24e22a2bb2fef8f05b8"
   },
   "backend/apps/competitions/infrastructure/read_models/public_catalog.py": {
-    "mtime": 1784537983.4820218,
-    "ast_hash": "6a60e466b820a8d88f49c028ad1e880f",
+    "mtime": 1784732611.1866474,
+    "ast_hash": "e0eeb5ef8120ac0b3c7321fc344f8784",
     "semantic_hash": ""
   },
   "backend/apps/competitions/infrastructure/read_models/registration.py": {
@@ -1110,8 +1110,8 @@
     "semantic_hash": "f69f71d457c119e89bbfa71aa902d570"
   },
   "backend/apps/competitions/presentation/api/v1/public_serializers.py": {
-    "mtime": 1784653699.27586,
-    "ast_hash": "b03dad308058e4a8ab135a191f13f704",
+    "mtime": 1784720865.0599935,
+    "ast_hash": "bb04c6e5291f84a6f73c80bbb275b751",
     "semantic_hash": ""
   },
   "backend/apps/competitions/presentation/api/v1/public_views.py": {
@@ -1120,13 +1120,13 @@
     "semantic_hash": "43e19663d587f9f7aa9f800e1c31ea95"
   },
   "backend/apps/competitions/presentation/api/v1/serializers.py": {
-    "mtime": 1784653699.27586,
-    "ast_hash": "d2c5fe081ffe72077c557574ff81d7d6",
+    "mtime": 1784716809.7437897,
+    "ast_hash": "7b5e03617f4460e6f5aff6cd6bf01aee",
     "semantic_hash": ""
   },
   "backend/apps/competitions/presentation/api/v1/views.py": {
-    "mtime": 1784491949.7158813,
-    "ast_hash": "bedae204454e9ee25f7927b45347be41",
+    "mtime": 1784723609.3281157,
+    "ast_hash": "c39de219433c2e5172a4b75ded61a1e0",
     "semantic_hash": ""
   },
   "backend/apps/competitions/presentation/permissions.py": {
@@ -3180,9 +3180,9 @@
     "semantic_hash": "4616a41e93c24e9d5e6c5ded3754db37"
   },
   "backend/config/settings/base.py": {
-    "mtime": 1784227779.4887729,
-    "ast_hash": "42659e77cd82458c4df45b56728ee0ed",
-    "semantic_hash": "42659e77cd82458c4df45b56728ee0ed"
+    "mtime": 1784796104.9681404,
+    "ast_hash": "8ba19913a9378ff92d9f45ef7d7a62dd",
+    "semantic_hash": ""
   },
   "backend/config/settings/development.py": {
     "mtime": 1783535938.3739555,
@@ -3190,9 +3190,9 @@
     "semantic_hash": "066b757f7581989a1553b1b5a4ceba00"
   },
   "backend/config/settings/env.py": {
-    "mtime": 1783547154.8653173,
-    "ast_hash": "2a3df4c644cc7613547c5b703ae9dde6",
-    "semantic_hash": "2a3df4c644cc7613547c5b703ae9dde6"
+    "mtime": 1784749027.439216,
+    "ast_hash": "6895440bece6f2b3f262d50aa47449cf",
+    "semantic_hash": ""
   },
   "backend/config/settings/production.py": {
     "mtime": 1783367029.71609,
@@ -3205,9 +3205,9 @@
     "semantic_hash": "a47caf2b47ea9b9e5afb1a536f9b19f8"
   },
   "backend/config/urls.py": {
-    "mtime": 1784227779.4887729,
-    "ast_hash": "a9a8807a86e22d3091dcdfcf3ff5c001",
-    "semantic_hash": "a9a8807a86e22d3091dcdfcf3ff5c001"
+    "mtime": 1784796106.792144,
+    "ast_hash": "0703db7009ca2d78067905d2d7b2372d",
+    "semantic_hash": ""
   },
   "backend/config/wsgi.py": {
     "mtime": 1783366796.6655648,
@@ -3270,9 +3270,9 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "backend/tests/application/applications/fakes.py": {
-    "mtime": 1784227779.4887729,
-    "ast_hash": "4c3702c10f213d6d0b518d4347af5ed2",
-    "semantic_hash": "4c3702c10f213d6d0b518d4347af5ed2"
+    "mtime": 1784716809.7437897,
+    "ast_hash": "cd4c45d17614efafd030ed6bea1c043b",
+    "semantic_hash": ""
   },
   "backend/tests/application/applications/test_handlers.py": {
     "mtime": 1784227779.4887729,
@@ -3300,13 +3300,13 @@
     "semantic_hash": "45b6a5fc59d48cb245cb3a32a42b1c14"
   },
   "backend/tests/application/competitions/test_command_handlers.py": {
-    "mtime": 1784653699.27586,
-    "ast_hash": "ad2002b76022ab98e839f4ad480fead5",
+    "mtime": 1784723609.3281157,
+    "ast_hash": "77ee68936df17a87a277616635f01f05",
     "semantic_hash": ""
   },
   "backend/tests/application/competitions/test_public_catalog.py": {
-    "mtime": 1784538029.0321796,
-    "ast_hash": "aae2796037fe6a40f6bcad0996d99e7b",
+    "mtime": 1784732740.9030046,
+    "ast_hash": "a1dace407ce9e37f2bf2cecd52d7d89a",
     "semantic_hash": ""
   },
   "backend/tests/application/identity/__init__.py": {
@@ -3440,8 +3440,8 @@
     "semantic_hash": "851763125944681ca30caacd3df893b3"
   },
   "backend/tests/domain/competitions/test_entities.py": {
-    "mtime": 1784653699.27986,
-    "ast_hash": "eb8b4a073b6f743afe79e14dfa278a07",
+    "mtime": 1784725464.0357962,
+    "ast_hash": "4ee0d67c7eac16767bcd68fd3517c560",
     "semantic_hash": ""
   },
   "backend/tests/domain/competitions/test_templates.py": {
@@ -3450,9 +3450,9 @@
     "semantic_hash": ""
   },
   "backend/tests/domain/competitions/test_value_objects.py": {
-    "mtime": 1783845894.5228257,
-    "ast_hash": "c5df07abe561060688f1c0ffe190bc56",
-    "semantic_hash": "c5df07abe561060688f1c0ffe190bc56"
+    "mtime": 1784723609.3281157,
+    "ast_hash": "0443b70a49473823dd3c7e8c439a0125",
+    "semantic_hash": ""
   },
   "backend/tests/domain/identity/__init__.py": {
     "mtime": 1783368401.4203904,
@@ -3635,19 +3635,19 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "backend/tests/presentation/applications/test_applications_api.py": {
-    "mtime": 1784321679.7555528,
-    "ast_hash": "160a77094f35071ee0182842af8309a9",
-    "semantic_hash": "160a77094f35071ee0182842af8309a9"
+    "mtime": 1784723609.3320267,
+    "ast_hash": "72de3f2fb86d427c2d519fcb6bbc2269",
+    "semantic_hash": ""
   },
   "backend/tests/presentation/applications/test_attachments_api.py": {
-    "mtime": 1784321679.7555528,
-    "ast_hash": "6abd70eae3d4cab5de98f97d11a0fdfc",
-    "semantic_hash": "6abd70eae3d4cab5de98f97d11a0fdfc"
+    "mtime": 1784723609.3320267,
+    "ast_hash": "9d0cc936e123b9af73495414bd00c5d1",
+    "semantic_hash": ""
   },
   "backend/tests/presentation/applications/test_submission_content_api.py": {
-    "mtime": 1784321679.7555528,
-    "ast_hash": "68b13f81e1446cf2484a72dfa784cc47",
-    "semantic_hash": "68b13f81e1446cf2484a72dfa784cc47"
+    "mtime": 1784723609.3320267,
+    "ast_hash": "049684f1fc9e2572dc02ce92f408e57c",
+    "semantic_hash": ""
   },
   "backend/tests/presentation/competitions/__init__.py": {
     "mtime": 1783759788.8899872,
@@ -3655,24 +3655,24 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "backend/tests/presentation/competitions/test_competitions_api.py": {
-    "mtime": 1784321679.7555528,
-    "ast_hash": "c9650da8c26213d6cb45c667bac3b9f9",
-    "semantic_hash": "c9650da8c26213d6cb45c667bac3b9f9"
+    "mtime": 1784723609.3320267,
+    "ast_hash": "5c3652d9b66cc6a70fc11a1cde5d165e",
+    "semantic_hash": ""
   },
   "backend/tests/presentation/competitions/test_openapi.py": {
-    "mtime": 1783760270.3375835,
-    "ast_hash": "74a6020976575f66e72acd19b821ab18",
-    "semantic_hash": "74a6020976575f66e72acd19b821ab18"
+    "mtime": 1784723609.3320267,
+    "ast_hash": "00cb014ee4f0f4aa98e2f31526ed0fe2",
+    "semantic_hash": ""
   },
   "backend/tests/presentation/competitions/test_public_festivals_api.py": {
-    "mtime": 1784536428.7627814,
-    "ast_hash": "d841f4fa05d59e8e1e5d2ee352ca913a",
+    "mtime": 1784732797.937194,
+    "ast_hash": "3532c6f0ec873bb68adc36cc65241c2f",
     "semantic_hash": ""
   },
   "backend/tests/presentation/competitions/test_registration_api.py": {
-    "mtime": 1784227779.4924374,
-    "ast_hash": "9ef03b2ca828601aa9be41543b73f890",
-    "semantic_hash": "9ef03b2ca828601aa9be41543b73f890"
+    "mtime": 1784723609.3320267,
+    "ast_hash": "43400621b4b7d8d1d53fa09ff2c9b173",
+    "semantic_hash": ""
   },
   "backend/tests/presentation/conftest.py": {
     "mtime": 1783451015.4887767,
@@ -3770,9 +3770,9 @@
     "semantic_hash": "63b2434495fba1eaf340a9be965b94c5"
   },
   "frontend/orval.config.ts": {
-    "mtime": 1784295573.6254816,
-    "ast_hash": "5bf01f8bb9620098b83f858e198fee38",
-    "semantic_hash": "5bf01f8bb9620098b83f858e198fee38"
+    "mtime": 1784796400.6721013,
+    "ast_hash": "299f2109c744d022df14aa4f1b87be63",
+    "semantic_hash": ""
   },
   "frontend/package.json": {
     "mtime": 1783507215.3853583,
@@ -3895,8 +3895,8 @@
     "semantic_hash": "6ed8c18b5c86df4e096858606ec153c0"
   },
   "frontend/src/app/router/router.tsx": {
-    "mtime": 1784565572.7384217,
-    "ast_hash": "c401356b9cc3b93fb2c13a00c039d63e",
+    "mtime": 1784796725.6440988,
+    "ast_hash": "ffcd8ab9bc0abbff4e76aee78cc9b95b",
     "semantic_hash": ""
   },
   "frontend/src/applications/participant/layouts/participant-layout.tsx": {
@@ -3945,9 +3945,9 @@
     "semantic_hash": "2f03c20ea19eb40c5aae1514c1eeda04"
   },
   "frontend/src/applications/staff/navigation.ts": {
-    "mtime": 1783771458.7918835,
-    "ast_hash": "8b7dfd75050922e5d86bb779b47d1d34",
-    "semantic_hash": "8b7dfd75050922e5d86bb779b47d1d34"
+    "mtime": 1784796722.4800994,
+    "ast_hash": "b64f136ff831d1a9849de8beb2d5eaa8",
+    "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/applications/index.tsx": {
     "mtime": 1784572971.6492698,
@@ -3955,14 +3955,14 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/competition-workspace/index.tsx": {
-    "mtime": 1783796937.6636784,
-    "ast_hash": "891491e2390ef3959bc15418fbff5968",
-    "semantic_hash": "891491e2390ef3959bc15418fbff5968"
+    "mtime": 1784724312.5376945,
+    "ast_hash": "129d07dddba44b15ef2b6c7a26dcc05e",
+    "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/competitions/index.tsx": {
-    "mtime": 1783771458.7918835,
-    "ast_hash": "7abf27cb792bc4b78ebf69e2d4104c90",
-    "semantic_hash": "7abf27cb792bc4b78ebf69e2d4104c90"
+    "mtime": 1784723857.7747726,
+    "ast_hash": "5ddc0762bb39f16a2e551aab4044a4bc",
+    "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/competitions/new/index.tsx": {
     "mtime": 1783771458.7955897,
@@ -4200,9 +4200,9 @@
     "semantic_hash": "86a725f8fd13f49d137093fbe9f4361f"
   },
   "frontend/src/features/competitions/api/competitions-api.ts": {
-    "mtime": 1783808143.6882348,
-    "ast_hash": "a9a68621507a3617b554b5aec1129e4d",
-    "semantic_hash": "a9a68621507a3617b554b5aec1129e4d"
+    "mtime": 1784724476.3640962,
+    "ast_hash": "5de6428ba2753672f1facf786ea58e87",
+    "semantic_hash": ""
   },
   "frontend/src/features/competitions/api/envelope.ts": {
     "mtime": 1783764249.4667552,
@@ -4210,9 +4210,9 @@
     "semantic_hash": "4d3d60f016ecf095766f821693b0be8f"
   },
   "frontend/src/features/competitions/api/index.ts": {
-    "mtime": 1783796946.5756829,
-    "ast_hash": "9154ea1ae6d7bf33d59457c67de0bd8e",
-    "semantic_hash": "9154ea1ae6d7bf33d59457c67de0bd8e"
+    "mtime": 1784724476.2869086,
+    "ast_hash": "b20a739f2fd35afb0757b0d9b7beab20",
+    "semantic_hash": ""
   },
   "frontend/src/features/competitions/api/keys.ts": {
     "mtime": 1783763808.5352569,
@@ -4225,8 +4225,8 @@
     "semantic_hash": "b4d5ff4a024a2e0d894f4daa2676ccb9"
   },
   "frontend/src/features/competitions/index.ts": {
-    "mtime": 1784655112.8344016,
-    "ast_hash": "e4c2c72b69d7ec6176cbc7e9a6a85557",
+    "mtime": 1784724476.2869086,
+    "ast_hash": "d1f349a790a8fc665c32a6ac5df77d0a",
     "semantic_hash": ""
   },
   "frontend/src/features/competitions/lib/additional-services.test.ts": {
@@ -4240,8 +4240,8 @@
     "semantic_hash": "570e827a1b0e994f3042659904ef5d37"
   },
   "frontend/src/features/competitions/lib/admission-rules.test.ts": {
-    "mtime": 1784654898.233888,
-    "ast_hash": "d0e05f2b3b028f068e2ac7dee904f4e6",
+    "mtime": 1784717407.262021,
+    "ast_hash": "8545760ce0dc1a1a1d9280f6a3ca12b5",
     "semantic_hash": ""
   },
   "frontend/src/features/competitions/lib/admission-rules.ts": {
@@ -4345,8 +4345,8 @@
     "semantic_hash": "0b0bccebdf18cc1942c1e1ee1c371260"
   },
   "frontend/src/features/competitions/lib/pricing.test.ts": {
-    "mtime": 1784654937.0440862,
-    "ast_hash": "8cc8df664620878efbb0e28639acc785",
+    "mtime": 1784717407.262021,
+    "ast_hash": "24b108e072b069f8b7afddb703a676c6",
     "semantic_hash": ""
   },
   "frontend/src/features/competitions/lib/pricing.ts": {
@@ -4375,9 +4375,9 @@
     "semantic_hash": "7a1a9e062ee743e993906e2753e0bc55"
   },
   "frontend/src/features/competitions/lib/taxonomy.test.ts": {
-    "mtime": 1783772124.4746022,
-    "ast_hash": "36889c24f33a83db32f45655fec1fb61",
-    "semantic_hash": "36889c24f33a83db32f45655fec1fb61"
+    "mtime": 1784717315.5984242,
+    "ast_hash": "d776840eee5c87d7dcf2237f1e3bc39c",
+    "semantic_hash": ""
   },
   "frontend/src/features/competitions/lib/taxonomy.ts": {
     "mtime": 1783772692.8112814,
@@ -4405,14 +4405,14 @@
     "semantic_hash": "22d6aedbacdc660999885c6a136ead15"
   },
   "frontend/src/features/competitions/model/publication-checklist.test.ts": {
-    "mtime": 1784655013.4854417,
-    "ast_hash": "fbe52e0efce9fcd6d4f2608b440c3f02",
+    "mtime": 1784717352.7042785,
+    "ast_hash": "c46090051d0e5820ea38144342462847",
     "semantic_hash": ""
   },
   "frontend/src/features/competitions/model/publication-checklist.ts": {
-    "mtime": 1783778843.160367,
-    "ast_hash": "453d7f12c9c7ba9f07ed66eda2686676",
-    "semantic_hash": "453d7f12c9c7ba9f07ed66eda2686676"
+    "mtime": 1784665028.514889,
+    "ast_hash": "777ce6d34e6fb65babf1e8e8d261b4a4",
+    "semantic_hash": ""
   },
   "frontend/src/features/competitions/model/schemas.ts": {
     "mtime": 1784647602.7671309,
@@ -4420,18 +4420,18 @@
     "semantic_hash": ""
   },
   "frontend/src/features/competitions/model/sections.ts": {
-    "mtime": 1783794169.5920432,
-    "ast_hash": "3493be21adec84ea34aa6610047a684b",
-    "semantic_hash": "3493be21adec84ea34aa6610047a684b"
+    "mtime": 1784719856.673179,
+    "ast_hash": "78a4479c8942e7fb4eab2c97fbb4c181",
+    "semantic_hash": ""
   },
   "frontend/src/features/competitions/model/status.test.ts": {
-    "mtime": 1784491949.7158813,
-    "ast_hash": "700a9f7628fa69febe291874a27dde8a",
+    "mtime": 1784724605.2782066,
+    "ast_hash": "585e6a38efd543078bae07bc2eaab54e",
     "semantic_hash": ""
   },
   "frontend/src/features/competitions/model/status.ts": {
-    "mtime": 1784491949.7158813,
-    "ast_hash": "49bc3cae770a7398f0b8c80bec7dcb55",
+    "mtime": 1784724476.2869086,
+    "ast_hash": "0fb54ea322fa9bff8ba523dae64a74f3",
     "semantic_hash": ""
   },
   "frontend/src/features/festival-catalog/api/index.ts": {
@@ -4515,14 +4515,14 @@
     "semantic_hash": "adff1f245e5e31fca616127515a12af3"
   },
   "frontend/src/features/festival-landing/api/index.ts": {
-    "mtime": 1783840431.235204,
-    "ast_hash": "d22d6fabfd5a9b7dea43cf0b8c250535",
-    "semantic_hash": "d22d6fabfd5a9b7dea43cf0b8c250535"
+    "mtime": 1784720944.3427596,
+    "ast_hash": "ca46caf051594a60558bc52b8f8800d1",
+    "semantic_hash": ""
   },
   "frontend/src/features/festival-landing/api/keys.ts": {
-    "mtime": 1783840414.1685605,
-    "ast_hash": "3576beed5d1160d503c588a361df29e2",
-    "semantic_hash": "3576beed5d1160d503c588a361df29e2"
+    "mtime": 1784720942.2457237,
+    "ast_hash": "e33b9bff2bcad052830a3eae8a7810db",
+    "semantic_hash": ""
   },
   "frontend/src/features/festival-landing/api/use-public-festival.ts": {
     "mtime": 1783840428.1117532,
@@ -4530,9 +4530,9 @@
     "semantic_hash": "599cd944cac064a0946c4f13e20e26cb"
   },
   "frontend/src/features/festival-landing/index.ts": {
-    "mtime": 1783846229.9647758,
-    "ast_hash": "44b1b496e45f5d646cefd37822f058a9",
-    "semantic_hash": "44b1b496e45f5d646cefd37822f058a9"
+    "mtime": 1784721199.5627809,
+    "ast_hash": "59b63deb69e8f0bc78d23cbccb6ccceb",
+    "semantic_hash": ""
   },
   "frontend/src/features/festival-landing/lib/blocks.test.ts": {
     "mtime": 1783840899.0569117,
@@ -4560,9 +4560,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/festival-landing/lib/index.ts": {
-    "mtime": 1783846216.2954202,
-    "ast_hash": "75ecc4a267e70bf5f29e5d25a15ca49b",
-    "semantic_hash": "75ecc4a267e70bf5f29e5d25a15ca49b"
+    "mtime": 1784721199.5588803,
+    "ast_hash": "49fcccd903aa75a70e35fa181888c6ef",
+    "semantic_hash": ""
   },
   "frontend/src/features/festival-landing/lib/price.ts": {
     "mtime": 1783840471.2225814,
@@ -4570,9 +4570,9 @@
     "semantic_hash": "e891f05369d4096dab9f7ed8684d90b4"
   },
   "frontend/src/features/festival-landing/lib/types.ts": {
-    "mtime": 1783846198.7634218,
-    "ast_hash": "0242dc02526771e194697c1a5aa29eb1",
-    "semantic_hash": "0242dc02526771e194697c1a5aa29eb1"
+    "mtime": 1784720987.2606544,
+    "ast_hash": "00339f660eb7ec34893ef57cdb0626d1",
+    "semantic_hash": ""
   },
   "frontend/src/features/registration-wizard/api/duplicate.ts": {
     "mtime": 1784295574.0134816,
@@ -4595,9 +4595,9 @@
     "semantic_hash": "b2afbbc9181fa8a280112b9c03784bbd"
   },
   "frontend/src/features/registration-wizard/lib/admission.ts": {
-    "mtime": 1784295574.0254817,
-    "ast_hash": "ffbec27d3587f86f2ec407ec96db2a6f",
-    "semantic_hash": "ffbec27d3587f86f2ec407ec96db2a6f"
+    "mtime": 1784667661.4069502,
+    "ast_hash": "4430ff8726daaa01ec61f26f9b70acb3",
+    "semantic_hash": ""
   },
   "frontend/src/features/registration-wizard/ui/participant-picker.tsx": {
     "mtime": 1784295574.0294816,
@@ -4615,9 +4615,9 @@
     "semantic_hash": "67802dca929e87b639f8d7dcd0b6f8c2"
   },
   "frontend/src/features/registration-wizard/ui/performance-form.tsx": {
-    "mtime": 1784295574.1174817,
-    "ast_hash": "672a3b72d26e4a8021bdda30a5c4b187",
-    "semantic_hash": "672a3b72d26e4a8021bdda30a5c4b187"
+    "mtime": 1784732843.911002,
+    "ast_hash": "9291cc1653bf8a0747ea2c8a92b9314a",
+    "semantic_hash": ""
   },
   "frontend/src/features/registration-wizard/ui/teacher-picker.tsx": {
     "mtime": 1784295574.0374818,
@@ -4645,14 +4645,14 @@
     "semantic_hash": "621bb559106784619e68da992ee75246"
   },
   "frontend/src/pages/applications/application-detail-page.tsx": {
-    "mtime": 1784295574.0574818,
-    "ast_hash": "b0076cb52773e9121ec9501e161e98b2",
-    "semantic_hash": "b0076cb52773e9121ec9501e161e98b2"
+    "mtime": 1784667935.2709267,
+    "ast_hash": "eb6132ebb85f6f09db2b37b4a5328f63",
+    "semantic_hash": ""
   },
   "frontend/src/pages/applications/festival-apply-page.tsx": {
-    "mtime": 1784295574.0814817,
-    "ast_hash": "f0efe50b2218f287b0bf138773d3a366",
-    "semantic_hash": "f0efe50b2218f287b0bf138773d3a366"
+    "mtime": 1784734211.7696235,
+    "ast_hash": "552e743afc88d7604c58502aec9c4bac",
+    "semantic_hash": ""
   },
   "frontend/src/pages/applications/index.ts": {
     "mtime": 1784295574.0534818,
@@ -4880,9 +4880,9 @@
     "semantic_hash": "ea79794f331f1f9b6b94a2067dfbc21a"
   },
   "frontend/src/shared/config/routes.ts": {
-    "mtime": 1784295574.177482,
-    "ast_hash": "54058be56853743841241bd6548b0a49",
-    "semantic_hash": "54058be56853743841241bd6548b0a49"
+    "mtime": 1784796713.0400987,
+    "ast_hash": "2c157e8886952d309577cf2bdd3c25f5",
+    "semantic_hash": ""
   },
   "frontend/src/shared/constants/index.ts": {
     "mtime": 1783508192.341872,
@@ -5690,9 +5690,9 @@
     "semantic_hash": "777ed23206a5886e040d165aba2731fb"
   },
   "frontend/src/widgets/competition-additional-services/ui/additional-services-section.tsx": {
-    "mtime": 1784295574.7174819,
-    "ast_hash": "aa8bfa32e6265005cf598bb9d0a8b664",
-    "semantic_hash": "aa8bfa32e6265005cf598bb9d0a8b664"
+    "mtime": 1784724381.947471,
+    "ast_hash": "66fbebab64b0004d3a8c5f7414e57290",
+    "semantic_hash": ""
   },
   "frontend/src/widgets/competition-additional-services/ui/additional-services-skeleton.tsx": {
     "mtime": 1783787644.4988317,
@@ -5720,13 +5720,13 @@
     "semantic_hash": "95f99511dc01204749d19a2d0421b120"
   },
   "frontend/src/widgets/competition-admission-rules/ui/edit-admission-rule-dialog.tsx": {
-    "mtime": 1784654837.411962,
-    "ast_hash": "1b6522cb5968c6f49f0aa087294469e2",
+    "mtime": 1784665854.6751337,
+    "ast_hash": "a3f1f631a7c9a74eb84acf97df8f75e2",
     "semantic_hash": ""
   },
   "frontend/src/widgets/competition-admission-rules/ui/rule-builder-dialog.tsx": {
-    "mtime": 1784654783.7794569,
-    "ast_hash": "6622d948c0cb05c4c8eaf4da8c35e431",
+    "mtime": 1784665819.7111177,
+    "ast_hash": "8bd38c51044174c9ed40ec268d12b320",
     "semantic_hash": ""
   },
   "frontend/src/widgets/competition-age-categories/index.ts": {
@@ -5755,7 +5755,7 @@
     "semantic_hash": "6a4d310bd63a82d7463d00f2a5dbb4d6"
   },
   "frontend/src/widgets/competition-categories/ui/categories-section.tsx": {
-    "mtime": 1783796676.4037411,
+    "mtime": 1784719617.5722756,
     "ast_hash": "a321145ad45bf82f56b0866854436fbc",
     "semantic_hash": "a321145ad45bf82f56b0866854436fbc"
   },
@@ -5770,8 +5770,8 @@
     "semantic_hash": "c090dda7628883dc7cf4c28d37bd5040"
   },
   "frontend/src/widgets/competition-contacts/ui/contacts-section.tsx": {
-    "mtime": 1784536770.437068,
-    "ast_hash": "181c1f7be7192e93a954736a1b97e087",
+    "mtime": 1784724381.4014022,
+    "ast_hash": "c9f8b8ba51e81321d6c7a051cf2afa59",
     "semantic_hash": ""
   },
   "frontend/src/widgets/competition-contacts/ui/contacts-skeleton.tsx": {
@@ -5795,9 +5795,9 @@
     "semantic_hash": "ba2ed14b09636976e9932c1fa18c329b"
   },
   "frontend/src/widgets/competition-documents/ui/documents-section.tsx": {
-    "mtime": 1783771458.7807646,
-    "ast_hash": "5b03642ac0556896dbfd7b608139f7f9",
-    "semantic_hash": "5b03642ac0556896dbfd7b608139f7f9"
+    "mtime": 1784724381.5407438,
+    "ast_hash": "cd215ab07747bad12842f990b93bfc2e",
+    "semantic_hash": ""
   },
   "frontend/src/widgets/competition-documents/ui/documents-skeleton.tsx": {
     "mtime": 1783770703.04254,
@@ -5815,9 +5815,9 @@
     "semantic_hash": "5dc7a69dd5456f7a084f02004ef4853a"
   },
   "frontend/src/widgets/competition-general/ui/general-section.tsx": {
-    "mtime": 1783772812.9688725,
-    "ast_hash": "08987a79d03c720aea30eb692822cd17",
-    "semantic_hash": "08987a79d03c720aea30eb692822cd17"
+    "mtime": 1784724381.7516394,
+    "ast_hash": "f56004048adee771b0cc22697d83afab",
+    "semantic_hash": ""
   },
   "frontend/src/widgets/competition-general/ui/poster-upload-field.tsx": {
     "mtime": 1783771458.7807646,
@@ -5830,8 +5830,8 @@
     "semantic_hash": "51d5c8bbea2a164e14e040eaff4f0a20"
   },
   "frontend/src/widgets/competition-participant-groups/ui/participant-group-form-dialog.tsx": {
-    "mtime": 1784654567.8913398,
-    "ast_hash": "11bc6b86ea6567735f1a0a8d65a87a29",
+    "mtime": 1784725568.6095936,
+    "ast_hash": "aa402d14347d21f04a200a7081290926",
     "semantic_hash": ""
   },
   "frontend/src/widgets/competition-participant-groups/ui/participant-groups-section.tsx": {
@@ -5910,9 +5910,9 @@
     "semantic_hash": "bd4bdeec3e04883100f7cc63c825a6e2"
   },
   "frontend/src/widgets/competition-public-information/ui/public-information-section.tsx": {
-    "mtime": 1783846411.9785519,
-    "ast_hash": "81556f7e042d815f33715da31f054658",
-    "semantic_hash": "81556f7e042d815f33715da31f054658"
+    "mtime": 1784724381.8307252,
+    "ast_hash": "f9a7e3cce9a10ae423f36118cf62d4c1",
+    "semantic_hash": ""
   },
   "frontend/src/widgets/competition-public-information/ui/public-information-skeleton.tsx": {
     "mtime": 1783794110.4120822,
@@ -5945,8 +5945,8 @@
     "semantic_hash": "0808038dedbca04b6382fecfe192a064"
   },
   "frontend/src/widgets/competition-regulations/ui/regulations-section.tsx": {
-    "mtime": 1784647602.7859015,
-    "ast_hash": "5bd773056649f531deba44da759972a7",
+    "mtime": 1784724381.6612556,
+    "ast_hash": "fcd56eaa2be0c357531c8a76c51e9b62",
     "semantic_hash": ""
   },
   "frontend/src/widgets/competition-settings/index.ts": {
@@ -5955,9 +5955,9 @@
     "semantic_hash": "792adda3369bb8add7f73f820b188302"
   },
   "frontend/src/widgets/competition-settings/ui/settings-section.tsx": {
-    "mtime": 1784295574.993482,
-    "ast_hash": "fcb2ae32d5989eb4c0f677314adf35ed",
-    "semantic_hash": "fcb2ae32d5989eb4c0f677314adf35ed"
+    "mtime": 1784724382.1583662,
+    "ast_hash": "ab7269da74a3fa5023f704b2bc5bc6e4",
+    "semantic_hash": ""
   },
   "frontend/src/widgets/competition-settings/ui/settings-skeleton.tsx": {
     "mtime": 1783790561.0125086,
@@ -5975,9 +5975,9 @@
     "semantic_hash": "3a3eb0d194628129c5cfefbce7678897"
   },
   "frontend/src/widgets/competition-workspace/ui/competition-workspace-layout.tsx": {
-    "mtime": 1783796902.2397103,
-    "ast_hash": "dd3cb732da0ed60883cfa9781a297fff",
-    "semantic_hash": "dd3cb732da0ed60883cfa9781a297fff"
+    "mtime": 1784724249.9869542,
+    "ast_hash": "d660901e89e226425726757b206c29ce",
+    "semantic_hash": ""
   },
   "frontend/src/widgets/competition-workspace/ui/publication-checklist-panel.tsx": {
     "mtime": 1783769484.2552526,
@@ -5990,9 +5990,9 @@
     "semantic_hash": "c39e2242157aba306944657e2127dc68"
   },
   "frontend/src/widgets/competition-workspace/ui/workspace-header.tsx": {
-    "mtime": 1783796908.367706,
-    "ast_hash": "655c375e8e23de116a6274565ca80225",
-    "semantic_hash": "655c375e8e23de116a6274565ca80225"
+    "mtime": 1784724476.3062055,
+    "ast_hash": "9aee9f8dfb8edc6d199fce2b73059374",
+    "semantic_hash": ""
   },
   "frontend/src/widgets/competition-workspace/ui/workspace-sidebar.tsx": {
     "mtime": 1783771458.7918835,
@@ -6005,8 +6005,8 @@
     "semantic_hash": "e604f0be844e2bf1a6acf47c25e33b31"
   },
   "frontend/src/widgets/competitions-list/ui/competition-card.tsx": {
-    "mtime": 1784491949.7158813,
-    "ast_hash": "545b5697a98a620837504af223122ccb",
+    "mtime": 1784724476.3023462,
+    "ast_hash": "48abd720fd0838750902c8c1fc6aee50",
     "semantic_hash": ""
   },
   "frontend/src/widgets/competitions-list/ui/competitions-empty-state.tsx": {
@@ -6015,9 +6015,9 @@
     "semantic_hash": "8a039f72f876de862be6de195972a8fb"
   },
   "frontend/src/widgets/competitions-list/ui/competitions-grid.tsx": {
-    "mtime": 1783764214.194323,
-    "ast_hash": "8a40f4918e76f709a92730d0b5f798ff",
-    "semantic_hash": "8a40f4918e76f709a92730d0b5f798ff"
+    "mtime": 1784723810.335451,
+    "ast_hash": "101d6a9e5da9a5ac48a721265ad0a1f8",
+    "semantic_hash": ""
   },
   "frontend/src/widgets/competitions-list/ui/competitions-skeleton.tsx": {
     "mtime": 1783771458.7807646,
@@ -6370,14 +6370,14 @@
     "semantic_hash": "6e3a926c7f142d0b78c067add9eb8950"
   },
   "frontend/src/widgets/festival-landing/ui/festival-landing.test.tsx": {
-    "mtime": 1784538685.8487816,
-    "ast_hash": "a1be3498ef84ff57badfdb6a18e2a758",
+    "mtime": 1784721170.2534368,
+    "ast_hash": "f7d58f0e72f5b6543c5d96fb92b65d63",
     "semantic_hash": ""
   },
   "frontend/src/widgets/festival-landing/ui/festival-landing.tsx": {
-    "mtime": 1784295573.7054815,
-    "ast_hash": "d57e09a855bba62ac4d2c2e3dc3a3579",
-    "semantic_hash": "d57e09a855bba62ac4d2c2e3dc3a3579"
+    "mtime": 1784721080.5830383,
+    "ast_hash": "1aec984202699ede15b1d4398a9382a4",
+    "semantic_hash": ""
   },
   "frontend/src/widgets/festival-landing/ui/landing-cta.tsx": {
     "mtime": 1783840551.7398517,
@@ -6590,8 +6590,8 @@
     "semantic_hash": "d4ecc328966ff21da30ecd22f0b2a981"
   },
   "frontend/openapi/schema-full.yaml": {
-    "mtime": 1784653831.8465748,
-    "ast_hash": "7141f649e6bf3b9c482c27d8e353113e",
+    "mtime": 1784798072.7839406,
+    "ast_hash": "5694ba453355e39f6ac5f8cbbf2a6ccb",
     "semantic_hash": ""
   },
   "frontend/openapi/schema.yaml": {
@@ -6967,6 +6967,281 @@
   "backend/apps/competitions/infrastructure/migrations/0012_age_category_group_scope.py": {
     "mtime": 1784653699.28786,
     "ast_hash": "01a20eba8b9403b0731afb2a1f0d4619",
+    "semantic_hash": ""
+  },
+  "backend/apps/applications/infrastructure/messaging/application_email_gateway.py": {
+    "mtime": 1784748008.7710884,
+    "ast_hash": "78264c117e9f4e3d4fd9c07a6a8426a3",
+    "semantic_hash": ""
+  },
+  "backend/apps/applications/infrastructure/migrations/0004_application_submitted_at.py": {
+    "mtime": 1784748967.678749,
+    "ast_hash": "828ee210fe95dd76792eac0de792ef06",
+    "semantic_hash": ""
+  },
+  "backend/apps/applications/tasks.py": {
+    "mtime": 1784749018.375168,
+    "ast_hash": "5adbd1a4ad28d3e95cb56fba03a33b5f",
+    "semantic_hash": ""
+  },
+  "backend/apps/competitions/infrastructure/migrations/0013_rename_competitions_addsvc_sort_idx_competition_competi_e596aa_idx.py": {
+    "mtime": 1784664767.4239306,
+    "ast_hash": "29844a0d854452bcd57d1d87292e1599",
+    "semantic_hash": ""
+  },
+  "backend/apps/competitions/infrastructure/migrations/0014_category_registration_schedule.py": {
+    "mtime": 1784715527.979279,
+    "ast_hash": "c77751251434e9271c69f7833992eb5c",
+    "semantic_hash": ""
+  },
+  "backend/apps/competitions/infrastructure/migrations/0015_remove_registration_and_archived_statuses.py": {
+    "mtime": 1784722722.2197273,
+    "ast_hash": "e2cf5c8526c6d7515ef9b7d26c4dbbd5",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/__init__.py": {
+    "mtime": 1784796044.096139,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/apps.py": {
+    "mtime": 1784796049.6321359,
+    "ast_hash": "b177e8b8c5992ae2b5a30ecf997b8114",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/domain/__init__.py": {
+    "mtime": 1784796050.6801376,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/domain/exceptions.py": {
+    "mtime": 1784797105.2520652,
+    "ast_hash": "5ef5e0f173b1989bdfbaa098db7c8bfe",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/infrastructure/__init__.py": {
+    "mtime": 1784796064.256143,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/infrastructure/admin.py": {
+    "mtime": 1784796094.1721346,
+    "ast_hash": "0cc6a1000b50475df4a06f33a5b464a4",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/infrastructure/migrations/0001_initial.py": {
+    "mtime": 1784798049.6799386,
+    "ast_hash": "b427b0f54d73e46ae1675ea9b800a931",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/infrastructure/migrations/__init__.py": {
+    "mtime": 1784796115.8001401,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/infrastructure/models/__init__.py": {
+    "mtime": 1784796091.2121387,
+    "ast_hash": "8f4a0828c1b6bc9a0fdc4e47ca6f3981",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/infrastructure/models/assignment.py": {
+    "mtime": 1784796089.2561398,
+    "ast_hash": "0b2954e5ea1ea4c8d2e0ac54cad65035",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/infrastructure/models/base.py": {
+    "mtime": 1784796071.3841434,
+    "ast_hash": "999126c4155901b58de467944374b2bc",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/infrastructure/models/template.py": {
+    "mtime": 1784797989.9439492,
+    "ast_hash": "04b743af654cf50561d51681fa84af18",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/presentation/__init__.py": {
+    "mtime": 1784796116.7881405,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/presentation/api/__init__.py": {
+    "mtime": 1784796117.9121394,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/presentation/api/v1/__init__.py": {
+    "mtime": 1784796118.876138,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/presentation/api/v1/diplomas/__init__.py": {
+    "mtime": 1784796119.9001367,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/presentation/api/v1/diplomas/composition.py": {
+    "mtime": 1784798005.0079343,
+    "ast_hash": "787245ebdfa6853ec28f116528c6c364",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py": {
+    "mtime": 1784798015.9199338,
+    "ast_hash": "2c1eb6c049d400bfc66851d6de4e9d9a",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/presentation/api/v1/diplomas/urls.py": {
+    "mtime": 1784796197.2281415,
+    "ast_hash": "b5897c59885b2608d5a7ad856ac92c3c",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/presentation/api/v1/diplomas/views.py": {
+    "mtime": 1784798026.8119369,
+    "ast_hash": "af180f99a8bbf8b428e9f80e5097e269",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/presentation/api/v1/problems.py": {
+    "mtime": 1784796136.7961237,
+    "ast_hash": "976a0fbc0f2b4026819672b23fe172e4",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/presentation/urls.py": {
+    "mtime": 1784796198.97614,
+    "ast_hash": "19005fae283483f47e69c05aa5e26578",
+    "semantic_hash": ""
+  },
+  "backend/apps/participants/infrastructure/migrations/0004_rename_participant_created_48a069_idx_participant_created_d8f051_idx_and_more.py": {
+    "mtime": 1784664767.4239306,
+    "ast_hash": "ba922c56baaf8ce77b64fdb5cecf4968",
+    "semantic_hash": ""
+  },
+  "backend/tests/application/applications/test_auto_cancel.py": {
+    "mtime": 1784736935.9544196,
+    "ast_hash": "454291c425088dc33b6147b5ac6dc281",
+    "semantic_hash": ""
+  },
+  "backend/tests/application/applications/test_sweep_unpaid.py": {
+    "mtime": 1784749260.4113731,
+    "ast_hash": "1458c23a76694376824b930a987c05c8",
+    "semantic_hash": ""
+  },
+  "backend/tests/infrastructure/diplomas/__init__.py": {
+    "mtime": 1784797213.0240467,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "backend/tests/infrastructure/diplomas/test_assignment_composition.py": {
+    "mtime": 1784798040.303932,
+    "ast_hash": "26391a04272e0fb3b9d541f0fcd0ff62",
+    "semantic_hash": ""
+  },
+  "frontend/src/applications/staff/pages/diplomas/index.tsx": {
+    "mtime": 1784796921.22008,
+    "ast_hash": "1d1db175128ab341320abdde6fdf3f51",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/diplomas/api/diplomas-api.ts": {
+    "mtime": 1784798116.0359344,
+    "ast_hash": "ea1449a2f7cbb13d4d494d074af2d095",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/diplomas/api/envelope.ts": {
+    "mtime": 1784796997.8240693,
+    "ast_hash": "8768c9268d6b7d8c915299c2b99eda45",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/diplomas/api/index.ts": {
+    "mtime": 1784798121.2959268,
+    "ast_hash": "a68629c0a8c8b8055c32c803d528a74a",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/diplomas/api/keys.ts": {
+    "mtime": 1784796745.776094,
+    "ast_hash": "56df80a7b575356d370ccea4107fdd08",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/diplomas/index.ts": {
+    "mtime": 1784798126.343932,
+    "ast_hash": "bc3785591ee671f7b76c8b3e74b6df0a",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/diplomas/model/sections.ts": {
+    "mtime": 1784796737.8800952,
+    "ast_hash": "c75a97e7ec925f34023626b008e5b36e",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/diplomas/model/types.ts": {
+    "mtime": 1784798106.3839467,
+    "ast_hash": "ee516c3488d63567405c1f206d0f1c1f",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/festival-landing/api/use-public-registration.ts": {
+    "mtime": 1784721199.5627809,
+    "ast_hash": "db0aeb561daa08c4225abe43d63190aa",
+    "semantic_hash": ""
+  },
+  "frontend/src/widgets/competition-registration/index.ts": {
+    "mtime": 1784719585.352267,
+    "ast_hash": "562108237a5c2a7dafc696fc6bc49c65",
+    "semantic_hash": ""
+  },
+  "frontend/src/widgets/competition-registration/ui/nomination-registration.tsx": {
+    "mtime": 1784719544.6319475,
+    "ast_hash": "81663c53c0a073665ed2b1a5b6a79d3f",
+    "semantic_hash": ""
+  },
+  "frontend/src/widgets/competition-registration/ui/registration-section.tsx": {
+    "mtime": 1784724434.1324334,
+    "ast_hash": "174e3243d220aa5e8f1b699bffcfa628",
+    "semantic_hash": ""
+  },
+  "frontend/src/widgets/diplomas-workspace/index.ts": {
+    "mtime": 1784796997.8320692,
+    "ast_hash": "30676c711eab2e96a6d706ef493dda30",
+    "semantic_hash": ""
+  },
+  "frontend/src/widgets/diplomas-workspace/lib/format.ts": {
+    "mtime": 1784796822.472092,
+    "ast_hash": "44070479b8a53ed3117a0ce19764695b",
+    "semantic_hash": ""
+  },
+  "frontend/src/widgets/diplomas-workspace/ui/diplomas-workspace-header.tsx": {
+    "mtime": 1784796796.22409,
+    "ast_hash": "f8050a792d16b6b8121f5c2a91b2aea3",
+    "semantic_hash": ""
+  },
+  "frontend/src/widgets/diplomas-workspace/ui/diplomas-workspace-layout.tsx": {
+    "mtime": 1784796805.1040893,
+    "ast_hash": "d468c7784ee502845ee359e2846b25d7",
+    "semantic_hash": ""
+  },
+  "frontend/src/widgets/diplomas-workspace/ui/diplomas-workspace-sidebar.tsx": {
+    "mtime": 1784796791.4280908,
+    "ast_hash": "fc579835745892aeed606ce4737a8cd0",
+    "semantic_hash": ""
+  },
+  "frontend/src/widgets/diplomas-workspace/ui/sections/archive-section.tsx": {
+    "mtime": 1784796997.8400693,
+    "ast_hash": "ea05d331f83165c6abfb5e8324341009",
+    "semantic_hash": ""
+  },
+  "frontend/src/widgets/diplomas-workspace/ui/sections/assignments-section.tsx": {
+    "mtime": 1784798197.5599375,
+    "ast_hash": "57b46609bd7f46c757ed86bc9ce914c6",
+    "semantic_hash": ""
+  },
+  "frontend/src/widgets/diplomas-workspace/ui/sections/generation-section.tsx": {
+    "mtime": 1784796904.4560766,
+    "ast_hash": "7e2d3260c0c6075e6499c928c87c7704",
+    "semantic_hash": ""
+  },
+  "frontend/src/widgets/diplomas-workspace/ui/sections/templates-section.tsx": {
+    "mtime": 1784798190.2999454,
+    "ast_hash": "fbf46f076c742b086c3571015cc8b762",
+    "semantic_hash": ""
+  },
+  "frontend/src/widgets/festival-landing/ui/blocks/registration-block.tsx": {
+    "mtime": 1784721199.5666811,
+    "ast_hash": "fc74ef9ef80804511f67c9c9093dc929",
     "semantic_hash": ""
   }
 }
