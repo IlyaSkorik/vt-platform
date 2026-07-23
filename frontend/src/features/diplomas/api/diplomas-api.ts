@@ -56,6 +56,31 @@ export function useCreateTemplateMutation(): UseMutationResult<
   });
 }
 
+export interface DiplomaTemplateQuery {
+  template: DiplomaTemplate | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  error: ApiError | null;
+  refetch: () => void;
+}
+
+/**
+ * A single template, selected from the library list (react-query caches it).
+ * A dedicated GET endpoint can replace this later without changing callers.
+ */
+export function useDiplomaTemplate(templateId: string | undefined): DiplomaTemplateQuery {
+  const query = useDiplomaTemplates();
+  return {
+    template: (query.data ?? []).find((item) => item.id === templateId),
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
+    refetch: () => {
+      void query.refetch();
+    },
+  };
+}
+
 export function useDiplomaAssignments(): UseQueryResult<DiplomaAssignment[], ApiError> {
   return useQuery<DiplomaAssignment[], ApiError>({
     queryKey: diplomaKeys.assignments(),

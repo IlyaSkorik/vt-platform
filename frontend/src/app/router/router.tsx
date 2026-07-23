@@ -337,10 +337,23 @@ const routes: RouteObject[] = [
               },
               {
                 path: ROUTES.staffDiplomas.slice(1),
-                lazy: lazyPage(
-                  () => import("@/applications/staff/pages/diplomas"),
-                  "StaffDiplomasPage",
-                ),
+                element: <Outlet />,
+                children: [
+                  {
+                    index: true,
+                    lazy: lazyPage(
+                      () => import("@/applications/staff/pages/diplomas"),
+                      "StaffDiplomasPage",
+                    ),
+                  },
+                  {
+                    path: "templates/:templateId/constructor",
+                    lazy: lazyPage(
+                      () => import("@/applications/staff/pages/diplomas/constructor"),
+                      "StaffDiplomaTemplateConstructorPage",
+                    ),
+                  },
+                ],
               },
               {
                 path: ROUTES.staffOrganization.slice(1),

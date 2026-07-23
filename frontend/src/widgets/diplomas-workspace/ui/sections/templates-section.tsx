@@ -1,11 +1,13 @@
 import { LayoutTemplate, PenTool, Plus } from "lucide-react";
 import { useState } from "react";
+import { generatePath, Link } from "react-router";
 import {
   type DiplomaTemplate,
   useCreateTemplateMutation,
   useDiplomaTemplates,
 } from "@/features/diplomas";
 import { ApiError } from "@/shared/api";
+import { ROUTES } from "@/shared/config";
 import {
   Button,
   Card,
@@ -132,10 +134,13 @@ function TemplateCard({ template }: { template: DiplomaTemplate }): React.JSX.El
           <span>Использований: {template.usageCount}</span>
           {updated ? <span className="ml-3">Изменён: {updated}</span> : null}
         </div>
-        {/* The visual constructor is a future screen — the action is a placeholder. */}
-        <Button variant="ghost" size="sm" disabled>
-          <PenTool className="size-4" aria-hidden="true" />
-          Конструктор
+        <Button asChild variant="ghost" size="sm">
+          <Link
+            to={generatePath(ROUTES.staffDiplomaTemplateConstructor, { templateId: template.id })}
+          >
+            <PenTool className="size-4" aria-hidden="true" />
+            Конструктор
+          </Link>
         </Button>
       </CardContent>
     </Card>

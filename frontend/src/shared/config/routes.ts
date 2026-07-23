@@ -45,6 +45,7 @@ export const ROUTES = {
   staffJudges: "/staff/judges",
   staffSchedules: "/staff/schedules",
   staffDiplomas: "/staff/diplomas",
+  staffDiplomaTemplateConstructor: "/staff/diplomas/templates/:templateId/constructor",
   staffFinance: "/staff/finance",
   staffAnalytics: "/staff/analytics",
   staffOrganization: "/staff/organization",
