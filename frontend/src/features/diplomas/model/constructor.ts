@@ -11,6 +11,7 @@ import {
   Type,
   Users,
 } from "lucide-react";
+import type { TemplateFieldBinding } from "./binding";
 
 /**
  * Domain model of the future diploma template constructor.
@@ -125,6 +126,11 @@ export interface TemplateField {
   /** 1-based page the field lives on. */
   page: number;
   type: TemplateFieldTypeId;
+  /**
+   * Reference to the data source resolved at generation (e.g.
+   * `participant.display_name`) — the field stores this, never literal text.
+   */
+  binding: TemplateFieldBinding;
   x: number;
   y: number;
   width: number;

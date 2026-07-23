@@ -13,6 +13,12 @@ export {
 } from "./api";
 export { resolveMediaUrl } from "./lib/media-url";
 export {
+  defaultBindingForType,
+  KNOWN_BINDINGS,
+  PARTICIPANT_DISPLAY_NAME,
+  type TemplateFieldBinding,
+} from "./model/binding";
+export {
   DEFAULT_FIELD_STYLE,
   FIELD_TYPES,
   type TemplateDocument,
@@ -26,6 +32,7 @@ export {
   type TemplateTextAlign,
   type TemplateVersion,
 } from "./model/constructor";
+export { type PreviewMode, resolvePreviewValue } from "./model/preview-data";
 export {
   DEFAULT_DIPLOMA_SECTION,
   DIPLOMA_SECTIONS,

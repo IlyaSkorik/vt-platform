@@ -16,6 +16,7 @@ import {
   diplomasTemplatesList,
 } from "@/shared/api/generated/diplomas/diplomas";
 import type { LayoutResponse, SaveLayoutRequest } from "@/shared/api/generated/model-diplomas";
+import { defaultBindingForType } from "../model/binding";
 import {
   DEFAULT_FIELD_STYLE,
   type TemplateField,
@@ -41,16 +42,20 @@ function toStyle(style: Partial<TemplateFieldStyle> | undefined): TemplateFieldS
 function toTemplateLayout(response: LayoutResponse): TemplateLayout {
   return {
     revision: response.revision,
-    fields: response.fields.map((field) => ({
-      id: field.id,
-      page: field.page,
-      type: field.type as TemplateFieldTypeId,
-      x: field.x,
-      y: field.y,
-      width: field.width,
-      height: field.height,
-      style: toStyle(field.style as Partial<TemplateFieldStyle> | undefined),
-    })),
+    fields: response.fields.map((field) => {
+      const type = field.type as TemplateFieldTypeId;
+      return {
+        id: field.id,
+        page: field.page,
+        type,
+        binding: field.binding || defaultBindingForType(type),
+        x: field.x,
+        y: field.y,
+        width: field.width,
+        height: field.height,
+        style: toStyle(field.style as Partial<TemplateFieldStyle> | undefined),
+      };
+    }),
   };
 }
 
@@ -60,6 +65,7 @@ function toSaveLayoutRequest(fields: TemplateField[]): SaveLayoutRequest {
     fields: fields.map((field, index) => ({
       page: field.page,
       type: field.type,
+      binding: field.binding,
       x: field.x,
       y: field.y,
       width: field.width,
