@@ -37,7 +37,7 @@ export function CanvasOverlay({ pageNumber, scale }: CanvasOverlayProps): React.
           field={field}
           overlayRef={overlayRef}
           scale={scale}
-          displayValue={resolve(field.binding)}
+          displayValue={field.binding ? resolve(field.binding) : (field.value ?? "")}
           selected={field.id === selectedId}
           onSelect={() => selectField(field.id)}
           onMove={(x, y) => moveField(field.id, x, y)}

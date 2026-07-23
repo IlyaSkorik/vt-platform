@@ -51,6 +51,8 @@ export interface ConstructorFieldsState {
   updateGeometry: (id: string, patch: FieldGeometryPatch) => void;
   /** Patch a field's appearance (inspector controls). */
   updateStyle: (id: string, patch: Partial<TemplateFieldStyle>) => void;
+  /** Set a free-text field's own text. */
+  updateValue: (id: string, value: string) => void;
   selectField: (id: string) => void;
   deselect: () => void;
   /** Replace the whole layout and mark it clean (e.g. on load or discard). */
@@ -148,6 +150,11 @@ export function useConstructorFields(initialFields: TemplateField[]): Constructo
     setDirty(true);
   }, []);
 
+  const updateValue = useCallback((id: string, value: string) => {
+    setFields((prev) => prev.map((field) => (field.id === id ? { ...field, value } : field)));
+    setDirty(true);
+  }, []);
+
   const selectField = useCallback((id: string) => setSelectedId(id), []);
   const deselect = useCallback(() => setSelectedId(null), []);
 
@@ -176,6 +183,7 @@ export function useConstructorFields(initialFields: TemplateField[]): Constructo
     duplicateField,
     updateGeometry,
     updateStyle,
+    updateValue,
     selectField,
     deselect,
     initialize,

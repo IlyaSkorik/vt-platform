@@ -2,9 +2,9 @@ import { FIELD_TYPES, type TemplateFieldType } from "@/features/diplomas";
 import { cn } from "@/shared/lib";
 import { useConstructorFieldsContext } from "../model/fields-context";
 
-// Only ParticipantName is placeable in this milestone; the rest are the
-// type foundation and stay inert until their renderers land.
-const PLACEABLE_TYPES = new Set(["participant_name"]);
+// Placeable field types; the rest are the type foundation and stay inert
+// until their renderers land.
+const PLACEABLE_TYPES = new Set(["participant_name", "free_text"]);
 
 interface PaletteItemProps {
   field: TemplateFieldType;

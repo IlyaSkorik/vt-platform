@@ -1,5 +1,6 @@
 import {
   DEFAULT_FIELD_STYLE,
+  DEFAULT_FREE_TEXT,
   defaultBindingForType,
   type TemplateField,
   type TemplateFieldTypeId,
@@ -20,13 +21,19 @@ export const MIN_HEIGHT = 0.025;
 /** Normalised offset a duplicate is nudged by so it doesn't hide the original. */
 export const DUPLICATE_OFFSET = 0.03;
 
-/** Create a new field centred on the given page, bound to its type's data source. */
+/**
+ * Create a new field centred on the given page. A field is either data-bound
+ * (binding set, value null) or free (value set, binding null) — never both.
+ */
 export function createField(type: TemplateFieldTypeId, page: number): TemplateField {
+  const binding = defaultBindingForType(type);
+  const bound = binding !== "";
   return {
     id: createUuidV7(),
     page,
     type,
-    binding: defaultBindingForType(type),
+    binding: bound ? binding : null,
+    value: bound ? null : DEFAULT_FREE_TEXT,
     x: (1 - DEFAULT_WIDTH) / 2,
     y: (1 - DEFAULT_HEIGHT) / 2,
     width: DEFAULT_WIDTH,

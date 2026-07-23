@@ -8,7 +8,7 @@ import { FieldInspector } from "./field-inspector";
  * the data layer — no appearance state lives here.
  */
 export function PropertiesPanel(): React.JSX.Element {
-  const { selectedField, updateGeometry, updateStyle } = useConstructorFieldsContext();
+  const { selectedField, updateGeometry, updateStyle, updateValue } = useConstructorFieldsContext();
 
   return (
     <aside
@@ -23,6 +23,7 @@ export function PropertiesPanel(): React.JSX.Element {
           field={selectedField}
           onGeometryChange={(patch) => updateGeometry(selectedField.id, patch)}
           onStyleChange={(patch) => updateStyle(selectedField.id, patch)}
+          onValueChange={(value) => updateValue(selectedField.id, value)}
         />
       ) : (
         <div className="flex flex-1 flex-col gap-4 p-4">

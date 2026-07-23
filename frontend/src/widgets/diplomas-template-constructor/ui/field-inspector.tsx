@@ -5,7 +5,7 @@ import {
   type TemplateFieldStyle,
   type TemplateTextAlign,
 } from "@/features/diplomas";
-import { Checkbox, IconButton, Input, Select, type SelectOption } from "@/shared/ui";
+import { Checkbox, IconButton, Input, Select, type SelectOption, Textarea } from "@/shared/ui";
 import type { FieldGeometryPatch } from "../model/use-constructor-fields";
 
 const FONT_OPTIONS: SelectOption[] = [
@@ -93,6 +93,7 @@ interface FieldInspectorProps {
   field: TemplateField;
   onGeometryChange: (patch: FieldGeometryPatch) => void;
   onStyleChange: (patch: Partial<TemplateFieldStyle>) => void;
+  onValueChange: (value: string) => void;
 }
 
 /**
@@ -104,6 +105,7 @@ export function FieldInspector({
   field,
   onGeometryChange,
   onStyleChange,
+  onValueChange,
 }: FieldInspectorProps): React.JSX.Element {
   const { style } = field;
   const pct = (value: number): number => Math.round(value * 1000) / 10;
@@ -115,12 +117,24 @@ export function FieldInspector({
         <p className="font-medium text-foreground text-sm">{typeLabel(field.type)}</p>
       </Section>
 
-      <Section>
-        <SectionTitle>Источник данных</SectionTitle>
-        {/* Read-only for now — the field is bound to one source. */}
-        <p className="text-foreground text-sm">{typeLabel(field.type)}</p>
-        <p className="font-mono text-muted-foreground text-xs">{field.binding}</p>
-      </Section>
+      {field.binding !== null ? (
+        <Section>
+          <SectionTitle>Источник данных</SectionTitle>
+          {/* Read-only — a data-bound field draws its value at generation. */}
+          <p className="text-foreground text-sm">{typeLabel(field.type)}</p>
+          <p className="font-mono text-muted-foreground text-xs">{field.binding}</p>
+        </Section>
+      ) : (
+        <Section>
+          <SectionTitle>Текст</SectionTitle>
+          <Textarea
+            aria-label="Текст"
+            rows={2}
+            value={field.value ?? ""}
+            onChange={(event) => onValueChange(event.target.value)}
+          />
+        </Section>
+      )}
 
       <Section>
         <SectionTitle>Позиция и размер</SectionTitle>
