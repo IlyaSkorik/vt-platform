@@ -6,5 +6,8 @@ export {
   useDiplomaAssignments,
   useDiplomaTemplate,
   useDiplomaTemplates,
+  useSaveTemplateLayoutMutation,
+  useTemplateLayout,
+  useUploadTemplateDocumentMutation,
 } from "./diplomas-api";
 export { diplomaKeys } from "./keys";

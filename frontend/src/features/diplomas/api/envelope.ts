@@ -1,4 +1,8 @@
-import type { AssignmentResponse, TemplateResponse } from "@/shared/api/generated/model-diplomas";
+import type {
+  AssignmentResponse,
+  LayoutResponse,
+  TemplateResponse,
+} from "@/shared/api/generated/model-diplomas";
 
 /**
  * The backend wraps every payload in a `{ data, meta }` envelope, while the
@@ -34,3 +38,5 @@ export const unwrapAssignmentList = (body: unknown): AssignmentResponse[] =>
 
 export const unwrapAssignment = (body: unknown): AssignmentResponse =>
   unwrapItem<AssignmentResponse>(body);
+
+export const unwrapLayout = (body: unknown): LayoutResponse => unwrapItem<LayoutResponse>(body);

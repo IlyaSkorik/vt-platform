@@ -70,36 +70,87 @@ export const FIELD_TYPES: readonly TemplateFieldType[] = [
 
 /** Horizontal anchor for a field's text (future property panel). */
 export type TemplateTextAlign = "left" | "center" | "right";
+export type TemplateFontWeight = "normal" | "bold";
+export type TemplateFontStyle = "normal" | "italic";
 
-/** Styling of a placed field. Reserved for the properties panel — not yet edited. */
+/**
+ * The appearance of a placed field — its single source of truth. Kept as one
+ * object (not scattered `fontSize`/`fontWeight`/… across components) so the
+ * inspector, renderer and persistence all speak the same model. `fontSize` and
+ * `letterSpacing` are in PDF points; `lineHeight` is a unitless multiplier.
+ */
 export interface TemplateFieldStyle {
   fontFamily: string;
   fontSize: number;
+  fontWeight: TemplateFontWeight;
+  fontStyle: TemplateFontStyle;
+  underline: boolean;
+  textAlign: TemplateTextAlign;
   color: string;
-  align: TemplateTextAlign;
-  /** Wrap long text onto multiple lines. */
-  wrap: boolean;
-  /** Shrink the font to fit the box. */
+  lineHeight: number;
+  letterSpacing: number;
+  /** Shrink the font so the text fits its box. */
   autoShrink: boolean;
+  /** Wrap long text onto multiple lines (otherwise it stays on one line). */
+  wrapText: boolean;
 }
 
+/** Appearance applied to every newly-added field. */
+export const DEFAULT_FIELD_STYLE: TemplateFieldStyle = {
+  fontFamily: "Montserrat",
+  fontSize: 24,
+  fontWeight: "normal",
+  fontStyle: "normal",
+  underline: false,
+  textAlign: "center",
+  color: "#000000",
+  lineHeight: 1.2,
+  letterSpacing: 0,
+  autoShrink: true,
+  wrapText: false,
+};
+
 /**
- * A field placed on the template canvas. Coordinates are normalised (0..1) to
- * the page so they survive zoom and DPI changes. Not created anywhere yet.
+ * A field placed on the template overlay. The single source of truth for a
+ * placed element — pure data, no view concerns (rendering lives in
+ * `FieldRenderer`, interaction in `FieldInteraction`).
+ *
+ * Coordinates are **normalised** (0..1) relative to the page: `x`/`y` are the
+ * box's top-left, `width`/`height` its size. Normalised units survive zoom,
+ * Fit Width/Page and different resolutions — never store pixels. `width`/`height`
+ * are auto-computed defaults for now (no resize yet).
  */
 export interface TemplateField {
   id: string;
-  templateId: string;
-  type: TemplateFieldTypeId;
+  /** 1-based page the field lives on. */
   page: number;
-  /** Normalised box on the page. */
+  type: TemplateFieldTypeId;
   x: number;
   y: number;
   width: number;
   height: number;
+  /** Appearance (font, colour, alignment, …). */
   style: TemplateFieldStyle;
-  /** Static content for free-text fields; data fields resolve at generation. */
-  text?: string;
+}
+
+/**
+ * A single rendered page of the template's PDF and its coordinate system.
+ *
+ * `width`/`height` are the PDF's native (scale-1) dimensions in points; `scale`
+ * is the current display zoom. A future field at normalised (nx, ny) in [0..1]
+ * renders on the overlay at `nx * width * scale` / `ny * height * scale` — so
+ * positions survive zoom. The transparent overlay lives above the page canvas;
+ * the PDF itself is never drawn on.
+ */
+export interface TemplatePage {
+  /** 1-based page number. */
+  pageNumber: number;
+  /** Native page width in PDF points (scale 1). */
+  width: number;
+  /** Native page height in PDF points (scale 1). */
+  height: number;
+  /** Current display scale (zoom). */
+  scale: number;
 }
 
 /** The PDF a template is marked up over. Uploaded in a later milestone. */

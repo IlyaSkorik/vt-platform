@@ -7,14 +7,22 @@ export {
   useDiplomaAssignments,
   useDiplomaTemplate,
   useDiplomaTemplates,
+  useSaveTemplateLayoutMutation,
+  useTemplateLayout,
+  useUploadTemplateDocumentMutation,
 } from "./api";
+export { resolveMediaUrl } from "./lib/media-url";
 export {
+  DEFAULT_FIELD_STYLE,
   FIELD_TYPES,
   type TemplateDocument,
   type TemplateField,
   type TemplateFieldStyle,
   type TemplateFieldType,
   type TemplateFieldTypeId,
+  type TemplateFontStyle,
+  type TemplateFontWeight,
+  type TemplatePage,
   type TemplateTextAlign,
   type TemplateVersion,
 } from "./model/constructor";
@@ -30,4 +38,5 @@ export type {
   CreateTemplatePayload,
   DiplomaAssignment,
   DiplomaTemplate,
+  TemplateLayout,
 } from "./model/types";
