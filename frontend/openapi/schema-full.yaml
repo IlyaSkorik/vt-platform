@@ -7230,6 +7230,9 @@ components:
           type: string
           default: ''
           maxLength: 64
+        value:
+          type: string
+          default: ''
         x:
           type: number
           format: double
@@ -9773,6 +9776,8 @@ components:
           type: string
         binding:
           type: string
+        value:
+          type: string
         x:
           type: number
           format: double
@@ -9810,6 +9815,7 @@ components:
       - templateId
       - type
       - updatedAt
+      - value
       - width
       - x
       - y

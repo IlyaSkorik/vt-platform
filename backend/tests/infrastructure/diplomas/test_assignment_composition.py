@@ -170,6 +170,27 @@ def test_layout_persists_field_binding() -> None:
     assert saved["binding"] == "participant.display_name"
 
 
+def test_layout_persists_free_text_value() -> None:
+    template = _template()
+    field = {
+        "page": 1,
+        "type": "free_text",
+        "binding": "",
+        "value": "Диплом I степени",
+        "x": 0.1,
+        "y": 0.1,
+        "width": 0.4,
+        "height": 0.08,
+    }
+
+    composition.replace_template_layout(template_id=str(template.id), fields=[field])
+
+    saved = composition.get_template_layout(str(template.id))["fields"][0]
+    assert saved["type"] == "free_text"
+    assert saved["binding"] == ""
+    assert saved["value"] == "Диплом I степени"
+
+
 def test_layout_unknown_template_raises() -> None:
     with pytest.raises(TemplateNotFoundError):
         composition.get_template_layout(str(uuid.uuid4()))

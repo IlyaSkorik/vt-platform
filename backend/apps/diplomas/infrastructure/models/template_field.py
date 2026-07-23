@@ -29,8 +29,11 @@ class TemplateFieldModel(BasePersistenceModel):
     # Element kind (mirrors the frontend field-type catalogue, e.g. "participant_name").
     type = models.CharField(max_length=32)
     # Data-source reference resolved at generation (e.g. "participant.display_name").
-    # The field stores this, not any literal text.
+    # A field is either data-bound (binding set, value empty) or free (value set,
+    # binding empty).
     binding = models.CharField(max_length=64, blank=True, default="")
+    # Own text for a free-text field; empty for a data-bound field.
+    value = models.TextField(blank=True, default="")
     # Normalised box (0..1) relative to the page.
     x = models.FloatField()
     y = models.FloatField()
