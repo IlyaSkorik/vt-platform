@@ -6590,8 +6590,8 @@
     "semantic_hash": "d4ecc328966ff21da30ecd22f0b2a981"
   },
   "frontend/openapi/schema-full.yaml": {
-    "mtime": 1784813674.979861,
-    "ast_hash": "005ba448cab5d3b5760fa25f2d354048",
+    "mtime": 1784815024.837854,
+    "ast_hash": "3b527b242dd3afa1e53071b778518ae7",
     "semantic_hash": ""
   },
   "frontend/openapi/schema.yaml": {
@@ -7080,13 +7080,13 @@
     "semantic_hash": ""
   },
   "backend/apps/diplomas/presentation/api/v1/diplomas/composition.py": {
-    "mtime": 1784813634.1541584,
-    "ast_hash": "7254a76a0b57a91e3ab341da9fc80f06",
+    "mtime": 1784814993.861706,
+    "ast_hash": "651d56d74c9f442b19cd287a53f08d1a",
     "semantic_hash": ""
   },
   "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py": {
-    "mtime": 1784813644.326623,
-    "ast_hash": "fe3d73f2e132f99279b45f0519dbdb0c",
+    "mtime": 1784815006.574793,
+    "ast_hash": "1cd48b9a0ce9e2edc0f0e0b4b163d234",
     "semantic_hash": ""
   },
   "backend/apps/diplomas/presentation/api/v1/diplomas/urls.py": {
@@ -7130,8 +7130,8 @@
     "semantic_hash": ""
   },
   "backend/tests/infrastructure/diplomas/test_assignment_composition.py": {
-    "mtime": 1784814026.273051,
-    "ast_hash": "ed61e624569da52a0cdb5e42d128024d",
+    "mtime": 1784815211.1261404,
+    "ast_hash": "fc3a2cf0d1664fe2c69cae815c97e3ad",
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/diplomas/index.tsx": {
@@ -7140,8 +7140,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/diplomas/api/diplomas-api.ts": {
-    "mtime": 1784813781.2569304,
-    "ast_hash": "13b5d7155b6caf794e1bd276e8e36551",
+    "mtime": 1784815084.4547987,
+    "ast_hash": "3906ef926e57926835051d15b8264c3f",
     "semantic_hash": ""
   },
   "frontend/src/features/diplomas/api/envelope.ts": {
@@ -7160,8 +7160,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/diplomas/index.ts": {
-    "mtime": 1784813991.3676937,
-    "ast_hash": "f3a75edd07d4cf075247831a5350e46f",
+    "mtime": 1784815067.3111691,
+    "ast_hash": "01ef55be92cfaf397fab7d811a5666ad",
     "semantic_hash": ""
   },
   "frontend/src/features/diplomas/model/sections.ts": {
@@ -7250,8 +7250,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/diplomas/model/constructor.ts": {
-    "mtime": 1784813731.0510757,
-    "ast_hash": "a1e232299b5b345d3a5888ad466f57a6",
+    "mtime": 1784815058.1456077,
+    "ast_hash": "9d9f6354878b7f3eb5915f18656ef1ef",
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/index.ts": {
@@ -7270,8 +7270,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/ui/element-palette.tsx": {
-    "mtime": 1784807492.8910494,
-    "ast_hash": "bd83a565a1018df2b7927a040e5f0753",
+    "mtime": 1784815108.1322546,
+    "ast_hash": "d51b1e663c8e1f07fe48d65dc8cd8365",
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/ui/pdf-canvas.tsx": {
@@ -7280,8 +7280,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/ui/properties-panel.tsx": {
-    "mtime": 1784812468.046756,
-    "ast_hash": "1bab5287fbe2a514442ec42abf178dc8",
+    "mtime": 1784815178.740606,
+    "ast_hash": "420654ec2ca2966aa6a4b08eeaceb980",
     "semantic_hash": ""
   },
   "backend/apps/diplomas/infrastructure/migrations/0002_templatedocumentmodel.py": {
@@ -7305,8 +7305,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/ui/canvas-overlay.tsx": {
-    "mtime": 1784813875.0853786,
-    "ast_hash": "22ea8bd5b2214930c04c10cb9e450b24",
+    "mtime": 1784815108.4614809,
+    "ast_hash": "e7baf4bcf89156e35886118e78733dbe",
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/ui/pdf-viewer.tsx": {
@@ -7315,8 +7315,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/model/field-factory.ts": {
-    "mtime": 1784813747.5757737,
-    "ast_hash": "b17a39b95b329a3d8f50c0fc65902add",
+    "mtime": 1784815073.279784,
+    "ast_hash": "beffd5214519f733c887311803af22a5",
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/model/fields-context.tsx": {
@@ -7325,8 +7325,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/model/use-constructor-fields.ts": {
-    "mtime": 1784812515.760501,
-    "ast_hash": "b10ad4732ace42c4d30dc220afa1c1e1",
+    "mtime": 1784815178.7366185,
+    "ast_hash": "3d1008b718703baa5b0d8385d5d32bf8",
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/ui/field-renderer.tsx": {
@@ -7360,8 +7360,8 @@
     "semantic_hash": ""
   },
   "backend/apps/diplomas/infrastructure/models/template_field.py": {
-    "mtime": 1784813630.145563,
-    "ast_hash": "d71af5259d8a50c2f764a06f4b2630e6",
+    "mtime": 1784814989.5657306,
+    "ast_hash": "88e913dd36b2824b86cf0845e3134498",
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/model/use-layout-persistence.ts": {
@@ -7380,8 +7380,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/ui/field-inspector.tsx": {
-    "mtime": 1784813901.8732615,
-    "ast_hash": "062861a992ac95350f41e8afb1cd0629",
+    "mtime": 1784815133.0349717,
+    "ast_hash": "9e2c94b9954d144653e74ccaf02926d8",
     "semantic_hash": ""
   },
   "backend/apps/diplomas/infrastructure/migrations/0005_templatefieldmodel_binding.py": {
@@ -7402,6 +7402,11 @@
   "frontend/src/widgets/diplomas-template-constructor/model/preview-context.tsx": {
     "mtime": 1784813991.3796215,
     "ast_hash": "4bfd4cdaa8c406a6d2e485b25f53c498",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/infrastructure/migrations/0006_templatefieldmodel_value.py": {
+    "mtime": 1784815019.5964794,
+    "ast_hash": "c8a98f4cfb362ba26b6ac39f95990266",
     "semantic_hash": ""
   }
 }
