@@ -1,18 +1,15 @@
 import { SlidersHorizontal } from "lucide-react";
+import { useConstructorFieldsContext } from "../model/fields-context";
+import { FieldInspector } from "./field-inspector";
 
-/** Properties that will become editable once a field is selected on the canvas. */
-const FUTURE_PROPERTIES = [
-  "Координаты",
-  "Размеры",
-  "Шрифт",
-  "Цвет",
-  "Выравнивание",
-  "Перенос",
-  "Автоуменьшение",
-  "Привязка данных",
-];
-
+/**
+ * The right dock. Shows the field inspector when something is selected, and a
+ * quiet placeholder otherwise. It only reads the selection and forwards edits to
+ * the data layer — no appearance state lives here.
+ */
 export function PropertiesPanel(): React.JSX.Element {
+  const { selectedField, updateGeometry, updateStyle } = useConstructorFieldsContext();
+
   return (
     <aside
       aria-label="Свойства"
@@ -21,29 +18,24 @@ export function PropertiesPanel(): React.JSX.Element {
       <div className="border-border border-b px-4 py-3">
         <h2 className="font-medium text-foreground text-sm">Свойства</h2>
       </div>
-      <div className="flex flex-1 flex-col gap-4 p-4">
-        <div className="flex flex-col items-center gap-2 rounded-md border border-border border-dashed bg-muted/30 px-4 py-6 text-center">
-          <span className="flex size-9 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <SlidersHorizontal className="size-4" aria-hidden="true" />
-          </span>
-          <p className="text-muted-foreground text-sm">
-            Выберите поле, чтобы настроить его свойства.
-          </p>
+      {selectedField ? (
+        <FieldInspector
+          field={selectedField}
+          onGeometryChange={(patch) => updateGeometry(selectedField.id, patch)}
+          onStyleChange={(patch) => updateStyle(selectedField.id, patch)}
+        />
+      ) : (
+        <div className="flex flex-1 flex-col gap-4 p-4">
+          <div className="flex flex-col items-center gap-2 rounded-md border border-border border-dashed bg-muted/30 px-4 py-6 text-center">
+            <span className="flex size-9 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <SlidersHorizontal className="size-4" aria-hidden="true" />
+            </span>
+            <p className="text-muted-foreground text-sm">
+              Выберите поле, чтобы настроить его свойства.
+            </p>
+          </div>
         </div>
-        <div>
-          <p className="mb-2 text-muted-foreground text-xs uppercase tracking-wide">
-            Позже здесь появятся
-          </p>
-          <ul className="flex flex-col gap-1 text-muted-foreground text-sm">
-            {FUTURE_PROPERTIES.map((property) => (
-              <li key={property} className="flex items-center gap-2">
-                <span className="size-1.5 rounded-full bg-border" aria-hidden="true" />
-                {property}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+      )}
     </aside>
   );
 }

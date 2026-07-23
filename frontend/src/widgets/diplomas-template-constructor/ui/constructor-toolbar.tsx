@@ -7,6 +7,12 @@ interface ConstructorToolbarProps {
   templateName: string;
   /** Whether a PDF is attached — switches the upload action label. */
   hasDocument: boolean;
+  onRequestUpload: () => void;
+  isUploading: boolean;
+  onSave: () => void;
+  isSaving: boolean;
+  /** Unsaved changes present — enables the Save button. */
+  dirty: boolean;
 }
 
 const TEMPLATES_PATH = `${ROUTES.staffDiplomas}?section=templates`;
@@ -14,6 +20,11 @@ const TEMPLATES_PATH = `${ROUTES.staffDiplomas}?section=templates`;
 export function ConstructorToolbar({
   templateName,
   hasDocument,
+  onRequestUpload,
+  isUploading,
+  onSave,
+  isSaving,
+  dirty,
 }: ConstructorToolbarProps): React.JSX.Element {
   return (
     <header className="flex flex-col gap-3 border-border border-b bg-card px-4 py-3 md:flex-row md:items-center md:justify-between md:px-6">
@@ -47,18 +58,18 @@ export function ConstructorToolbar({
         </div>
       </div>
       <div className="flex shrink-0 flex-wrap items-center gap-2">
-        {/* Upload/replace, preview and save land in later milestones — present but inert. */}
-        <Button variant="outline" size="sm" disabled>
+        <Button variant="outline" size="sm" onClick={onRequestUpload} disabled={isUploading}>
           <FileUp className="size-4" aria-hidden="true" />
-          {hasDocument ? "Заменить PDF" : "Загрузить PDF"}
+          {isUploading ? "Загрузка…" : hasDocument ? "Заменить PDF" : "Загрузить PDF"}
         </Button>
+        {/* Preview lands in a later milestone — present but inert. */}
         <Button variant="outline" size="sm" disabled>
           <Eye className="size-4" aria-hidden="true" />
           Предпросмотр
         </Button>
-        <Button size="sm" disabled>
+        <Button size="sm" onClick={onSave} disabled={!dirty || isSaving}>
           <Save className="size-4" aria-hidden="true" />
-          Сохранить
+          {isSaving ? "Сохранение…" : "Сохранить"}
         </Button>
       </div>
     </header>

@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router";
-import { useDiplomaTemplate } from "@/features/diplomas";
+import { useDiplomaTemplate, useTemplateLayout } from "@/features/diplomas";
 import { ROUTES } from "@/shared/config";
 import { Button, EmptyState, PageContainer, Skeleton } from "@/shared/ui";
 import { TemplateConstructorLayout } from "@/widgets/diplomas-template-constructor";
@@ -9,8 +9,10 @@ const TEMPLATES_PATH = `${ROUTES.staffDiplomas}?section=templates`;
 export function StaffDiplomaTemplateConstructorPage(): React.JSX.Element {
   const { templateId } = useParams<{ templateId: string }>();
   const { template, isLoading, isError, refetch } = useDiplomaTemplate(templateId);
+  // Restore the saved layout before mounting the editor (Template → GET Fields → Overlay).
+  const layoutQuery = useTemplateLayout(templateId);
 
-  if (isLoading) {
+  if (isLoading || layoutQuery.isLoading) {
     return (
       <PageContainer size="full">
         <div role="status" aria-label="Загрузка конструктора" className="space-y-4">
@@ -25,7 +27,7 @@ export function StaffDiplomaTemplateConstructorPage(): React.JSX.Element {
     );
   }
 
-  if (isError || !template) {
+  if (isError || !template || layoutQuery.isError || !layoutQuery.data) {
     return (
       <PageContainer size="narrow">
         <EmptyState
@@ -34,6 +36,9 @@ export function StaffDiplomaTemplateConstructorPage(): React.JSX.Element {
           action={
             <div className="flex flex-wrap gap-2">
               {isError ? <Button onClick={refetch}>Повторить</Button> : null}
+              {layoutQuery.isError ? (
+                <Button onClick={() => void layoutQuery.refetch()}>Повторить</Button>
+              ) : null}
               <Button asChild variant="outline">
                 <Link to={TEMPLATES_PATH}>К шаблонам</Link>
               </Button>
@@ -46,7 +51,11 @@ export function StaffDiplomaTemplateConstructorPage(): React.JSX.Element {
 
   return (
     <PageContainer size="full" className="gap-0">
-      <TemplateConstructorLayout templateName={template.name} />
+      <TemplateConstructorLayout
+        key={template.id}
+        template={template}
+        initialFields={layoutQuery.data.fields}
+      />
     </PageContainer>
   );
 }
