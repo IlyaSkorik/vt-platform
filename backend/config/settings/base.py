@@ -57,6 +57,7 @@ LOCAL_APPS = [
     "apps.institutions",
     "apps.competitions",
     "apps.applications",
+    "apps.diplomas",
     "apps.teachers",
     "apps.performances",
     "apps.judging",
@@ -132,6 +133,7 @@ MIGRATION_MODULES = {
     "competitions": "apps.competitions.infrastructure.migrations",
     "teachers": "apps.teachers.infrastructure.migrations",
     "applications": "apps.applications.infrastructure.migrations",
+    "diplomas": "apps.diplomas.infrastructure.migrations",
 }
 
 # --- Password validation --------------------------------------------------

@@ -58,6 +58,8 @@ urlpatterns = [
     path("api/v1/", include("apps.teachers.presentation.urls")),
     # Applicant-facing application (order) lifecycle.
     path("api/v1/", include("apps.applications.presentation.urls")),
+    # Standalone diplomas workspace (template library + assignments).
+    path("api/v1/", include("apps.diplomas.presentation.urls")),
     # Public, unauthenticated participant catalog (dedicated read model).
     path("api/v1/", include("apps.competitions.presentation.public_urls")),
 ]
