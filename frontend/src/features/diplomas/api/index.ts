@@ -6,6 +6,8 @@ export {
   useDiplomaAssignments,
   useDiplomaTemplate,
   useDiplomaTemplates,
+  usePreviewApplications,
+  usePreviewBindings,
   useSaveTemplateLayoutMutation,
   useTemplateLayout,
   useUploadTemplateDocumentMutation,

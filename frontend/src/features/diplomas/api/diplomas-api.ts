@@ -12,10 +12,16 @@ import {
   diplomasCreateTemplate,
   diplomasDeleteAssignment,
   diplomasGetTemplateLayout,
+  diplomasPreviewApplications,
+  diplomasPreviewBindings,
   diplomasSaveTemplateLayout,
   diplomasTemplatesList,
 } from "@/shared/api/generated/diplomas/diplomas";
-import type { LayoutResponse, SaveLayoutRequest } from "@/shared/api/generated/model-diplomas";
+import type {
+  LayoutResponse,
+  PreviewApplication,
+  SaveLayoutRequest,
+} from "@/shared/api/generated/model-diplomas";
 import { defaultBindingForType } from "../model/binding";
 import {
   DEFAULT_FIELD_STYLE,
@@ -30,7 +36,13 @@ import type {
   DiplomaTemplate,
   TemplateLayout,
 } from "../model/types";
-import { unwrapAssignmentList, unwrapLayout, unwrapTemplateList } from "./envelope";
+import {
+  unwrapAssignmentList,
+  unwrapLayout,
+  unwrapPreviewApplications,
+  unwrapPreviewBindings,
+  unwrapTemplateList,
+} from "./envelope";
 import { diplomaKeys } from "./keys";
 
 /** Merge a persisted (possibly partial/legacy) style onto the defaults. */
@@ -238,5 +250,43 @@ export function useSaveTemplateLayoutMutation(): UseMutationResult<
     onSuccess: (layout, { templateId }) => {
       queryClient.setQueryData(diplomaKeys.layout(templateId), layout);
     },
+  });
+}
+
+async function fetchPreviewApplications(
+  competitionId: string,
+  signal?: AbortSignal,
+): Promise<PreviewApplication[]> {
+  const response = await diplomasPreviewApplications({ competitionId }, signal ? { signal } : {});
+  return unwrapPreviewApplications(response.data);
+}
+
+async function fetchPreviewBindings(
+  applicationId: string,
+  signal?: AbortSignal,
+): Promise<Record<string, string>> {
+  const response = await diplomasPreviewBindings({ applicationId }, signal ? { signal } : {});
+  return unwrapPreviewBindings(response.data);
+}
+
+export function usePreviewApplications(
+  competitionId: string | undefined,
+): UseQueryResult<PreviewApplication[], ApiError> {
+  return useQuery<PreviewApplication[], ApiError>({
+    queryKey: diplomaKeys.previewApplications(competitionId ?? ""),
+    queryFn: ({ signal }) => fetchPreviewApplications(competitionId ?? "", signal),
+    enabled: Boolean(competitionId),
+    staleTime: 30_000,
+  });
+}
+
+export function usePreviewBindings(
+  applicationId: string | undefined,
+): UseQueryResult<Record<string, string>, ApiError> {
+  return useQuery<Record<string, string>, ApiError>({
+    queryKey: diplomaKeys.previewBindings(applicationId ?? ""),
+    queryFn: ({ signal }) => fetchPreviewBindings(applicationId ?? "", signal),
+    enabled: Boolean(applicationId),
+    staleTime: 30_000,
   });
 }

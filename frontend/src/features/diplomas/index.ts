@@ -1,3 +1,4 @@
+export type { PreviewApplication } from "@/shared/api/generated/model-diplomas";
 export {
   type DiplomaTemplateQuery,
   diplomaKeys,
@@ -7,6 +8,8 @@ export {
   useDiplomaAssignments,
   useDiplomaTemplate,
   useDiplomaTemplates,
+  usePreviewApplications,
+  usePreviewBindings,
   useSaveTemplateLayoutMutation,
   useTemplateLayout,
   useUploadTemplateDocumentMutation,
@@ -33,6 +36,12 @@ export {
   type TemplateTextAlign,
   type TemplateVersion,
 } from "./model/constructor";
+export {
+  type BindingResolveFn,
+  createBindingResolver,
+  MISSING_VALUE,
+  resolveFieldDisplay,
+} from "./model/display-value";
 export { type PreviewMode, resolvePreviewValue } from "./model/preview-data";
 export {
   DEFAULT_DIPLOMA_SECTION,

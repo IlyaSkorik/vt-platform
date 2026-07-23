@@ -1,6 +1,8 @@
 import type {
   AssignmentResponse,
   LayoutResponse,
+  PreviewApplication,
+  PreviewBindings,
   TemplateResponse,
 } from "@/shared/api/generated/model-diplomas";
 
@@ -40,3 +42,9 @@ export const unwrapAssignment = (body: unknown): AssignmentResponse =>
   unwrapItem<AssignmentResponse>(body);
 
 export const unwrapLayout = (body: unknown): LayoutResponse => unwrapItem<LayoutResponse>(body);
+
+export const unwrapPreviewApplications = (body: unknown): PreviewApplication[] =>
+  unwrapList<PreviewApplication>(body);
+
+export const unwrapPreviewBindings = (body: unknown): Record<string, string> =>
+  unwrapItem<PreviewBindings>(body).bindings;
