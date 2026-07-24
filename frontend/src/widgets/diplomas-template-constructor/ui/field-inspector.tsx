@@ -1,7 +1,10 @@
 import { AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline } from "lucide-react";
 import {
   FIELD_TYPES,
+  NOMINATION_PARTS,
+  type NominationPartKey,
   type TemplateField,
+  type TemplateFieldConfig,
   type TemplateFieldStyle,
   type TemplateTextAlign,
 } from "@/features/diplomas";
@@ -94,6 +97,51 @@ interface FieldInspectorProps {
   onGeometryChange: (patch: FieldGeometryPatch) => void;
   onStyleChange: (patch: Partial<TemplateFieldStyle>) => void;
   onValueChange: (value: string) => void;
+  onConfigChange: (patch: Partial<TemplateFieldConfig>) => void;
+}
+
+/**
+ * The data-source section for the nomination block: an editable prefix and a
+ * checkbox per part. Toggling a part preserves the canonical order (it never
+ * reorders); the preview updates instantly.
+ */
+function NominationBlockSection({
+  config,
+  onConfigChange,
+}: {
+  config: TemplateFieldConfig;
+  onConfigChange: (patch: Partial<TemplateFieldConfig>) => void;
+}): React.JSX.Element {
+  const selected = new Set(config.parts ?? []);
+  const toggle = (key: NominationPartKey, on: boolean): void => {
+    const next = NOMINATION_PARTS.map((part) => part.key).filter((key2) =>
+      key2 === key ? on : selected.has(key2),
+    );
+    onConfigChange({ parts: next });
+  };
+
+  return (
+    <Section>
+      <SectionTitle>Источник данных</SectionTitle>
+      <Input
+        aria-label="Префикс"
+        placeholder="Префикс, напр. «Номинация:»"
+        value={config.prefix ?? ""}
+        onChange={(event) => onConfigChange({ prefix: event.target.value })}
+      />
+      <p className="mt-1 text-muted-foreground text-xs">Части блока</p>
+      <div className="flex flex-col gap-2">
+        {NOMINATION_PARTS.map((part) => (
+          <Checkbox
+            key={part.key}
+            label={part.label}
+            checked={selected.has(part.key)}
+            onCheckedChange={(checked) => toggle(part.key, checked === true)}
+          />
+        ))}
+      </div>
+    </Section>
+  );
 }
 
 /**
@@ -106,6 +154,7 @@ export function FieldInspector({
   onGeometryChange,
   onStyleChange,
   onValueChange,
+  onConfigChange,
 }: FieldInspectorProps): React.JSX.Element {
   const { style } = field;
   const pct = (value: number): number => Math.round(value * 1000) / 10;
@@ -117,7 +166,9 @@ export function FieldInspector({
         <p className="font-medium text-foreground text-sm">{typeLabel(field.type)}</p>
       </Section>
 
-      {field.binding !== null ? (
+      {field.config?.parts ? (
+        <NominationBlockSection config={field.config} onConfigChange={onConfigChange} />
+      ) : field.binding !== null ? (
         <Section>
           <SectionTitle>Источник данных</SectionTitle>
           {/* Read-only — a data-bound field draws its value at generation. */}

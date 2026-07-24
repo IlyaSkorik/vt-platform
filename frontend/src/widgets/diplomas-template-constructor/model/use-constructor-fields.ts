@@ -1,5 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
-import type { TemplateField, TemplateFieldStyle, TemplateFieldTypeId } from "@/features/diplomas";
+import type {
+  TemplateField,
+  TemplateFieldConfig,
+  TemplateFieldStyle,
+  TemplateFieldTypeId,
+} from "@/features/diplomas";
 import { createField, DUPLICATE_OFFSET, MIN_HEIGHT, MIN_WIDTH } from "./field-factory";
 
 /** The subset of a field's geometry the inspector can edit numerically. */
@@ -53,6 +58,8 @@ export interface ConstructorFieldsState {
   updateStyle: (id: string, patch: Partial<TemplateFieldStyle>) => void;
   /** Set a free-text field's own text. */
   updateValue: (id: string, value: string) => void;
+  /** Patch a composite field's config (nomination block parts/prefix). */
+  updateConfig: (id: string, patch: Partial<TemplateFieldConfig>) => void;
   selectField: (id: string) => void;
   deselect: () => void;
   /** Replace the whole layout and mark it clean (e.g. on load or discard). */
@@ -155,6 +162,15 @@ export function useConstructorFields(initialFields: TemplateField[]): Constructo
     setDirty(true);
   }, []);
 
+  const updateConfig = useCallback((id: string, patch: Partial<TemplateFieldConfig>) => {
+    setFields((prev) =>
+      prev.map((field) =>
+        field.id === id ? { ...field, config: { ...field.config, ...patch } } : field,
+      ),
+    );
+    setDirty(true);
+  }, []);
+
   const selectField = useCallback((id: string) => setSelectedId(id), []);
   const deselect = useCallback(() => setSelectedId(null), []);
 
@@ -184,6 +200,7 @@ export function useConstructorFields(initialFields: TemplateField[]): Constructo
     updateGeometry,
     updateStyle,
     updateValue,
+    updateConfig,
     selectField,
     deselect,
     initialize,
