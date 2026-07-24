@@ -36,6 +36,8 @@ _PROBLEM_MAP: Final[dict[str, tuple[int, str, str]]] = {
     "diploma_not_found": (404, "not-found", "Resource not found"),
     "submission_not_found": (404, "not-found", "Resource not found"),
     "diploma_conflict": (409, "conflict", "This performance already has a diploma"),
+    "print_template_not_ready": (409, "conflict", "The template has no PDF to print over"),
+    "print_job_not_found": (404, "not-found", "Resource not found"),
 }
 
 _FALLBACK: Final[tuple[int, str, str]] = (400, "bad-request", "Bad request")

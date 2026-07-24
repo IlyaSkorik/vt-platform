@@ -20,6 +20,8 @@ __all__ = [
     "LayoutResponseSerializer",
     "PreviewApplicationSerializer",
     "PreviewBindingsSerializer",
+    "PrintJobResponseSerializer",
+    "PrintPackageRequestSerializer",
     "SaveLayoutRequestSerializer",
     "TemplateDocumentResponseSerializer",
     "TemplateFieldResponseSerializer",
@@ -258,7 +260,8 @@ class DiplomaResponseSerializer(serializers.Serializer[dict[str, object]]):
     templateId = serializers.UUIDField()
     status = serializers.ChoiceField(choices=["DRAFT", "GENERATED", "ISSUED", "CANCELLED"])
     snapshot = DiplomaSnapshotSerializer()  # type: ignore[assignment]
-    pdfPath = serializers.CharField(allow_null=True, allow_blank=True)
+    printPdfPath = serializers.CharField(allow_null=True, allow_blank=True)
+    officialPdfPath = serializers.CharField(allow_null=True, allow_blank=True)
     issuedAt = serializers.DateTimeField(allow_null=True)
     createdAt = serializers.DateTimeField()
     updatedAt = serializers.DateTimeField()
@@ -269,3 +272,25 @@ class CreateDiplomaRequestSerializer(serializers.Serializer[dict[str, object]]):
 
     submissionId = serializers.UUIDField()
     templateId = serializers.UUIDField()
+
+
+class PrintPackageRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """Body for starting a mass print-package generation for a competition."""
+
+    competitionId = serializers.UUIDField()
+    templateId = serializers.UUIDField()
+
+
+class PrintJobResponseSerializer(serializers.Serializer[dict[str, object]]):
+    """A print-package job's status and result (poll until COMPLETED/FAILED)."""
+
+    jobId = serializers.UUIDField()
+    competitionId = serializers.UUIDField()
+    templateId = serializers.UUIDField()
+    status = serializers.ChoiceField(choices=["PENDING", "RUNNING", "COMPLETED", "FAILED"])
+    created = serializers.IntegerField()
+    skipped = serializers.IntegerField()
+    zipUrl = serializers.CharField(allow_null=True)
+    error = serializers.CharField(allow_null=True)
+    createdAt = serializers.DateTimeField()
+    updatedAt = serializers.DateTimeField()

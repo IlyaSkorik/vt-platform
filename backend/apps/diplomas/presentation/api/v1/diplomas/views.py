@@ -20,7 +20,7 @@ from rest_framework.views import APIView
 
 from apps.diplomas.domain.exceptions import DiplomaError
 from apps.diplomas.presentation.api.v1 import problems
-from apps.diplomas.presentation.api.v1.diplomas import composition, preview, registry
+from apps.diplomas.presentation.api.v1.diplomas import composition, preview, print_package, registry
 from apps.diplomas.presentation.api.v1.diplomas.serializers import (
     AssignmentResponseSerializer,
     CreateAssignmentRequestSerializer,
@@ -30,6 +30,8 @@ from apps.diplomas.presentation.api.v1.diplomas.serializers import (
     LayoutResponseSerializer,
     PreviewApplicationSerializer,
     PreviewBindingsSerializer,
+    PrintJobResponseSerializer,
+    PrintPackageRequestSerializer,
     SaveLayoutRequestSerializer,
     TemplateDocumentResponseSerializer,
     TemplateResponseSerializer,
@@ -307,3 +309,54 @@ class DiplomaRegistryDetailView(_StaffView):
         except DiplomaError as exc:
             return problems.diploma_problem(exc, instance=request.path, request=request)
         return problems.envelope(request, diploma)
+
+
+class DiplomaPrintPackageView(_StaffView):
+    """Start a mass print-package generation (async): create missing diplomas,
+    render PDFs without a degree, and bundle a ZIP for printing."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="diplomas_start_print_package",
+        request=PrintPackageRequestSerializer,
+        responses={202: PrintJobResponseSerializer},
+    )
+    def post(self, request: Request) -> Response:
+        serializer = PrintPackageRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return problems.validation_problem(serializer.errors, instance=request.path, request=request)
+        data = serializer.validated_data
+        try:
+            job = print_package.start_print_package(
+                competition_id=data["competitionId"],
+                template_id=data["templateId"],
+            )
+        except DiplomaError as exc:
+            return problems.diploma_problem(exc, instance=request.path, request=request)
+        return problems.envelope(request, job, status=202)
+
+
+class DiplomaPrintJobDetailView(_StaffView):
+    """Poll a print-package job's status and result."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="diplomas_get_print_job",
+        responses={200: PrintJobResponseSerializer},
+    )
+    def get(self, request: Request, job_id: str) -> Response:
+        parsed = _parse_uuid(job_id)
+        if parsed is None:
+            return problems.problem_response(
+                status=404,
+                type_suffix="not-found",
+                title="Resource not found",
+                detail="Print job was not found.",
+                instance=request.path,
+                correlation_id=problems.request_id(request),
+            )
+        try:
+            job = print_package.get_print_job(parsed)
+        except DiplomaError as exc:
+            return problems.diploma_problem(exc, instance=request.path, request=request)
+        return problems.envelope(request, job)
