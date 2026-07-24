@@ -1,16 +1,16 @@
 # Graph Report - the_rise_of_talent  (2026-07-24)
 
 ## Corpus Check
-- 1464 files · ~749,759 words
+- 1464 files · ~749,793 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 13994 nodes · 43828 edges · 890 communities (447 shown, 443 thin omitted)
+- 13994 nodes · 43828 edges · 887 communities (445 shown, 442 thin omitted)
 - Extraction: 59% EXTRACTED · 41% INFERRED · 0% AMBIGUOUS · INFERRED: 18066 edges (avg confidence: 0.54)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `8bd3e8c2`
+- Built from commit: `2c75353c`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -497,7 +497,6 @@
 - Community 483
 - SubmissionSummaryView
 - CloseRegistrationHandler
-- Community 486
 - Community 488
 - .allows_extension
 - _billed_quantity
@@ -800,9 +799,7 @@
 - RevertCompetitionToConfiguredHandler
 - PublicFestivalFaqItemSerializer
 - @storybook/react-vite
-- useRemoveDocumentMutation
 - .to_dict
-- useUpdateGeneralInformationMutation
 - .empty
 - 0002_templatedocumentmodel.py
 - 0015_remove_registration_and_archived_statuses.py
@@ -870,8 +867,8 @@
   lefthook.yml → frontend/lefthook.yml
 - `CONTRIBUTING · Collaboration Guide` --cites--> `ARCH-001 · VT Platform Architecture`  [EXTRACTED]
   CONTRIBUTING.md → docs/architecture/ARCH-001-vt-platform-architecture.md
-- `Migration` --uses--> `ParticipationFormatId`  [INFERRED]
-  backend/apps/competitions/infrastructure/migrations/0006_participation_format_entity.py → backend/apps/applications/domain/value_objects.py
+- `Identity API (OpenAPI contract)` --cites--> `API-001 Identity contract`  [EXTRACTED]
+  frontend/openapi/schema.yaml → backend/README.md
 
 ## Import Cycles
 - 1-file cycle: `backend/config/celery.py -> backend/config/celery.py`
@@ -884,7 +881,7 @@
 - **Frontend Feature-Sliced Design layers** — frontend_src_widgets_readme_widgets_layer, frontend_src_features_readme_features_layer, frontend_src_entities_readme_entities_layer, frontend_readme_shared_layer [EXTRACTED 1.00]
 - **Festival Catalog public read flow** — frontend_docs_festival_catalog_festival_catalog, frontend_docs_festival_catalog_use_public_festivals, frontend_docs_festival_catalog_public_read_model, frontend_docs_festival_catalog_public_status [EXTRACTED 1.00]
 
-## Communities (890 total, 443 thin omitted)
+## Communities (887 total, 442 thin omitted)
 
 ### Community 0 - "Applications/Submissions · Domain (exceptions)"
 Cohesion: 0.07
@@ -972,7 +969,7 @@ Nodes (21): DjangoApplicationRepository, UserId, ``DjangoApplicationRepository``
 
 ### Community 21 - "Applications/Submissions · App Layer (orders)"
 Cohesion: 0.07
-Nodes (30): ApplicationConflictError, ApplicationError, ApplicationNotFoundError, ApplicationReferenceNotFoundError, Exception, A referenced child (participant/teacher/attachment) is not in the submission., No application (order) matched the identifier a use case required., A referenced submission/service line is not present on the application. (+22 more)
+Nodes (31): ApplicationConflictError, ApplicationError, ApplicationNotFoundError, ApplicationReferenceNotFoundError, Exception, Application-layer exceptions for the Applications (Competition Submission) conte, A referenced child (participant/teacher/attachment) is not in the submission., No application (order) matched the identifier a use case required. (+23 more)
 
 ### Community 22 - "Domain Tests · Identity"
 Cohesion: 0.13
@@ -1068,7 +1065,7 @@ Nodes (50): DjangoUserRepository, PhoneNumber, UserId, ``DjangoUserRepository`` 
 
 ### Community 45 - "Teachers · Domain (value)"
 Cohesion: 0.06
-Nodes (36): DirectConstructionError, InvalidEmailAddressError, InvalidOwnerIdError, InvalidPersonNameError, InvalidPhoneNumberError, InvalidTeacherIdError, InvalidTeacherRoleError, Exception (+28 more)
+Nodes (33): DirectConstructionError, InvalidEmailAddressError, InvalidOwnerIdError, InvalidPersonNameError, InvalidPhoneNumberError, InvalidTeacherIdError, Exception, ValueError (+25 more)
 
 ### Community 46 - "Applications/Submissions · App Layer (api)"
 Cohesion: 0.18
@@ -1164,7 +1161,7 @@ Nodes (6): Verify a proposed guardian relationship (makes it active)., VerifyGua
 
 ### Community 69 - "Competition Mgmt · App Layer"
 Cohesion: 0.08
-Nodes (50): _parse_attachment_type(), Attachment use cases: attach a file, remove an attachment., CancelSubmissionByReviewerHandler, CancelSubmissionHandler, Cancellation use case: the applicant withdraws the submission., Use case: cancel (withdraw) the submission on the applicant's behalf.      The, Use case: cancel (reject) a submission by organizer decision., Draft-lifecycle use cases: create a submission, delete a draft. (+42 more)
+Nodes (51): _parse_attachment_type(), Attachment use cases: attach a file, remove an attachment., CancelSubmissionByReviewerHandler, CancelSubmissionHandler, Cancellation use case: the applicant withdraws the submission., Use case: cancel (withdraw) the submission on the applicant's behalf.      The, Use case: cancel (reject) a submission by organizer decision., Draft-lifecycle use cases: create a submission, delete a draft. (+43 more)
 
 ### Community 70 - "Applications/Submissions · Infrastructure (repositories)"
 Cohesion: 0.12
@@ -1172,7 +1169,7 @@ Nodes (18): GuardianLinkDto, OperationResultDto, ParticipantDto, Participant, Re
 
 ### Community 71 - "Teachers · Domain"
 Cohesion: 0.05
-Nodes (42): datetime, DomainEvent, PersonName, PhoneNumber, TeacherId, TeacherRole, Domain entities for the Teacher Directory bounded context.  One aggregate - th, Reconstruct the aggregate from persistence (no re-validation, no events). (+34 more)
+Nodes (45): datetime, DomainEvent, PersonName, PhoneNumber, TeacherId, TeacherRole, Domain entities for the Teacher Directory bounded context.  One aggregate - th, Reconstruct the aggregate from persistence (no re-validation, no events). (+37 more)
 
 ### Community 72 - "Participants · App Layer"
 Cohesion: 0.13
@@ -1343,8 +1340,8 @@ Cohesion: 0.16
 Nodes (16): BLOCKING_SECTIONS, buildCompetitionReadiness(), CompetitionReadiness, CompetitionReadinessItem, isPublicInformationDone(), landingBlockHasItems(), buildPublicationChecklist(), hasPeriod() (+8 more)
 
 ### Community 115 - "Dashboard Widgets (FE)"
-Cohesion: 0.17
-Nodes (12): deriveWidgetStatus(), WidgetStatus, KIND_STYLE, NotificationCenter(), NotificationCenterView(), NotificationCenterViewProps, RecentCompetitions(), RecentCompetitionsView() (+4 more)
+Cohesion: 0.11
+Nodes (21): deriveWidgetStatus(), formatRelativeTime(), ActivityKind, NotificationKind, WidgetStatus, ACTIVITY_META, ActivityTimelineViewProps, TimelineItem() (+13 more)
 
 ### Community 116 - "Competition Mgmt · Infrastructure (system)"
 Cohesion: 0.15
@@ -1367,8 +1364,8 @@ Cohesion: 0.19
 Nodes (14): DialogContent, DialogDescription, DialogFooter(), DialogHeader(), DialogOverlay, DialogTitle, Default, Destructive (+6 more)
 
 ### Community 121 - "Dashboard Widgets (FE)"
-Cohesion: 0.11
-Nodes (18): MOCK_APPLICATIONS, makeClient(), withCardWidth(), withDashboardProviders(), Default, Story, Empty, Errored (+10 more)
+Cohesion: 0.08
+Nodes (25): MOCK_ACTIVITY, MOCK_APPLICATIONS, makeClient(), withCardWidth(), withDashboardProviders(), ActivityTimelineView(), Empty, Errored (+17 more)
 
 ### Community 122 - "Applications/Submissions · API/Presentation (api)"
 Cohesion: 0.22
@@ -1435,12 +1432,12 @@ Cohesion: 0.16
 Nodes (14): boxSize, Radio, RadioGroup, RadioSizeContext, Default, Disabled, Horizontal, Small (+6 more)
 
 ### Community 139 - "Dashboard Widgets (FE)"
-Cohesion: 0.15
-Nodes (18): APPLICATION_STATUS, COMPETITION_STATUS, dateFormatter, formatMoney(), formatNumber(), formatPercent(), integerFormatter, percentFormatter (+10 more)
+Cohesion: 0.16
+Nodes (17): APPLICATION_STATUS, COMPETITION_STATUS, dateFormatter, formatMoney(), formatNumber(), formatPercent(), integerFormatter, percentFormatter (+9 more)
 
 ### Community 140 - "Dashboard Widgets (FE)"
-Cohesion: 0.12
-Nodes (14): MOCK_COMPETITIONS, MOCK_NOTIFICATIONS, MOCK_STATS, NOW, ApplicationSummary, CompetitionSummary, NotificationItem, NotificationKind (+6 more)
+Cohesion: 0.18
+Nodes (17): dashboardKeys, mockRequest(), useActivityFeed(), useDashboardStats(), useNotifications(), useRecentApplications(), useRecentCompetitions(), useUpcomingEvents() (+9 more)
 
 ### Community 141 - "Competition Mgmt · Infrastructure (read)"
 Cohesion: 0.33
@@ -1487,20 +1484,20 @@ Cohesion: 0.17
 Nodes (13): AutosaveIndicator(), AutosaveIndicatorProps, CompetitionWorkspaceLayout(), CompetitionWorkspaceLayoutProps, PublicationChecklistPanel(), PublicationChecklistPanelProps, SectionPlaceholder(), SectionPlaceholderProps (+5 more)
 
 ### Community 152 - "Dashboard Widgets (FE)"
-Cohesion: 0.16
-Nodes (10): Dashboard(), Default, DEMO_USER, Story, DEMO_CURRENT_USER, ActivityTimeline(), ACTIONS, QuickAction (+2 more)
+Cohesion: 0.14
+Nodes (12): Dashboard(), Default, DEMO_USER, Story, DEMO_CURRENT_USER, ActivityTimeline(), NotificationCenter(), NotificationCenterViewProps (+4 more)
 
 ### Community 153 - "Dashboard Widgets (FE)"
 Cohesion: 0.13
-Nodes (16): EVENT_KIND_LABELS, formatDate(), MOCK_EVENTS, EventKind, UpcomingEvent, CompetitionRow(), EventRow(), KIND_ICON (+8 more)
+Nodes (15): EVENT_KIND_LABELS, formatDate(), MOCK_EVENTS, EventKind, CompetitionRow(), EventRow(), KIND_ICON, Empty (+7 more)
 
 ### Community 154 - "Community 154"
 Cohesion: 0.07
 Nodes (15): OrganizationProfile, The organization's optional public contact & legal details.      A cohesive bund, Strip surrounding whitespace, collapse blanks to ``None``, and bound length., The profile of an organization that has not filled in any contact details., _org(), Organization, Unit tests for the Organization domain aggregate roots., TestOrganization (+7 more)
 
 ### Community 155 - "Community 155"
-Cohesion: 0.11
-Nodes (27): build_public_catalog_read_service(), Assemble the public festival catalog read model (participant-facing).      A r, PublicFestivalDetailEnvelopeSerializer, PublicFestivalDetailSerializer, PublicFestivalListEnvelopeSerializer, PublicFestivalSerializer, One competition's full public landing view (catalog facts + landing + contacts)., The full ``GET /public/festivals/{id}`` response envelope. (+19 more)
+Cohesion: 0.14
+Nodes (23): PublicFestivalDetailEnvelopeSerializer, PublicFestivalDetailSerializer, PublicFestivalListEnvelopeSerializer, PublicFestivalSerializer, One competition's full public landing view (catalog facts + landing + contacts)., The full ``GET /public/festivals/{id}`` response envelope., The single Registration projection consumed by the wizard., The ``{data, meta}`` envelope for the registration projection. (+15 more)
 
 ### Community 156 - "Community 156"
 Cohesion: 0.14
@@ -1583,8 +1580,8 @@ Cohesion: 0.15
 Nodes (13): Clock, EventPublisher, datetime, Protocol, UUID, Application ports (contracts) required by Participants use cases.  The **outboun, Port: the source of the current instant, injected rather than read globally., The current instant as a timezone-aware datetime (possibly non-UTC zone). (+5 more)
 
 ### Community 176 - "Community 176"
-Cohesion: 0.11
-Nodes (15): LayoutPersistence, useLayoutPersistence(), ConstructorWorkspace(), errorMessage(), TemplateConstructorLayout(), TemplateConstructorLayoutProps, ConstructorToolbar(), ConstructorToolbarProps (+7 more)
+Cohesion: 0.16
+Nodes (12): LayoutPersistence, useLayoutPersistence(), ConstructorWorkspace(), errorMessage(), TemplateConstructorLayout(), TemplateConstructorLayoutProps, ConstructorToolbar(), ConstructorToolbarProps (+4 more)
 
 ### Community 177 - "Community 177"
 Cohesion: 0.16
@@ -1592,7 +1589,7 @@ Nodes (14): ParticipantVerified, A participant's required details were verified 
 
 ### Community 178 - "Community 178"
 Cohesion: 0.07
-Nodes (56): AcceptSubmissionHandler, CompleteSubmissionHandler, MarkPaidHandler, MarkWaitingPaymentHandler, Clock, EventPublisher, Use case: move accepted submission into running competition (organizer)., Use case: mark running submission as completed (organizer). (+48 more)
+Nodes (58): AcceptSubmissionHandler, CompleteSubmissionHandler, MarkPaidHandler, MarkWaitingPaymentHandler, Clock, EventPublisher, Use case: move accepted submission into running competition (organizer)., Use case: mark running submission as completed (organizer). (+50 more)
 
 ### Community 179 - "Community 179"
 Cohesion: 0.19
@@ -1748,7 +1745,7 @@ Nodes (12): application_problem(), problem_response(), Any, ApplicationError, Re
 
 ### Community 219 - "Community 219"
 Cohesion: 0.10
-Nodes (47): Remove a participant from the submission (owner; not the last one)., Remove a teacher from the submission (owner)., Set the submission's single performance (owner, editable states only)., RemoveParticipantCommand, RemoveTeacherCommand, SetPerformanceCommand, AddParticipantRequestSerializer, CreditTeacherRequestSerializer (+39 more)
+Nodes (49): AddTeacherCommand, Remove a participant from the submission (owner; not the last one)., Add a teacher in a configurable role (owner, editable states only)., Remove a teacher from the submission (owner)., Set the submission's single performance (owner, editable states only)., RemoveParticipantCommand, RemoveTeacherCommand, SetPerformanceCommand (+41 more)
 
 ### Community 220 - "Community 220"
 Cohesion: 0.21
@@ -1931,8 +1928,8 @@ Cohesion: 0.50
 Nodes (3): ElementPalette(), isPlaceable(), PaletteItemProps
 
 ### Community 265 - "Community 265"
-Cohesion: 0.12
-Nodes (12): Project a :class:`Submission` into its lightweight summary view., _ensure_can_view(), GetSubmissionHistoryHandler, Read use cases: fetch one submission in full, or its review history., Allow the owning applicant or any authorized organizer to view; else deny., Use case: fetch a submission's review history (owner or an authorized organizer), Query use cases for the Applications bounded context.  Read-side operations retu, ListCompetitionSubmissionsHandler (+4 more)
+Cohesion: 0.22
+Nodes (8): MOCK_NOTIFICATIONS, NotificationCenterView(), AllRead, Empty, Errored, Loading, Story, Success
 
 ### Community 266 - "Community 266"
 Cohesion: 0.14
@@ -1943,8 +1940,8 @@ Cohesion: 0.22
 Nodes (5): Architecture Documentation, Documents, Future Documents, Purpose, Scope
 
 ### Community 268 - "Community 268"
-Cohesion: 0.47
-Nodes (6): Application layer, Clean Architecture layering, Dependency inversion / inward dependency rule, Domain layer, Infrastructure layer, Presentation layer
+Cohesion: 0.28
+Nodes (9): Application layer, Clean Architecture layering, Dependency inversion / inward dependency rule, Domain layer, Infrastructure layer, Modular monolith, Presentation layer, Pydantic Settings configuration (+1 more)
 
 ### Community 269 - "Community 269"
 Cohesion: 0.22
@@ -1971,8 +1968,8 @@ Cohesion: 0.02
 Nodes (154): EmailGateway, Port: deliver transactional emails to a user's address.      **Why it exists.*, Send an email-ownership verification link to ``email``., Send a password-reset link to ``email``, valid until ``expires_at``., Domain entities for the Identity & Access bounded context.  The :class:`User`, The preferred timezone (storage stays UTC regardless)., ConsentGranted, ConsentType (+146 more)
 
 ### Community 275 - "Community 275"
-Cohesion: 0.06
-Nodes (64): CalculatePriceHandler, Use case: price the performance combination and freeze an immutable snapshot., AddParticipantCommand, AddTeacherCommand, AttachFileCommand, CalculatePriceCommand, CancelSubmissionCommand, CreateSubmissionCommand (+56 more)
+Cohesion: 0.05
+Nodes (72): CalculatePriceHandler, Clock, EventPublisher, Use case: price the performance combination and freeze an immutable snapshot., AddParticipantCommand, AttachFileCommand, CalculatePriceCommand, CancelSubmissionCommand (+64 more)
 
 ### Community 276 - "Community 276"
 Cohesion: 0.14
@@ -1987,8 +1984,8 @@ Cohesion: 0.25
 Nodes (8): AI Documentation, Documents, Future Documents, Governance Principles, Prefix, Prompts Library, Purpose, Scope
 
 ### Community 279 - "Community 279"
-Cohesion: 0.33
-Nodes (7): Data minimization, Guardian, Participant, Participants bounded context, Teacher, Bounded contexts, DATA-001 Business Data Model
+Cohesion: 0.29
+Nodes (8): Data minimization, Guardian, Participant, Participants bounded context, Teacher, API-001 Identity contract, Bounded contexts, DATA-001 Business Data Model
 
 ### Community 280 - "Community 280"
 Cohesion: 0.25
@@ -2003,8 +2000,8 @@ Cohesion: 0.32
 Nodes (7): healthz(), HttpRequest, Root URL configuration.  Mounts the OpenAPI schema/documentation, health probe, Liveness probe (ARCH-001 §17.4)., Readiness probe (ARCH-001 §17.4)., readyz(), JsonResponse
 
 ### Community 283 - "Community 283"
-Cohesion: 0.20
-Nodes (12): API-000 REST API Standards, API-001 Identity contract, Modular monolith, Pydantic Settings configuration, VT Platform Backend, Auth endpoints (registration/sessions/token), Email verification endpoints, Identity API (OpenAPI contract) (+4 more)
+Cohesion: 0.32
+Nodes (8): API-000 REST API Standards, Auth endpoints (registration/sessions/token), Email verification endpoints, Identity API (OpenAPI contract), StaffMembership schema, /users/me composition endpoint, Ky HTTP client, Orval generated API SDK
 
 ### Community 285 - "Community 285"
 Cohesion: 0.25
@@ -2191,8 +2188,8 @@ Cohesion: 0.50
 Nodes (3): UnauthorizedPage(), Default, Story
 
 ### Community 335 - "Community 335"
-Cohesion: 0.13
-Nodes (11): build_command_handler(), build_registration_read_service(), Composition root for the Competitions bounded context.  The one place framewor, Assemble any Competition command handler with its concrete adapters., Assemble the Registration read model (the wizard's single projection)., DjangoRegistrationReader, ORM-backed adapter for the Registration read model.  Loads the whole ``Competi, Concrete registration read service over the competition aggregate. (+3 more)
+Cohesion: 0.10
+Nodes (15): build_command_handler(), build_public_catalog_read_service(), build_registration_read_service(), Composition root for the Competitions bounded context.  The one place framewor, Assemble any Competition command handler with its concrete adapters., Assemble the public festival catalog read model (participant-facing).      A r, Assemble the Registration read model (the wizard's single projection)., DjangoRegistrationReader (+7 more)
 
 ### Community 336 - "Community 336"
 Cohesion: 0.50
@@ -2311,8 +2308,8 @@ Cohesion: 0.40
 Nodes (3): datetime, Whether ``kind`` is still open at ``now`` (open when unset or not yet past)., Whether the window admits applications at ``now`` (closed while unconfigured).
 
 ### Community 464 - "Community 464"
-Cohesion: 0.15
-Nodes (11): MOCK_ACTIVITY, ActivityEvent, ActivityKind, ACTIVITY_META, ActivityTimelineView(), ActivityTimelineViewProps, Empty, Errored (+3 more)
+Cohesion: 0.33
+Nodes (3): PreviewCanvasProps, PreviewDialog(), PreviewDialogProps
 
 ### Community 465 - "Community 465"
 Cohesion: 0.40
@@ -2341,10 +2338,6 @@ Nodes (4): FakeVerificationTokenService, datetime, UserId, Reversible :class:`Ve
 ### Community 485 - "CloseRegistrationHandler"
 Cohesion: 0.24
 Nodes (10): UUID, Integration tests for the diploma preview BindingResolver.  Exercises the cross-, _submission(), _teacher(), test_lists_applications_labelled_by_performer(), test_resolves_all_catalogue_keys_with_missing_default(), test_resolves_participant_age_from_birth_date(), test_resolves_participant_display_name() (+2 more)
-
-### Community 486 - "Community 486"
-Cohesion: 0.27
-Nodes (8): formatRelativeTime(), TimelineItem(), NotificationRow(), aliasInitials(), ApplicationRow(), RecentApplications(), RecentApplicationsView(), RecentApplicationsViewProps
 
 ### Community 488 - "Community 488"
 Cohesion: 0.22
@@ -2402,10 +2395,6 @@ Nodes (6): deriveState(), formatInstant(), periodText(), RegistrationBlock(), Re
 Cohesion: 0.40
 Nodes (3): UUID, UUID v7 generator - the concrete :class:`UuidGenerator` adapter (API-000 §23)., Return a brand-new UUID version 7.
 
-### Community 831 - "useRemoveDocumentMutation"
-Cohesion: 0.49
-Nodes (8): dashboardKeys, mockRequest(), useActivityFeed(), useDashboardStats(), useNotifications(), useRecentApplications(), useRecentCompetitions(), useUpcomingEvents()
-
 ### Community 832 - ".to_dict"
 Cohesion: 0.05
 Nodes (45): aggregate_pricing(), _hero_cover_image(), is_public_document_visibility(), OrganizerContactFacts, _project_block(), project_contacts(), project_landing(), PublicFestivalContactsView (+37 more)
@@ -2449,7 +2438,7 @@ Nodes (3): Render a JSON-safe payload with an ``event_type`` discriminator.     
 ## Knowledge Gaps
 - **1007 isolated node(s):** `Migration`, `Migration`, `Migration`, `Migration`, `Meta` (+1002 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **443 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **442 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_

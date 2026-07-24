@@ -7260,8 +7260,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/ui/constructor-layout.tsx": {
-    "mtime": 1784918348.7094197,
-    "ast_hash": "b400436b39f51f08d719db50dffe6898",
+    "mtime": 1784918660.7995555,
+    "ast_hash": "0477ca743afc3ef301773c00addaf98f",
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/ui/constructor-toolbar.tsx": {
