@@ -283,6 +283,8 @@ class PrintPackageRequestSerializer(serializers.Serializer[dict[str, object]]):
 
     competitionId = serializers.UUIDField()
     categoryIds = serializers.ListField(child=serializers.UUIDField(), required=False, default=list)
+    # Re-render print PDFs even for diplomas that already have one.
+    force = serializers.BooleanField(required=False, default=False)
 
 
 class PrintJobResponseSerializer(serializers.Serializer[dict[str, object]]):
@@ -291,6 +293,7 @@ class PrintJobResponseSerializer(serializers.Serializer[dict[str, object]]):
     jobId = serializers.UUIDField()
     competitionId = serializers.UUIDField()
     categoryIds = serializers.ListField(child=serializers.UUIDField())
+    force = serializers.BooleanField()
     status = serializers.ChoiceField(choices=["PENDING", "RUNNING", "COMPLETED", "FAILED"])
     created = serializers.IntegerField()
     skipped = serializers.IntegerField()

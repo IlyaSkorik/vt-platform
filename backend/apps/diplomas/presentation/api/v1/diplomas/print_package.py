@@ -139,6 +139,7 @@ def _job_json(job: PrintJobModel) -> dict[str, Any]:
         "jobId": str(job.id),
         "competitionId": str(job.competition_id),
         "categoryIds": [str(cid) for cid in (job.category_ids or [])],
+        "force": job.force,
         "status": job.status,
         "created": job.created_count,
         "skipped": job.skipped_count,
@@ -150,11 +151,12 @@ def _job_json(job: PrintJobModel) -> dict[str, Any]:
 
 
 def start_print_package(
-    *, competition_id: uuid.UUID, category_ids: list[str]
+    *, competition_id: uuid.UUID, category_ids: list[str], force: bool = False
 ) -> dict[str, Any]:
     """Create + enqueue a print-package job for the chosen nominations (or all).
 
-    Validates that the resolved nominations have a template with a PDF.
+    ``force`` re-renders print PDFs for diplomas that already have one. Validates
+    that the resolved nominations have a template with a PDF.
     """
     targets = resolve_targets(competition_id, category_ids)
     if not targets:
@@ -170,7 +172,9 @@ def start_print_package(
             raise PrintTemplateNotReadyError("A selected template has no PDF to print over.")
 
     job = PrintJobModel.objects.create(
-        competition_id=competition_id, category_ids=[str(cid) for cid in category_ids]
+        competition_id=competition_id,
+        category_ids=[str(cid) for cid in category_ids],
+        force=force,
     )
     from apps.diplomas.tasks import generate_print_package
 

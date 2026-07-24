@@ -185,6 +185,33 @@ def test_zip_contains_a_pdf_per_generated_diploma() -> None:
         assert archive.read(name).startswith(b"%PDF")
 
 
+def test_force_rerenders_existing_print_pdfs() -> None:
+    competition = _competition()
+    vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+    _assign(competition, vocals, _template_with_pdf("Вокал A4"))
+    _submission(competition, "Иванов Иван", vocals)
+
+    first = print_package.start_print_package(competition_id=competition.id, category_ids=[])
+    assert first["created"] == 1
+    diploma = DiplomaModel.objects.get(competition_id=competition.id)
+    version_after_first = diploma.version
+
+    # Without force: existing diploma is skipped and its PDF is not re-rendered.
+    plain = print_package.start_print_package(competition_id=competition.id, category_ids=[])
+    assert plain["created"] == 0 and plain["skipped"] == 1
+    diploma.refresh_from_db()
+    assert diploma.version == version_after_first
+
+    # With force: the existing diploma's print PDF is re-rendered (version bumps).
+    forced = print_package.start_print_package(
+        competition_id=competition.id, category_ids=[], force=True
+    )
+    assert forced["created"] == 0 and forced["skipped"] == 1
+    diploma.refresh_from_db()
+    assert diploma.version > version_after_first
+    assert diploma.print_pdf_path
+
+
 def test_no_assigned_template_raises() -> None:
     competition = _competition()
     vocals = CategoryModel.objects.create(competition=competition, name="Вокал")

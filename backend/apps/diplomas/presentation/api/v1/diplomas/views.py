@@ -350,6 +350,7 @@ class DiplomaPrintPackageView(_StaffView):
             job = print_package.start_print_package(
                 competition_id=data["competitionId"],
                 category_ids=[str(cid) for cid in data.get("categoryIds", [])],
+                force=bool(data.get("force", False)),
             )
         except DiplomaError as exc:
             return problems.diploma_problem(exc, instance=request.path, request=request)

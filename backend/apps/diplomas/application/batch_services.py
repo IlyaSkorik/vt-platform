@@ -65,11 +65,15 @@ class DiplomaBatchGenerationService:
         competition_id: uuid.UUID,
         targets: list[NominationTarget],
         now: datetime,
+        force: bool = False,
     ) -> BatchResult:
         """Create missing diplomas per nomination, render print PDFs, bundle a ZIP.
 
-        Raises :class:`PrintTemplateNotReadyError` if any target's template has no
-        PDF (checked up front so nothing is half-generated).
+        With ``force`` the print PDF is re-rendered even for diplomas that already
+        have one (e.g. after a template change) — creation/skip counts are
+        unchanged, only the rendered file is refreshed. Raises
+        :class:`PrintTemplateNotReadyError` if any target's template has no PDF
+        (checked up front so nothing is half-generated).
         """
         # Load (and validate) each nomination's template once.
         assets_by_template: dict[uuid.UUID, TemplateAssets] = {}
@@ -110,7 +114,7 @@ class DiplomaBatchGenerationService:
                 else:
                     skipped += 1
 
-                if not diploma.print_pdf_path:
+                if force or not diploma.print_pdf_path:
                     data = self._workspace.render(
                         assets=assets, snapshot=diploma.snapshot, number=diploma.number
                     )

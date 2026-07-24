@@ -372,12 +372,16 @@ export function usePrintPackageSummary(
 export function useStartPrintPackageMutation(): UseMutationResult<
   PrintJobResponse,
   ApiError,
-  { competitionId: string; categoryIds: string[] }
+  { competitionId: string; categoryIds: string[]; force?: boolean }
 > {
   const queryClient = useQueryClient();
-  return useMutation<PrintJobResponse, ApiError, { competitionId: string; categoryIds: string[] }>({
-    mutationFn: async ({ competitionId, categoryIds }) => {
-      const response = await diplomasStartPrintPackage({ competitionId, categoryIds });
+  return useMutation<
+    PrintJobResponse,
+    ApiError,
+    { competitionId: string; categoryIds: string[]; force?: boolean }
+  >({
+    mutationFn: async ({ competitionId, categoryIds, force = false }) => {
+      const response = await diplomasStartPrintPackage({ competitionId, categoryIds, force });
       return unwrapPrintJob(response.data);
     },
     onSuccess: (_job, { competitionId }) => {

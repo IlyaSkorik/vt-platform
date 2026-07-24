@@ -8472,6 +8472,8 @@ components:
           items:
             type: string
             format: uuid
+        force:
+          type: boolean
         status:
           $ref: '#/components/schemas/PrintJobResponseStatusEnum'
         created:
@@ -8498,6 +8500,7 @@ components:
       - created
       - createdAt
       - error
+      - force
       - jobId
       - skipped
       - status
@@ -8568,6 +8571,9 @@ components:
           items:
             type: string
             format: uuid
+        force:
+          type: boolean
+          default: false
       required:
       - competitionId
     PrintPackageSummaryResponse:

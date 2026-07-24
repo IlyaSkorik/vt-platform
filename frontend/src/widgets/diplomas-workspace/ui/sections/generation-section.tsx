@@ -29,6 +29,7 @@ export function GenerationSection(): React.JSX.Element {
   const [jobId, setJobId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [touched, setTouched] = useState(false);
+  const [force, setForce] = useState(false);
 
   const competitionsQuery = useCompetitionsList();
   const summaryQuery = usePrintPackageSummary(competitionId || undefined);
@@ -41,6 +42,7 @@ export function GenerationSection(): React.JSX.Element {
     setJobId(null);
     setSelected(new Set());
     setTouched(false);
+    setForce(false);
     startMutation.reset();
   }, [competitionId]);
 
@@ -87,7 +89,7 @@ export function GenerationSection(): React.JSX.Element {
 
   function handleGenerate(): void {
     startMutation.mutate(
-      { competitionId, categoryIds: [...effectiveSelected] },
+      { competitionId, categoryIds: [...effectiveSelected], force },
       { onSuccess: (created) => setJobId(created.jobId) },
     );
   }
@@ -142,21 +144,29 @@ export function GenerationSection(): React.JSX.Element {
           ) : null}
 
           {!jobId ? (
-            <div className="flex items-center gap-4">
-              <Button
-                size="lg"
-                onClick={handleGenerate}
-                disabled={startMutation.isPending || effectiveSelected.size === 0}
-              >
-                {startMutation.isPending ? (
-                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                ) : null}
-                Сформировать комплект для печати
-              </Button>
-              <span className="text-muted-foreground text-sm">
-                Будет создано:{" "}
-                <span className="font-semibold text-foreground">{selectedWillCreate}</span>
-              </span>
+            <div className="flex flex-col gap-3">
+              <Checkbox
+                label="Перерисовать уже созданные дипломы"
+                description="Перегенерировать печатный PDF даже для тех, что уже сформированы (например, после изменения шаблона)."
+                checked={force}
+                onCheckedChange={(checked) => setForce(checked === true)}
+              />
+              <div className="flex items-center gap-4">
+                <Button
+                  size="lg"
+                  onClick={handleGenerate}
+                  disabled={startMutation.isPending || effectiveSelected.size === 0}
+                >
+                  {startMutation.isPending ? (
+                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  ) : null}
+                  Сформировать комплект для печати
+                </Button>
+                <span className="text-muted-foreground text-sm">
+                  Будет создано:{" "}
+                  <span className="font-semibold text-foreground">{selectedWillCreate}</span>
+                </span>
+              </div>
             </div>
           ) : null}
 

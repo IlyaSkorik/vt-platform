@@ -31,6 +31,8 @@ class PrintJobModel(BasePersistenceModel):
     # Nominations (category ids) the run targets; empty means every nomination
     # of the competition that has an assigned template.
     category_ids = models.JSONField(default=list, blank=True)
+    # Re-render print PDFs even for diplomas that already have one.
+    force = models.BooleanField(default=False)
     status = models.CharField(
         max_length=16,
         choices=PrintJobStatusChoices.choices,
