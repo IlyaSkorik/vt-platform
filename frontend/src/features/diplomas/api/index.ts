@@ -10,6 +10,7 @@ export {
   usePreviewApplications,
   usePreviewBindings,
   usePrintJob,
+  usePrintPackageSummary,
   useSaveTemplateLayoutMutation,
   useStartPrintPackageMutation,
   useTemplateLayout,

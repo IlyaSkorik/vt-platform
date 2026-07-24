@@ -1,83 +1,58 @@
-import { CheckCircle2, Download, FilePlus2, FileStack, Loader2, Users } from "lucide-react";
-import { useMemo, useState } from "react";
+import { CheckCircle2, Download, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useCompetitionsList } from "@/features/competitions";
 import {
-  type DiplomaAssignment,
+  type PrintPackageNomination,
   resolveMediaUrl,
-  useDiplomaAssignments,
-  useDiplomaRegistry,
-  usePreviewApplications,
   usePrintJob,
+  usePrintPackageSummary,
   useStartPrintPackageMutation,
 } from "@/features/diplomas";
 import { ApiError } from "@/shared/api";
-import { Alert, Button, Card, CardContent, Select, type SelectOption, Spinner } from "@/shared/ui";
+import {
+  Alert,
+  Button,
+  Card,
+  CardContent,
+  Checkbox,
+  Select,
+  type SelectOption,
+  Spinner,
+} from "@/shared/ui";
 
-function StatCard({
-  icon,
-  label,
-  value,
-  accent,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: React.ReactNode;
-  accent?: boolean;
-}): React.JSX.Element {
-  return (
-    <Card>
-      <CardContent className="flex items-center gap-3 p-4">
-        <span
-          className={
-            accent
-              ? "flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary"
-              : "flex size-9 shrink-0 items-center justify-center rounded-md bg-accent text-accent-foreground"
-          }
-        >
-          {icon}
-        </span>
-        <div className="min-w-0">
-          <p className="text-muted-foreground text-xs">{label}</p>
-          <p className="truncate font-semibold text-foreground text-lg">{value}</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function assignedTemplate(
-  assignments: DiplomaAssignment[] | undefined,
-  competitionId: string,
-): DiplomaAssignment | undefined {
-  return (assignments ?? []).find((assignment) => assignment.competitionId === competitionId);
+function errorText(error: unknown, fallback: string): string {
+  return error instanceof ApiError ? (error.problem?.detail ?? fallback) : fallback;
 }
 
 export function GenerationSection(): React.JSX.Element {
   const [competitionId, setCompetitionId] = useState("");
   const [jobId, setJobId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [touched, setTouched] = useState(false);
 
   const competitionsQuery = useCompetitionsList();
-  const assignmentsQuery = useDiplomaAssignments();
-  const applicationsQuery = usePreviewApplications(competitionId || undefined);
-  const registryQuery = useDiplomaRegistry(competitionId || undefined);
+  const summaryQuery = usePrintPackageSummary(competitionId || undefined);
   const startMutation = useStartPrintPackageMutation();
   const jobQuery = usePrintJob(jobId || undefined);
+
+  // Reset the picker state when the competition changes.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset only on competition change
+  useEffect(() => {
+    setJobId(null);
+    setSelected(new Set());
+    setTouched(false);
+    startMutation.reset();
+  }, [competitionId]);
 
   const competitionOptions: SelectOption[] = useMemo(
     () => (competitionsQuery.data ?? []).map((item) => ({ value: item.id, label: item.title })),
     [competitionsQuery.data],
   );
 
-  const template = competitionId
-    ? assignedTemplate(assignmentsQuery.data, competitionId)
-    : undefined;
-  const submissions = applicationsQuery.data?.length ?? 0;
-  const existing = registryQuery.data?.length ?? 0;
-  const willCreate = Math.max(0, submissions - existing);
-
-  const summaryLoading =
-    Boolean(competitionId) &&
-    (assignmentsQuery.isLoading || applicationsQuery.isLoading || registryQuery.isLoading);
+  const nominations: PrintPackageNomination[] = summaryQuery.data?.nominations ?? [];
+  const selectable = nominations.filter((item) => item.templateId != null);
+  // Before the user touches anything, every nomination with a template is selected.
+  const effectiveSelected = touched ? selected : new Set(selectable.map((item) => item.categoryId));
 
   const job = jobQuery.data;
   const isRunning =
@@ -86,18 +61,32 @@ export function GenerationSection(): React.JSX.Element {
   const isFailed = job?.status === "FAILED";
   const zipHref = resolveMediaUrl(job?.zipUrl);
 
-  function handleCompetitionChange(value: string): void {
-    setCompetitionId(value);
-    setJobId(null);
-    startMutation.reset();
+  const selectedWillCreate = nominations
+    .filter((item) => effectiveSelected.has(item.categoryId))
+    .reduce((sum, item) => sum + item.willCreate, 0);
+  const allSelected =
+    selectable.length > 0 && selectable.every((item) => effectiveSelected.has(item.categoryId));
+  const someSelected = selectable.some((item) => effectiveSelected.has(item.categoryId));
+
+  function toggle(categoryId: string, on: boolean): void {
+    const next = new Set(effectiveSelected);
+    if (on) {
+      next.add(categoryId);
+    } else {
+      next.delete(categoryId);
+    }
+    setSelected(next);
+    setTouched(true);
+  }
+
+  function toggleAll(on: boolean): void {
+    setSelected(on ? new Set(selectable.map((item) => item.categoryId)) : new Set());
+    setTouched(true);
   }
 
   function handleGenerate(): void {
-    if (!template) {
-      return;
-    }
     startMutation.mutate(
-      { competitionId, templateId: template.templateId },
+      { competitionId, categoryIds: [...effectiveSelected] },
       { onSuccess: (created) => setJobId(created.jobId) },
     );
   }
@@ -110,73 +99,66 @@ export function GenerationSection(): React.JSX.Element {
           placeholder="Выберите конкурс"
           options={competitionOptions}
           value={competitionId}
-          onValueChange={handleCompetitionChange}
+          onValueChange={setCompetitionId}
           disabled={competitionsQuery.isLoading}
         />
       </div>
 
       {!competitionId ? (
         <p className="text-muted-foreground text-sm">
-          Выберите конкурс, чтобы увидеть сводку и сформировать комплект дипломов.
+          Выберите конкурс, чтобы увидеть сводку по номинациям и сформировать комплект дипломов.
         </p>
-      ) : summaryLoading ? (
+      ) : summaryQuery.isLoading ? (
         <div className="flex justify-center py-10">
           <Spinner />
         </div>
+      ) : nominations.length === 0 ? (
+        <Alert variant="warning" title="Нет данных">
+          У конкурса нет номинаций с выступлениями.
+        </Alert>
       ) : (
         <>
-          {template ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard
-                accent
-                icon={<FileStack className="size-4" aria-hidden="true" />}
-                label="Назначенный шаблон"
-                value={template.templateName}
-              />
-              <StatCard
-                icon={<Users className="size-4" aria-hidden="true" />}
-                label="Выступлений"
-                value={submissions}
-              />
-              <StatCard
-                icon={<FileStack className="size-4" aria-hidden="true" />}
-                label="Дипломов уже существует"
-                value={existing}
-              />
-              <StatCard
-                icon={<FilePlus2 className="size-4" aria-hidden="true" />}
-                label="Будет создано"
-                value={willCreate}
-              />
-            </div>
-          ) : (
+          {selectable.length === 0 ? (
             <Alert variant="warning" title="Шаблон не назначен">
-              Для конкурса не назначен шаблон диплома. Назначьте его в разделе «Назначение», чтобы
-              сформировать комплект.
-            </Alert>
-          )}
-
-          {startMutation.isError ? (
-            <Alert variant="danger" title="Не удалось запустить генерацию">
-              {startMutation.error instanceof ApiError
-                ? (startMutation.error.problem?.detail ?? "Попробуйте ещё раз.")
-                : "Попробуйте ещё раз."}
+              Ни для одной номинации не назначен шаблон диплома. Назначьте шаблоны в разделе
+              «Назначение», чтобы сформировать комплект.
             </Alert>
           ) : null}
 
-          {/* Idle: the main action. */}
-          {template && !jobId ? (
-            <div>
-              <Button size="lg" onClick={handleGenerate} disabled={startMutation.isPending}>
+          <NominationTable
+            nominations={nominations}
+            selected={effectiveSelected}
+            allSelected={allSelected}
+            someSelected={someSelected && !allSelected}
+            onToggle={toggle}
+            onToggleAll={toggleAll}
+          />
+
+          {startMutation.isError ? (
+            <Alert variant="danger" title="Не удалось запустить генерацию">
+              {errorText(startMutation.error, "Попробуйте ещё раз.")}
+            </Alert>
+          ) : null}
+
+          {!jobId ? (
+            <div className="flex items-center gap-4">
+              <Button
+                size="lg"
+                onClick={handleGenerate}
+                disabled={startMutation.isPending || effectiveSelected.size === 0}
+              >
                 {startMutation.isPending ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                 ) : null}
                 Сформировать комплект для печати
               </Button>
+              <span className="text-muted-foreground text-sm">
+                Будет создано:{" "}
+                <span className="font-semibold text-foreground">{selectedWillCreate}</span>
+              </span>
             </div>
           ) : null}
 
-          {/* Working. */}
           {jobId && isRunning ? (
             <Card>
               <CardContent className="flex flex-col gap-3 p-5">
@@ -195,7 +177,6 @@ export function GenerationSection(): React.JSX.Element {
             </Card>
           ) : null}
 
-          {/* Done. */}
           {isDone && job ? (
             <Card>
               <CardContent className="flex flex-col gap-4 p-5">
@@ -225,7 +206,6 @@ export function GenerationSection(): React.JSX.Element {
             </Card>
           ) : null}
 
-          {/* Failed. */}
           {isFailed && job ? (
             <Alert variant="danger" title="Генерация не удалась">
               {job.error ?? "Во время формирования комплекта произошла ошибка."}
@@ -233,6 +213,79 @@ export function GenerationSection(): React.JSX.Element {
           ) : null}
         </>
       )}
+    </div>
+  );
+}
+
+function NominationTable({
+  nominations,
+  selected,
+  allSelected,
+  someSelected,
+  onToggle,
+  onToggleAll,
+}: {
+  nominations: PrintPackageNomination[];
+  selected: Set<string>;
+  allSelected: boolean;
+  someSelected: boolean;
+  onToggle: (categoryId: string, on: boolean) => void;
+  onToggleAll: (on: boolean) => void;
+}): React.JSX.Element {
+  return (
+    <div className="overflow-x-auto rounded-lg border border-border">
+      <table className="w-full min-w-[36rem] text-sm">
+        <thead className="bg-muted/40 text-muted-foreground">
+          <tr>
+            <th className="w-10 px-3 py-2">
+              <Checkbox
+                aria-label="Выбрать все номинации"
+                checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                onCheckedChange={(checked) => onToggleAll(checked === true)}
+              />
+            </th>
+            <th className="px-3 py-2 text-left font-medium">Номинация</th>
+            <th className="px-3 py-2 text-left font-medium">Шаблон</th>
+            <th className="px-3 py-2 text-right font-medium">Выступлений</th>
+            <th className="px-3 py-2 text-right font-medium">Существует</th>
+            <th className="px-3 py-2 text-right font-medium">Будет создано</th>
+          </tr>
+        </thead>
+        <tbody>
+          {nominations.map((item) => {
+            const hasTemplate = item.templateId != null;
+            return (
+              <tr key={item.categoryId} className="border-border border-t">
+                <td className="px-3 py-2 align-middle">
+                  <Checkbox
+                    aria-label={`Выбрать номинацию ${item.nomination ?? ""}`}
+                    checked={selected.has(item.categoryId)}
+                    disabled={!hasTemplate}
+                    onCheckedChange={(checked) => onToggle(item.categoryId, checked === true)}
+                  />
+                </td>
+                <td className="px-3 py-2 text-foreground">{item.nomination ?? "—"}</td>
+                <td className="px-3 py-2">
+                  {hasTemplate ? (
+                    <span className="text-foreground">{item.templateName}</span>
+                  ) : (
+                    <span className="text-warning">шаблон не назначен</span>
+                  )}
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums text-foreground">
+                  {item.submissions}
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                  {item.existing}
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums font-medium text-foreground">
+                  {hasTemplate ? item.willCreate : "—"}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }

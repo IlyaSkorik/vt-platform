@@ -15,6 +15,7 @@ import {
   diplomasGetTemplateLayout,
   diplomasPreviewApplications,
   diplomasPreviewBindings,
+  diplomasPrintPackageSummary,
   diplomasRegistryList,
   diplomasSaveTemplateLayout,
   diplomasStartPrintPackage,
@@ -25,6 +26,7 @@ import type {
   LayoutResponse,
   PreviewApplication,
   PrintJobResponse,
+  PrintPackageSummaryResponse,
   SaveLayoutRequest,
 } from "@/shared/api/generated/model-diplomas";
 import { defaultBindingForType } from "../model/binding";
@@ -51,6 +53,7 @@ import {
   unwrapPreviewApplications,
   unwrapPreviewBindings,
   unwrapPrintJob,
+  unwrapPrintSummary,
   unwrapTemplateList,
 } from "./envelope";
 import { diplomaKeys } from "./keys";
@@ -345,20 +348,41 @@ export function useDiplomaRegistry(
   });
 }
 
-/** Start a print-package generation; returns the created (async) job. */
+async function fetchPrintSummary(
+  competitionId: string,
+  signal?: AbortSignal,
+): Promise<PrintPackageSummaryResponse> {
+  const response = await diplomasPrintPackageSummary({ competitionId }, signal ? { signal } : {});
+  return unwrapPrintSummary(response.data);
+}
+
+/** Per-nomination print-package summary (template + counts) for a competition. */
+export function usePrintPackageSummary(
+  competitionId: string | undefined,
+): UseQueryResult<PrintPackageSummaryResponse, ApiError> {
+  return useQuery<PrintPackageSummaryResponse, ApiError>({
+    queryKey: diplomaKeys.printSummary(competitionId ?? ""),
+    queryFn: ({ signal }) => fetchPrintSummary(competitionId ?? "", signal),
+    enabled: Boolean(competitionId),
+    staleTime: 10_000,
+  });
+}
+
+/** Start a print-package generation for chosen nominations; returns the job. */
 export function useStartPrintPackageMutation(): UseMutationResult<
   PrintJobResponse,
   ApiError,
-  { competitionId: string; templateId: string }
+  { competitionId: string; categoryIds: string[] }
 > {
   const queryClient = useQueryClient();
-  return useMutation<PrintJobResponse, ApiError, { competitionId: string; templateId: string }>({
-    mutationFn: async ({ competitionId, templateId }) => {
-      const response = await diplomasStartPrintPackage({ competitionId, templateId });
+  return useMutation<PrintJobResponse, ApiError, { competitionId: string; categoryIds: string[] }>({
+    mutationFn: async ({ competitionId, categoryIds }) => {
+      const response = await diplomasStartPrintPackage({ competitionId, categoryIds });
       return unwrapPrintJob(response.data);
     },
     onSuccess: (_job, { competitionId }) => {
-      // New diplomas may have been created for the competition.
+      // New diplomas may have been created — refresh the summary counts.
+      void queryClient.invalidateQueries({ queryKey: diplomaKeys.printSummary(competitionId) });
       void queryClient.invalidateQueries({ queryKey: diplomaKeys.registry(competitionId) });
     },
   });

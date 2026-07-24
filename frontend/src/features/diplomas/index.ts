@@ -2,6 +2,8 @@ export type {
   DiplomaResponse,
   PreviewApplication,
   PrintJobResponse,
+  PrintPackageNomination,
+  PrintPackageSummaryResponse,
 } from "@/shared/api/generated/model-diplomas";
 export {
   type DiplomaTemplateQuery,
@@ -16,6 +18,7 @@ export {
   usePreviewApplications,
   usePreviewBindings,
   usePrintJob,
+  usePrintPackageSummary,
   useSaveTemplateLayoutMutation,
   useStartPrintPackageMutation,
   useTemplateLayout,

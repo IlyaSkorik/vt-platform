@@ -5,6 +5,7 @@ import type {
   PreviewApplication,
   PreviewBindings,
   PrintJobResponse,
+  PrintPackageSummaryResponse,
   TemplateResponse,
 } from "@/shared/api/generated/model-diplomas";
 
@@ -56,3 +57,6 @@ export const unwrapDiplomaList = (body: unknown): DiplomaResponse[] =>
 
 export const unwrapPrintJob = (body: unknown): PrintJobResponse =>
   unwrapItem<PrintJobResponse>(body);
+
+export const unwrapPrintSummary = (body: unknown): PrintPackageSummaryResponse =>
+  unwrapItem<PrintPackageSummaryResponse>(body);
