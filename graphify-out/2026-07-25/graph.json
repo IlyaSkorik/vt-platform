@@ -1220,8 +1220,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "backend_apps_applications_application_commands_cancel_cancelsubmissionhandler",
-      "community": 469,
-      "community_name": "Community 469",
+      "community": 69,
+      "community_name": "Competition Mgmt \u00b7 App Layer",
       "norm_label": "cancelsubmissionhandler"
     },
     {
@@ -1319,8 +1319,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "backend_apps_applications_application_commands_cancel_rationale_21",
-      "community": 469,
-      "community_name": "Community 469",
+      "community": 69,
+      "community_name": "Competition Mgmt \u00b7 App Layer",
       "norm_label": "use case: cancel (withdraw) the submission on the applicant's behalf.      the"
     },
     {
@@ -1737,8 +1737,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_applications_application_commands_payment",
-      "community": 178,
-      "community_name": "Community 178",
+      "community": 69,
+      "community_name": "Competition Mgmt \u00b7 App Layer",
       "norm_label": "payment.py"
     },
     {
@@ -1935,8 +1935,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_applications_application_commands_payment_rationale_1",
-      "community": 178,
-      "community_name": "Community 178",
+      "community": 69,
+      "community_name": "Competition Mgmt \u00b7 App Layer",
       "norm_label": "payment & acceptance lifecycle use cases (organizer-driven)."
     },
     {
@@ -2254,8 +2254,8 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "backend_apps_applications_application_commands_review_submitsubmissionhandler",
-      "community": 178,
-      "community_name": "Community 178",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "submitsubmissionhandler"
     },
     {
@@ -2309,8 +2309,8 @@
       "source_location": "L118",
       "_origin": "ast",
       "id": "backend_apps_applications_application_commands_review_startreviewhandler",
-      "community": 175,
-      "community_name": "Community 175",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "startreviewhandler"
     },
     {
@@ -2342,8 +2342,8 @@
       "source_location": "L146",
       "_origin": "ast",
       "id": "backend_apps_applications_application_commands_review_returnsubmissionforcorrectionhandler",
-      "community": 69,
-      "community_name": "Competition Mgmt \u00b7 App Layer",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "returnsubmissionforcorrectionhandler"
     },
     {
@@ -2386,8 +2386,8 @@
       "source_location": "L187",
       "_origin": "ast",
       "id": "backend_apps_applications_application_commands_review_approvesubmissionhandler",
-      "community": 69,
-      "community_name": "Competition Mgmt \u00b7 App Layer",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "approvesubmissionhandler"
     },
     {
@@ -2430,8 +2430,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "backend_apps_applications_application_commands_review_rationale_62",
-      "community": 178,
-      "community_name": "Community 178",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "use case: submit the submission to its competition (owner).      confirms the"
     },
     {
@@ -2441,8 +2441,8 @@
       "source_location": "L119",
       "_origin": "ast",
       "id": "backend_apps_applications_application_commands_review_rationale_119",
-      "community": 175,
-      "community_name": "Community 175",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "use case: begin reviewing a submitted submission (organizer)."
     },
     {
@@ -2452,8 +2452,8 @@
       "source_location": "L147",
       "_origin": "ast",
       "id": "backend_apps_applications_application_commands_review_rationale_147",
-      "community": 69,
-      "community_name": "Competition Mgmt \u00b7 App Layer",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "use case: return the submission to the applicant for correction (organizer)."
     },
     {
@@ -2463,8 +2463,8 @@
       "source_location": "L188",
       "_origin": "ast",
       "id": "backend_apps_applications_application_commands_review_rationale_188",
-      "community": 69,
-      "community_name": "Competition Mgmt \u00b7 App Layer",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "use case: approve the submission under review (organizer)."
     },
     {
@@ -3211,8 +3211,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_commands",
-      "community": 178,
-      "community_name": "Community 178",
+      "community": 219,
+      "community_name": "Community 219",
       "norm_label": "commands.py"
     },
     {
@@ -3222,8 +3222,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_commands_createsubmissioncommand",
-      "community": 275,
-      "community_name": "Community 275",
+      "community": 14,
+      "community_name": "Organization \u00b7 Infrastructure (repositories)",
       "norm_label": "createsubmissioncommand"
     },
     {
@@ -3255,8 +3255,8 @@
       "source_location": "L86",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_commands_updateperformancecommand",
-      "community": 178,
-      "community_name": "Community 178",
+      "community": 219,
+      "community_name": "Community 219",
       "norm_label": "updateperformancecommand"
     },
     {
@@ -3376,8 +3376,8 @@
       "source_location": "L257",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_commands_startreviewcommand",
-      "community": 178,
-      "community_name": "Community 178",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "startreviewcommand"
     },
     {
@@ -3387,8 +3387,8 @@
       "source_location": "L265",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_commands_returnsubmissionforcorrectioncommand",
-      "community": 178,
-      "community_name": "Community 178",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "returnsubmissionforcorrectioncommand"
     },
     {
@@ -3398,8 +3398,8 @@
       "source_location": "L274",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_commands_approvesubmissioncommand",
-      "community": 178,
-      "community_name": "Community 178",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "approvesubmissioncommand"
     },
     {
@@ -3497,8 +3497,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_commands_rationale_1",
-      "community": 178,
-      "community_name": "Community 178",
+      "community": 219,
+      "community_name": "Community 219",
       "norm_label": "command dtos for the applications (competition submission) bounded context.  i"
     },
     {
@@ -3508,8 +3508,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_commands_rationale_51",
-      "community": 275,
-      "community_name": "Community 275",
+      "community": 14,
+      "community_name": "Organization \u00b7 Infrastructure (repositories)",
       "norm_label": "create a new draft submission for a competition, owned by the applicant."
     },
     {
@@ -3541,8 +3541,8 @@
       "source_location": "L87",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_commands_rationale_87",
-      "community": 178,
-      "community_name": "Community 178",
+      "community": 219,
+      "community_name": "Community 219",
       "norm_label": "replace the submission's existing performance (owner, editable states only)."
     },
     {
@@ -3662,8 +3662,8 @@
       "source_location": "L258",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_commands_rationale_258",
-      "community": 178,
-      "community_name": "Community 178",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "begin reviewing a submitted submission (organizer)."
     },
     {
@@ -3673,8 +3673,8 @@
       "source_location": "L266",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_commands_rationale_266",
-      "community": 178,
-      "community_name": "Community 178",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "return the submission to the applicant for correction, with a mandatory comment"
     },
     {
@@ -3684,8 +3684,8 @@
       "source_location": "L275",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_commands_rationale_275",
-      "community": 178,
-      "community_name": "Community 178",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "approve the submission under review (organizer)."
     },
     {
@@ -4454,8 +4454,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_queries",
-      "community": 484,
-      "community_name": "recent-applications.tsx",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "queries.py"
     },
     {
@@ -4509,8 +4509,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_queries_listmysubmissionsquery",
-      "community": 484,
-      "community_name": "recent-applications.tsx",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "listmysubmissionsquery"
     },
     {
@@ -4520,8 +4520,8 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_queries_listcompetitionsubmissionsquery",
-      "community": 484,
-      "community_name": "recent-applications.tsx",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "listcompetitionsubmissionsquery"
     },
     {
@@ -4542,8 +4542,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_queries_rationale_1",
-      "community": 484,
-      "community_name": "recent-applications.tsx",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "query dtos for the applications (competition submission) bounded context.  inp"
     },
     {
@@ -4597,8 +4597,8 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_queries_rationale_55",
-      "community": 484,
-      "community_name": "recent-applications.tsx",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "list the submissions owned by the current applicant."
     },
     {
@@ -4608,8 +4608,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_queries_rationale_62",
-      "community": 484,
-      "community_name": "recent-applications.tsx",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "list all submissions for a competition (authorized organizer only)."
     },
     {
@@ -4696,8 +4696,8 @@
       "source_location": "L106",
       "_origin": "ast",
       "id": "backend_apps_applications_application_exceptions_competitioncombinationnotfounderror",
-      "community": 14,
-      "community_name": "Organization \u00b7 Infrastructure (repositories)",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "competitioncombinationnotfounderror"
     },
     {
@@ -5070,8 +5070,8 @@
       "source_location": "L107",
       "_origin": "ast",
       "id": "backend_apps_applications_application_exceptions_rationale_107",
-      "community": 14,
-      "community_name": "Organization \u00b7 Infrastructure (repositories)",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "the competition has no configuration/pricing for the chosen combination."
     },
     {
@@ -6698,8 +6698,8 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_ref_from_submission",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 18,
+      "community_name": "Domain Tests \u00b7 Applications",
       "norm_label": "ref_from_submission()"
     },
     {
@@ -6819,8 +6819,8 @@
       "source_location": "L67",
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_rationale_67",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 18,
+      "community_name": "Domain Tests \u00b7 Applications",
       "norm_label": "build the order's cached snapshot of a submission from its current state."
     },
     {
@@ -8040,8 +8040,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_list_submissions_listmysubmissionshandler",
-      "community": 484,
-      "community_name": "recent-applications.tsx",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "listmysubmissionshandler"
     },
     {
@@ -8051,8 +8051,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_list_submissions_listmysubmissionshandler_init",
-      "community": 484,
-      "community_name": "recent-applications.tsx",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": ".__init__()"
     },
     {
@@ -8062,8 +8062,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_list_submissions_listmysubmissionshandler_handle",
-      "community": 484,
-      "community_name": "recent-applications.tsx",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": ".handle()"
     },
     {
@@ -8073,8 +8073,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_list_submissions_listcompetitionsubmissionshandler",
-      "community": 484,
-      "community_name": "recent-applications.tsx",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "listcompetitionsubmissionshandler"
     },
     {
@@ -8095,8 +8095,8 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_list_submissions_listcompetitionsubmissionshandler_handle",
-      "community": 484,
-      "community_name": "recent-applications.tsx",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": ".handle()"
     },
     {
@@ -8117,8 +8117,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_list_submissions_rationale_26",
-      "community": 484,
-      "community_name": "recent-applications.tsx",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "use case: list the submissions owned by the current applicant."
     },
     {
@@ -8128,8 +8128,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_list_submissions_rationale_38",
-      "community": 484,
-      "community_name": "recent-applications.tsx",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "use case: list all submissions for a competition (authorized organizer only)."
     },
     {
@@ -9206,8 +9206,8 @@
       "source_location": "L566",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_submission_draft",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 834,
+      "community_name": ".status_history",
       "norm_label": ".draft()"
     },
     {
@@ -9371,8 +9371,8 @@
       "source_location": "L685",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_submission_price_snapshot",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".price_snapshot()"
     },
     {
@@ -10460,8 +10460,8 @@
       "source_location": "L575",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_rationale_575",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 834,
+      "community_name": ".status_history",
       "norm_label": "create a brand-new submission in the draft state.          the only constructi"
     },
     {
@@ -15113,8 +15113,8 @@
       "source_location": "L871",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_duration_of_seconds",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".of_seconds()"
     },
     {
@@ -15476,8 +15476,8 @@
       "source_location": "L1135",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_pricesnapshot",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": "pricesnapshot"
     },
     {
@@ -15509,8 +15509,8 @@
       "source_location": "L1160",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_pricesnapshot_currency",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".currency()"
     },
     {
@@ -15520,8 +15520,8 @@
       "source_location": "L1164",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_pricesnapshot_str",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".__str__()"
     },
     {
@@ -15762,8 +15762,8 @@
       "source_location": "L1352",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_educationalorganizationid_from_uuid",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": ".from_uuid()"
     },
     {
@@ -16026,8 +16026,8 @@
       "source_location": "L1551",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_submissionref_post_init",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".__post_init__()"
     },
     {
@@ -16466,8 +16466,8 @@
       "source_location": "L872",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_rationale_872",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": "build a :class:`duration` from a whole number of seconds."
     },
     {
@@ -16631,8 +16631,8 @@
       "source_location": "L1136",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_rationale_1136",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": "the immutable price of a submission, frozen at the moment it was calculated."
     },
     {
@@ -16653,8 +16653,8 @@
       "source_location": "L1161",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_rationale_1161",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": "the snapshotted currency."
     },
     {
@@ -17742,8 +17742,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_mappers_application_mapper_applicationmapper",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "applicationmapper"
     },
     {
@@ -17753,8 +17753,8 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_mappers_application_mapper_applicationmapper_to_domain",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": ".to_domain()"
     },
     {
@@ -17764,8 +17764,8 @@
       "source_location": "L71",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_mappers_application_mapper_applicationmapper_to_model",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": ".to_model()"
     },
     {
@@ -17775,8 +17775,8 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_mappers_application_mapper_applicationmapper_update_model",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": ".update_model()"
     },
     {
@@ -17786,8 +17786,8 @@
       "source_location": "L83",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_mappers_application_mapper_applicationmapper_to_columns",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "._to_columns()"
     },
     {
@@ -17797,8 +17797,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_mappers_application_mapper_py_any",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "any"
     },
     {
@@ -17808,8 +17808,8 @@
       "source_location": "L110",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_mappers_application_mapper_applicationmapper_ref_to_json",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "._ref_to_json()"
     },
     {
@@ -17819,8 +17819,8 @@
       "source_location": "L127",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_mappers_application_mapper_applicationmapper_ref_from_json",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "._ref_from_json()"
     },
     {
@@ -17830,8 +17830,8 @@
       "source_location": "L152",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_mappers_application_mapper_applicationmapper_service_to_json",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "._service_to_json()"
     },
     {
@@ -17841,8 +17841,8 @@
       "source_location": "L162",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_mappers_application_mapper_applicationmapper_service_from_json",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "._service_from_json()"
     },
     {
@@ -17852,8 +17852,8 @@
       "source_location": "L171",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_mappers_application_mapper_applicationmapper_consent_to_json",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "._consent_to_json()"
     },
     {
@@ -17863,8 +17863,8 @@
       "source_location": "L175",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_mappers_application_mapper_applicationmapper_consent_from_json",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "._consent_from_json()"
     },
     {
@@ -17874,8 +17874,8 @@
       "source_location": "L183",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_mappers_application_mapper_applicationmapper_total_to_json",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "._total_to_json()"
     },
     {
@@ -17885,8 +17885,8 @@
       "source_location": "L195",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_mappers_application_mapper_applicationmapper_total_from_json",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "._total_from_json()"
     },
     {
@@ -17896,8 +17896,8 @@
       "source_location": "L207",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_mappers_application_mapper_applicationmapper_change_to_json",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "._change_to_json()"
     },
     {
@@ -17907,8 +17907,8 @@
       "source_location": "L215",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_mappers_application_mapper_applicationmapper_change_from_json",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "._change_from_json()"
     },
     {
@@ -17918,8 +17918,8 @@
       "source_location": "L223",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_mappers_application_mapper_applicationmapper_receipt_to_json",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "._receipt_to_json()"
     },
     {
@@ -17929,8 +17929,8 @@
       "source_location": "L229",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_mappers_application_mapper_applicationmapper_receipt_from_json",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "._receipt_from_json()"
     },
     {
@@ -17951,8 +17951,8 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_mappers_application_mapper_rationale_42",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "bidirectional, stateless translator between the ``application`` aggregate and it"
     },
     {
@@ -17962,8 +17962,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_mappers_application_mapper_rationale_46",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "reconstruct the ``application`` aggregate from its row (no re-validation, no eve"
     },
     {
@@ -17973,8 +17973,8 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_mappers_application_mapper_rationale_72",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "build a brand-new, **unsaved** ``applicationmodel`` from an aggregate."
     },
     {
@@ -17984,8 +17984,8 @@
       "source_location": "L77",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_mappers_application_mapper_rationale_77",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "project ``entity`` onto an existing ``model`` in place, returning it."
     },
     {
@@ -22274,8 +22274,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_applications_presentation_api_v1_submissions_content_serializers",
-      "community": 219,
-      "community_name": "Community 219",
+      "community": 264,
+      "community_name": "Community 264",
       "norm_label": "content_serializers.py"
     },
     {
@@ -22318,8 +22318,8 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "backend_apps_applications_presentation_api_v1_submissions_content_serializers_performanceresourceserializer",
-      "community": 219,
-      "community_name": "Community 219",
+      "community": 264,
+      "community_name": "Community 264",
       "norm_label": "_performanceresourceserializer"
     },
     {
@@ -22329,8 +22329,8 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "backend_apps_applications_presentation_api_v1_submissions_content_serializers_participantresourceserializer",
-      "community": 219,
-      "community_name": "Community 219",
+      "community": 264,
+      "community_name": "Community 264",
       "norm_label": "_participantresourceserializer"
     },
     {
@@ -22340,8 +22340,8 @@
       "source_location": "L88",
       "_origin": "ast",
       "id": "backend_apps_applications_presentation_api_v1_submissions_content_serializers_teacherresourceserializer",
-      "community": 219,
-      "community_name": "Community 219",
+      "community": 264,
+      "community_name": "Community 264",
       "norm_label": "_teacherresourceserializer"
     },
     {
@@ -22351,8 +22351,8 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "backend_apps_applications_presentation_api_v1_submissions_content_serializers_submissionattachmentresourceserializer",
-      "community": 219,
-      "community_name": "Community 219",
+      "community": 264,
+      "community_name": "Community 264",
       "norm_label": "_submissionattachmentresourceserializer"
     },
     {
@@ -22362,8 +22362,8 @@
       "source_location": "L104",
       "_origin": "ast",
       "id": "backend_apps_applications_presentation_api_v1_submissions_content_serializers_submissionpriceserializer",
-      "community": 219,
-      "community_name": "Community 219",
+      "community": 264,
+      "community_name": "Community 264",
       "norm_label": "_submissionpriceserializer"
     },
     {
@@ -22373,8 +22373,8 @@
       "source_location": "L110",
       "_origin": "ast",
       "id": "backend_apps_applications_presentation_api_v1_submissions_content_serializers_submissionstatushistoryserializer",
-      "community": 219,
-      "community_name": "Community 219",
+      "community": 264,
+      "community_name": "Community 264",
       "norm_label": "_submissionstatushistoryserializer"
     },
     {
@@ -22384,8 +22384,8 @@
       "source_location": "L116",
       "_origin": "ast",
       "id": "backend_apps_applications_presentation_api_v1_submissions_content_serializers_submissionresourceserializer",
-      "community": 219,
-      "community_name": "Community 219",
+      "community": 264,
+      "community_name": "Community 264",
       "norm_label": "submissionresourceserializer"
     },
     {
@@ -22395,8 +22395,8 @@
       "source_location": "L133",
       "_origin": "ast",
       "id": "backend_apps_applications_presentation_api_v1_submissions_content_serializers_submissionmetaserializer",
-      "community": 219,
-      "community_name": "Community 219",
+      "community": 264,
+      "community_name": "Community 264",
       "norm_label": "_submissionmetaserializer"
     },
     {
@@ -22406,8 +22406,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_applications_presentation_api_v1_submissions_content_serializers_rationale_1",
-      "community": 219,
-      "community_name": "Community 219",
+      "community": 264,
+      "community_name": "Community 264",
       "norm_label": "request/response serializers for the submission content endpoints (api-000 \u00a77, \u00a7"
     },
     {
@@ -22450,8 +22450,8 @@
       "source_location": "L117",
       "_origin": "ast",
       "id": "backend_apps_applications_presentation_api_v1_submissions_content_serializers_rationale_117",
-      "community": 219,
-      "community_name": "Community 219",
+      "community": 264,
+      "community_name": "Community 264",
       "norm_label": "the full submission resource (root + child graph)."
     },
     {
@@ -23891,8 +23891,8 @@
       "source_location": "L111",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_dto_commands_updatebrandingcommand",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "updatebrandingcommand"
     },
     {
@@ -24320,8 +24320,8 @@
       "source_location": "L512",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_dto_commands_disableadditionalservicecommand",
-      "community": 103,
-      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
+      "community": 55,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "disableadditionalservicecommand"
     },
     {
@@ -24441,8 +24441,8 @@
       "source_location": "L602",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_dto_commands_reverttodraftcommand",
-      "community": 1,
-      "community_name": "Competition Mgmt \u00b7 App Layer",
+      "community": 877,
+      "community_name": "RevertCompetitionToDraftHandler",
       "norm_label": "reverttodraftcommand"
     },
     {
@@ -24452,8 +24452,8 @@
       "source_location": "L607",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_dto_commands_markreadycommand",
-      "community": 103,
-      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
+      "community": 775,
+      "community_name": "Notifications Context",
       "norm_label": "markreadycommand"
     },
     {
@@ -24540,8 +24540,8 @@
       "source_location": "L112",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_dto_commands_rationale_112",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "replace the competition's branding assets (logo, banner, poster)."
     },
     {
@@ -26597,8 +26597,8 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_handlers_lifecycle_revertcompetitiontodrafthandler",
-      "community": 1,
-      "community_name": "Competition Mgmt \u00b7 App Layer",
+      "community": 877,
+      "community_name": "RevertCompetitionToDraftHandler",
       "norm_label": "revertcompetitiontodrafthandler"
     },
     {
@@ -26608,8 +26608,8 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_handlers_lifecycle_revertcompetitiontodrafthandler_handle",
-      "community": 1,
-      "community_name": "Competition Mgmt \u00b7 App Layer",
+      "community": 877,
+      "community_name": "RevertCompetitionToDraftHandler",
       "norm_label": ".handle()"
     },
     {
@@ -26619,8 +26619,8 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_handlers_lifecycle_markcompetitionreadyhandler",
-      "community": 1,
-      "community_name": "Competition Mgmt \u00b7 App Layer",
+      "community": 775,
+      "community_name": "Notifications Context",
       "norm_label": "markcompetitionreadyhandler"
     },
     {
@@ -26630,8 +26630,8 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_handlers_lifecycle_markcompetitionreadyhandler_handle",
-      "community": 103,
-      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
+      "community": 775,
+      "community_name": "Notifications Context",
       "norm_label": ".handle()"
     },
     {
@@ -26751,8 +26751,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_handlers_lifecycle_rationale_46",
-      "community": 1,
-      "community_name": "Competition Mgmt \u00b7 App Layer",
+      "community": 877,
+      "community_name": "RevertCompetitionToDraftHandler",
       "norm_label": "move a competition from configured back to draft."
     },
     {
@@ -26762,8 +26762,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_handlers_lifecycle_rationale_62",
-      "community": 1,
-      "community_name": "Competition Mgmt \u00b7 App Layer",
+      "community": 775,
+      "community_name": "Notifications Context",
       "norm_label": "move a competition from configured to ready."
     },
     {
@@ -27301,8 +27301,8 @@
       "source_location": "L118",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_handlers_services_disableadditionalservicehandler",
-      "community": 1,
-      "community_name": "Competition Mgmt \u00b7 App Layer",
+      "community": 55,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "disableadditionalservicehandler"
     },
     {
@@ -27312,8 +27312,8 @@
       "source_location": "L121",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_handlers_services_disableadditionalservicehandler_handle",
-      "community": 103,
-      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
+      "community": 55,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": ".handle()"
     },
     {
@@ -27400,8 +27400,8 @@
       "source_location": "L119",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_handlers_services_rationale_119",
-      "community": 1,
-      "community_name": "Competition Mgmt \u00b7 App Layer",
+      "community": 55,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "disable an additional service."
     },
     {
@@ -46859,8 +46859,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_py_any",
-      "community": 775,
-      "community_name": "Notifications Context",
+      "community": 215,
+      "community_name": "Community 215",
       "norm_label": "any"
     },
     {
@@ -46870,8 +46870,8 @@
       "source_location": "L216",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_error_responses",
-      "community": 775,
-      "community_name": "Notifications Context",
+      "community": 215,
+      "community_name": "Community 215",
       "norm_label": "_error_responses()"
     },
     {
@@ -46881,8 +46881,8 @@
       "source_location": "L229",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_detail_ok",
-      "community": 775,
-      "community_name": "Notifications Context",
+      "community": 215,
+      "community_name": "Community 215",
       "norm_label": "_detail_ok()"
     },
     {
@@ -46892,8 +46892,8 @@
       "source_location": "L233",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_command_kwargs",
-      "community": 775,
-      "community_name": "Notifications Context",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "_command_kwargs()"
     },
     {
@@ -46903,8 +46903,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "serializer",
-      "community": 775,
-      "community_name": "Notifications Context",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "serializer"
     },
     {
@@ -46914,7 +46914,7 @@
       "source_location": "L250",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset",
-      "community": 55,
+      "community": 23,
       "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "competitionviewset"
     },
@@ -46925,8 +46925,8 @@
       "source_location": "L260",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_body",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "._body()"
     },
     {
@@ -46936,8 +46936,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_py_request",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "request"
     },
     {
@@ -46947,8 +46947,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_py_response",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "response"
     },
     {
@@ -46958,8 +46958,8 @@
       "source_location": "L271",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_run",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "._run()"
     },
     {
@@ -46969,8 +46969,8 @@
       "source_location": "L287",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_detail",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "._detail()"
     },
     {
@@ -46991,8 +46991,8 @@
       "source_location": "L308",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_retrieve",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".retrieve()"
     },
     {
@@ -47002,8 +47002,8 @@
       "source_location": "L317",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_create",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".create()"
     },
     {
@@ -47013,8 +47013,8 @@
       "source_location": "L330",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_partial_update",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".partial_update()"
     },
     {
@@ -47024,8 +47024,8 @@
       "source_location": "L339",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_branding",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".branding()"
     },
     {
@@ -47035,8 +47035,8 @@
       "source_location": "L359",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_upload_poster",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".upload_poster()"
     },
     {
@@ -47046,7 +47046,7 @@
       "source_location": "L407",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_configure_settings",
-      "community": 55,
+      "community": 23,
       "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": ".configure_settings()"
     },
@@ -47057,8 +47057,8 @@
       "source_location": "L421",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_configure_contacts",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 5,
+      "community_name": "Identity \u00b7 Domain (value)",
       "norm_label": ".configure_contacts()"
     },
     {
@@ -47068,7 +47068,7 @@
       "source_location": "L450",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_configure_landing",
-      "community": 55,
+      "community": 23,
       "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": ".configure_landing()"
     },
@@ -47079,8 +47079,8 @@
       "source_location": "L488",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_deadlines",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".deadlines()"
     },
     {
@@ -47090,8 +47090,8 @@
       "source_location": "L501",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_mark_configured",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 51,
+      "community_name": "Application Tests \u00b7 Competitions",
       "norm_label": ".mark_configured()"
     },
     {
@@ -47101,8 +47101,8 @@
       "source_location": "L506",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_revert_to_draft",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 877,
+      "community_name": "RevertCompetitionToDraftHandler",
       "norm_label": ".revert_to_draft()"
     },
     {
@@ -47112,8 +47112,8 @@
       "source_location": "L511",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_mark_ready",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 775,
+      "community_name": "Notifications Context",
       "norm_label": ".mark_ready()"
     },
     {
@@ -47123,8 +47123,8 @@
       "source_location": "L516",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_revert_to_configured",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 1,
+      "community_name": "Competition Mgmt \u00b7 App Layer",
       "norm_label": ".revert_to_configured()"
     },
     {
@@ -47134,8 +47134,8 @@
       "source_location": "L521",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_publish",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 51,
+      "community_name": "Application Tests \u00b7 Competitions",
       "norm_label": ".publish()"
     },
     {
@@ -47145,8 +47145,8 @@
       "source_location": "L526",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_start",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 51,
+      "community_name": "Application Tests \u00b7 Competitions",
       "norm_label": ".start()"
     },
     {
@@ -47156,8 +47156,8 @@
       "source_location": "L531",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_complete",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".complete()"
     },
     {
@@ -47167,8 +47167,8 @@
       "source_location": "L540",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_categories",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".categories()"
     },
     {
@@ -47178,8 +47178,8 @@
       "source_location": "L550",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_category_detail",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".category_detail()"
     },
     {
@@ -47189,8 +47189,8 @@
       "source_location": "L566",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_nomination_registration",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".nomination_registration()"
     },
     {
@@ -47200,8 +47200,8 @@
       "source_location": "L579",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_stop_nomination_registration",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".stop_nomination_registration()"
     },
     {
@@ -47211,8 +47211,8 @@
       "source_location": "L588",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_resume_nomination_registration",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".resume_nomination_registration()"
     },
     {
@@ -47222,8 +47222,8 @@
       "source_location": "L601",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_disciplines",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".disciplines()"
     },
     {
@@ -47244,8 +47244,8 @@
       "source_location": "L626",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_age_categories",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".age_categories()"
     },
     {
@@ -47255,8 +47255,8 @@
       "source_location": "L636",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_age_category_detail",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".age_category_detail()"
     },
     {
@@ -47266,7 +47266,7 @@
       "source_location": "L653",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_participant_groups",
-      "community": 55,
+      "community": 23,
       "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": ".participant_groups()"
     },
@@ -47277,8 +47277,8 @@
       "source_location": "L671",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_participant_group_detail",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".participant_group_detail()"
     },
     {
@@ -47288,7 +47288,7 @@
       "source_location": "L702",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_participation_formats",
-      "community": 55,
+      "community": 23,
       "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": ".participation_formats()"
     },
@@ -47299,8 +47299,8 @@
       "source_location": "L720",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_participation_format_detail",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".participation_format_detail()"
     },
     {
@@ -47310,8 +47310,8 @@
       "source_location": "L749",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_admission_rules",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 773,
+      "community_name": "queries.ts",
       "norm_label": ".admission_rules()"
     },
     {
@@ -47321,8 +47321,8 @@
       "source_location": "L758",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_remove_admission_rule",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 773,
+      "community_name": "queries.ts",
       "norm_label": ".remove_admission_rule()"
     },
     {
@@ -47343,8 +47343,8 @@
       "source_location": "L789",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_remove_pricing_rule",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 773,
+      "community_name": "queries.ts",
       "norm_label": ".remove_pricing_rule()"
     },
     {
@@ -47365,8 +47365,8 @@
       "source_location": "L872",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_regulations",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".regulations()"
     },
     {
@@ -47376,8 +47376,8 @@
       "source_location": "L881",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_make_regulation_current",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".make_regulation_current()"
     },
     {
@@ -47387,8 +47387,8 @@
       "source_location": "L886",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_regulation_detail",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".regulation_detail()"
     },
     {
@@ -47420,8 +47420,8 @@
       "source_location": "L1044",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_documents",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".documents()"
     },
     {
@@ -47431,8 +47431,8 @@
       "source_location": "L1054",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_document_detail",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".document_detail()"
     },
     {
@@ -47442,8 +47442,8 @@
       "source_location": "L1065",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_publish_document",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".publish_document()"
     },
     {
@@ -47453,8 +47453,8 @@
       "source_location": "L1070",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_unpublish_document",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".unpublish_document()"
     },
     {
@@ -47464,8 +47464,8 @@
       "source_location": "L1081",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_services",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".services()"
     },
     {
@@ -47475,8 +47475,8 @@
       "source_location": "L1095",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_service_detail",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".service_detail()"
     },
     {
@@ -47486,8 +47486,8 @@
       "source_location": "L1106",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_enable_service",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".enable_service()"
     },
     {
@@ -47508,8 +47508,8 @@
       "source_location": "L1120",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_contacts",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".contacts()"
     },
     {
@@ -47519,8 +47519,8 @@
       "source_location": "L1129",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_set_primary_contact",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".set_primary_contact()"
     },
     {
@@ -47530,8 +47530,8 @@
       "source_location": "L1134",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_contact_detail",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".contact_detail()"
     },
     {
@@ -47541,8 +47541,8 @@
       "source_location": "L1145",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_information_blocks",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".information_blocks()"
     },
     {
@@ -47552,8 +47552,8 @@
       "source_location": "L1159",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_information_block_detail",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".information_block_detail()"
     },
     {
@@ -47563,8 +47563,8 @@
       "source_location": "L1170",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_publish_information_block",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".publish_information_block()"
     },
     {
@@ -47574,8 +47574,8 @@
       "source_location": "L1175",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_hide_information_block",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".hide_information_block()"
     },
     {
@@ -47607,8 +47607,8 @@
       "source_location": "L217",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_rationale_217",
-      "community": 775,
-      "community_name": "Notifications Context",
+      "community": 215,
+      "community_name": "Community 215",
       "norm_label": "shared response schema: the success entries plus the standard problems."
     },
     {
@@ -47618,8 +47618,8 @@
       "source_location": "L234",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_rationale_234",
-      "community": 775,
-      "community_name": "Notifications Context",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "coerce validated data into command-friendly primitives (uuid/decimal \u2192 str)."
     },
     {
@@ -47629,7 +47629,7 @@
       "source_location": "L251",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_rationale_251",
-      "community": 55,
+      "community": 23,
       "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "organizer competition api \u2014 staff-only."
     },
@@ -47640,8 +47640,8 @@
       "source_location": "L265",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_rationale_265",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "validate a request body; return (kwargs, none) or (none, problem)."
     },
     {
@@ -47651,8 +47651,8 @@
       "source_location": "L279",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_rationale_279",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "execute a command handler and render the refreshed competition (or a problem)."
     },
     {
@@ -47662,8 +47662,8 @@
       "source_location": "L360",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_rationale_360",
-      "community": 55,
-      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "upload a competition poster image and store its media reference."
     },
     {
@@ -52455,7 +52455,7 @@
       "label": "_job_json()",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py",
-      "source_location": "L127",
+      "source_location": "L137",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_job_json",
       "community": 94,
@@ -52466,7 +52466,7 @@
       "label": "start_print_package()",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py",
-      "source_location": "L142",
+      "source_location": "L152",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_start_print_package",
       "community": 94,
@@ -52477,7 +52477,7 @@
       "label": "get_print_job()",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py",
-      "source_location": "L172",
+      "source_location": "L182",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_get_print_job",
       "community": 94,
@@ -52532,9 +52532,9 @@
       "label": "Create + enqueue a print-package job for the chosen nominations (or all).      V",
       "file_type": "rationale",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py",
-      "source_location": "L145",
+      "source_location": "L155",
       "_origin": "ast",
-      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_rationale_145",
+      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_rationale_155",
       "community": 94,
       "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": "create + enqueue a print-package job for the chosen nominations (or all).      v"
@@ -52543,9 +52543,9 @@
       "label": "One job's status/result. Raises :class:`PrintJobNotFoundError` if unknown.",
       "file_type": "rationale",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py",
-      "source_location": "L173",
+      "source_location": "L183",
       "_origin": "ast",
-      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_rationale_173",
+      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_rationale_183",
       "community": 94,
       "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": "one job's status/result. raises :class:`printjobnotfounderror` if unknown."
@@ -52994,7 +52994,7 @@
       "label": "PrintPackageSummaryResponseSerializer",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L315",
+      "source_location": "L317",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_printpackagesummaryresponseserializer",
       "community": 125,
@@ -53236,9 +53236,9 @@
       "label": "Per-nomination print-package summary for a competition.",
       "file_type": "rationale",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L316",
+      "source_location": "L318",
       "_origin": "ast",
-      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_316",
+      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_318",
       "community": 125,
       "community_name": "Participants \u00b7 Domain (value)",
       "norm_label": "per-nomination print-package summary for a competition."
@@ -81883,8 +81883,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_participants_domain_entities_py_personname",
-      "community": 42,
-      "community_name": "Domain Tests \u00b7 Participants",
+      "community": 32,
+      "community_name": "Participants \u00b7 Domain",
       "norm_label": "personname"
     },
     {
@@ -81938,8 +81938,8 @@
       "source_location": "L247",
       "_origin": "ast",
       "id": "backend_apps_participants_domain_entities_participant_name",
-      "community": 42,
-      "community_name": "Domain Tests \u00b7 Participants",
+      "community": 32,
+      "community_name": "Participants \u00b7 Domain",
       "norm_label": ".name()"
     },
     {
@@ -82488,8 +82488,8 @@
       "source_location": "L248",
       "_origin": "ast",
       "id": "backend_apps_participants_domain_entities_rationale_248",
-      "community": 42,
-      "community_name": "Domain Tests \u00b7 Participants",
+      "community": 32,
+      "community_name": "Participants \u00b7 Domain",
       "norm_label": "the participant's minimized real name (access-restricted, prt-006)."
     },
     {
@@ -96153,8 +96153,8 @@
       "source_location": "L108",
       "_origin": "ast",
       "id": "backend_tests_application_applications_test_handlers_env_create",
-      "community": 275,
-      "community_name": "Community 275",
+      "community": 14,
+      "community_name": "Organization \u00b7 Infrastructure (repositories)",
       "norm_label": ".create()"
     },
     {
@@ -96296,8 +96296,8 @@
       "source_location": "L157",
       "_origin": "ast",
       "id": "backend_tests_application_applications_test_handlers_env_mark_waiting_payment",
-      "community": 178,
-      "community_name": "Community 178",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": ".mark_waiting_payment()"
     },
     {
@@ -96307,8 +96307,8 @@
       "source_location": "L160",
       "_origin": "ast",
       "id": "backend_tests_application_applications_test_handlers_env_mark_paid",
-      "community": 178,
-      "community_name": "Community 178",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": ".mark_paid()"
     },
     {
@@ -96318,8 +96318,8 @@
       "source_location": "L163",
       "_origin": "ast",
       "id": "backend_tests_application_applications_test_handlers_env_accept",
-      "community": 178,
-      "community_name": "Community 178",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": ".accept()"
     },
     {
@@ -96329,8 +96329,8 @@
       "source_location": "L166",
       "_origin": "ast",
       "id": "backend_tests_application_applications_test_handlers_env_cancel",
-      "community": 469,
-      "community_name": "Community 469",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": ".cancel()"
     },
     {
@@ -96362,8 +96362,8 @@
       "source_location": "L177",
       "_origin": "ast",
       "id": "backend_tests_application_applications_test_handlers_env_get_history",
-      "community": 484,
-      "community_name": "recent-applications.tsx",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": ".get_history()"
     },
     {
@@ -96450,8 +96450,8 @@
       "source_location": "L233",
       "_origin": "ast",
       "id": "backend_tests_application_applications_test_handlers_testcreatesubmission_test_creates_draft_and_publishes_event",
-      "community": 275,
-      "community_name": "Community 275",
+      "community": 14,
+      "community_name": "Organization \u00b7 Infrastructure (repositories)",
       "norm_label": ".test_creates_draft_and_publishes_event()"
     },
     {
@@ -96461,8 +96461,8 @@
       "source_location": "L245",
       "_origin": "ast",
       "id": "backend_tests_application_applications_test_handlers_testcreatesubmission_test_unknown_applicant_is_rejected",
-      "community": 275,
-      "community_name": "Community 275",
+      "community": 14,
+      "community_name": "Organization \u00b7 Infrastructure (repositories)",
       "norm_label": ".test_unknown_applicant_is_rejected()"
     },
     {
@@ -96472,8 +96472,8 @@
       "source_location": "L250",
       "_origin": "ast",
       "id": "backend_tests_application_applications_test_handlers_testcreatesubmission_test_unknown_competition_is_rejected",
-      "community": 275,
-      "community_name": "Community 275",
+      "community": 14,
+      "community_name": "Organization \u00b7 Infrastructure (repositories)",
       "norm_label": ".test_unknown_competition_is_rejected()"
     },
     {
@@ -96483,8 +96483,8 @@
       "source_location": "L255",
       "_origin": "ast",
       "id": "backend_tests_application_applications_test_handlers_testcreatesubmission_test_closed_competition_is_rejected",
-      "community": 275,
-      "community_name": "Community 275",
+      "community": 14,
+      "community_name": "Organization \u00b7 Infrastructure (repositories)",
       "norm_label": ".test_closed_competition_is_rejected()"
     },
     {
@@ -96648,8 +96648,8 @@
       "source_location": "L417",
       "_origin": "ast",
       "id": "backend_tests_application_applications_test_handlers_testlifecycle_test_full_happy_path",
-      "community": 178,
-      "community_name": "Community 178",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": ".test_full_happy_path()"
     },
     {
@@ -105822,8 +105822,8 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_application_value_objects_testidentifiers_test_educational_organization_id_rejects_non_v7",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 47,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": ".test_educational_organization_id_rejects_non_v7()"
     },
     {
@@ -105998,8 +105998,8 @@
       "source_location": "L119",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_application_value_objects_testsubmissionref",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": "testsubmissionref"
     },
     {
@@ -106009,8 +106009,8 @@
       "source_location": "L120",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_application_value_objects_testsubmissionref_ref",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": "._ref()"
     },
     {
@@ -106020,8 +106020,8 @@
       "source_location": "L131",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_application_value_objects_testsubmissionref_test_is_approved_reflects_status",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_is_approved_reflects_status()"
     },
     {
@@ -106031,8 +106031,8 @@
       "source_location": "L135",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_application_value_objects_testsubmissionref_test_price_line_is_zero_when_unpriced",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_price_line_is_zero_when_unpriced()"
     },
     {
@@ -106042,8 +106042,8 @@
       "source_location": "L138",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_application_value_objects_testsubmissionref_test_price_line_reads_snapshot",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_price_line_reads_snapshot()"
     },
     {
@@ -106053,8 +106053,8 @@
       "source_location": "L142",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_application_value_objects_testsubmissionref_test_trims_display_labels",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_trims_display_labels()"
     },
     {
@@ -106064,8 +106064,8 @@
       "source_location": "L154",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_application_value_objects_testsubmissionref_test_rejects_over_long_label",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_rejects_over_long_label()"
     },
     {
@@ -106075,8 +106075,8 @@
       "source_location": "L165",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_application_value_objects_testsubmissionref_test_rejects_bad_status_type",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_rejects_bad_status_type()"
     },
     {
@@ -106306,8 +106306,8 @@
       "source_location": "L143",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_entities_testconstruction_test_draft_starts_empty_and_emits_created",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 834,
+      "community_name": ".status_history",
       "norm_label": ".test_draft_starts_empty_and_emits_created()"
     },
     {
@@ -106504,8 +106504,8 @@
       "source_location": "L285",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_entities_testpricesnapshot_test_set_emits_event",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_set_emits_event()"
     },
     {
@@ -106515,8 +106515,8 @@
       "source_location": "L291",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_entities_testpricesnapshot_test_recompute_allowed_while_draft",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_recompute_allowed_while_draft()"
     },
     {
@@ -106999,8 +106999,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": "test_value_objects.py"
     },
     {
@@ -107098,8 +107098,8 @@
       "source_location": "L71",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testduration",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": "testduration"
     },
     {
@@ -107120,8 +107120,8 @@
       "source_location": "L77",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testduration_test_str_is_mm_ss",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_str_is_mm_ss()"
     },
     {
@@ -107131,8 +107131,8 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testduration_test_non_positive_rejected",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_non_positive_rejected()"
     },
     {
@@ -107142,8 +107142,8 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testduration_test_too_long_rejected",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_too_long_rejected()"
     },
     {
@@ -107164,8 +107164,8 @@
       "source_location": "L93",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testpersonname",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": "testpersonname"
     },
     {
@@ -107175,8 +107175,8 @@
       "source_location": "L94",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testpersonname_test_full_name_with_middle",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_full_name_with_middle()"
     },
     {
@@ -107186,8 +107186,8 @@
       "source_location": "L98",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testpersonname_test_full_name_without_middle",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_full_name_without_middle()"
     },
     {
@@ -107197,8 +107197,8 @@
       "source_location": "L101",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testpersonname_test_blank_middle_becomes_none",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_blank_middle_becomes_none()"
     },
     {
@@ -107208,8 +107208,8 @@
       "source_location": "L104",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testpersonname_test_empty_first_rejected",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_empty_first_rejected()"
     },
     {
@@ -107219,8 +107219,8 @@
       "source_location": "L108",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testpersonname_test_value_equality",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_value_equality()"
     },
     {
@@ -107285,8 +107285,8 @@
       "source_location": "L130",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testteacherrole",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": "testteacherrole"
     },
     {
@@ -107296,8 +107296,8 @@
       "source_location": "L131",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testteacherrole_test_configurable_label",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_configurable_label()"
     },
     {
@@ -107307,8 +107307,8 @@
       "source_location": "L134",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testteacherrole_test_empty_rejected",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_empty_rejected()"
     },
     {
@@ -107351,8 +107351,8 @@
       "source_location": "L148",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testmoney",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": "testmoney"
     },
     {
@@ -107362,8 +107362,8 @@
       "source_location": "L149",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testmoney_test_quantized",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_quantized()"
     },
     {
@@ -107373,8 +107373,8 @@
       "source_location": "L152",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testmoney_test_default_currency_is_rub",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_default_currency_is_rub()"
     },
     {
@@ -107384,8 +107384,8 @@
       "source_location": "L155",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testmoney_test_negative_rejected",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_negative_rejected()"
     },
     {
@@ -107395,8 +107395,8 @@
       "source_location": "L159",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testmoney_test_float_rejected",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_float_rejected()"
     },
     {
@@ -107406,8 +107406,8 @@
       "source_location": "L164",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testpricesnapshot",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": "testpricesnapshot"
     },
     {
@@ -107417,8 +107417,8 @@
       "source_location": "L165",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testpricesnapshot_test_exposes_amount_and_currency",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_exposes_amount_and_currency()"
     },
     {
@@ -107428,8 +107428,8 @@
       "source_location": "L171",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testpricesnapshot_test_requires_money",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_requires_money()"
     },
     {
@@ -107439,8 +107439,8 @@
       "source_location": "L175",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testpricesnapshot_test_requires_datetime",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_requires_datetime()"
     },
     {
@@ -107450,8 +107450,8 @@
       "source_location": "L179",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testpricesnapshot_test_is_immutable",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_is_immutable()"
     },
     {
@@ -107461,8 +107461,8 @@
       "source_location": "L185",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testparticipantcountrange",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": "testparticipantcountrange"
     },
     {
@@ -107472,8 +107472,8 @@
       "source_location": "L186",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testparticipantcountrange_test_fixed_size",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_fixed_size()"
     },
     {
@@ -107483,8 +107483,8 @@
       "source_location": "L191",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testparticipantcountrange_test_open_ended",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_open_ended()"
     },
     {
@@ -107494,8 +107494,8 @@
       "source_location": "L197",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testparticipantcountrange_test_min_below_one_rejected",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_min_below_one_rejected()"
     },
     {
@@ -107505,8 +107505,8 @@
       "source_location": "L201",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testparticipantcountrange_test_inverted_rejected",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_inverted_rejected()"
     },
     {
@@ -107549,8 +107549,8 @@
       "source_location": "L216",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testenums",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": "testenums"
     },
     {
@@ -107560,8 +107560,8 @@
       "source_location": "L217",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testenums_test_status_members",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_status_members()"
     },
     {
@@ -107571,8 +107571,8 @@
       "source_location": "L232",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testenums_test_attachment_type_members",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_attachment_type_members()"
     },
     {
@@ -107582,8 +107582,8 @@
       "source_location": "L235",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_testenums_test_gender_members",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": ".test_gender_members()"
     },
     {
@@ -107593,8 +107593,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_value_objects_rationale_1",
-      "community": 18,
-      "community_name": "Domain Tests \u00b7 Applications",
+      "community": 779,
+      "community_name": "Community 779",
       "norm_label": "unit tests for the applications (competition submission) domain value objects."
     },
     {
@@ -115854,8 +115854,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_applications_test_repositories",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 18,
+      "community_name": "Domain Tests \u00b7 Applications",
       "norm_label": "test_repositories.py"
     },
     {
@@ -115931,8 +115931,8 @@
       "source_location": "L172",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_applications_test_repositories_build_application",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 18,
+      "community_name": "Domain Tests \u00b7 Applications",
       "norm_label": "_build_application()"
     },
     {
@@ -115953,8 +115953,8 @@
       "source_location": "L199",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_applications_test_repositories_testapplicationrepository_test_round_trip_preserves_graph",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 18,
+      "community_name": "Domain Tests \u00b7 Applications",
       "norm_label": ".test_round_trip_preserves_graph()"
     },
     {
@@ -115964,8 +115964,8 @@
       "source_location": "L217",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_applications_test_repositories_testapplicationrepository_test_list_by_applicant",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 18,
+      "community_name": "Domain Tests \u00b7 Applications",
       "norm_label": ".test_list_by_applicant()"
     },
     {
@@ -115986,8 +115986,8 @@
       "source_location": "L237",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_applications_test_repositories_testapplicationrepository_test_many_mutations_in_one_unit_of_work_save_without_false_conflict",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 18,
+      "community_name": "Domain Tests \u00b7 Applications",
       "norm_label": ".test_many_mutations_in_one_unit_of_work_save_without_false_conflict()"
     },
     {
@@ -115997,8 +115997,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_applications_test_repositories_rationale_1",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 18,
+      "community_name": "Domain Tests \u00b7 Applications",
       "norm_label": "round-trip tests for the applications persistence adapters (real postgresql)."
     },
     {
@@ -116008,8 +116008,8 @@
       "source_location": "L238",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_applications_test_repositories_rationale_238",
-      "community": 834,
-      "community_name": ".status_history",
+      "community": 18,
+      "community_name": "Domain Tests \u00b7 Applications",
       "norm_label": "regression: submitting an order bumps the version several times before one"
     },
     {
@@ -116709,7 +116709,7 @@
       "label": "test_zip_contains_a_pdf_per_generated_diploma()",
       "file_type": "code",
       "source_file": "backend/tests/infrastructure/diplomas/test_print_package.py",
-      "source_location": "L160",
+      "source_location": "L170",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_diplomas_test_print_package_test_zip_contains_a_pdf_per_generated_diploma",
       "community": 266,
@@ -116720,7 +116720,7 @@
       "label": "test_no_assigned_template_raises()",
       "file_type": "code",
       "source_file": "backend/tests/infrastructure/diplomas/test_print_package.py",
-      "source_location": "L178",
+      "source_location": "L188",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_diplomas_test_print_package_test_no_assigned_template_raises",
       "community": 266,
@@ -150812,8 +150812,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "frontend_src_widgets_diplomas_template_constructor_ui_element_palette",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 176,
+      "community_name": "Community 176",
       "norm_label": "element-palette.tsx"
     },
     {
@@ -150823,8 +150823,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "frontend_src_widgets_diplomas_template_constructor_ui_element_palette_isplaceable",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 176,
+      "community_name": "Community 176",
       "norm_label": "isplaceable()"
     },
     {
@@ -150834,8 +150834,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "frontend_src_widgets_diplomas_template_constructor_ui_element_palette_paletteitemprops",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 176,
+      "community_name": "Community 176",
       "norm_label": "paletteitemprops"
     },
     {
@@ -150845,8 +150845,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "frontend_src_widgets_diplomas_template_constructor_ui_element_palette_paletteitem",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 176,
+      "community_name": "Community 176",
       "norm_label": "paletteitem()"
     },
     {
@@ -150856,8 +150856,8 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "frontend_src_widgets_diplomas_template_constructor_ui_element_palette_elementpalette",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 176,
+      "community_name": "Community 176",
       "norm_label": "elementpalette()"
     },
     {
@@ -151634,7 +151634,7 @@
       "label": "NominationTable()",
       "file_type": "code",
       "source_file": "frontend/src/widgets/diplomas-workspace/ui/sections/generation-section.tsx",
-      "source_location": "L220",
+      "source_location": "L221",
       "_origin": "ast",
       "id": "frontend_src_widgets_diplomas_workspace_ui_sections_generation_section_nominationtable",
       "community": 162,
@@ -157144,9 +157144,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 268,
+      "community": 283,
       "norm_label": "vt platform backend",
-      "community_name": "Community 268",
+      "community_name": "Community 283",
       "id": "backend_readme_vt_platform_backend"
     },
     {
@@ -157228,9 +157228,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 268,
+      "community": 283,
       "norm_label": "modular monolith",
-      "community_name": "Community 268",
+      "community_name": "Community 283",
       "id": "backend_readme_modular_monolith"
     },
     {
@@ -157284,9 +157284,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 279,
+      "community": 283,
       "norm_label": "api-001 identity contract",
-      "community_name": "Community 279",
+      "community_name": "Community 283",
       "id": "backend_readme_api_001"
     },
     {
@@ -157312,9 +157312,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 268,
+      "community": 283,
       "norm_label": "pydantic settings configuration",
-      "community_name": "Community 268",
+      "community_name": "Community 283",
       "id": "backend_readme_pydantic_settings"
     },
     {
@@ -430975,7 +430975,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py",
-      "source_location": "L151",
+      "source_location": "L161",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_start_print_package",
@@ -430987,7 +430987,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "backend/tests/infrastructure/diplomas/test_print_package.py",
-      "source_location": "L183",
+      "source_location": "L193",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_tests_infrastructure_diplomas_test_print_package_test_no_assigned_template_raises",
@@ -431010,7 +431010,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py",
-      "source_location": "L176",
+      "source_location": "L186",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_get_print_job",
@@ -433985,7 +433985,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py",
-      "source_location": "L127",
+      "source_location": "L137",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_job_json",
@@ -436443,7 +436443,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py",
-      "source_location": "L172",
+      "source_location": "L182",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package",
@@ -436454,7 +436454,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py",
-      "source_location": "L127",
+      "source_location": "L137",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package",
@@ -436499,7 +436499,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py",
-      "source_location": "L142",
+      "source_location": "L152",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package",
@@ -436593,7 +436593,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py",
-      "source_location": "L172",
+      "source_location": "L182",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_get_print_job",
@@ -436629,7 +436629,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py",
-      "source_location": "L142",
+      "source_location": "L152",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_start_print_package",
@@ -436641,7 +436641,7 @@
       "context": "generic_arg",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py",
-      "source_location": "L172",
+      "source_location": "L182",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_get_print_job",
@@ -436653,7 +436653,7 @@
       "context": "generic_arg",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py",
-      "source_location": "L127",
+      "source_location": "L137",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_job_json",
@@ -436677,7 +436677,7 @@
       "context": "generic_arg",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py",
-      "source_location": "L142",
+      "source_location": "L152",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_start_print_package",
@@ -436700,7 +436700,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py",
-      "source_location": "L149",
+      "source_location": "L159",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_start_print_package",
@@ -436735,7 +436735,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py",
-      "source_location": "L177",
+      "source_location": "L187",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_get_print_job",
@@ -436747,7 +436747,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py",
-      "source_location": "L169",
+      "source_location": "L179",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_start_print_package",
@@ -436758,10 +436758,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py",
-      "source_location": "L145",
+      "source_location": "L155",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_rationale_145",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_rationale_155",
       "target": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_start_print_package",
       "confidence_score": 1.0
     },
@@ -436769,10 +436769,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py",
-      "source_location": "L173",
+      "source_location": "L183",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_rationale_173",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_rationale_183",
       "target": "backend_apps_diplomas_presentation_api_v1_diplomas_print_package_get_print_job",
       "confidence_score": 1.0
     },
@@ -437278,7 +437278,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L315",
+      "source_location": "L317",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers",
@@ -437646,10 +437646,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L316",
+      "source_location": "L318",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_316",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_318",
       "target": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_printpackagesummaryresponseserializer",
       "confidence_score": 1.0
     },
@@ -588481,7 +588481,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/tests/infrastructure/diplomas/test_print_package.py",
-      "source_location": "L178",
+      "source_location": "L188",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_tests_infrastructure_diplomas_test_print_package",
@@ -588503,7 +588503,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/tests/infrastructure/diplomas/test_print_package.py",
-      "source_location": "L160",
+      "source_location": "L170",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_tests_infrastructure_diplomas_test_print_package",
@@ -588562,7 +588562,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/tests/infrastructure/diplomas/test_print_package.py",
-      "source_location": "L143",
+      "source_location": "L144",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_tests_infrastructure_diplomas_test_print_package_test_summary_breaks_down_by_nomination",
@@ -588574,7 +588574,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/tests/infrastructure/diplomas/test_print_package.py",
-      "source_location": "L163",
+      "source_location": "L173",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_tests_infrastructure_diplomas_test_print_package_test_zip_contains_a_pdf_per_generated_diploma",
@@ -588610,7 +588610,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/tests/infrastructure/diplomas/test_print_package.py",
-      "source_location": "L179",
+      "source_location": "L189",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_tests_infrastructure_diplomas_test_print_package_test_no_assigned_template_raises",
@@ -588634,7 +588634,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/tests/infrastructure/diplomas/test_print_package.py",
-      "source_location": "L161",
+      "source_location": "L171",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_tests_infrastructure_diplomas_test_print_package_test_zip_contains_a_pdf_per_generated_diploma",
@@ -588670,7 +588670,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/tests/infrastructure/diplomas/test_print_package.py",
-      "source_location": "L181",
+      "source_location": "L191",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_tests_infrastructure_diplomas_test_print_package_test_no_assigned_template_raises",
@@ -588682,7 +588682,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/tests/infrastructure/diplomas/test_print_package.py",
-      "source_location": "L145",
+      "source_location": "L148",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_tests_infrastructure_diplomas_test_print_package_test_summary_breaks_down_by_nomination",
@@ -588694,7 +588694,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/tests/infrastructure/diplomas/test_print_package.py",
-      "source_location": "L164",
+      "source_location": "L174",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_tests_infrastructure_diplomas_test_print_package_test_zip_contains_a_pdf_per_generated_diploma",
@@ -588730,7 +588730,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/tests/infrastructure/diplomas/test_print_package.py",
-      "source_location": "L143",
+      "source_location": "L144",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_tests_infrastructure_diplomas_test_print_package_test_summary_breaks_down_by_nomination",
@@ -588742,7 +588742,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/tests/infrastructure/diplomas/test_print_package.py",
-      "source_location": "L163",
+      "source_location": "L173",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_tests_infrastructure_diplomas_test_print_package_test_zip_contains_a_pdf_per_generated_diploma",
@@ -656167,7 +656167,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/widgets/diplomas-workspace/ui/sections/generation-section.tsx",
-      "source_location": "L220",
+      "source_location": "L221",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_widgets_diplomas_workspace_ui_sections_generation_section",
@@ -656179,7 +656179,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/widgets/diplomas-workspace/ui/sections/generation-section.tsx",
-      "source_location": "L139",
+      "source_location": "L140",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_widgets_diplomas_workspace_ui_sections_generation_section_generationsection",
@@ -665233,5 +665233,5 @@
       "source_file": "frontend/docs/festival-catalog.md"
     }
   ],
-  "built_at_commit": "20f1177b9631b62f13b0318c0910026f0a55714b"
+  "built_at_commit": "fbb3ddaef780e7dc0c4bda4a4731acf6e39f47f6"
 }

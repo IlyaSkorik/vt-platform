@@ -876,6 +876,7 @@
   "874": "0014_category_registration_schedule.py",
   "875": "0001_initial.py",
   "876": "urls.py",
+  "877": "RevertCompetitionToDraftHandler",
   "878": "0004_rename_participant_created_48a069_idx_participant_created_d8f051_idx_and_more.py",
   "879": "index.tsx",
   "880": "useCompleteCompetitionMutation",
