@@ -77,6 +77,14 @@ def resolve_targets(
 def print_package_summary(competition_id: uuid.UUID) -> dict[str, Any]:
     """Per-nomination stats: template, performances, existing diplomas, to-create."""
     assignments = _assignments_by_category(competition_id)
+    # A nomination is only "ready" to generate when its template also has a PDF.
+    assigned_template_ids = {item["templateId"] for item in assignments.values()}
+    templates_with_pdf = {
+        str(template_id)
+        for template_id in TemplateDocumentModel.objects.filter(
+            template__id__in=assigned_template_ids, deleted_at__isnull=True
+        ).values_list("template_id", flat=True)
+    }
     category_names = {
         str(row["id"]): str(row["name"])
         for row in CategoryModel.objects.filter(
@@ -108,16 +116,18 @@ def print_package_summary(competition_id: uuid.UUID) -> dict[str, Any]:
     for category_id in set(counts) | set(assignments):
         assignment = assignments.get(category_id)
         stats = counts.get(category_id, {"submissions": 0, "existing": 0})
-        has_template = assignment is not None
+        ready = assignment is not None and assignment["templateId"] in templates_with_pdf
         nominations.append(
             {
                 "categoryId": category_id,
                 "nomination": category_names.get(category_id),
                 "templateId": assignment["templateId"] if assignment else None,
                 "templateName": assignment["templateName"] if assignment else None,
+                # Assigned but with no uploaded PDF yet — cannot generate.
+                "ready": ready,
                 "submissions": stats["submissions"],
                 "existing": stats["existing"],
-                "willCreate": max(0, stats["submissions"] - stats["existing"]) if has_template else 0,
+                "willCreate": max(0, stats["submissions"] - stats["existing"]) if ready else 0,
             }
         )
     nominations.sort(key=lambda item: (item["nomination"] or "").lower())

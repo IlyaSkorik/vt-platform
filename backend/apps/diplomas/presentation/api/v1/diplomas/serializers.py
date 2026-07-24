@@ -307,6 +307,8 @@ class PrintPackageNominationSerializer(serializers.Serializer[dict[str, object]]
     nomination = serializers.CharField(allow_null=True)
     templateId = serializers.UUIDField(allow_null=True)
     templateName = serializers.CharField(allow_null=True)
+    # True when a template is assigned AND it has an uploaded PDF.
+    ready = serializers.BooleanField()
     submissions = serializers.IntegerField()
     existing = serializers.IntegerField()
     willCreate = serializers.IntegerField()

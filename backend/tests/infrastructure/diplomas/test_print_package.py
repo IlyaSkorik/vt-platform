@@ -140,21 +140,31 @@ def test_summary_breaks_down_by_nomination() -> None:
     competition = _competition()
     vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
     dance = CategoryModel.objects.create(competition=competition, name="Танец")
+    theatre = CategoryModel.objects.create(competition=competition, name="Театр")
     _assign(competition, vocals, _template_with_pdf("Вокал A4"))
+    # theatre has a template assigned but no uploaded PDF → not ready.
+    _assign(competition, theatre, TemplateModel.objects.create(name="Театр (без PDF)"))
     # dance has submissions but no template assigned.
     _submission(competition, "Иванов Иван", vocals)
     _submission(competition, "Сидоров С", vocals)
     _submission(competition, "Петров Пётр", dance)
+    _submission(competition, "Театров Т", theatre)
 
     summary = print_package.print_package_summary(competition.id)
     by_id = {row["categoryId"]: row for row in summary["nominations"]}
 
     assert by_id[str(vocals.id)]["templateName"] == "Вокал A4"
+    assert by_id[str(vocals.id)]["ready"] is True
     assert by_id[str(vocals.id)]["submissions"] == 2
     assert by_id[str(vocals.id)]["willCreate"] == 2
+    # Assigned template without a PDF: shown, but not ready and nothing to create.
+    assert by_id[str(theatre.id)]["templateName"] == "Театр (без PDF)"
+    assert by_id[str(theatre.id)]["ready"] is False
+    assert by_id[str(theatre.id)]["willCreate"] == 0
+    # No template at all.
     assert by_id[str(dance.id)]["templateId"] is None
-    assert by_id[str(dance.id)]["submissions"] == 1
-    assert by_id[str(dance.id)]["willCreate"] == 0  # no template → cannot generate
+    assert by_id[str(dance.id)]["ready"] is False
+    assert by_id[str(dance.id)]["willCreate"] == 0
 
 
 def test_zip_contains_a_pdf_per_generated_diploma() -> None:

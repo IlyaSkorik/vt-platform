@@ -8535,6 +8535,8 @@ components:
           type:
           - string
           - 'null'
+        ready:
+          type: boolean
         submissions:
           type: integer
         existing:
@@ -8545,6 +8547,7 @@ components:
       - categoryId
       - existing
       - nomination
+      - ready
       - submissions
       - templateId
       - templateName

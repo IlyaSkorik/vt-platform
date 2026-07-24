@@ -50,7 +50,8 @@ export function GenerationSection(): React.JSX.Element {
   );
 
   const nominations: PrintPackageNomination[] = summaryQuery.data?.nominations ?? [];
-  const selectable = nominations.filter((item) => item.templateId != null);
+  // Only nominations whose template also has an uploaded PDF can be generated.
+  const selectable = nominations.filter((item) => item.ready);
   // Before the user touches anything, every nomination with a template is selected.
   const effectiveSelected = touched ? selected : new Set(selectable.map((item) => item.categoryId));
 
@@ -119,9 +120,9 @@ export function GenerationSection(): React.JSX.Element {
       ) : (
         <>
           {selectable.length === 0 ? (
-            <Alert variant="warning" title="Шаблон не назначен">
-              Ни для одной номинации не назначен шаблон диплома. Назначьте шаблоны в разделе
-              «Назначение», чтобы сформировать комплект.
+            <Alert variant="warning" title="Нельзя сформировать">
+              Ни у одной номинации нет назначенного шаблона с загруженным PDF. Назначьте шаблон в
+              разделе «Назначение» и загрузите его PDF в конструкторе.
             </Alert>
           ) : null}
 
@@ -260,14 +261,16 @@ function NominationTable({
                   <Checkbox
                     aria-label={`Выбрать номинацию ${item.nomination ?? ""}`}
                     checked={selected.has(item.categoryId)}
-                    disabled={!hasTemplate}
+                    disabled={!item.ready}
                     onCheckedChange={(checked) => onToggle(item.categoryId, checked === true)}
                   />
                 </td>
                 <td className="px-3 py-2 text-foreground">{item.nomination ?? "—"}</td>
                 <td className="px-3 py-2">
-                  {hasTemplate ? (
+                  {item.ready ? (
                     <span className="text-foreground">{item.templateName}</span>
+                  ) : hasTemplate ? (
+                    <span className="text-warning">{item.templateName} · PDF не загружен</span>
                   ) : (
                     <span className="text-warning">шаблон не назначен</span>
                   )}
@@ -279,7 +282,7 @@ function NominationTable({
                   {item.existing}
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums font-medium text-foreground">
-                  {hasTemplate ? item.willCreate : "—"}
+                  {item.ready ? item.willCreate : "—"}
                 </td>
               </tr>
             );
