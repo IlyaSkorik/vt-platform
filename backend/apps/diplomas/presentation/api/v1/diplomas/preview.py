@@ -56,7 +56,6 @@ COMPETITION_TITLE = "competition.title"
 COMPETITION_DATE = "competition.date"
 COMPETITION_CITY = "competition.city"
 AWARD_DEGREE = "award.degree"
-AWARD_PLACE = "award.place"
 DIPLOMA_NUMBER = "diploma.number"
 DIPLOMA_ISSUE_DATE = "diploma.issue_date"
 
@@ -75,7 +74,6 @@ BINDINGS: tuple[str, ...] = (
     COMPETITION_DATE,
     COMPETITION_CITY,
     AWARD_DEGREE,
-    AWARD_PLACE,
     DIPLOMA_NUMBER,
     DIPLOMA_ISSUE_DATE,
 )

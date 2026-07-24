@@ -1,5 +1,4 @@
 import {
-  Award,
   Building2,
   Cake,
   Calendar,
@@ -54,7 +53,6 @@ export type TemplateFieldTypeId =
   | "competition_date"
   | "competition_city"
   | "award_degree"
-  | "award_place"
   | "diploma_number"
   | "diploma_issue_date"
   | "qr"
@@ -182,7 +180,6 @@ export const FIELD_TYPES: readonly TemplateFieldType[] = [
   },
   { id: "competition_city", label: "Город", binding: "data", group: "Конкурс", icon: MapPin },
   { id: "award_degree", label: "Степень", binding: "data", group: "Результат", icon: Medal },
-  { id: "award_place", label: "Место", binding: "data", group: "Результат", icon: Award },
   { id: "diploma_number", label: "Номер диплома", binding: "data", group: "Диплом", icon: Hash },
   {
     id: "diploma_issue_date",

@@ -1,6 +1,5 @@
 import {
   AWARD_DEGREE,
-  AWARD_PLACE,
   COMPETITION_CITY,
   COMPETITION_DATE,
   COMPETITION_TITLE,
@@ -38,7 +37,6 @@ const SHARED_VALUES: Record<TemplateFieldBinding, string> = {
   [COMPETITION_DATE]: "15.05.2026",
   [COMPETITION_CITY]: "Москва",
   [AWARD_DEGREE]: "Лауреат I степени",
-  [AWARD_PLACE]: "1 место",
   [DIPLOMA_NUMBER]: "№ 000123",
   [DIPLOMA_ISSUE_DATE]: "20.05.2026",
 };

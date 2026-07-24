@@ -35,7 +35,6 @@ export const COMPETITION_TITLE: TemplateFieldBinding = "competition.title";
 export const COMPETITION_DATE: TemplateFieldBinding = "competition.date";
 export const COMPETITION_CITY: TemplateFieldBinding = "competition.city";
 export const AWARD_DEGREE: TemplateFieldBinding = "award.degree";
-export const AWARD_PLACE: TemplateFieldBinding = "award.place";
 export const DIPLOMA_NUMBER: TemplateFieldBinding = "diploma.number";
 export const DIPLOMA_ISSUE_DATE: TemplateFieldBinding = "diploma.issue_date";
 
@@ -54,7 +53,6 @@ export const KNOWN_BINDINGS = {
   competitionDate: COMPETITION_DATE,
   competitionCity: COMPETITION_CITY,
   awardDegree: AWARD_DEGREE,
-  awardPlace: AWARD_PLACE,
   diplomaNumber: DIPLOMA_NUMBER,
   diplomaIssueDate: DIPLOMA_ISSUE_DATE,
 } as const;
@@ -75,7 +73,6 @@ const DEFAULT_BINDINGS: Partial<Record<TemplateFieldTypeId, TemplateFieldBinding
   competition_date: COMPETITION_DATE,
   competition_city: COMPETITION_CITY,
   award_degree: AWARD_DEGREE,
-  award_place: AWARD_PLACE,
   diploma_number: DIPLOMA_NUMBER,
   diploma_issue_date: DIPLOMA_ISSUE_DATE,
 };

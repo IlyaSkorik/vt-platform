@@ -17,7 +17,6 @@ export {
 export { resolveMediaUrl } from "./lib/media-url";
 export {
   AWARD_DEGREE,
-  AWARD_PLACE,
   COMPETITION_CITY,
   COMPETITION_DATE,
   COMPETITION_TITLE,
