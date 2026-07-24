@@ -73,9 +73,9 @@ const DEFAULT_BINDINGS: Partial<Record<TemplateFieldTypeId, TemplateFieldBinding
   competition_date: COMPETITION_DATE,
   competition_city: COMPETITION_CITY,
   award_degree: AWARD_DEGREE,
-  diploma_number: DIPLOMA_NUMBER,
   diploma_issue_date: DIPLOMA_ISSUE_DATE,
-  // The QR block draws the diploma number beside its authenticity text.
+  // The diploma number has no standalone field — the QR block draws it beside
+  // its authenticity text.
   qr_block: DIPLOMA_NUMBER,
 };
 

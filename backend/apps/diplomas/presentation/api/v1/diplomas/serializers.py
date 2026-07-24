@@ -52,7 +52,6 @@ _FIELD_TYPES = [
     "competition_date",
     "competition_city",
     "award_degree",
-    "diploma_number",
     "diploma_issue_date",
     "qr_block",
     "free_text",

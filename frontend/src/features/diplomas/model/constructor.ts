@@ -4,7 +4,6 @@ import {
   Calendar,
   CalendarCheck,
   GraduationCap,
-  Hash,
   type LucideIcon,
   MapPin,
   Medal,
@@ -53,7 +52,6 @@ export type TemplateFieldTypeId =
   | "competition_date"
   | "competition_city"
   | "award_degree"
-  | "diploma_number"
   | "diploma_issue_date"
   // QR-блок: место под QR-код + текст проверки подлинности + номер диплома.
   | "qr_block"
@@ -188,7 +186,6 @@ export const FIELD_TYPES: readonly TemplateFieldType[] = [
   },
   { id: "competition_city", label: "Город", binding: "data", group: "Конкурс", icon: MapPin },
   { id: "award_degree", label: "Степень", binding: "data", group: "Результат", icon: Medal },
-  { id: "diploma_number", label: "Номер диплома", binding: "data", group: "Диплом", icon: Hash },
   {
     id: "diploma_issue_date",
     label: "Дата выдачи",
