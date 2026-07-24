@@ -1,10 +1,21 @@
-import { FIELD_TYPES, type TemplateFieldType } from "@/features/diplomas";
+import {
+  defaultBindingForType,
+  FIELD_GROUPS,
+  FIELD_TYPES,
+  type TemplateFieldType,
+} from "@/features/diplomas";
 import { cn } from "@/shared/lib";
 import { useConstructorFieldsContext } from "../model/fields-context";
 
-// Placeable field types; the rest are the type foundation and stay inert
-// until their renderers land.
-const PLACEABLE_TYPES = new Set(["participant_name", "free_text"]);
+/**
+ * A palette element is placeable when it resolves to real data — a free-text
+ * field, or a data field whose type has a binding in the catalogue. Everything
+ * else (e.g. QR, whose renderer has not landed) stays an inert chip. Derived, not
+ * hardcoded: adding a field to the catalogue makes it placeable automatically.
+ */
+function isPlaceable(field: TemplateFieldType): boolean {
+  return field.binding === "free" || defaultBindingForType(field.id) !== "";
+}
 
 interface PaletteItemProps {
   field: TemplateFieldType;
@@ -59,14 +70,27 @@ export function ElementPalette(): React.JSX.Element {
           Нажмите, чтобы добавить элемент на страницу.
         </p>
       </div>
-      <div className="flex flex-col gap-2 overflow-y-auto p-3">
-        {FIELD_TYPES.map((field) => (
-          <PaletteItem
-            key={field.id}
-            field={field}
-            {...(PLACEABLE_TYPES.has(field.id) ? { onAdd: () => addField(field.id) } : {})}
-          />
-        ))}
+      <div className="flex flex-col gap-4 overflow-y-auto p-3">
+        {FIELD_GROUPS.map((group) => {
+          const items = FIELD_TYPES.filter((field) => field.group === group);
+          if (items.length === 0) {
+            return null;
+          }
+          return (
+            <section key={group} className="flex flex-col gap-2">
+              <h3 className="px-1 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+                {group}
+              </h3>
+              {items.map((field) => (
+                <PaletteItem
+                  key={field.id}
+                  field={field}
+                  {...(isPlaceable(field) ? { onAdd: () => addField(field.id) } : {})}
+                />
+              ))}
+            </section>
+          );
+        })}
       </div>
     </aside>
   );
