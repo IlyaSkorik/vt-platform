@@ -7,8 +7,11 @@ import { NOMINATION_PARTS, type TemplateField, type TemplateFieldConfig } from "
  */
 export type BindingResolveFn = (binding: string) => string;
 
-/** Placeholder for a binding with no value — the UI must never crash on a gap. */
-export const MISSING_VALUE = "—";
+/**
+ * What a binding with no value renders as: nothing (an empty string). An unfilled
+ * field shows no placeholder dash; the UI still never crashes on a gap.
+ */
+export const MISSING_VALUE = "";
 
 /**
  * Assemble a composite (nomination block) into one string: the prefix followed

@@ -50,13 +50,13 @@ const PREVIEW_VALUES: Record<PreviewMode, Record<TemplateFieldBinding, string>> 
   collective: {
     ...SHARED_VALUES,
     [PARTICIPANT_DISPLAY_NAME]: "Ансамбль «Созвездие»",
-    [PARTICIPANT_AGE]: "—",
+    [PARTICIPANT_AGE]: "",
     [NOMINATION_PARTICIPANT_GROUP]: "Ансамбль",
   },
 };
 
-/** Placeholder shown when a binding has no sample value yet. */
-const UNBOUND_PREVIEW = "—";
+/** A binding with no sample value renders as nothing (no placeholder dash). */
+const UNBOUND_PREVIEW = "";
 
 /**
  * PreviewDataProvider (pure): resolve a binding to a sample display value for

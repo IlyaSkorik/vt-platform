@@ -10,7 +10,8 @@ Bindings are dotted business keys, never storage columns. The catalogue
 :func:`resolve_preview_bindings` how to produce its value, and the editor needs no
 change. Every catalogue key is always present in the resolved map — a value that
 cannot be produced (no source row, empty field, or a source not wired yet such as
-awards and diploma numbers) resolves to :data:`MISSING` (an em dash), never raising.
+awards) resolves to :data:`MISSING` (an empty string, so the field renders nothing),
+never raising.
 
 `participant.display_name` is the performer's single display name — the
 individual's full name for a solo entry or the ensemble's name for a collective
@@ -78,9 +79,10 @@ BINDINGS: tuple[str, ...] = (
     DIPLOMA_ISSUE_DATE,
 )
 
-#: Placeholder for any binding whose value cannot be produced. The UI never crashes
-#: on a gap; a resolver never raises. Matches the frontend ``MISSING_VALUE``.
-MISSING = "—"
+#: Value for any binding that cannot be produced: an empty string, so an unfilled
+#: field renders as nothing rather than a placeholder dash. The UI never crashes on
+#: a gap; a resolver never raises. Matches the frontend ``MISSING_VALUE``.
+MISSING = ""
 
 
 # --- Small pure helpers -----------------------------------------------------
