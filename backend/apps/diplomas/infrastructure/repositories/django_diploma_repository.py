@@ -33,6 +33,11 @@ class DjangoDiplomaRepository:
         current = int(last) if last and last.isdigit() else 0
         return f"{current + 1:0{_NUMBER_WIDTH}d}"
 
+    def exists_for_submission(self, submission_id: uuid.UUID) -> bool:
+        return DiplomaModel.objects.filter(
+            submission_id=submission_id, deleted_at__isnull=True
+        ).exists()
+
     def add(self, diploma: Diploma) -> None:
         DiplomaMapper.to_model(diploma).save(force_insert=True)
 

@@ -71,6 +71,13 @@ class DiplomaModel(BasePersistenceModel):
             *BasePersistenceModel.Meta.constraints,
             models.UniqueConstraint(fields=["number"], name="diplomas_diploma_number_unique"),
             models.UniqueConstraint(fields=["verification_token"], name="diplomas_diploma_token_unique"),
+            # A diploma is issued per performance, and a submission is exactly one
+            # performance — so at most one (live) diploma per submission.
+            models.UniqueConstraint(
+                fields=["submission_id"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="diplomas_diploma_unique_per_performance",
+            ),
             models.CheckConstraint(
                 condition=models.Q(status__in=DiplomaStatusChoices.values),
                 name="diplomas_diploma_status_valid",

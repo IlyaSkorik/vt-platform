@@ -14,7 +14,11 @@ from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.competitions.infrastructure.models.competition import CompetitionModel
 from apps.competitions.infrastructure.models.taxonomy import CategoryModel
 from apps.diplomas.application.services import DiplomaService
-from apps.diplomas.domain.exceptions import SubmissionNotFoundError, TemplateNotFoundError
+from apps.diplomas.domain.exceptions import (
+    DuplicateDiplomaError,
+    SubmissionNotFoundError,
+    TemplateNotFoundError,
+)
 from apps.diplomas.domain.value_objects import DiplomaStatus
 from apps.diplomas.infrastructure.acl import DjangoDiplomaSnapshotSource
 from apps.diplomas.infrastructure.models import TemplateModel
@@ -107,6 +111,18 @@ def test_unknown_template_raises() -> None:
 
     with pytest.raises(TemplateNotFoundError):
         _service().create_diploma(submission_id=submission.id, template_id=uuid.uuid4(), now=_NOW)
+
+
+def test_one_diploma_per_performance() -> None:
+    competition = _competition()
+    template = TemplateModel.objects.create(name="Шаблон")
+    submission = _submission(competition)
+    service = _service()
+    service.create_diploma(submission_id=submission.id, template_id=template.id, now=_NOW)
+
+    # A submission is exactly one performance — a second diploma is rejected.
+    with pytest.raises(DuplicateDiplomaError):
+        service.create_diploma(submission_id=submission.id, template_id=template.id, now=_NOW)
 
 
 def test_unknown_submission_raises() -> None:

@@ -15,6 +15,7 @@ from apps.diplomas.application.interfaces import DiplomaRepository, DiplomaSnaps
 from apps.diplomas.domain.entities import Diploma
 from apps.diplomas.domain.exceptions import (
     DiplomaNotFoundError,
+    DuplicateDiplomaError,
     SubmissionNotFoundError,
     TemplateNotFoundError,
 )
@@ -36,11 +37,14 @@ class DiplomaService:
         """Snapshot a submission into a new ``DRAFT`` diploma with a permanent
         number and verification token.
 
-        A missing award degree is normal and does not block creation. Raises
-        :class:`TemplateNotFoundError` / :class:`SubmissionNotFoundError`.
+        A missing award degree is normal and does not block creation. A performance
+        may have at most one diploma. Raises :class:`TemplateNotFoundError` /
+        :class:`SubmissionNotFoundError` / :class:`DuplicateDiplomaError`.
         """
         if not self._snapshots.template_exists(template_id):
             raise TemplateNotFoundError("Template was not found.")
+        if self._repository.exists_for_submission(submission_id):
+            raise DuplicateDiplomaError("This performance already has a diploma.")
         built = self._snapshots.build(submission_id)
         if built is None:
             raise SubmissionNotFoundError("Submission was not found.")

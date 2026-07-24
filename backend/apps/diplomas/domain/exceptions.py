@@ -12,6 +12,7 @@ __all__ = [
     "AssignmentNotFoundError",
     "DiplomaError",
     "DiplomaNotFoundError",
+    "DuplicateDiplomaError",
     "SubmissionNotFoundError",
     "TemplateNotFoundError",
 ]
@@ -51,3 +52,9 @@ class SubmissionNotFoundError(DiplomaError):
     """Raised when the submission a diploma should snapshot does not exist."""
 
     code = "submission_not_found"
+
+
+class DuplicateDiplomaError(DiplomaError):
+    """Raised when a performance (submission) already has a diploma."""
+
+    code = "diploma_conflict"

@@ -35,6 +35,10 @@ class DiplomaRepository(Protocol):
         """Reserve the next permanent, unique diploma number."""
         ...
 
+    def exists_for_submission(self, submission_id: uuid.UUID) -> bool:
+        """Whether a (live) diploma already exists for this performance."""
+        ...
+
     def add(self, diploma: Diploma) -> None:
         """Persist a new diploma."""
         ...
