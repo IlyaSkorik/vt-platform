@@ -13,7 +13,13 @@ from typing import Protocol
 from apps.diplomas.domain.entities import Diploma
 from apps.diplomas.domain.value_objects import DiplomaSnapshot
 
-__all__ = ["DiplomaRepository", "DiplomaSnapshotSource", "SnapshotBuild"]
+__all__ = [
+    "DiplomaRepository",
+    "DiplomaSnapshotSource",
+    "PrintPackageWorkspace",
+    "SnapshotBuild",
+    "TemplateAssets",
+]
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,8 +49,16 @@ class DiplomaRepository(Protocol):
         """Persist a new diploma."""
         ...
 
+    def update(self, diploma: Diploma) -> None:
+        """Persist changes to an existing diploma."""
+        ...
+
     def get(self, diploma_id: uuid.UUID) -> Diploma | None:
         """Load a diploma by id, or None if it does not exist."""
+        ...
+
+    def get_by_submission(self, submission_id: uuid.UUID) -> Diploma | None:
+        """Load the (live) diploma for a performance, or None."""
         ...
 
     def list_by_competition(self, competition_id: uuid.UUID) -> list[Diploma]:
@@ -64,4 +78,39 @@ class DiplomaSnapshotSource(Protocol):
         """Resolve the submission's data into a snapshot, or None if it is gone.
 
         ``award.degree`` is left ``None`` — the jury result is filled in later."""
+        ...
+
+    def list_submission_ids(self, competition_id: uuid.UUID) -> list[uuid.UUID]:
+        """Every (live) submission id of a competition — one performance each."""
+        ...
+
+
+@dataclass(frozen=True, slots=True)
+class TemplateAssets:
+    """A template's print inputs: its placed fields and its backing PDF bytes."""
+
+    fields: list[dict]
+    backing_pdf: bytes
+
+
+class PrintPackageWorkspace(Protocol):
+    """Infra for rendering + storing print PDFs and the ZIP (reportlab/pypdf +
+    file storage). Kept behind a port so the batch service stays Django-free."""
+
+    def load_template(self, template_id: uuid.UUID) -> TemplateAssets | None:
+        """The template's fields + backing PDF, or None if it has no PDF yet."""
+        ...
+
+    def render(
+        self, *, assets: TemplateAssets, snapshot: DiplomaSnapshot, number: str
+    ) -> bytes:
+        """Render one diploma PDF from the template assets and a snapshot."""
+        ...
+
+    def store_pdf(self, *, competition_id: uuid.UUID, number: str, data: bytes) -> str:
+        """Persist a diploma PDF; return its ``/media/…`` path."""
+        ...
+
+    def store_zip(self, *, competition_id: uuid.UUID, items: list[tuple[str, str]]) -> str:
+        """Bundle ``(arcname, media_path)`` pairs into a ZIP; return its path."""
         ...

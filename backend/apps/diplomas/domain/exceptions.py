@@ -13,6 +13,8 @@ __all__ = [
     "DiplomaError",
     "DiplomaNotFoundError",
     "DuplicateDiplomaError",
+    "PrintJobNotFoundError",
+    "PrintTemplateNotReadyError",
     "SubmissionNotFoundError",
     "TemplateNotFoundError",
 ]
@@ -58,3 +60,15 @@ class DuplicateDiplomaError(DiplomaError):
     """Raised when a performance (submission) already has a diploma."""
 
     code = "diploma_conflict"
+
+
+class PrintTemplateNotReadyError(DiplomaError):
+    """Raised when a print package is requested but the template has no PDF."""
+
+    code = "print_template_not_ready"
+
+
+class PrintJobNotFoundError(DiplomaError):
+    """Raised when a referenced print job does not exist."""
+
+    code = "print_job_not_found"

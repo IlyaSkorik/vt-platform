@@ -120,6 +120,14 @@ class DjangoDiplomaSnapshotSource:
     def template_exists(self, template_id: uuid.UUID) -> bool:
         return TemplateModel.objects.filter(id=template_id, deleted_at__isnull=True).exists()
 
+    def list_submission_ids(self, competition_id: uuid.UUID) -> list[uuid.UUID]:
+        rows = (
+            SubmissionModel.objects.filter(competition_id=competition_id, deleted_at__isnull=True)
+            .order_by("created_at")
+            .values_list("id", flat=True)
+        )
+        return list(rows)
+
     def build(self, submission_id: uuid.UUID) -> SnapshotBuild | None:
         submission = SubmissionModel.objects.filter(id=submission_id, deleted_at__isnull=True).first()
         if submission is None:

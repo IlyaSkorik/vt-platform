@@ -41,8 +41,20 @@ class DjangoDiplomaRepository:
     def add(self, diploma: Diploma) -> None:
         DiplomaMapper.to_model(diploma).save(force_insert=True)
 
+    def update(self, diploma: Diploma) -> None:
+        model = DiplomaModel.objects.filter(id=diploma.id).first()
+        if model is None:
+            return
+        DiplomaMapper.update_model(model, diploma).save()
+
     def get(self, diploma_id: uuid.UUID) -> Diploma | None:
         model = DiplomaModel.objects.filter(id=diploma_id, deleted_at__isnull=True).first()
+        return DiplomaMapper.to_domain(model) if model is not None else None
+
+    def get_by_submission(self, submission_id: uuid.UUID) -> Diploma | None:
+        model = DiplomaModel.objects.filter(
+            submission_id=submission_id, deleted_at__isnull=True
+        ).first()
         return DiplomaMapper.to_domain(model) if model is not None else None
 
     def list_by_competition(self, competition_id: uuid.UUID) -> list[Diploma]:
