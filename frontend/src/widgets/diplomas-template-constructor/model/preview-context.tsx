@@ -8,8 +8,8 @@ import {
 interface PreviewData {
   mode: PreviewMode;
   setMode: (mode: PreviewMode) => void;
-  /** Resolve a binding to its sample display value for the current mode. */
-  resolve: (binding: TemplateFieldBinding) => string;
+  /** Resolve a binding to its sample display value, or null when there is none. */
+  resolve: (binding: TemplateFieldBinding) => string | null;
 }
 
 const PreviewContext = createContext<PreviewData | null>(null);

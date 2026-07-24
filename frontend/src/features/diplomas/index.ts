@@ -62,7 +62,6 @@ export {
 export {
   type BindingResolveFn,
   createBindingResolver,
-  MISSING_VALUE,
   resolveFieldDisplay,
 } from "./model/display-value";
 export { type PreviewMode, resolvePreviewValue } from "./model/preview-data";

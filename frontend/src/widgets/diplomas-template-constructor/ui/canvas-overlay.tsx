@@ -32,19 +32,27 @@ export function CanvasOverlay({ pageNumber, scale }: CanvasOverlayProps): React.
       data-overlay-page={pageNumber}
       className="pointer-events-none absolute inset-0 z-10"
     >
-      {pageFields.map((field) => (
-        <FieldObject
-          key={field.id}
-          field={field}
-          overlayRef={overlayRef}
-          scale={scale}
-          displayValue={resolveFieldDisplay(field, resolve)}
-          selected={field.id === selectedId}
-          onSelect={() => selectField(field.id)}
-          onMove={(x, y) => moveField(field.id, x, y)}
-          onResize={(rect) => resizeField(field.id, rect)}
-        />
-      ))}
+      {pageFields.map((field) => {
+        // Unresolved bindings resolve to null — the field is not rendered at all
+        // (no placeholder), matching what the generated diploma will show.
+        const displayValue = resolveFieldDisplay(field, resolve);
+        if (displayValue === null) {
+          return null;
+        }
+        return (
+          <FieldObject
+            key={field.id}
+            field={field}
+            overlayRef={overlayRef}
+            scale={scale}
+            displayValue={displayValue}
+            selected={field.id === selectedId}
+            onSelect={() => selectField(field.id)}
+            onMove={(x, y) => moveField(field.id, x, y)}
+            onResize={(rect) => resizeField(field.id, rect)}
+          />
+        );
+      })}
     </div>
   );
 }

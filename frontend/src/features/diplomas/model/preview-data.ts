@@ -55,14 +55,17 @@ const PREVIEW_VALUES: Record<PreviewMode, Record<TemplateFieldBinding, string>> 
   },
 };
 
-/** A binding with no sample value renders as nothing (no placeholder dash). */
-const UNBOUND_PREVIEW = "";
-
 /**
- * PreviewDataProvider (pure): resolve a binding to a sample display value for
- * the given mode. At generation time a real provider will replace this with
- * actual applicant data; the renderer never knows the difference.
+ * PreviewDataProvider (pure): resolve a binding to a sample display value for the
+ * given mode, or `null` when there is no sample (so the field is not rendered —
+ * a diploma never shows a placeholder). At generation time a real provider
+ * replaces this with actual applicant data; the renderer never knows the
+ * difference.
  */
-export function resolvePreviewValue(binding: TemplateFieldBinding, mode: PreviewMode): string {
-  return PREVIEW_VALUES[mode][binding] ?? PREVIEW_VALUES.individual[binding] ?? UNBOUND_PREVIEW;
+export function resolvePreviewValue(
+  binding: TemplateFieldBinding,
+  mode: PreviewMode,
+): string | null {
+  const value = PREVIEW_VALUES[mode][binding] ?? PREVIEW_VALUES.individual[binding];
+  return value ? value : null;
 }

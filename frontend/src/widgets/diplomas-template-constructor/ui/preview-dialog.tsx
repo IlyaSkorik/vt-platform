@@ -195,14 +195,21 @@ function PreviewCanvas({
             <div className="pointer-events-none absolute inset-0">
               {fields
                 .filter((field) => field.page === pageNumber)
-                .map((field) => (
-                  <PreviewFieldRenderer
-                    key={field.id}
-                    field={field}
-                    scale={scale}
-                    displayValue={resolveFieldDisplay(field, resolve)}
-                  />
-                ))}
+                .map((field) => {
+                  // Unresolved bindings → null → field omitted (no placeholder).
+                  const displayValue = resolveFieldDisplay(field, resolve);
+                  if (displayValue === null) {
+                    return null;
+                  }
+                  return (
+                    <PreviewFieldRenderer
+                      key={field.id}
+                      field={field}
+                      scale={scale}
+                      displayValue={displayValue}
+                    />
+                  );
+                })}
             </div>
           </div>
         ))}
