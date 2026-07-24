@@ -153,10 +153,7 @@ def _teacher_roster(submission: SubmissionModel) -> str:
         names_by_role[role].append(name)
     if not order:
         return MISSING
-    lines = [
-        f"{role}: {', '.join(names_by_role[role])}" if role else ", ".join(names_by_role[role])
-        for role in order
-    ]
+    lines = [f"{role}: {', '.join(names_by_role[role])}" if role else ", ".join(names_by_role[role]) for role in order]
     return "\n".join(lines)
 
 
@@ -164,11 +161,7 @@ def _taxonomy_name(model: Any, row_id: str) -> str:
     """The ``name`` of one taxonomy row by id, or ``MISSING``."""
     if not row_id:
         return MISSING
-    name = (
-        model.objects.filter(id=row_id, deleted_at__isnull=True)
-        .values_list("name", flat=True)
-        .first()
-    )
+    name = model.objects.filter(id=row_id, deleted_at__isnull=True).values_list("name", flat=True).first()
     return _clean(name) or MISSING
 
 
@@ -206,9 +199,7 @@ def _organization_name(participant: dict[str, Any]) -> str:
 
 def list_preview_applications(competition_id: str) -> list[dict[str, Any]]:
     """Applications (submissions) of a competition, labelled by performer name."""
-    rows = SubmissionModel.objects.filter(
-        competition_id=competition_id, deleted_at__isnull=True
-    ).order_by("-created_at")
+    rows = SubmissionModel.objects.filter(competition_id=competition_id, deleted_at__isnull=True).order_by("-created_at")
     applications: list[dict[str, Any]] = []
     for row in rows:
         performance = row.performance or {}
@@ -222,17 +213,13 @@ def resolve_preview_bindings(application_id: str) -> dict[str, str] | None:
 
     Every key in :data:`BINDINGS` is present; unresolved values are :data:`MISSING`.
     """
-    submission = SubmissionModel.objects.filter(
-        id=application_id, deleted_at__isnull=True
-    ).first()
+    submission = SubmissionModel.objects.filter(id=application_id, deleted_at__isnull=True).first()
     if submission is None:
         return None
 
     lead = _lead_participant(submission)
     performance = submission.performance or {}
-    competition = CompetitionModel.objects.filter(
-        id=submission.competition_id, deleted_at__isnull=True
-    ).first()
+    competition = CompetitionModel.objects.filter(id=submission.competition_id, deleted_at__isnull=True).first()
 
     values: dict[str, str] = dict.fromkeys(BINDINGS, MISSING)
 
@@ -242,28 +229,16 @@ def resolve_preview_bindings(application_id: str) -> dict[str, str] | None:
     values[ORGANIZATION_NAME] = _organization_name(lead)
 
     values[NOMINATION_TITLE] = _taxonomy_name(CategoryModel, _clean(performance.get("nomination_id")))
-    values[NOMINATION_DISCIPLINE] = _taxonomy_name(
-        DisciplineModel, _clean(performance.get("discipline_id"))
-    )
-    values[NOMINATION_PARTICIPANT_GROUP] = _taxonomy_name(
-        ParticipantGroupModel, _clean(performance.get("participant_group_id"))
-    )
-    values[NOMINATION_AGE_CATEGORY] = _taxonomy_name(
-        AgeCategoryModel, _clean(performance.get("age_category_id"))
-    )
+    values[NOMINATION_DISCIPLINE] = _taxonomy_name(DisciplineModel, _clean(performance.get("discipline_id")))
+    values[NOMINATION_PARTICIPANT_GROUP] = _taxonomy_name(ParticipantGroupModel, _clean(performance.get("participant_group_id")))
+    values[NOMINATION_AGE_CATEGORY] = _taxonomy_name(AgeCategoryModel, _clean(performance.get("age_category_id")))
 
     values[PERFORMANCE_TITLE] = _clean(performance.get("title")) or MISSING
 
     if competition is not None:
         values[COMPETITION_TITLE] = _clean(competition.title) or MISSING
-        values[COMPETITION_DATE] = (
-            competition.competition_start.strftime("%d.%m.%Y")
-            if competition.competition_start is not None
-            else MISSING
-        )
-        values[COMPETITION_CITY] = (
-            _clean(competition.venue_name) or _clean(competition.venue_address) or MISSING
-        )
+        values[COMPETITION_DATE] = competition.competition_start.strftime("%d.%m.%Y") if competition.competition_start is not None else MISSING
+        values[COMPETITION_CITY] = _clean(competition.venue_name) or _clean(competition.venue_address) or MISSING
 
     # award.* and diploma.* have no source wired yet — they stay MISSING.
     return values

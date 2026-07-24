@@ -7,6 +7,8 @@ from .views import (
     DiplomaAssignmentsView,
     DiplomaPreviewApplicationsView,
     DiplomaPreviewBindingsView,
+    DiplomaRegistryDetailView,
+    DiplomaRegistryView,
     DiplomaTemplateDocumentView,
     DiplomaTemplateLayoutView,
     DiplomaTemplatesView,
@@ -16,6 +18,12 @@ app_name = "diplomas"
 
 urlpatterns = [
     path("staff/diplomas/templates", DiplomaTemplatesView.as_view(), name="templates"),
+    path("staff/diplomas/registry", DiplomaRegistryView.as_view(), name="registry"),
+    path(
+        "staff/diplomas/registry/<str:diploma_id>",
+        DiplomaRegistryDetailView.as_view(),
+        name="registry-detail",
+    ),
     path(
         "staff/diplomas/preview/applications",
         DiplomaPreviewApplicationsView.as_view(),

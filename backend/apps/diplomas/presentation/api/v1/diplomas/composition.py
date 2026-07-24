@@ -50,9 +50,7 @@ def _document_json(row: TemplateDocumentModel) -> dict[str, Any]:
     }
 
 
-def _template_json(
-    row: TemplateModel, usage: int, document: TemplateDocumentModel | None
-) -> dict[str, Any]:
+def _template_json(row: TemplateModel, usage: int, document: TemplateDocumentModel | None) -> dict[str, Any]:
     return {
         "id": str(row.id),
         "name": row.name,
@@ -66,9 +64,7 @@ def _template_json(
 def _current_documents_by_template(template_ids: list[str]) -> dict[str, TemplateDocumentModel]:
     """The latest non-deleted document for each template (most recent wins)."""
     current: dict[str, TemplateDocumentModel] = {}
-    rows = TemplateDocumentModel.objects.filter(
-        template__id__in=template_ids, deleted_at__isnull=True
-    ).order_by("template_id", "-created_at")
+    rows = TemplateDocumentModel.objects.filter(template__id__in=template_ids, deleted_at__isnull=True).order_by("template_id", "-created_at")
     for row in rows:
         key = str(row.template_id)
         if key not in current:
@@ -126,9 +122,7 @@ def get_template_layout(template_id: str) -> dict[str, Any]:
     """
     if not TemplateModel.objects.filter(id=template_id, deleted_at__isnull=True).exists():
         raise TemplateNotFoundError("Template was not found.")
-    rows = TemplateFieldModel.objects.filter(
-        template__id=template_id, deleted_at__isnull=True
-    ).order_by("page", "sort_order", "created_at")
+    rows = TemplateFieldModel.objects.filter(template__id=template_id, deleted_at__isnull=True).order_by("page", "sort_order", "created_at")
     return {"fields": [_field_json(row) for row in rows], "revision": _template_revision(template_id)}
 
 
@@ -141,11 +135,7 @@ def replace_template_layout(*, template_id: str, fields: list[dict[str, Any]]) -
     revision. Raises :class:`TemplateNotFoundError` for an unknown template.
     """
     with transaction.atomic():
-        template = (
-            TemplateModel.objects.select_for_update()
-            .filter(id=template_id, deleted_at__isnull=True)
-            .first()
-        )
+        template = TemplateModel.objects.select_for_update().filter(id=template_id, deleted_at__isnull=True).first()
         if template is None:
             raise TemplateNotFoundError("Template was not found.")
 
@@ -180,9 +170,7 @@ def replace_template_layout(*, template_id: str, fields: list[dict[str, Any]]) -
     return get_template_layout(template_id)
 
 
-def set_template_document(
-    *, template_id: str, file_reference: str, original_filename: str = "", page_count: int = 0
-) -> dict[str, Any]:
+def set_template_document(*, template_id: str, file_reference: str, original_filename: str = "", page_count: int = 0) -> dict[str, Any]:
     """Attach (or replace) the template's backing PDF.
 
     Soft-deletes any current document so the newest upload becomes the current
@@ -192,9 +180,7 @@ def set_template_document(
     if not TemplateModel.objects.filter(id=template_id, deleted_at__isnull=True).exists():
         raise TemplateNotFoundError("Template was not found.")
     now = timezone.now()
-    TemplateDocumentModel.objects.filter(template__id=template_id, deleted_at__isnull=True).update(
-        deleted_at=now, updated_at=now
-    )
+    TemplateDocumentModel.objects.filter(template__id=template_id, deleted_at__isnull=True).update(deleted_at=now, updated_at=now)
     row = TemplateDocumentModel.objects.create(
         template_id=template_id,
         file_reference=file_reference,
@@ -206,21 +192,13 @@ def set_template_document(
 
 def list_assignments() -> list[dict[str, Any]]:
     """Every assignment, with competition/nomination/template labels resolved."""
-    rows = list(
-        AssignmentModel.objects.filter(deleted_at__isnull=True)
-        .select_related("template")
-        .order_by("-created_at")
-    )
+    rows = list(AssignmentModel.objects.filter(deleted_at__isnull=True).select_related("template").order_by("-created_at"))
     competition_ids = {row.competition_id for row in rows}
     category_ids = {row.category_id for row in rows}
     competition_title = {
-        str(item["id"]): str(item["title"])
-        for item in CompetitionModel.objects.filter(id__in=competition_ids).values("id", "title")
+        str(item["id"]): str(item["title"]) for item in CompetitionModel.objects.filter(id__in=competition_ids).values("id", "title")
     }
-    category_name = {
-        str(item["id"]): str(item["name"])
-        for item in CategoryModel.objects.filter(id__in=category_ids).values("id", "name")
-    }
+    category_name = {str(item["id"]): str(item["name"]) for item in CategoryModel.objects.filter(id__in=category_ids).values("id", "name")}
     return [
         {
             "id": str(row.id),
@@ -245,9 +223,7 @@ def create_assignment(*, competition_id: str, category_id: str, template_id: str
     """
     if not TemplateModel.objects.filter(id=template_id, deleted_at__isnull=True).exists():
         raise TemplateNotFoundError("Template was not found.")
-    if AssignmentModel.objects.filter(
-        competition_id=competition_id, category_id=category_id, deleted_at__isnull=True
-    ).exists():
+    if AssignmentModel.objects.filter(competition_id=competition_id, category_id=category_id, deleted_at__isnull=True).exists():
         raise AssignmentConflictError("This nomination already has a template assigned.")
     try:
         row = AssignmentModel.objects.create(

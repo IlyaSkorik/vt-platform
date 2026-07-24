@@ -5013,6 +5013,71 @@ paths:
               schema:
                 $ref: '#/components/schemas/PreviewBindings'
           description: ''
+  /api/v1/staff/diplomas/registry:
+    get:
+      operationId: diplomas_registry_list
+      description: 'The diploma registry: list a competition''s diplomas and create
+        one.'
+      parameters:
+      - in: query
+        name: competitionId
+        schema:
+          type: string
+      tags:
+      - Diplomas
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiplomaResponse'
+          description: ''
+    post:
+      operationId: diplomas_create_diploma
+      description: 'The diploma registry: list a competition''s diplomas and create
+        one.'
+      tags:
+      - Diplomas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDiplomaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateDiplomaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateDiplomaRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiplomaResponse'
+          description: ''
+  /api/v1/staff/diplomas/registry/{diploma_id}:
+    get:
+      operationId: diplomas_get_diploma
+      description: Read a single diploma from the registry.
+      parameters:
+      - in: path
+        name: diploma_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Diplomas
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiplomaResponse'
+          description: ''
   /api/v1/staff/diplomas/templates:
     get:
       operationId: diplomas_templates_list
@@ -6949,6 +7014,19 @@ components:
       - organizerId
       - season
       - title
+    CreateDiplomaRequest:
+      type: object
+      description: Body for creating one diploma from a submission (no PDF, no bulk).
+      properties:
+        submissionId:
+          type: string
+          format: uuid
+        templateId:
+          type: string
+          format: uuid
+      required:
+      - submissionId
+      - templateId
     CreateParticipantRequest:
       type: object
       description: Validate a create-participant request body.
@@ -7052,6 +7130,98 @@ components:
       required:
       - data
       - meta
+    DiplomaResponse:
+      type: object
+      description: A diploma in the registry.
+      properties:
+        id:
+          type: string
+          format: uuid
+        number:
+          type: string
+        verificationToken:
+          type: string
+        competitionId:
+          type: string
+          format: uuid
+        submissionId:
+          type: string
+          format: uuid
+        templateId:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/DiplomaResponseStatusEnum'
+        snapshot:
+          $ref: '#/components/schemas/DiplomaSnapshot'
+        pdfPath:
+          type:
+          - string
+          - 'null'
+        issuedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - competitionId
+      - createdAt
+      - id
+      - issuedAt
+      - number
+      - pdfPath
+      - snapshot
+      - status
+      - submissionId
+      - templateId
+      - updatedAt
+      - verificationToken
+    DiplomaResponseStatusEnum:
+      enum:
+      - DRAFT
+      - GENERATED
+      - ISSUED
+      - CANCELLED
+      type: string
+      description: |-
+        * `DRAFT` - DRAFT
+        * `GENERATED` - GENERATED
+        * `ISSUED` - ISSUED
+        * `CANCELLED` - CANCELLED
+    DiplomaSnapshot:
+      type: object
+      description: The frozen dataset a diploma is printed from (values only, no ids).
+      properties:
+        participant:
+          $ref: '#/components/schemas/_ParticipantSnapshot'
+        teachers:
+          type: array
+          items:
+            $ref: '#/components/schemas/_TeacherSnapshot'
+        organization:
+          $ref: '#/components/schemas/_OrganizationSnapshot'
+        nomination:
+          $ref: '#/components/schemas/_NominationSnapshot'
+        performance:
+          $ref: '#/components/schemas/_PerformanceSnapshot'
+        competition:
+          $ref: '#/components/schemas/_CompetitionSnapshot'
+        award:
+          $ref: '#/components/schemas/_AwardSnapshot'
+      required:
+      - award
+      - competition
+      - nomination
+      - organization
+      - participant
+      - performance
+      - teachers
     EmailVerificationConfirm:
       type: object
       description: |-
@@ -9539,11 +9709,11 @@ components:
         role:
           type: string
         status:
-          $ref: '#/components/schemas/StatusEnum'
+          $ref: '#/components/schemas/StaffMembershipStatusEnum'
       required:
       - role
       - status
-    StatusEnum:
+    StaffMembershipStatusEnum:
       enum:
       - PENDING
       - ACTIVE
@@ -10358,6 +10528,15 @@ components:
       - fileReference
       - id
       - type
+    _AwardSnapshot:
+      type: object
+      properties:
+        degree:
+          type:
+          - string
+          - 'null'
+      required:
+      - degree
     _Branding:
       type: object
       properties:
@@ -10410,6 +10589,25 @@ components:
       - registrationOpensAt
       - registrationStopped
       - sortOrder
+    _CompetitionSnapshot:
+      type: object
+      properties:
+        title:
+          type:
+          - string
+          - 'null'
+        date:
+          type:
+          - string
+          - 'null'
+        city:
+          type:
+          - string
+          - 'null'
+      required:
+      - city
+      - date
+      - title
     _ConsentItem:
       type: object
       description: One accepted consent (code + accepted text version).
@@ -11041,6 +11239,39 @@ components:
       - allowedFormats
       - maxUploadSizeMb
       - requireUpload
+    _NominationSnapshot:
+      type: object
+      properties:
+        title:
+          type:
+          - string
+          - 'null'
+        discipline:
+          type:
+          - string
+          - 'null'
+        participant_group:
+          type:
+          - string
+          - 'null'
+        age_category:
+          type:
+          - string
+          - 'null'
+      required:
+      - age_category
+      - discipline
+      - participant_group
+      - title
+    _OrganizationSnapshot:
+      type: object
+      properties:
+        name:
+          type:
+          - string
+          - 'null'
+      required:
+      - name
     _ParticipantGroup:
       type: object
       properties:
@@ -11113,6 +11344,18 @@ components:
       - memberCount
       - middleName
       - registryParticipantId
+    _ParticipantSnapshot:
+      type: object
+      properties:
+        display_name:
+          type: string
+        age:
+          type:
+          - integer
+          - 'null'
+      required:
+      - age
+      - display_name
     _ParticipationFormat:
       type: object
       properties:
@@ -11247,6 +11490,15 @@ components:
       - nominationId
       - participantGroupId
       - participationFormatId
+      - title
+    _PerformanceSnapshot:
+      type: object
+      properties:
+        title:
+          type:
+          - string
+          - 'null'
+      required:
       - title
     _Period:
       type: object
@@ -11541,6 +11793,18 @@ components:
       - middleName
       - role
       - teacherDirectoryId
+    _TeacherSnapshot:
+      type: object
+      properties:
+        name:
+          type: string
+        role:
+          type:
+          - string
+          - 'null'
+      required:
+      - name
+      - role
     _TeamContact:
       type: object
       properties:

@@ -13,7 +13,10 @@ from rest_framework import serializers
 __all__ = [
     "AssignmentResponseSerializer",
     "CreateAssignmentRequestSerializer",
+    "CreateDiplomaRequestSerializer",
     "CreateTemplateRequestSerializer",
+    "DiplomaResponseSerializer",
+    "DiplomaSnapshotSerializer",
     "LayoutResponseSerializer",
     "PreviewApplicationSerializer",
     "PreviewBindingsSerializer",
@@ -37,6 +40,7 @@ class PreviewBindingsSerializer(serializers.Serializer[dict[str, object]]):
     """Resolved binding→value map for a previewed application."""
 
     bindings = serializers.DictField(child=serializers.CharField(allow_blank=True))
+
 
 # Element kinds the editor can place (mirrors the frontend field-type catalogue).
 # The nomination axes (nomination/discipline/group/age category) are one composite
@@ -79,9 +83,7 @@ class FieldConfigSerializer(serializers.Serializer[dict[str, object]]):
     to include (``nomination``/``discipline``/``participant_group``/``age_category``)
     and the leading label. Empty for simple fields."""
 
-    parts = serializers.ListField(
-        child=serializers.CharField(max_length=32), required=False, default=list
-    )
+    parts = serializers.ListField(child=serializers.CharField(max_length=32), required=False, default=list)
     prefix = serializers.CharField(max_length=120, required=False, allow_blank=True, default="")
 
 
@@ -158,9 +160,7 @@ class CreateTemplateRequestSerializer(serializers.Serializer[dict[str, object]])
     """Body for creating a template in the library."""
 
     name = serializers.CharField(max_length=160)
-    description = serializers.CharField(
-        max_length=500, required=False, allow_blank=True, default=""
-    )
+    description = serializers.CharField(max_length=500, required=False, allow_blank=True, default="")
 
 
 class CreateAssignmentRequestSerializer(serializers.Serializer[dict[str, object]]):
@@ -194,3 +194,78 @@ class AssignmentResponseSerializer(serializers.Serializer[dict[str, object]]):
     templateName = serializers.CharField()
     createdAt = serializers.DateTimeField()
     updatedAt = serializers.DateTimeField()
+
+
+# --- Diploma registry -------------------------------------------------------
+
+
+class _ParticipantSnapshotSerializer(serializers.Serializer[dict[str, object]]):
+    display_name = serializers.CharField(allow_blank=True)
+    age = serializers.IntegerField(allow_null=True)
+
+
+class _TeacherSnapshotSerializer(serializers.Serializer[dict[str, object]]):
+    name = serializers.CharField(allow_blank=True)
+    role = serializers.CharField(allow_null=True)
+
+
+class _OrganizationSnapshotSerializer(serializers.Serializer[dict[str, object]]):
+    name = serializers.CharField(allow_null=True)
+
+
+class _NominationSnapshotSerializer(serializers.Serializer[dict[str, object]]):
+    title = serializers.CharField(allow_null=True)
+    discipline = serializers.CharField(allow_null=True)
+    participant_group = serializers.CharField(allow_null=True)
+    age_category = serializers.CharField(allow_null=True)
+
+
+class _PerformanceSnapshotSerializer(serializers.Serializer[dict[str, object]]):
+    title = serializers.CharField(allow_null=True)
+
+
+class _CompetitionSnapshotSerializer(serializers.Serializer[dict[str, object]]):
+    title = serializers.CharField(allow_null=True)
+    date = serializers.CharField(allow_null=True)
+    city = serializers.CharField(allow_null=True)
+
+
+class _AwardSnapshotSerializer(serializers.Serializer[dict[str, object]]):
+    # Null until the jury has decided — a normal state.
+    degree = serializers.CharField(allow_null=True)
+
+
+class DiplomaSnapshotSerializer(serializers.Serializer[dict[str, object]]):
+    """The frozen dataset a diploma is printed from (values only, no ids)."""
+
+    participant = _ParticipantSnapshotSerializer()
+    teachers = _TeacherSnapshotSerializer(many=True)  # type: ignore[assignment]
+    organization = _OrganizationSnapshotSerializer()
+    nomination = _NominationSnapshotSerializer()
+    performance = _PerformanceSnapshotSerializer()
+    competition = _CompetitionSnapshotSerializer()
+    award = _AwardSnapshotSerializer()
+
+
+class DiplomaResponseSerializer(serializers.Serializer[dict[str, object]]):
+    """A diploma in the registry."""
+
+    id = serializers.UUIDField()
+    number = serializers.CharField()
+    verificationToken = serializers.CharField()
+    competitionId = serializers.UUIDField()
+    submissionId = serializers.UUIDField()
+    templateId = serializers.UUIDField()
+    status = serializers.ChoiceField(choices=["DRAFT", "GENERATED", "ISSUED", "CANCELLED"])
+    snapshot = DiplomaSnapshotSerializer()  # type: ignore[assignment]
+    pdfPath = serializers.CharField(allow_null=True, allow_blank=True)
+    issuedAt = serializers.DateTimeField(allow_null=True)
+    createdAt = serializers.DateTimeField()
+    updatedAt = serializers.DateTimeField()
+
+
+class CreateDiplomaRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """Body for creating one diploma from a submission (no PDF, no bulk)."""
+
+    submissionId = serializers.UUIDField()
+    templateId = serializers.UUIDField()

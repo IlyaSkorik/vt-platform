@@ -20,11 +20,13 @@ from rest_framework.views import APIView
 
 from apps.diplomas.domain.exceptions import DiplomaError
 from apps.diplomas.presentation.api.v1 import problems
-from apps.diplomas.presentation.api.v1.diplomas import composition, preview
+from apps.diplomas.presentation.api.v1.diplomas import composition, preview, registry
 from apps.diplomas.presentation.api.v1.diplomas.serializers import (
     AssignmentResponseSerializer,
     CreateAssignmentRequestSerializer,
+    CreateDiplomaRequestSerializer,
     CreateTemplateRequestSerializer,
+    DiplomaResponseSerializer,
     LayoutResponseSerializer,
     PreviewApplicationSerializer,
     PreviewBindingsSerializer,
@@ -88,14 +90,10 @@ class DiplomaTemplateDocumentView(_StaffView):
     def post(self, request: Request, template_id: str) -> Response:
         uploaded = request.FILES.get("file")
         if uploaded is None:
-            return problems.validation_problem(
-                {"file": ["Выберите PDF-файл."]}, instance=request.path, request=request
-            )
+            return problems.validation_problem({"file": ["Выберите PDF-файл."]}, instance=request.path, request=request)
         content_type = (uploaded.content_type or "").lower()
         if content_type != "application/pdf":
-            return problems.validation_problem(
-                {"file": ["Допустим только PDF."]}, instance=request.path, request=request
-            )
+            return problems.validation_problem({"file": ["Допустим только PDF."]}, instance=request.path, request=request)
         if uploaded.size > _MAX_PDF_BYTES:
             return problems.validation_problem(
                 {"file": ["Размер файла не должен превышать 20 МБ."]},
@@ -103,9 +101,7 @@ class DiplomaTemplateDocumentView(_StaffView):
                 request=request,
             )
 
-        relative_path = default_storage.save(
-            f"diplomas/templates/{template_id}/{uuid.uuid4().hex}.pdf", uploaded
-        )
+        relative_path = default_storage.save(f"diplomas/templates/{template_id}/{uuid.uuid4().hex}.pdf", uploaded)
         file_reference = f"/{settings.MEDIA_URL.strip('/')}/{relative_path}"
         try:
             document = composition.set_template_document(
@@ -130,9 +126,7 @@ class DiplomaPreviewApplicationsView(_StaffView):
     def get(self, request: Request) -> Response:
         competition_id = (request.query_params.get("competitionId") or "").strip()
         if not competition_id:
-            return problems.validation_problem(
-                {"competitionId": ["Укажите конкурс."]}, instance=request.path, request=request
-            )
+            return problems.validation_problem({"competitionId": ["Укажите конкурс."]}, instance=request.path, request=request)
         return problems.envelope(request, preview.list_preview_applications(competition_id))
 
 
@@ -243,3 +237,73 @@ class DiplomaAssignmentDetailView(_StaffView):
             return problems.diploma_problem(exc, instance=request.path, request=request)
         rid = problems.request_id(request)
         return Response(status=204, headers={"X-Request-ID": rid})
+
+
+def _parse_uuid(value: str) -> uuid.UUID | None:
+    try:
+        return uuid.UUID(value)
+    except (ValueError, AttributeError):
+        return None
+
+
+class DiplomaRegistryView(_StaffView):
+    """The diploma registry: list a competition's diplomas and create one."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="diplomas_registry_list",
+        parameters=[OpenApiParameter(name="competitionId", type=str, location=OpenApiParameter.QUERY)],
+        responses={200: DiplomaResponseSerializer(many=True)},
+    )
+    def get(self, request: Request) -> Response:
+        raw = (request.query_params.get("competitionId") or "").strip()
+        competition_id = _parse_uuid(raw)
+        if competition_id is None:
+            return problems.validation_problem({"competitionId": ["Укажите конкурс."]}, instance=request.path, request=request)
+        return problems.envelope(request, registry.list_diplomas(competition_id))
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="diplomas_create_diploma",
+        request=CreateDiplomaRequestSerializer,
+        responses={201: DiplomaResponseSerializer},
+    )
+    def post(self, request: Request) -> Response:
+        serializer = CreateDiplomaRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return problems.validation_problem(serializer.errors, instance=request.path, request=request)
+        data = serializer.validated_data
+        try:
+            diploma = registry.create_diploma(
+                submission_id=data["submissionId"],
+                template_id=data["templateId"],
+            )
+        except DiplomaError as exc:
+            return problems.diploma_problem(exc, instance=request.path, request=request)
+        return problems.envelope(request, diploma, status=201)
+
+
+class DiplomaRegistryDetailView(_StaffView):
+    """Read a single diploma from the registry."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="diplomas_get_diploma",
+        responses={200: DiplomaResponseSerializer},
+    )
+    def get(self, request: Request, diploma_id: str) -> Response:
+        parsed = _parse_uuid(diploma_id)
+        if parsed is None:
+            return problems.problem_response(
+                status=404,
+                type_suffix="not-found",
+                title="Resource not found",
+                detail="Diploma was not found.",
+                instance=request.path,
+                correlation_id=problems.request_id(request),
+            )
+        try:
+            diploma = registry.get_diploma(parsed)
+        except DiplomaError as exc:
+            return problems.diploma_problem(exc, instance=request.path, request=request)
+        return problems.envelope(request, diploma)
