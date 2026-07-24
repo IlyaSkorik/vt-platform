@@ -25,7 +25,10 @@ import type {
 import { defaultBindingForType } from "../model/binding";
 import {
   DEFAULT_FIELD_STYLE,
+  defaultConfigForType,
+  type NominationPartKey,
   type TemplateField,
+  type TemplateFieldConfig,
   type TemplateFieldStyle,
   type TemplateFieldTypeId,
 } from "../model/constructor";
@@ -50,6 +53,26 @@ function toStyle(style: Partial<TemplateFieldStyle> | undefined): TemplateFieldS
   return { ...DEFAULT_FIELD_STYLE, ...(style ?? {}) };
 }
 
+/**
+ * Resolve a field's config from the wire: composite fields get their persisted
+ * parts/prefix (falling back to the type's defaults for legacy rows that predate
+ * config); simple fields get null. An explicit empty `parts` is preserved so a
+ * block with no parts selected stays a block.
+ */
+function toConfig(
+  type: TemplateFieldTypeId,
+  config: { parts?: string[]; prefix?: string } | undefined,
+): TemplateFieldConfig | null {
+  const fallback = defaultConfigForType(type);
+  if (fallback === null) {
+    return null;
+  }
+  return {
+    parts: (config?.parts as NominationPartKey[] | undefined) ?? fallback.parts ?? [],
+    prefix: config?.prefix ?? fallback.prefix ?? "",
+  };
+}
+
 /** Map the wire layout onto the editor's field model. */
 function toTemplateLayout(response: LayoutResponse): TemplateLayout {
   return {
@@ -70,6 +93,7 @@ function toTemplateLayout(response: LayoutResponse): TemplateLayout {
         width: field.width,
         height: field.height,
         style: toStyle(field.style as Partial<TemplateFieldStyle> | undefined),
+        config: toConfig(type, field.config),
       };
     }),
   };
@@ -90,6 +114,7 @@ function toSaveLayoutRequest(fields: TemplateField[]): SaveLayoutRequest {
       rotation: 0,
       sortOrder: index,
       style: field.style,
+      config: field.config ?? {},
     })),
   };
 }

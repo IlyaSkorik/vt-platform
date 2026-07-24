@@ -2,6 +2,7 @@ import {
   DEFAULT_FIELD_STYLE,
   DEFAULT_FREE_TEXT,
   defaultBindingForType,
+  defaultConfigForType,
   type TemplateField,
   type TemplateFieldTypeId,
 } from "@/features/diplomas";
@@ -39,5 +40,6 @@ export function createField(type: TemplateFieldTypeId, page: number): TemplateFi
     width: DEFAULT_WIDTH,
     height: DEFAULT_HEIGHT,
     style: { ...DEFAULT_FIELD_STYLE },
+    config: defaultConfigForType(type),
   };
 }

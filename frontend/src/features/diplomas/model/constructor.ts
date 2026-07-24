@@ -1,6 +1,5 @@
 import {
   Award,
-  Baby,
   Building2,
   Cake,
   Calendar,
@@ -12,14 +11,18 @@ import {
   Medal,
   Music,
   QrCode,
-  Shapes,
   Tag,
   Trophy,
   Type,
   Users,
-  UsersRound,
 } from "lucide-react";
-import type { TemplateFieldBinding } from "./binding";
+import {
+  NOMINATION_AGE_CATEGORY,
+  NOMINATION_DISCIPLINE,
+  NOMINATION_PARTICIPANT_GROUP,
+  NOMINATION_TITLE,
+  type TemplateFieldBinding,
+} from "./binding";
 
 /**
  * Domain model of the future diploma template constructor.
@@ -44,10 +47,8 @@ export type TemplateFieldTypeId =
   | "participant_age"
   | "teacher"
   | "organization"
-  | "nomination"
-  | "discipline"
-  | "participant_group"
-  | "age_category"
+  // Номинация, дисциплина, группа и возрастная категория — один составной блок.
+  | "nomination_block"
   | "work"
   | "competition_name"
   | "competition_date"
@@ -58,6 +59,53 @@ export type TemplateFieldTypeId =
   | "diploma_issue_date"
   | "qr"
   | "free_text";
+
+/** A part the nomination block can include. */
+export type NominationPartKey = "title" | "discipline" | "participant_group" | "age_category";
+
+/** One selectable part of the nomination block: its label and data source. */
+export interface NominationPart {
+  key: NominationPartKey;
+  label: string;
+  binding: TemplateFieldBinding;
+}
+
+/**
+ * The parts a nomination block can show, in canonical display order. Selecting
+ * parts in the inspector never reorders them — the block always reads
+ * номинация → дисциплина → группа → возрастная категория.
+ */
+export const NOMINATION_PARTS: readonly NominationPart[] = [
+  { key: "title", label: "Номинация", binding: NOMINATION_TITLE },
+  { key: "discipline", label: "Дисциплина", binding: NOMINATION_DISCIPLINE },
+  { key: "participant_group", label: "Группа участников", binding: NOMINATION_PARTICIPANT_GROUP },
+  { key: "age_category", label: "Возрастная категория", binding: NOMINATION_AGE_CATEGORY },
+];
+
+/** Default leading label of a nomination block. */
+export const DEFAULT_NOMINATION_PREFIX = "Номинация:";
+
+/**
+ * Per-field configuration beyond geometry and style. Only composite fields use
+ * it (currently the nomination block); simple fields carry `null`.
+ */
+export interface TemplateFieldConfig {
+  /** Nomination block: part keys to include (rendered in canonical order). */
+  parts?: NominationPartKey[];
+  /** Nomination block: leading label, e.g. "Номинация:". */
+  prefix?: string;
+}
+
+/** The default config for a field kind, or null for a simple field. */
+export function defaultConfigForType(type: TemplateFieldTypeId): TemplateFieldConfig | null {
+  if (type === "nomination_block") {
+    return {
+      parts: NOMINATION_PARTS.map((part) => part.key),
+      prefix: DEFAULT_NOMINATION_PREFIX,
+    };
+  }
+  return null;
+}
 
 /** A palette section — fields are grouped by the entity they draw from. */
 export type TemplateFieldGroup =
@@ -116,22 +164,7 @@ export const FIELD_TYPES: readonly TemplateFieldType[] = [
     group: "Организация",
     icon: Building2,
   },
-  { id: "nomination", label: "Номинация", binding: "data", group: "Номинация", icon: Tag },
-  { id: "discipline", label: "Дисциплина", binding: "data", group: "Номинация", icon: Shapes },
-  {
-    id: "participant_group",
-    label: "Группа участников",
-    binding: "data",
-    group: "Номинация",
-    icon: UsersRound,
-  },
-  {
-    id: "age_category",
-    label: "Возрастная категория",
-    binding: "data",
-    group: "Номинация",
-    icon: Baby,
-  },
+  { id: "nomination_block", label: "Номинация", binding: "data", group: "Номинация", icon: Tag },
   { id: "work", label: "Произведение", binding: "data", group: "Произведение", icon: Music },
   {
     id: "competition_name",
@@ -235,6 +268,8 @@ export interface TemplateField {
   height: number;
   /** Appearance (font, colour, alignment, …). */
   style: TemplateFieldStyle;
+  /** Composite-field configuration (nomination block); null for simple fields. */
+  config: TemplateFieldConfig | null;
 }
 
 /**

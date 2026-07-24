@@ -24,6 +24,12 @@ export const NOMINATION_TITLE: TemplateFieldBinding = "nomination.title";
 export const NOMINATION_DISCIPLINE: TemplateFieldBinding = "nomination.discipline";
 export const NOMINATION_PARTICIPANT_GROUP: TemplateFieldBinding = "nomination.participant_group";
 export const NOMINATION_AGE_CATEGORY: TemplateFieldBinding = "nomination.age_category";
+/**
+ * Marker binding for the composite nomination block. It flags the field as
+ * data-bound; the block's text is assembled from the individual nomination
+ * bindings above per the field's config, so this key is never resolved directly.
+ */
+export const NOMINATION_BLOCK: TemplateFieldBinding = "nomination.block";
 export const PERFORMANCE_TITLE: TemplateFieldBinding = "performance.title";
 export const COMPETITION_TITLE: TemplateFieldBinding = "competition.title";
 export const COMPETITION_DATE: TemplateFieldBinding = "competition.date";
@@ -42,6 +48,7 @@ export const KNOWN_BINDINGS = {
   nominationDiscipline: NOMINATION_DISCIPLINE,
   nominationParticipantGroup: NOMINATION_PARTICIPANT_GROUP,
   nominationAgeCategory: NOMINATION_AGE_CATEGORY,
+  nominationBlock: NOMINATION_BLOCK,
   performanceTitle: PERFORMANCE_TITLE,
   competitionTitle: COMPETITION_TITLE,
   competitionDate: COMPETITION_DATE,
@@ -62,10 +69,7 @@ const DEFAULT_BINDINGS: Partial<Record<TemplateFieldTypeId, TemplateFieldBinding
   participant_age: PARTICIPANT_AGE,
   teacher: TEACHER_DISPLAY_NAME,
   organization: ORGANIZATION_NAME,
-  nomination: NOMINATION_TITLE,
-  discipline: NOMINATION_DISCIPLINE,
-  participant_group: NOMINATION_PARTICIPANT_GROUP,
-  age_category: NOMINATION_AGE_CATEGORY,
+  nomination_block: NOMINATION_BLOCK,
   work: PERFORMANCE_TITLE,
   competition_name: COMPETITION_TITLE,
   competition_date: COMPETITION_DATE,

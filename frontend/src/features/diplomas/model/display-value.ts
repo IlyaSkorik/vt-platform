@@ -1,4 +1,4 @@
-import type { TemplateField } from "./constructor";
+import { NOMINATION_PARTS, type TemplateField, type TemplateFieldConfig } from "./constructor";
 
 /**
  * Resolves a binding key to a display string. Two implementations exist — the
@@ -11,10 +11,33 @@ export type BindingResolveFn = (binding: string) => string;
 export const MISSING_VALUE = "—";
 
 /**
- * The single rule for a field's on-screen text: a data-bound field resolves via
- * the provider, a free field shows its own value. Shared by editor and preview.
+ * Assemble a composite (nomination block) into one string: the prefix followed
+ * by the chosen parts joined by ", ", in canonical order. Missing/empty parts are
+ * dropped so a gap never leaves a stray "—" or comma. With nothing resolved the
+ * whole block is the placeholder.
+ */
+function resolveNominationBlock(config: TemplateFieldConfig, resolve: BindingResolveFn): string {
+  const chosen = new Set(config.parts ?? []);
+  const values = NOMINATION_PARTS.filter((part) => chosen.has(part.key))
+    .map((part) => resolve(part.binding))
+    .filter((value) => value && value !== MISSING_VALUE);
+  const body = values.join(", ");
+  if (!body) {
+    return MISSING_VALUE;
+  }
+  const prefix = (config.prefix ?? "").trim();
+  return prefix ? `${prefix} ${body}` : body;
+}
+
+/**
+ * The single rule for a field's on-screen text: a composite field assembles from
+ * its parts, a data-bound field resolves via the provider, a free field shows its
+ * own value. Shared by editor and preview.
  */
 export function resolveFieldDisplay(field: TemplateField, resolve: BindingResolveFn): string {
+  if (field.config?.parts) {
+    return resolveNominationBlock(field.config, resolve);
+  }
   if (field.binding) {
     return resolve(field.binding);
   }
