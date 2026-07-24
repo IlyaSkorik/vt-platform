@@ -27,7 +27,7 @@ export type PreviewMode = "individual" | "collective";
 
 /** Sample values shared by both modes (everything but the performer identity). */
 const SHARED_VALUES: Record<TemplateFieldBinding, string> = {
-  [TEACHER_DISPLAY_NAME]: "Петрова Мария Сергеевна",
+  [TEACHER_DISPLAY_NAME]: "Педагог: Петрова Мария Сергеевна",
   [ORGANIZATION_NAME]: "ДШИ №1",
   [NOMINATION_TITLE]: "Вокал",
   [NOMINATION_DISCIPLINE]: "Эстрадный вокал",

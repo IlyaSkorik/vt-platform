@@ -121,20 +121,43 @@ def _age_of(participant: dict[str, Any]) -> str:
     return str(years) if years >= 0 else MISSING
 
 
-def _teacher_name(submission: SubmissionModel) -> str:
-    for teacher in submission.teachers or []:
-        full = " ".join(
-            part
-            for part in (
-                _clean(teacher.get("last_name")),
-                _clean(teacher.get("first_name")),
-                _clean(teacher.get("middle_name")),
-            )
-            if part
+def _person_full_name(entry: dict[str, Any]) -> str:
+    return " ".join(
+        part
+        for part in (
+            _clean(entry.get("last_name")),
+            _clean(entry.get("first_name")),
+            _clean(entry.get("middle_name")),
         )
-        if full:
-            return full
-    return MISSING
+        if part
+    )
+
+
+def _teacher_roster(submission: SubmissionModel) -> str:
+    """The submission's teachers as ``role: name1, name2`` — one role per line.
+
+    Teachers sharing a role are joined on one line (``Педагог: ФИО1, ФИО2``);
+    distinct roles each get their own line, in first-appearance order. A teacher
+    with no name is skipped; a teacher with no role shows just the name.
+    """
+    order: list[str] = []
+    names_by_role: dict[str, list[str]] = {}
+    for teacher in submission.teachers or []:
+        name = _person_full_name(teacher)
+        if not name:
+            continue
+        role = _clean(teacher.get("role"))
+        if role not in names_by_role:
+            names_by_role[role] = []
+            order.append(role)
+        names_by_role[role].append(name)
+    if not order:
+        return MISSING
+    lines = [
+        f"{role}: {', '.join(names_by_role[role])}" if role else ", ".join(names_by_role[role])
+        for role in order
+    ]
+    return "\n".join(lines)
 
 
 def _taxonomy_name(model: Any, row_id: str) -> str:
@@ -215,7 +238,7 @@ def resolve_preview_bindings(application_id: str) -> dict[str, str] | None:
 
     values[PARTICIPANT_DISPLAY_NAME] = _clean(lead.get("display_name")) or MISSING
     values[PARTICIPANT_AGE] = _age_of(lead)
-    values[TEACHER_DISPLAY_NAME] = _teacher_name(submission)
+    values[TEACHER_DISPLAY_NAME] = _teacher_roster(submission)
     values[ORGANIZATION_NAME] = _organization_name(lead)
 
     values[NOMINATION_TITLE] = _taxonomy_name(CategoryModel, _clean(performance.get("nomination_id")))

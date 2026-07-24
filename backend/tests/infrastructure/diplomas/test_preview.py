@@ -98,5 +98,44 @@ def test_resolves_competition_and_nomination_across_contexts() -> None:
     assert bindings[preview.NOMINATION_TITLE] == "Вокал"
 
 
+def _teacher(last: str, first: str, role: str) -> dict[str, object]:
+    return {"last_name": last, "first_name": first, "middle_name": "", "role": role}
+
+
+def test_teachers_with_same_role_join_on_one_line() -> None:
+    submission = SubmissionModel.objects.create(
+        competition_id=uuid.uuid4(),
+        applicant_id=uuid.uuid4(),
+        status="SUBMITTED",
+        participants=[{"display_name": "Иванов Иван", "member_count": 1}],
+        teachers=[_teacher("Петрова", "Мария", "Педагог"), _teacher("Сидоров", "Пётр", "Педагог")],
+    )
+
+    bindings = preview.resolve_preview_bindings(str(submission.id))
+
+    assert bindings is not None
+    assert bindings[preview.TEACHER_DISPLAY_NAME] == "Педагог: Петрова Мария, Сидоров Пётр"
+
+
+def test_teachers_with_different_roles_go_on_separate_lines() -> None:
+    submission = SubmissionModel.objects.create(
+        competition_id=uuid.uuid4(),
+        applicant_id=uuid.uuid4(),
+        status="SUBMITTED",
+        participants=[{"display_name": "Иванов Иван", "member_count": 1}],
+        teachers=[
+            _teacher("Петрова", "Мария", "Педагог"),
+            _teacher("Сидоров", "Пётр", "Концертмейстер"),
+        ],
+    )
+
+    bindings = preview.resolve_preview_bindings(str(submission.id))
+
+    assert bindings is not None
+    assert bindings[preview.TEACHER_DISPLAY_NAME] == (
+        "Педагог: Петрова Мария\nКонцертмейстер: Сидоров Пётр"
+    )
+
+
 def test_resolve_unknown_application_returns_none() -> None:
     assert preview.resolve_preview_bindings(str(uuid.uuid4())) is None
