@@ -34,7 +34,8 @@ class Diploma:
     snapshot: DiplomaSnapshot
     created_at: datetime
     updated_at: datetime
-    pdf_path: str | None = None
+    print_pdf_path: str | None = None
+    official_pdf_path: str | None = None
     issued_at: datetime | None = None
     version: int = 1
 
@@ -67,7 +68,8 @@ class Diploma:
             snapshot=snapshot,
             created_at=now,
             updated_at=now,
-            pdf_path=None,
+            print_pdf_path=None,
+            official_pdf_path=None,
             issued_at=None,
             version=1,
         )
@@ -86,7 +88,8 @@ class Diploma:
         snapshot: DiplomaSnapshot,
         created_at: datetime,
         updated_at: datetime,
-        pdf_path: str | None,
+        print_pdf_path: str | None,
+        official_pdf_path: str | None,
         issued_at: datetime | None,
         version: int,
     ) -> Diploma:
@@ -102,7 +105,8 @@ class Diploma:
             snapshot=snapshot,
             created_at=created_at,
             updated_at=updated_at,
-            pdf_path=pdf_path,
+            print_pdf_path=print_pdf_path,
+            official_pdf_path=official_pdf_path,
             issued_at=issued_at,
             version=version,
         )
@@ -111,6 +115,16 @@ class Diploma:
     def degree(self) -> str | None:
         """The awarded degree, or ``None`` while it is still unknown."""
         return self.snapshot.award.degree
+
+    def with_print_pdf(self, path: str, *, now: datetime) -> Diploma:
+        """Record the generated print PDF (pre-ceremony copy) and mark GENERATED."""
+        return replace(
+            self,
+            print_pdf_path=path,
+            status=DiplomaStatus.GENERATED,
+            updated_at=now,
+            version=self.version + 1,
+        )
 
     def with_degree(self, degree: str | None, *, now: datetime) -> Diploma:
         """Return a copy whose award degree is set — the only snapshot field the

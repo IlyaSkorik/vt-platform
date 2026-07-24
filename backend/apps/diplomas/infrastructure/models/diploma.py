@@ -53,8 +53,11 @@ class DiplomaModel(BasePersistenceModel):
     # Submission uses). award.degree inside may be null until the jury decides.
     snapshot = models.JSONField(default=dict, blank=True)
 
-    # Produced at generation (future stage); empty until then.
-    pdf_path = models.CharField(max_length=1024, blank=True, default="")
+    # Rendered PDFs. The print PDF is the pre-ceremony copy WITHOUT a degree; the
+    # official PDF is produced after the jury assigns the degree. Empty until each
+    # is generated. Two columns now so the second branch needs no later migration.
+    print_pdf_path = models.CharField(max_length=1024, blank=True, default="")
+    official_pdf_path = models.CharField(max_length=1024, blank=True, default="")
     issued_at = models.DateTimeField(null=True, blank=True, default=None)
 
     class Meta(BasePersistenceModel.Meta):

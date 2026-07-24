@@ -54,7 +54,8 @@ def test_created_diploma_is_draft_without_degree() -> None:
 
     assert diploma.status is DiplomaStatus.DRAFT
     assert diploma.degree is None
-    assert diploma.pdf_path is None
+    assert diploma.print_pdf_path is None
+    assert diploma.official_pdf_path is None
     assert diploma.issued_at is None
     assert diploma.version == 1
 
