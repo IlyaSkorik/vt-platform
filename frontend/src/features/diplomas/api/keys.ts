@@ -8,4 +8,6 @@ export const diplomaKeys = {
     [...diplomaKeys.all, "preview", "applications", competitionId] as const,
   previewBindings: (applicationId: string) =>
     [...diplomaKeys.all, "preview", "bindings", applicationId] as const,
+  registry: (competitionId: string) => [...diplomaKeys.all, "registry", competitionId] as const,
+  printJob: (jobId: string) => [...diplomaKeys.all, "print-job", jobId] as const,
 };

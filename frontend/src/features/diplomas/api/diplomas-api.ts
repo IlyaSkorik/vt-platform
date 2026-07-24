@@ -11,15 +11,20 @@ import {
   diplomasCreateAssignment,
   diplomasCreateTemplate,
   diplomasDeleteAssignment,
+  diplomasGetPrintJob,
   diplomasGetTemplateLayout,
   diplomasPreviewApplications,
   diplomasPreviewBindings,
+  diplomasRegistryList,
   diplomasSaveTemplateLayout,
+  diplomasStartPrintPackage,
   diplomasTemplatesList,
 } from "@/shared/api/generated/diplomas/diplomas";
 import type {
+  DiplomaResponse,
   LayoutResponse,
   PreviewApplication,
+  PrintJobResponse,
   SaveLayoutRequest,
 } from "@/shared/api/generated/model-diplomas";
 import { defaultBindingForType } from "../model/binding";
@@ -41,9 +46,11 @@ import type {
 } from "../model/types";
 import {
   unwrapAssignmentList,
+  unwrapDiplomaList,
   unwrapLayout,
   unwrapPreviewApplications,
   unwrapPreviewBindings,
+  unwrapPrintJob,
   unwrapTemplateList,
 } from "./envelope";
 import { diplomaKeys } from "./keys";
@@ -313,5 +320,64 @@ export function usePreviewBindings(
     queryFn: ({ signal }) => fetchPreviewBindings(applicationId ?? "", signal),
     enabled: Boolean(applicationId),
     staleTime: 30_000,
+  });
+}
+
+// --- Print package (mass generation) ---------------------------------------
+
+async function fetchRegistry(
+  competitionId: string,
+  signal?: AbortSignal,
+): Promise<DiplomaResponse[]> {
+  const response = await diplomasRegistryList({ competitionId }, signal ? { signal } : {});
+  return unwrapDiplomaList(response.data);
+}
+
+/** A competition's existing diplomas — used for the generation summary counts. */
+export function useDiplomaRegistry(
+  competitionId: string | undefined,
+): UseQueryResult<DiplomaResponse[], ApiError> {
+  return useQuery<DiplomaResponse[], ApiError>({
+    queryKey: diplomaKeys.registry(competitionId ?? ""),
+    queryFn: ({ signal }) => fetchRegistry(competitionId ?? "", signal),
+    enabled: Boolean(competitionId),
+    staleTime: 15_000,
+  });
+}
+
+/** Start a print-package generation; returns the created (async) job. */
+export function useStartPrintPackageMutation(): UseMutationResult<
+  PrintJobResponse,
+  ApiError,
+  { competitionId: string; templateId: string }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<PrintJobResponse, ApiError, { competitionId: string; templateId: string }>({
+    mutationFn: async ({ competitionId, templateId }) => {
+      const response = await diplomasStartPrintPackage({ competitionId, templateId });
+      return unwrapPrintJob(response.data);
+    },
+    onSuccess: (_job, { competitionId }) => {
+      // New diplomas may have been created for the competition.
+      void queryClient.invalidateQueries({ queryKey: diplomaKeys.registry(competitionId) });
+    },
+  });
+}
+
+async function fetchPrintJob(jobId: string, signal?: AbortSignal): Promise<PrintJobResponse> {
+  const response = await diplomasGetPrintJob(jobId, signal ? { signal } : {});
+  return unwrapPrintJob(response.data);
+}
+
+/** Poll a print-package job while it is pending/running; stop once it settles. */
+export function usePrintJob(jobId: string | undefined): UseQueryResult<PrintJobResponse, ApiError> {
+  return useQuery<PrintJobResponse, ApiError>({
+    queryKey: diplomaKeys.printJob(jobId ?? ""),
+    queryFn: ({ signal }) => fetchPrintJob(jobId ?? "", signal),
+    enabled: Boolean(jobId),
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === "PENDING" || status === "RUNNING" ? 2500 : false;
+    },
   });
 }

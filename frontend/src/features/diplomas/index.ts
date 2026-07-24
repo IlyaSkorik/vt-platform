@@ -1,4 +1,8 @@
-export type { PreviewApplication } from "@/shared/api/generated/model-diplomas";
+export type {
+  DiplomaResponse,
+  PreviewApplication,
+  PrintJobResponse,
+} from "@/shared/api/generated/model-diplomas";
 export {
   type DiplomaTemplateQuery,
   diplomaKeys,
@@ -6,11 +10,14 @@ export {
   useCreateTemplateMutation,
   useDeleteAssignmentMutation,
   useDiplomaAssignments,
+  useDiplomaRegistry,
   useDiplomaTemplate,
   useDiplomaTemplates,
   usePreviewApplications,
   usePreviewBindings,
+  usePrintJob,
   useSaveTemplateLayoutMutation,
+  useStartPrintPackageMutation,
   useTemplateLayout,
   useUploadTemplateDocumentMutation,
 } from "./api";
