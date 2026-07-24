@@ -90,8 +90,10 @@ function ConstructorWorkspace({ template }: { template: DiplomaTemplate }): Reac
   return (
     <PreviewDataProvider>
       {/* Mobile: grows with content. Desktop: capped to the viewport (minus the
-          app chrome), so the three columns scroll internally instead of the page. */}
-      <div className="-mx-4 -mt-4 flex min-h-[calc(100svh-8rem)] flex-col overflow-hidden rounded-lg border bg-background md:-mx-6 md:-mt-6 md:h-[calc(100svh-8rem)] lg:-mx-8">
+          app chrome), so the three columns scroll internally instead of the page.
+          md/lg keep room for the workspace-switcher row; xl hides it, so less is
+          subtracted and the editor fills more of the screen. */}
+      <div className="-mx-4 -mt-4 flex min-h-[calc(100svh-8rem)] flex-col overflow-hidden rounded-lg border bg-background md:-mx-6 md:-mt-6 md:h-[calc(100svh-7.5rem)] md:min-h-0 lg:-mx-8 xl:h-[calc(100svh-4.5rem)]">
         <input
           ref={fileInputRef}
           type="file"
