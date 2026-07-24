@@ -70,7 +70,7 @@ export function ElementPalette(): React.JSX.Element {
           Нажмите, чтобы добавить элемент на страницу.
         </p>
       </div>
-      <div className="flex flex-col gap-4 overflow-y-auto p-3">
+      <div className="scrollbar-custom flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-3">
         {FIELD_GROUPS.map((group) => {
           const items = FIELD_TYPES.filter((field) => field.group === group);
           if (items.length === 0) {

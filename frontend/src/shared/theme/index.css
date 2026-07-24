@@ -101,6 +101,30 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * Custom scrollbar — thin, token-coloured, used by internal scroll areas (e.g.
+ * the diploma constructor panels) so overflow reads as part of the design.
+ * ------------------------------------------------------------------------- */
+@utility scrollbar-custom {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+
+  &::-webkit-scrollbar {
+    width: 0.5rem;
+    height: 0.5rem;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background-color: var(--border);
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: var(--muted-foreground);
+  }
+}
+
+/* ---------------------------------------------------------------------------
  * Base layer — global element defaults built on the token system.
  * ------------------------------------------------------------------------- */
 @layer base {

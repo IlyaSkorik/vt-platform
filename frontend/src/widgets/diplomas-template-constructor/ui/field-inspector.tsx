@@ -160,7 +160,7 @@ export function FieldInspector({
   const pct = (value: number): number => Math.round(value * 1000) / 10;
 
   return (
-    <div className="flex flex-col overflow-y-auto">
+    <div className="scrollbar-custom flex min-h-0 flex-1 flex-col overflow-y-auto">
       <Section>
         <SectionTitle>Элемент</SectionTitle>
         <p className="font-medium text-foreground text-sm">{typeLabel(field.type)}</p>

@@ -91,7 +91,7 @@ export function PdfViewer({ url }: PdfViewerProps): React.JSX.Element {
       {/* Pointerdown on empty space deselects; fields/handles stopPropagation. */}
       <div
         ref={scrollRef}
-        className="min-h-0 flex-1 overflow-auto p-6"
+        className="scrollbar-custom min-h-0 flex-1 overflow-auto p-6"
         onPointerDown={() => deselect()}
       >
         <Document

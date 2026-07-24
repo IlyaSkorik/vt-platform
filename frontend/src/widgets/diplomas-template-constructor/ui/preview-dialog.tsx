@@ -162,7 +162,7 @@ function PreviewCanvas({
   }
 
   return (
-    <div className="max-h-[70vh] overflow-auto rounded-md bg-muted/40 p-4">
+    <div className="scrollbar-custom max-h-[70vh] overflow-auto rounded-md bg-muted/40 p-4">
       {loading ? (
         <div className="flex justify-center py-12">
           <Spinner />
