@@ -7560,8 +7560,8 @@
     "semantic_hash": ""
   },
   "backend/apps/diplomas/infrastructure/pdf/field_values.py": {
-    "mtime": 1784929431.812569,
-    "ast_hash": "1335884487aa8240fb6622a26c394f33",
+    "mtime": 1784932683.6287653,
+    "ast_hash": "fef63916d52be3d5ba7ed123adf5fe72",
     "semantic_hash": ""
   },
   "backend/apps/diplomas/infrastructure/pdf/fonts.py": {
@@ -7597,6 +7597,11 @@
   "backend/apps/diplomas/infrastructure/migrations/0011_remove_printjobmodel_template_id_and_more.py": {
     "mtime": 1784931394.2471833,
     "ast_hash": "8404225ff153320dc25256bf5d978837",
+    "semantic_hash": ""
+  },
+  "backend/tests/infrastructure/diplomas/test_pdf_field_values.py": {
+    "mtime": 1784932696.292842,
+    "ast_hash": "cb6d199f9267eff7f9380ee8d4500e94",
     "semantic_hash": ""
   }
 }
