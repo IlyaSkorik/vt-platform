@@ -7086,6 +7086,22 @@ components:
       required:
       - data
       - meta
+    FieldConfig:
+      type: object
+      description: |-
+        Composite-field configuration. Currently the nomination block: which parts
+        to include (``nomination``/``discipline``/``participant_group``/``age_category``)
+        and the leading label. Empty for simple fields.
+      properties:
+        parts:
+          type: array
+          items:
+            type: string
+            maxLength: 32
+        prefix:
+          type: string
+          default: ''
+          maxLength: 120
     FieldStyle:
       type: object
       description: A field's appearance. fontSize/letterSpacing are PDF points.
@@ -7301,6 +7317,8 @@ components:
           default: 0
         style:
           $ref: '#/components/schemas/FieldStyle'
+        config:
+          $ref: '#/components/schemas/FieldConfig'
       required:
       - height
       - page
@@ -7314,10 +7332,7 @@ components:
       - participant_age
       - teacher
       - organization
-      - nomination
-      - discipline
-      - participant_group
-      - age_category
+      - nomination_block
       - work
       - competition_name
       - competition_date
@@ -7334,10 +7349,7 @@ components:
         * `participant_age` - participant_age
         * `teacher` - teacher
         * `organization` - organization
-        * `nomination` - nomination
-        * `discipline` - discipline
-        * `participant_group` - participant_group
-        * `age_category` - age_category
+        * `nomination_block` - nomination_block
         * `work` - work
         * `competition_name` - competition_name
         * `competition_date` - competition_date
@@ -9873,6 +9885,8 @@ components:
           type: integer
         style:
           $ref: '#/components/schemas/FieldStyle'
+        config:
+          $ref: '#/components/schemas/FieldConfig'
         createdAt:
           type: string
           format: date-time
@@ -9881,6 +9895,7 @@ components:
           format: date-time
       required:
       - binding
+      - config
       - createdAt
       - height
       - id

@@ -39,15 +39,14 @@ class PreviewBindingsSerializer(serializers.Serializer[dict[str, object]]):
     bindings = serializers.DictField(child=serializers.CharField(allow_blank=True))
 
 # Element kinds the editor can place (mirrors the frontend field-type catalogue).
+# The nomination axes (nomination/discipline/group/age category) are one composite
+# "nomination_block" field whose chosen parts live in ``config``.
 _FIELD_TYPES = [
     "participant_name",
     "participant_age",
     "teacher",
     "organization",
-    "nomination",
-    "discipline",
-    "participant_group",
-    "age_category",
+    "nomination_block",
     "work",
     "competition_name",
     "competition_date",
@@ -77,6 +76,17 @@ class FieldStyleSerializer(serializers.Serializer[dict[str, object]]):
     wrapText = serializers.BooleanField(default=False)
 
 
+class FieldConfigSerializer(serializers.Serializer[dict[str, object]]):
+    """Composite-field configuration. Currently the nomination block: which parts
+    to include (``nomination``/``discipline``/``participant_group``/``age_category``)
+    and the leading label. Empty for simple fields."""
+
+    parts = serializers.ListField(
+        child=serializers.CharField(max_length=32), required=False, default=list
+    )
+    prefix = serializers.CharField(max_length=120, required=False, allow_blank=True, default="")
+
+
 class LayoutFieldRequestSerializer(serializers.Serializer[dict[str, object]]):
     """One field in a layout save. Coordinates are normalised (0..1)."""
 
@@ -91,6 +101,7 @@ class LayoutFieldRequestSerializer(serializers.Serializer[dict[str, object]]):
     rotation = serializers.FloatField(required=False, default=0)
     sortOrder = serializers.IntegerField(required=False, default=0, min_value=0)
     style = FieldStyleSerializer(required=False)  # type: ignore[assignment]
+    config = FieldConfigSerializer(required=False)  # type: ignore[assignment]
 
 
 class SaveLayoutRequestSerializer(serializers.Serializer[dict[str, object]]):
@@ -117,6 +128,7 @@ class TemplateFieldResponseSerializer(serializers.Serializer[dict[str, object]])
     rotation = serializers.FloatField()
     sortOrder = serializers.IntegerField()
     style = FieldStyleSerializer()  # type: ignore[assignment]
+    config = FieldConfigSerializer()  # type: ignore[assignment]
     createdAt = serializers.DateTimeField()
     updatedAt = serializers.DateTimeField()
 

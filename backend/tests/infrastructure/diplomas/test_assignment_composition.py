@@ -160,6 +160,32 @@ def test_layout_persists_field_style() -> None:
     assert saved["style"]["color"] == "#ff0000"
 
 
+def test_layout_persists_nomination_block_config() -> None:
+    template = _template()
+    field = {
+        **_field(),
+        "type": "nomination_block",
+        "binding": "nomination.block",
+        "config": {"parts": ["title", "age_category"], "prefix": "Номинация:"},
+    }
+
+    composition.replace_template_layout(template_id=str(template.id), fields=[field])
+
+    saved = composition.get_template_layout(str(template.id))["fields"][0]
+    assert saved["type"] == "nomination_block"
+    assert saved["config"]["parts"] == ["title", "age_category"]
+    assert saved["config"]["prefix"] == "Номинация:"
+
+
+def test_layout_simple_field_has_empty_config() -> None:
+    template = _template()
+
+    composition.replace_template_layout(template_id=str(template.id), fields=[_field()])
+
+    saved = composition.get_template_layout(str(template.id))["fields"][0]
+    assert saved["config"] == {}
+
+
 def test_layout_persists_field_binding() -> None:
     template = _template()
     field = {**_field(), "binding": "participant.display_name"}

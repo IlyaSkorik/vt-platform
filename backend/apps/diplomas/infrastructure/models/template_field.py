@@ -46,6 +46,10 @@ class TemplateFieldModel(BasePersistenceModel):
     # Appearance (font, colour, alignment, …) as one document — kept flexible so
     # new appearance options need no migration.
     style = models.JSONField(default=dict, blank=True)
+    # Per-field configuration for composite fields (e.g. the nomination block's
+    # chosen parts and prefix). Empty for simple fields. A JSON document so new
+    # composite kinds need no migration.
+    config = models.JSONField(default=dict, blank=True)
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "diplomas_template_field"

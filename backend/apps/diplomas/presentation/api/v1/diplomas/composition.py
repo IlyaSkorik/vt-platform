@@ -108,6 +108,7 @@ def _field_json(row: TemplateFieldModel) -> dict[str, Any]:
         "rotation": row.rotation,
         "sortOrder": row.sort_order,
         "style": row.style or {},
+        "config": row.config or {},
         "createdAt": row.created_at,
         "updatedAt": row.updated_at,
     }
@@ -166,6 +167,7 @@ def replace_template_layout(*, template_id: str, fields: list[dict[str, Any]]) -
                 # z-order follows array order; the request's sortOrder is advisory.
                 sort_order=index,
                 style=dict(field.get("style") or {}),
+                config=dict(field.get("config") or {}),
             )
             for index, field in enumerate(fields)
         ]
