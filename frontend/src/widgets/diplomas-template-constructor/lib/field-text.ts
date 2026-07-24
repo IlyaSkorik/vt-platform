@@ -25,10 +25,21 @@ export function fieldTextClassName(style: TemplateFieldStyle): string {
   );
 }
 
+/** Whether the text overflows its box (with a 1px tolerance against jitter). */
+function overflows(text: HTMLElement, box: HTMLElement): boolean {
+  return text.scrollWidth > text.clientWidth + 1 || text.scrollHeight > box.clientHeight + 1;
+}
+
 /**
  * Size the text imperatively: at `basePx` (= fontSize × scale), then, when
- * autoShrink is on, shrink until it fits its box. Shared by the editable and
- * read-only renderers so both size text identically.
+ * autoShrink is on, shrink until it fits its box. Never grows past `basePx` — a
+ * larger box just means less shrinking. Shared by the editable and read-only
+ * renderers so both size text identically.
+ *
+ * `text` (the resolved string) is a dependency because it changes the metrics —
+ * without it the size would stay frozen from a previous value (switching preview
+ * data, editing, a different applicant). The fit also re-runs once web fonts
+ * finish loading, since their metrics differ from the fallback.
  */
 export function useAutoShrinkFont(
   boxRef: React.RefObject<HTMLElement | null>,
@@ -37,39 +48,55 @@ export function useAutoShrinkFont(
   style: TemplateFieldStyle,
   width: number,
   height: number,
+  text: string,
 ): void {
-  // biome-ignore lint/correctness/useExhaustiveDependencies: deps drive text metrics, not the closure
+  // biome-ignore lint/correctness/useExhaustiveDependencies: deps are the metric inputs, not the closure
   useLayoutEffect(() => {
-    const text = textRef.current;
+    const textEl = textRef.current;
     const box = boxRef.current;
-    if (!text || !box) {
+    if (!textEl || !box) {
       return;
     }
-    if (!style.autoShrink) {
-      text.style.fontSize = `${basePx}px`;
-      return;
-    }
-    let size = basePx;
-    text.style.fontSize = `${size}px`;
-    let guard = 0;
-    while (
-      (text.scrollWidth > box.clientWidth || text.scrollHeight > box.clientHeight) &&
-      size > MIN_FONT_PX &&
-      guard < 400
-    ) {
-      size -= Math.max(0.5, size * 0.06);
-      text.style.fontSize = `${size}px`;
-      guard += 1;
-    }
+
+    const applyFit = (): void => {
+      if (!style.autoShrink) {
+        textEl.style.fontSize = `${basePx}px`;
+        return;
+      }
+      let size = basePx;
+      textEl.style.fontSize = `${size}px`;
+      let guard = 0;
+      while (overflows(textEl, box) && size > MIN_FONT_PX && guard < 400) {
+        size = Math.max(MIN_FONT_PX, size - Math.max(0.5, size * 0.06));
+        textEl.style.fontSize = `${size}px`;
+        guard += 1;
+      }
+    };
+
+    applyFit();
+
+    // Web fonts load asynchronously; their metrics differ from the fallback, so
+    // re-fit once they are ready to avoid a stale (over- or under-shrunk) size.
+    let cancelled = false;
+    document.fonts?.ready.then(() => {
+      if (!cancelled) {
+        applyFit();
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [
     basePx,
     style.autoShrink,
     style.wrapText,
     style.fontWeight,
     style.fontStyle,
+    style.fontFamily,
     style.lineHeight,
     style.letterSpacing,
     width,
     height,
+    text,
   ]);
 }

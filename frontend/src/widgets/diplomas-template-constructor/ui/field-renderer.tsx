@@ -34,7 +34,15 @@ export function FieldRenderer({
   const { style } = field;
   const boxRef = useRef<HTMLButtonElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
-  useAutoShrinkFont(boxRef, textRef, style.fontSize * scale, style, field.width, field.height);
+  useAutoShrinkFont(
+    boxRef,
+    textRef,
+    style.fontSize * scale,
+    style,
+    field.width,
+    field.height,
+    displayValue,
+  );
 
   return (
     <div

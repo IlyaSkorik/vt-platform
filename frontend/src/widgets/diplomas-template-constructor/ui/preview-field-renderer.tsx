@@ -23,7 +23,15 @@ export function PreviewFieldRenderer({
   const { style } = field;
   const boxRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
-  useAutoShrinkFont(boxRef, textRef, style.fontSize * scale, style, field.width, field.height);
+  useAutoShrinkFont(
+    boxRef,
+    textRef,
+    style.fontSize * scale,
+    style,
+    field.width,
+    field.height,
+    displayValue,
+  );
 
   return (
     <div
