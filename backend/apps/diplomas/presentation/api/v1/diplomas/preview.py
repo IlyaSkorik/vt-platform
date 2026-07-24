@@ -2,8 +2,15 @@
 
 Given an application (a submission), resolve the values that fill a template's
 data-bound fields, keyed by binding (e.g. ``participant.display_name``). Reads the
-Applications context by id (cross-context read, as the organizer views do); the
-diplomas context owns none of these rows.
+Applications and Competitions contexts by id (cross-context reads, exactly as the
+organizer registry read model does); the diplomas context owns none of these rows.
+
+Bindings are dotted business keys, never storage columns. The catalogue
+(:data:`BINDINGS`) is the single seam a new field extends: add a key here, teach
+:func:`resolve_preview_bindings` how to produce its value, and the editor needs no
+change. Every catalogue key is always present in the resolved map — a value that
+cannot be produced (no source row, empty field, or a source not wired yet such as
+awards and diploma numbers) resolves to :data:`MISSING` (an em dash), never raising.
 
 `participant.display_name` is the performer's single display name — the
 individual's full name for a solo entry or the ensemble's name for a collective
@@ -12,25 +19,166 @@ individual's full name for a solo entry or the ensemble's name for a collective
 
 from __future__ import annotations
 
+import uuid
+from datetime import date
 from typing import Any
 
 from apps.applications.infrastructure.models.submission import SubmissionModel
+from apps.competitions.infrastructure.models.competition import CompetitionModel
+from apps.competitions.infrastructure.models.taxonomy import (
+    AgeCategoryModel,
+    CategoryModel,
+    DisciplineModel,
+    ParticipantGroupModel,
+)
+from apps.participants.infrastructure.models import ParticipantOrganizationMembershipModel
 
 __all__ = [
+    "BINDINGS",
+    "MISSING",
     "PARTICIPANT_DISPLAY_NAME",
     "list_preview_applications",
     "resolve_preview_bindings",
 ]
 
+# --- Binding catalogue (business keys) --------------------------------------
+
 PARTICIPANT_DISPLAY_NAME = "participant.display_name"
+PARTICIPANT_AGE = "participant.age"
+TEACHER_DISPLAY_NAME = "teacher.display_name"
+ORGANIZATION_NAME = "organization.name"
+NOMINATION_TITLE = "nomination.title"
+NOMINATION_DISCIPLINE = "nomination.discipline"
+NOMINATION_PARTICIPANT_GROUP = "nomination.participant_group"
+NOMINATION_AGE_CATEGORY = "nomination.age_category"
+PERFORMANCE_TITLE = "performance.title"
+COMPETITION_TITLE = "competition.title"
+COMPETITION_DATE = "competition.date"
+COMPETITION_CITY = "competition.city"
+AWARD_DEGREE = "award.degree"
+AWARD_PLACE = "award.place"
+DIPLOMA_NUMBER = "diploma.number"
+DIPLOMA_ISSUE_DATE = "diploma.issue_date"
+
+#: Every binding the editor may place. Mirrors the frontend Binding Catalog.
+BINDINGS: tuple[str, ...] = (
+    PARTICIPANT_DISPLAY_NAME,
+    PARTICIPANT_AGE,
+    TEACHER_DISPLAY_NAME,
+    ORGANIZATION_NAME,
+    NOMINATION_TITLE,
+    NOMINATION_DISCIPLINE,
+    NOMINATION_PARTICIPANT_GROUP,
+    NOMINATION_AGE_CATEGORY,
+    PERFORMANCE_TITLE,
+    COMPETITION_TITLE,
+    COMPETITION_DATE,
+    COMPETITION_CITY,
+    AWARD_DEGREE,
+    AWARD_PLACE,
+    DIPLOMA_NUMBER,
+    DIPLOMA_ISSUE_DATE,
+)
+
+#: Placeholder for any binding whose value cannot be produced. The UI never crashes
+#: on a gap; a resolver never raises. Matches the frontend ``MISSING_VALUE``.
+MISSING = "—"
+
+
+# --- Small pure helpers -----------------------------------------------------
+
+
+def _clean(value: object | None) -> str:
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def _lead_participant(submission: SubmissionModel) -> dict[str, Any]:
+    """The first participant carrying a display name (the one a diploma names)."""
+    for participant in submission.participants or []:
+        if _clean(participant.get("display_name")):
+            return participant
+    participants = submission.participants or []
+    return participants[0] if participants else {}
 
 
 def _performer_name(submission: SubmissionModel) -> str:
-    for participant in submission.participants or []:
-        name = str(participant.get("display_name") or "").strip()
-        if name:
-            return name
-    return ""
+    return _clean(_lead_participant(submission).get("display_name"))
+
+
+def _age_of(participant: dict[str, Any]) -> str:
+    """Whole years at today's date (birthday-aware), or ``MISSING`` if unknown."""
+    raw = _clean(participant.get("birth_date"))
+    if not raw:
+        return MISSING
+    try:
+        born = date.fromisoformat(raw)
+    except ValueError:
+        return MISSING
+    today = date.today()
+    years = today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+    return str(years) if years >= 0 else MISSING
+
+
+def _teacher_name(submission: SubmissionModel) -> str:
+    for teacher in submission.teachers or []:
+        full = " ".join(
+            part
+            for part in (
+                _clean(teacher.get("last_name")),
+                _clean(teacher.get("first_name")),
+                _clean(teacher.get("middle_name")),
+            )
+            if part
+        )
+        if full:
+            return full
+    return MISSING
+
+
+def _taxonomy_name(model: Any, row_id: str) -> str:
+    """The ``name`` of one taxonomy row by id, or ``MISSING``."""
+    if not row_id:
+        return MISSING
+    name = (
+        model.objects.filter(id=row_id, deleted_at__isnull=True)
+        .values_list("name", flat=True)
+        .first()
+    )
+    return _clean(name) or MISSING
+
+
+def _organization_name(participant: dict[str, Any]) -> str:
+    """The participant's primary educational organization (via the registry link).
+
+    Mirrors the organizer registry read model: a participant's organization is not
+    on the submission but in the Participants context, keyed by the
+    ``registry_participant_id`` the submission denormalizes.
+    """
+    registry_id = _clean(participant.get("registry_participant_id"))
+    if not registry_id:
+        return MISSING
+    try:
+        participant_uuid = uuid.UUID(registry_id)
+    except ValueError:
+        return MISSING
+    membership = (
+        ParticipantOrganizationMembershipModel.objects.filter(
+            participant_id=participant_uuid,
+            deleted_at__isnull=True,
+            organization__deleted_at__isnull=True,
+        )
+        .select_related("organization")
+        .order_by("-is_primary", "organization__name")
+        .first()
+    )
+    if membership is None:
+        return MISSING
+    return _clean(membership.organization.name) or MISSING
+
+
+# --- Public API -------------------------------------------------------------
 
 
 def list_preview_applications(competition_id: str) -> list[dict[str, Any]]:
@@ -41,16 +189,58 @@ def list_preview_applications(competition_id: str) -> list[dict[str, Any]]:
     applications: list[dict[str, Any]] = []
     for row in rows:
         performance = row.performance or {}
-        label = _performer_name(row) or str(performance.get("title") or "").strip()
+        label = _performer_name(row) or _clean(performance.get("title"))
         applications.append({"id": str(row.id), "label": label or str(row.id)[:8].upper()})
     return applications
 
 
 def resolve_preview_bindings(application_id: str) -> dict[str, str] | None:
-    """The binding→value map for one application, or None if it does not exist."""
+    """The binding→value map for one application, or None if it does not exist.
+
+    Every key in :data:`BINDINGS` is present; unresolved values are :data:`MISSING`.
+    """
     submission = SubmissionModel.objects.filter(
         id=application_id, deleted_at__isnull=True
     ).first()
     if submission is None:
         return None
-    return {PARTICIPANT_DISPLAY_NAME: _performer_name(submission)}
+
+    lead = _lead_participant(submission)
+    performance = submission.performance or {}
+    competition = CompetitionModel.objects.filter(
+        id=submission.competition_id, deleted_at__isnull=True
+    ).first()
+
+    values: dict[str, str] = dict.fromkeys(BINDINGS, MISSING)
+
+    values[PARTICIPANT_DISPLAY_NAME] = _clean(lead.get("display_name")) or MISSING
+    values[PARTICIPANT_AGE] = _age_of(lead)
+    values[TEACHER_DISPLAY_NAME] = _teacher_name(submission)
+    values[ORGANIZATION_NAME] = _organization_name(lead)
+
+    values[NOMINATION_TITLE] = _taxonomy_name(CategoryModel, _clean(performance.get("nomination_id")))
+    values[NOMINATION_DISCIPLINE] = _taxonomy_name(
+        DisciplineModel, _clean(performance.get("discipline_id"))
+    )
+    values[NOMINATION_PARTICIPANT_GROUP] = _taxonomy_name(
+        ParticipantGroupModel, _clean(performance.get("participant_group_id"))
+    )
+    values[NOMINATION_AGE_CATEGORY] = _taxonomy_name(
+        AgeCategoryModel, _clean(performance.get("age_category_id"))
+    )
+
+    values[PERFORMANCE_TITLE] = _clean(performance.get("title")) or MISSING
+
+    if competition is not None:
+        values[COMPETITION_TITLE] = _clean(competition.title) or MISSING
+        values[COMPETITION_DATE] = (
+            competition.competition_start.strftime("%d.%m.%Y")
+            if competition.competition_start is not None
+            else MISSING
+        )
+        values[COMPETITION_CITY] = (
+            _clean(competition.venue_name) or _clean(competition.venue_address) or MISSING
+        )
+
+    # award.* and diploma.* have no source wired yet — they stay MISSING.
+    return values

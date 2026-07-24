@@ -7311,25 +7311,41 @@ components:
     LayoutFieldRequestTypeEnum:
       enum:
       - participant_name
-      - nomination
-      - work
-      - age_category
+      - participant_age
       - teacher
       - organization
-      - date
+      - nomination
+      - discipline
+      - participant_group
+      - age_category
+      - work
+      - competition_name
+      - competition_date
+      - competition_city
+      - award_degree
+      - award_place
       - diploma_number
+      - diploma_issue_date
       - qr
       - free_text
       type: string
       description: |-
         * `participant_name` - participant_name
-        * `nomination` - nomination
-        * `work` - work
-        * `age_category` - age_category
+        * `participant_age` - participant_age
         * `teacher` - teacher
         * `organization` - organization
-        * `date` - date
+        * `nomination` - nomination
+        * `discipline` - discipline
+        * `participant_group` - participant_group
+        * `age_category` - age_category
+        * `work` - work
+        * `competition_name` - competition_name
+        * `competition_date` - competition_date
+        * `competition_city` - competition_city
+        * `award_degree` - award_degree
+        * `award_place` - award_place
         * `diploma_number` - diploma_number
+        * `diploma_issue_date` - diploma_issue_date
         * `qr` - qr
         * `free_text` - free_text
     LayoutResponse:
