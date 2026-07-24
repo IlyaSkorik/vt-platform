@@ -1,15 +1,23 @@
 import {
+  Award,
   Baby,
   Building2,
+  Cake,
   Calendar,
+  CalendarCheck,
   GraduationCap,
   Hash,
   type LucideIcon,
+  MapPin,
+  Medal,
   Music,
   QrCode,
+  Shapes,
   Tag,
+  Trophy,
   Type,
   Users,
+  UsersRound,
 } from "lucide-react";
 import type { TemplateFieldBinding } from "./binding";
 
@@ -33,15 +41,48 @@ import type { TemplateFieldBinding } from "./binding";
 export type TemplateFieldTypeId =
   // Соло-участник (ФИО) и коллектив — это одно поле «имя участника».
   | "participant_name"
-  | "nomination"
-  | "work"
-  | "age_category"
+  | "participant_age"
   | "teacher"
   | "organization"
-  | "date"
+  | "nomination"
+  | "discipline"
+  | "participant_group"
+  | "age_category"
+  | "work"
+  | "competition_name"
+  | "competition_date"
+  | "competition_city"
+  | "award_degree"
+  | "award_place"
   | "diploma_number"
+  | "diploma_issue_date"
   | "qr"
   | "free_text";
+
+/** A palette section — fields are grouped by the entity they draw from. */
+export type TemplateFieldGroup =
+  | "Участник"
+  | "Педагог"
+  | "Организация"
+  | "Номинация"
+  | "Произведение"
+  | "Конкурс"
+  | "Результат"
+  | "Диплом"
+  | "Прочее";
+
+/** The order palette sections render in. */
+export const FIELD_GROUPS: readonly TemplateFieldGroup[] = [
+  "Участник",
+  "Педагог",
+  "Организация",
+  "Номинация",
+  "Произведение",
+  "Конкурс",
+  "Результат",
+  "Диплом",
+  "Прочее",
+];
 
 /**
  * A kind of element that can live on a template. The left palette renders from
@@ -53,20 +94,72 @@ export interface TemplateFieldType {
   label: string;
   /** Whether the value is bound to competition data or free-form. */
   binding: "data" | "free";
+  /** Palette section this element lives under. */
+  group: TemplateFieldGroup;
   icon: LucideIcon;
 }
 
 export const FIELD_TYPES: readonly TemplateFieldType[] = [
-  { id: "participant_name", label: "ФИО / Коллектив", binding: "data", icon: Users },
-  { id: "nomination", label: "Номинация", binding: "data", icon: Tag },
-  { id: "work", label: "Произведение", binding: "data", icon: Music },
-  { id: "age_category", label: "Возрастная категория", binding: "data", icon: Baby },
-  { id: "teacher", label: "Педагог", binding: "data", icon: GraduationCap },
-  { id: "organization", label: "Организация", binding: "data", icon: Building2 },
-  { id: "date", label: "Дата", binding: "data", icon: Calendar },
-  { id: "diploma_number", label: "Номер диплома", binding: "data", icon: Hash },
-  { id: "qr", label: "QR", binding: "data", icon: QrCode },
-  { id: "free_text", label: "Свободный текст", binding: "free", icon: Type },
+  {
+    id: "participant_name",
+    label: "ФИО / Коллектив",
+    binding: "data",
+    group: "Участник",
+    icon: Users,
+  },
+  { id: "participant_age", label: "Возраст", binding: "data", group: "Участник", icon: Cake },
+  { id: "teacher", label: "ФИО педагога", binding: "data", group: "Педагог", icon: GraduationCap },
+  {
+    id: "organization",
+    label: "Организация",
+    binding: "data",
+    group: "Организация",
+    icon: Building2,
+  },
+  { id: "nomination", label: "Номинация", binding: "data", group: "Номинация", icon: Tag },
+  { id: "discipline", label: "Дисциплина", binding: "data", group: "Номинация", icon: Shapes },
+  {
+    id: "participant_group",
+    label: "Группа участников",
+    binding: "data",
+    group: "Номинация",
+    icon: UsersRound,
+  },
+  {
+    id: "age_category",
+    label: "Возрастная категория",
+    binding: "data",
+    group: "Номинация",
+    icon: Baby,
+  },
+  { id: "work", label: "Произведение", binding: "data", group: "Произведение", icon: Music },
+  {
+    id: "competition_name",
+    label: "Название конкурса",
+    binding: "data",
+    group: "Конкурс",
+    icon: Trophy,
+  },
+  {
+    id: "competition_date",
+    label: "Дата конкурса",
+    binding: "data",
+    group: "Конкурс",
+    icon: Calendar,
+  },
+  { id: "competition_city", label: "Город", binding: "data", group: "Конкурс", icon: MapPin },
+  { id: "award_degree", label: "Степень", binding: "data", group: "Результат", icon: Medal },
+  { id: "award_place", label: "Место", binding: "data", group: "Результат", icon: Award },
+  { id: "diploma_number", label: "Номер диплома", binding: "data", group: "Диплом", icon: Hash },
+  {
+    id: "diploma_issue_date",
+    label: "Дата выдачи",
+    binding: "data",
+    group: "Диплом",
+    icon: CalendarCheck,
+  },
+  { id: "qr", label: "QR", binding: "data", group: "Прочее", icon: QrCode },
+  { id: "free_text", label: "Свободный текст", binding: "free", group: "Прочее", icon: Type },
 ];
 
 /** Horizontal anchor for a field's text (future property panel). */
