@@ -3,6 +3,7 @@ import type { TemplateField } from "@/features/diplomas";
 import { cn } from "@/shared/lib";
 import { fieldTextClassName, fieldTextStyle, useAutoShrinkFont } from "../lib/field-text";
 import type { FieldPointerHandlers } from "../model/use-field-movement";
+import { QrBlockView } from "./qr-block-view";
 
 interface FieldRendererProps {
   field: TemplateField;
@@ -61,13 +62,17 @@ export function FieldRenderer({
             : "border border-neutral-400/70 border-dashed hover:border-primary/60",
         )}
       >
-        <span
-          ref={textRef}
-          className={fieldTextClassName(style)}
-          style={fieldTextStyle(style, scale)}
-        >
-          {displayValue}
-        </span>
+        {field.type === "qr_block" ? (
+          <QrBlockView number={displayValue} style={style} scale={scale} />
+        ) : (
+          <span
+            ref={textRef}
+            className={fieldTextClassName(style)}
+            style={fieldTextStyle(style, scale)}
+          >
+            {displayValue}
+          </span>
+        )}
       </button>
       {selected ? handles : null}
     </div>

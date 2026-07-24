@@ -34,6 +34,9 @@ export function PdfViewer({ url }: PdfViewerProps): React.JSX.Element {
   // Native (scale-1) page sizes in PDF points — the coordinate system future
   // fields position against. Keyed by 1-based page number.
   const pageSizes = useRef<Map<number, { width: number; height: number }>>(new Map());
+  // Fit the template to the viewport width once, when it first opens; after that
+  // the zoom is the user's to control.
+  const autoFitDone = useRef(false);
 
   const zoomOut = useCallback(() => setScale((s) => clampScale(s - SCALE_STEP)), []);
   const zoomIn = useCallback(() => setScale((s) => clampScale(s + SCALE_STEP)), []);
@@ -114,6 +117,11 @@ export function PdfViewer({ url }: PdfViewerProps): React.JSX.Element {
                     width: page.originalWidth,
                     height: page.originalHeight,
                   });
+                  // Auto-fit to width once the first page's size is known.
+                  if (pageNumber === 1 && !autoFitDone.current) {
+                    autoFitDone.current = true;
+                    fitWidth();
+                  }
                 }}
               />
               {/* Transparent editor layer hosting the fields. */}

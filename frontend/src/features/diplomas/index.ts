@@ -45,6 +45,7 @@ export {
   NOMINATION_PARTS,
   type NominationPart,
   type NominationPartKey,
+  QR_VERIFICATION_TEXT,
   type TemplateDocument,
   type TemplateField,
   type TemplateFieldConfig,

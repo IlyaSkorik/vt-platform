@@ -60,7 +60,7 @@ export const KNOWN_BINDINGS = {
 /**
  * The default data source for a field kind. This is the one seam a new data
  * field extends — add a `type → binding` entry and the editor needs no changes.
- * Types with no entry (`qr`, `free_text`) are not data-bound.
+ * Types with no entry (`free_text`) are not data-bound.
  */
 const DEFAULT_BINDINGS: Partial<Record<TemplateFieldTypeId, TemplateFieldBinding>> = {
   participant_name: PARTICIPANT_DISPLAY_NAME,
@@ -75,6 +75,8 @@ const DEFAULT_BINDINGS: Partial<Record<TemplateFieldTypeId, TemplateFieldBinding
   award_degree: AWARD_DEGREE,
   diploma_number: DIPLOMA_NUMBER,
   diploma_issue_date: DIPLOMA_ISSUE_DATE,
+  // The QR block draws the diploma number beside its authenticity text.
+  qr_block: DIPLOMA_NUMBER,
 };
 
 export function defaultBindingForType(type: TemplateFieldTypeId): TemplateFieldBinding {

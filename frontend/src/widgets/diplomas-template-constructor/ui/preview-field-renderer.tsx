@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import type { TemplateField } from "@/features/diplomas";
 import { fieldTextClassName, fieldTextStyle, useAutoShrinkFont } from "../lib/field-text";
+import { QrBlockView } from "./qr-block-view";
 
 interface PreviewFieldRendererProps {
   field: TemplateField;
@@ -35,13 +36,17 @@ export function PreviewFieldRenderer({
         height: `${field.height * 100}%`,
       }}
     >
-      <span
-        ref={textRef}
-        className={fieldTextClassName(style)}
-        style={fieldTextStyle(style, scale)}
-      >
-        {displayValue}
-      </span>
+      {field.type === "qr_block" ? (
+        <QrBlockView number={displayValue} style={style} scale={scale} />
+      ) : (
+        <span
+          ref={textRef}
+          className={fieldTextClassName(style)}
+          style={fieldTextStyle(style, scale)}
+        >
+          {displayValue}
+        </span>
+      )}
     </div>
   );
 }

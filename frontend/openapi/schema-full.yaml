@@ -7340,7 +7340,7 @@ components:
       - award_degree
       - diploma_number
       - diploma_issue_date
-      - qr
+      - qr_block
       - free_text
       type: string
       description: |-
@@ -7356,7 +7356,7 @@ components:
         * `award_degree` - award_degree
         * `diploma_number` - diploma_number
         * `diploma_issue_date` - diploma_issue_date
-        * `qr` - qr
+        * `qr_block` - qr_block
         * `free_text` - free_text
     LayoutResponse:
       type: object

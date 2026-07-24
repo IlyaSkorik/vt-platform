@@ -54,7 +54,7 @@ _FIELD_TYPES = [
     "award_degree",
     "diploma_number",
     "diploma_issue_date",
-    "qr",
+    "qr_block",
     "free_text",
 ]
 

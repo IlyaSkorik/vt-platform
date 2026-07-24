@@ -55,7 +55,8 @@ export type TemplateFieldTypeId =
   | "award_degree"
   | "diploma_number"
   | "diploma_issue_date"
-  | "qr"
+  // QR-блок: место под QR-код + текст проверки подлинности + номер диплома.
+  | "qr_block"
   | "free_text";
 
 /** A part the nomination block can include. */
@@ -82,6 +83,13 @@ export const NOMINATION_PARTS: readonly NominationPart[] = [
 
 /** Default leading label of a nomination block. */
 export const DEFAULT_NOMINATION_PREFIX = "Номинация:";
+
+/**
+ * Fixed authenticity text of the QR block. The block pairs a QR placeholder with
+ * this line and the diploma number; the text is not editable at this stage (the
+ * real QR image and its verification URL land with diploma generation).
+ */
+export const QR_VERIFICATION_TEXT = "Диплом подлинный. Проверить можно на сайте организатора.";
 
 /**
  * Per-field configuration beyond geometry and style. Only composite fields use
@@ -188,7 +196,7 @@ export const FIELD_TYPES: readonly TemplateFieldType[] = [
     group: "Диплом",
     icon: CalendarCheck,
   },
-  { id: "qr", label: "QR", binding: "data", group: "Прочее", icon: QrCode },
+  { id: "qr_block", label: "QR-блок", binding: "data", group: "Диплом", icon: QrCode },
   { id: "free_text", label: "Свободный текст", binding: "free", group: "Прочее", icon: Type },
 ];
 
