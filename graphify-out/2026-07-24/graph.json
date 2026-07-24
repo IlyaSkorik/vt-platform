@@ -5818,8 +5818,8 @@
       "source_location": "L349",
       "_origin": "ast",
       "id": "backend_apps_applications_application_interfaces_applicationrepository_get",
-      "community": 37,
-      "community_name": "Competition Mgmt \u00b7 App Layer (dto)",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": ".get()"
     },
     {
@@ -5840,8 +5840,8 @@
       "source_location": "L357",
       "_origin": "ast",
       "id": "backend_apps_applications_application_interfaces_applicationrepository_save",
-      "community": 37,
-      "community_name": "Competition Mgmt \u00b7 App Layer (dto)",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": ".save()"
     },
     {
@@ -6412,8 +6412,8 @@
       "source_location": "L350",
       "_origin": "ast",
       "id": "backend_apps_applications_application_interfaces_rationale_350",
-      "community": 37,
-      "community_name": "Competition Mgmt \u00b7 App Layer (dto)",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": "return the application with ``application_id``, or ``none``."
     },
     {
@@ -6434,8 +6434,8 @@
       "source_location": "L358",
       "_origin": "ast",
       "id": "backend_apps_applications_application_interfaces_rationale_358",
-      "community": 37,
-      "community_name": "Competition Mgmt \u00b7 App Layer (dto)",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": "persist ``application`` and its whole graph (insert or update), honouring its ve"
     },
     {
@@ -9250,8 +9250,8 @@
       "source_location": "L598",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_submission_rehydrate",
-      "community": 19,
-      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
+      "community": 850,
+      "community_name": "_utcnow",
       "norm_label": ".rehydrate()"
     },
     {
@@ -9778,8 +9778,8 @@
       "source_location": "L1098",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_application",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": "application"
     },
     {
@@ -9789,8 +9789,8 @@
       "source_location": "L1133",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_application_post_init",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": ".__post_init__()"
     },
     {
@@ -9844,8 +9844,8 @@
       "source_location": "L1219",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_application_id",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": ".id()"
     },
     {
@@ -9888,8 +9888,8 @@
       "source_location": "L1235",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_application_educational_organization_id",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": ".educational_organization_id()"
     },
     {
@@ -9910,8 +9910,8 @@
       "source_location": "L1243",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_application_submission_refs",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": ".submission_refs()"
     },
     {
@@ -9921,8 +9921,8 @@
       "source_location": "L1247",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_application_submission_count",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": ".submission_count()"
     },
     {
@@ -9932,8 +9932,8 @@
       "source_location": "L1251",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_application_service_lines",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": ".service_lines()"
     },
     {
@@ -9943,8 +9943,8 @@
       "source_location": "L1255",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_application_consents",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": ".consents()"
     },
     {
@@ -9954,8 +9954,8 @@
       "source_location": "L1259",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_application_total_price",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": ".total_price()"
     },
     {
@@ -9965,8 +9965,8 @@
       "source_location": "L1263",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_application_status_history",
-      "community": 125,
-      "community_name": "Participants \u00b7 Domain (value)",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": ".status_history()"
     },
     {
@@ -9976,8 +9976,8 @@
       "source_location": "L1268",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_application_payment_receipt",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": ".payment_receipt()"
     },
     {
@@ -10031,8 +10031,8 @@
       "source_location": "L1289",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_application_version",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": ".version()"
     },
     {
@@ -10042,8 +10042,8 @@
       "source_location": "L1293",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_application_initial_version",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": ".initial_version()"
     },
     {
@@ -10053,8 +10053,8 @@
       "source_location": "L1298",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_application_is_deleted",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": ".is_deleted()"
     },
     {
@@ -10064,8 +10064,8 @@
       "source_location": "L1301",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_application_is_draft",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": ".is_draft()"
     },
     {
@@ -10075,8 +10075,8 @@
       "source_location": "L1304",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_application_is_editable",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": ".is_editable()"
     },
     {
@@ -10097,8 +10097,8 @@
       "source_location": "L1312",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_application_accepts_payment_receipt",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": ".accepts_payment_receipt()"
     },
     {
@@ -10317,8 +10317,8 @@
       "source_location": "L1538",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_application_mark_persisted",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": ".mark_persisted()"
     },
     {
@@ -10328,8 +10328,8 @@
       "source_location": "L1548",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_application_eq",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": ".__eq__()"
     },
     {
@@ -10339,8 +10339,8 @@
       "source_location": "L1551",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_application_hash",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": ".__hash__()"
     },
     {
@@ -10350,8 +10350,8 @@
       "source_location": "L1554",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_application_repr",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": ".__repr__()"
     },
     {
@@ -10471,8 +10471,8 @@
       "source_location": "L617",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_rationale_617",
-      "community": 19,
-      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
+      "community": 850,
+      "community_name": "_utcnow",
       "norm_label": "reconstruct the aggregate from persistence (no re-validation, no events)."
     },
     {
@@ -10779,8 +10779,8 @@
       "source_location": "L1099",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_rationale_1099",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": "the application aggregate root - the order grouping one applicant's submissions."
     },
     {
@@ -10812,8 +10812,8 @@
       "source_location": "L1264",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_rationale_1264",
-      "community": 125,
-      "community_name": "Participants \u00b7 Domain (value)",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": "the order's status history, in the order it was recorded."
     },
     {
@@ -10834,8 +10834,8 @@
       "source_location": "L1294",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_rationale_1294",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": "the version this aggregate was loaded at (the optimistic-concurrency pre-image)."
     },
     {
@@ -10845,8 +10845,8 @@
       "source_location": "L1305",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_rationale_1305",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": "whether the order's composition may currently be changed (draft only)."
     },
     {
@@ -10867,8 +10867,8 @@
       "source_location": "L1313",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_rationale_1313",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": "whether a payment receipt may currently be attached (any time before settled)."
     },
     {
@@ -11054,8 +11054,8 @@
       "source_location": "L1539",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_rationale_1539",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 19,
+      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
       "norm_label": "mark this in-memory instance as clean at its current version.          called"
     },
     {
@@ -52425,8 +52425,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "backend_apps_identity_application_handlers_session_handlers_refreshtokenhandler_init",
-      "community": 12,
-      "community_name": "Identity \u00b7 App Layer",
+      "community": 125,
+      "community_name": "Participants \u00b7 Domain (value)",
       "norm_label": ".__init__()"
     },
     {
@@ -53855,8 +53855,8 @@
       "source_location": "L420",
       "_origin": "ast",
       "id": "backend_apps_identity_application_interfaces_tokenservice",
-      "community": 12,
-      "community_name": "Identity \u00b7 App Layer",
+      "community": 125,
+      "community_name": "Participants \u00b7 Domain (value)",
       "norm_label": "tokenservice"
     },
     {
@@ -53866,8 +53866,8 @@
       "source_location": "L448",
       "_origin": "ast",
       "id": "backend_apps_identity_application_interfaces_tokenservice_issue",
-      "community": 12,
-      "community_name": "Identity \u00b7 App Layer",
+      "community": 125,
+      "community_name": "Participants \u00b7 Domain (value)",
       "norm_label": ".issue()"
     },
     {
@@ -53877,8 +53877,8 @@
       "source_location": "L452",
       "_origin": "ast",
       "id": "backend_apps_identity_application_interfaces_tokenservice_rotate",
-      "community": 12,
-      "community_name": "Identity \u00b7 App Layer",
+      "community": 125,
+      "community_name": "Participants \u00b7 Domain (value)",
       "norm_label": ".rotate()"
     },
     {
@@ -53888,8 +53888,8 @@
       "source_location": "L456",
       "_origin": "ast",
       "id": "backend_apps_identity_application_interfaces_tokenservice_revoke",
-      "community": 12,
-      "community_name": "Identity \u00b7 App Layer",
+      "community": 125,
+      "community_name": "Participants \u00b7 Domain (value)",
       "norm_label": ".revoke()"
     },
     {
@@ -53899,8 +53899,8 @@
       "source_location": "L460",
       "_origin": "ast",
       "id": "backend_apps_identity_application_interfaces_tokenservice_issued_at_of",
-      "community": 12,
-      "community_name": "Identity \u00b7 App Layer",
+      "community": 125,
+      "community_name": "Participants \u00b7 Domain (value)",
       "norm_label": ".issued_at_of()"
     },
     {
@@ -54262,8 +54262,8 @@
       "source_location": "L421",
       "_origin": "ast",
       "id": "backend_apps_identity_application_interfaces_rationale_421",
-      "community": 12,
-      "community_name": "Identity \u00b7 App Layer",
+      "community": 125,
+      "community_name": "Participants \u00b7 Domain (value)",
       "norm_label": "port: issue, rotate, and revoke the session's jwt pair.      **why it exists.*"
     },
     {
@@ -54273,8 +54273,8 @@
       "source_location": "L449",
       "_origin": "ast",
       "id": "backend_apps_identity_application_interfaces_rationale_449",
-      "community": 12,
-      "community_name": "Identity \u00b7 App Layer",
+      "community": 125,
+      "community_name": "Participants \u00b7 Domain (value)",
       "norm_label": "issue a fresh access + refresh pair for the account ``subject``."
     },
     {
@@ -54284,8 +54284,8 @@
       "source_location": "L453",
       "_origin": "ast",
       "id": "backend_apps_identity_application_interfaces_rationale_453",
-      "community": 12,
-      "community_name": "Identity \u00b7 App Layer",
+      "community": 125,
+      "community_name": "Participants \u00b7 Domain (value)",
       "norm_label": "validate ``refresh_token``, invalidate it, and issue a new pair."
     },
     {
@@ -54295,8 +54295,8 @@
       "source_location": "L457",
       "_origin": "ast",
       "id": "backend_apps_identity_application_interfaces_rationale_457",
-      "community": 12,
-      "community_name": "Identity \u00b7 App Layer",
+      "community": 125,
+      "community_name": "Participants \u00b7 Domain (value)",
       "norm_label": "blacklist ``refresh_token`` so the session can no longer be renewed."
     },
     {
@@ -54306,8 +54306,8 @@
       "source_location": "L461",
       "_origin": "ast",
       "id": "backend_apps_identity_application_interfaces_rationale_461",
-      "community": 12,
-      "community_name": "Identity \u00b7 App Layer",
+      "community": 125,
+      "community_name": "Participants \u00b7 Domain (value)",
       "norm_label": "return the instant ``refresh_token`` was issued (its ``iat`` claim)."
     },
     {
@@ -87163,8 +87163,8 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "backend_apps_teachers_application_interfaces_clock_now",
-      "community": 775,
-      "community_name": ".required_attachment_types",
+      "community": 850,
+      "community_name": "_utcnow",
       "norm_label": ".now()"
     },
     {
@@ -87174,8 +87174,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_teachers_application_interfaces_py_datetime",
-      "community": 775,
-      "community_name": ".required_attachment_types",
+      "community": 850,
+      "community_name": "_utcnow",
       "norm_label": "datetime"
     },
     {
@@ -87185,8 +87185,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "backend_apps_teachers_application_interfaces_clock_utcnow",
-      "community": 775,
-      "community_name": ".required_attachment_types",
+      "community": 850,
+      "community_name": "_utcnow",
       "norm_label": ".utcnow()"
     },
     {
@@ -87328,8 +87328,8 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "backend_apps_teachers_application_interfaces_rationale_59",
-      "community": 775,
-      "community_name": ".required_attachment_types",
+      "community": 850,
+      "community_name": "_utcnow",
       "norm_label": "the current instant as a timezone-aware datetime (possibly non-utc)."
     },
     {
@@ -87339,8 +87339,8 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "backend_apps_teachers_application_interfaces_rationale_63",
-      "community": 775,
-      "community_name": ".required_attachment_types",
+      "community": 850,
+      "community_name": "_utcnow",
       "norm_label": "the current instant as a timezone-aware **utc** datetime."
     },
     {
@@ -88340,8 +88340,8 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "backend_apps_teachers_domain_exceptions_invalidteacherroleerror",
-      "community": 71,
-      "community_name": "Teachers \u00b7 Domain",
+      "community": 45,
+      "community_name": "Teachers \u00b7 Domain (value)",
       "norm_label": "invalidteacherroleerror"
     },
     {
@@ -88483,8 +88483,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "backend_apps_teachers_domain_exceptions_rationale_54",
-      "community": 71,
-      "community_name": "Teachers \u00b7 Domain",
+      "community": 45,
+      "community_name": "Teachers \u00b7 Domain (value)",
       "norm_label": "the provided value is not a valid teacher role (empty or too long)."
     },
     {
@@ -88560,8 +88560,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_teachers_domain_value_objects",
-      "community": 71,
-      "community_name": "Teachers \u00b7 Domain",
+      "community": 45,
+      "community_name": "Teachers \u00b7 Domain (value)",
       "norm_label": "value_objects.py"
     },
     {
@@ -88813,8 +88813,8 @@
       "source_location": "L204",
       "_origin": "ast",
       "id": "backend_apps_teachers_domain_value_objects_teacherrole_post_init",
-      "community": 71,
-      "community_name": "Teachers \u00b7 Domain",
+      "community": 45,
+      "community_name": "Teachers \u00b7 Domain (value)",
       "norm_label": ".__post_init__()"
     },
     {
@@ -88923,8 +88923,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_teachers_domain_value_objects_rationale_1",
-      "community": 71,
-      "community_name": "Teachers \u00b7 Domain",
+      "community": 45,
+      "community_name": "Teachers \u00b7 Domain (value)",
       "norm_label": "value objects for the teacher directory bounded context.  immutable, identity-"
     },
     {
@@ -95438,8 +95438,8 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeuserrepository_get",
-      "community": 484,
-      "community_name": "SubmissionSummaryView",
+      "community": 202,
+      "community_name": "Community 202",
       "norm_label": ".get()"
     },
     {
@@ -95449,8 +95449,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_py_userid",
-      "community": 484,
-      "community_name": "SubmissionSummaryView",
+      "community": 202,
+      "community_name": "Community 202",
       "norm_label": "userid"
     },
     {
@@ -95493,8 +95493,8 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeuserrepository_exists",
-      "community": 484,
-      "community_name": "SubmissionSummaryView",
+      "community": 202,
+      "community_name": "Community 202",
       "norm_label": ".exists()"
     },
     {
@@ -95625,8 +95625,8 @@
       "source_location": "L100",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeclock_init",
-      "community": 484,
-      "community_name": "SubmissionSummaryView",
+      "community": 202,
+      "community_name": "Community 202",
       "norm_label": ".__init__()"
     },
     {
@@ -95636,8 +95636,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_py_datetime",
-      "community": 484,
-      "community_name": "SubmissionSummaryView",
+      "community": 202,
+      "community_name": "Community 202",
       "norm_label": "datetime"
     },
     {
@@ -95647,8 +95647,8 @@
       "source_location": "L103",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeclock_now",
-      "community": 484,
-      "community_name": "SubmissionSummaryView",
+      "community": 202,
+      "community_name": "Community 202",
       "norm_label": ".now()"
     },
     {
@@ -95658,8 +95658,8 @@
       "source_location": "L106",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeclock_utcnow",
-      "community": 484,
-      "community_name": "SubmissionSummaryView",
+      "community": 202,
+      "community_name": "Community 202",
       "norm_label": ".utcnow()"
     },
     {
@@ -95724,8 +95724,8 @@
       "source_location": "L130",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_faketokenservice_init",
-      "community": 484,
-      "community_name": "SubmissionSummaryView",
+      "community": 202,
+      "community_name": "Community 202",
       "norm_label": ".__init__()"
     },
     {
@@ -95768,8 +95768,8 @@
       "source_location": "L164",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_faketokenservice_subject_of",
-      "community": 484,
-      "community_name": "SubmissionSummaryView",
+      "community": 202,
+      "community_name": "Community 202",
       "norm_label": ".subject_of()"
     },
     {
@@ -95779,8 +95779,8 @@
       "source_location": "L170",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_faketokenservice_issued_at_of",
-      "community": 484,
-      "community_name": "SubmissionSummaryView",
+      "community": 202,
+      "community_name": "Community 202",
       "norm_label": ".issued_at_of()"
     },
     {
@@ -95856,8 +95856,8 @@
       "source_location": "L235",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeverificationtokenservice",
-      "community": 484,
-      "community_name": "SubmissionSummaryView",
+      "community": 202,
+      "community_name": "Community 202",
       "norm_label": "fakeverificationtokenservice"
     },
     {
@@ -95867,8 +95867,8 @@
       "source_location": "L243",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeverificationtokenservice_init",
-      "community": 484,
-      "community_name": "SubmissionSummaryView",
+      "community": 202,
+      "community_name": "Community 202",
       "norm_label": ".__init__()"
     },
     {
@@ -95878,8 +95878,8 @@
       "source_location": "L247",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeverificationtokenservice_issue_link",
-      "community": 484,
-      "community_name": "SubmissionSummaryView",
+      "community": 202,
+      "community_name": "Community 202",
       "norm_label": ".issue_link()"
     },
     {
@@ -95889,8 +95889,8 @@
       "source_location": "L254",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeverificationtokenservice_verify",
-      "community": 484,
-      "community_name": "SubmissionSummaryView",
+      "community": 202,
+      "community_name": "Community 202",
       "norm_label": ".verify()"
     },
     {
@@ -96043,8 +96043,8 @@
       "source_location": "L236",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_rationale_236",
-      "community": 484,
-      "community_name": "SubmissionSummaryView",
+      "community": 202,
+      "community_name": "Community 202",
       "norm_label": "reversible :class:`verificationtokenservice` fake \u2014 no cryptography.      mint"
     },
     {
@@ -102797,8 +102797,8 @@
       "source_location": "L166",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_entities_testconstruction_test_rehydrate_reconstructs_without_events",
-      "community": 19,
-      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
+      "community": 850,
+      "community_name": "_utcnow",
       "norm_label": ".test_rehydrate_reconstructs_without_events()"
     },
     {
@@ -103204,8 +103204,8 @@
       "source_location": "L449",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_entities_testconcurrencyandidentity_test_equality_by_id",
-      "community": 19,
-      "community_name": "Applications/Submissions \u00b7 API/Presentation (api)",
+      "community": 850,
+      "community_name": "_utcnow",
       "norm_label": ".test_equality_by_id()"
     },
     {
@@ -145675,7 +145675,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_competitions_recent_competitions_competitionrow",
-      "community": 153,
+      "community": 139,
       "community_name": "Dashboard Widgets (FE)",
       "norm_label": "competitionrow()"
     },
@@ -146761,7 +146761,7 @@
       "label": "errorMessage()",
       "file_type": "code",
       "source_file": "frontend/src/widgets/diplomas-template-constructor/ui/constructor-layout.tsx",
-      "source_location": "L135",
+      "source_location": "L137",
       "_origin": "ast",
       "id": "frontend_src_widgets_diplomas_template_constructor_ui_constructor_layout_errormessage",
       "community": 176,
@@ -151024,9 +151024,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Supporting bounded context. Modules communicate via published interfaces and domain events, never cross-module ORM reach-in.",
-      "community": 867,
+      "community": 86,
       "norm_label": "notifications context",
-      "community_name": "Notifications Context",
+      "community_name": "Community 86",
       "id": "docs_architecture_arch_001_vt_platform_architecture_context_notifications_context"
     },
     {
@@ -151339,9 +151339,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Sent only on permitted channels",
-      "community": 867,
+      "community": 86,
       "norm_label": "notification (aggregate root)",
-      "community_name": "Notifications Context",
+      "community_name": "Community 86",
       "id": "docs_business_data_001_business_data_model_aggregate_notification"
     },
     {
@@ -152327,9 +152327,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 867,
+      "community": 86,
       "norm_label": "notificationqueued (domain event)",
-      "community_name": "Notifications Context",
+      "community_name": "Community 86",
       "id": "docs_business_data_003_domain_event_catalog_notificationqueued"
     },
     {
@@ -152341,9 +152341,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 867,
+      "community": 86,
       "norm_label": "notificationsent (domain event)",
-      "community_name": "Notifications Context",
+      "community_name": "Community 86",
       "id": "docs_business_data_003_domain_event_catalog_notificationsent"
     },
     {
@@ -152355,9 +152355,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 867,
+      "community": 86,
       "norm_label": "notificationdelivered (domain event)",
-      "community_name": "Notifications Context",
+      "community_name": "Community 86",
       "id": "docs_business_data_003_domain_event_catalog_notificationdelivered"
     },
     {
@@ -152369,9 +152369,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 867,
+      "community": 86,
       "norm_label": "notificationfailed (domain event)",
-      "community_name": "Notifications Context",
+      "community_name": "Community 86",
       "id": "docs_business_data_003_domain_event_catalog_notificationfailed"
     },
     {
@@ -153129,9 +153129,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 268,
+      "community": 283,
       "norm_label": "vt platform backend",
-      "community_name": "Community 268",
+      "community_name": "Community 283",
       "id": "backend_readme_vt_platform_backend"
     },
     {
@@ -153213,9 +153213,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 268,
+      "community": 283,
       "norm_label": "modular monolith",
-      "community_name": "Community 268",
+      "community_name": "Community 283",
       "id": "backend_readme_modular_monolith"
     },
     {
@@ -153269,9 +153269,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 279,
+      "community": 283,
       "norm_label": "api-001 identity contract",
-      "community_name": "Community 279",
+      "community_name": "Community 283",
       "id": "backend_readme_api_001"
     },
     {
@@ -153297,9 +153297,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 268,
+      "community": 283,
       "norm_label": "pydantic settings configuration",
-      "community_name": "Community 268",
+      "community_name": "Community 283",
       "id": "backend_readme_pydantic_settings"
     },
     {
@@ -642396,7 +642396,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/widgets/diplomas-template-constructor/ui/constructor-layout.tsx",
-      "source_location": "L135",
+      "source_location": "L137",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_widgets_diplomas_template_constructor_ui_constructor_layout",
@@ -652724,5 +652724,5 @@
       "source_file": "frontend/docs/festival-catalog.md"
     }
   ],
-  "built_at_commit": "2c75353cd6ae08652fde2584b021064d6568aabd"
+  "built_at_commit": "dd02f0f417040370ac45f2bc2c385deff398d246"
 }
