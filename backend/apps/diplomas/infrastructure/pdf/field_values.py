@@ -102,15 +102,19 @@ def _by_binding(binding: str, snapshot: DiplomaSnapshot, *, number: str) -> str 
 
 
 def field_text(field: dict[str, Any], snapshot: DiplomaSnapshot, *, number: str) -> str | None:
-    """The text a field prints, or ``None`` when it must not be drawn."""
-    config = field.get("config") or {}
-    if config.get("parts") is not None:
-        return _nomination_block(config, snapshot)
+    """The text a field prints, or ``None`` when it must not be drawn.
+
+    Keyed on the field *type*, not on the shape of ``config``: the layout
+    serializer stores a default ``{"parts": [], "prefix": ""}`` on every field, so
+    a simple field must not be mistaken for a nomination block.
+    """
     field_type = field.get("type")
-    binding = field.get("binding") or ""
+    if field_type == "nomination_block":
+        return _nomination_block(field.get("config") or {}, snapshot)
     if field_type == "qr_block":
         # QR image is deferred; print the diploma number the block carries.
         return _clean(number)
+    binding = field.get("binding") or ""
     if field_type == "free_text" or not binding:
         return _clean(field.get("value"))
     return _by_binding(binding, snapshot, number=number)
