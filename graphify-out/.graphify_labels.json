@@ -903,8 +903,15 @@
   "901": "typescript",
   "902": "vite-tsconfig-paths",
   "903": "__init__.py",
+  "904": "StartCompetitionHandler",
   "905": "0005_templatefieldmodel_binding.py",
+  "906": ".to_dict",
+  "907": ".is_active",
+  "908": ".post",
+  "909": ".post",
+  "910": ".post",
   "911": "__init__.py",
   "912": "0008_diplomamodel.py",
+  "913": ".put",
   "918": "__init__.py"
 }
