@@ -2177,8 +2177,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "backend_apps_applications_application_commands_pricing_calculatepricehandler_init",
-      "community": 834,
-      "community_name": "useUpdateGeneralInformationMutation",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": ".__init__()"
     },
     {
@@ -2188,8 +2188,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_applications_application_commands_pricing_py_clock",
-      "community": 834,
-      "community_name": "useUpdateGeneralInformationMutation",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "clock"
     },
     {
@@ -2199,8 +2199,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_applications_application_commands_pricing_py_eventpublisher",
-      "community": 834,
-      "community_name": "useUpdateGeneralInformationMutation",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "eventpublisher"
     },
     {
@@ -2914,8 +2914,8 @@
       "source_location": "L251",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_init_submissionsummaryview_from_submission",
-      "community": 265,
-      "community_name": "Community 265",
+      "community": 69,
+      "community_name": "Competition Mgmt \u00b7 App Layer",
       "norm_label": ".from_submission()"
     },
     {
@@ -3156,8 +3156,8 @@
       "source_location": "L252",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_init_rationale_252",
-      "community": 265,
-      "community_name": "Community 265",
+      "community": 69,
+      "community_name": "Competition Mgmt \u00b7 App Layer",
       "norm_label": "project a :class:`submission` into its lightweight summary view."
     },
     {
@@ -3299,8 +3299,8 @@
       "source_location": "L163",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_commands_addteachercommand",
-      "community": 275,
-      "community_name": "Community 275",
+      "community": 219,
+      "community_name": "Community 219",
       "norm_label": "addteachercommand"
     },
     {
@@ -3376,8 +3376,8 @@
       "source_location": "L257",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_commands_startreviewcommand",
-      "community": 275,
-      "community_name": "Community 275",
+      "community": 178,
+      "community_name": "Community 178",
       "norm_label": "startreviewcommand"
     },
     {
@@ -3585,8 +3585,8 @@
       "source_location": "L164",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_commands_rationale_164",
-      "community": 275,
-      "community_name": "Community 275",
+      "community": 219,
+      "community_name": "Community 219",
       "norm_label": "add a teacher in a configurable role (owner, editable states only)."
     },
     {
@@ -3662,8 +3662,8 @@
       "source_location": "L258",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_commands_rationale_258",
-      "community": 275,
-      "community_name": "Community 275",
+      "community": 178,
+      "community_name": "Community 178",
       "norm_label": "begin reviewing a submitted submission (organizer)."
     },
     {
@@ -4630,8 +4630,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_applications_application_exceptions",
-      "community": 275,
-      "community_name": "Community 275",
+      "community": 21,
+      "community_name": "Applications/Submissions \u00b7 App Layer (orders)",
       "norm_label": "exceptions.py"
     },
     {
@@ -5015,8 +5015,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_applications_application_exceptions_rationale_1",
-      "community": 275,
-      "community_name": "Community 275",
+      "community": 21,
+      "community_name": "Applications/Submissions \u00b7 App Layer (orders)",
       "norm_label": "application-layer exceptions for the applications (competition submission) conte"
     },
     {
@@ -7875,8 +7875,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_init",
-      "community": 265,
-      "community_name": "Community 265",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "__init__.py"
     },
     {
@@ -7886,8 +7886,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_init_rationale_1",
-      "community": 265,
-      "community_name": "Community 265",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "query use cases for the applications bounded context.  read-side operations retu"
     },
     {
@@ -7897,8 +7897,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_get_submission",
-      "community": 265,
-      "community_name": "Community 265",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "get_submission.py"
     },
     {
@@ -7908,8 +7908,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_get_submission_ensure_can_view",
-      "community": 265,
-      "community_name": "Community 265",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "_ensure_can_view()"
     },
     {
@@ -7941,8 +7941,8 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_get_submission_getsubmissionhandler_handle",
-      "community": 265,
-      "community_name": "Community 265",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": ".handle()"
     },
     {
@@ -7952,8 +7952,8 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_get_submission_getsubmissionhistoryhandler",
-      "community": 265,
-      "community_name": "Community 265",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "getsubmissionhistoryhandler"
     },
     {
@@ -7974,8 +7974,8 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_get_submission_getsubmissionhistoryhandler_handle",
-      "community": 265,
-      "community_name": "Community 265",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": ".handle()"
     },
     {
@@ -7985,8 +7985,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_get_submission_rationale_1",
-      "community": 265,
-      "community_name": "Community 265",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "read use cases: fetch one submission in full, or its review history."
     },
     {
@@ -7996,8 +7996,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_get_submission_rationale_27",
-      "community": 265,
-      "community_name": "Community 265",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "allow the owning applicant or any authorized organizer to view; else deny."
     },
     {
@@ -8018,8 +8018,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_get_submission_rationale_54",
-      "community": 265,
-      "community_name": "Community 265",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "use case: fetch a submission's review history (owner or an authorized organizer)"
     },
     {
@@ -8029,8 +8029,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_list_submissions",
-      "community": 265,
-      "community_name": "Community 265",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "list_submissions.py"
     },
     {
@@ -8040,8 +8040,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_list_submissions_listmysubmissionshandler",
-      "community": 265,
-      "community_name": "Community 265",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "listmysubmissionshandler"
     },
     {
@@ -8051,8 +8051,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_list_submissions_listmysubmissionshandler_init",
-      "community": 265,
-      "community_name": "Community 265",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": ".__init__()"
     },
     {
@@ -8062,8 +8062,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_list_submissions_listmysubmissionshandler_handle",
-      "community": 265,
-      "community_name": "Community 265",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": ".handle()"
     },
     {
@@ -8073,8 +8073,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_list_submissions_listcompetitionsubmissionshandler",
-      "community": 265,
-      "community_name": "Community 265",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "listcompetitionsubmissionshandler"
     },
     {
@@ -8106,8 +8106,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_list_submissions_rationale_1",
-      "community": 265,
-      "community_name": "Community 265",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "read use cases: list the applicant's own submissions, or a competition's."
     },
     {
@@ -8117,8 +8117,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_list_submissions_rationale_26",
-      "community": 265,
-      "community_name": "Community 265",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "use case: list the submissions owned by the current applicant."
     },
     {
@@ -8128,8 +8128,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "backend_apps_applications_application_queries_list_submissions_rationale_38",
-      "community": 265,
-      "community_name": "Community 265",
+      "community": 275,
+      "community_name": "Community 275",
       "norm_label": "use case: list all submissions for a competition (authorized organizer only)."
     },
     {
@@ -29545,8 +29545,8 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "backend_apps_competitions_composition_build_public_catalog_read_service",
-      "community": 155,
-      "community_name": "Community 155",
+      "community": 335,
+      "community_name": "Community 335",
       "norm_label": "build_public_catalog_read_service()"
     },
     {
@@ -29611,8 +29611,8 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "backend_apps_competitions_composition_rationale_58",
-      "community": 155,
-      "community_name": "Community 155",
+      "community": 335,
+      "community_name": "Community 335",
       "norm_label": "assemble the public festival catalog read model (participant-facing).      a r"
     },
     {
@@ -69200,8 +69200,8 @@
       "source_location": "L275",
       "_origin": "ast",
       "id": "backend_apps_organization_composition_build_organization_directory",
-      "community": 155,
-      "community_name": "Community 155",
+      "community": 335,
+      "community_name": "Community 335",
       "norm_label": "build_organization_directory()"
     },
     {
@@ -69365,8 +69365,8 @@
       "source_location": "L276",
       "_origin": "ast",
       "id": "backend_apps_organization_composition_rationale_276",
-      "community": 155,
-      "community_name": "Community 155",
+      "community": 335,
+      "community_name": "Community 335",
       "norm_label": "assemble the published cross-context organizer directory read model."
     },
     {
@@ -88340,8 +88340,8 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "backend_apps_teachers_domain_exceptions_invalidteacherroleerror",
-      "community": 45,
-      "community_name": "Teachers \u00b7 Domain (value)",
+      "community": 71,
+      "community_name": "Teachers \u00b7 Domain",
       "norm_label": "invalidteacherroleerror"
     },
     {
@@ -88483,8 +88483,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "backend_apps_teachers_domain_exceptions_rationale_54",
-      "community": 45,
-      "community_name": "Teachers \u00b7 Domain (value)",
+      "community": 71,
+      "community_name": "Teachers \u00b7 Domain",
       "norm_label": "the provided value is not a valid teacher role (empty or too long)."
     },
     {
@@ -88560,8 +88560,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_teachers_domain_value_objects",
-      "community": 45,
-      "community_name": "Teachers \u00b7 Domain (value)",
+      "community": 71,
+      "community_name": "Teachers \u00b7 Domain",
       "norm_label": "value_objects.py"
     },
     {
@@ -88813,8 +88813,8 @@
       "source_location": "L204",
       "_origin": "ast",
       "id": "backend_apps_teachers_domain_value_objects_teacherrole_post_init",
-      "community": 45,
-      "community_name": "Teachers \u00b7 Domain (value)",
+      "community": 71,
+      "community_name": "Teachers \u00b7 Domain",
       "norm_label": ".__post_init__()"
     },
     {
@@ -88923,8 +88923,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_teachers_domain_value_objects_rationale_1",
-      "community": 45,
-      "community_name": "Teachers \u00b7 Domain (value)",
+      "community": 71,
+      "community_name": "Teachers \u00b7 Domain",
       "norm_label": "value objects for the teacher directory bounded context.  immutable, identity-"
     },
     {
@@ -95042,8 +95042,8 @@
       "source_location": "L187",
       "_origin": "ast",
       "id": "backend_tests_application_competitions_test_public_catalog_testdjangopubliccatalogreader_reader",
-      "community": 155,
-      "community_name": "Community 155",
+      "community": 335,
+      "community_name": "Community 335",
       "norm_label": "._reader()"
     },
     {
@@ -144201,8 +144201,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_api_index",
-      "community": 831,
-      "community_name": "useRemoveDocumentMutation",
+      "community": 140,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "index.ts"
     },
     {
@@ -144212,8 +144212,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_api_queries",
-      "community": 831,
-      "community_name": "useRemoveDocumentMutation",
+      "community": 140,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "queries.ts"
     },
     {
@@ -144223,8 +144223,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_api_queries_dashboardkeys",
-      "community": 831,
-      "community_name": "useRemoveDocumentMutation",
+      "community": 140,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "dashboardkeys"
     },
     {
@@ -144234,8 +144234,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_api_queries_mockrequest",
-      "community": 831,
-      "community_name": "useRemoveDocumentMutation",
+      "community": 140,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "mockrequest()"
     },
     {
@@ -144245,8 +144245,8 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_api_queries_usedashboardstats",
-      "community": 831,
-      "community_name": "useRemoveDocumentMutation",
+      "community": 140,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "usedashboardstats()"
     },
     {
@@ -144256,8 +144256,8 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_api_queries_userecentcompetitions",
-      "community": 831,
-      "community_name": "useRemoveDocumentMutation",
+      "community": 140,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "userecentcompetitions()"
     },
     {
@@ -144267,8 +144267,8 @@
       "source_location": "L83",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_api_queries_userecentapplications",
-      "community": 831,
-      "community_name": "useRemoveDocumentMutation",
+      "community": 140,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "userecentapplications()"
     },
     {
@@ -144278,8 +144278,8 @@
       "source_location": "L90",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_api_queries_usenotifications",
-      "community": 831,
-      "community_name": "useRemoveDocumentMutation",
+      "community": 140,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "usenotifications()"
     },
     {
@@ -144289,8 +144289,8 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_api_queries_useupcomingevents",
-      "community": 831,
-      "community_name": "useRemoveDocumentMutation",
+      "community": 140,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "useupcomingevents()"
     },
     {
@@ -144300,8 +144300,8 @@
       "source_location": "L104",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_api_queries_useactivityfeed",
-      "community": 831,
-      "community_name": "useRemoveDocumentMutation",
+      "community": 140,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "useactivityfeed()"
     },
     {
@@ -144564,8 +144564,8 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_format_formatrelativetime",
-      "community": 486,
-      "community_name": "Community 486",
+      "community": 115,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "formatrelativetime()"
     },
     {
@@ -144718,8 +144718,8 @@
       "source_location": "L118",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_mock_data_mock_notifications",
-      "community": 140,
-      "community_name": "Dashboard Widgets (FE)",
+      "community": 265,
+      "community_name": "Community 265",
       "norm_label": "mock_notifications"
     },
     {
@@ -144740,8 +144740,8 @@
       "source_location": "L184",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_mock_data_mock_activity",
-      "community": 464,
-      "community_name": "Community 464",
+      "community": 121,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "mock_activity"
     },
     {
@@ -144806,7 +144806,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_types_statmetric",
-      "community": 139,
+      "community": 140,
       "community_name": "Dashboard Widgets (FE)",
       "norm_label": "statmetric"
     },
@@ -144861,7 +144861,7 @@
       "source_location": "L77",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_types_notificationkind",
-      "community": 140,
+      "community": 115,
       "community_name": "Dashboard Widgets (FE)",
       "norm_label": "notificationkind"
     },
@@ -144894,7 +144894,7 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_types_upcomingevent",
-      "community": 153,
+      "community": 140,
       "community_name": "Dashboard Widgets (FE)",
       "norm_label": "upcomingevent"
     },
@@ -144905,8 +144905,8 @@
       "source_location": "L108",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_types_activitykind",
-      "community": 464,
-      "community_name": "Community 464",
+      "community": 115,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "activitykind"
     },
     {
@@ -144916,8 +144916,8 @@
       "source_location": "L118",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_types_activityevent",
-      "community": 464,
-      "community_name": "Community 464",
+      "community": 140,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "activityevent"
     },
     {
@@ -144971,8 +144971,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_activity_timeline_activity_timeline_stories",
-      "community": 464,
-      "community_name": "Community 464",
+      "community": 121,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "activity-timeline.stories.tsx"
     },
     {
@@ -144982,8 +144982,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_activity_timeline_activity_timeline_stories_story",
-      "community": 464,
-      "community_name": "Community 464",
+      "community": 121,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "story"
     },
     {
@@ -144993,8 +144993,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_activity_timeline_activity_timeline_stories_success",
-      "community": 464,
-      "community_name": "Community 464",
+      "community": 121,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "success"
     },
     {
@@ -145004,8 +145004,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_activity_timeline_activity_timeline_stories_loading",
-      "community": 464,
-      "community_name": "Community 464",
+      "community": 121,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "loading"
     },
     {
@@ -145015,8 +145015,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_activity_timeline_activity_timeline_stories_empty",
-      "community": 464,
-      "community_name": "Community 464",
+      "community": 121,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "empty"
     },
     {
@@ -145026,8 +145026,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_activity_timeline_activity_timeline_stories_errored",
-      "community": 464,
-      "community_name": "Community 464",
+      "community": 121,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "errored"
     },
     {
@@ -145037,8 +145037,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_activity_timeline_activity_timeline",
-      "community": 464,
-      "community_name": "Community 464",
+      "community": 115,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "activity-timeline.tsx"
     },
     {
@@ -145048,8 +145048,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_activity_timeline_activity_timeline_activity_meta",
-      "community": 464,
-      "community_name": "Community 464",
+      "community": 115,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "activity_meta"
     },
     {
@@ -145059,8 +145059,8 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_activity_timeline_activity_timeline_timelineskeleton",
-      "community": 464,
-      "community_name": "Community 464",
+      "community": 115,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "timelineskeleton()"
     },
     {
@@ -145070,8 +145070,8 @@
       "source_location": "L79",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_activity_timeline_activity_timeline_timelineitem",
-      "community": 486,
-      "community_name": "Community 486",
+      "community": 115,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "timelineitem()"
     },
     {
@@ -145081,8 +145081,8 @@
       "source_location": "L112",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_activity_timeline_activity_timeline_activitytimelineviewprops",
-      "community": 464,
-      "community_name": "Community 464",
+      "community": 115,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "activitytimelineviewprops"
     },
     {
@@ -145092,8 +145092,8 @@
       "source_location": "L119",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_activity_timeline_activity_timeline_activitytimelineview",
-      "community": 464,
-      "community_name": "Community 464",
+      "community": 121,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "activitytimelineview()"
     },
     {
@@ -145125,7 +145125,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_notification_center_index",
-      "community": 115,
+      "community": 152,
       "community_name": "Dashboard Widgets (FE)",
       "norm_label": "index.ts"
     },
@@ -145136,8 +145136,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_notification_center_notification_center_stories",
-      "community": 140,
-      "community_name": "Dashboard Widgets (FE)",
+      "community": 265,
+      "community_name": "Community 265",
       "norm_label": "notification-center.stories.tsx"
     },
     {
@@ -145147,8 +145147,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_notification_center_notification_center_stories_story",
-      "community": 140,
-      "community_name": "Dashboard Widgets (FE)",
+      "community": 265,
+      "community_name": "Community 265",
       "norm_label": "story"
     },
     {
@@ -145158,8 +145158,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_notification_center_notification_center_stories_success",
-      "community": 140,
-      "community_name": "Dashboard Widgets (FE)",
+      "community": 265,
+      "community_name": "Community 265",
       "norm_label": "success"
     },
     {
@@ -145169,8 +145169,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_notification_center_notification_center_stories_allread",
-      "community": 140,
-      "community_name": "Dashboard Widgets (FE)",
+      "community": 265,
+      "community_name": "Community 265",
       "norm_label": "allread"
     },
     {
@@ -145180,8 +145180,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_notification_center_notification_center_stories_loading",
-      "community": 140,
-      "community_name": "Dashboard Widgets (FE)",
+      "community": 265,
+      "community_name": "Community 265",
       "norm_label": "loading"
     },
     {
@@ -145191,8 +145191,8 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_notification_center_notification_center_stories_empty",
-      "community": 140,
-      "community_name": "Dashboard Widgets (FE)",
+      "community": 265,
+      "community_name": "Community 265",
       "norm_label": "empty"
     },
     {
@@ -145202,8 +145202,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_notification_center_notification_center_stories_errored",
-      "community": 140,
-      "community_name": "Dashboard Widgets (FE)",
+      "community": 265,
+      "community_name": "Community 265",
       "norm_label": "errored"
     },
     {
@@ -145213,8 +145213,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_notification_center_notification_center_test",
-      "community": 140,
-      "community_name": "Dashboard Widgets (FE)",
+      "community": 265,
+      "community_name": "Community 265",
       "norm_label": "notification-center.test.tsx"
     },
     {
@@ -145257,8 +145257,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_notification_center_notification_center_notificationrow",
-      "community": 486,
-      "community_name": "Community 486",
+      "community": 115,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "notificationrow()"
     },
     {
@@ -145268,7 +145268,7 @@
       "source_location": "L77",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_notification_center_notification_center_notificationcenterviewprops",
-      "community": 115,
+      "community": 152,
       "community_name": "Dashboard Widgets (FE)",
       "norm_label": "notificationcenterviewprops"
     },
@@ -145279,8 +145279,8 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_notification_center_notification_center_notificationcenterview",
-      "community": 115,
-      "community_name": "Dashboard Widgets (FE)",
+      "community": 265,
+      "community_name": "Community 265",
       "norm_label": "notificationcenterview()"
     },
     {
@@ -145290,7 +145290,7 @@
       "source_location": "L122",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_notification_center_notification_center_notificationcenter",
-      "community": 115,
+      "community": 152,
       "community_name": "Dashboard Widgets (FE)",
       "norm_label": "notificationcenter()"
     },
@@ -145400,8 +145400,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_applications_index",
-      "community": 486,
-      "community_name": "Community 486",
+      "community": 115,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "index.ts"
     },
     {
@@ -145477,8 +145477,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_applications_recent_applications",
-      "community": 486,
-      "community_name": "Community 486",
+      "community": 115,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "recent-applications.tsx"
     },
     {
@@ -145488,8 +145488,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_applications_recent_applications_applicationsskeleton",
-      "community": 486,
-      "community_name": "Community 486",
+      "community": 115,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "applicationsskeleton()"
     },
     {
@@ -145499,8 +145499,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_applications_recent_applications_aliasinitials",
-      "community": 486,
-      "community_name": "Community 486",
+      "community": 115,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "aliasinitials()"
     },
     {
@@ -145510,8 +145510,8 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_applications_recent_applications_applicationrow",
-      "community": 486,
-      "community_name": "Community 486",
+      "community": 115,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "applicationrow()"
     },
     {
@@ -145521,8 +145521,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_applications_recent_applications_recentapplicationsviewprops",
-      "community": 486,
-      "community_name": "Community 486",
+      "community": 115,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "recentapplicationsviewprops"
     },
     {
@@ -145532,8 +145532,8 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_applications_recent_applications_recentapplicationsview",
-      "community": 486,
-      "community_name": "Community 486",
+      "community": 115,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "recentapplicationsview()"
     },
     {
@@ -145543,8 +145543,8 @@
       "source_location": "L103",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_applications_recent_applications_recentapplications",
-      "community": 486,
-      "community_name": "Community 486",
+      "community": 115,
+      "community_name": "Dashboard Widgets (FE)",
       "norm_label": "recentapplications()"
     },
     {
@@ -146390,8 +146390,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "frontend_src_widgets_diplomas_template_constructor_lib_pdf_worker",
-      "community": 176,
-      "community_name": "Community 176",
+      "community": 464,
+      "community_name": "Community 464",
       "norm_label": "pdf-worker.ts"
     },
     {
@@ -146761,7 +146761,7 @@
       "label": "errorMessage()",
       "file_type": "code",
       "source_file": "frontend/src/widgets/diplomas-template-constructor/ui/constructor-layout.tsx",
-      "source_location": "L133",
+      "source_location": "L135",
       "_origin": "ast",
       "id": "frontend_src_widgets_diplomas_template_constructor_ui_constructor_layout_errormessage",
       "community": 176,
@@ -147149,8 +147149,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "frontend_src_widgets_diplomas_template_constructor_ui_preview_dialog",
-      "community": 176,
-      "community_name": "Community 176",
+      "community": 464,
+      "community_name": "Community 464",
       "norm_label": "preview-dialog.tsx"
     },
     {
@@ -147160,8 +147160,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "frontend_src_widgets_diplomas_template_constructor_ui_preview_dialog_previewdialogprops",
-      "community": 176,
-      "community_name": "Community 176",
+      "community": 464,
+      "community_name": "Community 464",
       "norm_label": "previewdialogprops"
     },
     {
@@ -147171,8 +147171,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "frontend_src_widgets_diplomas_template_constructor_ui_preview_dialog_previewdialog",
-      "community": 176,
-      "community_name": "Community 176",
+      "community": 464,
+      "community_name": "Community 464",
       "norm_label": "previewdialog()"
     },
     {
@@ -147182,8 +147182,8 @@
       "source_location": "L137",
       "_origin": "ast",
       "id": "frontend_src_widgets_diplomas_template_constructor_ui_preview_dialog_previewcanvasprops",
-      "community": 176,
-      "community_name": "Community 176",
+      "community": 464,
+      "community_name": "Community 464",
       "norm_label": "previewcanvasprops"
     },
     {
@@ -147193,8 +147193,8 @@
       "source_location": "L144",
       "_origin": "ast",
       "id": "frontend_src_widgets_diplomas_template_constructor_ui_preview_dialog_previewcanvas",
-      "community": 176,
-      "community_name": "Community 176",
+      "community": 464,
+      "community_name": "Community 464",
       "norm_label": "previewcanvas()"
     },
     {
@@ -153129,9 +153129,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 283,
+      "community": 268,
       "norm_label": "vt platform backend",
-      "community_name": "Community 283",
+      "community_name": "Community 268",
       "id": "backend_readme_vt_platform_backend"
     },
     {
@@ -153213,9 +153213,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 283,
+      "community": 268,
       "norm_label": "modular monolith",
-      "community_name": "Community 283",
+      "community_name": "Community 268",
       "id": "backend_readme_modular_monolith"
     },
     {
@@ -153269,9 +153269,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 283,
+      "community": 279,
       "norm_label": "api-001 identity contract",
-      "community_name": "Community 283",
+      "community_name": "Community 279",
       "id": "backend_readme_api_001"
     },
     {
@@ -153297,9 +153297,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 283,
+      "community": 268,
       "norm_label": "pydantic settings configuration",
-      "community_name": "Community 283",
+      "community_name": "Community 268",
       "id": "backend_readme_pydantic_settings"
     },
     {
@@ -642396,7 +642396,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/widgets/diplomas-template-constructor/ui/constructor-layout.tsx",
-      "source_location": "L133",
+      "source_location": "L135",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_widgets_diplomas_template_constructor_ui_constructor_layout",
@@ -652724,5 +652724,5 @@
       "source_file": "frontend/docs/festival-catalog.md"
     }
   ],
-  "built_at_commit": "8bd3e8c2503e1cab14ef020aa3914c67784d3e0d"
+  "built_at_commit": "2c75353cd6ae08652fde2584b021064d6568aabd"
 }

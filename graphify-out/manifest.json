@@ -7260,8 +7260,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/ui/constructor-layout.tsx": {
-    "mtime": 1784816454.0089269,
-    "ast_hash": "ed55cd333199af02f807bb8f22f8d6a0",
+    "mtime": 1784918348.7094197,
+    "ast_hash": "b400436b39f51f08d719db50dffe6898",
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/ui/constructor-toolbar.tsx": {
@@ -7270,8 +7270,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/ui/element-palette.tsx": {
-    "mtime": 1784912504.1582296,
-    "ast_hash": "e57f6d6119ee865b24814bd9c4b7bcf8",
+    "mtime": 1784918353.4938195,
+    "ast_hash": "0a7d5ef575c868ee9a12c630a159a926",
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/ui/pdf-canvas.tsx": {
@@ -7310,8 +7310,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/ui/pdf-viewer.tsx": {
-    "mtime": 1784916430.1746385,
-    "ast_hash": "21fd8ca5daf8239d677316eca0d71883",
+    "mtime": 1784918371.5626745,
+    "ast_hash": "ae04b9066291b8ed22ca6076d08ca031",
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/model/field-factory.ts": {
@@ -7380,8 +7380,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/ui/field-inspector.tsx": {
-    "mtime": 1784914839.7025094,
-    "ast_hash": "4b8f562c00b4f0ae468690dbff93664f",
+    "mtime": 1784918366.2915637,
+    "ast_hash": "bded3287a03f4c0b6fd45456a4a50483",
     "semantic_hash": ""
   },
   "backend/apps/diplomas/infrastructure/migrations/0005_templatefieldmodel_binding.py": {
@@ -7430,8 +7430,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/ui/preview-dialog.tsx": {
-    "mtime": 1784816554.134631,
-    "ast_hash": "156c20816e8f338a9256d5402ee0e715",
+    "mtime": 1784918381.0838995,
+    "ast_hash": "b9715cce13400ecfef4d61e4c4145130",
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/ui/preview-field-renderer.tsx": {
