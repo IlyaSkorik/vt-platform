@@ -5818,8 +5818,8 @@
       "source_location": "L349",
       "_origin": "ast",
       "id": "backend_apps_applications_application_interfaces_applicationrepository_get",
-      "community": 37,
-      "community_name": "Competition Mgmt \u00b7 App Layer (dto)",
+      "community": 125,
+      "community_name": "Participants \u00b7 Domain (value)",
       "norm_label": ".get()"
     },
     {
@@ -6412,8 +6412,8 @@
       "source_location": "L350",
       "_origin": "ast",
       "id": "backend_apps_applications_application_interfaces_rationale_350",
-      "community": 37,
-      "community_name": "Competition Mgmt \u00b7 App Layer (dto)",
+      "community": 125,
+      "community_name": "Participants \u00b7 Domain (value)",
       "norm_label": "return the application with ``application_id``, or ``none``."
     },
     {
@@ -8711,8 +8711,8 @@
       "source_location": "L311",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_participant_birth_date",
-      "community": 9,
-      "community_name": "Applications/Submissions \u00b7 Domain",
+      "community": 850,
+      "community_name": "_utcnow",
       "norm_label": ".birth_date()"
     },
     {
@@ -8733,8 +8733,8 @@
       "source_location": "L319",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_participant_registry_participant_id",
-      "community": 9,
-      "community_name": "Applications/Submissions \u00b7 Domain",
+      "community": 850,
+      "community_name": "_utcnow",
       "norm_label": ".registry_participant_id()"
     },
     {
@@ -8887,8 +8887,8 @@
       "source_location": "L400",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_teacher_directory_teacher_id",
-      "community": 9,
-      "community_name": "Applications/Submissions \u00b7 Domain",
+      "community": 850,
+      "community_name": "_utcnow",
       "norm_label": ".directory_teacher_id()"
     },
     {
@@ -9129,8 +9129,8 @@
       "source_location": "L501",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_review_comment",
-      "community": 9,
-      "community_name": "Applications/Submissions \u00b7 Domain",
+      "community": 850,
+      "community_name": "_utcnow",
       "norm_label": ".comment()"
     },
     {
@@ -9294,8 +9294,8 @@
       "source_location": "L655",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_submission_status",
-      "community": 9,
-      "community_name": "Applications/Submissions \u00b7 Domain",
+      "community": 850,
+      "community_name": "_utcnow",
       "norm_label": ".status()"
     },
     {
@@ -9305,8 +9305,8 @@
       "source_location": "L659",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_submission_performance",
-      "community": 9,
-      "community_name": "Applications/Submissions \u00b7 Domain",
+      "community": 850,
+      "community_name": "_utcnow",
       "norm_label": ".performance()"
     },
     {
@@ -9371,8 +9371,8 @@
       "source_location": "L685",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_entities_submission_price_snapshot",
-      "community": 9,
-      "community_name": "Applications/Submissions \u00b7 Domain",
+      "community": 850,
+      "community_name": "_utcnow",
       "norm_label": ".price_snapshot()"
     },
     {
@@ -14134,8 +14134,8 @@
       "source_location": "L319",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_reviewid_post_init",
-      "community": 9,
-      "community_name": "Applications/Submissions \u00b7 Domain",
+      "community": 850,
+      "community_name": "_utcnow",
       "norm_label": ".__post_init__()"
     },
     {
@@ -14299,8 +14299,8 @@
       "source_location": "L406",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_userid_post_init",
-      "community": 9,
-      "community_name": "Applications/Submissions \u00b7 Domain",
+      "community": 850,
+      "community_name": "_utcnow",
       "norm_label": ".__post_init__()"
     },
     {
@@ -14376,8 +14376,8 @@
       "source_location": "L445",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_reviewerid_post_init",
-      "community": 9,
-      "community_name": "Applications/Submissions \u00b7 Domain",
+      "community": 850,
+      "community_name": "_utcnow",
       "norm_label": ".__post_init__()"
     },
     {
@@ -15278,8 +15278,8 @@
       "source_location": "L977",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_teacherrole_post_init",
-      "community": 9,
-      "community_name": "Applications/Submissions \u00b7 Domain",
+      "community": 850,
+      "community_name": "_utcnow",
       "norm_label": ".__post_init__()"
     },
     {
@@ -15652,8 +15652,8 @@
       "source_location": "L1296",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_applicationid",
-      "community": 37,
-      "community_name": "Competition Mgmt \u00b7 App Layer (dto)",
+      "community": 9,
+      "community_name": "Applications/Submissions \u00b7 Domain",
       "norm_label": "applicationid"
     },
     {
@@ -15663,8 +15663,8 @@
       "source_location": "L1301",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_applicationid_post_init",
-      "community": 37,
-      "community_name": "Competition Mgmt \u00b7 App Layer (dto)",
+      "community": 9,
+      "community_name": "Applications/Submissions \u00b7 Domain",
       "norm_label": ".__post_init__()"
     },
     {
@@ -15685,8 +15685,8 @@
       "source_location": "L1313",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_applicationid_from_uuid",
-      "community": 37,
-      "community_name": "Competition Mgmt \u00b7 App Layer (dto)",
+      "community": 18,
+      "community_name": "Domain Tests \u00b7 Applications",
       "norm_label": ".from_uuid()"
     },
     {
@@ -15696,8 +15696,8 @@
       "source_location": "L1317",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_applicationid_from_string",
-      "community": 37,
-      "community_name": "Competition Mgmt \u00b7 App Layer (dto)",
+      "community": 9,
+      "community_name": "Applications/Submissions \u00b7 Domain",
       "norm_label": ".from_string()"
     },
     {
@@ -15707,8 +15707,8 @@
       "source_location": "L1324",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_applicationid_json",
-      "community": 37,
-      "community_name": "Competition Mgmt \u00b7 App Layer (dto)",
+      "community": 9,
+      "community_name": "Applications/Submissions \u00b7 Domain",
       "norm_label": ".json()"
     },
     {
@@ -15718,8 +15718,8 @@
       "source_location": "L1327",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_applicationid_str",
-      "community": 37,
-      "community_name": "Competition Mgmt \u00b7 App Layer (dto)",
+      "community": 9,
+      "community_name": "Applications/Submissions \u00b7 Domain",
       "norm_label": ".__str__()"
     },
     {
@@ -15729,8 +15729,8 @@
       "source_location": "L1330",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_applicationid_repr",
-      "community": 37,
-      "community_name": "Competition Mgmt \u00b7 App Layer (dto)",
+      "community": 9,
+      "community_name": "Applications/Submissions \u00b7 Domain",
       "norm_label": ".__repr__()"
     },
     {
@@ -15751,8 +15751,8 @@
       "source_location": "L1345",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_educationalorganizationid_post_init",
-      "community": 9,
-      "community_name": "Applications/Submissions \u00b7 Domain",
+      "community": 850,
+      "community_name": "_utcnow",
       "norm_label": ".__post_init__()"
     },
     {
@@ -16741,8 +16741,8 @@
       "source_location": "L1297",
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_rationale_1297",
-      "community": 37,
-      "community_name": "Competition Mgmt \u00b7 App Layer (dto)",
+      "community": 9,
+      "community_name": "Applications/Submissions \u00b7 Domain",
       "norm_label": "the globally unique identity of an :class:`application` aggregate (uuid v7)."
     },
     {
@@ -23891,8 +23891,8 @@
       "source_location": "L111",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_dto_commands_updatebrandingcommand",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "updatebrandingcommand"
     },
     {
@@ -24320,8 +24320,8 @@
       "source_location": "L512",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_dto_commands_disableadditionalservicecommand",
-      "community": 103,
-      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
+      "community": 264,
+      "community_name": "Community 264",
       "norm_label": "disableadditionalservicecommand"
     },
     {
@@ -24441,8 +24441,8 @@
       "source_location": "L602",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_dto_commands_reverttodraftcommand",
-      "community": 1,
-      "community_name": "Competition Mgmt \u00b7 App Layer",
+      "community": 831,
+      "community_name": "PublicFestivalJuryCardSerializer",
       "norm_label": "reverttodraftcommand"
     },
     {
@@ -24452,8 +24452,8 @@
       "source_location": "L607",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_dto_commands_markreadycommand",
-      "community": 103,
-      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
+      "community": 830,
+      "community_name": "PublicFestivalFormatSerializer",
       "norm_label": "markreadycommand"
     },
     {
@@ -24540,8 +24540,8 @@
       "source_location": "L112",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_dto_commands_rationale_112",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "replace the competition's branding assets (logo, banner, poster)."
     },
     {
@@ -26597,8 +26597,8 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_handlers_lifecycle_revertcompetitiontodrafthandler",
-      "community": 1,
-      "community_name": "Competition Mgmt \u00b7 App Layer",
+      "community": 831,
+      "community_name": "PublicFestivalJuryCardSerializer",
       "norm_label": "revertcompetitiontodrafthandler"
     },
     {
@@ -26608,8 +26608,8 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_handlers_lifecycle_revertcompetitiontodrafthandler_handle",
-      "community": 1,
-      "community_name": "Competition Mgmt \u00b7 App Layer",
+      "community": 831,
+      "community_name": "PublicFestivalJuryCardSerializer",
       "norm_label": ".handle()"
     },
     {
@@ -26619,8 +26619,8 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_handlers_lifecycle_markcompetitionreadyhandler",
-      "community": 1,
-      "community_name": "Competition Mgmt \u00b7 App Layer",
+      "community": 830,
+      "community_name": "PublicFestivalFormatSerializer",
       "norm_label": "markcompetitionreadyhandler"
     },
     {
@@ -26630,8 +26630,8 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_handlers_lifecycle_markcompetitionreadyhandler_handle",
-      "community": 103,
-      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
+      "community": 830,
+      "community_name": "PublicFestivalFormatSerializer",
       "norm_label": ".handle()"
     },
     {
@@ -26751,8 +26751,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_handlers_lifecycle_rationale_46",
-      "community": 1,
-      "community_name": "Competition Mgmt \u00b7 App Layer",
+      "community": 831,
+      "community_name": "PublicFestivalJuryCardSerializer",
       "norm_label": "move a competition from configured back to draft."
     },
     {
@@ -26762,8 +26762,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_handlers_lifecycle_rationale_62",
-      "community": 1,
-      "community_name": "Competition Mgmt \u00b7 App Layer",
+      "community": 830,
+      "community_name": "PublicFestivalFormatSerializer",
       "norm_label": "move a competition from configured to ready."
     },
     {
@@ -27301,8 +27301,8 @@
       "source_location": "L118",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_handlers_services_disableadditionalservicehandler",
-      "community": 1,
-      "community_name": "Competition Mgmt \u00b7 App Layer",
+      "community": 264,
+      "community_name": "Community 264",
       "norm_label": "disableadditionalservicehandler"
     },
     {
@@ -27312,8 +27312,8 @@
       "source_location": "L121",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_handlers_services_disableadditionalservicehandler_handle",
-      "community": 103,
-      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
+      "community": 264,
+      "community_name": "Community 264",
       "norm_label": ".handle()"
     },
     {
@@ -27400,8 +27400,8 @@
       "source_location": "L119",
       "_origin": "ast",
       "id": "backend_apps_competitions_application_handlers_services_rationale_119",
-      "community": 1,
-      "community_name": "Competition Mgmt \u00b7 App Layer",
+      "community": 264,
+      "community_name": "Community 264",
       "norm_label": "disable an additional service."
     },
     {
@@ -46859,8 +46859,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_py_any",
-      "community": 765,
-      "community_name": "Community 765",
+      "community": 215,
+      "community_name": "Community 215",
       "norm_label": "any"
     },
     {
@@ -46870,8 +46870,8 @@
       "source_location": "L216",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_error_responses",
-      "community": 765,
-      "community_name": "Community 765",
+      "community": 215,
+      "community_name": "Community 215",
       "norm_label": "_error_responses()"
     },
     {
@@ -46881,8 +46881,8 @@
       "source_location": "L229",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_detail_ok",
-      "community": 765,
-      "community_name": "Community 765",
+      "community": 215,
+      "community_name": "Community 215",
       "norm_label": "_detail_ok()"
     },
     {
@@ -46892,8 +46892,8 @@
       "source_location": "L233",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_command_kwargs",
-      "community": 765,
-      "community_name": "Community 765",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "_command_kwargs()"
     },
     {
@@ -46903,8 +46903,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "serializer",
-      "community": 765,
-      "community_name": "Community 765",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "serializer"
     },
     {
@@ -46914,8 +46914,8 @@
       "source_location": "L250",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 23,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "competitionviewset"
     },
     {
@@ -46925,8 +46925,8 @@
       "source_location": "L260",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_body",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "._body()"
     },
     {
@@ -46936,8 +46936,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_py_request",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "request"
     },
     {
@@ -46947,8 +46947,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_py_response",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "response"
     },
     {
@@ -46958,8 +46958,8 @@
       "source_location": "L271",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_run",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "._run()"
     },
     {
@@ -46969,8 +46969,8 @@
       "source_location": "L287",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_detail",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "._detail()"
     },
     {
@@ -46991,8 +46991,8 @@
       "source_location": "L308",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_retrieve",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".retrieve()"
     },
     {
@@ -47002,8 +47002,8 @@
       "source_location": "L317",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_create",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".create()"
     },
     {
@@ -47013,8 +47013,8 @@
       "source_location": "L330",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_partial_update",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".partial_update()"
     },
     {
@@ -47024,8 +47024,8 @@
       "source_location": "L339",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_branding",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".branding()"
     },
     {
@@ -47035,8 +47035,8 @@
       "source_location": "L359",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_upload_poster",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".upload_poster()"
     },
     {
@@ -47046,8 +47046,8 @@
       "source_location": "L407",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_configure_settings",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 23,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": ".configure_settings()"
     },
     {
@@ -47057,8 +47057,8 @@
       "source_location": "L421",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_configure_contacts",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 5,
+      "community_name": "Identity \u00b7 Domain (value)",
       "norm_label": ".configure_contacts()"
     },
     {
@@ -47068,8 +47068,8 @@
       "source_location": "L450",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_configure_landing",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 23,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": ".configure_landing()"
     },
     {
@@ -47079,8 +47079,8 @@
       "source_location": "L488",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_deadlines",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".deadlines()"
     },
     {
@@ -47090,8 +47090,8 @@
       "source_location": "L501",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_mark_configured",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 51,
+      "community_name": "Application Tests \u00b7 Competitions",
       "norm_label": ".mark_configured()"
     },
     {
@@ -47101,8 +47101,8 @@
       "source_location": "L506",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_revert_to_draft",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 831,
+      "community_name": "PublicFestivalJuryCardSerializer",
       "norm_label": ".revert_to_draft()"
     },
     {
@@ -47112,8 +47112,8 @@
       "source_location": "L511",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_mark_ready",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 830,
+      "community_name": "PublicFestivalFormatSerializer",
       "norm_label": ".mark_ready()"
     },
     {
@@ -47123,8 +47123,8 @@
       "source_location": "L516",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_revert_to_configured",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 1,
+      "community_name": "Competition Mgmt \u00b7 App Layer",
       "norm_label": ".revert_to_configured()"
     },
     {
@@ -47134,8 +47134,8 @@
       "source_location": "L521",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_publish",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 51,
+      "community_name": "Application Tests \u00b7 Competitions",
       "norm_label": ".publish()"
     },
     {
@@ -47145,8 +47145,8 @@
       "source_location": "L526",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_start",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 51,
+      "community_name": "Application Tests \u00b7 Competitions",
       "norm_label": ".start()"
     },
     {
@@ -47156,8 +47156,8 @@
       "source_location": "L531",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_complete",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".complete()"
     },
     {
@@ -47167,8 +47167,8 @@
       "source_location": "L540",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_categories",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".categories()"
     },
     {
@@ -47178,8 +47178,8 @@
       "source_location": "L550",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_category_detail",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".category_detail()"
     },
     {
@@ -47189,8 +47189,8 @@
       "source_location": "L566",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_nomination_registration",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".nomination_registration()"
     },
     {
@@ -47200,8 +47200,8 @@
       "source_location": "L579",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_stop_nomination_registration",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".stop_nomination_registration()"
     },
     {
@@ -47211,8 +47211,8 @@
       "source_location": "L588",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_resume_nomination_registration",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".resume_nomination_registration()"
     },
     {
@@ -47222,8 +47222,8 @@
       "source_location": "L601",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_disciplines",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".disciplines()"
     },
     {
@@ -47244,8 +47244,8 @@
       "source_location": "L626",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_age_categories",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".age_categories()"
     },
     {
@@ -47255,8 +47255,8 @@
       "source_location": "L636",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_age_category_detail",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".age_category_detail()"
     },
     {
@@ -47266,8 +47266,8 @@
       "source_location": "L653",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_participant_groups",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 23,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": ".participant_groups()"
     },
     {
@@ -47277,8 +47277,8 @@
       "source_location": "L671",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_participant_group_detail",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".participant_group_detail()"
     },
     {
@@ -47288,8 +47288,8 @@
       "source_location": "L702",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_participation_formats",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 23,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": ".participation_formats()"
     },
     {
@@ -47299,8 +47299,8 @@
       "source_location": "L720",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_participation_format_detail",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".participation_format_detail()"
     },
     {
@@ -47310,8 +47310,8 @@
       "source_location": "L749",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_admission_rules",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 55,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": ".admission_rules()"
     },
     {
@@ -47321,8 +47321,8 @@
       "source_location": "L758",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_remove_admission_rule",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 55,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": ".remove_admission_rule()"
     },
     {
@@ -47343,8 +47343,8 @@
       "source_location": "L789",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_remove_pricing_rule",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 55,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": ".remove_pricing_rule()"
     },
     {
@@ -47365,8 +47365,8 @@
       "source_location": "L872",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_regulations",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".regulations()"
     },
     {
@@ -47376,8 +47376,8 @@
       "source_location": "L881",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_make_regulation_current",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".make_regulation_current()"
     },
     {
@@ -47387,8 +47387,8 @@
       "source_location": "L886",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_regulation_detail",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".regulation_detail()"
     },
     {
@@ -47420,8 +47420,8 @@
       "source_location": "L1044",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_documents",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".documents()"
     },
     {
@@ -47431,8 +47431,8 @@
       "source_location": "L1054",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_document_detail",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".document_detail()"
     },
     {
@@ -47442,8 +47442,8 @@
       "source_location": "L1065",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_publish_document",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".publish_document()"
     },
     {
@@ -47453,8 +47453,8 @@
       "source_location": "L1070",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_unpublish_document",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".unpublish_document()"
     },
     {
@@ -47464,8 +47464,8 @@
       "source_location": "L1081",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_services",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".services()"
     },
     {
@@ -47475,8 +47475,8 @@
       "source_location": "L1095",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_service_detail",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".service_detail()"
     },
     {
@@ -47486,8 +47486,8 @@
       "source_location": "L1106",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_enable_service",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".enable_service()"
     },
     {
@@ -47508,8 +47508,8 @@
       "source_location": "L1120",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_contacts",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".contacts()"
     },
     {
@@ -47519,8 +47519,8 @@
       "source_location": "L1129",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_set_primary_contact",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".set_primary_contact()"
     },
     {
@@ -47530,8 +47530,8 @@
       "source_location": "L1134",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_contact_detail",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".contact_detail()"
     },
     {
@@ -47541,8 +47541,8 @@
       "source_location": "L1145",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_information_blocks",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".information_blocks()"
     },
     {
@@ -47552,8 +47552,8 @@
       "source_location": "L1159",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_information_block_detail",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".information_block_detail()"
     },
     {
@@ -47563,8 +47563,8 @@
       "source_location": "L1170",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_publish_information_block",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".publish_information_block()"
     },
     {
@@ -47574,8 +47574,8 @@
       "source_location": "L1175",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_competitionviewset_hide_information_block",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": ".hide_information_block()"
     },
     {
@@ -47607,8 +47607,8 @@
       "source_location": "L217",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_rationale_217",
-      "community": 765,
-      "community_name": "Community 765",
+      "community": 215,
+      "community_name": "Community 215",
       "norm_label": "shared response schema: the success entries plus the standard problems."
     },
     {
@@ -47618,8 +47618,8 @@
       "source_location": "L234",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_rationale_234",
-      "community": 765,
-      "community_name": "Community 765",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "coerce validated data into command-friendly primitives (uuid/decimal \u2192 str)."
     },
     {
@@ -47629,8 +47629,8 @@
       "source_location": "L251",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_rationale_251",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 23,
+      "community_name": "Competition Mgmt \u00b7 API/Presentation (api)",
       "norm_label": "organizer competition api \u2014 staff-only."
     },
     {
@@ -47640,8 +47640,8 @@
       "source_location": "L265",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_rationale_265",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "validate a request body; return (kwargs, none) or (none, problem)."
     },
     {
@@ -47651,8 +47651,8 @@
       "source_location": "L279",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_rationale_279",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "execute a command handler and render the refreshed competition (or a problem)."
     },
     {
@@ -47662,8 +47662,8 @@
       "source_location": "L360",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_views_rationale_360",
-      "community": 264,
-      "community_name": "Community 264",
+      "community": 103,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (acl)",
       "norm_label": "upload a competition poster image and store its media reference."
     },
     {
@@ -49419,7 +49419,7 @@
       "label": "_clean()",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L91",
+      "source_location": "L89",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_clean",
       "community": 461,
@@ -49430,7 +49430,7 @@
       "label": "_lead_participant()",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L97",
+      "source_location": "L95",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_lead_participant",
       "community": 461,
@@ -49452,7 +49452,7 @@
       "label": "_performer_name()",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L106",
+      "source_location": "L104",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_performer_name",
       "community": 461,
@@ -49463,7 +49463,7 @@
       "label": "_age_of()",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L110",
+      "source_location": "L108",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_age_of",
       "community": 461,
@@ -49474,7 +49474,7 @@
       "label": "_person_full_name()",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L124",
+      "source_location": "L122",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_person_full_name",
       "community": 461,
@@ -49485,7 +49485,7 @@
       "label": "_teacher_roster()",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L136",
+      "source_location": "L134",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_teacher_roster",
       "community": 461,
@@ -49496,7 +49496,7 @@
       "label": "_taxonomy_name()",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L163",
+      "source_location": "L161",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_taxonomy_name",
       "community": 461,
@@ -49507,7 +49507,7 @@
       "label": "_organization_name()",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L175",
+      "source_location": "L173",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_organization_name",
       "community": 461,
@@ -49518,7 +49518,7 @@
       "label": "list_preview_applications()",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L207",
+      "source_location": "L205",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_list_preview_applications",
       "community": 461,
@@ -49529,7 +49529,7 @@
       "label": "resolve_preview_bindings()",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L220",
+      "source_location": "L218",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_resolve_preview_bindings",
       "community": 461,
@@ -49551,9 +49551,9 @@
       "label": "The first participant carrying a display name (the one a diploma names).",
       "file_type": "rationale",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L98",
+      "source_location": "L96",
       "_origin": "ast",
-      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_98",
+      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_96",
       "community": 461,
       "community_name": "Community 461",
       "norm_label": "the first participant carrying a display name (the one a diploma names)."
@@ -49562,9 +49562,9 @@
       "label": "Whole years at today's date (birthday-aware), or ``MISSING`` if unknown.",
       "file_type": "rationale",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L111",
+      "source_location": "L109",
       "_origin": "ast",
-      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_111",
+      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_109",
       "community": 461,
       "community_name": "Community 461",
       "norm_label": "whole years at today's date (birthday-aware), or ``missing`` if unknown."
@@ -49573,9 +49573,9 @@
       "label": "The submission's teachers as ``role: name1, name2`` \u2014 one role per line.      Te",
       "file_type": "rationale",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L137",
+      "source_location": "L135",
       "_origin": "ast",
-      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_137",
+      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_135",
       "community": 461,
       "community_name": "Community 461",
       "norm_label": "the submission's teachers as ``role: name1, name2`` \u2014 one role per line.      te"
@@ -49584,9 +49584,9 @@
       "label": "The ``name`` of one taxonomy row by id, or ``MISSING``.",
       "file_type": "rationale",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L164",
+      "source_location": "L162",
       "_origin": "ast",
-      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_164",
+      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_162",
       "community": 461,
       "community_name": "Community 461",
       "norm_label": "the ``name`` of one taxonomy row by id, or ``missing``."
@@ -49595,9 +49595,9 @@
       "label": "The participant's primary educational organization (via the registry link).",
       "file_type": "rationale",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L176",
+      "source_location": "L174",
       "_origin": "ast",
-      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_176",
+      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_174",
       "community": 461,
       "community_name": "Community 461",
       "norm_label": "the participant's primary educational organization (via the registry link)."
@@ -49606,9 +49606,9 @@
       "label": "Applications (submissions) of a competition, labelled by performer name.",
       "file_type": "rationale",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L208",
+      "source_location": "L206",
       "_origin": "ast",
-      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_208",
+      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_206",
       "community": 461,
       "community_name": "Community 461",
       "norm_label": "applications (submissions) of a competition, labelled by performer name."
@@ -49617,9 +49617,9 @@
       "label": "The binding\u2192value map for one application, or None if it does not exist.      Ev",
       "file_type": "rationale",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L221",
+      "source_location": "L219",
       "_origin": "ast",
-      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_221",
+      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_219",
       "community": 461,
       "community_name": "Community 461",
       "norm_label": "the binding\u2192value map for one application, or none if it does not exist.      ev"
@@ -49661,7 +49661,7 @@
       "label": "FieldStyleSerializer",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L63",
+      "source_location": "L62",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_fieldstyleserializer",
       "community": 133,
@@ -49672,7 +49672,7 @@
       "label": "FieldConfigSerializer",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L79",
+      "source_location": "L78",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_fieldconfigserializer",
       "community": 133,
@@ -49683,7 +49683,7 @@
       "label": "LayoutFieldRequestSerializer",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L90",
+      "source_location": "L89",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_layoutfieldrequestserializer",
       "community": 133,
@@ -49694,7 +49694,7 @@
       "label": "SaveLayoutRequestSerializer",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L107",
+      "source_location": "L106",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_savelayoutrequestserializer",
       "community": 133,
@@ -49705,7 +49705,7 @@
       "label": "TemplateFieldResponseSerializer",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L115",
+      "source_location": "L114",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_templatefieldresponseserializer",
       "community": 133,
@@ -49716,7 +49716,7 @@
       "label": "LayoutResponseSerializer",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L136",
+      "source_location": "L135",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_layoutresponseserializer",
       "community": 133,
@@ -49727,7 +49727,7 @@
       "label": "UploadTemplateDocumentRequestSerializer",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L143",
+      "source_location": "L142",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_uploadtemplatedocumentrequestserializer",
       "community": 133,
@@ -49738,7 +49738,7 @@
       "label": "TemplateDocumentResponseSerializer",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L149",
+      "source_location": "L148",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_templatedocumentresponseserializer",
       "community": 133,
@@ -49749,7 +49749,7 @@
       "label": "CreateTemplateRequestSerializer",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L159",
+      "source_location": "L158",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_createtemplaterequestserializer",
       "community": 87,
@@ -49760,7 +49760,7 @@
       "label": "CreateAssignmentRequestSerializer",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L168",
+      "source_location": "L167",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_createassignmentrequestserializer",
       "community": 133,
@@ -49771,7 +49771,7 @@
       "label": "TemplateResponseSerializer",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L176",
+      "source_location": "L175",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_templateresponseserializer",
       "community": 133,
@@ -49782,7 +49782,7 @@
       "label": "AssignmentResponseSerializer",
       "file_type": "code",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L187",
+      "source_location": "L186",
       "_origin": "ast",
       "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_assignmentresponseserializer",
       "community": 133,
@@ -49826,9 +49826,9 @@
       "label": "A field's appearance. fontSize/letterSpacing are PDF points.",
       "file_type": "rationale",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L64",
+      "source_location": "L63",
       "_origin": "ast",
-      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_64",
+      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_63",
       "community": 133,
       "community_name": "Competition Mgmt \u00b7 App Layer",
       "norm_label": "a field's appearance. fontsize/letterspacing are pdf points."
@@ -49837,9 +49837,9 @@
       "label": "Composite-field configuration. Currently the nomination block: which parts     t",
       "file_type": "rationale",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L80",
+      "source_location": "L79",
       "_origin": "ast",
-      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_80",
+      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_79",
       "community": 133,
       "community_name": "Competition Mgmt \u00b7 App Layer",
       "norm_label": "composite-field configuration. currently the nomination block: which parts     t"
@@ -49848,9 +49848,9 @@
       "label": "One field in a layout save. Coordinates are normalised (0..1).",
       "file_type": "rationale",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L91",
+      "source_location": "L90",
       "_origin": "ast",
-      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_91",
+      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_90",
       "community": 133,
       "community_name": "Competition Mgmt \u00b7 App Layer",
       "norm_label": "one field in a layout save. coordinates are normalised (0..1)."
@@ -49859,9 +49859,9 @@
       "label": "Whole-layout save: the full list of fields, persisted atomically.",
       "file_type": "rationale",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L108",
+      "source_location": "L107",
       "_origin": "ast",
-      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_108",
+      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_107",
       "community": 133,
       "community_name": "Competition Mgmt \u00b7 App Layer",
       "norm_label": "whole-layout save: the full list of fields, persisted atomically."
@@ -49870,9 +49870,9 @@
       "label": "A persisted layout field.",
       "file_type": "rationale",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L116",
+      "source_location": "L115",
       "_origin": "ast",
-      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_116",
+      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_115",
       "community": 133,
       "community_name": "Competition Mgmt \u00b7 App Layer",
       "norm_label": "a persisted layout field."
@@ -49881,9 +49881,9 @@
       "label": "A template's saved layout and its revision.",
       "file_type": "rationale",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L137",
+      "source_location": "L136",
       "_origin": "ast",
-      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_137",
+      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_136",
       "community": 133,
       "community_name": "Competition Mgmt \u00b7 App Layer",
       "norm_label": "a template's saved layout and its revision."
@@ -49892,9 +49892,9 @@
       "label": "Multipart body for uploading a template's backing PDF.",
       "file_type": "rationale",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L144",
+      "source_location": "L143",
       "_origin": "ast",
-      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_144",
+      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_143",
       "community": 133,
       "community_name": "Competition Mgmt \u00b7 App Layer",
       "norm_label": "multipart body for uploading a template's backing pdf."
@@ -49903,9 +49903,9 @@
       "label": "The PDF attached to a template.",
       "file_type": "rationale",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L150",
+      "source_location": "L149",
       "_origin": "ast",
-      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_150",
+      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_149",
       "community": 133,
       "community_name": "Competition Mgmt \u00b7 App Layer",
       "norm_label": "the pdf attached to a template."
@@ -49914,9 +49914,9 @@
       "label": "Body for creating a template in the library.",
       "file_type": "rationale",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L160",
+      "source_location": "L159",
       "_origin": "ast",
-      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_160",
+      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_159",
       "community": 87,
       "community_name": "Domain Tests \u00b7 Applications",
       "norm_label": "body for creating a template in the library."
@@ -49925,9 +49925,9 @@
       "label": "Body for creating a template assignment.",
       "file_type": "rationale",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L169",
+      "source_location": "L168",
       "_origin": "ast",
-      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_169",
+      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_168",
       "community": 133,
       "community_name": "Competition Mgmt \u00b7 App Layer",
       "norm_label": "body for creating a template assignment."
@@ -49936,9 +49936,9 @@
       "label": "A diploma template in the library.",
       "file_type": "rationale",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L177",
+      "source_location": "L176",
       "_origin": "ast",
-      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_177",
+      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_176",
       "community": 133,
       "community_name": "Competition Mgmt \u00b7 App Layer",
       "norm_label": "a diploma template in the library."
@@ -49947,9 +49947,9 @@
       "label": "A template assignment (competition + nomination -> template).",
       "file_type": "rationale",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L188",
+      "source_location": "L187",
       "_origin": "ast",
-      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_188",
+      "id": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_187",
       "community": 133,
       "community_name": "Competition Mgmt \u00b7 App Layer",
       "norm_label": "a template assignment (competition + nomination -> template)."
@@ -51358,8 +51358,8 @@
       "source_location": "L122",
       "_origin": "ast",
       "id": "backend_apps_identity_application_commands_user_commands_requestpasswordresetcommand",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "requestpasswordresetcommand"
     },
     {
@@ -51369,8 +51369,8 @@
       "source_location": "L135",
       "_origin": "ast",
       "id": "backend_apps_identity_application_commands_user_commands_resetpasswordcommand",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "resetpasswordcommand"
     },
     {
@@ -51556,8 +51556,8 @@
       "source_location": "L123",
       "_origin": "ast",
       "id": "backend_apps_identity_application_commands_user_commands_rationale_123",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "begin password recovery: email a reset link to the account owning ``email``."
     },
     {
@@ -51567,8 +51567,8 @@
       "source_location": "L136",
       "_origin": "ast",
       "id": "backend_apps_identity_application_commands_user_commands_rationale_136",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "set a new password from the signed token carried by the emailed reset link."
     },
     {
@@ -52766,8 +52766,8 @@
       "source_location": "L371",
       "_origin": "ast",
       "id": "backend_apps_identity_application_handlers_user_handlers_requestpasswordresethandler",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "requestpasswordresethandler"
     },
     {
@@ -52788,8 +52788,8 @@
       "source_location": "L405",
       "_origin": "ast",
       "id": "backend_apps_identity_application_handlers_user_handlers_requestpasswordresethandler_handle",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".handle()"
     },
     {
@@ -53294,8 +53294,8 @@
       "source_location": "L372",
       "_origin": "ast",
       "id": "backend_apps_identity_application_handlers_user_handlers_rationale_372",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "use case: begin password recovery by emailing a reset link (idn-004).      pub"
     },
     {
@@ -58662,8 +58662,8 @@
       "source_location": "L404",
       "_origin": "ast",
       "id": "backend_apps_identity_domain_value_objects_fullname_of",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".of()"
     },
     {
@@ -59091,8 +59091,8 @@
       "source_location": "L718",
       "_origin": "ast",
       "id": "backend_apps_identity_domain_value_objects_timezone_zone_info",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": ".zone_info()"
     },
     {
@@ -59102,8 +59102,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "zoneinfo",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": "zoneinfo"
     },
     {
@@ -59410,8 +59410,8 @@
       "source_location": "L405",
       "_origin": "ast",
       "id": "backend_apps_identity_domain_value_objects_rationale_405",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "rich constructor mirroring the field order."
     },
     {
@@ -59674,8 +59674,8 @@
       "source_location": "L719",
       "_origin": "ast",
       "id": "backend_apps_identity_domain_value_objects_rationale_719",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": "the corresponding :class:`zoneinfo.zoneinfo` instance."
     },
     {
@@ -60554,8 +60554,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_messaging_email_gateway",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": "email_gateway.py"
     },
     {
@@ -60576,8 +60576,8 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_messaging_email_gateway_format_expiry",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": "_format_expiry()"
     },
     {
@@ -60587,8 +60587,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_messaging_email_gateway_py_datetime",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": "datetime"
     },
     {
@@ -60598,8 +60598,8 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_messaging_email_gateway_reset_body",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": "_reset_body()"
     },
     {
@@ -60609,8 +60609,8 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_messaging_email_gateway_djangoemailgateway",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": "djangoemailgateway"
     },
     {
@@ -60620,8 +60620,8 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_messaging_email_gateway_djangoemailgateway_init",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": ".__init__()"
     },
     {
@@ -60642,8 +60642,8 @@
       "source_location": "L100",
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_messaging_email_gateway_djangoemailgateway_send_password_reset",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": ".send_password_reset()"
     },
     {
@@ -60653,8 +60653,8 @@
       "source_location": "L125",
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_messaging_email_gateway_djangoemailgateway_send",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": "._send()"
     },
     {
@@ -60664,8 +60664,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_messaging_email_gateway_rationale_1",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": "``djangoemailgateway`` \u2014 the transactional-email adapter over django core mail."
     },
     {
@@ -60686,8 +60686,8 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_messaging_email_gateway_rationale_49",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": "render a reset link's expiry as a human-readable local time.      formatted in"
     },
     {
@@ -60697,8 +60697,8 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_messaging_email_gateway_rationale_60",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": "render the plain-text password-reset email body."
     },
     {
@@ -60708,8 +60708,8 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_messaging_email_gateway_rationale_73",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": "send transactional emails via django core mail (``emailgateway`` port).      s"
     },
     {
@@ -60730,8 +60730,8 @@
       "source_location": "L109",
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_messaging_email_gateway_rationale_109",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": "send a password-reset link to ``email``, valid until ``expires_at``."
     },
     {
@@ -60741,8 +60741,8 @@
       "source_location": "L126",
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_messaging_email_gateway_rationale_126",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": "hand a single message to the configured email backend."
     },
     {
@@ -95405,8 +95405,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "fakes.py"
     },
     {
@@ -95559,8 +95559,8 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakepasswordhasher",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "fakepasswordhasher"
     },
     {
@@ -95570,8 +95570,8 @@
       "source_location": "L83",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakepasswordhasher_init",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".__init__()"
     },
     {
@@ -95581,8 +95581,8 @@
       "source_location": "L86",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakepasswordhasher_hash",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".hash()"
     },
     {
@@ -95592,8 +95592,8 @@
       "source_location": "L90",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakepasswordhasher_verify",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".verify()"
     },
     {
@@ -95603,8 +95603,8 @@
       "source_location": "L93",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakepasswordhasher_needs_rehash",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".needs_rehash()"
     },
     {
@@ -95614,8 +95614,8 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeclock",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "fakeclock"
     },
     {
@@ -95625,8 +95625,8 @@
       "source_location": "L100",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeclock_init",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".__init__()"
     },
     {
@@ -95636,8 +95636,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_py_datetime",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "datetime"
     },
     {
@@ -95647,8 +95647,8 @@
       "source_location": "L103",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeclock_now",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".now()"
     },
     {
@@ -95658,8 +95658,8 @@
       "source_location": "L106",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeclock_utcnow",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".utcnow()"
     },
     {
@@ -95669,8 +95669,8 @@
       "source_location": "L110",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeuuidgenerator",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "fakeuuidgenerator"
     },
     {
@@ -95680,8 +95680,8 @@
       "source_location": "L113",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeuuidgenerator_init",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".__init__()"
     },
     {
@@ -95691,8 +95691,8 @@
       "source_location": "L116",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeuuidgenerator_new",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".new()"
     },
     {
@@ -95702,8 +95702,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_py_uuid",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "uuid"
     },
     {
@@ -95790,8 +95790,8 @@
       "source_location": "L178",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_sentemail",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "sentemail"
     },
     {
@@ -95801,8 +95801,8 @@
       "source_location": "L188",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_sentpasswordreset",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "sentpasswordreset"
     },
     {
@@ -95812,8 +95812,8 @@
       "source_location": "L198",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeemailgateway",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "fakeemailgateway"
     },
     {
@@ -95823,8 +95823,8 @@
       "source_location": "L201",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeemailgateway_init",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".__init__()"
     },
     {
@@ -95856,8 +95856,8 @@
       "source_location": "L235",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeverificationtokenservice",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "fakeverificationtokenservice"
     },
     {
@@ -95867,8 +95867,8 @@
       "source_location": "L243",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeverificationtokenservice_init",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".__init__()"
     },
     {
@@ -95889,8 +95889,8 @@
       "source_location": "L254",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeverificationtokenservice_verify",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".verify()"
     },
     {
@@ -95944,8 +95944,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_rationale_1",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "in-memory fakes for the identity application ports.  framework-free, database-"
     },
     {
@@ -95966,8 +95966,8 @@
       "source_location": "L81",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_rationale_81",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "deterministic :class:`passwordhasher` fake \u2014 no real cryptography."
     },
     {
@@ -95977,8 +95977,8 @@
       "source_location": "L98",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_rationale_98",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ":class:`clock` fake frozen at a fixed instant."
     },
     {
@@ -95988,8 +95988,8 @@
       "source_location": "L111",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_rationale_111",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ":class:`uuidgenerator` fake producing fresh uuid v7 values, recording them."
     },
     {
@@ -96010,8 +96010,8 @@
       "source_location": "L179",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_rationale_179",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "a verification email a :class:`fakeemailgateway` recorded."
     },
     {
@@ -96021,8 +96021,8 @@
       "source_location": "L189",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_rationale_189",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "a password-reset email a :class:`fakeemailgateway` recorded."
     },
     {
@@ -96032,8 +96032,8 @@
       "source_location": "L199",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_rationale_199",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "recording :class:`emailgateway` fake \u2014 captures calls, sends nothing."
     },
     {
@@ -96043,8 +96043,8 @@
       "source_location": "L236",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_rationale_236",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "reversible :class:`verificationtokenservice` fake \u2014 no cryptography.      mint"
     },
     {
@@ -98210,8 +98210,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "test_password_reset_handlers.py"
     },
     {
@@ -98221,8 +98221,8 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_verified_user",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "_verified_user()"
     },
     {
@@ -98232,8 +98232,8 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_testrequestpasswordresethandler",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "testrequestpasswordresethandler"
     },
     {
@@ -98243,8 +98243,8 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_testrequestpasswordresethandler_handler",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "._handler()"
     },
     {
@@ -98254,8 +98254,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_py_fakeuserrepository",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "fakeuserrepository"
     },
     {
@@ -98265,8 +98265,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_py_fakeverificationtokenservice",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "fakeverificationtokenservice"
     },
     {
@@ -98276,8 +98276,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_py_fakeemailgateway",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "fakeemailgateway"
     },
     {
@@ -98287,8 +98287,8 @@
       "source_location": "L71",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_testrequestpasswordresethandler_test_sends_a_reset_link_with_expiry",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".test_sends_a_reset_link_with_expiry()"
     },
     {
@@ -98298,8 +98298,8 @@
       "source_location": "L83",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_testrequestpasswordresethandler_test_expiry_is_rendered_in_the_accounts_timezone",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".test_expiry_is_rendered_in_the_accounts_timezone()"
     },
     {
@@ -98309,8 +98309,8 @@
       "source_location": "L109",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_testrequestpasswordresethandler_test_no_op_for_unknown_email",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".test_no_op_for_unknown_email()"
     },
     {
@@ -98320,8 +98320,8 @@
       "source_location": "L116",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_testrequestpasswordresethandler_test_no_op_for_unverified_email",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".test_no_op_for_unverified_email()"
     },
     {
@@ -98331,8 +98331,8 @@
       "source_location": "L133",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_testrequestpasswordresethandler_test_no_op_for_malformed_email",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".test_no_op_for_malformed_email()"
     },
     {
@@ -98342,8 +98342,8 @@
       "source_location": "L140",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_testrequestpasswordresethandler_test_no_op_for_deleted_account",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".test_no_op_for_deleted_account()"
     },
     {
@@ -98353,8 +98353,8 @@
       "source_location": "L151",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_testresetpasswordhandler",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "testresetpasswordhandler"
     },
     {
@@ -98364,8 +98364,8 @@
       "source_location": "L152",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_testresetpasswordhandler_handler",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "._handler()"
     },
     {
@@ -98375,8 +98375,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_py_fakepasswordhasher",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "fakepasswordhasher"
     },
     {
@@ -98386,8 +98386,8 @@
       "source_location": "L167",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_testresetpasswordhandler_issue_token",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "._issue_token()"
     },
     {
@@ -98397,8 +98397,8 @@
       "source_location": "L171",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_testresetpasswordhandler_test_sets_new_password_and_revokes_sessions",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".test_sets_new_password_and_revokes_sessions()"
     },
     {
@@ -98408,8 +98408,8 @@
       "source_location": "L183",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_testresetpasswordhandler_test_invalid_token_is_rejected",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".test_invalid_token_is_rejected()"
     },
     {
@@ -98419,8 +98419,8 @@
       "source_location": "L189",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_testresetpasswordhandler_test_token_for_unknown_user_is_rejected_as_invalid",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".test_token_for_unknown_user_is_rejected_as_invalid()"
     },
     {
@@ -98430,8 +98430,8 @@
       "source_location": "L199",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_testresetpasswordhandler_test_expired_link_is_state_conflict",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".test_expired_link_is_state_conflict()"
     },
     {
@@ -98441,8 +98441,8 @@
       "source_location": "L209",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_testresetpasswordhandler_test_weak_password_is_rejected",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".test_weak_password_is_rejected()"
     },
     {
@@ -98452,8 +98452,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_rationale_1",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "unit tests for the password-reset use cases.  framework-free, database-free: b"
     },
     {
@@ -98463,8 +98463,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_password_reset_handlers_rationale_44",
-      "community": 202,
-      "community_name": "Community 202",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "a registered account with a verified email (eligible for reset)."
     },
     {
@@ -102258,8 +102258,8 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "backend_tests_domain_applications_test_application_value_objects_testidentifiers_test_application_id_roundtrips_through_string",
-      "community": 248,
-      "community_name": "Community 248",
+      "community": 9,
+      "community_name": "Applications/Submissions \u00b7 Domain",
       "norm_label": ".test_application_id_roundtrips_through_string()"
     },
     {
@@ -109595,8 +109595,8 @@
       "source_location": "L521",
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_value_objects_testfactorymethods",
-      "community": 14,
-      "community_name": "Organization \u00b7 Infrastructure (repositories)",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "testfactorymethods"
     },
     {
@@ -109617,8 +109617,8 @@
       "source_location": "L531",
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_value_objects_testfactorymethods_test_fullname_rich_constructor",
-      "community": 14,
-      "community_name": "Organization \u00b7 Infrastructure (repositories)",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": ".test_fullname_rich_constructor()"
     },
     {
@@ -109639,8 +109639,8 @@
       "source_location": "L542",
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_value_objects_testexceptionhierarchy",
-      "community": 11,
-      "community_name": "Identity \u00b7 Domain",
+      "community": 274,
+      "community_name": "Community 274",
       "norm_label": "testexceptionhierarchy"
     },
     {
@@ -109650,8 +109650,8 @@
       "source_location": "L543",
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_value_objects_testexceptionhierarchy_test_all_validation_errors_share_a_base",
-      "community": 11,
-      "community_name": "Identity \u00b7 Domain",
+      "community": 274,
+      "community_name": "Community 274",
       "norm_label": ".test_all_validation_errors_share_a_base()"
     },
     {
@@ -109661,8 +109661,8 @@
       "source_location": "L549",
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_value_objects_testexceptionhierarchy_test_validation_errors_are_value_errors",
-      "community": 11,
-      "community_name": "Identity \u00b7 Domain",
+      "community": 274,
+      "community_name": "Community 274",
       "norm_label": ".test_validation_errors_are_value_errors()"
     },
     {
@@ -109683,8 +109683,8 @@
       "source_location": "L522",
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_value_objects_rationale_522",
-      "community": 14,
-      "community_name": "Organization \u00b7 Infrastructure (repositories)",
+      "community": 15,
+      "community_name": "Applications/Submissions \u00b7 App Layer",
       "norm_label": "cover the ``from_string`` / rich constructors and string representations."
     },
     {
@@ -111806,8 +111806,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_domain_teachers_test_value_objects",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 765,
+      "community_name": "Community 765",
       "norm_label": "test_value_objects.py"
     },
     {
@@ -111872,8 +111872,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "backend_tests_domain_teachers_test_value_objects_testpersonname",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 765,
+      "community_name": "Community 765",
       "norm_label": "testpersonname"
     },
     {
@@ -111883,8 +111883,8 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "backend_tests_domain_teachers_test_value_objects_testpersonname_test_full_name_orders_last_first_middle",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 765,
+      "community_name": "Community 765",
       "norm_label": ".test_full_name_orders_last_first_middle()"
     },
     {
@@ -111894,8 +111894,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "backend_tests_domain_teachers_test_value_objects_testpersonname_test_blank_middle_becomes_none",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 765,
+      "community_name": "Community 765",
       "norm_label": ".test_blank_middle_becomes_none()"
     },
     {
@@ -111905,8 +111905,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "backend_tests_domain_teachers_test_value_objects_testpersonname_test_rejects_empty_first",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 765,
+      "community_name": "Community 765",
       "norm_label": ".test_rejects_empty_first()"
     },
     {
@@ -111916,8 +111916,8 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "backend_tests_domain_teachers_test_value_objects_testteacherrole",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 765,
+      "community_name": "Community 765",
       "norm_label": "testteacherrole"
     },
     {
@@ -111927,8 +111927,8 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "backend_tests_domain_teachers_test_value_objects_testteacherrole_test_trims",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 765,
+      "community_name": "Community 765",
       "norm_label": ".test_trims()"
     },
     {
@@ -111938,8 +111938,8 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "backend_tests_domain_teachers_test_value_objects_testteacherrole_test_rejects_empty",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 765,
+      "community_name": "Community 765",
       "norm_label": ".test_rejects_empty()"
     },
     {
@@ -111949,8 +111949,8 @@
       "source_location": "L68",
       "_origin": "ast",
       "id": "backend_tests_domain_teachers_test_value_objects_testemailaddress",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 765,
+      "community_name": "Community 765",
       "norm_label": "testemailaddress"
     },
     {
@@ -111982,8 +111982,8 @@
       "source_location": "L78",
       "_origin": "ast",
       "id": "backend_tests_domain_teachers_test_value_objects_testphonenumber",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 765,
+      "community_name": "Community 765",
       "norm_label": "testphonenumber"
     },
     {
@@ -111993,8 +111993,8 @@
       "source_location": "L79",
       "_origin": "ast",
       "id": "backend_tests_domain_teachers_test_value_objects_testphonenumber_test_accepts_plausible",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 765,
+      "community_name": "Community 765",
       "norm_label": ".test_accepts_plausible()"
     },
     {
@@ -112004,8 +112004,8 @@
       "source_location": "L83",
       "_origin": "ast",
       "id": "backend_tests_domain_teachers_test_value_objects_testphonenumber_test_rejects_malformed",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 765,
+      "community_name": "Community 765",
       "norm_label": ".test_rejects_malformed()"
     },
     {
@@ -112015,8 +112015,8 @@
       "source_location": "L88",
       "_origin": "ast",
       "id": "backend_tests_domain_teachers_test_value_objects_testteacherstatus",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 765,
+      "community_name": "Community 765",
       "norm_label": "testteacherstatus"
     },
     {
@@ -112026,8 +112026,8 @@
       "source_location": "L89",
       "_origin": "ast",
       "id": "backend_tests_domain_teachers_test_value_objects_testteacherstatus_test_members",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 765,
+      "community_name": "Community 765",
       "norm_label": ".test_members()"
     },
     {
@@ -112037,8 +112037,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_domain_teachers_test_value_objects_rationale_1",
-      "community": 850,
-      "community_name": "_utcnow",
+      "community": 765,
+      "community_name": "Community 765",
       "norm_label": "unit tests for the teacher directory value objects."
     },
     {
@@ -112994,8 +112994,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_email_gateway",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": "test_email_gateway.py"
     },
     {
@@ -113005,8 +113005,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_email_gateway_testdjangoemailgateway",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": "testdjangoemailgateway"
     },
     {
@@ -113016,8 +113016,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_email_gateway_testdjangoemailgateway_test_sends_verification_email",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": ".test_sends_verification_email()"
     },
     {
@@ -113027,8 +113027,8 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_email_gateway_testdjangoemailgateway_test_sends_password_reset",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": ".test_sends_password_reset()"
     },
     {
@@ -113038,8 +113038,8 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_email_gateway_testdjangoemailgateway_test_password_reset_expiry_uses_the_carried_zone",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": ".test_password_reset_expiry_uses_the_carried_zone()"
     },
     {
@@ -113049,8 +113049,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_email_gateway_rationale_1",
-      "community": 15,
-      "community_name": "Applications/Submissions \u00b7 App Layer",
+      "community": 94,
+      "community_name": "Applications/Submissions \u00b7 Infrastructure (mappers)",
       "norm_label": "unit tests for the django email gateway adapter.  exercises :class:`djangoemai"
     },
     {
@@ -119253,8 +119253,8 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "frontend_package_devdependencies_testing_library_react",
-      "community": 77,
-      "community_name": "Community 77",
+      "community": 834,
+      "community_name": "RegistrationDeadlinesSerializer",
       "norm_label": "@testing-library/react"
     },
     {
@@ -119264,8 +119264,8 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "testing_library_react",
-      "community": 77,
-      "community_name": "Community 77",
+      "community": 834,
+      "community_name": "RegistrationDeadlinesSerializer",
       "norm_label": "@testing-library/react"
     },
     {
@@ -119473,8 +119473,8 @@
       "source_location": "L68",
       "_origin": "ast",
       "id": "frontend_package_devdependencies_storybook",
-      "community": 843,
-      "community_name": "storybook",
+      "community": 77,
+      "community_name": "Community 77",
       "norm_label": "storybook"
     },
     {
@@ -119484,8 +119484,8 @@
       "source_location": "L68",
       "_origin": "ast",
       "id": "storybook",
-      "community": 843,
-      "community_name": "storybook",
+      "community": 77,
+      "community_name": "Community 77",
       "norm_label": "storybook"
     },
     {
@@ -123851,8 +123851,8 @@
       "source_location": "L133",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_patchgeneralinformation",
-      "community": 831,
-      "community_name": "PublicFestivalJuryCardSerializer",
+      "community": 147,
+      "community_name": "Competitions Feature (FE)",
       "norm_label": "patchgeneralinformation()"
     },
     {
@@ -123862,8 +123862,8 @@
       "source_location": "L141",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_patchbranding",
-      "community": 84,
-      "community_name": "Competitions Feature (FE)",
+      "community": 839,
+      "community_name": "useUpdateBrandingMutation",
       "norm_label": "patchbranding()"
     },
     {
@@ -123939,8 +123939,8 @@
       "source_location": "L230",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_deletedocument",
-      "community": 830,
-      "community_name": "PublicFestivalFormatSerializer",
+      "community": 84,
+      "community_name": "Competitions Feature (FE)",
       "norm_label": "deletedocument()"
     },
     {
@@ -123961,7 +123961,7 @@
       "source_location": "L249",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_publishregulation",
-      "community": 96,
+      "community": 84,
       "community_name": "Competitions Feature (FE)",
       "norm_label": "publishregulation()"
     },
@@ -123983,8 +123983,8 @@
       "source_location": "L265",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_deleteregulation",
-      "community": 156,
-      "community_name": "Community 156",
+      "community": 84,
+      "community_name": "Competitions Feature (FE)",
       "norm_label": "deleteregulation()"
     },
     {
@@ -124005,8 +124005,8 @@
       "source_location": "L278",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_markconfigured",
-      "community": 156,
-      "community_name": "Community 156",
+      "community": 147,
+      "community_name": "Competitions Feature (FE)",
       "norm_label": "markconfigured()"
     },
     {
@@ -124071,7 +124071,7 @@
       "source_location": "L311",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_createcategory",
-      "community": 147,
+      "community": 84,
       "community_name": "Competitions Feature (FE)",
       "norm_label": "createcategory()"
     },
@@ -124104,7 +124104,7 @@
       "source_location": "L336",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_schedulenominationregistration",
-      "community": 96,
+      "community": 84,
       "community_name": "Competitions Feature (FE)",
       "norm_label": "schedulenominationregistration()"
     },
@@ -124115,7 +124115,7 @@
       "source_location": "L351",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_stopnominationregistration",
-      "community": 147,
+      "community": 96,
       "community_name": "Competitions Feature (FE)",
       "norm_label": "stopnominationregistration()"
     },
@@ -124126,7 +124126,7 @@
       "source_location": "L365",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_resumenominationregistration",
-      "community": 147,
+      "community": 96,
       "community_name": "Competitions Feature (FE)",
       "norm_label": "resumenominationregistration()"
     },
@@ -124137,7 +124137,7 @@
       "source_location": "L379",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_creatediscipline",
-      "community": 84,
+      "community": 147,
       "community_name": "Competitions Feature (FE)",
       "norm_label": "creatediscipline()"
     },
@@ -124258,7 +124258,7 @@
       "source_location": "L492",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_createparticipationformat",
-      "community": 84,
+      "community": 147,
       "community_name": "Competitions Feature (FE)",
       "norm_label": "createparticipationformat()"
     },
@@ -124280,7 +124280,7 @@
       "source_location": "L509",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_deleteparticipationformat",
-      "community": 84,
+      "community": 147,
       "community_name": "Competitions Feature (FE)",
       "norm_label": "deleteparticipationformat()"
     },
@@ -124346,8 +124346,8 @@
       "source_location": "L563",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_createadditionalservice",
-      "community": 84,
-      "community_name": "Competitions Feature (FE)",
+      "community": 156,
+      "community_name": "Community 156",
       "norm_label": "createadditionalservice()"
     },
     {
@@ -124445,8 +124445,8 @@
       "source_location": "L675",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_useupdategeneralinformationmutation",
-      "community": 831,
-      "community_name": "PublicFestivalJuryCardSerializer",
+      "community": 147,
+      "community_name": "Competitions Feature (FE)",
       "norm_label": "useupdategeneralinformationmutation()"
     },
     {
@@ -124456,8 +124456,8 @@
       "source_location": "L693",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_useupdatebrandingmutation",
-      "community": 84,
-      "community_name": "Competitions Feature (FE)",
+      "community": 839,
+      "community_name": "useUpdateBrandingMutation",
       "norm_label": "useupdatebrandingmutation()"
     },
     {
@@ -124489,7 +124489,7 @@
       "source_location": "L735",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_useaddregulationmutation",
-      "community": 96,
+      "community": 84,
       "community_name": "Competitions Feature (FE)",
       "norm_label": "useaddregulationmutation()"
     },
@@ -124511,8 +124511,8 @@
       "source_location": "L768",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_useremoveregulationmutation",
-      "community": 156,
-      "community_name": "Community 156",
+      "community": 84,
+      "community_name": "Competitions Feature (FE)",
       "norm_label": "useremoveregulationmutation()"
     },
     {
@@ -124522,8 +124522,8 @@
       "source_location": "L782",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_usemarkconfiguredmutation",
-      "community": 156,
-      "community_name": "Community 156",
+      "community": 147,
+      "community_name": "Competitions Feature (FE)",
       "norm_label": "usemarkconfiguredmutation()"
     },
     {
@@ -124632,8 +124632,8 @@
       "source_location": "L941",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_useremovedocumentmutation",
-      "community": 830,
-      "community_name": "PublicFestivalFormatSerializer",
+      "community": 84,
+      "community_name": "Competitions Feature (FE)",
       "norm_label": "useremovedocumentmutation()"
     },
     {
@@ -124665,7 +124665,7 @@
       "source_location": "L1007",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_useaddcategorymutation",
-      "community": 147,
+      "community": 84,
       "community_name": "Competitions Feature (FE)",
       "norm_label": "useaddcategorymutation()"
     },
@@ -124709,7 +124709,7 @@
       "source_location": "L1087",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_useschedulenominationregistrationmutation",
-      "community": 96,
+      "community": 84,
       "community_name": "Competitions Feature (FE)",
       "norm_label": "useschedulenominationregistrationmutation()"
     },
@@ -124720,7 +124720,7 @@
       "source_location": "L1106",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_usestopnominationregistrationmutation",
-      "community": 147,
+      "community": 96,
       "community_name": "Competitions Feature (FE)",
       "norm_label": "usestopnominationregistrationmutation()"
     },
@@ -124731,7 +124731,7 @@
       "source_location": "L1121",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_useresumenominationregistrationmutation",
-      "community": 147,
+      "community": 96,
       "community_name": "Competitions Feature (FE)",
       "norm_label": "useresumenominationregistrationmutation()"
     },
@@ -124742,7 +124742,7 @@
       "source_location": "L1136",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_useadddisciplinemutation",
-      "community": 84,
+      "community": 147,
       "community_name": "Competitions Feature (FE)",
       "norm_label": "useadddisciplinemutation()"
     },
@@ -124874,7 +124874,7 @@
       "source_location": "L1413",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_useaddparticipationformatmutation",
-      "community": 84,
+      "community": 147,
       "community_name": "Competitions Feature (FE)",
       "norm_label": "useaddparticipationformatmutation()"
     },
@@ -124896,7 +124896,7 @@
       "source_location": "L1450",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_useremoveparticipationformatmutation",
-      "community": 84,
+      "community": 147,
       "community_name": "Competitions Feature (FE)",
       "norm_label": "useremoveparticipationformatmutation()"
     },
@@ -125028,8 +125028,8 @@
       "source_location": "L1824",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_useaddadditionalservicemutation",
-      "community": 84,
-      "community_name": "Competitions Feature (FE)",
+      "community": 156,
+      "community_name": "Community 156",
       "norm_label": "useaddadditionalservicemutation()"
     },
     {
@@ -125072,8 +125072,8 @@
       "source_location": "L1894",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_putsettings",
-      "community": 834,
-      "community_name": "RegistrationDeadlinesSerializer",
+      "community": 156,
+      "community_name": "Community 156",
       "norm_label": "putsettings()"
     },
     {
@@ -125083,8 +125083,8 @@
       "source_location": "L1902",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_useupdatecompetitionsettingsmutation",
-      "community": 834,
-      "community_name": "RegistrationDeadlinesSerializer",
+      "community": 156,
+      "community_name": "Community 156",
       "norm_label": "useupdatecompetitionsettingsmutation()"
     },
     {
@@ -125116,7 +125116,7 @@
       "source_location": "L1946",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_putlandingconfiguration",
-      "community": 147,
+      "community": 84,
       "community_name": "Competitions Feature (FE)",
       "norm_label": "putlandingconfiguration()"
     },
@@ -125127,7 +125127,7 @@
       "source_location": "L1954",
       "_origin": "ast",
       "id": "frontend_src_features_competitions_api_competitions_api_useupdatelandingconfigurationmutation",
-      "community": 147,
+      "community": 84,
       "community_name": "Competitions Feature (FE)",
       "norm_label": "useupdatelandingconfigurationmutation()"
     },
@@ -129436,7 +129436,7 @@
       "label": "KNOWN_BINDINGS",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/binding.ts",
-      "source_location": "L42",
+      "source_location": "L41",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_binding_known_bindings",
       "community": 106,
@@ -129447,7 +129447,7 @@
       "label": "DEFAULT_BINDINGS",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/binding.ts",
-      "source_location": "L67",
+      "source_location": "L65",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_binding_default_bindings",
       "community": 106,
@@ -129458,7 +129458,7 @@
       "label": "defaultBindingForType()",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/binding.ts",
-      "source_location": "L83",
+      "source_location": "L80",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_binding_defaultbindingfortype",
       "community": 106,
@@ -129480,7 +129480,7 @@
       "label": "TemplateFieldTypeId",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L44",
+      "source_location": "L43",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_constructor_templatefieldtypeid",
       "community": 106,
@@ -129491,7 +129491,7 @@
       "label": "NominationPartKey",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L64",
+      "source_location": "L62",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_constructor_nominationpartkey",
       "community": 106,
@@ -129502,7 +129502,7 @@
       "label": "NominationPart",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L67",
+      "source_location": "L65",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_constructor_nominationpart",
       "community": 106,
@@ -129513,7 +129513,7 @@
       "label": "NOMINATION_PARTS",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L78",
+      "source_location": "L76",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_constructor_nomination_parts",
       "community": 106,
@@ -129524,7 +129524,7 @@
       "label": "TemplateFieldConfig",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L92",
+      "source_location": "L90",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_constructor_templatefieldconfig",
       "community": 106,
@@ -129535,7 +129535,7 @@
       "label": "defaultConfigForType()",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L100",
+      "source_location": "L98",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_constructor_defaultconfigfortype",
       "community": 106,
@@ -129546,7 +129546,7 @@
       "label": "TemplateFieldGroup",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L111",
+      "source_location": "L109",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_constructor_templatefieldgroup",
       "community": 106,
@@ -129557,7 +129557,7 @@
       "label": "FIELD_GROUPS",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L123",
+      "source_location": "L121",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_constructor_field_groups",
       "community": 106,
@@ -129568,7 +129568,7 @@
       "label": "TemplateFieldType",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L140",
+      "source_location": "L138",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_constructor_templatefieldtype",
       "community": 106,
@@ -129579,7 +129579,7 @@
       "label": "FIELD_TYPES",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L150",
+      "source_location": "L148",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_constructor_field_types",
       "community": 106,
@@ -129590,7 +129590,7 @@
       "label": "TemplateTextAlign",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L199",
+      "source_location": "L196",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_constructor_templatetextalign",
       "community": 106,
@@ -129601,7 +129601,7 @@
       "label": "TemplateFontWeight",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L200",
+      "source_location": "L197",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_constructor_templatefontweight",
       "community": 106,
@@ -129612,7 +129612,7 @@
       "label": "TemplateFontStyle",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L201",
+      "source_location": "L198",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_constructor_templatefontstyle",
       "community": 106,
@@ -129623,7 +129623,7 @@
       "label": "TemplateFieldStyle",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L209",
+      "source_location": "L206",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_constructor_templatefieldstyle",
       "community": 106,
@@ -129634,7 +129634,7 @@
       "label": "DEFAULT_FIELD_STYLE",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L229",
+      "source_location": "L226",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_constructor_default_field_style",
       "community": 106,
@@ -129645,7 +129645,7 @@
       "label": "TemplateField",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L253",
+      "source_location": "L250",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_constructor_templatefield",
       "community": 106,
@@ -129656,7 +129656,7 @@
       "label": "TemplatePage",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L284",
+      "source_location": "L281",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_constructor_templatepage",
       "community": 106,
@@ -129667,7 +129667,7 @@
       "label": "TemplateDocument",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L296",
+      "source_location": "L293",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_constructor_templatedocument",
       "community": 106,
@@ -129678,7 +129678,7 @@
       "label": "TemplateVersion",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L308",
+      "source_location": "L305",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_constructor_templateversion",
       "community": 106,
@@ -129755,7 +129755,7 @@
       "label": "PreviewMode",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/preview-data.ts",
-      "source_location": "L26",
+      "source_location": "L25",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_preview_data_previewmode",
       "community": 106,
@@ -129766,7 +129766,7 @@
       "label": "SHARED_VALUES",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/preview-data.ts",
-      "source_location": "L29",
+      "source_location": "L28",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_preview_data_shared_values",
       "community": 106,
@@ -129777,7 +129777,7 @@
       "label": "PREVIEW_VALUES",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/preview-data.ts",
-      "source_location": "L46",
+      "source_location": "L44",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_preview_data_preview_values",
       "community": 106,
@@ -129788,7 +129788,7 @@
       "label": "resolvePreviewValue()",
       "file_type": "code",
       "source_file": "frontend/src/features/diplomas/model/preview-data.ts",
-      "source_location": "L68",
+      "source_location": "L66",
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_model_preview_data_resolvepreviewvalue",
       "community": 106,
@@ -145675,7 +145675,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_competitions_recent_competitions_competitionrow",
-      "community": 139,
+      "community": 153,
       "community_name": "Dashboard Widgets (FE)",
       "norm_label": "competitionrow()"
     },
@@ -150860,9 +150860,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Core bounded context. Modules communicate via published interfaces and domain events, never cross-module ORM reach-in.",
-      "community": 86,
+      "community": 827,
       "norm_label": "participants context",
-      "community_name": "Community 86",
+      "community_name": "PublicFestivalLandingSerializer",
       "id": "docs_architecture_arch_001_vt_platform_architecture_context_participants_context"
     },
     {
@@ -150875,9 +150875,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Supporting bounded context. Modules communicate via published interfaces and domain events, never cross-module ORM reach-in.",
-      "community": 827,
+      "community": 86,
       "norm_label": "institutions context",
-      "community_name": "PublicFestivalLandingSerializer",
+      "community_name": "Community 86",
       "id": "docs_architecture_arch_001_vt_platform_architecture_context_institutions_context"
     },
     {
@@ -151010,9 +151010,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Supporting bounded context. Modules communicate via published interfaces and domain events, never cross-module ORM reach-in.",
-      "community": 86,
+      "community": 827,
       "norm_label": "audit context",
-      "community_name": "Community 86",
+      "community_name": "PublicFestivalLandingSerializer",
       "id": "docs_architecture_arch_001_vt_platform_architecture_context_audit_context"
     },
     {
@@ -151055,9 +151055,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Verified guardian/institution + consent before Active",
-      "community": 86,
+      "community": 827,
       "norm_label": "participant (aggregate root)",
-      "community_name": "Community 86",
+      "community_name": "PublicFestivalLandingSerializer",
       "id": "docs_business_data_001_business_data_model_aggregate_participant"
     },
     {
@@ -151070,9 +151070,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Verified institution required for bulk/analytics; tenancy scope",
-      "community": 827,
+      "community": 86,
       "norm_label": "institution (aggregate root)",
-      "community_name": "PublicFestivalLandingSerializer",
+      "community_name": "Community 86",
       "id": "docs_business_data_001_business_data_model_aggregate_institution"
     },
     {
@@ -151310,9 +151310,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Immutable, append-only; never updated/deleted outside retention policy",
-      "community": 86,
+      "community": 827,
       "norm_label": "audit log entry (aggregate root)",
-      "community_name": "Community 86",
+      "community_name": "PublicFestivalLandingSerializer",
       "id": "docs_business_data_001_business_data_model_aggregate_audit_log_entry"
     },
     {
@@ -151555,9 +151555,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 86,
+      "community": 827,
       "norm_label": "participantcreated (domain event)",
-      "community_name": "Community 86",
+      "community_name": "PublicFestivalLandingSerializer",
       "id": "docs_business_data_003_domain_event_catalog_participantcreated"
     },
     {
@@ -151569,9 +151569,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 86,
+      "community": 827,
       "norm_label": "guardianlinked (domain event)",
-      "community_name": "Community 86",
+      "community_name": "PublicFestivalLandingSerializer",
       "id": "docs_business_data_003_domain_event_catalog_guardianlinked"
     },
     {
@@ -151583,9 +151583,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 86,
+      "community": 827,
       "norm_label": "participantverified (domain event)",
-      "community_name": "Community 86",
+      "community_name": "PublicFestivalLandingSerializer",
       "id": "docs_business_data_003_domain_event_catalog_participantverified"
     },
     {
@@ -151597,9 +151597,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 86,
+      "community": 827,
       "norm_label": "participantactivated (domain event)",
-      "community_name": "Community 86",
+      "community_name": "PublicFestivalLandingSerializer",
       "id": "docs_business_data_003_domain_event_catalog_participantactivated"
     },
     {
@@ -151611,9 +151611,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 86,
+      "community": 827,
       "norm_label": "participantarchived (domain event)",
-      "community_name": "Community 86",
+      "community_name": "PublicFestivalLandingSerializer",
       "id": "docs_business_data_003_domain_event_catalog_participantarchived"
     },
     {
@@ -151625,9 +151625,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 86,
+      "community": 827,
       "norm_label": "participanterasurerequested (domain event)",
-      "community_name": "Community 86",
+      "community_name": "PublicFestivalLandingSerializer",
       "id": "docs_business_data_003_domain_event_catalog_participanterasurerequested"
     },
     {
@@ -151639,9 +151639,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 827,
+      "community": 86,
       "norm_label": "institutionregistered (domain event)",
-      "community_name": "PublicFestivalLandingSerializer",
+      "community_name": "Community 86",
       "id": "docs_business_data_003_domain_event_catalog_institutionregistered"
     },
     {
@@ -151653,9 +151653,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 827,
+      "community": 86,
       "norm_label": "institutionverified (domain event)",
-      "community_name": "PublicFestivalLandingSerializer",
+      "community_name": "Community 86",
       "id": "docs_business_data_003_domain_event_catalog_institutionverified"
     },
     {
@@ -151667,9 +151667,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 827,
+      "community": 86,
       "norm_label": "teacherassigned (domain event)",
-      "community_name": "PublicFestivalLandingSerializer",
+      "community_name": "Community 86",
       "id": "docs_business_data_003_domain_event_catalog_teacherassigned"
     },
     {
@@ -151681,9 +151681,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 827,
+      "community": 86,
       "norm_label": "classgroupcreated (domain event)",
-      "community_name": "PublicFestivalLandingSerializer",
+      "community_name": "Community 86",
       "id": "docs_business_data_003_domain_event_catalog_classgroupcreated"
     },
     {
@@ -151695,9 +151695,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 827,
+      "community": 86,
       "norm_label": "participantjoinedinstitution (domain event)",
-      "community_name": "PublicFestivalLandingSerializer",
+      "community_name": "Community 86",
       "id": "docs_business_data_003_domain_event_catalog_participantjoinedinstitution"
     },
     {
@@ -152381,9 +152381,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 86,
+      "community": 827,
       "norm_label": "actionrecorded (domain event)",
-      "community_name": "Community 86",
+      "community_name": "PublicFestivalLandingSerializer",
       "id": "docs_business_data_003_domain_event_catalog_actionrecorded"
     },
     {
@@ -152395,9 +152395,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 86,
+      "community": 827,
       "norm_label": "datasubjectrequestreceived (domain event)",
-      "community_name": "Community 86",
+      "community_name": "PublicFestivalLandingSerializer",
       "id": "docs_business_data_003_domain_event_catalog_datasubjectrequestreceived"
     },
     {
@@ -152409,9 +152409,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 86,
+      "community": 827,
       "norm_label": "dataerased (domain event)",
-      "community_name": "Community 86",
+      "community_name": "PublicFestivalLandingSerializer",
       "id": "docs_business_data_003_domain_event_catalog_dataerased"
     },
     {
@@ -152423,9 +152423,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 86,
+      "community": 827,
       "norm_label": "legalholdplaced (domain event)",
-      "community_name": "Community 86",
+      "community_name": "PublicFestivalLandingSerializer",
       "id": "docs_business_data_003_domain_event_catalog_legalholdplaced"
     },
     {
@@ -289330,7 +289330,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L97",
+      "source_location": "L95",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_lead_participant",
@@ -289342,7 +289342,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L106",
+      "source_location": "L104",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_performer_name",
@@ -289354,7 +289354,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L136",
+      "source_location": "L134",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_teacher_roster",
@@ -413943,7 +413943,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L244",
+      "source_location": "L242",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_resolve_preview_bindings",
@@ -414033,7 +414033,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L246",
+      "source_location": "L244",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_resolve_preview_bindings",
@@ -414079,7 +414079,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L252",
+      "source_location": "L250",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_resolve_preview_bindings",
@@ -414125,7 +414125,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L249",
+      "source_location": "L247",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_resolve_preview_bindings",
@@ -426010,7 +426010,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L110",
+      "source_location": "L108",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview",
@@ -426021,7 +426021,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L91",
+      "source_location": "L89",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview",
@@ -426032,7 +426032,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L97",
+      "source_location": "L95",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview",
@@ -426043,7 +426043,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L207",
+      "source_location": "L205",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview",
@@ -426054,7 +426054,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L175",
+      "source_location": "L173",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview",
@@ -426065,7 +426065,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L106",
+      "source_location": "L104",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview",
@@ -426076,7 +426076,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L124",
+      "source_location": "L122",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview",
@@ -426087,7 +426087,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L220",
+      "source_location": "L218",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview",
@@ -426098,7 +426098,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L163",
+      "source_location": "L161",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview",
@@ -426109,7 +426109,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L136",
+      "source_location": "L134",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview",
@@ -426132,7 +426132,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L112",
+      "source_location": "L110",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_age_of",
@@ -426144,7 +426144,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L100",
+      "source_location": "L98",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_lead_participant",
@@ -426156,7 +426156,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L215",
+      "source_location": "L213",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_list_preview_applications",
@@ -426168,7 +426168,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L182",
+      "source_location": "L180",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_organization_name",
@@ -426180,7 +426180,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L107",
+      "source_location": "L105",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_performer_name",
@@ -426192,7 +426192,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L128",
+      "source_location": "L126",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_person_full_name",
@@ -426204,7 +426204,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L239",
+      "source_location": "L237",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_resolve_preview_bindings",
@@ -426216,7 +426216,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L172",
+      "source_location": "L170",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_taxonomy_name",
@@ -426228,7 +426228,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L149",
+      "source_location": "L147",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_teacher_roster",
@@ -426240,7 +426240,7 @@
       "context": "generic_arg",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L97",
+      "source_location": "L95",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_lead_participant",
@@ -426252,7 +426252,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L107",
+      "source_location": "L105",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_performer_name",
@@ -426263,10 +426263,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L98",
+      "source_location": "L96",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_98",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_96",
       "target": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_lead_participant",
       "confidence_score": 1.0
     },
@@ -426275,7 +426275,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L231",
+      "source_location": "L229",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_resolve_preview_bindings",
@@ -426287,7 +426287,7 @@
       "context": "generic_arg",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L110",
+      "source_location": "L108",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_age_of",
@@ -426299,7 +426299,7 @@
       "context": "generic_arg",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L207",
+      "source_location": "L205",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_list_preview_applications",
@@ -426311,7 +426311,7 @@
       "context": "generic_arg",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L175",
+      "source_location": "L173",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_organization_name",
@@ -426323,7 +426323,7 @@
       "context": "generic_arg",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L124",
+      "source_location": "L122",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_person_full_name",
@@ -426335,7 +426335,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L163",
+      "source_location": "L161",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_taxonomy_name",
@@ -426347,7 +426347,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L215",
+      "source_location": "L213",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_list_preview_applications",
@@ -426358,10 +426358,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L111",
+      "source_location": "L109",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_111",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_109",
       "target": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_age_of",
       "confidence_score": 1.0
     },
@@ -426370,7 +426370,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L240",
+      "source_location": "L238",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_resolve_preview_bindings",
@@ -426382,7 +426382,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L146",
+      "source_location": "L144",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_teacher_roster",
@@ -426393,10 +426393,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L137",
+      "source_location": "L135",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_137",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_135",
       "target": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_teacher_roster",
       "confidence_score": 1.0
     },
@@ -426405,7 +426405,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L241",
+      "source_location": "L239",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_resolve_preview_bindings",
@@ -426416,34 +426416,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L164",
+      "source_location": "L162",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_164",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_162",
       "target": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_taxonomy_name",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L244",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_resolve_preview_bindings",
-      "target": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_taxonomy_name",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "rationale_for",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L176",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_176",
-      "target": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_organization_name",
       "confidence_score": 1.0
     },
     {
@@ -426455,6 +426432,29 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_resolve_preview_bindings",
+      "target": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_taxonomy_name",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
+      "source_location": "L174",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_174",
+      "target": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_organization_name",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
+      "source_location": "L240",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_resolve_preview_bindings",
       "target": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_organization_name",
       "confidence_score": 1.0
     },
@@ -426462,10 +426462,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L208",
+      "source_location": "L206",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_208",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_206",
       "target": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_list_preview_applications",
       "confidence_score": 1.0
     },
@@ -426473,10 +426473,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/preview.py",
-      "source_location": "L221",
+      "source_location": "L219",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_221",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_rationale_219",
       "target": "backend_apps_diplomas_presentation_api_v1_diplomas_preview_resolve_preview_bindings",
       "confidence_score": 1.0
     },
@@ -426484,7 +426484,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L187",
+      "source_location": "L186",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers",
@@ -426495,7 +426495,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L168",
+      "source_location": "L167",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers",
@@ -426506,7 +426506,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L159",
+      "source_location": "L158",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers",
@@ -426517,7 +426517,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L79",
+      "source_location": "L78",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers",
@@ -426528,7 +426528,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L63",
+      "source_location": "L62",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers",
@@ -426539,7 +426539,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L90",
+      "source_location": "L89",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers",
@@ -426550,7 +426550,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L136",
+      "source_location": "L135",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers",
@@ -426583,7 +426583,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L107",
+      "source_location": "L106",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers",
@@ -426594,7 +426594,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L149",
+      "source_location": "L148",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers",
@@ -426605,7 +426605,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L115",
+      "source_location": "L114",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers",
@@ -426616,7 +426616,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L176",
+      "source_location": "L175",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers",
@@ -426627,7 +426627,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L143",
+      "source_location": "L142",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers",
@@ -426671,10 +426671,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L64",
+      "source_location": "L63",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_64",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_63",
       "target": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_fieldstyleserializer",
       "confidence_score": 1.0
     },
@@ -426682,10 +426682,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L80",
+      "source_location": "L79",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_80",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_79",
       "target": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_fieldconfigserializer",
       "confidence_score": 1.0
     },
@@ -426693,10 +426693,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L91",
+      "source_location": "L90",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_91",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_90",
       "target": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_layoutfieldrequestserializer",
       "confidence_score": 1.0
     },
@@ -426704,10 +426704,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L108",
+      "source_location": "L107",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_108",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_107",
       "target": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_savelayoutrequestserializer",
       "confidence_score": 1.0
     },
@@ -426727,10 +426727,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L116",
+      "source_location": "L115",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_116",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_115",
       "target": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_templatefieldresponseserializer",
       "confidence_score": 1.0
     },
@@ -426738,10 +426738,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L137",
+      "source_location": "L136",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_137",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_136",
       "target": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_layoutresponseserializer",
       "confidence_score": 1.0
     },
@@ -426749,10 +426749,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L144",
+      "source_location": "L143",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_144",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_143",
       "target": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_uploadtemplatedocumentrequestserializer",
       "confidence_score": 1.0
     },
@@ -426760,10 +426760,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L150",
+      "source_location": "L149",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_150",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_149",
       "target": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_templatedocumentresponseserializer",
       "confidence_score": 1.0
     },
@@ -426771,10 +426771,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L160",
+      "source_location": "L159",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_160",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_159",
       "target": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_createtemplaterequestserializer",
       "confidence_score": 1.0
     },
@@ -426794,10 +426794,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L169",
+      "source_location": "L168",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_169",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_168",
       "target": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_createassignmentrequestserializer",
       "confidence_score": 1.0
     },
@@ -426817,10 +426817,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L177",
+      "source_location": "L176",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_177",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_176",
       "target": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_templateresponseserializer",
       "confidence_score": 1.0
     },
@@ -426828,10 +426828,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "backend/apps/diplomas/presentation/api/v1/diplomas/serializers.py",
-      "source_location": "L188",
+      "source_location": "L187",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_188",
+      "source": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_rationale_187",
       "target": "backend_apps_diplomas_presentation_api_v1_diplomas_serializers_assignmentresponseserializer",
       "confidence_score": 1.0
     },
@@ -609533,7 +609533,7 @@
       "context": "export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L39",
+      "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609545,7 +609545,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L39",
+      "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609557,7 +609557,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L39",
+      "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609569,7 +609569,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L39",
+      "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609581,7 +609581,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L39",
+      "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609593,7 +609593,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L39",
+      "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609605,7 +609605,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L39",
+      "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609617,7 +609617,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L39",
+      "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609629,7 +609629,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L39",
+      "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609641,7 +609641,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L39",
+      "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609653,7 +609653,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L39",
+      "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609665,7 +609665,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L39",
+      "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609677,7 +609677,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L39",
+      "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609689,7 +609689,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L39",
+      "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609701,7 +609701,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L39",
+      "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609713,7 +609713,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L39",
+      "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609725,7 +609725,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L39",
+      "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609737,7 +609737,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L39",
+      "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609749,7 +609749,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L39",
+      "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609761,7 +609761,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L39",
+      "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609773,7 +609773,7 @@
       "context": "export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L62",
+      "source_location": "L61",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609785,7 +609785,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L62",
+      "source_location": "L61",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609797,7 +609797,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L62",
+      "source_location": "L61",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609809,7 +609809,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L62",
+      "source_location": "L61",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609821,7 +609821,7 @@
       "context": "export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L68",
+      "source_location": "L67",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609833,7 +609833,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L68",
+      "source_location": "L67",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609845,7 +609845,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L68",
+      "source_location": "L67",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609857,7 +609857,7 @@
       "context": "export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L69",
+      "source_location": "L68",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609869,7 +609869,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L69",
+      "source_location": "L68",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609881,7 +609881,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L69",
+      "source_location": "L68",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609893,7 +609893,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L69",
+      "source_location": "L68",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609905,7 +609905,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L69",
+      "source_location": "L68",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609917,7 +609917,7 @@
       "context": "export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L76",
+      "source_location": "L75",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609929,7 +609929,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L76",
+      "source_location": "L75",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609941,7 +609941,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L76",
+      "source_location": "L75",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609953,7 +609953,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L76",
+      "source_location": "L75",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609965,7 +609965,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L76",
+      "source_location": "L75",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609977,7 +609977,7 @@
       "context": "re-export",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/index.ts",
-      "source_location": "L76",
+      "source_location": "L75",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_index",
@@ -609999,7 +609999,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/binding.ts",
-      "source_location": "L67",
+      "source_location": "L65",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_binding",
@@ -610010,7 +610010,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/binding.ts",
-      "source_location": "L83",
+      "source_location": "L80",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_binding",
@@ -610021,7 +610021,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/binding.ts",
-      "source_location": "L42",
+      "source_location": "L41",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_binding",
@@ -610080,7 +610080,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L19",
+      "source_location": "L18",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_constructor",
@@ -610092,7 +610092,7 @@
       "context": "field",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L70",
+      "source_location": "L68",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_constructor_nominationpart",
@@ -610104,7 +610104,7 @@
       "context": "field",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L263",
+      "source_location": "L260",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_constructor_templatefield",
@@ -610127,7 +610127,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L229",
+      "source_location": "L226",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_constructor",
@@ -610138,7 +610138,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L100",
+      "source_location": "L98",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_constructor",
@@ -610149,7 +610149,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L123",
+      "source_location": "L121",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_constructor",
@@ -610160,7 +610160,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L150",
+      "source_location": "L148",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_constructor",
@@ -610171,7 +610171,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L78",
+      "source_location": "L76",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_constructor",
@@ -610182,7 +610182,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L67",
+      "source_location": "L65",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_constructor",
@@ -610193,7 +610193,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L64",
+      "source_location": "L62",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_constructor",
@@ -610204,7 +610204,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L296",
+      "source_location": "L293",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_constructor",
@@ -610215,7 +610215,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L253",
+      "source_location": "L250",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_constructor",
@@ -610226,7 +610226,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L92",
+      "source_location": "L90",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_constructor",
@@ -610237,7 +610237,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L111",
+      "source_location": "L109",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_constructor",
@@ -610248,7 +610248,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L209",
+      "source_location": "L206",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_constructor",
@@ -610259,7 +610259,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L140",
+      "source_location": "L138",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_constructor",
@@ -610270,7 +610270,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L44",
+      "source_location": "L43",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_constructor",
@@ -610281,7 +610281,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L201",
+      "source_location": "L198",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_constructor",
@@ -610292,7 +610292,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L200",
+      "source_location": "L197",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_constructor",
@@ -610303,7 +610303,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L284",
+      "source_location": "L281",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_constructor",
@@ -610314,7 +610314,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L199",
+      "source_location": "L196",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_constructor",
@@ -610325,7 +610325,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/constructor.ts",
-      "source_location": "L308",
+      "source_location": "L305",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_constructor",
@@ -610488,7 +610488,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/preview-data.ts",
-      "source_location": "L46",
+      "source_location": "L44",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_preview_data",
@@ -610499,7 +610499,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/preview-data.ts",
-      "source_location": "L26",
+      "source_location": "L25",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_preview_data",
@@ -610510,7 +610510,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/preview-data.ts",
-      "source_location": "L68",
+      "source_location": "L66",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_preview_data",
@@ -610521,7 +610521,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/diplomas/model/preview-data.ts",
-      "source_location": "L29",
+      "source_location": "L28",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_diplomas_model_preview_data",
@@ -652551,5 +652551,5 @@
       "source_file": "frontend/docs/festival-catalog.md"
     }
   ],
-  "built_at_commit": "f7dda3c1c3e79ff5174898dcca20ac87d3a2915c"
+  "built_at_commit": "beb677ff3a0010fc11e57e3637f9f49f8d3d4e76"
 }
