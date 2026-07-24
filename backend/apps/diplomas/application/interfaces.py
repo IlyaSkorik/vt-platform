@@ -80,8 +80,11 @@ class DiplomaSnapshotSource(Protocol):
         ``award.degree`` is left ``None`` — the jury result is filled in later."""
         ...
 
-    def list_submission_ids(self, competition_id: uuid.UUID) -> list[uuid.UUID]:
-        """Every (live) submission id of a competition — one performance each."""
+    def list_submission_ids(
+        self, competition_id: uuid.UUID, *, category_id: uuid.UUID | None = None
+    ) -> list[uuid.UUID]:
+        """Live submission ids of a competition — one performance each. Narrowed to
+        a nomination (category) when ``category_id`` is given."""
         ...
 
 

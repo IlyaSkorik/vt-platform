@@ -1,10 +1,12 @@
 """Mass print-package generation.
 
-For a competition + assigned template, create a diploma for every performance
-that lacks one (snapshot + number + verification token, no degree), render each
-pre-ceremony PDF, and bundle them into a ZIP the organizer prints from. Diplomas
-that already exist are not re-created (skipped); any diploma still missing its
-print PDF is rendered so the ZIP is a complete printable set.
+A competition assigns a template **per nomination**, so generation runs per
+nomination: for each requested nomination, the caller supplies its assigned
+template, and the service creates a diploma for every performance in that
+nomination that lacks one (snapshot + number + verification token, no degree),
+renders each pre-ceremony PDF, and bundles them all into one ZIP the organizer
+prints from. Existing diplomas are skipped; any still missing a print PDF is
+rendered so the ZIP is a complete printable set.
 """
 
 from __future__ import annotations
@@ -18,13 +20,22 @@ from apps.diplomas.application.interfaces import (
     DiplomaRepository,
     DiplomaSnapshotSource,
     PrintPackageWorkspace,
+    TemplateAssets,
 )
 from apps.diplomas.domain.entities import Diploma
 from apps.diplomas.domain.exceptions import PrintTemplateNotReadyError
 
-__all__ = ["BatchResult", "DiplomaBatchGenerationService"]
+__all__ = ["BatchResult", "DiplomaBatchGenerationService", "NominationTarget"]
 
 _TOKEN_BYTES = 32
+
+
+@dataclass(frozen=True, slots=True)
+class NominationTarget:
+    """One nomination to generate for, with its assigned template."""
+
+    category_id: uuid.UUID
+    template_id: uuid.UUID
 
 
 @dataclass(frozen=True, slots=True)
@@ -35,7 +46,7 @@ class BatchResult:
 
 
 class DiplomaBatchGenerationService:
-    """Generate the print package for a competition (offline preparation)."""
+    """Generate the print package for selected nominations (offline preparation)."""
 
     def __init__(
         self,
@@ -49,52 +60,67 @@ class DiplomaBatchGenerationService:
         self._workspace = workspace
 
     def generate_print_package(
-        self, *, competition_id: uuid.UUID, template_id: uuid.UUID, now: datetime
+        self,
+        *,
+        competition_id: uuid.UUID,
+        targets: list[NominationTarget],
+        now: datetime,
     ) -> BatchResult:
-        """Create missing diplomas, render print PDFs, and bundle the ZIP.
+        """Create missing diplomas per nomination, render print PDFs, bundle a ZIP.
 
-        Raises :class:`PrintTemplateNotReadyError` if the template has no PDF.
+        Raises :class:`PrintTemplateNotReadyError` if any target's template has no
+        PDF (checked up front so nothing is half-generated).
         """
-        assets = self._workspace.load_template(template_id)
-        if assets is None:
-            raise PrintTemplateNotReadyError("The template has no PDF to print over.")
+        # Load (and validate) each nomination's template once.
+        assets_by_template: dict[uuid.UUID, TemplateAssets] = {}
+        for target in targets:
+            if target.template_id in assets_by_template:
+                continue
+            assets = self._workspace.load_template(target.template_id)
+            if assets is None:
+                raise PrintTemplateNotReadyError("A selected template has no PDF to print over.")
+            assets_by_template[target.template_id] = assets
 
         created = 0
         skipped = 0
         items: list[tuple[str, str]] = []
 
-        for submission_id in self._snapshots.list_submission_ids(competition_id):
-            diploma = self._repository.get_by_submission(submission_id)
-            if diploma is None:
-                built = self._snapshots.build(submission_id)
-                if built is None:
-                    continue
-                diploma = Diploma.create(
-                    diploma_id=self._repository.new_id(),
-                    number=self._repository.next_number(),
-                    verification_token=secrets.token_urlsafe(_TOKEN_BYTES),
-                    competition_id=built.competition_id,
-                    submission_id=submission_id,
-                    template_id=template_id,
-                    snapshot=built.snapshot,
-                    now=now,
-                )
-                self._repository.add(diploma)
-                created += 1
-            else:
-                skipped += 1
+        for target in targets:
+            assets = assets_by_template[target.template_id]
+            for submission_id in self._snapshots.list_submission_ids(
+                competition_id, category_id=target.category_id
+            ):
+                diploma = self._repository.get_by_submission(submission_id)
+                if diploma is None:
+                    built = self._snapshots.build(submission_id)
+                    if built is None:
+                        continue
+                    diploma = Diploma.create(
+                        diploma_id=self._repository.new_id(),
+                        number=self._repository.next_number(),
+                        verification_token=secrets.token_urlsafe(_TOKEN_BYTES),
+                        competition_id=built.competition_id,
+                        submission_id=submission_id,
+                        template_id=target.template_id,
+                        snapshot=built.snapshot,
+                        now=now,
+                    )
+                    self._repository.add(diploma)
+                    created += 1
+                else:
+                    skipped += 1
 
-            if not diploma.print_pdf_path:
-                data = self._workspace.render(
-                    assets=assets, snapshot=diploma.snapshot, number=diploma.number
-                )
-                path = self._workspace.store_pdf(
-                    competition_id=competition_id, number=diploma.number, data=data
-                )
-                diploma = diploma.with_print_pdf(path, now=now)
-                self._repository.update(diploma)
+                if not diploma.print_pdf_path:
+                    data = self._workspace.render(
+                        assets=assets, snapshot=diploma.snapshot, number=diploma.number
+                    )
+                    path = self._workspace.store_pdf(
+                        competition_id=competition_id, number=diploma.number, data=data
+                    )
+                    diploma = diploma.with_print_pdf(path, now=now)
+                    self._repository.update(diploma)
 
-            items.append((f"{diploma.number}.pdf", diploma.print_pdf_path))
+                items.append((f"{diploma.number}.pdf", diploma.print_pdf_path))
 
         zip_path = self._workspace.store_zip(competition_id=competition_id, items=items)
         return BatchResult(created=created, skipped=skipped, zip_path=zip_path)

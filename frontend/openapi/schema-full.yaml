@@ -5017,8 +5017,8 @@ paths:
     post:
       operationId: diplomas_start_print_package
       description: |-
-        Start a mass print-package generation (async): create missing diplomas,
-        render PDFs without a degree, and bundle a ZIP for printing.
+        Start a mass print-package generation (async) for chosen nominations:
+        create missing diplomas, render PDFs without a degree, and bundle a ZIP.
       tags:
       - Diplomas
       requestBody:
@@ -5058,6 +5058,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PrintJobResponse'
+          description: ''
+  /api/v1/staff/diplomas/print-package/summary:
+    get:
+      operationId: diplomas_print_package_summary
+      description: Per-nomination print-package summary for a competition.
+      parameters:
+      - in: query
+        name: competitionId
+        schema:
+          type: string
+      tags:
+      - Diplomas
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrintPackageSummaryResponse'
           description: ''
   /api/v1/staff/diplomas/registry:
     get:
@@ -8449,9 +8467,11 @@ components:
         competitionId:
           type: string
           format: uuid
-        templateId:
-          type: string
-          format: uuid
+        categoryIds:
+          type: array
+          items:
+            type: string
+            format: uuid
         status:
           $ref: '#/components/schemas/PrintJobResponseStatusEnum'
         created:
@@ -8473,6 +8493,7 @@ components:
           type: string
           format: date-time
       required:
+      - categoryIds
       - competitionId
       - created
       - createdAt
@@ -8480,7 +8501,6 @@ components:
       - jobId
       - skipped
       - status
-      - templateId
       - updatedAt
       - zipUrl
     PrintJobResponseStatusEnum:
@@ -8495,19 +8515,72 @@ components:
         * `RUNNING` - RUNNING
         * `COMPLETED` - COMPLETED
         * `FAILED` - FAILED
+    PrintPackageNomination:
+      type: object
+      description: One nomination's print-package stats.
+      properties:
+        categoryId:
+          type: string
+          format: uuid
+        nomination:
+          type:
+          - string
+          - 'null'
+        templateId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        templateName:
+          type:
+          - string
+          - 'null'
+        submissions:
+          type: integer
+        existing:
+          type: integer
+        willCreate:
+          type: integer
+      required:
+      - categoryId
+      - existing
+      - nomination
+      - submissions
+      - templateId
+      - templateName
+      - willCreate
     PrintPackageRequest:
       type: object
-      description: Body for starting a mass print-package generation for a competition.
+      description: |-
+        Body for starting a mass print-package generation for a competition.
+
+        ``categoryIds`` selects nominations; empty means every nomination that has an
+        assigned template.
       properties:
         competitionId:
           type: string
           format: uuid
-        templateId:
-          type: string
-          format: uuid
+        categoryIds:
+          type: array
+          items:
+            type: string
+            format: uuid
       required:
       - competitionId
-      - templateId
+    PrintPackageSummaryResponse:
+      type: object
+      description: Per-nomination print-package summary for a competition.
+      properties:
+        competitionId:
+          type: string
+          format: uuid
+        nominations:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrintPackageNomination'
+      required:
+      - competitionId
+      - nominations
     ProblemDetail:
       type: object
       properties:

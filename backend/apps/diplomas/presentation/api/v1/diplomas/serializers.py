@@ -22,6 +22,7 @@ __all__ = [
     "PreviewBindingsSerializer",
     "PrintJobResponseSerializer",
     "PrintPackageRequestSerializer",
+    "PrintPackageSummaryResponseSerializer",
     "SaveLayoutRequestSerializer",
     "TemplateDocumentResponseSerializer",
     "TemplateFieldResponseSerializer",
@@ -275,10 +276,13 @@ class CreateDiplomaRequestSerializer(serializers.Serializer[dict[str, object]]):
 
 
 class PrintPackageRequestSerializer(serializers.Serializer[dict[str, object]]):
-    """Body for starting a mass print-package generation for a competition."""
+    """Body for starting a mass print-package generation for a competition.
+
+    ``categoryIds`` selects nominations; empty means every nomination that has an
+    assigned template."""
 
     competitionId = serializers.UUIDField()
-    templateId = serializers.UUIDField()
+    categoryIds = serializers.ListField(child=serializers.UUIDField(), required=False, default=list)
 
 
 class PrintJobResponseSerializer(serializers.Serializer[dict[str, object]]):
@@ -286,7 +290,7 @@ class PrintJobResponseSerializer(serializers.Serializer[dict[str, object]]):
 
     jobId = serializers.UUIDField()
     competitionId = serializers.UUIDField()
-    templateId = serializers.UUIDField()
+    categoryIds = serializers.ListField(child=serializers.UUIDField())
     status = serializers.ChoiceField(choices=["PENDING", "RUNNING", "COMPLETED", "FAILED"])
     created = serializers.IntegerField()
     skipped = serializers.IntegerField()
@@ -294,3 +298,22 @@ class PrintJobResponseSerializer(serializers.Serializer[dict[str, object]]):
     error = serializers.CharField(allow_null=True)
     createdAt = serializers.DateTimeField()
     updatedAt = serializers.DateTimeField()
+
+
+class PrintPackageNominationSerializer(serializers.Serializer[dict[str, object]]):
+    """One nomination's print-package stats."""
+
+    categoryId = serializers.UUIDField()
+    nomination = serializers.CharField(allow_null=True)
+    templateId = serializers.UUIDField(allow_null=True)
+    templateName = serializers.CharField(allow_null=True)
+    submissions = serializers.IntegerField()
+    existing = serializers.IntegerField()
+    willCreate = serializers.IntegerField()
+
+
+class PrintPackageSummaryResponseSerializer(serializers.Serializer[dict[str, object]]):
+    """Per-nomination print-package summary for a competition."""
+
+    competitionId = serializers.UUIDField()
+    nominations = PrintPackageNominationSerializer(many=True)  # type: ignore[assignment]

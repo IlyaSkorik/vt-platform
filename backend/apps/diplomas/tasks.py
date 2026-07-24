@@ -15,7 +15,10 @@ def generate_print_package(job_id: str) -> None:
     from django.utils import timezone
 
     from apps.diplomas.infrastructure.models import PrintJobModel, PrintJobStatusChoices
-    from apps.diplomas.presentation.api.v1.diplomas.print_package import build_batch_service
+    from apps.diplomas.presentation.api.v1.diplomas.print_package import (
+        build_batch_service,
+        resolve_targets,
+    )
 
     job = PrintJobModel.objects.filter(id=job_id).first()
     if job is None:
@@ -26,8 +29,9 @@ def generate_print_package(job_id: str) -> None:
     job.save(update_fields=["status", "updated_at"])
 
     try:
+        targets = resolve_targets(job.competition_id, job.category_ids or [])
         result = build_batch_service().generate_print_package(
-            competition_id=job.competition_id, template_id=job.template_id, now=timezone.now()
+            competition_id=job.competition_id, targets=targets, now=timezone.now()
         )
     except Exception as exc:
         job.status = PrintJobStatusChoices.FAILED

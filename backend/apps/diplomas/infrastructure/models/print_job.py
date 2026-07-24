@@ -28,7 +28,9 @@ class PrintJobModel(BasePersistenceModel):
     """Database row for a print-package generation job (persistence only)."""
 
     competition_id = models.UUIDField()
-    template_id = models.UUIDField()
+    # Nominations (category ids) the run targets; empty means every nomination
+    # of the competition that has an assigned template.
+    category_ids = models.JSONField(default=list, blank=True)
     status = models.CharField(
         max_length=16,
         choices=PrintJobStatusChoices.choices,

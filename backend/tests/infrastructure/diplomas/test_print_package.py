@@ -1,4 +1,4 @@
-"""Integration tests for mass print-package generation (create → render → ZIP)."""
+"""Integration tests for mass print-package generation (per-nomination)."""
 
 from __future__ import annotations
 
@@ -15,12 +15,9 @@ from reportlab.pdfgen import canvas
 from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.competitions.infrastructure.models.competition import CompetitionModel
 from apps.competitions.infrastructure.models.taxonomy import CategoryModel
-from apps.diplomas.application.services import DiplomaService
 from apps.diplomas.domain.exceptions import PrintTemplateNotReadyError
 from apps.diplomas.domain.value_objects import DiplomaStatus
-from apps.diplomas.infrastructure.acl import DjangoDiplomaSnapshotSource
 from apps.diplomas.infrastructure.models import DiplomaModel, TemplateDocumentModel, TemplateModel
-from apps.diplomas.infrastructure.repositories import DjangoDiplomaRepository
 from apps.diplomas.presentation.api.v1.diplomas import composition, print_package
 
 pytestmark = pytest.mark.django_db
@@ -41,9 +38,11 @@ def _backing_pdf() -> bytes:
     return buffer.getvalue()
 
 
-def _template_with_pdf() -> TemplateModel:
-    template = TemplateModel.objects.create(name="Шаблон")
-    key = default_storage.save(f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf()))
+def _template_with_pdf(name: str) -> TemplateModel:
+    template = TemplateModel.objects.create(name=name)
+    key = default_storage.save(
+        f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf())
+    )
     TemplateDocumentModel.objects.create(
         template=template, file_reference=f"/media/{key}", page_count=1
     )
@@ -59,25 +58,6 @@ def _template_with_pdf() -> TemplateModel:
                 "width": 0.6,
                 "height": 0.1,
             },
-            {
-                "page": 1,
-                "type": "award_degree",
-                "binding": "award.degree",
-                "x": 0.1,
-                "y": 0.3,
-                "width": 0.6,
-                "height": 0.1,
-            },
-            {
-                "page": 1,
-                "type": "nomination_block",
-                "binding": "nomination.block",
-                "config": {"parts": ["title", "discipline"], "prefix": "Номинация:"},
-                "x": 0.1,
-                "y": 0.5,
-                "width": 0.6,
-                "height": 0.1,
-            },
         ],
     )
     return template
@@ -89,7 +69,6 @@ def _competition() -> CompetitionModel:
         season="2026",
         organizer_id=uuid.uuid4(),
         status="PUBLISHED",
-        venue_name="Москва",
         competition_start=date(2026, 5, 15),
     )
 
@@ -104,65 +83,102 @@ def _submission(competition: CompetitionModel, name: str, category: CategoryMode
     )
 
 
-def test_generate_print_package_creates_renders_and_zips() -> None:
-    competition = _competition()
-    category = CategoryModel.objects.create(competition=competition, name="Вокал")
-    template = _template_with_pdf()
-    sub_a = _submission(competition, "Иванов Иван", category)
-    _submission(competition, "Петров Пётр", category)
-    # sub_a already has a diploma → it is skipped for creation but still printed.
-    DiplomaService(
-        repository=DjangoDiplomaRepository(),
-        snapshots=DjangoDiplomaSnapshotSource(),
-    ).create_diploma(submission_id=sub_a.id, template_id=template.id, now=_NOW)
-
-    result = print_package.build_batch_service().generate_print_package(
-        competition_id=competition.id, template_id=template.id, now=_NOW
+def _assign(competition: CompetitionModel, category: CategoryModel, template: TemplateModel) -> None:
+    composition.create_assignment(
+        competition_id=str(competition.id),
+        category_id=str(category.id),
+        template_id=str(template.id),
     )
 
-    assert result.created == 1  # only sub_b
-    assert result.skipped == 1  # sub_a existed
-    assert result.zip_path.startswith("/media/")
 
-    diplomas = DiplomaModel.objects.filter(competition_id=competition.id)
-    assert diplomas.count() == 2
-    for diploma in diplomas:
-        assert diploma.print_pdf_path
+def test_generation_uses_each_nominations_own_template() -> None:
+    competition = _competition()
+    vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+    dance = CategoryModel.objects.create(competition=competition, name="Танец")
+    vocals_template = _template_with_pdf("Вокал A4")
+    dance_template = _template_with_pdf("Танец A4")
+    _assign(competition, vocals, vocals_template)
+    _assign(competition, dance, dance_template)
+    sub_vocals = _submission(competition, "Иванов Иван", vocals)
+    sub_dance = _submission(competition, "Петров Пётр", dance)
+
+    # Empty categoryIds → all assigned nominations.
+    job = print_package.start_print_package(competition_id=competition.id, category_ids=[])
+
+    assert job["status"] == "COMPLETED"
+    assert job["created"] == 2
+    assert job["skipped"] == 0
+
+    by_submission = {
+        str(d.submission_id): d for d in DiplomaModel.objects.filter(competition_id=competition.id)
+    }
+    assert str(by_submission[str(sub_vocals.id)].template_id) == str(vocals_template.id)
+    assert str(by_submission[str(sub_dance.id)].template_id) == str(dance_template.id)
+    for diploma in by_submission.values():
         assert diploma.status == DiplomaStatus.GENERATED.value
+        assert diploma.print_pdf_path
 
-    # The ZIP holds one valid PDF per diploma.
-    zip_key = result.zip_path[len("/media/") :]
+
+def test_generation_for_selected_nominations_only() -> None:
+    competition = _competition()
+    vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+    dance = CategoryModel.objects.create(competition=competition, name="Танец")
+    _assign(competition, vocals, _template_with_pdf("Вокал A4"))
+    _assign(competition, dance, _template_with_pdf("Танец A4"))
+    _submission(competition, "Иванов Иван", vocals)
+    _submission(competition, "Петров Пётр", dance)
+
+    job = print_package.start_print_package(
+        competition_id=competition.id, category_ids=[str(vocals.id)]
+    )
+
+    assert job["created"] == 1  # only the vocals submission
+    assert DiplomaModel.objects.filter(competition_id=competition.id).count() == 1
+
+
+def test_summary_breaks_down_by_nomination() -> None:
+    competition = _competition()
+    vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+    dance = CategoryModel.objects.create(competition=competition, name="Танец")
+    _assign(competition, vocals, _template_with_pdf("Вокал A4"))
+    # dance has submissions but no template assigned.
+    _submission(competition, "Иванов Иван", vocals)
+    _submission(competition, "Сидоров С", vocals)
+    _submission(competition, "Петров Пётр", dance)
+
+    summary = print_package.print_package_summary(competition.id)
+    by_id = {row["categoryId"]: row for row in summary["nominations"]}
+
+    assert by_id[str(vocals.id)]["templateName"] == "Вокал A4"
+    assert by_id[str(vocals.id)]["submissions"] == 2
+    assert by_id[str(vocals.id)]["willCreate"] == 2
+    assert by_id[str(dance.id)]["templateId"] is None
+    assert by_id[str(dance.id)]["submissions"] == 1
+    assert by_id[str(dance.id)]["willCreate"] == 0  # no template → cannot generate
+
+
+def test_zip_contains_a_pdf_per_generated_diploma() -> None:
+    competition = _competition()
+    vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+    _assign(competition, vocals, _template_with_pdf("Вокал A4"))
+    _submission(competition, "Иванов Иван", vocals)
+    _submission(competition, "Сидоров С", vocals)
+
+    job = print_package.start_print_package(competition_id=competition.id, category_ids=[])
+
+    zip_key = job["zipUrl"][len("/media/") :]
     with default_storage.open(zip_key, "rb") as handle:
         archive = zipfile.ZipFile(io.BytesIO(handle.read()))
     names = archive.namelist()
     assert len(names) == 2
     for name in names:
-        assert name.endswith(".pdf")
         assert archive.read(name).startswith(b"%PDF")
 
 
-def test_print_package_requires_a_template_pdf() -> None:
+def test_no_assigned_template_raises() -> None:
     competition = _competition()
-    template = TemplateModel.objects.create(name="Без PDF")
+    vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+    _submission(competition, "Иванов Иван", vocals)
 
-    service = print_package.build_batch_service()
     with pytest.raises(PrintTemplateNotReadyError):
-        service.generate_print_package(
-            competition_id=competition.id, template_id=template.id, now=_NOW
-        )
-
-
-def test_start_print_package_runs_job_to_completion() -> None:
-    competition = _competition()
-    category = CategoryModel.objects.create(competition=competition, name="Вокал")
-    template = _template_with_pdf()
-    _submission(competition, "Иванов Иван", category)
-
-    # Eager Celery (test settings) runs the task inline, so the job is done.
-    job = print_package.start_print_package(competition_id=competition.id, template_id=template.id)
-
-    assert job["status"] == "COMPLETED"
-    assert job["created"] == 1
-    assert job["skipped"] == 0
-    assert job["zipUrl"].startswith("/media/")
-    assert job["error"] is None
+        print_package.start_print_package(competition_id=competition.id, category_ids=[])

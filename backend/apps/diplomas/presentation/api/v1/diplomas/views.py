@@ -32,6 +32,7 @@ from apps.diplomas.presentation.api.v1.diplomas.serializers import (
     PreviewBindingsSerializer,
     PrintJobResponseSerializer,
     PrintPackageRequestSerializer,
+    PrintPackageSummaryResponseSerializer,
     SaveLayoutRequestSerializer,
     TemplateDocumentResponseSerializer,
     TemplateResponseSerializer,
@@ -311,9 +312,28 @@ class DiplomaRegistryDetailView(_StaffView):
         return problems.envelope(request, diploma)
 
 
+class DiplomaPrintPackageSummaryView(_StaffView):
+    """Per-nomination print-package summary for a competition."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="diplomas_print_package_summary",
+        parameters=[OpenApiParameter(name="competitionId", type=str, location=OpenApiParameter.QUERY)],
+        responses={200: PrintPackageSummaryResponseSerializer},
+    )
+    def get(self, request: Request) -> Response:
+        raw = (request.query_params.get("competitionId") or "").strip()
+        competition_id = _parse_uuid(raw)
+        if competition_id is None:
+            return problems.validation_problem(
+                {"competitionId": ["Укажите конкурс."]}, instance=request.path, request=request
+            )
+        return problems.envelope(request, print_package.print_package_summary(competition_id))
+
+
 class DiplomaPrintPackageView(_StaffView):
-    """Start a mass print-package generation (async): create missing diplomas,
-    render PDFs without a degree, and bundle a ZIP for printing."""
+    """Start a mass print-package generation (async) for chosen nominations:
+    create missing diplomas, render PDFs without a degree, and bundle a ZIP."""
 
     @extend_schema(
         tags=[_TAG],
@@ -329,7 +349,7 @@ class DiplomaPrintPackageView(_StaffView):
         try:
             job = print_package.start_print_package(
                 competition_id=data["competitionId"],
-                template_id=data["templateId"],
+                category_ids=[str(cid) for cid in data.get("categoryIds", [])],
             )
         except DiplomaError as exc:
             return problems.diploma_problem(exc, instance=request.path, request=request)

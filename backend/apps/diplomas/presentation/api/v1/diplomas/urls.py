@@ -8,6 +8,7 @@ from .views import (
     DiplomaPreviewApplicationsView,
     DiplomaPreviewBindingsView,
     DiplomaPrintJobDetailView,
+    DiplomaPrintPackageSummaryView,
     DiplomaPrintPackageView,
     DiplomaRegistryDetailView,
     DiplomaRegistryView,
@@ -30,6 +31,12 @@ urlpatterns = [
         "staff/diplomas/print-package",
         DiplomaPrintPackageView.as_view(),
         name="print-package",
+    ),
+    # Must precede the "<job_id>" pattern so "summary" is not read as a job id.
+    path(
+        "staff/diplomas/print-package/summary",
+        DiplomaPrintPackageSummaryView.as_view(),
+        name="print-package-summary",
     ),
     path(
         "staff/diplomas/print-package/<str:job_id>",
