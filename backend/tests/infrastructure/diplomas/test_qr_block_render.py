@@ -34,10 +34,15 @@ from apps.diplomas.domain.value_objects import (
 )
 from apps.diplomas.infrastructure.models import DiplomaModel, TemplateDocumentModel, TemplateModel
 from apps.diplomas.infrastructure.pdf.qr import QR_BORDER, verification_url
-from apps.diplomas.infrastructure.pdf.renderer import QR_VERIFICATION_TEXT, render_diploma_pdf
+from apps.diplomas.infrastructure.pdf.renderer import (
+    QR_HEADLINE,
+    qr_caption_lines,
+    render_diploma_pdf,
+)
 from apps.diplomas.presentation.api.v1.diplomas import composition, print_package
 
-_DOMAIN = "https://diplomas.example.org"
+_DOMAIN = "https://vzlettalantov.by"
+_HOST = "vzlettalantov.by"
 _TOKEN = "AbC123-token_value"
 
 
@@ -157,7 +162,27 @@ def test_qr_block_embeds_a_code_for_the_verification_url() -> None:
     _assert_qr_encodes(pdf, url)
 
 
-def test_qr_block_prints_the_number_and_the_authenticity_text() -> None:
+def test_caption_is_three_lines_headline_number_and_host() -> None:
+    assert qr_caption_lines(
+        number="VT-2026-000042", verification_url=f"{_DOMAIN}/verify/{_TOKEN}"
+    ) == [
+        "Подлинность гарантирована!",
+        "№VT-2026-000042",
+        f"Проверить на {_HOST}",
+    ]
+
+
+def test_caption_host_comes_from_the_url_and_drops_www() -> None:
+    lines = qr_caption_lines(number="VT-2026-000001", verification_url="https://www.example.by/verify/x")
+
+    assert lines[2] == "Проверить на example.by"
+
+
+def test_caption_drops_lines_it_cannot_fill() -> None:
+    assert qr_caption_lines(number="", verification_url=None) == [QR_HEADLINE]
+
+
+def test_qr_block_prints_the_caption_on_three_lines() -> None:
     pdf = render_diploma_pdf(
         fields=[_qr_field()],
         backing_pdf=_backing_pdf(),
@@ -166,10 +191,13 @@ def test_qr_block_prints_the_number_and_the_authenticity_text() -> None:
         verification_url=verification_url(_TOKEN),
     )
 
-    # The caption is wrapped to the block's width, so compare on collapsed whitespace.
-    text = " ".join(PdfReader(io.BytesIO(pdf)).pages[0].extract_text().split())
-    assert "VT-2026-000042" in text
-    assert QR_VERIFICATION_TEXT in text
+    # The background draws one line of its own; the caption follows, one line each.
+    lines = PdfReader(io.BytesIO(pdf)).pages[0].extract_text().splitlines()
+    assert lines[-3:] == [
+        "Подлинность гарантирована!",
+        "№VT-2026-000042",
+        f"Проверить на {_HOST}",
+    ]
 
 
 def test_template_without_a_qr_block_gets_no_qr() -> None:
@@ -258,8 +286,12 @@ class TestPrintPackageCycle:
         pdf = self._stored(diploma.print_pdf_path)
         # The QR resolves to this diploma's own verification page…
         _assert_qr_encodes(pdf, f"{_DOMAIN}/verify/{diploma.verification_token}")
-        # …and the number printed under it is the diploma's number.
-        assert diploma.number in PdfReader(io.BytesIO(pdf)).pages[0].extract_text()
+        # …and the caption beside it names the same number and host.
+        assert PdfReader(io.BytesIO(pdf)).pages[0].extract_text().splitlines()[-3:] == [
+            QR_HEADLINE,
+            f"№{diploma.number}",
+            f"Проверить на {_HOST}",
+        ]
 
     def test_zip_still_bundles_the_diploma_under_its_number(self) -> None:
         diploma, job = self._generate()

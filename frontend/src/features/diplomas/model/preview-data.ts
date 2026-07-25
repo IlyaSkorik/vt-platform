@@ -37,7 +37,8 @@ const SHARED_VALUES: Record<TemplateFieldBinding, string> = {
   [COMPETITION_DATE]: "15.05.2026",
   [COMPETITION_CITY]: "Москва",
   [AWARD_DEGREE]: "Лауреат I степени",
-  [DIPLOMA_NUMBER]: "№ 000123",
+  // Bare number — the QR block's caption adds the "№" itself.
+  [DIPLOMA_NUMBER]: "VT-2026-000123",
   [DIPLOMA_ISSUE_DATE]: "20.05.2026",
 };
 

@@ -83,11 +83,26 @@ export const NOMINATION_PARTS: readonly NominationPart[] = [
 export const DEFAULT_NOMINATION_PREFIX = "Номинация:";
 
 /**
- * Fixed authenticity text of the QR block. The block pairs a QR placeholder with
- * this line and the diploma number; the text is not editable at this stage (the
- * real QR image and its verification URL land with diploma generation).
+ * First line of the QR block's fixed caption. Mirrors the backend renderer's
+ * `QR_HEADLINE` so the editor preview and the printed diploma match.
  */
-export const QR_VERIFICATION_TEXT = "Диплом подлинный. Проверить можно на сайте организатора.";
+export const QR_HEADLINE = "Подлинность гарантирована!";
+
+/** Lead-in of the caption's last line; the verification host follows. */
+export const QR_VERIFY_PREFIX = "Проверить на";
+
+/**
+ * The QR block's caption, one entry per rendered line: the authenticity headline,
+ * the diploma number, and where to check it. A line with no value is dropped, so
+ * an editor preview without a sample number shows two lines rather than an empty
+ * one. The caption is not editable — the block is a fixed composite.
+ */
+export function qrCaptionLines(number: string, host: string): string[] {
+  const lines = [QR_HEADLINE];
+  if (number) lines.push(`№${number}`);
+  if (host) lines.push(`${QR_VERIFY_PREFIX} ${host}`);
+  return lines;
+}
 
 /**
  * Per-field configuration beyond geometry and style. Only composite fields use

@@ -7,14 +7,16 @@ A field that resolves to nothing is skipped (no placeholder), so a print copy
 with no degree simply omits the Степень field.
 
 A ``qr_block`` field is the one composite: it draws the diploma's QR code (the
-verification link) plus the authenticity text and the diploma number beside it.
-A template without the block simply gets no QR — nothing else changes.
+verification link) plus a three-line caption beside it — the authenticity
+headline, the diploma number, and the host to check it on. A template without the
+block simply gets no QR — nothing else changes.
 """
 
 from __future__ import annotations
 
 from io import BytesIO
 from typing import Any
+from urllib.parse import urlsplit
 
 from pypdf import PdfReader, PdfWriter
 from reportlab.lib.colors import HexColor
@@ -26,16 +28,45 @@ from apps.diplomas.infrastructure.pdf.field_values import field_text
 from apps.diplomas.infrastructure.pdf.fonts import resolve_font
 from apps.diplomas.infrastructure.pdf.qr import qr_png
 
-__all__ = ["QR_VERIFICATION_TEXT", "render_diploma_pdf"]
+__all__ = ["QR_HEADLINE", "qr_caption_lines", "render_diploma_pdf"]
 
 _MIN_FONT_PT = 4.0
 
-#: The authenticity line printed beside the QR code. Mirrors the constructor's
-#: ``QR_VERIFICATION_TEXT`` so the editor preview and the print match exactly.
-QR_VERIFICATION_TEXT = "Диплом подлинный. Проверить можно на сайте организатора."
+#: First caption line beside the QR code. Mirrors the constructor's ``QR_HEADLINE``
+#: so the editor preview and the print match exactly.
+QR_HEADLINE = "Подлинность гарантирована!"
+
+#: Lead-in of the third caption line; the host follows.
+_QR_VERIFY_PREFIX = "Проверить на"
 
 #: Share of the QR side left as the gap between the code and its caption.
 _QR_GAP_RATIO = 0.12
+
+
+def _display_host(url: str) -> str:
+    """The bare host of a verification URL, as printed (no scheme, no ``www.``).
+
+    Taken from the URL the QR encodes, so the printed address and the scanned one
+    can never disagree — and the configured domain stays the single source."""
+    split = urlsplit(url)
+    # A value with no scheme parses as a path; treat its first segment as the host.
+    host = split.netloc or split.path.lstrip("/").split("/")[0]
+    return host.removeprefix("www.")
+
+
+def qr_caption_lines(*, number: str, verification_url: str | None) -> list[str]:
+    """The QR block's caption, one string per printed line.
+
+    Three lines: the authenticity headline, the diploma number, and where to check
+    it. A line whose value is unknown is dropped rather than printed empty.
+    """
+    lines = [QR_HEADLINE]
+    if number:
+        lines.append(f"№{number}")
+    host = _display_host(verification_url) if verification_url else ""
+    if host:
+        lines.append(f"{_QR_VERIFY_PREFIX} {host}")
+    return lines
 
 
 def _color(value: Any) -> HexColor:
@@ -172,7 +203,7 @@ def _draw_qr_block(
     page_w: float,
     page_h: float,
 ) -> None:
-    """Draw the QR block: the code, then the authenticity text and the number.
+    """Draw the QR block: the code, then its three-line caption.
 
     The code is a square anchored to the left edge of the block and as tall as the
     block allows; the caption takes the width that is left. With no verification
@@ -206,9 +237,10 @@ def _draw_qr_block(
     line_height = float(style.get("lineHeight", 1.2) or 1.2)
     align = style.get("textAlign", "left")
 
-    caption = f"{QR_VERIFICATION_TEXT}\n{number}" if number else QR_VERIFICATION_TEXT
-    # The caption always wraps and shrinks: the block is narrow by nature.
-    size, lines = _fit_size(caption, font, base_size, text_w, box_h, 0.0, True)
+    # The caption is exactly its three lines — it shrinks to fit rather than
+    # re-wrapping, so the number never breaks across lines.
+    caption = "\n".join(qr_caption_lines(number=number, verification_url=verification_url))
+    size, lines = _fit_size(caption, font, base_size, text_w, box_h, 0.0, False)
 
     c.setFont(font, size)
     c.setFillColor(_color(style.get("color")))
