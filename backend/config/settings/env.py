@@ -107,6 +107,14 @@ class Settings(BaseSettings):
         alias="FRONTEND_BASE_URL",
     )
 
+    # Public base URL the diploma QR code points at: the printed link is
+    # ``<base>/verify/<verificationToken>``. Empty means "use frontend_base_url" —
+    # set it only when authenticity checks live on their own domain. No trailing slash.
+    diploma_verification_base_url: str = Field(
+        default="",
+        alias="DIPLOMA_VERIFICATION_BASE_URL",
+    )
+
     # Hours an applicant has to attach a payment receipt after submitting before the
     # order is auto-cancelled. Lower it (e.g. to a fraction of an hour) to exercise the
     # auto-cancellation flow locally without waiting the production default.

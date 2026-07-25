@@ -120,9 +120,18 @@ class PrintPackageWorkspace(Protocol):
         ...
 
     def render(
-        self, *, assets: TemplateAssets, snapshot: DiplomaSnapshot, number: str
+        self,
+        *,
+        assets: TemplateAssets,
+        snapshot: DiplomaSnapshot,
+        number: str,
+        verification_token: str,
     ) -> bytes:
-        """Render one diploma PDF from the template assets and a snapshot."""
+        """Render one diploma PDF from the template assets and a snapshot.
+
+        ``verification_token`` is the diploma's own token; the adapter turns it
+        into the verification URL behind the QR code (the public domain is
+        infrastructure configuration, not application knowledge)."""
         ...
 
     def store_pdf(self, *, competition_id: uuid.UUID, number: str, data: bytes) -> str:

@@ -18,6 +18,7 @@ from django.core.files.storage import default_storage
 from apps.diplomas.application.interfaces import TemplateAssets
 from apps.diplomas.domain.value_objects import DiplomaSnapshot
 from apps.diplomas.infrastructure.models import TemplateDocumentModel
+from apps.diplomas.infrastructure.pdf.qr import verification_url
 from apps.diplomas.infrastructure.pdf.renderer import render_diploma_pdf
 from apps.diplomas.presentation.api.v1.diplomas import composition
 
@@ -53,9 +54,22 @@ class DjangoPrintPackageWorkspace:
         layout = composition.get_template_layout(str(template_id))
         return TemplateAssets(fields=list(layout["fields"]), backing_pdf=backing_pdf)
 
-    def render(self, *, assets: TemplateAssets, snapshot: DiplomaSnapshot, number: str) -> bytes:
+    def render(
+        self,
+        *,
+        assets: TemplateAssets,
+        snapshot: DiplomaSnapshot,
+        number: str,
+        verification_token: str,
+    ) -> bytes:
+        # The public verification domain is configuration, so the URL is built here
+        # (infrastructure) rather than passed down from the application service.
         return render_diploma_pdf(
-            fields=assets.fields, backing_pdf=assets.backing_pdf, snapshot=snapshot, number=number
+            fields=assets.fields,
+            backing_pdf=assets.backing_pdf,
+            snapshot=snapshot,
+            number=number,
+            verification_url=verification_url(verification_token),
         )
 
     def store_pdf(self, *, competition_id: uuid.UUID, number: str, data: bytes) -> str:

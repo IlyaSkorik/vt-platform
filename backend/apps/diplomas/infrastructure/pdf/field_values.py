@@ -112,7 +112,8 @@ def field_text(field: dict[str, Any], snapshot: DiplomaSnapshot, *, number: str)
     if field_type == "nomination_block":
         return _nomination_block(field.get("config") or {}, snapshot)
     if field_type == "qr_block":
-        # QR image is deferred; print the diploma number the block carries.
+        # The block's caption is the diploma number; the renderer draws it beside
+        # the QR image and the authenticity text (see ``renderer._draw_qr_block``).
         return _clean(number)
     binding = field.get("binding") or ""
     if field_type == "free_text" or not binding:

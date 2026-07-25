@@ -11,9 +11,11 @@ interface QrBlockViewProps {
 
 /**
  * On-canvas view of the QR block: a placeholder QR square next to the fixed
- * authenticity text and the diploma number. A stand-in for now — the real QR
- * image and its verification URL are produced at diploma generation, which does
- * not exist yet. Shared by the editable and read-only renderers so both match.
+ * authenticity text and the diploma number. The square stays a placeholder in the
+ * editor by design — a template has no diploma, so there is no verification token
+ * to encode; the backend draws the real code (pointing at
+ * `<domain>/verify/<verificationToken>`) when it renders the diploma PDF.
+ * Shared by the editable and read-only renderers so both match.
  */
 export function QrBlockView({ number, style, scale }: QrBlockViewProps): React.JSX.Element {
   return (

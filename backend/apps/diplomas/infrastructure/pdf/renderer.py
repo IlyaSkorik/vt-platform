@@ -5,6 +5,10 @@ field's style — honouring font family/weight/style, size, colour, alignment,
 auto-shrink and wrapping — then merges the overlay onto the immutable background.
 A field that resolves to nothing is skipped (no placeholder), so a print copy
 with no degree simply omits the Степень field.
+
+A ``qr_block`` field is the one composite: it draws the diploma's QR code (the
+verification link) plus the authenticity text and the diploma number beside it.
+A template without the block simply gets no QR — nothing else changes.
 """
 
 from __future__ import annotations
@@ -14,15 +18,24 @@ from typing import Any
 
 from pypdf import PdfReader, PdfWriter
 from reportlab.lib.colors import HexColor
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
 from apps.diplomas.domain.value_objects import DiplomaSnapshot
 from apps.diplomas.infrastructure.pdf.field_values import field_text
 from apps.diplomas.infrastructure.pdf.fonts import resolve_font
+from apps.diplomas.infrastructure.pdf.qr import qr_png
 
-__all__ = ["render_diploma_pdf"]
+__all__ = ["QR_VERIFICATION_TEXT", "render_diploma_pdf"]
 
 _MIN_FONT_PT = 4.0
+
+#: The authenticity line printed beside the QR code. Mirrors the constructor's
+#: ``QR_VERIFICATION_TEXT`` so the editor preview and the print match exactly.
+QR_VERIFICATION_TEXT = "Диплом подлинный. Проверить можно на сайте организатора."
+
+#: Share of the QR side left as the gap between the code and its caption.
+_QR_GAP_RATIO = 0.12
 
 
 def _color(value: Any) -> HexColor:
@@ -73,13 +86,46 @@ def _fit_size(text: str, font: str, base: float, box_w: float, box_h: float, cha
     return _MIN_FONT_PT, lines
 
 
-def _draw_field(c: canvas.Canvas, field: dict[str, Any], text: str, page_w: float, page_h: float) -> None:
-    style = field.get("style") or {}
+def _box(field: dict[str, Any], page_w: float, page_h: float) -> tuple[float, float, float, float]:
+    """The field's box in PDF points as ``(x, bottom, width, height)``.
+
+    Field geometry is normalised and top-anchored (as in the editor); PDF space is
+    bottom-anchored, hence the flip."""
     box_x = float(field["x"]) * page_w
     box_top = float(field["y"]) * page_h
     box_w = float(field["width"]) * page_w
     box_h = float(field["height"]) * page_h
-    box_bottom = page_h - (box_top + box_h)
+    return box_x, page_h - (box_top + box_h), box_w, box_h
+
+
+def _draw_lines(
+    c: canvas.Canvas,
+    lines: list[str],
+    *,
+    x: float,
+    bottom: float,
+    width: float,
+    height: float,
+    size: float,
+    line_height: float,
+    align: str,
+) -> None:
+    """Draw a vertically centred block of lines inside a box."""
+    step = size * line_height
+    top_baseline = bottom + (height + step * len(lines)) / 2 - size
+    for index, line in enumerate(lines):
+        y = top_baseline - index * step
+        if align == "left":
+            c.drawString(x, y, line)
+        elif align == "right":
+            c.drawRightString(x + width, y, line)
+        else:
+            c.drawCentredString(x + width / 2, y, line)
+
+
+def _draw_field(c: canvas.Canvas, field: dict[str, Any], text: str, page_w: float, page_h: float) -> None:
+    style = field.get("style") or {}
+    box_x, box_bottom, box_w, box_h = _box(field, page_w, page_h)
 
     base_size = float(style.get("fontSize", 24) or 24)
     weight = style.get("fontWeight", "normal") == "bold"
@@ -102,27 +148,106 @@ def _draw_field(c: canvas.Canvas, field: dict[str, Any], text: str, page_w: floa
     if char_space:
         c.setCharSpace(char_space)
 
-    step = size * line_height
-    block_h = step * len(lines)
-    # Vertically centre the block within the box.
-    top_baseline = box_bottom + (box_h + block_h) / 2 - size
-    for index, line in enumerate(lines):
-        y = top_baseline - index * step
-        if align == "left":
-            c.drawString(box_x, y, line)
-        elif align == "right":
-            c.drawRightString(box_x + box_w, y, line)
-        else:
-            c.drawCentredString(box_x + box_w / 2, y, line)
+    _draw_lines(
+        c,
+        lines,
+        x=box_x,
+        bottom=box_bottom,
+        width=box_w,
+        height=box_h,
+        size=size,
+        line_height=line_height,
+        align=align,
+    )
     if char_space:
         c.setCharSpace(0)
 
 
-def _overlay(fields: list[dict[str, Any]], snapshot: DiplomaSnapshot, number: str, w: float, h: float) -> bytes | None:
+def _draw_qr_block(
+    c: canvas.Canvas,
+    field: dict[str, Any],
+    *,
+    number: str,
+    verification_url: str | None,
+    page_w: float,
+    page_h: float,
+) -> None:
+    """Draw the QR block: the code, then the authenticity text and the number.
+
+    The code is a square anchored to the left edge of the block and as tall as the
+    block allows; the caption takes the width that is left. With no verification
+    URL (no token to encode) only the caption is drawn.
+    """
+    style = field.get("style") or {}
+    box_x, box_bottom, box_w, box_h = _box(field, page_w, page_h)
+
+    qr_side = min(box_h, box_w) if verification_url else 0.0
+    gap = qr_side * _QR_GAP_RATIO
+    if qr_side:
+        c.drawImage(
+            ImageReader(BytesIO(qr_png(verification_url or ""))),
+            box_x,
+            box_bottom + (box_h - qr_side) / 2,
+            width=qr_side,
+            height=qr_side,
+            mask="auto",
+        )
+
+    text_x = box_x + qr_side + gap
+    text_w = box_w - qr_side - gap
+    if text_w <= 0:
+        # The block is too narrow for a caption — the code alone still verifies.
+        return
+
+    base_size = float(style.get("fontSize", 24) or 24)
+    weight = style.get("fontWeight", "normal") == "bold"
+    italic = style.get("fontStyle", "normal") == "italic"
+    font = resolve_font(str(style.get("fontFamily", "")), bold=weight, italic=italic)
+    line_height = float(style.get("lineHeight", 1.2) or 1.2)
+    align = style.get("textAlign", "left")
+
+    caption = f"{QR_VERIFICATION_TEXT}\n{number}" if number else QR_VERIFICATION_TEXT
+    # The caption always wraps and shrinks: the block is narrow by nature.
+    size, lines = _fit_size(caption, font, base_size, text_w, box_h, 0.0, True)
+
+    c.setFont(font, size)
+    c.setFillColor(_color(style.get("color")))
+    _draw_lines(
+        c,
+        lines,
+        x=text_x,
+        bottom=box_bottom,
+        width=text_w,
+        height=box_h,
+        size=size,
+        line_height=line_height,
+        align=align,
+    )
+
+
+def _overlay(
+    fields: list[dict[str, Any]],
+    snapshot: DiplomaSnapshot,
+    number: str,
+    verification_url: str | None,
+    w: float,
+    h: float,
+) -> bytes | None:
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=(w, h))
     drew = False
     for field in fields:
+        if field.get("type") == "qr_block":
+            _draw_qr_block(
+                c,
+                field,
+                number=number,
+                verification_url=verification_url,
+                page_w=w,
+                page_h=h,
+            )
+            drew = True
+            continue
         text = field_text(field, snapshot, number=number)
         if not text:
             continue
@@ -135,9 +260,17 @@ def _overlay(fields: list[dict[str, Any]], snapshot: DiplomaSnapshot, number: st
 
 
 def render_diploma_pdf(
-    *, fields: list[dict[str, Any]], backing_pdf: bytes, snapshot: DiplomaSnapshot, number: str
+    *,
+    fields: list[dict[str, Any]],
+    backing_pdf: bytes,
+    snapshot: DiplomaSnapshot,
+    number: str,
+    verification_url: str | None = None,
 ) -> bytes:
-    """Produce the diploma PDF bytes: the backing PDF with the fields overlaid."""
+    """Produce the diploma PDF bytes: the backing PDF with the fields overlaid.
+
+    ``verification_url`` is what a ``qr_block`` field encodes into its QR code;
+    without it the block prints its caption only."""
     # Clone into the writer first so pages are writer-attached before merging the
     # overlay (the reliable pypdf path).
     writer = PdfWriter(clone_from=PdfReader(BytesIO(backing_pdf)))
@@ -147,7 +280,7 @@ def render_diploma_pdf(
             continue
         width = float(page.mediabox.width)
         height = float(page.mediabox.height)
-        overlay = _overlay(page_fields, snapshot, number, width, height)
+        overlay = _overlay(page_fields, snapshot, number, verification_url, width, height)
         if overlay is not None:
             page.merge_page(PdfReader(BytesIO(overlay)).pages[0])
     out = BytesIO()

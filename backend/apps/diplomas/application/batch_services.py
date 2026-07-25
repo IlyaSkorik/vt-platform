@@ -121,7 +121,10 @@ class DiplomaBatchGenerationService:
 
                 if force or not diploma.print_pdf_path:
                     data = self._workspace.render(
-                        assets=assets, snapshot=diploma.snapshot, number=diploma.number
+                        assets=assets,
+                        snapshot=diploma.snapshot,
+                        number=diploma.number,
+                        verification_token=diploma.verification_token,
                     )
                     path = self._workspace.store_pdf(
                         competition_id=competition_id, number=diploma.number, data=data
