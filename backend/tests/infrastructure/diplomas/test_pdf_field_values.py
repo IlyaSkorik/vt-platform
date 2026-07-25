@@ -33,12 +33,12 @@ def test_simple_field_renders_despite_default_empty_config() -> None:
         "binding": "participant.display_name",
         "config": _DEFAULT_CONFIG,
     }
-    assert field_text(field, _snapshot(), number="000001") == "Иванов Иван"
+    assert field_text(field, _snapshot(), number="VT-2026-000001") == "Иванов Иван"
 
 
 def test_award_degree_is_skipped_when_absent() -> None:
     field = {"type": "award_degree", "binding": "award.degree", "config": _DEFAULT_CONFIG}
-    assert field_text(field, _snapshot(), number="000001") is None
+    assert field_text(field, _snapshot(), number="VT-2026-000001") is None
 
 
 def test_nomination_block_joins_its_parts() -> None:
@@ -47,14 +47,14 @@ def test_nomination_block_joins_its_parts() -> None:
         "binding": "nomination.block",
         "config": {"parts": ["title", "discipline"], "prefix": "Номинация:"},
     }
-    assert field_text(field, _snapshot(), number="000001") == "Номинация: Вокал, Эстрадный вокал"
+    assert field_text(field, _snapshot(), number="VT-2026-000001") == "Номинация: Вокал, Эстрадный вокал"
 
 
-def test_qr_block_prints_the_number() -> None:
+def test_qr_block_caption_is_the_number() -> None:
     field = {"type": "qr_block", "binding": "diploma.number", "config": _DEFAULT_CONFIG}
-    assert field_text(field, _snapshot(), number="000123") == "000123"
+    assert field_text(field, _snapshot(), number="VT-2026-000123") == "VT-2026-000123"
 
 
 def test_free_text_prints_its_own_value() -> None:
     field = {"type": "free_text", "binding": "", "value": "Поздравляем!", "config": _DEFAULT_CONFIG}
-    assert field_text(field, _snapshot(), number="000001") == "Поздравляем!"
+    assert field_text(field, _snapshot(), number="VT-2026-000001") == "Поздравляем!"

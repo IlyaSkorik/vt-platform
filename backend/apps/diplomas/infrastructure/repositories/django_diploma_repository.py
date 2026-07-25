@@ -1,10 +1,10 @@
 """Django adapter implementing the ``DiplomaRepository`` port.
 
-Numbers are sequential, zero-padded and permanent. They are derived as
-``max(number) + 1`` (fixed-width zero-padding makes the lexicographic max the
-numeric max), which is portable across PostgreSQL and the test SQLite. The
-unconditional unique constraint on ``number`` is the correctness backstop: a
-concurrent collision surfaces as an ``IntegrityError`` rather than a duplicate.
+Numbers are **not** minted here: they come from the dedicated, row-locked counter
+behind :class:`~apps.diplomas.infrastructure.repositories.DjangoDiplomaNumberSequence`
+(no ``max(number) + 1`` scan, which could not be made parallel-safe). The
+unconditional unique constraint on ``number`` remains the correctness backstop: a
+duplicate would surface as an ``IntegrityError`` rather than two equal numbers.
 """
 
 from __future__ import annotations
@@ -18,20 +18,12 @@ from apps.diplomas.infrastructure.models.base import uuid7
 
 __all__ = ["DjangoDiplomaRepository"]
 
-#: Zero-pad width for diploma numbers (six digits: 000001, 000002, …).
-_NUMBER_WIDTH = 6
-
 
 class DjangoDiplomaRepository:
     """Concrete ``DiplomaRepository`` over the Django ORM."""
 
     def new_id(self) -> uuid.UUID:
         return uuid7()
-
-    def next_number(self) -> str:
-        last = DiplomaModel.objects.order_by("-number").values_list("number", flat=True).first()
-        current = int(last) if last and last.isdigit() else 0
-        return f"{current + 1:0{_NUMBER_WIDTH}d}"
 
     def exists_for_submission(self, submission_id: uuid.UUID) -> bool:
         return DiplomaModel.objects.filter(

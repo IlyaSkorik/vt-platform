@@ -12,6 +12,7 @@ import uuid
 from datetime import datetime
 
 from apps.diplomas.application.interfaces import DiplomaRepository, DiplomaSnapshotSource
+from apps.diplomas.application.numbering import DiplomaNumberService
 from apps.diplomas.domain.entities import Diploma
 from apps.diplomas.domain.exceptions import (
     DiplomaNotFoundError,
@@ -29,13 +30,20 @@ _TOKEN_BYTES = 32
 class DiplomaService:
     """Create diplomas from submissions and read the registry."""
 
-    def __init__(self, *, repository: DiplomaRepository, snapshots: DiplomaSnapshotSource) -> None:
+    def __init__(
+        self,
+        *,
+        repository: DiplomaRepository,
+        snapshots: DiplomaSnapshotSource,
+        numbers: DiplomaNumberService,
+    ) -> None:
         self._repository = repository
         self._snapshots = snapshots
+        self._numbers = numbers
 
     def create_diploma(self, *, submission_id: uuid.UUID, template_id: uuid.UUID, now: datetime) -> Diploma:
         """Snapshot a submission into a new ``DRAFT`` diploma with a permanent
-        number and verification token.
+        number (``VT-<competition year>-<sequence>``) and verification token.
 
         A missing award degree is normal and does not block creation. A performance
         may have at most one diploma. Raises :class:`TemplateNotFoundError` /
@@ -51,7 +59,9 @@ class DiplomaService:
 
         diploma = Diploma.create(
             diploma_id=self._repository.new_id(),
-            number=self._repository.next_number(),
+            number=self._numbers.next_number(
+                competition_year=built.competition_year or now.year
+            ),
             verification_token=secrets.token_urlsafe(_TOKEN_BYTES),
             competition_id=built.competition_id,
             submission_id=submission_id,

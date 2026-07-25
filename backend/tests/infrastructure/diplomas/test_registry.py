@@ -13,6 +13,7 @@ import pytest
 from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.competitions.infrastructure.models.competition import CompetitionModel
 from apps.competitions.infrastructure.models.taxonomy import CategoryModel
+from apps.diplomas.application.numbering import DiplomaNumberService
 from apps.diplomas.application.services import DiplomaService
 from apps.diplomas.domain.exceptions import (
     DuplicateDiplomaError,
@@ -22,7 +23,10 @@ from apps.diplomas.domain.exceptions import (
 from apps.diplomas.domain.value_objects import DiplomaStatus
 from apps.diplomas.infrastructure.acl import DjangoDiplomaSnapshotSource
 from apps.diplomas.infrastructure.models import TemplateModel
-from apps.diplomas.infrastructure.repositories import DjangoDiplomaRepository
+from apps.diplomas.infrastructure.repositories import (
+    DjangoDiplomaNumberSequence,
+    DjangoDiplomaRepository,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -30,7 +34,11 @@ _NOW = datetime(2026, 5, 20, 12, 0, tzinfo=UTC)
 
 
 def _service() -> DiplomaService:
-    return DiplomaService(repository=DjangoDiplomaRepository(), snapshots=DjangoDiplomaSnapshotSource())
+    return DiplomaService(
+        repository=DjangoDiplomaRepository(),
+        snapshots=DjangoDiplomaSnapshotSource(),
+        numbers=DiplomaNumberService(sequence=DjangoDiplomaNumberSequence()),
+    )
 
 
 def _competition() -> CompetitionModel:
@@ -85,8 +93,9 @@ def test_numbers_are_unique_and_sequential() -> None:
     first = service.create_diploma(submission_id=_submission(competition).id, template_id=template.id, now=_NOW)
     second = service.create_diploma(submission_id=_submission(competition).id, template_id=template.id, now=_NOW)
 
-    assert first.number != second.number
-    assert int(second.number) == int(first.number) + 1
+    # VT-<competition year>-<six digits>, consecutive within the year.
+    assert first.number == "VT-2026-000001"
+    assert second.number == "VT-2026-000002"
     assert first.verification_token != second.verification_token
 
 

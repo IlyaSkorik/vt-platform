@@ -22,6 +22,7 @@ from apps.diplomas.application.interfaces import (
     PrintPackageWorkspace,
     TemplateAssets,
 )
+from apps.diplomas.application.numbering import DiplomaNumberService
 from apps.diplomas.domain.entities import Diploma
 from apps.diplomas.domain.exceptions import PrintTemplateNotReadyError
 
@@ -54,10 +55,12 @@ class DiplomaBatchGenerationService:
         repository: DiplomaRepository,
         snapshots: DiplomaSnapshotSource,
         workspace: PrintPackageWorkspace,
+        numbers: DiplomaNumberService,
     ) -> None:
         self._repository = repository
         self._snapshots = snapshots
         self._workspace = workspace
+        self._numbers = numbers
 
     def generate_print_package(
         self,
@@ -101,7 +104,9 @@ class DiplomaBatchGenerationService:
                         continue
                     diploma = Diploma.create(
                         diploma_id=self._repository.new_id(),
-                        number=self._repository.next_number(),
+                        number=self._numbers.next_number(
+                            competition_year=built.competition_year or now.year
+                        ),
                         verification_token=secrets.token_urlsafe(_TOKEN_BYTES),
                         competition_id=built.competition_id,
                         submission_id=submission_id,

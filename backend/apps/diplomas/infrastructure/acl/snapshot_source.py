@@ -91,6 +91,23 @@ def _taxonomy_name(model: Any, row_id: str | None) -> str | None:
     return _clean(name)
 
 
+def _competition_year(competition: CompetitionModel | None) -> int | None:
+    """The year the competition is *held* — the year printed in diploma numbers.
+
+    The competition's own start date first; the ``season`` label (e.g. "2026") as
+    a fallback for a competition whose dates are not set yet. Never the system
+    year: a 2026 competition keeps 2026 in its numbers however late it prints.
+    """
+    if competition is None:
+        return None
+    if competition.competition_start is not None:
+        return competition.competition_start.year
+    season = _clean(competition.season)
+    if season is not None and season.isdigit() and len(season) == 4:
+        return int(season)
+    return None
+
+
 def _organization(participant: dict[str, Any]) -> OrganizationSnapshot:
     registry_id = _clean(participant.get("registry_participant_id"))
     if registry_id is None:
@@ -168,4 +185,8 @@ class DjangoDiplomaSnapshotSource:
             # The jury result is unknown at creation — filled in later.
             award=AwardSnapshot(degree=None),
         )
-        return SnapshotBuild(competition_id=submission.competition_id, snapshot=snapshot)
+        return SnapshotBuild(
+            competition_id=submission.competition_id,
+            snapshot=snapshot,
+            competition_year=_competition_year(competition),
+        )

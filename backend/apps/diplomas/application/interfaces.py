@@ -14,6 +14,7 @@ from apps.diplomas.domain.entities import Diploma
 from apps.diplomas.domain.value_objects import DiplomaSnapshot
 
 __all__ = [
+    "DiplomaNumberSequence",
     "DiplomaRepository",
     "DiplomaSnapshotSource",
     "PrintPackageWorkspace",
@@ -24,10 +25,28 @@ __all__ = [
 
 @dataclass(frozen=True, slots=True)
 class SnapshotBuild:
-    """A built snapshot plus the competition it belongs to (for the diploma row)."""
+    """A built snapshot plus the competition it belongs to (for the diploma row).
+
+    ``competition_year`` is the year the competition is *held* — the year printed
+    in the diploma number. ``None`` when the competition has no dates yet; the
+    caller then falls back to the creation year.
+    """
 
     competition_id: uuid.UUID
     snapshot: DiplomaSnapshot
+    competition_year: int | None = None
+
+
+class DiplomaNumberSequence(Protocol):
+    """Counter port behind the diploma number.
+
+    Implementations must reserve values atomically (one transaction, row lock) so
+    that parallel workers never receive the same value for a scope.
+    """
+
+    def next_value(self, *, scope: str) -> int:
+        """Reserve and return the next counter value for ``scope`` (starts at 1)."""
+        ...
 
 
 class DiplomaRepository(Protocol):
@@ -35,10 +54,6 @@ class DiplomaRepository(Protocol):
 
     def new_id(self) -> uuid.UUID:
         """Mint a fresh, time-ordered diploma id."""
-        ...
-
-    def next_number(self) -> str:
-        """Reserve the next permanent, unique diploma number."""
         ...
 
     def exists_for_submission(self, submission_id: uuid.UUID) -> bool:

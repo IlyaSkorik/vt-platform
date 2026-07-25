@@ -12,6 +12,7 @@ from typing import Any
 
 from apps.competitions.infrastructure.models.taxonomy import CategoryModel
 from apps.diplomas.application.batch_services import DiplomaBatchGenerationService, NominationTarget
+from apps.diplomas.application.numbering import DiplomaNumberService
 from apps.diplomas.domain.exceptions import PrintJobNotFoundError, PrintTemplateNotReadyError
 from apps.diplomas.infrastructure.acl import DjangoDiplomaSnapshotSource
 from apps.diplomas.infrastructure.models import (
@@ -21,7 +22,10 @@ from apps.diplomas.infrastructure.models import (
     TemplateModel,
 )
 from apps.diplomas.infrastructure.pdf.workspace import DjangoPrintPackageWorkspace
-from apps.diplomas.infrastructure.repositories import DjangoDiplomaRepository
+from apps.diplomas.infrastructure.repositories import (
+    DjangoDiplomaNumberSequence,
+    DjangoDiplomaRepository,
+)
 from apps.diplomas.presentation.api.v1.diplomas import composition
 
 __all__ = [
@@ -38,6 +42,7 @@ def build_batch_service() -> DiplomaBatchGenerationService:
         repository=DjangoDiplomaRepository(),
         snapshots=DjangoDiplomaSnapshotSource(),
         workspace=DjangoPrintPackageWorkspace(),
+        numbers=DiplomaNumberService(sequence=DjangoDiplomaNumberSequence()),
     )
 
 

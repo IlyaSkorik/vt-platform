@@ -12,10 +12,14 @@ from typing import Any
 
 from django.utils import timezone
 
+from apps.diplomas.application.numbering import DiplomaNumberService
 from apps.diplomas.application.services import DiplomaService
 from apps.diplomas.domain.entities import Diploma
 from apps.diplomas.infrastructure.acl import DjangoDiplomaSnapshotSource
-from apps.diplomas.infrastructure.repositories import DjangoDiplomaRepository
+from apps.diplomas.infrastructure.repositories import (
+    DjangoDiplomaNumberSequence,
+    DjangoDiplomaRepository,
+)
 
 __all__ = ["create_diploma", "get_diploma", "list_diplomas"]
 
@@ -24,6 +28,7 @@ def _service() -> DiplomaService:
     return DiplomaService(
         repository=DjangoDiplomaRepository(),
         snapshots=DjangoDiplomaSnapshotSource(),
+        numbers=DiplomaNumberService(sequence=DjangoDiplomaNumberSequence()),
     )
 
 
