@@ -915,6 +915,5 @@
   "913": ".without_format",
   "914": "useRemoveDocumentMutation",
   "915": "useUpdateGeneralInformationMutation",
-  "916": "useUpdateCompetitionSettingsMutation",
   "918": "__init__.py"
 }
