@@ -11,12 +11,15 @@ from __future__ import annotations
 from rest_framework import serializers
 
 __all__ = [
+    "DOCUMENT_TYPES",
     "AssignmentResponseSerializer",
     "CreateAssignmentRequestSerializer",
     "CreateDiplomaRequestSerializer",
     "CreateTemplateRequestSerializer",
     "DiplomaResponseSerializer",
     "DiplomaSnapshotSerializer",
+    "GenerateDocumentsRequestSerializer",
+    "GenerateDocumentsResponseSerializer",
     "LayoutResponseSerializer",
     "PreviewApplicationSerializer",
     "PreviewBindingsSerializer",
@@ -159,15 +162,29 @@ class TemplateDocumentResponseSerializer(serializers.Serializer[dict[str, object
     uploadedAt = serializers.DateTimeField()
 
 
+#: The kinds of document a template can produce. Mirrors the domain
+#: ``DocumentType``; a test asserts the two stay in step.
+DOCUMENT_TYPES = ["DIPLOMA", "THANK_YOU"]
+
+
 class CreateTemplateRequestSerializer(serializers.Serializer[dict[str, object]]):
     """Body for creating a template in the library."""
 
     name = serializers.CharField(max_length=160)
+    # Required: a layout is authored for one kind of document (a diploma carries a
+    # degree field and a QR block, a thank-you letter carries neither), so a
+    # template with no declared kind could not be safely rendered as anything.
+    type = serializers.ChoiceField(choices=DOCUMENT_TYPES)
     description = serializers.CharField(max_length=500, required=False, allow_blank=True, default="")
 
 
 class CreateAssignmentRequestSerializer(serializers.Serializer[dict[str, object]]):
-    """Body for creating a template assignment."""
+    """Body for creating a template assignment.
+
+    Unchanged from the single-slot era: which slot of the nomination the assignment
+    fills is derived from the template's own ``type``, so a mismatch is not
+    expressible.
+    """
 
     competitionId = serializers.UUIDField()
     categoryId = serializers.UUIDField()
@@ -175,18 +192,19 @@ class CreateAssignmentRequestSerializer(serializers.Serializer[dict[str, object]
 
 
 class TemplateResponseSerializer(serializers.Serializer[dict[str, object]]):
-    """A diploma template in the library."""
+    """A document template in the library."""
 
     id = serializers.UUIDField()
     name = serializers.CharField()
     description = serializers.CharField(allow_blank=True)
+    type = serializers.ChoiceField(choices=DOCUMENT_TYPES)
     usageCount = serializers.IntegerField()
     document = TemplateDocumentResponseSerializer(allow_null=True, required=False)
     updatedAt = serializers.DateTimeField()
 
 
 class AssignmentResponseSerializer(serializers.Serializer[dict[str, object]]):
-    """A template assignment (competition + nomination -> template)."""
+    """A template assignment (competition + nomination + kind -> template)."""
 
     id = serializers.UUIDField()
     competitionId = serializers.UUIDField()
@@ -195,8 +213,34 @@ class AssignmentResponseSerializer(serializers.Serializer[dict[str, object]]):
     nomination = serializers.CharField(allow_null=True)
     templateId = serializers.UUIDField()
     templateName = serializers.CharField()
+    #: Which document slot of the nomination this assignment fills.
+    documentType = serializers.ChoiceField(choices=DOCUMENT_TYPES)
     createdAt = serializers.DateTimeField()
     updatedAt = serializers.DateTimeField()
+
+
+class GenerateDocumentsRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """Body for generating non-registry documents for chosen nominations.
+
+    Diplomas are **not** generated here — they go through the numbered
+    print-package endpoint, which this does not touch.
+    """
+
+    competitionId = serializers.UUIDField()
+    categoryIds = serializers.ListField(child=serializers.UUIDField(), allow_empty=False)
+    # Only unnumbered, unverifiable kinds are accepted; DIPLOMA is rejected.
+    documentType = serializers.ChoiceField(choices=["THANK_YOU"])
+    # Re-render even for performances that already have this document.
+    force = serializers.BooleanField(required=False, default=False)
+
+
+class GenerateDocumentsResponseSerializer(serializers.Serializer[dict[str, object]]):
+    """Per-nomination outcome of a generation run."""
+
+    documentType = serializers.ChoiceField(choices=DOCUMENT_TYPES)
+    created = serializers.IntegerField()
+    regenerated = serializers.IntegerField()
+    nominations = serializers.IntegerField()
 
 
 # --- Diploma registry -------------------------------------------------------

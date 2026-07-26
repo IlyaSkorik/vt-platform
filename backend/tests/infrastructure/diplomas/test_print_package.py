@@ -39,7 +39,7 @@ def _backing_pdf() -> bytes:
 
 
 def _template_with_pdf(name: str) -> TemplateModel:
-    template = TemplateModel.objects.create(name=name)
+    template = TemplateModel.objects.create(type="DIPLOMA", name=name)
     key = default_storage.save(
         f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf())
     )
@@ -143,7 +143,7 @@ def test_summary_breaks_down_by_nomination() -> None:
     theatre = CategoryModel.objects.create(competition=competition, name="Театр")
     _assign(competition, vocals, _template_with_pdf("Вокал A4"))
     # theatre has a template assigned but no uploaded PDF → not ready.
-    _assign(competition, theatre, TemplateModel.objects.create(name="Театр (без PDF)"))
+    _assign(competition, theatre, TemplateModel.objects.create(type="DIPLOMA", name="Театр (без PDF)"))
     # dance has submissions but no template assigned.
     _submission(competition, "Иванов Иван", vocals)
     _submission(competition, "Сидоров С", vocals)

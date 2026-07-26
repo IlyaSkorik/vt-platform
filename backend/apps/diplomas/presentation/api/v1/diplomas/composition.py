@@ -55,6 +55,7 @@ def _template_json(row: TemplateModel, usage: int, document: TemplateDocumentMod
         "id": str(row.id),
         "name": row.name,
         "description": row.description,
+        "type": row.type,
         "usageCount": usage,
         "document": _document_json(document) if document is not None else None,
         "updatedAt": row.updated_at,
@@ -72,20 +73,33 @@ def _current_documents_by_template(template_ids: list[str]) -> dict[str, Templat
     return current
 
 
-def list_templates() -> list[dict[str, Any]]:
-    """Every template in the library, with usage count and current PDF (if any)."""
+def list_templates(*, document_type: str | None = None) -> list[dict[str, Any]]:
+    """Every template in the library, with usage count and current PDF (if any).
+
+    Narrowed to one kind when ``document_type`` is given — which is how a
+    nomination's thank-you slot offers only ``THANK_YOU`` templates.
+    """
+    query = TemplateModel.objects.filter(deleted_at__isnull=True)
+    if document_type:
+        query = query.filter(type=document_type)
     rows = list(
-        TemplateModel.objects.filter(deleted_at__isnull=True)
-        .annotate(usage=Count("assignments", filter=Q(assignments__deleted_at__isnull=True)))
-        .order_by("name")
+        query.annotate(usage=Count("assignments", filter=Q(assignments__deleted_at__isnull=True))).order_by(
+            "type", "name"
+        )
     )
     documents = _current_documents_by_template([str(row.id) for row in rows])
     return [_template_json(row, row.usage, documents.get(str(row.id))) for row in rows]
 
 
-def create_template(*, name: str, description: str = "") -> dict[str, Any]:
-    """Add a new, self-contained template to the library (created by the organizer)."""
-    row = TemplateModel.objects.create(name=name.strip(), description=description.strip())
+def create_template(*, name: str, document_type: str, description: str = "") -> dict[str, Any]:
+    """Add a new, self-contained template to the library (created by the organizer).
+
+    ``document_type`` is required: a layout is authored for one kind of document,
+    so a template with no declared kind could not be safely rendered as anything.
+    """
+    row = TemplateModel.objects.create(
+        name=name.strip(), description=description.strip(), type=document_type
+    )
     return _template_json(row, 0, None)
 
 
@@ -208,6 +222,7 @@ def list_assignments() -> list[dict[str, Any]]:
             "nomination": category_name.get(str(row.category_id)),
             "templateId": str(row.template_id),
             "templateName": row.template.name,
+            "documentType": row.document_type,
             "createdAt": row.created_at,
             "updatedAt": row.updated_at,
         }
@@ -216,23 +231,39 @@ def list_assignments() -> list[dict[str, Any]]:
 
 
 def create_assignment(*, competition_id: str, category_id: str, template_id: str) -> dict[str, Any]:
-    """Bind a template to a (competition, nomination) pair.
+    """Bind a template to one document slot of a (competition, nomination) pair.
+
+    Which slot it fills is **derived from the template's own type** rather than
+    passed in: a ``THANK_YOU`` template can only ever be a nomination's thank-you
+    template. That makes a slot/template mismatch unrepresentable here, and keeps
+    the request shape unchanged from the single-slot era.
 
     Raises :class:`TemplateNotFound` for an unknown template and
-    :class:`AssignmentConflict` when the nomination is already assigned.
+    :class:`AssignmentConflict` when the nomination already has a template of that
+    kind — a diploma assignment therefore no longer blocks a thank-you assignment.
     """
-    if not TemplateModel.objects.filter(id=template_id, deleted_at__isnull=True).exists():
+    template = TemplateModel.objects.filter(id=template_id, deleted_at__isnull=True).only("type").first()
+    if template is None:
         raise TemplateNotFoundError("Template was not found.")
-    if AssignmentModel.objects.filter(competition_id=competition_id, category_id=category_id, deleted_at__isnull=True).exists():
-        raise AssignmentConflictError("This nomination already has a template assigned.")
+    document_type = template.type
+    if AssignmentModel.objects.filter(
+        competition_id=competition_id,
+        category_id=category_id,
+        document_type=document_type,
+        deleted_at__isnull=True,
+    ).exists():
+        raise AssignmentConflictError("This nomination already has a template of that type assigned.")
     try:
         row = AssignmentModel.objects.create(
             competition_id=competition_id,
             category_id=category_id,
             template_id=template_id,
+            document_type=document_type,
         )
     except IntegrityError as exc:  # pragma: no cover - unique race
-        raise AssignmentConflictError("This nomination already has a template assigned.") from exc
+        raise AssignmentConflictError(
+            "This nomination already has a template of that type assigned."
+        ) from exc
     return list_assignments_by_id(str(row.id))
 
 

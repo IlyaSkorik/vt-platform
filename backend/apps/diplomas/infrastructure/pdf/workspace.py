@@ -63,17 +63,30 @@ class DjangoPrintPackageWorkspace:
         verification_token: str,
     ) -> bytes:
         # The public verification domain is configuration, so the URL is built here
-        # (infrastructure) rather than passed down from the application service.
+        # (infrastructure) rather than passed down from the application service. An
+        # empty token means an unverifiable kind — no URL, so the renderer's QR
+        # block prints nothing even if one were left in the layout.
         return render_diploma_pdf(
             fields=assets.fields,
             backing_pdf=assets.backing_pdf,
             snapshot=snapshot,
             number=number,
-            verification_url=verification_url(verification_token),
+            verification_url=verification_url(verification_token) if verification_token else None,
         )
 
     def store_pdf(self, *, competition_id: uuid.UUID, number: str, data: bytes) -> str:
         key = f"diplomas/print/{competition_id}/{number}.pdf"
+        if default_storage.exists(key):
+            default_storage.delete(key)
+        default_storage.save(key, ContentFile(data))
+        return _media_path(key)
+
+    def store_document_pdf(
+        self, *, competition_id: uuid.UUID, document_type: str, submission_id: uuid.UUID, data: bytes
+    ) -> str:
+        # Keyed by kind and performance: these documents have no number, and they
+        # stay out of the diploma print tree so the two are never bundled together.
+        key = f"diplomas/documents/{competition_id}/{document_type.lower()}/{submission_id}.pdf"
         if default_storage.exists(key):
             default_storage.delete(key)
         default_storage.save(key, ContentFile(data))

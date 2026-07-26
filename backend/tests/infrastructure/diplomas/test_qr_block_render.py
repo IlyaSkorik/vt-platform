@@ -275,7 +275,7 @@ class TestPrintPackageCycle:
             competition_start=date(2026, 5, 15),
         )
         category = CategoryModel.objects.create(competition=competition, name="Вокал")
-        template = TemplateModel.objects.create(name="Вокал A4")
+        template = TemplateModel.objects.create(type="DIPLOMA", name="Вокал A4")
         key = default_storage.save(
             f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf())
         )

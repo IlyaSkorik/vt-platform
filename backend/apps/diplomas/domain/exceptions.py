@@ -16,7 +16,9 @@ __all__ = [
     "PrintJobNotFoundError",
     "PrintTemplateNotReadyError",
     "SubmissionNotFoundError",
+    "TemplateNotAssignedError",
     "TemplateNotFoundError",
+    "TemplateTypeMismatchError",
 ]
 
 
@@ -72,3 +74,20 @@ class PrintJobNotFoundError(DiplomaError):
     """Raised when a referenced print job does not exist."""
 
     code = "print_job_not_found"
+
+
+class TemplateTypeMismatchError(DiplomaError):
+    """Raised when a template is assigned to the wrong kind of document slot.
+
+    A nomination's thank-you slot takes a ``THANK_YOU`` template and nothing else —
+    otherwise a diploma layout (degree field, QR block) would be rendered as a
+    courtesy letter.
+    """
+
+    code = "template_type_mismatch"
+
+
+class TemplateNotAssignedError(DiplomaError):
+    """Raised when generation is requested for a nomination with no template of that kind."""
+
+    code = "template_not_assigned"

@@ -100,7 +100,7 @@ def test_counter_is_independent_of_the_diplomas_table() -> None:
     from apps.diplomas.infrastructure.models import DiplomaModel
 
     competition = _competition(start=date(2026, 5, 15))
-    template = TemplateModel.objects.create(name="Шаблон")
+    template = TemplateModel.objects.create(type="DIPLOMA", name="Шаблон")
     service = _service()
     first = service.create_diploma(
         submission_id=_submission(competition).id, template_id=template.id, now=_NOW
@@ -120,7 +120,7 @@ def test_counter_is_independent_of_the_diplomas_table() -> None:
 
 def test_number_carries_the_competition_year_not_the_system_year() -> None:
     competition = _competition(start=date(2026, 5, 15))
-    template = TemplateModel.objects.create(name="Шаблон")
+    template = TemplateModel.objects.create(type="DIPLOMA", name="Шаблон")
 
     diploma = _service().create_diploma(
         submission_id=_submission(competition).id, template_id=template.id, now=_NOW
@@ -132,7 +132,7 @@ def test_number_carries_the_competition_year_not_the_system_year() -> None:
 
 def test_year_falls_back_to_the_season_when_dates_are_unset() -> None:
     competition = _competition(start=None, season="2028")
-    template = TemplateModel.objects.create(name="Шаблон")
+    template = TemplateModel.objects.create(type="DIPLOMA", name="Шаблон")
 
     diploma = _service().create_diploma(
         submission_id=_submission(competition).id, template_id=template.id, now=_NOW
@@ -143,7 +143,7 @@ def test_year_falls_back_to_the_season_when_dates_are_unset() -> None:
 
 def test_year_falls_back_to_the_creation_year_without_dates_or_season() -> None:
     competition = _competition(start=None, season="сезон 2029/2030")
-    template = TemplateModel.objects.create(name="Шаблон")
+    template = TemplateModel.objects.create(type="DIPLOMA", name="Шаблон")
 
     diploma = _service().create_diploma(
         submission_id=_submission(competition).id, template_id=template.id, now=_NOW

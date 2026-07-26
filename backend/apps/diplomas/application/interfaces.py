@@ -10,16 +10,21 @@ import uuid
 from dataclasses import dataclass
 from typing import Protocol
 
+from apps.diplomas.domain.document_types import DocumentType
 from apps.diplomas.domain.entities import Diploma
+from apps.diplomas.domain.issued_document import IssuedDocument
 from apps.diplomas.domain.value_objects import DiplomaSnapshot
 
 __all__ = [
+    "AssignedTemplate",
     "DiplomaNumberSequence",
     "DiplomaRepository",
     "DiplomaSnapshotSource",
+    "IssuedDocumentRepository",
     "PrintPackageWorkspace",
     "SnapshotBuild",
     "TemplateAssets",
+    "TemplateAssignments",
 ]
 
 
@@ -104,6 +109,60 @@ class DiplomaSnapshotSource(Protocol):
 
 
 @dataclass(frozen=True, slots=True)
+class AssignedTemplate:
+    """The template filling one document slot of a nomination, with its own type.
+
+    ``template_type`` is the template's declared type, which the caller checks
+    against the requested slot — the two are stored separately and must agree.
+    """
+
+    template_id: uuid.UUID
+    template_type: DocumentType
+
+
+class TemplateAssignments(Protocol):
+    """Read port over the assignment table, narrowed to one document kind.
+
+    Keeps the generation service free of the assignment's persistence shape: it
+    asks "which template fills this nomination's thank-you slot?" and gets an id.
+    """
+
+    def for_nomination(
+        self, *, competition_id: uuid.UUID, category_id: uuid.UUID, document_type: DocumentType
+    ) -> AssignedTemplate | None:
+        """The template assigned to this nomination for this kind, or None."""
+        ...
+
+
+class IssuedDocumentRepository(Protocol):
+    """Persistence port for the ``IssuedDocument`` aggregate."""
+
+    def new_id(self) -> uuid.UUID:
+        """Mint a fresh, time-ordered document id."""
+        ...
+
+    def add(self, document: IssuedDocument) -> None:
+        """Persist a new document."""
+        ...
+
+    def update(self, document: IssuedDocument) -> None:
+        """Persist changes to an existing document."""
+        ...
+
+    def get_for_submission(
+        self, submission_id: uuid.UUID, document_type: DocumentType
+    ) -> IssuedDocument | None:
+        """The live document of this kind for a performance, or None."""
+        ...
+
+    def list_by_competition(
+        self, competition_id: uuid.UUID, document_type: DocumentType
+    ) -> list[IssuedDocument]:
+        """Every live document of this kind for a competition, newest first."""
+        ...
+
+
+@dataclass(frozen=True, slots=True)
 class TemplateAssets:
     """A template's print inputs: its placed fields and its backing PDF bytes."""
 
@@ -131,11 +190,22 @@ class PrintPackageWorkspace(Protocol):
 
         ``verification_token`` is the diploma's own token; the adapter turns it
         into the verification URL behind the QR code (the public domain is
-        infrastructure configuration, not application knowledge)."""
+        infrastructure configuration, not application knowledge). An **empty**
+        token means the document is not verifiable, so no URL is built at all."""
         ...
 
     def store_pdf(self, *, competition_id: uuid.UUID, number: str, data: bytes) -> str:
         """Persist a diploma PDF; return its ``/media/…`` path."""
+        ...
+
+    def store_document_pdf(
+        self, *, competition_id: uuid.UUID, document_type: str, submission_id: uuid.UUID, data: bytes
+    ) -> str:
+        """Persist a non-diploma document's PDF; return its ``/media/…`` path.
+
+        Keyed by kind and performance rather than by number, because these
+        documents have no number. Separate from :meth:`store_pdf` so thank-you
+        letters do not land in the diploma print tree."""
         ...
 
     def store_zip(self, *, competition_id: uuid.UUID, items: list[tuple[str, str]]) -> str:

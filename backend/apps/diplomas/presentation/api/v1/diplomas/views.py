@@ -20,13 +20,22 @@ from rest_framework.views import APIView
 
 from apps.diplomas.domain.exceptions import DiplomaError
 from apps.diplomas.presentation.api.v1 import problems
-from apps.diplomas.presentation.api.v1.diplomas import composition, preview, print_package, registry
+from apps.diplomas.presentation.api.v1.diplomas import (
+    composition,
+    documents,
+    preview,
+    print_package,
+    registry,
+)
 from apps.diplomas.presentation.api.v1.diplomas.serializers import (
+    DOCUMENT_TYPES,
     AssignmentResponseSerializer,
     CreateAssignmentRequestSerializer,
     CreateDiplomaRequestSerializer,
     CreateTemplateRequestSerializer,
     DiplomaResponseSerializer,
+    GenerateDocumentsRequestSerializer,
+    GenerateDocumentsResponseSerializer,
     LayoutResponseSerializer,
     PreviewApplicationSerializer,
     PreviewBindingsSerializer,
@@ -51,15 +60,29 @@ class _StaffView(APIView):
 
 
 class DiplomaTemplatesView(_StaffView):
-    """The reusable template library."""
+    """The reusable template library, optionally narrowed to one document kind."""
 
     @extend_schema(
         tags=[_TAG],
         operation_id="diplomas_templates_list",
+        parameters=[
+            OpenApiParameter(
+                name="type",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                enum=DOCUMENT_TYPES,
+                description="Return only templates of this kind (a nomination's thank-you slot uses this).",
+            )
+        ],
         responses={200: TemplateResponseSerializer(many=True)},
     )
     def get(self, request: Request) -> Response:
-        return problems.envelope(request, composition.list_templates())
+        document_type = (request.query_params.get("type") or "").strip()
+        if document_type and document_type not in DOCUMENT_TYPES:
+            return problems.validation_problem(
+                {"type": ["Неизвестный тип документа."]}, instance=request.path, request=request
+            )
+        return problems.envelope(request, composition.list_templates(document_type=document_type or None))
 
     @extend_schema(
         tags=[_TAG],
@@ -74,6 +97,7 @@ class DiplomaTemplatesView(_StaffView):
         data = serializer.validated_data
         template = composition.create_template(
             name=str(data["name"]),
+            document_type=str(data["type"]),
             description=str(data.get("description") or ""),
         )
         return problems.envelope(request, template, status=201)
@@ -355,6 +379,41 @@ class DiplomaPrintPackageView(_StaffView):
         except DiplomaError as exc:
             return problems.diploma_problem(exc, instance=request.path, request=request)
         return problems.envelope(request, job, status=202)
+
+
+class DocumentGenerationView(_StaffView):
+    """Generate non-registry documents (thank-you letters) for chosen nominations.
+
+    Each nomination is generated from its own assigned template of that kind, so
+    «Вокал» may print a blue thank-you while «Хореография» prints a gold one.
+    Diplomas are not generated here — they keep the numbered print-package path,
+    which this endpoint does not touch.
+
+    Synchronous: there is no numbering to serialize and no ZIP to bundle, so the
+    run completes in the request.
+    """
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="diplomas_generate_documents",
+        request=GenerateDocumentsRequestSerializer,
+        responses={200: GenerateDocumentsResponseSerializer},
+    )
+    def post(self, request: Request) -> Response:
+        serializer = GenerateDocumentsRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return problems.validation_problem(serializer.errors, instance=request.path, request=request)
+        data = serializer.validated_data
+        try:
+            summary = documents.generate_documents(
+                competition_id=data["competitionId"],
+                category_ids=list(data["categoryIds"]),
+                document_type=str(data["documentType"]),
+                force=bool(data.get("force", False)),
+            )
+        except DiplomaError as exc:
+            return problems.diploma_problem(exc, instance=request.path, request=request)
+        return problems.envelope(request, summary)
 
 
 class DiplomaPrintJobDetailView(_StaffView):

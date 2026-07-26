@@ -71,7 +71,7 @@ def _diploma() -> Diploma:
     competition = _competition()
     category = CategoryModel.objects.create(competition=competition, name="Вокал")
     submission = _submission(competition, category=category)
-    template = TemplateModel.objects.create(name="Шаблон")
+    template = TemplateModel.objects.create(type="DIPLOMA", name="Шаблон")
     return _service().create_diploma(submission_id=submission.id, template_id=template.id, now=_NOW)
 
 

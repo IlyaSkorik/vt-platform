@@ -24,7 +24,7 @@ pytestmark = pytest.mark.django_db
 
 
 def _template(name: str = "Диплом очный") -> TemplateModel:
-    return TemplateModel.objects.create(name=name)
+    return TemplateModel.objects.create(type="DIPLOMA", name=name)
 
 
 def test_create_and_list_assignment() -> None:
@@ -259,9 +259,12 @@ def test_set_document_unknown_template_raises() -> None:
 def test_create_template_starts_empty_library() -> None:
     assert composition.list_templates() == []
 
-    created = composition.create_template(name="Диплом заочный", description="")
+    created = composition.create_template(
+        name="Диплом заочный", document_type="DIPLOMA", description=""
+    )
 
     assert created["name"] == "Диплом заочный"
+    assert created["type"] == "DIPLOMA"
     assert created["usageCount"] == 0
     assert [item["id"] for item in composition.list_templates()] == [created["id"]]
 

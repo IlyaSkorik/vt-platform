@@ -15,6 +15,7 @@ from .views import (
     DiplomaTemplateDocumentView,
     DiplomaTemplateLayoutView,
     DiplomaTemplatesView,
+    DocumentGenerationView,
 )
 
 app_name = "diplomas"
@@ -62,6 +63,13 @@ urlpatterns = [
         "staff/diplomas/templates/<str:template_id>/layout",
         DiplomaTemplateLayoutView.as_view(),
         name="template-layout",
+    ),
+    # Non-registry documents (thank-you letters today), generated per nomination
+    # from that nomination's own template of the kind.
+    path(
+        "staff/diplomas/documents/generate",
+        DocumentGenerationView.as_view(),
+        name="generate-documents",
     ),
     path("staff/diplomas/assignments", DiplomaAssignmentsView.as_view(), name="assignments"),
     path(
