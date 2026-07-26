@@ -29,7 +29,7 @@ export function DiplomaVerifyPage(): React.JSX.Element {
             belongs with the facts it describes, not in a header that also sits
             above a not-found result. */}
         <p className="mx-auto max-w-lg text-balance text-muted-foreground text-sm">
-          Сервис проверки документов организации «{APP_NAME}».
+          Сервис проверки документов платформы «{APP_NAME}».
         </p>
       </header>
       <DiplomaVerification verificationToken={verificationToken} />

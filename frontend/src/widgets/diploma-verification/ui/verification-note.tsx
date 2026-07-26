@@ -19,7 +19,7 @@ export function VerificationNote({ checkedAt }: { checkedAt: Date }): React.JSX.
       <ShieldCheck className="size-5 shrink-0 text-muted-foreground sm:mt-0.5" aria-hidden="true" />
       <div className="space-y-2">
         <p className="text-balance text-muted-foreground text-sm">
-          Подлинность документа проверена через официальный реестр организации «{APP_NAME}».
+          Подлинность документа проверена через официальный реестр платформы «{APP_NAME}».
         </p>
         <p className="text-muted-foreground/80 text-xs uppercase tracking-wider">
           Дата проверки{" "}
