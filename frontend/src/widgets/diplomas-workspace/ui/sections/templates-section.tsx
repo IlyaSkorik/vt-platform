@@ -3,12 +3,16 @@ import { useState } from "react";
 import { generatePath, Link } from "react-router";
 import {
   type DiplomaTemplate,
+  DOCUMENT_TYPE_OPTIONS,
+  type DocumentType,
+  documentTypeConfig,
   useCreateTemplateMutation,
   useDiplomaTemplates,
 } from "@/features/diplomas";
 import { ApiError } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -23,6 +27,7 @@ import {
   DialogTrigger,
   EmptyState,
   Input,
+  Select,
   Skeleton,
   Textarea,
   toast,
@@ -42,6 +47,9 @@ function CreateTemplateDialog({
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  // Defaults to the diploma: it is the kind an organizer reaches for most, and the
+  // one every pre-existing template is.
+  const [type, setType] = useState<DocumentType>("DIPLOMA");
   const createTemplate = useCreateTemplateMutation();
 
   function handleOpenChange(next: boolean): void {
@@ -49,6 +57,7 @@ function CreateTemplateDialog({
     if (!next) {
       setName("");
       setDescription("");
+      setType("DIPLOMA");
     }
   }
 
@@ -58,7 +67,7 @@ function CreateTemplateDialog({
       return;
     }
     try {
-      await createTemplate.mutateAsync({ name: trimmed, description: description.trim() });
+      await createTemplate.mutateAsync({ name: trimmed, type, description: description.trim() });
       toast.success("Шаблон создан");
       handleOpenChange(false);
     } catch (error) {
@@ -94,6 +103,16 @@ function CreateTemplateDialog({
             value={name}
             onChange={(event) => setName(event.target.value)}
           />
+          {/* The kind is fixed at creation: it decides which nomination slot the
+              template can fill, and what the renderer will and will not draw. */}
+          <Select
+            label="Тип документа"
+            required
+            options={DOCUMENT_TYPE_OPTIONS}
+            value={type}
+            onValueChange={(next) => setType(next as DocumentType)}
+            description={documentTypeConfig(type).hint}
+          />
           <Textarea
             label="Описание"
             placeholder="Необязательно: короткое пояснение для команды."
@@ -101,10 +120,6 @@ function CreateTemplateDialog({
             value={description}
             onChange={(event) => setDescription(event.target.value)}
           />
-          <p className="text-muted-foreground text-xs">
-            Загрузка PDF и визуальный конструктор появятся позже — сейчас достаточно задать
-            название.
-          </p>
         </div>
         <DialogFooter>
           <DialogClose asChild>
@@ -121,10 +136,18 @@ function CreateTemplateDialog({
 
 function TemplateCard({ template }: { template: DiplomaTemplate }): React.JSX.Element {
   const updated = formatDate(template.updatedAt);
+  const kind = documentTypeConfig(template.type);
   return (
     <Card className="flex flex-col">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-base">{template.name}</CardTitle>
+        <div className="flex items-start justify-between gap-2">
+          <CardTitle className="text-base">{template.name}</CardTitle>
+          {/* The kind is the card's most consequential fact — it decides which
+              nomination slot the template can fill. */}
+          <Badge variant={kind.tone} size="sm" className="shrink-0">
+            {kind.label}
+          </Badge>
+        </div>
         {template.description ? (
           <p className="line-clamp-2 text-muted-foreground text-sm">{template.description}</p>
         ) : null}
@@ -179,8 +202,8 @@ export function TemplatesSection(): React.JSX.Element {
     return (
       <EmptyState
         icon={<LayoutTemplate className="size-6" aria-hidden="true" />}
-        title="У вас пока нет шаблонов дипломов"
-        description="Создайте первый шаблон, чтобы начать работу с генерацией дипломов."
+        title="У вас пока нет шаблонов документов"
+        description="Создайте первый шаблон — диплома или благодарности — чтобы начать работу с генерацией."
         action={<CreateTemplateDialog />}
       />
     );

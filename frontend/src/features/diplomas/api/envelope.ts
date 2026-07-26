@@ -1,6 +1,7 @@
 import type {
   AssignmentResponse,
   DiplomaResponse,
+  GenerateDocumentsResponse,
   LayoutResponse,
   PreviewApplication,
   PreviewBindings,
@@ -60,3 +61,6 @@ export const unwrapPrintJob = (body: unknown): PrintJobResponse =>
 
 export const unwrapPrintSummary = (body: unknown): PrintPackageSummaryResponse =>
   unwrapItem<PrintPackageSummaryResponse>(body);
+
+export const unwrapGeneratedDocuments = (body: unknown): GenerateDocumentsResponse =>
+  unwrapItem<GenerateDocumentsResponse>(body);

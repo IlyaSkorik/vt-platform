@@ -3,6 +3,9 @@ import { useCallback, useMemo, useState } from "react";
 import { useCompetitionDetail, useCompetitionsList } from "@/features/competitions";
 import {
   type DiplomaAssignment,
+  DOCUMENT_TYPE_OPTIONS,
+  type DocumentType,
+  documentTypeConfig,
   useCreateAssignmentMutation,
   useDeleteAssignmentMutation,
   useDiplomaAssignments,
@@ -10,6 +13,7 @@ import {
 } from "@/features/diplomas";
 import { ApiError } from "@/shared/api";
 import {
+  Badge,
   Button,
   type ColumnDef,
   DataTable,
@@ -31,6 +35,7 @@ function CreateAssignmentDialog(): React.JSX.Element {
   const [open, setOpen] = useState(false);
   const [competitionId, setCompetitionId] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [documentType, setDocumentType] = useState<DocumentType>("DIPLOMA");
   const [templateId, setTemplateId] = useState("");
 
   const competitionsQuery = useCompetitionsList();
@@ -50,18 +55,20 @@ function CreateAssignmentDialog(): React.JSX.Element {
       })),
     [competitionDetailQuery.data],
   );
+  // Only templates of the chosen kind can fill that slot — the backend derives the
+  // slot from the template's own type, so offering the others would be a trap.
   const templateOptions: SelectOption[] = useMemo(
     () =>
-      (templatesQuery.data ?? []).map((template) => ({
-        value: template.id,
-        label: template.name,
-      })),
-    [templatesQuery.data],
+      (templatesQuery.data ?? [])
+        .filter((template) => template.type === documentType)
+        .map((template) => ({ value: template.id, label: template.name })),
+    [templatesQuery.data, documentType],
   );
 
   function reset(): void {
     setCompetitionId("");
     setCategoryId("");
+    setDocumentType("DIPLOMA");
     setTemplateId("");
   }
 
@@ -82,7 +89,9 @@ function CreateAssignmentDialog(): React.JSX.Element {
       handleOpenChange(false);
     } catch (error) {
       if (error instanceof ApiError && error.isConflict) {
-        toast.error("Для этой номинации уже назначен шаблон.");
+        // Per kind: a diploma assignment does not block a thank-you assignment.
+        const slot = documentTypeConfig(documentType).slotLabel.toLocaleLowerCase("ru-RU");
+        toast.error(`Для этой номинации уже назначен ${slot}.`);
         return;
       }
       const message =
@@ -129,13 +138,31 @@ function CreateAssignmentDialog(): React.JSX.Element {
             onValueChange={setCategoryId}
             disabled={!competitionId || competitionDetailQuery.isLoading}
           />
+          {/* The slot the assignment fills. A nomination has one of each, so this
+              chooses which of its slots is being set. */}
           <Select
-            label="Шаблон"
+            label="Тип документа"
             required
-            placeholder="Выберите шаблон"
+            options={DOCUMENT_TYPE_OPTIONS}
+            value={documentType}
+            onValueChange={(value) => {
+              setDocumentType(value as DocumentType);
+              // A template of the previous kind cannot fill this slot.
+              setTemplateId("");
+            }}
+          />
+          <Select
+            label={documentTypeConfig(documentType).slotLabel}
+            required
+            placeholder={
+              templateOptions.length > 0
+                ? "Выберите шаблон"
+                : `Нет шаблонов типа «${documentTypeConfig(documentType).label}»`
+            }
             options={templateOptions}
             value={templateId}
             onValueChange={setTemplateId}
+            disabled={templateOptions.length === 0}
           />
         </div>
         <DialogFooter>
@@ -184,6 +211,18 @@ export function AssignmentsSection(): React.JSX.Element {
         cell: ({ row }) => row.original.nomination ?? "—",
       },
       {
+        accessorKey: "documentType",
+        header: "Тип документа",
+        cell: ({ row }) => {
+          const kind = documentTypeConfig(row.original.documentType);
+          return (
+            <Badge variant={kind.tone} size="sm">
+              {kind.label}
+            </Badge>
+          );
+        },
+      },
+      {
         accessorKey: "templateName",
         header: "Шаблон",
         cell: ({ row }) => (
@@ -224,7 +263,8 @@ export function AssignmentsSection(): React.JSX.Element {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
         <p className="text-muted-foreground text-sm">
-          Здесь задаётся, какой шаблон используется для конкретного конкурса и номинации.
+          Каждая номинация имеет отдельный шаблон диплома и шаблон благодарности — так у разных
+          номинаций могут быть разные дизайны.
         </p>
         <CreateAssignmentDialog />
       </div>

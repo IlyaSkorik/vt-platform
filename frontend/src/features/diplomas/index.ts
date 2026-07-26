@@ -15,6 +15,7 @@ export {
   useDiplomaRegistry,
   useDiplomaTemplate,
   useDiplomaTemplates,
+  useGenerateDocumentsMutation,
   usePreviewApplications,
   usePreviewBindings,
   usePrintJob,
@@ -76,6 +77,14 @@ export {
   createBindingResolver,
   resolveFieldDisplay,
 } from "./model/display-value";
+export {
+  DOCUMENT_TYPE_OPTIONS,
+  DOCUMENT_TYPE_ORDER,
+  DOCUMENT_TYPES,
+  type DocumentType,
+  type DocumentTypeConfig,
+  documentTypeConfig,
+} from "./model/document-types";
 export { type PreviewMode, resolvePreviewValue } from "./model/preview-data";
 export {
   DEFAULT_DIPLOMA_SECTION,

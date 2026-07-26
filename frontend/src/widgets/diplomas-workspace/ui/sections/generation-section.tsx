@@ -4,6 +4,7 @@ import { useCompetitionsList } from "@/features/competitions";
 import {
   type PrintPackageNomination,
   resolveMediaUrl,
+  useGenerateDocumentsMutation,
   usePrintJob,
   usePrintPackageSummary,
   useStartPrintPackageMutation,
@@ -18,6 +19,7 @@ import {
   Select,
   type SelectOption,
   Spinner,
+  toast,
 } from "@/shared/ui";
 
 function errorText(error: unknown, fallback: string): string {
@@ -34,6 +36,7 @@ export function GenerationSection(): React.JSX.Element {
   const competitionsQuery = useCompetitionsList();
   const summaryQuery = usePrintPackageSummary(competitionId || undefined);
   const startMutation = useStartPrintPackageMutation();
+  const generateThanks = useGenerateDocumentsMutation();
   const jobQuery = usePrintJob(jobId || undefined);
 
   // Reset the picker state when the competition changes.
@@ -92,6 +95,36 @@ export function GenerationSection(): React.JSX.Element {
       { competitionId, categoryIds: [...effectiveSelected], force },
       { onSuccess: (created) => setJobId(created.jobId) },
     );
+  }
+
+  /**
+   * Generate thank-you letters for the same selection.
+   *
+   * A separate action, not a variant of the print package: letters are unnumbered
+   * and unverifiable, so there is no job to poll and no ZIP — each nomination's own
+   * THANK_YOU template renders straight to the participants' cabinets.
+   */
+  async function handleGenerateThanks(): Promise<void> {
+    try {
+      const summary = await generateThanks.mutateAsync({
+        competitionId,
+        categoryIds: [...effectiveSelected],
+        documentType: "THANK_YOU",
+        force,
+      });
+      const total = summary.created + summary.regenerated;
+      toast.success(
+        total > 0
+          ? `Благодарности сформированы: ${total}. Они уже доступны участникам.`
+          : "Все благодарности уже сформированы.",
+      );
+    } catch (error) {
+      const message =
+        error instanceof ApiError
+          ? (error.problem?.detail ?? "Не удалось сформировать благодарности.")
+          : "Не удалось сформировать благодарности.";
+      toast.error(message);
+    }
   }
 
   return (
@@ -166,6 +199,24 @@ export function GenerationSection(): React.JSX.Element {
                   Будет создано:{" "}
                   <span className="font-semibold text-foreground">{selectedWillCreate}</span>
                 </span>
+              </div>
+              <div className="flex flex-col gap-2 border-border border-t pt-4">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="self-start"
+                  onClick={() => void handleGenerateThanks()}
+                  disabled={generateThanks.isPending || effectiveSelected.size === 0}
+                >
+                  {generateThanks.isPending ? (
+                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  ) : null}
+                  Сформировать благодарности
+                </Button>
+                <p className="text-muted-foreground text-sm">
+                  По шаблону благодарности каждой выбранной номинации. Без степени, номера и QR —
+                  участники увидят их в личном кабинете сразу.
+                </p>
               </div>
             </div>
           ) : null}

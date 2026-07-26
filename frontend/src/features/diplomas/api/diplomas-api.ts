@@ -11,6 +11,7 @@ import {
   diplomasCreateAssignment,
   diplomasCreateTemplate,
   diplomasDeleteAssignment,
+  diplomasGenerateDocuments,
   diplomasGetPrintJob,
   diplomasGetTemplateLayout,
   diplomasPreviewApplications,
@@ -23,6 +24,8 @@ import {
 } from "@/shared/api/generated/diplomas/diplomas";
 import type {
   DiplomaResponse,
+  GenerateDocumentsRequestDocumentTypeEnum,
+  GenerateDocumentsResponse,
   LayoutResponse,
   PreviewApplication,
   PrintJobResponse,
@@ -39,6 +42,7 @@ import {
   type TemplateFieldStyle,
   type TemplateFieldTypeId,
 } from "../model/constructor";
+import type { DocumentType } from "../model/document-types";
 import type {
   CreateAssignmentPayload,
   CreateTemplatePayload,
@@ -49,6 +53,7 @@ import type {
 import {
   unwrapAssignmentList,
   unwrapDiplomaList,
+  unwrapGeneratedDocuments,
   unwrapLayout,
   unwrapPreviewApplications,
   unwrapPreviewBindings,
@@ -130,7 +135,9 @@ function toSaveLayoutRequest(fields: TemplateField[]): SaveLayoutRequest {
 }
 
 async function fetchTemplates(signal?: AbortSignal): Promise<DiplomaTemplate[]> {
-  const response = await diplomasTemplatesList(signal ? { signal } : {});
+  // The whole library in one read; callers narrow by `type` client-side, which
+  // keeps a single cache entry serving both the diploma and thank-you slots.
+  const response = await diplomasTemplatesList(undefined, signal ? { signal } : {});
   return unwrapTemplateList(response.data);
 }
 
@@ -388,6 +395,39 @@ export function useStartPrintPackageMutation(): UseMutationResult<
       // New diplomas may have been created — refresh the summary counts.
       void queryClient.invalidateQueries({ queryKey: diplomaKeys.printSummary(competitionId) });
       void queryClient.invalidateQueries({ queryKey: diplomaKeys.registry(competitionId) });
+    },
+  });
+}
+
+/**
+ * Generate non-registry documents (thank-you letters) for chosen nominations.
+ *
+ * Synchronous, unlike the diploma print package: there is no number to reserve and
+ * no ZIP to bundle, so the response already carries the outcome and there is no job
+ * to poll. Each nomination uses its own assigned template of the kind.
+ */
+export function useGenerateDocumentsMutation(): UseMutationResult<
+  GenerateDocumentsResponse,
+  ApiError,
+  { competitionId: string; categoryIds: string[]; documentType: DocumentType; force?: boolean }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    GenerateDocumentsResponse,
+    ApiError,
+    { competitionId: string; categoryIds: string[]; documentType: DocumentType; force?: boolean }
+  >({
+    mutationFn: async ({ competitionId, categoryIds, documentType, force = false }) => {
+      const response = await diplomasGenerateDocuments({
+        competitionId,
+        categoryIds,
+        documentType: documentType as GenerateDocumentsRequestDocumentTypeEnum,
+        force,
+      });
+      return unwrapGeneratedDocuments(response.data);
+    },
+    onSuccess: (_summary, { competitionId }) => {
+      void queryClient.invalidateQueries({ queryKey: diplomaKeys.printSummary(competitionId) });
     },
   });
 }
