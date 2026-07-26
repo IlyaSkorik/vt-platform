@@ -240,7 +240,7 @@ const routes: RouteObject[] = [
               },
               {
                 path: ROUTES.cabinetDocuments.slice(1),
-                lazy: workspacePlaceholder(participantItem(ROUTES.cabinetDocuments), "participant"),
+                lazy: lazyPage(() => import("@/pages/documents"), "MyDocumentsPage"),
               },
               {
                 path: ROUTES.cabinetNotifications.slice(1),
