@@ -145,6 +145,34 @@ def test_verification_url_tolerates_a_trailing_slash(settings) -> None:
     assert verification_url(_TOKEN) == f"{_DOMAIN}/verify/{_TOKEN}"
 
 
+def test_verification_url_completes_a_scheme_less_domain(settings) -> None:
+    """A bare host is the easy misconfiguration, and the costly one.
+
+    Without a scheme the payload is not a URL: a scanner shows plain text, or
+    linkifies the host and drops the token — so every printed diploma appears to
+    lead to the same place. Paper cannot be recalled, so this is corrected.
+    """
+    settings.DIPLOMA_VERIFICATION_BASE_URL = "vzlettalantov.by"
+
+    assert verification_url(_TOKEN) == f"https://vzlettalantov.by/verify/{_TOKEN}"
+
+
+def test_verification_url_keeps_an_explicit_http_scheme(settings) -> None:
+    # Local development points the QR at the dev client over plain http.
+    settings.DIPLOMA_VERIFICATION_BASE_URL = "http://localhost:5173"
+
+    assert verification_url(_TOKEN) == f"http://localhost:5173/verify/{_TOKEN}"
+
+
+def test_scheme_less_and_scheme_full_domains_agree(settings) -> None:
+    settings.DIPLOMA_VERIFICATION_BASE_URL = "vzlettalantov.by"
+    bare = verification_url(_TOKEN)
+    settings.DIPLOMA_VERIFICATION_BASE_URL = "https://vzlettalantov.by"
+
+    # Fixing the env var must not change what is already printed.
+    assert bare == verification_url(_TOKEN)
+
+
 # --- The renderer -----------------------------------------------------------
 
 

@@ -31,9 +31,31 @@ QR_BORDER = 2
 _VERIFY_PATH = "verify"
 
 
+#: Scheme assumed when the configured base omits one. A public verification page
+#: is always served over TLS, so this is the safe completion.
+_DEFAULT_SCHEME = "https"
+
+
+def _with_scheme(base: str) -> str:
+    """Complete a scheme-less base URL (``vzlettalantov.by`` → ``https://…``).
+
+    A QR payload without a scheme is not a URL — a phone camera shows it as plain
+    text, or linkifies the bare host and silently drops the ``/verify/<token>``
+    path, so *every* diploma appears to point at the same place. Printed diplomas
+    cannot be recalled, so a misconfigured base is corrected here rather than
+    trusted.
+
+    Detected on ``://`` rather than by parsing: ``urlsplit`` reads a bare
+    ``localhost:5173`` as scheme ``localhost``, which would defeat the check.
+    """
+    if not base or "://" in base:
+        return base
+    return f"{_DEFAULT_SCHEME}://{base}"
+
+
 def verification_url(token: str) -> str:
     """``https://<configured domain>/verify/<token>`` for a diploma's token."""
-    base = str(settings.DIPLOMA_VERIFICATION_BASE_URL).rstrip("/")
+    base = _with_scheme(str(settings.DIPLOMA_VERIFICATION_BASE_URL).strip()).rstrip("/")
     return f"{base}/{_VERIFY_PATH}/{token}"
 
 
