@@ -103,6 +103,12 @@ class DocumentPolicy:
     #: thanks a person, so it prints the name alone.
     teacher_roles: bool
 
+    #: Whether one document is issued **per teacher** rather than one per
+    #: performance. A thank-you letter is addressed to a person, so two teachers on
+    #: an entry mean two separate letters — each naming only its own recipient. A
+    #: diploma belongs to the performance and lists every teacher on one sheet.
+    per_teacher: bool
+
     def allows_field(self, field_type: str) -> bool:
         """Whether this kind of document may carry that element."""
         return field_type in self.field_types
@@ -130,6 +136,7 @@ _POLICIES: dict[DocumentType, DocumentPolicy] = {
         publishes_on_generation=False,
         field_types=DIPLOMA_FIELD_TYPES,
         teacher_roles=True,
+        per_teacher=False,
     ),
     # The thank-you letter: a courtesy, not an award. Nothing to rank, nothing to
     # verify, nothing to number — so it can reach the participant immediately.
@@ -141,6 +148,7 @@ _POLICIES: dict[DocumentType, DocumentPolicy] = {
         publishes_on_generation=True,
         field_types=THANK_YOU_FIELD_TYPES,
         teacher_roles=False,
+        per_teacher=True,
     ),
 }
 

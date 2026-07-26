@@ -42,6 +42,8 @@ class ParticipantDocumentSerializer(serializers.Serializer[dict[str, object]]):
     competitionTitle = serializers.CharField(source="competition_title", allow_null=True)
     nomination = serializers.CharField(allow_null=True)
     degree = serializers.CharField(allow_null=True)
+    #: Who the document is addressed to; empty when it belongs to the performance.
+    recipient = serializers.CharField(allow_blank=True)
     #: Stored ``/media/…`` reference, resolved client-side against the API origin.
     fileUrl = serializers.CharField(source="file_url")
     issuedAt = serializers.DateTimeField(source="issued_at", allow_null=True)

@@ -35,6 +35,11 @@ class IssuedDocumentModel(BasePersistenceModel):
     submission_id = models.UUIDField()
     template_id = models.UUIDField()
 
+    # Who the document is addressed to — a teacher's name for a per-teacher kind,
+    # empty for a kind issued once per performance. Part of the row's identity, so
+    # two teachers on one entry are two letters rather than one overwriting the other.
+    recipient = models.CharField(max_length=320, blank=True, default="")
+
     # The frozen dataset the document was rendered from.
     snapshot = models.JSONField(default=dict, blank=True)
 
@@ -58,12 +63,14 @@ class IssuedDocumentModel(BasePersistenceModel):
         ]
         constraints = [
             *BasePersistenceModel.Meta.constraints,
-            # A performance gets at most one live document of each kind — the same
-            # rule the diploma has, applied per kind.
+            # At most one live document per performance, kind **and recipient**. For a
+            # kind issued once per performance the recipient is empty, which reduces
+            # to the diploma's own rule; for a per-teacher kind it is what lets two
+            # teachers hold two separate letters.
             models.UniqueConstraint(
-                fields=["submission_id", "document_type"],
+                fields=["submission_id", "document_type", "recipient"],
                 condition=models.Q(deleted_at__isnull=True),
-                name="diplomas_issued_unique_per_performance_type",
+                name="diplomas_issued_unique_per_recipient",
             ),
             models.CheckConstraint(
                 condition=models.Q(document_type__in=DocumentTypeChoices.values),

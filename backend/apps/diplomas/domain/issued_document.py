@@ -38,6 +38,10 @@ class IssuedDocument:
     snapshot: DiplomaSnapshot
     created_at: datetime
     updated_at: datetime
+    #: Who this document is addressed to — a teacher's name for a per-teacher kind,
+    #: empty for a kind issued once per performance. Part of the document's identity:
+    #: two teachers on one entry are two distinct letters, not one shared sheet.
+    recipient: str = ""
     pdf_path: str | None = None
     published_at: datetime | None = None
     version: int = 1
@@ -53,6 +57,7 @@ class IssuedDocument:
         template_id: uuid.UUID,
         snapshot: DiplomaSnapshot,
         now: datetime,
+        recipient: str = "",
     ) -> IssuedDocument:
         """Create a document with no PDF yet and no publication.
 
@@ -68,6 +73,7 @@ class IssuedDocument:
             snapshot=snapshot,
             created_at=now,
             updated_at=now,
+            recipient=recipient,
             pdf_path=None,
             published_at=None,
             version=1,
@@ -88,6 +94,7 @@ class IssuedDocument:
         pdf_path: str | None,
         published_at: datetime | None,
         version: int,
+        recipient: str = "",
     ) -> IssuedDocument:
         """Reconstruct from persistence (no validation, no state change)."""
         return cls(
@@ -99,6 +106,7 @@ class IssuedDocument:
             snapshot=snapshot,
             created_at=created_at,
             updated_at=updated_at,
+            recipient=recipient,
             pdf_path=pdf_path,
             published_at=published_at,
             version=version,

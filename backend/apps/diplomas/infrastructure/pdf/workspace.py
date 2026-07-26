@@ -14,6 +14,7 @@ import zipfile
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.utils.text import slugify
 
 from apps.diplomas.application.interfaces import TemplateAssets
 from apps.diplomas.domain.value_objects import DiplomaSnapshot
@@ -82,11 +83,25 @@ class DjangoPrintPackageWorkspace:
         return _media_path(key)
 
     def store_document_pdf(
-        self, *, competition_id: uuid.UUID, document_type: str, submission_id: uuid.UUID, data: bytes
+        self,
+        *,
+        competition_id: uuid.UUID,
+        document_type: str,
+        submission_id: uuid.UUID,
+        data: bytes,
+        recipient: str = "",
     ) -> str:
-        # Keyed by kind and performance: these documents have no number, and they
-        # stay out of the diploma print tree so the two are never bundled together.
-        key = f"diplomas/documents/{competition_id}/{document_type.lower()}/{submission_id}.pdf"
+        # Keyed by kind, performance and recipient: these documents have no number,
+        # and a per-teacher kind issues several per performance — without the
+        # recipient in the key each would overwrite the last. They stay out of the
+        # diploma print tree so the two are never bundled together.
+        #
+        # The recipient is slugified rather than hashed because the participant
+        # downloads the file by this name, and "blagodarnost-petrova-olga.pdf" is
+        # worth more to them than an opaque digest. Unicode is kept, so Cyrillic
+        # names survive.
+        suffix = f"-{slugify(recipient, allow_unicode=True)}" if recipient.strip() else ""
+        key = f"diplomas/documents/{competition_id}/{document_type.lower()}/{submission_id}{suffix}.pdf"
         if default_storage.exists(key):
             default_storage.delete(key)
         default_storage.save(key, ContentFile(data))

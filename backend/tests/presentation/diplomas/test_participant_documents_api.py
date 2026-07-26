@@ -64,14 +64,17 @@ _SNAPSHOT = {
 }
 
 
-def _thank_you(submission: SubmissionModel, *, published: bool = True) -> IssuedDocumentModel:
+def _thank_you(
+    submission: SubmissionModel, *, published: bool = True, recipient: str = "Петрова Ольга"
+) -> IssuedDocumentModel:
     return IssuedDocumentModel.objects.create(
         document_type="THANK_YOU",
         competition_id=submission.competition_id,
         submission_id=submission.id,
         template_id=uuid.uuid4(),
+        recipient=recipient,
         snapshot=_SNAPSHOT,
-        pdf_path="/media/diplomas/documents/x/thank_you/1.pdf",
+        pdf_path=f"/media/diplomas/documents/x/thank_you/{recipient}.pdf",
         published_at=_NOW if published else None,
     )
 
@@ -106,6 +109,20 @@ class TestThankYouVisibility:
         # A courtesy letter is neither numbered nor ranked.
         assert rows[0]["number"] is None
         assert rows[0]["degree"] is None
+
+    def test_a_letter_per_teacher_is_listed_separately(self) -> None:
+        client, applicant = _applicant("twoteachers@example.com")
+        submission = _submission(applicant)
+        _thank_you(submission, recipient="Петрова Ольга")
+        _thank_you(submission, recipient="Сидоров Иван")
+
+        response = client.get("/api/v1/me/documents")
+
+        rows = response.data["data"]
+        # Two addressed letters for one entry, told apart by their recipient.
+        assert [row["documentType"] for row in rows] == ["THANK_YOU", "THANK_YOU"]
+        assert {row["recipient"] for row in rows} == {"Петрова Ольга", "Сидоров Иван"}
+        assert len({row["fileUrl"] for row in rows}) == 2
 
     def test_an_unpublished_document_stays_hidden(self) -> None:
         client, applicant = _applicant("unpublished@example.com")

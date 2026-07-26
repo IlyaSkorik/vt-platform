@@ -63,6 +63,7 @@ class DjangoParticipantDocumentsReader:
                     competition_title=snapshot.competition.title,
                     nomination=_nomination(snapshot),
                     degree=snapshot.award.degree,
+                    recipient="",
                     file_url=row.official_pdf_path,
                     issued_at=row.issued_at or row.updated_at,
                 )
@@ -86,6 +87,7 @@ class DjangoParticipantDocumentsReader:
                     competition_title=snapshot.competition.title,
                     nomination=_nomination(snapshot),
                     degree=None,
+                    recipient=row.recipient or "",
                     file_url=row.pdf_path,
                     issued_at=row.published_at,
                 )

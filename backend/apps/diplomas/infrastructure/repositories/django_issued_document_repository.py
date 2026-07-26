@@ -36,12 +36,17 @@ class DjangoIssuedDocumentRepository:
         IssuedDocumentMapper.update_model(model, document).save()
 
     def get_for_submission(
-        self, submission_id: uuid.UUID, document_type: DocumentType
+        self, submission_id: uuid.UUID, document_type: DocumentType, recipient: str = ""
     ) -> IssuedDocument | None:
-        """The live document of this kind for a performance, or None."""
+        """The live document of this kind for a performance and recipient, or None.
+
+        ``recipient`` is empty for a kind issued once per performance; for a
+        per-teacher kind it distinguishes one teacher's letter from another's.
+        """
         model = IssuedDocumentModel.objects.filter(
             submission_id=submission_id,
             document_type=document_type.value,
+            recipient=recipient,
             deleted_at__isnull=True,
         ).first()
         return IssuedDocumentMapper.to_domain(model) if model is not None else None

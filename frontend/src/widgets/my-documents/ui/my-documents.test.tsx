@@ -34,6 +34,7 @@ function makeDocument(overrides: Partial<MyDocument> = {}): MyDocument {
     competitionTitle: "Восходящие таланты",
     nomination: "Вокал",
     degree: null,
+    recipient: "Петрова Ольга",
     fileUrl: "/media/diplomas/documents/x/thank_you/1.pdf",
     issuedAt: "2026-05-20T12:00:00Z",
     ...overrides,
@@ -93,6 +94,27 @@ describe("MyDocuments", () => {
     render(<MyDocuments />);
     expect(screen.getByText("VT-2026-000001")).toBeInTheDocument();
     expect(screen.queryByText(/Лауреат/)).not.toBeInTheDocument();
+  });
+
+  it("tells two letters on one entry apart by recipient", () => {
+    mockQuery({
+      data: [
+        makeDocument({ id: "t1", recipient: "Петрова Ольга" }),
+        makeDocument({ id: "t2", recipient: "Сидоров Иван" }),
+      ],
+    });
+    render(<MyDocuments />);
+    expect(screen.getByText("Петрова Ольга")).toBeInTheDocument();
+    expect(screen.getByText("Сидоров Иван")).toBeInTheDocument();
+    // Each download names its recipient, so the choice is never a coin toss.
+    expect(screen.getByRole("link", { name: /Благодарность, Петрова Ольга/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Благодарность, Сидоров Иван/ })).toBeInTheDocument();
+  });
+
+  it("shows no recipient line for a diploma", () => {
+    mockQuery({ data: [makeDocument({ documentType: "DIPLOMA", recipient: "" })] });
+    render(<MyDocuments />);
+    expect(screen.queryByText("Петрова Ольга")).not.toBeInTheDocument();
   });
 
   it("offers a retry on failure", () => {

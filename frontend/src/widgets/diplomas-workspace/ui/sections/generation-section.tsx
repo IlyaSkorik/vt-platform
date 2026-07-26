@@ -113,10 +113,13 @@ export function GenerationSection(): React.JSX.Element {
         force,
       });
       const total = summary.created + summary.regenerated;
+      const skipped = summary.withoutRecipient
+        ? ` Заявок без педагога: ${summary.withoutRecipient}.`
+        : "";
       toast.success(
         total > 0
-          ? `Благодарности сформированы: ${total}. Они уже доступны участникам.`
-          : "Все благодарности уже сформированы.",
+          ? `Благодарности сформированы: ${total}. Они уже доступны участникам.${skipped}`
+          : `Все благодарности уже сформированы.${skipped}`,
       );
     } catch (error) {
       const message =
@@ -214,8 +217,9 @@ export function GenerationSection(): React.JSX.Element {
                   Сформировать благодарности
                 </Button>
                 <p className="text-muted-foreground text-sm">
-                  По шаблону благодарности каждой выбранной номинации. Без степени, номера и QR —
-                  участники увидят их в личном кабинете сразу.
+                  По шаблону благодарности каждой выбранной номинации — отдельная благодарность
+                  каждому педагогу. Без степени, номера и QR: участники увидят их в личном кабинете
+                  сразу.
                 </p>
               </div>
             </div>

@@ -7641,13 +7641,19 @@ components:
       description: '* `THANK_YOU` - THANK_YOU'
     GenerateDocumentsResponse:
       type: object
-      description: Per-nomination outcome of a generation run.
+      description: |-
+        Outcome of a generation run.
+
+        Counts documents, not performances: a kind addressed to a person issues one per
+        recipient, so an entry naming two teachers contributes two.
       properties:
         documentType:
           $ref: '#/components/schemas/DocumentTypeEnum'
         created:
           type: integer
         regenerated:
+          type: integer
+        withoutRecipient:
           type: integer
         nominations:
           type: integer
@@ -7656,6 +7662,7 @@ components:
       - documentType
       - nominations
       - regenerated
+      - withoutRecipient
     GuardianLinkResource:
       type: object
       description: A guardian relationship embedded in a participant resource.
@@ -8076,6 +8083,8 @@ components:
           type:
           - string
           - 'null'
+        recipient:
+          type: string
         fileUrl:
           type: string
         issuedAt:
@@ -8093,6 +8102,7 @@ components:
       - nomination
       - number
       - participantName
+      - recipient
     ParticipantDocumentsEnvelope:
       type: object
       description: The full ``GET /me/documents`` response envelope.

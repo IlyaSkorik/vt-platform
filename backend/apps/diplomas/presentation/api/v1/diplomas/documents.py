@@ -43,6 +43,7 @@ def generate_documents(
 
     created = 0
     regenerated = 0
+    without_recipient = 0
     for category_id in category_ids:
         result = service.generate_for_nomination(
             competition_id=competition_id,
@@ -53,10 +54,12 @@ def generate_documents(
         )
         created += result.created
         regenerated += result.regenerated
+        without_recipient += result.without_recipient
 
     return {
         "documentType": kind.value,
         "created": created,
         "regenerated": regenerated,
+        "withoutRecipient": without_recipient,
         "nominations": len(category_ids),
     }

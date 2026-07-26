@@ -60,3 +60,15 @@ export function documentSubtitle(document: MyDocument): string | null {
     .filter((part): part is string => Boolean(part));
   return parts.length > 0 ? parts.join(" · ") : null;
 }
+
+/**
+ * Who the document is addressed to, when that is what distinguishes it.
+ *
+ * A thank-you letter is issued per teacher, so one entry can produce several rows
+ * that are otherwise identical — the recipient is the only thing telling them
+ * apart, and the download would be a coin toss without it. Empty for a document
+ * that belongs to the performance itself, like a diploma.
+ */
+export function documentRecipient(document: MyDocument): string | null {
+  return document.recipient?.trim() || null;
+}

@@ -62,6 +62,10 @@ class ParticipantDocumentView:
     nomination: str | None
     #: ``None`` until the jury has sat; only meaningful for kinds that award one.
     degree: str | None
+    #: Who the document is addressed to, for kinds issued per person. Empty for a
+    #: document that belongs to the performance itself, like a diploma. It is what
+    #: tells two thank-you letters on one entry apart.
+    recipient: str
     #: The stored ``/media/…`` reference the client resolves against the API origin.
     file_url: str
     issued_at: datetime | None

@@ -235,11 +235,17 @@ class GenerateDocumentsRequestSerializer(serializers.Serializer[dict[str, object
 
 
 class GenerateDocumentsResponseSerializer(serializers.Serializer[dict[str, object]]):
-    """Per-nomination outcome of a generation run."""
+    """Outcome of a generation run.
+
+    Counts documents, not performances: a kind addressed to a person issues one per
+    recipient, so an entry naming two teachers contributes two.
+    """
 
     documentType = serializers.ChoiceField(choices=DOCUMENT_TYPES)
     created = serializers.IntegerField()
     regenerated = serializers.IntegerField()
+    #: Entries that named nobody to address, so nothing was issued for them.
+    withoutRecipient = serializers.IntegerField()
     nominations = serializers.IntegerField()
 
 

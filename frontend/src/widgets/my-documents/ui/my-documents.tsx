@@ -1,6 +1,7 @@
 import { Download, FileText, Frown, RotateCcw } from "lucide-react";
 import {
   documentKind,
+  documentRecipient,
   documentSubtitle,
   type MyDocument,
   useMyDocuments,
@@ -12,6 +13,7 @@ import { Badge, Button, Card, CardContent, EmptyState, Skeleton } from "@/shared
 function DocumentRow({ document }: { document: MyDocument }): React.JSX.Element {
   const kind = documentKind(document.documentType);
   const subtitle = documentSubtitle(document);
+  const recipient = documentRecipient(document);
   const href = resolveMediaUrl(document.fileUrl);
 
   return (
@@ -29,6 +31,10 @@ function DocumentRow({ document }: { document: MyDocument }): React.JSX.Element 
               </Badge>
             ) : null}
           </div>
+          {recipient ? (
+            // The only thing telling two letters on one entry apart.
+            <p className="wrap-anywhere text-foreground/80 text-sm">{recipient}</p>
+          ) : null}
           {subtitle ? (
             <p className="wrap-anywhere text-muted-foreground text-sm">{subtitle}</p>
           ) : null}
@@ -45,7 +51,7 @@ function DocumentRow({ document }: { document: MyDocument }): React.JSX.Element 
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={`Скачать: ${kind.label}${subtitle ? ` — ${subtitle}` : ""} (PDF, откроется в новой вкладке)`}
+            aria-label={`Скачать: ${kind.label}${recipient ? `, ${recipient}` : ""}${subtitle ? ` — ${subtitle}` : ""} (PDF, откроется в новой вкладке)`}
           >
             <Download aria-hidden="true" />
             Скачать

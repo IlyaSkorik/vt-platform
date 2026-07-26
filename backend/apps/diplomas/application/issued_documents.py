@@ -45,6 +45,7 @@ from apps.diplomas.domain.exceptions import (
     TemplateTypeMismatchError,
 )
 from apps.diplomas.domain.issued_document import IssuedDocument
+from apps.diplomas.domain.value_objects import DiplomaSnapshot
 
 __all__ = ["IssuedDocumentGenerationService", "IssuedDocumentResult"]
 
@@ -54,11 +55,39 @@ _TEACHER_FIELD_TYPE = "teacher"
 
 @dataclass(frozen=True, slots=True)
 class IssuedDocumentResult:
-    """Outcome of one generation run for one nomination."""
+    """Outcome of one generation run for one nomination.
+
+    Counts **documents**, not performances: a per-teacher kind issues one per
+    teacher, so an entry with two teachers contributes two.
+    """
 
     created: int
     regenerated: int
+    #: Entries a per-teacher kind could not address because no teacher is named.
+    without_recipient: int
     document_type: DocumentType
+
+
+def _addressees(
+    snapshot: DiplomaSnapshot, policy: DocumentPolicy
+) -> list[tuple[str, DiplomaSnapshot]]:
+    """The documents to issue for one performance, as ``(recipient, snapshot)``.
+
+    A thank-you letter is addressed to a person, so an entry naming two teachers
+    yields **two** letters — each carrying only its own recipient in the snapshot,
+    so the teacher field prints one name rather than the whole roster. An entry with
+    no teacher yields nothing: there is nobody to thank.
+
+    For a kind issued once per performance (a diploma) there is a single document
+    with no recipient and the snapshot untouched — every teacher stays on the sheet.
+    """
+    if not policy.per_teacher:
+        return [("", snapshot)]
+    return [
+        (teacher.name, replace(snapshot, teachers=(teacher,)))
+        for teacher in snapshot.teachers
+        if teacher.name.strip()
+    ]
 
 
 def _prepare_layout(fields: list[dict[str, Any]], policy: DocumentPolicy) -> list[dict[str, Any]]:
@@ -156,46 +185,61 @@ class IssuedDocumentGenerationService:
 
         created = 0
         regenerated = 0
+        without_recipient = 0
         for submission_id in self._snapshots.list_submission_ids(
             competition_id, category_id=category_id
         ):
-            document = self._repository.get_for_submission(submission_id, document_type)
-            if document is None:
-                built = self._snapshots.build(submission_id)
-                if built is None:
-                    continue
-                document = IssuedDocument.create(
-                    document_id=self._repository.new_id(),
-                    document_type=document_type,
-                    competition_id=built.competition_id,
-                    submission_id=submission_id,
-                    template_id=assigned.template_id,
-                    snapshot=built.snapshot,
-                    now=now,
-                )
-                self._repository.add(document)
-                created += 1
-            elif document.pdf_path and not force:
+            built = self._snapshots.build(submission_id)
+            if built is None:
                 continue
-            else:
-                regenerated += 1
 
-            # No number and no token: an unnumbered, unverifiable document. The
-            # renderer draws neither, because neither resolves to a value.
-            data = self._workspace.render(
-                assets=printable,
-                snapshot=document.snapshot,
-                number="",
-                verification_token="",
-            )
-            path = self._workspace.store_document_pdf(
-                competition_id=competition_id,
-                document_type=document_type.value,
-                submission_id=submission_id,
-                data=data,
-            )
-            self._repository.update(document.with_pdf(path, now=now))
+            addressed = _addressees(built.snapshot, policy)
+            if not addressed:
+                # A per-teacher kind with no teacher named on the entry: there is
+                # nobody to address, so nothing is issued. Counted, not silent.
+                without_recipient += 1
+                continue
+
+            for recipient, snapshot in addressed:
+                document = self._repository.get_for_submission(submission_id, document_type, recipient)
+                if document is None:
+                    document = IssuedDocument.create(
+                        document_id=self._repository.new_id(),
+                        document_type=document_type,
+                        competition_id=built.competition_id,
+                        submission_id=submission_id,
+                        template_id=assigned.template_id,
+                        snapshot=snapshot,
+                        now=now,
+                        recipient=recipient,
+                    )
+                    self._repository.add(document)
+                    created += 1
+                elif document.pdf_path and not force:
+                    continue
+                else:
+                    regenerated += 1
+
+                # No number and no token: an unnumbered, unverifiable document. The
+                # renderer draws neither, because neither resolves to a value.
+                data = self._workspace.render(
+                    assets=printable,
+                    snapshot=document.snapshot,
+                    number="",
+                    verification_token="",
+                )
+                path = self._workspace.store_document_pdf(
+                    competition_id=competition_id,
+                    document_type=document_type.value,
+                    submission_id=submission_id,
+                    recipient=document.recipient,
+                    data=data,
+                )
+                self._repository.update(document.with_pdf(path, now=now))
 
         return IssuedDocumentResult(
-            created=created, regenerated=regenerated, document_type=document_type
+            created=created,
+            regenerated=regenerated,
+            without_recipient=without_recipient,
+            document_type=document_type,
         )

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DOCUMENT_KINDS, documentKind, documentSubtitle } from "./kinds";
+import { DOCUMENT_KINDS, documentKind, documentRecipient, documentSubtitle } from "./kinds";
 import type { MyDocument } from "./types";
 
 function makeDocument(overrides: Partial<MyDocument> = {}): MyDocument {
@@ -11,6 +11,7 @@ function makeDocument(overrides: Partial<MyDocument> = {}): MyDocument {
     competitionTitle: "Восходящие таланты",
     nomination: "Вокал",
     degree: null,
+    recipient: "Петрова Ольга",
     fileUrl: "/media/diplomas/documents/x/thank_you/1.pdf",
     issuedAt: "2026-05-20T12:00:00Z",
     ...overrides,
@@ -49,5 +50,17 @@ describe("documentSubtitle", () => {
 
   it("has nothing to show when neither is known", () => {
     expect(documentSubtitle(makeDocument({ competitionTitle: null, nomination: null }))).toBeNull();
+  });
+});
+
+describe("documentRecipient", () => {
+  it("names who an addressed document is for", () => {
+    // Two letters on one entry are otherwise identical rows.
+    expect(documentRecipient(makeDocument())).toBe("Петрова Ольга");
+  });
+
+  it("has nothing to show for a document that belongs to the performance", () => {
+    expect(documentRecipient(makeDocument({ documentType: "DIPLOMA", recipient: "" }))).toBeNull();
+    expect(documentRecipient(makeDocument({ recipient: "   " }))).toBeNull();
   });
 });

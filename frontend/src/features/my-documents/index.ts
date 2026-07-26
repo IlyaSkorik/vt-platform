@@ -12,6 +12,7 @@ export {
   type DocumentKindConfig,
   type DocumentType,
   documentKind,
+  documentRecipient,
   documentSubtitle,
   type MyDocument,
 } from "./lib";

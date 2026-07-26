@@ -150,9 +150,11 @@ class IssuedDocumentRepository(Protocol):
         ...
 
     def get_for_submission(
-        self, submission_id: uuid.UUID, document_type: DocumentType
+        self, submission_id: uuid.UUID, document_type: DocumentType, recipient: str = ""
     ) -> IssuedDocument | None:
-        """The live document of this kind for a performance, or None."""
+        """The live document of this kind for a performance and recipient, or None.
+
+        ``recipient`` is empty for a kind issued once per performance."""
         ...
 
     def list_by_competition(
@@ -199,13 +201,20 @@ class PrintPackageWorkspace(Protocol):
         ...
 
     def store_document_pdf(
-        self, *, competition_id: uuid.UUID, document_type: str, submission_id: uuid.UUID, data: bytes
+        self,
+        *,
+        competition_id: uuid.UUID,
+        document_type: str,
+        submission_id: uuid.UUID,
+        data: bytes,
+        recipient: str = "",
     ) -> str:
         """Persist a non-diploma document's PDF; return its ``/media/…`` path.
 
-        Keyed by kind and performance rather than by number, because these
-        documents have no number. Separate from :meth:`store_pdf` so thank-you
-        letters do not land in the diploma print tree."""
+        Keyed by kind, performance and recipient rather than by number, because
+        these documents have no number and a per-teacher kind issues several per
+        performance. Separate from :meth:`store_pdf` so thank-you letters do not
+        land in the diploma print tree."""
         ...
 
     def store_zip(self, *, competition_id: uuid.UUID, items: list[tuple[str, str]]) -> str:

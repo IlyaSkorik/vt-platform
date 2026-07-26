@@ -96,6 +96,12 @@ class TestThankYouFields:
         assert policy_for(DocumentType.DIPLOMA).teacher_roles
         assert not policy_for(DocumentType.THANK_YOU).teacher_roles
 
+    def test_is_addressed_to_one_teacher_at_a_time(self) -> None:
+        # Two teachers on an entry mean two letters, each to its own recipient.
+        assert policy_for(DocumentType.THANK_YOU).per_teacher
+        # A diploma belongs to the performance and lists every teacher on one sheet.
+        assert not policy_for(DocumentType.DIPLOMA).per_teacher
+
 
 class TestIssuedDocument:
     def _document(self, document_type: DocumentType) -> IssuedDocument:

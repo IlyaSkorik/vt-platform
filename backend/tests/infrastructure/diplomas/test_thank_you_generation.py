@@ -104,13 +104,23 @@ def _competition() -> CompetitionModel:
     )
 
 
-def _submission(competition: CompetitionModel, category: CategoryModel, name: str) -> SubmissionModel:
+def _submission(
+    competition: CompetitionModel,
+    category: CategoryModel,
+    name: str,
+    *,
+    teachers: list[dict[str, str]] | None = None,
+) -> SubmissionModel:
+    """One entry. A thank-you letter is addressed to a teacher, so the default
+    names one — an entry with no teacher yields no letters at all."""
     return SubmissionModel.objects.create(
         competition_id=competition.id,
         applicant_id=uuid.uuid4(),
         status="SUBMITTED",
         participants=[{"display_name": name, "member_count": 1}],
-        teachers=[],
+        teachers=[{"first_name": "Ольга", "last_name": "Петрова", "role": "Педагог"}]
+        if teachers is None
+        else teachers,
         performance={"title": "Этюд", "nomination_id": str(category.id)},
     )
 
@@ -285,18 +295,13 @@ class TestLayoutRules:
         assert len(layout["fields"]) == 2
 
 
-class TestTeacherFormat:
-    def _generate_with_teacher(self, roles: list[dict[str, str]]) -> str:
+class TestAddressing:
+    """A thank-you letter is addressed to a person, so the recipient shapes the run."""
+
+    def _generate_for(self, teachers: list[dict[str, str]]):
         competition = _competition()
         vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
-        SubmissionModel.objects.create(
-            competition_id=competition.id,
-            applicant_id=uuid.uuid4(),
-            status="SUBMITTED",
-            participants=[{"display_name": "Иванов Иван", "member_count": 1}],
-            teachers=roles,
-            performance={"title": "Этюд", "nomination_id": str(vocals.id)},
-        )
+        _submission(competition, vocals, "Иванов Иван", teachers=teachers)
         template = TemplateModel.objects.create(type="THANK_YOU", name="Благодарность")
         key = default_storage.save(
             f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf())
@@ -319,31 +324,79 @@ class TestTeacherFormat:
             ],
         )
         _assign(competition, vocals, template)
-        _generate(competition, vocals)
+        return _generate(competition, vocals)
 
-        row = IssuedDocumentModel.objects.get(document_type="THANK_YOU")
+    def _text_of(self, row: IssuedDocumentModel) -> str:
         with default_storage.open(row.pdf_path.removeprefix("/media/"), "rb") as fh:
             return PdfReader(io.BytesIO(fh.read())).pages[0].extract_text()
 
     def test_prints_the_name_without_the_role(self) -> None:
-        text = self._generate_with_teacher(
-            [{"first_name": "Ольга", "last_name": "Петрова", "role": "Педагог"}]
-        )
+        self._generate_for([{"first_name": "Ольга", "last_name": "Петрова", "role": "Педагог"}])
 
+        row = IssuedDocumentModel.objects.get(document_type="THANK_YOU")
+        text = self._text_of(row)
         assert "Петрова Ольга" in text
         # A diploma would print "Педагог: Петрова Ольга"; a letter thanks the person.
         assert "Педагог:" not in text
+        assert row.recipient == "Петрова Ольга"
 
-    def test_joins_several_teachers_on_one_line(self) -> None:
-        text = self._generate_with_teacher(
+    def test_two_teachers_get_two_separate_letters(self) -> None:
+        result = self._generate_for(
             [
                 {"first_name": "Ольга", "last_name": "Петрова", "role": "Педагог"},
                 {"first_name": "Иван", "last_name": "Сидоров", "role": "Концертмейстер"},
             ]
         )
 
-        assert "Петрова Ольга, Сидоров Иван" in text
-        assert "Концертмейстер" not in text
+        assert result.created == 2
+        rows = {row.recipient: row for row in IssuedDocumentModel.objects.all()}
+        assert set(rows) == {"Петрова Ольга", "Сидоров Иван"}
+
+        # Each letter names only its own recipient — never the whole roster.
+        petrova = self._text_of(rows["Петрова Ольга"])
+        sidorov = self._text_of(rows["Сидоров Иван"])
+        assert "Петрова Ольга" in petrova
+        assert "Сидоров" not in petrova
+        assert "Сидоров Иван" in sidorov
+        assert "Петрова" not in sidorov
+
+        # …and each is a distinct file, not one overwriting the other.
+        assert rows["Петрова Ольга"].pdf_path != rows["Сидоров Иван"].pdf_path
+
+    def test_each_letters_snapshot_holds_only_its_recipient(self) -> None:
+        self._generate_for(
+            [
+                {"first_name": "Ольга", "last_name": "Петрова", "role": "Педагог"},
+                {"first_name": "Иван", "last_name": "Сидоров", "role": "Концертмейстер"},
+            ]
+        )
+
+        for row in IssuedDocumentModel.objects.all():
+            names = [teacher["name"] for teacher in row.snapshot["teachers"]]
+            assert names == [row.recipient]
+
+    def test_an_entry_naming_nobody_yields_no_letter(self) -> None:
+        result = self._generate_for([])
+
+        # Nobody to thank, so nothing is issued — and it is counted, not silent.
+        assert result.created == 0
+        assert result.without_recipient == 1
+        assert IssuedDocumentModel.objects.count() == 0
+
+    def test_regeneration_does_not_duplicate_per_recipient(self) -> None:
+        self._generate_for(
+            [
+                {"first_name": "Ольга", "last_name": "Петрова", "role": "Педагог"},
+                {"first_name": "Иван", "last_name": "Сидоров", "role": "Концертмейстер"},
+            ]
+        )
+        competition = CompetitionModel.objects.get()
+        vocals = CategoryModel.objects.get()
+
+        again = _generate(competition, vocals)
+
+        assert (again.created, again.regenerated) == (0, 0)
+        assert IssuedDocumentModel.objects.count() == 2
 
 
 class TestPerNominationTemplates:
@@ -365,6 +418,8 @@ class TestPerNominationTemplates:
             str(row.template_id): row.snapshot["participant"]["display_name"]
             for row in IssuedDocumentModel.objects.all()
         }
+        # One teacher each, so one letter each.
+        assert IssuedDocumentModel.objects.count() == 2
         assert by_template[str(blue.id)] == "Иванов Иван"
         assert by_template[str(gold.id)] == "Петров Пётр"
 
