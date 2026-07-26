@@ -93,6 +93,11 @@ const routes: RouteObject[] = [
             ],
           },
           {
+            // Public and unauthenticated: reached by scanning a printed diploma.
+            path: ROUTES.verifyDiploma.slice(1),
+            lazy: lazyPage(() => import("@/pages/verify"), "DiplomaVerifyPage"),
+          },
+          {
             path: ROUTES.privacyPolicy.slice(1),
             lazy: lazyPage(() => import("@/pages/legal"), "PrivacyPolicyPage"),
           },

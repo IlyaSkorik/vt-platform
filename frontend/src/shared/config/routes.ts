@@ -27,6 +27,8 @@ export const ROUTES = {
   dashboard: "/dashboard",
   participants: "/participants",
   competitions: "/competitions",
+  /** Public diploma authenticity page — the target printed inside a diploma's QR. */
+  verifyDiploma: "/verify/:verificationToken",
   privacyPolicy: "/privacy-policy",
   cookiesPolicy: "/cookies",
   applications: "/applications",
