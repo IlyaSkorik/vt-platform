@@ -154,6 +154,36 @@ export default defineConfig({
       },
     },
   },
+  vtMyDocuments: {
+    input: {
+      target: "./openapi/schema-full.yaml",
+      override: {
+        transformer: "./openapi/strip-api-version-prefix.ts",
+      },
+      filters: {
+        // The participant's own issued documents ("Мои документы") — authenticated
+        // but not staff-gated, so kept apart from the organizer tag.
+        tags: ["My Documents"],
+      },
+    },
+    output: {
+      mode: "tags-split",
+      target: "./src/shared/api/generated",
+      schemas: "./src/shared/api/generated/model-my-documents",
+      client: "react-query",
+      httpClient: "fetch",
+      clean: false,
+      override: {
+        mutator: {
+          path: "./src/shared/api/orval-mutator.ts",
+          name: "customInstance",
+        },
+        query: {
+          useQuery: true,
+        },
+      },
+    },
+  },
   vtDiplomaVerification: {
     input: {
       target: "./openapi/schema-full.yaml",

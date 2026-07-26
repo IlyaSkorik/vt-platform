@@ -219,6 +219,14 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
     "SCHEMA_PATH_PREFIX": "/api/v[0-9]",
     "OAS_VERSION": "3.1.0",
+    # Several serializers expose the same document-kind choice set under different
+    # field names (`type` on a template, `documentType` on an assignment). Without
+    # an override, spectacular resolves the collision with a hash suffix
+    # (`Type535Enum`) that changes as the schema grows — and the generated frontend
+    # SDK imports that name. Pinning it keeps the client's type stable.
+    "ENUM_NAME_OVERRIDES": {
+        "DocumentTypeEnum": "apps.diplomas.presentation.api.v1.diplomas.serializers.DOCUMENT_TYPES",
+    },
 }
 
 # --- CORS (locked to known origins, API-000 §26) --------------------------

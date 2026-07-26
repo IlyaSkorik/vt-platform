@@ -4319,6 +4319,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/CompetitionProblemDetail'
           description: Competition or element not found.
+  /api/v1/me/documents:
+    get:
+      operationId: listMyDocuments
+      description: List the authenticated participant's issued documents.
+      tags:
+      - My Documents
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantDocumentsEnvelope'
+          description: ''
   /api/v1/organization/profile:
     get:
       operationId: getOrganizationProfile
@@ -5001,6 +5014,40 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/staff/diplomas/documents/generate:
+    post:
+      operationId: diplomas_generate_documents
+      description: |-
+        Generate non-registry documents (thank-you letters) for chosen nominations.
+
+        Each nomination is generated from its own assigned template of that kind, so
+        «Вокал» may print a blue thank-you while «Хореография» prints a gold one.
+        Diplomas are not generated here — they keep the numbered print-package path,
+        which this endpoint does not touch.
+
+        Synchronous: there is no numbering to serialize and no ZIP to bundle, so the
+        run completes in the request.
+      tags:
+      - Diplomas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateDocumentsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GenerateDocumentsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GenerateDocumentsRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateDocumentsResponse'
+          description: ''
   /api/v1/staff/diplomas/preview/applications:
     get:
       operationId: diplomas_preview_applications
@@ -5171,7 +5218,18 @@ paths:
   /api/v1/staff/diplomas/templates:
     get:
       operationId: diplomas_templates_list
-      description: The reusable template library.
+      description: The reusable template library, optionally narrowed to one document
+        kind.
+      parameters:
+      - in: query
+        name: type
+        schema:
+          type: string
+          enum:
+          - DIPLOMA
+          - THANK_YOU
+        description: Return only templates of this kind (a nomination's thank-you
+          slot uses this).
       tags:
       - Diplomas
       responses:
@@ -5185,7 +5243,8 @@ paths:
           description: ''
     post:
       operationId: diplomas_create_template
-      description: The reusable template library.
+      description: The reusable template library, optionally narrowed to one document
+        kind.
       tags:
       - Diplomas
       requestBody:
@@ -6778,7 +6837,7 @@ components:
       - type
     AssignmentResponse:
       type: object
-      description: A template assignment (competition + nomination -> template).
+      description: A template assignment (competition + nomination + kind -> template).
       properties:
         id:
           type: string
@@ -6802,6 +6861,8 @@ components:
           format: uuid
         templateName:
           type: string
+        documentType:
+          $ref: '#/components/schemas/DocumentTypeEnum'
         createdAt:
           type: string
           format: date-time
@@ -6813,6 +6874,7 @@ components:
       - competition
       - competitionId
       - createdAt
+      - documentType
       - id
       - nomination
       - templateId
@@ -7069,7 +7131,12 @@ components:
       - competitionId
     CreateAssignmentRequest:
       type: object
-      description: Body for creating a template assignment.
+      description: |-
+        Body for creating a template assignment.
+
+        Unchanged from the single-slot era: which slot of the nomination the assignment
+        fills is derived from the template's own ``type``, so a mismatch is not
+        expressible.
       properties:
         competitionId:
           type: string
@@ -7150,12 +7217,15 @@ components:
         name:
           type: string
           maxLength: 160
+        type:
+          $ref: '#/components/schemas/DocumentTypeEnum'
         description:
           type: string
           default: ''
           maxLength: 500
       required:
       - name
+      - type
     CreatedByTypeEnum:
       enum:
       - guardian
@@ -7406,6 +7476,14 @@ components:
           type: string
       required:
       - requestId
+    DocumentTypeEnum:
+      enum:
+      - DIPLOMA
+      - THANK_YOU
+      type: string
+      description: |-
+        * `DIPLOMA` - DIPLOMA
+        * `THANK_YOU` - THANK_YOU
     EmailVerificationConfirm:
       type: object
       description: |-
@@ -7523,6 +7601,53 @@ components:
       description: |-
         * `normal` - normal
         * `bold` - bold
+    GenerateDocumentsRequest:
+      type: object
+      description: |-
+        Body for generating non-registry documents for chosen nominations.
+
+        Diplomas are **not** generated here — they go through the numbered
+        print-package endpoint, which this does not touch.
+      properties:
+        competitionId:
+          type: string
+          format: uuid
+        categoryIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        documentType:
+          $ref: '#/components/schemas/GenerateDocumentsRequestDocumentTypeEnum'
+        force:
+          type: boolean
+          default: false
+      required:
+      - categoryIds
+      - competitionId
+      - documentType
+    GenerateDocumentsRequestDocumentTypeEnum:
+      enum:
+      - THANK_YOU
+      type: string
+      description: '* `THANK_YOU` - THANK_YOU'
+    GenerateDocumentsResponse:
+      type: object
+      description: Per-nomination outcome of a generation run.
+      properties:
+        documentType:
+          $ref: '#/components/schemas/DocumentTypeEnum'
+        created:
+          type: integer
+        regenerated:
+          type: integer
+        nominations:
+          type: integer
+      required:
+      - created
+      - documentType
+      - nominations
+      - regenerated
     GuardianLinkResource:
       type: object
       description: A guardian relationship embedded in a participant resource.
@@ -7909,6 +8034,70 @@ components:
         * `creative_center` - creative_center
         * `private_studio` - private_studio
         * `other` - other
+    ParticipantDocument:
+      type: object
+      description: |-
+        One document the participant may download.
+
+        ``number`` and ``degree`` are null for kinds that have neither — a thank-you
+        letter is not numbered and ranks nothing — so the client renders the row from
+        what is present rather than from the kind.
+      properties:
+        id:
+          type: string
+          format: uuid
+        documentType:
+          $ref: '#/components/schemas/DocumentTypeEnum'
+        number:
+          type:
+          - string
+          - 'null'
+        participantName:
+          type:
+          - string
+          - 'null'
+        competitionTitle:
+          type:
+          - string
+          - 'null'
+        nomination:
+          type:
+          - string
+          - 'null'
+        degree:
+          type:
+          - string
+          - 'null'
+        fileUrl:
+          type: string
+        issuedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - competitionTitle
+      - degree
+      - documentType
+      - fileUrl
+      - id
+      - issuedAt
+      - nomination
+      - number
+      - participantName
+    ParticipantDocumentsEnvelope:
+      type: object
+      description: The full ``GET /me/documents`` response envelope.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParticipantDocument'
+        meta:
+          $ref: '#/components/schemas/_Meta'
+      required:
+      - data
+      - meta
     ParticipantMeta:
       type: object
       description: |-
@@ -10395,7 +10584,7 @@ components:
       - y
     TemplateResponse:
       type: object
-      description: A diploma template in the library.
+      description: A document template in the library.
       properties:
         id:
           type: string
@@ -10404,6 +10593,8 @@ components:
           type: string
         description:
           type: string
+        type:
+          $ref: '#/components/schemas/DocumentTypeEnum'
         usageCount:
           type: integer
         document:
@@ -10417,6 +10608,7 @@ components:
       - description
       - id
       - name
+      - type
       - updatedAt
       - usageCount
     TextAlignEnum:
