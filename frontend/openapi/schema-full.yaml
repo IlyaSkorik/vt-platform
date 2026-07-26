@@ -4835,6 +4835,32 @@ paths:
               schema:
                 $ref: '#/components/schemas/RegistrationEnvelope'
           description: ''
+  /api/v1/public/diplomas/verify/{verification_token}:
+    get:
+      operationId: verifyDiploma
+      description: |-
+        Verify one diploma by its verification token.
+
+        An unknown, malformed or revoked token is a single, indistinguishable ``404``
+        problem — the page renders "Диплом не найден" and nothing about which of the
+        three it was leaks.
+      parameters:
+      - in: path
+        name: verification_token
+        schema:
+          type: string
+        required: true
+      tags:
+      - Diploma Verification
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiplomaVerificationEnvelope'
+          description: ''
   /api/v1/public/festivals:
     get:
       operationId: listPublicFestivals
@@ -7291,6 +7317,95 @@ components:
       - participant
       - performance
       - teachers
+    DiplomaVerification:
+      type: object
+      description: |-
+        One verified diploma as shown on its public authenticity page.
+
+        Every printed fact is nullable because a snapshot may legitimately lack it
+        (no organization, no teacher, an undated competition). Two nulls carry a
+        specific meaning the client renders on:
+
+        * ``degree`` — the jury result is not published yet.
+        * ``officialPdfUrl`` — the official PDF does not exist yet, so no download.
+      properties:
+        number:
+          type: string
+        participantName:
+          type:
+          - string
+          - 'null'
+        competitionTitle:
+          type:
+          - string
+          - 'null'
+        competitionDate:
+          type:
+          - string
+          - 'null'
+        nomination:
+          type:
+          - string
+          - 'null'
+        performance:
+          type:
+          - string
+          - 'null'
+        teacher:
+          type:
+          - string
+          - 'null'
+        organization:
+          type:
+          - string
+          - 'null'
+        degree:
+          type:
+          - string
+          - 'null'
+        issueDate:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        officialPdfUrl:
+          type:
+          - string
+          - 'null'
+        verified:
+          type: boolean
+      required:
+      - competitionDate
+      - competitionTitle
+      - degree
+      - issueDate
+      - nomination
+      - number
+      - officialPdfUrl
+      - organization
+      - participantName
+      - performance
+      - teacher
+      - verified
+    DiplomaVerificationEnvelope:
+      type: object
+      description: The full ``GET /public/diplomas/verify/{token}`` response envelope.
+      properties:
+        data:
+          $ref: '#/components/schemas/DiplomaVerification'
+        meta:
+          $ref: '#/components/schemas/DiplomaVerificationMeta'
+      required:
+      - data
+      - meta
+    DiplomaVerificationMeta:
+      type: object
+      description: Response envelope metadata (API-000 §5).
+      properties:
+        requestId:
+          type: string
+      required:
+      - requestId
     EmailVerificationConfirm:
       type: object
       description: |-

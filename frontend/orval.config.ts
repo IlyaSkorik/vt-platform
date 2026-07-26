@@ -154,6 +154,33 @@ export default defineConfig({
       },
     },
   },
+  vtDiplomaVerification: {
+    input: {
+      target: "./openapi/schema-full.yaml",
+      override: {
+        transformer: "./openapi/strip-api-version-prefix.ts",
+      },
+      filters: {
+        // The public diploma authenticity page a printed QR points at — an
+        // unauthenticated read contract, kept apart from the organizer tag.
+        tags: ["Diploma Verification"],
+      },
+    },
+    output: {
+      mode: "tags-split",
+      target: "./src/shared/api/generated",
+      schemas: "./src/shared/api/generated/model-diploma-verification",
+      client: "fetch",
+      httpClient: "fetch",
+      clean: false,
+      override: {
+        mutator: {
+          path: "./src/shared/api/orval-mutator.ts",
+          name: "customInstance",
+        },
+      },
+    },
+  },
   vtDiplomas: {
     input: {
       target: "./openapi/schema-full.yaml",
