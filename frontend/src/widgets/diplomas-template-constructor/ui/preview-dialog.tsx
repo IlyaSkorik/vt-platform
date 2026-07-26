@@ -4,6 +4,7 @@ import { Document, Page } from "react-pdf";
 import { useCompetitionsList } from "@/features/competitions";
 import {
   createBindingResolver,
+  type DocumentType,
   resolveFieldDisplay,
   type TemplateField,
   usePreviewApplications,
@@ -30,6 +31,8 @@ interface PreviewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   fields: TemplateField[];
+  /** The template's kind — decides how values are formatted in the preview. */
+  documentType: DocumentType;
   pdfUrl?: string;
 }
 
@@ -42,6 +45,7 @@ export function PreviewDialog({
   open,
   onOpenChange,
   fields,
+  documentType,
   pdfUrl,
 }: PreviewDialogProps): React.JSX.Element {
   const [competitionId, setCompetitionId] = useState("");
@@ -50,7 +54,7 @@ export function PreviewDialog({
 
   const competitionsQuery = useCompetitionsList();
   const applicationsQuery = usePreviewApplications(competitionId || undefined);
-  const bindingsQuery = usePreviewBindings(shownApplicationId || undefined);
+  const bindingsQuery = usePreviewBindings(shownApplicationId || undefined, documentType);
 
   const competitionOptions: SelectOption[] = useMemo(
     () => (competitionsQuery.data ?? []).map((item) => ({ value: item.id, label: item.title })),

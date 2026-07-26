@@ -5077,6 +5077,14 @@ paths:
         name: applicationId
         schema:
           type: string
+      - in: query
+        name: documentType
+        schema:
+          type: string
+          enum:
+          - DIPLOMA
+          - THANK_YOU
+        description: Formatting rules to preview with (defaults to DIPLOMA).
       tags:
       - Diplomas
       responses:

@@ -107,6 +107,7 @@ function ConstructorWorkspace({ template }: { template: DiplomaTemplate }): Reac
           open={previewOpen}
           onOpenChange={setPreviewOpen}
           fields={fields}
+          documentType={template.type}
           {...(pdfUrl ? { pdfUrl } : {})}
         />
 
@@ -121,7 +122,7 @@ function ConstructorWorkspace({ template }: { template: DiplomaTemplate }): Reac
           onPreview={() => setPreviewOpen(true)}
         />
         <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-          <ElementPalette />
+          <ElementPalette documentType={template.type} />
           <PdfCanvas
             {...(pdfUrl ? { pdfUrl } : {})}
             onRequestUpload={requestUpload}

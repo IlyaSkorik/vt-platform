@@ -33,6 +33,7 @@ from apps.diplomas.domain.exceptions import (
 from apps.diplomas.infrastructure.models import (
     IssuedDocumentModel,
     TemplateDocumentModel,
+    TemplateFieldModel,
     TemplateModel,
 )
 from apps.diplomas.presentation.api.v1.diplomas import composition
@@ -51,35 +52,44 @@ def _backing_pdf() -> bytes:
 
 
 def _template(name: str, document_type: str, *, with_qr: bool = False) -> TemplateModel:
-    """A template of one kind, with a backing PDF and a name field."""
+    """A template of one kind, with a backing PDF and a name field.
+
+    ``with_qr`` inserts the QR row **directly**, bypassing
+    :func:`replace_template_layout` — which now refuses a QR on a thank-you
+    template. That is the point: it forges the layout a stale client or a
+    pre-rule template could leave behind, so the render-time defence is exercised
+    rather than the API validation that normally prevents it.
+    """
     template = TemplateModel.objects.create(type=document_type, name=name)
     key = default_storage.save(f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf()))
     TemplateDocumentModel.objects.create(template=template, file_reference=f"/media/{key}", page_count=1)
-    fields: list[dict[str, object]] = [
-        {
-            "page": 1,
-            "type": "participant_name",
-            "binding": "participant.display_name",
-            "x": 0.1,
-            "y": 0.1,
-            "width": 0.6,
-            "height": 0.1,
-        }
-    ]
-    if with_qr:
-        fields.append(
+    composition.replace_template_layout(
+        template_id=str(template.id),
+        fields=[
             {
                 "page": 1,
-                "type": "qr_block",
-                "binding": "diploma.number",
-                "x": 0.6,
-                "y": 0.8,
-                "width": 0.32,
+                "type": "participant_name",
+                "binding": "participant.display_name",
+                "x": 0.1,
+                "y": 0.1,
+                "width": 0.6,
                 "height": 0.1,
-                "style": {"fontSize": 9},
             }
+        ],
+    )
+    if with_qr:
+        TemplateFieldModel.objects.create(
+            template=template,
+            page=1,
+            type="qr_block",
+            binding="diploma.number",
+            x=0.6,
+            y=0.8,
+            width=0.32,
+            height=0.1,
+            sort_order=1,
+            style={"fontSize": 9},
         )
-    composition.replace_template_layout(template_id=str(template.id), fields=fields)
     return template
 
 
@@ -145,7 +155,8 @@ class TestGeneration:
         competition = _competition()
         vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
         _submission(competition, vocals, "Иванов Иван")
-        # Even a template that mistakenly carries a QR block must not print one.
+        # A forged layout carrying a QR block (see `_template`) must still print
+        # none: generation drops what the kind may not carry.
         _assign(competition, vocals, _template("Благодарность", "THANK_YOU", with_qr=True))
 
         _generate(competition, vocals)
@@ -192,6 +203,147 @@ class TestGeneration:
         assert (forced.created, forced.regenerated) == (0, 1)
         # One performance keeps exactly one letter throughout.
         assert IssuedDocumentModel.objects.count() == 1
+
+
+class TestLayoutRules:
+    def test_a_thank_you_template_cannot_be_given_diploma_fields(self) -> None:
+        from apps.diplomas.domain.exceptions import FieldTypeNotAllowedError
+
+        template = TemplateModel.objects.create(type="THANK_YOU", name="Благодарность")
+
+        with pytest.raises(FieldTypeNotAllowedError):
+            composition.replace_template_layout(
+                template_id=str(template.id),
+                fields=[
+                    {
+                        "page": 1,
+                        "type": "award_degree",
+                        "binding": "award.degree",
+                        "x": 0.1,
+                        "y": 0.1,
+                        "width": 0.5,
+                        "height": 0.1,
+                    }
+                ],
+            )
+
+    def test_a_thank_you_template_accepts_its_own_fields(self) -> None:
+        template = TemplateModel.objects.create(type="THANK_YOU", name="Благодарность")
+
+        layout = composition.replace_template_layout(
+            template_id=str(template.id),
+            fields=[
+                {
+                    "page": 1,
+                    "type": field_type,
+                    "binding": binding,
+                    "x": 0.1,
+                    "y": 0.1,
+                    "width": 0.5,
+                    "height": 0.1,
+                }
+                for field_type, binding in [
+                    ("participant_name", "participant.display_name"),
+                    ("teacher", "teacher.display_name"),
+                    ("competition_name", "competition.title"),
+                    ("competition_date", "competition.date"),
+                    ("competition_city", "competition.city"),
+                    ("free_text", ""),
+                ]
+            ],
+        )
+
+        assert len(layout["fields"]) == 6
+
+    def test_a_diploma_template_still_accepts_everything(self) -> None:
+        template = TemplateModel.objects.create(type="DIPLOMA", name="Диплом")
+
+        layout = composition.replace_template_layout(
+            template_id=str(template.id),
+            fields=[
+                {
+                    "page": 1,
+                    "type": "award_degree",
+                    "binding": "award.degree",
+                    "x": 0.1,
+                    "y": 0.1,
+                    "width": 0.5,
+                    "height": 0.1,
+                },
+                {
+                    "page": 1,
+                    "type": "qr_block",
+                    "binding": "diploma.number",
+                    "x": 0.6,
+                    "y": 0.8,
+                    "width": 0.3,
+                    "height": 0.1,
+                },
+            ],
+        )
+
+        assert len(layout["fields"]) == 2
+
+
+class TestTeacherFormat:
+    def _generate_with_teacher(self, roles: list[dict[str, str]]) -> str:
+        competition = _competition()
+        vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+        SubmissionModel.objects.create(
+            competition_id=competition.id,
+            applicant_id=uuid.uuid4(),
+            status="SUBMITTED",
+            participants=[{"display_name": "Иванов Иван", "member_count": 1}],
+            teachers=roles,
+            performance={"title": "Этюд", "nomination_id": str(vocals.id)},
+        )
+        template = TemplateModel.objects.create(type="THANK_YOU", name="Благодарность")
+        key = default_storage.save(
+            f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf())
+        )
+        TemplateDocumentModel.objects.create(
+            template=template, file_reference=f"/media/{key}", page_count=1
+        )
+        composition.replace_template_layout(
+            template_id=str(template.id),
+            fields=[
+                {
+                    "page": 1,
+                    "type": "teacher",
+                    "binding": "teacher.display_name",
+                    "x": 0.1,
+                    "y": 0.1,
+                    "width": 0.8,
+                    "height": 0.1,
+                }
+            ],
+        )
+        _assign(competition, vocals, template)
+        _generate(competition, vocals)
+
+        row = IssuedDocumentModel.objects.get(document_type="THANK_YOU")
+        with default_storage.open(row.pdf_path.removeprefix("/media/"), "rb") as fh:
+            return PdfReader(io.BytesIO(fh.read())).pages[0].extract_text()
+
+    def test_prints_the_name_without_the_role(self) -> None:
+        text = self._generate_with_teacher(
+            [{"first_name": "Ольга", "last_name": "Петрова", "role": "Педагог"}]
+        )
+
+        assert "Петрова Ольга" in text
+        # A diploma would print "Педагог: Петрова Ольга"; a letter thanks the person.
+        assert "Педагог:" not in text
+
+    def test_joins_several_teachers_on_one_line(self) -> None:
+        text = self._generate_with_teacher(
+            [
+                {"first_name": "Ольга", "last_name": "Петрова", "role": "Педагог"},
+                {"first_name": "Иван", "last_name": "Сидоров", "role": "Концертмейстер"},
+            ]
+        )
+
+        assert "Петрова Ольга, Сидоров Иван" in text
+        assert "Концертмейстер" not in text
 
 
 class TestPerNominationTemplates:

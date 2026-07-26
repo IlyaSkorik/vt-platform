@@ -16,9 +16,11 @@ from django.utils import timezone
 
 from apps.competitions.infrastructure.models.competition import CompetitionModel
 from apps.competitions.infrastructure.models.taxonomy import CategoryModel
+from apps.diplomas.domain.document_types import DocumentType, policy_for
 from apps.diplomas.domain.exceptions import (
     AssignmentConflictError,
     AssignmentNotFoundError,
+    FieldTypeNotAllowedError,
     TemplateNotFoundError,
 )
 from apps.diplomas.infrastructure.models import (
@@ -152,6 +154,16 @@ def replace_template_layout(*, template_id: str, fields: list[dict[str, Any]]) -
         template = TemplateModel.objects.select_for_update().filter(id=template_id, deleted_at__isnull=True).first()
         if template is None:
             raise TemplateNotFoundError("Template was not found.")
+
+        # A layout may only carry what its kind of document can print. The editor
+        # hides the rest, so this catches a stale client or a hand-made request —
+        # and keeps a thank-you template from ever holding a degree or a QR block.
+        policy = policy_for(DocumentType(template.type))
+        rejected = sorted({str(field.get("type") or "") for field in fields if not policy.allows_field(str(field.get("type") or ""))})
+        if rejected:
+            raise FieldTypeNotAllowedError(
+                f"Документ типа «{template.type}» не может содержать поля: {', '.join(rejected)}."
+            )
 
         # Hard-delete the previous layout: fields have no history of their own yet
         # (versioning lives on the template revision), so a clean replace is correct.

@@ -6,8 +6,10 @@ export const diplomaKeys = {
   layout: (templateId: string) => [...diplomaKeys.all, "layout", templateId] as const,
   previewApplications: (competitionId: string) =>
     [...diplomaKeys.all, "preview", "applications", competitionId] as const,
-  previewBindings: (applicationId: string) =>
-    [...diplomaKeys.all, "preview", "bindings", applicationId] as const,
+  // The kind is part of the key: the same application resolves differently for a
+  // diploma and for a thank-you letter.
+  previewBindings: (applicationId: string, documentType = "DIPLOMA") =>
+    [...diplomaKeys.all, "preview", "bindings", applicationId, documentType] as const,
   registry: (competitionId: string) => [...diplomaKeys.all, "registry", competitionId] as const,
   printSummary: (competitionId: string) =>
     [...diplomaKeys.all, "print-summary", competitionId] as const,

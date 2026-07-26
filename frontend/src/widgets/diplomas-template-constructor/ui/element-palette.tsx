@@ -1,5 +1,8 @@
 import {
+  allowsFieldType,
+  type DocumentType,
   defaultBindingForType,
+  documentTypeConfig,
   FIELD_GROUPS,
   FIELD_TYPES,
   type TemplateFieldType,
@@ -56,8 +59,17 @@ function PaletteItem({ field, onAdd }: PaletteItemProps): React.JSX.Element {
   );
 }
 
-export function ElementPalette(): React.JSX.Element {
+interface ElementPaletteProps {
+  /** The template's kind — decides which elements it may carry. */
+  documentType: DocumentType;
+}
+
+export function ElementPalette({ documentType }: ElementPaletteProps): React.JSX.Element {
   const { addField } = useConstructorFieldsContext();
+  const kind = documentTypeConfig(documentType);
+  // Only what this kind of document can print. The backend rejects the rest on
+  // save, so offering them would be a dead end.
+  const available = FIELD_TYPES.filter((field) => allowsFieldType(documentType, field.id));
 
   return (
     <aside
@@ -67,12 +79,14 @@ export function ElementPalette(): React.JSX.Element {
       <div className="border-border border-b px-4 py-3">
         <h2 className="font-medium text-foreground text-sm">Элементы</h2>
         <p className="mt-0.5 text-muted-foreground text-xs">
-          Нажмите, чтобы добавить элемент на страницу.
+          {documentType === "DIPLOMA"
+            ? "Нажмите, чтобы добавить элемент на страницу."
+            : `Набор для документа «${kind.label}»: без степени, номера и QR-кода.`}
         </p>
       </div>
       <div className="scrollbar-custom flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-3">
         {FIELD_GROUPS.map((group) => {
-          const items = FIELD_TYPES.filter((field) => field.group === group);
+          const items = available.filter((field) => field.group === group);
           if (items.length === 0) {
             return null;
           }

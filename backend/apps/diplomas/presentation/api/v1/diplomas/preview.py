@@ -32,6 +32,7 @@ from apps.competitions.infrastructure.models.taxonomy import (
     DisciplineModel,
     ParticipantGroupModel,
 )
+from apps.diplomas.domain.document_types import DocumentType, policy_for
 from apps.participants.infrastructure.models import ParticipantOrganizationMembershipModel
 
 __all__ = [
@@ -133,13 +134,21 @@ def _person_full_name(entry: dict[str, Any]) -> str:
     )
 
 
-def _teacher_roster(submission: SubmissionModel) -> str:
+def _teacher_roster(submission: SubmissionModel, *, roles: bool = True) -> str:
     """The submission's teachers as ``role: name1, name2`` — one role per line.
 
     Teachers sharing a role are joined on one line (``Педагог: ФИО1, ФИО2``);
     distinct roles each get their own line, in first-appearance order. A teacher
     with no name is skipped; a teacher with no role shows just the name.
+
+    Without ``roles`` (a thank-you letter) the names alone, comma-separated —
+    matching what the renderer prints for that kind, so the editor's preview does
+    not promise a format the PDF will not use.
     """
+    if not roles:
+        names = [name for teacher in submission.teachers or [] if (name := _person_full_name(teacher))]
+        return ", ".join(names) or MISSING
+
     order: list[str] = []
     names_by_role: dict[str, list[str]] = {}
     for teacher in submission.teachers or []:
@@ -208,14 +217,18 @@ def list_preview_applications(competition_id: str) -> list[dict[str, Any]]:
     return applications
 
 
-def resolve_preview_bindings(application_id: str) -> dict[str, str] | None:
+def resolve_preview_bindings(application_id: str, *, document_type: str = "DIPLOMA") -> dict[str, str] | None:
     """The binding→value map for one application, or None if it does not exist.
 
     Every key in :data:`BINDINGS` is present; unresolved values are :data:`MISSING`.
+
+    ``document_type`` selects the kind's formatting rules — currently whether the
+    teacher roster carries roles — so the editor previews what will actually print.
     """
     submission = SubmissionModel.objects.filter(id=application_id, deleted_at__isnull=True).first()
     if submission is None:
         return None
+    policy = policy_for(DocumentType(document_type))
 
     lead = _lead_participant(submission)
     performance = submission.performance or {}
@@ -225,7 +238,7 @@ def resolve_preview_bindings(application_id: str) -> dict[str, str] | None:
 
     values[PARTICIPANT_DISPLAY_NAME] = _clean(lead.get("display_name")) or MISSING
     values[PARTICIPANT_AGE] = _age_of(lead)
-    values[TEACHER_DISPLAY_NAME] = _teacher_roster(submission)
+    values[TEACHER_DISPLAY_NAME] = _teacher_roster(submission, roles=policy.teacher_roles)
     values[ORGANIZATION_NAME] = _organization_name(lead)
 
     values[NOMINATION_TITLE] = _taxonomy_name(CategoryModel, _clean(performance.get("nomination_id")))

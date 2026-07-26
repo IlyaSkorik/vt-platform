@@ -38,7 +38,7 @@ from apps.diplomas.application.interfaces import (
     PrintPackageWorkspace,
     TemplateAssignments,
 )
-from apps.diplomas.domain.document_types import DocumentType, policy_for
+from apps.diplomas.domain.document_types import DocumentPolicy, DocumentType, policy_for
 from apps.diplomas.domain.exceptions import (
     PrintTemplateNotReadyError,
     TemplateNotAssignedError,
@@ -48,8 +48,8 @@ from apps.diplomas.domain.issued_document import IssuedDocument
 
 __all__ = ["IssuedDocumentGenerationService", "IssuedDocumentResult"]
 
-#: Field type that carries a QR code. Dropped for non-verifiable kinds.
-_QR_FIELD_TYPE = "qr_block"
+#: Field type whose text is the teacher roster.
+_TEACHER_FIELD_TYPE = "teacher"
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,13 +61,28 @@ class IssuedDocumentResult:
     document_type: DocumentType
 
 
-def _without_qr(fields: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """The layout minus any QR block.
+def _prepare_layout(fields: list[dict[str, Any]], policy: DocumentPolicy) -> list[dict[str, Any]]:
+    """The layout as this kind of document may print it.
 
-    A thank-you letter has nothing to verify, so a QR would either encode a dead
-    link or — worse — imply the courtesy letter is a registered, checkable award.
+    Two rules, both from the policy:
+
+    * **Drop what the kind may not carry.** A thank-you letter has nothing to
+      verify, rank or itemise, so a QR block, a degree or a nomination left over
+      from an edited template is removed rather than printed. The editor already
+      hides them; this is the guarantee that a template edited before the rule
+      existed still prints correctly.
+    * **Ask the teacher field for the right format.** Roles are a diploma's way of
+      crediting a teacher; a letter thanks a person by name.
     """
-    return [field for field in fields if field.get("type") != _QR_FIELD_TYPE]
+    prepared: list[dict[str, Any]] = []
+    for field in fields:
+        field_type = str(field.get("type") or "")
+        if not policy.allows_field(field_type):
+            continue
+        if field_type == _TEACHER_FIELD_TYPE and not policy.teacher_roles:
+            field = {**field, "config": {**(field.get("config") or {}), "roles": False}}
+        prepared.append(field)
+    return prepared
 
 
 class IssuedDocumentGenerationService:
@@ -136,8 +151,8 @@ class IssuedDocumentGenerationService:
         if assets is None:
             raise PrintTemplateNotReadyError("The selected template has no PDF to print over.")
 
-        # Strip the QR once for the whole run rather than per document.
-        printable = assets if policy.verifiable else replace(assets, fields=_without_qr(assets.fields))
+        # Prepared once for the whole run rather than per document.
+        printable = replace(assets, fields=_prepare_layout(assets.fields, policy))
 
         created = 0
         regenerated = 0

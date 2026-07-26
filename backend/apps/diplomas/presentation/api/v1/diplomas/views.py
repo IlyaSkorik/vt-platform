@@ -163,12 +163,30 @@ class DiplomaPreviewBindingsView(_StaffView):
     @extend_schema(
         tags=[_TAG],
         operation_id="diplomas_preview_bindings",
-        parameters=[OpenApiParameter(name="applicationId", type=str, location=OpenApiParameter.QUERY)],
+        parameters=[
+            OpenApiParameter(name="applicationId", type=str, location=OpenApiParameter.QUERY),
+            OpenApiParameter(
+                name="documentType",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                enum=DOCUMENT_TYPES,
+                description="Formatting rules to preview with (defaults to DIPLOMA).",
+            ),
+        ],
         responses={200: PreviewBindingsSerializer},
     )
     def get(self, request: Request) -> Response:
         application_id = (request.query_params.get("applicationId") or "").strip()
-        bindings = preview.resolve_preview_bindings(application_id) if application_id else None
+        document_type = (request.query_params.get("documentType") or "DIPLOMA").strip()
+        if document_type not in DOCUMENT_TYPES:
+            return problems.validation_problem(
+                {"documentType": ["Неизвестный тип документа."]}, instance=request.path, request=request
+            )
+        bindings = (
+            preview.resolve_preview_bindings(application_id, document_type=document_type)
+            if application_id
+            else None
+        )
         if bindings is None:
             return problems.problem_response(
                 status=404,

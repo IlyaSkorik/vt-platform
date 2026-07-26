@@ -38,6 +38,9 @@ _PROBLEM_MAP: Final[dict[str, tuple[int, str, str]]] = {
     "diploma_conflict": (409, "conflict", "This performance already has a diploma"),
     "print_template_not_ready": (409, "conflict", "The template has no PDF to print over"),
     "print_job_not_found": (404, "not-found", "Resource not found"),
+    "template_not_assigned": (409, "conflict", "This nomination has no template of that type"),
+    "template_type_mismatch": (409, "conflict", "The template is of the wrong document type"),
+    "field_type_not_allowed": (422, "unprocessable-entity", "This document type cannot carry that field"),
 }
 
 _FALLBACK: Final[tuple[int, str, str]] = (400, "bad-request", "Bad request")

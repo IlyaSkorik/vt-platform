@@ -55,6 +55,47 @@ class TestPolicyTable:
 
         assert {t.value for t in DocumentType} == set(DocumentTypeChoices.values)
 
+    def test_the_layout_serializer_accepts_every_diploma_field(self) -> None:
+        from apps.diplomas.presentation.api.v1.diplomas.serializers import _FIELD_TYPES
+
+        # The diploma set is the full catalogue; drift here would silently make a
+        # field unplaceable or unvalidated.
+        assert policy_for(DocumentType.DIPLOMA).field_types == frozenset(_FIELD_TYPES)
+
+
+class TestThankYouFields:
+    """What a courtesy letter may carry — and, mostly, what it may not."""
+
+    def test_keeps_only_who_taught_whom_and_where(self) -> None:
+        assert policy_for(DocumentType.THANK_YOU).field_types == frozenset(
+            {
+                "participant_name",
+                "teacher",
+                "competition_name",
+                "competition_date",
+                "competition_city",
+                "free_text",
+            }
+        )
+
+    @pytest.mark.parametrize(
+        "field_type",
+        ["award_degree", "qr_block", "diploma_issue_date", "nomination_block", "work", "organization", "participant_age"],
+    )
+    def test_refuses_what_belongs_to_a_diploma(self, field_type: str) -> None:
+        thanks = policy_for(DocumentType.THANK_YOU)
+        diploma = policy_for(DocumentType.DIPLOMA)
+
+        assert not thanks.allows_field(field_type)
+        # …each of which is legitimate on a diploma.
+        assert diploma.allows_field(field_type)
+
+    def test_thanks_a_person_rather_than_crediting_a_role(self) -> None:
+        # A diploma credits a teacher in a stated capacity ("Педагог: ФИО");
+        # a letter simply thanks them.
+        assert policy_for(DocumentType.DIPLOMA).teacher_roles
+        assert not policy_for(DocumentType.THANK_YOU).teacher_roles
+
 
 class TestIssuedDocument:
     def _document(self, document_type: DocumentType) -> IssuedDocument:

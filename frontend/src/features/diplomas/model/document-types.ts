@@ -1,7 +1,26 @@
 import type { DocumentTypeEnum } from "@/shared/api/generated/model-diplomas";
+import type { TemplateFieldTypeId } from "./constructor";
 
 /** A kind of document a template produces. */
 export type DocumentType = DocumentTypeEnum;
+
+/**
+ * Element kinds a thank-you letter may carry — mirrors the backend policy, which
+ * rejects a layout carrying anything else.
+ *
+ * A courtesy letter names who is being thanked, who taught them, and which event it
+ * was for. It ranks nothing (no degree), is not registered (no number, issue date
+ * or QR) and does not itemise the entry (no age, organization, nomination or work).
+ * Free text carries whatever wording the organizer wants.
+ */
+const THANK_YOU_FIELD_TYPES: ReadonlySet<TemplateFieldTypeId> = new Set([
+  "participant_name",
+  "teacher",
+  "competition_name",
+  "competition_date",
+  "competition_city",
+  "free_text",
+]);
 
 /** How one kind presents itself in the organizer workspace. */
 export interface DocumentTypeConfig {
@@ -58,3 +77,20 @@ export const DOCUMENT_TYPE_OPTIONS = DOCUMENT_TYPE_ORDER.map((value) => ({
   value,
   label: documentTypeConfig(value).label,
 }));
+
+/**
+ * Whether a template of this kind may place that element.
+ *
+ * A diploma may carry the whole catalogue; a thank-you letter only its own short
+ * list. An unknown kind is treated as unrestricted rather than empty, so a client
+ * running behind the backend still shows a usable palette.
+ */
+export function allowsFieldType(
+  documentType: DocumentType | string,
+  fieldType: TemplateFieldTypeId,
+): boolean {
+  if (documentType === "THANK_YOU") {
+    return THANK_YOU_FIELD_TYPES.has(fieldType);
+  }
+  return true;
+}

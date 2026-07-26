@@ -305,9 +305,13 @@ async function fetchPreviewApplications(
 
 async function fetchPreviewBindings(
   applicationId: string,
+  documentType: DocumentType,
   signal?: AbortSignal,
 ): Promise<Record<string, string>> {
-  const response = await diplomasPreviewBindings({ applicationId }, signal ? { signal } : {});
+  const response = await diplomasPreviewBindings(
+    { applicationId, documentType },
+    signal ? { signal } : {},
+  );
   return unwrapPreviewBindings(response.data);
 }
 
@@ -322,12 +326,20 @@ export function usePreviewApplications(
   });
 }
 
+/**
+ * Resolved values for one application, formatted for a document kind.
+ *
+ * The kind is part of the read, not a display concern: a diploma credits a teacher
+ * as "Педагог: ФИО" while a thank-you letter prints the name alone, and the editor
+ * must preview whatever will actually print. It is therefore part of the cache key.
+ */
 export function usePreviewBindings(
   applicationId: string | undefined,
+  documentType: DocumentType = "DIPLOMA",
 ): UseQueryResult<Record<string, string>, ApiError> {
   return useQuery<Record<string, string>, ApiError>({
-    queryKey: diplomaKeys.previewBindings(applicationId ?? ""),
-    queryFn: ({ signal }) => fetchPreviewBindings(applicationId ?? "", signal),
+    queryKey: diplomaKeys.previewBindings(applicationId ?? "", documentType),
+    queryFn: ({ signal }) => fetchPreviewBindings(applicationId ?? "", documentType, signal),
     enabled: Boolean(applicationId),
     staleTime: 30_000,
   });

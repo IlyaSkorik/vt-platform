@@ -78,6 +78,7 @@ export {
   resolveFieldDisplay,
 } from "./model/display-value";
 export {
+  allowsFieldType,
   DOCUMENT_TYPE_OPTIONS,
   DOCUMENT_TYPE_ORDER,
   DOCUMENT_TYPES,

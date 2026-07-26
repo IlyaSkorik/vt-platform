@@ -13,6 +13,7 @@ __all__ = [
     "DiplomaError",
     "DiplomaNotFoundError",
     "DuplicateDiplomaError",
+    "FieldTypeNotAllowedError",
     "PrintJobNotFoundError",
     "PrintTemplateNotReadyError",
     "SubmissionNotFoundError",
@@ -91,3 +92,13 @@ class TemplateNotAssignedError(DiplomaError):
     """Raised when generation is requested for a nomination with no template of that kind."""
 
     code = "template_not_assigned"
+
+
+class FieldTypeNotAllowedError(DiplomaError):
+    """Raised when a layout carries an element its document kind cannot print.
+
+    A thank-you letter ranks nothing and is not registered, so a degree field or a
+    QR block on one would be meaningless at best and misleading at worst.
+    """
+
+    code = "field_type_not_allowed"

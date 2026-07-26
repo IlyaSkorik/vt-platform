@@ -31,8 +31,20 @@ def _clean(value: Any) -> str | None:
     return text or None
 
 
-def _teacher_roster(snapshot: DiplomaSnapshot) -> str | None:
-    """"role: name1, name2" — teachers grouped by role, one role per line."""
+def _teacher_roster(snapshot: DiplomaSnapshot, *, roles: bool = True) -> str | None:
+    """The teachers as printed.
+
+    With ``roles`` (a diploma): ``"role: name1, name2"``, grouped by role, one role
+    per line — a diploma credits a teacher in a stated capacity.
+
+    Without (a thank-you letter): the names alone, comma-separated. The letter
+    already says it is a thank-you, so "Педагог: ФИО" would only restate the label
+    printed beside the field.
+    """
+    if not roles:
+        names = [name for teacher in snapshot.teachers if (name := _clean(teacher.name)) is not None]
+        return ", ".join(names) or None
+
     order: list[str] = []
     by_role: dict[str, list[str]] = {}
     for teacher in snapshot.teachers:
@@ -66,7 +78,7 @@ def _nomination_block(config: dict[str, Any], snapshot: DiplomaSnapshot) -> str 
     return f"{prefix} {body}" if prefix else body
 
 
-def _by_binding(binding: str, snapshot: DiplomaSnapshot, *, number: str) -> str | None:
+def _by_binding(binding: str, snapshot: DiplomaSnapshot, *, number: str, teacher_roles: bool) -> str | None:
     match binding:
         case "participant.display_name":
             return _clean(snapshot.participant.display_name)
@@ -74,7 +86,7 @@ def _by_binding(binding: str, snapshot: DiplomaSnapshot, *, number: str) -> str 
             age = snapshot.participant.age
             return str(age) if age is not None else None
         case "teacher.display_name":
-            return _teacher_roster(snapshot)
+            return _teacher_roster(snapshot, roles=teacher_roles)
         case "organization.name":
             return _clean(snapshot.organization.name)
         case "nomination.title":
@@ -107,10 +119,16 @@ def field_text(field: dict[str, Any], snapshot: DiplomaSnapshot, *, number: str)
     Keyed on the field *type*, not on the shape of ``config``: the layout
     serializer stores a default ``{"parts": [], "prefix": ""}`` on every field, so
     a simple field must not be mistaken for a nomination block.
+
+    A teacher field prints roles unless its config says otherwise
+    (``{"roles": false}``). Expressed on the field rather than as a renderer flag,
+    because the caller that knows the document kind already prepares the layout —
+    so the renderer stays free of document-kind branches.
     """
     field_type = field.get("type")
+    config = field.get("config") or {}
     if field_type == "nomination_block":
-        return _nomination_block(field.get("config") or {}, snapshot)
+        return _nomination_block(config, snapshot)
     if field_type == "qr_block":
         # The block's caption is the diploma number; the renderer draws it beside
         # the QR image and the authenticity text (see ``renderer._draw_qr_block``).
@@ -118,4 +136,4 @@ def field_text(field: dict[str, Any], snapshot: DiplomaSnapshot, *, number: str)
     binding = field.get("binding") or ""
     if field_type == "free_text" or not binding:
         return _clean(field.get("value"))
-    return _by_binding(binding, snapshot, number=number)
+    return _by_binding(binding, snapshot, number=number, teacher_roles=config.get("roles", True) is not False)
