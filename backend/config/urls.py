@@ -64,6 +64,8 @@ urlpatterns = [
     path("api/v1/", include("apps.competitions.presentation.public_urls")),
     # Public, unauthenticated diploma verification (the printed QR's target).
     path("api/v1/", include("apps.diplomas.presentation.public_urls")),
+    # The participant's own issued documents ("Мои документы").
+    path("api/v1/", include("apps.diplomas.presentation.me_urls")),
 ]
 
 if settings.DEBUG:

@@ -17,7 +17,10 @@ from __future__ import annotations
 from apps.diplomas.application.issued_documents import IssuedDocumentGenerationService
 from apps.diplomas.infrastructure.acl import DjangoDiplomaSnapshotSource
 from apps.diplomas.infrastructure.pdf.workspace import DjangoPrintPackageWorkspace
-from apps.diplomas.infrastructure.read_models import DjangoDiplomaVerificationReader
+from apps.diplomas.infrastructure.read_models import (
+    DjangoDiplomaVerificationReader,
+    DjangoParticipantDocumentsReader,
+)
 from apps.diplomas.infrastructure.repositories import (
     DjangoIssuedDocumentRepository,
     DjangoTemplateAssignments,
@@ -26,12 +29,18 @@ from apps.diplomas.infrastructure.repositories import (
 __all__ = [
     "build_diploma_verification_read_service",
     "build_issued_document_generation_service",
+    "build_participant_documents_read_service",
 ]
 
 
 def build_diploma_verification_read_service() -> DjangoDiplomaVerificationReader:
     """Assemble the public diploma verification read model (QR authenticity page)."""
     return DjangoDiplomaVerificationReader()
+
+
+def build_participant_documents_read_service() -> DjangoParticipantDocumentsReader:
+    """Assemble the participant's "Мои документы" read model."""
+    return DjangoParticipantDocumentsReader()
 
 
 def build_issued_document_generation_service() -> IssuedDocumentGenerationService:

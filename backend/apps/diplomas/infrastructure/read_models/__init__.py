@@ -8,6 +8,9 @@ enforce no invariant (ARCH-001 §7.2, §14).
 
 from __future__ import annotations
 
+from apps.diplomas.infrastructure.read_models.participant_documents import (
+    DjangoParticipantDocumentsReader,
+)
 from apps.diplomas.infrastructure.read_models.verification import DjangoDiplomaVerificationReader
 
-__all__ = ["DjangoDiplomaVerificationReader"]
+__all__ = ["DjangoDiplomaVerificationReader", "DjangoParticipantDocumentsReader"]
