@@ -1,56 +1,66 @@
+import { formatCompetitionDate } from "./format";
 import type { VerifiedDiploma } from "./types";
 
 /** Shown in place of a degree that no jury has awarded yet. */
 export const DEGREE_PENDING_LABEL = "Результаты конкурса ещё не опубликованы";
 
-/** One label/value line of the authenticity page. */
+/**
+ * How a value should read.
+ *
+ * `identifier` — an exact registry number, set in tabular mono so every character
+ * is unambiguous. `award` — the conferred degree, the one fact worth emphasis.
+ * `pending` — stands in for a result that does not exist yet, so the UI renders it
+ * as secondary rather than as a printed fact.
+ */
+export type DiplomaFactKind = "text" | "identifier" | "award" | "pending";
+
+/** One label/value line of the registry entry. */
 export interface DiplomaFactRow {
   /** Stable key — also the field it came from. */
   key: string;
   label: string;
   /** Already-resolved display text. */
   value: string;
-  /**
-   * True when `value` stands in for absent data rather than reporting it, so the
-   * UI can render it as secondary/italic instead of as a printed fact.
-   */
-  pending?: boolean;
+  kind: DiplomaFactKind;
 }
 
 /**
- * The page's fact rows, in the order a diploma prints them.
+ * The registry entry's fact rows, in the order a diploma prints them.
  *
- * A row is omitted when its snapshot value is absent — a verification page never
+ * A row is omitted when its snapshot value is absent — a registry entry never
  * shows an empty "Организация" line, exactly as the printed diploma never draws a
  * field it has no value for. The one exception is **Степень**, which is always
  * shown: when the degree is null the row reports that results are not published
  * yet, which is a fact about the competition's progress rather than missing data.
  */
 export function diplomaFactRows(diploma: VerifiedDiploma): DiplomaFactRow[] {
-  const optional: Array<[key: string, label: string, value: string | null | undefined]> = [
-    ["number", "Номер", diploma.number],
-    ["participantName", "Участник", diploma.participantName],
-    ["competitionTitle", "Конкурс", diploma.competitionTitle],
-    ["competitionDate", "Дата конкурса", diploma.competitionDate],
-    ["nomination", "Номинация", diploma.nomination],
-    ["performance", "Произведение", diploma.performance],
-    ["teacher", "Педагог", diploma.teacher],
-    ["organization", "Организация", diploma.organization],
+  const optional: Array<
+    [key: string, label: string, value: string | null | undefined, kind: DiplomaFactKind]
+  > = [
+    ["number", "Номер диплома", diploma.number, "identifier"],
+    ["participantName", "Участник", diploma.participantName, "text"],
+    ["competitionTitle", "Конкурс", diploma.competitionTitle, "text"],
+    ["competitionDate", "Дата проведения", formatCompetitionDate(diploma.competitionDate), "text"],
+    ["nomination", "Номинация", diploma.nomination, "text"],
+    ["performance", "Произведение", diploma.performance, "text"],
+    ["teacher", "Педагог", diploma.teacher, "text"],
+    ["organization", "Организация", diploma.organization, "text"],
   ];
 
   const rows: DiplomaFactRow[] = [];
-  for (const [key, label, value] of optional) {
+  for (const [key, label, value, kind] of optional) {
     const text = value?.trim();
     if (text) {
-      rows.push({ key, label, value: text });
+      rows.push({ key, label, value: text, kind });
     }
   }
 
   const degree = diploma.degree?.trim();
-  rows.push(
-    degree
-      ? { key: "degree", label: "Степень", value: degree }
-      : { key: "degree", label: "Степень", value: DEGREE_PENDING_LABEL, pending: true },
-  );
+  rows.push({
+    key: "degree",
+    label: "Степень",
+    value: degree || DEGREE_PENDING_LABEL,
+    kind: degree ? "award" : "pending",
+  });
   return rows;
 }

@@ -6,10 +6,10 @@ describe("diplomaFactRows", () => {
   it("lists every fact in the order a diploma prints them", () => {
     const rows = diplomaFactRows(makeVerifiedDiploma());
     expect(rows.map((row) => row.label)).toEqual([
-      "Номер",
+      "Номер диплома",
       "Участник",
       "Конкурс",
-      "Дата конкурса",
+      "Дата проведения",
       "Номинация",
       "Произведение",
       "Педагог",
@@ -30,23 +30,38 @@ describe("diplomaFactRows", () => {
     expect(labels).toContain("Участник");
   });
 
-  it("reports a pending result instead of dropping the degree row", () => {
-    const rows = diplomaFactRows(makeVerifiedDiploma({ degree: null }));
-    const degree = rows.find((row) => row.key === "degree");
-    expect(degree).toEqual({
-      key: "degree",
-      label: "Степень",
-      value: DEGREE_PENDING_LABEL,
-      pending: true,
+  it("marks the diploma number as an exact identifier", () => {
+    const rows = diplomaFactRows(makeVerifiedDiploma());
+    expect(rows[0]).toEqual({
+      key: "number",
+      label: "Номер диплома",
+      value: "VT-2026-000001",
+      kind: "identifier",
     });
   });
 
-  it("marks an awarded degree as a printed fact", () => {
+  it("sets the competition date the way a document reads it", () => {
+    const rows = diplomaFactRows(makeVerifiedDiploma({ competitionDate: "12.04.2026" }));
+    expect(rows.find((row) => row.key === "competitionDate")?.value).toBe("12 апреля 2026");
+  });
+
+  it("reports a pending result instead of dropping the degree row", () => {
+    const rows = diplomaFactRows(makeVerifiedDiploma({ degree: null }));
+    expect(rows.find((row) => row.key === "degree")).toEqual({
+      key: "degree",
+      label: "Степень",
+      value: DEGREE_PENDING_LABEL,
+      kind: "pending",
+    });
+  });
+
+  it("marks an awarded degree as the entry's one emphasised fact", () => {
     const rows = diplomaFactRows(makeVerifiedDiploma({ degree: "Гран-при" }));
     expect(rows.find((row) => row.key === "degree")).toEqual({
       key: "degree",
       label: "Степень",
       value: "Гран-при",
+      kind: "award",
     });
   });
 });
