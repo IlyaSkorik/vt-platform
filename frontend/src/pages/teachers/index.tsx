@@ -45,6 +45,21 @@ const EMPTY_FORM: TeacherFormValues = {
   phone: "",
 };
 
+/**
+ * The fields a teacher record cannot do without.
+ *
+ * The full name is what gets printed on a diploma or a thank-you letter, and the
+ * role is what a diploma credits the teacher in — so all four are needed before the
+ * record is usable. Email and phone are the organizer's way of reaching the person
+ * and are left optional.
+ */
+const REQUIRED_FIELDS = [
+  "lastName",
+  "firstName",
+  "middleName",
+  "role",
+] as const satisfies readonly (keyof TeacherFormValues)[];
+
 function toRequest(values: TeacherFormValues): AddTeacherRequest {
   return {
     firstName: values.firstName.trim(),
@@ -145,6 +160,9 @@ export function TeacherProfilePage(): React.JSX.Element {
   const returnSubmissionId = searchParams.get("submissionId");
 
   const [values, setValues] = useState<TeacherFormValues>(EMPTY_FORM);
+  // Set by a save attempt that could not go through, which is what turns the
+  // required markers into per-field messages.
+  const [submitted, setSubmitted] = useState(false);
 
   const teacherQuery = useQuery({
     enabled: !isCreateMode && teacherId != null,
@@ -207,10 +225,32 @@ export function TeacherProfilePage(): React.JSX.Element {
     },
   });
 
-  const canSave = values.firstName.trim() && values.lastName.trim() && values.role.trim();
+  const canSave = REQUIRED_FIELDS.every((field) => values[field].trim());
   const pending = createMutation.isPending || updateMutation.isPending;
-  const set = (field: keyof TeacherFormValues) => (event: React.ChangeEvent<HTMLInputElement>) =>
+  const set = (field: keyof TeacherFormValues) => (event: React.ChangeEvent<HTMLInputElement>) => {
     setValues((prev) => ({ ...prev, [field]: event.target.value }));
+  };
+
+  /**
+   * The message under a required field, once the form has been submitted.
+   *
+   * Shown only after a save attempt: flagging fields the moment the page opens
+   * would scold the user for not having typed yet.
+   */
+  const errorFor = (field: (typeof REQUIRED_FIELDS)[number]): { error: string } | undefined =>
+    submitted && !values[field].trim() ? { error: "Обязательное поле" } : undefined;
+
+  function handleSave(): void {
+    if (!canSave) {
+      setSubmitted(true);
+      return;
+    }
+    if (isCreateMode) {
+      createMutation.mutate(values);
+    } else {
+      updateMutation.mutate(values);
+    }
+  }
 
   return (
     <PageContainer>
@@ -228,28 +268,62 @@ export function TeacherProfilePage(): React.JSX.Element {
       </PageHeader>
       <PageContent className="max-w-xl space-y-3">
         <div className="grid gap-3 sm:grid-cols-2">
-          <Input label="Фамилия" value={values.lastName} onChange={set("lastName")} />
-          <Input label="Имя" value={values.firstName} onChange={set("firstName")} />
-          <Input label="Отчество" value={values.middleName} onChange={set("middleName")} />
+          <Input
+            label="Фамилия"
+            required
+            value={values.lastName}
+            onChange={set("lastName")}
+            {...errorFor("lastName")}
+          />
+          <Input
+            label="Имя"
+            required
+            value={values.firstName}
+            onChange={set("firstName")}
+            {...errorFor("firstName")}
+          />
+          <Input
+            label="Отчество"
+            required
+            value={values.middleName}
+            onChange={set("middleName")}
+            {...errorFor("middleName")}
+          />
           <Input
             label="Роль"
+            required
             value={values.role}
             onChange={set("role")}
             placeholder="Педагог, Концертмейстер…"
+            {...errorFor("role")}
           />
-          <Input label="Email" type="email" value={values.email} onChange={set("email")} />
-          <Input label="Телефон" value={values.phone} onChange={set("phone")} />
+          {/* Contacts: the organizer's way of reaching the teacher, not part of what
+              gets printed, so neither is required. */}
+          <Input
+            label="Email"
+            type="email"
+            value={values.email}
+            onChange={set("email")}
+            description="Необязательно"
+          />
+          <Input
+            label="Телефон"
+            value={values.phone}
+            onChange={set("phone")}
+            description="Необязательно"
+          />
         </div>
-        <div>
-          <Button
-            disabled={!canSave}
-            loading={pending}
-            onClick={() =>
-              isCreateMode ? createMutation.mutate(values) : updateMutation.mutate(values)
-            }
-          >
+        <div className="space-y-2">
+          {/* Deliberately clickable while incomplete: a disabled button gives no
+              reason, whereas this one names the fields that are still empty. */}
+          <Button loading={pending} onClick={handleSave}>
             Сохранить
           </Button>
+          {submitted && !canSave ? (
+            <p className="text-danger text-sm">
+              Заполните обязательные поля, отмеченные звёздочкой.
+            </p>
+          ) : null}
         </div>
       </PageContent>
     </PageContainer>
