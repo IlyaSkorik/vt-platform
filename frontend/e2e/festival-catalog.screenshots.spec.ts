@@ -96,7 +96,7 @@ const festivals = {
     }),
     festival({
       id: "f-3",
-      title: "Цифровой холст — онлайн-конкурс ИЗО",
+      title: "Цифровой холст — онлайн-фестиваль ИЗО",
       organizer: organizer("Студия «Радуга»"),
       city: "Брест",
       status: "COMING_SOON",

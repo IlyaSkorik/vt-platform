@@ -84,7 +84,7 @@ describe("DiplomaVerification", () => {
     mockQuery({ data: makeVerifiedDiploma({ degree: null }) });
     renderVerification("tok-1");
     expect(screen.getByText("Степень")).toBeInTheDocument();
-    expect(screen.getByText("Результаты конкурса ещё не опубликованы")).toBeInTheDocument();
+    expect(screen.getByText("Результаты фестиваля ещё не опубликованы")).toBeInTheDocument();
   });
 
   it("hides the download until the official PDF exists", () => {
@@ -114,7 +114,7 @@ describe("DiplomaVerification", () => {
       screen.getByText("Мы не смогли подтвердить подлинность данного диплома."),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Проверьте QR-код или обратитесь к организаторам конкурса."),
+      screen.getByText("Проверьте QR-код или обратитесь к организаторам фестиваля."),
     ).toBeInTheDocument();
     // No status code and no diagnostics anywhere on the page.
     expect(container.textContent).not.toMatch(/404|error/i);

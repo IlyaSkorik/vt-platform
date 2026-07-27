@@ -46,7 +46,7 @@ export function VerificationNotFound(): React.JSX.Element {
           Мы не смогли подтвердить подлинность данного диплома.
         </p>
         <p className="mx-auto max-w-md text-balance text-muted-foreground text-sm">
-          Проверьте QR-код или обратитесь к организаторам конкурса.
+          Проверьте QR-код или обратитесь к организаторам фестиваля.
         </p>
       </div>
     </Card>

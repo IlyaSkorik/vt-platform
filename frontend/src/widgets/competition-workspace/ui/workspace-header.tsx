@@ -83,16 +83,16 @@ export function WorkspaceHeader({
       onConfirm: onMarkReady,
     },
     start: {
-      title: "Начать конкурс?",
+      title: "Начать фестиваль?",
       description:
         "Фестиваль перейдёт в статус «Идёт». Приёмом заявок по-прежнему управляют окна номинаций.",
-      confirmLabel: "Начать конкурс",
+      confirmLabel: "Начать фестиваль",
       onConfirm: onStart,
     },
     complete: {
-      title: "Завершить конкурс?",
+      title: "Завершить фестиваль?",
       description: "Фестиваль перейдёт в статус «Завершён» и станет доступен только для чтения.",
-      confirmLabel: "Завершить конкурс",
+      confirmLabel: "Завершить фестиваль",
       onConfirm: onComplete,
     },
   };
@@ -164,7 +164,7 @@ export function WorkspaceHeader({
             {canStart ? (
               <Button onClick={() => setConfirmAction("start")} loading={starting}>
                 <PlayCircle className="size-4" aria-hidden="true" />
-                Начать конкурс
+                Начать фестиваль
               </Button>
             ) : null}
 
@@ -175,7 +175,7 @@ export function WorkspaceHeader({
                 loading={completing}
               >
                 <Flag className="size-4" aria-hidden="true" />
-                Завершить конкурс
+                Завершить фестиваль
               </Button>
             ) : null}
           </div>

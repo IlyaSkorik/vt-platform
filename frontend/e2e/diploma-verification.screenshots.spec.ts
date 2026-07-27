@@ -19,7 +19,7 @@ const verified = {
   data: {
     number: "VT-2026-000001",
     participantName: "Иванов Иван Иванович",
-    competitionTitle: "Международный конкурс «Взлёт талантов»",
+    competitionTitle: "Международный фестиваль «Взлёт талантов»",
     competitionDate: "12.04.2026",
     nomination: "Вокал",
     performance: "Катюша",
@@ -103,7 +103,7 @@ test.describe("Diploma verification screenshots", () => {
     await page.setViewportSize({ width: 1440, height: 960 });
     await page.goto(`/verify/${TOKEN}`);
 
-    await expect(page.getByText("Результаты конкурса ещё не опубликованы")).toBeVisible();
+    await expect(page.getByText("Результаты фестиваля ещё не опубликованы")).toBeVisible();
     // No official PDF yet, so no download offered.
     await expect(page.getByRole("link", { name: /Скачать/ })).toHaveCount(0);
 

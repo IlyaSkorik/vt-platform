@@ -184,8 +184,8 @@ export function GenerationSection(): React.JSX.Element {
     <div className="flex flex-col gap-6">
       <div className="max-w-md">
         <Select
-          label="Конкурс"
-          placeholder="Выберите конкурс"
+          label="Фестиваль"
+          placeholder="Выберите фестиваль"
           options={competitionOptions}
           value={competitionId}
           onValueChange={setCompetitionId}
@@ -195,7 +195,7 @@ export function GenerationSection(): React.JSX.Element {
 
       {!competitionId ? (
         <p className="text-muted-foreground text-sm">
-          Выберите конкурс, чтобы увидеть сводку по номинациям и сформировать комплект дипломов.
+          Выберите фестиваль, чтобы увидеть сводку по номинациям и сформировать комплект дипломов.
         </p>
       ) : summaryQuery.isLoading ? (
         <div className="flex justify-center py-10">
@@ -203,7 +203,7 @@ export function GenerationSection(): React.JSX.Element {
         </div>
       ) : nominations.length === 0 ? (
         <Alert variant="warning" title="Нет данных">
-          У конкурса нет номинаций с выступлениями.
+          У фестиваля нет номинаций с выступлениями.
         </Alert>
       ) : (
         <>
@@ -217,8 +217,8 @@ export function GenerationSection(): React.JSX.Element {
           {/* Says why «Выступлений» can be smaller than the number of applications
               filed: the run only walks entries actually taken into the competition. */}
           <p className="text-muted-foreground text-sm">
-            Учитываются только заявки, принятые в конкурс: отменённые, отправленные на доработку и
-            ещё не принятые документов не получают.
+            Учитываются только заявки, принятые на фестиваль: отменённые, отправленные на доработку
+            и ещё не принятые документов не получают.
           </p>
 
           <NominationTable

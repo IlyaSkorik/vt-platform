@@ -166,7 +166,7 @@ function statusLabel(status: string): string {
     WAITING_PAYMENT: "Ожидает оплаты",
     PAID: "Оплачена",
     ACCEPTED: "Подтверждена",
-    SCHEDULED: "В конкурсе",
+    SCHEDULED: "На фестивале",
     COMPLETED: "Завершена",
     CANCELLED: "Отменена",
   };
@@ -423,7 +423,7 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                   placeholder="Поиск по номеру/заявителю"
                 />
                 <Select
-                  placeholder="Фильтр по конкурсу"
+                  placeholder="Фильтр по фестивалю"
                   value={competitionId}
                   onValueChange={(value) => setCompetitionId(value)}
                   options={(workspace.data.competitions ?? []).map((item) => ({
@@ -551,7 +551,7 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                   </div>
                   {cancelArmed ? (
                     <p className="text-sm text-warning">
-                      Заявка уже в конкурсе. Отмена необратима, участник вернуть её не сможет, а
+                      Заявка уже на фестивале. Отмена необратима, участник вернуть её не сможет, а
                       выданные по ней документы останутся в реестре. Нажмите «Подтвердить отмену»,
                       чтобы продолжить.
                     </p>

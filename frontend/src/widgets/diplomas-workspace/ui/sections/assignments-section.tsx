@@ -256,12 +256,12 @@ function NominationPicker({
       </div>
 
       {!competitionChosen ? (
-        <p className="text-muted-foreground text-sm">Сначала выберите конкурс.</p>
+        <p className="text-muted-foreground text-sm">Сначала выберите фестиваль.</p>
       ) : loading ? (
         <p className="text-muted-foreground text-sm">Загружаем номинации…</p>
       ) : nominations.length === 0 ? (
         <p className="text-muted-foreground text-sm">
-          У каждой номинации этого конкурса уже назначен {slotLabel}. Освободите слот, удалив
+          У каждой номинации этого фестиваля уже назначен {slotLabel}. Освободите слот, удалив
           назначение в таблице.
         </p>
       ) : (
@@ -380,8 +380,8 @@ export function AssignmentsSection(): React.JSX.Element {
     <div className="flex flex-col gap-6">
       <div className="max-w-md">
         <Select
-          label="Конкурс"
-          placeholder="Выберите конкурс"
+          label="Фестиваль"
+          placeholder="Выберите фестиваль"
           options={competitionOptions}
           value={competitionId}
           onValueChange={setCompetitionId}
@@ -391,7 +391,7 @@ export function AssignmentsSection(): React.JSX.Element {
 
       {!competitionId ? (
         <p className="text-muted-foreground text-sm">
-          Выберите конкурс, чтобы увидеть его назначения и связать шаблоны с номинациями.
+          Выберите фестиваль, чтобы увидеть его назначения и связать шаблоны с номинациями.
         </p>
       ) : (
         <div className="flex flex-col gap-4">
@@ -409,7 +409,7 @@ export function AssignmentsSection(): React.JSX.Element {
             emptyContent={
               <EmptyState
                 title="Назначений пока нет"
-                description="Создайте первое назначение, чтобы связать шаблон с номинацией этого конкурса."
+                description="Создайте первое назначение, чтобы связать шаблон с номинацией этого фестиваля."
               />
             }
           />

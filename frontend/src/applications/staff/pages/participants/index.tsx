@@ -197,7 +197,7 @@ export function StaffParticipantsPage(): React.JSX.Element {
       <PageHeader>
         <PageTitle>Участники</PageTitle>
         <PageDescription>
-          Реестр формируется автоматически из подтверждённых заявок конкурсов организации — без
+          Реестр формируется автоматически из подтверждённых заявок фестивалей организации — без
           ручного создания и редактирования.
         </PageDescription>
       </PageHeader>
@@ -214,7 +214,7 @@ export function StaffParticipantsPage(): React.JSX.Element {
               className="lg:max-w-xs"
             />
             <Select
-              placeholder="Все конкурсы"
+              placeholder="Все фестивали"
               value={filters.competitionId ?? ""}
               onValueChange={(value) => setFilters((prev) => ({ ...prev, competitionId: value }))}
               options={competitions.map((item) => ({ value: item.id, label: item.title }))}
@@ -403,7 +403,7 @@ function ParticipantRow({
               </span>
             ) : null}
             <span className="ml-auto shrink-0">
-              Конкурсов: {row.competitionsCount} · Заявок: {row.applicationsCount}
+              Фестивалей: {row.competitionsCount} · Заявок: {row.applicationsCount}
             </span>
           </div>
         </div>
@@ -444,7 +444,7 @@ function ParticipantDetail({
 
   const teacher = detail.teachers[0]?.name;
   const metrics: Array<{ label: string; value: string }> = [
-    { label: "Конкурсов", value: String(detail.competitionsCount) },
+    { label: "Фестивалей", value: String(detail.competitionsCount) },
     { label: "Заявок", value: String(detail.applicationsCount) },
     { label: "Выступлений", value: String(detail.performancesCount) },
     { label: "Наград", value: String(detail.awards.length) },
@@ -549,7 +549,7 @@ function ParticipantDetail({
           <TabsContent value="history" className="space-y-2">
             {detail.applications.length === 0 ? (
               <p className="py-6 text-center text-muted-foreground text-sm">
-                Участие в конкурсах организации пока отсутствует.
+                Участие в фестивалях организации пока отсутствует.
               </p>
             ) : (
               detail.applications.map((application) => (

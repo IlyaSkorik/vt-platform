@@ -63,7 +63,7 @@ function listResult(rows: RegistryParticipant[]): RegistryList {
       female: 0,
       male: rows.length,
     },
-    competitions: [{ id: "comp-1", title: "Весенний конкурс" }],
+    competitions: [{ id: "comp-1", title: "Весенний фестиваль" }],
   };
 }
 
@@ -75,7 +75,7 @@ function aDetail(): RegistryParticipantDetail {
         submissionId: "sub-1",
         applicationId: "app-1",
         competitionId: "comp-1",
-        competition: "Весенний конкурс",
+        competition: "Весенний фестиваль",
         status: "ACCEPTED",
         performanceTitle: "Танец с лентами",
         organization: "Школа №1",
@@ -88,7 +88,7 @@ function aDetail(): RegistryParticipantDetail {
       {
         submissionId: "sub-1",
         competitionId: "comp-1",
-        competition: "Весенний конкурс",
+        competition: "Весенний фестиваль",
         status: "ACCEPTED",
         title: "Танец с лентами",
         durationSeconds: 180,
@@ -177,7 +177,7 @@ describe("StaffParticipantsPage", () => {
     renderPage();
 
     // Summary metric strip.
-    expect(screen.getByText("Конкурсов")).toBeInTheDocument();
+    expect(screen.getByText("Фестивалей")).toBeInTheDocument();
     expect(screen.getByText("Выступлений")).toBeInTheDocument();
     expect(screen.getByText("Наград")).toBeInTheDocument();
     // Unified participation row with quick navigation.

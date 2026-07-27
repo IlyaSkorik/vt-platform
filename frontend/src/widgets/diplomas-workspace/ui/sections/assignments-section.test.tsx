@@ -108,7 +108,7 @@ function setup(assignments: DiplomaAssignment[] = [ASSIGNED_VOCALS]): {
 /** Pick the section's competition — everything else only exists after that. */
 async function chooseCompetition(): Promise<ReturnType<typeof userEvent.setup>> {
   const user = userEvent.setup();
-  await user.click(screen.getByRole("combobox", { name: "Конкурс" }));
+  await user.click(screen.getByRole("combobox", { name: "Фестиваль" }));
   await user.click(await screen.findByRole("option", { name: "Восходящие таланты" }));
   return user;
 }
@@ -129,7 +129,9 @@ describe("AssignmentsSection", () => {
     setup();
     render(<AssignmentsSection />);
 
-    expect(screen.getByText(/Выберите конкурс, чтобы увидеть его назначения/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Выберите фестиваль, чтобы увидеть его назначения/),
+    ).toBeInTheDocument();
     // Nothing to assign to yet, so there is nothing to assign with.
     expect(screen.queryByRole("button", { name: "Создать назначение" })).not.toBeInTheDocument();
 
@@ -145,7 +147,7 @@ describe("AssignmentsSection", () => {
         ...ASSIGNED_VOCALS,
         id: "01900000-0000-7000-8000-0000000000a9",
         competitionId: "01900000-0000-7000-8000-0000000000c9",
-        competition: "Другой конкурс",
+        competition: "Другой фестиваль",
         nomination: "Хореография",
       },
     ]);

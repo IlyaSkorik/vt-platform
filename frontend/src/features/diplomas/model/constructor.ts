@@ -133,7 +133,7 @@ export type TemplateFieldGroup =
   | "Организация"
   | "Номинация"
   | "Произведение"
-  | "Конкурс"
+  | "Фестиваль"
   | "Результат"
   | "Диплом"
   | "Прочее";
@@ -145,7 +145,7 @@ export const FIELD_GROUPS: readonly TemplateFieldGroup[] = [
   "Организация",
   "Номинация",
   "Произведение",
-  "Конкурс",
+  "Фестиваль",
   "Результат",
   "Диплом",
   "Прочее",
@@ -187,19 +187,19 @@ export const FIELD_TYPES: readonly TemplateFieldType[] = [
   { id: "work", label: "Произведение", binding: "data", group: "Произведение", icon: Music },
   {
     id: "competition_name",
-    label: "Название конкурса",
+    label: "Название фестиваля",
     binding: "data",
-    group: "Конкурс",
+    group: "Фестиваль",
     icon: Trophy,
   },
   {
     id: "competition_date",
-    label: "Дата конкурса",
+    label: "Дата фестиваля",
     binding: "data",
-    group: "Конкурс",
+    group: "Фестиваль",
     icon: Calendar,
   },
-  { id: "competition_city", label: "Город", binding: "data", group: "Конкурс", icon: MapPin },
+  { id: "competition_city", label: "Город", binding: "data", group: "Фестиваль", icon: MapPin },
   { id: "award_degree", label: "Степень", binding: "data", group: "Результат", icon: Medal },
   {
     id: "diploma_issue_date",

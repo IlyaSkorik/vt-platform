@@ -33,7 +33,7 @@ export function ArchiveSection(): React.JSX.Element {
       },
       {
         accessorKey: "competition",
-        header: "Конкурс",
+        header: "Фестиваль",
         // Null once a competition is deleted: the run still happened, so it is listed
         // without a name rather than dropped from the history.
         cell: ({ row }) => row.original.competition ?? "—",
@@ -84,7 +84,7 @@ export function ArchiveSection(): React.JSX.Element {
           <EmptyState
             icon={<Archive className="size-6" aria-hidden="true" />}
             title="Архив пуст"
-            description="Здесь появится история генераций: дата, конкурс, количество документов, кто запустил и повторное скачивание ZIP."
+            description="Здесь появится история генераций: дата, фестиваль, количество документов, кто запустил и повторное скачивание ZIP."
           />
         }
       />

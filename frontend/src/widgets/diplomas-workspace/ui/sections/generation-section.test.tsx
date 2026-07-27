@@ -122,7 +122,7 @@ function setup(nominations: PrintPackageNomination[] = NOMINATIONS): {
 
 async function chooseCompetition(): Promise<void> {
   const user = userEvent.setup();
-  await user.click(screen.getByRole("combobox", { name: "Конкурс" }));
+  await user.click(screen.getByRole("combobox", { name: "Фестиваль" }));
   await user.click(await screen.findByRole("option", { name: "Восходящие таланты" }));
 }
 

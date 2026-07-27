@@ -77,7 +77,7 @@ export function HomePage(): React.JSX.Element {
                 Взлёт талантов
               </h1>
               <p className="max-w-2xl text-pretty text-base text-muted-foreground sm:text-lg">
-                Здесь проходят конкурсы и фестивали: находите мероприятия, подавайте заявки,
+                Здесь проходят детские творческие фестивали: находите мероприятия, подавайте заявки,
                 смотрите результаты и скачивайте дипломы.
               </p>
             </div>
@@ -190,7 +190,7 @@ export function HomePage(): React.JSX.Element {
                   <CardTitle className="text-base">Найти мероприятие</CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground">
-                  Выберите конкурс или фестиваль по дате, формату и городу.
+                  Выберите фестиваль по дате, формату и городу.
                 </CardContent>
               </Card>
               <Card className="shadow-none">
@@ -290,8 +290,8 @@ export function HomePage(): React.JSX.Element {
             <div className="max-w-3xl space-y-4">
               <h2 className="text-3xl font-semibold tracking-tight">Для организаторов</h2>
               <p className="text-muted-foreground">
-                Проводите собственные конкурсы или фестивали? Используйте платформу «Взлёт талантов»
-                для автоматизации проведения мероприятий.
+                Проводите собственные фестивали? Используйте платформу «Взлёт талантов» для
+                автоматизации проведения мероприятий.
               </p>
               <Button asChild size="lg" className="text-foreground hover:text-foreground">
                 <Link to="mailto:hello@vzlet-talantov.by">Свяжитесь с нами</Link>

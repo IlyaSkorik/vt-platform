@@ -91,8 +91,8 @@ export function PreviewDialog({
         ) : (
           <div className="flex flex-col gap-4">
             <Select
-              label="Конкурс"
-              placeholder="Выберите конкурс"
+              label="Фестиваль"
+              placeholder="Выберите фестиваль"
               options={competitionOptions}
               value={competitionId}
               onValueChange={(value) => {
@@ -102,7 +102,7 @@ export function PreviewDialog({
             />
             <Select
               label="Заявка"
-              placeholder={competitionId ? "Выберите заявку" : "Сначала выберите конкурс"}
+              placeholder={competitionId ? "Выберите заявку" : "Сначала выберите фестиваль"}
               options={applicationOptions}
               value={applicationId}
               onValueChange={setApplicationId}

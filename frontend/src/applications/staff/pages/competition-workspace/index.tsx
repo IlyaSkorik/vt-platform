@@ -152,15 +152,15 @@ export function StaffCompetitionWorkspacePage(): React.JSX.Element {
         onStart={() =>
           void runLifecycleAction(
             () => startCompetition.mutateAsync(competition.id),
-            "Конкурс начат",
-            "Не удалось начать конкурс",
+            "Фестиваль начат",
+            "Не удалось начать фестиваль",
           )
         }
         onComplete={() =>
           void runLifecycleAction(
             () => completeCompetition.mutateAsync(competition.id),
-            "Конкурс завершён",
-            "Не удалось завершить конкурс",
+            "Фестиваль завершён",
+            "Не удалось завершить фестиваль",
           )
         }
         publishing={publish.isPending}

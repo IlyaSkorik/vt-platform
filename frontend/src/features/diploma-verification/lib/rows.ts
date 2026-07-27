@@ -2,7 +2,7 @@ import { formatCompetitionDate } from "./format";
 import type { VerifiedDiploma } from "./types";
 
 /** Shown in place of a degree that no jury has awarded yet. */
-export const DEGREE_PENDING_LABEL = "Результаты конкурса ещё не опубликованы";
+export const DEGREE_PENDING_LABEL = "Результаты фестиваля ещё не опубликованы";
 
 /**
  * How a value should read.
@@ -39,7 +39,7 @@ export function diplomaFactRows(diploma: VerifiedDiploma): DiplomaFactRow[] {
   > = [
     ["number", "Номер диплома", diploma.number, "identifier"],
     ["participantName", "Участник", diploma.participantName, "text"],
-    ["competitionTitle", "Конкурс", diploma.competitionTitle, "text"],
+    ["competitionTitle", "Фестиваль", diploma.competitionTitle, "text"],
     ["competitionDate", "Дата проведения", formatCompetitionDate(diploma.competitionDate), "text"],
     ["nomination", "Номинация", diploma.nomination, "text"],
     ["performance", "Произведение", diploma.performance, "text"],
