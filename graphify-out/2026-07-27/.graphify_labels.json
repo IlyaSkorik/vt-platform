@@ -944,5 +944,17 @@
   "942": ".scrollIntoView",
   "943": ".status_history",
   "944": ".hasPointerCapture",
-  "945": ".scrollIntoView"
+  "945": ".scrollIntoView",
+  "946": "CompetitionAlreadyPublishedError",
+  "947": "PublicCatalogMetaSerializer",
+  "948": "PublicFestivalEmergencySerializer",
+  "949": "PublicFestivalFaqItemSerializer",
+  "950": "PublicFestivalFormatSerializer",
+  "951": "PublicFestivalJuryCardSerializer",
+  "952": "PublicFestivalLandingSerializer",
+  "953": "PublicFestivalOrganizerSerializer",
+  "954": "PublicFestivalPricingSerializer",
+  "955": "PublicFestivalRegulationSerializer",
+  "956": "RegistrationDeadlinesSerializer",
+  "957": "@testing-library/react"
 }
