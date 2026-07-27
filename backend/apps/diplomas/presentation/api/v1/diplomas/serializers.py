@@ -21,6 +21,7 @@ __all__ = [
     "DocumentSlotSerializer",
     "GenerateDocumentsRequestSerializer",
     "GenerateDocumentsResponseSerializer",
+    "GenerationRunResponseSerializer",
     "LayoutResponseSerializer",
     "PreviewApplicationSerializer",
     "PreviewBindingsSerializer",
@@ -265,6 +266,29 @@ class GenerateDocumentsResponseSerializer(serializers.Serializer[dict[str, objec
     #: The printable archive's ``/media/…`` path; null unless ``bundle`` was asked
     #: for (or the run produced nothing to archive).
     zipUrl = serializers.CharField(allow_null=True)
+
+
+class GenerationRunResponseSerializer(serializers.Serializer[dict[str, object]]):
+    """One completed generation run, as the archive lists it.
+
+    Covers every kind of run — the numbered diploma package and the thank-you runs —
+    so the counts are per document rather than per diploma. ``zipUrl`` is null for a
+    run that produced no archive to download (a publish-only thank-you run).
+    """
+
+    id = serializers.UUIDField()
+    documentType = serializers.ChoiceField(choices=DOCUMENT_TYPES)
+    competitionId = serializers.UUIDField()
+    #: The competition's current title; null if it has since been deleted.
+    competition = serializers.CharField(allow_null=True)
+    nominations = serializers.IntegerField()
+    documents = serializers.IntegerField()
+    created = serializers.IntegerField()
+    published = serializers.IntegerField()
+    zipUrl = serializers.CharField(allow_null=True)
+    #: Who ran it, as named at the time; null when the actor is unknown.
+    user = serializers.CharField(allow_null=True)
+    createdAt = serializers.DateTimeField()
 
 
 # --- Diploma registry -------------------------------------------------------

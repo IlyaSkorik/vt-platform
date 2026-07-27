@@ -7,6 +7,7 @@ from .base import BasePersistenceModel, uuid7
 from .diploma import DiplomaModel, DiplomaStatusChoices
 from .diploma_number_sequence import DiplomaNumberSequenceModel
 from .document_type import DocumentTypeChoices
+from .generation_run import GenerationRunModel
 from .issued_document import IssuedDocumentModel
 from .print_job import PrintJobModel, PrintJobStatusChoices
 from .template import TemplateModel
@@ -20,6 +21,7 @@ __all__ = [
     "DiplomaNumberSequenceModel",
     "DiplomaStatusChoices",
     "DocumentTypeChoices",
+    "GenerationRunModel",
     "IssuedDocumentModel",
     "PrintJobModel",
     "PrintJobStatusChoices",

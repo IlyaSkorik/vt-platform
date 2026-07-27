@@ -1,8 +1,9 @@
 """Diplomas workspace REST surface (organizer-only).
 
-MVP endpoints: read the template library (with usage counts) and manage the
-assignment mechanism that binds a template to a (competition, nomination) pair.
-Generation and archive are future work and have no endpoints yet.
+Reads the template library (with usage counts), manages the assignment mechanism
+that binds a template to a (competition, nomination) pair, runs generation — the
+numbered diploma package asynchronously, the other kinds in the request — and lists
+the archive of completed runs.
 """
 
 from __future__ import annotations
@@ -19,8 +20,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.diplomas.domain.exceptions import DiplomaError
+from apps.diplomas.infrastructure.acl import actor_label
 from apps.diplomas.presentation.api.v1 import problems
 from apps.diplomas.presentation.api.v1.diplomas import (
+    archive,
     composition,
     documents,
     preview,
@@ -36,6 +39,7 @@ from apps.diplomas.presentation.api.v1.diplomas.serializers import (
     DiplomaResponseSerializer,
     GenerateDocumentsRequestSerializer,
     GenerateDocumentsResponseSerializer,
+    GenerationRunResponseSerializer,
     LayoutResponseSerializer,
     PreviewApplicationSerializer,
     PreviewBindingsSerializer,
@@ -296,6 +300,19 @@ def _parse_uuid(value: str) -> uuid.UUID | None:
         return None
 
 
+def _actor(request: Request) -> tuple[uuid.UUID | None, str]:
+    """The acting staff member as ``(id, display name)`` for the generation archive.
+
+    The token carries only the subject, so the name is resolved once here and
+    snapshotted with the run — the archive says who generated a package at the time,
+    not who that account is called today. An unresolvable actor yields ``(None, "")``
+    rather than blocking a generation over a missing label.
+    """
+    raw = getattr(getattr(request, "user", None), "id", None)
+    actor_id = _parse_uuid(str(raw)) if raw is not None else None
+    return actor_id, actor_label(actor_id)
+
+
 class DiplomaRegistryView(_StaffView):
     """The diploma registry: list a competition's diplomas and create one."""
 
@@ -393,11 +410,14 @@ class DiplomaPrintPackageView(_StaffView):
         if not serializer.is_valid():
             return problems.validation_problem(serializer.errors, instance=request.path, request=request)
         data = serializer.validated_data
+        actor_id, label = _actor(request)
         try:
             job = print_package.start_print_package(
                 competition_id=data["competitionId"],
                 category_ids=[str(cid) for cid in data.get("categoryIds", [])],
                 force=bool(data.get("force", False)),
+                actor_id=actor_id,
+                actor_label=label,
             )
         except DiplomaError as exc:
             return problems.diploma_problem(exc, instance=request.path, request=request)
@@ -429,6 +449,7 @@ class DocumentGenerationView(_StaffView):
         if not serializer.is_valid():
             return problems.validation_problem(serializer.errors, instance=request.path, request=request)
         data = serializer.validated_data
+        actor_id, label = _actor(request)
         try:
             summary = documents.generate_documents(
                 competition_id=data["competitionId"],
@@ -437,10 +458,45 @@ class DocumentGenerationView(_StaffView):
                 force=bool(data.get("force", False)),
                 bundle=bool(data.get("bundle", False)),
                 publish=bool(data.get("publish", True)),
+                actor_id=actor_id,
+                actor_label=label,
             )
         except DiplomaError as exc:
             return problems.diploma_problem(exc, instance=request.path, request=request)
         return problems.envelope(request, summary)
+
+
+class DiplomaGenerationArchiveView(_StaffView):
+    """The generation history: every completed run, newest first.
+
+    One list for every kind of run — the diploma print package and the thank-you
+    runs — because the organizer's question ("what did we generate, and where is that
+    ZIP?") does not care which mechanism produced it.
+    """
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="diplomas_generation_archive",
+        parameters=[
+            OpenApiParameter(
+                name="competitionId",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Narrow the history to one competition (optional).",
+            )
+        ],
+        responses={200: GenerationRunResponseSerializer(many=True)},
+    )
+    def get(self, request: Request) -> Response:
+        raw = (request.query_params.get("competitionId") or "").strip()
+        competition_id = _parse_uuid(raw) if raw else None
+        if raw and competition_id is None:
+            return problems.validation_problem(
+                {"competitionId": ["Некорректный идентификатор конкурса."]},
+                instance=request.path,
+                request=request,
+            )
+        return problems.envelope(request, archive.list_runs(competition_id))
 
 
 class DiplomaPrintJobDetailView(_StaffView):

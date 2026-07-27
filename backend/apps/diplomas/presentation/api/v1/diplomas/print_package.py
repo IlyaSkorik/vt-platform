@@ -233,12 +233,20 @@ def _job_json(job: PrintJobModel) -> dict[str, Any]:
 
 
 def start_print_package(
-    *, competition_id: uuid.UUID, category_ids: list[str], force: bool = False
+    *,
+    competition_id: uuid.UUID,
+    category_ids: list[str],
+    force: bool = False,
+    actor_id: uuid.UUID | None = None,
+    actor_label: str = "",
 ) -> dict[str, Any]:
     """Create + enqueue a print-package job for the chosen nominations (or all).
 
     ``force`` re-renders print PDFs for diplomas that already have one. Validates
     that the resolved nominations have a template with a PDF.
+
+    The actor is recorded on the job because only the request knows who asked; the
+    worker carries it into the generation archive once the run completes.
     """
     targets = resolve_targets(competition_id, category_ids)
     if not targets:
@@ -257,6 +265,8 @@ def start_print_package(
         competition_id=competition_id,
         category_ids=[str(cid) for cid in category_ids],
         force=force,
+        actor_id=actor_id,
+        actor_label=actor_label,
     )
     from apps.diplomas.tasks import generate_print_package
 

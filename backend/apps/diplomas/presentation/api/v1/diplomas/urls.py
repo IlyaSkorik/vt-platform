@@ -5,6 +5,7 @@ from django.urls import path
 from .views import (
     DiplomaAssignmentDetailView,
     DiplomaAssignmentsView,
+    DiplomaGenerationArchiveView,
     DiplomaPreviewApplicationsView,
     DiplomaPreviewBindingsView,
     DiplomaPrintJobDetailView,
@@ -70,6 +71,12 @@ urlpatterns = [
         "staff/diplomas/documents/generate",
         DocumentGenerationView.as_view(),
         name="generate-documents",
+    ),
+    # The history of completed generation runs, of every document kind.
+    path(
+        "staff/diplomas/generation-archive",
+        DiplomaGenerationArchiveView.as_view(),
+        name="generation-archive",
     ),
     path("staff/diplomas/assignments", DiplomaAssignmentsView.as_view(), name="assignments"),
     path(

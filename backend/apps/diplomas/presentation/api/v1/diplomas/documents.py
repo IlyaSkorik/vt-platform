@@ -19,6 +19,7 @@ from django.utils import timezone
 
 from apps.diplomas.composition import build_issued_document_generation_service
 from apps.diplomas.domain.document_types import DocumentType
+from apps.diplomas.presentation.api.v1.diplomas import archive
 
 __all__ = ["generate_documents"]
 
@@ -31,6 +32,8 @@ def generate_documents(
     force: bool = False,
     bundle: bool = False,
     publish: bool = True,
+    actor_id: uuid.UUID | None = None,
+    actor_label: str = "",
 ) -> dict[str, Any]:
     """Generate one kind of document across the chosen nominations.
 
@@ -75,6 +78,19 @@ def generate_documents(
         service.bundle(competition_id=competition_id, document_type=kind, items=items)
         if bundle and items
         else None
+    )
+
+    # One line of history per run, for the archive the organizer re-downloads from.
+    archive.record_run(
+        competition_id=competition_id,
+        document_type=kind.value,
+        category_ids=[str(category_id) for category_id in category_ids],
+        document_count=len(items),
+        created_count=created,
+        published_count=published,
+        zip_path=zip_url or "",
+        actor_id=actor_id,
+        actor_label=actor_label,
     )
 
     return {

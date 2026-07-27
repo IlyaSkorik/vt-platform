@@ -14,7 +14,9 @@ def generate_print_package(job_id: str) -> None:
     """Run one print-package job: create missing diplomas, render PDFs, build ZIP."""
     from django.utils import timezone
 
+    from apps.diplomas.domain.document_types import DocumentType
     from apps.diplomas.infrastructure.models import PrintJobModel, PrintJobStatusChoices
+    from apps.diplomas.presentation.api.v1.diplomas import archive
     from apps.diplomas.presentation.api.v1.diplomas.print_package import (
         build_batch_service,
         resolve_targets,
@@ -42,6 +44,20 @@ def generate_print_package(job_id: str) -> None:
         job.skipped_count = result.skipped
         job.zip_path = result.zip_path
         job.error = ""
+        # The archive records the run, not the job: the resolved targets rather than
+        # the request's (possibly empty, meaning "all") selection, and the whole
+        # package rather than the diplomas this run happened to create — that is what
+        # the ZIP contains and what the organizer prints.
+        archive.record_run(
+            competition_id=job.competition_id,
+            document_type=DocumentType.DIPLOMA.value,
+            category_ids=[str(target.category_id) for target in targets],
+            document_count=result.created + result.skipped,
+            created_count=result.created,
+            zip_path=result.zip_path,
+            actor_id=job.actor_id,
+            actor_label=job.actor_label,
+        )
 
     job.updated_at = timezone.now()
     job.version += 1

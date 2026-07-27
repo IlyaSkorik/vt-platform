@@ -5062,6 +5062,32 @@ paths:
               schema:
                 $ref: '#/components/schemas/GenerateDocumentsResponse'
           description: ''
+  /api/v1/staff/diplomas/generation-archive:
+    get:
+      operationId: diplomas_generation_archive
+      description: |-
+        The generation history: every completed run, newest first.
+
+        One list for every kind of run — the diploma print package and the thank-you
+        runs — because the organizer's question ("what did we generate, and where is that
+        ZIP?") does not care which mechanism produced it.
+      parameters:
+      - in: query
+        name: competitionId
+        schema:
+          type: string
+        description: Narrow the history to one competition (optional).
+      tags:
+      - Diplomas
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GenerationRunResponse'
+          description: ''
   /api/v1/staff/diplomas/preview/applications:
     get:
       operationId: diplomas_preview_applications
@@ -7724,6 +7750,58 @@ components:
       - published
       - regenerated
       - withoutRecipient
+      - zipUrl
+    GenerationRunResponse:
+      type: object
+      description: |-
+        One completed generation run, as the archive lists it.
+
+        Covers every kind of run — the numbered diploma package and the thank-you runs —
+        so the counts are per document rather than per diploma. ``zipUrl`` is null for a
+        run that produced no archive to download (a publish-only thank-you run).
+      properties:
+        id:
+          type: string
+          format: uuid
+        documentType:
+          $ref: '#/components/schemas/DocumentTypeEnum'
+        competitionId:
+          type: string
+          format: uuid
+        competition:
+          type:
+          - string
+          - 'null'
+        nominations:
+          type: integer
+        documents:
+          type: integer
+        created:
+          type: integer
+        published:
+          type: integer
+        zipUrl:
+          type:
+          - string
+          - 'null'
+        user:
+          type:
+          - string
+          - 'null'
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - competition
+      - competitionId
+      - created
+      - createdAt
+      - documentType
+      - documents
+      - id
+      - nominations
+      - published
+      - user
       - zipUrl
     GuardianLinkResource:
       type: object

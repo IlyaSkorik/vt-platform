@@ -43,6 +43,12 @@ class PrintJobModel(BasePersistenceModel):
     zip_path = models.CharField(max_length=1024, blank=True, default="")
     error = models.TextField(blank=True, default="")
 
+    # Who asked for the run. Recorded here because the request knows the requester
+    # and the worker does not, and carried into the generation archive when the job
+    # completes. Nullable for jobs enqueued before attribution existed.
+    actor_id = models.UUIDField(null=True, blank=True, default=None)
+    actor_label = models.CharField(max_length=320, blank=True, default="")
+
     class Meta(BasePersistenceModel.Meta):
         db_table = "diplomas_print_job"
         verbose_name = "print job"
