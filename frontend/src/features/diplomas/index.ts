@@ -1,6 +1,7 @@
 export type {
   DiplomaResponse,
   DocumentSlot,
+  GenerationRunResponse,
   PreviewApplication,
   PrintJobResponse,
   PrintPackageNomination,
@@ -18,6 +19,7 @@ export {
   useDiplomaTemplate,
   useDiplomaTemplates,
   useGenerateDocumentsMutation,
+  useGenerationArchive,
   usePreviewApplications,
   usePreviewBindings,
   usePrintJob,

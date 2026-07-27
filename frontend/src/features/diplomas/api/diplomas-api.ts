@@ -12,6 +12,7 @@ import {
   diplomasCreateTemplate,
   diplomasDeleteAssignment,
   diplomasGenerateDocuments,
+  diplomasGenerationArchive,
   diplomasGetPrintJob,
   diplomasGetTemplateLayout,
   diplomasPreviewApplications,
@@ -26,6 +27,7 @@ import type {
   DiplomaResponse,
   GenerateDocumentsRequestDocumentTypeEnum,
   GenerateDocumentsResponse,
+  GenerationRunResponse,
   LayoutResponse,
   PreviewApplication,
   PrintJobResponse,
@@ -54,6 +56,7 @@ import {
   unwrapAssignmentList,
   unwrapDiplomaList,
   unwrapGeneratedDocuments,
+  unwrapGenerationRuns,
   unwrapLayout,
   unwrapPreviewApplications,
   unwrapPreviewBindings,
@@ -407,6 +410,9 @@ export function useStartPrintPackageMutation(): UseMutationResult<
       // New diplomas may have been created — refresh the summary counts.
       void queryClient.invalidateQueries({ queryKey: diplomaKeys.printSummary(competitionId) });
       void queryClient.invalidateQueries({ queryKey: diplomaKeys.registry(competitionId) });
+      // The archive gains its line when the job completes, not now — this drops the
+      // stale history so opening the archive after the run reads it fresh.
+      void queryClient.invalidateQueries({ queryKey: diplomaKeys.generationArchives() });
     },
   });
 }
@@ -461,7 +467,36 @@ export function useGenerateDocumentsMutation(): UseMutationResult<
     },
     onSuccess: (_summary, { competitionId }) => {
       void queryClient.invalidateQueries({ queryKey: diplomaKeys.printSummary(competitionId) });
+      // A synchronous run: the archive already holds its line.
+      void queryClient.invalidateQueries({ queryKey: diplomaKeys.generationArchives() });
     },
+  });
+}
+
+async function fetchGenerationArchive(
+  competitionId: string,
+  signal?: AbortSignal,
+): Promise<GenerationRunResponse[]> {
+  const response = await diplomasGenerationArchive(
+    competitionId ? { competitionId } : undefined,
+    signal ? { signal } : {},
+  );
+  return unwrapGenerationRuns(response.data);
+}
+
+/**
+ * The generation history: completed runs of every document kind, newest first.
+ *
+ * Invalidated by both generation actions, since a run is what adds a line to it.
+ * Passing a competition narrows the history to that competition.
+ */
+export function useGenerationArchive(
+  competitionId?: string,
+): UseQueryResult<GenerationRunResponse[], ApiError> {
+  return useQuery<GenerationRunResponse[], ApiError>({
+    queryKey: diplomaKeys.generationArchive(competitionId ?? ""),
+    queryFn: ({ signal }) => fetchGenerationArchive(competitionId ?? "", signal),
+    staleTime: 10_000,
   });
 }
 

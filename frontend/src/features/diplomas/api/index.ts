@@ -9,6 +9,7 @@ export {
   useDiplomaTemplate,
   useDiplomaTemplates,
   useGenerateDocumentsMutation,
+  useGenerationArchive,
   usePreviewApplications,
   usePreviewBindings,
   usePrintJob,
