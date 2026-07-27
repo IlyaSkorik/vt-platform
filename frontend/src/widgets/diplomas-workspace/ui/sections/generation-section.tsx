@@ -188,6 +188,13 @@ export function GenerationSection(): React.JSX.Element {
             </Alert>
           ) : null}
 
+          {/* Says why «Выступлений» can be smaller than the number of applications
+              filed: the run only walks entries actually taken into the competition. */}
+          <p className="text-muted-foreground text-sm">
+            Учитываются только заявки, принятые в конкурс: отменённые, отправленные на доработку и
+            ещё не принятые документов не получают.
+          </p>
+
           <NominationTable
             nominations={nominations}
             selected={effectiveSelected}

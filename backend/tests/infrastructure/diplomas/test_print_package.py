@@ -78,11 +78,14 @@ def _submission(
     name: str,
     category: CategoryModel,
     teachers: list[dict[str, str]] | None = None,
+    status: str = "ACCEPTED",
 ) -> SubmissionModel:
+    """One entry. ``ACCEPTED`` by default — only entries taken into the competition
+    are printed, so anything earlier would be invisible to generation."""
     return SubmissionModel.objects.create(
         competition_id=competition.id,
         applicant_id=uuid.uuid4(),
-        status="SUBMITTED",
+        status=status,
         participants=[{"display_name": name, "member_count": 1}],
         performance={"title": "Этюд", "nomination_id": str(category.id)},
         teachers=teachers or [],
@@ -140,6 +143,47 @@ def test_generation_for_selected_nominations_only() -> None:
 
     assert job["created"] == 1  # only the vocals submission
     assert DiplomaModel.objects.filter(competition_id=competition.id).count() == 1
+
+
+@pytest.mark.parametrize(
+    "status",
+    ["DRAFT", "SUBMITTED", "UNDER_REVIEW", "REQUIRES_CORRECTION", "APPROVED", "WAITING_PAYMENT", "PAID", "CANCELLED"],
+)
+def test_an_entry_not_yet_in_the_competition_is_not_printed(status: str) -> None:
+    """A diploma attests taking part, so it waits until the entry is committed.
+
+    Everything before ``ACCEPTED`` is a decision not yet made, and ``CANCELLED`` is
+    one made the other way. The register is immutable once written, so an entry that
+    may still vanish must not get a numbered diploma.
+    """
+    competition = _competition()
+    vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+    _assign(competition, vocals, _template_with_pdf("Вокал A4"))
+    _submission(competition, "Иванов Иван", vocals, status=status)
+
+    job = print_package.start_print_package(competition_id=competition.id, category_ids=[])
+
+    assert job["created"] == 0
+    assert DiplomaModel.objects.filter(competition_id=competition.id).count() == 0
+    # And it is not promised in the summary either.
+    summary = print_package.print_package_summary(competition.id)
+    by_id = {row["categoryId"]: row for row in summary["nominations"]}
+    assert by_id[str(vocals.id)]["submissions"] == 0
+    assert by_id[str(vocals.id)]["diploma"]["willCreate"] == 0
+
+
+@pytest.mark.parametrize("status", ["ACCEPTED", "SCHEDULED", "COMPLETED"])
+def test_an_entry_in_the_competition_is_printed(status: str) -> None:
+    """From ``ACCEPTED`` on the entry cannot be cancelled and its content is frozen —
+    being scheduled or already performed does not take it out of the print run."""
+    competition = _competition()
+    vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+    _assign(competition, vocals, _template_with_pdf("Вокал A4"))
+    _submission(competition, "Иванов Иван", vocals, status=status)
+
+    job = print_package.start_print_package(competition_id=competition.id, category_ids=[])
+
+    assert job["created"] == 1
 
 
 def test_print_package_never_targets_a_thank_you_template() -> None:

@@ -18,7 +18,7 @@ from apps.diplomas.application.batch_services import DiplomaBatchGenerationServi
 from apps.diplomas.application.numbering import DiplomaNumberService
 from apps.diplomas.domain.document_types import DocumentType, policy_for
 from apps.diplomas.domain.exceptions import PrintJobNotFoundError, PrintTemplateNotReadyError
-from apps.diplomas.infrastructure.acl import DjangoDiplomaSnapshotSource
+from apps.diplomas.infrastructure.acl import COMPETING_SUBMISSION_STATUSES, DjangoDiplomaSnapshotSource
 from apps.diplomas.infrastructure.models import (
     DiplomaModel,
     IssuedDocumentModel,
@@ -145,8 +145,12 @@ def print_package_summary(competition_id: uuid.UUID) -> dict[str, Any]:
     submissions: Counter[str] = Counter()
     recipients: Counter[str] = Counter()
     unaddressable: Counter[str] = Counter()
+    # The same narrowing the generation pipeline applies, so «Выступлений» is the
+    # number a run will actually walk rather than every entry ever filed.
     for row in SubmissionModel.objects.filter(
-        competition_id=competition_id, deleted_at__isnull=True
+        competition_id=competition_id,
+        deleted_at__isnull=True,
+        status__in=COMPETING_SUBMISSION_STATUSES,
     ).values("id", "performance", "teachers"):
         category_id = str((row["performance"] or {}).get("nomination_id") or "")
         if not category_id:

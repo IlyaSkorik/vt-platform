@@ -293,7 +293,8 @@ class TestPrintPackageCycle:
         SubmissionModel.objects.create(
             competition_id=competition.id,
             applicant_id=uuid.uuid4(),
-            status="SUBMITTED",
+            # Only entries taken into the competition are printed.
+            status="ACCEPTED",
             participants=[{"display_name": "Иванов Иван", "member_count": 1}],
             performance={"title": "Этюд", "nomination_id": str(category.id)},
         )

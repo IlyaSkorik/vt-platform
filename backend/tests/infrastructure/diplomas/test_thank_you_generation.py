@@ -110,13 +110,15 @@ def _submission(
     name: str,
     *,
     teachers: list[dict[str, str]] | None = None,
+    status: str = "ACCEPTED",
 ) -> SubmissionModel:
     """One entry. A thank-you letter is addressed to a teacher, so the default
-    names one — an entry with no teacher yields no letters at all."""
+    names one — an entry with no teacher yields no letters at all. ``ACCEPTED`` by
+    default: only entries taken into the competition are issued documents."""
     return SubmissionModel.objects.create(
         competition_id=competition.id,
         applicant_id=uuid.uuid4(),
-        status="SUBMITTED",
+        status=status,
         participants=[{"display_name": name, "member_count": 1}],
         teachers=[{"first_name": "Ольга", "last_name": "Петрова", "role": "Педагог"}]
         if teachers is None
@@ -160,6 +162,23 @@ class TestGeneration:
             # Published on generation — the organizer publishes nothing extra.
             assert row.published_at == _NOW
             assert row.pdf_path.startswith("/media/diplomas/documents/")
+
+    def test_skips_entries_not_yet_in_the_competition(self) -> None:
+        """A letter thanks a teacher for a performance, so it waits for the same
+        commitment a diploma does — the filter lives in the shared snapshot source."""
+        competition = _competition()
+        vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+        _submission(competition, vocals, "Принятая")
+        _submission(competition, vocals, "Отменённая", status="CANCELLED")
+        _submission(competition, vocals, "На доработке", status="REQUIRES_CORRECTION")
+        _assign(competition, vocals, _template("Благодарность", "THANK_YOU"))
+
+        result = _generate(competition, vocals)
+
+        assert result.created == 1
+        # Not counted as "nobody to thank" either — those entries never entered the run.
+        assert result.without_recipient == 0
+        assert IssuedDocumentModel.objects.count() == 1
 
     def test_carries_no_number_and_no_qr(self) -> None:
         competition = _competition()

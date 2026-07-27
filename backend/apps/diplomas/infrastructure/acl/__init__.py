@@ -2,6 +2,6 @@
 
 from __future__ import annotations
 
-from .snapshot_source import DjangoDiplomaSnapshotSource
+from .snapshot_source import COMPETING_SUBMISSION_STATUSES, DjangoDiplomaSnapshotSource
 
-__all__ = ["DjangoDiplomaSnapshotSource"]
+__all__ = ["COMPETING_SUBMISSION_STATUSES", "DjangoDiplomaSnapshotSource"]

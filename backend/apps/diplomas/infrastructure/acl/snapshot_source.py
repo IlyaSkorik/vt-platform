@@ -6,14 +6,18 @@ from the Participants context — the same cross-context reads the organizer
 registry read model performs. Produces resolved *values*; anything absent is
 left ``None`` (a diploma never carries a placeholder). ``award.degree`` is always
 ``None`` here — the jury result is filled in later.
+
+Also owns the answer to *which* of a competition's submissions a document is due
+for: see :data:`COMPETING_SUBMISSION_STATUSES`.
 """
 
 from __future__ import annotations
 
 import uuid
 from datetime import date
-from typing import Any
+from typing import Any, Final
 
+from apps.applications.domain.value_objects import SubmissionStatus
 from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.competitions.infrastructure.models.competition import CompetitionModel
 from apps.competitions.infrastructure.models.taxonomy import (
@@ -36,7 +40,26 @@ from apps.diplomas.domain.value_objects import (
 from apps.diplomas.infrastructure.models import TemplateModel
 from apps.participants.infrastructure.models import ParticipantOrganizationMembershipModel
 
-__all__ = ["DjangoDiplomaSnapshotSource"]
+__all__ = ["COMPETING_SUBMISSION_STATUSES", "DjangoDiplomaSnapshotSource"]
+
+#: The statuses in which an entry is actually taking part in the competition, and
+#: therefore the only ones a document is issued for.
+#:
+#: Applications' lifecycle is linear and, past ``ACCEPTED``, irreversible: an entry
+#: cannot be cancelled from there on and its content is frozen (see
+#: ``_LEGAL_TRANSITIONS`` in :mod:`apps.applications.domain.entities`). ``ACCEPTED``
+#: onward is exactly "committed to the running order", which is what a diploma or a
+#: thank-you letter attests.
+#:
+#: Everything earlier is a decision not yet made — under review, returned for
+#: correction, approved but unpaid — and ``CANCELLED`` is a decision made the other
+#: way. Printing for those would put a name on a diploma for a performance that may
+#: never happen, and the diploma register is immutable once written.
+COMPETING_SUBMISSION_STATUSES: Final[tuple[str, ...]] = (
+    SubmissionStatus.ACCEPTED.value,
+    SubmissionStatus.SCHEDULED.value,
+    SubmissionStatus.COMPLETED.value,
+)
 
 
 def _clean(value: Any) -> str | None:
@@ -140,8 +163,16 @@ class DjangoDiplomaSnapshotSource:
     def list_submission_ids(
         self, competition_id: uuid.UUID, *, category_id: uuid.UUID | None = None
     ) -> list[uuid.UUID]:
+        """The entries a document is due for, narrowed to one nomination if asked.
+
+        Only entries actually in the competition — see
+        :data:`COMPETING_SUBMISSION_STATUSES`. A cancelled or still-under-review
+        entry is not skipped later in the pipeline; it never enters it.
+        """
         rows = SubmissionModel.objects.filter(
-            competition_id=competition_id, deleted_at__isnull=True
+            competition_id=competition_id,
+            deleted_at__isnull=True,
+            status__in=COMPETING_SUBMISSION_STATUSES,
         )
         if category_id is not None:
             # nomination == performance.nomination_id (Applications embeds it as JSON).
