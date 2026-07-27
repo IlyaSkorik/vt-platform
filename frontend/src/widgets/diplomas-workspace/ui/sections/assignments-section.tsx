@@ -15,6 +15,7 @@ import { ApiError } from "@/shared/api";
 import {
   Badge,
   Button,
+  Checkbox,
   type ColumnDef,
   DataTable,
   Dialog,
@@ -31,30 +32,49 @@ import {
 } from "@/shared/ui";
 import { formatDate } from "../../lib/format";
 
+/** A nomination offered for assignment, with the name the organizer knows it by. */
+interface FreeNomination {
+  id: string;
+  name: string;
+}
+
 function CreateAssignmentDialog(): React.JSX.Element {
   const [open, setOpen] = useState(false);
   const [competitionId, setCompetitionId] = useState("");
-  const [categoryId, setCategoryId] = useState("");
+  const [categoryIds, setCategoryIds] = useState<Set<string>>(new Set());
   const [documentType, setDocumentType] = useState<DocumentType>("DIPLOMA");
   const [templateId, setTemplateId] = useState("");
 
   const competitionsQuery = useCompetitionsList();
   const competitionDetailQuery = useCompetitionDetail(competitionId || undefined);
   const templatesQuery = useDiplomaTemplates();
+  const assignmentsQuery = useDiplomaAssignments();
   const createAssignment = useCreateAssignmentMutation();
 
   const competitionOptions: SelectOption[] = useMemo(
     () => (competitionsQuery.data ?? []).map((item) => ({ value: item.id, label: item.title })),
     [competitionsQuery.data],
   );
-  const nominationOptions: SelectOption[] = useMemo(
-    () =>
-      (competitionDetailQuery.data?.categories ?? []).map((category) => ({
-        value: category.id,
-        label: category.name,
-      })),
-    [competitionDetailQuery.data],
-  );
+  /**
+   * The nominations whose slot of this kind is still empty.
+   *
+   * An assigned nomination is left out rather than shown and rejected: the slot is
+   * already taken, so offering it could only produce a conflict. Its diploma slot
+   * being full says nothing about its thank-you slot, hence the filter is per kind.
+   */
+  const freeNominations: FreeNomination[] = useMemo(() => {
+    const taken = new Set(
+      (assignmentsQuery.data ?? [])
+        .filter(
+          (item) => item.competitionId === competitionId && item.documentType === documentType,
+        )
+        .map((item) => item.categoryId),
+    );
+    return (competitionDetailQuery.data?.categories ?? [])
+      .filter((category) => !taken.has(category.id))
+      .map((category) => ({ id: category.id, name: category.name }));
+  }, [assignmentsQuery.data, competitionDetailQuery.data, competitionId, documentType]);
+
   // Only templates of the chosen kind can fill that slot — the backend derives the
   // slot from the template's own type, so offering the others would be a trap.
   const templateOptions: SelectOption[] = useMemo(
@@ -67,7 +87,7 @@ function CreateAssignmentDialog(): React.JSX.Element {
 
   function reset(): void {
     setCompetitionId("");
-    setCategoryId("");
+    setCategoryIds(new Set());
     setDocumentType("DIPLOMA");
     setTemplateId("");
   }
@@ -79,19 +99,37 @@ function CreateAssignmentDialog(): React.JSX.Element {
     }
   }
 
+  function toggleNomination(id: string, on: boolean): void {
+    const next = new Set(categoryIds);
+    if (on) {
+      next.add(id);
+    } else {
+      next.delete(id);
+    }
+    setCategoryIds(next);
+  }
+
   async function handleSubmit(): Promise<void> {
-    if (!competitionId || !categoryId || !templateId) {
+    const picked = [...categoryIds];
+    if (!competitionId || picked.length === 0 || !templateId) {
       return;
     }
     try {
-      await createAssignment.mutateAsync({ competitionId, categoryId, templateId });
-      toast.success("Назначение создано");
+      await createAssignment.mutateAsync({
+        competitionId,
+        categoryIds: picked,
+        templateId,
+      });
+      toast.success(
+        picked.length === 1 ? "Назначение создано" : `Назначений создано: ${picked.length}`,
+      );
       handleOpenChange(false);
     } catch (error) {
       if (error instanceof ApiError && error.isConflict) {
-        // Per kind: a diploma assignment does not block a thank-you assignment.
+        // The picker hides assigned nominations, so this means the list went stale —
+        // nothing was created, and a refetch will show what changed.
         const slot = documentTypeConfig(documentType).slotLabel.toLocaleLowerCase("ru-RU");
-        toast.error(`Для этой номинации уже назначен ${slot}.`);
+        toast.error(`Для одной из номинаций уже назначен ${slot}. Обновите список.`);
         return;
       }
       const message =
@@ -103,7 +141,7 @@ function CreateAssignmentDialog(): React.JSX.Element {
   }
 
   const canSubmit =
-    Boolean(competitionId && categoryId && templateId) && !createAssignment.isPending;
+    Boolean(competitionId && categoryIds.size > 0 && templateId) && !createAssignment.isPending;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -126,20 +164,12 @@ function CreateAssignmentDialog(): React.JSX.Element {
             value={competitionId}
             onValueChange={(value) => {
               setCompetitionId(value);
-              setCategoryId("");
+              setCategoryIds(new Set());
             }}
           />
-          <Select
-            label="Номинация"
-            required
-            placeholder={competitionId ? "Выберите номинацию" : "Сначала выберите конкурс"}
-            options={nominationOptions}
-            value={categoryId}
-            onValueChange={setCategoryId}
-            disabled={!competitionId || competitionDetailQuery.isLoading}
-          />
           {/* The slot the assignment fills. A nomination has one of each, so this
-              chooses which of its slots is being set. */}
+              chooses which of its slots is being set — and therefore which
+              nominations are still free below. */}
           <Select
             label="Тип документа"
             required
@@ -147,9 +177,22 @@ function CreateAssignmentDialog(): React.JSX.Element {
             value={documentType}
             onValueChange={(value) => {
               setDocumentType(value as DocumentType);
-              // A template of the previous kind cannot fill this slot.
+              // A template of the previous kind cannot fill this slot, and the free
+              // nominations differ per kind.
               setTemplateId("");
+              setCategoryIds(new Set());
             }}
+          />
+          <NominationPicker
+            nominations={freeNominations}
+            selected={categoryIds}
+            competitionChosen={Boolean(competitionId)}
+            loading={competitionDetailQuery.isLoading || assignmentsQuery.isLoading}
+            slotLabel={documentTypeConfig(documentType).slotLabel.toLocaleLowerCase("ru-RU")}
+            onToggle={toggleNomination}
+            onToggleAll={(on) =>
+              setCategoryIds(on ? new Set(freeNominations.map((item) => item.id)) : new Set())
+            }
           />
           <Select
             label={documentTypeConfig(documentType).slotLabel}
@@ -175,6 +218,77 @@ function CreateAssignmentDialog(): React.JSX.Element {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * Pick any number of nominations to assign the template to.
+ *
+ * A checkbox list rather than a select: the whole point is seeing which
+ * nominations are still free and ticking several, which a single-value control
+ * cannot express.
+ */
+function NominationPicker({
+  nominations,
+  selected,
+  competitionChosen,
+  loading,
+  slotLabel,
+  onToggle,
+  onToggleAll,
+}: {
+  nominations: FreeNomination[];
+  selected: Set<string>;
+  competitionChosen: boolean;
+  loading: boolean;
+  slotLabel: string;
+  onToggle: (id: string, on: boolean) => void;
+  onToggleAll: (on: boolean) => void;
+}): React.JSX.Element {
+  const allSelected = nominations.length > 0 && nominations.every((item) => selected.has(item.id));
+
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <div className="flex items-baseline justify-between gap-2">
+        <legend className="font-medium text-foreground text-sm">
+          Номинации
+          <span className="ml-0.5 text-danger" aria-hidden="true">
+            *
+          </span>
+        </legend>
+        {nominations.length > 1 ? (
+          <Button variant="ghost" size="sm" onClick={() => onToggleAll(!allSelected)}>
+            {allSelected ? "Снять все" : "Выбрать все"}
+          </Button>
+        ) : null}
+      </div>
+
+      {!competitionChosen ? (
+        <p className="text-muted-foreground text-sm">Сначала выберите конкурс.</p>
+      ) : loading ? (
+        <p className="text-muted-foreground text-sm">Загружаем номинации…</p>
+      ) : nominations.length === 0 ? (
+        <p className="text-muted-foreground text-sm">
+          У каждой номинации этого конкурса уже назначен {slotLabel}. Освободите слот, удалив
+          назначение в таблице.
+        </p>
+      ) : (
+        <div className="flex max-h-56 flex-col gap-2 overflow-y-auto rounded-lg border border-border p-3">
+          {nominations.map((nomination) => (
+            <Checkbox
+              key={nomination.id}
+              label={nomination.name}
+              checked={selected.has(nomination.id)}
+              onCheckedChange={(checked) => onToggle(nomination.id, checked === true)}
+            />
+          ))}
+        </div>
+      )}
+
+      {selected.size > 0 ? (
+        <p className="text-muted-foreground text-sm">Выбрано: {selected.size}</p>
+      ) : null}
+    </fieldset>
   );
 }
 
