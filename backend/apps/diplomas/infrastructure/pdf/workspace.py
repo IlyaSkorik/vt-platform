@@ -108,15 +108,34 @@ class DjangoPrintPackageWorkspace:
         return _media_path(key)
 
     def store_zip(self, *, competition_id: uuid.UUID, items: list[tuple[str, str]]) -> str:
+        return self._store_archive(
+            key=f"diplomas/print/{competition_id}/Diplomas.zip", items=items
+        )
+
+    def store_documents_zip(
+        self, *, competition_id: uuid.UUID, document_type: str, items: list[tuple[str, str]]
+    ) -> str:
+        # Named after the kind ("ThankYou.zip"), because the file name is what the
+        # organizer sees in the downloads folder next to the diplomas archive. Kept
+        # inside the kind's own tree, so it neither collides with the diploma set
+        # nor with another kind's bundle.
+        kind = document_type.lower()
+        filename = "".join(part.capitalize() for part in document_type.split("_"))
+        return self._store_archive(
+            key=f"diplomas/documents/{competition_id}/{kind}/{filename}.zip", items=items
+        )
+
+    @staticmethod
+    def _store_archive(*, key: str, items: list[tuple[str, str]]) -> str:
+        """ZIP up ``(arcname, media_path)`` pairs at ``key``, replacing any previous."""
         buffer = io.BytesIO()
         with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
             for arcname, media_path in items:
-                key = _storage_key(media_path)
-                if not default_storage.exists(key):
+                storage_key = _storage_key(media_path)
+                if not default_storage.exists(storage_key):
                     continue
-                with default_storage.open(key, "rb") as handle:
+                with default_storage.open(storage_key, "rb") as handle:
                     archive.writestr(arcname, handle.read())
-        key = f"diplomas/print/{competition_id}/Diplomas.zip"
         if default_storage.exists(key):
             default_storage.delete(key)
         default_storage.save(key, ContentFile(buffer.getvalue()))

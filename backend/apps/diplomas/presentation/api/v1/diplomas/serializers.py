@@ -234,6 +234,13 @@ class GenerateDocumentsRequestSerializer(serializers.Serializer[dict[str, object
     documentType = serializers.ChoiceField(choices=["THANK_YOU"])
     # Re-render even for performances that already have this document.
     force = serializers.BooleanField(required=False, default=False)
+    #: Also archive the run's documents into one ZIP for offline printing, reported
+    #: as ``zipUrl``. Independent of ``publish``.
+    bundle = serializers.BooleanField(required=False, default=False)
+    #: Show the documents to the participants. Off for a run that only prepares
+    #: sheets to print: they are generated and stored, but stay out of the cabinets
+    #: until a later run publishes them. Never withdraws an existing publication.
+    publish = serializers.BooleanField(required=False, default=True)
 
 
 class GenerateDocumentsResponseSerializer(serializers.Serializer[dict[str, object]]):
@@ -249,6 +256,15 @@ class GenerateDocumentsResponseSerializer(serializers.Serializer[dict[str, objec
     #: Entries that named nobody to address, so nothing was issued for them.
     withoutRecipient = serializers.IntegerField()
     nominations = serializers.IntegerField()
+    #: Documents the chosen nominations now hold — what a bundle would contain,
+    #: which is more than ``created + regenerated`` on a repeat run.
+    documents = serializers.IntegerField()
+    #: Documents this run made visible to participants. Zero for a print-only run,
+    #: and the only non-zero count when publishing what a print run had rendered.
+    published = serializers.IntegerField()
+    #: The printable archive's ``/media/…`` path; null unless ``bundle`` was asked
+    #: for (or the run produced nothing to archive).
+    zipUrl = serializers.CharField(allow_null=True)
 
 
 # --- Diploma registry -------------------------------------------------------

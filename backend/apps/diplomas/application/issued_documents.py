@@ -17,9 +17,11 @@ What actually differs per kind is expressed as data, not branches:
   with no value is not drawn — simply does not appear.
 * **No degree.** A kind that does not award one leaves the snapshot's award
   untouched, and the same "no value, no field" rule omits any Степень field.
-* **Immediate publication.** :meth:`IssuedDocument.with_pdf` stamps
-  ``published_at`` when the policy says so, and the document reaches the
-  participant's cabinet with no organizer step.
+* **Immediate publication — when asked for.** For a kind whose policy allows it,
+  :meth:`IssuedDocument.with_pdf` stamps ``published_at`` and the document reaches
+  the participant's cabinet with no separate organizer step. A run may withhold
+  that (``publish=False``) to prepare sheets for printing without showing them;
+  a later publishing run picks those up without re-rendering them.
 
 Adding an unnumbered third kind (e.g. ``CERTIFICATE``) needs **no change here** —
 only a new :class:`DocumentType` member and its policy row.
@@ -27,6 +29,7 @@ only a new :class:`DocumentType` member and its policy row.
 
 from __future__ import annotations
 
+import re
 import uuid
 from dataclasses import dataclass, replace
 from datetime import datetime
@@ -52,6 +55,9 @@ __all__ = ["IssuedDocumentGenerationService", "IssuedDocumentResult"]
 #: Field type whose text is the teacher roster.
 _TEACHER_FIELD_TYPE = "teacher"
 
+#: Characters a ZIP entry name may not carry, whatever a name field holds.
+_UNSAFE_IN_NAME = re.compile(r"[\\/:*?\"<>|\r\n\t]+")
+
 
 @dataclass(frozen=True, slots=True)
 class IssuedDocumentResult:
@@ -66,6 +72,35 @@ class IssuedDocumentResult:
     #: Entries a per-teacher kind could not address because no teacher is named.
     without_recipient: int
     document_type: DocumentType
+    #: Documents this run made visible to participants. Zero for a print-only run,
+    #: and the only non-zero count when publishing what an earlier print run left
+    #: rendered but unpublished.
+    published: int = 0
+    #: Every document the nomination now holds, as ``(zip entry name, media path)``
+    #: — the whole set, not just what this run rendered, so a bundle built from it
+    #: is a complete printable stack even on a re-run that created nothing.
+    items: tuple[tuple[str, str], ...] = ()
+
+
+def _safe(value: str | None) -> str:
+    """A name field reduced to something a file name may hold."""
+    return _UNSAFE_IN_NAME.sub(" ", str(value or "")).strip()
+
+
+def _arcname(snapshot: DiplomaSnapshot, recipient: str) -> str:
+    """Where one document sits inside the printable ZIP.
+
+    Grouped by nomination and named after the person the sheet is handed to,
+    because that is how an organizer sorts a printed stack — the storage key is a
+    submission uuid and says nothing to whoever is stuffing envelopes. The
+    performance is kept in the name too, so a teacher thanked twice gets two
+    distinguishable sheets rather than a bare ``(2)``.
+    """
+    folder = _safe(snapshot.nomination.title) or "Без номинации"
+    participant = _safe(snapshot.participant.display_name) or "Без имени"
+    addressee = _safe(recipient)
+    stem = f"{addressee} — {participant}" if addressee else participant
+    return f"{folder}/{stem}.pdf"
 
 
 def _addressees(
@@ -138,12 +173,21 @@ class IssuedDocumentGenerationService:
         document_type: DocumentType,
         now: datetime,
         force: bool = False,
+        publish: bool = True,
     ) -> IssuedDocumentResult:
         """Render this kind of document for every performance in the nomination.
 
         Uses the template the nomination assigns to *this kind* — so «Вокал» may
         print a blue thank-you while «Хореография» prints a gold one. Documents
         that already have a PDF are left alone unless ``force`` re-renders them.
+
+        ``publish`` decides whether the run also shows its documents to the
+        participants. Off, the documents are generated and stored but stay out of
+        the cabinets — which is what an organizer wants when preparing sheets to
+        print and hand out. On, documents that were rendered by an earlier
+        print-only run are published too, without being re-rendered: publishing is
+        a step of its own, not a side effect of rendering. Nothing is ever
+        *un*published.
 
         Raises :class:`TemplateNotAssignedError` when the nomination has no
         template of this kind, :class:`TemplateTypeMismatchError` when the assigned
@@ -186,6 +230,8 @@ class IssuedDocumentGenerationService:
         created = 0
         regenerated = 0
         without_recipient = 0
+        published = 0
+        items: list[tuple[str, str]] = []
         for submission_id in self._snapshots.list_submission_ids(
             competition_id, category_id=category_id
         ):
@@ -216,6 +262,15 @@ class IssuedDocumentGenerationService:
                     self._repository.add(document)
                     created += 1
                 elif document.pdf_path and not force:
+                    # Nothing to render — but there may still be something to do: a
+                    # letter left unpublished by a print-only run is published here
+                    # without touching the PDF the organizer may already have printed.
+                    if publish and not document.is_published:
+                        self._repository.update(document.publish(now=now))
+                        published += 1
+                    # It still belongs in the bundle either way: the ZIP is the
+                    # nomination's whole printable set, not this run's delta.
+                    items.append((_arcname(document.snapshot, recipient), document.pdf_path))
                     continue
                 else:
                     regenerated += 1
@@ -235,11 +290,57 @@ class IssuedDocumentGenerationService:
                     recipient=document.recipient,
                     data=data,
                 )
-                self._repository.update(document.with_pdf(path, now=now))
+                rendered = document.with_pdf(path, now=now, publish=publish)
+                if rendered.is_published and not document.is_published:
+                    published += 1
+                self._repository.update(rendered)
+                items.append((_arcname(document.snapshot, recipient), path))
 
         return IssuedDocumentResult(
             created=created,
             regenerated=regenerated,
             without_recipient=without_recipient,
             document_type=document_type,
+            published=published,
+            items=tuple(items),
+        )
+
+    def bundle(
+        self,
+        *,
+        competition_id: uuid.UUID,
+        document_type: DocumentType,
+        items: list[tuple[str, str]],
+    ) -> str:
+        """Bundle already-generated documents into one ZIP; return its media path.
+
+        The offline half of the same run: these documents reach the participants'
+        cabinets on generation regardless, and the archive is what an organizer
+        prints and hands out at the ceremony — so bundling is a separate step over
+        the run's output, not a different way of generating it.
+
+        Names are made unique across the whole archive, because they are built from
+        names people actually share — two entries in one nomination may carry the
+        same participant name and thank the same teacher — and a duplicate name in a
+        ZIP is one file silently overwriting another on extraction. The same file
+        listed twice (a teacher named twice on one entry gets one letter) collapses
+        to a single entry instead.
+        """
+        unique: list[tuple[str, str]] = []
+        taken: set[str] = set()
+        seen_paths: set[str] = set()
+        for arcname, media_path in items:
+            if media_path in seen_paths:
+                continue
+            seen_paths.add(media_path)
+            stem, dot, extension = arcname.rpartition(".")
+            name = arcname
+            index = 2
+            while name.casefold() in taken:
+                name = f"{stem} ({index}){dot}{extension}"
+                index += 1
+            taken.add(name.casefold())
+            unique.append((name, media_path))
+        return self._workspace.store_documents_zip(
+            competition_id=competition_id, document_type=document_type.value, items=unique
         )

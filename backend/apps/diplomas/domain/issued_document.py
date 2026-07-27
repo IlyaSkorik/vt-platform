@@ -8,8 +8,10 @@ itself and is untouched by this.
 Like a diploma, an issued document is **self-contained**: it freezes the
 :class:`DiplomaSnapshot` it was generated from, so later edits to the submission or
 the competition never change it. Unlike a diploma it has no number, no verification
-token and no public register entry — and when its policy says so, it is published
-the moment it is generated, with no separate organizer step.
+token and no public register entry — and when its policy allows it, the generating
+run can publish it outright, with no separate organizer step. Whether a given run
+does is the run's call: sheets prepared for printing stay out of the cabinet until
+someone publishes them.
 
 Framework-free (no Django). Persistence lives in the infrastructure mapper.
 """
@@ -117,15 +119,21 @@ class IssuedDocument:
         """Whether the participant can see this document."""
         return self.published_at is not None
 
-    def with_pdf(self, path: str, *, now: datetime) -> IssuedDocument:
-        """Record the rendered PDF, publishing it if the kind publishes on generation.
+    def with_pdf(self, path: str, *, now: datetime, publish: bool = True) -> IssuedDocument:
+        """Record the rendered PDF, publishing it unless the caller withholds that.
 
-        This is where "a thank-you letter appears in the cabinet with no organizer
-        action" actually happens — and it is the policy that decides, not this
-        method knowing anything about thank-you letters.
+        Two gates, and both must open. The **policy** says whether the kind may be
+        published by its generating run at all (a diploma may not — it is published
+        through the registry). The **caller** says whether this particular run does:
+        an organizer preparing sheets to print is not yet showing them to anyone.
+
+        Publication is one-way here. An already-published document keeps its
+        original timestamp, so re-rendering it — with or without ``publish`` — never
+        moves the date and never takes it back out of the cabinet. Use
+        :meth:`publish` to publish a document that is already rendered.
         """
         policy = policy_for(self.document_type)
-        published_at = now if policy.publishes_on_generation else self.published_at
+        published_at = self.published_at or (now if publish and policy.publishes_on_generation else None)
         return replace(
             self,
             pdf_path=path,
@@ -133,3 +141,15 @@ class IssuedDocument:
             updated_at=now,
             version=self.version + 1,
         )
+
+    def publish(self, *, now: datetime) -> IssuedDocument:
+        """Publish an already-rendered document, without re-rendering it.
+
+        The second half of the split above: documents generated for print only are
+        complete but invisible, and this is what a later "publish" run does to them.
+        Idempotent — an already-published document is returned untouched, keeping its
+        original publication date.
+        """
+        if self.published_at is not None:
+            return self
+        return replace(self, published_at=now, updated_at=now, version=self.version + 1)

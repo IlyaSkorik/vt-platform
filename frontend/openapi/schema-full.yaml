@@ -5037,8 +5037,10 @@ paths:
         Diplomas are not generated here — they keep the numbered print-package path,
         which this endpoint does not touch.
 
-        Synchronous: there is no numbering to serialize and no ZIP to bundle, so the
-        run completes in the request.
+        Synchronous: there is no numbering to serialize, so the run completes in the
+        request. ``publish`` and ``bundle`` are independent: a run can publish the
+        documents to the participants' cabinets, hand back a ZIP to print from, or —
+        for a print-only run — generate them without publishing anything yet.
       tags:
       - Diplomas
       requestBody:
@@ -7673,6 +7675,12 @@ components:
         force:
           type: boolean
           default: false
+        bundle:
+          type: boolean
+          default: false
+        publish:
+          type: boolean
+          default: true
       required:
       - categoryIds
       - competitionId
@@ -7700,12 +7708,23 @@ components:
           type: integer
         nominations:
           type: integer
+        documents:
+          type: integer
+        published:
+          type: integer
+        zipUrl:
+          type:
+          - string
+          - 'null'
       required:
       - created
       - documentType
+      - documents
       - nominations
+      - published
       - regenerated
       - withoutRecipient
+      - zipUrl
     GuardianLinkResource:
       type: object
       description: A guardian relationship embedded in a participant resource.

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import io
 import uuid
+import zipfile
 from datetime import UTC, date, datetime
 
 import pytest
@@ -36,11 +37,16 @@ from apps.diplomas.infrastructure.models import (
     TemplateFieldModel,
     TemplateModel,
 )
-from apps.diplomas.presentation.api.v1.diplomas import composition
+from apps.diplomas.presentation.api.v1.diplomas import composition, documents
 
 pytestmark = pytest.mark.django_db
 
 _NOW = datetime(2026, 5, 20, 12, 0, tzinfo=UTC)
+
+
+@pytest.fixture(autouse=True)
+def _media_root(settings, tmp_path):
+    settings.MEDIA_ROOT = str(tmp_path)
 
 
 def _backing_pdf() -> bytes:
@@ -467,6 +473,171 @@ class TestPerNominationTemplates:
 
         with pytest.raises(AssignmentConflictError):
             _assign(competition, vocals, _template("Благодарность золотая", "THANK_YOU"))
+
+
+class TestPrintableBundle:
+    """The offline half: the same run can also hand back a ZIP to print from.
+
+    Publication is unaffected — a letter reaches the cabinet on generation either
+    way — so what these check is the archive: that it holds the nomination's whole
+    set (not just what one run rendered) under names an organizer can sort by hand.
+    """
+
+    def _run(self, competition: CompetitionModel, categories: list[CategoryModel], *, bundle: bool):
+        return documents.generate_documents(
+            competition_id=competition.id,
+            category_ids=[category.id for category in categories],
+            document_type="THANK_YOU",
+            bundle=bundle,
+        )
+
+    def _entries(self, zip_url: str) -> list[str]:
+        with (
+            default_storage.open(zip_url.removeprefix("/media/"), "rb") as fh,
+            zipfile.ZipFile(io.BytesIO(fh.read())) as archive,
+        ):
+            return sorted(archive.namelist())
+
+    def test_archives_a_letter_per_recipient_grouped_by_nomination(self) -> None:
+        competition = _competition()
+        vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+        _submission(
+            competition,
+            vocals,
+            "Иванов Иван",
+            teachers=[
+                {"first_name": "Ольга", "last_name": "Петрова", "role": "Педагог"},
+                {"first_name": "Иван", "last_name": "Сидоров", "role": "Концертмейстер"},
+            ],
+        )
+        _assign(competition, vocals, _template("Благодарность", "THANK_YOU"))
+
+        summary = self._run(competition, [vocals], bundle=True)
+
+        assert summary["created"] == 2
+        assert summary["documents"] == 2
+        assert summary["zipUrl"] == (
+            f"/media/diplomas/documents/{competition.id}/thank_you/ThankYou.zip"
+        )
+        # Addressed to the teacher, filed under the nomination, with the performance
+        # named so a teacher thanked twice yields two distinguishable sheets.
+        assert self._entries(summary["zipUrl"]) == [
+            "Вокал/Петрова Ольга — Иванов Иван.pdf",
+            "Вокал/Сидоров Иван — Иванов Иван.pdf",
+        ]
+
+    def test_a_repeat_run_archives_the_whole_set_it_did_not_regenerate(self) -> None:
+        competition = _competition()
+        vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+        _submission(competition, vocals, "Иванов Иван")
+        _submission(competition, vocals, "Петров Пётр")
+        _assign(competition, vocals, _template("Благодарность", "THANK_YOU"))
+
+        self._run(competition, [vocals], bundle=False)
+        again = self._run(competition, [vocals], bundle=True)
+
+        # Nothing to redo, yet the archive is still the complete printable stack.
+        assert (again["created"], again["regenerated"]) == (0, 0)
+        assert again["documents"] == 2
+        assert len(self._entries(again["zipUrl"])) == 2
+
+    def test_no_archive_without_asking_and_none_when_there_is_nothing_to_print(self) -> None:
+        competition = _competition()
+        vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+        _submission(competition, vocals, "Иванов Иван")
+        _assign(competition, vocals, _template("Благодарность", "THANK_YOU"))
+        empty = CategoryModel.objects.create(competition=competition, name="Хореография")
+        _submission(competition, empty, "Без педагога", teachers=[])
+        _assign(competition, empty, _template("Благодарность 2", "THANK_YOU"))
+
+        plain = self._run(competition, [vocals], bundle=True)
+        nothing = self._run(competition, [empty], bundle=True)
+
+        assert plain["zipUrl"] is not None
+        # A nomination naming nobody produces no letters, so there is no broken
+        # download to hand over either.
+        assert nothing["documents"] == 0
+        assert nothing["zipUrl"] is None
+        assert self._run(competition, [vocals], bundle=False)["zipUrl"] is None
+
+    def test_namesakes_get_two_entries_rather_than_one_overwriting_the_other(self) -> None:
+        competition = _competition()
+        vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+        # Two separate entries with the same performer name and the same teacher —
+        # names are not unique, so the archive cannot rely on them being so.
+        _submission(competition, vocals, "Иванов Иван")
+        _submission(competition, vocals, "Иванов Иван")
+        _assign(competition, vocals, _template("Благодарность", "THANK_YOU"))
+
+        summary = self._run(competition, [vocals], bundle=True)
+
+        assert summary["documents"] == 2
+        # Both letters survive: a duplicate name in a ZIP means one file replacing
+        # the other on extraction.
+        assert self._entries(summary["zipUrl"]) == [
+            "Вокал/Петрова Ольга — Иванов Иван (2).pdf",
+            "Вокал/Петрова Ольга — Иванов Иван.pdf",
+        ]
+
+
+class TestPublicationIsTheRunsChoice:
+    """Generating for print is not publishing.
+
+    An organizer who prepares sheets to print has decided nothing about what
+    participants may see yet, so the two intents are separate runs — and the
+    cabinet is only ever filled by the one that asks for it.
+    """
+
+    def _run(self, competition: CompetitionModel, category: CategoryModel, **kwargs):
+        return documents.generate_documents(
+            competition_id=competition.id,
+            category_ids=[category.id],
+            document_type="THANK_YOU",
+            **kwargs,
+        )
+
+    def _fixture(self) -> tuple[CompetitionModel, CategoryModel]:
+        competition = _competition()
+        vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+        _submission(competition, vocals, "Иванов Иван")
+        _assign(competition, vocals, _template("Благодарность", "THANK_YOU"))
+        return competition, vocals
+
+    def test_a_print_run_generates_without_publishing(self) -> None:
+        competition, vocals = self._fixture()
+
+        summary = self._run(competition, vocals, bundle=True, publish=False)
+
+        assert (summary["created"], summary["published"]) == (1, 0)
+        row = IssuedDocumentModel.objects.get()
+        # Complete and printable, but invisible: nothing reaches the cabinet.
+        assert row.pdf_path
+        assert row.published_at is None
+        assert summary["zipUrl"] is not None
+
+    def test_publishing_afterwards_needs_no_re_render(self) -> None:
+        competition, vocals = self._fixture()
+        self._run(competition, vocals, bundle=True, publish=False)
+
+        summary = self._run(competition, vocals)
+
+        # Nothing created and nothing re-rendered — the sheet the organizer may
+        # already have printed is untouched; only its visibility changed.
+        assert (summary["created"], summary["regenerated"]) == (0, 0)
+        assert summary["published"] == 1
+        assert IssuedDocumentModel.objects.get().published_at is not None
+
+    def test_a_print_run_never_unpublishes_what_is_already_out(self) -> None:
+        competition, vocals = self._fixture()
+        self._run(competition, vocals)
+        published_at = IssuedDocumentModel.objects.get().published_at
+
+        # Re-rendering after a template fix must not pull the letter back out of
+        # the cabinet, nor move its publication date.
+        summary = self._run(competition, vocals, bundle=True, publish=False, force=True)
+
+        assert summary["regenerated"] == 1
+        assert IssuedDocumentModel.objects.get().published_at == published_at
 
 
 class TestPreconditions:

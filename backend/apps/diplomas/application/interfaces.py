@@ -220,3 +220,13 @@ class PrintPackageWorkspace(Protocol):
     def store_zip(self, *, competition_id: uuid.UUID, items: list[tuple[str, str]]) -> str:
         """Bundle ``(arcname, media_path)`` pairs into a ZIP; return its path."""
         ...
+
+    def store_documents_zip(
+        self, *, competition_id: uuid.UUID, document_type: str, items: list[tuple[str, str]]
+    ) -> str:
+        """Bundle one kind's documents into a ZIP; return its path.
+
+        Separate from :meth:`store_zip` for the same reason as
+        :meth:`store_document_pdf`: the archive lives with the kind it holds, so a
+        thank-you bundle never lands in — or overwrites — the diploma print set."""
+        ...

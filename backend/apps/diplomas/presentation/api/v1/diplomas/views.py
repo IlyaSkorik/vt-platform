@@ -412,8 +412,10 @@ class DocumentGenerationView(_StaffView):
     Diplomas are not generated here — they keep the numbered print-package path,
     which this endpoint does not touch.
 
-    Synchronous: there is no numbering to serialize and no ZIP to bundle, so the
-    run completes in the request.
+    Synchronous: there is no numbering to serialize, so the run completes in the
+    request. ``publish`` and ``bundle`` are independent: a run can publish the
+    documents to the participants' cabinets, hand back a ZIP to print from, or —
+    for a print-only run — generate them without publishing anything yet.
     """
 
     @extend_schema(
@@ -433,6 +435,8 @@ class DocumentGenerationView(_StaffView):
                 category_ids=list(data["categoryIds"]),
                 document_type=str(data["documentType"]),
                 force=bool(data.get("force", False)),
+                bundle=bool(data.get("bundle", False)),
+                publish=bool(data.get("publish", True)),
             )
         except DiplomaError as exc:
             return problems.diploma_problem(exc, instance=request.path, request=request)

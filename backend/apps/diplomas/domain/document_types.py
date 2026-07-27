@@ -91,8 +91,11 @@ class DocumentPolicy:
     #: Can bear a jury result, so generation may legitimately wait for one.
     awards_degree: bool
 
-    #: Reaches the participant the moment it is generated, with no separate
-    #: publication step by the organizer.
+    #: **May** reach the participant the moment it is generated, with no separate
+    #: publication step. A diploma may not — it is published through the registry
+    #: after the ceremony — while a courtesy letter needs no such ceremony. This is
+    #: permission, not obligation: the generating run decides whether to use it, so
+    #: an organizer can prepare letters for printing without showing them yet.
     publishes_on_generation: bool
 
     #: Element kinds a template of this document kind may place.
