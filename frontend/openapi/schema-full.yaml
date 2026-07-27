@@ -7484,6 +7484,34 @@ components:
           type: string
       required:
       - requestId
+    DocumentSlot:
+      type: object
+      description: One nomination's readiness and forecast for a single document type.
+      properties:
+        templateId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        templateName:
+          type:
+          - string
+          - 'null'
+        ready:
+          type: boolean
+        existing:
+          type: integer
+        willCreate:
+          type: integer
+        withoutRecipient:
+          type: integer
+      required:
+      - existing
+      - ready
+      - templateId
+      - templateName
+      - willCreate
+      - withoutRecipient
     DocumentTypeEnum:
       enum:
       - DIPLOMA
@@ -8842,7 +8870,11 @@ components:
         * `FAILED` - FAILED
     PrintPackageNomination:
       type: object
-      description: One nomination's print-package stats.
+      description: |-
+        One nomination's stats, with a slot per document type.
+
+        Readiness is per type because assignment is: a nomination can be ready to
+        print diplomas and have no thank-you template at all.
       properties:
         categoryId:
           type: string
@@ -8851,32 +8883,18 @@ components:
           type:
           - string
           - 'null'
-        templateId:
-          type:
-          - string
-          - 'null'
-          format: uuid
-        templateName:
-          type:
-          - string
-          - 'null'
-        ready:
-          type: boolean
         submissions:
           type: integer
-        existing:
-          type: integer
-        willCreate:
-          type: integer
+        diploma:
+          $ref: '#/components/schemas/DocumentSlot'
+        thankYou:
+          $ref: '#/components/schemas/DocumentSlot'
       required:
       - categoryId
-      - existing
+      - diploma
       - nomination
-      - ready
       - submissions
-      - templateId
-      - templateName
-      - willCreate
+      - thankYou
     PrintPackageRequest:
       type: object
       description: |-

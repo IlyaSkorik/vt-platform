@@ -73,13 +73,19 @@ def _competition() -> CompetitionModel:
     )
 
 
-def _submission(competition: CompetitionModel, name: str, category: CategoryModel) -> SubmissionModel:
+def _submission(
+    competition: CompetitionModel,
+    name: str,
+    category: CategoryModel,
+    teachers: list[dict[str, str]] | None = None,
+) -> SubmissionModel:
     return SubmissionModel.objects.create(
         competition_id=competition.id,
         applicant_id=uuid.uuid4(),
         status="SUBMITTED",
         participants=[{"display_name": name, "member_count": 1}],
         performance={"title": "Этюд", "nomination_id": str(category.id)},
+        teachers=teachers or [],
     )
 
 
@@ -172,18 +178,61 @@ def test_summary_breaks_down_by_nomination() -> None:
     summary = print_package.print_package_summary(competition.id)
     by_id = {row["categoryId"]: row for row in summary["nominations"]}
 
-    assert by_id[str(vocals.id)]["templateName"] == "Вокал A4"
-    assert by_id[str(vocals.id)]["ready"] is True
+    assert by_id[str(vocals.id)]["diploma"]["templateName"] == "Вокал A4"
+    assert by_id[str(vocals.id)]["diploma"]["ready"] is True
     assert by_id[str(vocals.id)]["submissions"] == 2
-    assert by_id[str(vocals.id)]["willCreate"] == 2
+    assert by_id[str(vocals.id)]["diploma"]["willCreate"] == 2
     # Assigned template without a PDF: shown, but not ready and nothing to create.
-    assert by_id[str(theatre.id)]["templateName"] == "Театр (без PDF)"
-    assert by_id[str(theatre.id)]["ready"] is False
-    assert by_id[str(theatre.id)]["willCreate"] == 0
+    assert by_id[str(theatre.id)]["diploma"]["templateName"] == "Театр (без PDF)"
+    assert by_id[str(theatre.id)]["diploma"]["ready"] is False
+    assert by_id[str(theatre.id)]["diploma"]["willCreate"] == 0
     # No template at all.
-    assert by_id[str(dance.id)]["templateId"] is None
-    assert by_id[str(dance.id)]["ready"] is False
-    assert by_id[str(dance.id)]["willCreate"] == 0
+    assert by_id[str(dance.id)]["diploma"]["templateId"] is None
+    assert by_id[str(dance.id)]["diploma"]["ready"] is False
+    assert by_id[str(dance.id)]["diploma"]["willCreate"] == 0
+
+
+def test_summary_reports_each_document_type_separately() -> None:
+    """A diploma template must never make a nomination look thank-you-ready.
+
+    The two slots are independent: «Вокал» has both, «Танец» only a diploma. A
+    single merged flag would offer «Танец» for a thank-you run and earn a 409.
+    """
+    competition = _competition()
+    vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+    dance = CategoryModel.objects.create(competition=competition, name="Танец")
+    _assign(competition, vocals, _template_with_pdf("Вокал A4"))
+    _assign(competition, vocals, _template_with_pdf("Вокал: благодарность", "THANK_YOU"))
+    _assign(competition, dance, _template_with_pdf("Танец A4"))
+    # Two teachers → two letters, but a single diploma.
+    _submission(
+        competition,
+        "Иванов Иван",
+        vocals,
+        teachers=[
+            {"last_name": "Петрова", "first_name": "Ольга", "role": "Педагог"},
+            {"last_name": "Сидоров", "first_name": "Пётр", "role": "Концертмейстер"},
+        ],
+    )
+    # No teacher named → nobody to thank, so it is reported as unaddressable.
+    _submission(competition, "Петров Пётр", dance)
+
+    by_id = {
+        row["categoryId"]: row
+        for row in print_package.print_package_summary(competition.id)["nominations"]
+    }
+
+    assert by_id[str(vocals.id)]["diploma"]["willCreate"] == 1
+    assert by_id[str(vocals.id)]["thankYou"]["templateName"] == "Вокал: благодарность"
+    assert by_id[str(vocals.id)]["thankYou"]["ready"] is True
+    assert by_id[str(vocals.id)]["thankYou"]["willCreate"] == 2
+    assert by_id[str(vocals.id)]["thankYou"]["withoutRecipient"] == 0
+
+    assert by_id[str(dance.id)]["diploma"]["ready"] is True
+    assert by_id[str(dance.id)]["thankYou"]["templateId"] is None
+    assert by_id[str(dance.id)]["thankYou"]["ready"] is False
+    assert by_id[str(dance.id)]["thankYou"]["willCreate"] == 0
+    assert by_id[str(dance.id)]["thankYou"]["withoutRecipient"] == 1
 
 
 def test_zip_contains_a_pdf_per_generated_diploma() -> None:

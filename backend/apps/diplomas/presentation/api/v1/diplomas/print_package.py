@@ -1,23 +1,27 @@
 """Print-package composition: per-nomination summary, target resolution, jobs.
 
-A competition assigns a template per nomination, so generation is scoped to
-nominations: the summary reports each nomination's template + counts, and a run
-targets all assigned nominations or a chosen subset. Keeps the views thin.
+A competition assigns a template per nomination **per document type**, so
+generation is scoped to nominations: the summary reports every type's template +
+counts for each nomination, and a run targets all assigned nominations or a chosen
+subset. The summary serves both generation actions; the run here is the numbered
+print package, so it resolves diploma assignments only. Keeps the views thin.
 """
 
 from __future__ import annotations
 
 import uuid
+from collections import Counter
 from typing import Any
 
 from apps.competitions.infrastructure.models.taxonomy import CategoryModel
 from apps.diplomas.application.batch_services import DiplomaBatchGenerationService, NominationTarget
 from apps.diplomas.application.numbering import DiplomaNumberService
-from apps.diplomas.domain.document_types import DocumentType
+from apps.diplomas.domain.document_types import DocumentType, policy_for
 from apps.diplomas.domain.exceptions import PrintJobNotFoundError, PrintTemplateNotReadyError
 from apps.diplomas.infrastructure.acl import DjangoDiplomaSnapshotSource
 from apps.diplomas.infrastructure.models import (
     DiplomaModel,
+    IssuedDocumentModel,
     PrintJobModel,
     TemplateDocumentModel,
     TemplateModel,
@@ -86,11 +90,42 @@ def resolve_targets(competition_id: uuid.UUID, category_ids: list[str]) -> list[
     return targets
 
 
+def _named_teachers(teachers: Any) -> int:
+    """How many letters an entry's teacher roster is worth.
+
+    Mirrors the snapshot source's rule — a teacher counts only once some part of
+    the name is filled in — so the summary's forecast matches what a run actually
+    issues rather than promising letters to blank rows.
+    """
+    count = 0
+    for teacher in teachers or []:
+        parts = (teacher.get("last_name"), teacher.get("first_name"), teacher.get("middle_name"))
+        if any(str(part or "").strip() for part in parts):
+            count += 1
+    return count
+
+
 def print_package_summary(competition_id: uuid.UUID) -> dict[str, Any]:
-    """Per-nomination stats: template, performances, existing diplomas, to-create."""
-    assignments = _assignments_by_category(competition_id, DocumentType.DIPLOMA)
-    # A nomination is only "ready" to generate when its template also has a PDF.
-    assigned_template_ids = {item["templateId"] for item in assignments.values()}
+    """Per-nomination stats for **every** document type, one slot each.
+
+    A nomination assigns a template per type, so readiness is per type too:
+    «Вокал» may be ready to print diplomas and have no thank-you template at all.
+    One merged flag cannot say that, and reporting one is what let the generation
+    page offer nominations for a kind they had no template for.
+
+    Each slot's forecast follows its own policy. A diploma is issued per
+    performance, a thank-you letter per named teacher, so the two count different
+    denominators over the same entries — and a per-teacher kind also reports the
+    entries it cannot address at all.
+    """
+    assignments = {
+        document_type: _assignments_by_category(competition_id, document_type)
+        for document_type in DocumentType
+    }
+    # A slot is only "ready" to generate when its template also has a PDF.
+    assigned_template_ids = {
+        item["templateId"] for slots in assignments.values() for item in slots.values()
+    }
     templates_with_pdf = {
         str(template_id)
         for template_id in TemplateDocumentModel.objects.filter(
@@ -103,45 +138,76 @@ def print_package_summary(competition_id: uuid.UUID) -> dict[str, Any]:
             competition_id=competition_id, deleted_at__isnull=True
         ).values("id", "name")
     }
-    diploma_submissions = {
-        str(submission_id)
-        for submission_id in DiplomaModel.objects.filter(
-            competition_id=competition_id, deleted_at__isnull=True
-        ).values_list("submission_id", flat=True)
-    }
 
-    counts: dict[str, dict[str, int]] = {}
     from apps.applications.infrastructure.models.submission import SubmissionModel
 
+    category_of: dict[str, str] = {}
+    submissions: Counter[str] = Counter()
+    recipients: Counter[str] = Counter()
+    unaddressable: Counter[str] = Counter()
     for row in SubmissionModel.objects.filter(
         competition_id=competition_id, deleted_at__isnull=True
-    ).values("id", "performance"):
+    ).values("id", "performance", "teachers"):
         category_id = str((row["performance"] or {}).get("nomination_id") or "")
         if not category_id:
             continue
-        bucket = counts.setdefault(category_id, {"submissions": 0, "existing": 0})
-        bucket["submissions"] += 1
-        if str(row["id"]) in diploma_submissions:
-            bucket["existing"] += 1
+        category_of[str(row["id"])] = category_id
+        submissions[category_id] += 1
+        named = _named_teachers(row["teachers"])
+        recipients[category_id] += named
+        if not named:
+            unaddressable[category_id] += 1
 
-    nominations: list[dict[str, Any]] = []
-    for category_id in set(counts) | set(assignments):
-        assignment = assignments.get(category_id)
-        stats = counts.get(category_id, {"submissions": 0, "existing": 0})
+    existing: dict[DocumentType, Counter[str]] = {kind: Counter() for kind in DocumentType}
+    for submission_id in DiplomaModel.objects.filter(
+        competition_id=competition_id, deleted_at__isnull=True
+    ).values_list("submission_id", flat=True):
+        issued_in = category_of.get(str(submission_id))
+        if issued_in is not None:
+            existing[DocumentType.DIPLOMA][issued_in] += 1
+    for raw_type, submission_id in IssuedDocumentModel.objects.filter(
+        competition_id=competition_id, deleted_at__isnull=True
+    ).values_list("document_type", "submission_id"):
+        issued_in = category_of.get(str(submission_id))
+        if issued_in is None:
+            continue
+        try:
+            existing[DocumentType(raw_type)][issued_in] += 1
+        except ValueError:  # pragma: no cover - a type the enum no longer knows
+            continue
+
+    def slot(document_type: DocumentType, category_id: str) -> dict[str, Any]:
+        assignment = assignments[document_type].get(category_id)
         ready = assignment is not None and assignment["templateId"] in templates_with_pdf
-        nominations.append(
-            {
-                "categoryId": category_id,
-                "nomination": category_names.get(category_id),
-                "templateId": assignment["templateId"] if assignment else None,
-                "templateName": assignment["templateName"] if assignment else None,
-                # Assigned but with no uploaded PDF yet — cannot generate.
-                "ready": ready,
-                "submissions": stats["submissions"],
-                "existing": stats["existing"],
-                "willCreate": max(0, stats["submissions"] - stats["existing"]) if ready else 0,
-            }
-        )
+        per_teacher = policy_for(document_type).per_teacher
+        total = recipients[category_id] if per_teacher else submissions[category_id]
+        done = existing[document_type][category_id]
+        return {
+            "templateId": assignment["templateId"] if assignment else None,
+            "templateName": assignment["templateName"] if assignment else None,
+            # Assigned but with no uploaded PDF yet — cannot generate.
+            "ready": ready,
+            "existing": done,
+            "willCreate": max(0, total - done) if ready else 0,
+            # Entries a per-teacher kind cannot address; always 0 for the rest.
+            "withoutRecipient": unaddressable[category_id] if per_teacher else 0,
+        }
+
+    # A nomination is listed when it has entries or a template of either kind.
+    listed = set(submissions)
+    for slots in assignments.values():
+        listed |= set(slots)
+
+    nominations: list[dict[str, Any]] = [
+        {
+            "categoryId": category_id,
+            "nomination": category_names.get(category_id),
+            "submissions": submissions[category_id],
+            "diploma": slot(DocumentType.DIPLOMA, category_id),
+            "thankYou": slot(DocumentType.THANK_YOU, category_id),
+        }
+        for category_id in listed
+    ]
     nominations.sort(key=lambda item: (item["nomination"] or "").lower())
     return {"competitionId": str(competition_id), "nominations": nominations}
 

@@ -18,6 +18,7 @@ __all__ = [
     "CreateTemplateRequestSerializer",
     "DiplomaResponseSerializer",
     "DiplomaSnapshotSerializer",
+    "DocumentSlotSerializer",
     "GenerateDocumentsRequestSerializer",
     "GenerateDocumentsResponseSerializer",
     "LayoutResponseSerializer",
@@ -353,18 +354,31 @@ class PrintJobResponseSerializer(serializers.Serializer[dict[str, object]]):
     updatedAt = serializers.DateTimeField()
 
 
+class DocumentSlotSerializer(serializers.Serializer[dict[str, object]]):
+    """One nomination's readiness and forecast for a single document type."""
+
+    templateId = serializers.UUIDField(allow_null=True)
+    templateName = serializers.CharField(allow_null=True)
+    # True when a template of this type is assigned AND it has an uploaded PDF.
+    ready = serializers.BooleanField()
+    existing = serializers.IntegerField()
+    willCreate = serializers.IntegerField()
+    # Entries a per-teacher type cannot address (no teacher named); else 0.
+    withoutRecipient = serializers.IntegerField()
+
+
 class PrintPackageNominationSerializer(serializers.Serializer[dict[str, object]]):
-    """One nomination's print-package stats."""
+    """One nomination's stats, with a slot per document type.
+
+    Readiness is per type because assignment is: a nomination can be ready to
+    print diplomas and have no thank-you template at all.
+    """
 
     categoryId = serializers.UUIDField()
     nomination = serializers.CharField(allow_null=True)
-    templateId = serializers.UUIDField(allow_null=True)
-    templateName = serializers.CharField(allow_null=True)
-    # True when a template is assigned AND it has an uploaded PDF.
-    ready = serializers.BooleanField()
     submissions = serializers.IntegerField()
-    existing = serializers.IntegerField()
-    willCreate = serializers.IntegerField()
+    diploma = DocumentSlotSerializer()
+    thankYou = DocumentSlotSerializer()
 
 
 class PrintPackageSummaryResponseSerializer(serializers.Serializer[dict[str, object]]):
