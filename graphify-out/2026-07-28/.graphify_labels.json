@@ -927,6 +927,8 @@
   "925": "useUpdateCompetitionSettingsMutation",
   "926": "results.py",
   "927": ".empty",
+  "928": "@testing-library/react",
+  "929": "useUpdateBrandingMutation",
   "930": "__init__.py",
   "931": ".contains",
   "933": "0013_diplomanumbersequencemodel.py",
