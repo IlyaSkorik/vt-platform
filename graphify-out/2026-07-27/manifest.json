@@ -170,9 +170,9 @@
     "semantic_hash": "11c88412b96e0108a0963111c19ca046"
   },
   "backend/apps/applications/application/commands/cancel.py": {
-    "mtime": 1784227779.463122,
-    "ast_hash": "d9845b6489de2b9b3a04932caaec4226",
-    "semantic_hash": "d9845b6489de2b9b3a04932caaec4226"
+    "mtime": 1785147058.1106422,
+    "ast_hash": "5ae28ad0d90084045d8d6b0f0c5456c2",
+    "semantic_hash": ""
   },
   "backend/apps/applications/application/commands/draft.py": {
     "mtime": 1783712790.7206142,
@@ -295,8 +295,8 @@
     "semantic_hash": "987fe99adc390b99afc2e3a893b1b0bc"
   },
   "backend/apps/applications/domain/entities.py": {
-    "mtime": 1784748896.3776314,
-    "ast_hash": "9e51ce7b157a1aab62fd460516ea07a2",
+    "mtime": 1785147058.1106422,
+    "ast_hash": "0272e70700c0e094ee79247b33601f3e",
     "semantic_hash": ""
   },
   "backend/apps/applications/domain/events.py": {
@@ -325,9 +325,9 @@
     "semantic_hash": "0552d9bd9df2d18b04f9da4ffa81a170"
   },
   "backend/apps/applications/domain/value_objects.py": {
-    "mtime": 1784227779.4704509,
-    "ast_hash": "96694f0f3661a73facd3959c5dba0158",
-    "semantic_hash": "96694f0f3661a73facd3959c5dba0158"
+    "mtime": 1785147058.1106422,
+    "ast_hash": "0d33a8fbed8672f5c3277c5ee74291eb",
+    "semantic_hash": ""
   },
   "backend/apps/applications/infrastructure/__init__.py": {
     "mtime": 1783367029.6761498,
@@ -530,8 +530,8 @@
     "semantic_hash": ""
   },
   "backend/apps/applications/presentation/api/v1/organizer/views.py": {
-    "mtime": 1784747188.0955226,
-    "ast_hash": "6f414e50316f13ad34177ed4ff7ffb1d",
+    "mtime": 1785147058.1106422,
+    "ast_hash": "4fd51c8749d8c95b5e39603a717cd166",
     "semantic_hash": ""
   },
   "backend/apps/applications/presentation/api/v1/problems.py": {
@@ -3275,7 +3275,7 @@
     "semantic_hash": ""
   },
   "backend/tests/application/applications/test_handlers.py": {
-    "mtime": 1784227779.4887729,
+    "mtime": 1785146971.3693209,
     "ast_hash": "c8c46263c3af89e576cd860ec4703c9d",
     "semantic_hash": "c8c46263c3af89e576cd860ec4703c9d"
   },
@@ -3425,9 +3425,9 @@
     "semantic_hash": "f60e33b9bbb710230b8516379b9874af"
   },
   "backend/tests/domain/applications/test_entities.py": {
-    "mtime": 1784227779.4887729,
-    "ast_hash": "31055e4ec693aa4f000b7dd09676c8e3",
-    "semantic_hash": "31055e4ec693aa4f000b7dd09676c8e3"
+    "mtime": 1785147058.1144404,
+    "ast_hash": "45346fc18883af6f8e1254aef0fd4798",
+    "semantic_hash": ""
   },
   "backend/tests/domain/applications/test_value_objects.py": {
     "mtime": 1784227779.4887729,
@@ -3950,8 +3950,8 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/applications/index.tsx": {
-    "mtime": 1784572971.6492698,
-    "ast_hash": "f55f7457505c2e1dd2ea5e2855b97b79",
+    "mtime": 1785147066.825492,
+    "ast_hash": "9178e8940157dbee34393086b368182c",
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/competition-workspace/index.tsx": {
@@ -8027,6 +8027,11 @@
   "frontend/src/widgets/diplomas-workspace/ui/sections/assignments-section.test.tsx": {
     "mtime": 1785144534.9857237,
     "ast_hash": "b1eb0e8a2fb1ece35e6cdbcc231dcd58",
+    "semantic_hash": ""
+  },
+  "backend/tests/presentation/applications/test_organizer_capabilities.py": {
+    "mtime": 1785146998.6927867,
+    "ast_hash": "7709ff97991e81f8160a2bfaf2d84a02",
     "semantic_hash": ""
   }
 }
