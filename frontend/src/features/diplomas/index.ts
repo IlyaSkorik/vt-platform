@@ -1,5 +1,6 @@
 export type {
   DiplomaResponse,
+  DocumentSlot,
   PreviewApplication,
   PrintJobResponse,
   PrintPackageNomination,
