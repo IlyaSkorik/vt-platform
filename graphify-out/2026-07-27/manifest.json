@@ -7160,8 +7160,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/diplomas/index.ts": {
-    "mtime": 1785143029.418352,
-    "ast_hash": "30e90aabf82cab1b3762171c3c5c5a3f",
+    "mtime": 1785147969.0832179,
+    "ast_hash": "5d96d631bbab55e497e65c7bc62a79b8",
     "semantic_hash": ""
   },
   "frontend/src/features/diplomas/model/sections.ts": {
@@ -7260,8 +7260,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/ui/constructor-layout.tsx": {
-    "mtime": 1785067732.8314736,
-    "ast_hash": "eae3c4d525c8094c863e52ceb63fb7f2",
+    "mtime": 1785147867.2587938,
+    "ast_hash": "a96252dda28e345354f670ff14e1320d",
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/ui/constructor-toolbar.tsx": {
@@ -7395,13 +7395,13 @@
     "semantic_hash": ""
   },
   "frontend/src/features/diplomas/model/preview-data.ts": {
-    "mtime": 1784989641.2152853,
-    "ast_hash": "021b83cb9e02b3dba87b7e243bf2c59b",
+    "mtime": 1785147867.2549977,
+    "ast_hash": "7c34325b07872f395b8bdccd46444e64",
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/model/preview-context.tsx": {
-    "mtime": 1784925470.0687022,
-    "ast_hash": "4628bd5282ed1255054c42a4811065a3",
+    "mtime": 1785147867.2587938,
+    "ast_hash": "f8fdb54d6e176bed0fe0a5037abdb05a",
     "semantic_hash": ""
   },
   "backend/apps/diplomas/infrastructure/migrations/0006_templatefieldmodel_value.py": {
@@ -7895,8 +7895,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/diplomas/model/document-types.ts": {
-    "mtime": 1785067610.483536,
-    "ast_hash": "ff8e7b4368f231552e1c00027cc4ec07",
+    "mtime": 1785147867.2587938,
+    "ast_hash": "88658c717109dabea9fd963be1bd2d8d",
     "semantic_hash": ""
   },
   "frontend/src/features/my-documents/api/index.ts": {
@@ -8032,6 +8032,11 @@
   "backend/tests/presentation/applications/test_organizer_capabilities.py": {
     "mtime": 1785146998.6927867,
     "ast_hash": "7709ff97991e81f8160a2bfaf2d84a02",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/diplomas/model/preview-data.test.ts": {
+    "mtime": 1785147867.2549977,
+    "ast_hash": "89cba88d25cc9f1c33c10075d3b10c0b",
     "semantic_hash": ""
   }
 }

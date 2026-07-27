@@ -944,20 +944,5 @@
   "942": ".scrollIntoView",
   "943": ".required_attachment_types",
   "944": ".hasPointerCapture",
-  "945": ".scrollIntoView",
-  "946": ".json",
-  "947": "PublicCatalogMetaSerializer",
-  "948": ".contains",
-  "949": "PublicFestivalFaqItemSerializer",
-  "950": "PublicFestivalFormatSerializer",
-  "951": "PublicFestivalJuryCardSerializer",
-  "952": "PublicFestivalLandingBlockSerializer",
-  "953": "PublicFestivalLandingSerializer",
-  "954": "PublicFestivalPricingSerializer",
-  "955": "PublicFestivalOrganizerSerializer",
-  "956": "RegistrationDeadlinesSerializer",
-  "957": "PublicFestivalSocialLinksSerializer",
-  "958": "useRemoveAdditionalServiceMutation",
-  "959": "useRemoveDocumentMutation",
-  "960": "useUpdateCompetitionSettingsMutation"
+  "945": ".scrollIntoView"
 }

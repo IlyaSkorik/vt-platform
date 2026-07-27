@@ -4745,9 +4745,9 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/teachers/index.tsx": {
-    "mtime": 1784295574.1654818,
-    "ast_hash": "00c3f5117b03354b412e749c4747430d",
-    "semantic_hash": "00c3f5117b03354b412e749c4747430d"
+    "mtime": 1785152093.855004,
+    "ast_hash": "2c52d15ca2d3da49d2e01eeca860f009",
+    "semantic_hash": ""
   },
   "frontend/src/pages/unauthorized/index.tsx": {
     "mtime": 1783596610.363629,
@@ -8037,6 +8037,11 @@
   "frontend/src/features/diplomas/model/preview-data.test.ts": {
     "mtime": 1785147867.2549977,
     "ast_hash": "89cba88d25cc9f1c33c10075d3b10c0b",
+    "semantic_hash": ""
+  },
+  "frontend/src/pages/teachers/teacher-profile.test.tsx": {
+    "mtime": 1785152093.855004,
+    "ast_hash": "d8e77984255cae53697f98c6eeead90f",
     "semantic_hash": ""
   }
 }
