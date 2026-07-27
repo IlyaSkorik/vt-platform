@@ -38,8 +38,8 @@ def _backing_pdf() -> bytes:
     return buffer.getvalue()
 
 
-def _template_with_pdf(name: str) -> TemplateModel:
-    template = TemplateModel.objects.create(type="DIPLOMA", name=name)
+def _template_with_pdf(name: str, document_type: str = "DIPLOMA") -> TemplateModel:
+    template = TemplateModel.objects.create(type=document_type, name=name)
     key = default_storage.save(
         f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf())
     )
@@ -134,6 +134,25 @@ def test_generation_for_selected_nominations_only() -> None:
 
     assert job["created"] == 1  # only the vocals submission
     assert DiplomaModel.objects.filter(competition_id=competition.id).count() == 1
+
+
+def test_print_package_never_targets_a_thank_you_template() -> None:
+    """A nomination's thank-you template is not a print-package target.
+
+    Assignments are keyed by (nomination, type); resolving them by nomination
+    alone let the older row win, so a thank-you template could end up rendering
+    the numbered diplomas.
+    """
+    competition = _competition()
+    vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+    # The thank-you assignment is created *first*, so it is the older row.
+    _assign(competition, vocals, _template_with_pdf("Вокал: благодарность", "THANK_YOU"))
+    diploma_template = _template_with_pdf("Вокал A4")
+    _assign(competition, vocals, diploma_template)
+
+    targets = print_package.resolve_targets(competition.id, [])
+
+    assert [str(target.template_id) for target in targets] == [str(diploma_template.id)]
 
 
 def test_summary_breaks_down_by_nomination() -> None:

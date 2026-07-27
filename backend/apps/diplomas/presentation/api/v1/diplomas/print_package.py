@@ -13,6 +13,7 @@ from typing import Any
 from apps.competitions.infrastructure.models.taxonomy import CategoryModel
 from apps.diplomas.application.batch_services import DiplomaBatchGenerationService, NominationTarget
 from apps.diplomas.application.numbering import DiplomaNumberService
+from apps.diplomas.domain.document_types import DocumentType
 from apps.diplomas.domain.exceptions import PrintJobNotFoundError, PrintTemplateNotReadyError
 from apps.diplomas.infrastructure.acl import DjangoDiplomaSnapshotSource
 from apps.diplomas.infrastructure.models import (
@@ -46,24 +47,30 @@ def build_batch_service() -> DiplomaBatchGenerationService:
     )
 
 
-def _assignments_by_category(competition_id: uuid.UUID) -> dict[str, dict[str, Any]]:
-    """category_id -> {templateId, templateName} for the competition's assignments."""
+def _assignments_by_category(competition_id: uuid.UUID, document_type: DocumentType) -> dict[str, dict[str, Any]]:
+    """category_id -> assignment, for **one** document type of the competition.
+
+    The type filter is load-bearing, not a convenience. Since document types
+    landed, a nomination holds one assignment *per type*, so keying by category
+    alone silently collapses its diploma and thank-you templates into whichever
+    row happened to come last — and the survivor could be either kind.
+    """
+    wanted = document_type.value
     return {
         item["categoryId"]: item
         for item in composition.list_assignments()
-        if item["competitionId"] == str(competition_id)
+        if item["competitionId"] == str(competition_id) and item["documentType"] == wanted
     }
 
 
-def resolve_targets(
-    competition_id: uuid.UUID, category_ids: list[str]
-) -> list[NominationTarget]:
+def resolve_targets(competition_id: uuid.UUID, category_ids: list[str]) -> list[NominationTarget]:
     """Turn requested nominations into (category, template) targets.
 
     Empty ``category_ids`` means every nomination with an assigned template.
-    Nominations without an assignment are dropped.
+    Nominations without an assignment are dropped. Diplomas only: a nomination's
+    thank-you template is never a print-package target.
     """
-    assignments = _assignments_by_category(competition_id)
+    assignments = _assignments_by_category(competition_id, DocumentType.DIPLOMA)
     selected = [str(cid) for cid in category_ids] if category_ids else list(assignments)
     targets: list[NominationTarget] = []
     for category_id in selected:
@@ -81,7 +88,7 @@ def resolve_targets(
 
 def print_package_summary(competition_id: uuid.UUID) -> dict[str, Any]:
     """Per-nomination stats: template, performances, existing diplomas, to-create."""
-    assignments = _assignments_by_category(competition_id)
+    assignments = _assignments_by_category(competition_id, DocumentType.DIPLOMA)
     # A nomination is only "ready" to generate when its template also has a PDF.
     assigned_template_ids = {item["templateId"] for item in assignments.values()}
     templates_with_pdf = {
