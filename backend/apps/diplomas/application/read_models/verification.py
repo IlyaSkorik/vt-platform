@@ -20,7 +20,7 @@ without a database.
 Two fields are deliberately nullable rather than defaulted to a placeholder:
 
 * ``degree`` — ``None`` while the jury has not sat. The page renders "результаты
-  конкурса ещё не опубликованы", which is the truth; "не указано" would suggest
+  фестиваля ещё не опубликованы", which is the truth; "не указано" would suggest
   missing data instead of a pending process.
 * ``official_pdf_url`` — ``None`` until the post-ceremony PDF exists. The page
   then simply has no download button, and grows one the moment the file appears

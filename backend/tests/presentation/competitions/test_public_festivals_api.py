@@ -89,7 +89,7 @@ class TestPublicFestivalDetailEndpoint:
 
         org = _organization()
         competition = _competition(
-            organizer_id=org.id, status="PUBLISHED", title="Весенний конкурс"
+            organizer_id=org.id, status="PUBLISHED", title="Весенний фестиваль"
         )
         regulation = RegulationModel.objects.create(
             competition=competition,

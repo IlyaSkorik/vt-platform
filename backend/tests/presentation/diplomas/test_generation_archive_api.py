@@ -225,8 +225,8 @@ class TestHistory:
         assert [run["published"] for run in runs] == [1, 0]
 
     def test_it_can_be_narrowed_to_one_competition(self, staff_client: APIClient) -> None:
-        first, first_vocals = _competition("Первый конкурс")
-        second, second_vocals = _competition("Второй конкурс")
+        first, first_vocals = _competition("Первый фестиваль")
+        second, second_vocals = _competition("Второй фестиваль")
         _assign(first, first_vocals, _template("Благодарность 1", "THANK_YOU"))
         _assign(second, second_vocals, _template("Благодарность 2", "THANK_YOU"))
         _generate_letters(staff_client, first, first_vocals)
@@ -234,7 +234,7 @@ class TestHistory:
 
         runs = _runs(staff_client, competitionId=str(second.id))
 
-        assert [run["competition"] for run in runs] == ["Второй конкурс"]
+        assert [run["competition"] for run in runs] == ["Второй фестиваль"]
 
     def test_a_bad_competition_id_is_a_validation_problem(self, staff_client: APIClient) -> None:
         response = staff_client.get(_ARCHIVE, {"competitionId": "not-a-uuid"})

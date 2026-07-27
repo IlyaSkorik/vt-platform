@@ -127,7 +127,7 @@ def _capabilities(status: str) -> list[dict[str, str]]:
         "APPROVED": [("confirm_participation", "Подтвердить участие"), ("cancel", "Отменить")],
         "WAITING_PAYMENT": [("confirm_participation", "Подтвердить участие"), ("cancel", "Отменить")],
         "PAID": [("confirm_participation", "Подтвердить участие"), ("cancel", "Отменить")],
-        "ACCEPTED": [("move_to_running", "Перевести в конкурс"), ("cancel", "Отменить")],
+        "ACCEPTED": [("move_to_running", "Перевести на фестиваль"), ("cancel", "Отменить")],
         "SCHEDULED": [("cancel", "Отменить")],
         "COMPLETED": [],
         "CANCELLED": [],
@@ -463,8 +463,8 @@ class OrganizerProcessingWorkspaceView(_StaffView):
             "queues": [
                 {"key": "NEW", "label": "На доработке", "count": queue_counts.get("NEW", 0)},
                 {"key": "WAITING_PAYMENT", "label": "Ожидают оплату", "count": queue_counts.get("WAITING_PAYMENT", 0)},
-                {"key": "READY", "label": "Готовы к конкурсу", "count": queue_counts.get("READY", 0)},
-                {"key": "RUNNING", "label": "Назначены в конкурс", "count": queue_counts.get("RUNNING", 0)},
+                {"key": "READY", "label": "Готовы к фестивалю", "count": queue_counts.get("READY", 0)},
+                {"key": "RUNNING", "label": "Назначены на фестиваль", "count": queue_counts.get("RUNNING", 0)},
                 {"key": "ARCHIVE", "label": "Отменены", "count": queue_counts.get("ARCHIVE", 0)},
             ],
             "metrics": {
@@ -575,7 +575,7 @@ class OrganizerProcessingActionView(_StaffView):
                         f"Комментарий организатора:\n{comment}\n\n"
                         f"Откройте заявку в личном кабинете: {detail_url}\n"
                         f"Список заявок: {cabinet_url}\n\n"
-                        "С уважением,\nОргкомитет конкурса"
+                        "С уважением,\nОргкомитет фестиваля"
                     )
                     send_mail(
                         subject=subject,
@@ -685,7 +685,7 @@ class OrganizerProcessingActionView(_StaffView):
                         f"Комментарий организатора:\n{comment}\n\n"
                         f"Откройте заявку в личном кабинете: {detail_url}\n"
                         f"Список заявок: {cabinet_url}\n\n"
-                        "С уважением,\nОргкомитет конкурса"
+                        "С уважением,\nОргкомитет фестиваля"
                     )
                     send_mail(
                         subject=subject,
@@ -767,7 +767,7 @@ class OrganizerProcessingActionView(_StaffView):
                     f"{f' ({competition_title})' if competition_title else ''}.\n"
                     f"Откройте заявку: {_application_urls(application_id)[1]}\n"
                     "После прикрепления квитанции заявка будет готова к дальнейшей обработке.\n\n"
-                    "С уважением,\nОргкомитет конкурса"
+                    "С уважением,\nОргкомитет фестиваля"
                 )
                 _, detail_url = _application_urls(application_id)
                 send_mail(

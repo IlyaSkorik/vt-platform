@@ -157,7 +157,7 @@ class DiplomaPreviewApplicationsView(_StaffView):
     def get(self, request: Request) -> Response:
         competition_id = (request.query_params.get("competitionId") or "").strip()
         if not competition_id:
-            return problems.validation_problem({"competitionId": ["Укажите конкурс."]}, instance=request.path, request=request)
+            return problems.validation_problem({"competitionId": ["Укажите фестиваль."]}, instance=request.path, request=request)
         return problems.envelope(request, preview.list_preview_applications(competition_id))
 
 
@@ -326,7 +326,7 @@ class DiplomaRegistryView(_StaffView):
         raw = (request.query_params.get("competitionId") or "").strip()
         competition_id = _parse_uuid(raw)
         if competition_id is None:
-            return problems.validation_problem({"competitionId": ["Укажите конкурс."]}, instance=request.path, request=request)
+            return problems.validation_problem({"competitionId": ["Укажите фестиваль."]}, instance=request.path, request=request)
         return problems.envelope(request, registry.list_diplomas(competition_id))
 
     @extend_schema(
@@ -390,7 +390,7 @@ class DiplomaPrintPackageSummaryView(_StaffView):
         competition_id = _parse_uuid(raw)
         if competition_id is None:
             return problems.validation_problem(
-                {"competitionId": ["Укажите конкурс."]}, instance=request.path, request=request
+                {"competitionId": ["Укажите фестиваль."]}, instance=request.path, request=request
             )
         return problems.envelope(request, print_package.print_package_summary(competition_id))
 
@@ -492,7 +492,7 @@ class DiplomaGenerationArchiveView(_StaffView):
         competition_id = _parse_uuid(raw) if raw else None
         if raw and competition_id is None:
             return problems.validation_problem(
-                {"competitionId": ["Некорректный идентификатор конкурса."]},
+                {"competitionId": ["Некорректный идентификатор фестиваля."]},
                 instance=request.path,
                 request=request,
             )

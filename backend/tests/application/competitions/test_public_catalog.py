@@ -704,7 +704,7 @@ class TestDjangoPublicCatalogReaderDetail:
 
         org = self._organization()
         competition = self._competition(
-            organizer_id=org.id, status="RUNNING", title="Документный конкурс"
+            organizer_id=org.id, status="RUNNING", title="Документный фестиваль"
         )
         DocumentModel.objects.create(
             competition=competition,
