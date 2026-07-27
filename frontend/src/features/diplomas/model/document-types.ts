@@ -32,6 +32,14 @@ export interface DocumentTypeConfig {
   tone: "primary" | "info";
   /** One line explaining what the kind is for, shown when choosing. */
   hint: string;
+  /**
+   * Whether a teacher field prints the role alongside the name ("Педагог: ФИО").
+   *
+   * Mirrors the backend policy of the same name, which is what generation actually
+   * applies — so the editor's sample values show what will print rather than a
+   * label the letter drops.
+   */
+  teacherRoles: boolean;
 }
 
 /**
@@ -47,12 +55,16 @@ export const DOCUMENT_TYPES: Record<string, DocumentTypeConfig> = {
     slotLabel: "Шаблон диплома",
     tone: "primary",
     hint: "Награда участника: со степенью, номером и QR-кодом для проверки подлинности.",
+    // A diploma credits a teacher in a stated capacity.
+    teacherRoles: true,
   },
   THANK_YOU: {
     label: "Благодарность",
     slotLabel: "Шаблон благодарности",
     tone: "info",
     hint: "Знак признательности: без степени, без номера и без проверки подлинности.",
+    // A letter thanks a person by name; the letter itself already says what it is.
+    teacherRoles: false,
   },
 };
 
@@ -65,6 +77,9 @@ const UNKNOWN: DocumentTypeConfig = {
   slotLabel: "Шаблон документа",
   tone: "info",
   hint: "",
+  // Unrestricted, like `allowsFieldType` — a client running behind the backend
+  // shows the fuller form rather than silently dropping information.
+  teacherRoles: true,
 };
 
 /** How to present this kind, never throwing on an unknown one. */

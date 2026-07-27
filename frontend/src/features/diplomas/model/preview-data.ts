@@ -16,6 +16,7 @@ import {
   TEACHER_DISPLAY_NAME,
   type TemplateFieldBinding,
 } from "./binding";
+import { type DocumentType, documentTypeConfig } from "./document-types";
 
 /**
  * Which sample entry preview values represent — a solo participant or a
@@ -24,9 +25,13 @@ import {
  */
 export type PreviewMode = "individual" | "collective";
 
+/** The sample teacher, as each kind of document prints them. */
+const TEACHER_NAME = "Петрова Мария Сергеевна";
+const TEACHER_WITH_ROLE = `Педагог: ${TEACHER_NAME}`;
+
 /** Sample values shared by both modes (everything but the performer identity). */
 const SHARED_VALUES: Record<TemplateFieldBinding, string> = {
-  [TEACHER_DISPLAY_NAME]: "Педагог: Петрова Мария Сергеевна",
+  [TEACHER_DISPLAY_NAME]: TEACHER_WITH_ROLE,
   [ORGANIZATION_NAME]: "ДШИ №1",
   [NOMINATION_TITLE]: "Вокал",
   [NOMINATION_DISCIPLINE]: "Эстрадный вокал",
@@ -62,11 +67,22 @@ const PREVIEW_VALUES: Record<PreviewMode, Record<TemplateFieldBinding, string>> 
  * a diploma never shows a placeholder). At generation time a real provider
  * replaces this with actual applicant data; the renderer never knows the
  * difference.
+ *
+ * ``documentType`` matters for the teacher field: generation prints the role
+ * alongside the name on a diploma and the name alone on a thank-you letter, so a
+ * sample that always carried "Педагог: " showed a label the letter drops. Omitted,
+ * it falls back to the fuller diploma form.
  */
 export function resolvePreviewValue(
   binding: TemplateFieldBinding,
   mode: PreviewMode,
+  documentType?: DocumentType | string,
 ): string | null {
+  if (binding === TEACHER_DISPLAY_NAME) {
+    return documentTypeConfig(documentType ?? "DIPLOMA").teacherRoles
+      ? TEACHER_WITH_ROLE
+      : TEACHER_NAME;
+  }
   const value = PREVIEW_VALUES[mode][binding] ?? PREVIEW_VALUES.individual[binding];
   return value ? value : null;
 }
