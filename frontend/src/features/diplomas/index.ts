@@ -9,6 +9,7 @@ export type {
 export {
   type DiplomaTemplateQuery,
   diplomaKeys,
+  type GenerateDocumentsPayload,
   useCreateAssignmentMutation,
   useCreateTemplateMutation,
   useDeleteAssignmentMutation,

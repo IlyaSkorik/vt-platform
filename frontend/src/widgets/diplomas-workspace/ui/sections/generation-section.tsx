@@ -27,12 +27,17 @@ function errorText(error: unknown, fallback: string): string {
   return error instanceof ApiError ? (error.problem?.detail ?? fallback) : fallback;
 }
 
+/** Which thank-you action is in flight — the two share one mutation. */
+type ThanksAction = "publish" | "print";
+
 export function GenerationSection(): React.JSX.Element {
   const [competitionId, setCompetitionId] = useState("");
   const [jobId, setJobId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [touched, setTouched] = useState(false);
   const [force, setForce] = useState(false);
+  const [thanksAction, setThanksAction] = useState<ThanksAction | null>(null);
+  const [thanksZipUrl, setThanksZipUrl] = useState<string | null>(null);
 
   const competitionsQuery = useCompetitionsList();
   const summaryQuery = usePrintPackageSummary(competitionId || undefined);
@@ -47,6 +52,7 @@ export function GenerationSection(): React.JSX.Element {
     setSelected(new Set());
     setTouched(false);
     setForce(false);
+    setThanksZipUrl(null);
     startMutation.reset();
   }, [competitionId]);
 
@@ -125,25 +131,43 @@ export function GenerationSection(): React.JSX.Element {
    * Generate thank-you letters for the nominations that have a letter template.
    *
    * A separate action, not a variant of the print package: letters are unnumbered
-   * and unverifiable, so there is no job to poll and no ZIP — each nomination's own
-   * THANK_YOU template renders straight to the participants' cabinets.
+   * and unverifiable, so there is no job to poll — each nomination's own THANK_YOU
+   * template renders straight to the participants' cabinets.
+   *
+   * The two actions differ in what they *do* with the result, not in what they
+   * render: `publish` puts the letters in the participants' cabinets, `print` only
+   * prepares them and hands back a ZIP — nothing becomes visible. A letter already
+   * published by an earlier run stays published; nothing here takes one back.
    */
-  async function handleGenerateThanks(): Promise<void> {
+  async function handleGenerateThanks(action: ThanksAction): Promise<void> {
+    const forPrint = action === "print";
+    setThanksAction(action);
+    setThanksZipUrl(null);
     try {
       const summary = await generateThanks.mutateAsync({
         competitionId,
         categoryIds: thanksRun.categoryIds,
         documentType: "THANK_YOU",
         force,
+        bundle: forPrint,
+        publish: !forPrint,
       });
-      const total = summary.created + summary.regenerated;
       const skipped = summary.withoutRecipient
         ? ` Заявок без педагога: ${summary.withoutRecipient}.`
         : "";
+      if (forPrint) {
+        setThanksZipUrl(summary.zipUrl);
+        toast.success(
+          summary.documents > 0
+            ? `Благодарностей в архиве: ${summary.documents}. Скачайте ZIP для печати — в личных кабинетах они не опубликованы.${skipped}`
+            : `Нечего печатать: благодарности не сформированы.${skipped}`,
+        );
+        return;
+      }
       toast.success(
-        total > 0
-          ? `Благодарности сформированы: ${total}. Они уже доступны участникам.${skipped}`
-          : `Все благодарности уже сформированы.${skipped}`,
+        summary.published > 0
+          ? `Благодарностей опубликовано: ${summary.published}. Они доступны участникам в личном кабинете.${skipped}`
+          : `Новых благодарностей нет: все уже опубликованы.${skipped}`,
       );
     } catch (error) {
       const message =
@@ -151,6 +175,8 @@ export function GenerationSection(): React.JSX.Element {
           ? (error.problem?.detail ?? "Не удалось сформировать благодарности.")
           : "Не удалось сформировать благодарности.";
       toast.error(message);
+    } finally {
+      setThanksAction(null);
     }
   }
 
@@ -225,20 +251,42 @@ export function GenerationSection(): React.JSX.Element {
                 missingHint="без шаблона диплома"
                 onRun={handleGenerate}
               />
-              <div className="flex flex-col gap-2 border-border border-t pt-4">
+              <div className="flex flex-col gap-3 border-border border-t pt-4">
                 <RunAction
-                  label="Сформировать благодарности"
+                  label="Сформировать и опубликовать в ЛК"
                   variant="outline"
-                  pending={generateThanks.isPending}
+                  pending={thanksAction === "publish"}
+                  busy={generateThanks.isPending}
                   run={thanksRun}
                   missingHint="без шаблона благодарности"
-                  onRun={() => void handleGenerateThanks()}
+                  onRun={() => void handleGenerateThanks("publish")}
+                />
+                <RunAction
+                  label="Сформировать и скачать для печати"
+                  variant="outline"
+                  pending={thanksAction === "print"}
+                  busy={generateThanks.isPending}
+                  run={thanksRun}
+                  missingHint="без шаблона благодарности"
+                  onRun={() => void handleGenerateThanks("print")}
                 />
                 <p className="text-muted-foreground text-sm">
                   По шаблону благодарности каждой выбранной номинации — отдельная благодарность
-                  каждому педагогу. Без степени, номера и QR: участники увидят их в личном кабинете
-                  сразу.
+                  каждому педагогу. Первое действие публикует их в личных
+                  кабинетах участников. Второе только готовит файлы и отдаёт ZIP со всеми
+                  благодарностями выбранных номинаций (по папкам номинаций) — в кабинетах они не
+                  появятся, пока не нажать «Сформировать и опубликовать в ЛК».
                 </p>
+                {thanksZipUrl ? (
+                  <div>
+                    <Button asChild variant="outline">
+                      <a href={resolveMediaUrl(thanksZipUrl) ?? "#"} download>
+                        <Download className="size-4" aria-hidden="true" />
+                        Скачать ZIP с благодарностями
+                      </a>
+                    </Button>
+                  </div>
+                ) : null}
               </div>
             </div>
           ) : null}
@@ -312,13 +360,17 @@ function RunAction({
   label,
   variant,
   pending,
+  busy,
   run,
   missingHint,
   onRun,
 }: {
   label: string;
   variant?: "outline";
+  /** This action is the one running — it shows the spinner. */
   pending: boolean;
+  /** Some action sharing the same run is in flight, so this one waits its turn. */
+  busy?: boolean;
   run: { categoryIds: string[]; willCreate: number; skipped: number };
   missingHint: string;
   onRun: () => void;
@@ -329,7 +381,7 @@ function RunAction({
         size="lg"
         variant={variant}
         onClick={onRun}
-        disabled={pending || run.categoryIds.length === 0}
+        disabled={pending || busy || run.categoryIds.length === 0}
       >
         {pending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
         {label}

@@ -411,30 +411,51 @@ export function useStartPrintPackageMutation(): UseMutationResult<
   });
 }
 
+export interface GenerateDocumentsPayload {
+  competitionId: string;
+  categoryIds: string[];
+  documentType: DocumentType;
+  force?: boolean;
+  /** Also archive the run's documents into one ZIP for offline printing (`zipUrl`). */
+  bundle?: boolean;
+  /**
+   * Show the documents to the participants (default). Off for a run that only
+   * prepares sheets to print: they are generated and stored, but stay out of the
+   * cabinets until a later run publishes them. Never withdraws a publication.
+   */
+  publish?: boolean;
+}
+
 /**
  * Generate non-registry documents (thank-you letters) for chosen nominations.
  *
- * Synchronous, unlike the diploma print package: there is no number to reserve and
- * no ZIP to bundle, so the response already carries the outcome and there is no job
- * to poll. Each nomination uses its own assigned template of the kind.
+ * Synchronous, unlike the diploma print package: there is no number to reserve, so
+ * the response already carries the outcome (and the archive, when asked for) and
+ * there is no job to poll. Each nomination uses its own assigned template of the kind.
+ * `publish` and `bundle` are independent — see {@link GenerateDocumentsPayload}.
  */
 export function useGenerateDocumentsMutation(): UseMutationResult<
   GenerateDocumentsResponse,
   ApiError,
-  { competitionId: string; categoryIds: string[]; documentType: DocumentType; force?: boolean }
+  GenerateDocumentsPayload
 > {
   const queryClient = useQueryClient();
-  return useMutation<
-    GenerateDocumentsResponse,
-    ApiError,
-    { competitionId: string; categoryIds: string[]; documentType: DocumentType; force?: boolean }
-  >({
-    mutationFn: async ({ competitionId, categoryIds, documentType, force = false }) => {
+  return useMutation<GenerateDocumentsResponse, ApiError, GenerateDocumentsPayload>({
+    mutationFn: async ({
+      competitionId,
+      categoryIds,
+      documentType,
+      force = false,
+      bundle = false,
+      publish = true,
+    }) => {
       const response = await diplomasGenerateDocuments({
         competitionId,
         categoryIds,
         documentType: documentType as GenerateDocumentsRequestDocumentTypeEnum,
         force,
+        bundle,
+        publish,
       });
       return unwrapGeneratedDocuments(response.data);
     },

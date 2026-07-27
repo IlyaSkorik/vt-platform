@@ -86,6 +86,9 @@ function setup(nominations: PrintPackageNomination[] = NOMINATIONS): {
     regenerated: 0,
     withoutRecipient: 0,
     nominations: 1,
+    documents: 2,
+    published: 2,
+    zipUrl: "/media/diplomas/documents/c1/thank_you/ThankYou.zip",
   });
 
   vi.mocked(useCompetitionsList).mockReturnValue({
@@ -146,16 +149,40 @@ describe("GenerationSection", () => {
     render(<GenerationSection />);
     await chooseCompetition();
 
-    await userEvent
-      .setup()
-      .click(screen.getByRole("button", { name: /Сформировать благодарности/ }));
+    await userEvent.setup().click(screen.getByRole("button", { name: /опубликовать в ЛК/ }));
 
     expect(generateThanks).toHaveBeenCalledWith({
       competitionId: COMPETITION_ID,
       categoryIds: [VOCALS],
       documentType: "THANK_YOU",
       force: false,
+      bundle: false,
+      publish: true,
     });
+  });
+
+  it("prepares a print run without publishing anything, and offers the download", async () => {
+    const { generateThanks } = setup();
+    render(<GenerationSection />);
+    await chooseCompetition();
+
+    await userEvent.setup().click(screen.getByRole("button", { name: /скачать для печати/ }));
+
+    // The print action asks for the archive and withholds publication: preparing
+    // sheets to hand out is not the same decision as showing them in a cabinet.
+    expect(generateThanks).toHaveBeenCalledWith({
+      competitionId: COMPETITION_ID,
+      categoryIds: [VOCALS],
+      documentType: "THANK_YOU",
+      force: false,
+      bundle: true,
+      publish: false,
+    });
+    const download = await screen.findByRole("link", { name: /Скачать ZIP с благодарностями/ });
+    expect(download).toHaveAttribute(
+      "href",
+      expect.stringContaining("/media/diplomas/documents/c1/thank_you/ThankYou.zip"),
+    );
   });
 
   it("still sends every diploma-ready nomination to the print package", async () => {
@@ -180,7 +207,8 @@ describe("GenerationSection", () => {
     render(<GenerationSection />);
     await chooseCompetition();
 
-    expect(screen.getByRole("button", { name: /Сформировать благодарности/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /опубликовать в ЛК/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /скачать для печати/ })).toBeDisabled();
     expect(screen.getByRole("button", { name: /Сформировать комплект для печати/ })).toBeEnabled();
   });
 });

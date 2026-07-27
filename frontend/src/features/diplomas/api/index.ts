@@ -1,5 +1,6 @@
 export {
   type DiplomaTemplateQuery,
+  type GenerateDocumentsPayload,
   useCreateAssignmentMutation,
   useCreateTemplateMutation,
   useDeleteAssignmentMutation,
