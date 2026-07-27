@@ -147,6 +147,15 @@ function primaryAction(capabilities: Capability[]): Capability | null {
   return preferred ?? capabilities[0] ?? null;
 }
 
+/**
+ * Statuses whose cancellation is worth a second click.
+ *
+ * The entry is in the running order: the applicant cannot undo this, CANCELLED is
+ * terminal, and documents for the performance may already have been issued. Earlier
+ * in the lifecycle a cancellation is routine and stays a single click.
+ */
+const CANCEL_NEEDS_CONFIRMATION = new Set(["ACCEPTED", "SCHEDULED"]);
+
 function statusLabel(status: string): string {
   const map: Record<string, string> = {
     DRAFT: "Черновик",
@@ -230,6 +239,9 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
   const [competitionId, setCompetitionId] = useState(() => searchParams.get("competitionId") ?? "");
   const [openPerformances, setOpenPerformances] = useState<Record<string, boolean>>({});
   const [actionError, setActionError] = useState<string | null>(null);
+  // Set once the organizer has clicked «Отменить» on an entry already in the running
+  // order, so the second click is the deliberate one. See `needsCancelConfirmation`.
+  const [cancelArmed, setCancelArmed] = useState(false);
   const queryClient = useQueryClient();
 
   const workspace = useQuery({
@@ -306,6 +318,8 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
   // biome-ignore lint/correctness/useExhaustiveDependencies: сбрасываем раскрытые выступления при смене выбранной заявки
   useEffect(() => {
     setOpenPerformances({});
+    // A primed cancellation must never carry over to another entry.
+    setCancelArmed(false);
   }, [selected]);
 
   function executeAction(actionKey: string): void {
@@ -326,8 +340,19 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
       return;
     }
     if (!selectedItem) return;
+    if (needsCancelConfirmation(actionKey) && !cancelArmed) {
+      setCancelArmed(true);
+      setActionError(null);
+      return;
+    }
     setActionError(null);
+    setCancelArmed(false);
     action.mutate({ submissionId: selectedItem.id, actionKey });
+  }
+
+  /** Whether this action is the cancellation of an entry already in the competition. */
+  function needsCancelConfirmation(actionKey: string): boolean {
+    return actionKey === "cancel" && CANCEL_NEEDS_CONFIRMATION.has(selectedItem?.status ?? "");
   }
 
   if (!workspace.data) {
@@ -506,20 +531,31 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                       <Button
                         key={capability.key}
                         size="sm"
+                        // Cancelling always reads as destructive, even where it is the
+                        // only action left and would otherwise be styled as primary.
                         variant={
-                          capability.key === selectedPrimaryAction?.key
-                            ? "primary"
-                            : capability.key === "cancel"
-                              ? "danger"
+                          capability.key === "cancel"
+                            ? "danger"
+                            : capability.key === selectedPrimaryAction?.key
+                              ? "primary"
                               : "secondary"
                         }
                         loading={action.isPending}
                         onClick={() => executeAction(capability.key)}
                       >
-                        {capability.label}
+                        {capability.key === "cancel" && cancelArmed
+                          ? "Подтвердить отмену"
+                          : capability.label}
                       </Button>
                     ))}
                   </div>
+                  {cancelArmed ? (
+                    <p className="text-sm text-warning">
+                      Заявка уже в конкурсе. Отмена необратима, участник вернуть её не сможет, а
+                      выданные по ней документы останутся в реестре. Нажмите «Подтвердить отмену»,
+                      чтобы продолжить.
+                    </p>
+                  ) : null}
                   <Textarea
                     value={comment}
                     onChange={(event) => setComment(event.target.value)}

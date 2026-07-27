@@ -742,6 +742,9 @@ class SubmissionStatus(StrEnum):
     ``COMPLETED``           - the performance took place.
     ``CANCELLED``           - withdrawn or rejected; terminal.
 
+    From ``ACCEPTED`` on, the applicant can no longer withdraw; the organizer may
+    still cancel, case by case, until the performance has taken place.
+
     Legal transitions are enforced by the :class:`~apps.applications.domain.entities.
     Submission` aggregate; this enum only names the states.
     """

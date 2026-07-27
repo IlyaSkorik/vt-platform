@@ -112,6 +112,14 @@ def _missing_type_label(raw: str) -> str:
 
 
 def _capabilities(status: str) -> list[dict[str, str]]:
+    """What the organizer may do to a submission in this status.
+
+    Cancellation stays on offer once the entry is in the running order (``ACCEPTED``,
+    ``SCHEDULED``): the applicant can no longer withdraw there, but the organizer
+    decides such a withdrawal case by case — a disqualification, a no-show, or a
+    request granted as an exception. ``COMPLETED`` offers nothing: the performance
+    took place.
+    """
     mapping: dict[str, list[tuple[str, str]]] = {
         "SUBMITTED": [("approve", "Одобрить"), ("return_for_correction", "Вернуть на исправление"), ("cancel", "Отменить")],
         "UNDER_REVIEW": [("approve", "Одобрить"), ("return_for_correction", "Вернуть на исправление"), ("cancel", "Отменить")],
@@ -119,8 +127,8 @@ def _capabilities(status: str) -> list[dict[str, str]]:
         "APPROVED": [("confirm_participation", "Подтвердить участие"), ("cancel", "Отменить")],
         "WAITING_PAYMENT": [("confirm_participation", "Подтвердить участие"), ("cancel", "Отменить")],
         "PAID": [("confirm_participation", "Подтвердить участие"), ("cancel", "Отменить")],
-        "ACCEPTED": [("move_to_running", "Перевести в конкурс")],
-        "SCHEDULED": [],
+        "ACCEPTED": [("move_to_running", "Перевести в конкурс"), ("cancel", "Отменить")],
+        "SCHEDULED": [("cancel", "Отменить")],
         "COMPLETED": [],
         "CANCELLED": [],
     }

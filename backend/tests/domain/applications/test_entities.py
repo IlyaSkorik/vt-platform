@@ -127,6 +127,19 @@ def _solo_ready() -> SoloFixture:
     return SoloFixture(s, policy)
 
 
+def _accepted() -> Submission:
+    """A submission walked all the way to ACCEPTED — committed to the running order."""
+    fx = _solo_ready()
+    s = fx.submission
+    s.submit(policy=fx.solo_policy, now=NOW)
+    s.begin_review(now=NOW)
+    s.approve(now=NOW)
+    s.await_payment(now=NOW)
+    s.mark_paid(now=NOW)
+    s.accept(now=NOW)
+    return s
+
+
 class TestConstruction:
     def test_direct_construction_refused(self) -> None:
         with pytest.raises(DirectConstructionError):
@@ -427,16 +440,56 @@ class TestLifecycle:
         assert events[0].previous_status is SubmissionStatus.SUBMITTED
 
     def test_cannot_cancel_after_accept(self) -> None:
+        """The applicant's own withdrawal stops at the running order."""
+        s = _accepted()
+        with pytest.raises(IllegalStatusTransitionError):
+            s.cancel(now=NOW)
+
+    def test_applicant_cannot_cancel_once_scheduled(self) -> None:
+        s = _accepted()
+        s.schedule(now=NOW)
+        with pytest.raises(IllegalStatusTransitionError):
+            s.cancel(now=NOW)
+
+    def test_organizer_can_cancel_an_accepted_submission(self) -> None:
+        """Committed to the running order, but a withdrawal is still the organizer's
+        call — a disqualification or a request granted as an exception."""
+        s = _accepted()
+
+        events = s.cancel_by_organizer(now=NOW)
+
+        assert s.status is SubmissionStatus.CANCELLED
+        assert isinstance(events[0], SubmissionCancelled)
+        assert events[0].previous_status is SubmissionStatus.ACCEPTED
+
+    def test_organizer_can_cancel_a_scheduled_submission(self) -> None:
+        s = _accepted()
+        s.schedule(now=NOW)
+
+        events = s.cancel_by_organizer(now=NOW)
+
+        assert s.status is SubmissionStatus.CANCELLED
+        assert events[0].previous_status is SubmissionStatus.SCHEDULED
+
+    def test_not_even_the_organizer_can_cancel_a_performed_submission(self) -> None:
+        """COMPLETED stays terminal: the performance happened, and its diploma may
+        already be in the register."""
+        s = _accepted()
+        s.schedule(now=NOW)
+        s.complete(now=NOW)
+
+        with pytest.raises(IllegalStatusTransitionError):
+            s.cancel_by_organizer(now=NOW)
+
+    def test_organizer_cancellation_before_the_running_order_works_the_same(self) -> None:
         fx = _solo_ready()
         s = fx.submission
         s.submit(policy=fx.solo_policy, now=NOW)
-        s.begin_review(now=NOW)
-        s.approve(now=NOW)
-        s.await_payment(now=NOW)
-        s.mark_paid(now=NOW)
-        s.accept(now=NOW)
-        with pytest.raises(IllegalStatusTransitionError):
-            s.cancel(now=NOW)
+
+        events = s.cancel_by_organizer(now=NOW)
+
+        assert s.status is SubmissionStatus.CANCELLED
+        assert events[0].previous_status is SubmissionStatus.SUBMITTED
 
 
 class TestConcurrencyAndIdentity:

@@ -20,10 +20,10 @@ __all__ = ["CancelSubmissionByReviewerHandler", "CancelSubmissionHandler"]
 class CancelSubmissionHandler:
     """Use case: cancel (withdraw) the submission on the applicant's behalf.
 
-    The domain permits cancellation from any state up to - but not including -
-    ACCEPTED, and refuses it thereafter; the use case only enforces ownership.
-    Organizer-initiated rejection is a future extension that would authorize a
-    reviewer here instead.
+    The domain permits withdrawal from any state up to - but not including -
+    ACCEPTED, and refuses it thereafter; the use case only enforces ownership. Past
+    that point a withdrawal is the organizer's decision, handled by
+    :class:`CancelSubmissionByReviewerHandler`.
     """
 
     def __init__(
@@ -49,7 +49,12 @@ class CancelSubmissionHandler:
 
 
 class CancelSubmissionByReviewerHandler:
-    """Use case: cancel (reject) a submission by organizer decision."""
+    """Use case: cancel (reject) a submission by organizer decision.
+
+    Reaches further than the applicant's own withdrawal: an entry already committed
+    to the running order (ACCEPTED, SCHEDULED) may still be taken out of it, which is
+    why this is a staff-authorized action rather than a self-service one.
+    """
 
     def __init__(
         self,
@@ -70,7 +75,7 @@ class CancelSubmissionByReviewerHandler:
         ensure_reviewer(self._organization, reviewer_id)
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         with translate_domain_errors():
-            domain_events = submission.cancel(now=now)
+            domain_events = submission.cancel_by_organizer(now=now)
         self._submissions.save(submission)
         self._events.publish(domain_events)
         return SubmissionOperationResultDto.of(submission, tuple(domain_events))

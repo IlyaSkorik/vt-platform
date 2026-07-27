@@ -176,8 +176,9 @@ from .value_objects import (
 _CREATION_TOKEN: Final = object()
 
 #: The lifecycle transitions the aggregate permits. ``COMPLETED`` and ``CANCELLED``
-#: are terminal. Cancellation is possible until a submission is ``ACCEPTED``; from
-#: ``ACCEPTED`` onward the submission is committed to the running order.
+#: are terminal. Cancellation stays possible while the submission is committed to
+#: the running order (``ACCEPTED``, ``SCHEDULED``) but only by organizer decision —
+#: see :data:`_ORGANIZER_ONLY_CANCELLABLE_STATUSES`.
 _LEGAL_TRANSITIONS: Final[dict[SubmissionStatus, frozenset[SubmissionStatus]]] = {
     SubmissionStatus.DRAFT: frozenset({SubmissionStatus.SUBMITTED, SubmissionStatus.CANCELLED}),
     SubmissionStatus.SUBMITTED: frozenset({SubmissionStatus.UNDER_REVIEW, SubmissionStatus.CANCELLED}),
@@ -186,11 +187,26 @@ _LEGAL_TRANSITIONS: Final[dict[SubmissionStatus, frozenset[SubmissionStatus]]] =
     SubmissionStatus.APPROVED: frozenset({SubmissionStatus.WAITING_PAYMENT, SubmissionStatus.CANCELLED}),
     SubmissionStatus.WAITING_PAYMENT: frozenset({SubmissionStatus.PAID, SubmissionStatus.CANCELLED}),
     SubmissionStatus.PAID: frozenset({SubmissionStatus.ACCEPTED, SubmissionStatus.CANCELLED}),
-    SubmissionStatus.ACCEPTED: frozenset({SubmissionStatus.SCHEDULED}),
-    SubmissionStatus.SCHEDULED: frozenset({SubmissionStatus.COMPLETED}),
+    SubmissionStatus.ACCEPTED: frozenset({SubmissionStatus.SCHEDULED, SubmissionStatus.CANCELLED}),
+    SubmissionStatus.SCHEDULED: frozenset({SubmissionStatus.COMPLETED, SubmissionStatus.CANCELLED}),
     SubmissionStatus.COMPLETED: frozenset(),
     SubmissionStatus.CANCELLED: frozenset(),
 }
+
+#: Statuses a submission can only be cancelled *out of* by organizer decision.
+#:
+#: Once an entry is committed to the running order the applicant can no longer
+#: withdraw it — the fee is settled, the slot is allocated and the programme is being
+#: built around it. The organizer still can, because a withdrawal at this point is
+#: decided case by case: a disqualification, a no-show, or an applicant's request
+#: granted as an exception. Making it an organizer action is what keeps it a decision
+#: rather than a self-service button.
+#:
+#: ``COMPLETED`` is absent deliberately: the performance took place, so cancelling it
+#: would rewrite history — and its diploma may already be in the register.
+_ORGANIZER_ONLY_CANCELLABLE_STATUSES: Final = frozenset(
+    {SubmissionStatus.ACCEPTED, SubmissionStatus.SCHEDULED}
+)
 
 #: Statuses in which the submission's content (performance, participants, teachers,
 #: attachments, price snapshot) may still be edited. Beyond these it is frozen.
@@ -955,8 +971,9 @@ class Submission:
     def accept(self, *, now: datetime) -> list[DomainEvent]:
         """Accept the submission into the competition (PAID -> ACCEPTED).
 
-        From here content is permanently frozen and the submission can no longer be
-        cancelled - it is committed to the running order.
+        From here content is permanently frozen and the applicant can no longer
+        withdraw - the submission is committed to the running order. Only the
+        organizer may still take it out (:meth:`cancel_by_organizer`).
         """
         self._transition_to(SubmissionStatus.ACCEPTED, now=now)
         return [SubmissionAccepted(aggregate_id=self._id.value)]
@@ -972,7 +989,29 @@ class Submission:
         return [SubmissionCompleted(aggregate_id=self._id.value)]
 
     def cancel(self, *, now: datetime) -> list[DomainEvent]:
-        """Cancel the submission (withdraw or reject). Not possible once ACCEPTED."""
+        """Withdraw the submission at the applicant's request.
+
+        Refused once the submission is committed to the running order: from there a
+        withdrawal is the organizer's decision, not the applicant's — see
+        :meth:`cancel_by_organizer`.
+        """
+        if self._status in _ORGANIZER_ONLY_CANCELLABLE_STATUSES:
+            raise IllegalStatusTransitionError(
+                f"A submission that is {self._status.value} can only be cancelled by the organizer."
+            )
+        return self._cancel(now=now)
+
+    def cancel_by_organizer(self, *, now: datetime) -> list[DomainEvent]:
+        """Cancel the submission by organizer decision (withdrawal or rejection).
+
+        Reaches further than :meth:`cancel`: an entry already committed to the running
+        order may still be taken out of it, case by case. ``COMPLETED`` remains
+        terminal — a performance that happened cannot be un-entered.
+        """
+        return self._cancel(now=now)
+
+    def _cancel(self, *, now: datetime) -> list[DomainEvent]:
+        """Perform the cancellation itself, once the caller's authority is settled."""
         previous = self._status
         self._transition_to(SubmissionStatus.CANCELLED, now=now)
         return [SubmissionCancelled(aggregate_id=self._id.value, previous_status=previous)]
