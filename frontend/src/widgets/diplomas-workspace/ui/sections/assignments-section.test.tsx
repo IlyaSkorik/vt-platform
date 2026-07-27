@@ -105,17 +105,57 @@ function setup(assignments: DiplomaAssignment[] = [ASSIGNED_VOCALS]): {
   return { createAssignment };
 }
 
-/** Open the dialog and pick the competition, the state every test starts from. */
-async function openDialogForCompetition(): Promise<ReturnType<typeof userEvent.setup>> {
+/** Pick the section's competition — everything else only exists after that. */
+async function chooseCompetition(): Promise<ReturnType<typeof userEvent.setup>> {
   const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "Создать назначение" }));
   await user.click(screen.getByRole("combobox", { name: "Конкурс" }));
   await user.click(await screen.findByRole("option", { name: "Восходящие таланты" }));
   return user;
 }
 
+/** …and open the dialog on it, the state every dialog test starts from. */
+async function openDialogForCompetition(): Promise<ReturnType<typeof userEvent.setup>> {
+  const user = await chooseCompetition();
+  await user.click(screen.getByRole("button", { name: "Создать назначение" }));
+  return user;
+}
+
 afterEach(() => {
   vi.clearAllMocks();
+});
+
+describe("AssignmentsSection", () => {
+  it("asks for the competition before anything else", async () => {
+    setup();
+    render(<AssignmentsSection />);
+
+    expect(screen.getByText(/Выберите конкурс, чтобы увидеть его назначения/)).toBeInTheDocument();
+    // Nothing to assign to yet, so there is nothing to assign with.
+    expect(screen.queryByRole("button", { name: "Создать назначение" })).not.toBeInTheDocument();
+
+    await chooseCompetition();
+
+    expect(screen.getByRole("button", { name: "Создать назначение" })).toBeInTheDocument();
+  });
+
+  it("lists only the chosen competition's assignments", async () => {
+    setup([
+      ASSIGNED_VOCALS,
+      {
+        ...ASSIGNED_VOCALS,
+        id: "01900000-0000-7000-8000-0000000000a9",
+        competitionId: "01900000-0000-7000-8000-0000000000c9",
+        competition: "Другой конкурс",
+        nomination: "Хореография",
+      },
+    ]);
+    render(<AssignmentsSection />);
+    await chooseCompetition();
+
+    expect(screen.getByText("Вокал")).toBeInTheDocument();
+    // Another competition's assignment is not this competition's business.
+    expect(screen.queryByText("Хореография")).not.toBeInTheDocument();
+  });
 });
 
 describe("CreateAssignmentDialog", () => {

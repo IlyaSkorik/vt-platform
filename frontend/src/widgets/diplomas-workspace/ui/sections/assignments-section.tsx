@@ -38,23 +38,25 @@ interface FreeNomination {
   name: string;
 }
 
-function CreateAssignmentDialog(): React.JSX.Element {
+/**
+ * Assign a template to nominations of the competition already chosen in the section.
+ *
+ * The competition is the section's context rather than the dialog's first field: an
+ * organizer works on one competition at a time, and picking it inside every dialog
+ * made a form of four questions out of one — the same reason the generation page
+ * asks for it once, up front.
+ */
+function CreateAssignmentDialog({ competitionId }: { competitionId: string }): React.JSX.Element {
   const [open, setOpen] = useState(false);
-  const [competitionId, setCompetitionId] = useState("");
   const [categoryIds, setCategoryIds] = useState<Set<string>>(new Set());
   const [documentType, setDocumentType] = useState<DocumentType>("DIPLOMA");
   const [templateId, setTemplateId] = useState("");
 
-  const competitionsQuery = useCompetitionsList();
   const competitionDetailQuery = useCompetitionDetail(competitionId || undefined);
   const templatesQuery = useDiplomaTemplates();
   const assignmentsQuery = useDiplomaAssignments();
   const createAssignment = useCreateAssignmentMutation();
 
-  const competitionOptions: SelectOption[] = useMemo(
-    () => (competitionsQuery.data ?? []).map((item) => ({ value: item.id, label: item.title })),
-    [competitionsQuery.data],
-  );
   /**
    * The nominations whose slot of this kind is still empty.
    *
@@ -86,7 +88,8 @@ function CreateAssignmentDialog(): React.JSX.Element {
   );
 
   function reset(): void {
-    setCompetitionId("");
+    // The competition is not reset: it belongs to the section, and an organizer who
+    // just assigned a diploma template usually assigns the thank-you one next.
     setCategoryIds(new Set());
     setDocumentType("DIPLOMA");
     setTemplateId("");
@@ -156,17 +159,6 @@ function CreateAssignmentDialog(): React.JSX.Element {
           <DialogTitle>Новое назначение</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4">
-          <Select
-            label="Конкурс"
-            required
-            placeholder="Выберите конкурс"
-            options={competitionOptions}
-            value={competitionId}
-            onValueChange={(value) => {
-              setCompetitionId(value);
-              setCategoryIds(new Set());
-            }}
-          />
           {/* The slot the assignment fills. A nomination has one of each, so this
               chooses which of its slots is being set — and therefore which
               nominations are still free below. */}
@@ -293,8 +285,24 @@ function NominationPicker({
 }
 
 export function AssignmentsSection(): React.JSX.Element {
+  const [competitionId, setCompetitionId] = useState("");
+
+  const competitionsQuery = useCompetitionsList();
   const assignmentsQuery = useDiplomaAssignments();
   const deleteAssignment = useDeleteAssignmentMutation();
+
+  const competitionOptions: SelectOption[] = useMemo(
+    () => (competitionsQuery.data ?? []).map((item) => ({ value: item.id, label: item.title })),
+    [competitionsQuery.data],
+  );
+
+  // Assignments belong to a competition, so the section shows one competition's —
+  // the whole list across competitions is a report nobody asked for, and it made
+  // "which template does «Вокал» use?" a search rather than a glance.
+  const assignments: DiplomaAssignment[] = useMemo(
+    () => (assignmentsQuery.data ?? []).filter((item) => item.competitionId === competitionId),
+    [assignmentsQuery.data, competitionId],
+  );
 
   const handleDelete = useCallback(
     async (assignment: DiplomaAssignment): Promise<void> => {
@@ -314,11 +322,6 @@ export function AssignmentsSection(): React.JSX.Element {
 
   const columns: ColumnDef<DiplomaAssignment>[] = useMemo(
     () => [
-      {
-        accessorKey: "competition",
-        header: "Конкурс",
-        cell: ({ row }) => row.original.competition ?? "—",
-      },
       {
         accessorKey: "nomination",
         header: "Номинация",
@@ -374,25 +377,44 @@ export function AssignmentsSection(): React.JSX.Element {
   );
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-muted-foreground text-sm">
-          Каждая номинация имеет отдельный шаблон диплома и шаблон благодарности — так у разных
-          номинаций могут быть разные дизайны.
-        </p>
-        <CreateAssignmentDialog />
+    <div className="flex flex-col gap-6">
+      <div className="max-w-md">
+        <Select
+          label="Конкурс"
+          placeholder="Выберите конкурс"
+          options={competitionOptions}
+          value={competitionId}
+          onValueChange={setCompetitionId}
+          disabled={competitionsQuery.isLoading}
+        />
       </div>
-      <DataTable
-        columns={columns}
-        data={assignmentsQuery.data ?? []}
-        loading={assignmentsQuery.isLoading}
-        emptyContent={
-          <EmptyState
-            title="Назначений пока нет"
-            description="Создайте первое назначение, чтобы связать шаблон с конкурсом и номинацией."
+
+      {!competitionId ? (
+        <p className="text-muted-foreground text-sm">
+          Выберите конкурс, чтобы увидеть его назначения и связать шаблоны с номинациями.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-muted-foreground text-sm">
+              Каждая номинация имеет отдельный шаблон диплома и шаблон благодарности — так у разных
+              номинаций могут быть разные дизайны.
+            </p>
+            <CreateAssignmentDialog competitionId={competitionId} />
+          </div>
+          <DataTable
+            columns={columns}
+            data={assignments}
+            loading={assignmentsQuery.isLoading}
+            emptyContent={
+              <EmptyState
+                title="Назначений пока нет"
+                description="Создайте первое назначение, чтобы связать шаблон с номинацией этого конкурса."
+              />
+            }
           />
-        }
-      />
+        </div>
+      )}
     </div>
   );
 }
