@@ -4963,7 +4963,12 @@ paths:
   /api/v1/staff/diplomas/assignments:
     get:
       operationId: diplomas_assignments_list
-      description: List and create template assignments.
+      description: |-
+        List and create template assignments.
+
+        A create is a batch: one template, one or more nominations, all or nothing. The
+        organizer assigns the same design across a competition's nominations, so the
+        batch is the natural unit and a single nomination is a batch of one.
       tags:
       - Diplomas
       responses:
@@ -4977,7 +4982,12 @@ paths:
           description: ''
     post:
       operationId: diplomas_create_assignment
-      description: List and create template assignments.
+      description: |-
+        List and create template assignments.
+
+        A create is a batch: one template, one or more nominations, all or nothing. The
+        organizer assigns the same design across a competition's nominations, so the
+        batch is the natural unit and a single nomination is a batch of one.
       tags:
       - Diplomas
       requestBody:
@@ -4997,7 +5007,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AssignmentResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/AssignmentResponse'
           description: ''
   /api/v1/staff/diplomas/assignments/{assignment_id}:
     delete:
@@ -7140,23 +7152,26 @@ components:
     CreateAssignmentRequest:
       type: object
       description: |-
-        Body for creating a template assignment.
+        Body for assigning one template to one or more nominations.
 
-        Unchanged from the single-slot era: which slot of the nomination the assignment
-        fills is derived from the template's own ``type``, so a mismatch is not
-        expressible.
+        Which slot of each nomination the assignment fills is derived from the
+        template's own ``type``, so a mismatch is not expressible. ``categoryIds`` is a
+        list because a competition's nominations usually share a design; a single
+        nomination is a list of one.
       properties:
         competitionId:
           type: string
           format: uuid
-        categoryId:
-          type: string
-          format: uuid
+        categoryIds:
+          type: array
+          items:
+            type: string
+            format: uuid
         templateId:
           type: string
           format: uuid
       required:
-      - categoryId
+      - categoryIds
       - competitionId
       - templateId
     CreateCompetition:

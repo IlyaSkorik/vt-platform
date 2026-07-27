@@ -32,10 +32,12 @@ from apps.diplomas.infrastructure.models import (
 
 __all__ = [
     "create_assignment",
+    "create_assignments",
     "create_template",
     "delete_assignment",
     "get_template_layout",
     "list_assignments",
+    "list_assignments_by_ids",
     "list_templates",
     "replace_template_layout",
     "set_template_document",
@@ -245,46 +247,86 @@ def list_assignments() -> list[dict[str, Any]]:
 def create_assignment(*, competition_id: str, category_id: str, template_id: str) -> dict[str, Any]:
     """Bind a template to one document slot of a (competition, nomination) pair.
 
-    Which slot it fills is **derived from the template's own type** rather than
-    passed in: a ``THANK_YOU`` template can only ever be a nomination's thank-you
-    template. That makes a slot/template mismatch unrepresentable here, and keeps
-    the request shape unchanged from the single-slot era.
+    A batch of one: see :func:`create_assignments` for the slot derivation and the
+    errors raised.
+    """
+    return create_assignments(
+        competition_id=competition_id, category_ids=[category_id], template_id=template_id
+    )[0]
+
+
+def create_assignments(*, competition_id: str, category_ids: list[str], template_id: str) -> list[dict[str, Any]]:
+    """Bind one template to the same slot of several nominations at once.
+
+    The organizer's real unit of work: a competition's nominations usually share a
+    diploma design, and assigning it one at a time is the same decision repeated.
+
+    Which slot the batch fills is **derived from the template's own type** rather
+    than passed in: a ``THANK_YOU`` template can only ever be a nomination's
+    thank-you template. That makes a slot/template mismatch unrepresentable here, so
+    a batch fills one slot across the nominations and leaves the other untouched.
+
+    All or nothing. A batch that leaves some nominations assigned and others not is
+    worse than one that fails outright, because the table does not say which half
+    went through. Duplicate ids in one request are collapsed rather than rejected —
+    naming a nomination twice means what naming it once means.
 
     Raises :class:`TemplateNotFound` for an unknown template and
-    :class:`AssignmentConflict` when the nomination already has a template of that
-    kind — a diploma assignment therefore no longer blocks a thank-you assignment.
+    :class:`AssignmentConflict` for the first nomination that already has a template
+    of that kind — a diploma assignment therefore does not block a thank-you one.
     """
     template = TemplateModel.objects.filter(id=template_id, deleted_at__isnull=True).only("type").first()
     if template is None:
         raise TemplateNotFoundError("Template was not found.")
     document_type = template.type
-    if AssignmentModel.objects.filter(
-        competition_id=competition_id,
-        category_id=category_id,
-        document_type=document_type,
-        deleted_at__isnull=True,
-    ).exists():
-        raise AssignmentConflictError("This nomination already has a template of that type assigned.")
-    try:
-        row = AssignmentModel.objects.create(
-            competition_id=competition_id,
-            category_id=category_id,
-            template_id=template_id,
-            document_type=document_type,
+    wanted = list(dict.fromkeys(category_ids))
+
+    with transaction.atomic():
+        taken = set(
+            AssignmentModel.objects.filter(
+                competition_id=competition_id,
+                category_id__in=wanted,
+                document_type=document_type,
+                deleted_at__isnull=True,
+            ).values_list("category_id", flat=True)
         )
-    except IntegrityError as exc:  # pragma: no cover - unique race
-        raise AssignmentConflictError(
-            "This nomination already has a template of that type assigned."
-        ) from exc
-    return list_assignments_by_id(str(row.id))
+        if taken:
+            raise AssignmentConflictError("This nomination already has a template of that type assigned.")
+        try:
+            rows = AssignmentModel.objects.bulk_create(
+                [
+                    AssignmentModel(
+                        competition_id=competition_id,
+                        category_id=category_id,
+                        template_id=template_id,
+                        document_type=document_type,
+                    )
+                    for category_id in wanted
+                ]
+            )
+        except IntegrityError as exc:  # pragma: no cover - unique race
+            raise AssignmentConflictError(
+                "This nomination already has a template of that type assigned."
+            ) from exc
+    return list_assignments_by_ids([str(row.id) for row in rows])
+
+
+def list_assignments_by_ids(assignment_ids: list[str]) -> list[dict[str, Any]]:
+    """Return these assignments' JSON, in the order asked for (used after a create).
+
+    One listing pass for the whole batch: the label resolution behind
+    :func:`list_assignments` is the same work whether one row or twenty came back.
+    """
+    by_id = {item["id"]: item for item in list_assignments()}
+    try:
+        return [by_id[assignment_id] for assignment_id in assignment_ids]
+    except KeyError as exc:
+        raise AssignmentNotFoundError("Assignment was not found.") from exc
 
 
 def list_assignments_by_id(assignment_id: str) -> dict[str, Any]:
     """Return a single assignment's JSON (used right after a create)."""
-    for item in list_assignments():
-        if item["id"] == assignment_id:
-            return item
-    raise AssignmentNotFoundError("Assignment was not found.")
+    return list_assignments_by_ids([assignment_id])[0]
 
 
 def delete_assignment(assignment_id: str) -> None:

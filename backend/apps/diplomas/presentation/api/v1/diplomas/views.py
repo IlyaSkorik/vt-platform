@@ -235,7 +235,12 @@ class DiplomaTemplateLayoutView(_StaffView):
 
 
 class DiplomaAssignmentsView(_StaffView):
-    """List and create template assignments."""
+    """List and create template assignments.
+
+    A create is a batch: one template, one or more nominations, all or nothing. The
+    organizer assigns the same design across a competition's nominations, so the
+    batch is the natural unit and a single nomination is a batch of one.
+    """
 
     @extend_schema(
         tags=[_TAG],
@@ -249,7 +254,7 @@ class DiplomaAssignmentsView(_StaffView):
         tags=[_TAG],
         operation_id="diplomas_create_assignment",
         request=CreateAssignmentRequestSerializer,
-        responses={201: AssignmentResponseSerializer},
+        responses={201: AssignmentResponseSerializer(many=True)},
     )
     def post(self, request: Request) -> Response:
         serializer = CreateAssignmentRequestSerializer(data=request.data)
@@ -257,14 +262,14 @@ class DiplomaAssignmentsView(_StaffView):
             return problems.validation_problem(serializer.errors, instance=request.path, request=request)
         data = serializer.validated_data
         try:
-            assignment = composition.create_assignment(
+            assignments = composition.create_assignments(
                 competition_id=str(data["competitionId"]),
-                category_id=str(data["categoryId"]),
+                category_ids=[str(category_id) for category_id in data["categoryIds"]],
                 template_id=str(data["templateId"]),
             )
         except DiplomaError as exc:
             return problems.diploma_problem(exc, instance=request.path, request=request)
-        return problems.envelope(request, assignment, status=201)
+        return problems.envelope(request, assignments, status=201)
 
 
 class DiplomaAssignmentDetailView(_StaffView):

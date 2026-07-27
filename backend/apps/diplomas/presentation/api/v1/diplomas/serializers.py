@@ -180,15 +180,16 @@ class CreateTemplateRequestSerializer(serializers.Serializer[dict[str, object]])
 
 
 class CreateAssignmentRequestSerializer(serializers.Serializer[dict[str, object]]):
-    """Body for creating a template assignment.
+    """Body for assigning one template to one or more nominations.
 
-    Unchanged from the single-slot era: which slot of the nomination the assignment
-    fills is derived from the template's own ``type``, so a mismatch is not
-    expressible.
+    Which slot of each nomination the assignment fills is derived from the
+    template's own ``type``, so a mismatch is not expressible. ``categoryIds`` is a
+    list because a competition's nominations usually share a design; a single
+    nomination is a list of one.
     """
 
     competitionId = serializers.UUIDField()
-    categoryId = serializers.UUIDField()
+    categoryIds = serializers.ListField(child=serializers.UUIDField(), allow_empty=False)
     templateId = serializers.UUIDField()
 
 

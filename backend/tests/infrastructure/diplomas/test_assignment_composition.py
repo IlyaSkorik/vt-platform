@@ -109,6 +109,78 @@ def test_deleting_frees_the_nomination_for_reuse() -> None:
     assert second["id"] != first["id"]
 
 
+def test_one_template_assigned_to_several_nominations_at_once() -> None:
+    template = _template()
+    competition_id = str(uuid.uuid4())
+    nominations = [str(uuid.uuid4()) for _ in range(3)]
+
+    created = composition.create_assignments(
+        competition_id=competition_id,
+        category_ids=nominations,
+        template_id=str(template.id),
+    )
+
+    # Returned in the order asked for, so the caller can match them up.
+    assert [item["categoryId"] for item in created] == nominations
+    assert {item["templateId"] for item in created} == {str(template.id)}
+    assert len(composition.list_assignments()) == 3
+
+
+def test_a_nomination_named_twice_is_assigned_once() -> None:
+    template = _template()
+    category_id = str(uuid.uuid4())
+
+    created = composition.create_assignments(
+        competition_id=str(uuid.uuid4()),
+        category_ids=[category_id, category_id],
+        template_id=str(template.id),
+    )
+
+    assert len(created) == 1
+    assert len(composition.list_assignments()) == 1
+
+
+def test_a_batch_with_one_taken_nomination_creates_nothing() -> None:
+    """All or nothing: a half-applied batch is invisible in the table."""
+    template = _template()
+    competition_id = str(uuid.uuid4())
+    taken = str(uuid.uuid4())
+    free = str(uuid.uuid4())
+    composition.create_assignment(
+        competition_id=competition_id, category_id=taken, template_id=str(template.id)
+    )
+
+    with pytest.raises(AssignmentConflictError):
+        composition.create_assignments(
+            competition_id=competition_id,
+            category_ids=[free, taken],
+            template_id=str(template.id),
+        )
+
+    # Only the original assignment survives — `free` was rolled back with the batch.
+    assert [item["categoryId"] for item in composition.list_assignments()] == [taken]
+
+
+def test_a_batch_only_fills_the_templates_own_slot() -> None:
+    """A thank-you batch leaves the same nominations' diploma slots alone."""
+    diploma = _template()
+    thanks = TemplateModel.objects.create(type="THANK_YOU", name="Благодарность")
+    competition_id = str(uuid.uuid4())
+    nominations = [str(uuid.uuid4()) for _ in range(2)]
+    composition.create_assignments(
+        competition_id=competition_id, category_ids=nominations, template_id=str(diploma.id)
+    )
+
+    composition.create_assignments(
+        competition_id=competition_id, category_ids=nominations, template_id=str(thanks.id)
+    )
+
+    by_type: dict[str, set[str]] = {}
+    for item in composition.list_assignments():
+        by_type.setdefault(str(item["documentType"]), set()).add(str(item["categoryId"]))
+    assert by_type == {"DIPLOMA": set(nominations), "THANK_YOU": set(nominations)}
+
+
 def _field(page: int = 1, x: float = 0.1, y: float = 0.2) -> dict[str, object]:
     return {"page": page, "type": "participant_name", "x": x, "y": y, "width": 0.4, "height": 0.08}
 
