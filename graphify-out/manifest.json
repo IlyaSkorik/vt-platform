@@ -3180,8 +3180,8 @@
     "semantic_hash": "4616a41e93c24e9d5e6c5ded3754db37"
   },
   "backend/config/settings/base.py": {
-    "mtime": 1785272928.3886704,
-    "ast_hash": "199db9e8b66a865cdde85e9e612f461c",
+    "mtime": 1785274449.2703404,
+    "ast_hash": "30d217202c29e539a0f1e5d81b6e3081",
     "semantic_hash": ""
   },
   "backend/config/settings/development.py": {
@@ -3190,8 +3190,8 @@
     "semantic_hash": "066b757f7581989a1553b1b5a4ceba00"
   },
   "backend/config/settings/env.py": {
-    "mtime": 1785272928.3886704,
-    "ast_hash": "5ca7a644774e97174598af0115844de9",
+    "mtime": 1785273760.6242487,
+    "ast_hash": "f9240fab4d4992f263d238a46f30d6bd",
     "semantic_hash": ""
   },
   "backend/config/settings/production.py": {
@@ -6465,9 +6465,9 @@
     "semantic_hash": "bcb0a8c601a0e09347c7b2e17b88ff5a"
   },
   "backend/docker-compose.yml": {
-    "mtime": 1783767768.1940486,
-    "ast_hash": "fb6903c5dc26b04d01ec4b6c633798b6",
-    "semantic_hash": "fb6903c5dc26b04d01ec4b6c633798b6"
+    "mtime": 1785274449.2703404,
+    "ast_hash": "037fc7e889b65687ed910b09d29ea77d",
+    "semantic_hash": ""
   },
   "backend/shared/README.md": {
     "mtime": 1783367565.2267601,
@@ -8445,8 +8445,8 @@
     "semantic_hash": ""
   },
   "docs/devops/OPS-008-single-server-sizing.md": {
-    "mtime": 1785272270.6006684,
-    "ast_hash": "eaa71ede6df0a72c37970981aeb74d1b",
+    "mtime": 1785274539.2365685,
+    "ast_hash": "e9f0967bba11723d4755dfa20cbfe4d8",
     "semantic_hash": ""
   },
   "backend/apps/applications/presentation/api/v1/mail.py": {
@@ -8480,13 +8480,13 @@
     "semantic_hash": ""
   },
   "backend/tests/infrastructure/notifications/test_mail_limits.py": {
-    "mtime": 1785273012.7404723,
-    "ast_hash": "0098dc579833d4d815bf22e7613614fc",
+    "mtime": 1785274449.2703404,
+    "ast_hash": "064c8ed7bc00fe23a338cb5e4d4f4349",
     "semantic_hash": ""
   },
   "docs/devops/OPS-009-mail-provider-quotas.md": {
-    "mtime": 1785273110.9106843,
-    "ast_hash": "c92182000049f5a3087b79c21b9d0b79",
+    "mtime": 1785274539.2365685,
+    "ast_hash": "e7ab58bdd732f3a5562b58b4f58bf9ff",
     "semantic_hash": ""
   }
 }
