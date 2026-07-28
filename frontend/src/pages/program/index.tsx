@@ -105,7 +105,13 @@ function PublicProgramTable({
             description="Организатор ещё не добавил пункты в эту программу."
           />
         ) : (
-          <div className="scrollbar-custom w-full max-w-full overflow-x-auto rounded-lg border border-border">
+          // `relative` is load-bearing, not decoration. `sr-only` is `position: absolute`,
+          // and the host column's screen-reader header sits at the far right of a table that
+          // can be 2600px wide. Without a positioned ancestor its containing block is the
+          // document, so this scroll container never clips it and that one 1px span drags the
+          // whole page's scroll width out with it. `shared/ui/DataTable` carries the same
+          // `relative` for the same reason.
+          <div className="scrollbar-custom relative w-full max-w-full overflow-x-auto rounded-lg border border-border">
             {/* `w-max min-w-full`: may exceed the container (that is what scrolls) but never
                 leaves it narrower than the space available. */}
             <table className="w-max min-w-full border-collapse text-left">

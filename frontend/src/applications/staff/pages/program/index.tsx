@@ -409,8 +409,11 @@ function RunningOrder({ program }: { program: Program }): React.JSX.Element {
         />
       ) : (
         // The programme is a table, and the table is wide: it scrolls inside its own
-        // container so the page never scrolls sideways.
-        <div className="scrollbar-custom w-full max-w-full overflow-x-auto rounded-md border border-border">
+        // container so the page never scrolls sideways. `relative` is part of that - it
+        // makes this the containing block for absolutely positioned descendants, `sr-only`
+        // labels above all, so a 1px span at the right edge of a wide table is clipped here
+        // instead of setting the whole document's scroll width. See the public page.
+        <div className="scrollbar-custom relative w-full max-w-full overflow-x-auto rounded-md border border-border">
           {/* `w-max min-w-full`: the table may exceed the container (that is what makes it
               scroll) but never leaves it narrower than the space available. */}
           <table className="w-max min-w-full border-collapse text-left">
