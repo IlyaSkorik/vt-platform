@@ -25,10 +25,13 @@ from apps.organization.presentation.permissions import IsOrganizationStaff
 from apps.programs.application import dto
 from apps.programs.application.commands import (
     AddBlockCommand,
+    AddColumnCommand,
     AddPerformanceCommand,
     CreateProgramCommand,
     CreateShareCommand,
     EditItemCommand,
+    FillCellsCommand,
+    RenameColumnCommand,
     ReorderItemsCommand,
     UpdateProgramCommand,
     UpdateShareCommand,
@@ -40,9 +43,11 @@ from apps.programs.presentation.api.v1 import problems
 from apps.programs.presentation.api.v1.serializers import (
     AddBlockRequestSerializer,
     AddPerformanceRequestSerializer,
+    ColumnRequestSerializer,
     CreateProgramRequestSerializer,
     CreateShareRequestSerializer,
     EditItemRequestSerializer,
+    FillCellsRequestSerializer,
     ProgramCandidateSerializer,
     ProgramDetailSerializer,
     ProgramProblemDetailSerializer,
@@ -58,12 +63,16 @@ _TAG = "Competition Program"
 __all__ = [
     "ProgramCandidatesView",
     "ProgramCollectionView",
+    "ProgramColumnCollectionView",
+    "ProgramColumnDetailView",
     "ProgramDetailView",
+    "ProgramItemCellsView",
     "ProgramItemCollectionView",
     "ProgramItemDetailView",
     "ProgramItemNumbersView",
     "ProgramItemOrderView",
     "ProgramItemsFillView",
+    "ProgramProgressView",
     "ProgramShareCollectionView",
     "ProgramShareDetailView",
 ]
@@ -77,7 +86,7 @@ _PROBLEM_RESPONSES = {
 
 
 def _columns_json(columns: tuple[dto.ColumnView, ...]) -> list[dict[str, Any]]:
-    return [{"key": column.key, "label": column.label} for column in columns]
+    return [{"key": column.key, "label": column.label, "custom": column.custom} for column in columns]
 
 
 def _share_json(share: dto.ProgramShareView) -> dict[str, Any]:
@@ -89,6 +98,7 @@ def _share_json(share: dto.ProgramShareView) -> dict[str, Any]:
         "columns": _columns_json(share.columns),
         "itemCount": share.item_count,
         "coversWholeProgram": share.covers_whole_program,
+        "controlsRunningOrder": share.controls_running_order,
         "createdAt": share.created_at,
     }
 
@@ -119,6 +129,8 @@ def _item_json(item: dto.ProgramItemView) -> dict[str, Any]:
         "organization": item.organization,
         "comment": item.comment,
         "missingPerformance": item.missing_performance,
+        "customValues": dict(item.custom_values),
+        "progress": item.progress,
     }
 
 
@@ -457,6 +469,89 @@ class ProgramItemNumbersView(_StaffView):
         return problems.envelope(request, _program_json(program))
 
 
+class ProgramColumnCollectionView(_StaffView):
+    """``POST`` a column of the organizer's own onto this programme's table."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="programsAddColumn",
+        request=ColumnRequestSerializer,
+        responses={201: ProgramDetailSerializer, **_PROBLEM_RESPONSES},
+    )
+    def post(self, request: Request, program_id: str) -> Response:
+        serializer = ColumnRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return problems.validation_problem(serializer.errors, instance=request.get_full_path(), request=request)
+        try:
+            program = build_program_service().add_column(AddColumnCommand(program_id=program_id, title=str(serializer.validated_data["title"])))
+        except ProgramError as exc:
+            return self._problem(exc, request)
+        return problems.envelope(request, _program_json(program), status=201)
+
+
+class ProgramColumnDetailView(_StaffView):
+    """``PATCH`` a custom column's title; ``DELETE`` the column and its values."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="programsRenameColumn",
+        request=ColumnRequestSerializer,
+        responses={200: ProgramDetailSerializer, **_PROBLEM_RESPONSES},
+    )
+    def patch(self, request: Request, program_id: str, column_id: str) -> Response:
+        serializer = ColumnRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return problems.validation_problem(serializer.errors, instance=request.get_full_path(), request=request)
+        try:
+            program = build_program_service().rename_column(
+                RenameColumnCommand(program_id=program_id, column_id=column_id, title=str(serializer.validated_data["title"]))
+            )
+        except ProgramError as exc:
+            return self._problem(exc, request)
+        return problems.envelope(request, _program_json(program))
+
+    @extend_schema(tags=[_TAG], operation_id="programsRemoveColumn", responses={200: ProgramDetailSerializer, **_PROBLEM_RESPONSES})
+    def delete(self, request: Request, program_id: str, column_id: str) -> Response:
+        try:
+            program = build_program_service().remove_column(program_id=program_id, column_id=column_id)
+        except ProgramError as exc:
+            return self._problem(exc, request)
+        return problems.envelope(request, _program_json(program))
+
+
+class ProgramItemCellsView(_StaffView):
+    """``PUT`` the hand-filled cells of one row (a blank value clears one)."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="programsFillCells",
+        request=FillCellsRequestSerializer,
+        responses={200: ProgramDetailSerializer, **_PROBLEM_RESPONSES},
+    )
+    def put(self, request: Request, program_id: str, item_id: str) -> Response:
+        serializer = FillCellsRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return problems.validation_problem(serializer.errors, instance=request.get_full_path(), request=request)
+        values = tuple((str(key), str(value)) for key, value in serializer.validated_data["values"].items())
+        try:
+            program = build_program_service().fill_cells(FillCellsCommand(program_id=program_id, item_id=item_id, values=values))
+        except ProgramError as exc:
+            return self._problem(exc, request)
+        return problems.envelope(request, _program_json(program))
+
+
+class ProgramProgressView(_StaffView):
+    """``DELETE`` to put every slot back to pending (the organizer's reset)."""
+
+    @extend_schema(tags=[_TAG], operation_id="programsResetProgress", responses={200: ProgramDetailSerializer, **_PROBLEM_RESPONSES})
+    def delete(self, request: Request, program_id: str) -> Response:
+        try:
+            program = build_program_service().reset_progress(program_id)
+        except ProgramError as exc:
+            return self._problem(exc, request)
+        return problems.envelope(request, _program_json(program))
+
+
 class ProgramShareCollectionView(_StaffView):
     """``GET`` this program's public editions; ``POST`` a new one."""
 
@@ -488,6 +583,7 @@ class ProgramShareCollectionView(_StaffView):
             name=str(data["name"]),
             columns=tuple(str(column) for column in data.get("columns") or ()),
             item_ids=tuple(str(item_id) for item_id in data.get("itemIds") or ()),
+            controls_running_order=bool(data.get("controlsRunningOrder")),
         )
         try:
             program, share = build_program_service().create_share(command)
@@ -521,6 +617,7 @@ class ProgramShareDetailView(_StaffView):
             share_id=share_id,
             name=str(data["name"]) if "name" in data else None,
             columns=tuple(str(column) for column in data["columns"]) if "columns" in data else None,
+            controls_running_order=bool(data["controlsRunningOrder"]) if "controlsRunningOrder" in data else None,
         )
         try:
             program, share = build_program_service().update_share(command)

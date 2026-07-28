@@ -33,23 +33,28 @@ from .exceptions import (
     InvalidProgramDataError,
     ItemNotInProgramError,
     PerformanceAlreadyInProgramError,
+    ProgramColumnNotFoundError,
     ProgramItemNotFoundError,
     ProgramShareNotFoundError,
     ReorderMismatchError,
 )
 from .value_objects import (
     DEFAULT_PUBLIC_COLUMNS,
+    CellValue,
+    ColumnRef,
+    ColumnTitle,
     ItemDuration,
     ItemTitle,
     ProgramColumn,
     ProgramItemKind,
+    ProgramItemProgress,
     ProgramName,
     PublicSlug,
     ShareName,
     TimeBuffer,
 )
 
-__all__ = ["Program", "ProgramItem", "ProgramShare"]
+__all__ = ["CustomColumn", "Program", "ProgramItem", "ProgramShare"]
 
 _CREATION_TOKEN = object()
 
@@ -83,9 +88,22 @@ class ProgramItem:
     _number: int = 0
     _title: ItemTitle | None = None
     _submission_id: uuid.UUID | None = None
+    #: Hand-filled values, keyed by custom column id. Absent means blank.
+    _custom_values: dict[uuid.UUID, CellValue] = field(default_factory=dict)
+    #: How far this slot has got on the day itself (the host drives it).
+    _progress: ProgramItemProgress = ProgramItemProgress.PENDING
 
     @classmethod
-    def performance(cls, *, item_id: uuid.UUID, submission_id: uuid.UUID, duration: ItemDuration, number: int = 0) -> ProgramItem:
+    def performance(
+        cls,
+        *,
+        item_id: uuid.UUID,
+        submission_id: uuid.UUID,
+        duration: ItemDuration,
+        number: int = 0,
+        custom_values: dict[uuid.UUID, CellValue] | None = None,
+        progress: ProgramItemProgress = ProgramItemProgress.PENDING,
+    ) -> ProgramItem:
         """Build a slot for one competing act."""
         return cls(
             _id=item_id,
@@ -93,14 +111,34 @@ class ProgramItem:
             _duration=duration,
             _number=number,
             _submission_id=submission_id,
+            _custom_values=dict(custom_values or {}),
+            _progress=progress,
         )
 
     @classmethod
-    def block(cls, *, item_id: uuid.UUID, kind: ProgramItemKind, title: ItemTitle, duration: ItemDuration, number: int = 0) -> ProgramItem:
+    def block(
+        cls,
+        *,
+        item_id: uuid.UUID,
+        kind: ProgramItemKind,
+        title: ItemTitle,
+        duration: ItemDuration,
+        number: int = 0,
+        custom_values: dict[uuid.UUID, CellValue] | None = None,
+        progress: ProgramItemProgress = ProgramItemProgress.PENDING,
+    ) -> ProgramItem:
         """Build a standalone block (a break, and later an opening or an award)."""
         if kind.binds_performance:
             raise InvalidProgramDataError("A performance slot must be created with ProgramItem.performance().")
-        return cls(_id=item_id, _kind=kind, _duration=duration, _number=number, _title=title)
+        return cls(
+            _id=item_id,
+            _kind=kind,
+            _duration=duration,
+            _number=number,
+            _title=title,
+            _custom_values=dict(custom_values or {}),
+            _progress=progress,
+        )
 
     @property
     def id(self) -> uuid.UUID:
@@ -131,6 +169,35 @@ class ProgramItem:
         """Set the slot's length (the organizer's decision about the event)."""
         self._duration = duration
 
+    @property
+    def progress(self) -> ProgramItemProgress:
+        """How far this slot has got on the day itself."""
+        return self._progress
+
+    @property
+    def custom_values(self) -> dict[uuid.UUID, CellValue]:
+        """Hand-filled values by custom column id (a copy; use :meth:`fill` to change)."""
+        return dict(self._custom_values)
+
+    def value_in(self, column_id: uuid.UUID) -> CellValue:
+        """This slot's value in one custom column - blank when nothing was filled in."""
+        return self._custom_values.get(column_id, CellValue())
+
+    def fill(self, column_id: uuid.UUID, value: CellValue) -> None:
+        """Set (or clear) this slot's value in one custom column."""
+        if value.is_blank:
+            self._custom_values.pop(column_id, None)
+        else:
+            self._custom_values[column_id] = value
+
+    def forget_column(self, column_id: uuid.UUID) -> None:
+        """Drop the value for a column that no longer exists."""
+        self._custom_values.pop(column_id, None)
+
+    def set_progress(self, progress: ProgramItemProgress) -> None:
+        """Record how far this slot has got. Only the aggregate may call this."""
+        self._progress = progress
+
     def assign_number(self, number: int) -> None:
         """Set this slot's number. Only the aggregate may call this."""
         self._number = number
@@ -149,6 +216,46 @@ class ProgramItem:
 
     def __repr__(self) -> str:
         return f"ProgramItem(id={self._id!r}, kind={self._kind.value!r}, duration={str(self._duration)!r})"
+
+
+@dataclass(slots=True, eq=False, repr=False)
+class CustomColumn:
+    """A column the organizer added to this programme and fills in by hand.
+
+    The escape hatch for whatever a particular festival needs and the built-in vocabulary
+    does not have - "микрофон", "реквизит", "оплачено". It is owned by the programme, so
+    two programmes never share one, and it behaves like any other column downstream: it
+    can be published on a link and it renders into a cell.
+    """
+
+    _id: uuid.UUID
+    _title: ColumnTitle
+
+    @property
+    def id(self) -> uuid.UUID:
+        return self._id
+
+    @property
+    def title(self) -> ColumnTitle:
+        return self._title
+
+    @property
+    def ref(self) -> ColumnRef:
+        """This column as a reference a share can select."""
+        return ColumnRef.custom(self._id)
+
+    def rename(self, title: ColumnTitle) -> None:
+        """Rename the column. Its id - and so every value in it - is untouched."""
+        self._title = title
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, CustomColumn) and other._id == self._id
+
+    def __hash__(self) -> int:
+        return hash(self._id)
+
+    def __repr__(self) -> str:
+        return f"CustomColumn(id={self._id!r}, title={str(self._title)!r})"
 
 
 @dataclass(slots=True, eq=False, repr=False)
@@ -173,8 +280,12 @@ class ProgramShare:
     _id: uuid.UUID
     _name: ShareName
     _slug: PublicSlug
-    _columns: tuple[ProgramColumn, ...] = ()
+    _columns: tuple[ColumnRef, ...] = ()
     _item_ids: tuple[uuid.UUID, ...] = ()
+    #: Whether whoever holds this link may drive the running order on the day: mark an
+    #: act as on stage or performed, and rearrange what is still to come. The host's
+    #: edition; every other link stays read-only.
+    _controls_running_order: bool = False
     _created_at: datetime | None = None
 
     @property
@@ -194,13 +305,18 @@ class ProgramShare:
         return self._item_ids
 
     @property
-    def columns(self) -> tuple[ProgramColumn, ...]:
-        """The columns this edition shows, in canonical order.
+    def columns(self) -> tuple[ColumnRef, ...]:
+        """The columns this edition shows, in the programme's canonical order.
 
         Never empty: an edition published without a choice shows the default columns, so
         there is no state in which "no columns were chosen" has to be handled downstream.
         """
-        return self._columns or DEFAULT_PUBLIC_COLUMNS
+        return self._columns or tuple(ColumnRef.of(column) for column in DEFAULT_PUBLIC_COLUMNS)
+
+    @property
+    def controls_running_order(self) -> bool:
+        """Whether this link may drive the running order (the host's edition)."""
+        return self._controls_running_order
 
     @property
     def created_at(self) -> datetime | None:
@@ -215,9 +331,17 @@ class ProgramShare:
         """Rename the public edition (its slug, and therefore its link, is permanent)."""
         self._name = name
 
-    def show_columns(self, columns: Sequence[ProgramColumn]) -> None:
-        """Replace the set of columns this edition publishes."""
-        self._columns = tuple(column for column in ProgramColumn if column in set(columns))
+    def show_columns(self, columns: Sequence[ColumnRef]) -> None:
+        """Replace the set of columns this edition publishes (already normalized)."""
+        self._columns = tuple(columns)
+
+    def set_control(self, *, allowed: bool) -> None:
+        """Grant or withdraw the right to drive the running order from this link."""
+        self._controls_running_order = allowed
+
+    def drop_column(self, column_id: uuid.UUID) -> None:
+        """Stop publishing a custom column that no longer exists."""
+        self._columns = tuple(ref for ref in self._columns if ref.custom_id != column_id)
 
     def selects(self, item_id: uuid.UUID) -> bool:
         """Whether ``item_id`` is part of this edition."""
@@ -253,6 +377,7 @@ class Program:
     _buffer: TimeBuffer = field(default_factory=TimeBuffer.none)
     _items: list[ProgramItem] = field(default_factory=list)
     _shares: list[ProgramShare] = field(default_factory=list)
+    _custom_columns: list[CustomColumn] = field(default_factory=list)
     #: How many numbers this program has issued since freezing. Monotonic, so a removed
     #: slot's number is retired rather than reused - see :meth:`_next_number`.
     _numbers_issued: int = 0
@@ -312,6 +437,7 @@ class Program:
         buffer: TimeBuffer | None = None,
         items: Sequence[ProgramItem] = (),
         shares: Sequence[ProgramShare] = (),
+        custom_columns: Sequence[CustomColumn] = (),
         numbers_issued: int = 0,
         numbers_frozen_at: datetime | None = None,
         deleted_at: datetime | None = None,
@@ -330,6 +456,7 @@ class Program:
             _buffer=buffer if buffer is not None else TimeBuffer.none(),
             _items=list(items),
             _shares=list(shares),
+            _custom_columns=list(custom_columns),
             _numbers_issued=numbers_issued,
             _numbers_frozen_at=numbers_frozen_at,
             _deleted_at=deleted_at,
@@ -431,6 +558,113 @@ class Program:
             if candidate.id == share_id:
                 return candidate
         raise ProgramShareNotFoundError(f"Public program {share_id} does not belong to this program.")
+
+    @property
+    def custom_columns(self) -> tuple[CustomColumn, ...]:
+        """The columns the organizer added to this programme, in their own order."""
+        return tuple(self._custom_columns)
+
+    @property
+    def columns(self) -> tuple[ColumnRef, ...]:
+        """Every column this programme can carry: the built-ins, then its custom ones."""
+        return tuple(ColumnRef.of(column) for column in ProgramColumn) + tuple(column.ref for column in self._custom_columns)
+
+    @property
+    def on_stage(self) -> ProgramItem | None:
+        """The slot currently on stage, if the host has marked one."""
+        for item in self._items:
+            if item.progress is ProgramItemProgress.ON_STAGE:
+                return item
+        return None
+
+    def custom_column(self, column_id: uuid.UUID) -> CustomColumn:
+        """Return one custom column, or raise :class:`ProgramColumnNotFoundError`."""
+        for candidate in self._custom_columns:
+            if candidate.id == column_id:
+                return candidate
+        raise ProgramColumnNotFoundError(f"Column {column_id} is not part of this program.")
+
+    def normalize_columns(self, refs: Sequence[ColumnRef | ProgramColumn]) -> tuple[ColumnRef, ...]:
+        """Order a selection canonically and reject anything this programme has not got.
+
+        Built-ins keep their enum order and custom columns follow in the order the
+        organizer created them, so a column sits in the same place on every screen
+        whichever subset was chosen.
+
+        Accepts a bare :class:`ProgramColumn` as a convenience - naming a built-in column
+        should not require wrapping it first.
+        """
+        chosen = {ref if isinstance(ref, ColumnRef) else ColumnRef.of(ref) for ref in refs}
+        unknown = [ref.key for ref in chosen if ref.is_custom and ref.custom_id not in {column.id for column in self._custom_columns}]
+        if unknown:
+            raise ProgramColumnNotFoundError(f"Columns {', '.join(unknown)} are not part of this program.")
+        return tuple(ref for ref in self.columns if ref in chosen)
+
+    # ------------------------------------------------------------------
+    # Custom columns
+    # ------------------------------------------------------------------
+
+    def add_custom_column(self, *, column_id: uuid.UUID, title: ColumnTitle, now: datetime) -> CustomColumn:
+        """Add a column of the organizer's own, appended after the existing ones."""
+        column = CustomColumn(_id=column_id, _title=title)
+        self._custom_columns.append(column)
+        self._touch(now)
+        return column
+
+    def rename_custom_column(self, column_id: uuid.UUID, title: ColumnTitle, *, now: datetime) -> CustomColumn:
+        """Rename a custom column, keeping its id and therefore every value in it."""
+        column = self.custom_column(column_id)
+        column.rename(title)
+        self._touch(now)
+        return column
+
+    def remove_custom_column(self, column_id: uuid.UUID, *, now: datetime) -> None:
+        """Drop a custom column, its values, and its place on every published link.
+
+        Deliberately cascading: leaving a published edition pointing at a column that no
+        longer exists would render a header with nothing under it.
+        """
+        column = self.custom_column(column_id)
+        self._custom_columns.remove(column)
+        for item in self._items:
+            item.forget_column(column_id)
+        for share in self._shares:
+            share.drop_column(column_id)
+        self._touch(now)
+
+    def fill_cell(self, *, item_id: uuid.UUID, column_id: uuid.UUID, value: CellValue, now: datetime) -> ProgramItem:
+        """Write one hand-filled cell (blank clears it)."""
+        self.custom_column(column_id)
+        item = self.item(item_id)
+        item.fill(column_id, value)
+        self._touch(now)
+        return item
+
+    # ------------------------------------------------------------------
+    # The day itself
+    # ------------------------------------------------------------------
+
+    def set_item_progress(self, item_id: uuid.UUID, progress: ProgramItemProgress, *, now: datetime) -> ProgramItem:
+        """Record how far one slot has got, as the host announces the day.
+
+        Putting a slot on stage takes the previous one off it and counts it as performed:
+        an act ends when the next one begins, and a host should not have to say so twice.
+        At most one slot is ever on stage.
+        """
+        item = self.item(item_id)
+        if progress is ProgramItemProgress.ON_STAGE:
+            for other in self._items:
+                if other.id != item_id and other.progress is ProgramItemProgress.ON_STAGE:
+                    other.set_progress(ProgramItemProgress.PERFORMED)
+        item.set_progress(progress)
+        self._touch(now)
+        return item
+
+    def reset_progress(self, *, now: datetime) -> None:
+        """Put every slot back to pending - a rehearsal run, or a false start."""
+        for item in self._items:
+            item.set_progress(ProgramItemProgress.PENDING)
+        self._touch(now)
 
     # ------------------------------------------------------------------
     # Program-level settings
@@ -589,8 +823,9 @@ class Program:
         name: ShareName,
         slug: PublicSlug,
         now: datetime,
-        columns: Sequence[ProgramColumn] = (),
+        columns: Sequence[ColumnRef | ProgramColumn] = (),
         item_ids: Iterable[uuid.UUID] = (),
+        controls_running_order: bool = False,
     ) -> ProgramShare:
         """Publish a named edition of this program behind its own slug.
 
@@ -600,6 +835,10 @@ class Program:
         ``item_ids`` optionally narrows the rows; pass none for "the whole program, kept
         current". Every id must belong to this program - an edition cannot point at a
         slot the organizer never made.
+
+        ``controls_running_order`` makes this the **host's** edition: whoever holds the link
+        may mark an act as on stage or performed and rearrange what is still to come. Every
+        other link stays read-only, so the one handed to an audience cannot change the day.
 
         Publishing for the first time **freezes the numbers**: this is the moment they stop
         being a working draft and become what participants are told.
@@ -613,8 +852,9 @@ class Program:
             _id=share_id,
             _name=name,
             _slug=slug,
-            _columns=tuple(column for column in ProgramColumn if column in set(columns)),
+            _columns=self.normalize_columns(columns),
             _item_ids=selection,
+            _controls_running_order=controls_running_order,
             _created_at=now,
         )
         self._shares.append(share)
@@ -628,10 +868,17 @@ class Program:
         self._touch(now)
         return share
 
-    def set_share_columns(self, share_id: uuid.UUID, columns: Sequence[ProgramColumn], *, now: datetime) -> ProgramShare:
+    def set_share_columns(self, share_id: uuid.UUID, columns: Sequence[ColumnRef | ProgramColumn], *, now: datetime) -> ProgramShare:
         """Change which columns a published edition shows, keeping its link."""
         share = self.share(share_id)
-        share.show_columns(columns)
+        share.show_columns(self.normalize_columns(columns))
+        self._touch(now)
+        return share
+
+    def set_share_control(self, share_id: uuid.UUID, *, allowed: bool, now: datetime) -> ProgramShare:
+        """Grant or withdraw a link's right to drive the running order."""
+        share = self.share(share_id)
+        share.set_control(allowed=allowed)
         self._touch(now)
         return share
 

@@ -12,24 +12,29 @@ from rest_framework import serializers
 
 from apps.programs.domain.value_objects import (
     BUFFER_MAX_SECONDS,
+    CELL_VALUE_MAX,
     DURATION_MAX_SECONDS,
     ProgramColumn,
     ProgramItemKind,
+    ProgramItemProgress,
 )
 
 __all__ = [
     "COLUMN_KEYS",
     "AddBlockRequestSerializer",
     "AddPerformanceRequestSerializer",
+    "ColumnRequestSerializer",
     "CreateProgramRequestSerializer",
     "CreateShareRequestSerializer",
     "EditItemRequestSerializer",
+    "FillCellsRequestSerializer",
     "ProgramCandidateSerializer",
     "ProgramDetailSerializer",
     "ProgramProblemDetailSerializer",
     "ProgramShareResourceSerializer",
     "ProgramSummarySerializer",
     "ReorderItemsRequestSerializer",
+    "SetProgressRequestSerializer",
     "UpdateProgramRequestSerializer",
     "UpdateShareRequestSerializer",
 ]
@@ -106,15 +111,40 @@ class CreateShareRequestSerializer(serializers.Serializer[dict[str, object]]):
     """
 
     name = serializers.CharField(max_length=200)
-    columns = serializers.ListField(child=serializers.ChoiceField(choices=COLUMN_KEYS), required=False, allow_empty=True)
+    # A key is either a built-in column name or ``custom:<uuid>``; the domain validates
+    # which, because only it knows this programme's own columns.
+    columns = serializers.ListField(child=serializers.CharField(), required=False, allow_empty=True)
     itemIds = serializers.ListField(child=serializers.UUIDField(), required=False, allow_empty=True)
+    controlsRunningOrder = serializers.BooleanField(required=False, default=False)
 
 
 class UpdateShareRequestSerializer(serializers.Serializer[dict[str, object]]):
     """Validate a rename/re-column body for a published edition (its slug is permanent)."""
 
     name = serializers.CharField(required=False, max_length=200)
-    columns = serializers.ListField(child=serializers.ChoiceField(choices=COLUMN_KEYS), required=False, allow_empty=True)
+    columns = serializers.ListField(child=serializers.CharField(), required=False, allow_empty=True)
+    controlsRunningOrder = serializers.BooleanField(required=False)
+
+
+class ColumnRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """Validate the title of a custom column ("Микрофон", "Реквизит")."""
+
+    title = serializers.CharField(max_length=120)
+
+
+class FillCellsRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """Validate hand-filled values for one row, keyed by custom column key.
+
+    A blank value clears the cell, so there is no separate verb for removing one.
+    """
+
+    values = serializers.DictField(child=serializers.CharField(allow_blank=True, max_length=CELL_VALUE_MAX))
+
+
+class SetProgressRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """Validate a progress update from the host's link."""
+
+    progress = serializers.ChoiceField(choices=[state.value for state in ProgramItemProgress])
 
 
 class _SchedulePositionSerializer(serializers.Serializer[dict[str, object]]):
@@ -126,14 +156,19 @@ class _SchedulePositionSerializer(serializers.Serializer[dict[str, object]]):
 
 
 def _column_schema(*, many: bool = False) -> serializers.BaseSerializer[dict[str, object]]:
-    """One column of the programme table: its stable key and its header.
+    """One column of the programme table: its stable key, its header, and whether it is
+    one the organizer added themselves.
 
     Declared inline because ``label`` is a serializer attribute in DRF, and the wire
     contract's field name wins.
     """
     return inline_serializer(
         name="ProgramColumn",
-        fields={"key": serializers.ChoiceField(choices=COLUMN_KEYS), "label": serializers.CharField()},
+        fields={
+            "key": serializers.CharField(),
+            "label": serializers.CharField(),
+            "custom": serializers.BooleanField(),
+        },
         many=many,
     )
 
@@ -160,6 +195,9 @@ class ProgramItemResourceSerializer(serializers.Serializer[dict[str, object]]):
     organization = serializers.CharField(allow_null=True)
     comment = serializers.CharField(allow_null=True)
     missingPerformance = serializers.BooleanField()
+    #: Hand-filled values keyed by custom column key.
+    customValues = serializers.DictField(child=serializers.CharField(allow_blank=True))
+    progress = serializers.ChoiceField(choices=[state.value for state in ProgramItemProgress])
 
 
 class ProgramShareResourceSerializer(serializers.Serializer[dict[str, object]]):
@@ -172,6 +210,7 @@ class ProgramShareResourceSerializer(serializers.Serializer[dict[str, object]]):
     columns = _column_schema(many=True)
     itemCount = serializers.IntegerField()
     coversWholeProgram = serializers.BooleanField()
+    controlsRunningOrder = serializers.BooleanField()
     createdAt = serializers.DateTimeField(allow_null=True)
 
 

@@ -12,11 +12,13 @@ __all__ = [
     "ItemNotInProgramError",
     "PerformanceAlreadyInProgramError",
     "PerformanceNotAvailableError",
+    "ProgramColumnNotFoundError",
     "ProgramError",
     "ProgramItemNotFoundError",
     "ProgramNotFoundError",
     "ProgramShareNotFoundError",
     "ReorderMismatchError",
+    "RunningOrderNotControllableError",
     "SlugUnavailableError",
 ]
 
@@ -43,6 +45,22 @@ class ProgramItemNotFoundError(ProgramError):
     """Raised when a referenced item is not part of the program."""
 
     code = "program_item_not_found"
+
+
+class ProgramColumnNotFoundError(ProgramError):
+    """Raised when a referenced custom column is not part of the program."""
+
+    code = "program_column_not_found"
+
+
+class RunningOrderNotControllableError(ProgramError):
+    """Raised when a public link is used to drive the day but was not granted that right.
+
+    Only the host's edition may mark an act as on stage or rearrange what is still to
+    come; every other link is read-only, and says nothing about which it is.
+    """
+
+    code = "running_order_not_controllable"
 
 
 class ProgramShareNotFoundError(ProgramError):

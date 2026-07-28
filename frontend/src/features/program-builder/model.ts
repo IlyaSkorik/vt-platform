@@ -34,11 +34,32 @@ export type ProgramColumnKey =
   | "ORGANIZATION"
   | "COMMENT";
 
-/** One column: its stable key and the header the backend prints it under. */
+/**
+ * A column key: a built-in one, or `custom:<uuid>` for one the organizer added.
+ *
+ * Typed as a union with `string` on purpose — the set of custom keys is open, and the
+ * client never needs to know them, only pass them back.
+ */
+export type ColumnKey = ProgramColumnKey | (string & {});
+
+/** One column: its stable key, its header, and whether the organizer added it. */
 export interface ProgramColumn {
-  key: ProgramColumnKey;
+  key: ColumnKey;
   label: string;
+  /** Only custom columns can be renamed, removed, or filled in by hand. */
+  custom: boolean;
 }
+
+/** How far one slot has got on the day itself. */
+export type ProgramItemProgress = "PENDING" | "ON_STAGE" | "PERFORMED" | "SKIPPED";
+
+/** What each progress state is called on screen. */
+export const PROGRESS_LABELS: Record<ProgramItemProgress, string> = {
+  PENDING: "Ожидает",
+  ON_STAGE: "На сцене",
+  PERFORMED: "Выступил",
+  SKIPPED: "Пропущен",
+};
 
 /**
  * Where one item sits on the timeline (computed by the backend).
@@ -84,6 +105,10 @@ export interface ProgramItem {
   comment: string | null;
   /** True when the act behind this slot is no longer competing. */
   missingPerformance: boolean;
+  /** Hand-filled values, keyed by custom column key. */
+  customValues: Record<string, string>;
+  /** How far this slot has got on the day (the host drives it). */
+  progress: ProgramItemProgress;
 }
 
 /** A named public edition: the columns it shows, and the path its link points at. */
@@ -97,6 +122,8 @@ export interface ProgramShare {
   itemCount: number;
   /** An edition with no fixed row selection keeps following the whole programme. */
   coversWholeProgram: boolean;
+  /** Whether this link may drive the running order on the day — the host's edition. */
+  controlsRunningOrder: boolean;
   createdAt: string | null;
 }
 
@@ -183,9 +210,11 @@ export interface AddBlockInput {
 export interface CreateShareInput {
   name: string;
   /** The columns this link publishes. Empty falls back to the backend's defaults. */
-  columns?: ProgramColumnKey[];
+  columns?: ColumnKey[];
   /** Optionally narrow the rows too. Empty publishes every row, now and later. */
   itemIds?: string[];
+  /** Make this the host's edition: its holder may drive the running order. */
+  controlsRunningOrder?: boolean;
 }
 
 /** The buffer presets the constructor offers (seconds). */
@@ -209,9 +238,13 @@ export const DEFAULT_SHARE_COLUMNS: ProgramColumnKey[] = [
  */
 export function itemCell(
   item: ProgramItem,
-  column: ProgramColumnKey,
+  column: ColumnKey,
   format: { clock: (iso: string | null) => string; duration: (seconds: number) => string },
 ): string {
+  // A column the organizer added: whatever they typed into this row, or nothing.
+  if (column.startsWith("custom:")) {
+    return item.customValues[column] ?? "";
+  }
   switch (column) {
     case "POSITION":
       // The participant's permanent number, not the row's index.

@@ -1,28 +1,33 @@
-import { ArrowDown, ArrowUp, Copy, Link2, ListOrdered, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Columns3, Copy, Link2, ListOrdered, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { useCompetitionDetail, useCompetitionsList } from "@/features/competitions";
 import {
   BUFFER_PRESETS,
+  type ColumnKey,
   DEFAULT_SHARE_COLUMNS,
   ITEM_KIND_LABELS,
   itemCell,
   moveItem,
+  PROGRESS_LABELS,
   type Program,
   type ProgramColumn,
-  type ProgramColumnKey,
   type ProgramItem,
   useAddBlock,
+  useAddColumn,
   useAddPerformance,
   useCreateProgram,
   useCreateShare,
   useEditItem,
+  useFillCells,
   useFillProgram,
   useProgram,
   useProgramCandidates,
   usePrograms,
+  useRemoveColumn,
   useRemoveItem,
   useRemoveShare,
+  useRenameColumn,
   useRenumberItems,
   useReorderItems,
   useUpdateProgram,
@@ -374,6 +379,7 @@ function RunningOrder({ program }: { program: Program }): React.JSX.Element {
         </div>
         <div className="flex flex-wrap items-end gap-2">
           {outOfSequence ? <RenumberButton programId={program.id} /> : null}
+          <AddColumnControls programId={program.id} />
           <AddBreakControls programId={program.id} />
         </div>
       </div>
@@ -397,7 +403,11 @@ function RunningOrder({ program }: { program: Program }): React.JSX.Element {
                     scope="col"
                     className="whitespace-nowrap px-2 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
                   >
-                    {column.label}
+                    {column.custom ? (
+                      <CustomColumnHeader programId={program.id} column={column} />
+                    ) : (
+                      column.label
+                    )}
                   </th>
                 ))}
                 <th scope="col" className="px-2 py-2 text-right">
@@ -455,13 +465,20 @@ function ProgramItemRow({
 }): React.JSX.Element {
   const isPerformance = item.kind === "PERFORMANCE";
   const format = { clock: formatClock, duration: formatDuration };
+  const onStage = item.progress === "ON_STAGE";
+  const behindUs = item.progress === "PERFORMED" || item.progress === "SKIPPED";
   return (
     <tr
       data-testid="program-item"
+      data-progress={item.progress}
       className={
-        isPerformance
-          ? "border-border border-b last:border-0"
-          : "border-border border-b bg-muted/40 last:border-0"
+        onStage
+          ? "border-border border-b bg-primary/10 last:border-0"
+          : behindUs
+            ? "border-border border-b text-muted-foreground last:border-0"
+            : isPerformance
+              ? "border-border border-b last:border-0"
+              : "border-border border-b bg-muted/40 last:border-0"
       }
     >
       {columns.map((column) => (
@@ -473,7 +490,9 @@ function ProgramItemRow({
               : "px-2 py-2 text-sm"
           }
         >
-          {column.key === "TITLE" ? (
+          {column.custom ? (
+            <CustomCell programId={programId} item={item} columnKey={column.key} />
+          ) : column.key === "TITLE" ? (
             <span className="flex flex-wrap items-baseline gap-1.5">
               <span>{itemCell(item, column.key, format)}</span>
               {/* The badge names the kind; a break literally titled "Перерыв" needs no
@@ -482,6 +501,12 @@ function ProgramItemRow({
                 <Badge variant="secondary">{ITEM_KIND_LABELS[item.kind]}</Badge>
               )}
               {item.missingPerformance ? <Badge variant="warning">Номер снят</Badge> : null}
+              {/* What the host has announced, so the organizer's own table is live too. */}
+              {item.progress !== "PENDING" ? (
+                <Badge variant={onStage ? "success" : "secondary"}>
+                  {PROGRESS_LABELS[item.progress]}
+                </Badge>
+              ) : null}
             </span>
           ) : column.key === "DURATION" ? (
             <span className="whitespace-nowrap tabular-nums">
@@ -566,6 +591,125 @@ function EditBlockDuration({
       />
       <span className="text-muted-foreground text-xs">мин</span>
     </div>
+  );
+}
+
+function AddColumnControls({ programId }: { programId: string }): React.JSX.Element {
+  const addColumn = useAddColumn(programId);
+  const [title, setTitle] = useState("");
+
+  const submit = () =>
+    addColumn.mutate(title.trim(), {
+      onSuccess: () => {
+        setTitle("");
+        toast.success("Колонка добавлена");
+      },
+      onError: () => toast.error("Не удалось добавить колонку"),
+    });
+
+  return (
+    <div className="flex flex-wrap items-end gap-2">
+      <Input
+        aria-label="Название колонки"
+        placeholder="Своя колонка"
+        className="h-9 w-40"
+        value={title}
+        onChange={(event) => setTitle(event.target.value)}
+      />
+      <Button
+        variant="outline"
+        size="sm"
+        loading={addColumn.isPending}
+        disabled={title.trim().length === 0}
+        onClick={submit}
+      >
+        <Columns3 className="size-4" /> Колонка
+      </Button>
+    </div>
+  );
+}
+
+/**
+ * A custom column's header: rename it in place, or drop it.
+ *
+ * Renaming keeps the column's id, and so every value already filled into it — which is
+ * why it is offered here rather than making the organizer recreate the column.
+ */
+function CustomColumnHeader({
+  programId,
+  column,
+}: {
+  programId: string;
+  column: ProgramColumn;
+}): React.JSX.Element {
+  const rename = useRenameColumn(programId);
+  const remove = useRemoveColumn(programId);
+  const [title, setTitle] = useState(column.label);
+  const columnId = column.key.replace("custom:", "");
+
+  return (
+    <div className="flex items-center gap-1">
+      <Input
+        aria-label={`Колонка: ${column.label}`}
+        className="h-7 w-28 text-xs"
+        value={title}
+        onChange={(event) => setTitle(event.target.value)}
+        onBlur={() => {
+          const next = title.trim();
+          if (next.length > 0 && next !== column.label) {
+            rename.mutate(
+              { columnId, title: next },
+              { onError: () => toast.error("Не удалось переименовать колонку") },
+            );
+          } else if (next.length === 0) {
+            setTitle(column.label);
+          }
+        }}
+      />
+      <Button
+        variant="ghost"
+        size="xs"
+        aria-label={`Удалить колонку: ${column.label}`}
+        loading={remove.isPending}
+        onClick={() =>
+          remove.mutate(columnId, { onError: () => toast.error("Не удалось удалить колонку") })
+        }
+      >
+        <Trash2 className="size-3.5" />
+      </Button>
+    </div>
+  );
+}
+
+/** One hand-filled cell: typed in place, saved on blur, blank to clear. */
+function CustomCell({
+  programId,
+  item,
+  columnKey,
+}: {
+  programId: string;
+  item: ProgramItem;
+  columnKey: string;
+}): React.JSX.Element {
+  const fill = useFillCells(programId);
+  const stored = item.customValues[columnKey] ?? "";
+  const [value, setValue] = useState(stored);
+
+  return (
+    <Input
+      aria-label={`Значение: ${item.title}`}
+      className="h-7 w-32 text-xs"
+      value={value}
+      onChange={(event) => setValue(event.target.value)}
+      onBlur={() => {
+        if (value.trim() !== stored) {
+          fill.mutate(
+            { itemId: item.id, values: { [columnKey]: value.trim() } },
+            { onError: () => toast.error("Не удалось сохранить значение") },
+          );
+        }
+      }}
+    />
   );
 }
 
@@ -728,11 +872,12 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
   const create = useCreateShare(program.id);
   const remove = useRemoveShare(program.id);
   const [name, setName] = useState("");
-  const [columns, setColumns] = useState<ProgramColumnKey[]>(DEFAULT_SHARE_COLUMNS);
+  const [columns, setColumns] = useState<ColumnKey[]>(DEFAULT_SHARE_COLUMNS);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [controls, setControls] = useState(false);
 
-  const toggle = (key: ProgramColumnKey, checked: boolean) => {
+  const toggle = (key: ColumnKey, checked: boolean) => {
     setColumns((current) =>
       checked
         ? [...current.filter((item) => item !== key), key]
@@ -753,13 +898,14 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
             .map((item) => item.id)
         : [];
     create.mutate(
-      { name: name.trim(), columns, itemIds: selected },
+      { name: name.trim(), columns, itemIds: selected, controlsRunningOrder: controls },
       {
         onSuccess: () => {
           setName("");
           setColumns(DEFAULT_SHARE_COLUMNS);
           setFrom("");
           setTo("");
+          setControls(false);
           toast.success("Публичная программа создана");
         },
         onError: () => toast.error("Не удалось создать публичную программу"),
@@ -822,6 +968,17 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
           />
         ))}
       </fieldset>
+      <div className="flex flex-col gap-1">
+        <Checkbox
+          label="Программа ведущего — можно отмечать номера и менять порядок по ссылке"
+          checked={controls}
+          onCheckedChange={(checked) => setControls(checked === true)}
+        />
+        <p className="text-muted-foreground text-xs">
+          Такую ссылку давайте только ведущему: любой, у кого она есть, сможет вести программу.
+          Остальные ссылки только для чтения.
+        </p>
+      </div>
       <p className="text-muted-foreground text-xs">
         Оставьте диапазон пунктов пустым, чтобы опубликовать всю программу — такая ссылка сама
         подхватывает новые пункты.
@@ -844,6 +1001,9 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
               <p className="text-muted-foreground text-xs">
                 Колонки: {share.columns.map((column) => column.label).join(", ")}
               </p>
+              {share.controlsRunningOrder ? (
+                <Badge variant="warning">Ведущий: управляет программой</Badge>
+              ) : null}
             </div>
             <div className="flex items-center gap-1">
               <Button

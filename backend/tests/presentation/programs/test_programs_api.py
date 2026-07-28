@@ -419,6 +419,91 @@ class TestTheProgrammeTable:
             assert key in item
 
 
+class TestCustomColumns:
+    def test_a_column_is_added_filled_and_published(self, staff_client, scope) -> None:
+        competition_id, nomination_id = scope
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        program_id = _create_program(staff_client, scope)["id"]
+        filled = staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill")
+        item_id = filled.data["data"]["items"][0]["id"]
+
+        created = staff_client.post(f"{_PROGRAMS}/{program_id}/columns", {"title": "Микрофон"}, format="json")
+        assert created.status_code == 201, created.data
+        column = created.data["data"]["availableColumns"][-1]
+        assert column["label"] == "Микрофон"
+        assert column["custom"] is True
+        assert column["key"].startswith("custom:")
+
+        written = staff_client.put(
+            f"{_PROGRAMS}/{program_id}/items/{item_id}/cells",
+            {"values": {column["key"]: "на стойке"}},
+            format="json",
+        )
+        assert written.status_code == 200, written.data
+        assert written.data["data"]["items"][0]["customValues"] == {column["key"]: "на стойке"}
+
+        share = staff_client.post(
+            f"{_PROGRAMS}/{program_id}/shares",
+            {"name": "Звукорежиссёр", "columns": ["TIME", "TITLE", column["key"]]},
+            format="json",
+        )
+        assert share.status_code == 201, share.data
+        assert [c["label"] for c in share.data["data"]["share"]["columns"]] == ["Время", "Номер", "Микрофон"]
+
+    def test_a_column_is_renamed_without_losing_its_values(self, staff_client, scope) -> None:
+        competition_id, nomination_id = scope
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        program_id = _create_program(staff_client, scope)["id"]
+        item_id = staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill").data["data"]["items"][0]["id"]
+        key = staff_client.post(f"{_PROGRAMS}/{program_id}/columns", {"title": "Микрофон"}, format="json").data["data"]["availableColumns"][-1]["key"]
+        staff_client.put(f"{_PROGRAMS}/{program_id}/items/{item_id}/cells", {"values": {key: "на стойке"}}, format="json")
+
+        column_id = key.removeprefix("custom:")
+        renamed = staff_client.patch(f"{_PROGRAMS}/{program_id}/columns/{column_id}", {"title": "Микрофон (тип)"}, format="json")
+        assert renamed.status_code == 200, renamed.data
+        assert renamed.data["data"]["availableColumns"][-1]["label"] == "Микрофон (тип)"
+        assert renamed.data["data"]["items"][0]["customValues"] == {key: "на стойке"}
+
+    def test_removing_a_column_clears_its_cells(self, staff_client, scope) -> None:
+        competition_id, nomination_id = scope
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        program_id = _create_program(staff_client, scope)["id"]
+        item_id = staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill").data["data"]["items"][0]["id"]
+        key = staff_client.post(f"{_PROGRAMS}/{program_id}/columns", {"title": "Микрофон"}, format="json").data["data"]["availableColumns"][-1]["key"]
+        staff_client.put(f"{_PROGRAMS}/{program_id}/items/{item_id}/cells", {"values": {key: "на стойке"}}, format="json")
+
+        removed = staff_client.delete(f"{_PROGRAMS}/{program_id}/columns/{key.removeprefix('custom:')}")
+        assert removed.status_code == 200, removed.data
+        assert all(not column["custom"] for column in removed.data["data"]["availableColumns"])
+        assert removed.data["data"]["items"][0]["customValues"] == {}
+
+    def test_a_blank_column_title_is_rejected(self, staff_client, scope) -> None:
+        program_id = _create_program(staff_client, scope)["id"]
+        assert staff_client.post(f"{_PROGRAMS}/{program_id}/columns", {"title": "  "}, format="json").status_code == 400
+
+    def test_a_built_in_column_cannot_be_filled_in_by_hand(self, staff_client, scope) -> None:
+        competition_id, nomination_id = scope
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        program_id = _create_program(staff_client, scope)["id"]
+        item_id = staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill").data["data"]["items"][0]["id"]
+
+        response = staff_client.put(
+            f"{_PROGRAMS}/{program_id}/items/{item_id}/cells",
+            {"values": {"TITLE": "подменю название"}},
+            format="json",
+        )
+        assert response.status_code == 400
+
+    def test_publishing_an_unknown_custom_column_is_refused(self, staff_client, scope) -> None:
+        program_id = _create_program(staff_client, scope)["id"]
+        response = staff_client.post(
+            f"{_PROGRAMS}/{program_id}/shares",
+            {"name": "Чужое", "columns": [f"custom:{uuid.uuid4()}"]},
+            format="json",
+        )
+        assert response.status_code == 404
+
+
 class TestPublicEditions:
     def test_an_edition_is_published_with_its_columns_and_a_copyable_path(self, staff_client, scope) -> None:
         competition_id, nomination_id = scope

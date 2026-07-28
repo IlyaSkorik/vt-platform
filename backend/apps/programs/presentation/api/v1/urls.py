@@ -12,12 +12,16 @@ from django.urls import path
 from .views import (
     ProgramCandidatesView,
     ProgramCollectionView,
+    ProgramColumnCollectionView,
+    ProgramColumnDetailView,
     ProgramDetailView,
+    ProgramItemCellsView,
     ProgramItemCollectionView,
     ProgramItemDetailView,
     ProgramItemNumbersView,
     ProgramItemOrderView,
     ProgramItemsFillView,
+    ProgramProgressView,
     ProgramShareCollectionView,
     ProgramShareDetailView,
 )
@@ -33,6 +37,10 @@ urlpatterns = [
     path("staff/programs/<str:program_id>/items/order", ProgramItemOrderView.as_view(), name="items-order"),
     path("staff/programs/<str:program_id>/items/numbers", ProgramItemNumbersView.as_view(), name="items-numbers"),
     path("staff/programs/<str:program_id>/items/<str:item_id>", ProgramItemDetailView.as_view(), name="item-detail"),
+    path("staff/programs/<str:program_id>/items/<str:item_id>/cells", ProgramItemCellsView.as_view(), name="item-cells"),
+    path("staff/programs/<str:program_id>/columns", ProgramColumnCollectionView.as_view(), name="columns"),
+    path("staff/programs/<str:program_id>/columns/<str:column_id>", ProgramColumnDetailView.as_view(), name="column-detail"),
+    path("staff/programs/<str:program_id>/progress", ProgramProgressView.as_view(), name="progress"),
     path("staff/programs/<str:program_id>/shares", ProgramShareCollectionView.as_view(), name="shares"),
     path("staff/programs/<str:program_id>/shares/<str:share_id>", ProgramShareDetailView.as_view(), name="share-detail"),
 ]

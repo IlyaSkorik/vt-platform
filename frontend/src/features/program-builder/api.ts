@@ -17,11 +17,11 @@ import { type ApiError, apiClient, toApiError } from "@/shared/api";
 
 import type {
   AddBlockInput,
+  ColumnKey,
   CreateProgramInput,
   CreateShareInput,
   Program,
   ProgramCandidate,
-  ProgramColumnKey,
   ProgramShare,
   ProgramSummary,
   UpdateProgramInput,
@@ -267,19 +267,70 @@ export function useCreateShare(
   });
 }
 
+/** Add a column of the organizer's own to the programme's table. */
+export function useAddColumn(programId: string): UseMutationResult<Program, ApiError, string> {
+  return useProgramMutation<string>((title) =>
+    request<Envelope<Program>>(`staff/programs/${programId}/columns`, {
+      method: "post",
+      json: { title },
+    }),
+  );
+}
+
+/** Rename a custom column. Its id — and so every value in it — is untouched. */
+export function useRenameColumn(
+  programId: string,
+): UseMutationResult<Program, ApiError, { columnId: string; title: string }> {
+  return useProgramMutation<{ columnId: string; title: string }>(({ columnId, title }) =>
+    request<Envelope<Program>>(`staff/programs/${programId}/columns/${columnId}`, {
+      method: "patch",
+      json: { title },
+    }),
+  );
+}
+
+/** Remove a custom column, its values, and its place on every published link. */
+export function useRemoveColumn(programId: string): UseMutationResult<Program, ApiError, string> {
+  return useProgramMutation<string>((columnId) =>
+    request<Envelope<Program>>(`staff/programs/${programId}/columns/${columnId}`, {
+      method: "delete",
+    }),
+  );
+}
+
+/** Write the hand-filled cells of one row. A blank value clears one. */
+export function useFillCells(
+  programId: string,
+): UseMutationResult<Program, ApiError, { itemId: string; values: Record<string, string> }> {
+  return useProgramMutation<{ itemId: string; values: Record<string, string> }>(
+    ({ itemId, values }) =>
+      request<Envelope<Program>>(`staff/programs/${programId}/items/${itemId}/cells`, {
+        method: "put",
+        json: { values },
+      }),
+  );
+}
+
+/** Put every slot back to pending — the organizer's reset after a rehearsal. */
+export function useResetProgress(programId: string): UseMutationResult<Program, ApiError, void> {
+  return useProgramMutation<void>(() =>
+    request<Envelope<Program>>(`staff/programs/${programId}/progress`, { method: "delete" }),
+  );
+}
+
 /** Change which columns a live link shows (or rename it) — its slug is permanent. */
 export function useUpdateShare(
   programId: string,
 ): UseMutationResult<
   ProgramShare,
   ApiError,
-  { shareId: string; name?: string; columns?: ProgramColumnKey[] }
+  { shareId: string; name?: string; columns?: ColumnKey[]; controlsRunningOrder?: boolean }
 > {
   const queryClient = useQueryClient();
   return useMutation<
     ProgramShare,
     ApiError,
-    { shareId: string; name?: string; columns?: ProgramColumnKey[] }
+    { shareId: string; name?: string; columns?: ColumnKey[]; controlsRunningOrder?: boolean }
   >({
     mutationFn: async ({ shareId, ...body }) => {
       const response = await request<Envelope<{ share: ProgramShare; program: Program }>>(

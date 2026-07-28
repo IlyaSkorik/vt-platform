@@ -20,11 +20,16 @@ from datetime import datetime, timedelta
 
 from apps.programs.application.commands import (
     AddBlockCommand,
+    AddColumnCommand,
     AddPerformanceCommand,
     CreateProgramCommand,
     CreateShareCommand,
     EditItemCommand,
+    FillCellsCommand,
+    HostReorderCommand,
+    RenameColumnCommand,
     ReorderItemsCommand,
+    SetItemProgressCommand,
     UpdateProgramCommand,
     UpdateShareCommand,
 )
@@ -51,20 +56,25 @@ from apps.programs.domain.exceptions import (
     PerformanceNotAvailableError,
     ProgramNotFoundError,
     ProgramShareNotFoundError,
+    RunningOrderNotControllableError,
     SlugUnavailableError,
 )
 from apps.programs.domain.schedule import ScheduledItem, build_schedule, total_duration_seconds
 from apps.programs.domain.value_objects import (
     COLUMN_LABELS,
+    CellValue,
+    ColumnRef,
+    ColumnTitle,
     ItemDuration,
     ItemTitle,
     ProgramColumn,
     ProgramItemKind,
+    ProgramItemProgress,
     ProgramName,
     PublicSlug,
     ShareName,
     TimeBuffer,
-    parse_columns,
+    parse_column_refs,
 )
 
 __all__ = ["PUBLIC_PROGRAM_PATH", "ProgramService"]
@@ -289,23 +299,107 @@ class ProgramService:
             name=ShareName(command.name),
             slug=self._mint_slug(),
             now=now,
-            columns=parse_columns(command.columns),
+            columns=parse_column_refs(command.columns),
             item_ids=[_uuid(item_id, what="itemId") for item_id in command.item_ids],
+            controls_running_order=command.controls_running_order,
         )
         self._programs.save(program)
         return self._detail(program), self._share_view(share, program)
 
     def update_share(self, command: UpdateShareCommand) -> tuple[ProgramDetailView, ProgramShareView]:
-        """Rename an edition and/or change the columns it publishes, keeping its link."""
+        """Rename an edition, re-column it, or change what it may control."""
         now = self._clock.utcnow()
         program = self._load(command.program_id)
         share_id = _uuid(command.share_id, what="shareId")
         if command.name is not None:
             program.rename_share(share_id, ShareName(command.name), now=now)
         if command.columns is not None:
-            program.set_share_columns(share_id, parse_columns(command.columns), now=now)
+            program.set_share_columns(share_id, parse_column_refs(command.columns), now=now)
+        if command.controls_running_order is not None:
+            program.set_share_control(share_id, allowed=command.controls_running_order, now=now)
         self._programs.save(program)
         return self._detail(program), self._share_view(program.share(share_id), program)
+
+    # ------------------------------------------------------------------
+    # Custom columns
+    # ------------------------------------------------------------------
+
+    def add_column(self, command: AddColumnCommand) -> ProgramDetailView:
+        """Add a column of the organizer's own to this programme's table."""
+        now = self._clock.utcnow()
+        program = self._load(command.program_id)
+        program.add_custom_column(column_id=uuid.uuid4(), title=ColumnTitle(command.title), now=now)
+        self._programs.save(program)
+        return self._detail(program)
+
+    def rename_column(self, command: RenameColumnCommand) -> ProgramDetailView:
+        """Rename a custom column, keeping every value in it."""
+        now = self._clock.utcnow()
+        program = self._load(command.program_id)
+        program.rename_custom_column(_uuid(command.column_id, what="columnId"), ColumnTitle(command.title), now=now)
+        self._programs.save(program)
+        return self._detail(program)
+
+    def remove_column(self, *, program_id: str, column_id: str) -> ProgramDetailView:
+        """Drop a custom column, its values, and its place on every published link."""
+        now = self._clock.utcnow()
+        program = self._load(program_id)
+        program.remove_custom_column(_uuid(column_id, what="columnId"), now=now)
+        self._programs.save(program)
+        return self._detail(program)
+
+    def fill_cells(self, command: FillCellsCommand) -> ProgramDetailView:
+        """Write the hand-filled cells of one row."""
+        now = self._clock.utcnow()
+        program = self._load(command.program_id)
+        item_id = _uuid(command.item_id, what="itemId")
+        for raw_key, raw_value in command.values:
+            ref = ColumnRef.parse(raw_key)
+            if not ref.is_custom or ref.custom_id is None:
+                raise InvalidProgramDataError(f"{raw_key!r} is not a column that can be filled in by hand.")
+            program.fill_cell(item_id=item_id, column_id=ref.custom_id, value=CellValue(str(raw_value)), now=now)
+        self._programs.save(program)
+        return self._detail(program)
+
+    # ------------------------------------------------------------------
+    # The day itself (driven from the host's link)
+    # ------------------------------------------------------------------
+
+    def set_item_progress(self, command: SetItemProgressCommand) -> PublicProgramView:
+        """Mark how far one slot has got, from the host's own link.
+
+        Answers with the host's view of the programme, so their screen redraws from the
+        same payload every other screen is polling.
+        """
+        now = self._clock.utcnow()
+        program, share = self._host_program(command.slug)
+        try:
+            progress = ProgramItemProgress(str(command.progress).upper())
+        except ValueError as exc:
+            raise InvalidProgramDataError(f"{command.progress!r} is not a known progress state.") from exc
+        program.set_item_progress(_uuid(command.item_id, what="itemId"), progress, now=now)
+        self._programs.save(program)
+        return self._public_view(program, share)
+
+    def host_reorder(self, command: HostReorderCommand) -> PublicProgramView:
+        """Rearrange what is still to come, from the host's link, mid-event.
+
+        The numbers are frozen by now - publishing froze them - so the rows move and the
+        participants' numbers stay theirs, which is exactly right in front of an audience.
+        """
+        now = self._clock.utcnow()
+        program, share = self._host_program(command.slug)
+        program.reorder([_uuid(item_id, what="itemId") for item_id in command.item_ids], now=now)
+        self._programs.save(program)
+        return self._public_view(program, share)
+
+    def reset_progress(self, program_id: str) -> ProgramDetailView:
+        """Put every slot back to pending (the organizer's reset after a rehearsal)."""
+        now = self._clock.utcnow()
+        program = self._load(program_id)
+        program.reset_progress(now=now)
+        self._programs.save(program)
+        return self._detail(program)
 
     def remove_share(self, *, program_id: str, share_id: str) -> ProgramDetailView:
         """Revoke a public edition; its link stops resolving at once."""
@@ -335,6 +429,10 @@ class ProgramService:
         except ProgramShareNotFoundError:
             # Revoked between the slug lookup and the read: the link is simply gone.
             return None
+        return self._public_view(program, share)
+
+    def _public_view(self, program: Program, share: ProgramShare) -> PublicProgramView:
+        """Render one published edition of a programme as its table."""
         columns = share.columns
         items = program.items_for(share)
         schedule_by_item = {entry.item.id: entry for entry in build_schedule(items=program.items, buffer=program.buffer, starts_at=program.starts_at)}
@@ -359,6 +457,10 @@ class ProgramService:
                         )
                         for column in columns
                     ),
+                    progress=item.progress.value,
+                    # Only the host needs a handle on a row, and only the host's link gets
+                    # one: a read-only edition carries no ids at all.
+                    id=str(item.id) if share.controls_running_order else None,
                 )
             )
         return PublicProgramView(
@@ -368,9 +470,28 @@ class ProgramService:
             nomination=self._catalog.nomination_title(program.nomination_id) if program.nomination_id else None,
             starts_at=first_start or program.starts_at,
             total_seconds=total_duration_seconds(items=items, buffer=program.buffer),
-            columns=tuple(ColumnView(key=column.value, label=COLUMN_LABELS[column]) for column in columns),
+            columns=self._column_views(program, columns),
             rows=tuple(rows),
+            controls_running_order=share.controls_running_order,
         )
+
+    def _host_program(self, slug: str) -> tuple[Program, ProgramShare]:
+        """Resolve a host link, refusing anything that was not granted control.
+
+        An unknown slug and a read-only one are the same refusal, so a link cannot be
+        probed for whether it happens to be the host's.
+        """
+        found = self._programs.get_by_slug(slug)
+        if found is None:
+            raise RunningOrderNotControllableError("No programme answers to this link.")
+        program, share_id = found
+        try:
+            share = program.share(share_id)
+        except ProgramShareNotFoundError as exc:
+            raise RunningOrderNotControllableError("No programme answers to this link.") from exc
+        if not share.controls_running_order:
+            raise RunningOrderNotControllableError("This link may not change the running order.")
+        return program, share
 
     # ------------------------------------------------------------------
     # Internals
@@ -412,9 +533,21 @@ class ProgramService:
         ids = [item.submission_id for item in items if item.submission_id is not None]
         return self._catalog.performances_by_id(ids) if ids else {}
 
+    @staticmethod
+    def _column_views(program: Program, refs: Sequence[ColumnRef]) -> tuple[ColumnView, ...]:
+        """Name each column: built-ins from the domain's headers, custom ones by title."""
+        titles = {column.id: str(column.title) for column in program.custom_columns}
+        views: list[ColumnView] = []
+        for ref in refs:
+            if ref.is_custom and ref.custom_id is not None:
+                views.append(ColumnView(key=ref.key, label=titles.get(ref.custom_id, "—"), custom=True))
+            elif ref.builtin is not None:
+                views.append(ColumnView(key=ref.key, label=COLUMN_LABELS[ref.builtin]))
+        return tuple(views)
+
     def _cell(
         self,
-        column: ProgramColumn,
+        ref: ColumnRef,
         *,
         item: ProgramItem,
         performance: CatalogPerformance | None,
@@ -428,6 +561,12 @@ class ProgramService:
         and no age category, and gets blanks rather than a placeholder that would read
         like missing data.
         """
+        if ref.is_custom:
+            # A hand-filled column: whatever the organizer typed, or nothing.
+            return str(item.value_in(ref.custom_id)) if ref.custom_id is not None else ""
+        column = ref.builtin
+        if column is None:  # pragma: no cover - guaranteed by ColumnRef
+            return ""
         match column:
             case ProgramColumn.POSITION:
                 # The participant's permanent number, not the row's index: a programme
@@ -498,7 +637,7 @@ class ProgramService:
             starts_at=program.starts_at,
             items=tuple(self._item_view(entry, performances) for entry in schedule),
             shares=tuple(self._share_view(share, program) for share in program.shares),
-            available_columns=tuple(ColumnView(key=column.value, label=COLUMN_LABELS[column]) for column in ProgramColumn),
+            available_columns=self._column_views(program, program.columns),
             numbers_frozen=program.numbers_frozen,
             numbers_frozen_at=program.numbers_frozen_at,
             total_seconds=total,
@@ -536,18 +675,22 @@ class ProgramService:
             organization=performance.organization if performance is not None else None,
             comment=performance.comment if performance is not None else None,
             missing_performance=item.submission_id is not None and performance is None,
+            custom_values=tuple(
+                (ColumnRef.custom(column_id).key, str(value)) for column_id, value in item.custom_values.items() if not value.is_blank
+            ),
+            progress=item.progress.value,
         )
 
-    @staticmethod
-    def _share_view(share: ProgramShare, program: Program) -> ProgramShareView:
+    def _share_view(self, share: ProgramShare, program: Program) -> ProgramShareView:
         selected = program.items_for(share)
         return ProgramShareView(
             id=str(share.id),
             name=str(share.name),
             slug=str(share.slug),
             path=PUBLIC_PROGRAM_PATH.format(slug=share.slug),
-            columns=tuple(ColumnView(key=column.value, label=COLUMN_LABELS[column]) for column in share.columns),
+            columns=self._column_views(program, share.columns),
             item_count=len(selected),
             covers_whole_program=share.covers_whole_program,
+            controls_running_order=share.controls_running_order,
             created_at=share.created_at,
         )

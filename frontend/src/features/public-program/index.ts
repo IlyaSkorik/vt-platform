@@ -1,9 +1,12 @@
-/** Public API of the `public-program` feature — reading a published programme by slug. */
+/** Public API of the `public-program` feature — reading (and hosting) a published programme. */
 export {
   fetchPublicProgram,
   type PublicProgram,
   type PublicProgramColumn,
+  type PublicProgramProgress,
   type PublicProgramRow,
   publicProgramKeys,
+  useHostReorder,
   usePublicProgram,
+  useSetRowProgress,
 } from "./api";

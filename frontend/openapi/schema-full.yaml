@@ -4942,6 +4942,85 @@ paths:
               schema:
                 $ref: '#/components/schemas/PublicProgramEnvelope'
           description: ''
+  /api/v1/public/programs/{slug}/order:
+    put:
+      operationId: publicProgramReorder
+      description: |-
+        ``PUT /public/programs/{slug}/order`` - the host rearranges what is still to come.
+
+        Numbers are frozen by now (publishing froze them), so the rows move and every
+        participant keeps the number they were told.
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - Public Program
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderItemsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReorderItemsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReorderItemsRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProgramEnvelope'
+          description: ''
+  /api/v1/public/programs/{slug}/rows/{item_id}/progress:
+    put:
+      operationId: publicProgramSetProgress
+      description: |-
+        ``PUT /public/programs/{slug}/rows/{itemId}/progress`` - the host marks the day.
+
+        Answers with the whole programme so the host's screen redraws from exactly the payload
+        every other screen is polling - one table, one source, no divergence.
+      parameters:
+      - in: path
+        name: item_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - Public Program
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetProgressRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SetProgressRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SetProgressRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProgramEnvelope'
+          description: ''
   /api/v1/staff/applications/{submission_id}/actions/{action}:
     post:
       operationId: staff_applications_actions_create
@@ -6069,6 +6148,170 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProgramProblemDetail'
           description: Unprocessable.
+  /api/v1/staff/programs/{program_id}/columns:
+    post:
+      operationId: programsAddColumn
+      description: '``POST`` a column of the organizer''s own onto this programme''s
+        table.'
+      parameters:
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ColumnRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ColumnRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ColumnRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/programs/{program_id}/columns/{column_id}:
+    patch:
+      operationId: programsRenameColumn
+      description: '``PATCH`` a custom column''s title; ``DELETE`` the column and
+        its values.'
+      parameters:
+      - in: path
+        name: column_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedColumnRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedColumnRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedColumnRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
+    delete:
+      operationId: programsRemoveColumn
+      description: '``PATCH`` a custom column''s title; ``DELETE`` the column and
+        its values.'
+      parameters:
+      - in: path
+        name: column_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
   /api/v1/staff/programs/{program_id}/items:
     post:
       operationId: programsAddItem
@@ -6231,6 +6474,67 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProgramProblemDetail'
           description: Unprocessable.
+  /api/v1/staff/programs/{program_id}/items/{item_id}/cells:
+    put:
+      operationId: programsFillCells
+      description: '``PUT`` the hand-filled cells of one row (a blank value clears
+        one).'
+      parameters:
+      - in: path
+        name: item_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FillCellsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FillCellsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FillCellsRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
   /api/v1/staff/programs/{program_id}/items/fill:
     post:
       operationId: programsFillItems
@@ -6349,6 +6653,50 @@ paths:
             schema:
               $ref: '#/components/schemas/ReorderItemsRequest'
         required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/programs/{program_id}/progress:
+    delete:
+      operationId: programsResetProgress
+      description: '``DELETE`` to put every slot back to pending (the organizer''s
+        reset).'
+      parameters:
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
       responses:
         '200':
           content:
@@ -7814,36 +8162,15 @@ components:
       description: |-
         * `PER_PARTICIPANT` - PER_PARTICIPANT
         * `PER_PERFORMANCE` - PER_PERFORMANCE
-    ColumnsEnum:
-      enum:
-      - POSITION
-      - TIME
-      - PARTICIPANT
-      - TITLE
-      - DURATION
-      - NOMINATION
-      - DISCIPLINE
-      - PARTICIPANT_GROUP
-      - AGE_CATEGORY
-      - PARTICIPATION_FORMAT
-      - TEACHERS
-      - ORGANIZATION
-      - COMMENT
-      type: string
-      description: |-
-        * `POSITION` - POSITION
-        * `TIME` - TIME
-        * `PARTICIPANT` - PARTICIPANT
-        * `TITLE` - TITLE
-        * `DURATION` - DURATION
-        * `NOMINATION` - NOMINATION
-        * `DISCIPLINE` - DISCIPLINE
-        * `PARTICIPANT_GROUP` - PARTICIPANT_GROUP
-        * `AGE_CATEGORY` - AGE_CATEGORY
-        * `PARTICIPATION_FORMAT` - PARTICIPATION_FORMAT
-        * `TEACHERS` - TEACHERS
-        * `ORGANIZATION` - ORGANIZATION
-        * `COMMENT` - COMMENT
+    ColumnRequest:
+      type: object
+      description: Validate the title of a custom column ("Микрофон", "Реквизит").
+      properties:
+        title:
+          type: string
+          maxLength: 120
+      required:
+      - title
     CompetitionDetail:
       type: object
       properties:
@@ -8193,12 +8520,15 @@ components:
         columns:
           type: array
           items:
-            $ref: '#/components/schemas/ColumnsEnum'
+            type: string
         itemIds:
           type: array
           items:
             type: string
             format: uuid
+        controlsRunningOrder:
+          type: boolean
+          default: false
       required:
       - name
     CreateTemplateRequest:
@@ -8604,6 +8934,20 @@ components:
         wrapText:
           type: boolean
           default: false
+    FillCellsRequest:
+      type: object
+      description: |-
+        Validate hand-filled values for one row, keyed by custom column key.
+
+        A blank value clears the cell, so there is no separate verb for removing one.
+      properties:
+        values:
+          type: object
+          additionalProperties:
+            type: string
+            maxLength: 500
+      required:
+      - values
     FontStyleEnum:
       enum:
       - normal
@@ -8845,36 +9189,6 @@ components:
       required:
       - email
       - role
-    KeyEnum:
-      enum:
-      - POSITION
-      - TIME
-      - PARTICIPANT
-      - TITLE
-      - DURATION
-      - NOMINATION
-      - DISCIPLINE
-      - PARTICIPANT_GROUP
-      - AGE_CATEGORY
-      - PARTICIPATION_FORMAT
-      - TEACHERS
-      - ORGANIZATION
-      - COMMENT
-      type: string
-      description: |-
-        * `POSITION` - POSITION
-        * `TIME` - TIME
-        * `PARTICIPANT` - PARTICIPANT
-        * `TITLE` - TITLE
-        * `DURATION` - DURATION
-        * `NOMINATION` - NOMINATION
-        * `DISCIPLINE` - DISCIPLINE
-        * `PARTICIPANT_GROUP` - PARTICIPANT_GROUP
-        * `AGE_CATEGORY` - AGE_CATEGORY
-        * `PARTICIPATION_FORMAT` - PARTICIPATION_FORMAT
-        * `TEACHERS` - TEACHERS
-        * `ORGANIZATION` - ORGANIZATION
-        * `COMMENT` - COMMENT
     LayoutFieldRequest:
       type: object
       description: One field in a layout save. Coordinates are normalised (0..1).
@@ -9461,6 +9775,13 @@ components:
       properties:
         role:
           $ref: '#/components/schemas/RoleEnum'
+    PatchedColumnRequest:
+      type: object
+      description: Validate the title of a custom column ("Микрофон", "Реквизит").
+      properties:
+        title:
+          type: string
+          maxLength: 120
     PatchedEditItemRequest:
       type: object
       description: Validate an edit-item body (retitle a block, resize any slot).
@@ -9867,7 +10188,9 @@ components:
         columns:
           type: array
           items:
-            $ref: '#/components/schemas/ColumnsEnum'
+            type: string
+        controlsRunningOrder:
+          type: boolean
     PatchedUpdateTeacherRequest:
       type: object
       description: Validate an update-teacher request body (same shape as add).
@@ -10149,10 +10472,13 @@ components:
       type: object
       properties:
         key:
-          $ref: '#/components/schemas/KeyEnum'
+          type: string
         label:
           type: string
+        custom:
+          type: boolean
       required:
+      - custom
       - key
       - label
     ProgramDetail:
@@ -10295,9 +10621,16 @@ components:
           - 'null'
         missingPerformance:
           type: boolean
+        customValues:
+          type: object
+          additionalProperties:
+            type: string
+        progress:
+          $ref: '#/components/schemas/ProgressEnum'
       required:
       - ageCategory
       - comment
+      - customValues
       - discipline
       - durationSeconds
       - id
@@ -10310,6 +10643,7 @@ components:
       - participantGroup
       - participants
       - participationFormat
+      - progress
       - schedule
       - submissionId
       - teachers
@@ -10380,6 +10714,8 @@ components:
           type: integer
         coversWholeProgram:
           type: boolean
+        controlsRunningOrder:
+          type: boolean
         createdAt:
           type:
           - string
@@ -10387,6 +10723,7 @@ components:
           format: date-time
       required:
       - columns
+      - controlsRunningOrder
       - coversWholeProgram
       - createdAt
       - id
@@ -10445,6 +10782,18 @@ components:
       - startsAt
       - totalSeconds
       - updatedAt
+    ProgressEnum:
+      enum:
+      - PENDING
+      - ON_STAGE
+      - PERFORMED
+      - SKIPPED
+      type: string
+      description: |-
+        * `PENDING` - PENDING
+        * `ON_STAGE` - ON_STAGE
+        * `PERFORMED` - PERFORMED
+        * `SKIPPED` - SKIPPED
     ProposeGuardianLinkRequest:
       type: object
       description: Validate a propose-guardian-link request body.
@@ -11140,6 +11489,8 @@ components:
           format: date-time
         totalSeconds:
           type: integer
+        controlsRunningOrder:
+          type: boolean
         rows:
           type: array
           items:
@@ -11147,6 +11498,7 @@ components:
       required:
       - columns
       - competitionTitle
+      - controlsRunningOrder
       - name
       - nomination
       - rows
@@ -11160,7 +11512,10 @@ components:
           type: string
         label:
           type: string
+        custom:
+          type: boolean
       required:
+      - custom
       - key
       - label
     PublicProgramEnvelope:
@@ -11176,7 +11531,11 @@ components:
       - meta
     PublicProgramRow:
       type: object
-      description: One row of the table. ``cells`` is aligned with ``columns``.
+      description: |-
+        One row of the table. ``cells`` is aligned with ``columns``.
+
+        ``progress`` is what makes a screen live; ``id`` is present only on the host's edition,
+        where it is the handle their controls act on.
       properties:
         kind:
           type: string
@@ -11184,9 +11543,18 @@ components:
           type: array
           items:
             type: string
+        progress:
+          type: string
+        id:
+          type:
+          - string
+          - 'null'
+          format: uuid
       required:
       - cells
+      - id
       - kind
+      - progress
     RecordConsentsRequest:
       type: object
       description: Validate a record-consents request body.
@@ -11743,6 +12111,14 @@ components:
       - participantGroupId
       - participationFormatId
       - title
+    SetProgressRequest:
+      type: object
+      description: Validate a progress update from the host's link.
+      properties:
+        progress:
+          $ref: '#/components/schemas/ProgressEnum'
+      required:
+      - progress
     StaffInvitationDetail:
       type: object
       description: Serialize an invitation-detail resource.

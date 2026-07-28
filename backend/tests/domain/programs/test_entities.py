@@ -17,6 +17,7 @@ from apps.programs.domain.exceptions import (
     InvalidProgramDataError,
     ItemNotInProgramError,
     PerformanceAlreadyInProgramError,
+    ProgramColumnNotFoundError,
     ProgramItemNotFoundError,
     ProgramShareNotFoundError,
     ReorderMismatchError,
@@ -24,10 +25,14 @@ from apps.programs.domain.exceptions import (
 from apps.programs.domain.value_objects import (
     COLUMN_LABELS,
     DEFAULT_PUBLIC_COLUMNS,
+    CellValue,
+    ColumnRef,
+    ColumnTitle,
     ItemDuration,
     ItemTitle,
     ProgramColumn,
     ProgramItemKind,
+    ProgramItemProgress,
     ProgramName,
     PublicSlug,
     ShareName,
@@ -426,7 +431,7 @@ class TestPublishedColumns:
     def test_an_edition_without_a_choice_shows_the_default_columns(self) -> None:
         program = _program()
         share = program.add_share(share_id=uuid.uuid4(), name=ShareName("Экран"), slug=PublicSlug("Screen234"), now=NOW)
-        assert share.columns == DEFAULT_PUBLIC_COLUMNS
+        assert [ref.key for ref in share.columns] == [column.value for column in DEFAULT_PUBLIC_COLUMNS]
 
     def test_columns_are_kept_in_canonical_order(self) -> None:
         program = _program()
@@ -437,7 +442,7 @@ class TestPublishedColumns:
             now=NOW,
             columns=[ProgramColumn.COMMENT, ProgramColumn.TITLE, ProgramColumn.TIME],
         )
-        assert share.columns == (ProgramColumn.TIME, ProgramColumn.TITLE, ProgramColumn.COMMENT)
+        assert [ref.key for ref in share.columns] == ["TIME", "TITLE", "COMMENT"]
 
     def test_columns_can_be_changed_later_and_the_slug_survives(self) -> None:
         program = _program()
@@ -449,7 +454,7 @@ class TestPublishedColumns:
             columns=[ProgramColumn.TIME],
         )
         program.set_share_columns(share.id, [ProgramColumn.TIME, ProgramColumn.PARTICIPANT], now=NOW)
-        assert program.share(share.id).columns == (ProgramColumn.TIME, ProgramColumn.PARTICIPANT)
+        assert [ref.key for ref in program.share(share.id).columns] == ["TIME", "PARTICIPANT"]
         assert str(program.share(share.id).slug) == "Host23456"
 
     def test_two_editions_of_one_program_show_different_columns(self) -> None:
@@ -469,8 +474,8 @@ class TestPublishedColumns:
             now=NOW,
             columns=[ProgramColumn.TIME, ProgramColumn.PARTICIPANT, ProgramColumn.TITLE],
         )
-        assert ProgramColumn.COMMENT in engineer.columns
-        assert ProgramColumn.COMMENT not in screen.columns
+        assert ColumnRef.of(ProgramColumn.COMMENT) in engineer.columns
+        assert ColumnRef.of(ProgramColumn.COMMENT) not in screen.columns
 
     def test_parsing_accepts_names_and_rejects_unknown_ones(self) -> None:
         assert parse_columns(["time", "TITLE"]) == (ProgramColumn.TIME, ProgramColumn.TITLE)
@@ -484,6 +489,177 @@ class TestPublishedColumns:
     def test_every_column_has_a_header(self) -> None:
         assert {column: COLUMN_LABELS[column] for column in ProgramColumn}
         assert COLUMN_LABELS[ProgramColumn.PARTICIPANT_GROUP] == "Состав участников"
+
+
+class TestCustomColumns:
+    """The escape hatch: a column the organizer names and fills in themselves."""
+
+    def test_a_custom_column_is_appended_after_the_built_in_ones(self) -> None:
+        program = _program()
+        column = program.add_custom_column(column_id=uuid.uuid4(), title=ColumnTitle("Микрофон"), now=NOW)
+
+        assert [c.id for c in program.custom_columns] == [column.id]
+        assert program.columns[-1] == column.ref
+        assert program.columns[0] == ColumnRef.of(ProgramColumn.POSITION)
+
+    def test_a_blank_title_is_refused(self) -> None:
+        with pytest.raises(InvalidProgramDataError):
+            ColumnTitle("   ")
+
+    def test_a_cell_is_filled_and_cleared(self) -> None:
+        program = _program()
+        column = program.add_custom_column(column_id=uuid.uuid4(), title=ColumnTitle("Микрофон"), now=NOW)
+        item = _add_act(program)
+
+        program.fill_cell(item_id=item.id, column_id=column.id, value=CellValue("  на стойке  "), now=NOW)
+        assert str(program.item(item.id).value_in(column.id)) == "на стойке"
+
+        # Blank is how a value is removed - no second verb for it.
+        program.fill_cell(item_id=item.id, column_id=column.id, value=CellValue(""), now=NOW)
+        assert program.item(item.id).value_in(column.id).is_blank
+
+    def test_an_unfilled_cell_reads_blank_rather_than_missing(self) -> None:
+        program = _program()
+        column = program.add_custom_column(column_id=uuid.uuid4(), title=ColumnTitle("Реквизит"), now=NOW)
+        assert _add_act(program).value_in(column.id).is_blank
+
+    def test_filling_an_unknown_column_is_refused(self) -> None:
+        program = _program()
+        item = _add_act(program)
+        with pytest.raises(ProgramColumnNotFoundError):
+            program.fill_cell(item_id=item.id, column_id=uuid.uuid4(), value=CellValue("x"), now=NOW)
+
+    def test_renaming_keeps_the_values(self) -> None:
+        program = _program()
+        column = program.add_custom_column(column_id=uuid.uuid4(), title=ColumnTitle("Микрофон"), now=NOW)
+        item = _add_act(program)
+        program.fill_cell(item_id=item.id, column_id=column.id, value=CellValue("на стойке"), now=NOW)
+
+        program.rename_custom_column(column.id, ColumnTitle("Микрофон (тип)"), now=NOW)
+        assert str(program.custom_column(column.id).title) == "Микрофон (тип)"
+        assert str(program.item(item.id).value_in(column.id)) == "на стойке"
+
+    def test_removing_a_column_takes_its_values_and_its_place_on_every_link(self) -> None:
+        # Leaving a published edition pointing at a column that no longer exists would
+        # render a header with nothing under it.
+        program = _program()
+        column = program.add_custom_column(column_id=uuid.uuid4(), title=ColumnTitle("Микрофон"), now=NOW)
+        item = _add_act(program)
+        program.fill_cell(item_id=item.id, column_id=column.id, value=CellValue("на стойке"), now=NOW)
+        share = program.add_share(
+            share_id=uuid.uuid4(),
+            name=ShareName("Звукорежиссёр"),
+            slug=PublicSlug("Sound2345"),
+            now=NOW,
+            columns=[ColumnRef.of(ProgramColumn.TIME), column.ref],
+        )
+
+        program.remove_custom_column(column.id, now=NOW)
+        assert program.custom_columns == ()
+        assert program.item(item.id).value_in(column.id).is_blank
+        assert [ref.key for ref in share.columns] == ["TIME"]
+
+    def test_a_custom_column_can_be_published_like_any_other(self) -> None:
+        program = _program()
+        column = program.add_custom_column(column_id=uuid.uuid4(), title=ColumnTitle("Микрофон"), now=NOW)
+        share = program.add_share(
+            share_id=uuid.uuid4(),
+            name=ShareName("Звукорежиссёр"),
+            slug=PublicSlug("Sound2345"),
+            now=NOW,
+            columns=[column.ref, ColumnRef.of(ProgramColumn.TIME)],
+        )
+        # Built-ins first in their own order, then the programme's own columns.
+        assert [ref.key for ref in share.columns] == ["TIME", column.ref.key]
+
+    def test_publishing_a_column_from_another_programme_is_refused(self) -> None:
+        program = _program()
+        with pytest.raises(ProgramColumnNotFoundError):
+            program.add_share(
+                share_id=uuid.uuid4(),
+                name=ShareName("Чужое"),
+                slug=PublicSlug("Foreign234"),
+                now=NOW,
+                columns=[ColumnRef.custom(uuid.uuid4())],
+            )
+
+    def test_a_column_reference_round_trips_through_its_wire_key(self) -> None:
+        column_id = uuid.uuid4()
+        assert ColumnRef.parse(f"custom:{column_id}") == ColumnRef.custom(column_id)
+        assert ColumnRef.parse("time") == ColumnRef.of(ProgramColumn.TIME)
+        with pytest.raises(InvalidProgramDataError):
+            ColumnRef.parse("custom:not-a-uuid")
+
+
+class TestTheDayItself:
+    """What the host drives from their link while the festival is running."""
+
+    def test_slots_start_pending(self) -> None:
+        program = _program()
+        assert _add_act(program).progress is ProgramItemProgress.PENDING
+        assert program.on_stage is None
+
+    def test_putting_an_act_on_stage_finishes_the_previous_one(self) -> None:
+        # An act ends when the next one begins; a host should not have to say so twice.
+        program = _program()
+        first, second = _add_act(program), _add_act(program)
+        program.set_item_progress(first.id, ProgramItemProgress.ON_STAGE, now=NOW)
+        program.set_item_progress(second.id, ProgramItemProgress.ON_STAGE, now=NOW)
+
+        assert program.item(first.id).progress is ProgramItemProgress.PERFORMED
+        assert program.item(second.id).progress is ProgramItemProgress.ON_STAGE
+        assert program.on_stage is not None
+        assert program.on_stage.id == second.id
+
+    def test_at_most_one_act_is_ever_on_stage(self) -> None:
+        program = _program()
+        items = [_add_act(program) for _ in range(3)]
+        for item in items:
+            program.set_item_progress(item.id, ProgramItemProgress.ON_STAGE, now=NOW)
+
+        assert len([item for item in program.items if item.progress is ProgramItemProgress.ON_STAGE]) == 1
+
+    def test_an_act_can_be_marked_performed_or_skipped_directly(self) -> None:
+        program = _program()
+        first, second = _add_act(program), _add_act(program)
+        program.set_item_progress(first.id, ProgramItemProgress.PERFORMED, now=NOW)
+        program.set_item_progress(second.id, ProgramItemProgress.SKIPPED, now=NOW)
+
+        assert program.item(first.id).progress.is_finished
+        assert program.item(second.id).progress.is_finished
+        assert program.on_stage is None
+
+    def test_progress_can_be_reset_for_a_rehearsal(self) -> None:
+        program = _program()
+        item = _add_act(program)
+        program.set_item_progress(item.id, ProgramItemProgress.PERFORMED, now=NOW)
+
+        program.reset_progress(now=NOW)
+        assert program.item(item.id).progress is ProgramItemProgress.PENDING
+
+    def test_a_link_controls_the_running_order_only_when_granted(self) -> None:
+        program = _program()
+        _add_act(program)
+        screen = program.add_share(share_id=uuid.uuid4(), name=ShareName("Экран"), slug=PublicSlug("Screen234"), now=NOW)
+        host = program.add_share(
+            share_id=uuid.uuid4(),
+            name=ShareName("Ведущий"),
+            slug=PublicSlug("Host23456"),
+            now=NOW,
+            controls_running_order=True,
+        )
+
+        assert screen.controls_running_order is False
+        assert host.controls_running_order is True
+
+    def test_control_can_be_granted_and_withdrawn_later(self) -> None:
+        program = _program()
+        share = program.add_share(share_id=uuid.uuid4(), name=ShareName("Ведущий"), slug=PublicSlug("Host23456"), now=NOW)
+        program.set_share_control(share.id, allowed=True, now=NOW)
+        assert program.share(share.id).controls_running_order is True
+
+        program.set_share_control(share.id, allowed=False, now=NOW)
+        assert program.share(share.id).controls_running_order is False
 
 
 class TestSlug:

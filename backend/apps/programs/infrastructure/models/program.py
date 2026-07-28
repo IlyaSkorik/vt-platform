@@ -19,7 +19,14 @@ from django.db import models
 
 from .base import BasePersistenceModel
 
-__all__ = ["ProgramItemKindChoices", "ProgramItemModel", "ProgramModel", "ProgramShareModel"]
+__all__ = [
+    "ProgramColumnModel",
+    "ProgramItemKindChoices",
+    "ProgramItemModel",
+    "ProgramItemProgressChoices",
+    "ProgramModel",
+    "ProgramShareModel",
+]
 
 
 class ProgramItemKindChoices(models.TextChoices):
@@ -71,6 +78,44 @@ class ProgramModel(BasePersistenceModel):
         return self.name
 
 
+class ProgramItemProgressChoices(models.TextChoices):
+    """How far a slot has got on the day (mirrors the domain ``ProgramItemProgress``)."""
+
+    PENDING = "PENDING", "Pending"
+    ON_STAGE = "ON_STAGE", "On stage"
+    PERFORMED = "PERFORMED", "Performed"
+    SKIPPED = "SKIPPED", "Skipped"
+
+
+class ProgramColumnModel(BasePersistenceModel):
+    """A column the organizer added to one programme and fills in by hand.
+
+    A table rather than JSON on the programme row, because items reference these by id:
+    a column's identity is what its values hang off, so it gets a row of its own.
+    """
+
+    program = models.ForeignKey(
+        "programs.ProgramModel",
+        on_delete=models.CASCADE,
+        related_name="custom_columns",
+    )
+    position = models.PositiveIntegerField(default=0)
+    title = models.CharField(max_length=120)
+
+    class Meta(BasePersistenceModel.Meta):
+        db_table = "programs_program_column"
+        verbose_name = "programme column"
+        verbose_name_plural = "programme columns"
+        ordering = ["position"]
+        indexes = [
+            *BasePersistenceModel.Meta.indexes,
+            models.Index(fields=["program", "position"]),
+        ]
+
+    def __str__(self) -> str:
+        return self.title
+
+
 class ProgramItemModel(BasePersistenceModel):
     """Database row for one slot of a program (persistence only)."""
 
@@ -91,6 +136,15 @@ class ProgramItemModel(BasePersistenceModel):
     duration_seconds = models.PositiveIntegerField()
     # Id-only reference into the Applications context; set only for performances.
     submission_id = models.UUIDField(null=True, blank=True, default=None)
+    # Hand-filled values keyed by custom column id. One JSON document because they are
+    # read and written with the row and never queried field by field.
+    custom_values = models.JSONField(default=dict, blank=True)
+    # How far this slot has got on the day itself; the host drives it from their link.
+    progress = models.CharField(
+        max_length=16,
+        choices=ProgramItemProgressChoices.choices,
+        default=ProgramItemProgressChoices.PENDING,
+    )
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "programs_program_item"
@@ -111,6 +165,10 @@ class ProgramItemModel(BasePersistenceModel):
             models.CheckConstraint(
                 condition=models.Q(duration_seconds__gt=0),
                 name="programs_item_duration_positive",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(progress__in=ProgramItemProgressChoices.values),
+                name="programs_item_progress_valid",
             ),
             # One act, one slot: a second slot for the same submission would double it
             # in the running order and in every schedule computed from it.
@@ -148,6 +206,9 @@ class ProgramShareModel(BasePersistenceModel):
     slug = models.CharField(max_length=64)
     columns = models.JSONField(default=list, blank=True)
     item_ids = models.JSONField(default=list, blank=True)
+    # Whether whoever holds this link may drive the running order on the day - the host's
+    # edition. Every other link is read-only.
+    controls_running_order = models.BooleanField(default=False)
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "programs_program_share"

@@ -13,6 +13,7 @@ title, the two kinds of duration, the item kind, and a public slug.
 from __future__ import annotations
 
 import secrets
+import uuid
 from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import StrEnum
@@ -22,22 +23,37 @@ from .exceptions import InvalidProgramDataError
 
 __all__ = [
     "BUFFER_MAX_SECONDS",
+    "CELL_VALUE_MAX",
     "COLUMN_LABELS",
+    "CUSTOM_COLUMN_PREFIX",
     "DEFAULT_PUBLIC_COLUMNS",
     "DURATION_MAX_SECONDS",
+    "CellValue",
+    "ColumnRef",
+    "ColumnTitle",
     "ItemDuration",
     "ItemTitle",
     "ProgramColumn",
     "ProgramItemKind",
+    "ProgramItemProgress",
     "ProgramName",
     "PublicSlug",
     "ShareName",
     "TimeBuffer",
+    "parse_column_refs",
     "parse_columns",
 ]
 
 _NAME_MAX: Final = 200
 _TITLE_MAX: Final = 200
+_COLUMN_TITLE_MAX: Final = 120
+
+#: A hand-filled cell is a note, not a document: long enough for "фонограмма на флешке
+#: у звукорежиссёра", short enough that a table stays a table.
+CELL_VALUE_MAX: Final = 500
+
+#: How a custom column is named on the wire, distinguishing it from the built-in keys.
+CUSTOM_COLUMN_PREFIX: Final = "custom:"
 
 #: A single item may not be longer than a day - the sanity ceiling a real running
 #: order can never legitimately cross.
@@ -108,6 +124,141 @@ DEFAULT_PUBLIC_COLUMNS: Final[tuple[ProgramColumn, ...]] = (
     ProgramColumn.PARTICIPANT,
     ProgramColumn.TITLE,
 )
+
+
+@dataclass(frozen=True, slots=True)
+class ColumnRef:
+    """A reference to one column of the table: a built-in one, or a custom one by id.
+
+    Custom columns are the escape hatch for whatever a particular festival needs and the
+    built-in vocabulary does not have - "микрофон", "реквизит на сцене", "оплачено". They
+    are named by the organizer and filled in by hand, and they behave like any other
+    column everywhere else: they can be published on a link and they render into a cell.
+
+    On the wire a built-in is its own name (``TIME``) and a custom one is
+    ``custom:<uuid>``, so one list can carry both without a second field to disambiguate.
+    """
+
+    builtin: ProgramColumn | None = None
+    custom_id: uuid.UUID | None = None
+
+    def __post_init__(self) -> None:
+        if (self.builtin is None) == (self.custom_id is None):
+            raise InvalidProgramDataError("A column reference is either a built-in column or a custom one, never both or neither.")
+
+    @classmethod
+    def of(cls, column: ProgramColumn) -> ColumnRef:
+        """Reference a built-in column."""
+        return cls(builtin=column)
+
+    @classmethod
+    def custom(cls, column_id: uuid.UUID) -> ColumnRef:
+        """Reference a custom column by id."""
+        return cls(custom_id=column_id)
+
+    @classmethod
+    def parse(cls, raw: object) -> ColumnRef:
+        """Read a wire key: ``"TIME"`` or ``"custom:<uuid>"``."""
+        text = str(raw).strip()
+        if text.lower().startswith(CUSTOM_COLUMN_PREFIX):
+            try:
+                return cls.custom(uuid.UUID(text[len(CUSTOM_COLUMN_PREFIX) :]))
+            except ValueError as exc:
+                raise InvalidProgramDataError(f"{raw!r} is not a valid custom column reference.") from exc
+        try:
+            return cls.of(ProgramColumn(text.upper()))
+        except ValueError as exc:
+            raise InvalidProgramDataError(f"{raw!r} is not a known programme column.") from exc
+
+    @property
+    def is_custom(self) -> bool:
+        return self.custom_id is not None
+
+    @property
+    def key(self) -> str:
+        """The wire key for this column."""
+        if self.custom_id is not None:
+            return f"{CUSTOM_COLUMN_PREFIX}{self.custom_id}"
+        # __post_init__ guarantees exactly one of the two is set.
+        return self.builtin.value if self.builtin is not None else ""
+
+    def __str__(self) -> str:
+        return self.key
+
+
+@dataclass(frozen=True, slots=True)
+class ColumnTitle:
+    """The header of a custom column ("Микрофон", "Реквизит")."""
+
+    value: str
+
+    def __post_init__(self) -> None:
+        stripped = self.value.strip()
+        if not stripped:
+            raise InvalidProgramDataError("Column title must not be empty.")
+        if len(stripped) > _COLUMN_TITLE_MAX:
+            raise InvalidProgramDataError(f"Column title must be at most {_COLUMN_TITLE_MAX} characters.")
+        object.__setattr__(self, "value", stripped)
+
+    def __str__(self) -> str:
+        return self.value
+
+
+@dataclass(frozen=True, slots=True)
+class CellValue:
+    """A hand-filled value in a custom column. Blank means "nothing here"."""
+
+    value: str = ""
+
+    def __post_init__(self) -> None:
+        stripped = self.value.strip()
+        if len(stripped) > CELL_VALUE_MAX:
+            raise InvalidProgramDataError(f"A cell value must be at most {CELL_VALUE_MAX} characters.")
+        object.__setattr__(self, "value", stripped)
+
+    @property
+    def is_blank(self) -> bool:
+        return not self.value
+
+    def __str__(self) -> str:
+        return self.value
+
+
+class ProgramItemProgress(StrEnum):
+    """How far one slot has got on the day itself.
+
+    The host drives this from their own link, and every screen reading the programme sees
+    it: ``ON_STAGE`` is what a display beside the stage highlights, ``PERFORMED`` is what
+    it greys out, and ``SKIPPED`` is the act that did not appear.
+    """
+
+    PENDING = "PENDING"
+    ON_STAGE = "ON_STAGE"
+    PERFORMED = "PERFORMED"
+    SKIPPED = "SKIPPED"
+
+    @property
+    def is_finished(self) -> bool:
+        """Whether this slot is behind us, one way or the other."""
+        return self in {ProgramItemProgress.PERFORMED, ProgramItemProgress.SKIPPED}
+
+
+def parse_column_refs(values: Iterable[object] | None) -> tuple[ColumnRef, ...]:
+    """Read a selection of columns (built-in or custom), without duplicates.
+
+    Order is preserved as sent; the aggregate normalizes it against its own custom
+    columns, which is the only place that knows their order.
+    """
+    if values is None:
+        return ()
+    if isinstance(values, str):
+        raise InvalidProgramDataError("Columns must be a list of column names.")
+    refs: list[ColumnRef] = []
+    for raw in values:
+        ref = ColumnRef.parse(raw)
+        if ref not in refs:
+            refs.append(ref)
+    return tuple(refs)
 
 
 def parse_columns(values: Iterable[object] | None) -> tuple[ProgramColumn, ...]:

@@ -10,16 +10,20 @@ import {
   type ProgramColumn,
   type ProgramItem,
   useAddBlock,
+  useAddColumn,
   useAddPerformance,
   useCreateProgram,
   useCreateShare,
   useEditItem,
+  useFillCells,
   useFillProgram,
   useProgram,
   useProgramCandidates,
   usePrograms,
+  useRemoveColumn,
   useRemoveItem,
   useRemoveShare,
+  useRenameColumn,
   useRenumberItems,
   useReorderItems,
   useUpdateProgram,
@@ -43,6 +47,10 @@ vi.mock("@/features/program-builder", async (importOriginal) => ({
   useRenumberItems: vi.fn(),
   useCreateShare: vi.fn(),
   useRemoveShare: vi.fn(),
+  useAddColumn: vi.fn(),
+  useRenameColumn: vi.fn(),
+  useRemoveColumn: vi.fn(),
+  useFillCells: vi.fn(),
 }));
 
 vi.mock("@/features/competitions", async (importOriginal) => ({
@@ -59,19 +67,19 @@ const COMPETITION_ID = "01900000-0000-7000-8000-0000000000ff";
 
 /** The column catalogue the backend sends with every programme. */
 const ALL_COLUMNS: ProgramColumn[] = [
-  { key: "POSITION", label: "№" },
-  { key: "TIME", label: "Время" },
-  { key: "PARTICIPANT", label: "Участник" },
-  { key: "TITLE", label: "Номер" },
-  { key: "DURATION", label: "Длительность" },
-  { key: "NOMINATION", label: "Номинация" },
-  { key: "DISCIPLINE", label: "Дисциплина" },
-  { key: "PARTICIPANT_GROUP", label: "Состав участников" },
-  { key: "AGE_CATEGORY", label: "Возрастная категория" },
-  { key: "PARTICIPATION_FORMAT", label: "Формат участия" },
-  { key: "TEACHERS", label: "Педагог" },
-  { key: "ORGANIZATION", label: "Организация" },
-  { key: "COMMENT", label: "Комментарий" },
+  { key: "POSITION", label: "№", custom: false },
+  { key: "TIME", label: "Время", custom: false },
+  { key: "PARTICIPANT", label: "Участник", custom: false },
+  { key: "TITLE", label: "Номер", custom: false },
+  { key: "DURATION", label: "Длительность", custom: false },
+  { key: "NOMINATION", label: "Номинация", custom: false },
+  { key: "DISCIPLINE", label: "Дисциплина", custom: false },
+  { key: "PARTICIPANT_GROUP", label: "Состав участников", custom: false },
+  { key: "AGE_CATEGORY", label: "Возрастная категория", custom: false },
+  { key: "PARTICIPATION_FORMAT", label: "Формат участия", custom: false },
+  { key: "TEACHERS", label: "Педагог", custom: false },
+  { key: "ORGANIZATION", label: "Организация", custom: false },
+  { key: "COMMENT", label: "Комментарий", custom: false },
 ];
 const PROGRAM_ID = "01900000-0000-7000-8000-00000000000a";
 
@@ -86,6 +94,10 @@ const removeItem = vi.fn();
 const removeShare = vi.fn();
 const editItem = vi.fn();
 const createProgram = vi.fn();
+const addColumn = vi.fn();
+const renameColumn = vi.fn();
+const removeColumn = vi.fn();
+const fillCells = vi.fn();
 
 function mutation(mutate: ReturnType<typeof vi.fn>) {
   return { mutate, mutateAsync: mutate, isPending: false } as never;
@@ -99,6 +111,8 @@ function anItem(overrides: Partial<ProgramItem> & { id: string; position: number
     // Unless a test says otherwise, a slot's number matches its row — the state a
     // programme is in until somebody is moved.
     number: position,
+    customValues: {},
+    progress: "PENDING",
     durationSeconds: 200,
     submissionId: "01900000-0000-7000-8000-0000000000b1",
     leadParticipant: "Иванов Иван",
@@ -211,6 +225,10 @@ function stub(
   vi.mocked(useRenumberItems).mockReturnValue(mutation(renumber));
   vi.mocked(useCreateShare).mockReturnValue(mutation(createShare));
   vi.mocked(useRemoveShare).mockReturnValue(mutation(removeShare));
+  vi.mocked(useAddColumn).mockReturnValue(mutation(addColumn));
+  vi.mocked(useRenameColumn).mockReturnValue(mutation(renameColumn));
+  vi.mocked(useRemoveColumn).mockReturnValue(mutation(removeColumn));
+  vi.mocked(useFillCells).mockReturnValue(mutation(fillCells));
 }
 
 async function renderPage(): Promise<void> {
@@ -238,6 +256,10 @@ beforeEach(() => {
     removeShare,
     editItem,
     createProgram,
+    addColumn,
+    renameColumn,
+    removeColumn,
+    fillCells,
   ]) {
     spy.mockReset();
   }
@@ -386,6 +408,173 @@ describe("StaffProgramPage — the programme table", () => {
     await userEvent.click(screen.getByRole("button", { name: "Удалить: Калинка" }));
 
     expect(removeItem).toHaveBeenCalledWith("item-2", expect.anything());
+  });
+});
+
+describe("StaffProgramPage — the organizer's own columns", () => {
+  const CUSTOM: ProgramColumn = { key: "custom:col-1", label: "Микрофон", custom: true };
+
+  it("adds a column with a name of the organizer's choosing", async () => {
+    stub();
+    await renderPage();
+
+    await userEvent.type(screen.getByLabelText("Название колонки"), "Микрофон");
+    await userEvent.click(screen.getByRole("button", { name: /Колонка/ }));
+
+    expect(addColumn).toHaveBeenCalledWith("Микрофон", expect.anything());
+  });
+
+  it("refuses to add a column without a name", async () => {
+    stub();
+    await renderPage();
+
+    expect(screen.getByRole("button", { name: /Колонка/ })).toBeDisabled();
+  });
+
+  it("renders a custom column's header as an editable name with a remove button", async () => {
+    stub(aProgram({ availableColumns: [...ALL_COLUMNS, CUSTOM] }));
+    await renderPage();
+
+    expect(screen.getByLabelText("Колонка: Микрофон")).toHaveValue("Микрофон");
+    expect(screen.getByRole("button", { name: "Удалить колонку: Микрофон" })).toBeInTheDocument();
+  });
+
+  it("renames a column on blur, keeping its values", async () => {
+    stub(aProgram({ availableColumns: [...ALL_COLUMNS, CUSTOM] }));
+    await renderPage();
+
+    const header = screen.getByLabelText("Колонка: Микрофон");
+    await userEvent.clear(header);
+    await userEvent.type(header, "Микрофон (тип)");
+    await userEvent.tab();
+
+    await waitFor(() => expect(renameColumn).toHaveBeenCalled());
+    expect(renameColumn.mock.calls[0]?.[0]).toEqual({ columnId: "col-1", title: "Микрофон (тип)" });
+  });
+
+  it("removes a column", async () => {
+    stub(aProgram({ availableColumns: [...ALL_COLUMNS, CUSTOM] }));
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: "Удалить колонку: Микрофон" }));
+    expect(removeColumn).toHaveBeenCalledWith("col-1", expect.anything());
+  });
+
+  it("fills a cell in place and saves it on blur", async () => {
+    stub(
+      aProgram({
+        availableColumns: [...ALL_COLUMNS, CUSTOM],
+        items: [anItem({ id: "item-1", position: 1, title: "Катюша" })],
+      }),
+    );
+    await renderPage();
+
+    const cell = screen.getByLabelText("Значение: Катюша");
+    await userEvent.type(cell, "на стойке");
+    await userEvent.tab();
+
+    await waitFor(() => expect(fillCells).toHaveBeenCalled());
+    expect(fillCells.mock.calls[0]?.[0]).toEqual({
+      itemId: "item-1",
+      values: { "custom:col-1": "на стойке" },
+    });
+  });
+
+  it("shows a value already filled in", async () => {
+    stub(
+      aProgram({
+        availableColumns: [...ALL_COLUMNS, CUSTOM],
+        items: [
+          anItem({
+            id: "item-1",
+            position: 1,
+            title: "Катюша",
+            customValues: { "custom:col-1": "на стойке" },
+          }),
+        ],
+      }),
+    );
+    await renderPage();
+
+    expect(screen.getByLabelText("Значение: Катюша")).toHaveValue("на стойке");
+  });
+
+  it("offers a custom column when publishing a link", async () => {
+    stub(aProgram({ availableColumns: [...ALL_COLUMNS, CUSTOM] }));
+    await renderPage();
+
+    await userEvent.type(screen.getByLabelText("Название ссылки"), "Звукорежиссёр");
+    await userEvent.click(screen.getByRole("checkbox", { name: "Микрофон" }));
+    await userEvent.click(screen.getByRole("button", { name: /Создать ссылку/ }));
+
+    const payload = createShare.mock.calls[0]?.[0] as { columns: string[] };
+    expect(payload.columns).toContain("custom:col-1");
+  });
+});
+
+describe("StaffProgramPage — the host's link and the live day", () => {
+  it("publishes a host edition when asked to", async () => {
+    stub();
+    await renderPage();
+
+    await userEvent.type(screen.getByLabelText("Название ссылки"), "Программа ведущего");
+    await userEvent.click(screen.getByRole("checkbox", { name: /Программа ведущего/ }));
+    await userEvent.click(screen.getByRole("button", { name: /Создать ссылку/ }));
+
+    const payload = createShare.mock.calls[0]?.[0] as { controlsRunningOrder: boolean };
+    expect(payload.controlsRunningOrder).toBe(true);
+  });
+
+  it("publishes a read-only edition by default", async () => {
+    stub();
+    await renderPage();
+
+    await userEvent.type(screen.getByLabelText("Название ссылки"), "Экран");
+    await userEvent.click(screen.getByRole("button", { name: /Создать ссылку/ }));
+
+    const payload = createShare.mock.calls[0]?.[0] as { controlsRunningOrder: boolean };
+    expect(payload.controlsRunningOrder).toBe(false);
+  });
+
+  it("marks a host link as such in the list", async () => {
+    stub(
+      aProgram({
+        shares: [
+          {
+            id: "share-1",
+            name: "Программа ведущего",
+            slug: "Host23456",
+            path: "/program/Host23456",
+            columns: [{ key: "TIME", label: "Время", custom: false }],
+            itemCount: 2,
+            coversWholeProgram: true,
+            controlsRunningOrder: true,
+            createdAt: "2026-08-01T09:00:00Z",
+          },
+        ],
+      }),
+    );
+    await renderPage();
+
+    expect(screen.getByText("Ведущий: управляет программой")).toBeInTheDocument();
+  });
+
+  it("shows what the host has announced on the organizer's own table", async () => {
+    stub(
+      aProgram({
+        items: [
+          anItem({ id: "item-1", position: 1, title: "Катюша", progress: "PERFORMED" }),
+          anItem({ id: "item-2", position: 2, title: "Калинка", progress: "ON_STAGE" }),
+        ],
+      }),
+    );
+    await renderPage();
+
+    const rows = screen.getAllByTestId("program-item");
+    expect(rows[0]).toHaveAttribute("data-progress", "PERFORMED");
+    expect(rows[1]).toHaveAttribute("data-progress", "ON_STAGE");
+    expect(within(rows[0] as HTMLElement).getByText("Выступил")).toBeInTheDocument();
+    expect(within(rows[1] as HTMLElement).getByText("На сцене")).toBeInTheDocument();
   });
 });
 
@@ -549,6 +738,7 @@ describe("StaffProgramPage — public links", () => {
       name: "Экран у сцены",
       columns: ["POSITION", "TIME", "PARTICIPANT", "TITLE"],
       itemIds: [],
+      controlsRunningOrder: false,
     });
   });
 
@@ -604,12 +794,13 @@ describe("StaffProgramPage — public links", () => {
             slug: "AbX82Kmn",
             path: "/program/AbX82Kmn",
             columns: [
-              { key: "TIME", label: "Время" },
-              { key: "TITLE", label: "Номер" },
-              { key: "COMMENT", label: "Комментарий" },
+              { key: "TIME", label: "Время", custom: false },
+              { key: "TITLE", label: "Номер", custom: false },
+              { key: "COMMENT", label: "Комментарий", custom: false },
             ],
             itemCount: 2,
             coversWholeProgram: false,
+            controlsRunningOrder: false,
             createdAt: "2026-08-01T09:00:00Z",
           },
         ],
@@ -637,12 +828,13 @@ describe("StaffProgramPage — public links", () => {
             slug: "AbX82Kmn",
             path: "/program/AbX82Kmn",
             columns: [
-              { key: "TIME", label: "Время" },
-              { key: "TITLE", label: "Номер" },
-              { key: "COMMENT", label: "Комментарий" },
+              { key: "TIME", label: "Время", custom: false },
+              { key: "TITLE", label: "Номер", custom: false },
+              { key: "COMMENT", label: "Комментарий", custom: false },
             ],
             itemCount: 2,
             coversWholeProgram: false,
+            controlsRunningOrder: false,
             createdAt: "2026-08-01T09:00:00Z",
           },
         ],

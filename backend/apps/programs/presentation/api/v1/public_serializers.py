@@ -19,16 +19,26 @@ __all__ = ["PublicProgramEnvelopeSerializer", "PublicProgramSerializer"]
 #: field name wins.
 PublicProgramColumnSerializer = inline_serializer(
     name="PublicProgramColumn",
-    fields={"key": serializers.CharField(), "label": serializers.CharField()},
+    fields={
+        "key": serializers.CharField(),
+        "label": serializers.CharField(),
+        "custom": serializers.BooleanField(),
+    },
     many=True,
 )
 
 
 class PublicProgramRowSerializer(serializers.Serializer[dict[str, object]]):
-    """One row of the table. ``cells`` is aligned with ``columns``."""
+    """One row of the table. ``cells`` is aligned with ``columns``.
+
+    ``progress`` is what makes a screen live; ``id`` is present only on the host's edition,
+    where it is the handle their controls act on.
+    """
 
     kind = serializers.CharField()
     cells = serializers.ListField(child=serializers.CharField(allow_blank=True))
+    progress = serializers.CharField()
+    id = serializers.UUIDField(allow_null=True)
 
 
 class PublicProgramSerializer(serializers.Serializer[dict[str, object]]):
@@ -40,6 +50,8 @@ class PublicProgramSerializer(serializers.Serializer[dict[str, object]]):
     nomination = serializers.CharField(allow_null=True)
     startsAt = serializers.DateTimeField(allow_null=True)
     totalSeconds = serializers.IntegerField()
+    #: Whether the reader of this link may drive the running order (the host's edition).
+    controlsRunningOrder = serializers.BooleanField()
     columns = PublicProgramColumnSerializer
     rows = PublicProgramRowSerializer(many=True)
 

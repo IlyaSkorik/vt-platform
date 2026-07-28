@@ -15,7 +15,12 @@ from django.db import transaction
 
 from apps.programs.domain.entities import Program
 from apps.programs.infrastructure.mappers import ProgramMapper
-from apps.programs.infrastructure.models import ProgramItemModel, ProgramModel, ProgramShareModel
+from apps.programs.infrastructure.models import (
+    ProgramColumnModel,
+    ProgramItemModel,
+    ProgramModel,
+    ProgramShareModel,
+)
 
 __all__ = ["DjangoProgramRepository"]
 
@@ -57,6 +62,9 @@ class DjangoProgramRepository:
     def save(self, program: Program) -> None:
         """Persist the whole aggregate: root row plus synchronized children."""
         ProgramModel.objects.update_or_create(id=program.id, defaults=ProgramMapper.root_fields(program))
+        # Columns first: an item's values are keyed by column id, so the columns they
+        # refer to should exist by the time the items land.
+        self._sync_columns(program)
         self._sync_items(program)
         self._sync_shares(program)
 
@@ -67,7 +75,8 @@ class DjangoProgramRepository:
     def _to_entity(self, model: ProgramModel) -> Program:
         items = list(ProgramItemModel.objects.filter(program_id=model.id, deleted_at__isnull=True).order_by("position"))
         shares = list(ProgramShareModel.objects.filter(program_id=model.id, deleted_at__isnull=True).order_by("created_at"))
-        return ProgramMapper.to_entity(model, items=items, shares=shares)
+        columns = list(ProgramColumnModel.objects.filter(program_id=model.id, deleted_at__isnull=True).order_by("position"))
+        return ProgramMapper.to_entity(model, items=items, shares=shares, columns=columns)
 
     def _sync_items(self, program: Program) -> None:
         kept: set[uuid.UUID] = set()
@@ -83,6 +92,24 @@ class DjangoProgramRepository:
                 },
             )
         ProgramItemModel.objects.filter(program_id=program.id, deleted_at__isnull=True).exclude(id__in=kept).update(
+            deleted_at=program.updated_at,
+            updated_at=program.updated_at,
+        )
+
+    def _sync_columns(self, program: Program) -> None:
+        kept: set[uuid.UUID] = set()
+        for position, column in enumerate(program.custom_columns, start=1):
+            kept.add(column.id)
+            ProgramColumnModel.objects.update_or_create(
+                id=column.id,
+                defaults={
+                    **ProgramMapper.column_fields(column, position=position),
+                    "program_id": program.id,
+                    "updated_at": program.updated_at,
+                    "deleted_at": None,
+                },
+            )
+        ProgramColumnModel.objects.filter(program_id=program.id, deleted_at__isnull=True).exclude(id__in=kept).update(
             deleted_at=program.updated_at,
             updated_at=program.updated_at,
         )

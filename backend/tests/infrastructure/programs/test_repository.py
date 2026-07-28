@@ -105,7 +105,7 @@ class TestRoundTrip:
         assert loaded.item(second).duration.seconds == 240
         assert [s.id for s in loaded.shares] == [share.id]
         assert loaded.shares[0].item_ids == (first, second)
-        assert loaded.shares[0].columns == (ProgramColumn.TIME, ProgramColumn.TITLE, ProgramColumn.COMMENT)
+        assert [ref.key for ref in loaded.shares[0].columns] == ["TIME", "TITLE", "COMMENT"]
 
     def test_the_order_is_the_order_that_comes_back(self) -> None:
         repository = DjangoProgramRepository()
@@ -314,4 +314,4 @@ class TestPublicLinks:
 
         loaded = repository.get(program.id)
         assert loaded is not None
-        assert loaded.shares[0].columns == DEFAULT_PUBLIC_COLUMNS
+        assert [ref.key for ref in loaded.shares[0].columns] == [column.value for column in DEFAULT_PUBLIC_COLUMNS]

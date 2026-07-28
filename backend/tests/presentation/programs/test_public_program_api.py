@@ -79,6 +79,7 @@ def _published_program(
     name: str = "Для ведущего",
     columns: list[str] | None = None,
     item_slice: slice | None = None,
+    controls: bool = False,
 ) -> Any:
     """Build a two-act programme and publish an edition of it; returns (slug, id, items)."""
     competition_id, nomination_id = scope
@@ -101,6 +102,8 @@ def _published_program(
     body: dict[str, Any] = {"name": name}
     if columns is not None:
         body["columns"] = columns
+    if controls:
+        body["controlsRunningOrder"] = True
     if item_slice is not None:
         body["itemIds"] = [item["id"] for item in items[item_slice]]
     share = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", body, format="json")
@@ -133,6 +136,111 @@ class TestPublicAccess:
         slug, program_id, _items = _published_program(staff_client, scope)
         staff_client.delete(f"{_PROGRAMS}/{program_id}")
         assert APIClient().get(f"{_PUBLIC}/{slug}").status_code == 404
+
+
+class TestTheHostsEdition:
+    """The link the organizer hands the host is the one that may drive the day."""
+
+    def _host_link(self, staff_client: APIClient, scope: tuple[str, str]) -> tuple[str, str, list[dict[str, Any]]]:
+        """Publish a host edition; returns (slug, program_id, its rows)."""
+        slug, program_id, _items = _published_program(
+            staff_client,
+            scope,
+            name="Программа ведущего",
+            columns=["POSITION", "TIME", "PARTICIPANT", "TITLE"],
+            controls=True,
+        )
+        rows = APIClient().get(f"{_PUBLIC}/{slug}").data["data"]["rows"]
+        return slug, program_id, rows
+
+    def test_the_host_link_says_it_may_control_and_carries_row_handles(self, staff_client, scope) -> None:
+        slug, _program_id, rows = self._host_link(staff_client, scope)
+        data = APIClient().get(f"{_PUBLIC}/{slug}").data["data"]
+
+        assert data["controlsRunningOrder"] is True
+        assert all(row["id"] for row in rows)
+
+    def test_a_read_only_link_says_it_may_not_and_carries_no_handles(self, staff_client, scope) -> None:
+        slug, _program_id, _items = _published_program(staff_client, scope, name="Экран")
+        data = APIClient().get(f"{_PUBLIC}/{slug}").data["data"]
+
+        assert data["controlsRunningOrder"] is False
+        assert all(row["id"] is None for row in data["rows"])
+
+    def test_the_host_marks_an_act_on_stage_and_everyone_sees_it(self, staff_client, scope) -> None:
+        slug, program_id, rows = self._host_link(staff_client, scope)
+        # A second edition of the *same* programme - what the audience screen reads.
+        screen_slug = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Экран"}, format="json").data["data"]["share"]["slug"]
+
+        response = APIClient().put(
+            f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/progress",
+            {"progress": "ON_STAGE"},
+            format="json",
+        )
+        assert response.status_code == 200, response.data
+        assert response.data["data"]["rows"][0]["progress"] == "ON_STAGE"
+
+        # The audience screen is a different link over the same running order.
+        screen = APIClient().get(f"{_PUBLIC}/{screen_slug}").data["data"]
+        assert screen["rows"][0]["progress"] == "ON_STAGE"
+
+    def test_putting_the_next_act_on_stage_finishes_the_previous_one(self, staff_client, scope) -> None:
+        slug, _program_id, rows = self._host_link(staff_client, scope)
+        client = APIClient()
+        client.put(f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/progress", {"progress": "ON_STAGE"}, format="json")
+        second = client.put(f"{_PUBLIC}/{slug}/rows/{rows[1]['id']}/progress", {"progress": "ON_STAGE"}, format="json")
+
+        assert [row["progress"] for row in second.data["data"]["rows"]] == ["PERFORMED", "ON_STAGE"]
+
+    def test_the_host_rearranges_what_is_still_to_come(self, staff_client, scope) -> None:
+        slug, _program_id, rows = self._host_link(staff_client, scope)
+        ids = [row["id"] for row in rows]
+
+        response = APIClient().put(f"{_PUBLIC}/{slug}/order", {"itemIds": list(reversed(ids))}, format="json")
+        assert response.status_code == 200, response.data
+        assert [row["id"] for row in response.data["data"]["rows"]] == list(reversed(ids))
+        # Numbers were frozen at publication, so they travelled with their participants.
+        assert [row["cells"][0] for row in response.data["data"]["rows"]] == ["2", "1"]
+
+    def test_a_read_only_link_cannot_drive_the_day(self, staff_client, scope) -> None:
+        # And is refused indistinguishably from a slug that does not exist, so an audience
+        # link cannot be probed for whether it happens to be the host's.
+        _host_slug, program_id, rows = self._host_link(staff_client, scope)
+        screen_slug = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Экран"}, format="json").data["data"]["share"]["slug"]
+
+        refused = APIClient().put(
+            f"{_PUBLIC}/{screen_slug}/rows/{rows[0]['id']}/progress",
+            {"progress": "ON_STAGE"},
+            format="json",
+        )
+        assert refused.status_code == 404
+        assert APIClient().put(f"{_PUBLIC}/{screen_slug}/order", {"itemIds": [rows[0]["id"]]}, format="json").status_code == 404
+
+    def test_an_unknown_link_cannot_drive_the_day_either(self) -> None:
+        response = APIClient().put(f"{_PUBLIC}/Nobody234/rows/{uuid.uuid4()}/progress", {"progress": "ON_STAGE"}, format="json")
+        assert response.status_code == 404
+
+    def test_an_unknown_progress_state_is_rejected(self, staff_client, scope) -> None:
+        slug, _program_id, rows = self._host_link(staff_client, scope)
+        response = APIClient().put(
+            f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/progress",
+            {"progress": "DANCING"},
+            format="json",
+        )
+        assert response.status_code == 400
+
+    def test_an_incomplete_reorder_from_the_host_is_rejected(self, staff_client, scope) -> None:
+        slug, _program_id, rows = self._host_link(staff_client, scope)
+        response = APIClient().put(f"{_PUBLIC}/{slug}/order", {"itemIds": [rows[0]["id"]]}, format="json")
+        assert response.status_code == 422
+
+    def test_the_organizer_can_reset_the_day(self, staff_client, scope) -> None:
+        slug, program_id, rows = self._host_link(staff_client, scope)
+        APIClient().put(f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/progress", {"progress": "PERFORMED"}, format="json")
+
+        reset = staff_client.delete(f"{_PROGRAMS}/{program_id}/progress")
+        assert reset.status_code == 200, reset.data
+        assert all(item["progress"] == "PENDING" for item in reset.data["data"]["items"])
 
 
 class TestPublicContent:
@@ -190,7 +298,9 @@ class TestPublicContent:
         data = APIClient().get(f"{_PUBLIC}/{slug}").data["data"]
         assert "id" not in data
         for row in data["rows"]:
-            assert set(row) == {"kind", "cells"}
+            assert set(row) == {"kind", "cells", "progress", "id"}
+            # A read-only edition carries no handle on a row - only the host's does.
+            assert row["id"] is None
 
     def test_breaks_appear_on_the_screen(self, staff_client, scope) -> None:
         slug, program_id, _items = _published_program(staff_client, scope)

@@ -13,11 +13,16 @@ from datetime import datetime
 
 __all__ = [
     "AddBlockCommand",
+    "AddColumnCommand",
     "AddPerformanceCommand",
     "CreateProgramCommand",
     "CreateShareCommand",
     "EditItemCommand",
+    "FillCellsCommand",
+    "HostReorderCommand",
+    "RenameColumnCommand",
     "ReorderItemsCommand",
+    "SetItemProgressCommand",
     "UpdateProgramCommand",
     "UpdateShareCommand",
 ]
@@ -106,11 +111,13 @@ class CreateShareCommand:
     name: str
     columns: tuple[str, ...] = ()
     item_ids: tuple[str, ...] = ()
+    #: Make this the host's edition: its holder may drive the running order on the day.
+    controls_running_order: bool = False
 
 
 @dataclass(frozen=True, slots=True)
 class UpdateShareCommand:
-    """Rename a published edition and/or change which columns it shows.
+    """Rename a published edition, re-column it, or change what it may control.
 
     Its slug is permanent, so a link already handed out keeps working.
     """
@@ -119,3 +126,54 @@ class UpdateShareCommand:
     share_id: str
     name: str | None = None
     columns: tuple[str, ...] | None = None
+    controls_running_order: bool | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class AddColumnCommand:
+    """Add a column of the organizer's own ("Микрофон", "Реквизит")."""
+
+    program_id: str
+    title: str
+
+
+@dataclass(frozen=True, slots=True)
+class RenameColumnCommand:
+    """Rename a custom column, keeping every value already filled into it."""
+
+    program_id: str
+    column_id: str
+    title: str
+
+
+@dataclass(frozen=True, slots=True)
+class FillCellsCommand:
+    """Write hand-filled values for one slot, keyed by custom column key.
+
+    A blank value clears the cell, which is how a value is removed without a second verb.
+    """
+
+    program_id: str
+    item_id: str
+    values: tuple[tuple[str, str], ...]
+
+
+@dataclass(frozen=True, slots=True)
+class SetItemProgressCommand:
+    """Mark how far one slot has got, as the host announces the day.
+
+    ``slug`` identifies the host's own public link; it is the only credential involved,
+    which is why it is granted per edition rather than per user.
+    """
+
+    slug: str
+    item_id: str
+    progress: str
+
+
+@dataclass(frozen=True, slots=True)
+class HostReorderCommand:
+    """Rearrange the running order from the host's link, mid-event."""
+
+    slug: str
+    item_ids: tuple[str, ...]

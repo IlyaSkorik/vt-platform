@@ -12,6 +12,8 @@ function anItem(overrides: Partial<ProgramItem> = {}): ProgramItem {
     kind: "PERFORMANCE",
     title: "Катюша",
     number: 3,
+    customValues: {},
+    progress: "PENDING",
     durationSeconds: 200,
     schedule: {
       position: 3,

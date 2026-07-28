@@ -29,10 +29,15 @@ __all__ = [
 
 @dataclass(frozen=True, slots=True)
 class ColumnView:
-    """One column of the programme table: its stable key and its header."""
+    """One column of the programme table: its stable key and its header.
+
+    ``custom`` marks a column the organizer added themselves - the only ones that can be
+    renamed, removed, or filled in by hand.
+    """
 
     key: str
     label: str
+    custom: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -81,6 +86,10 @@ class ProgramItemView:
     organization: str | None = None
     comment: str | None = None
     missing_performance: bool = False
+    #: Hand-filled values, keyed by custom column key (``custom:<uuid>``).
+    custom_values: tuple[tuple[str, str], ...] = ()
+    #: How far this slot has got on the day (``PENDING`` until the host says otherwise).
+    progress: str = "PENDING"
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,6 +103,8 @@ class ProgramShareView:
     columns: tuple[ColumnView, ...]
     item_count: int
     covers_whole_program: bool
+    #: Whether this link may drive the running order on the day (the host's edition).
+    controls_running_order: bool
     created_at: datetime | None
 
 
@@ -150,10 +161,16 @@ class PublicProgramRowView:
     organizer did not publish produces no cell at all, so a hidden column cannot be read
     off the wire. ``kind`` is carried for styling (a break is drawn differently), not as
     data about the act.
+
+    ``progress`` is what makes a screen live: the row on stage is highlighted and the ones
+    behind it are greyed out. ``id`` is present **only** on the host's edition, because it
+    is the handle their controls act on - a read-only link carries no ids at all.
     """
 
     kind: str
     cells: tuple[str, ...]
+    progress: str = "PENDING"
+    id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -168,3 +185,5 @@ class PublicProgramView:
     total_seconds: int
     columns: tuple[ColumnView, ...]
     rows: tuple[PublicProgramRowView, ...]
+    #: Whether the reader of this link may drive the running order (the host's edition).
+    controls_running_order: bool = False

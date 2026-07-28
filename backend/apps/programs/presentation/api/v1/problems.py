@@ -33,6 +33,10 @@ _PROBLEM_MAP: Final[dict[str, tuple[int, str, str]]] = {
     "program_not_found": (404, "not-found", "Resource not found"),
     "program_item_not_found": (404, "not-found", "Resource not found"),
     "program_share_not_found": (404, "not-found", "Resource not found"),
+    "program_column_not_found": (404, "not-found", "Resource not found"),
+    # A link that was not granted control is refused exactly like one that does not
+    # exist, so an audience link cannot be probed for whether it is the host's.
+    "running_order_not_controllable": (404, "not-found", "Resource not found"),
     "invalid_program_data": (400, "bad-request", "Bad request"),
     "item_not_in_program": (422, "unprocessable-entity", "Those items are not part of this program"),
     "performance_already_in_program": (409, "conflict", "This act already has a slot in the program"),
