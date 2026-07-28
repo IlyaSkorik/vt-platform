@@ -1,0 +1,405 @@
+"""Use-case tests for the Programs bounded context (in-memory ports, no database).
+
+Covers the flows an organizer actually performs: build a program from a nomination,
+insert and remove a break, change the buffer, reorder, publish a public edition, and
+read one back through its link.
+"""
+
+from __future__ import annotations
+
+import uuid
+from datetime import UTC, datetime
+
+import pytest
+
+from apps.programs.application.commands import (
+    AddBlockCommand,
+    AddPerformanceCommand,
+    CreateProgramCommand,
+    CreateShareCommand,
+    EditItemCommand,
+    ReorderItemsCommand,
+    UpdateProgramCommand,
+)
+from apps.programs.application.interfaces import CatalogPerformance
+from apps.programs.application.services import ProgramService
+from apps.programs.domain.exceptions import (
+    InvalidProgramDataError,
+    PerformanceAlreadyInProgramError,
+    PerformanceNotAvailableError,
+    ProgramNotFoundError,
+    ReorderMismatchError,
+    SlugUnavailableError,
+)
+
+from .fakes import FixedClock, InMemoryProgramRepository, ScriptedSlugFactory, StubPerformanceCatalog
+
+COMPETITION_ID = uuid.uuid4()
+NOMINATION_ID = uuid.uuid4()
+TEN_AM = datetime(2026, 8, 1, 10, 0, tzinfo=UTC)
+
+
+def _act(title: str, seconds: int, *, comment: str | None = None, performer: str = "Иванов Иван") -> CatalogPerformance:
+    return CatalogPerformance(
+        submission_id=uuid.uuid4(),
+        title=title,
+        duration_seconds=seconds,
+        nomination_id=NOMINATION_ID,
+        nomination="Вокал",
+        discipline="Эстрадный вокал",
+        participants=(performer,),
+        teachers=("Петрова Мария",),
+        organization="Школа №1",
+        comment=comment,
+        status="ACCEPTED",
+    )
+
+
+class Env:
+    """A service wired to in-memory ports."""
+
+    def __init__(self, *performances: CatalogPerformance, slugs: tuple[str, ...] = ("Sound2345",)) -> None:
+        self.repository = InMemoryProgramRepository()
+        self.catalog = StubPerformanceCatalog(*performances)
+        self.slugs = ScriptedSlugFactory(*slugs)
+        self.service = ProgramService(
+            programs=self.repository,
+            catalog=self.catalog,
+            clock=FixedClock(),
+            slugs=self.slugs,
+        )
+
+    def program(self, *, starts_at: datetime | None = TEN_AM, buffer_seconds: int = 0) -> str:
+        created = self.service.create_program(
+            CreateProgramCommand(
+                competition_id=str(COMPETITION_ID),
+                name="Вокал, 1 отделение",
+                nomination_id=str(NOMINATION_ID),
+                buffer_seconds=buffer_seconds,
+                starts_at=starts_at,
+            )
+        )
+        return created.id
+
+
+class TestCreateProgram:
+    def test_a_program_starts_empty(self) -> None:
+        env = Env()
+        program = env.service.get_program(env.program())
+        assert program.items == ()
+        assert program.total_seconds == 0
+        assert program.name == "Вокал, 1 отделение"
+
+    def test_a_blank_name_is_refused(self) -> None:
+        env = Env()
+        with pytest.raises(InvalidProgramDataError):
+            env.service.create_program(CreateProgramCommand(competition_id=str(COMPETITION_ID), name="   "))
+
+    def test_a_malformed_competition_id_is_refused(self) -> None:
+        env = Env()
+        with pytest.raises(InvalidProgramDataError):
+            env.service.create_program(CreateProgramCommand(competition_id="not-a-uuid", name="Вокал"))
+
+    def test_programs_are_listed_per_competition(self) -> None:
+        env = Env()
+        env.program()
+        env.program()
+        assert len(env.service.list_programs(competition_id=str(COMPETITION_ID))) == 2
+        assert env.service.list_programs(competition_id=str(uuid.uuid4())) == ()
+
+    def test_an_unknown_program_is_not_found(self) -> None:
+        env = Env()
+        with pytest.raises(ProgramNotFoundError):
+            env.service.get_program(str(uuid.uuid4()))
+
+    def test_a_deleted_program_is_gone(self) -> None:
+        env = Env()
+        program_id = env.program()
+        env.service.delete_program(program_id)
+        with pytest.raises(ProgramNotFoundError):
+            env.service.get_program(program_id)
+
+
+class TestBuildingTheRunningOrder:
+    def test_candidates_are_the_acts_without_a_slot(self) -> None:
+        first, second = _act("Катюша", 200), _act("Калинка", 180)
+        env = Env(first, second)
+        program_id = env.program()
+        assert {c.submission_id for c in env.service.candidates(program_id)} == {first.submission_id, second.submission_id}
+
+        env.service.add_performance(AddPerformanceCommand(program_id=program_id, submission_id=str(first.submission_id)))
+        assert [c.submission_id for c in env.service.candidates(program_id)] == [second.submission_id]
+
+    def test_filling_turns_a_nomination_into_a_running_order(self) -> None:
+        env = Env(_act("Катюша", 200), _act("Калинка", 180), _act("Барыня", 240))
+        program = env.service.fill_from_scope(env.program())
+        assert len(program.items) == 3
+        assert all(item.kind == "PERFORMANCE" for item in program.items)
+
+    def test_filling_twice_adds_nothing_and_keeps_the_arrangement(self) -> None:
+        env = Env(_act("Катюша", 200), _act("Калинка", 180))
+        program_id = env.program()
+        first_pass = env.service.fill_from_scope(program_id)
+        order = [item.id for item in first_pass.items]
+        env.service.reorder_items(ReorderItemsCommand(program_id=program_id, item_ids=tuple(reversed(order))))
+        second_pass = env.service.fill_from_scope(program_id)
+        assert [item.id for item in second_pass.items] == list(reversed(order))
+
+    def test_a_slot_takes_its_length_from_the_act(self) -> None:
+        act = _act("Катюша", 200)
+        env = Env(act)
+        program = env.service.add_performance(AddPerformanceCommand(program_id=env.program(), submission_id=str(act.submission_id)))
+        assert program.items[0].duration_seconds == 200
+
+    def test_a_slot_length_can_be_overridden_for_this_program_only(self) -> None:
+        act = _act("Катюша", 200)
+        env = Env(act)
+        program = env.service.add_performance(
+            AddPerformanceCommand(program_id=env.program(), submission_id=str(act.submission_id), duration_seconds=260)
+        )
+        assert program.items[0].duration_seconds == 260
+
+    def test_an_act_outside_the_scope_cannot_be_scheduled(self) -> None:
+        env = Env(_act("Катюша", 200))
+        with pytest.raises(PerformanceNotAvailableError):
+            env.service.add_performance(AddPerformanceCommand(program_id=env.program(), submission_id=str(uuid.uuid4())))
+
+    def test_the_same_act_cannot_take_two_slots(self) -> None:
+        act = _act("Катюша", 200)
+        env = Env(act)
+        program_id = env.program()
+        env.service.add_performance(AddPerformanceCommand(program_id=program_id, submission_id=str(act.submission_id)))
+        with pytest.raises(PerformanceAlreadyInProgramError):
+            env.service.add_performance(AddPerformanceCommand(program_id=program_id, submission_id=str(act.submission_id)))
+
+    def test_a_slot_carries_the_applicants_note_for_the_organizers(self) -> None:
+        act = _act("Катюша", 200, comment="Выход с точки 3")
+        env = Env(act)
+        program = env.service.add_performance(AddPerformanceCommand(program_id=env.program(), submission_id=str(act.submission_id)))
+        assert program.items[0].comment == "Выход с точки 3"
+
+
+class TestBreaksAndBlocks:
+    def test_a_break_is_inserted_and_re_times_the_rest(self) -> None:
+        env = Env(_act("Катюша", 180), _act("Калинка", 180))
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+        program = env.service.add_block(AddBlockCommand(program_id=program_id, title="Перерыв", duration_seconds=900, position=2))
+        assert [item.kind for item in program.items] == ["PERFORMANCE", "BREAK", "PERFORMANCE"]
+        assert program.items[1].title == "Перерыв"
+        assert program.items[2].schedule.starts_at == datetime(2026, 8, 1, 10, 18, tzinfo=UTC)
+
+    def test_a_break_can_be_removed_again(self) -> None:
+        env = Env()
+        program_id = env.program()
+        program = env.service.add_block(AddBlockCommand(program_id=program_id, title="Обед", duration_seconds=2400))
+        program = env.service.remove_item(program_id=program_id, item_id=program.items[0].id)
+        assert program.items == ()
+
+    def test_a_breaks_length_can_be_edited(self) -> None:
+        env = Env()
+        program_id = env.program()
+        program = env.service.add_block(AddBlockCommand(program_id=program_id, title="Перерыв", duration_seconds=900))
+        program = env.service.edit_item(EditItemCommand(program_id=program_id, item_id=program.items[0].id, duration_seconds=1200))
+        assert program.items[0].duration_seconds == 1200
+
+    def test_a_service_block_of_a_future_kind_already_schedules(self) -> None:
+        # The extensibility claim, exercised: an award ceremony needs no new code.
+        env = Env()
+        program = env.service.add_block(AddBlockCommand(program_id=env.program(), title="Награждение", duration_seconds=1800, kind="AWARD"))
+        assert program.items[0].kind == "AWARD"
+        assert program.total_seconds == 1800
+
+    def test_a_performance_cannot_be_added_as_a_block(self) -> None:
+        env = Env()
+        with pytest.raises(InvalidProgramDataError):
+            env.service.add_block(AddBlockCommand(program_id=env.program(), title="Номер", duration_seconds=200, kind="PERFORMANCE"))
+
+    def test_an_unknown_kind_is_refused(self) -> None:
+        env = Env()
+        with pytest.raises(InvalidProgramDataError):
+            env.service.add_block(AddBlockCommand(program_id=env.program(), title="Что-то", duration_seconds=200, kind="PARTY"))
+
+
+class TestScheduleAndBuffer:
+    def test_the_schedule_is_recomputed_on_every_write(self) -> None:
+        env = Env(_act("A", 200), _act("B", 200), _act("C", 200))
+        program = env.service.fill_from_scope(env.program(buffer_seconds=40))
+        assert [item.schedule.starts_at for item in program.items] == [
+            datetime(2026, 8, 1, 10, 0, tzinfo=UTC),
+            datetime(2026, 8, 1, 10, 4, tzinfo=UTC),
+            datetime(2026, 8, 1, 10, 8, tzinfo=UTC),
+        ]
+
+    def test_changing_the_buffer_shifts_the_timetable_but_not_the_acts(self) -> None:
+        env = Env(_act("A", 180), _act("B", 180))
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+        program = env.service.update_program(UpdateProgramCommand(program_id=program_id, buffer_seconds=60))
+        assert program.buffer_seconds == 60
+        assert program.items[0].duration_seconds == 180
+        assert program.items[0].schedule.slot_seconds == 240
+        assert program.items[1].schedule.starts_at == datetime(2026, 8, 1, 10, 4, tzinfo=UTC)
+
+    def test_the_end_of_the_program_is_reported(self) -> None:
+        env = Env(_act("A", 600))
+        program = env.service.fill_from_scope(env.program(buffer_seconds=60))
+        assert program.total_seconds == 660
+        assert program.ends_at == datetime(2026, 8, 1, 10, 11, tzinfo=UTC)
+
+    def test_a_program_without_a_start_time_has_offsets_but_no_clock(self) -> None:
+        env = Env(_act("A", 200), _act("B", 200))
+        program = env.service.fill_from_scope(env.program(starts_at=None))
+        assert [item.schedule.offset_seconds for item in program.items] == [0, 200]
+        assert all(item.schedule.starts_at is None for item in program.items)
+
+    def test_a_start_time_can_be_dropped_explicitly(self) -> None:
+        env = Env()
+        program_id = env.program()
+        program = env.service.update_program(UpdateProgramCommand(program_id=program_id, clear_starts_at=True))
+        assert program.starts_at is None
+
+    def test_a_buffer_over_the_ceiling_is_refused(self) -> None:
+        env = Env()
+        with pytest.raises(InvalidProgramDataError):
+            env.service.update_program(UpdateProgramCommand(program_id=env.program(), buffer_seconds=7200))
+
+
+class TestReorder:
+    def test_the_order_is_replaced_and_re_timed(self) -> None:
+        env = Env(_act("A", 100), _act("B", 200), _act("C", 300))
+        program_id = env.program()
+        program = env.service.fill_from_scope(program_id)
+        ids = [item.id for item in program.items]
+        reordered = env.service.reorder_items(ReorderItemsCommand(program_id=program_id, item_ids=(ids[2], ids[0], ids[1])))
+        assert [item.id for item in reordered.items] == [ids[2], ids[0], ids[1]]
+        assert [item.schedule.offset_seconds for item in reordered.items] == [0, 300, 400]
+
+    def test_an_incomplete_order_is_refused(self) -> None:
+        env = Env(_act("A", 100), _act("B", 200))
+        program_id = env.program()
+        program = env.service.fill_from_scope(program_id)
+        with pytest.raises(ReorderMismatchError):
+            env.service.reorder_items(ReorderItemsCommand(program_id=program_id, item_ids=(program.items[0].id,)))
+
+
+class TestPublicEditions:
+    def test_an_edition_is_published_with_a_link(self) -> None:
+        env = Env(_act("A", 200), _act("B", 200))
+        program_id = env.program()
+        program = env.service.fill_from_scope(program_id)
+        _detail, share = env.service.create_share(
+            CreateShareCommand(program_id=program_id, name="Программа звукорежиссёра", item_ids=(program.items[0].id,))
+        )
+        assert share.name == "Программа звукорежиссёра"
+        assert share.slug == "Sound2345"
+        assert share.path == "/program/Sound2345"
+        assert share.item_count == 1
+        assert share.covers_whole_program is False
+
+    def test_an_edition_without_a_selection_covers_the_whole_program(self) -> None:
+        env = Env(_act("A", 200))
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+        _detail, share = env.service.create_share(CreateShareCommand(program_id=program_id, name="Экран у сцены"))
+        assert share.covers_whole_program is True
+        assert share.item_count == 1
+
+    def test_a_taken_slug_is_re_rolled(self) -> None:
+        env = Env(_act("A", 200), slugs=("Collide23", "Collide23", "Fresh2345"))
+        env.repository.claimed_slugs.add("Collide23")
+        program_id = env.program()
+        _detail, share = env.service.create_share(CreateShareCommand(program_id=program_id, name="Вторая"))
+        assert share.slug == "Fresh2345"
+        assert env.slugs.calls == 3
+
+    def test_giving_up_on_slugs_is_an_explicit_error(self) -> None:
+        env = Env(slugs=("Collide23",))
+        env.repository.claimed_slugs.add("Collide23")
+        with pytest.raises(SlugUnavailableError):
+            env.service.create_share(CreateShareCommand(program_id=env.program(), name="Не выйдет"))
+
+    def test_many_editions_of_one_program_are_allowed(self) -> None:
+        env = Env(_act("A", 200), slugs=("Sound2345", "Host23456", "Jury23456"))
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+        for name in ("Звукорежиссёр", "Ведущий", "Жюри"):
+            env.service.create_share(CreateShareCommand(program_id=program_id, name=name))
+        assert len(env.service.get_program(program_id).shares) == 3
+
+    def test_an_edition_can_be_revoked(self) -> None:
+        env = Env(_act("A", 200))
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+        _detail, share = env.service.create_share(CreateShareCommand(program_id=program_id, name="Временная"))
+        program = env.service.remove_share(program_id=program_id, share_id=share.id)
+        assert program.shares == ()
+        assert env.service.public_program(share.slug) is None
+
+
+class TestPublicRead:
+    def test_a_link_renders_the_selected_lines_with_their_times(self) -> None:
+        first, second = _act("Катюша", 200, performer="Иванов Иван"), _act("Калинка", 200, performer="Петров Пётр")
+        env = Env(first, second)
+        program_id = env.program(buffer_seconds=40)
+        program = env.service.fill_from_scope(program_id)
+        _detail, share = env.service.create_share(CreateShareCommand(program_id=program_id, name="Для ведущего"))
+
+        public = env.service.public_program(share.slug)
+        assert public is not None
+        assert public.name == "Для ведущего"
+        assert public.competition_title == "Весенний фестиваль"
+        assert public.nomination == "Вокал"
+        assert [line.position for line in public.items] == [1, 2]
+        assert [line.title for line in public.items] == ["Катюша", "Калинка"]
+        assert [line.performer for line in public.items] == ["Иванов Иван", "Петров Пётр"]
+        assert [line.starts_at for line in public.items] == [
+            datetime(2026, 8, 1, 10, 0, tzinfo=UTC),
+            datetime(2026, 8, 1, 10, 4, tzinfo=UTC),
+        ]
+        assert program.items[0].schedule.starts_at == public.items[0].starts_at
+
+    def test_a_partial_edition_renumbers_its_own_lines_but_keeps_real_times(self) -> None:
+        env = Env(_act("A", 200), _act("B", 200), _act("C", 200))
+        program_id = env.program(buffer_seconds=0)
+        program = env.service.fill_from_scope(program_id)
+        _detail, share = env.service.create_share(
+            CreateShareCommand(program_id=program_id, name="Только второй и третий", item_ids=(program.items[1].id, program.items[2].id))
+        )
+        public = env.service.public_program(share.slug)
+        assert public is not None
+        assert [line.position for line in public.items] == [1, 2]
+        # The times are the program's, not the edition's: the second act still starts
+        # when the first one has finished.
+        assert public.items[0].starts_at == datetime(2026, 8, 1, 10, 3, 20, tzinfo=UTC)
+
+    def test_breaks_appear_on_a_public_screen(self) -> None:
+        env = Env(_act("A", 200))
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+        env.service.add_block(AddBlockCommand(program_id=program_id, title="Перерыв", duration_seconds=900))
+        _detail, share = env.service.create_share(CreateShareCommand(program_id=program_id, name="Экран"))
+        public = env.service.public_program(share.slug)
+        assert public is not None
+        assert [(line.kind, line.title) for line in public.items] == [("PERFORMANCE", "A"), ("BREAK", "Перерыв")]
+
+    def test_an_unknown_link_resolves_to_nothing(self) -> None:
+        assert Env().service.public_program("NoSuchSlug") is None
+
+    def test_a_deleted_program_takes_its_links_down(self) -> None:
+        env = Env(_act("A", 200))
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+        _detail, share = env.service.create_share(CreateShareCommand(program_id=program_id, name="Экран"))
+        env.service.delete_program(program_id)
+        assert env.service.public_program(share.slug) is None
+
+    def test_an_act_withdrawn_from_the_catalog_still_holds_its_place(self) -> None:
+        act = _act("A", 200)
+        env = Env(act)
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+        env.catalog.performances.clear()
+        program = env.service.get_program(program_id)
+        assert program.items[0].missing_performance is True
+        assert program.items[0].schedule.starts_at == datetime(2026, 8, 1, 10, 0, tzinfo=UTC)

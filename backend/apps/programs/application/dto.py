@@ -1,0 +1,147 @@
+"""Result & view DTOs for the Programs application layer.
+
+Immutable, primitive-only output shapes: ids and enums as strings, durations as
+whole seconds, instants as :class:`~datetime.datetime`. They are the boundary in the
+outward direction, so no outer layer needs the domain to read a program.
+
+The organizer view and the public view are deliberately **separate shapes** rather
+than one shape with fields blanked out. A public program is read by anyone holding a
+link, and keeping its projection its own type is what stops an organizer-only field
+from leaking into it by accident later.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import datetime
+
+__all__ = [
+    "ProgramDetailView",
+    "ProgramItemView",
+    "ProgramShareView",
+    "ProgramSummaryView",
+    "PublicProgramItemView",
+    "PublicProgramView",
+    "SchedulePosition",
+]
+
+
+@dataclass(frozen=True, slots=True)
+class SchedulePosition:
+    """Where one item sits on the timeline."""
+
+    position: int
+    offset_seconds: int
+    slot_seconds: int
+    starts_at: datetime | None
+    ends_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class ProgramItemView:
+    """One slot as the organizer's constructor shows it.
+
+    ``title`` is resolved: a block's own title, or the act's title for a performance
+    slot. ``performance`` fields are ``None`` for blocks, and ``missing_performance``
+    marks the one case an organizer must be able to see - a slot whose act has since
+    been withdrawn from this competition.
+    """
+
+    id: str
+    kind: str
+    title: str
+    duration_seconds: int
+    schedule: SchedulePosition
+    submission_id: str | None = None
+    lead_participant: str | None = None
+    participants: tuple[str, ...] = ()
+    teachers: tuple[str, ...] = ()
+    nomination: str | None = None
+    discipline: str | None = None
+    age_category: str | None = None
+    participation_format: str | None = None
+    organization: str | None = None
+    comment: str | None = None
+    missing_performance: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class ProgramShareView:
+    """A public edition of the program, as listed in the constructor."""
+
+    id: str
+    name: str
+    slug: str
+    path: str
+    item_count: int
+    covers_whole_program: bool
+    created_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class ProgramSummaryView:
+    """A program as it appears in a list of programs."""
+
+    id: str
+    competition_id: str
+    nomination_id: str | None
+    name: str
+    buffer_seconds: int
+    starts_at: datetime | None
+    item_count: int
+    performance_count: int
+    total_seconds: int
+    share_count: int
+    created_at: datetime
+    updated_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class ProgramDetailView:
+    """One program in full: its settings, its computed timetable, its public links."""
+
+    id: str
+    competition_id: str
+    nomination_id: str | None
+    name: str
+    buffer_seconds: int
+    starts_at: datetime | None
+    items: tuple[ProgramItemView, ...]
+    shares: tuple[ProgramShareView, ...]
+    total_seconds: int
+    ends_at: datetime | None
+    created_at: datetime
+    updated_at: datetime
+    version: int
+
+
+@dataclass(frozen=True, slots=True)
+class PublicProgramItemView:
+    """One line of a public program screen.
+
+    Carries what an audience, a host or a sound engineer needs and nothing else: no
+    ids, no submission reference, no internal state.
+    """
+
+    position: int
+    kind: str
+    title: str
+    performer: str | None
+    teachers: tuple[str, ...]
+    organization: str | None
+    duration_seconds: int
+    starts_at: datetime | None
+    note: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class PublicProgramView:
+    """What a public link resolves to."""
+
+    name: str
+    slug: str
+    competition_title: str | None
+    nomination: str | None
+    starts_at: datetime | None
+    total_seconds: int
+    items: tuple[PublicProgramItemView, ...]

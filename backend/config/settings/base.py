@@ -60,6 +60,8 @@ LOCAL_APPS = [
     "apps.diplomas",
     "apps.teachers",
     "apps.performances",
+    # The running order of the event itself (programs, their items, public links).
+    "apps.programs",
     "apps.judging",
     "apps.results",
     "apps.finance",
@@ -134,6 +136,7 @@ MIGRATION_MODULES = {
     "teachers": "apps.teachers.infrastructure.migrations",
     "applications": "apps.applications.infrastructure.migrations",
     "diplomas": "apps.diplomas.infrastructure.migrations",
+    "programs": "apps.programs.infrastructure.migrations",
 }
 
 # --- Password validation --------------------------------------------------
