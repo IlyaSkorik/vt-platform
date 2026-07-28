@@ -974,12 +974,10 @@
   "972": ".is_approved",
   "973": "@storybook/react-vite",
   "974": "PublicFestivalRegulationSerializer",
-  "975": "RegistrationDeadlinesSerializer",
   "976": "0002_programsharemodel_columns.py",
   "980": "me_serializers.py",
   "986": ".to_dict",
   "987": "0004_freeze_numbers_on_publication.py",
   "988": ".as_timedelta",
-  "995": ".is_open_ended",
   "997": "@storybook/react-vite"
 }
