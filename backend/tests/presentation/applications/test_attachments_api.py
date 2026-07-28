@@ -72,7 +72,10 @@ def test_upload_stores_and_attaches(auth_client: APIClient) -> None:
     attachments = response.data["data"]["attachments"]
     assert len(attachments) == 1
     assert attachments[0]["type"] == "MUSIC"
-    assert attachments[0]["fileReference"].startswith("applications/attachments/")
+    # A URL the browser can open, not the bare storage key: the aggregate keeps an opaque
+    # key, and the edge resolves it against whichever storage is configured. Before object
+    # storage this worked only because the client guessed a `/media/` prefix.
+    assert attachments[0]["fileReference"].startswith("/media/applications/attachments/")
 
 
 def test_upload_rejects_unsupported_type(auth_client: APIClient) -> None:

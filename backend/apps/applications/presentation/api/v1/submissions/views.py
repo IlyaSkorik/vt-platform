@@ -21,6 +21,7 @@ from apps.applications.application.dto import SubmissionOperationResultDto
 from apps.applications.application.dto.commands import RemoveAttachmentCommand, UploadAttachmentCommand
 from apps.applications.application.exceptions import ApplicationError
 from apps.applications.presentation.api.v1 import problems
+from apps.applications.presentation.api.v1.files import file_url
 from apps.applications.presentation.api.v1.submissions import composition
 from apps.applications.presentation.api.v1.submissions.serializers import (
     ProblemDetailSerializer,
@@ -37,7 +38,7 @@ def _attachments_resource(result: SubmissionOperationResultDto) -> dict[str, Any
     return {
         "id": dto.id,
         "status": dto.status,
-        "attachments": [{"id": a.id, "type": a.type, "fileReference": a.file_reference, "caption": a.caption} for a in dto.attachments],
+        "attachments": [{"id": a.id, "type": a.type, "fileReference": file_url(a.file_reference), "caption": a.caption} for a in dto.attachments],
     }
 
 

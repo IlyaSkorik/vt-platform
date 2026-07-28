@@ -46,6 +46,7 @@ from apps.applications.application.dto.queries import (
 from apps.applications.application.exceptions import ApplicationError
 from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.applications.presentation.api.v1 import problems
+from apps.applications.presentation.api.v1.files import file_url
 from apps.applications.presentation.api.v1.orders import composition
 from apps.applications.presentation.api.v1.orders.serializers import (
     ApplicationDirectoryResponseSerializer,
@@ -73,10 +74,7 @@ def _application_resource(dto: ApplicationView) -> dict[str, Any]:
     latest_correction_comment: str | None = None
     has_corrections = any(ref.status == "REQUIRES_CORRECTION" for ref in dto.submissions)
     if submission_ids:
-        review_rows = (
-            SubmissionModel.objects.filter(id__in=submission_ids, deleted_at__isnull=True)
-            .values_list("reviews", flat=True)
-        )
+        review_rows = SubmissionModel.objects.filter(id__in=submission_ids, deleted_at__isnull=True).values_list("reviews", flat=True)
         latest_at: str = ""
         for reviews in review_rows:
             for review in reviews or []:
@@ -140,7 +138,7 @@ def _application_resource(dto: ApplicationView) -> dict[str, Any]:
             {"fromStatus": change.from_status, "toStatus": change.to_status, "occurredAt": _iso(change.occurred_at)} for change in dto.status_history
         ],
         "paymentReceipt": (
-            {"fileReference": dto.payment_receipt.file_reference, "uploadedAt": _iso(dto.payment_receipt.uploaded_at)}
+            {"fileReference": file_url(dto.payment_receipt.file_reference), "uploadedAt": _iso(dto.payment_receipt.uploaded_at)}
             if dto.payment_receipt is not None
             else None
         ),

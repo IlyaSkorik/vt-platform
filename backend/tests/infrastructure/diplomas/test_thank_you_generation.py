@@ -15,6 +15,7 @@ import io
 import uuid
 import zipfile
 from datetime import UTC, date, datetime
+from urllib.parse import unquote
 
 import pytest
 from django.core.files.base import ContentFile
@@ -42,6 +43,16 @@ from apps.diplomas.presentation.api.v1.diplomas import composition, documents
 pytestmark = pytest.mark.django_db
 
 _NOW = datetime(2026, 5, 20, 12, 0, tzinfo=UTC)
+
+
+def _key(reference: str) -> str:
+    """The storage key behind a stored reference.
+
+    References are URLs (``default_storage.url``), so a document named after "Петрова
+    Ольга" is percent-encoded in the reference while the object is stored under the
+    name as written.
+    """
+    return unquote(reference.removeprefix("/media/"))
 
 
 @pytest.fixture(autouse=True)
@@ -126,9 +137,7 @@ def _submission(
         applicant_id=uuid.uuid4(),
         status=status,
         participants=[{"display_name": name, "member_count": 1}],
-        teachers=[{"first_name": "Ольга", "last_name": "Петрова", "role": "Педагог"}]
-        if teachers is None
-        else teachers,
+        teachers=[{"first_name": "Ольга", "last_name": "Петрова", "role": "Педагог"}] if teachers is None else teachers,
         performance={"title": "Этюд", "nomination_id": str(category.id)},
     )
 
@@ -197,7 +206,7 @@ class TestGeneration:
         _generate(competition, vocals)
 
         row = IssuedDocumentModel.objects.get(document_type="THANK_YOU")
-        key = row.pdf_path.removeprefix("/media/")
+        key = _key(row.pdf_path)
         with default_storage.open(key, "rb") as fh:
             page = PdfReader(io.BytesIO(fh.read())).pages[0]
         # No embedded image: the QR block was dropped for an unverifiable kind.
@@ -328,12 +337,8 @@ class TestAddressing:
         vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
         _submission(competition, vocals, "Иванов Иван", teachers=teachers)
         template = TemplateModel.objects.create(type="THANK_YOU", name="Благодарность")
-        key = default_storage.save(
-            f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf())
-        )
-        TemplateDocumentModel.objects.create(
-            template=template, file_reference=f"/media/{key}", page_count=1
-        )
+        key = default_storage.save(f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf()))
+        TemplateDocumentModel.objects.create(template=template, file_reference=f"/media/{key}", page_count=1)
         composition.replace_template_layout(
             template_id=str(template.id),
             fields=[
@@ -352,7 +357,7 @@ class TestAddressing:
         return _generate(competition, vocals)
 
     def _text_of(self, row: IssuedDocumentModel) -> str:
-        with default_storage.open(row.pdf_path.removeprefix("/media/"), "rb") as fh:
+        with default_storage.open(_key(row.pdf_path), "rb") as fh:
             return PdfReader(io.BytesIO(fh.read())).pages[0].extract_text()
 
     def test_prints_the_name_without_the_role(self) -> None:
@@ -439,10 +444,7 @@ class TestPerNominationTemplates:
         _generate(competition, vocals)
         _generate(competition, dance)
 
-        by_template = {
-            str(row.template_id): row.snapshot["participant"]["display_name"]
-            for row in IssuedDocumentModel.objects.all()
-        }
+        by_template = {str(row.template_id): row.snapshot["participant"]["display_name"] for row in IssuedDocumentModel.objects.all()}
         # One teacher each, so one letter each.
         assert IssuedDocumentModel.objects.count() == 2
         assert by_template[str(blue.id)] == "Иванов Иван"
@@ -493,7 +495,7 @@ class TestPrintableBundle:
 
     def _entries(self, zip_url: str) -> list[str]:
         with (
-            default_storage.open(zip_url.removeprefix("/media/"), "rb") as fh,
+            default_storage.open(_key(zip_url), "rb") as fh,
             zipfile.ZipFile(io.BytesIO(fh.read())) as archive,
         ):
             return sorted(archive.namelist())
@@ -516,9 +518,10 @@ class TestPrintableBundle:
 
         assert summary["created"] == 2
         assert summary["documents"] == 2
-        assert summary["zipUrl"] == (
-            f"/media/diplomas/documents/{competition.id}/thank_you/ThankYou.zip"
-        )
+        # The unguessable segment between the kind and the filename is derived from
+        # SECRET_KEY, so the test asserts the shape rather than recomputing the secret.
+        assert summary["zipUrl"].startswith(f"/media/diplomas/documents/{competition.id}/thank_you/")
+        assert summary["zipUrl"].endswith("/ThankYou.zip")
         # Addressed to the teacher, filed under the nomination, with the performance
         # named so a teacher thanked twice yields two distinguishable sheets.
         assert self._entries(summary["zipUrl"]) == [

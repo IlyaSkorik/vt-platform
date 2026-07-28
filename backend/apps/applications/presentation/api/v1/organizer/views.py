@@ -29,6 +29,7 @@ from apps.applications.application.exceptions import ApplicationError
 from apps.applications.infrastructure.models.application import ApplicationModel
 from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.applications.presentation.api.v1 import problems
+from apps.applications.presentation.api.v1.files import file_url
 from apps.applications.presentation.api.v1.submissions import composition
 from apps.competitions.infrastructure.models.competition import CompetitionModel
 from apps.competitions.infrastructure.models.taxonomy import (
@@ -62,9 +63,7 @@ def _now() -> datetime:
 
 
 def _application_meta_for_submission(submission_id: str) -> tuple[str | None, str | None, str | None]:
-    app_rows = ApplicationModel.objects.filter(deleted_at__isnull=True).values(
-        "id", "submission_refs", "payment_receipt", "competition_id"
-    )
+    app_rows = ApplicationModel.objects.filter(deleted_at__isnull=True).values("id", "submission_refs", "payment_receipt", "competition_id")
     for row in app_rows:
         refs = row.get("submission_refs") or []
         if any(str(ref.get("submission_id") or "") == submission_id for ref in refs):
@@ -80,11 +79,7 @@ def _application_meta_for_submission(submission_id: str) -> tuple[str | None, st
 def _submission_ids_for_application(application_id: str | None) -> list[str]:
     if not application_id:
         return []
-    row = (
-        ApplicationModel.objects.filter(id=application_id, deleted_at__isnull=True)
-        .values("submission_refs")
-        .first()
-    )
+    row = ApplicationModel.objects.filter(id=application_id, deleted_at__isnull=True).values("submission_refs").first()
     if not row:
         return []
     refs = row.get("submission_refs") or []
@@ -156,9 +151,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
         has_corrections_filter = (request.query_params.get("hasCorrections") or "").strip().lower()
         has_missing_files_filter = (request.query_params.get("hasMissingFiles") or "").strip().lower()
 
-        competitions = list(
-            CompetitionModel.objects.filter(deleted_at__isnull=True).values("id", "title", "status").order_by("title")
-        )
+        competitions = list(CompetitionModel.objects.filter(deleted_at__isnull=True).values("id", "title", "status").order_by("title"))
         competition_ids = [row["id"] for row in competitions]
         competition_name = {str(row["id"]): row["title"] for row in competitions}
         nomination_name = {
@@ -179,9 +172,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
         }
         participation_format_name = {
             str(row["id"]): str(row["name"])
-            for row in ParticipationFormatModel.objects.filter(deleted_at__isnull=True, competition_id__in=competition_ids).values(
-                "id", "name"
-            )
+            for row in ParticipationFormatModel.objects.filter(deleted_at__isnull=True, competition_id__in=competition_ids).values("id", "name")
         }
         organization_by_submission: dict[str, str] = {}
         application_by_submission: dict[str, str] = {}
@@ -233,8 +224,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
             applicant = str(model.applicant_id)
             organization_name = organization_by_submission.get(str(model.id), "")
             teachers_text = " ".join(
-                " ".join(filter(None, [str(item.get("last_name") or ""), str(item.get("first_name") or "")])).strip()
-                for item in teachers
+                " ".join(filter(None, [str(item.get("last_name") or ""), str(item.get("first_name") or "")])).strip() for item in teachers
             )
             haystack = " ".join(
                 [str(model.id), title, applicant, competition_name.get(str(model.competition_id), ""), organization_name, teachers_text]
@@ -295,11 +285,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                 continue
             rows.append(row)
 
-        queue_source = (
-            [item for item in all_rows if item.get("competitionId") == competition_filter]
-            if competition_filter
-            else all_rows
-        )
+        queue_source = [item for item in all_rows if item.get("competitionId") == competition_filter] if competition_filter else all_rows
         queue_counts = Counter(item["queue"] for item in queue_source)
         selected = next((item for item in rows if item["id"] == selected_id), rows[0] if rows else None)
         detail: dict[str, Any] | None = None
@@ -316,29 +302,17 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                 if not related_submission_ids:
                     related_submission_ids = [selected_submission_id]
                 related_dtos = [
-                    composition.build_get_submission_handler().handle(
-                        GetSubmissionQuery(submission_id=submission_id, requested_by=user_id)
-                    )
+                    composition.build_get_submission_handler().handle(GetSubmissionQuery(submission_id=submission_id, requested_by=user_id))
                     for submission_id in related_submission_ids
                 ]
             except ApplicationError:
                 detail = None
             else:
                 representative = related_dtos[0]
-                participants = [
-                    {"id": p.id, "name": p.display_name, "memberCount": p.member_count}
-                    for dto in related_dtos
-                    for p in dto.participants
-                ]
-                teachers = [
-                    {"id": t.id, "name": f"{t.last_name} {t.first_name}", "role": t.role}
-                    for dto in related_dtos
-                    for t in dto.teachers
-                ]
+                participants = [{"id": p.id, "name": p.display_name, "memberCount": p.member_count} for dto in related_dtos for p in dto.participants]
+                teachers = [{"id": t.id, "name": f"{t.last_name} {t.first_name}", "role": t.role} for dto in related_dtos for t in dto.teachers]
                 attachments = [
-                    {"id": a.id, "type": a.type, "fileReference": a.file_reference}
-                    for dto in related_dtos
-                    for a in dto.attachments
+                    {"id": a.id, "type": a.type, "fileReference": file_url(a.file_reference)} for dto in related_dtos for a in dto.attachments
                 ]
                 total_amount_value = application_meta_by_id.get(selected_application_id or "", {}).get("total_amount")
                 total_currency_value = application_meta_by_id.get(selected_application_id or "", {}).get("total_currency")
@@ -426,17 +400,11 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                             "comment": (dto.performance.comment or None) if dto.performance else None,
                             "participantsCount": len(dto.participants),
                             "teachersCount": len(dto.teachers),
-                            "participants": [
-                                {"id": p.id, "name": p.display_name, "memberCount": p.member_count} for p in dto.participants
-                            ],
-                            "teachers": [
-                                {"id": t.id, "name": f"{t.last_name} {t.first_name}", "role": t.role} for t in dto.teachers
-                            ],
+                            "participants": [{"id": p.id, "name": p.display_name, "memberCount": p.member_count} for p in dto.participants],
+                            "teachers": [{"id": t.id, "name": f"{t.last_name} {t.first_name}", "role": t.role} for t in dto.teachers],
                             "priceAmount": dto.price.amount if dto.price else None,
                             "priceCurrency": dto.price.currency if dto.price else None,
-                            "attachments": [
-                                {"id": a.id, "type": a.type, "fileReference": a.file_reference} for a in dto.attachments
-                            ],
+                            "attachments": [{"id": a.id, "type": a.type, "fileReference": file_url(a.file_reference)} for a in dto.attachments],
                         }
                         for dto in related_dtos
                     ],
@@ -450,9 +418,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                     "timeline": timeline,
                     "audit": audit,
                     "internalNotes": [
-                        note
-                        for submission_id in related_submission_ids
-                        for note in (submission_model_by_id[submission_id].organizer_notes or [])
+                        note for submission_id in related_submission_ids for note in (submission_model_by_id[submission_id].organizer_notes or [])
                     ],
                     "participantMessages": [
                         message
@@ -492,9 +458,7 @@ class OrganizerProcessingActionView(_StaffView):
         comment = str(request.data.get("comment", "")).strip()
         try:
             if action == "start_review":
-                result = composition.build_start_review_handler().handle(
-                    StartReviewCommand(submission_id=submission_id, reviewer_id=user_id)
-                )
+                result = composition.build_start_review_handler().handle(StartReviewCommand(submission_id=submission_id, reviewer_id=user_id))
             elif action == "approve":
                 application_id, _, _ = _application_meta_for_submission(submission_id)
                 target_submission_ids = _submission_ids_for_application(application_id) or [submission_id]
@@ -505,24 +469,14 @@ class OrganizerProcessingActionView(_StaffView):
                     if model.status not in {"SUBMITTED", "UNDER_REVIEW"}:
                         continue
                     if model.status == "SUBMITTED":
-                        composition.build_start_review_handler().handle(
-                            StartReviewCommand(submission_id=target_id, reviewer_id=user_id)
-                        )
+                        composition.build_start_review_handler().handle(StartReviewCommand(submission_id=target_id, reviewer_id=user_id))
                     # Approval takes the submission straight into the running competition
                     # (UNDER_REVIEW → APPROVED → … → ACCEPTED → SCHEDULED) — no separate
                     # "confirm participation" / "move to running" steps for the organizer.
-                    composition.build_approve_submission_handler().handle(
-                        ApproveSubmissionCommand(submission_id=target_id, reviewer_id=user_id)
-                    )
-                    composition.build_mark_waiting_payment_handler().handle(
-                        MarkWaitingPaymentCommand(submission_id=target_id, reviewer_id=user_id)
-                    )
-                    composition.build_mark_paid_handler().handle(
-                        MarkPaidCommand(submission_id=target_id, reviewer_id=user_id)
-                    )
-                    composition.build_accept_submission_handler().handle(
-                        AcceptSubmissionCommand(submission_id=target_id, reviewer_id=user_id)
-                    )
+                    composition.build_approve_submission_handler().handle(ApproveSubmissionCommand(submission_id=target_id, reviewer_id=user_id))
+                    composition.build_mark_waiting_payment_handler().handle(MarkWaitingPaymentCommand(submission_id=target_id, reviewer_id=user_id))
+                    composition.build_mark_paid_handler().handle(MarkPaidCommand(submission_id=target_id, reviewer_id=user_id))
+                    composition.build_accept_submission_handler().handle(AcceptSubmissionCommand(submission_id=target_id, reviewer_id=user_id))
                     scheduled = composition.build_schedule_submission_handler().handle(
                         ScheduleSubmissionCommand(submission_id=target_id, reviewer_id=user_id)
                     )
@@ -543,9 +497,7 @@ class OrganizerProcessingActionView(_StaffView):
                     if model.status not in {"SUBMITTED", "UNDER_REVIEW"}:
                         continue
                     if model.status == "SUBMITTED":
-                        composition.build_start_review_handler().handle(
-                            StartReviewCommand(submission_id=target_id, reviewer_id=user_id)
-                        )
+                        composition.build_start_review_handler().handle(StartReviewCommand(submission_id=target_id, reviewer_id=user_id))
                     returned = composition.build_return_for_correction_handler().handle(
                         ReturnSubmissionForCorrectionCommand(
                             submission_id=target_id,
@@ -562,9 +514,7 @@ class OrganizerProcessingActionView(_StaffView):
                 recipient = UserModel.objects.filter(id=primary_model.applicant_id, deleted_at__isnull=True).first()
                 if recipient is not None and recipient.email:
                     competition_title = (
-                        CompetitionModel.objects.filter(id=competition_id).values_list("title", flat=True).first()
-                        if competition_id
-                        else None
+                        CompetitionModel.objects.filter(id=competition_id).values_list("title", flat=True).first() if competition_id else None
                     )
                     application_number = (application_id or submission_id)[:8].upper()
                     subject = f"Заявка #{application_number} возвращена на исправление"
@@ -616,9 +566,7 @@ class OrganizerProcessingActionView(_StaffView):
                     MarkWaitingPaymentCommand(submission_id=submission_id, reviewer_id=user_id)
                 )
             elif action == "confirm_payment":
-                result = composition.build_mark_paid_handler().handle(
-                    MarkPaidCommand(submission_id=submission_id, reviewer_id=user_id)
-                )
+                result = composition.build_mark_paid_handler().handle(MarkPaidCommand(submission_id=submission_id, reviewer_id=user_id))
             elif action == "confirm_participation":
                 model = SubmissionModel.objects.get(id=submission_id, deleted_at__isnull=True)
                 if model.status in {"APPROVED", "WAITING_PAYMENT"}:
@@ -630,9 +578,7 @@ class OrganizerProcessingActionView(_StaffView):
                         composition.build_mark_waiting_payment_handler().handle(
                             MarkWaitingPaymentCommand(submission_id=submission_id, reviewer_id=user_id)
                         )
-                    composition.build_mark_paid_handler().handle(
-                        MarkPaidCommand(submission_id=submission_id, reviewer_id=user_id)
-                    )
+                    composition.build_mark_paid_handler().handle(MarkPaidCommand(submission_id=submission_id, reviewer_id=user_id))
                 result = composition.build_accept_submission_handler().handle(
                     AcceptSubmissionCommand(submission_id=submission_id, reviewer_id=user_id)
                 )
@@ -671,9 +617,7 @@ class OrganizerProcessingActionView(_StaffView):
                 if recipient is not None and recipient.email:
                     application_id, _, competition_id = _application_meta_for_submission(submission_id)
                     competition_title = (
-                        CompetitionModel.objects.filter(id=competition_id).values_list("title", flat=True).first()
-                        if competition_id
-                        else None
+                        CompetitionModel.objects.filter(id=competition_id).values_list("title", flat=True).first() if competition_id else None
                     )
                     application_number = (application_id or submission_id)[:8].upper()
                     requested_types = ", ".join(_missing_type_label(str(item)) for item in missing_types)
@@ -757,9 +701,7 @@ class OrganizerProcessingActionView(_StaffView):
                 if recipient is None:
                     return Response({"detail": "Не найден получатель напоминания."}, status=400)
                 competition_title = (
-                    CompetitionModel.objects.filter(id=competition_id).values_list("title", flat=True).first()
-                    if competition_id
-                    else None
+                    CompetitionModel.objects.filter(id=competition_id).values_list("title", flat=True).first() if competition_id else None
                 )
                 application_number = (application_id or submission_id)[:8].upper()
                 subject = f"Напоминание об оплате заявки #{application_number}"
@@ -851,9 +793,7 @@ class OrganizerProcessingExportView(_StaffView):
                     writer.writerow(
                         [
                             str(model.id),
-                            " ".join(
-                                filter(None, [str(teacher.get("last_name") or ""), str(teacher.get("first_name") or "")])
-                            ).strip(),
+                            " ".join(filter(None, [str(teacher.get("last_name") or ""), str(teacher.get("first_name") or "")])).strip(),
                             str(teacher.get("role") or ""),
                         ]
                     )

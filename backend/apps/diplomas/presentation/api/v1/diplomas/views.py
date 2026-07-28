@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import uuid
 
-from django.conf import settings
 from django.core.files.storage import default_storage
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -83,9 +82,7 @@ class DiplomaTemplatesView(_StaffView):
     def get(self, request: Request) -> Response:
         document_type = (request.query_params.get("type") or "").strip()
         if document_type and document_type not in DOCUMENT_TYPES:
-            return problems.validation_problem(
-                {"type": ["Неизвестный тип документа."]}, instance=request.path, request=request
-            )
+            return problems.validation_problem({"type": ["Неизвестный тип документа."]}, instance=request.path, request=request)
         return problems.envelope(request, composition.list_templates(document_type=document_type or None))
 
     @extend_schema(
@@ -133,7 +130,7 @@ class DiplomaTemplateDocumentView(_StaffView):
             )
 
         relative_path = default_storage.save(f"diplomas/templates/{template_id}/{uuid.uuid4().hex}.pdf", uploaded)
-        file_reference = f"/{settings.MEDIA_URL.strip('/')}/{relative_path}"
+        file_reference = default_storage.url(relative_path)
         try:
             document = composition.set_template_document(
                 template_id=template_id,
@@ -183,14 +180,8 @@ class DiplomaPreviewBindingsView(_StaffView):
         application_id = (request.query_params.get("applicationId") or "").strip()
         document_type = (request.query_params.get("documentType") or "DIPLOMA").strip()
         if document_type not in DOCUMENT_TYPES:
-            return problems.validation_problem(
-                {"documentType": ["Неизвестный тип документа."]}, instance=request.path, request=request
-            )
-        bindings = (
-            preview.resolve_preview_bindings(application_id, document_type=document_type)
-            if application_id
-            else None
-        )
+            return problems.validation_problem({"documentType": ["Неизвестный тип документа."]}, instance=request.path, request=request)
+        bindings = preview.resolve_preview_bindings(application_id, document_type=document_type) if application_id else None
         if bindings is None:
             return problems.problem_response(
                 status=404,
@@ -389,9 +380,7 @@ class DiplomaPrintPackageSummaryView(_StaffView):
         raw = (request.query_params.get("competitionId") or "").strip()
         competition_id = _parse_uuid(raw)
         if competition_id is None:
-            return problems.validation_problem(
-                {"competitionId": ["Укажите фестиваль."]}, instance=request.path, request=request
-            )
+            return problems.validation_problem({"competitionId": ["Укажите фестиваль."]}, instance=request.path, request=request)
         return problems.envelope(request, print_package.print_package_summary(competition_id))
 
 

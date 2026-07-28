@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 from pathlib import Path
+from typing import Any
 
 from corsheaders.defaults import default_headers
 
@@ -166,15 +167,51 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS: list[Path] = []
 
-MEDIA_URL = "media/"
+#: Leading slash on purpose: every stored file reference is minted by
+#: ``default_storage.url(key)``, and with a relative ``MEDIA_URL`` those would come out
+#: without one and stop resolving against the API origin.
+MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-STORAGES = {
+#: Annotated because the S3 entry below carries nested ``OPTIONS``, which a literal of
+#: plain strings would otherwise fix the type of.
+STORAGES: dict[str, dict[str, Any]] = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
+
+# Uploads and generated documents move to object storage as soon as a bucket is
+# configured. Nothing in the application layer knows: files are written through
+# ``default_storage`` everywhere, and every reference is whatever that storage says its
+# URL is - a ``/media/…`` path locally, an absolute bucket URL in a deployment.
+if settings.s3_bucket:
+    STORAGES["default"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "bucket_name": settings.s3_bucket,
+            **({"region_name": settings.s3_region} if settings.s3_region else {}),
+            **({"endpoint_url": settings.s3_endpoint_url} if settings.s3_endpoint_url else {}),
+            **({"access_key": settings.s3_access_key_id} if settings.s3_access_key_id else {}),
+            **({"secret_key": settings.s3_secret_access_key} if settings.s3_secret_access_key else {}),
+            **({"custom_domain": settings.s3_custom_domain} if settings.s3_custom_domain else {}),
+            **({"location": settings.s3_location} if settings.s3_location else {}),
+            # Plain, stable URLs rather than signed ones: the bucket is public-read and a
+            # reference is stored in the database, so it has to keep working tomorrow.
+            "querystring_auth": False,
+            # No ACL on the object. Public access is granted by the bucket policy, which is
+            # the only thing that works on providers that disable object ACLs outright.
+            "default_acl": None,
+            # Two writes to one key are always a deliberate replacement in this codebase
+            # (the callers delete first), so never rename behind their back - a renamed
+            # object would leave the reference in the database pointing at nothing.
+            "file_overwrite": True,
+            # Keys carry an unguessable component and content at a key never changes
+            # meaning, so a year is safe and it is what makes a CDN worth putting in front.
+            "object_parameters": {"CacheControl": "public, max-age=31536000, immutable"},
+        },
+    }
 
 # --- REST Framework (API-000) --------------------------------------------
 REST_FRAMEWORK = {
@@ -261,9 +298,7 @@ FRONTEND_BASE_URL = settings.frontend_base_url.rstrip("/")
 # Base URL encoded into a diploma's QR code (``<base>/verify/<token>``). Defaults
 # to the web client; DIPLOMA_VERIFICATION_BASE_URL overrides it when authenticity
 # checks are served from a separate domain. Never hardcoded in the renderer.
-DIPLOMA_VERIFICATION_BASE_URL = (
-    settings.diploma_verification_base_url or settings.frontend_base_url
-).rstrip("/")
+DIPLOMA_VERIFICATION_BASE_URL = (settings.diploma_verification_base_url or settings.frontend_base_url).rstrip("/")
 
 # Hours before an unpaid, submitted order (no payment receipt attached) is
 # auto-cancelled. Configurable via APPLICATION_PAYMENT_WINDOW_HOURS (default 48).

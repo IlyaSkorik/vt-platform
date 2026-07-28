@@ -132,6 +132,27 @@ class Settings(BaseSettings):
         alias="APPLICATION_PAYMENT_SWEEP_MINUTES",
     )
 
+    # --- Object storage for uploads and generated documents ---
+    #
+    # Set ``S3_BUCKET`` and the platform stores every upload, diploma and archive in that
+    # bucket instead of the local filesystem; leave it empty and nothing changes, which is
+    # what local work and the test suite run on.
+    #
+    # The bucket is expected to be **public-read**: references are stable URLs a browser
+    # and a CDN can cache, so a poster on a landing page is fetched once rather than on
+    # every render. Confidentiality comes from the key being unguessable, not from the
+    # bucket being closed - see ``apps/diplomas/infrastructure/pdf/workspace.py``.
+    s3_bucket: str = Field(default="", alias="S3_BUCKET")
+    s3_region: str = Field(default="", alias="S3_REGION")
+    #: Required for anything that is not AWS itself (Yandex, Selectel, VK, MinIO).
+    s3_endpoint_url: str = Field(default="", alias="S3_ENDPOINT_URL")
+    s3_access_key_id: str = Field(default="", alias="S3_ACCESS_KEY_ID")
+    s3_secret_access_key: str = Field(default="", alias="S3_SECRET_ACCESS_KEY")
+    #: A CDN or vanity host in front of the bucket, if there is one. No scheme, no slash.
+    s3_custom_domain: str = Field(default="", alias="S3_CUSTOM_DOMAIN")
+    #: Optional key prefix, so one bucket can carry several environments.
+    s3_location: str = Field(default="", alias="S3_LOCATION")
+
     # --- Redis / Celery (ARCH-001 §6.1, §7.5) ---
     redis_url: RedisDsn = Field(
         default="redis://localhost:6379/0",  # type: ignore[assignment]

@@ -15,7 +15,6 @@ import uuid
 from decimal import Decimal
 from typing import Any, Protocol, cast
 
-from django.conf import settings
 from django.core.files.storage import default_storage
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status, viewsets
@@ -389,7 +388,9 @@ class CompetitionViewSet(viewsets.ViewSet):
         }
         extension = extension_by_type[content_type]
         relative_path = default_storage.save(f"competitions/{pk}/poster{extension}", uploaded)
-        poster_ref = f"/{settings.MEDIA_URL.strip('/')}/{relative_path}"
+        # Ask the storage for the URL rather than assembling one: that is the single line
+        # that decides whether this lives under /media/ or in a bucket.
+        poster_ref = default_storage.url(relative_path)
 
         return self._run(
             UpdateCompetitionBrandingHandler,
@@ -424,9 +425,7 @@ class CompetitionViewSet(viewsets.ViewSet):
             return problem
         assert kwargs is not None
         # Nested UUIDField yields uuid.UUID — normalize to strings for the command DTO.
-        team_contacts = [
-            {**item, "id": str(item["id"])} for item in kwargs.get("team_contacts", [])
-        ]
+        team_contacts = [{**item, "id": str(item["id"])} for item in kwargs.get("team_contacts", [])]
         return self._run(
             UpdateContactsConfigHandler,
             UpdateContactsConfigCommand(
@@ -463,18 +462,10 @@ class CompetitionViewSet(viewsets.ViewSet):
         blocks: list[dict[str, object]] = []
         for raw in kwargs.get("blocks", []):
             block = _normalize_uuid_fields(raw, "id")
-            block["cards"] = [
-                _normalize_uuid_fields(card, "id") for card in block.get("cards", [])
-            ]
-            block["partners"] = [
-                _normalize_uuid_fields(card, "id") for card in block.get("partners", [])
-            ]
-            block["images"] = [
-                _normalize_uuid_fields(image, "id") for image in block.get("images", [])
-            ]
-            block["faq_items"] = [
-                _normalize_uuid_fields(item, "id") for item in block.get("faq_items", [])
-            ]
+            block["cards"] = [_normalize_uuid_fields(card, "id") for card in block.get("cards", [])]
+            block["partners"] = [_normalize_uuid_fields(card, "id") for card in block.get("partners", [])]
+            block["images"] = [_normalize_uuid_fields(image, "id") for image in block.get("images", [])]
+            block["faq_items"] = [_normalize_uuid_fields(item, "id") for item in block.get("faq_items", [])]
             blocks.append(block)
 
         return self._run(
@@ -856,7 +847,7 @@ class CompetitionViewSet(viewsets.ViewSet):
             f"competitions/{pk}/regulations/{uuid.uuid4().hex}.pdf",
             uploaded,
         )
-        file_reference = f"/{settings.MEDIA_URL.strip('/')}/{relative_path}"
+        file_reference = default_storage.url(relative_path)
         correlation_id = request_id(request)
         return Response(
             {
@@ -953,7 +944,7 @@ class CompetitionViewSet(viewsets.ViewSet):
             f"competitions/{pk}/landing/{uuid.uuid4().hex}{extension}",
             uploaded,
         )
-        file_reference = f"/{settings.MEDIA_URL.strip('/')}/{relative_path}"
+        file_reference = default_storage.url(relative_path)
         correlation_id = request_id(request)
         return Response(
             {
@@ -1028,7 +1019,7 @@ class CompetitionViewSet(viewsets.ViewSet):
             f"competitions/{pk}/documents/{uuid.uuid4().hex}{extension}",
             uploaded,
         )
-        file_reference = f"/{settings.MEDIA_URL.strip('/')}/{relative_path}"
+        file_reference = default_storage.url(relative_path)
         correlation_id = request_id(request)
         return Response(
             {

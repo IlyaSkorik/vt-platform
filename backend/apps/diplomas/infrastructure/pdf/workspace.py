@@ -1,15 +1,23 @@
 """``DjangoPrintPackageWorkspace`` — the infra side of print-package generation.
 
 Loads a template's fields and backing PDF, renders diploma PDFs (reportlab/pypdf),
-and stores the per-diploma PDFs and the final ZIP in ``default_storage`` under
-``/media/…`` paths (served directly, as every other upload in this codebase).
+and stores the per-diploma PDFs and the final ZIP in ``default_storage`` - a ``/media/…``
+path locally, an object in a bucket in a deployment, and the reference it hands back is
+whatever that storage says the file's URL is.
+
+Keys here carry an unguessable token, which is what keeps a public-read bucket safe: a
+diploma's number and its competition's id are both public, so without it the whole
+registry could be walked by counting.
 """
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import io
 import uuid
 import zipfile
+from urllib.parse import unquote
 
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -25,26 +33,67 @@ from apps.diplomas.presentation.api.v1.diplomas import composition
 
 __all__ = ["DjangoPrintPackageWorkspace"]
 
-
-def _storage_key(media_path: str) -> str:
-    """Strip a leading ``/media/`` from a stored reference to a storage key."""
-    prefix = f"/{settings.MEDIA_URL.strip('/')}/"
-    return media_path[len(prefix) :] if media_path.startswith(prefix) else media_path.lstrip("/")
+#: An ASCII key that no real file uses, minted only to find out what a reference looks
+#: like in front of the key. Never read or written.
+_BASE_PROBE_KEY = "__reference_base_probe__"
 
 
-def _media_path(key: str) -> str:
-    return f"/{settings.MEDIA_URL.strip('/')}/{key}"
+def _storage_key(reference: str) -> str:
+    """Turn a stored reference back into the storage key it was minted from.
+
+    The inverse of :func:`_reference`, and it has to work for both shapes a reference
+    takes: ``/media/diplomas/…`` on a filesystem and an absolute bucket URL in a
+    deployment. Asking the storage for its own base rather than matching on ``/media/``
+    keeps the two symmetric.
+
+    The unquoting is the part that matters: a reference is a URL, so a document named
+    after "Петрова Ольга" arrives percent-encoded, while the object itself is stored
+    under the name as written. Keys in this module come from slugify, uuids and diploma
+    numbers, so there is no literal ``%`` for this to misread.
+    """
+    base = _reference_base()
+    trimmed = reference[len(base) :] if base and reference.startswith(base) else reference.lstrip("/")
+    return unquote(trimmed)
+
+
+def _reference_base() -> str:
+    """Everything a reference carries in front of the key.
+
+    Derived by minting a URL for a sentinel key and cutting it off, rather than asking for
+    the URL of an empty one: S3 rejects a zero-length key outright, so the obvious version
+    of this works on a filesystem and raises in a deployment.
+    """
+    probe = default_storage.url(_BASE_PROBE_KEY)
+    return probe[: probe.index(_BASE_PROBE_KEY)] if _BASE_PROBE_KEY in probe else ""
+
+
+def _reference(key: str) -> str:
+    """The URL a stored file is reachable at - whatever the configured storage says."""
+    return default_storage.url(key)
+
+
+def _unguessable(*parts: str) -> str:
+    """A short, stable token that cannot be derived from the parts without the secret.
+
+    Diploma keys are otherwise perfectly predictable - a competition id that appears in
+    public URLs and a diploma number that increments - so in a public-read bucket the
+    whole registry could be walked by counting. This makes each key unguessable while
+    keeping it *stable*: regenerating a diploma lands on the same key and replaces the
+    file, rather than leaving an orphan behind at a key nobody can compute again.
+
+    Keyed on ``SECRET_KEY``, so rotating it changes where future files are written.
+    Already-issued diplomas keep working: their reference is stored in the database and
+    the object it points at is untouched.
+    """
+    digest = hmac.new(settings.SECRET_KEY.encode(), "/".join(parts).encode(), hashlib.sha256)
+    return digest.hexdigest()[:16]
 
 
 class DjangoPrintPackageWorkspace:
     """Concrete ``PrintPackageWorkspace`` over Django storage + the PDF renderer."""
 
     def load_template(self, template_id: uuid.UUID) -> TemplateAssets | None:
-        document = (
-            TemplateDocumentModel.objects.filter(template__id=template_id, deleted_at__isnull=True)
-            .order_by("-created_at")
-            .first()
-        )
+        document = TemplateDocumentModel.objects.filter(template__id=template_id, deleted_at__isnull=True).order_by("-created_at").first()
         if document is None:
             return None
         key = _storage_key(document.file_reference)
@@ -76,11 +125,15 @@ class DjangoPrintPackageWorkspace:
         )
 
     def store_pdf(self, *, competition_id: uuid.UUID, number: str, data: bytes) -> str:
-        key = f"diplomas/print/{competition_id}/{number}.pdf"
+        # The number stays in the key - an organizer looking at the bucket should be able
+        # to see which diploma this is - but the token in front of it is what stops the
+        # registry from being enumerated by counting numbers up from one.
+        token = _unguessable("print", str(competition_id), number)
+        key = f"diplomas/print/{competition_id}/{token}/{number}.pdf"
         if default_storage.exists(key):
             default_storage.delete(key)
         default_storage.save(key, ContentFile(data))
-        return _media_path(key)
+        return _reference(key)
 
     def store_document_pdf(
         self,
@@ -101,37 +154,36 @@ class DjangoPrintPackageWorkspace:
         # worth more to them than an opaque digest. Unicode is kept, so Cyrillic
         # names survive.
         suffix = f"-{slugify(recipient, allow_unicode=True)}" if recipient.strip() else ""
-        key = f"diplomas/documents/{competition_id}/{document_type.lower()}/{submission_id}{suffix}.pdf"
+        token = _unguessable("documents", str(competition_id), document_type.lower(), str(submission_id), suffix)
+        key = f"diplomas/documents/{competition_id}/{document_type.lower()}/{token}/{submission_id}{suffix}.pdf"
         if default_storage.exists(key):
             default_storage.delete(key)
         default_storage.save(key, ContentFile(data))
-        return _media_path(key)
+        return _reference(key)
 
     def store_zip(self, *, competition_id: uuid.UUID, items: list[tuple[str, str]]) -> str:
-        return self._store_archive(
-            key=f"diplomas/print/{competition_id}/Diplomas.zip", items=items
-        )
+        # The archive is the whole set in one file, so it is the most valuable object in
+        # the bucket and gets the same unguessable token as the diplomas inside it.
+        token = _unguessable("print-zip", str(competition_id))
+        return self._store_archive(key=f"diplomas/print/{competition_id}/{token}/Diplomas.zip", items=items)
 
-    def store_documents_zip(
-        self, *, competition_id: uuid.UUID, document_type: str, items: list[tuple[str, str]]
-    ) -> str:
+    def store_documents_zip(self, *, competition_id: uuid.UUID, document_type: str, items: list[tuple[str, str]]) -> str:
         # Named after the kind ("ThankYou.zip"), because the file name is what the
         # organizer sees in the downloads folder next to the diplomas archive. Kept
         # inside the kind's own tree, so it neither collides with the diploma set
         # nor with another kind's bundle.
         kind = document_type.lower()
         filename = "".join(part.capitalize() for part in document_type.split("_"))
-        return self._store_archive(
-            key=f"diplomas/documents/{competition_id}/{kind}/{filename}.zip", items=items
-        )
+        token = _unguessable("documents-zip", str(competition_id), kind)
+        return self._store_archive(key=f"diplomas/documents/{competition_id}/{kind}/{token}/{filename}.zip", items=items)
 
     @staticmethod
     def _store_archive(*, key: str, items: list[tuple[str, str]]) -> str:
-        """ZIP up ``(arcname, media_path)`` pairs at ``key``, replacing any previous."""
+        """ZIP up ``(arcname, reference)`` pairs at ``key``, replacing any previous."""
         buffer = io.BytesIO()
         with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
-            for arcname, media_path in items:
-                storage_key = _storage_key(media_path)
+            for arcname, reference in items:
+                storage_key = _storage_key(reference)
                 if not default_storage.exists(storage_key):
                     continue
                 with default_storage.open(storage_key, "rb") as handle:
@@ -139,4 +191,4 @@ class DjangoPrintPackageWorkspace:
         if default_storage.exists(key):
             default_storage.delete(key)
         default_storage.save(key, ContentFile(buffer.getvalue()))
-        return _media_path(key)
+        return _reference(key)

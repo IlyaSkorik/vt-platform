@@ -29,6 +29,7 @@ from apps.applications.application.dto.commands import (
 from apps.applications.application.dto.queries import GetSubmissionQuery
 from apps.applications.application.exceptions import ApplicationError
 from apps.applications.presentation.api.v1 import problems
+from apps.applications.presentation.api.v1.files import file_url
 from apps.applications.presentation.api.v1.submissions import composition
 from apps.applications.presentation.api.v1.submissions.content_serializers import (
     AddParticipantRequestSerializer,
@@ -93,7 +94,7 @@ def _submission_resource(dto: SubmissionView) -> dict[str, Any]:
             }
             for t in dto.teachers
         ],
-        "attachments": [{"id": a.id, "type": a.type, "fileReference": a.file_reference, "caption": a.caption} for a in dto.attachments],
+        "attachments": [{"id": a.id, "type": a.type, "fileReference": file_url(a.file_reference), "caption": a.caption} for a in dto.attachments],
         "statusHistory": [
             {"fromStatus": from_status, "toStatus": to_status, "occurredAt": _iso(occurred_at)}
             for from_status, to_status, occurred_at in dto.status_history
