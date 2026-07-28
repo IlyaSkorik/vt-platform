@@ -956,5 +956,21 @@
   "954": "useRemoveAdditionalServiceMutation",
   "955": "useRemoveDocumentMutation",
   "956": "useUpdateGeneralInformationMutation",
-  "957": "useUpdateCompetitionSettingsMutation"
+  "957": "useUpdateCompetitionSettingsMutation",
+  "958": "@testing-library/react",
+  "959": "useUpdateBrandingMutation",
+  "960": "__init__.py",
+  "961": "__init__.py",
+  "962": "__init__.py",
+  "963": "__init__.py",
+  "964": "__init__.py",
+  "965": "__init__.py",
+  "966": ".hasPointerCapture",
+  "967": ".scrollIntoView",
+  "968": ".to_dict",
+  "969": ".empty",
+  "970": ".is_open_ended",
+  "971": ".full_name",
+  "972": ".is_approved",
+  "973": "@storybook/react-vite"
 }
