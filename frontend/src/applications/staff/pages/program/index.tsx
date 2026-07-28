@@ -106,7 +106,9 @@ export function StaffProgramPage(): React.JSX.Element {
         </PageDescription>
       </PageHeader>
 
-      <PageContent className="gap-4">
+      {/* `min-w-0` here too: PageContainer and PageContent are both flex columns, so the
+          table's width would otherwise travel all the way up and widen the page itself. */}
+      <PageContent className="min-w-0 gap-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:max-w-2xl">
           <Select
             label="Фестиваль"
@@ -125,9 +127,12 @@ export function StaffProgramPage(): React.JSX.Element {
 
         {competitions.isLoading ? <LoadingState label="Загружаем фестивали…" size="sm" /> : null}
 
+        {/* `minmax(0,1fr)` in both cases, and `min-w-0` on the children: without them a grid
+            track is as wide as its content, and a wide running order stretches the layout
+            rather than scrolling inside it. The single-column case is what a phone gets. */}
         {competitionId ? (
-          <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
-            <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+            <div className="flex min-w-0 flex-col gap-4">
               <ProgramList
                 programs={programs.data ?? []}
                 isLoading={programs.isLoading}
@@ -287,7 +292,8 @@ function ProgramWorkspace({ programId }: { programId: string }): React.JSX.Eleme
 
 function ProgramWorkspaceInner({ program }: { program: Program }): React.JSX.Element {
   return (
-    <div className="flex flex-col gap-4">
+    // `min-w-0` all the way down to the scroll container, or the table's width wins.
+    <div className="flex min-w-0 flex-col gap-4">
       <ProgramSettings program={program} />
       <Divider />
       <RunningOrder program={program} />
@@ -363,7 +369,7 @@ function RunningOrder({ program }: { program: Program }): React.JSX.Element {
     program.numbersFrozen && items.some((item, index) => item.number !== index + 1);
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex min-w-0 flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-baseline gap-2">
           <p className="font-medium text-sm">Программа</p>
@@ -392,8 +398,10 @@ function RunningOrder({ program }: { program: Program }): React.JSX.Element {
       ) : (
         // The programme is a table, and the table is wide: it scrolls inside its own
         // container so the page never scrolls sideways.
-        <div className="scrollbar-custom overflow-x-auto rounded-md border border-border">
-          <table className="w-full border-collapse text-left">
+        <div className="scrollbar-custom w-full max-w-full overflow-x-auto rounded-md border border-border">
+          {/* `w-max min-w-full`: the table may exceed the container (that is what makes it
+              scroll) but never leaves it narrower than the space available. */}
+          <table className="w-max min-w-full border-collapse text-left">
             <caption className="sr-only">Программа: {program.name}</caption>
             <thead>
               <tr className="border-border border-b bg-muted/50">

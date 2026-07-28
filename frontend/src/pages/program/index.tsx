@@ -68,7 +68,9 @@ function PublicProgramTable({
 
   return (
     <div className="min-h-svh bg-background">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 md:py-12">
+      {/* `min-w-0` on the column: a flex item sizes to its content by default, and the wide
+          table would push the whole page sideways instead of scrolling inside itself. */}
+      <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 md:py-12">
         <header className="space-y-2">
           {heading ? (
             <p className="font-medium text-muted-foreground text-xs uppercase tracking-[0.18em]">
@@ -100,8 +102,10 @@ function PublicProgramTable({
             description="Организатор ещё не добавил пункты в эту программу."
           />
         ) : (
-          <div className="scrollbar-custom overflow-x-auto rounded-lg border border-border">
-            <table className="w-full border-collapse text-left">
+          <div className="scrollbar-custom w-full max-w-full overflow-x-auto rounded-lg border border-border">
+            {/* `w-max min-w-full`: may exceed the container (that is what scrolls) but never
+                leaves it narrower than the space available. */}
+            <table className="w-max min-w-full border-collapse text-left">
               <caption className="sr-only">{program.name}</caption>
               <thead>
                 <tr className="border-border border-b bg-muted/50">
