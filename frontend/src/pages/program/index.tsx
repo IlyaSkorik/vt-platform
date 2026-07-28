@@ -67,7 +67,10 @@ function PublicProgramTable({
   const columnKeys = program.columns.map((column) => column.key);
 
   return (
-    <div className="min-h-svh bg-background">
+    // This page has no shell to clip for it, so it clips for itself: the table below is as
+    // wide as its published columns, and the excess must scroll inside the table, never
+    // sideways across the whole page.
+    <div className="min-h-svh overflow-x-clip bg-background">
       {/* `min-w-0` on the column: a flex item sizes to its content by default, and the wide
           table would push the whole page sideways instead of scrolling inside itself. */}
       <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 md:py-12">

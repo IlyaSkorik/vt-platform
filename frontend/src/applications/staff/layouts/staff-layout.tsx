@@ -300,7 +300,17 @@ export function StaffLayout(): React.JSX.Element {
         <div className="bg-background px-4 py-2 xl:hidden">
           <WorkspaceSwitcher />
         </div>
-        <main id={SKIP_TARGET_ID} tabIndex={-1} className="flex-1 p-4 outline-none md:p-6 lg:p-8">
+        {/* `overflow-x-clip`: a page can be wider than this column - a table, a preview, a
+            long unbreakable string - and a flex item's width cannot be pushed on the cross
+            axis, so the excess would spill out and scroll the *document* instead, dragging
+            the sidebar and the sticky header sideways with it. Clipping keeps that contained;
+            anything legitimately wide scrolls in its own container. `clip` rather than
+            `hidden` because `hidden` would make this a scroll container and break `sticky`. */}
+        <main
+          id={SKIP_TARGET_ID}
+          tabIndex={-1}
+          className="min-w-0 flex-1 overflow-x-clip p-4 outline-none md:p-6 lg:p-8"
+        >
           <Outlet />
         </main>
         <SiteFooter />

@@ -80,7 +80,13 @@ function ShellFrame({
           actions={headerActions}
         />
 
-        <main id={SKIP_TARGET_ID} tabIndex={-1} className="flex-1 p-4 outline-none md:p-6 lg:p-8">
+        {/* See the staff shell: content wider than this column must be clipped here, or it
+            scrolls the whole document and takes the chrome with it. */}
+        <main
+          id={SKIP_TARGET_ID}
+          tabIndex={-1}
+          className="min-w-0 flex-1 overflow-x-clip p-4 outline-none md:p-6 lg:p-8"
+        >
           {children}
         </main>
 

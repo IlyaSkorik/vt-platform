@@ -118,9 +118,7 @@ export function StaffProgramPage(): React.JSX.Element {
         </PageDescription>
       </PageHeader>
 
-      {/* `min-w-0` here too: PageContainer and PageContent are both flex columns, so the
-          chain has to be unbroken from the page down to the table's scroll container. */}
-      <PageContent className="min-w-0 gap-4">
+      <PageContent className="gap-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:max-w-2xl">
           <Select
             label="Фестиваль"
@@ -845,7 +843,9 @@ function ExportPanel({ program }: { program: Program }): React.JSX.Element {
         </Button>
       </div>
 
-      <fieldset className="flex flex-wrap gap-x-4 gap-y-2 rounded-md border border-border p-3">
+      {/* `min-w-0`: a `fieldset` has a built-in `min-width: min-content` that ignores its
+          container, so a row of column names can widen the layout unless it is overridden. */}
+      <fieldset className="flex min-w-0 flex-wrap gap-x-4 gap-y-2 rounded-md border border-border p-3">
         <legend className="px-1 text-muted-foreground text-xs">Колонки в PDF</legend>
         {program.availableColumns.map((column) => (
           <Checkbox
@@ -1043,7 +1043,8 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
         </Button>
       </div>
 
-      <fieldset className="flex flex-wrap gap-x-4 gap-y-2 rounded-md border border-border p-3">
+      {/* `min-w-0` for the same reason as the export picker's fieldset above. */}
+      <fieldset className="flex min-w-0 flex-wrap gap-x-4 gap-y-2 rounded-md border border-border p-3">
         <legend className="px-1 text-muted-foreground text-xs">Колонки для публикации</legend>
         {program.availableColumns.map((column) => (
           <Checkbox

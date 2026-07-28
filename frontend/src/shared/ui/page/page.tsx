@@ -19,6 +19,12 @@ import type {
  * structure: token-only styling, no business logic, theme-agnostic. Compose
  * as: `PageContainer > PageHeader (PageTitle + PageDescription + PageActions)
  * + PageContent (PageSection…)`.
+ *
+ * Every one of these carries `min-w-0`. A flex item is as wide as its content
+ * by default, so without it a single wide descendant — a table, a preview, a
+ * long unbreakable string — travels up this chain and scrolls the whole
+ * document sideways, chrome and all. Pages that need something wider than the
+ * viewport give it its own `overflow-x-auto` container instead.
  */
 
 const CONTAINER_SIZES = {
@@ -36,7 +42,7 @@ export const PageContainer = forwardRef<HTMLDivElement, PageContainerProps>(func
     <div
       ref={ref}
       data-slot="page-container"
-      className={cn("mx-auto flex w-full flex-col gap-6", CONTAINER_SIZES[size], className)}
+      className={cn("mx-auto flex w-full min-w-0 flex-col gap-6", CONTAINER_SIZES[size], className)}
       {...props}
     />
   );
@@ -108,7 +114,7 @@ export const PageContent = forwardRef<HTMLDivElement, PageContentProps>(function
     <div
       ref={ref}
       data-slot="page-content"
-      className={cn("flex flex-col gap-6", className)}
+      className={cn("flex min-w-0 flex-col gap-6", className)}
       {...props}
     />
   );
@@ -123,7 +129,7 @@ export const PageSection = forwardRef<HTMLElement, PageSectionProps>(function Pa
     <section
       ref={ref}
       data-slot="page-section"
-      className={cn("flex flex-col gap-4", className)}
+      className={cn("flex min-w-0 flex-col gap-4", className)}
       {...props}
     >
       {hasHeader && (
