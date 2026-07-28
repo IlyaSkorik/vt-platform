@@ -18,10 +18,27 @@ from pydantic import Field, RedisDsn, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
+def _group_config(prefix: str) -> SettingsConfigDict:
+    """Config for a nested settings group, including the ``.env`` file.
+
+    The ``env_file`` is the part worth spelling out. A nested group does not inherit the
+    root's config, so without it a group reads process environment only - and that failure
+    is invisible under Docker Compose, where ``env_file:`` injects everything as real
+    environment variables. Run the backend on the host instead and ``EMAIL_HOST`` in
+    ``.env`` is silently ignored while the defaults quietly stand in for it.
+    """
+    return SettingsConfigDict(
+        env_prefix=prefix,
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+
 class DatabaseSettings(BaseSettings):
     """PostgreSQL connection settings (ARCH-001 §9)."""
 
-    model_config = SettingsConfigDict(env_prefix="POSTGRES_", extra="ignore")
+    model_config = _group_config("POSTGRES_")
 
     db: str = "vt_platform"
     user: str = "vt_platform"
@@ -33,7 +50,7 @@ class DatabaseSettings(BaseSettings):
 class JWTSettings(BaseSettings):
     """JWT authentication settings (ARCH-001 §11, API-000 §17)."""
 
-    model_config = SettingsConfigDict(env_prefix="JWT_", extra="ignore")
+    model_config = _group_config("JWT_")
 
     # Short-lived access token; rotating refresh token (in minutes / days).
     access_token_lifetime_minutes: int = 15
@@ -50,7 +67,7 @@ class EmailSettings(BaseSettings):
     provider's host, port, credentials, and TLS via the environment.
     """
 
-    model_config = SettingsConfigDict(env_prefix="EMAIL_", extra="ignore")
+    model_config = _group_config("EMAIL_")
 
     backend: str = "django.core.mail.backends.smtp.EmailBackend"
     host: str = "localhost"
