@@ -9,6 +9,12 @@
  * cadence, and the host's writes answer with the whole programme so their own view is
  * exact immediately. That needs no new transport, and a server-sent-events stream is the
  * natural upgrade when the polling cost stops being negligible.
+ *
+ * The cost of that cadence is carried by HTTP, not by cleverness here: the endpoint sends
+ * an `ETag`, the browser revalidates with `If-None-Match` on its own, and a poll that finds
+ * nothing changed - which is nearly all of them - costs a bodyless `304`. Nothing in this
+ * file has to know that; it is the reason a five-second poll stays cheap with a hall full
+ * of phones on it.
  */
 import {
   type UseMutationResult,
@@ -91,12 +97,37 @@ export function usePublicProgram(
     enabled: Boolean(slug),
     queryKey: publicProgramKeys.detail(slug ?? ""),
     queryFn: ({ signal }) => fetchPublicProgram(slug ?? "", signal),
-    refetchInterval: LIVE_REFETCH_MS,
-    // A screen left open all day should keep polling even while the tab is in the
-    // background: that is exactly the display beside the stage.
+    refetchInterval: (query) => livePollInterval(query.state.data, isHidden()),
     refetchIntervalInBackground: true,
     retry: false,
   });
+}
+
+/**
+ * How long until this screen should re-read the programme, or `false` to stop for now.
+ *
+ * Visible, everyone polls. Hidden, only the edition that drives the day keeps polling: a
+ * phone in a pocket and a switched-away tab show nobody anything, and on return TanStack
+ * refetches on focus, so that viewer sees a current programme the moment they look — no
+ * tick to wait for. A display beside the stage is the opposite case: nothing ever brings
+ * it back to the foreground, and it has to be right whenever somebody glances at it.
+ *
+ * An edition whose first read has not landed yet keeps polling: it may turn out to be the
+ * host's, and one wasted request beats a screen that never starts.
+ */
+export function livePollInterval(
+  program: PublicProgram | undefined,
+  hidden: boolean,
+): number | false {
+  if (!hidden || program === undefined) {
+    return LIVE_REFETCH_MS;
+  }
+  return program.controlsRunningOrder ? LIVE_REFETCH_MS : false;
+}
+
+/** Whether the page is currently out of sight. Guarded so it is safe under SSR and jsdom. */
+function isHidden(): boolean {
+  return typeof document !== "undefined" && document.visibilityState === "hidden";
 }
 
 /**

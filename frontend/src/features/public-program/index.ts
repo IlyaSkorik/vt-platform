@@ -1,6 +1,7 @@
 /** Public API of the `public-program` feature — reading (and hosting) a published programme. */
 export {
   fetchPublicProgram,
+  livePollInterval,
   type PublicProgram,
   type PublicProgramColumn,
   type PublicProgramProgress,
