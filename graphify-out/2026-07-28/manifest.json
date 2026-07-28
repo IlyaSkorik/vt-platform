@@ -3900,9 +3900,9 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/participant/layouts/participant-layout.tsx": {
-    "mtime": 1784295573.6774817,
-    "ast_hash": "fbc45b967ca54235879639b2d6af1f7b",
-    "semantic_hash": "fbc45b967ca54235879639b2d6af1f7b"
+    "mtime": 1785254602.5820296,
+    "ast_hash": "925c9fb861de42d70473a3460cc52d2a",
+    "semantic_hash": ""
   },
   "frontend/src/applications/participant/navigation.ts": {
     "mtime": 1783771458.7918835,
@@ -3940,9 +3940,9 @@
     "semantic_hash": "43f6dc7a1ca50bf4faf541109a8a2e4c"
   },
   "frontend/src/applications/staff/layouts/staff-layout.tsx": {
-    "mtime": 1784295573.6894815,
-    "ast_hash": "2f03c20ea19eb40c5aae1514c1eeda04",
-    "semantic_hash": "2f03c20ea19eb40c5aae1514c1eeda04"
+    "mtime": 1785254602.5820296,
+    "ast_hash": "08f4900d6dee6f68ee5be83df4182992",
+    "semantic_hash": ""
   },
   "frontend/src/applications/staff/navigation.ts": {
     "mtime": 1785231919.094254,
@@ -5330,9 +5330,9 @@
     "semantic_hash": "5cce6cdfcd266478e62a3f749430a657"
   },
   "frontend/src/shared/ui/page/page.tsx": {
-    "mtime": 1783509528.279797,
-    "ast_hash": "82527dadc8b82a0dbcdd5dd94d0ad71a",
-    "semantic_hash": "82527dadc8b82a0dbcdd5dd94d0ad71a"
+    "mtime": 1785254602.5820296,
+    "ast_hash": "9eff939872158a4d87ff4767e41ba93b",
+    "semantic_hash": ""
   },
   "frontend/src/shared/ui/page/types.ts": {
     "mtime": 1783508507.443857,
@@ -5635,9 +5635,9 @@
     "semantic_hash": "c2033dd9943c610a8c4bfa3617b15cba"
   },
   "frontend/src/widgets/app-shell/app-shell.tsx": {
-    "mtime": 1783509528.0268567,
-    "ast_hash": "8ff42772d39e85f6de038ed5a75571e9",
-    "semantic_hash": "8ff42772d39e85f6de038ed5a75571e9"
+    "mtime": 1785254602.5820296,
+    "ast_hash": "3078f10c1b50c1bdca2b4cf68365f6ea",
+    "semantic_hash": ""
   },
   "frontend/src/widgets/app-shell/breadcrumbs.tsx": {
     "mtime": 1783508434.6418002,
@@ -6590,8 +6590,8 @@
     "semantic_hash": "d4ecc328966ff21da30ecd22f0b2a981"
   },
   "frontend/openapi/schema-full.yaml": {
-    "mtime": 1785253118.6624508,
-    "ast_hash": "22b3dea52cda0bd5b302ab58744ae984",
+    "mtime": 1785267474.8419762,
+    "ast_hash": "28fae4afabe17e6405fabf5e402c7ebc",
     "semantic_hash": ""
   },
   "frontend/openapi/schema.yaml": {
@@ -8100,13 +8100,13 @@
     "semantic_hash": ""
   },
   "backend/apps/programs/application/interfaces.py": {
-    "mtime": 1785253118.6584508,
-    "ast_hash": "ef67c1744c551bda26806047b40f30d0",
+    "mtime": 1785267182.4301226,
+    "ast_hash": "7337e95e3fb960cff0a070543d240358",
     "semantic_hash": ""
   },
   "backend/apps/programs/application/services.py": {
-    "mtime": 1785253118.6584508,
-    "ast_hash": "6e235fac153235641d7990527de456a1",
+    "mtime": 1785267182.4301226,
+    "ast_hash": "a06ccc9406f560a44fba3794e5d812b5",
     "semantic_hash": ""
   },
   "backend/apps/programs/apps.py": {
@@ -8205,8 +8205,8 @@
     "semantic_hash": ""
   },
   "backend/apps/programs/infrastructure/repositories/django_program_repository.py": {
-    "mtime": 1785250939.3629372,
-    "ast_hash": "d1cda5b09f8a040a5badee1c1fa15131",
+    "mtime": 1785267182.4301226,
+    "ast_hash": "9a02b9cd3619dd0a884485ed393e1359",
     "semantic_hash": ""
   },
   "backend/apps/programs/infrastructure/system.py": {
@@ -8240,8 +8240,8 @@
     "semantic_hash": ""
   },
   "backend/apps/programs/presentation/api/v1/public_views.py": {
-    "mtime": 1785250939.3669372,
-    "ast_hash": "50b45261f076d1423415d1522b7a0dff",
+    "mtime": 1785267182.4301226,
+    "ast_hash": "957313957f8c0f0bfa597f04d7973d73",
     "semantic_hash": ""
   },
   "backend/apps/programs/presentation/api/v1/serializers.py": {
@@ -8275,8 +8275,8 @@
     "semantic_hash": ""
   },
   "backend/tests/application/programs/fakes.py": {
-    "mtime": 1785250939.3669372,
-    "ast_hash": "5e6ad39fc121cf788f83777758945070",
+    "mtime": 1785267182.4301226,
+    "ast_hash": "5fa9b90b13b677d6bbe8722485a71e3d",
     "semantic_hash": ""
   },
   "backend/tests/application/programs/test_services.py": {
@@ -8305,8 +8305,8 @@
     "semantic_hash": ""
   },
   "backend/tests/infrastructure/programs/test_repository.py": {
-    "mtime": 1785250939.3669372,
-    "ast_hash": "20185d71ee86dc69558910ec86280996",
+    "mtime": 1785267289.2789423,
+    "ast_hash": "99459ebd4f3632b5ec040d338a12f9e9",
     "semantic_hash": ""
   },
   "backend/tests/presentation/programs/__init__.py": {
@@ -8320,8 +8320,8 @@
     "semantic_hash": ""
   },
   "backend/tests/presentation/programs/test_public_program_api.py": {
-    "mtime": 1785250939.370937,
-    "ast_hash": "dd64fe45a5939d63534438ca215298cf",
+    "mtime": 1785267355.1160316,
+    "ast_hash": "72c857d9a9a706c9e3234c3c925d917d",
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/program/index.test.tsx": {
@@ -8330,8 +8330,8 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/program/index.tsx": {
-    "mtime": 1785253685.4760485,
-    "ast_hash": "67bf0a07e0d492a6a27e5ef8b50545c9",
+    "mtime": 1785255919.7177734,
+    "ast_hash": "5ced7d4aaff7a28488f03c1a83b4a8f1",
     "semantic_hash": ""
   },
   "frontend/src/features/program-builder/api.ts": {
@@ -8350,18 +8350,18 @@
     "semantic_hash": ""
   },
   "frontend/src/features/public-program/api.ts": {
-    "mtime": 1785250939.374937,
-    "ast_hash": "42c7f52bfa4c0289ab3ba8ad6b1ca875",
+    "mtime": 1785267435.5267475,
+    "ast_hash": "b809461f9ce49144fd39a9255caf8752",
     "semantic_hash": ""
   },
   "frontend/src/features/public-program/index.ts": {
-    "mtime": 1785250939.374937,
-    "ast_hash": "1b7d669bc39cde54fc294b2df5fa984d",
+    "mtime": 1785267435.5267475,
+    "ast_hash": "37369c799987fa8128d404698f281f47",
     "semantic_hash": ""
   },
   "frontend/src/pages/program/index.tsx": {
-    "mtime": 1785253675.7004242,
-    "ast_hash": "ff8bfbe203775849f1b0e8fda710d977",
+    "mtime": 1785255960.3577688,
+    "ast_hash": "403ee05b48e6ce2550d7daff3bf12698",
     "semantic_hash": ""
   },
   "frontend/src/features/program-builder/model.test.ts": {
@@ -8412,6 +8412,16 @@
   "backend/apps/programs/infrastructure/pdf/table.py": {
     "mtime": 1785253118.670451,
     "ast_hash": "98aea452e92d91effa8418054e87f48a",
+    "semantic_hash": ""
+  },
+  "frontend/e2e/program-horizontal-scroll.spec.ts": {
+    "mtime": 1785256155.9097307,
+    "ast_hash": "ee88dd1002fa59d865d832ea4328a3d5",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/public-program/api.test.ts": {
+    "mtime": 1785267435.5267475,
+    "ast_hash": "a616a9db6296eab0ca865dc5ebefe578",
     "semantic_hash": ""
   }
 }
