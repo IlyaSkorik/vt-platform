@@ -10191,6 +10191,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ProgramColumn'
+        numbersFrozen:
+          type: boolean
+        numbersFrozenAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
         totalSeconds:
           type: integer
         endsAt:
@@ -10216,6 +10223,8 @@ components:
       - items
       - name
       - nominationId
+      - numbersFrozen
+      - numbersFrozenAt
       - shares
       - startsAt
       - totalSeconds

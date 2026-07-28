@@ -64,7 +64,8 @@ class ProgramItemView:
     id: str
     kind: str
     title: str
-    #: The permanent number told to the participant - stable across every reorder.
+    #: The slot's number. Follows the running order until the programme is published, and
+    #: is fixed to the slot from then on.
     number: int
     duration_seconds: int
     schedule: SchedulePosition
@@ -129,6 +130,11 @@ class ProgramDetailView:
     #: Every column the table can carry, in canonical order - what the constructor
     #: renders its header from and what a publish dialog offers to choose between.
     available_columns: tuple[ColumnView, ...]
+    #: Whether numbers are fixed to their slots. ``False`` while the programme is being
+    #: assembled: numbers then follow the order and a reorder renumbers freely.
+    numbers_frozen: bool
+    #: The first publication, i.e. when the numbers were fixed (``None`` if never).
+    numbers_frozen_at: datetime | None
     total_seconds: int
     ends_at: datetime | None
     created_at: datetime

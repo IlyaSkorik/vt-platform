@@ -50,9 +50,12 @@ class ProgramModel(BasePersistenceModel):
     # Padding added to every performance slot when the schedule is computed. Never
     # changes an act's own duration.
     buffer_seconds = models.PositiveIntegerField(default=0)
-    # How many permanent slot numbers this programme has ever issued. Monotonic, so a
+    # How many slot numbers this programme has issued since freezing. Monotonic, so a
     # removed slot's number is retired rather than handed to the next act.
     numbers_issued = models.PositiveIntegerField(default=0)
+    # When the numbers stopped following the running order - the first publication. Null
+    # while the programme is still being assembled.
+    numbers_frozen_at = models.DateTimeField(null=True, blank=True, default=None)
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "programs_program"

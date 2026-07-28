@@ -300,16 +300,33 @@ class TestBufferAndOrder:
         assert response.status_code == 200
         assert [item["id"] for item in response.data["data"]["items"]] == list(reversed(ids))
 
-    def test_reordering_moves_the_rows_and_keeps_the_numbers(self, staff_client, scope) -> None:
+    def test_reordering_an_unpublished_programme_renumbers_it(self, staff_client, scope) -> None:
+        # Nothing has been handed out yet, so the numbers just follow the order.
+        program_id, ids = self._three_act_program(staff_client, scope)
+
+        response = staff_client.put(
+            f"{_PROGRAMS}/{program_id}/items/order",
+            {"itemIds": [ids[0], ids[2], ids[1]]},
+            format="json",
+        )
+        assert response.status_code == 200
+        items = response.data["data"]["items"]
+        assert response.data["data"]["numbersFrozen"] is False
+        assert [item["id"] for item in items] == [ids[0], ids[2], ids[1]]
+        assert [item["number"] for item in items] == [1, 2, 3]
+
+    def test_publishing_freezes_the_numbers(self, staff_client, scope) -> None:
+        program_id, _ids = self._three_act_program(staff_client, scope)
+        created = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Экран"}, format="json")
+
+        assert created.data["data"]["program"]["numbersFrozen"] is True
+        assert created.data["data"]["program"]["numbersFrozenAt"] is not None
+
+    def test_reordering_a_published_programme_keeps_the_numbers(self, staff_client, scope) -> None:
         # A participant asked to perform later: the row moves, номер 3 stays номер 3, and
         # the programme reads 1, 3, 2 - which is what everybody was told.
-        competition_id, nomination_id = scope
-        for index in range(3):
-            _act(competition_id=competition_id, nomination_id=nomination_id, title=f"Акт {index}", seconds=120)
-        program_id = _create_program(staff_client, scope)["id"]
-        filled = staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill")
-        ids = [item["id"] for item in filled.data["data"]["items"]]
-        assert [item["number"] for item in filled.data["data"]["items"]] == [1, 2, 3]
+        program_id, ids = self._three_act_program(staff_client, scope)
+        staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Экран"}, format="json")
 
         response = staff_client.put(
             f"{_PROGRAMS}/{program_id}/items/order",
@@ -324,17 +341,23 @@ class TestBufferAndOrder:
         assert [item["schedule"]["position"] for item in items] == [1, 2, 3]
 
     def test_renumbering_is_a_separate_deliberate_action(self, staff_client, scope) -> None:
-        competition_id, nomination_id = scope
-        for index in range(3):
-            _act(competition_id=competition_id, nomination_id=nomination_id, title=f"Акт {index}", seconds=120)
-        program_id = _create_program(staff_client, scope)["id"]
-        filled = staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill")
-        ids = [item["id"] for item in filled.data["data"]["items"]]
+        program_id, ids = self._three_act_program(staff_client, scope)
+        staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Экран"}, format="json")
         staff_client.put(f"{_PROGRAMS}/{program_id}/items/order", {"itemIds": [ids[2], ids[0], ids[1]]}, format="json")
 
         response = staff_client.post(f"{_PROGRAMS}/{program_id}/items/numbers")
         assert response.status_code == 200, response.data
         assert [item["number"] for item in response.data["data"]["items"]] == [1, 2, 3]
+
+    @staticmethod
+    def _three_act_program(staff_client: APIClient, scope: tuple[str, str]) -> tuple[str, list[str]]:
+        competition_id, nomination_id = scope
+        for index in range(3):
+            _act(competition_id=competition_id, nomination_id=nomination_id, title=f"Акт {index}", seconds=120)
+        program_id = _create_program(staff_client, scope)["id"]
+        filled = staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill")
+        assert [item["number"] for item in filled.data["data"]["items"]] == [1, 2, 3]
+        return program_id, [item["id"] for item in filled.data["data"]["items"]]
 
     def test_an_incomplete_order_is_rejected(self, staff_client, scope) -> None:
         competition_id, nomination_id = scope

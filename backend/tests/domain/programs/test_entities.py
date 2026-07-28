@@ -12,7 +12,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from apps.programs.domain.entities import Program, ProgramItem
+from apps.programs.domain.entities import Program, ProgramItem, ProgramShare
 from apps.programs.domain.exceptions import (
     InvalidProgramDataError,
     ItemNotInProgramError,
@@ -187,47 +187,126 @@ class TestReorder:
             program.reorder([first.id, first.id, second.id], now=NOW)
 
 
-class TestPermanentNumbers:
-    """A number belongs to the participant, not to the row it happens to sit on."""
+def _publish(program: Program, slug: str = "Sound2345") -> ProgramShare:
+    """Publish an edition - the act that freezes the numbers."""
+    return program.add_share(share_id=uuid.uuid4(), name=ShareName("Экран"), slug=PublicSlug(slug), now=NOW)
 
-    def test_slots_are_numbered_as_they_are_added(self) -> None:
+
+class TestNumbersWhileTheProgrammeIsBeingAssembled:
+    """Nobody has been told a number yet, so numbers simply follow the running order."""
+
+    def test_a_new_programme_is_not_frozen(self) -> None:
+        program = _program()
+        assert program.numbers_frozen is False
+        assert program.numbers_frozen_at is None
+
+    def test_slots_are_numbered_in_order_as_they_are_added(self) -> None:
         program = _program()
         assert [_add_act(program).number for _ in range(3)] == [1, 2, 3]
 
-    def test_reordering_moves_the_rows_and_leaves_the_numbers(self) -> None:
-        # The case this exists for: a participant asks to perform later, so #4 is moved
-        # up one - and the programme legitimately reads 2, 3, 5, 4.
+    def test_reordering_renumbers_freely(self) -> None:
         program = _program()
-        items = [_add_act(program) for _ in range(5)]
-        first, second, third, fourth, fifth = items
-        program.reorder([first.id, second.id, third.id, fifth.id, fourth.id], now=NOW)
+        first, second, third = _add_act(program), _add_act(program), _add_act(program)
+        program.reorder([third.id, first.id, second.id], now=NOW)
 
-        assert [item.number for item in program.items] == [1, 2, 3, 5, 4]
+        assert [item.number for item in program.items] == [1, 2, 3]
+        assert [item.id for item in program.items] == [third.id, first.id, second.id]
 
-    def test_a_block_inserted_in_the_middle_pushes_nobody_number(self) -> None:
+    def test_a_block_inserted_in_the_middle_pushes_the_rest_along(self) -> None:
         program = _program()
         first, second = _add_act(program), _add_act(program)
         pause = _add_break(program, position=2)
 
-        assert [item.number for item in program.items] == [first.number, pause.number, second.number]
+        assert [item.id for item in program.items] == [first.id, pause.id, second.id]
+        assert [item.number for item in program.items] == [1, 2, 3]
+
+    def test_removing_a_slot_closes_the_gap(self) -> None:
+        program = _program()
+        first, second, third = _add_act(program), _add_act(program), _add_act(program)
+        program.remove_item(second.id, now=NOW)
+
+        assert [item.id for item in program.items] == [first.id, third.id]
+        assert [item.number for item in program.items] == [1, 2]
+
+
+class TestNumbersAfterTheFirstPublication:
+    """Publishing is the moment numbers leave the organizer's screen, so they freeze."""
+
+    def test_publishing_freezes_the_numbers(self) -> None:
+        program = _program()
+        _add_act(program)
+        _publish(program)
+
+        assert program.numbers_frozen is True
+        assert program.numbers_frozen_at == NOW
+
+    def test_reordering_then_moves_the_rows_and_leaves_the_numbers(self) -> None:
+        # The case this exists for: a participant asks to perform later, so #4 is swapped
+        # with #5 - and the programme legitimately reads 2, 3, 5, 4.
+        program = _program()
+        items = [_add_act(program) for _ in range(5)]
+        _publish(program)
+        first, second, third, fourth, fifth = items
+        program.reorder([second.id, third.id, fifth.id, fourth.id, first.id], now=NOW)
+
+        assert [item.number for item in program.items] == [2, 3, 5, 4, 1]
+
+    def test_a_slot_added_after_publication_takes_the_next_free_number(self) -> None:
+        program = _program()
+        _add_act(program), _add_act(program)
+        _publish(program)
+
+        assert _add_act(program).number == 3
+
+    def test_a_block_inserted_after_publication_pushes_nobody_number(self) -> None:
+        program = _program()
+        first, second = _add_act(program), _add_act(program)
+        _publish(program)
+        pause = _add_break(program, position=2)
+
+        assert [item.id for item in program.items] == [first.id, pause.id, second.id]
         assert [item.number for item in program.items] == [1, 3, 2]
 
     def test_a_removed_number_is_retired_rather_than_reused(self) -> None:
         # Handing номер 2 to somebody else after telling it to a participant is exactly
-        # the confusion permanent numbers exist to prevent.
+        # the confusion freezing exists to prevent.
         program = _program()
         _first, second = _add_act(program), _add_act(program)
+        _publish(program)
         program.remove_item(second.id, now=NOW)
+
         assert _add_act(program).number == 3
+
+    def test_a_second_publication_does_not_re_freeze(self) -> None:
+        program = _program()
+        first, second = _add_act(program), _add_act(program)
+        _publish(program, "Sound2345")
+        program.reorder([second.id, first.id], now=NOW)
+        _publish(program, "Screen234")
+
+        # Re-freezing here would renumber what the first link already published.
+        assert [item.number for item in program.items] == [2, 1]
 
     def test_renumbering_is_available_as_a_deliberate_reset(self) -> None:
         program = _program()
         items = [_add_act(program) for _ in range(3)]
+        _publish(program)
         program.reorder([items[2].id, items[0].id, items[1].id], now=NOW)
         assert [item.number for item in program.items] == [3, 1, 2]
 
         program.renumber_sequentially(now=NOW)
         assert [item.number for item in program.items] == [1, 2, 3]
+
+    def test_renumbering_frees_the_numbers_it_reclaimed(self) -> None:
+        program = _program()
+        first, second, third = _add_act(program), _add_act(program), _add_act(program)
+        _publish(program)
+        program.remove_item(third.id, now=NOW)
+        program.renumber_sequentially(now=NOW)
+
+        assert [item.number for item in program.items] == [1, 2]
+        assert [item.id for item in program.items] == [first.id, second.id]
+        assert _add_act(program).number == 3
 
 
 class TestSettings:

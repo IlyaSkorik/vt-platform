@@ -352,16 +352,23 @@ function RunningOrder({ program }: { program: Program }): React.JSX.Element {
   };
 
   const busy = reorder.isPending || remove.isPending;
-  // Numbers stay with their participants, so a rearranged programme reads 2, 3, 5, 4.
-  // Saying so out loud beats letting an organizer wonder whether it is a bug.
-  const outOfSequence = items.some((item, index) => item.number !== index + 1);
+  // Once published, numbers stay with their participants, so a rearranged programme reads
+  // 2, 3, 5, 4. Saying so out loud beats letting an organizer wonder whether it is a bug.
+  const outOfSequence =
+    program.numbersFrozen && items.some((item, index) => item.number !== index + 1);
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-baseline gap-2">
           <p className="font-medium text-sm">Программа</p>
-          {outOfSequence ? (
+          {/* Which phase the programme is in is the difference between "the numbers will
+              settle later" and "these numbers are what participants were told". */}
+          {!program.numbersFrozen ? (
+            <span className="text-muted-foreground text-xs">
+              номера идут по порядку и зафиксируются после первой публикации
+            </span>
+          ) : outOfSequence ? (
             <span className="text-muted-foreground text-xs">номера сохранены за участниками</span>
           ) : null}
         </div>

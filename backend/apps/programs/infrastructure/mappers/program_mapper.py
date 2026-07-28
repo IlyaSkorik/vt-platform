@@ -45,6 +45,7 @@ class ProgramMapper:
             items=[ProgramMapper._item_to_entity(row) for row in sorted(items, key=lambda row: row.position)],
             shares=[ProgramMapper._share_to_entity(row) for row in sorted(shares, key=lambda row: row.created_at)],
             numbers_issued=int(model.numbers_issued),
+            numbers_frozen_at=model.numbers_frozen_at,
             deleted_at=model.deleted_at,
             version=model.version,
         )
@@ -59,6 +60,7 @@ class ProgramMapper:
             "starts_at": program.starts_at,
             "buffer_seconds": program.buffer.seconds,
             "numbers_issued": program.numbers_issued,
+            "numbers_frozen_at": program.numbers_frozen_at,
             "created_at": program.created_at,
             "updated_at": program.updated_at,
             "deleted_at": program.deleted_at,

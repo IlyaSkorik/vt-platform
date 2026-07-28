@@ -134,6 +134,8 @@ def _program_json(view: dto.ProgramDetailView) -> dict[str, Any]:
         "items": [_item_json(item) for item in view.items],
         "shares": [_share_json(share) for share in view.shares],
         "availableColumns": _columns_json(view.available_columns),
+        "numbersFrozen": view.numbers_frozen,
+        "numbersFrozenAt": view.numbers_frozen_at,
         "totalSeconds": view.total_seconds,
         "endsAt": view.ends_at,
         "createdAt": view.created_at,

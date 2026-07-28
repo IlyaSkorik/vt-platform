@@ -499,6 +499,8 @@ class ProgramService:
             items=tuple(self._item_view(entry, performances) for entry in schedule),
             shares=tuple(self._share_view(share, program) for share in program.shares),
             available_columns=tuple(ColumnView(key=column.value, label=COLUMN_LABELS[column]) for column in ProgramColumn),
+            numbers_frozen=program.numbers_frozen,
+            numbers_frozen_at=program.numbers_frozen_at,
             total_seconds=total,
             ends_at=program.starts_at + timedelta(seconds=total) if program.starts_at is not None else None,
             created_at=program.created_at,

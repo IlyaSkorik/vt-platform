@@ -269,6 +269,73 @@ class TestScheduleAndBuffer:
             env.service.update_program(UpdateProgramCommand(program_id=env.program(), buffer_seconds=7200))
 
 
+class TestNumbersAndPublication:
+    """Numbers are a draft until the programme is published, and a promise afterwards."""
+
+    def test_an_unpublished_programme_renumbers_on_every_reorder(self) -> None:
+        env = Env(_act("A", 100), _act("B", 100), _act("C", 100))
+        program_id = env.program()
+        program = env.service.fill_from_scope(program_id)
+        assert program.numbers_frozen is False
+        ids = [item.id for item in program.items]
+
+        reordered = env.service.reorder_items(ReorderItemsCommand(program_id=program_id, item_ids=(ids[2], ids[0], ids[1])))
+        assert [item.number for item in reordered.items] == [1, 2, 3]
+
+    def test_publishing_freezes_the_numbers(self) -> None:
+        env = Env(_act("A", 100))
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+
+        detail, _share = env.service.create_share(CreateShareCommand(program_id=program_id, name="Экран"))
+        assert detail.numbers_frozen is True
+        assert detail.numbers_frozen_at is not None
+
+    def test_after_publication_a_reorder_keeps_the_numbers(self) -> None:
+        env = Env(_act("A", 100), _act("B", 100), _act("C", 100))
+        program_id = env.program()
+        program = env.service.fill_from_scope(program_id)
+        ids = [item.id for item in program.items]
+        env.service.create_share(CreateShareCommand(program_id=program_id, name="Экран"))
+
+        reordered = env.service.reorder_items(ReorderItemsCommand(program_id=program_id, item_ids=(ids[0], ids[2], ids[1])))
+        assert [item.number for item in reordered.items] == [1, 3, 2]
+
+    def test_after_publication_a_new_act_takes_the_next_free_number(self) -> None:
+        first, second = _act("A", 100), _act("B", 100)
+        env = Env(first, second)
+        program_id = env.program()
+        env.service.add_performance(AddPerformanceCommand(program_id=program_id, submission_id=str(first.submission_id)))
+        env.service.create_share(CreateShareCommand(program_id=program_id, name="Экран"))
+
+        program = env.service.add_performance(AddPerformanceCommand(program_id=program_id, submission_id=str(second.submission_id)))
+        assert [item.number for item in program.items] == [1, 2]
+
+    def test_renumbering_a_published_programme_is_an_explicit_call(self) -> None:
+        env = Env(_act("A", 100), _act("B", 100))
+        program_id = env.program()
+        program = env.service.fill_from_scope(program_id)
+        ids = [item.id for item in program.items]
+        env.service.create_share(CreateShareCommand(program_id=program_id, name="Экран"))
+        env.service.reorder_items(ReorderItemsCommand(program_id=program_id, item_ids=(ids[1], ids[0])))
+        assert [item.number for item in env.service.get_program(program_id).items] == [2, 1]
+
+        renumbered = env.service.renumber_items(program_id)
+        assert [item.number for item in renumbered.items] == [1, 2]
+
+    def test_the_public_screen_shows_the_frozen_numbers(self) -> None:
+        env = Env(_act("A", 100), _act("B", 100), _act("C", 100))
+        program_id = env.program()
+        program = env.service.fill_from_scope(program_id)
+        ids = [item.id for item in program.items]
+        _detail, share = env.service.create_share(CreateShareCommand(program_id=program_id, name="Экран"))
+        env.service.reorder_items(ReorderItemsCommand(program_id=program_id, item_ids=(ids[0], ids[2], ids[1])))
+
+        public = env.service.public_program(share.slug)
+        assert public is not None
+        assert [row.cells[0] for row in public.rows] == ["1", "3", "2"]
+
+
 class TestReorder:
     def test_the_order_is_replaced_and_re_timed(self) -> None:
         env = Env(_act("A", 100), _act("B", 200), _act("C", 300))

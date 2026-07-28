@@ -187,6 +187,9 @@ class ProgramDetailSerializer(serializers.Serializer[dict[str, object]]):
     items = ProgramItemResourceSerializer(many=True)
     shares = ProgramShareResourceSerializer(many=True)
     availableColumns = _column_schema(many=True)
+    #: False while the programme is being assembled - numbers then follow the order.
+    numbersFrozen = serializers.BooleanField()
+    numbersFrozenAt = serializers.DateTimeField(allow_null=True)
     totalSeconds = serializers.IntegerField()
     endsAt = serializers.DateTimeField(allow_null=True)
     createdAt = serializers.DateTimeField()

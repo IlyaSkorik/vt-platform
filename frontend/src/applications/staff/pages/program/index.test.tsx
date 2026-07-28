@@ -138,6 +138,9 @@ function aProgram(overrides: Partial<Program> = {}): Program {
     ],
     shares: [],
     availableColumns: ALL_COLUMNS,
+    // Most tests describe a published programme, which is when numbers matter.
+    numbersFrozen: true,
+    numbersFrozenAt: "2026-08-01T09:00:00Z",
     totalSeconds: 460,
     endsAt: "2026-08-01T10:07:40Z",
     createdAt: "2026-08-01T09:00:00Z",
@@ -321,6 +324,17 @@ describe("StaffProgramPage — the programme table", () => {
 
     expect(screen.queryByRole("button", { name: /Пересчитать номера/ })).toBeNull();
     expect(screen.queryByText("номера сохранены за участниками")).toBeNull();
+  });
+
+  it("says numbers are still provisional before the first publication", async () => {
+    stub(aProgram({ numbersFrozen: false, numbersFrozenAt: null }));
+    await renderPage();
+
+    expect(
+      screen.getByText("номера идут по порядку и зафиксируются после первой публикации"),
+    ).toBeInTheDocument();
+    // Nothing to renumber: they already follow the order and will keep doing so.
+    expect(screen.queryByRole("button", { name: /Пересчитать номера/ })).toBeNull();
   });
 
   it("renumbers only when the organizer asks for it", async () => {

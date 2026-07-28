@@ -56,6 +56,11 @@ def _act(program: Program, seconds: int = 200) -> uuid.UUID:
     ).id
 
 
+def _publish(program: Program, slug: str = "Screen234") -> None:
+    """Publish an edition - the act that freezes the numbers."""
+    program.add_share(share_id=uuid.uuid4(), name=ShareName("Экран"), slug=PublicSlug(slug), now=NOW)
+
+
 def _break(program: Program, title: str = "Перерыв", seconds: int = 900) -> uuid.UUID:
     return program.add_block(
         item_id=uuid.uuid4(),
@@ -118,14 +123,17 @@ class TestRoundTrip:
             ProgramItemModel.objects.filter(program_id=program.id, deleted_at__isnull=True).order_by("position").values_list("id", flat=True)
         ) == [third, first, second]
 
-    def test_permanent_numbers_survive_a_reorder_across_a_reload(self) -> None:
+    def test_the_frozen_flag_and_the_numbers_survive_a_reorder_across_a_reload(self) -> None:
         repository = DjangoProgramRepository()
         program = _program()
         first, second, third = _act(program), _act(program), _act(program)
+        _publish(program)
         repository.save(program)
 
         reloaded = repository.get(program.id)
         assert reloaded is not None
+        assert reloaded.numbers_frozen is True
+        assert reloaded.numbers_frozen_at == NOW
         reloaded.reorder([first, third, second], now=NOW)
         repository.save(reloaded)
 
@@ -134,10 +142,28 @@ class TestRoundTrip:
         assert [item.id for item in again.items] == [first, third, second]
         assert [item.number for item in again.items] == [1, 3, 2]
 
+    def test_an_unpublished_programme_reloads_unfrozen_and_still_renumbers(self) -> None:
+        repository = DjangoProgramRepository()
+        program = _program()
+        first, second = _act(program), _act(program)
+        repository.save(program)
+
+        reloaded = repository.get(program.id)
+        assert reloaded is not None
+        assert reloaded.numbers_frozen is False
+        reloaded.reorder([second, first], now=NOW)
+        repository.save(reloaded)
+
+        again = repository.get(program.id)
+        assert again is not None
+        assert [item.id for item in again.items] == [second, first]
+        assert [item.number for item in again.items] == [1, 2]
+
     def test_a_retired_number_is_not_reissued_after_a_reload(self) -> None:
         repository = DjangoProgramRepository()
         program = _program()
         _first, second = _act(program), _act(program)
+        _publish(program)
         program.remove_item(second, now=NOW)
         repository.save(program)
 

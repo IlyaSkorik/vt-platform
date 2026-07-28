@@ -61,8 +61,11 @@ export interface ProgramItem {
   kind: ProgramItemKind;
   title: string;
   /**
-   * The participant's permanent number — assigned once and never changed by a reorder,
-   * so a rearranged programme legitimately reads 2, 3, 5, 4.
+   * The slot's number in the programme.
+   *
+   * Follows the running order while the programme is unpublished, and is fixed to the
+   * slot from the first public link onwards — so a rearranged published programme
+   * legitimately reads 2, 3, 5, 4.
    */
   number: number;
   durationSeconds: number;
@@ -109,6 +112,14 @@ export interface Program {
   shares: ProgramShare[];
   /** Every column the table can carry — the header, and what a link may be cut to. */
   availableColumns: ProgramColumn[];
+  /**
+   * Whether numbers are fixed to their slots.
+   *
+   * `false` while the programme is being assembled: numbers follow the order and a
+   * reorder renumbers freely. The first published link flips this for good.
+   */
+  numbersFrozen: boolean;
+  numbersFrozenAt: string | null;
   totalSeconds: number;
   endsAt: string | null;
   createdAt: string;
