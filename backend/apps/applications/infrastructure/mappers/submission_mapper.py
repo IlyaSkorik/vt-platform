@@ -127,6 +127,7 @@ class SubmissionMapper:
             "age_category_id": performance.age_category_id.json(),
             "participant_group_id": performance.participant_group_id.json(),
             "participation_format_id": performance.participation_format_id.json(),
+            "comment": performance.comment,
         }
 
     @staticmethod
@@ -141,6 +142,8 @@ class SubmissionMapper:
             age_category_id=AgeCategoryId.from_string(data["age_category_id"]),
             participant_group_id=ParticipantGroupId.from_string(data["participant_group_id"]),
             participation_format_id=ParticipationFormatId.from_string(data["participation_format_id"]),
+            # Rows written before the comment existed simply have no key.
+            comment=str(data.get("comment") or ""),
         )
 
     # ------------------------------------------------------------------

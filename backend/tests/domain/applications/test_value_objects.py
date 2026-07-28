@@ -12,6 +12,7 @@ from apps.applications.domain.exceptions import (
     InvalidDurationError,
     InvalidMoneyError,
     InvalidParticipantCountRangeError,
+    InvalidPerformanceCommentError,
     InvalidPerformanceTitleError,
     InvalidPersonNameError,
     InvalidPriceSnapshotError,
@@ -20,13 +21,19 @@ from apps.applications.domain.exceptions import (
     InvalidTeacherRoleError,
 )
 from apps.applications.domain.value_objects import (
+    AgeCategoryId,
     AttachmentType,
     BirthDate,
     Currency,
+    DisciplineId,
     Duration,
     Gender,
     Money,
+    NominationId,
     ParticipantCountRange,
+    ParticipantGroupId,
+    ParticipationFormatId,
+    Performance,
     PerformanceTitle,
     PersonName,
     PriceSnapshot,
@@ -66,6 +73,50 @@ class TestPerformanceTitle:
     def test_empty_rejected(self) -> None:
         with pytest.raises(InvalidPerformanceTitleError):
             PerformanceTitle("   ")
+
+
+_REFERENCES = {
+    "nomination_id": NominationId.from_uuid(SubmissionId.generate().value),
+    "discipline_id": DisciplineId.from_uuid(SubmissionId.generate().value),
+    "age_category_id": AgeCategoryId.from_uuid(SubmissionId.generate().value),
+    "participant_group_id": ParticipantGroupId.from_uuid(SubmissionId.generate().value),
+    "participation_format_id": ParticipationFormatId.from_uuid(SubmissionId.generate().value),
+}
+
+
+def _performance(comment: str | None = None) -> Performance:
+    """A valid performance; ``comment`` omitted means "the applicant added no note"."""
+    return Performance(
+        title=PerformanceTitle("Swan Lake"),
+        duration=Duration.of(minutes=3, seconds=30),
+        **_REFERENCES,
+        **({} if comment is None else {"comment": comment}),
+    )
+
+
+class TestPerformanceComment:
+    """The applicant's optional note to the organizers about this act."""
+
+    def test_defaults_to_blank(self) -> None:
+        assert _performance().comment == ""
+
+    def test_trims(self) -> None:
+        assert _performance("  выход с точки 3  ").comment == "выход с точки 3"
+
+    def test_blank_stays_blank(self) -> None:
+        assert _performance("   ").comment == ""
+
+    def test_at_the_limit_accepted(self) -> None:
+        assert len(_performance("я" * 1_000).comment) == 1_000
+
+    def test_over_the_limit_rejected(self) -> None:
+        with pytest.raises(InvalidPerformanceCommentError):
+            _performance("я" * 1_001)
+
+    def test_is_part_of_value_equality(self) -> None:
+        # Editing only the note still replaces the whole value object.
+        assert _performance("нужен микрофон") != _performance()
+        assert _performance("нужен микрофон") == _performance("нужен микрофон")
 
 
 class TestDuration:

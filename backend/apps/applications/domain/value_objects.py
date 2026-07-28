@@ -65,6 +65,7 @@ from .exceptions import (
     InvalidParticipantIdError,
     InvalidParticipationFormatIdError,
     InvalidPaymentReceiptError,
+    InvalidPerformanceCommentError,
     InvalidPerformanceTitleError,
     InvalidPersonNameError,
     InvalidPriceSnapshotError,
@@ -823,6 +824,7 @@ class Currency(StrEnum):
 # ---------------------------------------------------------------------------
 
 _PERFORMANCE_TITLE_MAX: Final = 300
+_PERFORMANCE_COMMENT_MAX: Final = 1_000
 _FIRST_NAME_MAX: Final = 120
 _LAST_NAME_MAX: Final = 120
 _MIDDLE_NAME_MAX: Final = 120
@@ -1049,6 +1051,11 @@ class Performance:
     Modelled as a value object (not a child entity) because there is exactly one
     per submission and no independent identity: editing the performance replaces
     the whole value.
+
+    ``comment`` is the applicant's optional free-text note for the organizers about
+    this act (stage entry point, props, equipment, backing-track quirks). It is
+    plain, length-bounded text - an empty string means "nothing to add" (the same
+    "blank, not null" shape :class:`Attachment`'s caption uses).
     """
 
     title: PerformanceTitle
@@ -1058,6 +1065,13 @@ class Performance:
     age_category_id: AgeCategoryId
     participant_group_id: ParticipantGroupId
     participation_format_id: ParticipationFormatId
+    comment: str = ""
+
+    def __post_init__(self) -> None:
+        stripped = self.comment.strip()
+        if len(stripped) > _PERFORMANCE_COMMENT_MAX:
+            raise InvalidPerformanceCommentError(f"Performance comment must be at most {_PERFORMANCE_COMMENT_MAX} characters.")
+        object.__setattr__(self, "comment", stripped)
 
     def __str__(self) -> str:
         return f"{self.title} ({self.duration})"

@@ -44,6 +44,7 @@ from apps.applications.domain.value_objects import (
     TeacherRole,
     UserId,
 )
+from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.applications.infrastructure.repositories import (
     ConcurrencyConflictError,
     DjangoApplicationRepository,
@@ -71,6 +72,7 @@ def _build_submission() -> Submission:
             age_category_id=AgeCategoryId.from_uuid(SubmissionId.generate().value),
             participant_group_id=ParticipantGroupId.from_uuid(SubmissionId.generate().value),
             participation_format_id=ParticipationFormatId.from_uuid(SubmissionId.generate().value),
+            comment="Выход с точки 3. Нужен микрофон на стойке.",
         ),
         now=NOW,
     )
@@ -116,6 +118,22 @@ class TestSubmissionRepository:
         assert loaded.teachers == original.teachers
         assert loaded.attachments == original.attachments
         assert loaded.price_snapshot == original.price_snapshot
+        assert loaded.performance is not None
+        assert loaded.performance.comment == "Выход с точки 3. Нужен микрофон на стойке."
+
+    def test_rows_written_before_the_comment_existed_load_with_a_blank_one(self) -> None:
+        """The performance is stored as JSON, so older rows simply have no key."""
+        repo = DjangoSubmissionRepository()
+        submission = _build_submission()
+        repo.save(submission)
+        row = SubmissionModel.objects.get(id=submission.id.value)
+        del row.performance["comment"]
+        row.save(update_fields=["performance"])
+
+        loaded = repo.get(submission.id)
+        assert loaded is not None
+        assert loaded.performance is not None
+        assert loaded.performance.comment == ""
 
     def test_update_and_list(self) -> None:
         repo = DjangoSubmissionRepository()

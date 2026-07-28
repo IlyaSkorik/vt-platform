@@ -69,7 +69,10 @@ class DeleteDraftSubmissionCommand:
 
 @dataclass(frozen=True, slots=True)
 class SetPerformanceCommand:
-    """Set the submission's single performance (owner, editable states only)."""
+    """Set the submission's single performance (owner, editable states only).
+
+    ``comment`` is the applicant's optional note for the organizers about this act.
+    """
 
     submission_id: str
     requested_by: str
@@ -80,11 +83,15 @@ class SetPerformanceCommand:
     age_category_id: str
     participant_group_id: str
     participation_format_id: str
+    comment: str = ""
 
 
 @dataclass(frozen=True, slots=True)
 class UpdatePerformanceCommand:
-    """Replace the submission's existing performance (owner, editable states only)."""
+    """Replace the submission's existing performance (owner, editable states only).
+
+    ``comment`` is the applicant's optional note for the organizers about this act.
+    """
 
     submission_id: str
     requested_by: str
@@ -95,6 +102,7 @@ class UpdatePerformanceCommand:
     age_category_id: str
     participant_group_id: str
     participation_format_id: str
+    comment: str = ""
 
 
 # ---------------------------------------------------------------------------

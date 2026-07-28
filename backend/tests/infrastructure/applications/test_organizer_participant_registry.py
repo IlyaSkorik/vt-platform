@@ -54,6 +54,7 @@ def _make_submission(
     teachers: list[dict] | None = None,
     attachments: list[dict] | None = None,
     notes: list[dict] | None = None,
+    comment: str | None = None,
     updated: datetime,
 ) -> SubmissionModel:
     return SubmissionModel.objects.create(
@@ -68,6 +69,8 @@ def _make_submission(
             "age_category_id": str(uuid.uuid4()),
             "participant_group_id": str(uuid.uuid4()),
             "participation_format_id": str(uuid.uuid4()),
+            # Omitted entirely when unset, mirroring rows written before the field existed.
+            **({} if comment is None else {"comment": comment}),
         },
         participants=participants,
         teachers=teachers or [],
@@ -203,6 +206,33 @@ def test_detail_returns_full_card_across_scope(registry, _seed) -> None:
     assert detail.notes[0].text == "Проверить документы"
     assert detail.awards == ()  # no results/judging source yet
     assert len(detail.history) == 2
+
+
+def test_detail_surfaces_the_performance_comment_when_the_applicant_left_one(registry) -> None:
+    """The organizer's participant card carries the note; rows without one stay None."""
+    _make_submission(
+        competition_id=COMP_A,
+        status="ACCEPTED",
+        participants=[_participant(REGISTRY_P1, first="Пётр", last="Петров", birth="2015-05-01", gender="male")],
+        comment="  Выход с точки 3.  ",
+        updated=datetime(2026, 7, 10, 10, 0, tzinfo=UTC),
+    )
+    _make_submission(
+        competition_id=COMP_A,
+        status="ACCEPTED",
+        participants=[_participant(REGISTRY_P2, first="Анна", last="Сидорова", birth="2014-03-03", gender="female")],
+        updated=datetime(2026, 7, 11, 10, 0, tzinfo=UTC),
+    )
+
+    rows = registry.list(competition_ids=SCOPE, filters=RegistryFilters())
+    comments = {}
+    for row in rows:
+        detail = registry.get(competition_ids=SCOPE, key=row.key)
+        assert detail is not None
+        comments[row.last_name] = [performance.comment for performance in detail.performances]
+
+    assert comments["Петров"] == ["Выход с точки 3."]
+    assert comments["Сидорова"] == [None]
 
 
 def test_detail_missing_key_returns_none(registry, _seed) -> None:

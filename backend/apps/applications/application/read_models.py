@@ -111,6 +111,7 @@ class RegistryPerformanceView:
     age_category: str | None
     participant_group: str | None
     participation_format: str | None
+    comment: str | None
 
 
 @dataclass(frozen=True, slots=True)

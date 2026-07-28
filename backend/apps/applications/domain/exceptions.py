@@ -20,6 +20,7 @@ objects) and mapped to RFC 9457 Problem Details at the presentation edge
     │   ├── InvalidParticipantGroupIdError
     │   ├── InvalidParticipationFormatIdError
     │   ├── InvalidPerformanceTitleError
+    │   ├── InvalidPerformanceCommentError
     │   ├── InvalidDurationError
     │   ├── InvalidPersonNameError
     │   ├── InvalidBirthDateError
@@ -135,6 +136,10 @@ class InvalidParticipationFormatIdError(ValueObjectValidationError):
 
 class InvalidPerformanceTitleError(ValueObjectValidationError):
     """The provided value is not a valid performance title (empty or too long)."""
+
+
+class InvalidPerformanceCommentError(ValueObjectValidationError):
+    """The provided value is not a valid performance comment (too long)."""
 
 
 class InvalidDurationError(ValueObjectValidationError):

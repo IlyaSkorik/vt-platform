@@ -43,6 +43,7 @@ def _performance_from(
     age_category_id: str,
     participant_group_id: str,
     participation_format_id: str,
+    comment: str = "",
 ) -> Performance:
     """Build the :class:`Performance` value object, translating validation errors."""
     with translate_domain_errors():
@@ -54,6 +55,7 @@ def _performance_from(
             age_category_id=AgeCategoryId.from_string(age_category_id),
             participant_group_id=ParticipantGroupId.from_string(participant_group_id),
             participation_format_id=ParticipationFormatId.from_string(participation_format_id),
+            comment=comment,
         )
 
 
@@ -85,6 +87,7 @@ class SetPerformanceHandler:
             age_category_id=command.age_category_id,
             participant_group_id=command.participant_group_id,
             participation_format_id=command.participation_format_id,
+            comment=command.comment,
         )
         if not self._catalog.accepts_submissions(competition_id=submission.competition_id, nomination_id=performance.nomination_id, now=now):
             raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
@@ -136,6 +139,7 @@ class UpdatePerformanceHandler:
             age_category_id=command.age_category_id,
             participant_group_id=command.participant_group_id,
             participation_format_id=command.participation_format_id,
+            comment=command.comment,
         )
         if not self._catalog.accepts_submissions(competition_id=submission.competition_id, nomination_id=performance.nomination_id, now=now):
             raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")

@@ -275,6 +275,7 @@ class DjangoOrganizerParticipantRegistry:
                             participation_format=taxonomy["participation_format"].get(
                                 str(performance.get("participation_format_id") or "")
                             ),
+                            comment=_clean(performance.get("comment")),
                         )
                     )
                 for attachment in model.attachments or []:
