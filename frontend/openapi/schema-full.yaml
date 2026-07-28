@@ -4920,11 +4920,8 @@ paths:
   /api/v1/public/programs/{slug}:
     get:
       operationId: publicProgramRetrieve
-      description: |-
-        Read one published program by its slug.
-
-        An unknown, malformed or revoked slug is a single, indistinguishable ``404``, so
-        nothing about which of the three it was leaks.
+      description: Returns the published table. Send back the `ETag` as `If-None-Match`
+        and a poll that finds nothing changed costs a `304` instead of the whole table.
       parameters:
       - in: path
         name: slug
@@ -4942,6 +4939,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/PublicProgramEnvelope'
           description: ''
+        '304':
+          description: No response body
   /api/v1/public/programs/{slug}/order:
     put:
       operationId: publicProgramReorder

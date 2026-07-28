@@ -58,6 +58,22 @@ class DjangoProgramRepository:
             return None
         return self._to_entity(share.program), share.id
 
+    def stamp_for_slug(self, slug: str) -> tuple[uuid.UUID, int] | None:
+        """(share id, program version) from one row, with the same liveness rules as above.
+
+        ``values_list`` rather than a model instance on purpose: this runs on every poll
+        of every open screen, and none of the rest of the row is wanted.
+        """
+        row = (
+            ProgramShareModel.objects.filter(slug=slug, deleted_at__isnull=True, program__deleted_at__isnull=True)
+            .values_list("id", "program__version")
+            .first()
+        )
+        if row is None:
+            return None
+        share_id, version = row
+        return share_id, int(version)
+
     @transaction.atomic
     def save(self, program: Program) -> None:
         """Persist the whole aggregate: root row plus synchronized children."""

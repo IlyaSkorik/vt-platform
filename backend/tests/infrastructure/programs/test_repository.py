@@ -19,6 +19,7 @@ from apps.programs.domain.value_objects import (
     ItemTitle,
     ProgramColumn,
     ProgramItemKind,
+    ProgramItemProgress,
     ProgramName,
     PublicSlug,
     ShareName,
@@ -297,6 +298,41 @@ class TestPublicLinks:
 
     def test_a_free_slug_is_not_reported_as_taken(self) -> None:
         assert DjangoProgramRepository().slug_taken("Nobody234") is False
+
+    def test_a_stamp_names_the_edition_and_the_version_it_was_read_at(self) -> None:
+        repository = DjangoProgramRepository()
+        program = _program()
+        _act(program)
+        share = program.add_share(share_id=uuid.uuid4(), name=ShareName("Экран"), slug=PublicSlug("Screen234"), now=NOW)
+        repository.save(program)
+
+        stamp = repository.stamp_for_slug("Screen234")
+        assert stamp == (share.id, program.version)
+
+    def test_a_stamp_moves_when_the_programme_does(self) -> None:
+        """What the public screen's validator is built on: it must move on every change."""
+        repository = DjangoProgramRepository()
+        program = _program()
+        item_id = _act(program)
+        program.add_share(share_id=uuid.uuid4(), name=ShareName("Экран"), slug=PublicSlug("Screen234"), now=NOW)
+        repository.save(program)
+        before = repository.stamp_for_slug("Screen234")
+
+        program.set_item_progress(item_id, ProgramItemProgress.ON_STAGE, now=NOW)
+        repository.save(program)
+
+        assert repository.stamp_for_slug("Screen234") != before
+
+    def test_a_stamp_follows_the_same_liveness_rules_as_the_link(self) -> None:
+        repository = DjangoProgramRepository()
+        program = _program()
+        share = program.add_share(share_id=uuid.uuid4(), name=ShareName("Временная"), slug=PublicSlug("Temp23456"), now=NOW)
+        repository.save(program)
+        program.remove_share(share.id, now=NOW)
+        repository.save(program)
+
+        assert repository.stamp_for_slug("Temp23456") is None
+        assert repository.stamp_for_slug("Nobody234") is None
 
     def test_a_row_written_before_columns_existed_loads_with_the_defaults(self) -> None:
         """The columns field is JSON, so an older row simply has an empty list."""

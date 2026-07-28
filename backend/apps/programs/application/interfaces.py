@@ -90,6 +90,16 @@ class ProgramRepository(Protocol):
         """
         ...
 
+    def stamp_for_slug(self, slug: str) -> tuple[uuid.UUID, int] | None:
+        """The edition's id and its program's version, without loading the aggregate.
+
+        Exists for the one caller that asks "has anything changed?" far more often than
+        it asks "what is it?" - the public screen, polling every few seconds. Answering
+        that from one indexed row beats loading items, editions, columns and the whole
+        catalog read behind them, only to find nothing moved.
+        """
+        ...
+
 
 class PerformanceCatalog(Protocol):
     """Anti-corruption layer over Applications + Competitions."""

@@ -12,6 +12,9 @@ one is indistinguishable from one that never existed.
 
 from __future__ import annotations
 
+import uuid
+
+from django.core.cache import cache
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny
@@ -34,7 +37,38 @@ from apps.programs.presentation.api.v1.serializers import (
 
 _TAG = "Public Program"
 
+#: How long a rendered table may be served from Redis before it is built again.
+#:
+#: This is the ceiling on how far behind the screen can be on data this context does not
+#: own - a participant renamed in Applications, a competition retitled - because those do
+#: not move the programme's version. Anything the programme itself records (a row marked
+#: on stage, a reorder, a republished column set) bumps the version and is visible on the
+#: next poll regardless.
+_CACHE_TTL_SECONDS = 60
+
 __all__ = ["PublicProgramDetailView", "PublicProgramOrderView", "PublicProgramRowProgressView"]
+
+
+def _cache_key(slug: str, stamp: str) -> str:
+    return f"programs:public:{slug}:{stamp}"
+
+
+def _if_none_match(request: Request) -> frozenset[str]:
+    """The client's validators, weak prefix stripped so ``W/"x"`` matches ``"x"``."""
+    header = request.headers.get("If-None-Match", "")
+    return frozenset(part.removeprefix("W/").strip() for part in (raw.strip() for raw in header.split(",")) if part)
+
+
+def _cache_headers(etag: str, correlation_id: str) -> dict[str, str]:
+    return {
+        "ETag": etag,
+        # ``no-cache`` means "revalidate", not "do not store": the client keeps the body
+        # and asks whether it is still current, which is the whole point of the ETag.
+        # ``private`` because the host's edition carries row ids that a shared cache has
+        # no business holding.
+        "Cache-Control": "private, no-cache",
+        "X-Request-ID": correlation_id,
+    }
 
 
 def _public_json(view: PublicProgramView) -> dict[str, object]:
@@ -70,24 +104,59 @@ class PublicProgramDetailView(APIView):
     @extend_schema(
         tags=[_TAG],
         operation_id="publicProgramRetrieve",
-        responses={status.HTTP_200_OK: PublicProgramEnvelopeSerializer},
+        responses={
+            status.HTTP_200_OK: PublicProgramEnvelopeSerializer,
+            status.HTTP_304_NOT_MODIFIED: None,
+        },
+        description=(
+            "Returns the published table. Send back the `ETag` as `If-None-Match` and a "
+            "poll that finds nothing changed costs a `304` instead of the whole table."
+        ),
     )
     def get(self, request: Request, slug: str) -> Response:
         correlation_id = request_id(request)
-        program = build_program_service().public_program(slug)
-        if program is None:
-            return problem_response(
-                status=status.HTTP_404_NOT_FOUND,
-                type_suffix="not-found",
-                title="Resource not found",
-                detail="No published program answers to this link.",
-                instance=request.get_full_path(),
-                correlation_id=correlation_id,
-            )
+        service = build_program_service()
+
+        # The cheap question first: one indexed row, no aggregate, no catalog read behind it.
+        stamp = service.public_program_stamp(slug)
+        if stamp is None:
+            return self._gone(request, correlation_id)
+
+        key = _cache_key(slug, stamp)
+        entry = cache.get(key)
+        if entry is None:
+            view = service.public_program(slug)
+            if view is None:
+                # Revoked between the two reads: the link is simply gone.
+                return self._gone(request, correlation_id)
+            # The validator is minted with the entry and stored beside it, so it rotates
+            # exactly when the table is built again. That is what bounds the lag on data
+            # this context does not own: no rebuild, no new validator, no stale answer
+            # that outlives the TTL.
+            entry = {"etag": f'W/"{stamp}.{uuid.uuid4().hex[:8]}"', "body": _public_json(view)}
+            cache.set(key, entry, timeout=_CACHE_TTL_SECONDS)
+
+        etag = str(entry["etag"])
+        if etag.removeprefix("W/") in _if_none_match(request):
+            # Nothing to send, and this is the answer to the overwhelming majority of
+            # polls: a programme changes a few times an hour, and every open screen asks
+            # every few seconds.
+            return Response(status=status.HTTP_304_NOT_MODIFIED, headers=_cache_headers(etag, correlation_id))
+
         return Response(
-            {"data": _public_json(program), "meta": {"requestId": correlation_id}},
+            {"data": entry["body"], "meta": {"requestId": correlation_id}},
             status=status.HTTP_200_OK,
-            headers={"X-Request-ID": correlation_id},
+            headers=_cache_headers(etag, correlation_id),
+        )
+
+    def _gone(self, request: Request, correlation_id: str) -> Response:
+        return problem_response(
+            status=status.HTTP_404_NOT_FOUND,
+            type_suffix="not-found",
+            title="Resource not found",
+            detail="No published program answers to this link.",
+            instance=request.get_full_path(),
+            correlation_id=correlation_id,
         )
 
 

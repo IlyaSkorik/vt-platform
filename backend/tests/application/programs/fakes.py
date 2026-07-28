@@ -79,6 +79,13 @@ class InMemoryProgramRepository:
                     return program, share.id
         return None
 
+    def stamp_for_slug(self, slug: str) -> tuple[uuid.UUID, int] | None:
+        found = self.get_by_slug(slug)
+        if found is None:
+            return None
+        program, share_id = found
+        return share_id, program.version
+
 
 class StubPerformanceCatalog:
     """A fixed catalog of competing acts, standing in for other contexts."""

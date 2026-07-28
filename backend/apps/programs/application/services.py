@@ -448,6 +448,25 @@ class ProgramService:
         self._programs.save(program)
         return self._detail(program)
 
+    def public_program_stamp(self, slug: str) -> str | None:
+        """A short string that changes whenever this edition's table could have changed.
+
+        The cheap half of the public read. Every mutation of a programme touches the
+        aggregate's version - a row marked on stage, a reorder, a republished column
+        set - so the version plus the edition's id identify a rendered table exactly,
+        and two editions of one programme never share a stamp because their columns
+        differ.
+
+        What it deliberately does *not* cover is data owned by other contexts: a
+        participant renamed in Applications does not move this version. The caller
+        bounds that staleness with time rather than pretending otherwise.
+        """
+        stamp = self._programs.stamp_for_slug(slug)
+        if stamp is None:
+            return None
+        share_id, version = stamp
+        return f"{share_id.hex}.{version}"
+
     def public_program(self, slug: str) -> PublicProgramView | None:
         """Resolve a public link into the table it publishes, or ``None``.
 

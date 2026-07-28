@@ -12,6 +12,9 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
+from django.core.cache import cache
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -315,3 +318,103 @@ class TestPublicContent:
         staff_client.post(f"{_PROGRAMS}/{program_id}/items", {"title": "Обед", "durationSeconds": 2400}, format="json")
         data = APIClient().get(f"{_PUBLIC}/{slug}").data["data"]
         assert len(data["rows"]) == 3
+
+
+class TestRevalidation:
+    """Every open screen asks every few seconds; almost every answer should be "no change".
+
+    This is what makes a five-second poll affordable with a hall full of phones on it, so
+    it is a contract of the endpoint rather than an optimization detail: a validator that
+    survives an unchanged programme, and one that does not survive a changed one.
+    """
+
+    def test_a_read_carries_a_validator(self, staff_client, scope) -> None:
+        slug, _program_id, _items = _published_program(staff_client, scope)
+        response = APIClient().get(f"{_PUBLIC}/{slug}")
+        assert response["ETag"]
+        # ``no-cache`` is "revalidate", not "do not store" - the client keeps the body and
+        # asks whether it is still current.
+        assert response["Cache-Control"] == "private, no-cache"
+
+    def test_polling_an_unchanged_programme_costs_a_304(self, staff_client, scope) -> None:
+        slug, _program_id, _items = _published_program(staff_client, scope)
+        first = APIClient().get(f"{_PUBLIC}/{slug}")
+
+        again = APIClient().get(f"{_PUBLIC}/{slug}", HTTP_IF_NONE_MATCH=first["ETag"])
+        assert again.status_code == 304
+        assert not again.content
+        # The validator is repeated, so the next poll can send it back too.
+        assert again["ETag"] == first["ETag"]
+
+    def test_a_weak_validator_is_matched_without_its_prefix(self, staff_client, scope) -> None:
+        slug, _program_id, _items = _published_program(staff_client, scope)
+        etag = APIClient().get(f"{_PUBLIC}/{slug}")["ETag"]
+        assert etag.startswith('W/"')
+        assert APIClient().get(f"{_PUBLIC}/{slug}", HTTP_IF_NONE_MATCH=etag.removeprefix("W/")).status_code == 304
+
+    def test_marking_a_row_invalidates_the_validator(self, staff_client, scope) -> None:
+        slug, _program_id, _items = _published_program(staff_client, scope, name="Программа ведущего", controls=True)
+        first = APIClient().get(f"{_PUBLIC}/{slug}")
+        row_id = first.data["data"]["rows"][0]["id"]
+
+        APIClient().put(f"{_PUBLIC}/{slug}/rows/{row_id}/progress", {"progress": "ON_STAGE"}, format="json")
+
+        after = APIClient().get(f"{_PUBLIC}/{slug}", HTTP_IF_NONE_MATCH=first["ETag"])
+        assert after.status_code == 200, "a row on stage must reach the hall on the next poll"
+        assert after["ETag"] != first["ETag"]
+        assert after.data["data"]["rows"][0]["progress"] == "ON_STAGE"
+
+    def test_editing_the_programme_invalidates_the_validator(self, staff_client, scope) -> None:
+        slug, program_id, _items = _published_program(staff_client, scope, name="Экран у сцены")
+        first = APIClient().get(f"{_PUBLIC}/{slug}")
+
+        staff_client.post(f"{_PROGRAMS}/{program_id}/items", {"title": "Обед", "durationSeconds": 2400}, format="json")
+
+        after = APIClient().get(f"{_PUBLIC}/{slug}", HTTP_IF_NONE_MATCH=first["ETag"])
+        assert after.status_code == 200
+        assert len(after.data["data"]["rows"]) == 3
+
+    def test_two_editions_of_one_programme_never_share_a_validator(self, staff_client, scope) -> None:
+        """Otherwise one edition's link could revalidate into another's columns."""
+        slug_a, program_id, _items = _published_program(staff_client, scope, name="Для жюри", columns=["TIME", "TITLE"])
+        share_b = staff_client.post(
+            f"{_PROGRAMS}/{program_id}/shares",
+            {"name": "Для зала", "columns": ["POSITION", "TITLE"]},
+            format="json",
+        )
+        slug_b = share_b.data["data"]["share"]["slug"]
+
+        etag_a = APIClient().get(f"{_PUBLIC}/{slug_a}")["ETag"]
+        response_b = APIClient().get(f"{_PUBLIC}/{slug_b}", HTTP_IF_NONE_MATCH=etag_a)
+        assert response_b.status_code == 200
+        assert [column["key"] for column in response_b.data["data"]["columns"]] == ["POSITION", "TITLE"]
+
+    def test_a_304_answers_from_one_query(self, staff_client, scope) -> None:
+        """The whole point: an unchanged poll must not load the aggregate or the catalog.
+
+        Asserting the exact count rather than "fewer than a full read" on purpose - if this
+        ever grows a second query, the cost lands on every screen every few seconds, and
+        that is worth being told about.
+        """
+        slug, _program_id, _items = _published_program(staff_client, scope)
+        etag = APIClient().get(f"{_PUBLIC}/{slug}")["ETag"]
+
+        with CaptureQueriesContext(connection) as unchanged:
+            assert APIClient().get(f"{_PUBLIC}/{slug}", HTTP_IF_NONE_MATCH=etag).status_code == 304
+        assert len(unchanged.captured_queries) == 1, [query["sql"] for query in unchanged.captured_queries]
+
+        cache.clear()
+        with CaptureQueriesContext(connection) as rebuilt:
+            assert APIClient().get(f"{_PUBLIC}/{slug}").status_code == 200
+        assert len(rebuilt.captured_queries) > 1
+
+    def test_a_revoked_link_is_not_served_from_the_cache(self, staff_client, scope) -> None:
+        """A link taken down mid-event must stop resolving, warm cache or not."""
+        slug, program_id, _items = _published_program(staff_client, scope)
+        first = APIClient().get(f"{_PUBLIC}/{slug}")
+        assert first.status_code == 200
+
+        share_id = staff_client.get(f"{_PROGRAMS}/{program_id}/shares").data["data"][0]["id"]
+        staff_client.delete(f"{_PROGRAMS}/{program_id}/shares/{share_id}")
+
+        assert APIClient().get(f"{_PUBLIC}/{slug}", HTTP_IF_NONE_MATCH=first["ETag"]).status_code == 404
