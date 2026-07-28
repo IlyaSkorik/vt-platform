@@ -25,27 +25,50 @@ Mbit/s.
 
 | | vCPU | RAM | Disk |
 |---|---|---|---|
-| Minimum (works, tight) | 2 | 4 GB | 40 GB SSD |
-| **Recommended** | **4** | **8 GB** | **60 GB NVMe** |
+| **Start here** | **2** | **6 GB** | **50 GB SSD** |
+| Comfortable | 4 | 8 GB | 60 GB NVMe |
 | Headroom for 500+ online | 8 | 16 GB | 80 GB |
 
-Memory budget for 4 vCPU / 8 GB:
+Two vCPU are enough to begin with because **the three load profiles never overlap in
+time**: the registration burst is weeks before the event, the programme polling is during
+it, and the diploma run is after. There is no hour in the calendar where all three stack.
 
-| Service | RAM |
-|---|---|
-| PostgreSQL | ~2.5 GB |
-| gunicorn, 3 workers × 300–400 MB | ~1.2 GB |
-| Celery worker (concurrency 2) | ~600 MB |
-| Celery beat + nginx | ~200 MB |
-| Redis | 512 MB |
-| OS + page cache | the rest |
+Memory budget:
+
+| Service | 2 vCPU / 6 GB | 4 vCPU / 8 GB |
+|---|---|---|
+| PostgreSQL | ~2 GB | ~2.5 GB |
+| gunicorn | 2 workers, ~700 MB | 3 workers, ~1.2 GB |
+| Celery worker | concurrency 1, ~300 MB | concurrency 2, ~600 MB |
+| Celery beat + nginx | ~150 MB | ~200 MB |
+| Redis | 256 MB | 512 MB |
+| OS + page cache | the rest (~2.5 GB) | the rest (~3 GB) |
+
+The database is 1–3 GB per season, so on either box it sits in page cache in its entirety.
+That is why 6 GB is not a compromise here — and why going to 5 GB buys almost nothing while
+removing all the headroom.
+
+### Settings that change on the smaller box
+
+| Setting | 4 vCPU / 8 GB | 2 vCPU / 6 GB |
+|---|---|---|
+| `shared_buffers` | 2GB | 1500MB |
+| `effective_cache_size` | 5GB | 3500MB |
+| `work_mem` | 24MB | 16MB |
+| `max_connections` | 100 | 50 |
+| gunicorn `workers` | 3 | 2 |
+| Celery `--concurrency` | 2 | 1 |
+| Redis `maxmemory` | 512mb | 256mb |
 
 Disk is small because uploads and generated documents live in a bucket: what stays is the
-database (1–3 GB per season), WAL, and temporary files.
+database (1–3 GB per season), WAL, and temporary files. **Keep ~15 GB of it free**: a print
+run spools the diploma archive to disk on its way to the bucket (§8), and that archive is as
+large as the tirage times the template.
 
 ## 3. PostgreSQL
 
-`/etc/postgresql/16/main/conf.d/vt-platform.conf`:
+`/etc/postgresql/16/main/conf.d/vt-platform.conf` (values for 4 vCPU / 8 GB — see §2 for the
+smaller box):
 
 ```ini
 # 4 vCPU / 8 GB, media in S3, one application on the box.
@@ -207,6 +230,13 @@ server {
 
 ## 8. Known limits of this shape
 
+- **A print run spools its archive to disk, not to RAM.** Worth knowing because it used to be
+  the other way round, and that — not the web workers — was what decided how much memory the
+  box needed: one archive holds every diploma of a competition, each diploma is a full copy
+  of its template, so 3 000 participants with a 2 MB template make a ~6 GB archive, and
+  buffering it took twice that. It now streams member by member through a spool
+  (`_ARCHIVE_SPOOL_BYTES`, 4 MB) that rolls over to disk, so peak memory is a chunk plus the
+  threshold whatever the tirage. The cost moved to disk — hence the free-space note in §2.
 - **The programme PDF export is synchronous.** 60 rows take 100–300 ms; a 300-row programme
   occupies one of three workers for far longer. When programmes get that big, move the
   export to Celery the way diploma generation already is.

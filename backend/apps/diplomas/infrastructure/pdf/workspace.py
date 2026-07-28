@@ -14,13 +14,15 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-import io
+import shutil
+import tempfile
 import uuid
 import zipfile
+from pathlib import PurePosixPath
 from urllib.parse import unquote
 
 from django.conf import settings
-from django.core.files.base import ContentFile
+from django.core.files.base import ContentFile, File
 from django.core.files.storage import default_storage
 from django.utils.text import slugify
 
@@ -36,6 +38,13 @@ __all__ = ["DjangoPrintPackageWorkspace"]
 #: An ASCII key that no real file uses, minted only to find out what a reference looks
 #: like in front of the key. Never read or written.
 _BASE_PROBE_KEY = "__reference_base_probe__"
+
+#: How much of an archive is held in memory before the spool rolls over to disk. Small
+#: bundles never touch the filesystem; a festival's full diploma set always does.
+_ARCHIVE_SPOOL_BYTES = 4 * 1024 * 1024
+
+#: Read size when copying one document into the archive.
+_COPY_CHUNK_BYTES = 256 * 1024
 
 
 def _storage_key(reference: str) -> str:
@@ -179,16 +188,28 @@ class DjangoPrintPackageWorkspace:
 
     @staticmethod
     def _store_archive(*, key: str, items: list[tuple[str, str]]) -> str:
-        """ZIP up ``(arcname, reference)`` pairs at ``key``, replacing any previous."""
-        buffer = io.BytesIO()
-        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
-            for arcname, reference in items:
-                storage_key = _storage_key(reference)
-                if not default_storage.exists(storage_key):
-                    continue
-                with default_storage.open(storage_key, "rb") as handle:
-                    archive.writestr(arcname, handle.read())
-        if default_storage.exists(key):
-            default_storage.delete(key)
-        default_storage.save(key, ContentFile(buffer.getvalue()))
+        """ZIP up ``(arcname, reference)`` pairs at ``key``, replacing any previous.
+
+        Streamed on purpose, member by member and chunk by chunk, through a spool that
+        rolls over to disk. One archive holds every diploma of a competition, and every
+        diploma is a full copy of the template it was rendered over - so a festival with
+        3 000 participants and a 2 MB template produces a ~6 GB archive. Built in memory,
+        that alone would exhaust a server twice over, and the ``getvalue()`` it used to
+        end with doubled it again. Peak memory is now one chunk plus the spool threshold,
+        whatever the tirage.
+        """
+        with tempfile.SpooledTemporaryFile(max_size=_ARCHIVE_SPOOL_BYTES) as spool:
+            with zipfile.ZipFile(spool, "w", zipfile.ZIP_DEFLATED) as archive:
+                for arcname, reference in items:
+                    storage_key = _storage_key(reference)
+                    if not default_storage.exists(storage_key):
+                        continue
+                    with default_storage.open(storage_key, "rb") as source, archive.open(arcname, "w") as target:
+                        shutil.copyfileobj(source, target, length=_COPY_CHUNK_BYTES)
+            spool.seek(0)
+            if default_storage.exists(key):
+                default_storage.delete(key)
+            # A file object rather than bytes: the storage reads it in chunks, so the
+            # archive is never resident in full - locally or on the way to a bucket.
+            default_storage.save(key, File(spool, name=PurePosixPath(key).name))
         return _reference(key)
