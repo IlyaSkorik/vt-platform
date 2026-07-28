@@ -77,6 +77,32 @@ The trade is honest and worth stating: if Redis or the worker is down, mail stop
 silently, where before a failure surfaced in the request. That is what makes the worker part
 of the monitored surface, not an optional extra.
 
+## Throughput: the allowance is not the ceiling
+
+Measured against the provider, one message costs **~2.8 seconds**, and almost all of it is
+opening an SSL connection and authenticating rather than transferring the letter. So a single
+delivery slot tops out near **21 messages a minute** — under the 30 it is allowed. The
+bottleneck was never the quota; it was reconnecting for every message.
+
+Mail therefore has its own queue and its own worker:
+
+```bash
+celery -A config worker -l info -Q mail --concurrency 4
+```
+
+Four slots clear the allowance with room to spare and use **4 of the 10 sessions** the
+contract permits per mailbox (§5.4). The limiter still holds the line at 30 a minute; the
+concurrency only makes sure that line is reachable.
+
+The separation earns its keep beyond throughput: on a shared queue a password reset waits
+behind whatever a print run is doing, and a task priority cannot help across unrelated kinds
+of work.
+
+> **A worker must consume the `mail` queue, or mail silently stops.** The route is in
+> `CELERY_TASK_ROUTES`; the worker is the `mail-worker` service in `docker-compose.yml` and
+> a second unit in a host deployment (OPS-008 §5). Two tests pin the routing so it cannot be
+> dropped quietly.
+
 ## Things that will bite
 
 - **The window is fixed, not sliding.** A burst that straddles a minute boundary can in

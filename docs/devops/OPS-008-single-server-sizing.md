@@ -39,10 +39,14 @@ Memory budget:
 |---|---|---|
 | PostgreSQL | ~2 GB | ~2.5 GB |
 | gunicorn | 2 workers, ~700 MB | 3 workers, ~1.2 GB |
-| Celery worker | concurrency 1, ~300 MB | concurrency 2, ~600 MB |
+| Celery worker (general) | concurrency 1, ~300 MB | concurrency 2, ~600 MB |
+| Celery worker (mail, `-Q mail`) | concurrency 4, ~350 MB | concurrency 4, ~350 MB |
 | Celery beat + nginx | ~150 MB | ~200 MB |
 | Redis | 256 MB | 512 MB |
-| OS + page cache | the rest (~2.5 GB) | the rest (~3 GB) |
+| OS + page cache | the rest (~2.2 GB) | the rest (~2.6 GB) |
+
+The mail worker is cheap despite four slots: it holds no PDFs, and each slot is a socket
+waiting on a handshake.
 
 The database is 1–3 GB per season, so on either box it sits in page cache in its entirety.
 That is why 6 GB is not a compromise here — and why going to 5 GB buys almost nothing while
@@ -130,12 +134,22 @@ The image's `CMD` currently passes `--workers 3` inline. Point it at this file i
 
 ## 5. Celery
 
+Two workers, because the work is nothing alike:
+
 ```bash
+# Everything except mail: print runs, sweeps. CPU-bound, long, memory-hungry.
 celery -A config worker -l info \
   --concurrency 2 \
   --max-tasks-per-child 50 \
   --time-limit 3600 --soft-time-limit 3300
+
+# Mail only. Not CPU work at all - each message spends ~2.8 s waiting on an SSL handshake,
+# so one slot could never reach the provider's 30-a-minute allowance (OPS-009).
+celery -A config worker -l info -Q mail --concurrency 4
 ```
+
+On the 2 vCPU box drop the first to `--concurrency 1`; leave the mail worker at 4, since its
+slots sit in network wait rather than competing for a core.
 
 `--concurrency 2` leaves the API responsive while a print package renders. The child limit
 matters more than usual: a run holds a template PDF and every rendered page, and uploads

@@ -61,6 +61,33 @@ services:
       redis:
         condition: service_healthy
 
+  # Mail has its own worker because a message costs ~2.8 s almost entirely in opening an
+  # SSL connection, so one slot cannot reach the provider's 30-a-minute allowance. Four
+  # slots clear it and still use only 4 of the 10 sessions the contract permits. It also
+  # keeps a password reset from waiting behind a diploma print run.
+  mail-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    command: celery -A config worker -l info -Q mail --concurrency 4
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.development
+      POSTGRES_HOST: postgres
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      EMAIL_HOST: mailhog
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   beat:
     build:
       context: .

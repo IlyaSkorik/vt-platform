@@ -203,6 +203,35 @@ class TestTwoMailboxes:
         assert mail.outbox[0].from_email == "no-reply@vzlettalantov.by"
 
 
+class TestRouting:
+    """Mail is delivered by its own worker, and that is a deployment contract.
+
+    Measured against the provider, a message costs ~2.8 s almost entirely in opening an SSL
+    connection, so a single slot tops out around 21 a minute - under the allowance it is
+    supposed to be able to reach. Four slots on a dedicated queue clear it, and stop a
+    password reset from waiting behind a diploma print run.
+
+    Asserted through Celery's own router rather than by reading the setting back, so it
+    fails if the routing stops being applied rather than only if somebody edits the value.
+    """
+
+    def test_mail_goes_to_the_queue_a_dedicated_worker_consumes(self) -> None:
+        from config.celery import app
+
+        route = app.amqp.router.route({}, "notifications.deliver_email")
+        assert route["queue"].name == "mail", (
+            "mail must stay on its own queue; a worker has to consume it (see the "
+            "mail-worker service in docker-compose.yml) or nothing is delivered"
+        )
+
+    def test_other_work_stays_on_the_default_queue(self) -> None:
+        """Otherwise the mail worker would end up rendering diplomas."""
+        from config.celery import app
+
+        route = app.amqp.router.route({}, "diplomas.generate_print_package")
+        assert route["queue"].name != "mail"
+
+
 class TestQueuePriority:
     """Two mailboxes double the send rate; they do not reorder the queue.
 

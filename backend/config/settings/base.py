@@ -339,6 +339,23 @@ CELERY_BROKER_TRANSPORT_OPTIONS = {
     "queue_order_strategy": "priority",
 }
 
+# Mail gets its own queue, and therefore its own worker (OPS-009 §"Throughput").
+#
+# Measured against the provider: a message costs ~2.8 s, nearly all of it opening an SSL
+# connection and authenticating. One slot delivers ~21 messages a minute, so the allowance
+# of 30 could never be reached - the bottleneck was our own reconnecting, not the quota.
+# A worker at concurrency 4 clears it with room to spare and still uses only 4 of the 10
+# sessions the contract permits per mailbox.
+#
+# The separation matters beyond throughput: on a shared queue a password reset waits behind
+# whatever a print run is doing, and priorities cannot help across unrelated task types.
+#
+# **A worker must consume this queue or mail stops.** See the ``mail-worker`` service in
+# docker-compose.yml, and OPS-008 §5 for a host deployment.
+CELERY_TASK_ROUTES = {
+    "notifications.deliver_email": {"queue": "mail"},
+}
+
 # Periodic jobs. The unpaid-order sweep is durable: it recomputes overdue orders
 # from the DB each run, so it survives web/worker/beat restarts (unlike per-order
 # ETA jobs). Interval via APPLICATION_PAYMENT_SWEEP_MINUTES (default 15).
