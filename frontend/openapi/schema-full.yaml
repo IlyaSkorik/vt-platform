@@ -4917,6 +4917,31 @@ paths:
               schema:
                 $ref: '#/components/schemas/PublicFestivalDetailEnvelope'
           description: ''
+  /api/v1/public/programs/{slug}:
+    get:
+      operationId: publicProgramRetrieve
+      description: |-
+        Read one published program by its slug.
+
+        An unknown, malformed or revoked slug is a single, indistinguishable ``404``, so
+        nothing about which of the three it was leaks.
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - Public Program
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProgramEnvelope'
+          description: ''
   /api/v1/staff/applications/{submission_id}/actions/{action}:
     post:
       operationId: staff_applications_actions_create
@@ -5765,6 +5790,693 @@ paths:
       responses:
         '200':
           description: CSV export of the participant registry
+  /api/v1/staff/programs:
+    get:
+      operationId: programsList
+      description: '``GET /api/v1/staff/programs`` - list; ``POST`` - create.'
+      parameters:
+      - in: query
+        name: competitionId
+        schema:
+          type: string
+        description: The competition whose programs to list.
+        required: true
+      - in: query
+        name: nominationId
+        schema:
+          type: string
+        description: Narrow to one nomination.
+      tags:
+      - Competition Program
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProgramSummary'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
+    post:
+      operationId: programsCreate
+      description: '``GET /api/v1/staff/programs`` - list; ``POST`` - create.'
+      tags:
+      - Competition Program
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProgramRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateProgramRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateProgramRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/programs/{program_id}:
+    get:
+      operationId: programsRetrieve
+      description: '``GET``, ``PATCH`` and ``DELETE`` one program.'
+      parameters:
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
+    patch:
+      operationId: programsUpdate
+      description: '``GET``, ``PATCH`` and ``DELETE`` one program.'
+      parameters:
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateProgramRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateProgramRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateProgramRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
+    delete:
+      operationId: programsDestroy
+      description: '``GET``, ``PATCH`` and ``DELETE`` one program.'
+      parameters:
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/programs/{program_id}/candidates:
+    get:
+      operationId: programsCandidates
+      description: '``GET`` the competing acts of this program''s scope that have
+        no slot yet.'
+      parameters:
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProgramCandidate'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/programs/{program_id}/items:
+    post:
+      operationId: programsAddItem
+      description: '``POST`` a slot: an act by ``submissionId``, or a block by title
+        and length.'
+      parameters:
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddBlockRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddBlockRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddBlockRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/programs/{program_id}/items/{item_id}:
+    patch:
+      operationId: programsEditItem
+      description: '``PATCH`` and ``DELETE`` one slot.'
+      parameters:
+      - in: path
+        name: item_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEditItemRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEditItemRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEditItemRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
+    delete:
+      operationId: programsRemoveItem
+      description: '``PATCH`` and ``DELETE`` one slot.'
+      parameters:
+      - in: path
+        name: item_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/programs/{program_id}/items/fill:
+    post:
+      operationId: programsFillItems
+      description: '``POST`` to append every remaining competing act of the program''s
+        scope.'
+      parameters:
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/programs/{program_id}/items/order:
+    put:
+      operationId: programsReorderItems
+      description: '``PUT`` the complete running order, top to bottom.'
+      parameters:
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderItemsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReorderItemsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReorderItemsRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/programs/{program_id}/shares:
+    get:
+      operationId: programsListShares
+      description: '``GET`` this program''s public editions; ``POST`` a new one.'
+      parameters:
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProgramShareResource'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
+    post:
+      operationId: programsCreateShare
+      description: '``GET`` this program''s public editions; ``POST`` a new one.'
+      parameters:
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShareRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateShareRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateShareRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/programs/{program_id}/shares/{share_id}:
+    delete:
+      operationId: programsRemoveShare
+      description: '``DELETE`` one public edition - its link stops resolving at once.'
+      parameters:
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: share_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
   /api/v1/submissions/{submission_id}:
     get:
       operationId: submissions_retrieve
@@ -6400,6 +7112,42 @@ components:
       - minAge
       - name
       - participantGroupId
+    AddBlockRequest:
+      type: object
+      description: Validate an add-block body (a break, and later an opening or an
+        award).
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        durationSeconds:
+          type: integer
+          maximum: 86400
+          minimum: 1
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/AddBlockRequestKindEnum'
+          default: BREAK
+        position:
+          type: integer
+          minimum: 1
+      required:
+      - durationSeconds
+      - title
+    AddBlockRequestKindEnum:
+      enum:
+      - BREAK
+      - OPENING
+      - AWARD
+      - MASTER_CLASS
+      - TECHNICAL
+      type: string
+      description: |-
+        * `BREAK` - BREAK
+        * `OPENING` - OPENING
+        * `AWARD` - AWARD
+        * `MASTER_CLASS` - MASTER_CLASS
+        * `TECHNICAL` - TECHNICAL
     AddCategory:
       type: object
       properties:
@@ -7261,6 +8009,51 @@ components:
       - displayAlias
       - firstName
       - lastName
+    CreateProgramRequest:
+      type: object
+      description: Validate a create-program body.
+      properties:
+        competitionId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 200
+        nominationId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        bufferSeconds:
+          type: integer
+          maximum: 3600
+          minimum: 0
+        startsAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - competitionId
+      - name
+    CreateShareRequest:
+      type: object
+      description: |-
+        Validate a create-public-program body.
+
+        Omitting ``itemIds`` (or sending an empty list) publishes the whole program and
+        keeps following it - what a screen by the stage wants.
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        itemIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+      - name
     CreateTemplateRequest:
       type: object
       description: Body for creating a template in the library.
@@ -8491,6 +9284,17 @@ components:
       properties:
         role:
           $ref: '#/components/schemas/RoleEnum'
+    PatchedEditItemRequest:
+      type: object
+      description: Validate an edit-item body (retitle a block, resize any slot).
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        durationSeconds:
+          type: integer
+          maximum: 86400
+          minimum: 1
     PatchedOrganizationProfileUpdate:
       type: object
       description: |-
@@ -8855,6 +9659,26 @@ components:
           - integer
           - 'null'
           minimum: 0
+    PatchedUpdateProgramRequest:
+      type: object
+      description: |-
+        Validate a partial program update.
+
+        An absent field means "unchanged"; ``startsAt: null`` explicitly drops the start
+        time, which is how a program goes back to being an untimed running order.
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        bufferSeconds:
+          type: integer
+          maximum: 3600
+          minimum: 0
+        startsAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
     PatchedUpdateTeacherRequest:
       type: object
       description: Validate an update-teacher request body (same shape as add).
@@ -9072,6 +9896,322 @@ components:
       - status
       - title
       - type
+    ProgramCandidate:
+      type: object
+      description: A competing act that has no slot in this program yet.
+      properties:
+        submissionId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        durationSeconds:
+          type: integer
+        nomination:
+          type:
+          - string
+          - 'null'
+        discipline:
+          type:
+          - string
+          - 'null'
+        ageCategory:
+          type:
+          - string
+          - 'null'
+        participationFormat:
+          type:
+          - string
+          - 'null'
+        participants:
+          type: array
+          items:
+            type: string
+        teachers:
+          type: array
+          items:
+            type: string
+        organization:
+          type:
+          - string
+          - 'null'
+        comment:
+          type:
+          - string
+          - 'null'
+      required:
+      - ageCategory
+      - comment
+      - discipline
+      - durationSeconds
+      - nomination
+      - organization
+      - participants
+      - participationFormat
+      - submissionId
+      - teachers
+      - title
+    ProgramDetail:
+      type: object
+      description: 'One program in full: settings, timetable and public links.'
+      properties:
+        id:
+          type: string
+          format: uuid
+        competitionId:
+          type: string
+          format: uuid
+        nominationId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        name:
+          type: string
+        bufferSeconds:
+          type: integer
+        startsAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProgramItemResource'
+        shares:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProgramShareResource'
+        totalSeconds:
+          type: integer
+        endsAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+      required:
+      - bufferSeconds
+      - competitionId
+      - createdAt
+      - endsAt
+      - id
+      - items
+      - name
+      - nominationId
+      - shares
+      - startsAt
+      - totalSeconds
+      - updatedAt
+      - version
+    ProgramItemResource:
+      type: object
+      description: One slot of the running order, with its computed place on the timeline.
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: '#/components/schemas/ProgramItemResourceKindEnum'
+        title:
+          type: string
+        durationSeconds:
+          type: integer
+        schedule:
+          $ref: '#/components/schemas/_SchedulePosition'
+        submissionId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        leadParticipant:
+          type:
+          - string
+          - 'null'
+        participants:
+          type: array
+          items:
+            type: string
+        teachers:
+          type: array
+          items:
+            type: string
+        nomination:
+          type:
+          - string
+          - 'null'
+        discipline:
+          type:
+          - string
+          - 'null'
+        ageCategory:
+          type:
+          - string
+          - 'null'
+        participationFormat:
+          type:
+          - string
+          - 'null'
+        organization:
+          type:
+          - string
+          - 'null'
+        comment:
+          type:
+          - string
+          - 'null'
+        missingPerformance:
+          type: boolean
+      required:
+      - ageCategory
+      - comment
+      - discipline
+      - durationSeconds
+      - id
+      - kind
+      - leadParticipant
+      - missingPerformance
+      - nomination
+      - organization
+      - participants
+      - participationFormat
+      - schedule
+      - submissionId
+      - teachers
+      - title
+    ProgramItemResourceKindEnum:
+      enum:
+      - PERFORMANCE
+      - BREAK
+      - OPENING
+      - AWARD
+      - MASTER_CLASS
+      - TECHNICAL
+      type: string
+      description: |-
+        * `PERFORMANCE` - PERFORMANCE
+        * `BREAK` - BREAK
+        * `OPENING` - OPENING
+        * `AWARD` - AWARD
+        * `MASTER_CLASS` - MASTER_CLASS
+        * `TECHNICAL` - TECHNICAL
+    ProgramProblemDetail:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        requestId:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - detail
+      - instance
+      - requestId
+      - status
+      - title
+      - type
+    ProgramShareResource:
+      type: object
+      description: A public edition of the program and the path its link points at.
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        path:
+          type: string
+        itemCount:
+          type: integer
+        coversWholeProgram:
+          type: boolean
+        createdAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - coversWholeProgram
+      - createdAt
+      - id
+      - itemCount
+      - name
+      - path
+      - slug
+    ProgramSummary:
+      type: object
+      description: A program as it appears in a list.
+      properties:
+        id:
+          type: string
+          format: uuid
+        competitionId:
+          type: string
+          format: uuid
+        nominationId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        name:
+          type: string
+        bufferSeconds:
+          type: integer
+        startsAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        itemCount:
+          type: integer
+        performanceCount:
+          type: integer
+        totalSeconds:
+          type: integer
+        shareCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - bufferSeconds
+      - competitionId
+      - createdAt
+      - id
+      - itemCount
+      - name
+      - nominationId
+      - performanceCount
+      - shareCount
+      - startsAt
+      - totalSeconds
+      - updatedAt
     ProposeGuardianLinkRequest:
       type: object
       description: Validate a propose-guardian-link request body.
@@ -9740,6 +10880,96 @@ components:
       - googleMapsUrl
       - name
       - yandexMapsUrl
+    PublicProgram:
+      type: object
+      description: What a public link resolves to.
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        competitionTitle:
+          type:
+          - string
+          - 'null'
+        nomination:
+          type:
+          - string
+          - 'null'
+        startsAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        totalSeconds:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicProgramItem'
+      required:
+      - competitionTitle
+      - items
+      - name
+      - nomination
+      - slug
+      - startsAt
+      - totalSeconds
+    PublicProgramEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/PublicProgram'
+        meta:
+          type: object
+          additionalProperties: {}
+      required:
+      - data
+      - meta
+    PublicProgramItem:
+      type: object
+      description: One line of the program as an audience, a host or an engineer reads
+        it.
+      properties:
+        position:
+          type: integer
+        kind:
+          type: string
+        title:
+          type: string
+        performer:
+          type:
+          - string
+          - 'null'
+        teachers:
+          type: array
+          items:
+            type: string
+        organization:
+          type:
+          - string
+          - 'null'
+        durationSeconds:
+          type: integer
+        startsAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        note:
+          type:
+          - string
+          - 'null'
+      required:
+      - durationSeconds
+      - kind
+      - note
+      - organization
+      - performer
+      - position
+      - startsAt
+      - teachers
+      - title
     RecordConsentsRequest:
       type: object
       description: Validate a record-consents request body.
@@ -10135,6 +11365,17 @@ components:
         * `father` - father
         * `legal_guardian` - legal_guardian
         * `other` - other
+    ReorderItemsRequest:
+      type: object
+      description: 'Validate a reorder body: the complete new order, top to bottom.'
+      properties:
+        itemIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+      - itemIds
     RoleEnum:
       enum:
       - OWNER
@@ -12230,6 +13471,31 @@ components:
       - publicationDate
       - title
       - version
+    _SchedulePosition:
+      type: object
+      properties:
+        position:
+          type: integer
+        offsetSeconds:
+          type: integer
+        slotSeconds:
+          type: integer
+        startsAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        endsAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - endsAt
+      - offsetSeconds
+      - position
+      - slotSeconds
+      - startsAt
     _ServiceLine:
       type: object
       properties:
