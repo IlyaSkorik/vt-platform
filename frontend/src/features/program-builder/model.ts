@@ -40,7 +40,12 @@ export interface ProgramColumn {
   label: string;
 }
 
-/** Where one item sits on the timeline (computed by the backend). */
+/**
+ * Where one item sits on the timeline (computed by the backend).
+ *
+ * `position` is the row's place in the running order (1..N, always contiguous). It is
+ * *not* the participant's number — see {@link ProgramItem.number}.
+ */
 export interface SchedulePosition {
   position: number;
   offsetSeconds: number;
@@ -55,6 +60,11 @@ export interface ProgramItem {
   id: string;
   kind: ProgramItemKind;
   title: string;
+  /**
+   * The participant's permanent number — assigned once and never changed by a reorder,
+   * so a rearranged programme legitimately reads 2, 3, 5, 4.
+   */
+  number: number;
   durationSeconds: number;
   schedule: SchedulePosition;
   submissionId: string | null;
@@ -193,7 +203,8 @@ export function itemCell(
 ): string {
   switch (column) {
     case "POSITION":
-      return String(item.schedule.position);
+      // The participant's permanent number, not the row's index.
+      return String(item.number || item.schedule.position);
     case "TIME":
       return format.clock(item.schedule.startsAt);
     case "PARTICIPANT":

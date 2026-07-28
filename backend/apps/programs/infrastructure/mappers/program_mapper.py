@@ -44,6 +44,7 @@ class ProgramMapper:
             buffer=TimeBuffer(int(model.buffer_seconds)),
             items=[ProgramMapper._item_to_entity(row) for row in sorted(items, key=lambda row: row.position)],
             shares=[ProgramMapper._share_to_entity(row) for row in sorted(shares, key=lambda row: row.created_at)],
+            numbers_issued=int(model.numbers_issued),
             deleted_at=model.deleted_at,
             version=model.version,
         )
@@ -57,6 +58,7 @@ class ProgramMapper:
             "name": str(program.name),
             "starts_at": program.starts_at,
             "buffer_seconds": program.buffer.seconds,
+            "numbers_issued": program.numbers_issued,
             "created_at": program.created_at,
             "updated_at": program.updated_at,
             "deleted_at": program.deleted_at,
@@ -65,9 +67,14 @@ class ProgramMapper:
 
     @staticmethod
     def item_fields(item: ProgramItem, *, position: int) -> dict[str, Any]:
-        """One item row's columns, stamped with its 1-based ordinal in the program."""
+        """One item row's columns, stamped with its 1-based ordinal in the program.
+
+        ``position`` comes from the aggregate's list on every save; ``number`` comes from
+        the item itself and is written once, when the slot is created.
+        """
         return {
             "position": position,
+            "number": item.number,
             "kind": item.kind.value,
             "title": str(item.title) if item.title is not None else "",
             "duration_seconds": item.duration.seconds,
@@ -88,8 +95,11 @@ class ProgramMapper:
     def _item_to_entity(row: ProgramItemModel) -> ProgramItem:
         kind = ProgramItemKind(row.kind)
         duration = ItemDuration(int(row.duration_seconds))
+        # Rows written before numbers existed fall back to their ordinal, which is what
+        # their number would have been anyway.
+        number = int(row.number) or int(row.position)
         if kind.binds_performance and row.submission_id is not None:
-            return ProgramItem.performance(item_id=row.id, submission_id=row.submission_id, duration=duration)
+            return ProgramItem.performance(item_id=row.id, submission_id=row.submission_id, duration=duration, number=number)
         # A row that lost its submission (or was written as a block) rehydrates as a
         # titled block: the slot keeps its place rather than failing the whole load.
         return ProgramItem.block(
@@ -97,6 +107,7 @@ class ProgramMapper:
             kind=kind if not kind.binds_performance else ProgramItemKind.TECHNICAL,
             title=ItemTitle(row.title or "Без названия"),
             duration=duration,
+            number=number,
         )
 
     @staticmethod

@@ -50,6 +50,9 @@ class ProgramModel(BasePersistenceModel):
     # Padding added to every performance slot when the schedule is computed. Never
     # changes an act's own duration.
     buffer_seconds = models.PositiveIntegerField(default=0)
+    # How many permanent slot numbers this programme has ever issued. Monotonic, so a
+    # removed slot's number is retired rather than handed to the next act.
+    numbers_issued = models.PositiveIntegerField(default=0)
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "programs_program"
@@ -73,7 +76,11 @@ class ProgramItemModel(BasePersistenceModel):
         on_delete=models.CASCADE,
         related_name="items",
     )
+    # Where the row sits in the running order (1..N, rewritten on every save).
     position = models.PositiveIntegerField(default=0)
+    # The participant's permanent number. Assigned once and never rewritten by a
+    # reorder, so a rearranged programme can read 2, 3, 5, 4 - see ``ProgramItem``.
+    number = models.PositiveIntegerField(default=0)
     kind = models.CharField(max_length=24, choices=ProgramItemKindChoices.choices)
     # Set for standalone blocks ("Обед"); blank for a performance, whose name is read
     # from the act so a corrected name shows up everywhere at once.

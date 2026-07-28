@@ -363,7 +363,9 @@ class TestPublicRead:
         # The organizer's own table says the same time for the same slot.
         assert program.items[0].schedule.starts_at == datetime(2026, 8, 1, 10, 0, tzinfo=UTC)
 
-    def test_a_partial_edition_renumbers_its_own_rows_but_keeps_real_times(self) -> None:
+    def test_a_partial_edition_keeps_the_real_numbers_and_the_real_times(self) -> None:
+        # A cut of the programme is still the programme: the participant published here
+        # as номер 2 is номер 2 on every other copy too.
         env = Env(_act("A", 200), _act("B", 200), _act("C", 200))
         program_id = env.program(buffer_seconds=0)
         program = env.service.fill_from_scope(program_id)
@@ -372,7 +374,7 @@ class TestPublicRead:
         )
         public = env.service.public_program(share.slug)
         assert public is not None
-        assert [row.cells[0] for row in public.rows] == ["1", "2"]
+        assert [row.cells[0] for row in public.rows] == ["2", "3"]
         # The times are the program's, not the edition's: the second act still starts
         # when the first one has finished.
         assert public.rows[0].cells[1] == "10:03"

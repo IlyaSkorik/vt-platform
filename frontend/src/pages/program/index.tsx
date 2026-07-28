@@ -68,7 +68,7 @@ export function PublicProgramPage(): React.JSX.Element {
             description="Организатор ещё не добавил пункты в эту программу."
           />
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-border">
+          <div className="scrollbar-custom overflow-x-auto rounded-lg border border-border">
             <table className="w-full border-collapse text-left">
               <caption className="sr-only">{program.name}</caption>
               <thead>

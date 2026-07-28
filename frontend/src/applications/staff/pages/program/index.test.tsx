@@ -20,6 +20,7 @@ import {
   usePrograms,
   useRemoveItem,
   useRemoveShare,
+  useRenumberItems,
   useReorderItems,
   useUpdateProgram,
 } from "@/features/program-builder";
@@ -39,6 +40,7 @@ vi.mock("@/features/program-builder", async (importOriginal) => ({
   useFillProgram: vi.fn(),
   useRemoveItem: vi.fn(),
   useReorderItems: vi.fn(),
+  useRenumberItems: vi.fn(),
   useCreateShare: vi.fn(),
   useRemoveShare: vi.fn(),
 }));
@@ -74,6 +76,7 @@ const ALL_COLUMNS: ProgramColumn[] = [
 const PROGRAM_ID = "01900000-0000-7000-8000-00000000000a";
 
 const reorder = vi.fn();
+const renumber = vi.fn();
 const addBlock = vi.fn();
 const updateProgram = vi.fn();
 const createShare = vi.fn();
@@ -93,6 +96,9 @@ function anItem(overrides: Partial<ProgramItem> & { id: string; position: number
   return {
     kind: "PERFORMANCE",
     title: "Катюша",
+    // Unless a test says otherwise, a slot's number matches its row — the state a
+    // programme is in until somebody is moved.
+    number: position,
     durationSeconds: 200,
     submissionId: "01900000-0000-7000-8000-0000000000b1",
     leadParticipant: "Иванов Иван",
@@ -199,6 +205,7 @@ function stub(
   vi.mocked(useFillProgram).mockReturnValue(mutation(fillProgram));
   vi.mocked(useRemoveItem).mockReturnValue(mutation(removeItem));
   vi.mocked(useReorderItems).mockReturnValue(mutation(reorder));
+  vi.mocked(useRenumberItems).mockReturnValue(mutation(renumber));
   vi.mocked(useCreateShare).mockReturnValue(mutation(createShare));
   vi.mocked(useRemoveShare).mockReturnValue(mutation(removeShare));
 }
@@ -218,6 +225,7 @@ async function renderPage(): Promise<void> {
 beforeEach(() => {
   for (const spy of [
     reorder,
+    renumber,
     addBlock,
     updateProgram,
     createShare,
@@ -271,6 +279,63 @@ describe("StaffProgramPage — the programme table", () => {
     expect(items).toHaveLength(2);
     expect(within(items[0] as HTMLElement).getByText("Катюша")).toBeInTheDocument();
     expect(within(items[1] as HTMLElement).getByText("Калинка")).toBeInTheDocument();
+  });
+
+  it("shows each participant's own number, not the row index", async () => {
+    // A programme that has been rearranged: rows 1,2,3 carry numbers 2,3,5.
+    stub(
+      aProgram({
+        items: [
+          anItem({ id: "item-1", position: 1, number: 2, title: "Катюша" }),
+          anItem({ id: "item-2", position: 2, number: 3, title: "Калинка" }),
+          anItem({ id: "item-3", position: 3, number: 5, title: "Барыня" }),
+        ],
+      }),
+    );
+    await renderPage();
+
+    const numbers = screen
+      .getAllByTestId("program-item")
+      .map((row) => within(row).getAllByRole("cell")[0]?.textContent);
+    expect(numbers).toEqual(["2", "3", "5"]);
+  });
+
+  it("explains the gap instead of leaving it looking like a bug", async () => {
+    stub(
+      aProgram({
+        items: [
+          anItem({ id: "item-1", position: 1, number: 2 }),
+          anItem({ id: "item-2", position: 2, number: 3 }),
+        ],
+      }),
+    );
+    await renderPage();
+
+    expect(screen.getByText("номера сохранены за участниками")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Пересчитать номера/ })).toBeInTheDocument();
+  });
+
+  it("offers no renumbering while the numbers still match the order", async () => {
+    stub();
+    await renderPage();
+
+    expect(screen.queryByRole("button", { name: /Пересчитать номера/ })).toBeNull();
+    expect(screen.queryByText("номера сохранены за участниками")).toBeNull();
+  });
+
+  it("renumbers only when the organizer asks for it", async () => {
+    stub(
+      aProgram({
+        items: [
+          anItem({ id: "item-1", position: 1, number: 2 }),
+          anItem({ id: "item-2", position: 2, number: 3 }),
+        ],
+      }),
+    );
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: /Пересчитать номера/ }));
+    expect(renumber).toHaveBeenCalledTimes(1);
   });
 
   it("sends the whole new order when an item is moved down", async () => {
@@ -396,6 +461,38 @@ describe("StaffProgramPage — the buffer", () => {
 });
 
 describe("StaffProgramPage — candidates", () => {
+  it("shows the composition and the age band on the card, not one click away", async () => {
+    stub(aProgram(), [
+      {
+        ...aCandidate(),
+        nomination: "Вокал",
+        discipline: "Эстрадный вокал",
+        participantGroup: "Ансамбль",
+        ageCategory: "13-15 лет",
+        participationFormat: "Очно",
+        organization: "Школа №2",
+      },
+    ]);
+    await renderPage();
+
+    const card = screen.getByTestId("program-candidate");
+    expect(within(card).getByText("Ансамбль")).toBeInTheDocument();
+    expect(within(card).getByText("13-15 лет")).toBeInTheDocument();
+    expect(within(card).getByText("Вокал")).toBeInTheDocument();
+    expect(within(card).getByText("Эстрадный вокал")).toBeInTheDocument();
+    expect(within(card).getByText("Очно")).toBeInTheDocument();
+    expect(within(card).getByText(/Школа №2/)).toBeInTheDocument();
+  });
+
+  it("omits a badge for a fact the act does not carry", async () => {
+    stub(aProgram(), [{ ...aCandidate(), participantGroup: null, ageCategory: null }]);
+    await renderPage();
+
+    const card = screen.getByTestId("program-candidate");
+    expect(within(card).getByText("Вокал")).toBeInTheDocument();
+    expect(within(card).queryByText("Ансамбль")).toBeNull();
+  });
+
   it("adds one act to the programme", async () => {
     stub();
     await renderPage();

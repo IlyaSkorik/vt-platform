@@ -220,13 +220,25 @@ export function useRemoveItem(programId: string): UseMutationResult<Program, Api
   );
 }
 
-/** Send the complete new running order. */
+/** Send the complete new running order. Permanent numbers stay with their slots. */
 export function useReorderItems(programId: string): UseMutationResult<Program, ApiError, string[]> {
   return useProgramMutation<string[]>((itemIds) =>
     request<Envelope<Program>>(`staff/programs/${programId}/items/order`, {
       method: "put",
       json: { itemIds },
     }),
+  );
+}
+
+/**
+ * Re-issue numbers 1..N along the current order.
+ *
+ * Deliberately its own call rather than part of a reorder: it invalidates every number
+ * already told to a participant, so it has to be something the organizer asks for.
+ */
+export function useRenumberItems(programId: string): UseMutationResult<Program, ApiError, void> {
+  return useProgramMutation<void>(() =>
+    request<Envelope<Program>>(`staff/programs/${programId}/items/numbers`, { method: "post" }),
   );
 }
 

@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, Copy, Link2, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, Link2, ListOrdered, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { useCompetitionDetail, useCompetitionsList } from "@/features/competitions";
@@ -23,6 +23,7 @@ import {
   usePrograms,
   useRemoveItem,
   useRemoveShare,
+  useRenumberItems,
   useReorderItems,
   useUpdateProgram,
 } from "@/features/program-builder";
@@ -351,12 +352,23 @@ function RunningOrder({ program }: { program: Program }): React.JSX.Element {
   };
 
   const busy = reorder.isPending || remove.isPending;
+  // Numbers stay with their participants, so a rearranged programme reads 2, 3, 5, 4.
+  // Saying so out loud beats letting an organizer wonder whether it is a bug.
+  const outOfSequence = items.some((item, index) => item.number !== index + 1);
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="font-medium text-sm">Программа</p>
-        <AddBreakControls programId={program.id} />
+        <div className="flex flex-wrap items-baseline gap-2">
+          <p className="font-medium text-sm">Программа</p>
+          {outOfSequence ? (
+            <span className="text-muted-foreground text-xs">номера сохранены за участниками</span>
+          ) : null}
+        </div>
+        <div className="flex flex-wrap items-end gap-2">
+          {outOfSequence ? <RenumberButton programId={program.id} /> : null}
+          <AddBreakControls programId={program.id} />
+        </div>
       </div>
 
       {items.length === 0 ? (
@@ -367,7 +379,7 @@ function RunningOrder({ program }: { program: Program }): React.JSX.Element {
       ) : (
         // The programme is a table, and the table is wide: it scrolls inside its own
         // container so the page never scrolls sideways.
-        <div className="overflow-x-auto rounded-md border border-border">
+        <div className="scrollbar-custom overflow-x-auto rounded-md border border-border">
           <table className="w-full border-collapse text-left">
             <caption className="sr-only">Программа: {program.name}</caption>
             <thead>
@@ -550,6 +562,27 @@ function EditBlockDuration({
   );
 }
 
+function RenumberButton({ programId }: { programId: string }): React.JSX.Element {
+  const renumber = useRenumberItems(programId);
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      loading={renumber.isPending}
+      // Destructive in the sense that matters here: it invalidates numbers already told
+      // to participants, so it says what it does rather than being an icon.
+      onClick={() =>
+        renumber.mutate(undefined, {
+          onSuccess: () => toast.success("Номера пересчитаны по порядку"),
+          onError: () => toast.error("Не удалось пересчитать номера"),
+        })
+      }
+    >
+      <ListOrdered className="size-4" /> Пересчитать номера
+    </Button>
+  );
+}
+
 function AddBreakControls({ programId }: { programId: string }): React.JSX.Element {
   const addBlock = useAddBlock(programId);
   const [title, setTitle] = useState("Перерыв");
@@ -634,14 +667,30 @@ function CandidateList({ program }: { program: Program }): React.JSX.Element {
       {(candidates ?? []).map((candidate) => (
         <div
           key={candidate.submissionId}
+          data-testid="program-candidate"
           className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-border p-3"
         >
           <div className="min-w-0">
             <p className="font-medium text-sm">{candidate.title}</p>
             <p className="text-muted-foreground text-xs">
-              {[candidate.participants[0], candidate.nomination, candidate.discipline]
-                .filter(Boolean)
-                .join(" · ")}
+              {[candidate.participants[0], candidate.organization].filter(Boolean).join(" · ")}
+            </p>
+            {/* The composition and the age band decide where an act can go in the day,
+                so they belong on the card the organizer picks from — not one click away. */}
+            <p className="mt-1 flex flex-wrap gap-1.5 text-xs">
+              {[
+                candidate.nomination,
+                candidate.discipline,
+                candidate.participantGroup,
+                candidate.ageCategory,
+                candidate.participationFormat,
+              ]
+                .filter((value): value is string => Boolean(value))
+                .map((value) => (
+                  <Badge key={value} variant="secondary">
+                    {value}
+                  </Badge>
+                ))}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -685,14 +734,15 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
   };
 
   const publish = () => {
-    // Positions are what an organizer talks in ("пункты 25-40"); ids are what the API
-    // takes, so the range is resolved here against the order on screen.
+    // Numbers are what an organizer talks in ("пункты 25-40") and what the table shows;
+    // ids are what the API takes, so the range is resolved here against the numbers on
+    // screen — not against row indexes, which drift from them after a reorder.
     const start = Number(from) || 0;
     const end = Number(to) || 0;
     const selected =
       start > 0 && end >= start
         ? program.items
-            .filter((item) => item.schedule.position >= start && item.schedule.position <= end)
+            .filter((item) => item.number >= start && item.number <= end)
             .map((item) => item.id)
         : [];
     create.mutate(
@@ -728,7 +778,7 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
           onChange={(event) => setName(event.target.value)}
         />
         <Input
-          label="Пункты с"
+          label="Номера с"
           aria-label="Пункты с"
           type="number"
           min={1}

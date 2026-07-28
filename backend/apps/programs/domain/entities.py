@@ -68,29 +68,48 @@ class ProgramItem:
     A performance item's duration is **seeded** from the act's declared length and
     then belongs to the program: an organizer sizing a slot by hand is making a
     decision about the event, not about the act.
+
+    :attr:`number` is the slot's **permanent** number in this program - the number a
+    participant is told and remembers. It is assigned once, when the slot is created,
+    and never changes again: rearranging the running order rearranges the rows, not the
+    numbers, so a program can legitimately read 2, 3, 5, 4. Removing a slot retires its
+    number rather than freeing it, because handing номер 4 to somebody else after telling
+    it to a participant is exactly the confusion this guards against.
     """
 
     _id: uuid.UUID
     _kind: ProgramItemKind
     _duration: ItemDuration
+    _number: int = 0
     _title: ItemTitle | None = None
     _submission_id: uuid.UUID | None = None
 
     @classmethod
-    def performance(cls, *, item_id: uuid.UUID, submission_id: uuid.UUID, duration: ItemDuration) -> ProgramItem:
+    def performance(cls, *, item_id: uuid.UUID, submission_id: uuid.UUID, duration: ItemDuration, number: int = 0) -> ProgramItem:
         """Build a slot for one competing act."""
-        return cls(_id=item_id, _kind=ProgramItemKind.PERFORMANCE, _duration=duration, _submission_id=submission_id)
+        return cls(
+            _id=item_id,
+            _kind=ProgramItemKind.PERFORMANCE,
+            _duration=duration,
+            _number=number,
+            _submission_id=submission_id,
+        )
 
     @classmethod
-    def block(cls, *, item_id: uuid.UUID, kind: ProgramItemKind, title: ItemTitle, duration: ItemDuration) -> ProgramItem:
+    def block(cls, *, item_id: uuid.UUID, kind: ProgramItemKind, title: ItemTitle, duration: ItemDuration, number: int = 0) -> ProgramItem:
         """Build a standalone block (a break, and later an opening or an award)."""
         if kind.binds_performance:
             raise InvalidProgramDataError("A performance slot must be created with ProgramItem.performance().")
-        return cls(_id=item_id, _kind=kind, _duration=duration, _title=title)
+        return cls(_id=item_id, _kind=kind, _duration=duration, _number=number, _title=title)
 
     @property
     def id(self) -> uuid.UUID:
         return self._id
+
+    @property
+    def number(self) -> int:
+        """The permanent number of this slot (never changes when the order changes)."""
+        return self._number
 
     @property
     def kind(self) -> ProgramItemKind:
@@ -111,6 +130,18 @@ class ProgramItem:
     def resize(self, duration: ItemDuration) -> None:
         """Set the slot's length (the organizer's decision about the event)."""
         self._duration = duration
+
+    def assign_number(self, number: int) -> None:
+        """Give this slot its permanent number. Only the aggregate may call this."""
+        self._number = number
+
+    def renumber(self, number: int) -> None:
+        """Overwrite the permanent number - the deliberate "renumber the programme" act.
+
+        Separate from :meth:`assign_number` so the intent is visible at the call site:
+        this breaks the promise made to a participant and is never done implicitly.
+        """
+        self._number = number
 
     def retitle(self, title: ItemTitle) -> None:
         """Rename a standalone block."""
@@ -230,6 +261,9 @@ class Program:
     _buffer: TimeBuffer = field(default_factory=TimeBuffer.none)
     _items: list[ProgramItem] = field(default_factory=list)
     _shares: list[ProgramShare] = field(default_factory=list)
+    #: How many permanent numbers this program has ever issued. Monotonic, so a removed
+    #: slot's number is retired rather than reused - see :meth:`_next_number`.
+    _numbers_issued: int = 0
     _deleted_at: datetime | None = None
     _version: int = 1
     #: The version this aggregate was loaded at - the optimistic-concurrency
@@ -283,6 +317,7 @@ class Program:
         buffer: TimeBuffer | None = None,
         items: Sequence[ProgramItem] = (),
         shares: Sequence[ProgramShare] = (),
+        numbers_issued: int = 0,
         deleted_at: datetime | None = None,
         version: int = 1,
     ) -> Program:
@@ -299,6 +334,7 @@ class Program:
             _buffer=buffer if buffer is not None else TimeBuffer.none(),
             _items=list(items),
             _shares=list(shares),
+            _numbers_issued=numbers_issued,
             _deleted_at=deleted_at,
             _version=version,
             _initial_version=version,
@@ -362,6 +398,11 @@ class Program:
         return self._initial_version
 
     @property
+    def numbers_issued(self) -> int:
+        """How many permanent numbers this program has handed out (never decreases)."""
+        return max(self._numbers_issued, *(item.number for item in self._items)) if self._items else self._numbers_issued
+
+    @property
     def performance_submission_ids(self) -> tuple[uuid.UUID, ...]:
         """The acts already in this program, in program order."""
         return tuple(item.submission_id for item in self._items if item.submission_id is not None)
@@ -419,10 +460,19 @@ class Program:
         now: datetime,
         position: int | None = None,
     ) -> ProgramItem:
-        """Give one competing act a slot (appended, or inserted at ``position``)."""
+        """Give one competing act a slot (appended, or inserted at ``position``).
+
+        The slot receives the next free permanent number, which it then keeps for good -
+        inserting an act in the middle does not push anybody else's number along.
+        """
         if submission_id in self.performance_submission_ids:
             raise PerformanceAlreadyInProgramError(f"Act {submission_id} already has a slot in this program.")
-        item = ProgramItem.performance(item_id=item_id, submission_id=submission_id, duration=duration)
+        item = ProgramItem.performance(
+            item_id=item_id,
+            submission_id=submission_id,
+            duration=duration,
+            number=self._next_number(),
+        )
         self._insert(item, position)
         self._touch(now)
         return item
@@ -438,7 +488,7 @@ class Program:
         position: int | None = None,
     ) -> ProgramItem:
         """Insert a standalone block - a break, and in future an opening or an award."""
-        item = ProgramItem.block(item_id=item_id, kind=kind, title=title, duration=duration)
+        item = ProgramItem.block(item_id=item_id, kind=kind, title=title, duration=duration, number=self._next_number())
         self._insert(item, position)
         self._touch(now)
         return item
@@ -467,16 +517,32 @@ class Program:
         return item
 
     def reorder(self, ordered_item_ids: Sequence[uuid.UUID], *, now: datetime) -> None:
-        """Rearrange the whole running order.
+        """Rearrange the whole running order, **keeping every number where it is**.
 
         Takes the complete new order rather than a move instruction: the request then
         carries what the organizer sees, and a stale client cannot half-apply a move.
+
+        Numbers travel with their slots, so swapping two acts because a participant asked
+        to go later leaves the programme reading 2, 3, 5, 4 - which is correct: номер 4
+        was promised to that participant, and it is still theirs.
         """
         wanted = list(ordered_item_ids)
         if len(wanted) != len(set(wanted)) or set(wanted) != {item.id for item in self._items}:
             raise ReorderMismatchError("A reorder must list every item of the program exactly once.")
         by_id = {item.id: item for item in self._items}
         self._items = [by_id[item_id] for item_id in wanted]
+        self._touch(now)
+
+    def renumber_sequentially(self, *, now: datetime) -> None:
+        """Re-issue numbers 1..N following the current running order.
+
+        The deliberate way out of a programme whose numbers have drifted far from its
+        order - offered as its own action precisely because it invalidates every number
+        already told to a participant, and so must never happen as a side effect of a
+        reorder.
+        """
+        for index, item in enumerate(self._items, start=1):
+            item.renumber(index)
         self._touch(now)
 
     # ------------------------------------------------------------------
@@ -550,6 +616,18 @@ class Program:
         """Soft-delete the program (and with it every public link into it)."""
         self._deleted_at = now
         self._touch(now)
+
+    def _next_number(self) -> int:
+        """Issue the next permanent number: one past the highest this program ever gave out.
+
+        Deliberately a monotonic counter rather than ``max(present numbers) + 1``: a
+        removed slot's number must be **retired**, not handed to the next act. A
+        participant told "номер 4" must never find somebody else performing as номер 4,
+        including after theirs was withdrawn.
+        """
+        self._numbers_issued = max(self._numbers_issued, *(item.number for item in self._items)) if self._items else self._numbers_issued
+        self._numbers_issued += 1
+        return self._numbers_issued
 
     def _insert(self, item: ProgramItem, position: int | None) -> None:
         """Place ``item`` at a 1-based ``position``, or append when it is ``None``."""

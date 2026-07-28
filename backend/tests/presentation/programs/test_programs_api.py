@@ -300,6 +300,42 @@ class TestBufferAndOrder:
         assert response.status_code == 200
         assert [item["id"] for item in response.data["data"]["items"]] == list(reversed(ids))
 
+    def test_reordering_moves_the_rows_and_keeps_the_numbers(self, staff_client, scope) -> None:
+        # A participant asked to perform later: the row moves, номер 3 stays номер 3, and
+        # the programme reads 1, 3, 2 - which is what everybody was told.
+        competition_id, nomination_id = scope
+        for index in range(3):
+            _act(competition_id=competition_id, nomination_id=nomination_id, title=f"Акт {index}", seconds=120)
+        program_id = _create_program(staff_client, scope)["id"]
+        filled = staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill")
+        ids = [item["id"] for item in filled.data["data"]["items"]]
+        assert [item["number"] for item in filled.data["data"]["items"]] == [1, 2, 3]
+
+        response = staff_client.put(
+            f"{_PROGRAMS}/{program_id}/items/order",
+            {"itemIds": [ids[0], ids[2], ids[1]]},
+            format="json",
+        )
+        assert response.status_code == 200
+        items = response.data["data"]["items"]
+        assert [item["id"] for item in items] == [ids[0], ids[2], ids[1]]
+        assert [item["number"] for item in items] == [1, 3, 2]
+        # The running order itself is still contiguous - only the numbers jump.
+        assert [item["schedule"]["position"] for item in items] == [1, 2, 3]
+
+    def test_renumbering_is_a_separate_deliberate_action(self, staff_client, scope) -> None:
+        competition_id, nomination_id = scope
+        for index in range(3):
+            _act(competition_id=competition_id, nomination_id=nomination_id, title=f"Акт {index}", seconds=120)
+        program_id = _create_program(staff_client, scope)["id"]
+        filled = staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill")
+        ids = [item["id"] for item in filled.data["data"]["items"]]
+        staff_client.put(f"{_PROGRAMS}/{program_id}/items/order", {"itemIds": [ids[2], ids[0], ids[1]]}, format="json")
+
+        response = staff_client.post(f"{_PROGRAMS}/{program_id}/items/numbers")
+        assert response.status_code == 200, response.data
+        assert [item["number"] for item in response.data["data"]["items"]] == [1, 2, 3]
+
     def test_an_incomplete_order_is_rejected(self, staff_client, scope) -> None:
         competition_id, nomination_id = scope
         _act(competition_id=competition_id, nomination_id=nomination_id, title="Акт A", seconds=100)

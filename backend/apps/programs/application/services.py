@@ -261,10 +261,18 @@ class ProgramService:
         return self._detail(program)
 
     def reorder_items(self, command: ReorderItemsCommand) -> ProgramDetailView:
-        """Apply a new running order."""
+        """Apply a new running order, leaving every permanent number where it is."""
         now = self._clock.utcnow()
         program = self._load(command.program_id)
         program.reorder([_uuid(item_id, what="itemId") for item_id in command.item_ids], now=now)
+        self._programs.save(program)
+        return self._detail(program)
+
+    def renumber_items(self, program_id: str) -> ProgramDetailView:
+        """Re-issue numbers 1..N along the current order (the explicit, opt-in reset)."""
+        now = self._clock.utcnow()
+        program = self._load(program_id)
+        program.renumber_sequentially(now=now)
         self._programs.save(program)
         return self._detail(program)
 
@@ -422,7 +430,9 @@ class ProgramService:
         """
         match column:
             case ProgramColumn.POSITION:
-                return str(position)
+                # The participant's permanent number, not the row's index: a programme
+                # that was rearranged legitimately reads 2, 3, 5, 4.
+                return str(item.number or position)
             case ProgramColumn.TIME:
                 return _clock(starts_at)
             case ProgramColumn.PARTICIPANT:
@@ -503,6 +513,7 @@ class ProgramService:
             id=str(item.id),
             kind=item.kind.value,
             title=self._item_title(item, performance),
+            number=item.number or entry.position,
             duration_seconds=item.duration.seconds,
             schedule=SchedulePosition(
                 position=entry.position,

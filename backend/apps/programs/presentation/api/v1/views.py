@@ -61,6 +61,7 @@ __all__ = [
     "ProgramDetailView",
     "ProgramItemCollectionView",
     "ProgramItemDetailView",
+    "ProgramItemNumbersView",
     "ProgramItemOrderView",
     "ProgramItemsFillView",
     "ProgramShareCollectionView",
@@ -97,6 +98,7 @@ def _item_json(item: dto.ProgramItemView) -> dict[str, Any]:
         "id": item.id,
         "kind": item.kind,
         "title": item.title,
+        "number": item.number,
         "durationSeconds": item.duration_seconds,
         "schedule": {
             "position": item.schedule.position,
@@ -409,7 +411,10 @@ class ProgramItemDetailView(_StaffView):
 
 
 class ProgramItemOrderView(_StaffView):
-    """``PUT`` the complete running order, top to bottom."""
+    """``PUT`` the complete running order, top to bottom.
+
+    Numbers are untouched: the rows move, the numbers stay with their slots.
+    """
 
     @extend_schema(
         tags=[_TAG],
@@ -424,6 +429,27 @@ class ProgramItemOrderView(_StaffView):
         item_ids = tuple(str(item_id) for item_id in serializer.validated_data["itemIds"])
         try:
             program = build_program_service().reorder_items(ReorderItemsCommand(program_id=program_id, item_ids=item_ids))
+        except ProgramError as exc:
+            return self._problem(exc, request)
+        return problems.envelope(request, _program_json(program))
+
+
+class ProgramItemNumbersView(_StaffView):
+    """``POST`` to re-issue numbers 1..N along the current order.
+
+    Explicitly opt-in, and never a side effect of reordering: it invalidates every number
+    already told to a participant.
+    """
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="programsRenumberItems",
+        request=None,
+        responses={200: ProgramDetailSerializer, **_PROBLEM_RESPONSES},
+    )
+    def post(self, request: Request, program_id: str) -> Response:
+        try:
+            program = build_program_service().renumber_items(program_id)
         except ProgramError as exc:
             return self._problem(exc, request)
         return problems.envelope(request, _program_json(program))

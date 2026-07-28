@@ -6275,10 +6275,60 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProgramProblemDetail'
           description: Unprocessable.
+  /api/v1/staff/programs/{program_id}/items/numbers:
+    post:
+      operationId: programsRenumberItems
+      description: |-
+        ``POST`` to re-issue numbers 1..N along the current order.
+
+        Explicitly opt-in, and never a side effect of reordering: it invalidates every number
+        already told to a participant.
+      parameters:
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
   /api/v1/staff/programs/{program_id}/items/order:
     put:
       operationId: programsReorderItems
-      description: '``PUT`` the complete running order, top to bottom.'
+      description: |-
+        ``PUT`` the complete running order, top to bottom.
+
+        Numbers are untouched: the rows move, the numbers stay with their slots.
       parameters:
       - in: path
         name: program_id
@@ -10183,6 +10233,8 @@ components:
           $ref: '#/components/schemas/ProgramItemResourceKindEnum'
         title:
           type: string
+        number:
+          type: integer
         durationSeconds:
           type: integer
         schedule:
@@ -10244,6 +10296,7 @@ components:
       - leadParticipant
       - missingPerformance
       - nomination
+      - number
       - organization
       - participantGroup
       - participants

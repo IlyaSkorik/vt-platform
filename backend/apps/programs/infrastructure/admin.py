@@ -19,7 +19,7 @@ class ProgramItemInline(admin.TabularInline):  # type: ignore[type-arg]
 
     model = ProgramItemModel
     extra = 0
-    fields = ("position", "kind", "title", "duration_seconds", "submission_id", "deleted_at")
+    fields = ("position", "number", "kind", "title", "duration_seconds", "submission_id", "deleted_at")
     readonly_fields = fields
     ordering = ("position",)
 

@@ -37,7 +37,12 @@ class ColumnView:
 
 @dataclass(frozen=True, slots=True)
 class SchedulePosition:
-    """Where one item sits on the timeline."""
+    """Where one item sits on the timeline.
+
+    ``position`` is the row's place in the running order (1..N, always contiguous);
+    :attr:`ProgramItemView.number` is the participant's permanent number, which does not
+    change when the order does. The two are equal until somebody is moved.
+    """
 
     position: int
     offset_seconds: int
@@ -59,6 +64,8 @@ class ProgramItemView:
     id: str
     kind: str
     title: str
+    #: The permanent number told to the participant - stable across every reorder.
+    number: int
     duration_seconds: int
     schedule: SchedulePosition
     submission_id: str | None = None

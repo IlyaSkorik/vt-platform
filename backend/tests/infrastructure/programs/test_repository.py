@@ -118,6 +118,53 @@ class TestRoundTrip:
             ProgramItemModel.objects.filter(program_id=program.id, deleted_at__isnull=True).order_by("position").values_list("id", flat=True)
         ) == [third, first, second]
 
+    def test_permanent_numbers_survive_a_reorder_across_a_reload(self) -> None:
+        repository = DjangoProgramRepository()
+        program = _program()
+        first, second, third = _act(program), _act(program), _act(program)
+        repository.save(program)
+
+        reloaded = repository.get(program.id)
+        assert reloaded is not None
+        reloaded.reorder([first, third, second], now=NOW)
+        repository.save(reloaded)
+
+        again = repository.get(program.id)
+        assert again is not None
+        assert [item.id for item in again.items] == [first, third, second]
+        assert [item.number for item in again.items] == [1, 3, 2]
+
+    def test_a_retired_number_is_not_reissued_after_a_reload(self) -> None:
+        repository = DjangoProgramRepository()
+        program = _program()
+        _first, second = _act(program), _act(program)
+        program.remove_item(second, now=NOW)
+        repository.save(program)
+
+        reloaded = repository.get(program.id)
+        assert reloaded is not None
+        assert (
+            reloaded.add_performance(
+                item_id=uuid.uuid4(),
+                submission_id=uuid.uuid4(),
+                duration=ItemDuration(200),
+                now=NOW,
+            ).number
+            == 3
+        )
+
+    def test_a_row_written_before_numbers_existed_falls_back_to_its_ordinal(self) -> None:
+        repository = DjangoProgramRepository()
+        program = _program()
+        first, second = _act(program), _act(program)
+        repository.save(program)
+        ProgramItemModel.objects.filter(program_id=program.id).update(number=0)
+
+        loaded = repository.get(program.id)
+        assert loaded is not None
+        assert [item.number for item in loaded.items] == [1, 2]
+        assert [item.id for item in loaded.items] == [first, second]
+
     def test_a_performance_slot_stores_no_title(self) -> None:
         repository = DjangoProgramRepository()
         program = _program()

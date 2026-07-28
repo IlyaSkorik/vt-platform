@@ -11,6 +11,7 @@ function anItem(overrides: Partial<ProgramItem> = {}): ProgramItem {
     id: "item-1",
     kind: "PERFORMANCE",
     title: "Катюша",
+    number: 3,
     durationSeconds: 200,
     schedule: {
       position: 3,
@@ -85,6 +86,23 @@ describe("itemCell", () => {
 
   it("renders an untimed programme's time cell as a dash", () => {
     expect(itemCell(anItem(), "TIME", FORMAT)).toBe("—");
+  });
+
+  it("puts the participant's permanent number in the № cell, not the row index", () => {
+    // Row 1 of a rearranged programme can legitimately be номер 3.
+    const moved = anItem({
+      number: 3,
+      schedule: { position: 1, offsetSeconds: 0, slotSeconds: 200, startsAt: null, endsAt: null },
+    });
+    expect(itemCell(moved, "POSITION", FORMAT)).toBe("3");
+  });
+
+  it("falls back to the row index for a slot that has no number yet", () => {
+    const legacy = anItem({
+      number: 0,
+      schedule: { position: 7, offsetSeconds: 0, slotSeconds: 200, startsAt: null, endsAt: null },
+    });
+    expect(itemCell(legacy, "POSITION", FORMAT)).toBe("7");
   });
 });
 

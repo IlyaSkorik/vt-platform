@@ -179,7 +179,9 @@ class TestPublicContent:
         slug, _program_id, _items = _published_program(staff_client, scope, name="Только второй номер", item_slice=slice(1, 2))
         data = APIClient().get(f"{_PUBLIC}/{slug}").data["data"]
         assert len(data["rows"]) == 1
-        assert data["rows"][0]["cells"][0] == "1"
+        # The participant's own number, not a fresh 1: a cut of the programme is still
+        # the programme.
+        assert data["rows"][0]["cells"][0] == "2"
         # Its real slot time is preserved, not recomputed from the edition.
         assert data["rows"][0]["cells"][1] == "10:04"
 

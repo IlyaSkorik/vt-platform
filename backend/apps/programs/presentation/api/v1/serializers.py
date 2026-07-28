@@ -144,6 +144,8 @@ class ProgramItemResourceSerializer(serializers.Serializer[dict[str, object]]):
     id = serializers.UUIDField()
     kind = serializers.ChoiceField(choices=[kind.value for kind in ProgramItemKind])
     title = serializers.CharField()
+    #: The participant's permanent number, unchanged by a reorder.
+    number = serializers.IntegerField()
     durationSeconds = serializers.IntegerField()
     schedule = _SchedulePositionSerializer()
     submissionId = serializers.UUIDField(allow_null=True)

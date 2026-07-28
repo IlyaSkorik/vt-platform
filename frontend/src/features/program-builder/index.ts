@@ -18,6 +18,7 @@ export {
   usePrograms,
   useRemoveItem,
   useRemoveShare,
+  useRenumberItems,
   useReorderItems,
   useUpdateProgram,
   useUpdateShare,

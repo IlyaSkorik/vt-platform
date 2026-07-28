@@ -187,6 +187,49 @@ class TestReorder:
             program.reorder([first.id, first.id, second.id], now=NOW)
 
 
+class TestPermanentNumbers:
+    """A number belongs to the participant, not to the row it happens to sit on."""
+
+    def test_slots_are_numbered_as_they_are_added(self) -> None:
+        program = _program()
+        assert [_add_act(program).number for _ in range(3)] == [1, 2, 3]
+
+    def test_reordering_moves_the_rows_and_leaves_the_numbers(self) -> None:
+        # The case this exists for: a participant asks to perform later, so #4 is moved
+        # up one - and the programme legitimately reads 2, 3, 5, 4.
+        program = _program()
+        items = [_add_act(program) for _ in range(5)]
+        first, second, third, fourth, fifth = items
+        program.reorder([first.id, second.id, third.id, fifth.id, fourth.id], now=NOW)
+
+        assert [item.number for item in program.items] == [1, 2, 3, 5, 4]
+
+    def test_a_block_inserted_in_the_middle_pushes_nobody_number(self) -> None:
+        program = _program()
+        first, second = _add_act(program), _add_act(program)
+        pause = _add_break(program, position=2)
+
+        assert [item.number for item in program.items] == [first.number, pause.number, second.number]
+        assert [item.number for item in program.items] == [1, 3, 2]
+
+    def test_a_removed_number_is_retired_rather_than_reused(self) -> None:
+        # Handing номер 2 to somebody else after telling it to a participant is exactly
+        # the confusion permanent numbers exist to prevent.
+        program = _program()
+        _first, second = _add_act(program), _add_act(program)
+        program.remove_item(second.id, now=NOW)
+        assert _add_act(program).number == 3
+
+    def test_renumbering_is_available_as_a_deliberate_reset(self) -> None:
+        program = _program()
+        items = [_add_act(program) for _ in range(3)]
+        program.reorder([items[2].id, items[0].id, items[1].id], now=NOW)
+        assert [item.number for item in program.items] == [3, 1, 2]
+
+        program.renumber_sequentially(now=NOW)
+        assert [item.number for item in program.items] == [1, 2, 3]
+
+
 class TestSettings:
     def test_the_buffer_can_be_changed_without_touching_any_act(self) -> None:
         program = _program()
