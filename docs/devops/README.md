@@ -18,6 +18,7 @@ Documents in this domain use the `OPS-` prefix (e.g. `OPS-001-environments.md`).
 | ID | Title | Status |
 |----|-------|--------|
 | [OPS-007](OPS-007-object-storage.md) | Object storage for uploads and generated documents | Active |
+| [OPS-008](OPS-008-single-server-sizing.md) | Single-server sizing & tuning (PostgreSQL, gunicorn, Celery, Redis, nginx) | Active |
 
 > Infrastructure, Docker, CI/CD, logging, monitoring, backup, DR, and deployment are defined in [ARCH-001 §16–§25](../architecture/ARCH-001-vt-platform-architecture.md#16-infrastructure) and [§29](../architecture/ARCH-001-vt-platform-architecture.md#29-deployment-strategy).
 
@@ -29,4 +30,3 @@ Documents in this domain use the `OPS-` prefix (e.g. `OPS-001-environments.md`).
 - `OPS-004` — Observability (logging, metrics, tracing, alerting).
 - `OPS-005` — Backup & disaster-recovery runbooks.
 - `OPS-006` — Incident-response & on-call runbooks.
-- `OPS-008` — Single-server sizing & tuning (Postgres, gunicorn, Celery, Redis).
