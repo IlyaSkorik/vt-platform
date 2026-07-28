@@ -504,6 +504,61 @@ class TestCustomColumns:
         assert response.status_code == 404
 
 
+class TestPdfExport:
+    """The organizer prints the programme, choosing which columns go on the page."""
+
+    def _program_with_two_acts(self, staff_client: APIClient, scope: tuple[str, str]) -> str:
+        competition_id, nomination_id = scope
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200, comment="Выход с точки 3")
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Калинка", seconds=200)
+        program_id = _create_program(staff_client, scope)["id"]
+        staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill")
+        return program_id
+
+    def test_the_export_is_a_pdf_attachment(self, staff_client, scope) -> None:
+        program_id = self._program_with_two_acts(staff_client, scope)
+
+        response = staff_client.get(f"{_PROGRAMS}/{program_id}/export.pdf?columns=POSITION,TIME,TITLE")
+        assert response.status_code == 200, response.content[:200]
+        assert response["Content-Type"] == "application/pdf"
+        assert "attachment" in response["Content-Disposition"]
+        # A real PDF, not an error page rendered with the wrong content type.
+        assert response.content.startswith(b"%PDF-")
+        assert len(response.content) > 1000
+
+    def test_every_column_is_exported_when_none_is_chosen(self, staff_client, scope) -> None:
+        program_id = self._program_with_two_acts(staff_client, scope)
+        response = staff_client.get(f"{_PROGRAMS}/{program_id}/export.pdf")
+        assert response.status_code == 200
+        assert response.content.startswith(b"%PDF-")
+
+    def test_a_custom_column_can_be_exported(self, staff_client, scope) -> None:
+        program_id = self._program_with_two_acts(staff_client, scope)
+        key = staff_client.post(f"{_PROGRAMS}/{program_id}/columns", {"title": "Микрофон"}, format="json").data["data"]["availableColumns"][-1]["key"]
+
+        response = staff_client.get(f"{_PROGRAMS}/{program_id}/export.pdf?columns=TITLE,{key}")
+        assert response.status_code == 200
+        assert response.content.startswith(b"%PDF-")
+
+    def test_an_empty_programme_still_exports(self, staff_client, scope) -> None:
+        # A programme is often printed before it is finished; an empty page beats an error.
+        program_id = _create_program(staff_client, scope)["id"]
+        response = staff_client.get(f"{_PROGRAMS}/{program_id}/export.pdf?columns=TIME,TITLE")
+        assert response.status_code == 200
+        assert response.content.startswith(b"%PDF-")
+
+    def test_an_unknown_column_is_a_problem_document(self, staff_client, scope) -> None:
+        program_id = self._program_with_two_acts(staff_client, scope)
+        response = staff_client.get(f"{_PROGRAMS}/{program_id}/export.pdf?columns=NOT_A_COLUMN")
+        assert response.status_code == 400
+
+    def test_an_unknown_programme_cannot_be_exported(self, staff_client) -> None:
+        assert staff_client.get(f"{_PROGRAMS}/{uuid.uuid4()}/export.pdf").status_code == 404
+
+    def test_the_export_is_staff_only(self, outsider_client, scope) -> None:
+        assert outsider_client.get(f"{_PROGRAMS}/{uuid.uuid4()}/export.pdf").status_code == 403
+
+
 class TestPublicEditions:
     def test_an_edition_is_published_with_its_columns_and_a_copyable_path(self, staff_client, scope) -> None:
         competition_id, nomination_id = scope

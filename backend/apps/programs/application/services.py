@@ -39,6 +39,7 @@ from apps.programs.application.dto import (
     ProgramItemView,
     ProgramShareView,
     ProgramSummaryView,
+    ProgramTableView,
     PublicProgramRowView,
     PublicProgramView,
     SchedulePosition,
@@ -49,9 +50,11 @@ from apps.programs.application.interfaces import (
     PerformanceCatalog,
     ProgramRepository,
     SlugFactory,
+    TableRenderer,
 )
 from apps.programs.domain.entities import Program, ProgramItem, ProgramShare
 from apps.programs.domain.exceptions import (
+    ExportUnavailableError,
     InvalidProgramDataError,
     PerformanceNotAvailableError,
     ProgramNotFoundError,
@@ -116,11 +119,15 @@ class ProgramService:
         catalog: PerformanceCatalog,
         clock: Clock,
         slugs: SlugFactory,
+        tables: TableRenderer | None = None,
     ) -> None:
         self._programs = programs
         self._catalog = catalog
         self._clock = clock
         self._slugs = slugs
+        # Optional: every use case except the export works without a renderer, and a test
+        # that never exports should not have to supply one.
+        self._tables = tables
 
     # ------------------------------------------------------------------
     # Programs
@@ -362,6 +369,38 @@ class ProgramService:
         return self._detail(program)
 
     # ------------------------------------------------------------------
+    # Export
+    # ------------------------------------------------------------------
+
+    def program_table(self, *, program_id: str, columns: Sequence[str] = ()) -> ProgramTableView:
+        """Render the programme as a plain table of the chosen columns.
+
+        The organizer's own cut of the programme, for printing or sending on. It goes through
+        the same cell renderer as a published link, so an exported table and a screen never
+        disagree about what a cell says. An empty selection means every column the programme
+        has - an export is for the organizer, who is allowed to see all of it.
+        """
+        program = self._load(program_id)
+        chosen = program.normalize_columns(parse_column_refs(columns)) if columns else program.columns
+        rows = self._rows(program, program.items, chosen)
+        nomination = self._catalog.nomination_title(program.nomination_id) if program.nomination_id else None
+        competition = self._catalog.competition_title(program.competition_id)
+        return ProgramTableView(
+            title=str(program.name),
+            subtitle=" · ".join(part for part in (competition, nomination) if part) or None,
+            starts_at=program.starts_at,
+            total_seconds=total_duration_seconds(items=program.items, buffer=program.buffer),
+            columns=self._column_views(program, chosen),
+            rows=tuple(cells for _kind, _item_id, _progress, cells in rows),
+        )
+
+    def export_pdf(self, *, program_id: str, columns: Sequence[str] = ()) -> bytes:
+        """Render the programme table as a PDF document."""
+        if self._tables is None:
+            raise ExportUnavailableError("No table renderer is configured for this context.")
+        return self._tables.render(self.program_table(program_id=program_id, columns=columns))
+
+    # ------------------------------------------------------------------
     # The day itself (driven from the host's link)
     # ------------------------------------------------------------------
 
@@ -435,45 +474,63 @@ class ProgramService:
         """Render one published edition of a programme as its table."""
         columns = share.columns
         items = program.items_for(share)
-        schedule_by_item = {entry.item.id: entry for entry in build_schedule(items=program.items, buffer=program.buffer, starts_at=program.starts_at)}
-        performances = self._resolve_performances(items)
-        rows: list[PublicProgramRowView] = []
-        first_start: datetime | None = None
-        for position, item in enumerate(items, start=1):
-            entry = schedule_by_item[item.id]
-            if position == 1:
-                first_start = entry.starts_at
-            performance = performances.get(item.submission_id) if item.submission_id is not None else None
-            rows.append(
-                PublicProgramRowView(
-                    kind=item.kind.value,
-                    cells=tuple(
-                        self._cell(
-                            column,
-                            item=item,
-                            performance=performance,
-                            position=position,
-                            starts_at=entry.starts_at,
-                        )
-                        for column in columns
-                    ),
-                    progress=item.progress.value,
-                    # Only the host needs a handle on a row, and only the host's link gets
-                    # one: a read-only edition carries no ids at all.
-                    id=str(item.id) if share.controls_running_order else None,
-                )
-            )
+        rows = self._rows(program, items, columns)
         return PublicProgramView(
             name=str(share.name),
             slug=str(share.slug),
             competition_title=self._catalog.competition_title(program.competition_id),
             nomination=self._catalog.nomination_title(program.nomination_id) if program.nomination_id else None,
-            starts_at=first_start or program.starts_at,
+            starts_at=self._first_start(program, items) or program.starts_at,
             total_seconds=total_duration_seconds(items=items, buffer=program.buffer),
             columns=self._column_views(program, columns),
-            rows=tuple(rows),
+            rows=tuple(
+                PublicProgramRowView(
+                    kind=kind,
+                    cells=cells,
+                    progress=progress,
+                    # Only the host needs a handle on a row, and only the host's link gets
+                    # one: a read-only edition carries no ids at all.
+                    id=item_id if share.controls_running_order else None,
+                )
+                for kind, item_id, progress, cells in rows
+            ),
             controls_running_order=share.controls_running_order,
         )
+
+    def _rows(
+        self,
+        program: Program,
+        items: Sequence[ProgramItem],
+        columns: Sequence[ColumnRef],
+    ) -> tuple[tuple[str, str, str, tuple[str, ...]], ...]:
+        """Render ``items`` into ``(kind, item id, progress, cells)`` tuples.
+
+        The single place a programme becomes text, shared by the public screen and every
+        export: one renderer means an exported table and a screen can never disagree about
+        what a cell says.
+        """
+        schedule_by_item = {entry.item.id: entry for entry in build_schedule(items=program.items, buffer=program.buffer, starts_at=program.starts_at)}
+        performances = self._resolve_performances(items)
+        rendered: list[tuple[str, str, str, tuple[str, ...]]] = []
+        for position, item in enumerate(items, start=1):
+            entry = schedule_by_item[item.id]
+            performance = performances.get(item.submission_id) if item.submission_id is not None else None
+            rendered.append(
+                (
+                    item.kind.value,
+                    str(item.id),
+                    item.progress.value,
+                    tuple(self._cell(column, item=item, performance=performance, position=position, starts_at=entry.starts_at) for column in columns),
+                )
+            )
+        return tuple(rendered)
+
+    def _first_start(self, program: Program, items: Sequence[ProgramItem]) -> datetime | None:
+        """When the first of ``items`` begins, on the whole programme's timeline."""
+        if not items:
+            return None
+        schedule = {entry.item.id: entry for entry in build_schedule(items=program.items, buffer=program.buffer, starts_at=program.starts_at)}
+        return schedule[items[0].id].starts_at
 
     def _host_program(self, slug: str) -> tuple[Program, ProgramShare]:
         """Resolve a host link, refusing anything that was not granted control.

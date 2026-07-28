@@ -21,6 +21,7 @@ __all__ = [
     "ProgramItemView",
     "ProgramShareView",
     "ProgramSummaryView",
+    "ProgramTableView",
     "PublicProgramRowView",
     "PublicProgramView",
     "SchedulePosition",
@@ -151,6 +152,24 @@ class ProgramDetailView:
     created_at: datetime
     updated_at: datetime
     version: int
+
+
+@dataclass(frozen=True, slots=True)
+class ProgramTableView:
+    """A programme as a plain table, for a renderer that knows nothing about programmes.
+
+    The same shape the public screen is built from, minus anything link-specific: a heading,
+    the chosen columns, and one row of already-rendered cells each. That is deliberately all
+    a PDF (or a CSV, later) needs, which keeps the renderer a dumb table printer rather than
+    a second place that knows what a programme is.
+    """
+
+    title: str
+    subtitle: str | None
+    starts_at: datetime | None
+    total_seconds: int
+    columns: tuple[ColumnView, ...]
+    rows: tuple[tuple[str, ...], ...]
 
 
 @dataclass(frozen=True, slots=True)

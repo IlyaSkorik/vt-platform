@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useCompetitionDetail, useCompetitionsList } from "@/features/competitions";
 import {
+  downloadProgramPdf as downloadProgramPdfImpl,
   type Program,
   type ProgramCandidate,
   type ProgramColumn,
@@ -29,6 +30,8 @@ import {
   useUpdateProgram,
 } from "@/features/program-builder";
 
+import { toast } from "@/shared/ui";
+
 import { StaffProgramPage } from "./index";
 
 vi.mock("@/features/program-builder", async (importOriginal) => ({
@@ -51,7 +54,14 @@ vi.mock("@/features/program-builder", async (importOriginal) => ({
   useRenameColumn: vi.fn(),
   useRemoveColumn: vi.fn(),
   useFillCells: vi.fn(),
+  downloadProgramPdf: vi.fn(),
 }));
+
+// The export panel reports failures through the toaster, which is worth asserting.
+vi.mock("@/shared/ui", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/shared/ui")>();
+  return { ...actual, toast: { ...actual.toast, error: vi.fn(), success: vi.fn() } };
+});
 
 vi.mock("@/features/competitions", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/features/competitions")>()),
@@ -98,6 +108,7 @@ const addColumn = vi.fn();
 const renameColumn = vi.fn();
 const removeColumn = vi.fn();
 const fillCells = vi.fn();
+const downloadProgramPdf = vi.mocked(downloadProgramPdfImpl);
 
 function mutation(mutate: ReturnType<typeof vi.fn>) {
   return { mutate, mutateAsync: mutate, isPending: false } as never;
@@ -263,6 +274,9 @@ beforeEach(() => {
   ]) {
     spy.mockReset();
   }
+  downloadProgramPdf.mockReset();
+  downloadProgramPdf.mockResolvedValue(undefined);
+  vi.mocked(toast.error).mockReset();
 });
 
 afterEach(() => {
@@ -504,11 +518,83 @@ describe("StaffProgramPage — the organizer's own columns", () => {
     await renderPage();
 
     await userEvent.type(screen.getByLabelText("Название ссылки"), "Звукорежиссёр");
-    await userEvent.click(screen.getByRole("checkbox", { name: "Микрофон" }));
+    const panel = screen.getByRole("group", { name: "Колонки для публикации" });
+    await userEvent.click(within(panel).getByRole("checkbox", { name: "Микрофон" }));
     await userEvent.click(screen.getByRole("button", { name: /Создать ссылку/ }));
 
     const payload = createShare.mock.calls[0]?.[0] as { columns: string[] };
     expect(payload.columns).toContain("custom:col-1");
+  });
+});
+
+describe("StaffProgramPage — printing the programme", () => {
+  it("downloads a PDF of the columns that are ticked", async () => {
+    stub();
+    await renderPage();
+
+    // Drop one default column and add one that is not.
+    const panel = screen.getByRole("group", { name: "Колонки в PDF" });
+    await userEvent.click(within(panel).getByRole("checkbox", { name: "Организация" }));
+    await userEvent.click(within(panel).getByRole("checkbox", { name: "Педагог" }));
+    await userEvent.click(screen.getByRole("button", { name: /Скачать PDF/ }));
+
+    await waitFor(() => expect(downloadProgramPdf).toHaveBeenCalled());
+    const [programId, columns, fallback] = downloadProgramPdf.mock.calls[0] as [
+      string,
+      string[],
+      string,
+    ];
+    expect(programId).toBe(PROGRAM_ID);
+    expect(columns).toEqual(["POSITION", "TIME", "PARTICIPANT", "TITLE", "DURATION", "TEACHERS"]);
+    expect(fallback).toBe("Вокал, 1 отделение");
+  });
+
+  it("starts from the columns a printed running order usually wants", async () => {
+    stub();
+    await renderPage();
+
+    const panel = screen.getByRole("group", { name: "Колонки в PDF" });
+    for (const label of ["№", "Время", "Участник", "Номер", "Длительность", "Организация"]) {
+      expect(within(panel).getByRole("checkbox", { name: label })).toBeChecked();
+    }
+    expect(within(panel).getByRole("checkbox", { name: "Комментарий" })).not.toBeChecked();
+  });
+
+  it("offers a custom column for printing too", async () => {
+    stub(
+      aProgram({
+        availableColumns: [
+          ...ALL_COLUMNS,
+          { key: "custom:col-1", label: "Микрофон", custom: true },
+        ],
+      }),
+    );
+    await renderPage();
+
+    const panel = screen.getByRole("group", { name: "Колонки в PDF" });
+    expect(within(panel).getByRole("checkbox", { name: "Микрофон" })).toBeInTheDocument();
+  });
+
+  it("cannot export nothing at all", async () => {
+    stub();
+    await renderPage();
+
+    const panel = screen.getByRole("group", { name: "Колонки в PDF" });
+    for (const label of ["№", "Время", "Участник", "Номер", "Длительность", "Организация"]) {
+      await userEvent.click(within(panel).getByRole("checkbox", { name: label }));
+    }
+
+    expect(screen.getByRole("button", { name: /Скачать PDF/ })).toBeDisabled();
+  });
+
+  it("says so when the export fails rather than failing silently", async () => {
+    downloadProgramPdf.mockRejectedValueOnce(new Error("nope"));
+    stub();
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: /Скачать PDF/ }));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Не удалось сформировать PDF"));
   });
 });
 
@@ -749,10 +835,11 @@ describe("StaffProgramPage — public links", () => {
     await userEvent.type(screen.getByLabelText("Название ссылки"), "Программа звукорежиссёра");
     // The sound engineer's cut: drop the two default columns they do not need, add the
     // two they do.
-    await userEvent.click(screen.getByRole("checkbox", { name: "№" }));
-    await userEvent.click(screen.getByRole("checkbox", { name: "Участник" }));
-    await userEvent.click(screen.getByRole("checkbox", { name: "Длительность" }));
-    await userEvent.click(screen.getByRole("checkbox", { name: "Комментарий" }));
+    const panel = screen.getByRole("group", { name: "Колонки для публикации" });
+    await userEvent.click(within(panel).getByRole("checkbox", { name: "№" }));
+    await userEvent.click(within(panel).getByRole("checkbox", { name: "Участник" }));
+    await userEvent.click(within(panel).getByRole("checkbox", { name: "Длительность" }));
+    await userEvent.click(within(panel).getByRole("checkbox", { name: "Комментарий" }));
     await userEvent.click(screen.getByRole("button", { name: /Создать ссылку/ }));
 
     const payload = createShare.mock.calls[0]?.[0] as { columns: string[] };
@@ -764,8 +851,9 @@ describe("StaffProgramPage — public links", () => {
     await renderPage();
 
     await userEvent.type(screen.getByLabelText("Название ссылки"), "Пустая");
+    const panel = screen.getByRole("group", { name: "Колонки для публикации" });
     for (const label of ["№", "Время", "Участник", "Номер"]) {
-      await userEvent.click(screen.getByRole("checkbox", { name: label }));
+      await userEvent.click(within(panel).getByRole("checkbox", { name: label }));
     }
 
     expect(screen.getByRole("button", { name: /Создать ссылку/ })).toBeDisabled();

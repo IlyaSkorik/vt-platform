@@ -2,6 +2,7 @@
  * Public API of the `program-builder` feature — the organizer's programme constructor.
  */
 export {
+  downloadProgramPdf,
   fetchCandidates,
   fetchProgram,
   fetchPrograms,
@@ -34,6 +35,7 @@ export {
   type ColumnKey,
   type CreateProgramInput,
   type CreateShareInput,
+  DEFAULT_EXPORT_COLUMNS,
   DEFAULT_SHARE_COLUMNS,
   ITEM_KIND_LABELS,
   itemCell,

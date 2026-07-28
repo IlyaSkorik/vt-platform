@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol
 
+from apps.programs.application.dto import ProgramTableView
 from apps.programs.domain.entities import Program
 
 __all__ = [
@@ -26,6 +27,7 @@ __all__ = [
     "PerformanceCatalog",
     "ProgramRepository",
     "SlugFactory",
+    "TableRenderer",
 ]
 
 
@@ -127,4 +129,18 @@ class SlugFactory(Protocol):
 
     def new_slug(self) -> str:
         """A fresh candidate slug."""
+        ...
+
+
+class TableRenderer(Protocol):
+    """Turns a rendered table into a document the organizer can print or send.
+
+    Deliberately ignorant of programmes: it is handed a heading, columns and rows of text
+    and returns bytes. That keeps the layout rules (page size, wrapping, repeating the
+    header on each page) in one adapter, and keeps every decision about *what* a cell says
+    in the application layer, where the public screen decides it too.
+    """
+
+    def render(self, table: ProgramTableView) -> bytes:
+        """Render the table; the caller knows the media type it asked for."""
         ...

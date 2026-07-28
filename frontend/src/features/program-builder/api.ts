@@ -311,6 +311,55 @@ export function useFillCells(
   );
 }
 
+/**
+ * Download the programme as a PDF table of the chosen columns.
+ *
+ * Fetched rather than linked: the endpoint is staff-gated, so the request needs the same
+ * auth as everything else and a plain `<a href>` would arrive without it. The blob is then
+ * handed to the browser under the filename the server chose.
+ */
+export async function downloadProgramPdf(
+  programId: string,
+  columns: ColumnKey[],
+  fallbackName: string,
+): Promise<void> {
+  const query = columns.length > 0 ? `?columns=${encodeURIComponent(columns.join(","))}` : "";
+  let blob: Blob;
+  let disposition: string | null;
+  try {
+    const response = await apiClient(`staff/programs/${programId}/export.pdf${query}`);
+    blob = await response.blob();
+    disposition = response.headers.get("Content-Disposition");
+  } catch (error) {
+    throw await toApiError(error);
+  }
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filenameFrom(disposition) ?? `${fallbackName}.pdf`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  // Revoking immediately can cancel the download in some browsers; a tick is enough.
+  setTimeout(() => URL.revokeObjectURL(url), 1_000);
+}
+
+/** Read the server's chosen filename out of a Content-Disposition header. */
+function filenameFrom(disposition: string | null): string | null {
+  if (!disposition) {
+    return null;
+  }
+  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
+  if (encoded?.[1]) {
+    try {
+      return decodeURIComponent(encoded[1]);
+    } catch {
+      // A malformed header is not worth failing a download over.
+    }
+  }
+  return /filename="([^"]+)"/i.exec(disposition)?.[1] ?? null;
+}
+
 /** Put every slot back to pending — the organizer's reset after a rehearsal. */
 export function useResetProgress(programId: string): UseMutationResult<Program, ApiError, void> {
   return useProgramMutation<void>(() =>

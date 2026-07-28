@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from apps.programs.application.services import ProgramService
 from apps.programs.infrastructure.acl import DjangoPerformanceCatalog
+from apps.programs.infrastructure.pdf import ReportLabTableRenderer
 from apps.programs.infrastructure.repositories import DjangoProgramRepository
 from apps.programs.infrastructure.system import RandomSlugFactory, SystemClock
 
@@ -17,10 +18,11 @@ __all__ = ["build_program_service"]
 
 
 def build_program_service() -> ProgramService:
-    """Assemble the program use cases over PostgreSQL and the real clock."""
+    """Assemble the program use cases over PostgreSQL, the real clock and a PDF renderer."""
     return ProgramService(
         programs=DjangoProgramRepository(),
         catalog=DjangoPerformanceCatalog(),
         clock=SystemClock(),
         slugs=RandomSlugFactory(),
+        tables=ReportLabTableRenderer(),
     )

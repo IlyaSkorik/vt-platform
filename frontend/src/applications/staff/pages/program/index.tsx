@@ -1,11 +1,23 @@
-import { ArrowDown, ArrowUp, Columns3, Copy, Link2, ListOrdered, Plus, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Columns3,
+  Copy,
+  FileDown,
+  Link2,
+  ListOrdered,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { useCompetitionDetail, useCompetitionsList } from "@/features/competitions";
 import {
   BUFFER_PRESETS,
   type ColumnKey,
+  DEFAULT_EXPORT_COLUMNS,
   DEFAULT_SHARE_COLUMNS,
+  downloadProgramPdf,
   ITEM_KIND_LABELS,
   itemCell,
   moveItem,
@@ -107,7 +119,7 @@ export function StaffProgramPage(): React.JSX.Element {
       </PageHeader>
 
       {/* `min-w-0` here too: PageContainer and PageContent are both flex columns, so the
-          table's width would otherwise travel all the way up and widen the page itself. */}
+          chain has to be unbroken from the page down to the table's scroll container. */}
       <PageContent className="min-w-0 gap-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:max-w-2xl">
           <Select
@@ -128,8 +140,8 @@ export function StaffProgramPage(): React.JSX.Element {
         {competitions.isLoading ? <LoadingState label="Загружаем фестивали…" size="sm" /> : null}
 
         {/* `minmax(0,1fr)` in both cases, and `min-w-0` on the children: without them a grid
-            track is as wide as its content, and a wide running order stretches the layout
-            rather than scrolling inside it. The single-column case is what a phone gets. */}
+            or flex track sizes to its content, and the wide programme table would push the
+            whole page sideways instead of scrolling inside itself. */}
         {competitionId ? (
           <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
             <div className="flex min-w-0 flex-col gap-4">
@@ -297,6 +309,8 @@ function ProgramWorkspaceInner({ program }: { program: Program }): React.JSX.Ele
       <ProgramSettings program={program} />
       <Divider />
       <RunningOrder program={program} />
+      <Divider />
+      <ExportPanel program={program} />
       <Divider />
       <CandidateList program={program} />
       <Divider />
@@ -781,6 +795,70 @@ function AddBreakControls({ programId }: { programId: string }): React.JSX.Eleme
       >
         <Plus className="size-4" /> Вставить блок
       </Button>
+    </div>
+  );
+}
+
+/**
+ * Print the programme: tick the columns, get a PDF.
+ *
+ * The same column-picking shape as publishing a link, because it is the same decision —
+ * which of the table's columns this particular audience needs. Defaults to the columns a
+ * printed running order almost always wants, rather than to everything, since a thirteen-
+ * column page is unreadable.
+ */
+function ExportPanel({ program }: { program: Program }): React.JSX.Element {
+  const [columns, setColumns] = useState<ColumnKey[]>(DEFAULT_EXPORT_COLUMNS);
+  const [busy, setBusy] = useState(false);
+
+  const toggle = (key: ColumnKey, checked: boolean) => {
+    setColumns((current) =>
+      checked
+        ? [...current.filter((item) => item !== key), key]
+        : current.filter((item) => item !== key),
+    );
+  };
+
+  const download = async () => {
+    setBusy(true);
+    try {
+      await downloadProgramPdf(program.id, columns, program.name);
+    } catch {
+      toast.error("Не удалось сформировать PDF");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="flex min-w-0 flex-col gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="font-medium text-sm">Печать и экспорт</p>
+        <Button
+          variant="outline"
+          size="sm"
+          loading={busy}
+          disabled={columns.length === 0}
+          onClick={() => void download()}
+        >
+          <FileDown className="size-4" /> Скачать PDF
+        </Button>
+      </div>
+
+      <fieldset className="flex flex-wrap gap-x-4 gap-y-2 rounded-md border border-border p-3">
+        <legend className="px-1 text-muted-foreground text-xs">Колонки в PDF</legend>
+        {program.availableColumns.map((column) => (
+          <Checkbox
+            key={column.key}
+            label={column.label}
+            checked={columns.includes(column.key)}
+            onCheckedChange={(checked) => toggle(column.key, checked === true)}
+          />
+        ))}
+      </fieldset>
+      <p className="text-muted-foreground text-xs">
+        Таблица печатается на A4 в альбомной ориентации, заголовок повторяется на каждой странице.
+      </p>
     </div>
   );
 }

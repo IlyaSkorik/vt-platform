@@ -14,10 +14,12 @@ import pytest
 
 from apps.programs.application.commands import (
     AddBlockCommand,
+    AddColumnCommand,
     AddPerformanceCommand,
     CreateProgramCommand,
     CreateShareCommand,
     EditItemCommand,
+    FillCellsCommand,
     ReorderItemsCommand,
     UpdateProgramCommand,
     UpdateShareCommand,
@@ -25,6 +27,7 @@ from apps.programs.application.commands import (
 from apps.programs.application.interfaces import CatalogPerformance
 from apps.programs.application.services import ProgramService
 from apps.programs.domain.exceptions import (
+    ExportUnavailableError,
     InvalidProgramDataError,
     PerformanceAlreadyInProgramError,
     PerformanceNotAvailableError,
@@ -267,6 +270,73 @@ class TestScheduleAndBuffer:
         env = Env()
         with pytest.raises(InvalidProgramDataError):
             env.service.update_program(UpdateProgramCommand(program_id=env.program(), buffer_seconds=7200))
+
+
+class TestExport:
+    """The organizer's own cut of the programme, for printing or sending on."""
+
+    def test_the_table_carries_the_chosen_columns_in_canonical_order(self) -> None:
+        act = _act("Катюша", 200, comment="Выход с точки 3")
+        env = Env(act)
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+
+        table = env.service.program_table(program_id=program_id, columns=("COMMENT", "TITLE", "TIME"))
+        assert [column.key for column in table.columns] == ["TIME", "TITLE", "COMMENT"]
+        assert table.rows == (("10:00", "Катюша", "Выход с точки 3"),)
+
+    def test_an_export_without_a_choice_carries_every_column(self) -> None:
+        env = Env(_act("Катюша", 200))
+        program_id = env.program()
+        detail = env.service.fill_from_scope(program_id)
+
+        table = env.service.program_table(program_id=program_id)
+        assert len(table.columns) == len(detail.available_columns)
+
+    def test_the_heading_names_the_programme_the_festival_and_the_nomination(self) -> None:
+        env = Env(_act("Катюша", 200))
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+
+        table = env.service.program_table(program_id=program_id, columns=("TITLE",))
+        assert table.title == "Вокал, 1 отделение"
+        assert table.subtitle == "Весенний фестиваль · Вокал"
+        assert table.total_seconds == 200
+
+    def test_an_exported_cell_says_what_the_public_screen_says(self) -> None:
+        # One cell renderer for both, so a printed programme and a screen cannot disagree.
+        env = Env(_act("Катюша", 200), _act("Калинка", 200))
+        program_id = env.program(buffer_seconds=40)
+        env.service.fill_from_scope(program_id)
+        _detail, share = env.service.create_share(CreateShareCommand(program_id=program_id, name="Экран", columns=("TIME", "TITLE")))
+
+        table = env.service.program_table(program_id=program_id, columns=("TIME", "TITLE"))
+        public = env.service.public_program(share.slug)
+        assert public is not None
+        assert table.rows == tuple(row.cells for row in public.rows)
+
+    def test_a_custom_column_is_exportable(self) -> None:
+        env = Env(_act("Катюша", 200))
+        program_id = env.program()
+        detail = env.service.fill_from_scope(program_id)
+        key = env.service.add_column(AddColumnCommand(program_id=program_id, title="Микрофон")).available_columns[-1].key
+        env.service.fill_cells(FillCellsCommand(program_id=program_id, item_id=detail.items[0].id, values=((key, "на стойке"),)))
+
+        table = env.service.program_table(program_id=program_id, columns=("TITLE", key))
+        assert [column.label for column in table.columns] == ["Номер", "Микрофон"]
+        assert table.rows == (("Катюша", "на стойке"),)
+
+    def test_an_unknown_column_is_refused(self) -> None:
+        env = Env(_act("Катюша", 200))
+        program_id = env.program()
+        with pytest.raises(InvalidProgramDataError):
+            env.service.program_table(program_id=program_id, columns=("NOT_A_COLUMN",))
+
+    def test_exporting_without_a_renderer_says_so_rather_than_crashing(self) -> None:
+        env = Env(_act("Катюша", 200))
+        program_id = env.program()
+        with pytest.raises(ExportUnavailableError):
+            env.service.export_pdf(program_id=program_id)
 
 
 class TestNumbersAndPublication:

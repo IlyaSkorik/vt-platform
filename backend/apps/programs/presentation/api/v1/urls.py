@@ -15,6 +15,7 @@ from .views import (
     ProgramColumnCollectionView,
     ProgramColumnDetailView,
     ProgramDetailView,
+    ProgramExportView,
     ProgramItemCellsView,
     ProgramItemCollectionView,
     ProgramItemDetailView,
@@ -41,6 +42,7 @@ urlpatterns = [
     path("staff/programs/<str:program_id>/columns", ProgramColumnCollectionView.as_view(), name="columns"),
     path("staff/programs/<str:program_id>/columns/<str:column_id>", ProgramColumnDetailView.as_view(), name="column-detail"),
     path("staff/programs/<str:program_id>/progress", ProgramProgressView.as_view(), name="progress"),
+    path("staff/programs/<str:program_id>/export.pdf", ProgramExportView.as_view(), name="export-pdf"),
     path("staff/programs/<str:program_id>/shares", ProgramShareCollectionView.as_view(), name="shares"),
     path("staff/programs/<str:program_id>/shares/<str:share_id>", ProgramShareDetailView.as_view(), name="share-detail"),
 ]

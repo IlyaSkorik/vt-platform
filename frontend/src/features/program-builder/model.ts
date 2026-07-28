@@ -229,6 +229,21 @@ export const DEFAULT_SHARE_COLUMNS: ProgramColumnKey[] = [
 ];
 
 /**
+ * What a printed programme starts with.
+ *
+ * Wider than a screen's default — paper has room and a printed running order is usually
+ * the one people work from — but not everything: a thirteen-column page is unreadable.
+ */
+export const DEFAULT_EXPORT_COLUMNS: ProgramColumnKey[] = [
+  "POSITION",
+  "TIME",
+  "PARTICIPANT",
+  "TITLE",
+  "DURATION",
+  "ORGANIZATION",
+];
+
+/**
  * One cell of the organizer's table.
  *
  * The same mapping the backend applies when it renders a published edition, so the

@@ -8,6 +8,7 @@ problem body from ad-hoc strings.
 from __future__ import annotations
 
 __all__ = [
+    "ExportUnavailableError",
     "InvalidProgramDataError",
     "ItemNotInProgramError",
     "PerformanceAlreadyInProgramError",
@@ -45,6 +46,15 @@ class ProgramItemNotFoundError(ProgramError):
     """Raised when a referenced item is not part of the program."""
 
     code = "program_item_not_found"
+
+
+class ExportUnavailableError(ProgramError):
+    """Raised when an export is asked for and no renderer is wired up.
+
+    A configuration fault rather than a request fault - the caller did nothing wrong.
+    """
+
+    code = "export_unavailable"
 
 
 class ProgramColumnNotFoundError(ProgramError):

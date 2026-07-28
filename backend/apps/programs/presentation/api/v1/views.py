@@ -13,7 +13,10 @@ codebase, and the HTTP views keep the name here.
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import quote
 
+from django.http import HttpResponse
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -66,6 +69,7 @@ __all__ = [
     "ProgramColumnCollectionView",
     "ProgramColumnDetailView",
     "ProgramDetailView",
+    "ProgramExportView",
     "ProgramItemCellsView",
     "ProgramItemCollectionView",
     "ProgramItemDetailView",
@@ -83,6 +87,12 @@ _PROBLEM_RESPONSES = {
     409: OpenApiResponse(ProgramProblemDetailSerializer, description="Conflict."),
     422: OpenApiResponse(ProgramProblemDetailSerializer, description="Unprocessable."),
 }
+
+
+def _pdf_name(title: str) -> str:
+    """A filename a person recognises: the programme's own name, path-safe."""
+    cleaned = "".join(char if char.isalnum() or char in " -_" else " " for char in title).strip()
+    return f"{' '.join(cleaned.split()) or 'Программа'}.pdf"
 
 
 def _columns_json(columns: tuple[dto.ColumnView, ...]) -> list[dict[str, Any]]:
@@ -538,6 +548,46 @@ class ProgramItemCellsView(_StaffView):
         except ProgramError as exc:
             return self._problem(exc, request)
         return problems.envelope(request, _program_json(program))
+
+
+class ProgramExportView(_StaffView):
+    """``GET`` the programme as a PDF table of the chosen columns.
+
+    A ``GET`` because it is a download: the organizer picks columns, the browser saves a
+    file. Columns arrive as a comma-separated list so the URL stays something that can be
+    copied, bookmarked, or wired into a print button; omitting them exports every column.
+    """
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="programsExportPdf",
+        parameters=[
+            OpenApiParameter(
+                "columns",
+                str,
+                required=False,
+                description="Comma-separated column keys (built-in names or custom:<uuid>). Omit for all.",
+            )
+        ],
+        responses={
+            (200, "application/pdf"): OpenApiTypes.BINARY,
+            **_PROBLEM_RESPONSES,
+        },
+    )
+    def get(self, request: Request, program_id: str) -> HttpResponse | Response:
+        raw = (request.query_params.get("columns") or "").strip()
+        columns = tuple(key.strip() for key in raw.split(",") if key.strip())
+        try:
+            service = build_program_service()
+            table = service.program_table(program_id=program_id, columns=columns)
+            document = service.export_pdf(program_id=program_id, columns=columns)
+        except ProgramError as exc:
+            return self._problem(exc, request)
+        response = HttpResponse(document, content_type="application/pdf")
+        # ``filename*`` carries the real, Cyrillic name; the ASCII ``filename`` is the
+        # fallback for clients that ignore RFC 5987.
+        response["Content-Disposition"] = f"attachment; filename=\"programme.pdf\"; filename*=UTF-8''{quote(_pdf_name(table.title))}"
+        return response
 
 
 class ProgramProgressView(_StaffView):
