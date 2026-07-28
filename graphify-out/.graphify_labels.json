@@ -976,5 +976,7 @@
   "974": "PublicFestivalRegulationSerializer",
   "975": "RegistrationDeadlinesSerializer",
   "976": "0002_programsharemodel_columns.py",
-  "977": "useUpdateGeneralInformationMutation"
+  "977": "useUpdateGeneralInformationMutation",
+  "978": ".json",
+  "979": "@testing-library/react"
 }
