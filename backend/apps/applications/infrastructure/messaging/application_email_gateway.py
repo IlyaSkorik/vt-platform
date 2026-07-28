@@ -17,6 +17,7 @@ from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 
 from apps.emailing import render_transactional_email_html
+from apps.notifications.infrastructure.email import send_transactional
 
 __all__ = ["DjangoApplicantNotifier"]
 
@@ -108,6 +109,7 @@ class DjangoApplicantNotifier:
         )
 
     def _send(self, *, subject: str, body: str, html_body: str, to: str) -> None:
+        """Queue a single message, within the provider's per-mailbox allowance."""
         message = EmailMultiAlternatives(subject=subject, body=body, from_email=self._from_email, to=[to])
         message.attach_alternative(html_body, "text/html")
-        message.send(fail_silently=False)
+        send_transactional(message)

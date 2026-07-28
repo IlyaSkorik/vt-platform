@@ -291,6 +291,13 @@ EMAIL_USE_SSL = settings.email.use_ssl
 EMAIL_TIMEOUT = settings.email.timeout
 DEFAULT_FROM_EMAIL = settings.email.default_from
 
+# The mail provider's per-mailbox quotas (OPS-009). Enforced on the way out in
+# ``apps.notifications``, because a message the provider refuses is one a participant
+# never receives.
+MAIL_RATE_LIMIT_PER_MINUTE = settings.email.rate_limit_per_minute
+MAIL_MAX_RECIPIENTS = settings.email.max_recipients
+MAIL_MAX_BYTES = settings.email.max_bytes
+
 # Public base URL of the web client, used to build user-facing links the backend
 # emails (email-verification link, IDN-002). No trailing slash.
 FRONTEND_BASE_URL = settings.frontend_base_url.rstrip("/")

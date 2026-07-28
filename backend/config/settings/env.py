@@ -63,6 +63,20 @@ class EmailSettings(BaseSettings):
     # Envelope sender for transactional mail (IDN-002 verification, resets).
     default_from: str = "no-reply@vzlyot-talantov.ru"
 
+    # --- The provider's mailbox quotas (OPS-009) ---------------------------
+    #
+    # These are contractual limits on the hosting provider's mail servers, not tuning
+    # knobs: exceeding them gets outbound mail throttled or refused. They are settings
+    # rather than constants because a different provider (or tariff) has different numbers.
+    #
+    # 30 outgoing messages per minute per mailbox. Zero disables the limiter, which is what
+    # the test suite runs on - the quota has its own focused tests.
+    rate_limit_per_minute: int = 30
+    # 50 recipients per message, counting To + Cc + Bcc together.
+    max_recipients: int = 50
+    # 100 MB per message. Refused locally rather than spent on a rejection.
+    max_bytes: int = 100 * 1024 * 1024
+
 
 class Settings(BaseSettings):
     """Root application settings.

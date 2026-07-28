@@ -8,7 +8,6 @@ from io import StringIO
 from typing import Any
 
 from django.conf import settings
-from django.core.mail import send_mail
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -30,6 +29,7 @@ from apps.applications.infrastructure.models.application import ApplicationModel
 from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.applications.presentation.api.v1 import problems
 from apps.applications.presentation.api.v1.files import file_url
+from apps.applications.presentation.api.v1.mail import queue_transactional_email
 from apps.applications.presentation.api.v1.submissions import composition
 from apps.competitions.infrastructure.models.competition import CompetitionModel
 from apps.competitions.infrastructure.models.taxonomy import (
@@ -529,13 +529,11 @@ class OrganizerProcessingActionView(_StaffView):
                         f"Список заявок: {cabinet_url}\n\n"
                         "С уважением,\nОргкомитет фестиваля"
                     )
-                    send_mail(
+                    queue_transactional_email(
                         subject=subject,
-                        message=body_text,
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[recipient.email],
-                        fail_silently=False,
-                        html_message=render_transactional_email_html(
+                        body=body_text,
+                        to=recipient.email,
+                        html_body=render_transactional_email_html(
                             title=subject,
                             intro=(
                                 f"Организатор вернул заявку #{application_number}"
@@ -633,13 +631,11 @@ class OrganizerProcessingActionView(_StaffView):
                         f"Список заявок: {cabinet_url}\n\n"
                         "С уважением,\nОргкомитет фестиваля"
                     )
-                    send_mail(
+                    queue_transactional_email(
                         subject=subject,
-                        message=body_text,
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[recipient.email],
-                        fail_silently=False,
-                        html_message=render_transactional_email_html(
+                        body=body_text,
+                        to=recipient.email,
+                        html_body=render_transactional_email_html(
                             title=subject,
                             intro=(
                                 f"Организатор запросил дополнительные файлы по заявке #{application_number}"
@@ -714,13 +710,11 @@ class OrganizerProcessingActionView(_StaffView):
                     "С уважением,\nОргкомитет фестиваля"
                 )
                 _, detail_url = _application_urls(application_id)
-                send_mail(
+                queue_transactional_email(
                     subject=subject,
-                    message=body_text,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[recipient.email],
-                    fail_silently=False,
-                    html_message=render_transactional_email_html(
+                    body=body_text,
+                    to=recipient.email,
+                    html_body=render_transactional_email_html(
                         title=subject,
                         intro=(
                             f"Пожалуйста, прикрепите квитанцию об оплате по заявке #{application_number}"

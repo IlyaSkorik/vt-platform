@@ -30,8 +30,14 @@ CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 # In-memory email backend so tests assert on ``django.core.mail.outbox`` without
-# a live SMTP server (the SMTP→Mailhog path is exercised by the running stack).
+# a live SMTP server (the SMTP→Mailhog path is exercised by the running stack). Delivery
+# still goes through the Celery task, which runs inline here.
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+
+# The provider's per-minute allowance is off for the suite. The cache is shared across the
+# whole run, so a real quota would start throttling whichever tests happened to land in a
+# busy minute - and the limiter has its own tests that set the limit they need.
+MAIL_RATE_LIMIT_PER_MINUTE = 0
 
 # Whitenoise manifest storage requires collectstatic; use plain storage in tests.
 STORAGES = {

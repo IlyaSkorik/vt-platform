@@ -25,6 +25,7 @@ from django.core.mail import EmailMultiAlternatives
 
 from apps.emailing import render_transactional_email_html
 from apps.identity.domain.value_objects import Email, FullName, Locale
+from apps.notifications.infrastructure.email import send_transactional
 
 __all__ = ["DjangoEmailGateway"]
 
@@ -123,7 +124,7 @@ class DjangoEmailGateway:
         )
 
     def _send(self, *, subject: str, body: str, html_body: str, to: str) -> None:
-        """Hand a single message to the configured email backend."""
+        """Queue a single message, within the provider's per-mailbox allowance."""
         message = EmailMultiAlternatives(subject=subject, body=body, from_email=self._from_email, to=[to])
         message.attach_alternative(html_body, "text/html")
-        message.send(fail_silently=False)
+        send_transactional(message)
