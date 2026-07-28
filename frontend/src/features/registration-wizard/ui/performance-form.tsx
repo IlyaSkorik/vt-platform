@@ -18,6 +18,7 @@ import {
   Input,
   LoadingState,
   Select,
+  Textarea,
   toast,
 } from "@/shared/ui";
 
@@ -43,6 +44,9 @@ import { TeacherPicker } from "./teacher-picker";
 import { UploadControls } from "./upload-controls";
 
 type NamedItem = { id: string; name: string; sortOrder: number };
+
+/** Mirrors the backend bound on the performance comment. */
+const COMMENT_MAX_LENGTH = 1000;
 
 function options(
   items: readonly NamedItem[],
@@ -109,6 +113,7 @@ function PerformanceFormInner({
   const [seconds, setSeconds] = useState(() =>
     String((submission.performance?.durationSeconds ?? 0) % 60 || ""),
   );
+  const [comment, setComment] = useState(submission.performance?.comment ?? "");
 
   const setPerformance = useSetPerformance(submissionId);
 
@@ -162,6 +167,7 @@ function PerformanceFormInner({
         selection.ageCategoryId,
         selection.participantGroupId,
         selection.participationFormatId,
+        comment.trim(),
       ].join("|")
     : null;
   const savedSignature = useRef<string | null>(saveSignature);
@@ -180,6 +186,7 @@ function PerformanceFormInner({
           ageCategoryId: selection.ageCategoryId as string,
           participantGroupId: selection.participantGroupId as string,
           participationFormatId: selection.participationFormatId as string,
+          comment: comment.trim(),
         },
         {
           onSuccess: () => {
@@ -192,7 +199,7 @@ function PerformanceFormInner({
       );
     }, 700);
     return () => clearTimeout(handle);
-  }, [saveSignature, savePerformance, title, durationSeconds, selection]);
+  }, [saveSignature, savePerformance, title, durationSeconds, selection, comment]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -276,6 +283,16 @@ function PerformanceFormInner({
           />
         </div>
       </div>
+
+      <Textarea
+        label="Дополнительная информация для организаторов"
+        description="Здесь можно указать особенности выступления: выход на сцену, реквизит, оборудование, особенности фонограммы и любую другую информацию, которая поможет организаторам."
+        value={comment}
+        // The backend bounds the note, so stop at the same length rather than let a
+        // request fail: the field is a convenience, never a blocker on saving.
+        maxLength={COMMENT_MAX_LENGTH}
+        onChange={(event) => setComment(event.target.value)}
+      />
 
       {!admissible && Object.keys(selection).length > 0 ? (
         <Alert variant="info">
