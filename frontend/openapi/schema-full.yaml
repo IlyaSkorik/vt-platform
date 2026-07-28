@@ -10248,7 +10248,11 @@ components:
       - meta
     SetPerformanceRequest:
       type: object
-      description: Validate a set-performance request body.
+      description: |-
+        Validate a set-performance request body.
+
+        ``comment`` is the applicant's optional free-text note for the organizers about
+        this act (stage entry, props, equipment, backing-track quirks).
       properties:
         title:
           type: string
@@ -10270,6 +10274,9 @@ components:
         participationFormatId:
           type: string
           format: uuid
+        comment:
+          type: string
+          maxLength: 1000
       required:
       - ageCategoryId
       - disciplineId
@@ -12140,8 +12147,11 @@ components:
         participationFormatId:
           type: string
           format: uuid
+        comment:
+          type: string
       required:
       - ageCategoryId
+      - comment
       - disciplineId
       - durationSeconds
       - nominationId

@@ -153,6 +153,7 @@ def _performance_json(view: RegistryPerformanceView) -> dict[str, Any]:
         "ageCategory": view.age_category,
         "participantGroup": view.participant_group,
         "participationFormat": view.participation_format,
+        "comment": view.comment,
     }
 
 

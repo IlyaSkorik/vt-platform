@@ -101,6 +101,44 @@ def test_build_performance_and_participant(auth_client: APIClient) -> None:
     assert len(data["teachers"]) == 1
 
 
+def test_performance_comment_round_trips(auth_client: APIClient) -> None:
+    """The applicant's note for the organizers is stored and read back verbatim."""
+    submission_id, nomination_id = _submission(auth_client)
+    body = _performance_body(nomination_id)
+    body["comment"] = "  Выход с точки 3. Фонограмма начинается не с начала.  "
+
+    saved = auth_client.put(f"/api/v1/submissions/{submission_id}/performance", body, format="json")
+    assert saved.status_code == 200, saved.data
+    assert saved.data["data"]["performance"]["comment"] == "Выход с точки 3. Фонограмма начинается не с начала."
+
+    fetched = auth_client.get(f"/api/v1/submissions/{submission_id}")
+    assert fetched.data["data"]["performance"]["comment"] == "Выход с точки 3. Фонограмма начинается не с начала."
+
+
+def test_performance_comment_is_optional_and_defaults_to_blank(auth_client: APIClient) -> None:
+    submission_id, nomination_id = _submission(auth_client)
+    response = auth_client.put(f"/api/v1/submissions/{submission_id}/performance", _performance_body(nomination_id), format="json")
+    assert response.status_code == 200, response.data
+    assert response.data["data"]["performance"]["comment"] == ""
+
+
+def test_performance_comment_can_be_cleared(auth_client: APIClient) -> None:
+    submission_id, nomination_id = _submission(auth_client)
+    filled = _performance_body(nomination_id) | {"comment": "нужен микрофон на стойке"}
+    auth_client.put(f"/api/v1/submissions/{submission_id}/performance", filled, format="json")
+
+    cleared = auth_client.put(f"/api/v1/submissions/{submission_id}/performance", _performance_body(nomination_id) | {"comment": ""}, format="json")
+    assert cleared.status_code == 200, cleared.data
+    assert cleared.data["data"]["performance"]["comment"] == ""
+
+
+def test_performance_comment_over_the_limit_is_rejected(auth_client: APIClient) -> None:
+    submission_id, nomination_id = _submission(auth_client)
+    body = _performance_body(nomination_id) | {"comment": "я" * 1_001}
+    response = auth_client.put(f"/api/v1/submissions/{submission_id}/performance", body, format="json")
+    assert response.status_code == 400
+
+
 def test_set_performance_rejects_malformed_id(auth_client: APIClient) -> None:
     submission_id, nomination_id = _submission(auth_client)
     body = _performance_body(nomination_id)

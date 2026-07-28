@@ -19,7 +19,11 @@ __all__ = [
 
 
 class SetPerformanceRequestSerializer(serializers.Serializer[dict[str, object]]):
-    """Validate a set-performance request body."""
+    """Validate a set-performance request body.
+
+    ``comment`` is the applicant's optional free-text note for the organizers about
+    this act (stage entry, props, equipment, backing-track quirks).
+    """
 
     title = serializers.CharField()
     durationSeconds = serializers.IntegerField(min_value=1)
@@ -28,6 +32,7 @@ class SetPerformanceRequestSerializer(serializers.Serializer[dict[str, object]])
     ageCategoryId = serializers.UUIDField()
     participantGroupId = serializers.UUIDField()
     participationFormatId = serializers.UUIDField()
+    comment = serializers.CharField(required=False, allow_blank=True, max_length=1_000)
 
 
 class AddParticipantRequestSerializer(serializers.Serializer[dict[str, object]]):
@@ -71,6 +76,7 @@ class _PerformanceResourceSerializer(serializers.Serializer[dict[str, object]]):
     ageCategoryId = serializers.UUIDField()
     participantGroupId = serializers.UUIDField()
     participationFormatId = serializers.UUIDField()
+    comment = serializers.CharField(allow_blank=True)
 
 
 class _ParticipantResourceSerializer(serializers.Serializer[dict[str, object]]):

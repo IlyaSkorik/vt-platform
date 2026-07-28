@@ -422,6 +422,8 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                             if dto.performance
                             else None,
                             "durationSeconds": dto.performance.duration_seconds if dto.performance else None,
+                            # The applicant's optional note for the organizers; blank when unset.
+                            "comment": (dto.performance.comment or None) if dto.performance else None,
                             "participantsCount": len(dto.participants),
                             "teachersCount": len(dto.teachers),
                             "participants": [
