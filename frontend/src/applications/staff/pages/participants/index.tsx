@@ -675,6 +675,14 @@ function ParticipationRow({
           Педагоги: {application.teachers.map((item) => item.name).join(", ")}
         </p>
       ) : null}
+      {performance?.comment?.trim() ? (
+        <div className="mt-1.5">
+          <p className="font-medium text-xs">Дополнительная информация</p>
+          <p className="whitespace-pre-line text-muted-foreground text-xs">
+            {performance.comment.trim()}
+          </p>
+        </div>
+      ) : null}
     </div>
   );
 }

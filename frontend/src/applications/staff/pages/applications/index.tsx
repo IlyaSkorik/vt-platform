@@ -58,6 +58,7 @@ type Detail = {
     participantGroupName?: string | null;
     participationFormatName?: string | null;
     durationSeconds?: number | null;
+    comment?: string | null;
     participantsCount?: number | null;
     teachersCount?: number | null;
     participants?: Array<{ id: string; name: string; memberCount: number }>;
@@ -678,6 +679,16 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                                         Формат: {performance.participationFormatName ?? "—"} ·
                                         Длительность: {performance.durationSeconds ?? 0} сек
                                       </p>
+                                      {performance.comment?.trim() ? (
+                                        <div className="mt-1 space-y-1">
+                                          <p className="text-xs font-medium">
+                                            Дополнительная информация
+                                          </p>
+                                          <p className="whitespace-pre-line text-xs text-muted-foreground">
+                                            {performance.comment.trim()}
+                                          </p>
+                                        </div>
+                                      ) : null}
                                       <div className="mt-1 space-y-1">
                                         <p className="text-xs font-medium">Участники</p>
                                         {(performance.participants ?? []).length === 0 ? (

@@ -50,6 +50,8 @@ export interface RegistryPerformance {
   ageCategory: string | null;
   participantGroup: string | null;
   participationFormat: string | null;
+  /** The applicant's note to the organizers about this act; null when they left none. */
+  comment: string | null;
 }
 
 /** A file uploaded within one of the participant's submissions. */

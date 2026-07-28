@@ -67,7 +67,7 @@ function listResult(rows: RegistryParticipant[]): RegistryList {
   };
 }
 
-function aDetail(): RegistryParticipantDetail {
+function aDetail(performanceComment: string | null = null): RegistryParticipantDetail {
   return {
     ...aParticipant(),
     applications: [
@@ -97,6 +97,7 @@ function aDetail(): RegistryParticipantDetail {
         ageCategory: "10-12 лет",
         participantGroup: null,
         participationFormat: "Соло",
+        comment: performanceComment,
       },
     ],
     documents: [],
@@ -183,5 +184,36 @@ describe("StaffParticipantsPage", () => {
     // Unified participation row with quick navigation.
     expect(screen.getByText("История участия (1)")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Открыть заявку/i })).toBeInTheDocument();
+  });
+
+  it("shows the applicant's note for the organizers on the performance", () => {
+    mockedMedia.mockReturnValue(true);
+    stubList(listResult([aParticipant()]));
+    stubDetail(aDetail("Выход с точки 3.\nИспользуется собственная стойка для микрофона."));
+
+    renderPage();
+
+    expect(screen.getByText("Дополнительная информация")).toBeInTheDocument();
+    expect(screen.getByText(/Используется собственная стойка для микрофона\./)).toBeInTheDocument();
+  });
+
+  it("hides the note block entirely when the applicant left none", () => {
+    mockedMedia.mockReturnValue(true);
+    stubList(listResult([aParticipant()]));
+    stubDetail(aDetail(null));
+
+    renderPage();
+
+    expect(screen.queryByText("Дополнительная информация")).toBeNull();
+  });
+
+  it("hides the note block when the note is only whitespace", () => {
+    mockedMedia.mockReturnValue(true);
+    stubList(listResult([aParticipant()]));
+    stubDetail(aDetail("   \n  "));
+
+    renderPage();
+
+    expect(screen.queryByText("Дополнительная информация")).toBeNull();
   });
 });
