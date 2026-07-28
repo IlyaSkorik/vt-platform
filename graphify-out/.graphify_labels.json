@@ -931,6 +931,7 @@
   "929": "useUpdateBrandingMutation",
   "930": "__init__.py",
   "931": ".contains",
+  "932": "StopNominationRegistrationHandler",
   "933": "0013_diplomanumbersequencemodel.py",
   "934": "@testing-library/dom",
   "935": "__init__.py",
@@ -941,6 +942,19 @@
   "940": "index.tsx",
   "941": ".hasPointerCapture",
   "942": ".scrollIntoView",
+  "943": "DiplomaAssignmentsView",
   "944": ".hasPointerCapture",
-  "945": ".scrollIntoView"
+  "945": ".scrollIntoView",
+  "946": "DiplomaRegistryView",
+  "947": "DiplomaTemplateLayoutView",
+  "948": ".has_role",
+  "949": ".__init__",
+  "950": ".handle",
+  "951": ".is_pending",
+  "952": "WithdrawConsentCommand",
+  "953": "@storybook/addon-a11y",
+  "954": "useRemoveAdditionalServiceMutation",
+  "955": "useRemoveDocumentMutation",
+  "956": "useUpdateGeneralInformationMutation",
+  "957": "useUpdateCompetitionSettingsMutation"
 }
