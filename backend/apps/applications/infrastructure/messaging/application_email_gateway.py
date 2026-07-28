@@ -9,17 +9,21 @@ application layer depends only on the port; the transport is a settings concern.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
 from typing import Final
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMessage, EmailMultiAlternatives
 
 from apps.emailing import render_transactional_email_html
-from apps.notifications.infrastructure.email import send_transactional
+from apps.notifications.infrastructure.email import send_bulk, send_priority
 
 __all__ = ["DjangoApplicantNotifier"]
+
+#: Which channel a letter leaves by — see ``apps.notifications.infrastructure.email``.
+Deliver = Callable[[EmailMessage], None]
 
 _SUBMITTED_SUBJECT: Final = "Заявка подана"
 _AWAITING_PAYMENT_SUBJECT: Final = "Заявка подана — ожидается оплата"
@@ -59,6 +63,9 @@ class DjangoApplicantNotifier:
                 button_url=self._applications_url,
             ),
             to=email,
+            # A receipt. During a registration rush these arrive by the hundred and nobody
+            # is waiting on one, so they must not crowd out a password reset.
+            deliver=send_bulk,
         )
 
     def notify_application_awaiting_payment(self, *, email: str, applicant_name: str, deadline: datetime) -> None:
@@ -77,14 +84,14 @@ class DjangoApplicantNotifier:
                 title=_AWAITING_PAYMENT_SUBJECT,
                 intro=f"Здравствуйте, {applicant_name}! Ваша заявка подана и ожидает оплаты.",
                 details_label="Оплатите до",
-                details=(
-                    f"{deadline_text}. Прикрепите квитанцию об оплате до этого срока, "
-                    "иначе заявка автоматически отменится."
-                ),
+                details=(f"{deadline_text}. Прикрепите квитанцию об оплате до этого срока, иначе заявка автоматически отменится."),
                 button_label="Прикрепить квитанцию",
                 button_url=self._applications_url,
             ),
             to=email,
+            # Carries a deadline the applicant loses their place by missing. Late is the
+            # same as never here, so it goes out on the priority channel.
+            deliver=send_priority,
         )
 
     def notify_application_auto_cancelled(self, *, email: str, applicant_name: str) -> None:
@@ -106,10 +113,13 @@ class DjangoApplicantNotifier:
                 button_url=self._applications_url,
             ),
             to=email,
+            # Produced by the sweep, which cancels every overdue order in one pass. The
+            # deadline has already gone by, so nothing is gained by arriving first.
+            deliver=send_bulk,
         )
 
-    def _send(self, *, subject: str, body: str, html_body: str, to: str) -> None:
-        """Queue a single message, within the provider's per-mailbox allowance."""
+    def _send(self, *, subject: str, body: str, html_body: str, to: str, deliver: Deliver) -> None:
+        """Queue a single message on the channel the caller chose."""
         message = EmailMultiAlternatives(subject=subject, body=body, from_email=self._from_email, to=[to])
         message.attach_alternative(html_body, "text/html")
-        send_transactional(message)
+        deliver(message)

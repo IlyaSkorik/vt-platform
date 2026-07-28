@@ -60,8 +60,17 @@ class EmailSettings(BaseSettings):
     use_tls: bool = False
     use_ssl: bool = False
     timeout: int = 10
-    # Envelope sender for transactional mail (IDN-002 verification, resets).
-    default_from: str = "no-reply@vzlyot-talantov.ru"
+    # Envelope sender for mail somebody is waiting on: verification links, password
+    # resets, staff invitations, payment deadlines (IDN-002).
+    default_from: str = "no-reply@vzlettalantov.by"
+    # Envelope sender for notices produced in batches: submission receipts, an
+    # organizer's review outcomes, the auto-cancellation sweep.
+    #
+    # A second mailbox is the cheapest way to buy headroom, because the provider counts
+    # its 30-a-minute allowance per mailbox: a registration rush or an organizer working
+    # through eighty applications can no longer delay a password reset. Empty means "use
+    # ``default_from``", which is a single-mailbox deployment and still correct.
+    bulk_from: str = ""
 
     # --- The provider's mailbox quotas (OPS-009) ---------------------------
     #

@@ -28,6 +28,39 @@ EMAIL_MAX_RECIPIENTS=50
 EMAIL_MAX_BYTES=104857600
 ```
 
+## Two mailboxes
+
+The allowance is counted **per mailbox**, so a second address is the cheapest headroom there
+is. The platform sends on two channels:
+
+```
+EMAIL_DEFAULT_FROM=no-reply@vzlettalantov.by   # priority
+EMAIL_BULK_FROM=news@vzlettalantov.by          # bulk; empty = use the one above
+```
+
+**The split is about what happens under load, not about importance.** The question for each
+letter is: *is somebody waiting to proceed?*
+
+| Channel | Letters | Why |
+|---|---|---|
+| `send_priority` → `EMAIL_DEFAULT_FROM` | email verification, password reset, staff invitation, "оплатите до …" | Each carries a link or a deadline somebody is blocked on. Late is as good as never. |
+| `send_bulk` → `EMAIL_BULK_FROM` | submission receipts, an organizer's review outcomes (accepted / rejected / returned), auto-cancellation notices | Arrive by the hundred, predictable, nobody is watching their inbox for one. |
+
+The two-part reasoning matters, because either half alone leaves the problem in place:
+
+1. **Two mailboxes double the send rate.** A registration rush spends the bulk mailbox's 30
+   a minute and the priority one is still untouched — there is a test for exactly that.
+2. **A priority on the task reorders the queue.** Two mailboxes do nothing about ordering: one
+   queue means a password reset still waits behind five hundred receipts. Redis has no native
+   priorities, so Celery emulates them with one list per step, which is why
+   `CELERY_BROKER_TRANSPORT_OPTIONS` declares `priority_steps` — without that declaration a
+   priority is silently ignored.
+
+Both mailboxes must exist at the provider and both must be able to send. Nothing checks that
+at boot: a `EMAIL_BULK_FROM` the provider does not know will authenticate fine (the SMTP login
+is one account) and then bounce, or be rejected as a forged sender under SPF/DKIM. Send one
+test message through each channel after configuring them.
+
 ## Why delivery is queued
 
 Sending used to happen in the request. That is fine for one verification letter and wrong for
@@ -59,7 +92,10 @@ of the monitored surface, not an optional extra.
   and the task gives up. If mail stops entirely after a credentials change, that log line is
   the first place to look — and check whether §5.7 has already pinned the mailbox to another
   IP.
-- **Several mailboxes multiply the allowance, one mailbox does not.** The quota is per
-  envelope sender, so splitting transactional mail (`no-reply@`) from bulk announcements
-  (`news@`) doubles the headroom. The tariff allows 10 domains × 1 000 mailboxes; the
-  platform sends from one today.
+- **Two mailboxes are the limit of what this buys for free.** The quota is per envelope
+  sender and the tariff allows 10 domains × 1 000 mailboxes, so a third channel is possible
+  — but each one needs its own SPF/DKIM story and its own reputation, and a platform sending
+  from five addresses looks worse to a receiving spam filter than one sending from two.
+- **Both channels share one worker.** The priority reorders the queue; it does not add
+  capacity. If bulk volume ever grows enough to keep the worker permanently busy, the answer
+  is a second worker on its own queue (OPS-008 §5), not a third mailbox.

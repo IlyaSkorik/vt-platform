@@ -298,6 +298,10 @@ MAIL_RATE_LIMIT_PER_MINUTE = settings.email.rate_limit_per_minute
 MAIL_MAX_RECIPIENTS = settings.email.max_recipients
 MAIL_MAX_BYTES = settings.email.max_bytes
 
+# The second mailbox, for notices produced in batches. Falls back to the first, so a
+# single-mailbox deployment needs no configuration and behaves exactly as before.
+MAIL_BULK_FROM = settings.email.bulk_from or settings.email.default_from
+
 # Public base URL of the web client, used to build user-facing links the backend
 # emails (email-verification link, IDN-002). No trailing slash.
 FRONTEND_BASE_URL = settings.frontend_base_url.rstrip("/")
@@ -323,6 +327,17 @@ CELERY_BROKER_URL = str(settings.celery_broker_url)
 CELERY_RESULT_BACKEND = str(settings.celery_result_backend)
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TIMEZONE = TIME_ZONE
+
+# Two mailboxes double the send rate, but on their own they do not fix ordering: with one
+# queue a password reset still waits behind five hundred batch notices. Redis has no native
+# priorities, so Celery emulates them with one list per step - which is why the steps have
+# to be declared here for a priority to mean anything at all (OPS-009).
+CELERY_TASK_DEFAULT_PRIORITY = 5
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    "priority_steps": [0, 3, 6, 9],
+    "sep": ":",
+    "queue_order_strategy": "priority",
+}
 
 # Periodic jobs. The unpaid-order sweep is durable: it recomputes overdue orders
 # from the DB each run, so it survives web/worker/beat restarts (unlike per-order

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .delivery import rebuild_message, send_transactional, serialize_message
+from .delivery import rebuild_message, send_bulk, send_priority, serialize_message
 from .limits import (
     MessageTooLargeError,
     QuotaExceededError,
@@ -23,7 +23,8 @@ __all__ = [
     "recipient_count",
     "reserve_send_slot",
     "seconds_until_window_resets",
-    "send_transactional",
+    "send_bulk",
+    "send_priority",
     "serialize_message",
     "validate_message",
 ]

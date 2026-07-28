@@ -10,6 +10,8 @@ Contract references are the hosting agreement's §5 (see OPS-009).
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 from celery.exceptions import Retry
 from django.core import mail
@@ -25,7 +27,8 @@ from apps.notifications.infrastructure.email import (
     recipient_count,
     reserve_send_slot,
     seconds_until_window_resets,
-    send_transactional,
+    send_bulk,
+    send_priority,
     serialize_message,
     validate_message,
 )
@@ -65,7 +68,7 @@ class TestRecipientLimit:
     @override_settings(MAIL_MAX_RECIPIENTS=3)
     def test_one_recipient_too_many_is_refused_before_anything_is_queued(self) -> None:
         with pytest.raises(TooManyRecipientsError):
-            send_transactional(_message(to=["a@example.com", "b@example.com"], bcc=["c@example.com", "d@example.com"]))
+            send_priority(_message(to=["a@example.com", "b@example.com"], bcc=["c@example.com", "d@example.com"]))
         assert mail.outbox == [], "a message the provider would refuse must not be sent"
 
 
@@ -80,7 +83,7 @@ class TestSizeLimit:
     @override_settings(MAIL_MAX_BYTES=2000)
     def test_an_oversized_message_is_refused_locally(self) -> None:
         with pytest.raises(MessageTooLargeError):
-            send_transactional(_message(body="x" * 5000))
+            send_priority(_message(body="x" * 5000))
         assert mail.outbox == []
 
     @override_settings(MAIL_MAX_BYTES=100 * 1024 * 1024)
@@ -130,7 +133,7 @@ class TestPerMinuteQuota:
 class TestDelivery:
     def test_a_queued_message_arrives_intact(self) -> None:
         """Celery runs inline in tests, so this exercises the whole path."""
-        send_transactional(_message(subject="Заявка подана", to=["applicant@example.com"]))
+        send_priority(_message(subject="Заявка подана", to=["applicant@example.com"]))
 
         assert len(mail.outbox) == 1
         sent = mail.outbox[0]
@@ -157,5 +160,65 @@ class TestDelivery:
         message = _message()
         message.attach("diploma.pdf", b"%PDF-1.7", "application/pdf")
         with pytest.raises(ValueError, match="Attachments"):
-            send_transactional(message)
+            send_priority(message)
         assert mail.outbox == []
+
+
+class TestTwoMailboxes:
+    """Two mailboxes, because the provider's allowance is counted per mailbox.
+
+    The split is about what happens under load rather than about importance: a registration
+    rush or an organizer working through eighty applications must not be able to delay
+    somebody who cannot log in until their letter arrives.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _second_mailbox(self, settings: Any) -> None:
+        settings.MAIL_BULK_FROM = "news@vzlettalantov.by"
+
+    def test_priority_mail_leaves_by_the_first_mailbox(self) -> None:
+        send_priority(_message(from_email="no-reply@vzlettalantov.by"))
+        assert mail.outbox[0].from_email == "no-reply@vzlettalantov.by"
+
+    def test_bulk_mail_is_rewritten_to_the_second(self) -> None:
+        send_bulk(_message(from_email="no-reply@vzlettalantov.by"))
+        assert mail.outbox[0].from_email == "news@vzlettalantov.by"
+
+    @override_settings(MAIL_RATE_LIMIT_PER_MINUTE=2)
+    def test_a_saturated_bulk_mailbox_leaves_the_priority_one_untouched(self) -> None:
+        """The whole point: this is what a registration rush must not be able to do."""
+        for _ in range(2):
+            reserve_send_slot("news@vzlettalantov.by", now=1_000.0)
+        with pytest.raises(QuotaExceededError):
+            reserve_send_slot("news@vzlettalantov.by", now=1_000.0)
+
+        # The mailbox somebody's password reset goes out by is still entirely free.
+        reserve_send_slot("no-reply@vzlettalantov.by", now=1_000.0)
+        reserve_send_slot("no-reply@vzlettalantov.by", now=1_000.0)
+
+    def test_bulk_still_works_when_only_one_mailbox_is_configured(self, settings: Any) -> None:
+        """A deployment that has not bought the second address must behave as before."""
+        settings.MAIL_BULK_FROM = ""
+        send_bulk(_message(from_email="no-reply@vzlettalantov.by"))
+        assert mail.outbox[0].from_email == "no-reply@vzlettalantov.by"
+
+
+class TestQueuePriority:
+    """Two mailboxes double the send rate; they do not reorder the queue.
+
+    With one queue a password reset still waits behind five hundred receipts, so the channel
+    also carries a Celery priority. Asserted on the call rather than on the broker, because
+    tests run tasks inline and there is no queue to inspect.
+    """
+
+    def test_priority_and_bulk_are_queued_at_different_priorities(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        seen: list[int] = []
+
+        def _capture(*_args: object, **kwargs: object) -> None:
+            seen.append(int(kwargs["priority"]))  # type: ignore[call-overload]
+
+        monkeypatch.setattr("apps.notifications.tasks.deliver_email.apply_async", _capture)
+        send_priority(_message())
+        send_bulk(_message())
+
+        assert seen[0] > seen[1], "priority mail must outrank bulk in the queue"

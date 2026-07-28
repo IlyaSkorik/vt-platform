@@ -29,7 +29,7 @@ from apps.applications.infrastructure.models.application import ApplicationModel
 from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.applications.presentation.api.v1 import problems
 from apps.applications.presentation.api.v1.files import file_url
-from apps.applications.presentation.api.v1.mail import queue_transactional_email
+from apps.applications.presentation.api.v1.mail import queue_review_email
 from apps.applications.presentation.api.v1.submissions import composition
 from apps.competitions.infrastructure.models.competition import CompetitionModel
 from apps.competitions.infrastructure.models.taxonomy import (
@@ -529,7 +529,7 @@ class OrganizerProcessingActionView(_StaffView):
                         f"Список заявок: {cabinet_url}\n\n"
                         "С уважением,\nОргкомитет фестиваля"
                     )
-                    queue_transactional_email(
+                    queue_review_email(
                         subject=subject,
                         body=body_text,
                         to=recipient.email,
@@ -631,7 +631,7 @@ class OrganizerProcessingActionView(_StaffView):
                         f"Список заявок: {cabinet_url}\n\n"
                         "С уважением,\nОргкомитет фестиваля"
                     )
-                    queue_transactional_email(
+                    queue_review_email(
                         subject=subject,
                         body=body_text,
                         to=recipient.email,
@@ -710,7 +710,7 @@ class OrganizerProcessingActionView(_StaffView):
                     "С уважением,\nОргкомитет фестиваля"
                 )
                 _, detail_url = _application_urls(application_id)
-                queue_transactional_email(
+                queue_review_email(
                     subject=subject,
                     body=body_text,
                     to=recipient.email,

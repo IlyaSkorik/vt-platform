@@ -21,7 +21,7 @@ from django.core.mail import EmailMultiAlternatives
 
 from apps.emailing import render_transactional_email_html
 from apps.identity.composition import build_user_directory
-from apps.notifications.infrastructure.email import send_transactional
+from apps.notifications.infrastructure.email import send_priority
 from apps.organization.application.handlers import (
     AcceptStaffInvitationHandler,
     ChangeStaffRoleHandler,
@@ -226,7 +226,7 @@ class DjangoStaffInvitationEmailGateway:
             to=[recipient_email.value],
         )
         message.attach_alternative(html_body, "text/html")
-        send_transactional(message)
+        send_priority(message)
 
 
 def _build_email_gateway() -> EmailGateway:
