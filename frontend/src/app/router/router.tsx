@@ -98,6 +98,12 @@ const routes: RouteObject[] = [
             lazy: lazyPage(() => import("@/pages/verify"), "DiplomaVerifyPage"),
           },
           {
+            // Public and unauthenticated: a programme link handed to the sound
+            // engineer, the host, the jury, or a screen beside the stage.
+            path: ROUTES.publicProgram.slice(1),
+            lazy: lazyPage(() => import("@/pages/program"), "PublicProgramPage"),
+          },
+          {
             path: ROUTES.privacyPolicy.slice(1),
             lazy: lazyPage(() => import("@/pages/legal"), "PrivacyPolicyPage"),
           },
@@ -337,8 +343,11 @@ const routes: RouteObject[] = [
                 lazy: workspacePlaceholder(staffItem(ROUTES.staffJudges), "staff"),
               },
               {
-                path: ROUTES.staffSchedules.slice(1),
-                lazy: workspacePlaceholder(staffItem(ROUTES.staffSchedules), "staff"),
+                path: ROUTES.staffProgram.slice(1),
+                lazy: lazyPage(
+                  () => import("@/applications/staff/pages/program"),
+                  "StaffProgramPage",
+                ),
               },
               {
                 path: ROUTES.staffDiplomas.slice(1),

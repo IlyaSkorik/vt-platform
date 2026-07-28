@@ -55,10 +55,10 @@ export const STAFF_NAVIGATION: StaffNavItem[] = [
     description: "Состав жюри и назначения.",
   },
   {
-    title: "Расписание",
-    path: ROUTES.staffSchedules,
+    title: "Программа",
+    path: ROUTES.staffProgram,
     icon: CalendarDays,
-    description: "Сетка событий и выступлений.",
+    description: "Конструктор программы фестиваля и публичные ссылки.",
   },
   {
     title: "Дипломы",

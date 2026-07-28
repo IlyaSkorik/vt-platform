@@ -29,6 +29,8 @@ export const ROUTES = {
   competitions: "/competitions",
   /** Public diploma authenticity page — the target printed inside a diploma's QR. */
   verifyDiploma: "/verify/:verificationToken",
+  /** Public programme screen — one unguessable slug per published edition. */
+  publicProgram: "/program/:slug",
   privacyPolicy: "/privacy-policy",
   cookiesPolicy: "/cookies",
   applications: "/applications",
@@ -45,7 +47,7 @@ export const ROUTES = {
   staffApplications: "/staff/applications",
   staffParticipants: "/staff/participants",
   staffJudges: "/staff/judges",
-  staffSchedules: "/staff/schedules",
+  staffProgram: "/staff/program",
   staffDiplomas: "/staff/diplomas",
   staffDiplomaTemplateConstructor: "/staff/diplomas/templates/:templateId/constructor",
   staffFinance: "/staff/finance",
