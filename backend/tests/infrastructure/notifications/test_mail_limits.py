@@ -240,6 +240,18 @@ class TestQueuePriority:
     tests run tasks inline and there is no queue to inspect.
     """
 
+    def test_the_worker_reserves_one_message_per_slot(self) -> None:
+        """Without this the priority above is nearly decorative.
+
+        Celery applies priority when it fetches from the queue, so a worker that has already
+        reserved a batch of bulk messages runs them first whatever arrives behind them. At
+        the default multiplier of 4 a four-slot mail worker holds sixteen - some 45 seconds
+        of sending at the measured 2.8 s a message.
+        """
+        from config.celery import app
+
+        assert app.conf.worker_prefetch_multiplier == 1
+
     def test_priority_and_bulk_are_queued_at_different_priorities(self, monkeypatch: pytest.MonkeyPatch) -> None:
         seen: list[int] = []
 

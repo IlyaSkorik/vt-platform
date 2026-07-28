@@ -356,6 +356,19 @@ CELERY_TASK_ROUTES = {
     "notifications.deliver_email": {"queue": "mail"},
 }
 
+# One message reserved per slot, and this is what makes the priority above real.
+#
+# Celery applies priority when it *fetches* from the queue. At the default multiplier of 4
+# a mail worker with four slots reserves sixteen messages up front - so a password reset
+# queued behind a batch of receipts waits for all sixteen to go out, ~45 seconds at 2.8 s
+# each, no matter what priority it carries. The priority would look configured and do
+# almost nothing under exactly the load it exists for.
+#
+# With 1, at most four messages are in flight and every next fetch reconsults priority: a
+# priority letter waits for one message, not sixteen. Prefetching buys pipelining for tasks
+# measured in milliseconds; nothing here is one.
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+
 # Periodic jobs. The unpaid-order sweep is durable: it recomputes overdue orders
 # from the DB each run, so it survives web/worker/beat restarts (unlike per-order
 # ETA jobs). Interval via APPLICATION_PAYMENT_SWEEP_MINUTES (default 15).
