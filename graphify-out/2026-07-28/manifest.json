@@ -6545,8 +6545,8 @@
     "semantic_hash": "14be49838479455d37edd06d1aea92e9"
   },
   "docs/devops/README.md": {
-    "mtime": 1785269788.0794694,
-    "ast_hash": "d6f3beeb2588d781b054a3b78a773bf1",
+    "mtime": 1785270482.1710358,
+    "ast_hash": "a799170fda6385f04d36d73bce559237",
     "semantic_hash": ""
   },
   "docs/diagrams/DIA-001-entity-relationship-model.md": {
@@ -7575,8 +7575,8 @@
     "semantic_hash": ""
   },
   "backend/apps/diplomas/infrastructure/pdf/workspace.py": {
-    "mtime": 1785269510.7248023,
-    "ast_hash": "5ef968b05cb9752d66f63659bcf5d511",
+    "mtime": 1785271174.7639182,
+    "ast_hash": "cebc266bba802ebcac5251c478b9e2e1",
     "semantic_hash": ""
   },
   "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py": {
@@ -8437,6 +8437,16 @@
   "docs/devops/OPS-007-object-storage.md": {
     "mtime": 1785269776.9320395,
     "ast_hash": "3bc9ed18a6624091f8e00c60db043cc1",
+    "semantic_hash": ""
+  },
+  "backend/tests/infrastructure/diplomas/test_archive_streaming.py": {
+    "mtime": 1785271194.4758809,
+    "ast_hash": "94f604e850868c556d2c2391daf59eff",
+    "semantic_hash": ""
+  },
+  "docs/devops/OPS-008-single-server-sizing.md": {
+    "mtime": 1785271292.4120314,
+    "ast_hash": "eaa71ede6df0a72c37970981aeb74d1b",
     "semantic_hash": ""
   }
 }

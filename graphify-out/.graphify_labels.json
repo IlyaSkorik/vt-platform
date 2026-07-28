@@ -996,11 +996,5 @@
   "994": ".overlaps",
   "995": ".without_format",
   "996": "PublicFestivalFaqItemSerializer",
-  "997": "@storybook/react-vite",
-  "998": "PublicFestivalGalleryImageSerializer",
-  "999": "PublicFestivalJuryCardSerializer",
-  "1000": "RegistrationDeadlinesSerializer",
-  "1001": "useRemoveAdmissionRuleMutation",
-  "1002": "useRemoveDocumentMutation",
-  "1003": "useUpdateGeneralInformationMutation"
+  "997": "@storybook/react-vite"
 }

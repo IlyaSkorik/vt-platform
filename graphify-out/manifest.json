@@ -530,8 +530,8 @@
     "semantic_hash": ""
   },
   "backend/apps/applications/presentation/api/v1/organizer/views.py": {
-    "mtime": 1785269510.7287717,
-    "ast_hash": "243c61f09eba03cab2621f28c25ae532",
+    "mtime": 1785271945.8294237,
+    "ast_hash": "861994c9eb7fcab8c9a348a6fb768174",
     "semantic_hash": ""
   },
   "backend/apps/applications/presentation/api/v1/problems.py": {
@@ -1515,8 +1515,8 @@
     "semantic_hash": ""
   },
   "backend/apps/identity/infrastructure/messaging/email_gateway.py": {
-    "mtime": 1784486237.4880934,
-    "ast_hash": "64f0325b8d6103d66f3b19d699425743",
+    "mtime": 1785271945.8294237,
+    "ast_hash": "c26186a400754f2f2da50425a717941d",
     "semantic_hash": ""
   },
   "backend/apps/identity/infrastructure/messaging/event_dispatcher.py": {
@@ -2160,8 +2160,8 @@
     "semantic_hash": "487b25684440af01c453a755d3aa4f25"
   },
   "backend/apps/organization/composition.py": {
-    "mtime": 1784542447.7439837,
-    "ast_hash": "4649686ec30d80da14954d003eea4aa2",
+    "mtime": 1785271945.8294237,
+    "ast_hash": "a7d3e55d703a2861c88f4324d5250678",
     "semantic_hash": ""
   },
   "backend/apps/organization/domain/__init__.py": {
@@ -3180,8 +3180,8 @@
     "semantic_hash": "4616a41e93c24e9d5e6c5ded3754db37"
   },
   "backend/config/settings/base.py": {
-    "mtime": 1785269643.6803958,
-    "ast_hash": "a5015e7b686acf61d74f75a8f225f0d6",
+    "mtime": 1785271945.8294237,
+    "ast_hash": "14f8de790c341a405b32d9c412b61543",
     "semantic_hash": ""
   },
   "backend/config/settings/development.py": {
@@ -3190,8 +3190,8 @@
     "semantic_hash": "066b757f7581989a1553b1b5a4ceba00"
   },
   "backend/config/settings/env.py": {
-    "mtime": 1785268793.9794912,
-    "ast_hash": "1f42f3b09f49e27e122d056e9bc7321e",
+    "mtime": 1785271945.8294237,
+    "ast_hash": "050d6b79dfeab6d7763036234471e51c",
     "semantic_hash": ""
   },
   "backend/config/settings/production.py": {
@@ -3200,9 +3200,9 @@
     "semantic_hash": "1fb06dd2ff5f20d90901ea16ea706ef1"
   },
   "backend/config/settings/testing.py": {
-    "mtime": 1783535938.236624,
-    "ast_hash": "a47caf2b47ea9b9e5afb1a536f9b19f8",
-    "semantic_hash": "a47caf2b47ea9b9e5afb1a536f9b19f8"
+    "mtime": 1785271978.7224162,
+    "ast_hash": "11931e7f84f2d14996e9faafa581a77d",
+    "semantic_hash": ""
   },
   "backend/config/urls.py": {
     "mtime": 1785231919.0869207,
@@ -6545,8 +6545,8 @@
     "semantic_hash": "14be49838479455d37edd06d1aea92e9"
   },
   "docs/devops/README.md": {
-    "mtime": 1785270482.1710358,
-    "ast_hash": "a799170fda6385f04d36d73bce559237",
+    "mtime": 1785272270.6006684,
+    "ast_hash": "1e26b53c95df46d0cd0a6cd721c9de74",
     "semantic_hash": ""
   },
   "docs/diagrams/DIA-001-entity-relationship-model.md": {
@@ -6970,8 +6970,8 @@
     "semantic_hash": ""
   },
   "backend/apps/applications/infrastructure/messaging/application_email_gateway.py": {
-    "mtime": 1785269541.1708753,
-    "ast_hash": "0533ab150a351d80a4e5adbf2ee45174",
+    "mtime": 1785271945.8294237,
+    "ast_hash": "e63fbab1265474a766df069ad49c38b7",
     "semantic_hash": ""
   },
   "backend/apps/applications/infrastructure/migrations/0004_application_submitted_at.py": {
@@ -8435,7 +8435,7 @@
     "semantic_hash": ""
   },
   "docs/devops/OPS-007-object-storage.md": {
-    "mtime": 1785269776.9320395,
+    "mtime": 1785272270.6006684,
     "ast_hash": "3bc9ed18a6624091f8e00c60db043cc1",
     "semantic_hash": ""
   },
@@ -8445,8 +8445,48 @@
     "semantic_hash": ""
   },
   "docs/devops/OPS-008-single-server-sizing.md": {
-    "mtime": 1785271292.4120314,
+    "mtime": 1785272270.6006684,
     "ast_hash": "eaa71ede6df0a72c37970981aeb74d1b",
+    "semantic_hash": ""
+  },
+  "backend/apps/applications/presentation/api/v1/mail.py": {
+    "mtime": 1785271945.8294237,
+    "ast_hash": "1ece232fa73a88653d38a02c0470e980",
+    "semantic_hash": ""
+  },
+  "backend/apps/notifications/infrastructure/email/__init__.py": {
+    "mtime": 1785271945.8294237,
+    "ast_hash": "51eb241373c678e45455c2e8388a5a7d",
+    "semantic_hash": ""
+  },
+  "backend/apps/notifications/infrastructure/email/delivery.py": {
+    "mtime": 1785271945.8294237,
+    "ast_hash": "50b6fa5953cbc9b2ac4fdea90c924d8d",
+    "semantic_hash": ""
+  },
+  "backend/apps/notifications/infrastructure/email/limits.py": {
+    "mtime": 1785271945.8294237,
+    "ast_hash": "43eba6705a58dc597ed042b04d2273bb",
+    "semantic_hash": ""
+  },
+  "backend/apps/notifications/tasks.py": {
+    "mtime": 1785271945.8294237,
+    "ast_hash": "0cc14566261ddc9f729140597d42a016",
+    "semantic_hash": ""
+  },
+  "backend/tests/infrastructure/notifications/__init__.py": {
+    "mtime": 1785272062.3645945,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "backend/tests/infrastructure/notifications/test_mail_limits.py": {
+    "mtime": 1785272186.2277374,
+    "ast_hash": "2a7f92c90bfbaa5fc46fcf577d1f9d20",
+    "semantic_hash": ""
+  },
+  "docs/devops/OPS-009-mail-provider-quotas.md": {
+    "mtime": 1785272270.6006684,
+    "ast_hash": "342c0447fc3de348f53b4964b1708401",
     "semantic_hash": ""
   }
 }
