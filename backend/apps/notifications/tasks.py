@@ -44,9 +44,12 @@ def deliver_email(self: Any, payload: dict[str, Any]) -> str:
     try:
         reserve_send_slot(sender)
     except QuotaExceededError as exc:
-        # Not an error worth logging at warning level: it is the limiter working.
-        logger.info("Mail quota reached for %s; retrying when the window resets.", sender)
-        raise self.retry(exc=exc, countdown=seconds_until_window_resets()) from exc
+        # Not an error worth logging at warning level: it is the limiter working. The wait
+        # comes from the limiter, which knows when the earlier messages age out of the
+        # sliding window - the next clock boundary is not the same thing.
+        countdown = getattr(exc, "retry_after", None) or seconds_until_window_resets()
+        logger.info("Mail quota reached for %s; retrying in %ss.", sender, countdown)
+        raise self.retry(exc=exc, countdown=countdown) from exc
 
     try:
         message.send(fail_silently=False)

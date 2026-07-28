@@ -56,6 +56,17 @@ The two-part reasoning matters, because either half alone leaves the problem in 
    `CELERY_BROKER_TRANSPORT_OPTIONS` declares `priority_steps` — without that declaration a
    priority is silently ignored.
 
+> **On Redis, a lower priority number is served first — the opposite of AMQP.** kombu keeps
+> one list per step and asks Redis for them in ascending order (`mail`, `mail:3`, `mail:6`,
+> `mail:9`), and Redis answers from the first non-empty one; step 0 is the bare queue name.
+> So urgent mail is queued at 0 and bulk at 6. Getting this backwards is accepted silently
+> and sends urgent mail *last*, which is exactly what happened here before it was measured.
+
+Both were verified against a running worker rather than reasoned about. With the mail worker
+stopped, 40 bulk messages and then one priority message were queued — the priority one last of
+41 — and on starting the worker it came out **first**. Under the same load the bulk mailbox
+sent exactly **30 in any rolling 60 seconds** and the remaining 10 a second past the minute.
+
 Both mailboxes must exist at the provider and both must be able to send. Nothing checks that
 at boot: a `EMAIL_BULK_FROM` the provider does not know will authenticate fine (the SMTP login
 is one account) and then bounce, or be rejected as a forged sender under SPF/DKIM. Send one
@@ -105,11 +116,14 @@ of work.
 
 ## Things that will bite
 
-- **The window is fixed, not sliding.** A burst that straddles a minute boundary can in
-  principle exceed 30 in a rolling 60 seconds. Deliberate: the recovery is the same retry
-  that covers any refusal, and real traffic does not sit at the cap. If the provider ever
-  starts rejecting on that, lower `EMAIL_RATE_LIMIT_PER_MINUTE` to 25 rather than building a
-  sliding window.
+- **The window slides, and it had to.** The first version counted per clock minute, which
+  hands out a fresh allowance the instant the minute turns over: queueing 41 messages put all
+  41 inside one rolling minute, 37% over the contract. Measured, not theorised. The second
+  version weighted the previous minute by how much of it was still in view and traded that
+  for the opposite error — it under-counts a burst that arrived late in the window, and a
+  simulation caught it exceeding the limit too. What ships is one counter per second summed
+  over the last sixty-one; the extra bucket is there because whole-second buckets otherwise
+  let a message through ~0.9 s early.
 - **Attachments are refused, not dropped.** Nothing in the platform emails attachments —
   documents are linked so they stay behind their own access rules and out of a 100 MB limit.
   Queueing one would also put megabytes in Redis. If that has to change, put the bytes in

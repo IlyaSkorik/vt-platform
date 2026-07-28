@@ -109,10 +109,73 @@ class TestPerMinuteQuota:
         reserve_send_slot("diplomas@vzlyot-talantov.ru", now=1_000.0)
 
     @override_settings(MAIL_RATE_LIMIT_PER_MINUTE=3)
-    def test_the_next_minute_starts_fresh(self) -> None:
+    def test_the_window_slides_rather_than_resetting_on_the_hour(self) -> None:
+        """The bug this replaced: a full window plus a fresh one, back to back.
+
+        Measured before the fix - queueing 41 messages put all 41 inside one rolling minute
+        against a limit of 30, because thirty went out at the end of a window and the rest
+        the instant it turned over. Crossing a boundary must not hand out a new allowance
+        while the old sends are still inside the last sixty seconds.
+        """
         for _ in range(3):
-            reserve_send_slot("no-reply@vzlyot-talantov.ru", now=1_000.0)
-        reserve_send_slot("no-reply@vzlyot-talantov.ru", now=1_060.0)
+            reserve_send_slot("no-reply@vzlyot-talantov.ru", now=1_050.0)  # 30s into the window
+
+        # One second past the boundary: the three earlier sends are still 49s old.
+        with pytest.raises(QuotaExceededError):
+            reserve_send_slot("no-reply@vzlyot-talantov.ru", now=1_081.0)
+
+    @override_settings(MAIL_RATE_LIMIT_PER_MINUTE=3)
+    def test_room_returns_exactly_when_the_earlier_sends_age_out(self) -> None:
+        for _ in range(3):
+            reserve_send_slot("news@vzlyot-talantov.ru", now=1_020.0)
+
+        # A second short of a minute they are still in the view.
+        with pytest.raises(QuotaExceededError):
+            reserve_send_slot("news@vzlyot-talantov.ru", now=1_079.0)
+        # A minute on they are not, and the allowance is whole again.
+        for _ in range(3):
+            reserve_send_slot("news@vzlyot-talantov.ru", now=1_081.0)
+
+    @override_settings(MAIL_RATE_LIMIT_PER_MINUTE=10)
+    def test_no_rolling_minute_ever_exceeds_the_allowance(self) -> None:
+        """The property that matters, checked by simulation rather than by argument."""
+        sent: list[float] = []
+        moment = 1_000.0
+        while moment < 1_600.0:  # ten minutes, trying twice a second
+            try:
+                reserve_send_slot("news@vzlyot-talantov.ru", now=moment)
+                sent.append(moment)
+            except QuotaExceededError:
+                pass
+            moment += 0.5
+
+        worst = max(sum(1 for other in sent if 0 <= other - stamp < 60) for stamp in sent)
+        assert worst <= 10, f"{worst} sends landed inside one rolling minute against a limit of 10"
+
+    @override_settings(MAIL_RATE_LIMIT_PER_MINUTE=3)
+    def test_a_refused_attempt_does_not_spend_a_slot(self) -> None:
+        """Otherwise a retrying task would eat the allowance it is waiting for."""
+        for _ in range(3):
+            reserve_send_slot("news@vzlyot-talantov.ru", now=1_020.0)
+        for _ in range(5):
+            with pytest.raises(QuotaExceededError):
+                reserve_send_slot("news@vzlyot-talantov.ru", now=1_030.0)
+
+        # The five refusals cost nothing: a minute on, the allowance is whole again.
+        for _ in range(3):
+            reserve_send_slot("news@vzlyot-talantov.ru", now=1_081.0)
+
+    @override_settings(MAIL_RATE_LIMIT_PER_MINUTE=3)
+    def test_the_refusal_says_how_long_to_wait(self) -> None:
+        for _ in range(3):
+            reserve_send_slot("news@vzlyot-talantov.ru", now=1_020.0)
+        with pytest.raises(QuotaExceededError) as caught:
+            reserve_send_slot("news@vzlyot-talantov.ru", now=1_030.0)
+
+        # Long enough to be worth waiting for, and never zero - a retry scheduled for "now"
+        # would spin.
+        assert caught.value.retry_after >= 1
+        assert caught.value.retry_after <= 60
 
     @override_settings(MAIL_RATE_LIMIT_PER_MINUTE=0)
     def test_zero_disables_the_limiter(self) -> None:
@@ -220,8 +283,7 @@ class TestRouting:
 
         route = app.amqp.router.route({}, "notifications.deliver_email")
         assert route["queue"].name == "mail", (
-            "mail must stay on its own queue; a worker has to consume it (see the "
-            "mail-worker service in docker-compose.yml) or nothing is delivered"
+            "mail must stay on its own queue; a worker has to consume it (see the mail-worker service in docker-compose.yml) or nothing is delivered"
         )
 
     def test_other_work_stays_on_the_default_queue(self) -> None:
@@ -262,4 +324,8 @@ class TestQueuePriority:
         send_priority(_message())
         send_bulk(_message())
 
-        assert seen[0] > seen[1], "priority mail must outrank bulk in the queue"
+        # Lower wins on Redis, the opposite of AMQP: kombu keeps one list per priority step
+        # and asks Redis for them in ascending order, so step 0 - the bare queue name - is
+        # drained first. Asserting the direction rather than the values, with the reason,
+        # because getting it backwards is accepted silently and sends urgent mail last.
+        assert seen[0] < seen[1], "priority mail must be queued at a lower number than bulk"

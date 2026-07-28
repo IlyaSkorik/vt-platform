@@ -23,7 +23,14 @@ services:
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/1
       CELERY_RESULT_BACKEND: redis://redis:6379/2
+      # The whole transport, not just the host: with a real provider in .env the port
+      # and SSL flags would come from there and nothing could reach Mailhog.
       EMAIL_HOST: mailhog
+      EMAIL_PORT: 1025
+      EMAIL_USE_SSL: "false"
+      EMAIL_USE_TLS: "false"
+      EMAIL_HOST_USER: ""
+      EMAIL_HOST_PASSWORD: ""
     env_file:
       - .env
     ports:
@@ -50,7 +57,14 @@ services:
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/1
       CELERY_RESULT_BACKEND: redis://redis:6379/2
+      # The whole transport, not just the host: with a real provider in .env the port
+      # and SSL flags would come from there and nothing could reach Mailhog.
       EMAIL_HOST: mailhog
+      EMAIL_PORT: 1025
+      EMAIL_USE_SSL: "false"
+      EMAIL_USE_TLS: "false"
+      EMAIL_HOST_USER: ""
+      EMAIL_HOST_PASSWORD: ""
     env_file:
       - .env
     volumes:
@@ -77,7 +91,14 @@ services:
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/1
       CELERY_RESULT_BACKEND: redis://redis:6379/2
+      # The whole transport, not just the host: with a real provider in .env the port
+      # and SSL flags would come from there and nothing could reach Mailhog.
       EMAIL_HOST: mailhog
+      EMAIL_PORT: 1025
+      EMAIL_USE_SSL: "false"
+      EMAIL_USE_TLS: "false"
+      EMAIL_HOST_USER: ""
+      EMAIL_HOST_PASSWORD: ""
     env_file:
       - .env
     volumes:
@@ -102,7 +123,14 @@ services:
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/1
       CELERY_RESULT_BACKEND: redis://redis:6379/2
+      # The whole transport, not just the host: with a real provider in .env the port
+      # and SSL flags would come from there and nothing could reach Mailhog.
       EMAIL_HOST: mailhog
+      EMAIL_PORT: 1025
+      EMAIL_USE_SSL: "false"
+      EMAIL_USE_TLS: "false"
+      EMAIL_HOST_USER: ""
+      EMAIL_HOST_PASSWORD: ""
     env_file:
       - .env
     volumes:

@@ -42,9 +42,18 @@ __all__ = ["rebuild_message", "send_bulk", "send_priority", "serialize_message"]
 
 _HTML = "text/html"
 
-#: Celery priorities, matching the steps declared in settings. Higher runs first.
-_PRIORITY: Final = 9
-_BULK: Final = 3
+#: Celery priorities, matching the steps declared in settings.
+#:
+#: **Lower runs first here, which is the opposite of AMQP.** On the Redis transport kombu
+#: keeps one list per priority step and builds its ``BRPOP`` key list in ascending step
+#: order - ``[mail, mail:3, mail:6, mail:9]`` - and Redis serves the first non-empty key.
+#: Step 0 is the bare queue name, so it is drained first (kombu/transport/redis.py, and
+#: note that a step of 0 is falsy in ``_q_for_pri``).
+#:
+#: Getting this backwards is silent: the setting is accepted, the steps are declared, and
+#: urgent mail goes out last.
+_PRIORITY: Final = 0
+_BULK: Final = 6
 
 
 def serialize_message(message: EmailMessage) -> dict[str, Any]:
