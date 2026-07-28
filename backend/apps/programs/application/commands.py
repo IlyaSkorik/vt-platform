@@ -19,6 +19,7 @@ __all__ = [
     "EditItemCommand",
     "ReorderItemsCommand",
     "UpdateProgramCommand",
+    "UpdateShareCommand",
 ]
 
 
@@ -95,9 +96,26 @@ class ReorderItemsCommand:
 class CreateShareCommand:
     """Publish a named edition of the program behind a fresh public slug.
 
-    An empty ``item_ids`` publishes the whole program and keeps following it.
+    ``columns`` is the selection that defines the edition - which columns of the table
+    its reader sees. Empty means the default columns.
+
+    An empty ``item_ids`` publishes every row and keeps following the program.
     """
 
     program_id: str
     name: str
+    columns: tuple[str, ...] = ()
     item_ids: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class UpdateShareCommand:
+    """Rename a published edition and/or change which columns it shows.
+
+    Its slug is permanent, so a link already handed out keeps working.
+    """
+
+    program_id: str
+    share_id: str
+    name: str | None = None
+    columns: tuple[str, ...] | None = None

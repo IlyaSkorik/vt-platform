@@ -39,20 +39,8 @@ def _public_json(view: PublicProgramView) -> dict[str, object]:
         "nomination": view.nomination,
         "startsAt": view.starts_at,
         "totalSeconds": view.total_seconds,
-        "items": [
-            {
-                "position": item.position,
-                "kind": item.kind,
-                "title": item.title,
-                "performer": item.performer,
-                "teachers": list(item.teachers),
-                "organization": item.organization,
-                "durationSeconds": item.duration_seconds,
-                "startsAt": item.starts_at,
-                "note": item.note,
-            }
-            for item in view.items
-        ],
+        "columns": [{"key": column.key, "label": column.label} for column in view.columns],
+        "rows": [{"kind": row.kind, "cells": list(row.cells)} for row in view.rows],
     }
 
 

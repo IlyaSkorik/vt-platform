@@ -7,6 +7,7 @@ import { useCompetitionDetail, useCompetitionsList } from "@/features/competitio
 import {
   type Program,
   type ProgramCandidate,
+  type ProgramColumn,
   type ProgramItem,
   useAddBlock,
   useAddPerformance,
@@ -53,6 +54,23 @@ Element.prototype.hasPointerCapture = () => false;
 Element.prototype.scrollIntoView = () => {};
 
 const COMPETITION_ID = "01900000-0000-7000-8000-0000000000ff";
+
+/** The column catalogue the backend sends with every programme. */
+const ALL_COLUMNS: ProgramColumn[] = [
+  { key: "POSITION", label: "№" },
+  { key: "TIME", label: "Время" },
+  { key: "PARTICIPANT", label: "Участник" },
+  { key: "TITLE", label: "Номер" },
+  { key: "DURATION", label: "Длительность" },
+  { key: "NOMINATION", label: "Номинация" },
+  { key: "DISCIPLINE", label: "Дисциплина" },
+  { key: "PARTICIPANT_GROUP", label: "Состав участников" },
+  { key: "AGE_CATEGORY", label: "Возрастная категория" },
+  { key: "PARTICIPATION_FORMAT", label: "Формат участия" },
+  { key: "TEACHERS", label: "Педагог" },
+  { key: "ORGANIZATION", label: "Организация" },
+  { key: "COMMENT", label: "Комментарий" },
+];
 const PROGRAM_ID = "01900000-0000-7000-8000-00000000000a";
 
 const reorder = vi.fn();
@@ -81,10 +99,11 @@ function anItem(overrides: Partial<ProgramItem> & { id: string; position: number
     participants: ["Иванов Иван"],
     teachers: [],
     nomination: "Вокал",
-    discipline: null,
-    ageCategory: null,
-    participationFormat: null,
-    organization: null,
+    discipline: "Эстрадный вокал",
+    ageCategory: "10-12 лет",
+    participantGroup: "Соло",
+    participationFormat: "Очно",
+    organization: "Школа №1",
     comment: null,
     missingPerformance: false,
     ...rest,
@@ -112,6 +131,7 @@ function aProgram(overrides: Partial<Program> = {}): Program {
       anItem({ id: "item-2", position: 2, title: "Калинка" }),
     ],
     shares: [],
+    availableColumns: ALL_COLUMNS,
     totalSeconds: 460,
     endsAt: "2026-08-01T10:07:40Z",
     createdAt: "2026-08-01T09:00:00Z",
@@ -129,6 +149,7 @@ function aCandidate(): ProgramCandidate {
     nomination: "Вокал",
     discipline: null,
     ageCategory: null,
+    participantGroup: null,
     participationFormat: null,
     participants: ["Сидоров Сидор"],
     teachers: [],
@@ -215,7 +236,33 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe("StaffProgramPage — the running order", () => {
+describe("StaffProgramPage — the programme table", () => {
+  it("renders a column header for every column the programme carries", async () => {
+    stub();
+    await renderPage();
+
+    for (const column of ALL_COLUMNS) {
+      expect(screen.getByRole("columnheader", { name: column.label })).toBeInTheDocument();
+    }
+  });
+
+  it("puts each value in its own column", async () => {
+    stub();
+    await renderPage();
+
+    const rows = screen.getAllByTestId("program-item");
+    const cells = within(rows[0] as HTMLElement).getAllByRole("cell");
+    // Aligned with ALL_COLUMNS: №, Время, Участник, Номер, Длительность, …
+    expect(cells[0]).toHaveTextContent("1");
+    expect(cells[2]).toHaveTextContent("Иванов Иван");
+    expect(cells[3]).toHaveTextContent("Катюша");
+    expect(cells[4]).toHaveTextContent("3:20");
+    expect(cells[5]).toHaveTextContent("Вокал");
+    expect(cells[7]).toHaveTextContent("Соло");
+    expect(cells[8]).toHaveTextContent("10-12 лет");
+    expect(cells[11]).toHaveTextContent("Школа №1");
+  });
+
   it("shows the computed start time of every item", async () => {
     stub();
     await renderPage();
@@ -379,7 +426,7 @@ describe("StaffProgramPage — candidates", () => {
 });
 
 describe("StaffProgramPage — public links", () => {
-  it("publishes the whole programme when no range is given", async () => {
+  it("publishes the default columns and every row when nothing is narrowed", async () => {
     stub();
     await renderPage();
 
@@ -387,7 +434,40 @@ describe("StaffProgramPage — public links", () => {
     await userEvent.click(screen.getByRole("button", { name: /Создать ссылку/ }));
 
     expect(createShare).toHaveBeenCalledTimes(1);
-    expect(createShare.mock.calls[0]?.[0]).toEqual({ name: "Экран у сцены", itemIds: [] });
+    expect(createShare.mock.calls[0]?.[0]).toEqual({
+      name: "Экран у сцены",
+      columns: ["POSITION", "TIME", "PARTICIPANT", "TITLE"],
+      itemIds: [],
+    });
+  });
+
+  it("sends exactly the columns the organizer ticked", async () => {
+    stub();
+    await renderPage();
+
+    await userEvent.type(screen.getByLabelText("Название ссылки"), "Программа звукорежиссёра");
+    // The sound engineer's cut: drop the two default columns they do not need, add the
+    // two they do.
+    await userEvent.click(screen.getByRole("checkbox", { name: "№" }));
+    await userEvent.click(screen.getByRole("checkbox", { name: "Участник" }));
+    await userEvent.click(screen.getByRole("checkbox", { name: "Длительность" }));
+    await userEvent.click(screen.getByRole("checkbox", { name: "Комментарий" }));
+    await userEvent.click(screen.getByRole("button", { name: /Создать ссылку/ }));
+
+    const payload = createShare.mock.calls[0]?.[0] as { columns: string[] };
+    expect(payload.columns).toEqual(["TIME", "TITLE", "DURATION", "COMMENT"]);
+  });
+
+  it("cannot publish a link with no columns at all", async () => {
+    stub();
+    await renderPage();
+
+    await userEvent.type(screen.getByLabelText("Название ссылки"), "Пустая");
+    for (const label of ["№", "Время", "Участник", "Номер"]) {
+      await userEvent.click(screen.getByRole("checkbox", { name: label }));
+    }
+
+    expect(screen.getByRole("button", { name: /Создать ссылку/ })).toBeDisabled();
   });
 
   it("resolves a range of positions into the item ids the API takes", async () => {
@@ -399,10 +479,34 @@ describe("StaffProgramPage — public links", () => {
     await userEvent.type(screen.getByLabelText("Пункты по"), "2");
     await userEvent.click(screen.getByRole("button", { name: /Создать ссылку/ }));
 
-    expect(createShare.mock.calls[0]?.[0]).toEqual({
-      name: "Программа звукорежиссёра",
-      itemIds: ["item-2"],
-    });
+    const payload = createShare.mock.calls[0]?.[0] as { itemIds: string[] };
+    expect(payload.itemIds).toEqual(["item-2"]);
+  });
+
+  it("shows which columns a live link publishes", async () => {
+    stub(
+      aProgram({
+        shares: [
+          {
+            id: "share-1",
+            name: "Программа звукорежиссёра",
+            slug: "AbX82Kmn",
+            path: "/program/AbX82Kmn",
+            columns: [
+              { key: "TIME", label: "Время" },
+              { key: "TITLE", label: "Номер" },
+              { key: "COMMENT", label: "Комментарий" },
+            ],
+            itemCount: 2,
+            coversWholeProgram: false,
+            createdAt: "2026-08-01T09:00:00Z",
+          },
+        ],
+      }),
+    );
+    await renderPage();
+
+    expect(screen.getByText("Колонки: Время, Номер, Комментарий")).toBeInTheDocument();
   });
 
   it("refuses to publish an unnamed edition", async () => {
@@ -421,6 +525,11 @@ describe("StaffProgramPage — public links", () => {
             name: "Программа звукорежиссёра",
             slug: "AbX82Kmn",
             path: "/program/AbX82Kmn",
+            columns: [
+              { key: "TIME", label: "Время" },
+              { key: "TITLE", label: "Номер" },
+              { key: "COMMENT", label: "Комментарий" },
+            ],
             itemCount: 2,
             coversWholeProgram: false,
             createdAt: "2026-08-01T09:00:00Z",

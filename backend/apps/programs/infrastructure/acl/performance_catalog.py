@@ -27,6 +27,7 @@ from apps.competitions.infrastructure.models.taxonomy import (
     AgeCategoryModel,
     CategoryModel,
     DisciplineModel,
+    ParticipantGroupModel,
     ParticipationFormatModel,
 )
 from apps.participants.infrastructure.models import ParticipantOrganizationMembershipModel
@@ -146,6 +147,7 @@ class DjangoPerformanceCatalog:
                     nomination=taxonomy["nomination"].get(nomination_id or ""),
                     discipline=taxonomy["discipline"].get(_clean(performance.get("discipline_id")) or ""),
                     age_category=taxonomy["age_category"].get(_clean(performance.get("age_category_id")) or ""),
+                    participant_group=taxonomy["participant_group"].get(_clean(performance.get("participant_group_id")) or ""),
                     participation_format=taxonomy["format"].get(_clean(performance.get("participation_format_id")) or ""),
                     participants=participants,
                     teachers=teachers,
@@ -159,13 +161,20 @@ class DjangoPerformanceCatalog:
     @staticmethod
     def _taxonomy(models: list[SubmissionModel]) -> dict[str, dict[str, str]]:
         """One id→name map per taxonomy axis, built from two queries."""
-        wanted: dict[str, set[str]] = {"nomination": set(), "discipline": set(), "age_category": set(), "format": set()}
+        wanted: dict[str, set[str]] = {
+            "nomination": set(),
+            "discipline": set(),
+            "age_category": set(),
+            "participant_group": set(),
+            "format": set(),
+        }
         for model in models:
             performance = model.performance or {}
             for axis, key in (
                 ("nomination", "nomination_id"),
                 ("discipline", "discipline_id"),
                 ("age_category", "age_category_id"),
+                ("participant_group", "participant_group_id"),
                 ("format", "participation_format_id"),
             ):
                 value = _clean(performance.get(key))
@@ -182,6 +191,7 @@ class DjangoPerformanceCatalog:
             "nomination": names(CategoryModel, wanted["nomination"]),
             "discipline": names(DisciplineModel, wanted["discipline"]),
             "age_category": names(AgeCategoryModel, wanted["age_category"]),
+            "participant_group": names(ParticipantGroupModel, wanted["participant_group"]),
             "format": names(ParticipationFormatModel, wanted["format"]),
         }
 

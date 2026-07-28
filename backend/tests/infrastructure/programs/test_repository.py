@@ -14,8 +14,10 @@ import pytest
 
 from apps.programs.domain.entities import Program
 from apps.programs.domain.value_objects import (
+    DEFAULT_PUBLIC_COLUMNS,
     ItemDuration,
     ItemTitle,
+    ProgramColumn,
     ProgramItemKind,
     ProgramName,
     PublicSlug,
@@ -76,6 +78,7 @@ class TestRoundTrip:
             name=ShareName("Программа звукорежиссёра"),
             slug=PublicSlug("Sound2345"),
             now=NOW,
+            columns=[ProgramColumn.TIME, ProgramColumn.TITLE, ProgramColumn.COMMENT],
             item_ids=[first, second],
         )
         repository.save(program)
@@ -97,6 +100,7 @@ class TestRoundTrip:
         assert loaded.item(second).duration.seconds == 240
         assert [s.id for s in loaded.shares] == [share.id]
         assert loaded.shares[0].item_ids == (first, second)
+        assert loaded.shares[0].columns == (ProgramColumn.TIME, ProgramColumn.TITLE, ProgramColumn.COMMENT)
 
     def test_the_order_is_the_order_that_comes_back(self) -> None:
         repository = DjangoProgramRepository()
@@ -220,3 +224,21 @@ class TestPublicLinks:
 
     def test_a_free_slug_is_not_reported_as_taken(self) -> None:
         assert DjangoProgramRepository().slug_taken("Nobody234") is False
+
+    def test_a_row_written_before_columns_existed_loads_with_the_defaults(self) -> None:
+        """The columns field is JSON, so an older row simply has an empty list."""
+        repository = DjangoProgramRepository()
+        program = _program()
+        share = program.add_share(
+            share_id=uuid.uuid4(),
+            name=ShareName("Старая ссылка"),
+            slug=PublicSlug("Legacy234"),
+            now=NOW,
+            columns=[ProgramColumn.TIME],
+        )
+        repository.save(program)
+        ProgramShareModel.objects.filter(id=share.id).update(columns=[])
+
+        loaded = repository.get(program.id)
+        assert loaded is not None
+        assert loaded.shares[0].columns == DEFAULT_PUBLIC_COLUMNS

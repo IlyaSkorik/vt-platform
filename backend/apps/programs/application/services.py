@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Sequence
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from apps.programs.application.commands import (
     AddBlockCommand,
@@ -26,13 +26,15 @@ from apps.programs.application.commands import (
     EditItemCommand,
     ReorderItemsCommand,
     UpdateProgramCommand,
+    UpdateShareCommand,
 )
 from apps.programs.application.dto import (
+    ColumnView,
     ProgramDetailView,
     ProgramItemView,
     ProgramShareView,
     ProgramSummaryView,
-    PublicProgramItemView,
+    PublicProgramRowView,
     PublicProgramView,
     SchedulePosition,
 )
@@ -53,13 +55,16 @@ from apps.programs.domain.exceptions import (
 )
 from apps.programs.domain.schedule import ScheduledItem, build_schedule, total_duration_seconds
 from apps.programs.domain.value_objects import (
+    COLUMN_LABELS,
     ItemDuration,
     ItemTitle,
+    ProgramColumn,
     ProgramItemKind,
     ProgramName,
     PublicSlug,
     ShareName,
     TimeBuffer,
+    parse_columns,
 )
 
 __all__ = ["PUBLIC_PROGRAM_PATH", "ProgramService"]
@@ -79,6 +84,16 @@ def _uuid(value: str, *, what: str) -> uuid.UUID:
         return uuid.UUID(str(value))
     except (ValueError, TypeError, AttributeError) as exc:
         raise InvalidProgramDataError(f"{what} must be a UUID, got {value!r}.") from exc
+
+
+def _clock(moment: datetime | None) -> str:
+    """A cell's time of day, or blank when the programme is not timed yet."""
+    return "" if moment is None else moment.strftime("%H:%M")
+
+
+def _duration(seconds: int) -> str:
+    minutes, remainder = divmod(max(0, seconds), 60)
+    return f"{minutes}:{remainder:02d}"
 
 
 class ProgramService:
@@ -266,10 +281,23 @@ class ProgramService:
             name=ShareName(command.name),
             slug=self._mint_slug(),
             now=now,
+            columns=parse_columns(command.columns),
             item_ids=[_uuid(item_id, what="itemId") for item_id in command.item_ids],
         )
         self._programs.save(program)
         return self._detail(program), self._share_view(share, program)
+
+    def update_share(self, command: UpdateShareCommand) -> tuple[ProgramDetailView, ProgramShareView]:
+        """Rename an edition and/or change the columns it publishes, keeping its link."""
+        now = self._clock.utcnow()
+        program = self._load(command.program_id)
+        share_id = _uuid(command.share_id, what="shareId")
+        if command.name is not None:
+            program.rename_share(share_id, ShareName(command.name), now=now)
+        if command.columns is not None:
+            program.set_share_columns(share_id, parse_columns(command.columns), now=now)
+        self._programs.save(program)
+        return self._detail(program), self._share_view(program.share(share_id), program)
 
     def remove_share(self, *, program_id: str, share_id: str) -> ProgramDetailView:
         """Revoke a public edition; its link stops resolving at once."""
@@ -280,11 +308,15 @@ class ProgramService:
         return self._detail(program)
 
     def public_program(self, slug: str) -> PublicProgramView | None:
-        """Resolve a public link, or ``None`` when nothing (any longer) answers to it.
+        """Resolve a public link into the table it publishes, or ``None``.
 
         The single unauthenticated read in this context. It renders from the same
         aggregate and the same schedule rule as the organizer view - one running order
         means one timetable, never a second calculation that could disagree.
+
+        Only the edition's own columns are rendered into cells: a column the organizer
+        did not publish never reaches the response, so it cannot be read off the wire
+        by anyone holding the link.
         """
         found = self._programs.get_by_slug(slug)
         if found is None:
@@ -295,24 +327,30 @@ class ProgramService:
         except ProgramShareNotFoundError:
             # Revoked between the slug lookup and the read: the link is simply gone.
             return None
+        columns = share.columns
         items = program.items_for(share)
         schedule_by_item = {entry.item.id: entry for entry in build_schedule(items=program.items, buffer=program.buffer, starts_at=program.starts_at)}
         performances = self._resolve_performances(items)
-        lines: list[PublicProgramItemView] = []
+        rows: list[PublicProgramRowView] = []
+        first_start: datetime | None = None
         for position, item in enumerate(items, start=1):
             entry = schedule_by_item[item.id]
+            if position == 1:
+                first_start = entry.starts_at
             performance = performances.get(item.submission_id) if item.submission_id is not None else None
-            lines.append(
-                PublicProgramItemView(
-                    position=position,
+            rows.append(
+                PublicProgramRowView(
                     kind=item.kind.value,
-                    title=self._item_title(item, performance),
-                    performer=performance.lead_participant if performance is not None else None,
-                    teachers=performance.teachers if performance is not None else (),
-                    organization=performance.organization if performance is not None else None,
-                    duration_seconds=item.duration.seconds,
-                    starts_at=entry.starts_at,
-                    note=performance.comment if performance is not None else None,
+                    cells=tuple(
+                        self._cell(
+                            column,
+                            item=item,
+                            performance=performance,
+                            position=position,
+                            starts_at=entry.starts_at,
+                        )
+                        for column in columns
+                    ),
                 )
             )
         return PublicProgramView(
@@ -320,9 +358,10 @@ class ProgramService:
             slug=str(share.slug),
             competition_title=self._catalog.competition_title(program.competition_id),
             nomination=self._catalog.nomination_title(program.nomination_id) if program.nomination_id else None,
-            starts_at=lines[0].starts_at if lines else program.starts_at,
+            starts_at=first_start or program.starts_at,
             total_seconds=total_duration_seconds(items=items, buffer=program.buffer),
-            items=tuple(lines),
+            columns=tuple(ColumnView(key=column.value, label=COLUMN_LABELS[column]) for column in columns),
+            rows=tuple(rows),
         )
 
     # ------------------------------------------------------------------
@@ -365,6 +404,51 @@ class ProgramService:
         ids = [item.submission_id for item in items if item.submission_id is not None]
         return self._catalog.performances_by_id(ids) if ids else {}
 
+    def _cell(
+        self,
+        column: ProgramColumn,
+        *,
+        item: ProgramItem,
+        performance: CatalogPerformance | None,
+        position: int,
+        starts_at: datetime | None,
+    ) -> str:
+        """Render one cell of the table as plain text.
+
+        Every column resolves to a string here - including the empty one - so a client
+        renders a row without knowing what any column means. A break has no participant
+        and no age category, and gets blanks rather than a placeholder that would read
+        like missing data.
+        """
+        match column:
+            case ProgramColumn.POSITION:
+                return str(position)
+            case ProgramColumn.TIME:
+                return _clock(starts_at)
+            case ProgramColumn.PARTICIPANT:
+                return performance.lead_participant or "" if performance is not None else ""
+            case ProgramColumn.TITLE:
+                return self._item_title(item, performance)
+            case ProgramColumn.DURATION:
+                return _duration(item.duration.seconds)
+            case ProgramColumn.NOMINATION:
+                return (performance.nomination or "") if performance is not None else ""
+            case ProgramColumn.DISCIPLINE:
+                return (performance.discipline or "") if performance is not None else ""
+            case ProgramColumn.PARTICIPANT_GROUP:
+                return (performance.participant_group or "") if performance is not None else ""
+            case ProgramColumn.AGE_CATEGORY:
+                return (performance.age_category or "") if performance is not None else ""
+            case ProgramColumn.PARTICIPATION_FORMAT:
+                return (performance.participation_format or "") if performance is not None else ""
+            case ProgramColumn.TEACHERS:
+                return ", ".join(performance.teachers) if performance is not None else ""
+            case ProgramColumn.ORGANIZATION:
+                return (performance.organization or "") if performance is not None else ""
+            case ProgramColumn.COMMENT:
+                return (performance.comment or "") if performance is not None else ""
+        return ""
+
     @staticmethod
     def _item_title(item: ProgramItem, performance: CatalogPerformance | None) -> str:
         if item.title is not None:
@@ -404,6 +488,7 @@ class ProgramService:
             starts_at=program.starts_at,
             items=tuple(self._item_view(entry, performances) for entry in schedule),
             shares=tuple(self._share_view(share, program) for share in program.shares),
+            available_columns=tuple(ColumnView(key=column.value, label=COLUMN_LABELS[column]) for column in ProgramColumn),
             total_seconds=total,
             ends_at=program.starts_at + timedelta(seconds=total) if program.starts_at is not None else None,
             created_at=program.created_at,
@@ -433,6 +518,7 @@ class ProgramService:
             nomination=performance.nomination if performance is not None else None,
             discipline=performance.discipline if performance is not None else None,
             age_category=performance.age_category if performance is not None else None,
+            participant_group=performance.participant_group if performance is not None else None,
             participation_format=performance.participation_format if performance is not None else None,
             organization=performance.organization if performance is not None else None,
             comment=performance.comment if performance is not None else None,
@@ -447,6 +533,7 @@ class ProgramService:
             name=str(share.name),
             slug=str(share.slug),
             path=PUBLIC_PROGRAM_PATH.format(slug=share.slug),
+            columns=tuple(ColumnView(key=column.value, label=COLUMN_LABELS[column]) for column in share.columns),
             item_count=len(selected),
             covers_whole_program=share.covers_whole_program,
             created_at=share.created_at,

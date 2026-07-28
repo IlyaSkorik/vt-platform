@@ -22,13 +22,17 @@ from apps.programs.domain.exceptions import (
     ReorderMismatchError,
 )
 from apps.programs.domain.value_objects import (
+    COLUMN_LABELS,
+    DEFAULT_PUBLIC_COLUMNS,
     ItemDuration,
     ItemTitle,
+    ProgramColumn,
     ProgramItemKind,
     ProgramName,
     PublicSlug,
     ShareName,
     TimeBuffer,
+    parse_columns,
 )
 
 NOW = datetime(2026, 8, 1, 9, 0, tzinfo=UTC)
@@ -292,6 +296,72 @@ class TestPublicEditions:
                 item_ids=[item.id],
             )
         assert len(program.shares) == 4
+
+
+class TestPublishedColumns:
+    """An edition is defined by which columns of the table it shows."""
+
+    def test_an_edition_without_a_choice_shows_the_default_columns(self) -> None:
+        program = _program()
+        share = program.add_share(share_id=uuid.uuid4(), name=ShareName("Экран"), slug=PublicSlug("Screen234"), now=NOW)
+        assert share.columns == DEFAULT_PUBLIC_COLUMNS
+
+    def test_columns_are_kept_in_canonical_order(self) -> None:
+        program = _program()
+        share = program.add_share(
+            share_id=uuid.uuid4(),
+            name=ShareName("Звукорежиссёр"),
+            slug=PublicSlug("Sound2345"),
+            now=NOW,
+            columns=[ProgramColumn.COMMENT, ProgramColumn.TITLE, ProgramColumn.TIME],
+        )
+        assert share.columns == (ProgramColumn.TIME, ProgramColumn.TITLE, ProgramColumn.COMMENT)
+
+    def test_columns_can_be_changed_later_and_the_slug_survives(self) -> None:
+        program = _program()
+        share = program.add_share(
+            share_id=uuid.uuid4(),
+            name=ShareName("Ведущий"),
+            slug=PublicSlug("Host23456"),
+            now=NOW,
+            columns=[ProgramColumn.TIME],
+        )
+        program.set_share_columns(share.id, [ProgramColumn.TIME, ProgramColumn.PARTICIPANT], now=NOW)
+        assert program.share(share.id).columns == (ProgramColumn.TIME, ProgramColumn.PARTICIPANT)
+        assert str(program.share(share.id).slug) == "Host23456"
+
+    def test_two_editions_of_one_program_show_different_columns(self) -> None:
+        # The point of the whole mechanism: one running order, many audiences.
+        program = _program()
+        engineer = program.add_share(
+            share_id=uuid.uuid4(),
+            name=ShareName("Звукорежиссёр"),
+            slug=PublicSlug("Sound2345"),
+            now=NOW,
+            columns=[ProgramColumn.TIME, ProgramColumn.TITLE, ProgramColumn.COMMENT],
+        )
+        screen = program.add_share(
+            share_id=uuid.uuid4(),
+            name=ShareName("Экран"),
+            slug=PublicSlug("Screen234"),
+            now=NOW,
+            columns=[ProgramColumn.TIME, ProgramColumn.PARTICIPANT, ProgramColumn.TITLE],
+        )
+        assert ProgramColumn.COMMENT in engineer.columns
+        assert ProgramColumn.COMMENT not in screen.columns
+
+    def test_parsing_accepts_names_and_rejects_unknown_ones(self) -> None:
+        assert parse_columns(["time", "TITLE"]) == (ProgramColumn.TIME, ProgramColumn.TITLE)
+        assert parse_columns([]) == ()
+        with pytest.raises(InvalidProgramDataError):
+            parse_columns(["NOT_A_COLUMN"])
+
+    def test_parsing_drops_duplicates(self) -> None:
+        assert parse_columns(["TIME", "TIME", "TITLE"]) == (ProgramColumn.TIME, ProgramColumn.TITLE)
+
+    def test_every_column_has_a_header(self) -> None:
+        assert {column: COLUMN_LABELS[column] for column in ProgramColumn}
+        assert COLUMN_LABELS[ProgramColumn.PARTICIPANT_GROUP] == "Состав участников"
 
 
 class TestSlug:

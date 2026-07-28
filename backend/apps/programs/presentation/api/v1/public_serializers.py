@@ -1,7 +1,9 @@
-"""Response serializers for the public program screen (anyone-facing).
+"""Response serializers for the public programme screen (anyone-facing).
 
-A deliberately smaller shape than the organizer's: no ids, no submission references,
-no version. Whatever is not in this contract cannot leak through a public link.
+A table and nothing else: the columns the organizer published, and one row of cells per
+item. Deliberately smaller than the organizer's shape - no ids, no submission references,
+no version - and cells exist only for published columns, so a column the organizer left
+out cannot be recovered from the response.
 """
 
 from __future__ import annotations
@@ -12,18 +14,21 @@ from rest_framework import serializers
 __all__ = ["PublicProgramEnvelopeSerializer", "PublicProgramSerializer"]
 
 
-class PublicProgramItemSerializer(serializers.Serializer[dict[str, object]]):
-    """One line of the program as an audience, a host or an engineer reads it."""
+#: One published column: its stable key and the header it is printed under. Declared
+#: inline because ``label`` is a serializer attribute in DRF, and the wire contract's
+#: field name wins.
+PublicProgramColumnSerializer = inline_serializer(
+    name="PublicProgramColumn",
+    fields={"key": serializers.CharField(), "label": serializers.CharField()},
+    many=True,
+)
 
-    position = serializers.IntegerField()
+
+class PublicProgramRowSerializer(serializers.Serializer[dict[str, object]]):
+    """One row of the table. ``cells`` is aligned with ``columns``."""
+
     kind = serializers.CharField()
-    title = serializers.CharField()
-    performer = serializers.CharField(allow_null=True)
-    teachers = serializers.ListField(child=serializers.CharField())
-    organization = serializers.CharField(allow_null=True)
-    durationSeconds = serializers.IntegerField()
-    startsAt = serializers.DateTimeField(allow_null=True)
-    note = serializers.CharField(allow_null=True)
+    cells = serializers.ListField(child=serializers.CharField(allow_blank=True))
 
 
 class PublicProgramSerializer(serializers.Serializer[dict[str, object]]):
@@ -35,7 +40,8 @@ class PublicProgramSerializer(serializers.Serializer[dict[str, object]]):
     nomination = serializers.CharField(allow_null=True)
     startsAt = serializers.DateTimeField(allow_null=True)
     totalSeconds = serializers.IntegerField()
-    items = PublicProgramItemSerializer(many=True)
+    columns = PublicProgramColumnSerializer
+    rows = PublicProgramRowSerializer(many=True)
 
 
 # The platform's ``{data, meta}`` envelope. Declared inline because ``data`` is a

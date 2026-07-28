@@ -20,6 +20,7 @@ from apps.programs.domain.value_objects import (
     PublicSlug,
     ShareName,
     TimeBuffer,
+    parse_columns,
 )
 from apps.programs.infrastructure.models import ProgramItemModel, ProgramModel, ProgramShareModel
 
@@ -75,10 +76,11 @@ class ProgramMapper:
 
     @staticmethod
     def share_fields(share: ProgramShare) -> dict[str, Any]:
-        """One public-edition row's columns."""
+        """One public-edition row's own columns (not to be confused with its selection)."""
         return {
             "name": str(share.name),
             "slug": str(share.slug),
+            "columns": [column.value for column in share.columns],
             "item_ids": [str(item_id) for item_id in share.item_ids],
         }
 
@@ -103,6 +105,9 @@ class ProgramMapper:
             _id=row.id,
             _name=ShareName(row.name),
             _slug=PublicSlug(row.slug),
+            # Rows written before columns existed have none, and the entity reads that
+            # as "the default columns" rather than as "no columns".
+            _columns=parse_columns(row.columns or []),
             _item_ids=tuple(uuid.UUID(str(item_id)) for item_id in row.item_ids or []),
             _created_at=row.created_at,
         )

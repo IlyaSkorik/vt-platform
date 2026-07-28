@@ -6430,9 +6430,69 @@ paths:
                 $ref: '#/components/schemas/ProgramProblemDetail'
           description: Unprocessable.
   /api/v1/staff/programs/{program_id}/shares/{share_id}:
+    patch:
+      operationId: programsUpdateShare
+      description: '``PATCH`` one public edition''s name or columns; ``DELETE`` to
+        revoke it.'
+      parameters:
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: share_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateShareRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateShareRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateShareRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramShareResource'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
     delete:
       operationId: programsRemoveShare
-      description: '``DELETE`` one public edition - its link stops resolving at once.'
+      description: '``PATCH`` one public edition''s name or columns; ``DELETE`` to
+        revoke it.'
       parameters:
       - in: path
         name: program_id
@@ -7704,6 +7764,36 @@ components:
       description: |-
         * `PER_PARTICIPANT` - PER_PARTICIPANT
         * `PER_PERFORMANCE` - PER_PERFORMANCE
+    ColumnsEnum:
+      enum:
+      - POSITION
+      - TIME
+      - PARTICIPANT
+      - TITLE
+      - DURATION
+      - NOMINATION
+      - DISCIPLINE
+      - PARTICIPANT_GROUP
+      - AGE_CATEGORY
+      - PARTICIPATION_FORMAT
+      - TEACHERS
+      - ORGANIZATION
+      - COMMENT
+      type: string
+      description: |-
+        * `POSITION` - POSITION
+        * `TIME` - TIME
+        * `PARTICIPANT` - PARTICIPANT
+        * `TITLE` - TITLE
+        * `DURATION` - DURATION
+        * `NOMINATION` - NOMINATION
+        * `DISCIPLINE` - DISCIPLINE
+        * `PARTICIPANT_GROUP` - PARTICIPANT_GROUP
+        * `AGE_CATEGORY` - AGE_CATEGORY
+        * `PARTICIPATION_FORMAT` - PARTICIPATION_FORMAT
+        * `TEACHERS` - TEACHERS
+        * `ORGANIZATION` - ORGANIZATION
+        * `COMMENT` - COMMENT
     CompetitionDetail:
       type: object
       properties:
@@ -8041,12 +8131,19 @@ components:
       description: |-
         Validate a create-public-program body.
 
-        Omitting ``itemIds`` (or sending an empty list) publishes the whole program and
-        keeps following it - what a screen by the stage wants.
+        ``columns`` is the selection that defines the edition - which columns of the table
+        its reader sees. Omitting it publishes the default columns.
+
+        Omitting ``itemIds`` (or sending an empty list) publishes every row and keeps
+        following the programme - what a screen by the stage wants.
       properties:
         name:
           type: string
           maxLength: 200
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/ColumnsEnum'
         itemIds:
           type: array
           items:
@@ -8698,6 +8795,36 @@ components:
       required:
       - email
       - role
+    KeyEnum:
+      enum:
+      - POSITION
+      - TIME
+      - PARTICIPANT
+      - TITLE
+      - DURATION
+      - NOMINATION
+      - DISCIPLINE
+      - PARTICIPANT_GROUP
+      - AGE_CATEGORY
+      - PARTICIPATION_FORMAT
+      - TEACHERS
+      - ORGANIZATION
+      - COMMENT
+      type: string
+      description: |-
+        * `POSITION` - POSITION
+        * `TIME` - TIME
+        * `PARTICIPANT` - PARTICIPANT
+        * `TITLE` - TITLE
+        * `DURATION` - DURATION
+        * `NOMINATION` - NOMINATION
+        * `DISCIPLINE` - DISCIPLINE
+        * `PARTICIPANT_GROUP` - PARTICIPANT_GROUP
+        * `AGE_CATEGORY` - AGE_CATEGORY
+        * `PARTICIPATION_FORMAT` - PARTICIPATION_FORMAT
+        * `TEACHERS` - TEACHERS
+        * `ORGANIZATION` - ORGANIZATION
+        * `COMMENT` - COMMENT
     LayoutFieldRequest:
       type: object
       description: One field in a layout save. Coordinates are normalised (0..1).
@@ -9679,6 +9806,18 @@ components:
           - string
           - 'null'
           format: date-time
+    PatchedUpdateShareRequest:
+      type: object
+      description: Validate a rename/re-column body for a published edition (its slug
+        is permanent).
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/ColumnsEnum'
     PatchedUpdateTeacherRequest:
       type: object
       description: Validate an update-teacher request body (same shape as add).
@@ -9919,6 +10058,10 @@ components:
           type:
           - string
           - 'null'
+        participantGroup:
+          type:
+          - string
+          - 'null'
         participationFormat:
           type:
           - string
@@ -9946,11 +10089,22 @@ components:
       - durationSeconds
       - nomination
       - organization
+      - participantGroup
       - participants
       - participationFormat
       - submissionId
       - teachers
       - title
+    ProgramColumn:
+      type: object
+      properties:
+        key:
+          $ref: '#/components/schemas/KeyEnum'
+        label:
+          type: string
+      required:
+      - key
+      - label
     ProgramDetail:
       type: object
       description: 'One program in full: settings, timetable and public links.'
@@ -9983,6 +10137,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ProgramShareResource'
+        availableColumns:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProgramColumn'
         totalSeconds:
           type: integer
         endsAt:
@@ -9999,6 +10157,7 @@ components:
         version:
           type: integer
       required:
+      - availableColumns
       - bufferSeconds
       - competitionId
       - createdAt
@@ -10014,7 +10173,8 @@ components:
       - version
     ProgramItemResource:
       type: object
-      description: One slot of the running order, with its computed place on the timeline.
+      description: One row of the programme table, with its computed place on the
+        timeline.
       properties:
         id:
           type: string
@@ -10056,6 +10216,10 @@ components:
           type:
           - string
           - 'null'
+        participantGroup:
+          type:
+          - string
+          - 'null'
         participationFormat:
           type:
           - string
@@ -10081,6 +10245,7 @@ components:
       - missingPerformance
       - nomination
       - organization
+      - participantGroup
       - participants
       - participationFormat
       - schedule
@@ -10133,7 +10298,8 @@ components:
       - type
     ProgramShareResource:
       type: object
-      description: A public edition of the program and the path its link points at.
+      description: 'A public edition of the program: the columns it shows and the
+        path it lives at.'
       properties:
         id:
           type: string
@@ -10144,6 +10310,10 @@ components:
           type: string
         path:
           type: string
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProgramColumn'
         itemCount:
           type: integer
         coversWholeProgram:
@@ -10154,6 +10324,7 @@ components:
           - 'null'
           format: date-time
       required:
+      - columns
       - coversWholeProgram
       - createdAt
       - id
@@ -10884,6 +11055,10 @@ components:
       type: object
       description: What a public link resolves to.
       properties:
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicProgramColumn'
         name:
           type: string
         slug:
@@ -10903,18 +11078,29 @@ components:
           format: date-time
         totalSeconds:
           type: integer
-        items:
+        rows:
           type: array
           items:
-            $ref: '#/components/schemas/PublicProgramItem'
+            $ref: '#/components/schemas/PublicProgramRow'
       required:
+      - columns
       - competitionTitle
-      - items
       - name
       - nomination
+      - rows
       - slug
       - startsAt
       - totalSeconds
+    PublicProgramColumn:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+      required:
+      - key
+      - label
     PublicProgramEnvelope:
       type: object
       properties:
@@ -10926,50 +11112,19 @@ components:
       required:
       - data
       - meta
-    PublicProgramItem:
+    PublicProgramRow:
       type: object
-      description: One line of the program as an audience, a host or an engineer reads
-        it.
+      description: One row of the table. ``cells`` is aligned with ``columns``.
       properties:
-        position:
-          type: integer
         kind:
           type: string
-        title:
-          type: string
-        performer:
-          type:
-          - string
-          - 'null'
-        teachers:
+        cells:
           type: array
           items:
             type: string
-        organization:
-          type:
-          - string
-          - 'null'
-        durationSeconds:
-          type: integer
-        startsAt:
-          type:
-          - string
-          - 'null'
-          format: date-time
-        note:
-          type:
-          - string
-          - 'null'
       required:
-      - durationSeconds
+      - cells
       - kind
-      - note
-      - organization
-      - performer
-      - position
-      - startsAt
-      - teachers
-      - title
     RecordConsentsRequest:
       type: object
       description: Validate a record-consents request body.

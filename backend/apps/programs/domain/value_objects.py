@@ -13,6 +13,7 @@ title, the two kinds of duration, the item kind, and a public slug.
 from __future__ import annotations
 
 import secrets
+from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Final
@@ -21,14 +22,18 @@ from .exceptions import InvalidProgramDataError
 
 __all__ = [
     "BUFFER_MAX_SECONDS",
+    "COLUMN_LABELS",
+    "DEFAULT_PUBLIC_COLUMNS",
     "DURATION_MAX_SECONDS",
     "ItemDuration",
     "ItemTitle",
+    "ProgramColumn",
     "ProgramItemKind",
     "ProgramName",
     "PublicSlug",
     "ShareName",
     "TimeBuffer",
+    "parse_columns",
 ]
 
 _NAME_MAX: Final = 200
@@ -46,6 +51,82 @@ _SLUG_ALPHABET: Final = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz234567
 _SLUG_LENGTH: Final = 10
 _SLUG_MIN_LENGTH: Final = 6
 _SLUG_MAX_LENGTH: Final = 64
+
+
+class ProgramColumn(StrEnum):
+    """A column of the programme table.
+
+    A programme *is* a table: one row per item, and these are the columns it can carry.
+    They are also the unit a public link is cut along - publishing an edition means
+    choosing which of these the reader sees, so the sound engineer gets the time, the
+    act and its notes while the audience screen gets the time, the participant and the
+    act and nothing else.
+
+    Order here is the canonical order a table is rendered in, whichever subset was
+    chosen: a column means the same thing and sits in the same place on every screen.
+    """
+
+    POSITION = "POSITION"
+    TIME = "TIME"
+    PARTICIPANT = "PARTICIPANT"
+    TITLE = "TITLE"
+    DURATION = "DURATION"
+    NOMINATION = "NOMINATION"
+    DISCIPLINE = "DISCIPLINE"
+    PARTICIPANT_GROUP = "PARTICIPANT_GROUP"
+    AGE_CATEGORY = "AGE_CATEGORY"
+    PARTICIPATION_FORMAT = "PARTICIPATION_FORMAT"
+    TEACHERS = "TEACHERS"
+    ORGANIZATION = "ORGANIZATION"
+    COMMENT = "COMMENT"
+
+
+#: The header each column is printed under. Kept beside the enum so the organizer's
+#: table and every published edition name a column identically - Russian is the
+#: platform's language (ARCH-001), so these are the values, not a translation layer.
+COLUMN_LABELS: Final[dict[ProgramColumn, str]] = {
+    ProgramColumn.POSITION: "№",
+    ProgramColumn.TIME: "Время",
+    ProgramColumn.PARTICIPANT: "Участник",
+    ProgramColumn.TITLE: "Номер",
+    ProgramColumn.DURATION: "Длительность",
+    ProgramColumn.NOMINATION: "Номинация",
+    ProgramColumn.DISCIPLINE: "Дисциплина",
+    ProgramColumn.PARTICIPANT_GROUP: "Состав участников",
+    ProgramColumn.AGE_CATEGORY: "Возрастная категория",
+    ProgramColumn.PARTICIPATION_FORMAT: "Формат участия",
+    ProgramColumn.TEACHERS: "Педагог",
+    ProgramColumn.ORGANIZATION: "Организация",
+    ProgramColumn.COMMENT: "Комментарий",
+}
+
+#: What a published edition shows when the organizer chose nothing in particular - the
+#: four columns every reader of a programme needs before any other.
+DEFAULT_PUBLIC_COLUMNS: Final[tuple[ProgramColumn, ...]] = (
+    ProgramColumn.POSITION,
+    ProgramColumn.TIME,
+    ProgramColumn.PARTICIPANT,
+    ProgramColumn.TITLE,
+)
+
+
+def parse_columns(values: Iterable[object] | None) -> tuple[ProgramColumn, ...]:
+    """Read a selection of columns, in canonical order and without duplicates.
+
+    An empty selection is returned empty; it is the caller's business to decide that
+    "nothing chosen" means :data:`DEFAULT_PUBLIC_COLUMNS`.
+    """
+    if values is None:
+        return ()
+    if isinstance(values, str):
+        raise InvalidProgramDataError("Columns must be a list of column names.")
+    chosen: set[ProgramColumn] = set()
+    for raw in values:
+        try:
+            chosen.add(ProgramColumn(str(raw).upper()))
+        except ValueError as exc:
+            raise InvalidProgramDataError(f"{raw!r} is not a known programme column.") from exc
+    return tuple(column for column in ProgramColumn if column in chosen)
 
 
 class ProgramItemKind(StrEnum):

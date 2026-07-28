@@ -16,14 +16,23 @@ from dataclasses import dataclass
 from datetime import datetime
 
 __all__ = [
+    "ColumnView",
     "ProgramDetailView",
     "ProgramItemView",
     "ProgramShareView",
     "ProgramSummaryView",
-    "PublicProgramItemView",
+    "PublicProgramRowView",
     "PublicProgramView",
     "SchedulePosition",
 ]
+
+
+@dataclass(frozen=True, slots=True)
+class ColumnView:
+    """One column of the programme table: its stable key and its header."""
+
+    key: str
+    label: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,6 +68,7 @@ class ProgramItemView:
     nomination: str | None = None
     discipline: str | None = None
     age_category: str | None = None
+    participant_group: str | None = None
     participation_format: str | None = None
     organization: str | None = None
     comment: str | None = None
@@ -73,6 +83,7 @@ class ProgramShareView:
     name: str
     slug: str
     path: str
+    columns: tuple[ColumnView, ...]
     item_count: int
     covers_whole_program: bool
     created_at: datetime | None
@@ -108,6 +119,9 @@ class ProgramDetailView:
     starts_at: datetime | None
     items: tuple[ProgramItemView, ...]
     shares: tuple[ProgramShareView, ...]
+    #: Every column the table can carry, in canonical order - what the constructor
+    #: renders its header from and what a publish dialog offers to choose between.
+    available_columns: tuple[ColumnView, ...]
     total_seconds: int
     ends_at: datetime | None
     created_at: datetime
@@ -116,27 +130,22 @@ class ProgramDetailView:
 
 
 @dataclass(frozen=True, slots=True)
-class PublicProgramItemView:
-    """One line of a public program screen.
+class PublicProgramRowView:
+    """One row of a public programme table.
 
-    Carries what an audience, a host or a sound engineer needs and nothing else: no
-    ids, no submission reference, no internal state.
+    ``cells`` is aligned with the view's :attr:`PublicProgramView.columns` - a column the
+    organizer did not publish produces no cell at all, so a hidden column cannot be read
+    off the wire. ``kind`` is carried for styling (a break is drawn differently), not as
+    data about the act.
     """
 
-    position: int
     kind: str
-    title: str
-    performer: str | None
-    teachers: tuple[str, ...]
-    organization: str | None
-    duration_seconds: int
-    starts_at: datetime | None
-    note: str | None = None
+    cells: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)
 class PublicProgramView:
-    """What a public link resolves to."""
+    """What a public link resolves to: a table, and the columns it was cut to."""
 
     name: str
     slug: str
@@ -144,4 +153,5 @@ class PublicProgramView:
     nomination: str | None
     starts_at: datetime | None
     total_seconds: int
-    items: tuple[PublicProgramItemView, ...]
+    columns: tuple[ColumnView, ...]
+    rows: tuple[PublicProgramRowView, ...]

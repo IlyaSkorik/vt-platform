@@ -119,9 +119,13 @@ class ProgramShareModel(BasePersistenceModel):
     """Database row for a public edition of a program (the task's ``ProgramView``).
 
     Named ``share`` rather than ``view`` so nothing in a Django codebase confuses it
-    with an HTTP view. ``item_ids`` is a *selection over* the program - an empty list
-    means "the whole program", which keeps a screen by the stage correct as the
-    program grows. The slug is unique platform-wide and permanent: it is the only
+    with an HTTP view.
+
+    ``columns`` is what the edition *is*: the columns of the programme table its reader
+    sees. ``item_ids`` optionally narrows the rows - an empty list means "every row",
+    which keeps a screen by the stage correct as the programme grows. Both are stored as
+    JSON: they are selections over the programme, read as one value and never queried
+    field by field. The slug is unique platform-wide and permanent: it is the only
     credential a public link has.
     """
 
@@ -132,6 +136,7 @@ class ProgramShareModel(BasePersistenceModel):
     )
     name = models.CharField(max_length=200)
     slug = models.CharField(max_length=64)
+    columns = models.JSONField(default=list, blank=True)
     item_ids = models.JSONField(default=list, blank=True)
 
     class Meta(BasePersistenceModel.Meta):

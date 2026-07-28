@@ -4,9 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useCompetitionDetail, useCompetitionsList } from "@/features/competitions";
 import {
   BUFFER_PRESETS,
+  DEFAULT_SHARE_COLUMNS,
   ITEM_KIND_LABELS,
+  itemCell,
   moveItem,
   type Program,
+  type ProgramColumn,
+  type ProgramColumnKey,
   type ProgramItem,
   useAddBlock,
   useAddPerformance,
@@ -29,6 +33,7 @@ import {
   Button,
   Card,
   CardContent,
+  Checkbox,
   Divider,
   EmptyState,
   Input,
@@ -345,6 +350,8 @@ function RunningOrder({ program }: { program: Program }): React.JSX.Element {
     reorder.mutate(next, { onError: () => toast.error("Не удалось изменить порядок") });
   };
 
+  const busy = reorder.isPending || remove.isPending;
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -358,23 +365,49 @@ function RunningOrder({ program }: { program: Program }): React.JSX.Element {
           description="Добавьте выступления из списка ниже или вставьте служебный блок."
         />
       ) : (
-        <ol className="flex flex-col gap-2">
-          {items.map((item, index) => (
-            <ProgramItemRow
-              key={item.id}
-              item={item}
-              index={index}
-              total={items.length}
-              busy={reorder.isPending || remove.isPending}
-              onUp={() => move(index, index - 1)}
-              onDown={() => move(index, index + 1)}
-              onRemove={() =>
-                remove.mutate(item.id, { onError: () => toast.error("Не удалось удалить пункт") })
-              }
-              programId={program.id}
-            />
-          ))}
-        </ol>
+        // The programme is a table, and the table is wide: it scrolls inside its own
+        // container so the page never scrolls sideways.
+        <div className="overflow-x-auto rounded-md border border-border">
+          <table className="w-full border-collapse text-left">
+            <caption className="sr-only">Программа: {program.name}</caption>
+            <thead>
+              <tr className="border-border border-b bg-muted/50">
+                {program.availableColumns.map((column) => (
+                  <th
+                    key={column.key}
+                    scope="col"
+                    className="whitespace-nowrap px-2 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
+                  >
+                    {column.label}
+                  </th>
+                ))}
+                <th scope="col" className="px-2 py-2 text-right">
+                  <span className="sr-only">Действия</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item, index) => (
+                <ProgramItemRow
+                  key={item.id}
+                  item={item}
+                  columns={program.availableColumns}
+                  index={index}
+                  total={items.length}
+                  busy={busy}
+                  onUp={() => move(index, index - 1)}
+                  onDown={() => move(index, index + 1)}
+                  onRemove={() =>
+                    remove.mutate(item.id, {
+                      onError: () => toast.error("Не удалось удалить пункт"),
+                    })
+                  }
+                  programId={program.id}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
@@ -382,6 +415,7 @@ function RunningOrder({ program }: { program: Program }): React.JSX.Element {
 
 function ProgramItemRow({
   item,
+  columns,
   index,
   total,
   busy,
@@ -391,6 +425,7 @@ function ProgramItemRow({
   programId,
 }: {
   item: ProgramItem;
+  columns: ProgramColumn[];
   index: number;
   total: number;
   busy: boolean;
@@ -400,82 +435,85 @@ function ProgramItemRow({
   programId: string;
 }): React.JSX.Element {
   const isPerformance = item.kind === "PERFORMANCE";
+  const format = { clock: formatClock, duration: formatDuration };
   return (
-    <li
+    <tr
       data-testid="program-item"
       className={
         isPerformance
-          ? "flex flex-wrap items-baseline gap-3 rounded-md border border-border p-3"
-          : "flex flex-wrap items-baseline gap-3 rounded-md border border-border border-dashed bg-muted/40 p-3"
+          ? "border-border border-b last:border-0"
+          : "border-border border-b bg-muted/40 last:border-0"
       }
     >
-      <span className="w-14 shrink-0 font-semibold text-sm tabular-nums">
-        {formatClock(item.schedule.startsAt)}
-      </span>
-      <span className="w-6 shrink-0 text-muted-foreground text-xs tabular-nums">
-        {item.schedule.position}
-      </span>
-
-      <div className="min-w-0 flex-1 space-y-1">
-        <div className="flex flex-wrap items-baseline gap-2">
-          <p className="font-medium text-sm">{item.title}</p>
-          {/* The badge names the kind; a break literally titled "Перерыв" needs no
-              second label saying so. */}
-          {isPerformance || item.title === ITEM_KIND_LABELS[item.kind] ? null : (
-            <Badge variant="secondary">{ITEM_KIND_LABELS[item.kind]}</Badge>
+      {columns.map((column) => (
+        <td
+          key={column.key}
+          className={
+            column.key === "TIME" || column.key === "POSITION"
+              ? "whitespace-nowrap px-2 py-2 font-semibold text-sm tabular-nums"
+              : "px-2 py-2 text-sm"
+          }
+        >
+          {column.key === "TITLE" ? (
+            <span className="flex flex-wrap items-baseline gap-1.5">
+              <span>{itemCell(item, column.key, format)}</span>
+              {/* The badge names the kind; a break literally titled "Перерыв" needs no
+                  second label saying so. */}
+              {isPerformance || item.title === ITEM_KIND_LABELS[item.kind] ? null : (
+                <Badge variant="secondary">{ITEM_KIND_LABELS[item.kind]}</Badge>
+              )}
+              {item.missingPerformance ? <Badge variant="warning">Номер снят</Badge> : null}
+            </span>
+          ) : column.key === "DURATION" ? (
+            <span className="whitespace-nowrap tabular-nums">
+              {itemCell(item, column.key, format)}
+              {item.schedule.slotSeconds !== item.durationSeconds
+                ? ` (+${formatDuration(item.schedule.slotSeconds - item.durationSeconds)})`
+                : ""}
+            </span>
+          ) : column.key === "COMMENT" ? (
+            <span className="whitespace-pre-line text-muted-foreground text-xs">
+              {itemCell(item, column.key, format)}
+            </span>
+          ) : (
+            itemCell(item, column.key, format) || <span className="text-muted-foreground">—</span>
           )}
-          {item.missingPerformance ? <Badge variant="warning">Номер снят</Badge> : null}
+        </td>
+      ))}
+
+      <td className="px-2 py-2">
+        <div className="flex items-center justify-end gap-1">
+          {isPerformance ? null : <EditBlockDuration programId={programId} item={item} />}
+          <Button
+            variant="ghost"
+            size="xs"
+            aria-label={`Вверх: ${item.title}`}
+            disabled={index === 0 || busy}
+            onClick={onUp}
+          >
+            <ArrowUp className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="xs"
+            aria-label={`Вниз: ${item.title}`}
+            disabled={index === total - 1 || busy}
+            onClick={onDown}
+          >
+            <ArrowDown className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="xs"
+            aria-label={`Удалить: ${item.title}`}
+            disabled={busy}
+            onClick={onRemove}
+          >
+            <Trash2 className="size-4" />
+          </Button>
         </div>
-        {item.leadParticipant ? (
-          <p className="text-muted-foreground text-xs">
-            {item.leadParticipant}
-            {item.organization ? ` · ${item.organization}` : ""}
-            {item.nomination ? ` · ${item.nomination}` : ""}
-          </p>
-        ) : null}
-        {item.comment ? (
-          <p className="whitespace-pre-line text-muted-foreground text-xs">{item.comment}</p>
-        ) : null}
-      </div>
-
-      <span className="shrink-0 text-muted-foreground text-xs tabular-nums">
-        {formatDuration(item.durationSeconds)}
-        {item.schedule.slotSeconds !== item.durationSeconds
-          ? ` (+${formatDuration(item.schedule.slotSeconds - item.durationSeconds)})`
-          : ""}
-      </span>
-
-      <div className="flex shrink-0 items-center gap-1">
-        {isPerformance ? null : <EditBlockDuration programId={programId} item={item} />}
-        <Button
-          variant="ghost"
-          size="xs"
-          aria-label={`Вверх: ${item.title}`}
-          disabled={index === 0 || busy}
-          onClick={onUp}
-        >
-          <ArrowUp className="size-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="xs"
-          aria-label={`Вниз: ${item.title}`}
-          disabled={index === total - 1 || busy}
-          onClick={onDown}
-        >
-          <ArrowDown className="size-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="xs"
-          aria-label={`Удалить: ${item.title}`}
-          disabled={busy}
-          onClick={onRemove}
-        >
-          <Trash2 className="size-4" />
-        </Button>
-      </div>
-    </li>
+      </td>
+    </tr>
   );
 }
 
@@ -634,8 +672,17 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
   const create = useCreateShare(program.id);
   const remove = useRemoveShare(program.id);
   const [name, setName] = useState("");
+  const [columns, setColumns] = useState<ProgramColumnKey[]>(DEFAULT_SHARE_COLUMNS);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+
+  const toggle = (key: ProgramColumnKey, checked: boolean) => {
+    setColumns((current) =>
+      checked
+        ? [...current.filter((item) => item !== key), key]
+        : current.filter((item) => item !== key),
+    );
+  };
 
   const publish = () => {
     // Positions are what an organizer talks in ("пункты 25-40"); ids are what the API
@@ -649,10 +696,11 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
             .map((item) => item.id)
         : [];
     create.mutate(
-      { name: name.trim(), itemIds: selected },
+      { name: name.trim(), columns, itemIds: selected },
       {
         onSuccess: () => {
           setName("");
+          setColumns(DEFAULT_SHARE_COLUMNS);
           setFrom("");
           setTo("");
           toast.success("Публичная программа создана");
@@ -665,6 +713,11 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
   return (
     <div className="flex flex-col gap-3">
       <p className="font-medium text-sm">Публичные программы</p>
+      <p className="text-muted-foreground text-xs">
+        Отметьте колонки, которые нужно показать по ссылке: звукорежиссёру — время, номер и
+        комментарий; экрану у сцены — время, участника и номер. Неотмеченные колонки по ссылке не
+        передаются вообще.
+      </p>
 
       <div className="flex flex-wrap items-end gap-2">
         <Input
@@ -692,13 +745,29 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
           value={to}
           onChange={(event) => setTo(event.target.value)}
         />
-        <Button loading={create.isPending} disabled={name.trim().length === 0} onClick={publish}>
+        <Button
+          loading={create.isPending}
+          disabled={name.trim().length === 0 || columns.length === 0}
+          onClick={publish}
+        >
           <Link2 className="size-4" /> Создать ссылку
         </Button>
       </div>
+
+      <fieldset className="flex flex-wrap gap-x-4 gap-y-2 rounded-md border border-border p-3">
+        <legend className="px-1 text-muted-foreground text-xs">Колонки для публикации</legend>
+        {program.availableColumns.map((column) => (
+          <Checkbox
+            key={column.key}
+            label={column.label}
+            checked={columns.includes(column.key)}
+            onCheckedChange={(checked) => toggle(column.key, checked === true)}
+          />
+        ))}
+      </fieldset>
       <p className="text-muted-foreground text-xs">
-        Оставьте диапазон пустым, чтобы опубликовать всю программу — такая ссылка сама подхватывает
-        новые пункты.
+        Оставьте диапазон пунктов пустым, чтобы опубликовать всю программу — такая ссылка сама
+        подхватывает новые пункты.
       </p>
 
       {program.shares.length === 0 ? (
@@ -714,6 +783,9 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
               <p className="truncate text-muted-foreground text-xs">
                 {share.path} ·{" "}
                 {share.coversWholeProgram ? "вся программа" : `пунктов: ${share.itemCount}`}
+              </p>
+              <p className="text-muted-foreground text-xs">
+                Колонки: {share.columns.map((column) => column.label).join(", ")}
               </p>
             </div>
             <div className="flex items-center gap-1">

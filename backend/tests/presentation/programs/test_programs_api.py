@@ -316,8 +316,52 @@ class TestBufferAndOrder:
         assert staff_client.patch(f"{_PROGRAMS}/{program_id}", {"bufferSeconds": 7200}, format="json").status_code == 400
 
 
+class TestTheProgrammeTable:
+    def test_the_programme_exposes_every_column_it_can_carry(self, staff_client, scope) -> None:
+        program = _create_program(staff_client, scope)
+        keys = [column["key"] for column in program["availableColumns"]]
+        assert keys == [
+            "POSITION",
+            "TIME",
+            "PARTICIPANT",
+            "TITLE",
+            "DURATION",
+            "NOMINATION",
+            "DISCIPLINE",
+            "PARTICIPANT_GROUP",
+            "AGE_CATEGORY",
+            "PARTICIPATION_FORMAT",
+            "TEACHERS",
+            "ORGANIZATION",
+            "COMMENT",
+        ]
+        assert {column["key"]: column["label"] for column in program["availableColumns"]}["TEACHERS"] == "Педагог"
+
+    def test_a_row_carries_a_value_for_every_column(self, staff_client, scope) -> None:
+        competition_id, nomination_id = scope
+        _act(
+            competition_id=competition_id,
+            nomination_id=nomination_id,
+            title="Катюша",
+            seconds=200,
+            performer="Иванов Иван",
+            comment="Выход с точки 3",
+        )
+        program_id = _create_program(staff_client, scope)["id"]
+        filled = staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill")
+
+        item = filled.data["data"]["items"][0]
+        assert item["title"] == "Катюша"
+        assert item["leadParticipant"] == "Иванов Иван"
+        assert item["teachers"] == ["Иванова Мария"]
+        assert item["comment"] == "Выход с точки 3"
+        # Every taxonomy column the table offers is resolved, not just the ids.
+        for key in ("nomination", "discipline", "ageCategory", "participantGroup", "participationFormat"):
+            assert key in item
+
+
 class TestPublicEditions:
-    def test_an_edition_is_published_with_a_copyable_path(self, staff_client, scope) -> None:
+    def test_an_edition_is_published_with_its_columns_and_a_copyable_path(self, staff_client, scope) -> None:
         competition_id, nomination_id = scope
         _act(competition_id=competition_id, nomination_id=nomination_id, title="Акт A", seconds=200)
         program_id = _create_program(staff_client, scope)["id"]
@@ -326,15 +370,68 @@ class TestPublicEditions:
 
         response = staff_client.post(
             f"{_PROGRAMS}/{program_id}/shares",
-            {"name": "Программа звукорежиссёра", "itemIds": [item_id]},
+            {
+                "name": "Программа звукорежиссёра",
+                "columns": ["TIME", "TITLE", "DURATION", "COMMENT"],
+                "itemIds": [item_id],
+            },
             format="json",
         )
         assert response.status_code == 201, response.data
         share = response.data["data"]["share"]
         assert share["name"] == "Программа звукорежиссёра"
         assert share["path"] == f"/program/{share['slug']}"
+        assert [column["key"] for column in share["columns"]] == ["TIME", "TITLE", "DURATION", "COMMENT"]
         assert share["itemCount"] == 1
         assert share["coversWholeProgram"] is False
+
+    def test_an_edition_published_without_columns_falls_back_to_the_defaults(self, staff_client, scope) -> None:
+        program_id = _create_program(staff_client, scope)["id"]
+        created = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Экран у сцены"}, format="json")
+        assert [column["key"] for column in created.data["data"]["share"]["columns"]] == [
+            "POSITION",
+            "TIME",
+            "PARTICIPANT",
+            "TITLE",
+        ]
+
+    def test_an_unknown_column_is_rejected(self, staff_client, scope) -> None:
+        program_id = _create_program(staff_client, scope)["id"]
+        response = staff_client.post(
+            f"{_PROGRAMS}/{program_id}/shares",
+            {"name": "Нет", "columns": ["TIME", "SOMETHING"]},
+            format="json",
+        )
+        assert response.status_code == 400
+
+    def test_the_columns_of_a_live_link_can_be_changed(self, staff_client, scope) -> None:
+        program_id = _create_program(staff_client, scope)["id"]
+        created = staff_client.post(
+            f"{_PROGRAMS}/{program_id}/shares",
+            {"name": "Ведущий", "columns": ["TIME", "TITLE"]},
+            format="json",
+        )
+        share = created.data["data"]["share"]
+
+        updated = staff_client.patch(
+            f"{_PROGRAMS}/{program_id}/shares/{share['id']}",
+            {"columns": ["TIME", "PARTICIPANT", "TITLE"]},
+            format="json",
+        )
+        assert updated.status_code == 200, updated.data
+        assert [column["key"] for column in updated.data["data"]["share"]["columns"]] == [
+            "TIME",
+            "PARTICIPANT",
+            "TITLE",
+        ]
+        # The link itself is permanent, so anything already handed out keeps working.
+        assert updated.data["data"]["share"]["slug"] == share["slug"]
+
+    def test_an_empty_edition_update_is_rejected(self, staff_client, scope) -> None:
+        program_id = _create_program(staff_client, scope)["id"]
+        created = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Ведущий"}, format="json")
+        share_id = created.data["data"]["share"]["id"]
+        assert staff_client.patch(f"{_PROGRAMS}/{program_id}/shares/{share_id}", {}, format="json").status_code == 400
 
     def test_editions_are_listed_and_can_be_revoked(self, staff_client, scope) -> None:
         program_id = _create_program(staff_client, scope)["id"]

@@ -20,6 +20,7 @@ from apps.programs.application.commands import (
     EditItemCommand,
     ReorderItemsCommand,
     UpdateProgramCommand,
+    UpdateShareCommand,
 )
 from apps.programs.application.interfaces import CatalogPerformance
 from apps.programs.application.services import ProgramService
@@ -47,6 +48,9 @@ def _act(title: str, seconds: int, *, comment: str | None = None, performer: str
         nomination_id=NOMINATION_ID,
         nomination="Вокал",
         discipline="Эстрадный вокал",
+        age_category="10-12 лет",
+        participant_group="Соло",
+        participation_format="Очно",
         participants=(performer,),
         teachers=("Петрова Мария",),
         organization="Школа №1",
@@ -338,7 +342,7 @@ class TestPublicEditions:
 
 
 class TestPublicRead:
-    def test_a_link_renders_the_selected_lines_with_their_times(self) -> None:
+    def test_a_link_renders_the_default_columns_with_their_times(self) -> None:
         first, second = _act("Катюша", 200, performer="Иванов Иван"), _act("Калинка", 200, performer="Петров Пётр")
         env = Env(first, second)
         program_id = env.program(buffer_seconds=40)
@@ -350,16 +354,16 @@ class TestPublicRead:
         assert public.name == "Для ведущего"
         assert public.competition_title == "Весенний фестиваль"
         assert public.nomination == "Вокал"
-        assert [line.position for line in public.items] == [1, 2]
-        assert [line.title for line in public.items] == ["Катюша", "Калинка"]
-        assert [line.performer for line in public.items] == ["Иванов Иван", "Петров Пётр"]
-        assert [line.starts_at for line in public.items] == [
-            datetime(2026, 8, 1, 10, 0, tzinfo=UTC),
-            datetime(2026, 8, 1, 10, 4, tzinfo=UTC),
+        assert [column.key for column in public.columns] == ["POSITION", "TIME", "PARTICIPANT", "TITLE"]
+        assert [column.label for column in public.columns] == ["№", "Время", "Участник", "Номер"]
+        assert [row.cells for row in public.rows] == [
+            ("1", "10:00", "Иванов Иван", "Катюша"),
+            ("2", "10:04", "Петров Пётр", "Калинка"),
         ]
-        assert program.items[0].schedule.starts_at == public.items[0].starts_at
+        # The organizer's own table says the same time for the same slot.
+        assert program.items[0].schedule.starts_at == datetime(2026, 8, 1, 10, 0, tzinfo=UTC)
 
-    def test_a_partial_edition_renumbers_its_own_lines_but_keeps_real_times(self) -> None:
+    def test_a_partial_edition_renumbers_its_own_rows_but_keeps_real_times(self) -> None:
         env = Env(_act("A", 200), _act("B", 200), _act("C", 200))
         program_id = env.program(buffer_seconds=0)
         program = env.service.fill_from_scope(program_id)
@@ -368,10 +372,10 @@ class TestPublicRead:
         )
         public = env.service.public_program(share.slug)
         assert public is not None
-        assert [line.position for line in public.items] == [1, 2]
+        assert [row.cells[0] for row in public.rows] == ["1", "2"]
         # The times are the program's, not the edition's: the second act still starts
         # when the first one has finished.
-        assert public.items[0].starts_at == datetime(2026, 8, 1, 10, 3, 20, tzinfo=UTC)
+        assert public.rows[0].cells[1] == "10:03"
 
     def test_breaks_appear_on_a_public_screen(self) -> None:
         env = Env(_act("A", 200))
@@ -381,7 +385,109 @@ class TestPublicRead:
         _detail, share = env.service.create_share(CreateShareCommand(program_id=program_id, name="Экран"))
         public = env.service.public_program(share.slug)
         assert public is not None
-        assert [(line.kind, line.title) for line in public.items] == [("PERFORMANCE", "A"), ("BREAK", "Перерыв")]
+        assert [row.kind for row in public.rows] == ["PERFORMANCE", "BREAK"]
+        # A break has no participant, so that cell is blank rather than a placeholder.
+        assert public.rows[1].cells == ("2", "10:03", "", "Перерыв")
+
+    def test_an_edition_shows_exactly_the_columns_it_was_published_with(self) -> None:
+        # The sound engineer's cut: when, what, how long, and the applicant's notes.
+        act = _act("Катюша", 200, comment="Фонограмма начинается не с начала", performer="Иванов Иван")
+        env = Env(act)
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+        _detail, share = env.service.create_share(
+            CreateShareCommand(
+                program_id=program_id,
+                name="Программа звукорежиссёра",
+                columns=("TIME", "TITLE", "DURATION", "COMMENT"),
+            )
+        )
+
+        public = env.service.public_program(share.slug)
+        assert public is not None
+        assert [column.key for column in public.columns] == ["TIME", "TITLE", "DURATION", "COMMENT"]
+        assert public.rows[0].cells == ("10:00", "Катюша", "3:20", "Фонограмма начинается не с начала")
+
+    def test_a_column_left_out_never_reaches_the_response(self) -> None:
+        # The confidentiality property of the whole design: an unpublished column cannot
+        # be read off the wire by whoever holds the link.
+        act = _act("Катюша", 200, comment="Выход с точки 3", performer="Иванов Иван")
+        env = Env(act)
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+        _detail, share = env.service.create_share(CreateShareCommand(program_id=program_id, name="Экран у сцены", columns=("TIME", "TITLE")))
+
+        public = env.service.public_program(share.slug)
+        assert public is not None
+        assert [column.key for column in public.columns] == ["TIME", "TITLE"]
+        flattened = [cell for row in public.rows for cell in row.cells]
+        assert "Выход с точки 3" not in flattened
+        assert "Иванов Иван" not in flattened
+
+    def test_columns_are_published_in_canonical_order_whatever_order_was_sent(self) -> None:
+        env = Env(_act("Катюша", 200))
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+        _detail, share = env.service.create_share(CreateShareCommand(program_id=program_id, name="Жюри", columns=("TEACHERS", "TITLE", "TIME")))
+        public = env.service.public_program(share.slug)
+        assert public is not None
+        assert [column.key for column in public.columns] == ["TIME", "TITLE", "TEACHERS"]
+
+    def test_every_available_column_can_be_published(self) -> None:
+        act = _act("Катюша", 200, comment="Нужен микрофон")
+        env = Env(act)
+        program_id = env.program(buffer_seconds=30)
+        detail = env.service.fill_from_scope(program_id)
+        all_columns = tuple(column.key for column in detail.available_columns)
+        _detail, share = env.service.create_share(CreateShareCommand(program_id=program_id, name="Всё", columns=all_columns))
+
+        public = env.service.public_program(share.slug)
+        assert public is not None
+        assert len(public.columns) == len(all_columns)
+        cells = dict(zip((column.key for column in public.columns), public.rows[0].cells, strict=True))
+        assert cells["POSITION"] == "1"
+        assert cells["TIME"] == "10:00"
+        assert cells["PARTICIPANT"] == "Иванов Иван"
+        assert cells["TITLE"] == "Катюша"
+        assert cells["DURATION"] == "3:20"
+        assert cells["NOMINATION"] == "Вокал"
+        assert cells["DISCIPLINE"] == "Эстрадный вокал"
+        assert cells["PARTICIPANT_GROUP"] == "Соло"
+        assert cells["AGE_CATEGORY"] == "10-12 лет"
+        assert cells["PARTICIPATION_FORMAT"] == "Очно"
+        assert cells["TEACHERS"] == "Петрова Мария"
+        assert cells["ORGANIZATION"] == "Школа №1"
+        assert cells["COMMENT"] == "Нужен микрофон"
+
+    def test_an_unknown_column_is_refused(self) -> None:
+        env = Env(_act("Катюша", 200))
+        with pytest.raises(InvalidProgramDataError):
+            env.service.create_share(CreateShareCommand(program_id=env.program(), name="Нет", columns=("SOMETHING",)))
+
+    def test_the_columns_of_a_published_edition_can_be_changed_without_a_new_link(self) -> None:
+        env = Env(_act("Катюша", 200))
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+        _detail, share = env.service.create_share(CreateShareCommand(program_id=program_id, name="Ведущий", columns=("TIME", "TITLE")))
+
+        _updated_program, updated = env.service.update_share(
+            UpdateShareCommand(program_id=program_id, share_id=share.id, columns=("TIME", "PARTICIPANT", "TITLE"))
+        )
+        assert updated.slug == share.slug
+        assert [column.key for column in updated.columns] == ["TIME", "PARTICIPANT", "TITLE"]
+        public = env.service.public_program(share.slug)
+        assert public is not None
+        assert [column.key for column in public.columns] == ["TIME", "PARTICIPANT", "TITLE"]
+
+    def test_an_edition_can_be_renamed_without_touching_its_columns(self) -> None:
+        env = Env(_act("Катюша", 200))
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+        _detail, share = env.service.create_share(CreateShareCommand(program_id=program_id, name="Черновик", columns=("TIME", "TITLE")))
+
+        _program, updated = env.service.update_share(UpdateShareCommand(program_id=program_id, share_id=share.id, name="Сцена №2"))
+        assert updated.name == "Сцена №2"
+        assert [column.key for column in updated.columns] == ["TIME", "TITLE"]
 
     def test_an_unknown_link_resolves_to_nothing(self) -> None:
         assert Env().service.public_program("NoSuchSlug") is None

@@ -47,6 +47,7 @@ class CatalogPerformance:
     nomination: str | None = None
     discipline: str | None = None
     age_category: str | None = None
+    participant_group: str | None = None
     participation_format: str | None = None
     participants: tuple[str, ...] = ()
     teachers: tuple[str, ...] = ()

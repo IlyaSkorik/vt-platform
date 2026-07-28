@@ -31,6 +31,7 @@ from apps.programs.application.commands import (
     EditItemCommand,
     ReorderItemsCommand,
     UpdateProgramCommand,
+    UpdateShareCommand,
 )
 from apps.programs.application.interfaces import CatalogPerformance
 from apps.programs.composition import build_program_service
@@ -49,6 +50,7 @@ from apps.programs.presentation.api.v1.serializers import (
     ProgramSummarySerializer,
     ReorderItemsRequestSerializer,
     UpdateProgramRequestSerializer,
+    UpdateShareRequestSerializer,
 )
 
 _TAG = "Competition Program"
@@ -73,12 +75,17 @@ _PROBLEM_RESPONSES = {
 }
 
 
+def _columns_json(columns: tuple[dto.ColumnView, ...]) -> list[dict[str, Any]]:
+    return [{"key": column.key, "label": column.label} for column in columns]
+
+
 def _share_json(share: dto.ProgramShareView) -> dict[str, Any]:
     return {
         "id": share.id,
         "name": share.name,
         "slug": share.slug,
         "path": share.path,
+        "columns": _columns_json(share.columns),
         "itemCount": share.item_count,
         "coversWholeProgram": share.covers_whole_program,
         "createdAt": share.created_at,
@@ -105,6 +112,7 @@ def _item_json(item: dto.ProgramItemView) -> dict[str, Any]:
         "nomination": item.nomination,
         "discipline": item.discipline,
         "ageCategory": item.age_category,
+        "participantGroup": item.participant_group,
         "participationFormat": item.participation_format,
         "organization": item.organization,
         "comment": item.comment,
@@ -123,6 +131,7 @@ def _program_json(view: dto.ProgramDetailView) -> dict[str, Any]:
         "startsAt": view.starts_at,
         "items": [_item_json(item) for item in view.items],
         "shares": [_share_json(share) for share in view.shares],
+        "availableColumns": _columns_json(view.available_columns),
         "totalSeconds": view.total_seconds,
         "endsAt": view.ends_at,
         "createdAt": view.created_at,
@@ -156,6 +165,7 @@ def _candidate_json(performance: CatalogPerformance) -> dict[str, Any]:
         "nomination": performance.nomination,
         "discipline": performance.discipline,
         "ageCategory": performance.age_category,
+        "participantGroup": performance.participant_group,
         "participationFormat": performance.participation_format,
         "participants": list(performance.participants),
         "teachers": list(performance.teachers),
@@ -448,6 +458,7 @@ class ProgramShareCollectionView(_StaffView):
         command = CreateShareCommand(
             program_id=program_id,
             name=str(data["name"]),
+            columns=tuple(str(column) for column in data.get("columns") or ()),
             item_ids=tuple(str(item_id) for item_id in data.get("itemIds") or ()),
         )
         try:
@@ -458,7 +469,36 @@ class ProgramShareCollectionView(_StaffView):
 
 
 class ProgramShareDetailView(_StaffView):
-    """``DELETE`` one public edition - its link stops resolving at once."""
+    """``PATCH`` one public edition's name or columns; ``DELETE`` to revoke it."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="programsUpdateShare",
+        request=UpdateShareRequestSerializer,
+        responses={200: ProgramShareResourceSerializer, **_PROBLEM_RESPONSES},
+    )
+    def patch(self, request: Request, program_id: str, share_id: str) -> Response:
+        serializer = UpdateShareRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return problems.validation_problem(serializer.errors, instance=request.get_full_path(), request=request)
+        data = serializer.validated_data
+        if not data:
+            return problems.validation_problem(
+                {"non_field_errors": ["Send a name, a set of columns, or both."]},
+                instance=request.get_full_path(),
+                request=request,
+            )
+        command = UpdateShareCommand(
+            program_id=program_id,
+            share_id=share_id,
+            name=str(data["name"]) if "name" in data else None,
+            columns=tuple(str(column) for column in data["columns"]) if "columns" in data else None,
+        )
+        try:
+            program, share = build_program_service().update_share(command)
+        except ProgramError as exc:
+            return self._problem(exc, request)
+        return problems.envelope(request, {"share": _share_json(share), "program": _program_json(program)})
 
     @extend_schema(tags=[_TAG], operation_id="programsRemoveShare", responses={200: ProgramDetailSerializer, **_PROBLEM_RESPONSES})
     def delete(self, request: Request, program_id: str, share_id: str) -> Response:

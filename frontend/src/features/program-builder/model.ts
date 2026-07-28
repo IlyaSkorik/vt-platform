@@ -1,9 +1,12 @@
 /**
  * Programme constructor domain types (organizer side).
  *
- * A programme is a first-class list of items, not a view over the accepted acts: the
- * backend owns the order and recomputes the timetable on every write, so these types
+ * A programme is a **table**: one row per item, and a fixed set of columns it can carry.
+ * The backend owns the order and recomputes the timetable on every write, so these types
  * mirror that shape exactly and the client never recalculates a start time itself.
+ *
+ * Columns are also the unit a public link is cut along — publishing an edition means
+ * choosing which of them its reader sees.
  */
 
 /** What a slot is. Only the first two are creatable from the UI today. */
@@ -14,6 +17,28 @@ export type ProgramItemKind =
   | "AWARD"
   | "MASTER_CLASS"
   | "TECHNICAL";
+
+/** A column of the programme table. Mirrors the backend's `ProgramColumn`. */
+export type ProgramColumnKey =
+  | "POSITION"
+  | "TIME"
+  | "PARTICIPANT"
+  | "TITLE"
+  | "DURATION"
+  | "NOMINATION"
+  | "DISCIPLINE"
+  | "PARTICIPANT_GROUP"
+  | "AGE_CATEGORY"
+  | "PARTICIPATION_FORMAT"
+  | "TEACHERS"
+  | "ORGANIZATION"
+  | "COMMENT";
+
+/** One column: its stable key and the header the backend prints it under. */
+export interface ProgramColumn {
+  key: ProgramColumnKey;
+  label: string;
+}
 
 /** Where one item sits on the timeline (computed by the backend). */
 export interface SchedulePosition {
@@ -39,6 +64,7 @@ export interface ProgramItem {
   nomination: string | null;
   discipline: string | null;
   ageCategory: string | null;
+  participantGroup: string | null;
   participationFormat: string | null;
   organization: string | null;
   /** The applicant's note for the organizers about this act. */
@@ -47,14 +73,16 @@ export interface ProgramItem {
   missingPerformance: boolean;
 }
 
-/** A named public edition of the programme and the path its link points at. */
+/** A named public edition: the columns it shows, and the path its link points at. */
 export interface ProgramShare {
   id: string;
   name: string;
   slug: string;
   path: string;
+  /** The columns this link publishes — what the edition is for. */
+  columns: ProgramColumn[];
   itemCount: number;
-  /** An edition with no fixed selection keeps following the whole programme. */
+  /** An edition with no fixed row selection keeps following the whole programme. */
   coversWholeProgram: boolean;
   createdAt: string | null;
 }
@@ -69,6 +97,8 @@ export interface Program {
   startsAt: string | null;
   items: ProgramItem[];
   shares: ProgramShare[];
+  /** Every column the table can carry — the header, and what a link may be cut to. */
+  availableColumns: ProgramColumn[];
   totalSeconds: number;
   endsAt: string | null;
   createdAt: string;
@@ -100,6 +130,7 @@ export interface ProgramCandidate {
   nomination: string | null;
   discipline: string | null;
   ageCategory: string | null;
+  participantGroup: string | null;
   participationFormat: string | null;
   participants: string[];
   teachers: string[];
@@ -128,8 +159,69 @@ export interface AddBlockInput {
   position?: number;
 }
 
+export interface CreateShareInput {
+  name: string;
+  /** The columns this link publishes. Empty falls back to the backend's defaults. */
+  columns?: ProgramColumnKey[];
+  /** Optionally narrow the rows too. Empty publishes every row, now and later. */
+  itemIds?: string[];
+}
+
 /** The buffer presets the constructor offers (seconds). */
 export const BUFFER_PRESETS = [0, 30, 45, 60, 90, 120] as const;
+
+/** What a public link shows when the organizer has not chosen otherwise. */
+export const DEFAULT_SHARE_COLUMNS: ProgramColumnKey[] = [
+  "POSITION",
+  "TIME",
+  "PARTICIPANT",
+  "TITLE",
+];
+
+/**
+ * One cell of the organizer's table.
+ *
+ * The same mapping the backend applies when it renders a published edition, so the
+ * constructor and every public link show identical text for identical data. A block has
+ * no participant or age category and gets a blank rather than a placeholder that would
+ * read like missing data.
+ */
+export function itemCell(
+  item: ProgramItem,
+  column: ProgramColumnKey,
+  format: { clock: (iso: string | null) => string; duration: (seconds: number) => string },
+): string {
+  switch (column) {
+    case "POSITION":
+      return String(item.schedule.position);
+    case "TIME":
+      return format.clock(item.schedule.startsAt);
+    case "PARTICIPANT":
+      return item.leadParticipant ?? "";
+    case "TITLE":
+      return item.title;
+    case "DURATION":
+      return format.duration(item.durationSeconds);
+    case "NOMINATION":
+      return item.nomination ?? "";
+    case "DISCIPLINE":
+      return item.discipline ?? "";
+    case "PARTICIPANT_GROUP":
+      return item.participantGroup ?? "";
+    case "AGE_CATEGORY":
+      return item.ageCategory ?? "";
+    case "PARTICIPATION_FORMAT":
+      return item.participationFormat ?? "";
+    case "TEACHERS":
+      return item.teachers.join(", ");
+    case "ORGANIZATION":
+      return item.organization ?? "";
+    case "COMMENT":
+      return item.comment ?? "";
+    default:
+      return "";
+  }
+}
 
 /** Human label for a slot kind. */
 export const ITEM_KIND_LABELS: Record<ProgramItemKind, string> = {

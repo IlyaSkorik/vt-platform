@@ -1,33 +1,19 @@
 import { useParams } from "react-router";
 
-import { type PublicProgramItem, usePublicProgram } from "@/features/public-program";
+import { type PublicProgramRow, usePublicProgram } from "@/features/public-program";
 import { APP_NAME } from "@/shared/config";
-import { formatClock, formatDuration, formatSpan } from "@/shared/lib";
-import { Alert, Badge, EmptyState, LoadingState } from "@/shared/ui";
+import { formatClock, formatSpan } from "@/shared/lib";
+import { EmptyState, LoadingState } from "@/shared/ui";
 
 /**
- * What a non-performance block is called on a public screen.
- *
- * Deliberately its own map rather than the constructor's: audience-facing wording is
- * free to differ from the organizer's vocabulary, and a public page has no business
- * depending on the organizer feature.
- */
-const PUBLIC_KIND_LABELS: Record<string, string> = {
-  BREAK: "Перерыв",
-  OPENING: "Открытие",
-  AWARD: "Награждение",
-  MASTER_CLASS: "Мастер-класс",
-  TECHNICAL: "Технический блок",
-};
-
-/**
- * `/program/:slug` — a published programme, as handed to a sound engineer, a host,
- * the jury, or a display beside the stage.
+ * `/program/:slug` — a published programme, as handed to a sound engineer, a host, the
+ * jury, or a display beside the stage.
  *
  * Unauthenticated by design: the slug in the URL is the only input and the only
- * credential. The layout is deliberately full-bleed and large-type — one of its jobs
- * is to be legible on a screen several metres away — and the time column is the
- * anchor, because "when does my number start" is the one question every reader has.
+ * credential. The page renders whatever columns the organizer published — it does not
+ * know or care which ones those are, which is exactly why an unpublished column cannot
+ * appear here. Type is sized to be read from several metres away, and the table scrolls
+ * inside itself so the page never scrolls sideways on a phone.
  */
 export function PublicProgramPage(): React.JSX.Element {
   const { slug } = useParams();
@@ -58,7 +44,7 @@ export function PublicProgramPage(): React.JSX.Element {
 
   return (
     <div className="min-h-svh bg-background">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 md:py-12">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 md:py-12">
         <header className="space-y-2">
           {heading ? (
             <p className="font-medium text-muted-foreground text-xs uppercase tracking-[0.18em]">
@@ -69,24 +55,49 @@ export function PublicProgramPage(): React.JSX.Element {
             {program.name}
           </h1>
           <p className="text-muted-foreground text-sm">
-            {program.items.length > 0
-              ? `Пунктов: ${program.items.length} · Продолжительность: ${formatSpan(program.totalSeconds)}`
+            {program.rows.length > 0
+              ? `Пунктов: ${program.rows.length} · Продолжительность: ${formatSpan(program.totalSeconds)}`
               : "Пока ни один пункт не опубликован"}
             {program.startsAt ? ` · Начало: ${formatClock(program.startsAt)}` : ""}
           </p>
         </header>
 
-        {program.items.length === 0 ? (
+        {program.rows.length === 0 ? (
           <EmptyState
             title="Программа пуста"
             description="Организатор ещё не добавил пункты в эту программу."
           />
         ) : (
-          <ol className="flex flex-col gap-2">
-            {program.items.map((item) => (
-              <ProgramLine key={`${item.position}-${item.title}`} item={item} />
-            ))}
-          </ol>
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full border-collapse text-left">
+              <caption className="sr-only">{program.name}</caption>
+              <thead>
+                <tr className="border-border border-b bg-muted/50">
+                  {program.columns.map((column) => (
+                    <th
+                      key={column.key}
+                      scope="col"
+                      className="whitespace-nowrap px-3 py-2.5 font-medium text-muted-foreground text-xs uppercase tracking-wide"
+                    >
+                      {column.label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {program.rows.map((row) => (
+                  <ProgramTableRow
+                    // A public row carries no id by design, so its own published content
+                    // is its identity. Safe here: the table is read-only and its rows
+                    // never move, so nothing depends on the key surviving a reorder.
+                    key={`${row.kind}${row.cells.join("")}`}
+                    row={row}
+                    columns={program.columns.map((column) => column.key)}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
         <footer className="pt-4 text-center text-muted-foreground text-xs">
@@ -97,49 +108,39 @@ export function PublicProgramPage(): React.JSX.Element {
   );
 }
 
-function ProgramLine({ item }: { item: PublicProgramItem }): React.JSX.Element {
-  const isPerformance = item.kind === "PERFORMANCE";
+function ProgramTableRow({
+  row,
+  columns,
+}: {
+  row: PublicProgramRow;
+  columns: string[];
+}): React.JSX.Element {
+  const isPerformance = row.kind === "PERFORMANCE";
   return (
-    <li
+    <tr
       className={
         isPerformance
-          ? "flex flex-col gap-2 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-baseline sm:gap-5"
-          : "flex flex-col gap-2 rounded-lg border border-border border-dashed bg-muted/40 p-4 sm:flex-row sm:items-baseline sm:gap-5"
+          ? "border-border border-b last:border-0"
+          : "border-border border-b bg-muted/40 last:border-0"
       }
     >
-      <div className="flex shrink-0 items-baseline gap-3 sm:w-32">
-        <span className="font-semibold text-foreground text-xl tabular-nums sm:text-2xl">
-          {formatClock(item.startsAt)}
-        </span>
-        <span className="text-muted-foreground text-xs tabular-nums">{item.position}</span>
-      </div>
-
-      <div className="min-w-0 flex-1 space-y-1">
-        <div className="flex flex-wrap items-baseline gap-2">
-          <p className="font-medium text-foreground text-lg">{item.title}</p>
-          {isPerformance ? null : (
-            <Badge variant="secondary">{PUBLIC_KIND_LABELS[item.kind] ?? "Блок"}</Badge>
-          )}
-        </div>
-        {item.performer ? (
-          <p className="text-muted-foreground text-sm">
-            {item.performer}
-            {item.organization ? ` · ${item.organization}` : ""}
-          </p>
-        ) : null}
-        {item.teachers.length > 0 ? (
-          <p className="text-muted-foreground text-xs">Педагоги: {item.teachers.join(", ")}</p>
-        ) : null}
-        {item.note ? (
-          <Alert variant="info" className="mt-2">
-            {item.note}
-          </Alert>
-        ) : null}
-      </div>
-
-      <span className="shrink-0 text-muted-foreground text-sm tabular-nums">
-        {formatDuration(item.durationSeconds)}
-      </span>
-    </li>
+      {row.cells.map((cell, index) => {
+        const column = columns[index];
+        const emphasise = column === "TIME" || (column === "TITLE" && !isPerformance);
+        return (
+          <td
+            // Cells are positional against `columns`, so the column key identifies them.
+            key={column ?? String(index)}
+            className={
+              emphasise
+                ? "whitespace-nowrap px-3 py-3 font-semibold text-base tabular-nums"
+                : "px-3 py-3 text-sm"
+            }
+          >
+            {cell || <span className="text-muted-foreground">—</span>}
+          </td>
+        );
+      })}
+    </tr>
   );
 }

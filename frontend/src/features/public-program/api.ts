@@ -9,21 +9,25 @@ import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 
 import { type ApiError, apiClient, toApiError } from "@/shared/api";
 
-/** One line of a public programme. */
-export interface PublicProgramItem {
-  position: number;
-  kind: string;
-  title: string;
-  performer: string | null;
-  teachers: string[];
-  organization: string | null;
-  durationSeconds: number;
-  startsAt: string | null;
-  /** The applicant's note about the act — what the engineer and the host need. */
-  note: string | null;
+/** One published column: its stable key and the header it is printed under. */
+export interface PublicProgramColumn {
+  key: string;
+  label: string;
 }
 
-/** What a public link resolves to. */
+/**
+ * One row of the table. ``cells`` is aligned with the programme's ``columns``.
+ *
+ * There is no field-by-field shape here on purpose: the backend renders only the
+ * published columns into cells, so a column the organizer left out does not exist in
+ * this payload at all.
+ */
+export interface PublicProgramRow {
+  kind: string;
+  cells: string[];
+}
+
+/** What a public link resolves to: a table cut to the columns the organizer chose. */
 export interface PublicProgram {
   name: string;
   slug: string;
@@ -31,7 +35,8 @@ export interface PublicProgram {
   nomination: string | null;
   startsAt: string | null;
   totalSeconds: number;
-  items: PublicProgramItem[];
+  columns: PublicProgramColumn[];
+  rows: PublicProgramRow[];
 }
 
 export const publicProgramKeys = {

@@ -2,7 +2,8 @@
 export {
   fetchPublicProgram,
   type PublicProgram,
-  type PublicProgramItem,
+  type PublicProgramColumn,
+  type PublicProgramRow,
   publicProgramKeys,
   usePublicProgram,
 } from "./api";

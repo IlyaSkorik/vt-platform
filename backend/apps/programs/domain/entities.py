@@ -38,8 +38,10 @@ from .exceptions import (
     ReorderMismatchError,
 )
 from .value_objects import (
+    DEFAULT_PUBLIC_COLUMNS,
     ItemDuration,
     ItemTitle,
+    ProgramColumn,
     ProgramItemKind,
     ProgramName,
     PublicSlug,
@@ -130,19 +132,25 @@ class ProgramItem:
 class ProgramShare:
     """A named public edition of the program, reachable by its own slug.
 
-    ``item_ids`` is a *selection over* the program, not a copy of it: the items are
-    always rendered in the program's current order, and an item removed from the
-    program simply stops appearing here.
+    An edition is defined by **which columns of the table it shows**: the sound engineer
+    needs the time, the act and its notes; the screen beside the stage needs the time,
+    the participant and the act. That is the selection an organizer makes when
+    publishing, and :attr:`columns` is it. An empty selection falls back to
+    :data:`DEFAULT_PUBLIC_COLUMNS` rather than showing everything, because a public link
+    must never expose a column by accident.
 
-    An **empty selection means the whole program** - and keeps meaning that as the
-    program grows. This is what the screen by the stage wants ("полностью вся
-    программа"), and it is the difference between a link that stays right and one
-    that silently freezes on the day it was created.
+    ``item_ids`` optionally narrows the *rows* as well ("пункты 25-40"), and is a
+    selection over the program rather than a copy of it: rows are always rendered in the
+    program's current order, and an item removed from the program simply stops appearing.
+    An **empty row selection means the whole program** - and keeps meaning that as the
+    program grows, which is the difference between a link that stays right and one that
+    silently freezes on the day it was created.
     """
 
     _id: uuid.UUID
     _name: ShareName
     _slug: PublicSlug
+    _columns: tuple[ProgramColumn, ...] = ()
     _item_ids: tuple[uuid.UUID, ...] = ()
     _created_at: datetime | None = None
 
@@ -163,17 +171,30 @@ class ProgramShare:
         return self._item_ids
 
     @property
+    def columns(self) -> tuple[ProgramColumn, ...]:
+        """The columns this edition shows, in canonical order.
+
+        Never empty: an edition published without a choice shows the default columns, so
+        there is no state in which "no columns were chosen" has to be handled downstream.
+        """
+        return self._columns or DEFAULT_PUBLIC_COLUMNS
+
+    @property
     def created_at(self) -> datetime | None:
         return self._created_at
 
     @property
     def covers_whole_program(self) -> bool:
-        """Whether this share follows the entire program rather than a fixed subset."""
+        """Whether this share follows every row rather than a fixed set of them."""
         return not self._item_ids
 
     def rename(self, name: ShareName) -> None:
         """Rename the public edition (its slug, and therefore its link, is permanent)."""
         self._name = name
+
+    def show_columns(self, columns: Sequence[ProgramColumn]) -> None:
+        """Replace the set of columns this edition publishes."""
+        self._columns = tuple(column for column in ProgramColumn if column in set(columns))
 
     def selects(self, item_id: uuid.UUID) -> bool:
         """Whether ``item_id`` is part of this edition."""
@@ -469,20 +490,31 @@ class Program:
         name: ShareName,
         slug: PublicSlug,
         now: datetime,
+        columns: Sequence[ProgramColumn] = (),
         item_ids: Iterable[uuid.UUID] = (),
     ) -> ProgramShare:
         """Publish a named edition of this program behind its own slug.
 
-        Pass no ids for "the whole program, kept current"; pass a selection for a
-        fixed cut of it. Every id must belong to this program - a share cannot point
-        at a slot the organizer never made.
+        ``columns`` is what the edition is *for*: the columns of the table its reader
+        sees. Passing none falls back to the default columns.
+
+        ``item_ids`` optionally narrows the rows; pass none for "the whole program, kept
+        current". Every id must belong to this program - an edition cannot point at a
+        slot the organizer never made.
         """
         selection = tuple(dict.fromkeys(item_ids))
         known = {item.id for item in self._items}
         unknown = [str(item_id) for item_id in selection if item_id not in known]
         if unknown:
             raise ItemNotInProgramError(f"Items {', '.join(unknown)} are not part of this program.")
-        share = ProgramShare(_id=share_id, _name=name, _slug=slug, _item_ids=selection, _created_at=now)
+        share = ProgramShare(
+            _id=share_id,
+            _name=name,
+            _slug=slug,
+            _columns=tuple(column for column in ProgramColumn if column in set(columns)),
+            _item_ids=selection,
+            _created_at=now,
+        )
         self._shares.append(share)
         self._touch(now)
         return share
@@ -490,6 +522,13 @@ class Program:
     def rename_share(self, share_id: uuid.UUID, name: ShareName, *, now: datetime) -> ProgramShare:
         share = self.share(share_id)
         share.rename(name)
+        self._touch(now)
+        return share
+
+    def set_share_columns(self, share_id: uuid.UUID, columns: Sequence[ProgramColumn], *, now: datetime) -> ProgramShare:
+        """Change which columns a published edition shows, keeping its link."""
+        share = self.share(share_id)
+        share.show_columns(columns)
         self._touch(now)
         return share
 

@@ -18,8 +18,10 @@ import { type ApiError, apiClient, toApiError } from "@/shared/api";
 import type {
   AddBlockInput,
   CreateProgramInput,
+  CreateShareInput,
   Program,
   ProgramCandidate,
+  ProgramColumnKey,
   ProgramShare,
   ProgramSummary,
   UpdateProgramInput,
@@ -228,12 +230,17 @@ export function useReorderItems(programId: string): UseMutationResult<Program, A
   );
 }
 
-/** Publish a named edition; an empty selection publishes the whole programme. */
+/**
+ * Publish a named edition of the programme.
+ *
+ * ``columns`` is the selection that defines it — which columns of the table its reader
+ * sees. An empty row selection publishes every row, now and as the programme grows.
+ */
 export function useCreateShare(
   programId: string,
-): UseMutationResult<ProgramShare, ApiError, { name: string; itemIds?: string[] }> {
+): UseMutationResult<ProgramShare, ApiError, CreateShareInput> {
   const queryClient = useQueryClient();
-  return useMutation<ProgramShare, ApiError, { name: string; itemIds?: string[] }>({
+  return useMutation<ProgramShare, ApiError, CreateShareInput>({
     mutationFn: async (input) => {
       const body = await request<Envelope<{ share: ProgramShare; program: Program }>>(
         `staff/programs/${programId}/shares`,
@@ -244,6 +251,31 @@ export function useCreateShare(
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [...programKeys.all, "list"] });
+    },
+  });
+}
+
+/** Change which columns a live link shows (or rename it) — its slug is permanent. */
+export function useUpdateShare(
+  programId: string,
+): UseMutationResult<
+  ProgramShare,
+  ApiError,
+  { shareId: string; name?: string; columns?: ProgramColumnKey[] }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    ProgramShare,
+    ApiError,
+    { shareId: string; name?: string; columns?: ProgramColumnKey[] }
+  >({
+    mutationFn: async ({ shareId, ...body }) => {
+      const response = await request<Envelope<{ share: ProgramShare; program: Program }>>(
+        `staff/programs/${programId}/shares/${shareId}`,
+        { method: "patch", json: body },
+      );
+      queryClient.setQueryData(programKeys.detail(programId), response.data.program);
+      return response.data.share;
     },
   });
 }

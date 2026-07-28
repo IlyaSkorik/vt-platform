@@ -1,6 +1,92 @@
 import { describe, expect, it } from "vitest";
 
-import { moveItem } from "./model";
+import { formatClock, formatDuration } from "@/shared/lib";
+
+import { itemCell, moveItem, type ProgramItem } from "./model";
+
+const FORMAT = { clock: formatClock, duration: formatDuration };
+
+function anItem(overrides: Partial<ProgramItem> = {}): ProgramItem {
+  return {
+    id: "item-1",
+    kind: "PERFORMANCE",
+    title: "Катюша",
+    durationSeconds: 200,
+    schedule: {
+      position: 3,
+      offsetSeconds: 400,
+      slotSeconds: 230,
+      startsAt: null,
+      endsAt: null,
+    },
+    submissionId: "sub-1",
+    leadParticipant: "Иванов Иван",
+    participants: ["Иванов Иван"],
+    teachers: ["Петрова Мария", "Сидорова Анна"],
+    nomination: "Вокал",
+    discipline: "Эстрадный вокал",
+    ageCategory: "10-12 лет",
+    participantGroup: "Соло",
+    participationFormat: "Очно",
+    organization: "Школа №1",
+    comment: "Выход с точки 3",
+    missingPerformance: false,
+    ...overrides,
+  };
+}
+
+/**
+ * `itemCell` mirrors the backend's cell renderer. If the two disagree, the organizer's
+ * table and a published link show different text for the same data.
+ */
+describe("itemCell", () => {
+  it("renders every column of a performance row", () => {
+    const item = anItem();
+    expect(itemCell(item, "POSITION", FORMAT)).toBe("3");
+    expect(itemCell(item, "PARTICIPANT", FORMAT)).toBe("Иванов Иван");
+    expect(itemCell(item, "TITLE", FORMAT)).toBe("Катюша");
+    expect(itemCell(item, "DURATION", FORMAT)).toBe("3:20");
+    expect(itemCell(item, "NOMINATION", FORMAT)).toBe("Вокал");
+    expect(itemCell(item, "DISCIPLINE", FORMAT)).toBe("Эстрадный вокал");
+    expect(itemCell(item, "PARTICIPANT_GROUP", FORMAT)).toBe("Соло");
+    expect(itemCell(item, "AGE_CATEGORY", FORMAT)).toBe("10-12 лет");
+    expect(itemCell(item, "PARTICIPATION_FORMAT", FORMAT)).toBe("Очно");
+    expect(itemCell(item, "ORGANIZATION", FORMAT)).toBe("Школа №1");
+    expect(itemCell(item, "COMMENT", FORMAT)).toBe("Выход с точки 3");
+  });
+
+  it("joins several teachers into one cell", () => {
+    expect(itemCell(anItem(), "TEACHERS", FORMAT)).toBe("Петрова Мария, Сидорова Анна");
+  });
+
+  it("leaves a block's absent columns blank rather than filling in a placeholder", () => {
+    const pause = anItem({
+      kind: "BREAK",
+      title: "Перерыв",
+      submissionId: null,
+      leadParticipant: null,
+      participants: [],
+      teachers: [],
+      nomination: null,
+      discipline: null,
+      ageCategory: null,
+      participantGroup: null,
+      participationFormat: null,
+      organization: null,
+      comment: null,
+    });
+    expect(itemCell(pause, "PARTICIPANT", FORMAT)).toBe("");
+    expect(itemCell(pause, "AGE_CATEGORY", FORMAT)).toBe("");
+    expect(itemCell(pause, "TEACHERS", FORMAT)).toBe("");
+    // A block still has a title and a length — that is what makes it schedulable.
+    expect(itemCell(pause, "TITLE", FORMAT)).toBe("Перерыв");
+    expect(itemCell(pause, "DURATION", FORMAT)).toBe("3:20");
+  });
+
+  it("renders an untimed programme's time cell as a dash", () => {
+    expect(itemCell(anItem(), "TIME", FORMAT)).toBe("—");
+  });
+});
 
 /**
  * `moveItem` is the only place the running order is rearranged client-side: the reorder
