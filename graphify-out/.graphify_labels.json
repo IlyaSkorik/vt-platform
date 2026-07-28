@@ -972,5 +972,9 @@
   "970": ".is_open_ended",
   "971": ".full_name",
   "972": ".is_approved",
-  "973": "@storybook/react-vite"
+  "973": "@storybook/react-vite",
+  "974": "PublicFestivalRegulationSerializer",
+  "975": "RegistrationDeadlinesSerializer",
+  "976": "0002_programsharemodel_columns.py",
+  "977": "useUpdateGeneralInformationMutation"
 }

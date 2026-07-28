@@ -4910,8 +4910,8 @@
     "semantic_hash": "b6a8867840fecbca73857b85d2c87687"
   },
   "frontend/src/shared/lib/index.ts": {
-    "mtime": 1785059418.533211,
-    "ast_hash": "449f4430b3ed4653d1282a3e1ef766e7",
+    "mtime": 1785232342.0205386,
+    "ast_hash": "b736628d0c6346ad8223b3ad0b817341",
     "semantic_hash": ""
   },
   "frontend/src/shared/lib/uuid.test.ts": {
@@ -8330,8 +8330,8 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/program/index.tsx": {
-    "mtime": 1785231930.682301,
-    "ast_hash": "fbec1451bb71f22a4db4fcbacc9a3fc4",
+    "mtime": 1785232342.0205386,
+    "ast_hash": "9a50b2a248cd574e7f1a1feda6a249f6",
     "semantic_hash": ""
   },
   "frontend/src/features/program-builder/api.ts": {
@@ -8340,13 +8340,13 @@
     "semantic_hash": ""
   },
   "frontend/src/features/program-builder/index.ts": {
-    "mtime": 1785231919.0869207,
-    "ast_hash": "172d9d4bec1430525ea5e83a36149625",
+    "mtime": 1785232342.0205386,
+    "ast_hash": "af98a1cb72133c3a1e570ef95b2b6324",
     "semantic_hash": ""
   },
   "frontend/src/features/program-builder/model.ts": {
-    "mtime": 1785231919.0869207,
-    "ast_hash": "887b35d1c448b8bbaef0217cb748a83d",
+    "mtime": 1785232342.0205386,
+    "ast_hash": "206734f800c8dabef9db6569f4706c07",
     "semantic_hash": ""
   },
   "frontend/src/features/public-program/api.ts": {
@@ -8360,8 +8360,23 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/program/index.tsx": {
-    "mtime": 1785231930.6713011,
-    "ast_hash": "55cff9d5c449d0f67d61bac95c82937f",
+    "mtime": 1785232342.0205386,
+    "ast_hash": "6e9e63b17c4a8d65cde85ab0dbb3c7be",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/program-builder/model.test.ts": {
+    "mtime": 1785232342.0205386,
+    "ast_hash": "6d2a0577e775acad59c869dbea188835",
+    "semantic_hash": ""
+  },
+  "frontend/src/shared/lib/duration.test.ts": {
+    "mtime": 1785232342.0205386,
+    "ast_hash": "7e77ce126ebf6a8ba354fd94a448d068",
+    "semantic_hash": ""
+  },
+  "frontend/src/shared/lib/duration.ts": {
+    "mtime": 1785232342.0205386,
+    "ast_hash": "9426c185ab9c010fbd4f29a937fcb374",
     "semantic_hash": ""
   }
 }
