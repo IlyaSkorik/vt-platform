@@ -1,0 +1,53 @@
+/**
+ * Public API of the `jury-protocols` feature — the jury's results and their publication.
+ */
+export {
+  fetchProtocol,
+  fetchProtocolCandidates,
+  fetchProtocols,
+  protocolKeys,
+  useAddProtocolRow,
+  useAwardProtocolRows,
+  useClearProtocolAwards,
+  useCreateProtocol,
+  useDeleteProtocol,
+  useProtocol,
+  useProtocolCandidates,
+  useProtocols,
+  usePublishProtocol,
+  useRemoveProtocolRow,
+  useRenumberProtocolRows,
+  useReorderProtocolRows,
+  useSyncProtocolRows,
+  useUnpublishProtocol,
+  useUpdateProtocol,
+} from "./api";
+export {
+  type AwardEntry,
+  type AwardKind,
+  type AwardOption,
+  type CreateProtocolInput,
+  canPublish,
+  DEFAULT_PUBLIC_COLUMNS,
+  moveRow,
+  PROTOCOL_STATUS_LABELS,
+  type Protocol,
+  type ProtocolCandidate,
+  type ProtocolColumn,
+  type ProtocolColumnKey,
+  type ProtocolRow,
+  type ProtocolStatus,
+  type ProtocolSummary,
+  type PublicationResult,
+  type PublishProtocolInput,
+  rowCell,
+  type UpdateProtocolInput,
+  undecidedCount,
+} from "./model";
+export {
+  DEFAULT_JURY_SECTION,
+  findJurySection,
+  JURY_SECTIONS,
+  type JurySection,
+  type JurySectionId,
+} from "./sections";
