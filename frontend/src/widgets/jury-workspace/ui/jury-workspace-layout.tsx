@@ -24,7 +24,12 @@ export function JuryWorkspaceLayout({
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <JuryWorkspaceSidebar activeSection={activeSection} onSectionChange={onSectionChange} />
         <section
-          className="scrollbar-custom min-w-0 flex-1 overflow-y-auto p-4 md:p-6"
+          // `overflow-x-hidden` is not decoration: `overflow-y-auto` on its own coerces
+          // `overflow-x` from `visible` to `auto`, which made this section scroll sideways
+          // whenever its content was wider than it — dragging the protocol's heading, its
+          // banner and its toolbar along with the table. Sideways scrolling belongs to the
+          // table's own wrapper, which has it, and to nothing above that.
+          className="scrollbar-custom min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6"
           aria-label="Содержимое раздела жюри"
         >
           {children}

@@ -217,7 +217,10 @@ export function ProtocolEditor({ protocol }: ProtocolEditorProps): React.JSX.Ele
         </p>
       ) : (
         <div className="scrollbar-custom overflow-x-auto rounded-lg border border-border">
-          <table className="w-full min-w-[52rem] border-collapse text-sm">
+          {/* The floor is what the fixed columns actually need — 3.5rem for the number, 17rem
+              for the award dropdown, 7rem for the actions — plus room for two names. Wider
+              than that and the table asked for a sideways scroll it did not need. */}
+          <table className="w-full min-w-[44rem] border-collapse text-sm">
             <thead>
               <tr className="border-border border-b bg-muted/40 text-left">
                 <th scope="col" className="w-14 px-3 py-2 font-medium">

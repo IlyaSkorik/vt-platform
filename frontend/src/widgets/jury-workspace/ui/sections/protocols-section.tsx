@@ -125,7 +125,7 @@ export function ProtocolsSection(): React.JSX.Element {
           description="Добавьте номинации в разделе «Номинации и дисциплины» фестиваля — протокол ведётся по номинации."
         />
       ) : (
-        <div className="flex min-h-0 flex-col gap-4 lg:flex-row">
+        <div className="flex min-h-0 min-w-0 flex-col gap-4 lg:flex-row">
           <nav aria-label="Номинации" className="w-full shrink-0 lg:w-72">
             <ul className="flex flex-col gap-1">
               {nominations.map((nomination) => {
