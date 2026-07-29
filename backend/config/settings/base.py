@@ -174,6 +174,15 @@ STATICFILES_DIRS: list[Path] = []
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+#: Where a host keeps local copies of uploaded diploma fonts.
+#:
+#: reportlab embeds a font by opening a file, so a font in object storage has to be on the
+#: local disk before it can be drawn. Left empty the cache lands in the system temp directory,
+#: which is right for a single host; a container deployment should point this at a volume its
+#: workers share, so a font is fetched from the bucket once per host rather than once per
+#: container lifetime. It holds nothing that cannot be re-downloaded.
+DIPLOMA_FONT_CACHE_DIR = settings.diploma_font_cache_dir
+
 #: Annotated because the S3 entry below carries nested ``OPTIONS``, which a literal of
 #: plain strings would otherwise fix the type of.
 STORAGES: dict[str, dict[str, Any]] = {

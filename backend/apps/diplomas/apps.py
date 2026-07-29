@@ -33,7 +33,14 @@ class DiplomasConfig(AppConfig):
         # imported inside the registry: that module is loaded by the renderer, including in a
         # Celery worker, and a direct import of the repository would put a database
         # dependency inside the one component that must work with nothing else wired up.
-        from apps.diplomas.infrastructure.fonts import DjangoFontFaceRepository
+        from apps.diplomas.infrastructure.fonts import DjangoFontFaceRepository, FontFileCache
         from apps.diplomas.infrastructure.pdf.fonts import set_uploaded_face_source
 
-        set_uploaded_face_source(DjangoFontFaceRepository().faces)
+        # `materialize` is what makes an uploaded font work on object storage: reportlab embeds
+        # a font by opening a file, and in production the file is in S3. It is called for the
+        # one face a render draws, not for the whole library.
+        cache = FontFileCache()
+        set_uploaded_face_source(
+            DjangoFontFaceRepository().faces,
+            materialize=lambda face: cache.local_path(reference=face.reference, name=face.registered_name),
+        )

@@ -192,6 +192,11 @@ class Settings(BaseSettings):
     s3_custom_domain: str = Field(default="", alias="S3_CUSTOM_DOMAIN")
     #: Optional key prefix, so one bucket can carry several environments.
     s3_location: str = Field(default="", alias="S3_LOCATION")
+    #: Where a host keeps local copies of uploaded diploma fonts. reportlab embeds a font by
+    #: opening a file, so a font in the bucket has to be on local disk before it can be drawn.
+    #: Empty means the system temp directory, which is right for a single host; point it at a
+    #: shared volume so a container fleet fetches each font once rather than once per container.
+    diploma_font_cache_dir: str = Field(default="", alias="DIPLOMA_FONT_CACHE_DIR")
 
     # --- Redis / Celery (ARCH-001 §6.1, §7.5) ---
     redis_url: RedisDsn = Field(

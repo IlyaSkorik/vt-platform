@@ -23,13 +23,19 @@ that reason, and an upload is inspected rather than trusted.
 The uploaded index is cached per process with a short TTL. Renders happen in Celery workers
 as well as in web processes, so a worker that cached its index before an upload has to pick
 the new face up on its own — invalidating the caller's cache cannot reach it.
+
+An uploaded face's reference is a **storage** reference, not a path: in production the files
+live in S3. It is turned into a local file by the injected ``materialize`` callable, and only
+for the one face a render actually draws — resolving the whole index would download a font
+library to embed one font.
 """
 
 from __future__ import annotations
 
+import logging
 import threading
 import time
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from pathlib import Path
 
 from reportlab.pdfbase import pdfmetrics
@@ -52,6 +58,8 @@ __all__ = [
     "resolve_font",
     "set_uploaded_face_source",
 ]
+
+logger = logging.getLogger(__name__)
 
 BUNDLED_FONTS_DIR = Path(__file__).parent / "fonts"
 
@@ -79,20 +87,32 @@ _bundled_index: dict[str, dict[FontVariant, FontFace]] = {}
 _registered_names: set[str] = set()
 
 _uploaded_source: Callable[[], Sequence[FontFace]] | None = None
+#: Turns an uploaded face's storage reference into a local path reportlab can open, or
+#: ``None`` when storage cannot produce one.
+_materialize: Callable[[FontFace], str | None] | None = None
 _uploaded_index: dict[str, dict[FontVariant, FontFace]] = {}
 _uploaded_loaded_at = 0.0
 
 
-def set_uploaded_face_source(source: Callable[[], Sequence[FontFace]] | None) -> None:
-    """Tell the registry where to read uploaded faces from.
+def set_uploaded_face_source(
+    source: Callable[[], Sequence[FontFace]] | None,
+    *,
+    materialize: Callable[[FontFace], str | None] | None = None,
+) -> None:
+    """Tell the registry where to read uploaded faces from, and how to get their bytes.
 
-    Injected by the composition root rather than imported here: this module is loaded by the
-    renderer, and a direct import of the repository would put a database dependency inside
+    Both injected by the composition root rather than imported here: this module is loaded by
+    the renderer, and a direct import of the repository would put a database dependency inside
     the one component that has to work in a worker with nothing else wired up.
+
+    ``materialize`` exists because an uploaded face's reference points at object storage in
+    production. Without it an S3 deployment would list an organizer's fonts in the editor and
+    quietly draw every diploma in a bundled family instead.
     """
-    global _uploaded_source, _uploaded_loaded_at
+    global _uploaded_source, _materialize, _uploaded_loaded_at
     with _lock:
         _uploaded_source = source
+        _materialize = materialize
         _uploaded_loaded_at = 0.0
 
 
@@ -176,13 +196,35 @@ def _uploaded() -> dict[str, dict[FontVariant, FontFace]]:
         return _uploaded_index
 
 
-def _register(face: FontFace) -> str:
-    """Register a face with reportlab once; return the name it is known by."""
+def _register(face: FontFace) -> str | None:
+    """Register a face with reportlab once; return the name it is known by, or ``None``.
+
+    ``None`` means this face cannot be drawn right now — its file could not be fetched from
+    storage, or reportlab refused it. The caller then carries on down its fallback chain, so a
+    single unreachable upload costs the chosen family rather than the whole diploma.
+    """
     if face.registered_name in _registered_names:
         return face.registered_name
+
+    path = face.reference
+    if face.source is FontSource.UPLOADED:
+        if _materialize is None:
+            # Nothing wired up to fetch it: on a filesystem backend the reference happens to be
+            # openable, so trying is still better than refusing outright.
+            path = face.reference
+        else:
+            local = _materialize(face)
+            if local is None:
+                return None
+            path = local
+
     with _lock:
         if face.registered_name not in _registered_names:
-            pdfmetrics.registerFont(TTFont(face.registered_name, face.reference))
+            try:
+                pdfmetrics.registerFont(TTFont(face.registered_name, path))
+            except Exception:
+                logger.warning("Could not register font %s from %s.", face.registered_name, path, exc_info=True)
+                return None
             _registered_names.add(face.registered_name)
     return face.registered_name
 
@@ -199,8 +241,17 @@ def _register_fallbacks() -> None:
                     _registered_names.add(name)
 
 
-def _lookup(key: str, variant: FontVariant) -> FontFace | None:
-    """One family's best available face for a variant, uploaded before bundled."""
+def _candidates(key: str, variant: FontVariant) -> Iterator[FontFace]:
+    """Every face that could draw this family and variant, best first.
+
+    Yields rather than returns one, because a face can be *found* and still not be
+    *drawable*: an uploaded font whose object storage is unreachable is the case this exists
+    for. The caller tries them in turn, so an unreachable upload falls through to the bundled
+    family of the same name — which is sitting right there — instead of skipping to DejaVu.
+
+    Order within a family is the requested variant, then its own fallbacks: a family's regular
+    weight is a better answer for a missing bold than a different family's bold.
+    """
     for index in (_uploaded(), _bundled_index):
         faces = index.get(key)
         if not faces:
@@ -208,8 +259,7 @@ def _lookup(key: str, variant: FontVariant) -> FontFace | None:
         for candidate in (variant, *variant.fallbacks):
             face = faces.get(candidate)
             if face is not None:
-                return face
-    return None
+                yield face
 
 
 def resolve_font(family: str, *, bold: bool, italic: bool) -> str:
@@ -224,13 +274,16 @@ def resolve_font(family: str, *, bold: bool, italic: bool) -> str:
     variant = FontVariant.of(bold=bold, italic=italic)
     key = normalize_family(family)
 
-    face = _lookup(key, variant)
-    if face is None:
-        alias = FAMILY_ALIASES.get(key)
-        if alias:
-            face = _lookup(normalize_family(alias), variant)
-    if face is not None:
-        return _register(face)
+    for candidate_key in (key, normalize_family(FAMILY_ALIASES.get(key, ""))):
+        if not candidate_key:
+            continue
+        for face in _candidates(candidate_key, variant):
+            registered = _register(face)
+            if registered is not None:
+                return registered
+            # Found but not drawable — an upload whose storage is unreachable. Carry on to the
+            # bundled face of the same family, then the alias, then DejaVu. A diploma in the
+            # wrong typeface is bad; a render that fails is worse.
 
     _register_fallbacks()
     base = "DejaVuSerif" if key in _SERIF_HINTS else "DejaVuSans"

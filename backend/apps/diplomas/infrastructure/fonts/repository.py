@@ -95,30 +95,25 @@ class DjangoFontFaceRepository:
     def faces(self) -> Sequence[FontFace]:
         """Every uploaded face in the renderer's vocabulary.
 
-        ``reference`` is turned into an absolute filesystem path here, because that is what
-        reportlab opens. The renderer never sees a storage key.
+        ``reference`` stays the **storage** reference rather than a local path: on S3 there is
+        no local path yet, and producing one here would mean downloading every uploaded font
+        each time this index is rebuilt — for a render that needs one of them. The registry
+        materializes the face it actually draws, through
+        :class:`~apps.diplomas.infrastructure.fonts.cache.FontFileCache`.
         """
         rows = FontFaceModel.objects.filter(deleted_at__isnull=True).only("id", "family", "variant", "file_reference")
-        faces: list[FontFace] = []
-        for row in rows:
-            key = _storage_key(row.file_reference)
-            try:
-                path = default_storage.path(key)
-            except NotImplementedError:
-                # A non-filesystem backend (S3): reportlab needs a readable path, so such a
-                # deployment has to stage the file locally. Skipping keeps the render working
-                # off the bundled families instead of failing outright.
-                continue
-            faces.append(
-                FontFace(
-                    family=row.family,
-                    variant=FontVariant(row.variant),
-                    source=FontSource.UPLOADED,
-                    reference=path,
-                    registered_name=f"vtu-{row.id.hex}",
-                )
+        return [
+            FontFace(
+                family=row.family,
+                variant=FontVariant(row.variant),
+                source=FontSource.UPLOADED,
+                reference=row.file_reference,
+                # Unique per uploaded row, which is what makes it safe as a cache filename:
+                # the file behind one row never changes.
+                registered_name=f"vtu-{row.id.hex}",
             )
-        return faces
+            for row in rows
+        ]
 
     def remove(self, font_id: uuid.UUID) -> str | None:
         row = FontFaceModel.objects.filter(id=font_id, deleted_at__isnull=True).first()
