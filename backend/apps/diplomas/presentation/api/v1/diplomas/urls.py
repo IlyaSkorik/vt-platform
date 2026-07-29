@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.urls import path
 
+from .fonts import DiplomaFontDetailView, DiplomaFontsView
 from .views import (
     DiplomaAssignmentDetailView,
     DiplomaAssignmentsView,
@@ -23,6 +24,10 @@ app_name = "diplomas"
 
 urlpatterns = [
     path("staff/diplomas/templates", DiplomaTemplatesView.as_view(), name="templates"),
+    # The font library: the catalog the editor's dropdown is built from, and the uploads
+    # that extend it beyond the families the platform happens to ship.
+    path("staff/diplomas/fonts", DiplomaFontsView.as_view(), name="fonts"),
+    path("staff/diplomas/fonts/<str:font_id>", DiplomaFontDetailView.as_view(), name="font-detail"),
     path("staff/diplomas/registry", DiplomaRegistryView.as_view(), name="registry"),
     path(
         "staff/diplomas/registry/<str:diploma_id>",

@@ -15,9 +15,17 @@ sense of the word entirely.
 from __future__ import annotations
 
 from apps.diplomas.application.awarding import DiplomaAwardService
+from apps.diplomas.application.font_library import FontLibraryService
 from apps.diplomas.application.issued_documents import IssuedDocumentGenerationService
 from apps.diplomas.application.numbering import DiplomaNumberService
+from apps.diplomas.domain.fonts import FAMILY_ALIASES
 from apps.diplomas.infrastructure.acl import DjangoDiplomaSnapshotSource
+from apps.diplomas.infrastructure.fonts import (
+    DjangoFontFaceRepository,
+    DjangoFontFileStore,
+    ReportLabFontInspector,
+)
+from apps.diplomas.infrastructure.pdf.fonts import DjangoBundledFontProvider
 from apps.diplomas.infrastructure.pdf.workspace import DjangoPrintPackageWorkspace
 from apps.diplomas.infrastructure.read_models import (
     DjangoDiplomaVerificationReader,
@@ -33,9 +41,26 @@ from apps.diplomas.infrastructure.repositories import (
 __all__ = [
     "build_diploma_award_service",
     "build_diploma_verification_read_service",
+    "build_font_library_service",
     "build_issued_document_generation_service",
     "build_participant_documents_read_service",
 ]
+
+
+def build_font_library_service() -> FontLibraryService:
+    """Assemble the font catalog and the upload path behind it.
+
+    The catalog is what the editor's font dropdown is built from, so this is the seam that
+    keeps "selectable" and "printable" the same set: both sides read the faces this service
+    lists, and a family reaches the dropdown only once the renderer can draw it.
+    """
+    return FontLibraryService(
+        repository=DjangoFontFaceRepository(),
+        store=DjangoFontFileStore(),
+        inspector=ReportLabFontInspector(),
+        bundled=DjangoBundledFontProvider(),
+        aliases=FAMILY_ALIASES,
+    )
 
 
 def build_diploma_verification_read_service() -> DjangoDiplomaVerificationReader:

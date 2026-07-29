@@ -28,3 +28,12 @@ class DiplomasConfig(AppConfig):
         register the models with the app registry and their admin bindings.
         """
         from apps.diplomas.infrastructure import admin, models  # noqa: F401
+
+        # Tell the PDF font registry where uploaded faces live. Injected here rather than
+        # imported inside the registry: that module is loaded by the renderer, including in a
+        # Celery worker, and a direct import of the repository would put a database
+        # dependency inside the one component that must work with nothing else wired up.
+        from apps.diplomas.infrastructure.fonts import DjangoFontFaceRepository
+        from apps.diplomas.infrastructure.pdf.fonts import set_uploaded_face_source
+
+        set_uploaded_face_source(DjangoFontFaceRepository().faces)
