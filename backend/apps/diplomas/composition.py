@@ -14,7 +14,9 @@ sense of the word entirely.
 
 from __future__ import annotations
 
+from apps.diplomas.application.awarding import DiplomaAwardService
 from apps.diplomas.application.issued_documents import IssuedDocumentGenerationService
+from apps.diplomas.application.numbering import DiplomaNumberService
 from apps.diplomas.infrastructure.acl import DjangoDiplomaSnapshotSource
 from apps.diplomas.infrastructure.pdf.workspace import DjangoPrintPackageWorkspace
 from apps.diplomas.infrastructure.read_models import (
@@ -22,11 +24,14 @@ from apps.diplomas.infrastructure.read_models import (
     DjangoParticipantDocumentsReader,
 )
 from apps.diplomas.infrastructure.repositories import (
+    DjangoDiplomaNumberSequence,
+    DjangoDiplomaRepository,
     DjangoIssuedDocumentRepository,
     DjangoTemplateAssignments,
 )
 
 __all__ = [
+    "build_diploma_award_service",
     "build_diploma_verification_read_service",
     "build_issued_document_generation_service",
     "build_participant_documents_read_service",
@@ -41,6 +46,26 @@ def build_diploma_verification_read_service() -> DjangoDiplomaVerificationReader
 def build_participant_documents_read_service() -> DjangoParticipantDocumentsReader:
     """Assemble the participant's "Мои документы" read model."""
     return DjangoParticipantDocumentsReader()
+
+
+def build_diploma_award_service() -> DiplomaAwardService:
+    """Assemble the service that writes a jury result onto a diploma and issues it.
+
+    Shares the print pipeline's adapters — the same snapshot ACL, numbering and
+    render/store workspace — so a diploma issued by publishing results and one printed
+    before the ceremony cannot drift in how they were built from a submission.
+
+    The Results context reaches this through its own ACL rather than importing the
+    service directly, which is what keeps "publish the results" independent of how a
+    diploma is stored, numbered or rendered.
+    """
+    return DiplomaAwardService(
+        repository=DjangoDiplomaRepository(),
+        snapshots=DjangoDiplomaSnapshotSource(),
+        workspace=DjangoPrintPackageWorkspace(),
+        assignments=DjangoTemplateAssignments(),
+        numbers=DiplomaNumberService(sequence=DjangoDiplomaNumberSequence()),
+    )
 
 
 def build_issued_document_generation_service() -> IssuedDocumentGenerationService:

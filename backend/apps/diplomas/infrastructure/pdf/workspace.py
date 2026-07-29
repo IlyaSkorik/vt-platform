@@ -144,6 +144,21 @@ class DjangoPrintPackageWorkspace:
         default_storage.save(key, ContentFile(data))
         return _reference(key)
 
+    def store_official_pdf(self, *, competition_id: uuid.UUID, number: str, data: bytes) -> str:
+        # The participant's own copy, kept in its own tree rather than overwriting the
+        # print copy: the two differ by the degree, both are legitimately wanted at once
+        # (an organizer prints blanks before the ceremony and hands out the awarded ones
+        # after), and one key for both would mean publishing the results destroyed the
+        # print set. Same unguessable prefix scheme, with its own salt.
+        token = _unguessable("official", str(competition_id), number)
+        key = f"diplomas/official/{competition_id}/{token}/{number}.pdf"
+        if default_storage.exists(key):
+            # Re-rendered by a corrected protocol: the participant's URL must not change,
+            # so the object behind it is replaced in place.
+            default_storage.delete(key)
+        default_storage.save(key, ContentFile(data))
+        return _reference(key)
+
     def store_document_pdf(
         self,
         *,

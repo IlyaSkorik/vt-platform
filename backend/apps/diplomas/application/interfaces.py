@@ -197,7 +197,17 @@ class PrintPackageWorkspace(Protocol):
         ...
 
     def store_pdf(self, *, competition_id: uuid.UUID, number: str, data: bytes) -> str:
-        """Persist a diploma PDF; return its ``/media/…`` path."""
+        """Persist a diploma's **print** PDF (pre-ceremony, no degree); return its path."""
+        ...
+
+    def store_official_pdf(self, *, competition_id: uuid.UUID, number: str, data: bytes) -> str:
+        """Persist the participant's own copy (post-ceremony, with the degree).
+
+        Separate from :meth:`store_pdf` because both copies are legitimately wanted at
+        once — the organizer prints the blanks before the ceremony and the participant
+        downloads the awarded one after — so one key for both would mean publishing the
+        results destroyed the print set. Re-rendering a corrected degree replaces the
+        object in place, keeping the URL the participant already has."""
         ...
 
     def store_document_pdf(

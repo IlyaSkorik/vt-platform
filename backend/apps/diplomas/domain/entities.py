@@ -126,6 +126,28 @@ class Diploma:
             version=self.version + 1,
         )
 
+    def issued(self, official_pdf_path: str, *, now: datetime) -> Diploma:
+        """Record the participant's own copy and mark the diploma ``ISSUED``.
+
+        The one transition that makes a diploma the participant's rather than the
+        organizer's: "Мои документы" lists a diploma exactly when this path exists,
+        which is why the pre-ceremony print copy is kept in a separate field. Called
+        when the nomination's results are published — never before, because until then
+        the degree on it is not a fact.
+
+        Re-issuing is legal and deliberate: publishing a corrected protocol renders the
+        corrected degree over the same diploma, keeping its number, its token and the
+        URL the participant already has.
+        """
+        return replace(
+            self,
+            official_pdf_path=official_pdf_path,
+            status=DiplomaStatus.ISSUED,
+            issued_at=self.issued_at or now,
+            updated_at=now,
+            version=self.version + 1,
+        )
+
     def with_degree(self, degree: str | None, *, now: datetime) -> Diploma:
         """Return a copy whose award degree is set — the only snapshot field the
         organizer fills in after the fact (offline: printed later as "Степень").
