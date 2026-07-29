@@ -31,6 +31,13 @@ export const ROUTES = {
   verifyDiploma: "/verify/:verificationToken",
   /** Public programme screen — one unguessable slug per published edition. */
   publicProgram: "/program/:slug",
+  /**
+   * Public results page — one slug per published protocol.
+   *
+   * Unlike a programme link this one is meant to be found: the competition's landing page
+   * links it under "Результаты", and so does the letter sent to every participant.
+   */
+  publicProtocol: "/protocol/:slug",
   privacyPolicy: "/privacy-policy",
   cookiesPolicy: "/cookies",
   applications: "/applications",

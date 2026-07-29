@@ -10,6 +10,7 @@ import {
 import { ROUTES } from "@/shared/config";
 import { Button } from "@/shared/ui";
 import { RegistrationBlock } from "./blocks/registration-block";
+import { ResultsSection } from "./blocks/results-section";
 import { LandingFooter } from "./landing-footer";
 import { LandingHero } from "./landing-hero";
 import { LandingSections } from "./landing-sections";
@@ -32,10 +33,12 @@ function BackLink({ to }: { to: string }): React.JSX.Element {
 
 function LandingContent({
   festival,
+  festivalId,
   applyPath,
   nominations,
 }: {
   festival: FestivalDetail;
+  festivalId: string;
   applyPath: string;
   nominations: RegistrationNominationView[];
 }): React.JSX.Element {
@@ -49,8 +52,11 @@ function LandingContent({
         <aside className="lg:sticky lg:top-18 lg:order-2 lg:self-start">
           <LandingSummary festival={festival} applyPath={applyPath} />
         </aside>
-        <main className="min-w-0 lg:order-1">
+        <main className="min-w-0 lg:order-1 space-y-14">
           <LandingSections festival={festival} />
+          {/* Not one of the organizer's blocks: results appear by themselves once a protocol
+              is published, because publishing is already the deliberate act. */}
+          <ResultsSection festivalId={festivalId} />
         </main>
       </div>
       <LandingFooter contacts={festival.contacts} />
@@ -118,6 +124,7 @@ export function FestivalLanding({
       <BackLink to={catalogPath} />
       <LandingContent
         festival={query.data}
+        festivalId={festivalId}
         applyPath={ctaPath}
         nominations={registrationQuery.data?.nominations ?? []}
       />

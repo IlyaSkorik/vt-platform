@@ -16,6 +16,14 @@ vi.mock("@/features/festival-landing", async (importOriginal) => ({
   usePublicRegistration: vi.fn(() => ({ data: undefined })),
 }));
 
+// The "Результаты" section is a third, independent read: it appears by itself once a protocol
+// is published and renders nothing otherwise. These tests are about the organizer's blocks, so
+// it is stubbed as "nothing published" — its own behaviour is covered where it lives.
+vi.mock("@/features/public-protocol", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/public-protocol")>()),
+  useCompetitionResults: vi.fn(() => ({ data: [] })),
+}));
+
 vi.mock("@/app/providers", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/app/providers")>()),
   useAuth: vi.fn(() => ({ isAuthenticated: true })),

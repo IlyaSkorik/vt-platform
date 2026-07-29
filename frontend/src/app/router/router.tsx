@@ -104,6 +104,12 @@ const routes: RouteObject[] = [
             lazy: lazyPage(() => import("@/pages/program"), "PublicProgramPage"),
           },
           {
+            // Public and unauthenticated: linked from the festival's "Результаты" section
+            // and from the letter every participant is sent when the results are published.
+            path: ROUTES.publicProtocol.slice(1),
+            lazy: lazyPage(() => import("@/pages/protocol"), "PublicProtocolPage"),
+          },
+          {
             path: ROUTES.privacyPolicy.slice(1),
             lazy: lazyPage(() => import("@/pages/legal"), "PrivacyPolicyPage"),
           },
@@ -340,7 +346,10 @@ const routes: RouteObject[] = [
               },
               {
                 path: ROUTES.staffJudges.slice(1),
-                lazy: workspacePlaceholder(staffItem(ROUTES.staffJudges), "staff"),
+                lazy: lazyPage(
+                  () => import("@/applications/staff/pages/judges"),
+                  "StaffJudgesPage",
+                ),
               },
               {
                 path: ROUTES.staffProgram.slice(1),
