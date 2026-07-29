@@ -148,6 +148,41 @@
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
     scroll-behavior: smooth;
+
+    /* The page's own scrollbar, given the same treatment as the internal scroll areas
+     * (`scrollbar-custom` above) so the window frame does not read as a different design
+     * from everything inside it.
+     *
+     * These two properties **inherit**, so declaring them here covers every scrollable
+     * descendant as well — a panel, a dialog body, a wide table — in Firefox and in any
+     * engine that implements the standard properties. The WebKit pseudo-elements below do
+     * not inherit, which is why they need a rule of their own. */
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--muted-foreground) 35%, transparent) transparent;
+  }
+
+  /* WebKit/Blink equivalent of the above, applied to everything for the same reason. It sits
+   * in the base layer deliberately: a component that wants a different scrollbar — the
+   * gallery hides its own, the constructor panels use `scrollbar-custom` — is a utility
+   * class, and utilities beat base. */
+  *::-webkit-scrollbar {
+    width: 0.5rem;
+    height: 0.5rem;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background-color: color-mix(in oklab, var(--muted-foreground) 35%, transparent);
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklab, var(--muted-foreground) 60%, transparent);
+  }
+  /* A corner left unstyled shows the browser's own grey square where the two bars meet,
+   * which is the one place a custom scrollbar usually gives itself away. */
+  *::-webkit-scrollbar-corner {
+    background: transparent;
   }
 
   body {
