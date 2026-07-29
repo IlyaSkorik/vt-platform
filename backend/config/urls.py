@@ -62,12 +62,16 @@ urlpatterns = [
     path("api/v1/", include("apps.diplomas.presentation.urls")),
     # The organizer's programme constructor (running order + its public editions).
     path("api/v1/", include("apps.programs.presentation.urls")),
+    # The jury's protocols: results per nomination, and their publication.
+    path("api/v1/", include("apps.results.presentation.urls")),
     # Public, unauthenticated participant catalog (dedicated read model).
     path("api/v1/", include("apps.competitions.presentation.public_urls")),
     # Public, unauthenticated diploma verification (the printed QR's target).
     path("api/v1/", include("apps.diplomas.presentation.public_urls")),
     # Public, unauthenticated programme screens (one slug per published edition).
     path("api/v1/", include("apps.programs.presentation.public_urls")),
+    # Public, unauthenticated results: a published protocol, and a competition's index of them.
+    path("api/v1/", include("apps.results.presentation.public_urls")),
     # The participant's own issued documents ("Мои документы").
     path("api/v1/", include("apps.diplomas.presentation.me_urls")),
 ]

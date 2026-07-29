@@ -138,6 +138,7 @@ MIGRATION_MODULES = {
     "applications": "apps.applications.infrastructure.migrations",
     "diplomas": "apps.diplomas.infrastructure.migrations",
     "programs": "apps.programs.infrastructure.migrations",
+    "results": "apps.results.infrastructure.migrations",
 }
 
 # --- Password validation --------------------------------------------------
@@ -266,6 +267,12 @@ SPECTACULAR_SETTINGS = {
     # SDK imports that name. Pinning it keeps the client's type stable.
     "ENUM_NAME_OVERRIDES": {
         "DocumentTypeEnum": "apps.diplomas.presentation.api.v1.diplomas.serializers.DOCUMENT_TYPES",
+        # The award vocabulary appears under three field names — `award` on a protocol
+        # row, `value` on a dropdown option, `award` on a public row — so it collides
+        # with itself as well as with unrelated `value` fields elsewhere. Same reason as
+        # above: an unpinned name gets a hash suffix that moves as the schema grows.
+        "AwardKindEnum": "apps.results.presentation.api.v1.serializers.AWARD_VALUES",
+        "ProtocolStatusEnum": "apps.results.presentation.api.v1.serializers.PROTOCOL_STATUS_VALUES",
     },
 }
 

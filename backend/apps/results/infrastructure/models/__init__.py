@@ -1,7 +1,15 @@
-"""ORM models (adapters) for the Results bounded context.
+"""Results persistence models."""
 
-Django models live ONLY here, never in the domain (ARCH-001 §7.2, §14), and
-carry NO business logic. A package (not a single module) so models can be split
-per aggregate as the context grows. Each context maps to its own PostgreSQL
-schema (ARCH-001 §9.2). No models are defined during bootstrap.
-"""
+from __future__ import annotations
+
+from .base import BasePersistenceModel, uuid7
+from .protocol import AwardChoices, ProtocolModel, ProtocolRowModel, ProtocolStatusChoices
+
+__all__ = [
+    "AwardChoices",
+    "BasePersistenceModel",
+    "ProtocolModel",
+    "ProtocolRowModel",
+    "ProtocolStatusChoices",
+    "uuid7",
+]

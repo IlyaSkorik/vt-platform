@@ -1,6 +1,7 @@
-"""Repository implementations for the Results bounded context.
+"""Concrete repository adapters for the Results bounded context."""
 
-ORM-backed adapters implementing the ports in application/interfaces.py and
-domain/interfaces.py (ARCH-001 §7.2) — the only gateway between aggregates and
-persistence. A package so repositories can be split per aggregate. Structure only.
-"""
+from __future__ import annotations
+
+from .django_protocol_repository import DjangoProtocolRepository
+
+__all__ = ["DjangoProtocolRepository"]

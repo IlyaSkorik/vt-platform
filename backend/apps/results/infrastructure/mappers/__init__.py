@@ -1,5 +1,7 @@
-"""Domain <-> persistence mappers for the Results bounded context.
+"""Mappers between Results persistence models and the domain aggregate."""
 
-Translate between framework-free domain objects and Django ORM models, keeping
-the domain ignorant of persistence (ARCH-001 §4.1, §7.2). Structure only at bootstrap.
-"""
+from __future__ import annotations
+
+from .protocol_mapper import ProtocolMapper
+
+__all__ = ["ProtocolMapper"]
