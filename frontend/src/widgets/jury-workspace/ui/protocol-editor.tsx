@@ -217,26 +217,28 @@ export function ProtocolEditor({ protocol }: ProtocolEditorProps): React.JSX.Ele
         </p>
       ) : (
         <div className="scrollbar-custom overflow-x-auto rounded-lg border border-border">
-          {/* The floor is what the fixed columns actually need — 3.5rem for the number, 17rem
-              for the award dropdown, 7rem for the actions — plus room for two names. Wider
-              than that and the table asked for a sideways scroll it did not need. */}
-          <table className="w-full min-w-[44rem] border-collapse text-sm">
+          {/* `table-fixed` on purpose: with an auto layout a cell grows to fit its text and
+              `truncate` never engages, so one long organization name is enough to push the
+              table past its container and demand a sideways scroll. Fixed widths make the
+              cells definite, which is what lets long values be cut instead.
+              The floor is 34rem — under the width this pane gets even with the nomination
+              list beside it, so the table scrolls only on a genuinely narrow screen. */}
+          <table className="w-full min-w-[34rem] table-fixed border-collapse text-sm">
             <thead>
               <tr className="border-border border-b bg-muted/40 text-left">
                 <th scope="col" className="w-14 px-3 py-2 font-medium">
                   №
                 </th>
+                {/* Participant and act in one column, stacked. They were two, and the four
+                    fixed columns then left under 200px for both — the jury reads a line as
+                    "кто и что", so stacking them costs nothing and buys the width back. */}
                 <th scope="col" className="px-3 py-2 font-medium">
-                  Участник
+                  Участник и номер
                 </th>
-                <th scope="col" className="px-3 py-2 font-medium">
-                  Номер
-                </th>
-                {/* Wide enough for "Номинант на Гран-при" — the longest award — and pinned
-                    with a min-width, because `w-` is only a hint to the table layout and a
-                    long participant name would otherwise squeeze the dropdown until its
-                    label wrapped inside a fixed-height trigger. */}
-                <th scope="col" className="w-[17rem] min-w-[17rem] px-3 py-2 font-medium">
+                {/* Wide enough for "Номинант на Гран-при", the longest award, and pinned with
+                    a min-width because `w-` alone is a hint the table layout may ignore — and
+                    a squeezed dropdown wraps its label inside a fixed-height trigger. */}
+                <th scope="col" className="w-[15rem] min-w-[15rem] px-3 py-2 font-medium">
                   Результат
                 </th>
                 <th scope="col" className="w-28 px-3 py-2 font-medium">
@@ -249,17 +251,14 @@ export function ProtocolEditor({ protocol }: ProtocolEditorProps): React.JSX.Ele
                 <tr key={row.id} className="border-border border-b last:border-b-0">
                   <td className="px-3 py-2 text-muted-foreground tabular-nums">{row.number}</td>
                   <td className="px-3 py-2">
-                    <span className="block truncate">{row.leadParticipant ?? "—"}</span>
-                    {row.organization ? (
-                      <span className="block truncate text-muted-foreground text-xs">
-                        {row.organization}
-                      </span>
-                    ) : null}
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className="block truncate">{row.title}</span>
+                    <span className="block truncate font-medium">{row.leadParticipant ?? "—"}</span>
+                    {/* The act, and the school after it: two facts that identify one line and
+                        neither of which needs a column of its own here. */}
+                    <span className="block truncate text-muted-foreground text-xs">
+                      {row.organization ? `${row.title} · ${row.organization}` : row.title}
+                    </span>
                     {row.missingPerformance ? (
-                      <span className="block text-warning text-xs">
+                      <span className="block truncate text-warning text-xs">
                         Заявка удалена — строка осталась в протоколе
                       </span>
                     ) : null}
