@@ -2,12 +2,23 @@ import { type CSSProperties, useLayoutEffect } from "react";
 import type { TemplateFieldStyle } from "@/features/diplomas";
 import { cn } from "@/shared/lib";
 
+/**
+ * A generic to land on while a face is still loading, or when a template names a family the
+ * library no longer has. Chosen from the family's own name rather than guessed: a serif that
+ * falls back to a sans re-wraps every line it was laid out against.
+ */
+function genericFor(family: string): string {
+  return /serif/i.test(family) && !/sans/i.test(family) ? "serif" : "sans-serif";
+}
+
 const MIN_FONT_PX = 4;
 
 /** CSS for a field's text, excluding font-size (owned imperatively by autoshrink). */
 export function fieldTextStyle(style: TemplateFieldStyle, scale: number): CSSProperties {
   return {
-    fontFamily: style.fontFamily,
+    // Quoted, with a generic behind it: family names here contain spaces ("PT Sans"), and an
+    // unquoted one with a space is not a valid CSS font-family value.
+    fontFamily: `"${style.fontFamily}", ${genericFor(style.fontFamily)}`,
     fontWeight: style.fontWeight === "bold" ? 700 : 400,
     fontStyle: style.fontStyle,
     color: style.color,

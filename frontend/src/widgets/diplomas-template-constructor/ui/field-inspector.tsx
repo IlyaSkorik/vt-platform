@@ -1,25 +1,44 @@
 import { AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline } from "lucide-react";
+import { useMemo } from "react";
 import {
   FIELD_TYPES,
+  type FontFamily,
   NOMINATION_PARTS,
   type NominationPartKey,
   type TemplateField,
   type TemplateFieldConfig,
   type TemplateFieldStyle,
   type TemplateTextAlign,
+  useFontFaces,
 } from "@/features/diplomas";
 import { Checkbox, IconButton, Input, Select, type SelectOption, Textarea } from "@/shared/ui";
 import type { FieldGeometryPatch } from "../model/use-constructor-fields";
 
-const FONT_OPTIONS: SelectOption[] = [
-  { value: "Montserrat", label: "Montserrat" },
-  { value: "Arial", label: "Arial" },
-  { value: "Times New Roman", label: "Times New Roman" },
-  { value: "Georgia", label: "Georgia" },
-  { value: "Roboto", label: "Roboto" },
-  { value: "Open Sans", label: "Open Sans" },
-  { value: "PT Sans", label: "PT Sans" },
-];
+/**
+ * The font list, built from what the renderer can actually draw.
+ *
+ * It used to be seven hard-coded names and the backend had files for none of them, so every
+ * diploma printed in the fallback face whatever the editor showed. Now the catalog is served:
+ * a family reaches this list only once a file for it exists, and an organizer's own uploads
+ * appear here without a release.
+ *
+ * A substituted name says so in its label. "Arial" cannot be shipped by anyone, and an
+ * organizer who picks it should learn that it prints as Liberation Sans here rather than at
+ * the ceremony.
+ */
+function fontOptions(families: readonly FontFamily[], chosen: string): SelectOption[] {
+  const options: SelectOption[] = families.map((family) => ({
+    value: family.family,
+    label:
+      family.substitutedBy == null ? family.family : `${family.family} → ${family.substitutedBy}`,
+  }));
+  // A template saved against a family that has since been removed from the library keeps its
+  // value visible instead of silently snapping to whatever sorts first.
+  if (chosen && !options.some((option) => option.value === chosen)) {
+    options.unshift({ value: chosen, label: `${chosen} (нет в библиотеке)` });
+  }
+  return options;
+}
 
 const ALIGNMENTS: ReadonlyArray<{
   value: TemplateTextAlign;
@@ -158,6 +177,13 @@ export function FieldInspector({
 }: FieldInspectorProps): React.JSX.Element {
   const { style } = field;
   const pct = (value: number): number => Math.round(value * 1000) / 10;
+  // Also loads the `@font-face` rules, so the canvas beside this panel draws with the same
+  // files the PDF will embed rather than with a system fallback.
+  const families: FontFamily[] = useFontFaces();
+  const fontChoices = useMemo(
+    () => fontOptions(families, style.fontFamily),
+    [families, style.fontFamily],
+  );
 
   return (
     <div className="scrollbar-custom flex min-h-0 flex-1 flex-col overflow-y-auto">
@@ -240,7 +266,7 @@ export function FieldInspector({
         <SectionTitle>Текст</SectionTitle>
         <Select
           label="Шрифт"
-          options={FONT_OPTIONS}
+          options={fontChoices}
           value={style.fontFamily}
           onValueChange={(value) => onStyleChange({ fontFamily: value })}
         />

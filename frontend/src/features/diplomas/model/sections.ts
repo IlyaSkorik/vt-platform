@@ -1,6 +1,6 @@
-import { Archive, FileStack, LayoutTemplate, type LucideIcon, Sparkles } from "lucide-react";
+import { Archive, FileStack, LayoutTemplate, type LucideIcon, Sparkles, Type } from "lucide-react";
 
-export type DiplomaSectionId = "templates" | "assignments" | "generation" | "archive";
+export type DiplomaSectionId = "templates" | "fonts" | "assignments" | "generation" | "archive";
 
 export interface DiplomaSection {
   id: DiplomaSectionId;
@@ -15,6 +15,12 @@ export const DIPLOMA_SECTIONS: readonly DiplomaSection[] = [
     title: "Шаблоны",
     description: "Библиотека шаблонов дипломов, благодарностей и сертификатов.",
     icon: LayoutTemplate,
+  },
+  {
+    id: "fonts",
+    title: "Шрифты",
+    description: "Чем набираются дипломы: встроенные семьи и свои загруженные .ttf.",
+    icon: Type,
   },
   {
     id: "assignments",

@@ -29,7 +29,16 @@ export {
   useTemplateLayout,
   useUploadTemplateDocumentMutation,
 } from "./api";
+export {
+  fetchFontCatalog,
+  fontKeys,
+  useDeleteFont,
+  useFontCatalog,
+  useFontCatalogData,
+  useUploadFont,
+} from "./api/fonts-api";
 export { resolveMediaUrl } from "./lib/media-url";
+export { applyFontFaces, useFontFaces } from "./lib/use-font-faces";
 export {
   AWARD_DEGREE,
   COMPETITION_CITY,
@@ -90,6 +99,19 @@ export {
   type DocumentTypeConfig,
   documentTypeConfig,
 } from "./model/document-types";
+export {
+  cssFontStack,
+  FONT_VARIANT_LABELS,
+  type FontCatalog,
+  type FontFamily,
+  type FontSource,
+  type FontVariantFace,
+  type FontVariantId,
+  fontFaceCss,
+  formatFontSize,
+  missingVariants,
+  type UploadedFont,
+} from "./model/fonts";
 export { type PreviewMode, resolvePreviewValue } from "./model/preview-data";
 export {
   DEFAULT_DIPLOMA_SECTION,

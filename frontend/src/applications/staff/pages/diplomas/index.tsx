@@ -10,6 +10,7 @@ import {
   ArchiveSection,
   AssignmentsSection,
   DiplomasWorkspaceLayout,
+  FontsSection,
   GenerationSection,
   TemplatesSection,
 } from "@/widgets/diplomas-workspace";
@@ -35,6 +36,8 @@ export function StaffDiplomasPage(): React.JSX.Element {
       >
         {section.id === "templates" ? (
           <TemplatesSection />
+        ) : section.id === "fonts" ? (
+          <FontsSection />
         ) : section.id === "assignments" ? (
           <AssignmentsSection />
         ) : section.id === "generation" ? (
