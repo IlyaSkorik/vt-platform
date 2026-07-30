@@ -65,9 +65,14 @@ def _act(title: str, seconds: int, *, comment: str | None = None, performer: str
 class Env:
     """A service wired to in-memory ports."""
 
-    def __init__(self, *performances: CatalogPerformance, slugs: tuple[str, ...] = ("Sound2345",)) -> None:
+    def __init__(
+        self,
+        *performances: CatalogPerformance,
+        slugs: tuple[str, ...] = ("Sound2345",),
+        music: dict[uuid.UUID, tuple[str, ...]] | None = None,
+    ) -> None:
         self.repository = InMemoryProgramRepository()
-        self.catalog = StubPerformanceCatalog(*performances)
+        self.catalog = StubPerformanceCatalog(*performances, music=music)
         self.slugs = ScriptedSlugFactory(*slugs)
         self.service = ProgramService(
             programs=self.repository,
@@ -270,6 +275,60 @@ class TestScheduleAndBuffer:
         env = Env()
         with pytest.raises(InvalidProgramDataError):
             env.service.update_program(UpdateProgramCommand(program_id=env.program(), buffer_seconds=7200))
+
+
+class TestMusicArchive:
+    """What the sound desk is handed: the tracks, named for the running order."""
+
+    def test_tracks_are_named_by_number_performer_and_title(self) -> None:
+        act = _act("Катюша", 200, performer="Иванова Анна")
+        env = Env(act, music={act.submission_id: ("uploads/2026/abc123.mp3",)})
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+
+        archive = env.service.music_archive(program_id=program_id)
+        assert [file.filename for file in archive.files] == ["01 — Иванова Анна — Катюша.mp3"]
+        assert archive.missing == ()
+
+    def test_a_slot_without_a_track_is_reported_rather_than_dropped(self) -> None:
+        # A live act needs no backing track, but the person collecting the music has
+        # to know which numbers brought none.
+        with_track = _act("Катюша", 200, performer="Иванова Анна")
+        without = _act("Гимн", 180, performer="Петров Пётр")
+        env = Env(with_track, without, music={with_track.submission_id: ("uploads/2026/abc123.mp3",)})
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+
+        archive = env.service.music_archive(program_id=program_id)
+        assert len(archive.files) == 1
+        assert len(archive.missing) == 1
+        assert "Петров Пётр" in archive.missing[0]
+
+    def test_every_track_of_an_act_is_carried(self) -> None:
+        act = _act("Катюша", 200, performer="Иванова Анна")
+        env = Env(act, music={act.submission_id: ("uploads/a.mp3", "uploads/b.wav")})
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+
+        archive = env.service.music_archive(program_id=program_id)
+        assert [file.filename for file in archive.files] == [
+            "01 — Иванова Анна — Катюша.mp3",
+            "01 — Иванова Анна — Катюша.wav",
+        ]
+
+    def test_a_slash_in_a_title_does_not_invent_a_folder(self) -> None:
+        act = _act("Зима/Весна", 200, performer="Иванова Анна")
+        env = Env(act, music={act.submission_id: ("uploads/a.mp3",)})
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+
+        archive = env.service.music_archive(program_id=program_id)
+        assert "/" not in archive.files[0].filename
+
+    def test_an_unknown_programme_is_not_found(self) -> None:
+        env = Env()
+        with pytest.raises(ProgramNotFoundError):
+            env.service.music_archive(program_id=str(uuid.uuid4()))
 
 
 class TestExport:

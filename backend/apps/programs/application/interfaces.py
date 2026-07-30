@@ -117,6 +117,15 @@ class PerformanceCatalog(Protocol):
         """Resolve specific acts - used to render a program's existing slots."""
         ...
 
+    def music_references(self, submission_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, tuple[str, ...]]:
+        """The stored backing-track references of each act, in upload order.
+
+        Kept off :class:`CatalogPerformance` on purpose: every screen that renders a
+        running order would then carry file keys it never shows. Only the archive
+        download asks for these.
+        """
+        ...
+
     def competition_title(self, competition_id: uuid.UUID) -> str | None:
         """The competition's title, for the heading of a public program."""
         ...

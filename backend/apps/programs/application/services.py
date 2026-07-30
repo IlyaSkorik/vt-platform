@@ -17,6 +17,8 @@ from __future__ import annotations
 import uuid
 from collections.abc import Sequence
 from datetime import datetime, timedelta
+from pathlib import PurePosixPath
+from typing import Final
 
 from apps.programs.application.commands import (
     AddBlockCommand,
@@ -35,6 +37,8 @@ from apps.programs.application.commands import (
 )
 from apps.programs.application.dto import (
     ColumnView,
+    MusicArchiveView,
+    MusicFileView,
     ProgramDetailView,
     ProgramItemView,
     ProgramShareView,
@@ -107,6 +111,31 @@ def _clock(moment: datetime | None) -> str:
 def _duration(seconds: int) -> str:
     minutes, remainder = divmod(max(0, seconds), 60)
     return f"{minutes}:{remainder:02d}"
+
+
+#: Characters a file name may not carry into an archive. Slashes would invent folders
+#: and the rest are what Windows refuses outright, which is where these files are
+#: usually unpacked.
+_FILENAME_FORBIDDEN: Final = str.maketrans(dict.fromkeys('/\\:*?"<>|', " "))
+
+
+def _safe(text: str) -> str:
+    """``text`` as a file name: no separators, no double spaces, not empty."""
+    cleaned = " ".join(text.translate(_FILENAME_FORBIDDEN).split())
+    return cleaned or "—"
+
+
+def _act_label(number: int, performance: CatalogPerformance | None) -> str:
+    """``01 — Иванова Анна — Вальс``: the number first, because that is what is cued."""
+    title = performance.title if performance is not None else ""
+    lead = performance.lead_participant if performance is not None else None
+    parts = [f"{number:02d}", *(part for part in (lead, title) if part)]
+    return _safe(" — ".join(parts))
+
+
+def _extension(reference: str) -> str:
+    """The uploaded file's suffix, lower-cased, so players still recognise the track."""
+    return PurePosixPath(reference).suffix.lower()
 
 
 class ProgramService:
@@ -399,6 +428,39 @@ class ProgramService:
         if self._tables is None:
             raise ExportUnavailableError("No table renderer is configured for this context.")
         return self._tables.render(self.program_table(program_id=program_id, columns=columns))
+
+    def music_archive(self, *, program_id: str) -> MusicArchiveView:
+        """Every backing track of the programme, named for the running order.
+
+        What the sound desk needs the morning of the event: the tracks in the order
+        they will be played, under names that say which number each belongs to, and a
+        list of the slots that brought no track at all.
+
+        A slot's own number leads the name when the programme has frozen its numbers;
+        before that it has none, and the position in the running order stands in — the
+        same number the organizer is looking at on screen.
+        """
+        program = self._load(program_id)
+        acts = [item for item in program.items if item.submission_id is not None]
+        performances = self._resolve_performances(acts)
+        references = self._catalog.music_references([item.submission_id for item in acts if item.submission_id is not None])
+
+        files: list[MusicFileView] = []
+        missing: list[str] = []
+        for position, item in enumerate(program.items, start=1):
+            if item.submission_id is None:
+                continue
+            number = item.number or position
+            performance = performances.get(item.submission_id)
+            label = _act_label(number, performance)
+            tracks = references.get(item.submission_id, ())
+            if not tracks:
+                missing.append(label)
+                continue
+            for reference in tracks:
+                files.append(MusicFileView(number=number, filename=f"{label}{_extension(reference)}", reference=reference))
+
+        return MusicArchiveView(title=str(program.name), files=tuple(files), missing=tuple(missing))
 
     # ------------------------------------------------------------------
     # The day itself (driven from the host's link)

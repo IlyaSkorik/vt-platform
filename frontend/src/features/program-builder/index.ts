@@ -2,6 +2,7 @@
  * Public API of the `program-builder` feature — the organizer's programme constructor.
  */
 export {
+  downloadProgramMusic,
   downloadProgramPdf,
   fetchCandidates,
   fetchProgram,

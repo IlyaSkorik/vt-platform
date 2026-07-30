@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useCompetitionDetail, useCompetitionsList } from "@/features/competitions";
 import {
+  downloadProgramMusic as downloadProgramMusicImpl,
   downloadProgramPdf as downloadProgramPdfImpl,
   type Program,
   type ProgramCandidate,
@@ -55,6 +56,7 @@ vi.mock("@/features/program-builder", async (importOriginal) => ({
   useRemoveColumn: vi.fn(),
   useFillCells: vi.fn(),
   downloadProgramPdf: vi.fn(),
+  downloadProgramMusic: vi.fn(),
 }));
 
 // The export panel reports failures through the toaster, which is worth asserting.
@@ -109,6 +111,7 @@ const renameColumn = vi.fn();
 const removeColumn = vi.fn();
 const fillCells = vi.fn();
 const downloadProgramPdf = vi.mocked(downloadProgramPdfImpl);
+const downloadProgramMusic = vi.mocked(downloadProgramMusicImpl);
 
 function mutation(mutate: ReturnType<typeof vi.fn>) {
   return { mutate, mutateAsync: mutate, isPending: false } as never;
@@ -595,6 +598,42 @@ describe("StaffProgramPage — printing the programme", () => {
     await userEvent.click(screen.getByRole("button", { name: /Скачать PDF/ }));
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Не удалось сформировать PDF"));
+  });
+});
+
+describe("StaffProgramPage — collecting the backing tracks", () => {
+  it("downloads the archive for the programme on screen", async () => {
+    stub();
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: /Скачать фонограммы/ }));
+
+    await waitFor(() => expect(downloadProgramMusic).toHaveBeenCalled());
+    expect(downloadProgramMusic.mock.calls[0]).toEqual([PROGRAM_ID, "Вокал, 1 отделение"]);
+  });
+
+  it("does not depend on the print columns, which are a different decision", async () => {
+    stub();
+    await renderPage();
+
+    const panel = screen.getByRole("group", { name: "Колонки в PDF" });
+    for (const label of ["№", "Время", "Участник", "Номер", "Длительность", "Организация"]) {
+      await userEvent.click(within(panel).getByRole("checkbox", { name: label }));
+    }
+
+    expect(screen.getByRole("button", { name: /Скачать фонограммы/ })).toBeEnabled();
+  });
+
+  it("says so when the archive cannot be built", async () => {
+    downloadProgramMusic.mockRejectedValueOnce(new Error("nope"));
+    stub();
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: /Скачать фонограммы/ }));
+
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith("Не удалось собрать архив фонограмм"),
+    );
   });
 });
 

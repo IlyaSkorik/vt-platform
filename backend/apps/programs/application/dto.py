@@ -173,6 +173,34 @@ class ProgramTableView:
 
 
 @dataclass(frozen=True, slots=True)
+class MusicFileView:
+    """One backing track, named for the slot it plays in.
+
+    ``filename`` is what the file is called inside the archive; the sound desk works
+    from the running order, so the number leads and everything else is there to
+    confirm the right track is cued.
+    """
+
+    number: int
+    filename: str
+    reference: str
+
+
+@dataclass(frozen=True, slots=True)
+class MusicArchiveView:
+    """Every backing track of a programme, plus the slots that have none.
+
+    ``missing`` is not an error: a live act needs no track. It is listed because the
+    person collecting the music is the person who has to know which numbers to chase,
+    and an archive that silently omits them looks complete when it is not.
+    """
+
+    title: str
+    files: tuple[MusicFileView, ...]
+    missing: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class PublicProgramRowView:
     """One row of a public programme table.
 

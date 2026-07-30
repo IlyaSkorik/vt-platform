@@ -90,10 +90,17 @@ class InMemoryProgramRepository:
 class StubPerformanceCatalog:
     """A fixed catalog of competing acts, standing in for other contexts."""
 
-    def __init__(self, *performances: CatalogPerformance, competition: str = "Весенний фестиваль", nomination: str = "Вокал") -> None:
+    def __init__(
+        self,
+        *performances: CatalogPerformance,
+        competition: str = "Весенний фестиваль",
+        nomination: str = "Вокал",
+        music: dict[uuid.UUID, tuple[str, ...]] | None = None,
+    ) -> None:
         self.performances = list(performances)
         self._competition = competition
         self._nomination = nomination
+        self._music = music or {}
 
     def competing_performances(
         self,
@@ -108,6 +115,10 @@ class StubPerformanceCatalog:
     def performances_by_id(self, submission_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, CatalogPerformance]:
         wanted = set(submission_ids)
         return {p.submission_id: p for p in self.performances if p.submission_id in wanted}
+
+    def music_references(self, submission_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, tuple[str, ...]]:
+        wanted = set(submission_ids)
+        return {key: value for key, value in self._music.items() if key in wanted}
 
     def competition_title(self, competition_id: uuid.UUID) -> str | None:
         return self._competition

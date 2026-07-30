@@ -324,10 +324,32 @@ export async function downloadProgramPdf(
   fallbackName: string,
 ): Promise<void> {
   const query = columns.length > 0 ? `?columns=${encodeURIComponent(columns.join(","))}` : "";
+  await saveAs(`staff/programs/${programId}/export.pdf${query}`, `${fallbackName}.pdf`);
+}
+
+/**
+ * Download every backing track of the programme as one ZIP, named by number.
+ *
+ * What the sound desk is handed on the day. The archive is assembled per request from
+ * the files the applicants already uploaded, so it can never be out of date with the
+ * running order it was downloaded from.
+ */
+export async function downloadProgramMusic(programId: string, fallbackName: string): Promise<void> {
+  await saveAs(`staff/programs/${programId}/music.zip`, `${fallbackName} — фонограммы.zip`);
+}
+
+/**
+ * Fetch a staff-gated download and hand the blob to the browser.
+ *
+ * Fetched rather than linked: these endpoints need the same auth as everything else,
+ * and a plain `<a href>` would arrive without it. The server's own filename wins when
+ * it sends one — it knows the programme's real, Cyrillic name.
+ */
+async function saveAs(path: string, fallbackName: string): Promise<void> {
   let blob: Blob;
   let disposition: string | null;
   try {
-    const response = await apiClient(`staff/programs/${programId}/export.pdf${query}`);
+    const response = await apiClient(path);
     blob = await response.blob();
     disposition = response.headers.get("Content-Disposition");
   } catch (error) {
@@ -336,7 +358,7 @@ export async function downloadProgramPdf(
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = filenameFrom(disposition) ?? `${fallbackName}.pdf`;
+  link.download = filenameFrom(disposition) ?? fallbackName;
   document.body.append(link);
   link.click();
   link.remove();

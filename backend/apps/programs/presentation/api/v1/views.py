@@ -60,6 +60,7 @@ from apps.programs.presentation.api.v1.serializers import (
     UpdateProgramRequestSerializer,
     UpdateShareRequestSerializer,
 )
+from config.archive import ArchiveMember, zip_response
 
 _TAG = "Competition Program"
 
@@ -91,8 +92,13 @@ _PROBLEM_RESPONSES = {
 
 def _pdf_name(title: str) -> str:
     """A filename a person recognises: the programme's own name, path-safe."""
+    return f"{_download_stem(title)}.pdf"
+
+
+def _download_stem(title: str) -> str:
+    """The programme's own name, reduced to what a filename may carry."""
     cleaned = "".join(char if char.isalnum() or char in " -_" else " " for char in title).strip()
-    return f"{' '.join(cleaned.split()) or 'Программа'}.pdf"
+    return " ".join(cleaned.split()) or "Программа"
 
 
 def _columns_json(columns: tuple[dto.ColumnView, ...]) -> list[dict[str, Any]]:
@@ -588,6 +594,32 @@ class ProgramExportView(_StaffView):
         # fallback for clients that ignore RFC 5987.
         response["Content-Disposition"] = f"attachment; filename=\"programme.pdf\"; filename*=UTF-8''{quote(_pdf_name(table.title))}"
         return response
+
+
+class ProgramMusicArchiveView(_StaffView):
+    """``GET`` every backing track of the programme as one ZIP, named by number.
+
+    A ``GET`` for the same reason the PDF export is one: it is a download the
+    organizer hands to the sound desk. Nothing is stored — the archive is assembled
+    from the already-uploaded files on each request, so it can never be stale.
+    """
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="programsDownloadMusic",
+        responses={
+            (200, "application/zip"): OpenApiTypes.BINARY,
+            **_PROBLEM_RESPONSES,
+        },
+    )
+    def get(self, request: Request, program_id: str) -> HttpResponse | Response:
+        try:
+            archive = build_program_service().music_archive(program_id=program_id)
+        except ProgramError as exc:
+            return self._problem(exc, request)
+        members = [ArchiveMember(arcname=file.filename, reference=file.reference) for file in archive.files]
+        notes = [f"Без фонограммы: {label}" for label in archive.missing]
+        return zip_response(members, filename=f"{_download_stem(archive.title)} — фонограммы.zip", notes=notes)
 
 
 class ProgramProgressView(_StaffView):

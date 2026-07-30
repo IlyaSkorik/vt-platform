@@ -6,6 +6,7 @@ import {
   FileDown,
   Link2,
   ListOrdered,
+  Music,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -17,6 +18,7 @@ import {
   type ColumnKey,
   DEFAULT_EXPORT_COLUMNS,
   DEFAULT_SHARE_COLUMNS,
+  downloadProgramMusic,
   downloadProgramPdf,
   ITEM_KIND_LABELS,
   itemCell,
@@ -811,6 +813,7 @@ function AddBreakControls({ programId }: { programId: string }): React.JSX.Eleme
 function ExportPanel({ program }: { program: Program }): React.JSX.Element {
   const [columns, setColumns] = useState<ColumnKey[]>(DEFAULT_EXPORT_COLUMNS);
   const [busy, setBusy] = useState(false);
+  const [musicBusy, setMusicBusy] = useState(false);
 
   const toggle = (key: ColumnKey, checked: boolean) => {
     setColumns((current) =>
@@ -831,19 +834,40 @@ function ExportPanel({ program }: { program: Program }): React.JSX.Element {
     }
   };
 
+  const downloadMusic = async () => {
+    setMusicBusy(true);
+    try {
+      await downloadProgramMusic(program.id, program.name);
+    } catch {
+      toast.error("Не удалось собрать архив фонограмм");
+    } finally {
+      setMusicBusy(false);
+    }
+  };
+
   return (
     <div className="flex min-w-0 flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="font-medium text-sm">Печать и экспорт</p>
-        <Button
-          variant="outline"
-          size="sm"
-          loading={busy}
-          disabled={columns.length === 0}
-          onClick={() => void download()}
-        >
-          <FileDown className="size-4" /> Скачать PDF
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            loading={musicBusy}
+            onClick={() => void downloadMusic()}
+          >
+            <Music className="size-4" /> Скачать фонограммы
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            loading={busy}
+            disabled={columns.length === 0}
+            onClick={() => void download()}
+          >
+            <FileDown className="size-4" /> Скачать PDF
+          </Button>
+        </div>
       </div>
 
       {/* `min-w-0`: a `fieldset` has a built-in `min-width: min-content` that ignores its

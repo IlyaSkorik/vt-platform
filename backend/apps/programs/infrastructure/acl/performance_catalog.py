@@ -37,6 +37,9 @@ __all__ = ["COMPETING_SUBMISSION_STATUSES", "DjangoPerformanceCatalog"]
 
 #: The statuses in which an entry is committed to taking part, and therefore the only
 #: ones that may occupy a slot in a running order.
+#: The attachment kind a backing track is stored under in the Applications context.
+_MUSIC: Final = "MUSIC"
+
 COMPETING_SUBMISSION_STATUSES: Final[tuple[str, ...]] = (
     SubmissionStatus.ACCEPTED.value,
     SubmissionStatus.SCHEDULED.value,
@@ -105,6 +108,22 @@ class DjangoPerformanceCatalog:
             )
         )
         return {performance.submission_id: performance for performance in self._resolve(models)}
+
+    def music_references(self, submission_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, tuple[str, ...]]:
+        """The backing tracks each act uploaded, read straight off the submission rows."""
+        if not submission_ids:
+            return {}
+        rows = SubmissionModel.objects.filter(id__in=list(submission_ids), deleted_at__isnull=True).values_list("id", "attachments")
+        references: dict[uuid.UUID, tuple[str, ...]] = {}
+        for submission_id, attachments in rows:
+            files = tuple(
+                reference
+                for reference in (_clean((entry or {}).get("file")) for entry in attachments or [] if (entry or {}).get("type") == _MUSIC)
+                if reference
+            )
+            if files:
+                references[submission_id] = files
+        return references
 
     def competition_title(self, competition_id: uuid.UUID) -> str | None:
         title = CompetitionModel.objects.filter(id=competition_id, deleted_at__isnull=True).values_list("title", flat=True).first()
