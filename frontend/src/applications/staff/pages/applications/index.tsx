@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, FileArchive } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { resolveMediaUrl } from "@/features/competitions/lib/media-url";
@@ -229,6 +229,48 @@ function statusPriority(status: string): number {
   return map[status] ?? 100;
 }
 
+/**
+ * Download the orders' paperwork — receipts and benefit certificates — as one ZIP.
+ *
+ * Kept apart from the programme's backing-track archive on purpose: this is the
+ * bundle somebody reconciles payments against, and it must not drag a festival's
+ * audio along with it. Follows the competition filter above, so what is downloaded
+ * is what is on screen.
+ *
+ * Fetched rather than linked because the endpoint is staff-gated and a plain
+ * `<a href>` would arrive without the token.
+ */
+function DocumentsArchiveButton({ competitionId }: { competitionId: string }): React.JSX.Element {
+  const [busy, setBusy] = useState(false);
+
+  const download = async () => {
+    setBusy(true);
+    try {
+      const query = competitionId ? `?competitionId=${encodeURIComponent(competitionId)}` : "";
+      const response = await apiClient.get(`staff/applications/documents.zip${query}`);
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "Документы заявок.zip";
+      document.body.append(link);
+      link.click();
+      link.remove();
+      // Revoking immediately can cancel the download in some browsers; a tick is enough.
+      setTimeout(() => URL.revokeObjectURL(url), 1_000);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="flex justify-end">
+      <Button variant="outline" size="sm" loading={busy} onClick={() => void download()}>
+        <FileArchive className="size-4" /> Скачать документы
+      </Button>
+    </div>
+  );
+}
+
 export function StaffApplicationsProcessingPage(): React.JSX.Element {
   // A deep link (e.g. "Открыть заявку" from the participant registry) may seed the
   // queue, competition and preselected submission via the URL; otherwise defaults apply.
@@ -417,7 +459,7 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-4">
+            <CardContent className="flex flex-col gap-2 pt-4">
               <div className="grid gap-2 md:grid-cols-2">
                 <Input
                   value={q}
@@ -434,6 +476,7 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                   }))}
                 />
               </div>
+              <DocumentsArchiveButton competitionId={competitionId} />
             </CardContent>
           </Card>
         </div>

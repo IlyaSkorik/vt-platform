@@ -5,6 +5,7 @@ from collections import Counter
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from io import StringIO
+from pathlib import PurePosixPath
 from typing import Any
 
 from django.conf import settings
@@ -43,6 +44,7 @@ from apps.emailing import render_transactional_email_html
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.identity.infrastructure.models.user import UserModel
 from apps.organization.presentation.permissions import IsOrganizationStaff
+from config.archive import ArchiveMember, zip_response
 
 _QUEUE_BY_STATUS = {
     "SUBMITTED": "NEW",
@@ -772,6 +774,74 @@ class OrganizerProcessingBulkView(_StaffView):
                 failed.append({"id": submission_id, "error": "failed"})
         rid = problems.request_id(request)
         return Response({"data": {"processed": processed, "failed": failed, "comment": comment}, "meta": {"requestId": rid}})
+
+
+#: Characters a folder or file name may not carry into an archive.
+_ARCHIVE_FORBIDDEN = str.maketrans(dict.fromkeys('/\\:*?"<>|', " "))
+
+
+def _archive_safe(text: str) -> str:
+    """``text`` as one path segment: no separators, no runs of spaces, never empty."""
+    cleaned = " ".join(str(text).translate(_ARCHIVE_FORBIDDEN).split())
+    return cleaned or "—"
+
+
+def _application_folder(application: ApplicationModel) -> str:
+    """The folder an order's paperwork goes in: who it is, then which order.
+
+    The name alone is not enough — two Ивановых Анны are ordinary at a festival — so
+    the order's short id follows it. Accounting reconciles against that id anyway.
+    """
+    refs = application.submission_refs or []
+    lead = next((str(ref.get("participant_display_name") or "").strip() for ref in refs if ref.get("participant_display_name")), "")
+    short = str(application.id).split("-")[0]
+    return _archive_safe(f"{lead} — {short}" if lead else f"Заявка {short}")
+
+
+class OrganizerProcessingDocumentsArchiveView(_StaffView):
+    """``GET`` the orders' paperwork — receipts and benefit certificates — as one ZIP.
+
+    Deliberately separate from the programme's backing tracks: this is the archive
+    somebody reconciles payments and benefits from, and mixing the two would mean
+    downloading gigabytes of audio to read four PDFs.
+
+    Scoped with ``competitionId`` when given; without it, every order the organizer
+    can see. One folder per order, so a receipt and the certificate justifying its
+    amount sit together.
+    """
+
+    def get(self, request: Request) -> Any:
+        competition_filter = (request.query_params.get("competitionId") or "").strip()
+        applications = ApplicationModel.objects.filter(deleted_at__isnull=True)
+        if competition_filter:
+            applications = applications.filter(competition_id=competition_filter)
+        applications = applications.order_by("created_at")
+
+        members: list[ArchiveMember] = []
+        empty: list[str] = []
+        for application in applications:
+            folder = _application_folder(application)
+            found = 0
+            receipt = (application.payment_receipt or {}).get("file")
+            if receipt:
+                members.append(ArchiveMember(arcname=f"{folder}/Квитанция{PurePosixPath(str(receipt)).suffix.lower()}", reference=str(receipt)))
+                found += 1
+            submission_ids = [ref.get("submission_id") for ref in application.submission_refs or [] if ref.get("submission_id")]
+            for row in SubmissionModel.objects.filter(id__in=submission_ids, deleted_at__isnull=True).values_list("attachments", flat=True):
+                for entry in row or []:
+                    if (entry or {}).get("type") != "BENEFIT":
+                        continue
+                    reference = str((entry or {}).get("file") or "").strip()
+                    if not reference:
+                        continue
+                    caption = _archive_safe((entry or {}).get("caption") or "Документ о льготе")
+                    members.append(ArchiveMember(arcname=f"{folder}/{caption}{PurePosixPath(reference).suffix.lower()}", reference=reference))
+                    found += 1
+            if found == 0:
+                empty.append(folder)
+
+        notes = [f"Без документов: {folder}" for folder in empty]
+        return zip_response(members, filename="Документы заявок.zip", notes=notes)
 
 
 class OrganizerProcessingExportView(_StaffView):

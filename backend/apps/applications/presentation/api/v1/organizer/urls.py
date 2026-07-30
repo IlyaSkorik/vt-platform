@@ -10,6 +10,7 @@ from .participants_views import (
 from .views import (
     OrganizerProcessingActionView,
     OrganizerProcessingBulkView,
+    OrganizerProcessingDocumentsArchiveView,
     OrganizerProcessingExportView,
     OrganizerProcessingWorkspaceView,
 )
@@ -20,6 +21,7 @@ urlpatterns = [
     path("staff/applications/workspace", OrganizerProcessingWorkspaceView.as_view(), name="workspace"),
     path("staff/applications/bulk", OrganizerProcessingBulkView.as_view(), name="bulk"),
     path("staff/applications/export", OrganizerProcessingExportView.as_view(), name="export"),
+    path("staff/applications/documents.zip", OrganizerProcessingDocumentsArchiveView.as_view(), name="documents-archive"),
     path(
         "staff/applications/<str:submission_id>/actions/<str:action>",
         OrganizerProcessingActionView.as_view(),
