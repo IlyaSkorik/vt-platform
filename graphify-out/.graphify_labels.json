@@ -1004,5 +1004,13 @@
   "1002": "useRemoveDocumentMutation",
   "1003": "useUpdateGeneralInformationMutation",
   "1004": ".is_open_ended",
-  "1005": ".full_name"
+  "1005": ".full_name",
+  "1006": "useReorderAgeCategoriesMutation",
+  "1007": ".publish",
+  "1008": ".publish",
+  "1009": ".publish",
+  "1010": ".required_attachment_types",
+  "1011": "0018_fontfacemodel.py",
+  "1012": "__init__.py",
+  "1013": "useUpdateBrandingMutation"
 }
