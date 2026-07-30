@@ -10,6 +10,7 @@ from __future__ import annotations
 import io
 import uuid
 import zipfile
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
@@ -18,7 +19,11 @@ from django.core.files.storage import default_storage
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
+from apps.applications.domain.entities import Application
+from apps.applications.domain.value_objects import ApplicationId, CompetitionId, FileReference, UserId
+from apps.applications.infrastructure.mappers.application_mapper import ApplicationMapper
 from apps.applications.infrastructure.models.application import ApplicationModel
+from apps.applications.infrastructure.models.base import uuid7
 from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.identity.presentation.api.v1.auth import composition as identity_composition
 from apps.organization.application.dto.commands import ProvisionOwnerCommand
@@ -28,6 +33,7 @@ pytestmark = pytest.mark.django_db
 
 _PASSWORD = "V3ry$ecurePass!"
 _ARCHIVE = "/api/v1/staff/applications/documents.zip"
+NOW = datetime(2026, 3, 1, 12, 0, tzinfo=UTC)
 
 
 def _authenticated(client: APIClient, email: str) -> str:
@@ -60,6 +66,23 @@ def _stored(name: str, content: bytes) -> str:
     return default_storage.save(f"uploads/{uuid.uuid4()}-{name}", ContentFile(content))
 
 
+def _receipt_json(reference: str) -> dict[str, Any]:
+    """The receipt exactly as the aggregate persists it.
+
+    Built through the real aggregate and mapper rather than hand-written: a receipt
+    is stored under ``file_reference`` while an attachment uses ``file``, and a
+    fixture that guessed once already made a broken archive look tested.
+    """
+    application, _ = Application.create(
+        application_id=ApplicationId.generate(),
+        competition_id=CompetitionId.from_uuid(uuid7()),
+        applicant_id=UserId.from_uuid(uuid7()),
+        now=NOW,
+    )
+    application.upload_payment_receipt(file=FileReference(reference), now=NOW)
+    return ApplicationMapper.to_model(application).payment_receipt
+
+
 def _order(
     *,
     competition_id: uuid.UUID,
@@ -72,16 +95,14 @@ def _order(
         competition_id=competition_id,
         applicant_id=uuid.uuid4(),
         status="SUBMITTED",
-        attachments=[
-            {"id": str(uuid.uuid4()), "type": "BENEFIT", "file": reference, "caption": caption} for caption, reference in benefits
-        ],
+        attachments=[{"id": str(uuid.uuid4()), "type": "BENEFIT", "file": reference, "caption": caption} for caption, reference in benefits],
     )
     return ApplicationModel.objects.create(
         competition_id=competition_id,
         applicant_id=submission.applicant_id,
         status="SUBMITTED",
         submission_refs=[{"submission_id": str(submission.id), "participant_display_name": performer}],
-        payment_receipt={"file": receipt, "uploaded_at": "2026-03-01T12:00:00Z"} if receipt else None,
+        payment_receipt=_receipt_json(receipt) if receipt else None,
     )
 
 

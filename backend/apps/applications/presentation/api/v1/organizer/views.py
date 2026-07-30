@@ -827,9 +827,12 @@ class OrganizerProcessingDocumentsArchiveView(_StaffView):
         without_receipt: list[str] = []
         for application in applications:
             folder = _application_folder(application)
-            receipt = (application.payment_receipt or {}).get("file")
+            # ``file_reference``, not ``file``: an order's receipt and a submission's
+            # attachment are stored under different keys, and only the attachment uses
+            # the short one.
+            receipt = str((application.payment_receipt or {}).get("file_reference") or "").strip()
             if receipt:
-                members.append(ArchiveMember(arcname=f"{folder}/Квитанция{PurePosixPath(str(receipt)).suffix.lower()}", reference=str(receipt)))
+                members.append(ArchiveMember(arcname=f"{folder}/Квитанция{PurePosixPath(receipt).suffix.lower()}", reference=receipt))
             else:
                 without_receipt.append(folder)
             submission_ids = [ref.get("submission_id") for ref in application.submission_refs or [] if ref.get("submission_id")]
