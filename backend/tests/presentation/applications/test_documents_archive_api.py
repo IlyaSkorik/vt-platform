@@ -117,7 +117,30 @@ class TestDocumentsArchive:
         response = staff_client.get(f"{_ARCHIVE}?competitionId={competition_id}")
         with _archive(response) as archive:
             assert archive.namelist() == ["ПРОЧТИ.txt"]
-            assert "Петров Пётр" in archive.read("ПРОЧТИ.txt").decode()
+            assert "Без квитанции: Петров Пётр" in archive.read("ПРОЧТИ.txt").decode()
+
+    def test_a_benefit_without_a_receipt_is_still_flagged(self, staff_client) -> None:
+        # The case worth chasing: a claim for a reduced fee with no proof that the
+        # reduced fee was ever paid. Counting documents would call this folder done.
+        competition_id = uuid.uuid4()
+        _order(
+            competition_id=competition_id,
+            performer="Петров Пётр",
+            benefits=(("Справка о льготе", _stored("benefit.pdf", b"benefit")),),
+        )
+
+        response = staff_client.get(f"{_ARCHIVE}?competitionId={competition_id}")
+        with _archive(response) as archive:
+            assert any(name.endswith("Справка о льготе.pdf") for name in archive.namelist())
+            assert "Без квитанции: Петров Пётр" in archive.read("ПРОЧТИ.txt").decode()
+
+    def test_an_order_that_paid_is_not_flagged(self, staff_client) -> None:
+        competition_id = uuid.uuid4()
+        _order(competition_id=competition_id, performer="Иванова Анна", receipt=_stored("r.pdf", b"r"))
+
+        response = staff_client.get(f"{_ARCHIVE}?competitionId={competition_id}")
+        with _archive(response) as archive:
+            assert "ПРОЧТИ.txt" not in archive.namelist()
 
     def test_the_archive_is_scoped_to_the_competition_asked_for(self, staff_client) -> None:
         wanted, other = uuid.uuid4(), uuid.uuid4()

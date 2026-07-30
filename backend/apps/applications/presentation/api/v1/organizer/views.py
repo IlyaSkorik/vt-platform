@@ -807,7 +807,13 @@ class OrganizerProcessingDocumentsArchiveView(_StaffView):
 
     Scoped with ``competitionId`` when given; without it, every order the organizer
     can see. One folder per order, so a receipt and the certificate justifying its
-    amount sit together.
+    amount sit together — the receipt first, because it is the document the rest of
+    the folder explains.
+
+    Orders with no receipt are named in the notes. That, and not the file count, is
+    what somebody reconciling payments is looking for: an order carrying a benefit
+    certificate but no proof of payment is precisely the case worth chasing, and
+    counting documents would call it complete.
     """
 
     def get(self, request: Request) -> Any:
@@ -818,14 +824,14 @@ class OrganizerProcessingDocumentsArchiveView(_StaffView):
         applications = applications.order_by("created_at")
 
         members: list[ArchiveMember] = []
-        empty: list[str] = []
+        without_receipt: list[str] = []
         for application in applications:
             folder = _application_folder(application)
-            found = 0
             receipt = (application.payment_receipt or {}).get("file")
             if receipt:
                 members.append(ArchiveMember(arcname=f"{folder}/Квитанция{PurePosixPath(str(receipt)).suffix.lower()}", reference=str(receipt)))
-                found += 1
+            else:
+                without_receipt.append(folder)
             submission_ids = [ref.get("submission_id") for ref in application.submission_refs or [] if ref.get("submission_id")]
             for row in SubmissionModel.objects.filter(id__in=submission_ids, deleted_at__isnull=True).values_list("attachments", flat=True):
                 for entry in row or []:
@@ -836,11 +842,8 @@ class OrganizerProcessingDocumentsArchiveView(_StaffView):
                         continue
                     caption = _archive_safe((entry or {}).get("caption") or "Документ о льготе")
                     members.append(ArchiveMember(arcname=f"{folder}/{caption}{PurePosixPath(reference).suffix.lower()}", reference=reference))
-                    found += 1
-            if found == 0:
-                empty.append(folder)
 
-        notes = [f"Без документов: {folder}" for folder in empty]
+        notes = [f"Без квитанции: {folder}" for folder in without_receipt]
         return zip_response(members, filename="Документы заявок.zip", notes=notes)
 
 
