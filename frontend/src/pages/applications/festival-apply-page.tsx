@@ -19,6 +19,7 @@ import {
   useSelectService,
   useSubmitApplication,
 } from "@/entities/application";
+import { BenefitDocumentsCard } from "@/features/application-benefit-documents";
 import { ReceiptCard } from "@/features/application-receipt";
 import { PerformanceBuilder } from "@/features/registration-wizard";
 import type { ApplicationResource } from "@/shared/api/generated/model-applications";
@@ -512,6 +513,7 @@ function ReviewStep({
           )}
         </CardContent>
       </Card>
+      <BenefitDocumentsCard application={application} />
       <ReceiptCard application={application} />
     </div>
   );

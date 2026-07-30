@@ -7,6 +7,7 @@ import {
   useApplication,
   useRegistration,
 } from "@/entities/application";
+import { BenefitDocumentsCard } from "@/features/application-benefit-documents";
 import { ReceiptCard } from "@/features/application-receipt";
 import { ROUTES } from "@/shared/config";
 import {
@@ -145,6 +146,8 @@ export function ApplicationDetailPage(): React.JSX.Element {
               </div>
             </CardContent>
           </Card>
+
+          <BenefitDocumentsCard application={application} />
 
           <ReceiptCard application={application} />
 

@@ -26,12 +26,19 @@ import {
 import type {
   ApplicationResource,
   ApplicationSummaryResource,
+  AttachmentTypeEnum,
   RecordConsentsRequest,
   SelectEducationalOrganizationRequest,
   SelectServiceRequest,
+  SubmissionResource,
 } from "@/shared/api/generated/model-applications";
 import type { Registration } from "@/shared/api/generated/model-public-catalog";
 import { getRegistration } from "@/shared/api/generated/public-catalog/public-catalog";
+import {
+  submissionsRemoveAttachment,
+  submissionsUploadAttachment,
+} from "@/shared/api/generated/submission-attachments/submission-attachments";
+import { submissionsRetrieve } from "@/shared/api/generated/submissions/submissions";
 
 import { applicationKeys } from "./keys";
 
@@ -216,6 +223,67 @@ export function useUploadReceipt(applicationId: string) {
       return unwrap<ApplicationResource>(response);
     },
     onSuccess: () => invalidate(applicationId),
+  });
+}
+
+/**
+ * Load one submission in full (performance, participants, teachers, attachments).
+ *
+ * The order screens need this for the attachments a submission carries; the
+ * Performance Builder keeps its own copy of the same query under its own key.
+ */
+export function useSubmissionDetail(submissionId: string | undefined) {
+  return useQuery({
+    queryKey: applicationKeys.submission(submissionId ?? "unknown"),
+    queryFn: async (): Promise<SubmissionResource> =>
+      unwrap<SubmissionResource>(await submissionsRetrieve(submissionId as string)),
+    enabled: Boolean(submissionId),
+  });
+}
+
+/**
+ * Invalidate everything a change to a submission's attachments can be seen through:
+ * this entity's copy, the Performance Builder's, and the order (whose cached
+ * per-performance prices depend on whether a benefit is claimed).
+ */
+function useInvalidateSubmission(submissionId: string) {
+  const queryClient = useQueryClient();
+  return () => {
+    void queryClient.invalidateQueries({ queryKey: applicationKeys.submission(submissionId) });
+    void queryClient.invalidateQueries({ queryKey: ["submission", submissionId] });
+    void queryClient.invalidateQueries({ queryKey: applicationKeys.all });
+  };
+}
+
+/** Attach a file of the given kind to a submission (multipart). */
+export function useUploadSubmissionAttachment(submissionId: string) {
+  const invalidate = useInvalidateSubmission(submissionId);
+  return useMutation({
+    mutationFn: async (input: {
+      file: File;
+      attachmentType: AttachmentTypeEnum;
+      caption?: string | undefined;
+    }): Promise<SubmissionResource> => {
+      // The generated multipart contract types `file` as `string`; a real File is
+      // appended to FormData verbatim, so it is correct at runtime.
+      const response = await submissionsUploadAttachment(submissionId, {
+        file: input.file as unknown as string,
+        attachmentType: input.attachmentType,
+        caption: input.caption ?? null,
+      });
+      return unwrap<SubmissionResource>(response);
+    },
+    onSuccess: invalidate,
+  });
+}
+
+/** Detach one attachment from a submission. */
+export function useRemoveSubmissionAttachment(submissionId: string) {
+  const invalidate = useInvalidateSubmission(submissionId);
+  return useMutation({
+    mutationFn: async (attachmentId: string): Promise<SubmissionResource> =>
+      unwrap<SubmissionResource>(await submissionsRemoveAttachment(submissionId, attachmentId)),
+    onSuccess: invalidate,
   });
 }
 

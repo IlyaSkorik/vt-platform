@@ -196,6 +196,7 @@ function attachmentTypeLabel(type: string): string {
     MUSIC: "Музыка",
     VIDEO: "Видео",
     DOCUMENT: "Документ",
+    BENEFIT: "Документ о льготе",
     RECEIPT: "Квитанция",
     OTHER: "Файл",
   };
