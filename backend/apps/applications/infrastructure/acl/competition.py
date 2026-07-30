@@ -132,7 +132,9 @@ class DjangoCompetitionCatalog:
             return False
         if attachment_kind == "MUSIC":
             return competition.is_music_upload_allowed(now)
-        if attachment_kind == "DOCUMENT":
+        if attachment_kind in {"DOCUMENT", "BENEFIT"}:
+            # A benefit certificate is paperwork like any other document, so it
+            # rides the competition's document-upload deadline.
             return competition.is_document_upload_allowed(now)
         return competition.is_application_allowed(now)
 

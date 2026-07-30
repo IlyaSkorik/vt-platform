@@ -805,12 +805,19 @@ class AttachmentType(StrEnum):
     A fixed vocabulary of the media a submission carries today; new kinds are added
     here (the enum is the extension point). The domain stores only a
     :class:`FileReference` per attachment - never the bytes.
+
+    ``BENEFIT`` is deliberately distinct from ``DOCUMENT``. A ``DOCUMENT`` is the
+    supporting paperwork a competition may *require* of everyone
+    (``require_document_upload``); a ``BENEFIT`` is the certificate an applicant
+    *chooses* to attach to claim a reduced fee. Conflating the two would let a
+    competition's mandatory document read as a benefit claim.
     """
 
     MUSIC = "MUSIC"
     VIDEO = "VIDEO"
     IMAGE = "IMAGE"
     DOCUMENT = "DOCUMENT"
+    BENEFIT = "BENEFIT"
 
 
 class Currency(StrEnum):

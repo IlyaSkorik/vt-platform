@@ -12,7 +12,7 @@ from rest_framework import serializers
 
 __all__ = ["ProblemDetailSerializer", "SubmissionAttachmentResponseSerializer", "UploadAttachmentRequestSerializer"]
 
-_ATTACHMENT_TYPES = ["MUSIC", "VIDEO", "IMAGE", "DOCUMENT"]
+_ATTACHMENT_TYPES = ["MUSIC", "VIDEO", "IMAGE", "DOCUMENT", "BENEFIT"]
 
 
 class UploadAttachmentRequestSerializer(serializers.Serializer[dict[str, object]]):

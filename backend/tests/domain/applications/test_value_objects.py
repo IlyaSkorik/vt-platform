@@ -281,7 +281,7 @@ class TestEnums:
         }
 
     def test_attachment_type_members(self) -> None:
-        assert {a.value for a in AttachmentType} == {"MUSIC", "VIDEO", "IMAGE", "DOCUMENT"}
+        assert {a.value for a in AttachmentType} == {"MUSIC", "VIDEO", "IMAGE", "DOCUMENT", "BENEFIT"}
 
     def test_gender_members(self) -> None:
         assert {g.value for g in Gender} == {"MALE", "FEMALE", "OTHER"}
