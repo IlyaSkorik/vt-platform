@@ -3,6 +3,7 @@ import { useId, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router";
 import { ROUTES } from "@/shared/config";
+import { formatPersonName } from "@/shared/lib";
 import { Alert, Button, Checkbox, Input, PasswordInput } from "@/shared/ui";
 import { useRegister } from "../api";
 import { applyProblemToForm } from "../lib/problem-to-form";
@@ -29,6 +30,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps): React.JSX.Elemen
   const {
     register,
     handleSubmit,
+    getValues,
     setError,
     setValue,
     watch,
@@ -46,6 +48,24 @@ export function RegisterForm({ onSuccess }: RegisterFormProps): React.JSX.Elemen
   });
 
   const acceptTerms = watch("acceptTerms");
+
+  /**
+   * Registers a name field, tidying its capitalisation once the user leaves it.
+   *
+   * The account holder's name is printed back at them across the cabinet, so
+   * "ИВАНОВ" typed with caps lock on is worth fixing at the point of entry. On
+   * blur rather than on every keystroke, so the value never shifts mid-word.
+   */
+  const registerName = (field: "firstName" | "lastName") =>
+    register(field, {
+      onBlur: () => {
+        const current = getValues(field);
+        const formatted = formatPersonName(current);
+        if (formatted !== current) {
+          setValue(field, formatted, { shouldValidate: true });
+        }
+      },
+    });
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
@@ -75,14 +95,14 @@ export function RegisterForm({ onSuccess }: RegisterFormProps): React.JSX.Elemen
         autoComplete="given-name"
         autoFocus
         error={errors.firstName?.message}
-        {...register("firstName")}
+        {...registerName("firstName")}
       />
 
       <Input
         label="Фамилия"
         autoComplete="family-name"
         error={errors.lastName?.message}
-        {...register("lastName")}
+        {...registerName("lastName")}
       />
 
       <Input
