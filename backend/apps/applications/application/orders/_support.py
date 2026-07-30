@@ -20,7 +20,14 @@ from apps.applications.application.exceptions import (
 )
 from apps.applications.application.interfaces import ApplicationRepository, SubmissionRepository
 from apps.applications.domain.entities import Application, Submission
-from apps.applications.domain.value_objects import ApplicationId, Money, PriceSnapshot, SubmissionRef, UserId
+from apps.applications.domain.value_objects import (
+    ApplicationId,
+    AttachmentType,
+    Money,
+    PriceSnapshot,
+    SubmissionRef,
+    UserId,
+)
 
 __all__ = [
     "ensure_owner",
@@ -117,6 +124,11 @@ def _apply_additional_performance_discount(
     return discounted
 
 
+def _claims_a_benefit(order_submissions: list[Submission]) -> bool:
+    """Whether the order carries a benefit certificate on any of its submissions."""
+    return any(attachment.type is AttachmentType.BENEFIT for submission in order_submissions for attachment in submission.attachments)
+
+
 def load_order_submissions(application: Application, submissions: SubmissionRepository) -> list[Submission]:
     """Load the live Submission aggregates the order references (skipping any gone)."""
     loaded: list[Submission] = []
@@ -145,16 +157,24 @@ def refresh_submission_refs(
     its snapshot re-cached on the order (status/price/display), so a derived decision
     such as payment-readiness reads current data. A reference whose submission can no
     longer be loaded is left as-is.
+
+    Discounts do not stack. An order that claims a benefit (a certificate attached
+    to any of its submissions) is priced at the plain list price: the reduction the
+    certificate earns is settled with the organizer, and the additional-performance
+    discount is not applied on top of it.
     """
     refreshed_refs: list[SubmissionRef] = []
+    loaded: list[Submission] = []
     for ref in application.submission_refs:
         submission = submissions.get(ref.submission_id)
         if submission is None:
             continue
+        loaded.append(submission)
         refreshed_refs.append(ref_from_submission(submission))
+    discount_percent = 0 if _claims_a_benefit(loaded) else additional_performance_discount_percent
     for ref in _apply_additional_performance_discount(
         refreshed_refs,
-        discount_percent=additional_performance_discount_percent,
+        discount_percent=discount_percent,
     ):
         with translate_application_domain_errors():
             application.refresh_submission_ref(ref=ref, now=now)
