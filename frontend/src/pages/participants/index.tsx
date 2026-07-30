@@ -16,6 +16,7 @@ import {
 } from "@/entities/participant";
 import { type ApiError, apiClient, toApiError } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
+import { formatPersonName } from "@/shared/lib";
 import {
   Avatar,
   Badge,
@@ -480,6 +481,29 @@ export function ParticipantsProfilePage(): React.JSX.Element {
     },
   });
 
+  /**
+   * Registers one part of a person's ФИО, tidying its capitalisation on blur.
+   *
+   * On blur rather than on every keystroke, so the value never shifts under a
+   * caret mid-word. Only the three person fields go through here — a
+   * collective's name is registered plainly and keeps whatever case its author
+   * chose.
+   */
+  const registerName = (
+    field: "firstName" | "lastName" | "middleName",
+    options?: { required: string },
+  ) =>
+    form.register(field, {
+      ...options,
+      onBlur: () => {
+        const current = form.getValues(field);
+        const formatted = formatPersonName(current);
+        if (formatted !== current) {
+          form.setValue(field, formatted, { shouldDirty: true, shouldValidate: true });
+        }
+      },
+    });
+
   useEffect(() => {
     const participant = participantQuery.data;
     if (participant == null) {
@@ -644,15 +668,15 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                         label="Имя"
                         required
                         error={form.formState.errors.firstName?.message}
-                        {...form.register("firstName", { required: "Укажите имя" })}
+                        {...registerName("firstName", { required: "Укажите имя" })}
                       />
                       <Input
                         label="Фамилия"
                         required
                         error={form.formState.errors.lastName?.message}
-                        {...form.register("lastName", { required: "Укажите фамилию" })}
+                        {...registerName("lastName", { required: "Укажите фамилию" })}
                       />
-                      <Input label="Отчество" {...form.register("middleName")} />
+                      <Input label="Отчество" {...registerName("middleName")} />
                       <Input
                         type="date"
                         label="Дата рождения"
@@ -810,15 +834,15 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                         label="Имя"
                         required
                         error={form.formState.errors.firstName?.message}
-                        {...form.register("firstName", { required: "Укажите имя" })}
+                        {...registerName("firstName", { required: "Укажите имя" })}
                       />
                       <Input
                         label="Фамилия"
                         required
                         error={form.formState.errors.lastName?.message}
-                        {...form.register("lastName", { required: "Укажите фамилию" })}
+                        {...registerName("lastName", { required: "Укажите фамилию" })}
                       />
-                      <Input label="Отчество" {...form.register("middleName")} />
+                      <Input label="Отчество" {...registerName("middleName")} />
                     </>
                   )}
                   {form.watch("participantType") === "solo" ? (

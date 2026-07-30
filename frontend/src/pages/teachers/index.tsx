@@ -11,6 +11,7 @@ import {
   teachersUpdate,
 } from "@/shared/api/generated/teacher-directory/teacher-directory";
 import { ROUTES } from "@/shared/config";
+import { formatPersonName } from "@/shared/lib";
 import {
   Button,
   Card,
@@ -232,6 +233,16 @@ export function TeacherProfilePage(): React.JSX.Element {
   };
 
   /**
+   * Tidies a ФИО field once the user leaves it.
+   *
+   * On blur rather than on every keystroke: rewriting the value mid-word would
+   * fight the caret of anyone deliberately typing a lowercase particle.
+   */
+  const normalizeName = (field: keyof TeacherFormValues) => () => {
+    setValues((prev) => ({ ...prev, [field]: formatPersonName(prev[field]) }));
+  };
+
+  /**
    * The message under a required field, once the form has been submitted.
    *
    * Shown only after a save attempt: flagging fields the moment the page opens
@@ -273,6 +284,7 @@ export function TeacherProfilePage(): React.JSX.Element {
             required
             value={values.lastName}
             onChange={set("lastName")}
+            onBlur={normalizeName("lastName")}
             {...errorFor("lastName")}
           />
           <Input
@@ -280,6 +292,7 @@ export function TeacherProfilePage(): React.JSX.Element {
             required
             value={values.firstName}
             onChange={set("firstName")}
+            onBlur={normalizeName("firstName")}
             {...errorFor("firstName")}
           />
           <Input
@@ -287,6 +300,7 @@ export function TeacherProfilePage(): React.JSX.Element {
             required
             value={values.middleName}
             onChange={set("middleName")}
+            onBlur={normalizeName("middleName")}
             {...errorFor("middleName")}
           />
           <Input
