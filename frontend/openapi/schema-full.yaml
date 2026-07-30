@@ -8194,12 +8194,14 @@ components:
       - VIDEO
       - IMAGE
       - DOCUMENT
+      - BENEFIT
       type: string
       description: |-
         * `MUSIC` - MUSIC
         * `VIDEO` - VIDEO
         * `IMAGE` - IMAGE
         * `DOCUMENT` - DOCUMENT
+        * `BENEFIT` - BENEFIT
     BillingModelEnum:
       enum:
       - PER_PARTICIPANT
