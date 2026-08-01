@@ -24,6 +24,7 @@ from apps.applications.domain.value_objects import (
     Money,
     OrganizationName,
     PaymentReceipt,
+    PaymentReceiptId,
     PriceSnapshot,
     ServiceId,
     ServiceLine,
@@ -60,7 +61,7 @@ class ApplicationMapper:
             consents=[ApplicationMapper._consent_from_json(row) for row in model.consents],
             total_price=ApplicationMapper._total_from_json(model.total_price),
             status_history=[ApplicationMapper._change_from_json(row) for row in model.status_history],
-            payment_receipt=ApplicationMapper._receipt_from_json(model.payment_receipt),
+            payment_receipts=[ApplicationMapper._receipt_from_json(row) for row in model.payment_receipts or []],
             paid_at=model.paid_at,
             submitted_at=model.submitted_at,
             deleted_at=model.deleted_at,
@@ -94,7 +95,7 @@ class ApplicationMapper:
             "consents": [ApplicationMapper._consent_to_json(consent) for consent in entity.consents],
             "total_price": ApplicationMapper._total_to_json(entity.total_price),
             "status_history": [ApplicationMapper._change_to_json(change) for change in entity.status_history],
-            "payment_receipt": ApplicationMapper._receipt_to_json(entity.payment_receipt),
+            "payment_receipts": [ApplicationMapper._receipt_to_json(receipt) for receipt in entity.payment_receipts],
             "paid_at": entity.paid_at,
             "submitted_at": entity.submitted_at,
             "created_at": entity.created_at,
@@ -220,13 +221,13 @@ class ApplicationMapper:
         )
 
     @staticmethod
-    def _receipt_to_json(receipt: PaymentReceipt | None) -> dict[str, Any] | None:
-        if receipt is None:
-            return None
-        return {"file_reference": receipt.file.value, "uploaded_at": receipt.uploaded_at.isoformat()}
+    def _receipt_to_json(receipt: PaymentReceipt) -> dict[str, Any]:
+        return {"id": receipt.id.json(), "file_reference": receipt.file.value, "uploaded_at": receipt.uploaded_at.isoformat()}
 
     @staticmethod
-    def _receipt_from_json(data: dict[str, Any] | None) -> PaymentReceipt | None:
-        if not data:
-            return None
-        return PaymentReceipt(file=FileReference(data["file_reference"]), uploaded_at=datetime.fromisoformat(data["uploaded_at"]))
+    def _receipt_from_json(data: dict[str, Any]) -> PaymentReceipt:
+        return PaymentReceipt(
+            id=PaymentReceiptId.from_string(data["id"]),
+            file=FileReference(data["file_reference"]),
+            uploaded_at=datetime.fromisoformat(data["uploaded_at"]),
+        )

@@ -40,6 +40,7 @@ from .value_objects import (
     Currency,
     EducationalOrganizationId,
     ParticipantId,
+    PaymentReceiptId,
     ReviewerId,
     ReviewId,
     ServiceId,
@@ -67,6 +68,7 @@ __all__ = [
     "EducationalOrganizationSelected",
     "ParticipantAdded",
     "ParticipantRemoved",
+    "PaymentReceiptRemoved",
     "PaymentReceiptUploaded",
     "PerformanceDefined",
     "PriceSnapshotCreated",
@@ -382,4 +384,13 @@ class ApplicationCancelled(DomainEvent):
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class PaymentReceiptUploaded(DomainEvent):
-    """The applicant attached (or replaced) the payment receipt for the order."""
+    """The applicant attached one more payment receipt to the order."""
+
+    receipt_id: PaymentReceiptId
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class PaymentReceiptRemoved(DomainEvent):
+    """The applicant detached one of the order's payment receipts."""
+
+    receipt_id: PaymentReceiptId

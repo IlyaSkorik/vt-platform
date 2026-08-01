@@ -65,6 +65,7 @@ from .exceptions import (
     InvalidParticipantIdError,
     InvalidParticipationFormatIdError,
     InvalidPaymentReceiptError,
+    InvalidPaymentReceiptIdError,
     InvalidPerformanceCommentError,
     InvalidPerformanceTitleError,
     InvalidPersonNameError,
@@ -110,6 +111,7 @@ __all__ = [
     "ParticipantId",
     "ParticipationFormatId",
     "PaymentReceipt",
+    "PaymentReceiptId",
     "Performance",
     "PersonName",
     "PriceCalculationType",
@@ -309,6 +311,49 @@ class AttachmentId:
 
     def __repr__(self) -> str:
         return f"AttachmentId({str(self.value)!r})"
+
+
+@dataclass(frozen=True, slots=True, repr=False)
+class PaymentReceiptId:
+    """The identity of one :class:`PaymentReceipt` on an order (UUID v7).
+
+    An order may carry several receipts (a fee settled by more than one transfer),
+    so each needs its own handle: without one the applicant could only add to the
+    pile, never point at the wrong file and take it back.
+    """
+
+    value: uuid.UUID
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.value, uuid.UUID):
+            raise InvalidPaymentReceiptIdError(f"PaymentReceiptId must wrap a uuid.UUID, got {type(self.value)!r}.")
+        if self.value.version != _UUID_V7_VERSION:
+            raise InvalidPaymentReceiptIdError(f"PaymentReceiptId must be a UUID v7, got version {self.value.version}.")
+
+    @classmethod
+    def generate(cls) -> PaymentReceiptId:
+        return cls(_generate_uuid7())
+
+    @classmethod
+    def from_uuid(cls, value: uuid.UUID) -> PaymentReceiptId:
+        return cls(value)
+
+    @classmethod
+    def from_string(cls, value: str) -> PaymentReceiptId:
+        try:
+            parsed = uuid.UUID(value)
+        except (ValueError, AttributeError, TypeError) as exc:
+            raise InvalidPaymentReceiptIdError(f"{value!r} is not a valid UUID string.") from exc
+        return cls(parsed)
+
+    def json(self) -> str:
+        return str(self.value)
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+    def __repr__(self) -> str:
+        return f"PaymentReceiptId({str(self.value)!r})"
 
 
 @dataclass(frozen=True, slots=True, repr=False)
@@ -1191,18 +1236,24 @@ class PriceSnapshot:
 
 @dataclass(frozen=True, slots=True)
 class PaymentReceipt:
-    """The applicant's proof of payment for the whole order.
+    """One piece of the applicant's proof of payment for the whole order.
 
-    Unlike a submission attachment (which belongs to one performance), the receipt
-    is an **order-level** artifact: a single payment settles the application total,
-    so one receipt is kept on the Application. It pairs the stored file reference with
-    the instant it was uploaded; re-uploading replaces it.
+    Unlike a submission attachment (which belongs to one performance), a receipt is
+    an **order-level** artifact: it settles the application total, not a single
+    number in it. An order keeps a *list* of them, because the total is regularly
+    paid in more than one transfer — a school pays for part of a group and a parent
+    for the rest, or the fee goes out in instalments — and each transfer produces
+    its own slip. It pairs the stored file reference with the instant it was
+    uploaded, under an id the applicant can use to take the wrong file back.
     """
 
+    id: PaymentReceiptId
     file: FileReference
     uploaded_at: datetime
 
     def __post_init__(self) -> None:
+        if not isinstance(self.id, PaymentReceiptId):
+            raise InvalidPaymentReceiptError(f"PaymentReceipt id must be a PaymentReceiptId, got {type(self.id)!r}.")
         if not isinstance(self.file, FileReference):
             raise InvalidPaymentReceiptError(f"PaymentReceipt file must be a FileReference, got {type(self.file)!r}.")
         if not isinstance(self.uploaded_at, datetime):

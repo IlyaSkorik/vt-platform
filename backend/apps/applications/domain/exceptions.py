@@ -31,6 +31,7 @@ objects) and mapped to RFC 9457 Problem Details at the presentation edge
     │   ├── InvalidMoneyError
     │   ├── InvalidPriceSnapshotError
     │   ├── InvalidPaymentReceiptError
+    │   ├── InvalidPaymentReceiptIdError
     │   └── InvalidParticipantCountRangeError
     ├── DirectConstructionError                 - an aggregate was built bypassing its factories
     ├── SubmissionStateError                    - an operation illegal in the Submission's lifecycle
@@ -179,7 +180,11 @@ class InvalidPriceSnapshotError(ValueObjectValidationError):
 
 
 class InvalidPaymentReceiptError(ValueObjectValidationError):
-    """The provided value is not a valid payment receipt (missing file reference or timestamp)."""
+    """The provided value is not a valid payment receipt (missing id, file reference or timestamp)."""
+
+
+class InvalidPaymentReceiptIdError(ValueObjectValidationError):
+    """The provided value is not a valid ``PaymentReceiptId`` (must be a UUID v7)."""
 
 
 class InvalidParticipantCountRangeError(ValueObjectValidationError):
@@ -339,9 +344,11 @@ class ParticipantCountMismatchError(SubmissionInvariantError):
 #     │   ├── ApplicationNotEditableError
 #     │   ├── IllegalApplicationStatusTransitionError
 #     │   ├── PaymentReceiptNotAllowedError
+#     │   ├── TooManyPaymentReceiptsError
 #     │   └── TotalPriceLockedError
 #     ├── ApplicationReferenceError                   - a referenced line/ref is absent
 #     │   ├── SubmissionRefNotFoundError
+#     │   ├── PaymentReceiptNotFoundError
 #     │   └── ServiceLineNotFoundError
 #     ├── ApplicationConflictError                    - a line/ref would duplicate one present
 #     │   ├── DuplicateSubmissionRefError
@@ -429,11 +436,21 @@ class IllegalApplicationStatusTransitionError(ApplicationStateError):
 
 
 class PaymentReceiptNotAllowedError(ApplicationStateError):
-    """A payment receipt was uploaded after the order was already settled.
+    """A payment receipt was attached (or detached) after the order was already settled.
 
-    The receipt is proof of payment for the order and may be attached any time
-    before it settles (while ``DRAFT``, ``SUBMITTED`` or ``WAITING_PAYMENT``); once
-    the order is ``PAID``, ``COMPLETED`` or ``CANCELLED`` it is final.
+    A receipt is proof of payment for the order and the set of them may be changed
+    any time before it settles (while ``DRAFT``, ``SUBMITTED`` or
+    ``WAITING_PAYMENT``); once the order is ``PAID``, ``COMPLETED`` or ``CANCELLED``
+    it is final.
+    """
+
+
+class TooManyPaymentReceiptsError(ApplicationStateError):
+    """The order already carries as many payment receipts as it may hold.
+
+    An order is often settled by several transfers, so several receipts are normal;
+    an unbounded pile of them is not, and is far more likely a client retry loop
+    than an applicant paying in that many instalments.
     """
 
 
@@ -451,6 +468,10 @@ class ApplicationReferenceError(ApplicationDomainError):
 
 class SubmissionRefNotFoundError(ApplicationReferenceError):
     """The referenced submission is not attached to this application."""
+
+
+class PaymentReceiptNotFoundError(ApplicationReferenceError):
+    """The referenced payment receipt is not attached to this application."""
 
 
 class ServiceLineNotFoundError(ApplicationReferenceError):

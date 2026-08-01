@@ -17,6 +17,8 @@ from apps.applications.domain.events import (
     ApplicationPaid,
     ApplicationSubmitted,
     EducationalOrganizationSelected,
+    PaymentReceiptRemoved,
+    PaymentReceiptUploaded,
     SubmissionAttachedToApplication,
     SubmissionDetachedFromApplication,
 )
@@ -29,8 +31,11 @@ from apps.applications.domain.exceptions import (
     MissingRequiredConsentError,
     NoSubmissionsError,
     NotAllSubmissionsApprovedError,
+    PaymentReceiptNotAllowedError,
+    PaymentReceiptNotFoundError,
     ServiceLineNotFoundError,
     SubmissionRefNotFoundError,
+    TooManyPaymentReceiptsError,
 )
 from apps.applications.domain.value_objects import (
     ApplicationId,
@@ -38,8 +43,10 @@ from apps.applications.domain.value_objects import (
     CompetitionId,
     Consent,
     EducationalOrganizationId,
+    FileReference,
     Money,
     OrganizationName,
+    PaymentReceiptId,
     PriceSnapshot,
     ServiceId,
     ServiceLine,
@@ -284,6 +291,67 @@ class TestPaymentReadinessAndLifecycle:
         application.mark_paid(now=NOW)
         with pytest.raises(IllegalApplicationStatusTransitionError):
             application.cancel(now=NOW)
+
+
+class TestPaymentReceipts:
+    def test_each_upload_adds_a_receipt(self) -> None:
+        # A fee settled by two transfers has two slips; the second must not erase
+        # the first, or the order looks half-paid to whoever reconciles it.
+        application = _new_application()
+        application.upload_payment_receipt(file=FileReference("first.pdf"), now=NOW)
+        events = application.upload_payment_receipt(file=FileReference("second.pdf"), now=NOW)
+
+        assert [receipt.file.value for receipt in application.payment_receipts] == ["first.pdf", "second.pdf"]
+        assert isinstance(events[0], PaymentReceiptUploaded)
+        assert events[0].receipt_id == application.payment_receipts[1].id
+
+    def test_receipts_carry_distinct_ids(self) -> None:
+        application = _new_application()
+        application.upload_payment_receipt(file=FileReference("first.pdf"), now=NOW)
+        application.upload_payment_receipt(file=FileReference("second.pdf"), now=NOW)
+        assert len({receipt.id for receipt in application.payment_receipts}) == 2
+
+    def test_remove_detaches_only_the_receipt_named(self) -> None:
+        application = _new_application()
+        application.upload_payment_receipt(file=FileReference("keep.pdf"), now=NOW)
+        application.upload_payment_receipt(file=FileReference("wrong.pdf"), now=NOW)
+        wrong = application.payment_receipts[1]
+
+        events = application.remove_payment_receipt(receipt_id=wrong.id, now=NOW)
+
+        assert [receipt.file.value for receipt in application.payment_receipts] == ["keep.pdf"]
+        assert isinstance(events[0], PaymentReceiptRemoved)
+
+    def test_removing_a_receipt_that_is_not_there_is_refused(self) -> None:
+        application = _new_application()
+        application.upload_payment_receipt(file=FileReference("only.pdf"), now=NOW)
+        with pytest.raises(PaymentReceiptNotFoundError):
+            application.remove_payment_receipt(receipt_id=PaymentReceiptId.generate(), now=NOW)
+
+    def test_has_payment_receipt_tracks_the_list(self) -> None:
+        application = _new_application()
+        assert application.has_payment_receipt is False
+        application.upload_payment_receipt(file=FileReference("only.pdf"), now=NOW)
+        assert application.has_payment_receipt is True
+        application.remove_payment_receipt(receipt_id=application.payment_receipts[0].id, now=NOW)
+        assert application.has_payment_receipt is False
+
+    def test_the_pile_is_capped(self) -> None:
+        application = _new_application()
+        for index in range(20):
+            application.upload_payment_receipt(file=FileReference(f"transfer-{index}.pdf"), now=NOW)
+        with pytest.raises(TooManyPaymentReceiptsError):
+            application.upload_payment_receipt(file=FileReference("one-too-many.pdf"), now=NOW)
+
+    def test_a_settled_order_accepts_no_change_to_its_receipts(self) -> None:
+        application = _new_application()
+        application.upload_payment_receipt(file=FileReference("paid.pdf"), now=NOW)
+        receipt_id = application.payment_receipts[0].id
+        application.cancel(now=NOW)
+        with pytest.raises(PaymentReceiptNotAllowedError):
+            application.upload_payment_receipt(file=FileReference("late.pdf"), now=NOW)
+        with pytest.raises(PaymentReceiptNotAllowedError):
+            application.remove_payment_receipt(receipt_id=receipt_id, now=NOW)
 
 
 class TestRehydrate:

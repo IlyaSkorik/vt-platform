@@ -81,6 +81,7 @@ from .events import (
     EducationalOrganizationSelected,
     ParticipantAdded,
     ParticipantRemoved,
+    PaymentReceiptRemoved,
     PaymentReceiptUploaded,
     PerformanceDefined,
     PriceSnapshotCreated,
@@ -124,6 +125,7 @@ from .exceptions import (
     ParticipantNotFoundError,
     ParticipantRequiredError,
     PaymentReceiptNotAllowedError,
+    PaymentReceiptNotFoundError,
     PerformanceRequiredError,
     PriceSnapshotLockedError,
     PriceSnapshotRequiredError,
@@ -133,6 +135,7 @@ from .exceptions import (
     SubmissionRefNotFoundError,
     TeacherNotFoundError,
     TeacherRequiredError,
+    TooManyPaymentReceiptsError,
     TotalPriceLockedError,
 )
 from .value_objects import (
@@ -153,6 +156,7 @@ from .value_objects import (
     OrganizationName,
     ParticipantId,
     PaymentReceipt,
+    PaymentReceiptId,
     Performance,
     PersonName,
     PriceSnapshot,
@@ -1119,13 +1123,18 @@ _LEGAL_APPLICATION_TRANSITIONS: Final[dict[ApplicationStatus, frozenset[Applicat
 #: submission references, additional services, consents) may be edited.
 _APPLICATION_EDITABLE_STATUSES: Final = frozenset({ApplicationStatus.DRAFT, ApplicationStatus.SUBMITTED})
 
-#: Statuses in which the applicant may attach (or replace) the payment receipt:
+#: Statuses in which the applicant may attach or detach payment receipts:
 #: any time before the order is settled. Some festivals require payment upfront, so
 #: a receipt may be uploaded while the order is still a DRAFT in the wizard, through
 #: submission and while awaiting payment; a paid/completed/cancelled order is settled.
 _APPLICATION_RECEIPT_STATUSES: Final = frozenset(
     {ApplicationStatus.DRAFT, ApplicationStatus.SUBMITTED, ApplicationStatus.WAITING_PAYMENT}
 )
+
+#: How many payment receipts one order may carry. Paying the total in several
+#: transfers is ordinary; twenty slips for one order is a stuck client, not an
+#: applicant, and the cap keeps the JSON column (and the organizer's folder) sane.
+_MAX_PAYMENT_RECEIPTS: Final = 20
 
 #: Statuses in which a submission reference's cached snapshot may still be
 #: refreshed by the projection. Past payment the order is settled and its lines
@@ -1158,7 +1167,7 @@ class Application:
     _consents: tuple[Consent, ...] = ()
     _total_price: TotalPriceSnapshot | None = None
     _status_history: list[ApplicationStatusChange] = field(default_factory=list)
-    _payment_receipt: PaymentReceipt | None = None
+    _payment_receipts: list[PaymentReceipt] = field(default_factory=list)
     _paid_at: datetime | None = None
     _submitted_at: datetime | None = None
     _deleted_at: datetime | None = None
@@ -1220,7 +1229,7 @@ class Application:
         consents: Sequence[Consent] = (),
         total_price: TotalPriceSnapshot | None = None,
         status_history: Sequence[ApplicationStatusChange] = (),
-        payment_receipt: PaymentReceipt | None = None,
+        payment_receipts: Sequence[PaymentReceipt] = (),
         paid_at: datetime | None = None,
         submitted_at: datetime | None = None,
         deleted_at: datetime | None = None,
@@ -1242,7 +1251,7 @@ class Application:
             _consents=tuple(consents),
             _total_price=total_price,
             _status_history=list(status_history),
-            _payment_receipt=payment_receipt,
+            _payment_receipts=list(payment_receipts),
             _paid_at=paid_at,
             _submitted_at=submitted_at,
             _deleted_at=deleted_at,
@@ -1304,8 +1313,19 @@ class Application:
         return tuple(self._status_history)
 
     @property
-    def payment_receipt(self) -> PaymentReceipt | None:
-        return self._payment_receipt
+    def payment_receipts(self) -> tuple[PaymentReceipt, ...]:
+        """Every proof of payment attached to the order, oldest upload first."""
+        return tuple(self._payment_receipts)
+
+    @property
+    def has_payment_receipt(self) -> bool:
+        """Whether any proof of payment is attached at all.
+
+        The question the order lifecycle actually asks — the auto-cancel sweep and
+        the submission confirmation care that *something* was paid, not how many
+        transfers it took.
+        """
+        return bool(self._payment_receipts)
 
     @property
     def paid_at(self) -> datetime | None:
@@ -1349,7 +1369,7 @@ class Application:
         return bool(self._submission_refs) and all(ref.is_approved for ref in self._submission_refs.values())
 
     def accepts_payment_receipt(self) -> bool:
-        """Whether a payment receipt may currently be attached (any time before settled)."""
+        """Whether payment receipts may currently be attached or detached (before settled)."""
         return self._status in _APPLICATION_RECEIPT_STATUSES
 
     # ------------------------------------------------------------------
@@ -1490,21 +1510,50 @@ class Application:
         return [ApplicationAwaitingPayment(aggregate_id=self._id.value)]
 
     def upload_payment_receipt(self, *, file: FileReference, now: datetime) -> list[DomainEvent]:
-        """Attach (or replace) the applicant's proof of payment for the order.
+        """Attach one more proof of payment to the order.
 
         Allowed any time before the order is settled (``DRAFT``, ``SUBMITTED`` or
         ``WAITING_PAYMENT``) - festivals that require upfront payment let the applicant
-        attach the receipt while still filling in the draft; a paid/closed order is
+        attach a receipt while still filling in the draft; a paid/closed order is
         final. This does not change the order status; the organizer still confirms
-        payment separately. Re-uploading replaces the previous receipt.
+        payment separately.
+
+        Uploading **adds** rather than replaces: the total is regularly settled by
+        several transfers, and a second slip is normally the rest of the payment, not
+        a correction of the first. A receipt uploaded by mistake is taken back with
+        :meth:`remove_payment_receipt`.
         """
         if self._status not in _APPLICATION_RECEIPT_STATUSES:
             raise PaymentReceiptNotAllowedError(
                 f"A payment receipt cannot be attached once the application is settled ({self._status.value})."
             )
-        self._payment_receipt = PaymentReceipt(file=file, uploaded_at=now)
+        if len(self._payment_receipts) >= _MAX_PAYMENT_RECEIPTS:
+            raise TooManyPaymentReceiptsError(
+                f"The application already carries {len(self._payment_receipts)} payment receipts (the maximum is {_MAX_PAYMENT_RECEIPTS})."
+            )
+        receipt = PaymentReceipt(id=PaymentReceiptId.generate(), file=file, uploaded_at=now)
+        self._payment_receipts.append(receipt)
         self._touch(now)
-        return [PaymentReceiptUploaded(aggregate_id=self._id.value)]
+        return [PaymentReceiptUploaded(aggregate_id=self._id.value, receipt_id=receipt.id)]
+
+    def remove_payment_receipt(self, *, receipt_id: PaymentReceiptId, now: datetime) -> list[DomainEvent]:
+        """Detach one of the order's payment receipts (the wrong file, or a duplicate).
+
+        Same window as attaching one: while the order is still unsettled. Removing a
+        receipt that is not on the order is an error rather than a silent no-op — the
+        applicant asked to take back a specific file, and pretending it worked would
+        leave the wrong slip in the organizer's folder.
+        """
+        if self._status not in _APPLICATION_RECEIPT_STATUSES:
+            raise PaymentReceiptNotAllowedError(
+                f"A payment receipt cannot be removed once the application is settled ({self._status.value})."
+            )
+        remaining = [receipt for receipt in self._payment_receipts if receipt.id != receipt_id]
+        if len(remaining) == len(self._payment_receipts):
+            raise PaymentReceiptNotFoundError(f"No payment receipt {receipt_id.json()} on this application.")
+        self._payment_receipts = remaining
+        self._touch(now)
+        return [PaymentReceiptRemoved(aggregate_id=self._id.value, receipt_id=receipt_id)]
 
     def mark_paid(self, *, now: datetime) -> list[DomainEvent]:
         """Record that the order's total was paid (WAITING_PAYMENT -> PAID)."""
