@@ -19,6 +19,7 @@ __all__ = [
     "MarkApplicationPaidCommand",
     "RecordConsentsCommand",
     "RemoveAdditionalServiceCommand",
+    "RemoveApplicationReceiptCommand",
     "RemoveSubmissionFromApplicationCommand",
     "RequestApplicationPaymentCommand",
     "SelectAdditionalServiceCommand",
@@ -149,11 +150,12 @@ class SyncApplicationCommand:
 
 @dataclass(frozen=True, slots=True)
 class UploadApplicationReceiptCommand:
-    """Upload (or replace) the applicant's payment receipt for the whole order.
+    """Attach one more payment receipt to the whole order.
 
     Carries the raw uploaded bytes plus its declared filename and content type; the
     handler validates them against the fixed receipt constraints, stores the bytes,
-    and attaches the resulting reference to the order.
+    and adds the resulting reference to the order's receipts. It adds rather than
+    replaces — an order settled by several transfers has a slip per transfer.
     """
 
     requested_by: str
@@ -161,3 +163,12 @@ class UploadApplicationReceiptCommand:
     filename: str
     content_type: str
     content: bytes
+
+
+@dataclass(frozen=True, slots=True)
+class RemoveApplicationReceiptCommand:
+    """Detach one of the order's payment receipts (the wrong file, or a duplicate)."""
+
+    requested_by: str
+    application_id: str
+    receipt_id: str

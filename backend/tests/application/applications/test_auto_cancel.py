@@ -12,6 +12,7 @@ from apps.applications.domain.value_objects import (
     CompetitionId,
     FileReference,
     PaymentReceipt,
+    PaymentReceiptId,
     UserId,
 )
 from apps.applications.infrastructure.models.base import uuid7
@@ -44,7 +45,7 @@ class RecordingNotifier:
 
 
 def _application(status: ApplicationStatus, *, with_receipt: bool) -> Application:
-    receipt = PaymentReceipt(file=FileReference("receipt.pdf"), uploaded_at=_NOW) if with_receipt else None
+    receipts = [PaymentReceipt(id=PaymentReceiptId.generate(), file=FileReference("receipt.pdf"), uploaded_at=_NOW)] if with_receipt else []
     return Application.rehydrate(
         application_id=ApplicationId.generate(),
         competition_id=CompetitionId.from_uuid(uuid7()),
@@ -52,7 +53,7 @@ def _application(status: ApplicationStatus, *, with_receipt: bool) -> Applicatio
         status=status,
         created_at=_NOW,
         updated_at=_NOW,
-        payment_receipt=receipt,
+        payment_receipts=receipts,
     )
 
 

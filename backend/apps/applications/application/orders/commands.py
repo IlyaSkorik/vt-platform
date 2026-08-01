@@ -25,6 +25,7 @@ from apps.applications.application.dto.order_commands import (
     MarkApplicationPaidCommand,
     RecordConsentsCommand,
     RemoveAdditionalServiceCommand,
+    RemoveApplicationReceiptCommand,
     RemoveSubmissionFromApplicationCommand,
     RequestApplicationPaymentCommand,
     SelectAdditionalServiceCommand,
@@ -72,6 +73,7 @@ from apps.applications.domain.value_objects import (
     EducationalOrganizationId,
     FileReference,
     OrganizationName,
+    PaymentReceiptId,
     PriceCalculationType,
     ServiceId,
     ServiceLine,
@@ -98,6 +100,7 @@ __all__ = [
     "MarkApplicationPaidHandler",
     "RecordConsentsHandler",
     "RemoveAdditionalServiceHandler",
+    "RemoveApplicationReceiptHandler",
     "RemoveSubmissionFromApplicationHandler",
     "RequestApplicationPaymentHandler",
     "SelectAdditionalServiceHandler",
@@ -487,7 +490,7 @@ class SubmitApplicationHandler:
         applicant = self._identity.get_applicant(user_id=application.applicant_id)
         if applicant is None:
             return
-        if application.payment_receipt is not None:
+        if application.has_payment_receipt:
             self._notifier.notify_application_submitted(email=applicant.email, applicant_name=applicant.display_name)
             return
         deadline = now + self._payment_window
@@ -680,7 +683,7 @@ class AutoCancelUnpaidApplicationHandler:
         if application is None:
             return
         # A receipt was attached (payment proof provided) → keep the order.
-        if application.payment_receipt is not None:
+        if application.has_payment_receipt:
             return
         # Already paid / completed / cancelled → nothing to do.
         if application.status not in _AUTO_CANCELLABLE_STATUSES:
@@ -726,12 +729,12 @@ class SyncApplicationHandler:
 
 
 class UploadApplicationReceiptHandler:
-    """Use case: validate, store and attach the applicant's order-level payment receipt.
+    """Use case: validate, store and attach one order-level payment receipt.
 
-    The receipt proves payment for the whole order, so it lives on the Application
+    A receipt proves payment for the whole order, so it lives on the Application
     (not a submission). The file is validated against the fixed receipt constraints,
-    stored, and attached; the domain enforces that a receipt may only be attached
-    while the order awaits payment.
+    stored, and added to the order's receipts; the domain enforces that receipts may
+    only be attached before the order settles, and caps how many one order holds.
     """
 
     def __init__(self, *, applications: ApplicationRepository, storage: FileStorage, clock: Clock, events: EventPublisher) -> None:
@@ -762,6 +765,33 @@ class UploadApplicationReceiptHandler:
         with translate_application_domain_errors():
             file_reference = FileReference(reference)
             order_events = application.upload_payment_receipt(file=file_reference, now=now)
+        self._applications.save(application)
+        self._events.publish(order_events)
+        return ApplicationOperationResultDto.of(application, tuple(order_events))
+
+
+class RemoveApplicationReceiptHandler:
+    """Use case: detach one of the order's payment receipts.
+
+    The counterpart of uploading: since a second upload now *adds* a receipt rather
+    than replacing the first, taking back a wrong file is its own operation. The
+    stored file is left in place — the storage is append-only and an orphaned blob
+    is cheaper than deleting one an audit may still want.
+    """
+
+    def __init__(self, *, applications: ApplicationRepository, clock: Clock, events: EventPublisher) -> None:
+        self._applications = applications
+        self._clock = clock
+        self._events = events
+
+    def handle(self, command: RemoveApplicationReceiptCommand) -> ApplicationOperationResultDto:
+        now = self._clock.utcnow()
+        application = load_application(self._applications, parse_application_id(command.application_id))
+        ensure_owner(application, parse_user_id(command.requested_by))
+
+        with translate_application_domain_errors():
+            receipt_id = PaymentReceiptId.from_string(command.receipt_id)
+            order_events = application.remove_payment_receipt(receipt_id=receipt_id, now=now)
         self._applications.save(application)
         self._events.publish(order_events)
         return ApplicationOperationResultDto.of(application, tuple(order_events))

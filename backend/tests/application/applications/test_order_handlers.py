@@ -19,6 +19,7 @@ from apps.applications.application.dto.order_commands import (
     CreateApplicationCommand,
     MarkApplicationPaidCommand,
     RecordConsentsCommand,
+    RemoveApplicationReceiptCommand,
     RemoveSubmissionFromApplicationCommand,
     RequestApplicationPaymentCommand,
     SelectAdditionalServiceCommand,
@@ -36,6 +37,7 @@ from apps.applications.application.exceptions import (
     AdditionalServiceNotFoundError,
     ApplicantNotFoundError,
     ApplicationInvariantViolationError,
+    ApplicationReferenceNotFoundError,
     ApplicationStateConflictError,
     CompetitionClosedError,
     CompetitionNotFoundError,
@@ -54,6 +56,7 @@ from apps.applications.application.orders import (
     ListDraftApplicationsHandler,
     MarkApplicationPaidHandler,
     RecordConsentsHandler,
+    RemoveApplicationReceiptHandler,
     RemoveSubmissionFromApplicationHandler,
     RequestApplicationPaymentHandler,
     SelectAdditionalServiceHandler,
@@ -163,6 +166,9 @@ class Env:
 
     def upload_receipt(self) -> UploadApplicationReceiptHandler:
         return UploadApplicationReceiptHandler(applications=self.applications, storage=self.storage, clock=self.clock, events=self.events)
+
+    def remove_receipt(self) -> RemoveApplicationReceiptHandler:
+        return RemoveApplicationReceiptHandler(applications=self.applications, clock=self.clock, events=self.events)
 
     def get(self) -> GetApplicationHandler:
         return GetApplicationHandler(applications=self.applications, submissions=self.submissions, clock=self.clock)
@@ -462,7 +468,7 @@ class TestPaymentReceipt:
         env = Env()
         app_id, applicant, _ = _reach_submitted(env)
         result = env.upload_receipt().handle(_receipt_command(app_id, applicant))
-        assert result.application.payment_receipt is not None
+        assert len(result.application.payment_receipts) == 1
         assert len(env.storage.saved) == 1
 
     def test_upload_allowed_while_awaiting_payment(self) -> None:
@@ -471,14 +477,14 @@ class TestPaymentReceipt:
         env.approve(submission_id)
         env.request_payment().handle(RequestApplicationPaymentCommand(requested_by=applicant, application_id=app_id))
         result = env.upload_receipt().handle(_receipt_command(app_id, applicant))
-        assert result.application.payment_receipt is not None
+        assert len(result.application.payment_receipts) == 1
 
     def test_upload_allowed_while_draft(self) -> None:
         # Upfront-payment festivals: the receipt may be attached while still a draft.
         env = Env()
         app_id, applicant = _create_app(env)
         result = env.upload_receipt().handle(_receipt_command(app_id, applicant))
-        assert result.application.payment_receipt is not None
+        assert len(result.application.payment_receipts) == 1
         assert len(env.storage.saved) == 1
 
     def test_upload_rejected_once_settled(self) -> None:
@@ -508,3 +514,50 @@ class TestPaymentReceipt:
         app_id, _, _ = _reach_submitted(env)
         with pytest.raises(PermissionDeniedError):
             env.upload_receipt().handle(_receipt_command(app_id, uuid7_str()))
+
+    def test_a_second_upload_adds_a_receipt_instead_of_replacing_the_first(self) -> None:
+        # The whole point: a fee paid in two transfers has two slips, and the
+        # organizer needs both to see the total was covered.
+        env = Env()
+        app_id, applicant = _create_app(env)
+        env.upload_receipt().handle(_receipt_command(app_id, applicant, filename="part-one.pdf"))
+        result = env.upload_receipt().handle(_receipt_command(app_id, applicant, filename="part-two.pdf"))
+
+        assert len(result.application.payment_receipts) == 2
+        assert len(env.storage.saved) == 2
+        assert len({receipt.id for receipt in result.application.payment_receipts}) == 2
+
+    def test_remove_takes_back_only_the_receipt_named(self) -> None:
+        env = Env()
+        app_id, applicant = _create_app(env)
+        env.upload_receipt().handle(_receipt_command(app_id, applicant, filename="part-one.pdf"))
+        uploaded = env.upload_receipt().handle(_receipt_command(app_id, applicant, filename="wrong-file.pdf"))
+        kept, wrong = uploaded.application.payment_receipts
+
+        result = env.remove_receipt().handle(RemoveApplicationReceiptCommand(requested_by=applicant, application_id=app_id, receipt_id=wrong.id))
+
+        assert [receipt.id for receipt in result.application.payment_receipts] == [kept.id]
+
+    def test_remove_rejects_a_receipt_not_on_the_order(self) -> None:
+        env = Env()
+        app_id, applicant = _create_app(env)
+        env.upload_receipt().handle(_receipt_command(app_id, applicant))
+        with pytest.raises(ApplicationReferenceNotFoundError):
+            env.remove_receipt().handle(RemoveApplicationReceiptCommand(requested_by=applicant, application_id=app_id, receipt_id=uuid7_str()))
+
+    def test_remove_requires_owner(self) -> None:
+        env = Env()
+        app_id, applicant = _create_app(env)
+        uploaded = env.upload_receipt().handle(_receipt_command(app_id, applicant))
+        receipt_id = uploaded.application.payment_receipts[0].id
+        with pytest.raises(PermissionDeniedError):
+            env.remove_receipt().handle(RemoveApplicationReceiptCommand(requested_by=uuid7_str(), application_id=app_id, receipt_id=receipt_id))
+
+    def test_remove_rejected_once_settled(self) -> None:
+        env = Env()
+        app_id, applicant = _create_app(env)
+        uploaded = env.upload_receipt().handle(_receipt_command(app_id, applicant))
+        receipt_id = uploaded.application.payment_receipts[0].id
+        env.cancel().handle(CancelApplicationCommand(requested_by=applicant, application_id=app_id))
+        with pytest.raises(ApplicationStateConflictError):
+            env.remove_receipt().handle(RemoveApplicationReceiptCommand(requested_by=applicant, application_id=app_id, receipt_id=receipt_id))
