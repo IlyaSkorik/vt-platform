@@ -66,8 +66,8 @@ def _stored(name: str, content: bytes) -> str:
     return default_storage.save(f"uploads/{uuid.uuid4()}-{name}", ContentFile(content))
 
 
-def _receipt_json(reference: str) -> dict[str, Any]:
-    """The receipt exactly as the aggregate persists it.
+def _receipts_json(references: tuple[str, ...]) -> list[dict[str, Any]]:
+    """The receipts exactly as the aggregate persists them.
 
     Built through the real aggregate and mapper rather than hand-written: a receipt
     is stored under ``file_reference`` while an attachment uses ``file``, and a
@@ -79,18 +79,19 @@ def _receipt_json(reference: str) -> dict[str, Any]:
         applicant_id=UserId.from_uuid(uuid7()),
         now=NOW,
     )
-    application.upload_payment_receipt(file=FileReference(reference), now=NOW)
-    return ApplicationMapper.to_model(application).payment_receipt
+    for reference in references:
+        application.upload_payment_receipt(file=FileReference(reference), now=NOW)
+    return ApplicationMapper.to_model(application).payment_receipts
 
 
 def _order(
     *,
     competition_id: uuid.UUID,
     performer: str,
-    receipt: str | None = None,
+    receipts: tuple[str, ...] = (),
     benefits: tuple[tuple[str, str], ...] = (),
 ) -> ApplicationModel:
-    """One order with a lead performer, an optional receipt and any benefit files."""
+    """One order with a lead performer, any receipts it paid with, and any benefit files."""
     submission = SubmissionModel.objects.create(
         competition_id=competition_id,
         applicant_id=uuid.uuid4(),
@@ -102,7 +103,7 @@ def _order(
         applicant_id=submission.applicant_id,
         status="SUBMITTED",
         submission_refs=[{"submission_id": str(submission.id), "participant_display_name": performer}],
-        payment_receipt=_receipt_json(receipt) if receipt else None,
+        payment_receipts=_receipts_json(receipts),
     )
 
 
@@ -116,7 +117,7 @@ class TestDocumentsArchive:
         order = _order(
             competition_id=competition_id,
             performer="Иванова Анна",
-            receipt=_stored("receipt.pdf", b"receipt"),
+            receipts=(_stored("receipt.pdf", b"receipt"),),
             benefits=(("Справка о многодетной семье", _stored("benefit.pdf", b"benefit")),),
         )
         short = str(order.id).split("-")[0]
@@ -130,6 +131,25 @@ class TestDocumentsArchive:
                 f"Иванова Анна — {short}/Справка о многодетной семье.pdf",
             ]
             assert archive.read(f"Иванова Анна — {short}/Квитанция.pdf") == b"receipt"
+
+    def test_an_order_paid_in_several_transfers_keeps_every_slip(self, staff_client) -> None:
+        # A group fee split between a school and a parent arrives as two payments.
+        # Keeping only one of the slips would leave the folder short of the sum.
+        competition_id = uuid.uuid4()
+        order = _order(
+            competition_id=competition_id,
+            performer="Иванова Анна",
+            receipts=(_stored("part-one.pdf", b"first"), _stored("part-two.jpg", b"second")),
+        )
+        short = str(order.id).split("-")[0]
+
+        response = staff_client.get(f"{_ARCHIVE}?competitionId={competition_id}")
+        with _archive(response) as archive:
+            assert sorted(archive.namelist()) == [
+                f"Иванова Анна — {short}/Квитанция 1.pdf",
+                f"Иванова Анна — {short}/Квитанция 2.jpg",
+            ]
+            assert archive.read(f"Иванова Анна — {short}/Квитанция 2.jpg") == b"second"
 
     def test_an_order_with_no_paperwork_is_listed_rather_than_silently_absent(self, staff_client) -> None:
         competition_id = uuid.uuid4()
@@ -157,7 +177,7 @@ class TestDocumentsArchive:
 
     def test_an_order_that_paid_is_not_flagged(self, staff_client) -> None:
         competition_id = uuid.uuid4()
-        _order(competition_id=competition_id, performer="Иванова Анна", receipt=_stored("r.pdf", b"r"))
+        _order(competition_id=competition_id, performer="Иванова Анна", receipts=(_stored("r.pdf", b"r"),))
 
         response = staff_client.get(f"{_ARCHIVE}?competitionId={competition_id}")
         with _archive(response) as archive:
@@ -165,8 +185,8 @@ class TestDocumentsArchive:
 
     def test_the_archive_is_scoped_to_the_competition_asked_for(self, staff_client) -> None:
         wanted, other = uuid.uuid4(), uuid.uuid4()
-        _order(competition_id=wanted, performer="Иванова Анна", receipt=_stored("a.pdf", b"a"))
-        _order(competition_id=other, performer="Сидоров Иван", receipt=_stored("b.pdf", b"b"))
+        _order(competition_id=wanted, performer="Иванова Анна", receipts=(_stored("a.pdf", b"a"),))
+        _order(competition_id=other, performer="Сидоров Иван", receipts=(_stored("b.pdf", b"b"),))
 
         response = staff_client.get(f"{_ARCHIVE}?competitionId={wanted}")
         with _archive(response) as archive:
@@ -175,7 +195,7 @@ class TestDocumentsArchive:
 
     def test_music_never_enters_the_paperwork_archive(self, staff_client) -> None:
         competition_id = uuid.uuid4()
-        order = _order(competition_id=competition_id, performer="Иванова Анна", receipt=_stored("r.pdf", b"r"))
+        order = _order(competition_id=competition_id, performer="Иванова Анна", receipts=(_stored("r.pdf", b"r"),))
         submission_id = order.submission_refs[0]["submission_id"]
         submission = SubmissionModel.objects.get(id=submission_id)
         submission.attachments = [{"id": str(uuid.uuid4()), "type": "MUSIC", "file": _stored("t.mp3", b"track"), "caption": None}]

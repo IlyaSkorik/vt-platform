@@ -27,11 +27,13 @@ def sweep_unpaid_applications() -> None:
     from apps.applications.presentation.api.v1.orders.composition import build_auto_cancel_unpaid_handler
 
     cutoff = timezone.now() - timedelta(hours=settings.APPLICATION_PAYMENT_WINDOW_HOURS)
+    # "No receipt" is now an empty list, not a null column: one receipt of several
+    # is still proof that payment started, so any entry at all spares the order.
     overdue_ids = list(
         ApplicationModel.objects.filter(
             deleted_at__isnull=True,
             status__in=["SUBMITTED", "WAITING_PAYMENT"],
-            payment_receipt__isnull=True,
+            payment_receipts=[],
             submitted_at__isnull=False,
             submitted_at__lte=cutoff,
         ).values_list("id", flat=True)

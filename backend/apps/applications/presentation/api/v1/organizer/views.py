@@ -64,18 +64,27 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
-def _application_meta_for_submission(submission_id: str) -> tuple[str | None, str | None, str | None]:
-    app_rows = ApplicationModel.objects.filter(deleted_at__isnull=True).values("id", "submission_refs", "payment_receipt", "competition_id")
+def _receipt_references(payment_receipts: Any) -> list[str]:
+    """The stored file of every receipt on an order, oldest first, blanks dropped.
+
+    An order carries a list because its fee is regularly settled by more than one
+    transfer; everything downstream (the payment badge, the archive, the reminder)
+    asks about the whole list rather than a single document.
+    """
+    return [reference for entry in payment_receipts or [] if (reference := str((entry or {}).get("file_reference") or "").strip())]
+
+
+def _application_meta_for_submission(submission_id: str) -> tuple[str | None, list[str], str | None]:
+    app_rows = ApplicationModel.objects.filter(deleted_at__isnull=True).values("id", "submission_refs", "payment_receipts", "competition_id")
     for row in app_rows:
         refs = row.get("submission_refs") or []
         if any(str(ref.get("submission_id") or "") == submission_id for ref in refs):
-            receipt = row.get("payment_receipt") or {}
             return (
                 str(row.get("id") or "") or None,
-                str(receipt.get("file_reference") or "").strip() or None,
+                _receipt_references(row.get("payment_receipts")),
                 str(row.get("competition_id") or "") or None,
             )
-    return None, None, None
+    return None, [], None
 
 
 def _submission_ids_for_application(application_id: str | None) -> list[str]:
@@ -178,19 +187,18 @@ class OrganizerProcessingWorkspaceView(_StaffView):
         }
         organization_by_submission: dict[str, str] = {}
         application_by_submission: dict[str, str] = {}
-        application_meta_by_id: dict[str, dict[str, str | None]] = {}
+        application_meta_by_id: dict[str, dict[str, Any]] = {}
         submission_ids_by_application: dict[str, list[str]] = {}
         application_rows = ApplicationModel.objects.filter(deleted_at__isnull=True).values(
-            "id", "organization_name", "submission_refs", "payment_receipt", "total_price"
+            "id", "organization_name", "submission_refs", "payment_receipts", "total_price"
         )
         for row in application_rows:
             application_id = str(row.get("id"))
             organization_name = str(row.get("organization_name") or "")
-            payment_receipt = row.get("payment_receipt") or {}
-            receipt_ref = str(payment_receipt.get("file_reference") or "").strip()
+            receipt_refs = _receipt_references(row.get("payment_receipts"))
             total_price = row.get("total_price") or {}
             application_meta_by_id[application_id] = {
-                "receipt_ref": receipt_ref or None,
+                "receipt_refs": receipt_refs,
                 "total_amount": str(total_price.get("amount") or "").strip() or None,
                 "total_currency": str(total_price.get("currency") or "").strip() or None,
             }
@@ -233,11 +241,11 @@ class OrganizerProcessingWorkspaceView(_StaffView):
             ).lower()
             application_id = application_by_submission.get(str(model.id), "")
             app_meta = application_meta_by_id.get(application_id or "", {})
-            receipt_ref = str(app_meta.get("receipt_ref") or "")
-            payment = "RECEIPT_ATTACHED" if receipt_ref else "RECEIPT_MISSING"
+            receipt_refs = list(app_meta.get("receipt_refs") or [])
+            payment = "RECEIPT_ATTACHED" if receipt_refs else "RECEIPT_MISSING"
             has_corrections = model.status == "REQUIRES_CORRECTION"
             if model.status not in {"REQUIRES_CORRECTION", "SCHEDULED", "COMPLETED", "CANCELLED"}:
-                queue_key = "READY" if receipt_ref else "WAITING_PAYMENT"
+                queue_key = "READY" if receipt_refs else "WAITING_PAYMENT"
             row = {
                 "id": str(model.id),
                 "applicationId": application_id or None,
@@ -250,8 +258,8 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                 "status": model.status,
                 "queue": queue_key,
                 "paymentStatus": payment,
-                "hasReceipt": bool(receipt_ref),
-                "receiptFileReference": receipt_ref or None,
+                "hasReceipt": bool(receipt_refs),
+                "receiptFileReferences": receipt_refs,
                 "organization": organization_name or None,
                 "submissionDate": model.created_at,
                 "lastActivity": model.updated_at,
@@ -416,7 +424,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                     "price": representative.price.amount if representative.price else None,
                     "totalPriceAmount": total_amount_value,
                     "totalPriceCurrency": total_currency_value,
-                    "receiptFileReference": application_meta_by_id.get(selected_application_id or "", {}).get("receipt_ref"),
+                    "receiptFileReferences": list(application_meta_by_id.get(selected_application_id or "", {}).get("receipt_refs") or []),
                     "timeline": timeline,
                     "audit": audit,
                     "internalNotes": [
@@ -570,9 +578,8 @@ class OrganizerProcessingActionView(_StaffView):
             elif action == "confirm_participation":
                 model = SubmissionModel.objects.get(id=submission_id, deleted_at__isnull=True)
                 if model.status in {"APPROVED", "WAITING_PAYMENT"}:
-                    _, receipt_ref, _ = _application_meta_for_submission(submission_id)
-                    has_receipt = bool(receipt_ref)
-                    if not has_receipt:
+                    _, receipt_refs, _ = _application_meta_for_submission(submission_id)
+                    if not receipt_refs:
                         return Response({"detail": "Для подтверждения участия нужно прикрепить квитанцию."}, status=400)
                     if model.status == "APPROVED":
                         composition.build_mark_waiting_payment_handler().handle(
@@ -692,8 +699,8 @@ class OrganizerProcessingActionView(_StaffView):
                 model = SubmissionModel.objects.get(id=submission_id, deleted_at__isnull=True)
                 if model.status in {"COMPLETED", "CANCELLED", "SCHEDULED"}:
                     return Response({"detail": "Напоминание об оплате доступно только для активных заявок."}, status=400)
-                application_id, receipt_ref, competition_id = _application_meta_for_submission(submission_id)
-                if receipt_ref:
+                application_id, receipt_refs, competition_id = _application_meta_for_submission(submission_id)
+                if receipt_refs:
                     return Response({"detail": "Квитанция уже прикреплена, напоминание не требуется."}, status=400)
                 recipient = UserModel.objects.filter(id=model.applicant_id, deleted_at__isnull=True).first()
                 if recipient is None:
@@ -806,9 +813,14 @@ class OrganizerProcessingDocumentsArchiveView(_StaffView):
     downloading gigabytes of audio to read four PDFs.
 
     Scoped with ``competitionId`` when given; without it, every order the organizer
-    can see. One folder per order, so a receipt and the certificate justifying its
-    amount sit together — the receipt first, because it is the document the rest of
-    the folder explains.
+    can see. One folder per order, so the receipts and the certificate justifying the
+    amount sit together — the receipts first, because they are the documents the rest
+    of the folder explains.
+
+    An order settled by several transfers carries several receipts, and they are all
+    included, numbered in upload order (``Квитанция 1``, ``Квитанция 2``, …) so the
+    folder shows at a glance that the payment came in parts. A lone receipt keeps the
+    plain name, because numbering one document reads as a missing second one.
 
     Orders with no receipt are named in the notes. That, and not the file count, is
     what somebody reconciling payments is looking for: an order carrying a benefit
@@ -830,10 +842,11 @@ class OrganizerProcessingDocumentsArchiveView(_StaffView):
             # ``file_reference``, not ``file``: an order's receipt and a submission's
             # attachment are stored under different keys, and only the attachment uses
             # the short one.
-            receipt = str((application.payment_receipt or {}).get("file_reference") or "").strip()
-            if receipt:
-                members.append(ArchiveMember(arcname=f"{folder}/Квитанция{PurePosixPath(receipt).suffix.lower()}", reference=receipt))
-            else:
+            receipts = _receipt_references(application.payment_receipts)
+            for index, receipt in enumerate(receipts, start=1):
+                caption = "Квитанция" if len(receipts) == 1 else f"Квитанция {index}"
+                members.append(ArchiveMember(arcname=f"{folder}/{caption}{PurePosixPath(receipt).suffix.lower()}", reference=receipt))
+            if not receipts:
                 without_receipt.append(folder)
             submission_ids = [ref.get("submission_id") for ref in application.submission_refs or [] if ref.get("submission_id")]
             for row in SubmissionModel.objects.filter(id__in=submission_ids, deleted_at__isnull=True).values_list("attachments", flat=True):
