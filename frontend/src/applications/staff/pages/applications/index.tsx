@@ -41,7 +41,8 @@ type Item = {
   queue: string;
   paymentStatus: string;
   hasReceipt?: boolean;
-  receiptFileReference?: string | null;
+  /** Every slip the order paid with — a fee settled in instalments has several. */
+  receiptFileReferences?: string[];
   capabilities: Capability[];
 };
 type Detail = {
@@ -70,7 +71,7 @@ type Detail = {
   price?: string | null;
   totalPriceAmount?: string | null;
   totalPriceCurrency?: string | null;
-  receiptFileReference?: string | null;
+  receiptFileReferences?: string[];
   participants: Array<{ id: string; name: string; memberCount: number }>;
   teachers: Array<{ id: string; name: string; role: string }>;
   attachments: Array<{ id: string; type: string; fileReference: string }>;
@@ -189,6 +190,32 @@ function receiptDownloadUrl(reference: string | null | undefined): string | null
   if (value.startsWith("/media/") || value.startsWith("media/")) return resolveMediaUrl(value);
   const normalized = value.startsWith("/") ? `/media${value}` : `/media/${value}`;
   return resolveMediaUrl(normalized);
+}
+
+/**
+ * Download links for every receipt the order paid with.
+ *
+ * A fee is regularly settled by more than one transfer, so a single link would
+ * hide the rest of the payment from whoever is reconciling it. The slips are
+ * numbered only when there is more than one — numbering a lone receipt reads as
+ * a second one gone missing.
+ */
+function ReceiptDownloads({ references }: { references: string[] }): React.JSX.Element | null {
+  const urls = references.map(receiptDownloadUrl).filter((url): url is string => url !== null);
+  if (urls.length === 0) {
+    return null;
+  }
+  return (
+    <div className="mt-2 flex flex-wrap justify-end gap-2">
+      {urls.map((url, index) => (
+        <Button asChild key={url} size="sm" variant="outline">
+          <a href={url} target="_blank" rel="noreferrer">
+            {urls.length === 1 ? "Скачать квитанцию" : `Скачать квитанцию ${index + 1}`}
+          </a>
+        </Button>
+      ))}
+    </div>
+  );
 }
 
 function attachmentTypeLabel(type: string): string {
@@ -546,27 +573,13 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                         ? ` · ${workspace.data.detail.totalPriceAmount} ${workspace.data.detail.totalPriceCurrency ?? "BYN"}`
                         : ""}
                     </p>
-                    {receiptDownloadUrl(
-                      workspace.data.detail.receiptFileReference ??
-                        selectedItem.receiptFileReference,
-                    ) ? (
-                      <div className="mt-2 flex justify-end">
-                        <Button asChild size="sm" variant="outline">
-                          <a
-                            href={
-                              receiptDownloadUrl(
-                                workspace.data.detail.receiptFileReference ??
-                                  selectedItem.receiptFileReference,
-                              ) ?? "#"
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            Скачать квитанцию
-                          </a>
-                        </Button>
-                      </div>
-                    ) : null}
+                    <ReceiptDownloads
+                      references={
+                        workspace.data.detail.receiptFileReferences ??
+                        selectedItem.receiptFileReferences ??
+                        []
+                      }
+                    />
                   </div>
                   {!selectedPrimaryAction ? (
                     <Badge variant="outline">Нет доступных действий</Badge>
@@ -817,26 +830,18 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                             ? `${workspace.data.detail.totalPriceAmount} ${workspace.data.detail.totalPriceCurrency ?? "BYN"}`
                             : "не рассчитана"}
                         </p>
-                        {receiptDownloadUrl(
-                          workspace.data.detail.receiptFileReference ??
-                            selectedItem.receiptFileReference,
-                        ) ? (
-                          <div className="mt-2 flex justify-end">
-                            <Button asChild size="sm" variant="outline">
-                              <a
-                                href={
-                                  receiptDownloadUrl(
-                                    workspace.data.detail.receiptFileReference ??
-                                      selectedItem.receiptFileReference,
-                                  ) ?? "#"
-                                }
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                Скачать квитанцию
-                              </a>
-                            </Button>
-                          </div>
+                        {(
+                          workspace.data.detail.receiptFileReferences ??
+                          selectedItem.receiptFileReferences ??
+                          []
+                        ).length > 0 ? (
+                          <ReceiptDownloads
+                            references={
+                              workspace.data.detail.receiptFileReferences ??
+                              selectedItem.receiptFileReferences ??
+                              []
+                            }
+                          />
                         ) : (
                           <p className="mt-1 text-xs text-muted-foreground">
                             Файл квитанции еще не прикреплен.

@@ -14,6 +14,7 @@ import {
   applicationsCreate,
   applicationsList,
   applicationsRecordConsents,
+  applicationsRemoveReceipt,
   applicationsRemoveService,
   applicationsRemoveSubmission,
   applicationsRequestPayment,
@@ -210,7 +211,12 @@ export function useRequestPayment(applicationId: string) {
   });
 }
 
-/** Upload (or replace) the order-level payment receipt (multipart). */
+/**
+ * Attach one more order-level payment receipt (multipart).
+ *
+ * Adds rather than replaces: an order's fee is regularly settled by several
+ * transfers, so each upload is another slip, not a correction of the last.
+ */
 export function useUploadReceipt(applicationId: string) {
   const invalidate = useInvalidateApplication();
   return useMutation({
@@ -220,6 +226,18 @@ export function useUploadReceipt(applicationId: string) {
       const response = await applicationsUploadReceipt(applicationId, {
         file: file as unknown as string,
       });
+      return unwrap<ApplicationResource>(response);
+    },
+    onSuccess: () => invalidate(applicationId),
+  });
+}
+
+/** Take back one of the order's payment receipts (the wrong file, or a duplicate). */
+export function useRemoveReceipt(applicationId: string) {
+  const invalidate = useInvalidateApplication();
+  return useMutation({
+    mutationFn: async (receiptId: string): Promise<ApplicationResource> => {
+      const response = await applicationsRemoveReceipt(applicationId, receiptId);
       return unwrap<ApplicationResource>(response);
     },
     onSuccess: () => invalidate(applicationId),
