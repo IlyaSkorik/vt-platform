@@ -1,6 +1,7 @@
-import { BriefcaseBusiness, User } from "lucide-react";
+import { BriefcaseBusiness, ShieldCheck, User } from "lucide-react";
 import { NavLink } from "react-router";
 
+import { useAuth } from "@/app/providers";
 import { ROUTES } from "@/shared/config";
 import { cn } from "@/shared/lib";
 
@@ -17,6 +18,10 @@ const linkClassName = ({ isActive }: { isActive: boolean }) =>
   );
 
 export function WorkspaceSwitcher({ className }: WorkspaceSwitcherProps): React.JSX.Element {
+  // The platform console is only offered to whoever actually operates the
+  // platform; for everyone else the switcher stays the two workspaces it was.
+  const { isPlatformAdmin } = useAuth();
+
   return (
     <nav
       aria-label="Переключение рабочего пространства"
@@ -30,6 +35,12 @@ export function WorkspaceSwitcher({ className }: WorkspaceSwitcherProps): React.
         <BriefcaseBusiness className="size-4" aria-hidden="true" />
         <span>Панель управления</span>
       </NavLink>
+      {isPlatformAdmin ? (
+        <NavLink to={ROUTES.platform} className={linkClassName}>
+          <ShieldCheck className="size-4" aria-hidden="true" />
+          <span>Платформа</span>
+        </NavLink>
+      ) : null}
     </nav>
   );
 }

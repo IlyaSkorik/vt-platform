@@ -45,6 +45,30 @@ export function StaffRoute(): React.JSX.Element | null {
   return <Outlet />;
 }
 
+export function PlatformRoute(): React.JSX.Element | null {
+  const { status, sessionExpired, isPlatformAdmin } = useAuth();
+  const location = useLocation();
+
+  if (status === "loading") {
+    return null;
+  }
+
+  if (status === "unauthenticated") {
+    if (sessionExpired) {
+      return <Navigate to={ROUTES.sessionExpired} replace />;
+    }
+
+    return <Navigate to={ROUTES.login} replace state={{ from: location }} />;
+  }
+
+  // Not the staff gate: being an organization's owner grants nothing here.
+  if (!isPlatformAdmin) {
+    return <Navigate to={ROUTES.cabinet} replace />;
+  }
+
+  return <Outlet />;
+}
+
 export function GuestRoute(): React.JSX.Element | null {
   const { status } = useAuth();
 

@@ -77,8 +77,8 @@ describe("ReceiptCard", () => {
         ])}
       />,
     );
-    const rows = screen.getAllByRole("button", { name: /Удалить/ });
-    await userEvent.click(rows[1]);
+    const [, secondRow] = screen.getAllByRole("button", { name: /Удалить/ });
+    await userEvent.click(secondRow as HTMLElement);
     expect(remove).toHaveBeenCalledWith("r-2", expect.anything());
   });
 

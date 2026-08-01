@@ -18,6 +18,7 @@ const DEMO_CURRENT_USER: CurrentUser = {
     emailVerified: true,
   },
   staffMembership: null,
+  platformAdmin: false,
 };
 
 /**

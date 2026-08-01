@@ -9,10 +9,11 @@ import {
   PARTICIPANT_NAVIGATION,
   type ParticipantNavItem,
 } from "@/applications/participant/navigation";
+import { PlatformLayout } from "@/applications/platform/layouts/platform-layout";
 import { StaffLayout } from "@/applications/staff/layouts/staff-layout";
 import { STAFF_NAVIGATION, type StaffNavItem } from "@/applications/staff/navigation";
 import { ROUTES } from "@/shared/config";
-import { GuestRoute, ProtectedRoute, StaffRoute } from "./guards";
+import { GuestRoute, PlatformRoute, ProtectedRoute, StaffRoute } from "./guards";
 import { RouteError } from "./route-error";
 
 /** Lazily import a page module, mapping its named export to `Component`. */
@@ -407,6 +408,32 @@ const routes: RouteObject[] = [
               {
                 path: ROUTES.staffSettings.slice(1),
                 lazy: workspacePlaceholder(staffItem(ROUTES.staffSettings), "staff"),
+              },
+            ],
+          },
+        ],
+      },
+      {
+        // The platform operator's console, gated on `platformAdmin` rather than
+        // on staff membership: an organization's owner is not admitted here.
+        element: <PlatformRoute />,
+        children: [
+          {
+            element: <PlatformLayout />,
+            children: [
+              {
+                path: ROUTES.platform.slice(1),
+                lazy: lazyPage(
+                  () => import("@/applications/platform/pages/dashboard"),
+                  "PlatformDashboardPage",
+                ),
+              },
+              {
+                path: ROUTES.platformOrganizations.slice(1),
+                lazy: lazyPage(
+                  () => import("@/applications/platform/pages/organizations"),
+                  "PlatformOrganizationsPage",
+                ),
               },
             ],
           },

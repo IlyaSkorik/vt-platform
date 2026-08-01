@@ -24,6 +24,12 @@ interface AuthContextValue {
   staffMembership: AuthStaffMembership | null;
   /** Convenience: an ACTIVE staff membership exists. */
   isStaff: boolean;
+  /**
+   * The account operates the platform itself: connecting organizations, setting
+   * their commission, reading across all of them. Deliberately not a staff role
+   * — an organization's OWNER is the top of that organization and nothing more.
+   */
+  isPlatformAdmin: boolean;
   isAuthenticated: boolean;
   /**
    * True when a previously live session dropped (expired token + failed
@@ -131,6 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   const currentUser = query.data ?? null;
   const user = currentUser?.user ?? null;
   const staffMembership = currentUser?.staffMembership ?? null;
+  const isPlatformAdmin = currentUser?.platformAdmin ?? false;
 
   const status: AuthStatus = useMemo(() => {
     if (bootstrapping || (enabled && query.isLoading)) {
@@ -145,12 +152,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
       user,
       staffMembership,
       isStaff: staffMembership?.status === "ACTIVE",
+      isPlatformAdmin,
       isAuthenticated: status === "authenticated",
       sessionExpired,
       refresh,
       signOut,
     }),
-    [status, user, staffMembership, sessionExpired, refresh, signOut],
+    [status, user, staffMembership, isPlatformAdmin, sessionExpired, refresh, signOut],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;

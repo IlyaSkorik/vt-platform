@@ -64,6 +64,9 @@ export const ROUTES = {
   staffInvitations: "/staff/invitations",
   staffSettings: "/staff/settings",
   staffInvitation: "/staff/invitations/:token",
+  /** The platform operator's own console — above every connected organization. */
+  platform: "/platform",
+  platformOrganizations: "/platform/organizations",
   profile: "/profile",
 } as const;
 
