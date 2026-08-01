@@ -9,6 +9,8 @@ neither context should own (ARCH-001 §14):
 * **Organization** supplies the account's staff status (via the published
   ``StaffMembershipReadService`` cross-context read model), or ``None`` for the
   vast majority of users who are not staff.
+* **Platform** supplies whether the account operates the platform itself — the
+  flag the client routes the operator's console on.
 
 The view depends only on each context's *application/presentation* seams — never
 on the other's domain — so composing here introduces no coupling between them.
@@ -39,6 +41,7 @@ from apps.identity.presentation.api.v1.problems import (
 from apps.identity.presentation.api.v1.resources import user_resource
 from apps.organization.application.dto import StaffMembershipView
 from apps.organization.composition import build_staff_membership_read_service
+from apps.platform.composition import build_platform_access_read_service
 
 _TAG = "Identity"
 
@@ -47,7 +50,9 @@ def _staff_membership_resource(view: StaffMembershipView | None) -> dict[str, An
     """Project the staff read model into the ``staffMembership`` payload (or ``None``)."""
     if view is None:
         return None
-    return {"role": view.role, "status": view.status}
+    # The organization is part of the answer now: with several connected to the
+    # platform, "staff" is a fact about a person *and* which organization.
+    return {"role": view.role, "status": view.status, "organizationId": view.organization_id}
 
 
 class CurrentUserView(APIView):
@@ -62,7 +67,9 @@ class CurrentUserView(APIView):
         summary="Get the current user composed with staff membership",
         description=(
             "Return the authenticated account (Identity) composed with its staff "
-            "membership (Organization). `staffMembership` is null for non-staff users."
+            "membership (Organization) and whether it operates the platform itself. "
+            "`staffMembership` is null for non-staff users; `platformAdmin` is false "
+            "for everyone but the platform's own operators."
         ),
         request=None,
         responses={
@@ -82,11 +89,13 @@ class CurrentUserView(APIView):
         # The staff read model keys off the raw user UUID. A malformed subject can
         # never reach here (the JWT auth already validated it), so parsing is safe.
         membership = build_staff_membership_read_service().active_for_user(uuid.UUID(user_id))
+        platform_admin = build_platform_access_read_service().is_platform_administrator(uuid.UUID(user_id))
 
         correlation_id = request_id(request)
         body = {
             "user": user_resource(user),
             "staffMembership": _staff_membership_resource(membership),
+            "platformAdmin": platform_admin,
         }
         return Response(
             {"data": body, "meta": {"requestId": correlation_id}},

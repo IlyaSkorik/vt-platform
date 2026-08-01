@@ -38,6 +38,7 @@ class StaffMembershipSerializer(serializers.Serializer[dict[str, object]]):
 
     role = serializers.CharField()
     status = serializers.ChoiceField(choices=["PENDING", "ACTIVE", "REVOKED"])
+    organizationId = serializers.UUIDField(required=False)
 
 
 # The envelope is built with ``inline_serializer`` because its top-level ``data``
@@ -49,6 +50,7 @@ CurrentUserResourceSerializer = inline_serializer(
     fields={
         "user": UserResourceSerializer(),
         "staffMembership": StaffMembershipSerializer(allow_null=True),
+        "platformAdmin": serializers.BooleanField(),
     },
 )
 

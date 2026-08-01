@@ -316,9 +316,15 @@ components:
         status:
           type: string
           enum: [PENDING, ACTIVE, REVOKED]
+        organizationId:
+          type: string
+          format: uuid
+          description: >-
+            Which organization the membership is in. The platform hosts several,
+            so staff status is a fact about a person and an organization both.
     CurrentUser:
       type: object
-      required: [user, staffMembership]
+      required: [user, staffMembership, platformAdmin]
       properties:
         user:
           $ref: "#/components/schemas/User"
@@ -326,6 +332,12 @@ components:
           oneOf:
             - $ref: "#/components/schemas/StaffMembership"
             - type: "null"
+        platformAdmin:
+          type: boolean
+          description: >-
+            Whether the account operates the platform itself — connecting
+            organizations and reading across all of them. Granted only by a
+            management command, and never by anything inside an organization.
     Session:
       type: object
       required: [type, accessToken, tokenType, expiresIn]

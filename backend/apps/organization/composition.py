@@ -24,16 +24,20 @@ from apps.identity.composition import build_user_directory
 from apps.notifications.infrastructure.email import send_priority
 from apps.organization.application.handlers import (
     AcceptStaffInvitationHandler,
+    ChangeOrganizationStatusHandler,
     ChangeStaffRoleHandler,
+    ConnectOrganizationHandler,
     GetOrganizationProfileHandler,
     GetStaffInvitationHandler,
     InviteStaffHandler,
+    ListOrganizationsHandler,
     ListStaffInvitationsHandler,
     ListStaffMembersHandler,
     ProvisionOwnerHandler,
     RevokeStaffInvitationHandler,
     RevokeStaffMembershipHandler,
     SendInvitationEmailHandler,
+    SetCommissionRateHandler,
     UpdateOrganizationProfileHandler,
 )
 from apps.organization.application.interfaces import EmailGateway, InvitationTokenService
@@ -54,16 +58,20 @@ from apps.organization.infrastructure.system import SystemClock, Uuid7Generator
 
 __all__ = [
     "build_accept_staff_invitation_handler",
+    "build_change_organization_status_handler",
     "build_change_staff_role_handler",
+    "build_connect_organization_handler",
     "build_get_organization_profile_handler",
     "build_get_staff_invitation_handler",
     "build_invite_staff_handler",
+    "build_list_organizations_handler",
     "build_list_staff_invitations_handler",
     "build_list_staff_members_handler",
     "build_organization_directory",
     "build_provision_owner_handler",
     "build_revoke_staff_invitation_handler",
     "build_revoke_staff_membership_handler",
+    "build_set_commission_rate_handler",
     "build_staff_membership_read_service",
     "build_update_organization_profile_handler",
 ]
@@ -91,6 +99,41 @@ def build_provision_owner_handler() -> ProvisionOwnerHandler:
         uuids=Uuid7Generator(),
         events=_build_event_dispatcher(),
     )
+
+
+def build_connect_organization_handler() -> ConnectOrganizationHandler:
+    """Assemble the platform's connect-an-organization use case with its adapters."""
+    return ConnectOrganizationHandler(
+        organizations=DjangoOrganizationRepository(),
+        invitations=DjangoStaffInvitationRepository(),
+        clock=SystemClock(),
+        uuids=Uuid7Generator(),
+        hasher=Sha256InvitationTokenHasher(),
+        events=_build_event_dispatcher(),
+    )
+
+
+def build_set_commission_rate_handler() -> SetCommissionRateHandler:
+    """Assemble the commission-rate use case (platform-gated) with its adapters."""
+    return SetCommissionRateHandler(
+        organizations=DjangoOrganizationRepository(),
+        clock=SystemClock(),
+        events=_build_event_dispatcher(),
+    )
+
+
+def build_change_organization_status_handler() -> ChangeOrganizationStatusHandler:
+    """Assemble the suspend/reactivate use case (platform-gated) with its adapters."""
+    return ChangeOrganizationStatusHandler(
+        organizations=DjangoOrganizationRepository(),
+        clock=SystemClock(),
+        events=_build_event_dispatcher(),
+    )
+
+
+def build_list_organizations_handler() -> ListOrganizationsHandler:
+    """Assemble the platform's organization roster read use case."""
+    return ListOrganizationsHandler(organizations=DjangoOrganizationRepository())
 
 
 def build_invite_staff_handler() -> InviteStaffHandler:
@@ -124,6 +167,7 @@ def build_list_staff_invitations_handler() -> ListStaffInvitationsHandler:
     """Assemble the invitation-roster read use case with its adapters."""
     return ListStaffInvitationsHandler(
         organizations=DjangoOrganizationRepository(),
+        memberships=DjangoStaffMembershipRepository(),
         invitations=DjangoStaffInvitationRepository(),
         clock=SystemClock(),
     )
@@ -133,6 +177,7 @@ def build_revoke_staff_invitation_handler() -> RevokeStaffInvitationHandler:
     """Assemble the invitation-revocation use case with its adapters."""
     return RevokeStaffInvitationHandler(
         organizations=DjangoOrganizationRepository(),
+        memberships=DjangoStaffMembershipRepository(),
         invitations=DjangoStaffInvitationRepository(),
         clock=SystemClock(),
         events=_build_event_dispatcher(),
@@ -253,13 +298,17 @@ def build_get_staff_invitation_handler() -> GetStaffInvitationHandler:
 
 def build_get_organization_profile_handler() -> GetOrganizationProfileHandler:
     """Assemble the organization profile read use case."""
-    return GetOrganizationProfileHandler(organizations=DjangoOrganizationRepository())
+    return GetOrganizationProfileHandler(
+        organizations=DjangoOrganizationRepository(),
+        memberships=DjangoStaffMembershipRepository(),
+    )
 
 
 def build_update_organization_profile_handler() -> UpdateOrganizationProfileHandler:
     """Assemble the organization profile edit use case with its adapters."""
     return UpdateOrganizationProfileHandler(
         organizations=DjangoOrganizationRepository(),
+        memberships=DjangoStaffMembershipRepository(),
         clock=SystemClock(),
         events=_build_event_dispatcher(),
     )

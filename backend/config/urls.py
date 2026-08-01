@@ -50,6 +50,8 @@ urlpatterns = [
     # Versioned bounded-context routers (ARCH-001 §14, API-000 §2).
     path("api/v1/", include("apps.identity.presentation.urls")),
     path("api/v1/", include("apps.organization.presentation.urls")),
+    # The platform operator's own console: connected organizations and their terms.
+    path("api/v1/", include("apps.platform.presentation.urls")),
     path("api/v1/", include("apps.participants.presentation.urls")),
     # Composition edge (owned by no single context — e.g. GET /users/me).
     path("api/v1/", include("apps.composition.presentation.urls")),
