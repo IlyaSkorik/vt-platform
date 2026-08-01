@@ -57,7 +57,10 @@ __all__ = [
 
 
 class CreateCompetitionSerializer(serializers.Serializer[dict[str, object]]):
-    organizerId = serializers.UUIDField(source="organizer_id")
+    # Accepted for compatibility and then ignored: the owning organization is the
+    # caller's own, resolved server-side from their staff membership. A client
+    # cannot be trusted to say which organization a festival belongs to.
+    organizerId = serializers.UUIDField(source="organizer_id", required=False)
     title = serializers.CharField(max_length=200)
     season = serializers.CharField(max_length=50)
     description = serializers.CharField(required=False, allow_blank=True, allow_null=True)
@@ -159,9 +162,7 @@ class UpdateCompetitionDeadlinesSerializer(serializers.Serializer[dict[str, obje
 
 
 class _ContactProfileOverrideInputSerializer(serializers.Serializer[dict[str, object]]):
-    organizationName = serializers.CharField(
-        source="organization_name", required=False, allow_blank=True, allow_null=True
-    )
+    organizationName = serializers.CharField(source="organization_name", required=False, allow_blank=True, allow_null=True)
     phone = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     email = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     website = serializers.CharField(required=False, allow_blank=True, allow_null=True)
@@ -346,9 +347,7 @@ class UpdateAgeCategorySerializer(serializers.Serializer[dict[str, object]]):
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if not any(k in attrs for k in ("name", "min_age", "max_age", "sort_order", "age_category_type", "mixed_calculation_method")):
-            raise serializers.ValidationError(
-                "At least one of name, minAge, maxAge, sortOrder, type, or mixedCalculationMethod must be provided."
-            )
+            raise serializers.ValidationError("At least one of name, minAge, maxAge, sortOrder, type, or mixedCalculationMethod must be provided.")
         has_min = attrs.get("min_age") is not None
         has_max = attrs.get("max_age") is not None
         if has_min != has_max:
@@ -387,9 +386,7 @@ class UpdateParticipantGroupSerializer(serializers.Serializer[dict[str, object]]
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if not any(k in attrs for k in ("name", "min_count", "max_count", "description", "sort_order")):
-            raise serializers.ValidationError(
-                "At least one of name, minCount, maxCount, description, or sortOrder must be provided."
-            )
+            raise serializers.ValidationError("At least one of name, minCount, maxCount, description, or sortOrder must be provided.")
         if "min_count" in attrs and attrs["min_count"] is None:
             raise serializers.ValidationError("minCount cannot be null.")
         if "min_count" in attrs:
@@ -416,9 +413,7 @@ class UpdateParticipationFormatSerializer(serializers.Serializer[dict[str, objec
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if not any(k in attrs for k in ("name", "description", "enabled", "sort_order")):
-            raise serializers.ValidationError(
-                "At least one of name, description, enabled, or sortOrder must be provided."
-            )
+            raise serializers.ValidationError("At least one of name, description, enabled, or sortOrder must be provided.")
         return attrs
 
 

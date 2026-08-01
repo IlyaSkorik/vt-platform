@@ -20,6 +20,13 @@ class GetCompetitionQuery:
 
 @dataclass(frozen=True, slots=True)
 class ListCompetitionsQuery:
-    """List competitions, optionally narrowed to one season."""
+    """List competitions, optionally narrowed to one season and one organizer.
+
+    ``organizer_id`` is the scoping filter, not a convenience: the organizer
+    workspace passes the caller's own organization so a festival run by another
+    organization never appears in it. ``None`` means "every organizer", which only
+    the platform operator's own reads ask for.
+    """
 
     season: str | None = None
+    organizer_id: str | None = None

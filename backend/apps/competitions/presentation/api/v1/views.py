@@ -19,6 +19,7 @@ from django.core.files.storage import default_storage
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.request import Request
@@ -157,12 +158,18 @@ from apps.competitions.composition import (
     build_list_competitions_handler,
 )
 from apps.competitions.domain.exceptions import CompetitionDomainError
+from apps.competitions.infrastructure.models import CompetitionModel
 from apps.competitions.presentation.api.v1.problems import (
     competition_problem,
     request_id,
     validation_problem,
 )
 from apps.competitions.presentation.permissions import IsOrganizationStaff
+from apps.competitions.presentation.scope import (
+    callers_organization_id,
+    is_platform_operator,
+    may_reach_competition,
+)
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 
 from .serializers import (
@@ -247,10 +254,38 @@ def _command_kwargs(serializer: Serializer[Any]) -> dict[str, Any]:
 
 
 class CompetitionViewSet(viewsets.ViewSet):
-    """Organizer Competition API — staff-only."""
+    """Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+    Every route that names a competition passes through :meth:`initial`, which
+    refuses one belonging to another organization before the action runs. That is
+    deliberately one gate rather than a check per action: this viewset carries the
+    whole competition configuration surface (nominations, pricing, documents,
+    publication), and a rule repeated forty times is a rule with a hole in it.
+    """
 
     authentication_classes = (CredentialAwareJWTAuthentication,)
     permission_classes: tuple[type[BasePermission], ...] = (IsAuthenticated, IsOrganizationStaff)
+
+    # ------------------------------------------------------------------
+    # Organization scoping
+    # ------------------------------------------------------------------
+
+    def initial(self, request: Request, *args: Any, **kwargs: Any) -> None:
+        """Run the usual DRF setup, then refuse another organization's competition."""
+        super().initial(request, *args, **kwargs)
+        competition_id = kwargs.get("pk")
+        if competition_id is None:
+            return
+        organizer_id = CompetitionModel.objects.filter(id=competition_id, deleted_at__isnull=True).values_list("organizer_id", flat=True).first()
+        if organizer_id is None:
+            # Absent competitions are the action's business (it answers 404 with a
+            # proper problem document); only ownership is decided here.
+            return
+        if not may_reach_competition(request, organizer_id):
+            raise PermissionDenied("This competition belongs to another organization.")
+
+    def _callers_organizer_id(self, request: Request) -> uuid.UUID | None:
+        return callers_organization_id(request)
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -294,7 +329,13 @@ class CompetitionViewSet(viewsets.ViewSet):
 
     @extend_schema(tags=[_TAG], operation_id="listCompetitions", responses=_error_responses({200: CompetitionListEnvelopeSerializer}))
     def list(self, request: Request) -> Response:
-        query = ListCompetitionsQuery(season=request.query_params.get("season"))
+        # Scoped to the caller's own organization; the platform operator, who is
+        # staff of none, reads across all of them.
+        organizer_id = None if is_platform_operator(request) else self._callers_organizer_id(request)
+        query = ListCompetitionsQuery(
+            season=request.query_params.get("season"),
+            organizer_id=str(organizer_id) if organizer_id is not None else None,
+        )
         try:
             result = build_list_competitions_handler().handle(query)
         except (ApplicationError, CompetitionDomainError) as exc:
@@ -318,6 +359,13 @@ class CompetitionViewSet(viewsets.ViewSet):
         if problem is not None:
             return problem
         assert kwargs is not None
+        # The owning organization is the caller's, decided here and not by the
+        # client: it used to be whatever id the browser had cached, which with
+        # several organizations connected would file a festival under anyone.
+        organizer_id = self._callers_organizer_id(request)
+        if organizer_id is None:
+            raise PermissionDenied("Only staff of an organization may create a competition for it.")
+        kwargs["organizer_id"] = str(organizer_id)
         return self._run(CreateCompetitionHandler, CreateCompetitionCommand(**kwargs), request, success=status.HTTP_201_CREATED)
 
     @extend_schema(

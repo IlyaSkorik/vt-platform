@@ -55,6 +55,8 @@ class ListCompetitionsHandler:
         query: ListCompetitionsQuery,
     ) -> list[CompetitionSummaryView]:
         competitions = self._repository.list_all() if query.season is None else self._repository.list_by_season(Season(query.season))
+        if query.organizer_id is not None:
+            competitions = [competition for competition in competitions if competition.organizer_id.json() == query.organizer_id]
 
         return [
             CompetitionSummaryView.of(

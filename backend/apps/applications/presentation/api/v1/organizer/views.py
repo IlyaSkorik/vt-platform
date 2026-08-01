@@ -44,6 +44,7 @@ from apps.emailing import render_transactional_email_html
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.identity.infrastructure.models.user import UserModel
 from apps.organization.presentation.permissions import IsOrganizationStaff
+from apps.organization.presentation.scope import callers_organization_id, is_platform_operator
 from config.archive import ArchiveMember, zip_response
 
 _QUEUE_BY_STATUS = {
@@ -62,6 +63,22 @@ _QUEUE_BY_STATUS = {
 
 def _now() -> datetime:
     return datetime.now(UTC)
+
+
+def _visible_competitions(request: Request) -> Any:
+    """The competitions this caller's organization runs (all of them, for the operator).
+
+    Everything in the organizer workspace hangs off this queryset — the queues, the
+    filters, the exports, the archives — so scoping it here scopes the workspace.
+    A caller who is staff of no organization sees nothing rather than everything.
+    """
+    competitions = CompetitionModel.objects.filter(deleted_at__isnull=True)
+    if is_platform_operator(request):
+        return competitions
+    organization_id = callers_organization_id(request)
+    if organization_id is None:
+        return competitions.none()
+    return competitions.filter(organizer_id=organization_id)
 
 
 def _receipt_references(payment_receipts: Any) -> list[str]:
@@ -162,7 +179,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
         has_corrections_filter = (request.query_params.get("hasCorrections") or "").strip().lower()
         has_missing_files_filter = (request.query_params.get("hasMissingFiles") or "").strip().lower()
 
-        competitions = list(CompetitionModel.objects.filter(deleted_at__isnull=True).values("id", "title", "status").order_by("title"))
+        competitions = list(_visible_competitions(request).values("id", "title", "status").order_by("title"))
         competition_ids = [row["id"] for row in competitions]
         competition_name = {str(row["id"]): row["title"] for row in competitions}
         nomination_name = {
@@ -830,7 +847,11 @@ class OrganizerProcessingDocumentsArchiveView(_StaffView):
 
     def get(self, request: Request) -> Any:
         competition_filter = (request.query_params.get("competitionId") or "").strip()
-        applications = ApplicationModel.objects.filter(deleted_at__isnull=True)
+        # Scoped to the caller's own organization first, then narrowed by the
+        # filter: an archive is a bulk download, and a bulk download is exactly
+        # where a missing scope would hand over someone else's paperwork.
+        visible = list(_visible_competitions(request).values_list("id", flat=True))
+        applications = ApplicationModel.objects.filter(deleted_at__isnull=True, competition_id__in=visible)
         if competition_filter:
             applications = applications.filter(competition_id=competition_filter)
         applications = applications.order_by("created_at")
