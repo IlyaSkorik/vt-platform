@@ -153,9 +153,32 @@ def test_receipt_upload_on_draft_succeeds(auth_client: APIClient) -> None:
     competition_id = _seed_open_competition()
     app_id = _create(auth_client, competition_id).data["data"]["id"]
     receipt = SimpleUploadedFile("receipt.pdf", b"%PDF-1.4 paid", content_type="application/pdf")
-    response = auth_client.post(f"/api/v1/applications/{app_id}/receipt", {"file": receipt}, format="multipart")
+    response = auth_client.post(f"/api/v1/applications/{app_id}/receipts", {"file": receipt}, format="multipart")
     assert response.status_code == 200, response.data
-    assert response.data["data"]["paymentReceipt"] is not None
+    assert len(response.data["data"]["paymentReceipts"]) == 1
+
+
+def test_several_receipts_accumulate_and_one_can_be_taken_back(auth_client: APIClient) -> None:
+    # An order's fee is regularly settled by more than one transfer, so posting a
+    # second receipt must add to the first rather than overwrite it — and the wrong
+    # file must be removable without losing the right one.
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    competition_id = _seed_open_competition()
+    app_id = _create(auth_client, competition_id).data["data"]["id"]
+
+    def _upload(name: str):
+        upload = SimpleUploadedFile(name, b"%PDF-1.4 paid", content_type="application/pdf")
+        return auth_client.post(f"/api/v1/applications/{app_id}/receipts", {"file": upload}, format="multipart")
+
+    _upload("part-one.pdf")
+    second = _upload("part-two.pdf")
+    assert len(second.data["data"]["paymentReceipts"]) == 2
+
+    wrong_id = second.data["data"]["paymentReceipts"][1]["id"]
+    removed = auth_client.delete(f"/api/v1/applications/{app_id}/receipts/{wrong_id}")
+    assert removed.status_code == 200, removed.data
+    assert [receipt["id"] for receipt in removed.data["data"]["paymentReceipts"]] == [second.data["data"]["paymentReceipts"][0]["id"]]
 
 
 def test_ownership_isolation() -> None:

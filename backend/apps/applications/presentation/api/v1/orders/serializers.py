@@ -105,6 +105,7 @@ class _TotalPriceSerializer(serializers.Serializer[dict[str, object]]):
 
 
 class _PaymentReceiptSerializer(serializers.Serializer[dict[str, object]]):
+    id = serializers.CharField()
     fileReference = serializers.CharField()
     uploadedAt = serializers.DateTimeField()
 
@@ -125,14 +126,14 @@ class ApplicationResourceSerializer(serializers.Serializer[dict[str, object]]):
     services = _ServiceLineSerializer(many=True)
     consents = _ConsentViewSerializer(many=True)
     totalPrice = _TotalPriceSerializer(allow_null=True)
-    paymentReceipt = _PaymentReceiptSerializer(allow_null=True)
+    paymentReceipts = _PaymentReceiptSerializer(many=True)
     paidAt = serializers.DateTimeField(allow_null=True)
     createdAt = serializers.DateTimeField()
     updatedAt = serializers.DateTimeField()
 
 
 class UploadReceiptRequestSerializer(serializers.Serializer[dict[str, object]]):
-    """Validate a payment-receipt upload (a ``multipart/form-data`` file part)."""
+    """Validate one payment-receipt upload (a ``multipart/form-data`` file part)."""
 
     file = serializers.FileField()
 

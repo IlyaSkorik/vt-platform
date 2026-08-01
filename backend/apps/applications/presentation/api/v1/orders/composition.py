@@ -26,6 +26,7 @@ from apps.applications.application.orders import (
     MarkApplicationPaidHandler,
     RecordConsentsHandler,
     RemoveAdditionalServiceHandler,
+    RemoveApplicationReceiptHandler,
     RemoveSubmissionFromApplicationHandler,
     RequestApplicationPaymentHandler,
     SelectAdditionalServiceHandler,
@@ -58,6 +59,7 @@ __all__ = [
     "build_list_drafts_handler",
     "build_mark_paid_handler",
     "build_record_consents_handler",
+    "build_remove_receipt_handler",
     "build_remove_service_handler",
     "build_remove_submission_handler",
     "build_request_payment_handler",
@@ -185,6 +187,10 @@ def build_upload_receipt_handler() -> UploadApplicationReceiptHandler:
     return UploadApplicationReceiptHandler(
         applications=_applications(), storage=DjangoFileStorage(), clock=SystemClock(), events=NullEventPublisher()
     )
+
+
+def build_remove_receipt_handler() -> RemoveApplicationReceiptHandler:
+    return RemoveApplicationReceiptHandler(applications=_applications(), clock=SystemClock(), events=NullEventPublisher())
 
 
 def build_get_application_handler() -> GetApplicationHandler:

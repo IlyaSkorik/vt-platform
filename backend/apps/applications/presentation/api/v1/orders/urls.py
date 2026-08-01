@@ -18,7 +18,8 @@ from apps.applications.presentation.api.v1.orders.views import (
     ApplicationPaymentRequestView,
     ApplicationPaymentView,
     ApplicationPlacementView,
-    ApplicationReceiptView,
+    ApplicationReceiptDetailView,
+    ApplicationReceiptsView,
     ApplicationServiceDetailView,
     ApplicationServicesView,
     ApplicationSubmissionDetailView,
@@ -43,6 +44,7 @@ urlpatterns = [
     path("applications/<str:application_id>/placement", ApplicationPlacementView.as_view(), name="placement"),
     path("applications/<str:application_id>/payment-request", ApplicationPaymentRequestView.as_view(), name="payment-request"),
     path("applications/<str:application_id>/payment", ApplicationPaymentView.as_view(), name="payment"),
-    path("applications/<str:application_id>/receipt", ApplicationReceiptView.as_view(), name="receipt"),
+    path("applications/<str:application_id>/receipts", ApplicationReceiptsView.as_view(), name="receipts"),
+    path("applications/<str:application_id>/receipts/<str:receipt_id>", ApplicationReceiptDetailView.as_view(), name="receipt-detail"),
     path("applications/<str:application_id>/cancellation", ApplicationCancellationView.as_view(), name="cancellation"),
 ]

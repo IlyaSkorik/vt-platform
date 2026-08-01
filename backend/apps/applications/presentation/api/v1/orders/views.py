@@ -30,6 +30,7 @@ from apps.applications.application.dto.order_commands import (
     MarkApplicationPaidCommand,
     RecordConsentsCommand,
     RemoveAdditionalServiceCommand,
+    RemoveApplicationReceiptCommand,
     RemoveSubmissionFromApplicationCommand,
     RequestApplicationPaymentCommand,
     SelectAdditionalServiceCommand,
@@ -137,11 +138,10 @@ def _application_resource(dto: ApplicationView) -> dict[str, Any]:
         "statusHistory": [
             {"fromStatus": change.from_status, "toStatus": change.to_status, "occurredAt": _iso(change.occurred_at)} for change in dto.status_history
         ],
-        "paymentReceipt": (
-            {"fileReference": file_url(dto.payment_receipt.file_reference), "uploadedAt": _iso(dto.payment_receipt.uploaded_at)}
-            if dto.payment_receipt is not None
-            else None
-        ),
+        "paymentReceipts": [
+            {"id": receipt.id, "fileReference": file_url(receipt.file_reference), "uploadedAt": _iso(receipt.uploaded_at)}
+            for receipt in dto.payment_receipts
+        ],
         "paidAt": _iso(dto.paid_at),
         "createdAt": _iso(dto.created_at),
         "updatedAt": _iso(dto.updated_at),
@@ -441,21 +441,26 @@ class ApplicationCancellationView(_TransitionView):
         return self._run(request, application_id, command, composition.build_cancel_application_handler())
 
 
-class ApplicationReceiptView(_AuthenticatedView):
-    """POST /api/v1/applications/{id}/receipt - upload the order's payment receipt."""
+class ApplicationReceiptsView(_AuthenticatedView):
+    """POST /api/v1/applications/{id}/receipts - attach one more payment receipt.
+
+    A collection, not a single document: an order's fee is regularly settled by
+    several transfers, so posting again adds a receipt instead of replacing the
+    one already there.
+    """
 
     parser_classes = (MultiPartParser, FormParser)
 
     @extend_schema(
         tags=[_TAG],
         operation_id="applications_upload_receipt",
-        summary="Upload the payment receipt",
+        summary="Attach a payment receipt",
         request={"multipart/form-data": UploadReceiptRequestSerializer},
         responses={
             200: ApplicationResponseSerializer,
             400: OpenApiResponse(ProblemDetailSerializer, description="Malformed request."),
             404: OpenApiResponse(ProblemDetailSerializer, description="Application not found."),
-            409: OpenApiResponse(ProblemDetailSerializer, description="Not awaiting payment."),
+            409: OpenApiResponse(ProblemDetailSerializer, description="Settled, or too many receipts already."),
             413: OpenApiResponse(ProblemDetailSerializer, description="File too large."),
             415: OpenApiResponse(ProblemDetailSerializer, description="Unsupported file type."),
         },
@@ -474,6 +479,33 @@ class ApplicationReceiptView(_AuthenticatedView):
         )
         try:
             result = composition.build_upload_receipt_handler().handle(command)
+        except ApplicationError as exc:
+            return problems.application_problem(exc, instance=request.path, request=request)
+        return _envelope(request, _application_resource(result.application), status=200)
+
+
+class ApplicationReceiptDetailView(_AuthenticatedView):
+    """DELETE /api/v1/applications/{id}/receipts/{receipt_id} - take one receipt back."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="applications_remove_receipt",
+        summary="Remove a payment receipt",
+        request=None,
+        responses={
+            200: ApplicationResponseSerializer,
+            404: OpenApiResponse(ProblemDetailSerializer, description="Application or receipt not found."),
+            409: OpenApiResponse(ProblemDetailSerializer, description="The order is already settled."),
+        },
+    )
+    def delete(self, request: Request, application_id: str, receipt_id: str) -> Response:
+        command = RemoveApplicationReceiptCommand(
+            requested_by=_uid(request),
+            application_id=application_id,
+            receipt_id=receipt_id,
+        )
+        try:
+            result = composition.build_remove_receipt_handler().handle(command)
         except ApplicationError as exc:
             return problems.application_problem(exc, instance=request.path, request=request)
         return _envelope(request, _application_resource(result.application), status=200)
