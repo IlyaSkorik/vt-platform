@@ -104,6 +104,12 @@ class LastOwnerError(ApplicationError):
     code: ClassVar[str] = "last_owner"
 
 
+class OrganizationConflictError(ApplicationError):
+    """An organization already occupies the address (slug) being connected."""
+
+    code: ClassVar[str] = "organization_conflict"
+
+
 class InvitationConflictError(ApplicationError):
     """An open invitation already exists for this email in the organization."""
 

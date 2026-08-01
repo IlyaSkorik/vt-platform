@@ -54,14 +54,22 @@ __all__ = [
 
 @runtime_checkable
 class OrganizationRepository(Protocol):
-    """Port: persistence & retrieval of the singleton :class:`Organization`."""
+    """Port: persistence & retrieval of :class:`Organization` aggregates."""
 
     def get(self, organization_id: OrganizationId) -> Organization | None:
         """Return the organization with ``organization_id``, or ``None``."""
         ...
 
     def get_default(self) -> Organization | None:
-        """Return the singleton organization, or ``None`` if not yet seeded."""
+        """Return the platform's own organization, or ``None`` if not yet seeded."""
+        ...
+
+    def find_by_slug(self, slug: str) -> Organization | None:
+        """Return the organization holding ``slug``, or ``None`` (uniqueness check)."""
+        ...
+
+    def list_all(self) -> list[Organization]:
+        """Return every connected organization, oldest first."""
         ...
 
     def save(self, organization: Organization) -> None:
@@ -82,6 +90,14 @@ class StaffMembershipRepository(Protocol):
 
         **The authorization query.** A non-``None`` result is the sole basis for
         granting staff access.
+        """
+        ...
+
+    def find_active_for_user(self, user_id: StaffUserId) -> StaffMembership | None:
+        """Return the user's ACTIVE membership in whichever organization holds it.
+
+        **The scoping query.** Staff endpoints read and write inside one
+        organization — the caller's — and this is what says which one that is.
         """
         ...
 

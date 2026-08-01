@@ -11,6 +11,7 @@ edge (ARCH-001 §7.6). No Django/DRF imports.
     │   ├── InvalidStaffInvitationIdError
     │   ├── InvalidStaffUserIdError
     │   ├── InvalidOrganizationNameError
+    │   ├── InvalidCommissionRateError
     │   ├── InvalidOrganizationSlugError
     │   ├── InvalidOrganizationProfileError
     │   ├── InvalidStaffEmailError
@@ -63,6 +64,10 @@ class InvalidStaffUserIdError(ValueObjectValidationError):
 
 class InvalidOrganizationNameError(ValueObjectValidationError):
     """The provided value is not a valid organization name (empty or too long)."""
+
+
+class InvalidCommissionRateError(ValueObjectValidationError):
+    """The provided value is not a valid commission rate (outside 0–100 percent)."""
 
 
 class InvalidOrganizationSlugError(ValueObjectValidationError):

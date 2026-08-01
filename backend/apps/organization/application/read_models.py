@@ -105,8 +105,9 @@ class StaffMembershipReader:
     """Concrete :class:`StaffMembershipReadService` over the Organization repositories.
 
     Structurally satisfies the port (no inheritance — the seam is structural by
-    design). Resolves the singleton organization, then looks up the caller's
-    active membership within it.
+    design). Looks up the caller's active membership in whichever organization
+    holds it: with several connected to the platform, staff status is a fact about
+    a person *and* an organization, and the view carries both.
     """
 
     def __init__(
@@ -121,15 +122,10 @@ class StaffMembershipReader:
     def active_for_user(self, user_id: uuid.UUID) -> StaffMembershipView | None:
         """Return the user's active staff membership view, or ``None``.
 
-        A malformed id or an un-seeded organization both mean "not staff" here
-        (``None``) rather than an error: this is a read model consulted on every
-        ``/users/me`` call, and absence of staff is the normal answer.
+        "Not staff" is the normal answer here (``None``) rather than an error:
+        this is consulted on every ``/users/me`` call.
         """
-        organization = self._organizations.get_default()
-        if organization is None:
-            return None
-        staff_user_id = StaffUserId.from_uuid(user_id)
-        membership = self._memberships.find_active(user_id=staff_user_id, organization_id=organization.id)
+        membership = self._memberships.find_active_for_user(StaffUserId.from_uuid(user_id))
         if membership is None:
             return None
         return StaffMembershipView.from_membership(membership)

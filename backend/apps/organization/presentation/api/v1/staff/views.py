@@ -66,6 +66,8 @@ _PROBLEM_MAP = {
     "user_already_staff": (409, "conflict", "Conflict", None),
     "permission_denied": (403, "forbidden", "Forbidden", None),
     "invitation_conflict": (409, "conflict", "Conflict", None),
+    "organization_conflict": (409, "conflict", "Conflict", None),
+    "organization_state_conflict": (409, "conflict", "Conflict", None),
     "invitation_state_conflict": (409, "conflict", "Conflict", None),
     "membership_state_conflict": (409, "conflict", "Conflict", None),
     "last_owner": (409, "conflict", "Conflict", None),
@@ -180,7 +182,7 @@ class StaffInvitationCollectionView(APIView):
     )
     def get(self, request: Request) -> Response:
         try:
-            invitations = build_list_staff_invitations_handler().handle(ListStaffInvitationsQuery())
+            invitations = build_list_staff_invitations_handler().handle(ListStaffInvitationsQuery(requested_by=str(request.user.id)))
         except ApplicationError as exc:
             return application_problem(exc, instance=request.path, request=request)
 
@@ -350,7 +352,7 @@ class StaffMemberCollectionView(APIView):
     )
     def get(self, request: Request) -> Response:
         try:
-            members = build_list_staff_members_handler().handle(ListStaffMembersQuery())
+            members = build_list_staff_members_handler().handle(ListStaffMembersQuery(requested_by=str(request.user.id)))
         except ApplicationError as exc:
             return application_problem(exc, instance=request.path, request=request)
 

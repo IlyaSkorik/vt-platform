@@ -54,6 +54,28 @@ class DjangoStaffMembershipRepository:
             raise PersistenceError("Failed to load active membership.") from exc
         return StaffMembershipMapper.to_domain(model)
 
+    def find_active_for_user(self, user_id: StaffUserId) -> StaffMembership | None:
+        """Return the user's ACTIVE membership in **whichever** organization it is in.
+
+        With several organizations on the platform, "is this person staff?" can no
+        longer be asked of one organization: the answer is a membership that also
+        says *where*. A person belongs to one organization at a time, so the
+        earliest active row wins if data ever says otherwise.
+        """
+        try:
+            model = (
+                StaffMembershipModel.objects.filter(
+                    user_id=user_id.value,
+                    status=MembershipStatus.ACTIVE.value,
+                    deleted_at__isnull=True,
+                )
+                .order_by("created_at")
+                .first()
+            )
+        except DatabaseError as exc:  # pragma: no cover - defensive
+            raise PersistenceError("Failed to load active membership.") from exc
+        return StaffMembershipMapper.to_domain(model) if model is not None else None
+
     def exists_active(self, *, user_id: StaffUserId, organization_id: OrganizationId) -> bool:
         """Whether the user already has an ACTIVE membership (uniqueness pre-check)."""
         try:

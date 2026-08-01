@@ -31,10 +31,12 @@ import re
 import time
 import uuid
 from dataclasses import dataclass
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from enum import StrEnum
 from typing import Final
 
 from .exceptions import (
+    InvalidCommissionRateError,
     InvalidInvitationTokenHashError,
     InvalidOrganizationIdError,
     InvalidOrganizationNameError,
@@ -47,6 +49,7 @@ from .exceptions import (
 )
 
 __all__ = [
+    "CommissionRate",
     "InvitationTokenHash",
     "MembershipStatus",
     "OrganizationId",
@@ -297,6 +300,65 @@ class OrganizationSlug:
 
     def __str__(self) -> str:
         return self.value
+
+
+# ---------------------------------------------------------------------------
+# Commercial terms
+# ---------------------------------------------------------------------------
+
+#: The platform's cut is a percentage, so the scale is fixed at two decimals —
+#: enough for "12.5%" without inviting a rate nobody can reconcile against a bank
+#: statement.
+_COMMISSION_SCALE: Final = Decimal("0.01")
+
+
+@dataclass(frozen=True, slots=True)
+class CommissionRate:
+    """What share of an organization's participation fees the platform is owed.
+
+    The commercial term under which an organization is connected: the platform
+    hosts the festival, the organizer collects the entry fees, and this is the
+    percentage of those fees that comes back. Zero is a legitimate rate — an
+    organization can be hosted for free — and 100 is the upper bound rather than a
+    sensible setting.
+
+    Kept as an exact :class:`~decimal.Decimal` percentage (never a float): the
+    number is multiplied by money and read off invoices.
+    """
+
+    percent: Decimal
+
+    def __post_init__(self) -> None:
+        if isinstance(self.percent, float):
+            raise InvalidCommissionRateError("Commission rate must not be built from a float; use Decimal or str.")
+        try:
+            value = Decimal(self.percent).quantize(_COMMISSION_SCALE, rounding=ROUND_HALF_UP)
+        except (InvalidOperation, TypeError, ValueError) as exc:
+            raise InvalidCommissionRateError(f"{self.percent!r} is not a valid commission rate.") from exc
+        if value < Decimal("0") or value > Decimal("100"):
+            raise InvalidCommissionRateError(f"Commission rate must be between 0 and 100 percent, got {value}.")
+        object.__setattr__(self, "percent", value)
+
+    @classmethod
+    def zero(cls) -> CommissionRate:
+        """No commission — the organization is hosted for free."""
+        return cls(Decimal("0.00"))
+
+    @classmethod
+    def of(cls, value: Decimal | int | str) -> CommissionRate:
+        """Build a rate from a decimal, integer or string percentage."""
+        return cls(Decimal(str(value)))
+
+    def apply_to(self, amount: Decimal) -> Decimal:
+        """The platform's share of ``amount``, rounded to the minor unit.
+
+        Rounds half-up to two decimals, the way money is rounded everywhere else
+        on the platform, so a projection adds up against the fees it came from.
+        """
+        return (amount * self.percent / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    def __str__(self) -> str:
+        return f"{self.percent}%"
 
 
 # ---------------------------------------------------------------------------

@@ -27,6 +27,7 @@ from datetime import UTC, datetime
 from enum import StrEnum
 
 from .value_objects import (
+    CommissionRate,
     InvitationTokenHash,
     OrganizationId,
     OrganizationName,
@@ -41,6 +42,8 @@ from .value_objects import (
 
 __all__ = [
     "DomainEvent",
+    "OrganizationCommissionRateChanged",
+    "OrganizationConnected",
     "OrganizationProfileUpdated",
     "OrganizationReactivated",
     "OrganizationRenamed",
@@ -82,6 +85,8 @@ def _serialize(value: object) -> object:
             return value.json()
         case OrganizationName() | OrganizationSlug() | StaffEmail() | InvitationTokenHash():
             return str(value)
+        case CommissionRate():
+            return str(value.percent)
     raise TypeError(f"Cannot serialize event field of type {type(value).__name__!r}.")
 
 
@@ -113,10 +118,26 @@ class DomainEvent:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class OrganizationSeeded(DomainEvent):
-    """The singleton organization was seeded into existence."""
+    """The platform's own organization was seeded into existence."""
 
     name: OrganizationName
     slug: OrganizationSlug
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class OrganizationConnected(DomainEvent):
+    """A new organization was connected to the platform by its operator."""
+
+    name: OrganizationName
+    slug: OrganizationSlug
+    commission_rate: CommissionRate
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class OrganizationCommissionRateChanged(DomainEvent):
+    """The share of participation fees the organization owes the platform changed."""
+
+    commission_rate: CommissionRate
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

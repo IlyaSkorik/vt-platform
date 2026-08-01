@@ -33,16 +33,37 @@ class DjangoOrganizationRepository:
         return OrganizationMapper.to_domain(model)
 
     def get_default(self) -> Organization | None:
-        """Return the singleton organization, or ``None`` if not yet seeded.
+        """Return the platform's own organization, or ``None`` if not yet seeded.
 
-        The platform runs a single active organization; the earliest-created
-        active row is authoritative should more than one ever exist.
+        The earliest-created active row: the one the seed migration wrote, before
+        the platform operator connected any others. Only the bootstrap path uses
+        it — everything staff-facing resolves the caller's own organization.
         """
         try:
             model = OrganizationModel.objects.filter(deleted_at__isnull=True).order_by("created_at").first()
         except DatabaseError as exc:  # pragma: no cover - defensive
             raise PersistenceError("Failed to load the default organization.") from exc
         return OrganizationMapper.to_domain(model) if model is not None else None
+
+    def find_by_slug(self, slug: str) -> Organization | None:
+        """Return the organization holding ``slug``, or ``None``.
+
+        The uniqueness check for connecting a new organization: the slug is the
+        URL identity, so a collision has to be refused before anything is written.
+        """
+        try:
+            model = OrganizationModel.objects.filter(slug=slug, deleted_at__isnull=True).first()
+        except DatabaseError as exc:  # pragma: no cover - defensive
+            raise PersistenceError(f"Failed to load the organization with slug {slug!r}.") from exc
+        return OrganizationMapper.to_domain(model) if model is not None else None
+
+    def list_all(self) -> list[Organization]:
+        """Return every connected organization, oldest first."""
+        try:
+            models = OrganizationModel.objects.filter(deleted_at__isnull=True).order_by("created_at")
+            return [OrganizationMapper.to_domain(model) for model in models]
+        except DatabaseError as exc:  # pragma: no cover - defensive
+            raise PersistenceError("Failed to list organizations.") from exc
 
     def save(self, organization: Organization) -> None:
         """Persist ``organization`` (insert or update), honouring its version."""

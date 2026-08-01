@@ -4,16 +4,21 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from apps.organization.application.exceptions import OrganizationNotFoundError
-from apps.organization.application.interfaces import OrganizationRepository
+from apps.organization.application.dto.queries import GetOrganizationProfileQuery
+from apps.organization.application.handlers._scope import organization_of_actor
+from apps.organization.application.interfaces import (
+    OrganizationRepository,
+    StaffMembershipRepository,
+)
 from apps.organization.domain.entities import Organization
+from apps.organization.domain.value_objects import StaffUserId
 
 __all__ = ["GetOrganizationProfileHandler", "OrganizationProfileView"]
 
 
 @dataclass(frozen=True, slots=True)
 class OrganizationProfileView:
-    """Staff-facing, flat read model of the singleton organization's profile."""
+    """Staff-facing, flat read model of one organization's profile."""
 
     id: str
     name: str
@@ -49,13 +54,26 @@ class OrganizationProfileView:
 
 
 class GetOrganizationProfileHandler:
-    """Return the singleton organization profile for staff."""
+    """Return the caller's own organization profile.
 
-    def __init__(self, *, organizations: OrganizationRepository) -> None:
+    Which organization that is comes from the caller's staff membership: with
+    several connected to the platform, "the organization" is only ever the one the
+    reader belongs to.
+    """
+
+    def __init__(
+        self,
+        *,
+        organizations: OrganizationRepository,
+        memberships: StaffMembershipRepository,
+    ) -> None:
         self._organizations = organizations
+        self._memberships = memberships
 
-    def handle(self) -> OrganizationProfileView:
-        organization = self._organizations.get_default()
-        if organization is None:
-            raise OrganizationNotFoundError("Organization has not been seeded.")
+    def handle(self, query: GetOrganizationProfileQuery) -> OrganizationProfileView:
+        organization, _ = organization_of_actor(
+            StaffUserId.from_string(query.requested_by),
+            organizations=self._organizations,
+            memberships=self._memberships,
+        )
         return OrganizationProfileView.from_organization(organization)

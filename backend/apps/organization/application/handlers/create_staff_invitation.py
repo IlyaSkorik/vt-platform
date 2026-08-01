@@ -7,9 +7,9 @@ from apps.organization.application.dto import (
 from apps.organization.application.dto.commands import InviteStaffCommand
 from apps.organization.application.exceptions import (
     InvitationConflictError,
-    OrganizationNotFoundError,
     PermissionDeniedError,
 )
+from apps.organization.application.handlers._scope import organization_of_actor
 from apps.organization.application.interfaces import (
     Clock,
     EventPublisher,
@@ -63,16 +63,20 @@ class InviteStaffHandler:
 
     def handle(self, command: InviteStaffCommand) -> InvitationOperationResultDto:
         now = self._clock.utcnow()
-        organization = self._organizations.get_default()
-        if organization is None:
-            raise OrganizationNotFoundError("The organization has not been seeded; run migrations first.")
 
         email = StaffEmail(command.email)
         role = StaffRole(command.role)
         invited_by = StaffUserId.from_string(command.invited_by)
 
-        inviter_membership = self._memberships.find_active(user_id=invited_by, organization_id=organization.id)
-        if inviter_membership is None or not inviter_membership.has_role(StaffRole.OWNER, StaffRole.DIRECTOR):
+        # The invitation is issued into the inviter's *own* organization — never a
+        # platform-wide default, which with several organizations connected would
+        # hand one organization's owner a seat at another's table.
+        organization, inviter_membership = organization_of_actor(
+            invited_by,
+            organizations=self._organizations,
+            memberships=self._memberships,
+        )
+        if not inviter_membership.has_role(StaffRole.OWNER, StaffRole.DIRECTOR):
             raise PermissionDeniedError("Only active owners or directors may issue staff invitations.")
 
         if self._invitations.find_pending_by_email(email=email, organization_id=organization.id) is not None:

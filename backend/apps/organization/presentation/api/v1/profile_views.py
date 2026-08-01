@@ -12,6 +12,7 @@ from rest_framework.views import APIView
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.identity.presentation.api.v1.problems import request_id, validation_problem
 from apps.organization.application.dto.commands import UpdateOrganizationProfileCommand
+from apps.organization.application.dto.queries import GetOrganizationProfileQuery
 from apps.organization.application.exceptions import ApplicationError
 from apps.organization.application.handlers import OrganizationProfileView as OrganizationProfileReadModel
 from apps.organization.composition import (
@@ -85,7 +86,7 @@ class OrganizationProfileView(APIView):
         tags=[_TAG],
         operation_id="getOrganizationProfile",
         summary="Get organization profile",
-        description="Return the singleton organization profile. Contact fields are null until persisted.",
+        description="Return the caller's own organization profile. Contact fields are null until persisted.",
         responses={
             200: OrganizationProfileResponseSerializer,
             403: OpenApiResponse(ProblemDetailSerializer, description="Not organization staff."),
@@ -94,7 +95,7 @@ class OrganizationProfileView(APIView):
     )
     def get(self, request: Request) -> Response:
         try:
-            profile = build_get_organization_profile_handler().handle()
+            profile = build_get_organization_profile_handler().handle(GetOrganizationProfileQuery(requested_by=str(request.user.id)))
         except ApplicationError as exc:
             return application_problem(exc, instance=request.path, request=request)
         return Response(_envelope(profile, request), status=200)

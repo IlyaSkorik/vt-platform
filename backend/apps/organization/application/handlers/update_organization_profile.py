@@ -3,23 +3,26 @@
 from __future__ import annotations
 
 from apps.organization.application.dto.commands import UpdateOrganizationProfileCommand
-from apps.organization.application.exceptions import (
-    OrganizationNotFoundError,
-    translate_domain_errors,
-)
+from apps.organization.application.exceptions import translate_domain_errors
+from apps.organization.application.handlers._scope import organization_of_actor
 from apps.organization.application.handlers.get_organization_profile import OrganizationProfileView
 from apps.organization.application.interfaces import (
     Clock,
     EventPublisher,
     OrganizationRepository,
+    StaffMembershipRepository,
 )
-from apps.organization.domain.value_objects import OrganizationName, OrganizationProfile
+from apps.organization.domain.value_objects import (
+    OrganizationName,
+    OrganizationProfile,
+    StaffUserId,
+)
 
 __all__ = ["UpdateOrganizationProfileHandler"]
 
 
 class UpdateOrganizationProfileHandler:
-    """Use case: replace the singleton organization's public contact & legal profile.
+    """Use case: replace the acting staff member's organization's contact & legal profile.
 
     A full-replacement edit driven by the staff profile form. Builds the
     :class:`OrganizationProfile` value object (translating any validation error
@@ -32,17 +35,26 @@ class UpdateOrganizationProfileHandler:
         self,
         *,
         organizations: OrganizationRepository,
+        memberships: StaffMembershipRepository,
         clock: Clock,
         events: EventPublisher,
     ) -> None:
         self._organizations = organizations
+        self._memberships = memberships
         self._clock = clock
         self._events = events
 
     def handle(self, command: UpdateOrganizationProfileCommand) -> OrganizationProfileView:
-        organization = self._organizations.get_default()
-        if organization is None:
-            raise OrganizationNotFoundError("Organization has not been seeded.")
+        with translate_domain_errors():
+            updated_by = StaffUserId.from_string(command.updated_by)
+
+        # The staff member edits their own organization's profile — resolved from
+        # their membership, never a platform-wide default.
+        organization, _ = organization_of_actor(
+            updated_by,
+            organizations=self._organizations,
+            memberships=self._memberships,
+        )
 
         with translate_domain_errors():
             name = OrganizationName(command.name) if command.name is not None else None

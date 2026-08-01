@@ -4,10 +4,10 @@ from apps.organization.application.dto import StaffMembershipView
 from apps.organization.application.dto.commands import ChangeStaffRoleCommand
 from apps.organization.application.exceptions import (
     LastOwnerError,
-    OrganizationNotFoundError,
     StaffMembershipNotFoundError,
     translate_domain_errors,
 )
+from apps.organization.application.handlers._scope import organization_of_actor
 from apps.organization.application.handlers._staff_guards import is_sole_active_owner
 from apps.organization.application.interfaces import (
     Clock,
@@ -24,9 +24,10 @@ class ChangeStaffRoleHandler:
     """Use case: change the role of an active staff membership.
 
     Authorization (only OWNER/DIRECTOR) is enforced at the presentation edge. The
-    handler guards that the membership belongs to the singleton organization and
-    refuses to demote the last active OWNER (:class:`LastOwnerError`). A no-op
-    change (same role) is accepted and simply re-persists without new events.
+    handler guards that the membership belongs to **the actor's own** organization
+    — a role in someone else's is not found rather than editable — and refuses to
+    demote the last active OWNER (:class:`LastOwnerError`). A no-op change (same
+    role) is accepted and simply re-persists without new events.
     """
 
     def __init__(
@@ -45,26 +46,22 @@ class ChangeStaffRoleHandler:
     def handle(self, command: ChangeStaffRoleCommand) -> StaffMembershipView:
         now = self._clock.utcnow()
 
-        organization = self._organizations.get_default()
-        if organization is None:
-            raise OrganizationNotFoundError("The organization has not been seeded; run migrations first.")
-
         with translate_domain_errors():
             membership_id = StaffMembershipId.from_string(command.membership_id)
             changed_by = StaffUserId.from_string(command.changed_by)
             new_role = StaffRole(command.new_role)
 
+        organization, _ = organization_of_actor(
+            changed_by,
+            organizations=self._organizations,
+            memberships=self._memberships,
+        )
+
         membership = self._memberships.get(membership_id)
-        if (
-            membership is None
-            or membership.deleted_at is not None
-            or membership.organization_id != organization.id
-        ):
+        if membership is None or membership.deleted_at is not None or membership.organization_id != organization.id:
             raise StaffMembershipNotFoundError("The staff membership was not found.")
 
-        if new_role is not StaffRole.OWNER and is_sole_active_owner(
-            self._memberships.list_by_organization(organization.id), membership
-        ):
+        if new_role is not StaffRole.OWNER and is_sole_active_owner(self._memberships.list_by_organization(organization.id), membership):
             raise LastOwnerError("The last active owner cannot be demoted.")
 
         with translate_domain_errors():

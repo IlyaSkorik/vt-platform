@@ -10,7 +10,10 @@ from apps.organization.application.dto.commands import (
     ProvisionOwnerCommand,
     UpdateOrganizationProfileCommand,
 )
-from apps.organization.application.dto.queries import GetStaffInvitationQuery
+from apps.organization.application.dto.queries import (
+    GetOrganizationProfileQuery,
+    GetStaffInvitationQuery,
+)
 from apps.organization.application.exceptions import (
     InvalidInputError,
     InvalidInvitationTokenError,
@@ -32,7 +35,7 @@ from apps.organization.application.handlers import (
     UpdateOrganizationProfileHandler,
 )
 from apps.organization.application.read_models import StaffMembershipReader
-from apps.organization.domain.entities import Organization
+from apps.organization.domain.entities import Organization, StaffMembership
 from apps.organization.domain.events import OrganizationProfileUpdated, StaffInvitationIssued
 from apps.organization.domain.policies import InvitationExpiryPolicy
 from apps.organization.domain.value_objects import (
@@ -41,6 +44,7 @@ from apps.organization.domain.value_objects import (
     OrganizationSlug,
     StaffEmail,
     StaffInvitationId,
+    StaffMembershipId,
     StaffRole,
     StaffUserId,
 )
@@ -171,6 +175,23 @@ def _seeded_org(repo: FakeOrganizationRepository) -> Organization:
         now=NOW,
     )
     return repo.seed(org)
+
+
+def _owner_of(
+    orgs: FakeOrganizationRepository,
+    members: FakeStaffMembershipRepository,
+    organization: Organization,
+) -> StaffUserId:
+    """Make a fresh account the organization's owner and return its id."""
+    user_id = _new_user_uuid()
+    membership, _ = StaffMembership.activate_for_owner(
+        membership_id=StaffMembershipId.generate(),
+        organization_id=organization.id,
+        user_id=user_id,
+        now=NOW,
+    )
+    members.save(membership)
+    return user_id
 
 
 def _new_user_uuid() -> StaffUserId:
@@ -603,11 +624,13 @@ class TestSendInvitationEmailHandler:
 
 
 class TestGetOrganizationProfileHandler:
-    def test_returns_seeded_identity_with_empty_contact_fields(self) -> None:
+    def test_returns_the_callers_own_organization(self) -> None:
         orgs = FakeOrganizationRepository()
+        members = FakeStaffMembershipRepository()
         org = _seeded_org(orgs)
+        owner = _owner_of(orgs, members, org)
 
-        view = GetOrganizationProfileHandler(organizations=orgs).handle()
+        view = GetOrganizationProfileHandler(organizations=orgs, memberships=members).handle(GetOrganizationProfileQuery(requested_by=owner.json()))
 
         assert view.id == org.id.json()
         assert view.name == "Взлёт талантов"
@@ -615,9 +638,13 @@ class TestGetOrganizationProfileHandler:
         assert view.phone is None
         assert view.legal_information is None
 
-    def test_rejects_when_org_not_seeded(self) -> None:
-        with pytest.raises(OrganizationNotFoundError):
-            GetOrganizationProfileHandler(organizations=FakeOrganizationRepository()).handle()
+    def test_rejects_a_caller_who_is_staff_of_no_organization(self) -> None:
+        # Never "the first organization on the platform": with several connected,
+        # a caller who is staff nowhere must read nothing.
+        with pytest.raises(PermissionDeniedError):
+            GetOrganizationProfileHandler(organizations=FakeOrganizationRepository(), memberships=FakeStaffMembershipRepository()).handle(
+                GetOrganizationProfileQuery(requested_by=_new_user_uuid().json())
+            )
 
 
 class TestUpdateOrganizationProfileHandler:
@@ -625,17 +652,24 @@ class TestUpdateOrganizationProfileHandler:
         self,
         orgs: FakeOrganizationRepository,
         events: RecordingEventPublisher,
+        members: FakeStaffMembershipRepository | None = None,
     ) -> UpdateOrganizationProfileHandler:
-        return UpdateOrganizationProfileHandler(organizations=orgs, clock=FakeClock(), events=events)
+        return UpdateOrganizationProfileHandler(
+            organizations=orgs,
+            memberships=members if members is not None else FakeStaffMembershipRepository(),
+            clock=FakeClock(),
+            events=events,
+        )
 
     def test_persists_and_returns_updated_profile(self) -> None:
         orgs = FakeOrganizationRepository()
         events = RecordingEventPublisher()
-        _seeded_org(orgs)
+        members = FakeStaffMembershipRepository()
+        owner = _owner_of(orgs, members, _seeded_org(orgs))
 
-        view = self._handler(orgs, events).handle(
+        view = self._handler(orgs, events, members).handle(
             UpdateOrganizationProfileCommand(
-                updated_by=_new_user_uuid().json(),
+                updated_by=owner.json(),
                 phone="+7 900 000-00-00",
                 email="hello@vzlet.ru",
                 website="https://vzlet.ru",
@@ -654,11 +688,10 @@ class TestUpdateOrganizationProfileHandler:
     def test_renames_organization(self) -> None:
         orgs = FakeOrganizationRepository()
         events = RecordingEventPublisher()
-        _seeded_org(orgs)
+        members = FakeStaffMembershipRepository()
+        owner = _owner_of(orgs, members, _seeded_org(orgs))
 
-        view = self._handler(orgs, events).handle(
-            UpdateOrganizationProfileCommand(updated_by=_new_user_uuid().json(), name="Новое имя")
-        )
+        view = self._handler(orgs, events, members).handle(UpdateOrganizationProfileCommand(updated_by=owner.json(), name="Новое имя"))
 
         assert view.name == "Новое имя"
         assert view.slug == "vzlyot-talantov"  # slug stays fixed
@@ -666,21 +699,19 @@ class TestUpdateOrganizationProfileHandler:
 
     def test_rejects_blank_name(self) -> None:
         orgs = FakeOrganizationRepository()
-        _seeded_org(orgs)
+        members = FakeStaffMembershipRepository()
+        owner = _owner_of(orgs, members, _seeded_org(orgs))
 
         with pytest.raises(InvalidInputError):
-            self._handler(orgs, RecordingEventPublisher()).handle(
-                UpdateOrganizationProfileCommand(updated_by=_new_user_uuid().json(), name="   ")
-            )
+            self._handler(orgs, RecordingEventPublisher(), members).handle(UpdateOrganizationProfileCommand(updated_by=owner.json(), name="   "))
 
     def test_blank_fields_are_normalized_to_none(self) -> None:
         orgs = FakeOrganizationRepository()
         events = RecordingEventPublisher()
-        _seeded_org(orgs)
+        members = FakeStaffMembershipRepository()
+        owner = _owner_of(orgs, members, _seeded_org(orgs))
 
-        view = self._handler(orgs, events).handle(
-            UpdateOrganizationProfileCommand(updated_by=_new_user_uuid().json(), phone="   ", email=None)
-        )
+        view = self._handler(orgs, events, members).handle(UpdateOrganizationProfileCommand(updated_by=owner.json(), phone="   ", email=None))
 
         assert view.phone is None
         assert view.email is None
@@ -688,34 +719,34 @@ class TestUpdateOrganizationProfileHandler:
     def test_unchanged_profile_is_a_noop_without_event(self) -> None:
         orgs = FakeOrganizationRepository()
         events = RecordingEventPublisher()
-        _seeded_org(orgs)
+        members = FakeStaffMembershipRepository()
+        owner = _owner_of(orgs, members, _seeded_org(orgs))
 
         # Seeded organization already has an empty profile; submitting an empty one changes nothing.
-        self._handler(orgs, events).handle(UpdateOrganizationProfileCommand(updated_by=_new_user_uuid().json()))
+        self._handler(orgs, events, members).handle(UpdateOrganizationProfileCommand(updated_by=owner.json()))
 
         assert events.published == []
 
-    def test_rejects_when_org_not_seeded(self) -> None:
-        with pytest.raises(OrganizationNotFoundError):
+    def test_rejects_a_caller_who_is_staff_of_no_organization(self) -> None:
+        with pytest.raises(PermissionDeniedError):
             self._handler(FakeOrganizationRepository(), RecordingEventPublisher()).handle(
                 UpdateOrganizationProfileCommand(updated_by=_new_user_uuid().json(), phone="123")
             )
 
     def test_rejects_overlong_field(self) -> None:
         orgs = FakeOrganizationRepository()
-        _seeded_org(orgs)
+        members = FakeStaffMembershipRepository()
+        owner = _owner_of(orgs, members, _seeded_org(orgs))
 
         with pytest.raises(InvalidInputError):
-            self._handler(orgs, RecordingEventPublisher()).handle(
-                UpdateOrganizationProfileCommand(updated_by=_new_user_uuid().json(), phone="x" * 201)
-            )
+            self._handler(orgs, RecordingEventPublisher(), members).handle(UpdateOrganizationProfileCommand(updated_by=owner.json(), phone="x" * 201))
 
     def test_rejects_update_on_suspended_organization(self) -> None:
         orgs = FakeOrganizationRepository()
+        members = FakeStaffMembershipRepository()
         org = _seeded_org(orgs)
+        owner = _owner_of(orgs, members, org)
         org.suspend(now=NOW)
 
         with pytest.raises(OrganizationStateConflictError):
-            self._handler(orgs, RecordingEventPublisher()).handle(
-                UpdateOrganizationProfileCommand(updated_by=_new_user_uuid().json(), phone="123")
-            )
+            self._handler(orgs, RecordingEventPublisher(), members).handle(UpdateOrganizationProfileCommand(updated_by=owner.json(), phone="123"))

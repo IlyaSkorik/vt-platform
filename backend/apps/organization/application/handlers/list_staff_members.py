@@ -3,17 +3,18 @@ from __future__ import annotations
 from apps.identity.application.read_models import UserDirectory
 from apps.organization.application.dto import StaffMemberView
 from apps.organization.application.dto.queries import ListStaffMembersQuery
-from apps.organization.application.exceptions import OrganizationNotFoundError
+from apps.organization.application.handlers._scope import organization_of_actor
 from apps.organization.application.interfaces import (
     OrganizationRepository,
     StaffMembershipRepository,
 )
+from apps.organization.domain.value_objects import StaffUserId
 
 __all__ = ["ListStaffMembersHandler"]
 
 
 class ListStaffMembersHandler:
-    """Use case: list every staff member of the singleton organization.
+    """Use case: list every staff member of the caller's own organization.
 
     A read-only roster projection joining each :class:`StaffMembership` to its
     Identity user card via the published :class:`UserDirectory` port (the same
@@ -34,9 +35,11 @@ class ListStaffMembersHandler:
         self._users = users
 
     def handle(self, query: ListStaffMembersQuery) -> list[StaffMemberView]:
-        organization = self._organizations.get_default()
-        if organization is None:
-            raise OrganizationNotFoundError("The organization has not been seeded; run migrations first.")
+        organization, _ = organization_of_actor(
+            StaffUserId.from_string(query.requested_by),
+            organizations=self._organizations,
+            memberships=self._memberships,
+        )
 
         memberships = self._memberships.list_by_organization(organization.id)
         cards = self._users.resolve({membership.user_id.value for membership in memberships})

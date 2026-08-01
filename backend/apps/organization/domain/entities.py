@@ -32,6 +32,8 @@ from typing import Final
 
 from .events import (
     DomainEvent,
+    OrganizationCommissionRateChanged,
+    OrganizationConnected,
     OrganizationProfileUpdated,
     OrganizationReactivated,
     OrganizationRenamed,
@@ -57,6 +59,7 @@ from .exceptions import (
 )
 from .policies import InvitationExpiryPolicy
 from .value_objects import (
+    CommissionRate,
     InvitationTokenHash,
     MembershipStatus,
     OrganizationId,
@@ -80,10 +83,19 @@ _CREATION_TOKEN: Final = object()
 
 @dataclass(slots=True, eq=False, repr=False)
 class Organization:
-    """The singleton operating organization aggregate root.
+    """One organization running festivals on the platform.
 
-    There is exactly one instance ("Взлёт талантов"), seeded via :meth:`seed`
-    (used only by the data migration) and never created through a public API.
+    The platform's own organization ("Взлёт талантов") is seeded via :meth:`seed`
+    by the data migration; every other one is **connected** by the platform
+    operator via :meth:`connect`, which is the only other construction path — an
+    organization can never sign itself up, and no organization can create another.
+
+    Alongside its identity and profile it carries the commercial term it was
+    connected under: :class:`CommissionRate`, the share of the participation fees
+    it collects that is owed back to the platform. That term belongs to the
+    platform, not to the organization's own staff, so only a platform-level use
+    case ever calls :meth:`change_commission_rate`.
+
     Guards its own status transitions. Equality/hashing is by :class:`OrganizationId`.
     """
 
@@ -95,6 +107,7 @@ class Organization:
     _created_at: datetime
     _updated_at: datetime
     _profile: OrganizationProfile = field(default_factory=OrganizationProfile.empty)
+    _commission_rate: CommissionRate = field(default_factory=CommissionRate.zero)
     _deleted_at: datetime | None = None
     _version: int = 1
 
@@ -135,6 +148,37 @@ class Organization:
         return org, [event]
 
     @classmethod
+    def connect(
+        cls,
+        *,
+        organization_id: OrganizationId,
+        name: OrganizationName,
+        slug: OrganizationSlug,
+        commission_rate: CommissionRate,
+        now: datetime,
+    ) -> tuple[Organization, list[DomainEvent]]:
+        """Connect a new organization to the platform, ACTIVE from the start.
+
+        The platform operator's path: they name the organization and the share of
+        its fees the platform is owed, and the organization begins operating at
+        once. Its first owner arrives separately, by invitation — connecting an
+        organization and handing someone the keys to it are two facts, and the
+        second one may well be accepted days later.
+        """
+        org = cls(
+            _token=_CREATION_TOKEN,
+            _id=organization_id,
+            _name=name,
+            _slug=slug,
+            _status=OrganizationStatus.ACTIVE,
+            _created_at=now,
+            _updated_at=now,
+            _commission_rate=commission_rate,
+        )
+        event = OrganizationConnected(aggregate_id=organization_id.value, name=name, slug=slug, commission_rate=commission_rate)
+        return org, [event]
+
+    @classmethod
     def rehydrate(
         cls,
         *,
@@ -145,6 +189,7 @@ class Organization:
         created_at: datetime,
         updated_at: datetime,
         profile: OrganizationProfile | None = None,
+        commission_rate: CommissionRate | None = None,
         deleted_at: datetime | None = None,
         version: int = 1,
     ) -> Organization:
@@ -158,6 +203,7 @@ class Organization:
             _created_at=created_at,
             _updated_at=updated_at,
             _profile=profile if profile is not None else OrganizationProfile.empty(),
+            _commission_rate=commission_rate if commission_rate is not None else CommissionRate.zero(),
             _deleted_at=deleted_at,
             _version=version,
         )
@@ -185,6 +231,11 @@ class Organization:
     @property
     def profile(self) -> OrganizationProfile:
         return self._profile
+
+    @property
+    def commission_rate(self) -> CommissionRate:
+        """The share of participation fees this organization owes the platform."""
+        return self._commission_rate
 
     @property
     def created_at(self) -> datetime:
@@ -225,6 +276,24 @@ class Organization:
         self._status = OrganizationStatus.ACTIVE
         self._touch(now)
         return [OrganizationReactivated(aggregate_id=self._id.value)]
+
+    def change_commission_rate(self, rate: CommissionRate, *, now: datetime) -> list[DomainEvent]:
+        """Set the share of participation fees owed to the platform.
+
+        A platform-level decision, not an organization-level one: the rate is the
+        term the organization was connected under, and its own staff never reach
+        this. Setting the rate it already has is a no-op — no version bump, no
+        event — so re-saving an unchanged form does not read as a renegotiation.
+
+        Allowed while suspended: suspension stops the organization operating, but
+        what it owes is exactly the kind of thing that gets renegotiated *because*
+        it was suspended.
+        """
+        if rate == self._commission_rate:
+            return []
+        self._commission_rate = rate
+        self._touch(now)
+        return [OrganizationCommissionRateChanged(aggregate_id=self._id.value, commission_rate=rate)]
 
     def update_profile(
         self,

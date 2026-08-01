@@ -3,15 +3,16 @@ from __future__ import annotations
 from apps.organization.application.dto import InvitationView
 from apps.organization.application.dto.commands import RevokeStaffInvitationCommand
 from apps.organization.application.exceptions import (
-    OrganizationNotFoundError,
     StaffInvitationNotFoundError,
     translate_domain_errors,
 )
+from apps.organization.application.handlers._scope import organization_of_actor
 from apps.organization.application.interfaces import (
     Clock,
     EventPublisher,
     OrganizationRepository,
     StaffInvitationRepository,
+    StaffMembershipRepository,
 )
 from apps.organization.domain.value_objects import StaffInvitationId, StaffUserId
 
@@ -22,7 +23,7 @@ class RevokeStaffInvitationHandler:
     """Use case: revoke a still-pending staff invitation.
 
     Authorization (only OWNER/DIRECTOR) is enforced at the presentation edge; the
-    handler guards that the invitation belongs to the singleton organization and
+    handler guards that the invitation belongs to the actor's own organization and
     that its own state permits revocation (an accepted or already-revoked
     invitation raises through :func:`translate_domain_errors`).
     """
@@ -31,11 +32,13 @@ class RevokeStaffInvitationHandler:
         self,
         *,
         organizations: OrganizationRepository,
+        memberships: StaffMembershipRepository,
         invitations: StaffInvitationRepository,
         clock: Clock,
         events: EventPublisher,
     ) -> None:
         self._organizations = organizations
+        self._memberships = memberships
         self._invitations = invitations
         self._clock = clock
         self._events = events
@@ -43,20 +46,18 @@ class RevokeStaffInvitationHandler:
     def handle(self, command: RevokeStaffInvitationCommand) -> InvitationView:
         now = self._clock.utcnow()
 
-        organization = self._organizations.get_default()
-        if organization is None:
-            raise OrganizationNotFoundError("The organization has not been seeded; run migrations first.")
-
         with translate_domain_errors():
             invitation_id = StaffInvitationId.from_string(command.invitation_id)
             revoked_by = StaffUserId.from_string(command.revoked_by)
 
+        organization, _ = organization_of_actor(
+            revoked_by,
+            organizations=self._organizations,
+            memberships=self._memberships,
+        )
+
         invitation = self._invitations.get(invitation_id)
-        if (
-            invitation is None
-            or invitation.deleted_at is not None
-            or invitation.organization_id != organization.id
-        ):
+        if invitation is None or invitation.deleted_at is not None or invitation.organization_id != organization.id:
             raise StaffInvitationNotFoundError("The invitation was not found.")
 
         with translate_domain_errors():

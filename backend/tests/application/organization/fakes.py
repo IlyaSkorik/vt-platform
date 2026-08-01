@@ -106,6 +106,12 @@ class FakeOrganizationRepository:
     def get_default(self) -> Organization | None:
         return next(iter(self._by_id.values()), None)
 
+    def find_by_slug(self, slug: str) -> Organization | None:
+        return next((org for org in self._by_id.values() if org.slug.value == slug), None)
+
+    def list_all(self) -> list[Organization]:
+        return list(self._by_id.values())
+
     def save(self, organization: Organization) -> None:
         self._by_id[organization.id] = organization
         self.saved.append(organization)
@@ -130,6 +136,12 @@ class FakeStaffMembershipRepository:
                 for m in self._by_id.values()
                 if m.user_id == user_id and m.organization_id == organization_id and m.status is MembershipStatus.ACTIVE
             ),
+            None,
+        )
+
+    def find_active_for_user(self, user_id: StaffUserId) -> StaffMembership | None:
+        return next(
+            (m for m in self._by_id.values() if m.user_id == user_id and m.status is MembershipStatus.ACTIVE),
             None,
         )
 
@@ -196,9 +208,7 @@ class FakeUserDirectory:
         display_name: str = "Иван Иванов",
         status: str = "active",
     ) -> None:
-        self._by_id[user_id] = self._card_cls(
-            id=str(user_id), email=email, display_name=display_name, status=status
-        )
+        self._by_id[user_id] = self._card_cls(id=str(user_id), email=email, display_name=display_name, status=status)
 
     def resolve(self, user_ids: object) -> dict[uuid.UUID, object]:
         ids = {uid for uid in user_ids if uid is not None}

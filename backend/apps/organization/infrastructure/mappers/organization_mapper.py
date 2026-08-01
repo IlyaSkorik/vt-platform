@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from apps.organization.domain.entities import Organization
 from apps.organization.domain.value_objects import (
+    CommissionRate,
     OrganizationId,
     OrganizationName,
     OrganizationProfile,
@@ -39,6 +40,7 @@ class OrganizationMapper:
                 telegram=model.telegram,
                 legal_information=model.legal_information,
             ),
+            commission_rate=CommissionRate(model.commission_percent),
             deleted_at=model.deleted_at,
             version=model.version,
         )
@@ -66,6 +68,7 @@ class OrganizationMapper:
             "instagram": profile.instagram,
             "telegram": profile.telegram,
             "legal_information": profile.legal_information,
+            "commission_percent": entity.commission_rate.percent,
             "created_at": entity.created_at,
             "updated_at": entity.updated_at,
             "deleted_at": entity.deleted_at,
