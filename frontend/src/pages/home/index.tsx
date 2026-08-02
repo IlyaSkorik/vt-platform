@@ -11,7 +11,9 @@ import {
   resolveMediaUrl,
   usePublicFestivals,
 } from "@/features/festival-catalog";
-import { ROUTES } from "@/shared/config";
+import { APP_NAME, ROUTES } from "@/shared/config";
+import { festivalPath } from "@/shared/lib";
+import { absoluteUrl, JsonLd, organizationSchema, useSeo, webSiteSchema } from "@/shared/seo";
 import {
   Badge,
   Button,
@@ -36,6 +38,19 @@ function isUpcoming(festival: Festival, now: Date): boolean {
 }
 
 export function HomePage(): React.JSX.Element {
+  // The home page is the one that competes on the brand name itself, so it wears
+  // the site name as its whole title rather than "Главная — Взлёт талантов": the
+  // word "Главная" is dead weight in a result list.
+  useSeo({
+    title: `${APP_NAME} — фестивали и конкурсы детского творчества`,
+    standaloneTitle: true,
+    description:
+      "Афиша детских творческих фестивалей и конкурсов: условия участия, номинации, сроки подачи заявок и результаты. Подайте заявку онлайн на платформе «Взлёт талантов».",
+    image: absoluteUrl("/home-hero-bg.png"),
+    imageAlt: "Юные участники творческого фестиваля на сцене",
+    canonicalPath: "/",
+  });
+
   const { isAuthenticated } = useAuth();
   const festivalsQuery = usePublicFestivals();
   const festivals = festivalsQuery.data ?? [];
@@ -57,6 +72,8 @@ export function HomePage(): React.JSX.Element {
 
   return (
     <>
+      <JsonLd id="organization" data={organizationSchema()} />
+      <JsonLd id="website" data={webSiteSchema()} />
       <section className="relative min-h-screen w-full overflow-hidden border-border border-b">
         <div
           aria-hidden="true"
@@ -115,7 +132,7 @@ export function HomePage(): React.JSX.Element {
               <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                 {activeFestivals.map((festival) => {
                   const status = catalogStatusConfig(festival.status);
-                  const detailPath = `${ROUTES.competitions}/${festival.id}`;
+                  const detailPath = festivalPath(festival, ROUTES.competitions);
                   return (
                     <Card key={festival.id} className="shadow-none">
                       <div className="aspect-[16/9] overflow-hidden rounded-t-xl bg-muted">
@@ -248,7 +265,7 @@ export function HomePage(): React.JSX.Element {
                         </p>
                       </div>
                       <Button asChild variant="outline" size="sm">
-                        <Link to={`${ROUTES.competitions}/${festival.id}`}>Открыть</Link>
+                        <Link to={festivalPath(festival, ROUTES.competitions)}>Открыть</Link>
                       </Button>
                     </CardContent>
                   </Card>
@@ -277,7 +294,7 @@ export function HomePage(): React.JSX.Element {
                         </p>
                       </div>
                       <Button asChild variant="outline" size="sm">
-                        <Link to={`${ROUTES.competitions}/${festival.id}`}>Смотреть</Link>
+                        <Link to={festivalPath(festival, ROUTES.competitions)}>Смотреть</Link>
                       </Button>
                     </CardContent>
                   </Card>

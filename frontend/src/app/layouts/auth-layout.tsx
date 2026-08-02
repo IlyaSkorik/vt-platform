@@ -1,5 +1,6 @@
 import { Link, Outlet } from "react-router";
 import { APP_NAME, ROUTES } from "@/shared/config";
+import { useSectionSeo } from "@/shared/seo";
 import { ThemeToggle } from "./theme-toggle";
 
 /**
@@ -10,6 +11,11 @@ import { ThemeToggle } from "./theme-toggle";
  * layout placeholders only; the auth forms are added by the Auth feature.
  */
 export function AuthLayout(): React.JSX.Element {
+  // A sign-in form is not a search result, and a password-reset URL carries a
+  // token that must never be crawled. Closed here so every screen added to the
+  // shell inherits it.
+  useSectionSeo({ title: "Вход", robots: "noindex" });
+
   return (
     <div className="flex min-h-svh flex-col">
       <header className="flex items-center justify-between p-4">

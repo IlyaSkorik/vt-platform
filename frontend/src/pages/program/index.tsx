@@ -11,6 +11,7 @@ import {
 } from "@/features/public-program";
 import { APP_NAME } from "@/shared/config";
 import { formatClock, formatSpan } from "@/shared/lib";
+import { useSeo } from "@/shared/seo";
 import { Badge, Button, EmptyState, LoadingState, toast } from "@/shared/ui";
 
 /**
@@ -30,6 +31,10 @@ import { Badge, Button, EmptyState, LoadingState, toast } from "@/shared/ui";
 export function PublicProgramPage(): React.JSX.Element {
   const { slug } = useParams();
   const { data: program, isLoading, isError } = usePublicProgram(slug);
+  // Reachable by anyone with the link, indexed by no one: the running order names
+  // every performing child. Sharing it with the sound engineer is the purpose;
+  // making it findable by a child's name is not.
+  useSeo({ title: "Программа выступлений", robots: "noindex" });
 
   if (isLoading) {
     return (

@@ -1,5 +1,6 @@
 import { useParams } from "react-router";
 import { APP_NAME } from "@/shared/config";
+import { useSeo } from "@/shared/seo";
 import { PageContainer } from "@/shared/ui";
 import { DiplomaVerification } from "@/widgets/diploma-verification";
 
@@ -16,6 +17,11 @@ import { DiplomaVerification } from "@/widgets/diploma-verification";
  */
 export function DiplomaVerifyPage(): React.JSX.Element {
   const { verificationToken } = useParams();
+  // Closed to crawlers: the whole address is a token, and what it opens is a
+  // named child's award. Public in the sense that anyone holding the paper can
+  // check it — not in the sense that it belongs in a search index.
+  useSeo({ title: "Проверка подлинности диплома", robots: "noindex" });
+
   return (
     <PageContainer size="narrow" className="gap-8 px-4 py-10 sm:px-6 md:py-14">
       <header className="space-y-2 text-center">

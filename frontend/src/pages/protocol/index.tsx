@@ -8,6 +8,7 @@ import {
 } from "@/features/public-protocol";
 import { APP_NAME } from "@/shared/config";
 import { cn } from "@/shared/lib";
+import { useSeo } from "@/shared/seo";
 import { Badge, EmptyState, LoadingState } from "@/shared/ui";
 
 const PUBLISHED_AT_FORMATTER = new Intl.DateTimeFormat("ru-RU", {
@@ -42,6 +43,9 @@ function formatPublishedAt(iso: string | null): string {
 export function PublicProtocolPage(): React.JSX.Element {
   const { slug } = useParams();
   const { data: protocol, isLoading, isError } = usePublicProtocol(slug);
+  // Same reasoning as the programme: a results protocol is a list of children's
+  // full names, ages and marks. The link is meant to be forwarded, not found.
+  useSeo({ title: "Протокол результатов", robots: "noindex" });
 
   if (isLoading) {
     return (

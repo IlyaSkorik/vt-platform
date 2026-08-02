@@ -1,5 +1,6 @@
 import { Link, Outlet } from "react-router";
 import { APP_NAME, ROUTES } from "@/shared/config";
+import { useSectionSeo } from "@/shared/seo";
 import { ThemeToggle } from "./theme-toggle";
 
 /**
@@ -10,6 +11,10 @@ import { ThemeToggle } from "./theme-toggle";
  * views. Just a brand line, the theme control, and a centered content column.
  */
 export function MinimalLayout(): React.JSX.Element {
+  // Single-task flows reached by an emailed link — an invitation token is the
+  // whole address, so none of it belongs in an index.
+  useSectionSeo({ title: APP_NAME, standaloneTitle: true, robots: "noindex" });
+
   return (
     <div className="flex min-h-svh flex-col bg-background">
       <header className="flex h-16 items-center justify-between px-4 md:px-8">

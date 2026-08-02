@@ -1,4 +1,5 @@
 import { ROUTES } from "@/shared/config";
+import { useSeo } from "@/shared/seo";
 import { PageContainer, PageContent, PageDescription, PageHeader, PageTitle } from "@/shared/ui";
 
 function LegalPage({
@@ -10,6 +11,11 @@ function LegalPage({
   description: string;
   children: React.ReactNode;
 }): React.JSX.Element {
+  // Indexable on purpose: a findable privacy policy is part of being a service
+  // parents are asked to trust with a child's data, and search engines treat its
+  // presence as a quality signal for the domain.
+  useSeo({ title, description });
+
   return (
     <PageContainer size="wide">
       <PageHeader>

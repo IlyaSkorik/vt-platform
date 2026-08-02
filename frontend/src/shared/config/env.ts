@@ -11,6 +11,11 @@ const envSchema = z.object({
   VITE_API_BASE_URL: z.url().default("http://localhost:8000/api/v1"),
   VITE_API_TIMEOUT: z.coerce.number().int().positive().default(15_000),
   VITE_APP_ENV: z.enum(["development", "stage", "production"]).default("development"),
+  // The origin the site is served from, used to build absolute canonical and
+  // Open Graph URLs. Crawlers and social-network previews reject relative ones,
+  // and a canonical pointing at the wrong host is worse than none at all — so
+  // this is a deployment fact, not a constant.
+  VITE_SITE_URL: z.url().default("https://vzlettalantov.by"),
 });
 
 const parsed = envSchema.safeParse(import.meta.env);
@@ -26,6 +31,9 @@ export const env = Object.freeze({
   apiBaseUrl: parsed.data.VITE_API_BASE_URL,
   apiTimeout: parsed.data.VITE_API_TIMEOUT,
   appEnv: parsed.data.VITE_APP_ENV,
+  // Normalized without a trailing slash so callers can always concatenate a
+  // leading-slash path without producing a double slash.
+  siteUrl: parsed.data.VITE_SITE_URL.replace(/\/+$/, ""),
   isProduction: parsed.data.VITE_APP_ENV === "production",
   isDev: import.meta.env.DEV,
 });
