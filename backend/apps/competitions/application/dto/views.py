@@ -129,7 +129,6 @@ class SettingsView:
     allow_multiple_applications: bool
     allow_application_editing: bool
     allow_withdrawing_applications: bool
-    allow_copying_previous_applications: bool
     require_teacher: bool
     require_parent_guardian: bool
     participant_comment_enabled: bool
@@ -143,10 +142,6 @@ class SettingsView:
     require_personal_data_consent: bool
     require_media_consent: bool
     require_regulations_acceptance: bool
-    email_notifications: bool
-    cabinet_notifications: bool
-    sms_notifications: bool
-    push_notifications: bool
     manual_application_approval: bool
     automatic_approval_after_payment: bool
     allow_returning_for_correction: bool
@@ -158,7 +153,6 @@ class SettingsView:
             allow_multiple_applications=settings.allow_multiple_applications,
             allow_application_editing=settings.allow_application_editing,
             allow_withdrawing_applications=settings.allow_withdrawing_applications,
-            allow_copying_previous_applications=settings.allow_copying_previous_applications,
             require_teacher=settings.require_teacher,
             require_parent_guardian=settings.require_parent_guardian,
             participant_comment_enabled=settings.participant_comment_enabled,
@@ -172,10 +166,6 @@ class SettingsView:
             require_personal_data_consent=settings.require_personal_data_consent,
             require_media_consent=settings.require_media_consent,
             require_regulations_acceptance=settings.require_regulations_acceptance,
-            email_notifications=settings.email_notifications,
-            cabinet_notifications=settings.cabinet_notifications,
-            sms_notifications=settings.sms_notifications,
-            push_notifications=settings.push_notifications,
             manual_application_approval=settings.manual_application_approval,
             automatic_approval_after_payment=settings.automatic_approval_after_payment,
             allow_returning_for_correction=settings.allow_returning_for_correction,

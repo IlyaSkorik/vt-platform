@@ -7,13 +7,10 @@ import {
   type CompetitionSectionId,
   defaultCompetitionSettings,
   mergeSettingsWithFormats,
-  PAYMENT_METHOD_OPTIONS,
-  PAYMENT_TIMING_OPTIONS,
   type PublicationChecklist,
   settingsToUpdatePayload,
   useUpdateCompetitionSettingsMutation,
   VIDEO_MODE_OPTIONS,
-  VIDEO_PROVIDER_OPTIONS,
 } from "@/features/competitions";
 import { ApiError } from "@/shared/api";
 import type {
@@ -70,6 +67,13 @@ function SectionCard({
   );
 }
 
+/**
+ * One setting row.
+ *
+ * Every row rendered here is a setting the platform actually acts on — the ones it
+ * merely stored were removed rather than shown as pending (see
+ * ``UNENFORCED_SETTINGS``), so there is no "disabled but visible" state to model.
+ */
 function SwitchRow({
   label,
   description,
@@ -176,6 +180,7 @@ function FormatRequirementsAccordion({
         <MaterialBlock icon={<Music className="size-3.5" />} title="Музыка">
           <SwitchRow
             label="Требовать загрузку"
+            description="Без трека заявку подать нельзя."
             checked={requirements.music.requireUpload}
             disabled={readOnly}
             onChange={(v) => update({ music: { ...requirements.music, requireUpload: v } })}
@@ -183,11 +188,14 @@ function FormatRequirementsAccordion({
           <SwitchRow
             label="Разрешить замену"
             checked={requirements.music.allowReplacement}
-            disabled={readOnly}
+            comingSoon
             onChange={(v) => update({ music: { ...requirements.music, allowReplacement: v } })}
           />
           <div>
             <p className="mb-1.5 font-medium text-sm">Допустимые аудиоформаты</p>
+            <p className="mb-1.5 text-muted-foreground text-xs">
+              Загрузка файла другого расширения будет отклонена.
+            </p>
             <CheckboxGroup
               options={AUDIO_FORMAT_OPTIONS}
               value={requirements.music.allowedFormats as string[]}
@@ -233,61 +241,31 @@ function FormatRequirementsAccordion({
               placeholder="Выберите режим…"
             />
           </div>
-          {requirements.video.mode !== "NOT_REQUIRED" && requirements.video.mode !== "FILE_ONLY" ? (
-            <div>
-              <p className="mb-1.5 font-medium text-sm">Платформы</p>
-              <CheckboxGroup
-                options={VIDEO_PROVIDER_OPTIONS}
-                value={requirements.video.allowedProviders as string[]}
-                disabled={readOnly}
-                onChange={(v) =>
-                  update({
-                    video: {
-                      ...requirements.video,
-                      allowedProviders: v as _FormatRequirements["video"]["allowedProviders"],
-                    },
-                  })
-                }
-              />
-            </div>
-          ) : null}
-          <SwitchRow
-            label="Разрешить замену"
-            checked={requirements.video.allowReplacement}
-            disabled={readOnly}
-            onChange={(v) => update({ video: { ...requirements.video, allowReplacement: v } })}
-          />
         </MaterialBlock>
 
         <MaterialBlock icon={<Receipt className="size-3.5" />} title="Квитанция">
           <SwitchRow
             label="Требовать квитанцию"
+            description="Без подтверждения оплаты заявку нельзя отметить оплаченной."
             checked={requirements.paymentReceipt.requireReceipt}
             disabled={readOnly}
             onChange={(v) =>
               update({ paymentReceipt: { ...requirements.paymentReceipt, requireReceipt: v } })
             }
           />
-          <SwitchRow
-            label="Разрешить загрузить позже"
-            checked={requirements.paymentReceipt.allowUploadLater}
-            disabled={readOnly}
-            onChange={(v) =>
-              update({
-                paymentReceipt: { ...requirements.paymentReceipt, allowUploadLater: v },
-              })
-            }
-          />
-          <SwitchRow
-            label="Разрешить замену"
-            checked={requirements.paymentReceipt.allowReplacement}
-            disabled={readOnly}
-            onChange={(v) =>
-              update({
-                paymentReceipt: { ...requirements.paymentReceipt, allowReplacement: v },
-              })
-            }
-          />
+          {requirements.paymentReceipt.requireReceipt ? (
+            <SwitchRow
+              label="Разрешить загрузить позже"
+              description="Выключите, чтобы квитанция требовалась уже при подаче заявки."
+              checked={requirements.paymentReceipt.allowUploadLater}
+              disabled={readOnly}
+              onChange={(v) =>
+                update({
+                  paymentReceipt: { ...requirements.paymentReceipt, allowUploadLater: v },
+                })
+              }
+            />
+          ) : null}
         </MaterialBlock>
       </div>
     </details>
@@ -474,7 +452,7 @@ export function SettingsSection({
         <div>
           <h2 className="font-semibold text-lg">Правила участия</h2>
           <p className="text-muted-foreground text-sm">
-            Что делает участник при подаче заявки — и как вы её обрабатываете.
+            Что участник обязан приложить и подтвердить, чтобы подать заявку.
           </p>
         </div>
 
@@ -486,46 +464,25 @@ export function SettingsSection({
 
         <SectionCard title="Подача заявки" description="Как участник создаёт и меняет заявку.">
           <SwitchRow
-            label="Несколько заявок от одного участника"
-            checked={settings.allowMultipleApplications}
-            disabled={isReadOnly}
-            onChange={(v) => update({ allowMultipleApplications: v })}
-          />
-          <SwitchRow
-            label="Редактирование до закрытия регистрации"
-            checked={settings.allowApplicationEditing}
-            disabled={isReadOnly}
-            onChange={(v) => update({ allowApplicationEditing: v })}
-          />
-          <SwitchRow
-            label="Отзыв заявки"
-            checked={settings.allowWithdrawingApplications}
-            disabled={isReadOnly}
-            onChange={(v) => update({ allowWithdrawingApplications: v })}
-          />
-          <SwitchRow
-            label="Копирование прошлой заявки"
-            checked={settings.allowCopyingPreviousApplications}
-            disabled={isReadOnly}
-            onChange={(v) => update({ allowCopyingPreviousApplications: v })}
-          />
-          <SwitchRow
             label="Педагог обязателен"
+            description="Заявку нельзя подать, не указав педагога."
             checked={settings.requireTeacher}
             disabled={isReadOnly}
             onChange={(v) => update({ requireTeacher: v })}
           />
           <SwitchRow
-            label="Данные родителя / опекуна обязательны"
-            checked={settings.requireParentGuardian}
-            disabled={isReadOnly}
-            onChange={(v) => update({ requireParentGuardian: v })}
-          />
-          <SwitchRow
             label="Комментарий участника"
+            description="Свободное примечание к выступлению для организаторов."
             checked={settings.participantCommentEnabled}
             disabled={isReadOnly}
             onChange={(v) => update({ participantCommentEnabled: v })}
+          />
+          <SwitchRow
+            label="Данные родителя / опекуна обязательны"
+            description="У каждого участника должен быть подтверждённый опекун в реестре."
+            checked={settings.requireParentGuardian}
+            disabled={isReadOnly}
+            onChange={(v) => update({ requireParentGuardian: v })}
           />
         </SectionCard>
 
@@ -570,83 +527,12 @@ export function SettingsSection({
             </p>
             <SwitchRow
               label="Требовать загрузку документов"
+              description="Без документа заявку подать нельзя."
               checked={settings.requireDocumentUpload}
               disabled={isReadOnly}
               onChange={(v) => update({ requireDocumentUpload: v })}
             />
-            <SwitchRow
-              label="Разрешить загрузить позже"
-              checked={settings.allowAdditionalDocumentsLater}
-              disabled={isReadOnly}
-              onChange={(v) => update({ allowAdditionalDocumentsLater: v })}
-            />
-            <SwitchRow
-              label="Разрешить замену документов"
-              checked={settings.allowReplacingDocuments}
-              disabled={isReadOnly}
-              onChange={(v) => update({ allowReplacingDocuments: v })}
-            />
           </div>
-        </SectionCard>
-
-        <SectionCard title="Правила оплаты" description="Когда и как участник оплачивает участие.">
-          <SwitchRow
-            label="Оплата обязательна"
-            checked={settings.paymentRequired}
-            disabled={isReadOnly}
-            onChange={(v) =>
-              update({
-                paymentRequired: v,
-                paymentMethods:
-                  v && settings.paymentMethods.length === 0
-                    ? ["BANK_TRANSFER"]
-                    : settings.paymentMethods,
-                automaticApprovalAfterPayment: v ? settings.automaticApprovalAfterPayment : false,
-              })
-            }
-          />
-          {settings.paymentRequired ? (
-            <>
-              <div>
-                <p className="mb-1.5 font-medium text-sm">Момент оплаты</p>
-                <Select
-                  options={PAYMENT_TIMING_OPTIONS}
-                  value={settings.paymentTiming}
-                  onValueChange={(v) =>
-                    update({
-                      paymentTiming: (v as _Settings["paymentTiming"]) ?? "BEFORE_APPROVAL",
-                    })
-                  }
-                  disabled={isReadOnly}
-                  placeholder="Выберите момент…"
-                />
-              </div>
-              <div>
-                <p className="mb-1.5 font-medium text-sm">Способы оплаты</p>
-                <CheckboxGroup
-                  options={PAYMENT_METHOD_OPTIONS}
-                  value={settings.paymentMethods as string[]}
-                  disabled={isReadOnly}
-                  onChange={(v) => update({ paymentMethods: v as _Settings["paymentMethods"] })}
-                />
-              </div>
-            </>
-          ) : null}
-          <Input
-            label="Скидка на 2-е и следующие выступления (%)"
-            type="number"
-            min={0}
-            max={100}
-            value={String(settings.additionalPerformanceDiscountPercent ?? 0)}
-            disabled={isReadOnly}
-            onChange={(event) => {
-              const next = Number(event.target.value);
-              if (!Number.isFinite(next)) return;
-              update({
-                additionalPerformanceDiscountPercent: Math.max(0, Math.min(100, Math.round(next))),
-              });
-            }}
-          />
         </SectionCard>
 
         <SectionCard title="Согласия" description="Что участник подтверждает при подаче заявки.">
@@ -667,69 +553,6 @@ export function SettingsSection({
             checked={settings.requireRegulationsAcceptance}
             disabled={isReadOnly}
             onChange={(v) => update({ requireRegulationsAcceptance: v })}
-          />
-        </SectionCard>
-
-        <SectionCard title="Уведомления" description="Куда отправлять сообщения участникам.">
-          <SwitchRow
-            label="Email"
-            checked={settings.emailNotifications}
-            disabled={isReadOnly}
-            onChange={(v) => update({ emailNotifications: v })}
-          />
-          <SwitchRow
-            label="Личный кабинет"
-            checked={settings.cabinetNotifications}
-            disabled={isReadOnly}
-            onChange={(v) => update({ cabinetNotifications: v })}
-          />
-          <div className="flex items-center justify-between gap-2">
-            <Switch
-              label="SMS"
-              description="Скоро"
-              checked={false}
-              disabled
-              containerClassName="flex-1 flex-row-reverse justify-between"
-            />
-            <Badge variant="secondary" size="sm" className="shrink-0">
-              Скоро
-            </Badge>
-          </div>
-          <div className="flex items-center justify-between gap-2">
-            <Switch
-              label="Push"
-              description="Скоро"
-              checked={false}
-              disabled
-              containerClassName="flex-1 flex-row-reverse justify-between"
-            />
-            <Badge variant="secondary" size="sm" className="shrink-0">
-              Скоро
-            </Badge>
-          </div>
-        </SectionCard>
-
-        <SectionCard
-          title="Работа организатора"
-          description="Как вы принимаете и возвращаете заявки."
-        >
-          <SwitchRow
-            label="Ручное подтверждение заявок"
-            checked={settings.manualApplicationApproval}
-            disabled={isReadOnly}
-            onChange={(v) => update({ manualApplicationApproval: v })}
-          />
-          <SwitchRow
-            label="Автоподтверждение после успешной оплаты"
-            checked={settings.automaticApprovalAfterPayment}
-            disabled={isReadOnly || !settings.paymentRequired}
-            onChange={(v) => update({ automaticApprovalAfterPayment: v })}
-          />
-          <SwitchRow
-            label="Возврат заявки на доработку"
-            checked={settings.allowReturningForCorrection}
-            disabled={isReadOnly}
-            onChange={(v) => update({ allowReturningForCorrection: v })}
           />
         </SectionCard>
       </div>

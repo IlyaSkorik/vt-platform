@@ -26,11 +26,10 @@ __all__ = ["settings_from_json", "settings_to_json"]
 def settings_to_json(settings: CompetitionSettings) -> dict[str, object]:
     """Serialize settings for the competitions.settings JSON column."""
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "allow_multiple_applications": settings.allow_multiple_applications,
         "allow_application_editing": settings.allow_application_editing,
         "allow_withdrawing_applications": settings.allow_withdrawing_applications,
-        "allow_copying_previous_applications": settings.allow_copying_previous_applications,
         "require_teacher": settings.require_teacher,
         "require_parent_guardian": settings.require_parent_guardian,
         "participant_comment_enabled": settings.participant_comment_enabled,
@@ -44,10 +43,6 @@ def settings_to_json(settings: CompetitionSettings) -> dict[str, object]:
         "require_personal_data_consent": settings.require_personal_data_consent,
         "require_media_consent": settings.require_media_consent,
         "require_regulations_acceptance": settings.require_regulations_acceptance,
-        "email_notifications": settings.email_notifications,
-        "cabinet_notifications": settings.cabinet_notifications,
-        "sms_notifications": settings.sms_notifications,
-        "push_notifications": settings.push_notifications,
         "manual_application_approval": settings.manual_application_approval,
         "automatic_approval_after_payment": settings.automatic_approval_after_payment,
         "allow_returning_for_correction": settings.allow_returning_for_correction,
@@ -56,12 +51,18 @@ def settings_to_json(settings: CompetitionSettings) -> dict[str, object]:
 
 
 def settings_from_json(data: object) -> CompetitionSettings:
-    """Rebuild settings from JSON, migrating legacy flat boolean bags."""
+    """Rebuild settings from JSON, migrating legacy flat boolean bags.
+
+    Schemas 2 and 3 share a shape — 3 only *drops* keys (notification channels and
+    previous-application copying), and unknown keys are ignored — so one reader
+    serves both. Rows still holding schema-2 keys are read fine and rewritten as 3
+    on the next save.
+    """
     default = CompetitionSettings.default()
     if not isinstance(data, dict):
         return default
-    if data.get("schema_version") == 2 or "payment_timing" in data or "format_requirements" in data:
-        return _from_v2(data, default)
+    if data.get("schema_version") in {2, 3} or "payment_timing" in data or "format_requirements" in data:
+        return _from_modern(data, default)
     return _from_legacy(data, default)
 
 
@@ -73,7 +74,6 @@ def _from_legacy(data: dict[str, object], default: CompetitionSettings) -> Compe
         allow_withdrawing_applications=bool(
             data.get("allow_participant_changes", default.allow_withdrawing_applications)
         ),
-        allow_copying_previous_applications=False,
         require_teacher=bool(data.get("require_teacher", default.require_teacher)),
         require_parent_guardian=bool(data.get("require_parent_consent", default.require_parent_guardian)),
         participant_comment_enabled=bool(
@@ -88,10 +88,6 @@ def _from_legacy(data: dict[str, object], default: CompetitionSettings) -> Compe
         require_personal_data_consent=bool(data.get("require_parent_consent", default.require_personal_data_consent)),
         require_media_consent=False,
         require_regulations_acceptance=True,
-        email_notifications=True,
-        cabinet_notifications=True,
-        sms_notifications=False,
-        push_notifications=False,
         manual_application_approval=True,
         automatic_approval_after_payment=False,
         allow_returning_for_correction=True,
@@ -99,7 +95,7 @@ def _from_legacy(data: dict[str, object], default: CompetitionSettings) -> Compe
     )
 
 
-def _from_v2(data: dict[str, object], default: CompetitionSettings) -> CompetitionSettings:
+def _from_modern(data: dict[str, object], default: CompetitionSettings) -> CompetitionSettings:
     timing_raw = data.get("payment_timing", default.payment_timing.value)
     try:
         timing = PaymentTiming(str(timing_raw))
@@ -136,9 +132,6 @@ def _from_v2(data: dict[str, object], default: CompetitionSettings) -> Competiti
         allow_withdrawing_applications=bool(
             data.get("allow_withdrawing_applications", default.allow_withdrawing_applications)
         ),
-        allow_copying_previous_applications=bool(
-            data.get("allow_copying_previous_applications", default.allow_copying_previous_applications)
-        ),
         require_teacher=bool(data.get("require_teacher", default.require_teacher)),
         require_parent_guardian=bool(data.get("require_parent_guardian", default.require_parent_guardian)),
         participant_comment_enabled=bool(
@@ -160,10 +153,6 @@ def _from_v2(data: dict[str, object], default: CompetitionSettings) -> Competiti
         require_regulations_acceptance=bool(
             data.get("require_regulations_acceptance", default.require_regulations_acceptance)
         ),
-        email_notifications=bool(data.get("email_notifications", default.email_notifications)),
-        cabinet_notifications=bool(data.get("cabinet_notifications", default.cabinet_notifications)),
-        sms_notifications=bool(data.get("sms_notifications", default.sms_notifications)),
-        push_notifications=bool(data.get("push_notifications", default.push_notifications)),
         manual_application_approval=bool(
             data.get("manual_application_approval", default.manual_application_approval)
         ),

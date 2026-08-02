@@ -26,11 +26,18 @@ export const PAYMENT_METHOD_OPTIONS: { value: SettingsPaymentMethod; label: stri
 export type VideoMode = "NOT_REQUIRED" | "URL_ONLY" | "FILE_ONLY" | "URL_OR_FILE";
 export type VideoProvider = "YOUTUBE" | "VK_VIDEO" | "RUTUBE" | "VIMEO";
 
+/**
+ * Video modes the platform can actually hold an applicant to.
+ *
+ * ``URL_ONLY`` and ``URL_OR_FILE`` are deliberately absent: a submission has no
+ * field for a video *link*, only uploaded files, so either would behave exactly
+ * like "не требуется". They remain in {@link VideoMode} and in the stored settings
+ * — a competition configured with one keeps its value — but are not offered until
+ * a video link is something an applicant can actually supply.
+ */
 export const VIDEO_MODE_OPTIONS: { value: VideoMode; label: string }[] = [
   { value: "NOT_REQUIRED", label: "Не требуется" },
-  { value: "URL_ONLY", label: "Только ссылка" },
-  { value: "FILE_ONLY", label: "Только файл" },
-  { value: "URL_OR_FILE", label: "Ссылка или файл" },
+  { value: "FILE_ONLY", label: "Требовать файл" },
 ];
 
 export const VIDEO_PROVIDER_OPTIONS: { value: VideoProvider; label: string }[] = [
@@ -76,7 +83,6 @@ export function defaultCompetitionSettings(): _Settings {
     allowMultipleApplications: false,
     allowApplicationEditing: true,
     allowWithdrawingApplications: true,
-    allowCopyingPreviousApplications: false,
     requireTeacher: false,
     requireParentGuardian: false,
     participantCommentEnabled: false,
@@ -90,15 +96,40 @@ export function defaultCompetitionSettings(): _Settings {
     requirePersonalDataConsent: true,
     requireMediaConsent: false,
     requireRegulationsAcceptance: true,
-    emailNotifications: true,
-    cabinetNotifications: true,
-    smsNotifications: false,
-    pushNotifications: false,
     manualApplicationApproval: true,
     automaticApprovalAfterPayment: false,
     allowReturningForCorrection: true,
     formatRequirements: [],
   };
+}
+
+/**
+ * Settings the platform stores but does not act on, and so does not show.
+ *
+ * An audit found most of this section was decoration: the switch saved and the
+ * platform carried on regardless. The behaviour each one describes is currently
+ * fixed for every festival — applications stay editable, approval stays manual,
+ * payment is always on — and that base is what organizers actually want, so the
+ * controls are simply absent rather than shown as pending. The fields stay in the
+ * API and the stored bag: when enforcement lands, the setting is rendered again
+ * and drops out of this list. Nothing here is read by the UI.
+ */
+export const UNENFORCED_SETTINGS = new Set<keyof _Settings>([
+  "allowMultipleApplications",
+  "allowApplicationEditing",
+  "allowWithdrawingApplications",
+  "allowAdditionalDocumentsLater",
+  "allowReplacingDocuments",
+  "paymentRequired",
+  "paymentTiming",
+  "paymentMethods",
+  "manualApplicationApproval",
+  "automaticApprovalAfterPayment",
+  "allowReturningForCorrection",
+]);
+
+export function isSettingEnforced(key: keyof _Settings): boolean {
+  return !UNENFORCED_SETTINGS.has(key);
 }
 
 /**
@@ -121,7 +152,6 @@ export function settingsToUpdatePayload(settings: _Settings): UpdateCompetitionS
     allowMultipleApplications: settings.allowMultipleApplications,
     allowApplicationEditing: settings.allowApplicationEditing,
     allowWithdrawingApplications: settings.allowWithdrawingApplications,
-    allowCopyingPreviousApplications: settings.allowCopyingPreviousApplications,
     requireTeacher: settings.requireTeacher,
     requireParentGuardian: settings.requireParentGuardian,
     participantCommentEnabled: settings.participantCommentEnabled,
@@ -140,10 +170,6 @@ export function settingsToUpdatePayload(settings: _Settings): UpdateCompetitionS
     requirePersonalDataConsent: settings.requirePersonalDataConsent,
     requireMediaConsent: settings.requireMediaConsent,
     requireRegulationsAcceptance: settings.requireRegulationsAcceptance,
-    emailNotifications: settings.emailNotifications,
-    cabinetNotifications: settings.cabinetNotifications,
-    smsNotifications: settings.smsNotifications,
-    pushNotifications: settings.pushNotifications,
     manualApplicationApproval: settings.manualApplicationApproval,
     automaticApprovalAfterPayment: settings.automaticApprovalAfterPayment,
     allowReturningForCorrection: settings.allowReturningForCorrection,

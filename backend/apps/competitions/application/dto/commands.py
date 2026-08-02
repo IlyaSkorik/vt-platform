@@ -125,7 +125,6 @@ class UpdateSettingsCommand:
     allow_multiple_applications: bool
     allow_application_editing: bool
     allow_withdrawing_applications: bool
-    allow_copying_previous_applications: bool
     require_teacher: bool
     require_parent_guardian: bool
     participant_comment_enabled: bool
@@ -139,10 +138,6 @@ class UpdateSettingsCommand:
     require_personal_data_consent: bool
     require_media_consent: bool
     require_regulations_acceptance: bool
-    email_notifications: bool
-    cabinet_notifications: bool
-    sms_notifications: bool
-    push_notifications: bool
     manual_application_approval: bool
     automatic_approval_after_payment: bool
     allow_returning_for_correction: bool

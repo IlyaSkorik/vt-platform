@@ -15298,8 +15298,6 @@ components:
           type: boolean
         allowWithdrawingApplications:
           type: boolean
-        allowCopyingPreviousApplications:
-          type: boolean
         requireTeacher:
           type: boolean
         requireParentGuardian:
@@ -15330,16 +15328,6 @@ components:
           type: boolean
         requireRegulationsAcceptance:
           type: boolean
-        emailNotifications:
-          type: boolean
-        cabinetNotifications:
-          type: boolean
-        smsNotifications:
-          type: boolean
-          default: false
-        pushNotifications:
-          type: boolean
-          default: false
         manualApplicationApproval:
           type: boolean
         automaticApprovalAfterPayment:
@@ -15354,14 +15342,11 @@ components:
       - additionalPerformanceDiscountPercent
       - allowAdditionalDocumentsLater
       - allowApplicationEditing
-      - allowCopyingPreviousApplications
       - allowMultipleApplications
       - allowReplacingDocuments
       - allowReturningForCorrection
       - allowWithdrawingApplications
       - automaticApprovalAfterPayment
-      - cabinetNotifications
-      - emailNotifications
       - formatRequirements
       - manualApplicationApproval
       - participantCommentEnabled
@@ -16919,8 +16904,6 @@ components:
           type: boolean
         allowWithdrawingApplications:
           type: boolean
-        allowCopyingPreviousApplications:
-          type: boolean
         requireTeacher:
           type: boolean
         requireParentGuardian:
@@ -16949,14 +16932,6 @@ components:
           type: boolean
         requireRegulationsAcceptance:
           type: boolean
-        emailNotifications:
-          type: boolean
-        cabinetNotifications:
-          type: boolean
-        smsNotifications:
-          type: boolean
-        pushNotifications:
-          type: boolean
         manualApplicationApproval:
           type: boolean
         automaticApprovalAfterPayment:
@@ -16971,28 +16946,23 @@ components:
       - additionalPerformanceDiscountPercent
       - allowAdditionalDocumentsLater
       - allowApplicationEditing
-      - allowCopyingPreviousApplications
       - allowMultipleApplications
       - allowReplacingDocuments
       - allowReturningForCorrection
       - allowWithdrawingApplications
       - automaticApprovalAfterPayment
-      - cabinetNotifications
-      - emailNotifications
       - formatRequirements
       - manualApplicationApproval
       - participantCommentEnabled
       - paymentMethods
       - paymentRequired
       - paymentTiming
-      - pushNotifications
       - requireDocumentUpload
       - requireMediaConsent
       - requireParentGuardian
       - requirePersonalDataConsent
       - requireRegulationsAcceptance
       - requireTeacher
-      - smsNotifications
     _SubmissionAttachmentMeta:
       type: object
       properties:

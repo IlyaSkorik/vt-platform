@@ -1793,18 +1793,22 @@ class ParticipationFormatRequirements:
 
 @dataclass(frozen=True, slots=True)
 class CompetitionSettings:
-    """Immutable competition behaviour configuration for future workflows.
+    """Immutable competition behaviour configuration.
 
     Global sections configure applications, participant data, documents, payments,
-    consents, notifications and organizer policy. Media/receipt rules live under
+    consents and organizer policy. Media/receipt rules live under
     :attr:`format_requirements` — one entry per selected participation format.
+
+    Every field here is meant to *change behaviour*. A setting that nothing reads is
+    a lie told to the organizer, so notification channels and previous-application
+    copying were dropped in schema 3 rather than kept as decoration: e-mail is sent
+    unconditionally by the Applications context, and no copying feature exists.
     """
 
     # Applications
     allow_multiple_applications: bool = False
     allow_application_editing: bool = True
     allow_withdrawing_applications: bool = True
-    allow_copying_previous_applications: bool = False
 
     # Participant data
     require_teacher: bool = False
@@ -1826,12 +1830,6 @@ class CompetitionSettings:
     require_personal_data_consent: bool = True
     require_media_consent: bool = False
     require_regulations_acceptance: bool = True
-
-    # Notifications
-    email_notifications: bool = True
-    cabinet_notifications: bool = True
-    sms_notifications: bool = False  # prepared for future
-    push_notifications: bool = False  # prepared for future
 
     # Organizer
     manual_application_approval: bool = True
