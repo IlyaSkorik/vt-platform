@@ -58,18 +58,24 @@ export function FestivalApplyPage(): React.JSX.Element {
   const { festivalId = "" } = useParams<{ festivalId: string }>();
   const [searchParams] = useSearchParams();
   const { data: applications, isLoading: listLoading } = useMyApplications();
+  // The address bar carries whatever the link used — a readable slug or a uuid — and
+  // the public projection resolves either. Applications, though, are keyed strictly
+  // by the competition's uuid, so the projection is the only trustworthy source of
+  // the id to create against and to match existing applications on.
+  const { data: registration, isLoading: registrationLoading } = useRegistration(festivalId);
+  const competitionId = registration?.competition.id ?? null;
   const createApplication = useCreateApplication();
   const [createdId, setCreatedId] = useState<string | null>(null);
   const targetApplicationId = searchParams.get("applicationId");
 
   const selectedApplication = useMemo(() => {
-    if (!applications) return null;
+    if (!applications || competitionId === null) return null;
     // An explicit ?applicationId= (e.g. "edit" from an application card) opens that
     // exact application regardless of status, so an already-submitted one stays editable.
     if (targetApplicationId) {
       const exact = applications.find(
         (application) =>
-          application.id === targetApplicationId && application.competitionId === festivalId,
+          application.id === targetApplicationId && application.competitionId === competitionId,
       );
       if (exact) return exact;
     }
@@ -77,18 +83,32 @@ export function FestivalApplyPage(): React.JSX.Element {
     // applicant already submitted, a fresh application is started from scratch.
     return (
       applications.find(
-        (application) => application.competitionId === festivalId && application.status === "DRAFT",
+        (application) =>
+          application.competitionId === competitionId && application.status === "DRAFT",
       ) ?? null
     );
-  }, [applications, festivalId, targetApplicationId]);
+  }, [applications, competitionId, targetApplicationId]);
   const applicationId = createdId ?? selectedApplication?.id ?? null;
 
-  if (listLoading) {
+  if (listLoading || registrationLoading) {
     return (
       <PageContainer>
         <PageContent>
           <LoadingState label="Готовим заявку…" />
         </PageContent>
+      </PageContainer>
+    );
+  }
+
+  if (competitionId === null) {
+    return (
+      <PageContainer>
+        <PageHeader>
+          <PageTitle>Фестиваль не найден</PageTitle>
+          <PageDescription>
+            Приём заявок на этот фестиваль закрыт, либо ссылка устарела.
+          </PageDescription>
+        </PageHeader>
       </PageContainer>
     );
   }
@@ -109,7 +129,7 @@ export function FestivalApplyPage(): React.JSX.Element {
           <Button
             loading={createApplication.isPending}
             onClick={() =>
-              createApplication.mutate(festivalId, {
+              createApplication.mutate(competitionId, {
                 onSuccess: (application) => setCreatedId(application.id),
               })
             }
@@ -121,15 +141,16 @@ export function FestivalApplyPage(): React.JSX.Element {
     );
   }
 
-  return <WizardBody applicationId={applicationId} competitionId={festivalId} />;
+  return <WizardBody applicationId={applicationId} festivalRef={festivalId} />;
 }
 
 function WizardBody({
   applicationId,
-  competitionId,
+  festivalRef,
 }: {
   applicationId: string;
-  competitionId: string;
+  /** The identifier from the address bar — slug or uuid; the projection takes either. */
+  festivalRef: string;
 }): React.JSX.Element {
   const {
     data: application,
@@ -142,7 +163,7 @@ function WizardBody({
     isLoading: registrationLoading,
     refetch: refetchRegistration,
     isFetching: isFetchingRegistration,
-  } = useRegistration(competitionId);
+  } = useRegistration(festivalRef);
   const [refreshNotice, setRefreshNotice] = useState<{
     type: "success" | "error";
     text: string;
