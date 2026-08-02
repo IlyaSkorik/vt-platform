@@ -20,6 +20,8 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from config.seo import robots_txt, sitemap_xml
+
 
 def healthz(_request: HttpRequest) -> JsonResponse:
     """Liveness probe (ARCH-001 §17.4)."""
@@ -35,6 +37,11 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("healthz", healthz, name="healthz"),
     path("readyz", readyz, name="readyz"),
+    # What a crawler reads first. Served from the API rather than shipped as a
+    # static file because the sitemap has to name the competitions that exist
+    # right now, not the ones that existed at the last frontend build.
+    path("robots.txt", robots_txt, name="robots-txt"),
+    path("sitemap.xml", sitemap_xml, name="sitemap-xml"),
     # OpenAPI 3.1 contract + docs (drf-spectacular, API-000 §25).
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
