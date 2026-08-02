@@ -1170,8 +1170,8 @@
     "semantic_hash": "48403aa647e783b829232680e5dd201c"
   },
   "backend/apps/composition/presentation/api/v1/serializers.py": {
-    "mtime": 1785602478.8062758,
-    "ast_hash": "e7b1789cd843e09b71159047a0089350",
+    "mtime": 1785663801.187691,
+    "ast_hash": "e76a8865a75a9c4ccd3c3d1314acdf91",
     "semantic_hash": ""
   },
   "backend/apps/composition/presentation/api/v1/urls.py": {
@@ -1355,8 +1355,8 @@
     "semantic_hash": "90d7826a0ae32f92aad69a68fcf4dedc"
   },
   "backend/apps/identity/application/commands/user_commands.py": {
-    "mtime": 1784485466.7750194,
-    "ast_hash": "a92a797f95daaa5e002d3bc9726e9c33",
+    "mtime": 1785663569.9016378,
+    "ast_hash": "5f4b8a5ec4461c5abd8be4ee1a8464ac",
     "semantic_hash": ""
   },
   "backend/apps/identity/application/dto/__init__.py": {
@@ -1410,8 +1410,8 @@
     "semantic_hash": ""
   },
   "backend/apps/identity/application/handlers/user_handlers.py": {
-    "mtime": 1784486244.166665,
-    "ast_hash": "026d576173d70674e44a455b8f34a499",
+    "mtime": 1785663608.0208328,
+    "ast_hash": "5d758d80fadf6b8a950518eadd8c0b4e",
     "semantic_hash": ""
   },
   "backend/apps/identity/application/interfaces.py": {
@@ -1625,13 +1625,13 @@
     "semantic_hash": "8dd28e037080347f3aaafd38fff89bac"
   },
   "backend/apps/identity/presentation/api/v1/auth/composition.py": {
-    "mtime": 1784485466.7750194,
-    "ast_hash": "eac39dc09f148aed92e5aa365ec0edc2",
+    "mtime": 1785663644.0784354,
+    "ast_hash": "a6bee53583fff1bb0a60d4dacc9e0721",
     "semantic_hash": ""
   },
   "backend/apps/identity/presentation/api/v1/auth/serializers.py": {
-    "mtime": 1784485466.7750194,
-    "ast_hash": "b0d86241f01afb7832de9a7d0aeac3ae",
+    "mtime": 1785663801.187691,
+    "ast_hash": "5f228e6ec2eb7c6bfbd4e55939693438",
     "semantic_hash": ""
   },
   "backend/apps/identity/presentation/api/v1/auth/urls.py": {
@@ -1655,9 +1655,9 @@
     "semantic_hash": "59d420fb8fd334ca4c39dba840ec00dd"
   },
   "backend/apps/identity/presentation/api/v1/resources.py": {
-    "mtime": 1783592775.9065268,
-    "ast_hash": "cd86f72b4fcc768167b37476324b0f38",
-    "semantic_hash": "cd86f72b4fcc768167b37476324b0f38"
+    "mtime": 1785663777.567825,
+    "ast_hash": "e56f45047d2443db10c288edd47c801a",
+    "semantic_hash": ""
   },
   "backend/apps/identity/presentation/api/v1/sessions/__init__.py": {
     "mtime": 1783367549.1983747,
@@ -1670,9 +1670,9 @@
     "semantic_hash": "57bdf484ded1133c0d7312f065f55534"
   },
   "backend/apps/identity/presentation/urls.py": {
-    "mtime": 1783450718.0386074,
-    "ast_hash": "2f9ba9628c6df7bcbe91c607c91bc699",
-    "semantic_hash": "2f9ba9628c6df7bcbe91c607c91bc699"
+    "mtime": 1785663771.1166253,
+    "ast_hash": "6c0c461e124d23c879285fd68acdbbf6",
+    "semantic_hash": ""
   },
   "backend/apps/institutions/__init__.py": {
     "mtime": 1783367029.6801438,
@@ -3275,9 +3275,9 @@
     "semantic_hash": ""
   },
   "backend/tests/application/identity/test_commands.py": {
-    "mtime": 1783618251.5733554,
-    "ast_hash": "2df5a7eb26f0635e226979b1355ab84d",
-    "semantic_hash": "2df5a7eb26f0635e226979b1355ab84d"
+    "mtime": 1785663906.6470838,
+    "ast_hash": "dfd5f501643dd83dd706a4e432173649",
+    "semantic_hash": ""
   },
   "backend/tests/application/identity/test_dto.py": {
     "mtime": 1783416361.594153,
@@ -3290,9 +3290,9 @@
     "semantic_hash": "1382f02b7c3c4b46202ecbd3d63462f1"
   },
   "backend/tests/application/identity/test_handlers.py": {
-    "mtime": 1784321662.5106814,
-    "ast_hash": "853af2c002a89b0daa00478a0220922d",
-    "semantic_hash": "853af2c002a89b0daa00478a0220922d"
+    "mtime": 1785663929.776986,
+    "ast_hash": "bb9a75d9f348d7444a89070a080c834b",
+    "semantic_hash": ""
   },
   "backend/tests/application/identity/test_interfaces.py": {
     "mtime": 1783618251.5815425,
@@ -3850,8 +3850,8 @@
     "semantic_hash": "6ed8c18b5c86df4e096858606ec153c0"
   },
   "frontend/src/app/router/router.tsx": {
-    "mtime": 1785605198.7985013,
-    "ast_hash": "db653db613558b70e08d9fc3e92a5ad2",
+    "mtime": 1785664453.0957825,
+    "ast_hash": "f2e2dd86649146bdca8c3f0c4e034286",
     "semantic_hash": ""
   },
   "frontend/src/applications/participant/layouts/participant-layout.tsx": {
@@ -4035,7 +4035,7 @@
     "semantic_hash": "a836386b80ef99b01ff343a34dae2d15"
   },
   "frontend/src/features/auth/api/index.ts": {
-    "mtime": 1785186812.5095985,
+    "mtime": 1785664815.4687676,
     "ast_hash": "bd9b8b954f8ce191b444e04a57b716e4",
     "semantic_hash": "bd9b8b954f8ce191b444e04a57b716e4"
   },
@@ -4075,9 +4075,9 @@
     "semantic_hash": "4d4fb875b73fbe1f53159c638aaf87ec"
   },
   "frontend/src/features/auth/index.ts": {
-    "mtime": 1783619251.6621423,
-    "ast_hash": "dcd8ea11bd31971575f10487bb8df91e",
-    "semantic_hash": "dcd8ea11bd31971575f10487bb8df91e"
+    "mtime": 1785664292.222252,
+    "ast_hash": "9b3739177e27f8367a60823266066be8",
+    "semantic_hash": ""
   },
   "frontend/src/features/auth/lib/problem-to-form.test.ts": {
     "mtime": 1783520922.2764144,
@@ -4115,12 +4115,12 @@
     "semantic_hash": "0db001438669826f130a18bdca573ae6"
   },
   "frontend/src/features/auth/ui/login-form.test.tsx": {
-    "mtime": 1785186812.5095985,
+    "mtime": 1785664815.4687676,
     "ast_hash": "3cd402917b5ddcb54daa94e2bcf02817",
     "semantic_hash": "3cd402917b5ddcb54daa94e2bcf02817"
   },
   "frontend/src/features/auth/ui/login-form.tsx": {
-    "mtime": 1785186812.5095985,
+    "mtime": 1785664815.4687676,
     "ast_hash": "1e91e5a47b02c3c540bceeabce2ebe79",
     "semantic_hash": "1e91e5a47b02c3c540bceeabce2ebe79"
   },
@@ -6545,13 +6545,13 @@
     "semantic_hash": "d4ecc328966ff21da30ecd22f0b2a981"
   },
   "frontend/openapi/schema-full.yaml": {
-    "mtime": 1785586424.4078524,
+    "mtime": 1785664766.5703764,
     "ast_hash": "aa2255c725275e4950b35d1c4ae46aad",
     "semantic_hash": ""
   },
   "frontend/openapi/schema.yaml": {
-    "mtime": 1785604322.5641983,
-    "ast_hash": "bfef6c1a4bd1e78339280ac031868284",
+    "mtime": 1785664246.5202,
+    "ast_hash": "c4d766b75d6f711183599bcd2be9d2b2",
     "semantic_hash": ""
   },
   "frontend/src/entities/README.md": {
@@ -7880,13 +7880,13 @@
     "semantic_hash": ""
   },
   "frontend/src/features/my-documents/lib/kinds.test.ts": {
-    "mtime": 1785069815.9724476,
-    "ast_hash": "858611cbea1d4db9793cdb5311a2f559",
+    "mtime": 1785664593.1443367,
+    "ast_hash": "fb640d088423b128f22b3929b4075798",
     "semantic_hash": ""
   },
   "frontend/src/features/my-documents/lib/kinds.ts": {
-    "mtime": 1785069704.8326347,
-    "ast_hash": "fd1b3934ea180a32b4926e0773fd293c",
+    "mtime": 1785664091.9119473,
+    "ast_hash": "ebc4cb7d5a10461486f982b470c96da7",
     "semantic_hash": ""
   },
   "frontend/src/features/my-documents/lib/types.ts": {
@@ -7940,8 +7940,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/my-documents/ui/my-documents.tsx": {
-    "mtime": 1785069746.657325,
-    "ast_hash": "4afc7c5285f6c9a8dbcf8d7643814284",
+    "mtime": 1785664114.3080263,
+    "ast_hash": "a3983e2000a0768cb7592ea30f18e242",
     "semantic_hash": ""
   },
   "frontend/docs/screenshots/diploma-verification/desktop-dark.png": {
@@ -9117,6 +9117,86 @@
   "frontend/src/features/application-phonograms/ui/phonograms-card.tsx": {
     "mtime": 1785662243.282584,
     "ast_hash": "347d76af77b6c57c133f15e36c2fb1cc",
+    "semantic_hash": ""
+  },
+  "backend/apps/identity/presentation/api/v1/account/__init__.py": {
+    "mtime": 1785663670.1104717,
+    "ast_hash": "289ac3c1509cca9df8ae49848897b3ee",
+    "semantic_hash": ""
+  },
+  "backend/apps/identity/presentation/api/v1/account/serializers.py": {
+    "mtime": 1785663695.7504158,
+    "ast_hash": "8bd5e63dcd1dfa6e220177a1ad52cb65",
+    "semantic_hash": ""
+  },
+  "backend/apps/identity/presentation/api/v1/account/urls.py": {
+    "mtime": 1785663754.0230806,
+    "ast_hash": "cb55c6f0f3797cb8b928d5f5bbaad5a1",
+    "semantic_hash": ""
+  },
+  "backend/apps/identity/presentation/api/v1/account/views.py": {
+    "mtime": 1785663747.7950804,
+    "ast_hash": "bc6aa1b8ef89526e2b9d63d62432ba83",
+    "semantic_hash": ""
+  },
+  "backend/tests/presentation/identity/test_account_api.py": {
+    "mtime": 1785663990.2893674,
+    "ast_hash": "c6ce959d4b8f7dab53f80c6e81ca64bc",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/account-settings/api/hooks.ts": {
+    "mtime": 1785664211.4254782,
+    "ast_hash": "cb8670ed495a511b558554a23aa03ed1",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/account-settings/index.ts": {
+    "mtime": 1785664593.0975368,
+    "ast_hash": "9c5b2fbf5d4e05c0105e4d8c38dca24b",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/account-settings/model/schemas.ts": {
+    "mtime": 1785664175.0367146,
+    "ast_hash": "1cb7744711a76782ba4af3e2b238e985",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/account-settings/ui/appearance-card.tsx": {
+    "mtime": 1785664429.481042,
+    "ast_hash": "94e66c423e039d52dd62aabfdda1fe03",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/account-settings/ui/email-card.test.tsx": {
+    "mtime": 1785664593.1047368,
+    "ast_hash": "280abb65361a90e97359c790db0d559c",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/account-settings/ui/email-card.tsx": {
+    "mtime": 1785664373.5483634,
+    "ast_hash": "55161723536b24c58d5f2e93b74f2442",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/account-settings/ui/password-card.test.tsx": {
+    "mtime": 1785664522.9415114,
+    "ast_hash": "3a4c3bdd00dc98a576030d1dd7615e2c",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/account-settings/ui/password-card.tsx": {
+    "mtime": 1785664308.4059992,
+    "ast_hash": "dd50ab6995e5ee51bea579e3232bf188",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/account-settings/ui/phone-card.test.tsx": {
+    "mtime": 1785664561.8150544,
+    "ast_hash": "a2bfc2109b955255c628563bde0e296f",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/account-settings/ui/phone-card.tsx": {
+    "mtime": 1785664389.7915738,
+    "ast_hash": "88842090157ab40fed10aeb74a37b7fb",
+    "semantic_hash": ""
+  },
+  "frontend/src/pages/settings/index.tsx": {
+    "mtime": 1785664593.1263368,
+    "ast_hash": "f8f01deb89db7b5c7ec03e11ed70efa0",
     "semantic_hash": ""
   }
 }
