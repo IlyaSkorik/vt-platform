@@ -44,9 +44,12 @@ from apps.applications.application.exceptions import (
     DeadlinePassedError,
     EducationalOrganizationNotFoundError,
     FileTooLargeError,
+    ParentGuardianRequiredError,
+    PaymentReceiptRequiredError,
     PermissionDeniedError,
     UnsupportedFileTypeError,
 )
+from apps.applications.application.interfaces import ReceiptRequirement
 from apps.applications.application.orders import (
     AddSubmissionToApplicationHandler,
     CancelApplicationHandler,
@@ -79,6 +82,7 @@ from apps.applications.domain.value_objects import (
     PerformanceTitle,
     PersonName,
     PriceSnapshot,
+    RegistryParticipantId,
     SubmissionId,
     SubmissionStatus,
 )
@@ -92,6 +96,7 @@ from .fakes import (
     FakeEducationalOrganizationDirectory,
     FakeFileStorage,
     FakeIdentityReadModel,
+    FakeParticipantGuardianRegistry,
     FakeSubmissionRepository,
     RecordingEventPublisher,
     SequenceUuidGenerator,
@@ -107,7 +112,9 @@ class Env:
         identity: FakeIdentityReadModel | None = None,
         services: FakeCompetitionServiceCatalog | None = None,
         directory: FakeEducationalOrganizationDirectory | None = None,
+        guardians: FakeParticipantGuardianRegistry | None = None,
     ) -> None:
+        self.guardians = guardians or FakeParticipantGuardianRegistry()
         self.applications = FakeApplicationRepository()
         self.submissions = FakeSubmissionRepository()
         self.catalog = catalog or FakeCompetitionCatalog()
@@ -168,6 +175,7 @@ class Env:
             services=self.services,
             clock=self.clock,
             events=self.events,
+            guardians=self.guardians,
         )
 
     def request_payment(self) -> RequestApplicationPaymentHandler:
@@ -200,8 +208,13 @@ class Env:
 
     # -- test helpers driving the separate Submission workflow --------------
 
-    def build_submittable(self, submission_id_str: str) -> None:
-        """Give the submission a performance, a participant, and a frozen price."""
+    def build_submittable(self, submission_id_str: str, *, from_registry: bool = False) -> None:
+        """Give the submission a performance, a participant, and a frozen price.
+
+        ``from_registry`` links the participant back to a Participant Registry record,
+        which is what the guardian requirement is checked against — a manually typed
+        participant has no registry row and so can never carry a guardian link.
+        """
         submission = self.submissions.get(SubmissionId.from_string(submission_id_str))
         assert submission is not None
         performance = Performance(
@@ -219,6 +232,9 @@ class Env:
             name=PersonName(first_name="Anna", last_name="Ivanova"),
             birth_date=BirthDate(date(2014, 5, 1)),
             gender=Gender.FEMALE,
+            registry_participant_id=(
+                RegistryParticipantId.from_uuid(SubmissionId.generate().value) if from_registry else None
+            ),
             now=NOW,
         )
         submission.set_price_snapshot(price_snapshot=PriceSnapshot(price=Money.of("300.00"), calculated_at=NOW), now=NOW)
@@ -378,6 +394,66 @@ class TestSubmitAndPay:
         assert result.application.submissions[0].status == "SUBMITTED"
         assert result.application.total_price is not None
         assert result.application.total_price.submissions_amount == "300.00"
+
+    def test_submit_demands_receipt_when_late_upload_is_forbidden(self) -> None:
+        env = Env(services=FakeCompetitionServiceCatalog(receipt_requirement=ReceiptRequirement(required=True, due_at_submit=True)))
+        app_id, applicant = _create_app(env)
+        submission_id = _add_submission(env, app_id, applicant)
+        env.build_submittable(submission_id)
+        with pytest.raises(PaymentReceiptRequiredError):
+            env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
+
+    def test_submit_allows_missing_receipt_when_it_may_arrive_later(self) -> None:
+        env = Env(services=FakeCompetitionServiceCatalog(receipt_requirement=ReceiptRequirement(required=True, due_at_submit=False)))
+        app_id, applicant = _create_app(env)
+        submission_id = _add_submission(env, app_id, applicant)
+        env.build_submittable(submission_id)
+        result = env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
+        assert result.application.status == "SUBMITTED"
+
+    def test_submit_rejects_participant_without_active_guardian(self) -> None:
+        env = Env(
+            services=FakeCompetitionServiceCatalog(requires_parent_guardian=True),
+            guardians=FakeParticipantGuardianRegistry(all_covered=False),
+        )
+        app_id, applicant = _create_app(env)
+        submission_id = _add_submission(env, app_id, applicant)
+        env.build_submittable(submission_id, from_registry=True)
+        with pytest.raises(ParentGuardianRequiredError):
+            env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
+
+    def test_submit_rejects_manually_typed_participant_who_has_no_registry_record(self) -> None:
+        env = Env(
+            services=FakeCompetitionServiceCatalog(requires_parent_guardian=True),
+            guardians=FakeParticipantGuardianRegistry(all_covered=True),
+        )
+        app_id, applicant = _create_app(env)
+        submission_id = _add_submission(env, app_id, applicant)
+        env.build_submittable(submission_id, from_registry=False)
+        with pytest.raises(ParentGuardianRequiredError):
+            env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
+
+    def test_submit_passes_when_every_participant_has_a_guardian(self) -> None:
+        env = Env(
+            services=FakeCompetitionServiceCatalog(requires_parent_guardian=True),
+            guardians=FakeParticipantGuardianRegistry(all_covered=True),
+        )
+        app_id, applicant = _create_app(env)
+        submission_id = _add_submission(env, app_id, applicant)
+        env.build_submittable(submission_id, from_registry=True)
+        result = env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
+        assert result.application.status == "SUBMITTED"
+
+    def test_guardian_check_skipped_when_competition_does_not_ask(self) -> None:
+        env = Env(
+            services=FakeCompetitionServiceCatalog(requires_parent_guardian=False),
+            guardians=FakeParticipantGuardianRegistry(all_covered=False),
+        )
+        app_id, applicant = _create_app(env)
+        submission_id = _add_submission(env, app_id, applicant)
+        env.build_submittable(submission_id)
+        result = env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
+        assert result.application.status == "SUBMITTED"
 
     def test_submit_enforces_required_services(self) -> None:
         env = Env(services=FakeCompetitionServiceCatalog(required_services=frozenset({uuid7_str()})))

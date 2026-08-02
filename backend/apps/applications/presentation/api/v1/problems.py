@@ -44,6 +44,8 @@ _PROBLEM_MAP: Final[dict[str, tuple[int, str, str]]] = {
     "competition_closed": (409, "conflict", "Competition is not accepting applications"),
     "additional_service_not_available": (409, "conflict", "Service not available for this format"),
     "deadline_passed": (409, "conflict", "Deadline has passed"),
+    "payment_receipt_required": (409, "conflict", "Payment receipt is required"),
+    "parent_guardian_required": (422, "business-rule-violation", "Parent or guardian is required"),
     "application_state_conflict": (409, "conflict", "Conflict"),
     "submission_state_conflict": (409, "conflict", "Conflict"),
     "application_conflict": (409, "conflict", "Conflict"),

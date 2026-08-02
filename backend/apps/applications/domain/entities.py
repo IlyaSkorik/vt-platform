@@ -121,6 +121,7 @@ from .exceptions import (
     MissingRequiredServiceError,
     NoSubmissionsError,
     NotAllSubmissionsApprovedError,
+    ParticipantCommentNotAcceptedError,
     ParticipantCountMismatchError,
     ParticipantNotFoundError,
     ParticipantRequiredError,
@@ -1085,6 +1086,10 @@ class Submission:
             )
         if policy.requires_teacher and not self._teachers:
             raise TeacherRequiredError("This competition requires a teacher to be credited before the submission can be submitted.")
+        if not policy.allows_participant_comment and self._performance.comment:
+            raise ParticipantCommentNotAcceptedError(
+                "This competition does not accept a participant comment on the performance."
+            )
         present_types = {attachment.type for attachment in self._attachments.values()}
         missing = policy.required_attachment_types() - present_types
         if missing:

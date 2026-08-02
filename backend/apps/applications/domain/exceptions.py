@@ -49,6 +49,7 @@ objects) and mapped to RFC 9457 Problem Details at the presentation edge
         ├── PerformanceRequiredError
         ├── ParticipantRequiredError
         ├── TeacherRequiredError
+        ├── ParticipantCommentNotAcceptedError
         ├── RequiredAttachmentMissingError
         ├── PriceSnapshotRequiredError
         ├── CombinationNotAdmissibleError
@@ -300,6 +301,10 @@ class ParticipantRequiredError(SubmissionInvariantError):
 
 class TeacherRequiredError(SubmissionInvariantError):
     """The competition requires a teacher, but the submission credits none."""
+
+
+class ParticipantCommentNotAcceptedError(SubmissionInvariantError):
+    """The competition does not invite a participant comment, but one is present."""
 
 
 class RequiredAttachmentMissingError(SubmissionInvariantError):

@@ -15,6 +15,7 @@ from apps.applications.application.interfaces import (
     AdditionalServiceQuote,
     ApplicantInfo,
     EducationalOrganizationInfo,
+    ReceiptRequirement,
     UploadConstraints,
 )
 from apps.applications.domain.entities import Application, Submission
@@ -227,7 +228,10 @@ class FakeCompetitionServiceCatalog:
         billing_model: PriceCalculationType = PriceCalculationType.PER_PARTICIPANT,
         available_format_ids: frozenset[str] = frozenset(),
         required_service: bool = False,
+        receipt_requirement: ReceiptRequirement | None = None,
+        requires_parent_guardian: bool = False,
     ) -> None:
+        self._requires_parent_guardian = requires_parent_guardian
         self._service_price = service_price if service_price is not None else Money.of("25.00")
         self._service_known = service_known
         self._required = required_consents
@@ -235,6 +239,7 @@ class FakeCompetitionServiceCatalog:
         self._billing_model = billing_model
         self._available_format_ids = available_format_ids
         self._required_service = required_service
+        self._receipt_requirement = receipt_requirement if receipt_requirement is not None else ReceiptRequirement.none()
 
     def get_additional_service(self, *, competition_id: CompetitionId, service_id: ServiceId) -> AdditionalServiceQuote | None:
         if not self._service_known:
@@ -251,8 +256,29 @@ class FakeCompetitionServiceCatalog:
     def required_consent_codes(self, *, competition_id: CompetitionId) -> frozenset[str]:
         return self._required
 
+    def requires_parent_guardian(self, *, competition_id: CompetitionId) -> bool:
+        return self._requires_parent_guardian
+
     def required_service_ids(self, *, competition_id: CompetitionId, participation_format_ids: frozenset[str]) -> frozenset[str]:
         return self._required_services
+
+    def receipt_requirement(
+        self,
+        *,
+        competition_id: CompetitionId,
+        participation_format_ids: frozenset[str],
+    ) -> ReceiptRequirement:
+        return self._receipt_requirement
+
+
+class FakeParticipantGuardianRegistry:
+    """Participants ACL stand-in; every participant either has a guardian or none do."""
+
+    def __init__(self, *, all_covered: bool = True) -> None:
+        self._all_covered = all_covered
+
+    def participants_without_active_guardian(self, *, participant_ids: frozenset[str]) -> frozenset[str]:
+        return frozenset() if self._all_covered else participant_ids
 
 
 class FakeEducationalOrganizationDirectory:

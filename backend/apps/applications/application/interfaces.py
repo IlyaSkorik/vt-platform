@@ -78,6 +78,8 @@ __all__ = [
     "FileStorage",
     "IdentityReadModel",
     "OrganizationReadModel",
+    "ParticipantGuardianRegistry",
+    "ReceiptRequirement",
     "SubmissionRepository",
     "UploadConstraints",
     "UuidGenerator",
@@ -381,6 +383,26 @@ class AdditionalServiceQuote:
     required: bool = False
 
 
+@dataclass(frozen=True, slots=True)
+class ReceiptRequirement:
+    """Whether the order must carry a payment receipt, and by which moment.
+
+    Two organizer settings collapse into this pair. ``required`` mirrors the
+    format's ``require_receipt``; ``due_at_submit`` is the answer to its
+    ``allow_upload_later`` — when uploading later is *not* permitted, the receipt
+    has to be attached before the order may be placed, otherwise it is only owed
+    before the order can be marked paid.
+    """
+
+    required: bool = False
+    due_at_submit: bool = False
+
+    @classmethod
+    def none(cls) -> ReceiptRequirement:
+        """No receipt is required at all."""
+        return cls()
+
+
 @runtime_checkable
 class CompetitionServiceCatalog(Protocol):
     """Port: the Competition ACL for additional services and required consents.
@@ -398,6 +420,10 @@ class CompetitionServiceCatalog(Protocol):
         """Return the consent codes the competition requires before an application may be submitted."""
         ...
 
+    def requires_parent_guardian(self, *, competition_id: CompetitionId) -> bool:
+        """Whether every performer must have a verified parent/guardian on file."""
+        ...
+
     def required_service_ids(self, *, competition_id: CompetitionId, participation_format_ids: frozenset[str]) -> frozenset[str]:
         """Return the ids of services the competition mandates for the given formats.
 
@@ -406,10 +432,45 @@ class CompetitionServiceCatalog(Protocol):
         """
         ...
 
+    def receipt_requirement(
+        self,
+        *,
+        competition_id: CompetitionId,
+        participation_format_ids: frozenset[str],
+    ) -> ReceiptRequirement:
+        """Return whether a payment receipt is mandatory for this order, and when.
+
+        The requirement is configured per participation format, and one order may
+        span several — so the strictest wins: the receipt is required if *any*
+        chosen format requires it, and it is due at submit unless *every* format
+        requiring it also permits uploading later.
+        """
+        ...
+
 
 # ---------------------------------------------------------------------------
 # Educational-organization directory gateway (read model / ACL)
 # ---------------------------------------------------------------------------
+
+
+@runtime_checkable
+class ParticipantGuardianRegistry(Protocol):
+    """Port: the Participants ACL answering who has a verified guardian on file.
+
+    A competition may insist that every performer be backed by a parent or legal
+    guardian. The relationship itself belongs to the Participants context (it long
+    outlives any one application), so this context only asks the question and never
+    models the link.
+    """
+
+    def participants_without_active_guardian(self, *, participant_ids: frozenset[str]) -> frozenset[str]:
+        """Return the subset of ids that have no *active* guardian relationship.
+
+        A merely proposed link does not count — an unverified claim of guardianship
+        is exactly what the requirement exists to catch. Unknown ids are reported as
+        missing rather than silently passing.
+        """
+        ...
 
 
 @dataclass(frozen=True, slots=True)

@@ -29,6 +29,7 @@ from apps.applications.domain.exceptions import (
     InvalidBirthDateError,
     InvalidParticipantMemberCountError,
     InvalidPersonNameError,
+    ParticipantCommentNotAcceptedError,
     ParticipantCountMismatchError,
     ParticipantNotFoundError,
     ParticipantRequiredError,
@@ -79,8 +80,9 @@ def _new_id() -> uuid.UUID:
     return SubmissionId.generate().value
 
 
-def _performance() -> Performance:
+def _performance(comment: str = "") -> Performance:
     return Performance(
+        comment=comment,
         title=PerformanceTitle("Swan Lake"),
         duration=Duration.of(minutes=3, seconds=30),
         nomination_id=NominationId.from_uuid(_new_id()),
@@ -710,4 +712,21 @@ class TestSubmitRequirements:
             attachment_id=AttachmentId.generate(), attachment_type=AttachmentType.DOCUMENT, file=FileReference("s3://document.pdf"), now=NOW
         )
         submission.submit(policy=_policy(requires_document=True), now=NOW)
+        assert submission.status is SubmissionStatus.SUBMITTED
+
+    def test_comment_rejected_when_competition_does_not_invite_one(self) -> None:
+        submission = _solo_ready().submission
+        submission.set_performance(performance=_performance(comment="Нужен свет с левой кулисы"), now=NOW)
+        with pytest.raises(ParticipantCommentNotAcceptedError):
+            submission.submit(policy=_policy(allows_participant_comment=False), now=NOW)
+
+    def test_empty_comment_passes_when_comments_are_off(self) -> None:
+        submission = _solo_ready().submission
+        submission.submit(policy=_policy(allows_participant_comment=False), now=NOW)
+        assert submission.status is SubmissionStatus.SUBMITTED
+
+    def test_comment_accepted_when_competition_invites_one(self) -> None:
+        submission = _solo_ready().submission
+        submission.set_performance(performance=_performance(comment="Нужен свет с левой кулисы"), now=NOW)
+        submission.submit(policy=_policy(allows_participant_comment=True), now=NOW)
         assert submission.status is SubmissionStatus.SUBMITTED

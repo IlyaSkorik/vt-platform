@@ -1321,6 +1321,11 @@ class SubmissionParticipationPolicy:
     requires_music: bool = False
     requires_video_file: bool = False
     requires_document: bool = False
+    #: Whether the competition invites the applicant's free-text note about the act.
+    #: When a competition does not, a note that slipped in anyway (an older draft, a
+    #: client that still renders the field) is rejected rather than quietly carried
+    #: to organizers who never asked to read it.
+    allows_participant_comment: bool = True
 
     def required_attachment_types(self) -> frozenset[AttachmentType]:
         """The attachment kinds this competition requires before submission.

@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from apps.applications.application.interfaces import AdditionalServiceQuote
+from apps.applications.application.interfaces import AdditionalServiceQuote, ReceiptRequirement
 from apps.applications.domain.value_objects import (
     AgeCategoryId,
     CompetitionId,
@@ -176,6 +176,7 @@ class DjangoCompetitionCatalog:
             # (see the Application's PaymentReceipt), so it is not a submit-time
             # submission attachment; only genuine supporting documents are.
             requires_document=settings.require_document_upload,
+            allows_participant_comment=settings.participant_comment_enabled,
         )
 
     def price_quote(
@@ -238,6 +239,39 @@ class DjangoCompetitionServiceCatalog:
             for service in competition.additional_services
             if service.is_enabled and service.required and any(service.is_available_for(fid) for fid in formats)
         )
+
+    def receipt_requirement(
+        self,
+        *,
+        competition_id: CompetitionId,
+        participation_format_ids: frozenset[str],
+    ) -> ReceiptRequirement:
+        """Fold the per-format receipt rules of one order into a single requirement.
+
+        An order may mix participation formats, so the strictest rule wins: required
+        if any format requires a receipt, and due at submit unless every format that
+        requires one also allows uploading it later.
+        """
+        competition = self._repo.get(CompCompetitionId.from_uuid(competition_id.value))
+        if competition is None:
+            return ReceiptRequirement.none()
+        settings = competition.settings
+        demanding = [
+            settings.requirements_for(CompParticipationFormatId.from_string(fid)).payment_receipt
+            for fid in participation_format_ids
+        ]
+        requiring = [receipt for receipt in demanding if receipt.require_receipt]
+        if not requiring:
+            return ReceiptRequirement.none()
+        return ReceiptRequirement(
+            required=True,
+            due_at_submit=any(not receipt.allow_upload_later for receipt in requiring),
+        )
+
+    def requires_parent_guardian(self, *, competition_id: CompetitionId) -> bool:
+        """Whether the competition insists every performer has a guardian on file."""
+        competition = self._repo.get(CompCompetitionId.from_uuid(competition_id.value))
+        return competition is not None and competition.settings.require_parent_guardian
 
     def required_consent_codes(self, *, competition_id: CompetitionId) -> frozenset[str]:
         """The consent codes the competition's settings mandate before submission.

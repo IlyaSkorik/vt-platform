@@ -63,6 +63,8 @@ __all__ = [
     "EducationalOrganizationNotFoundError",
     "FileTooLargeError",
     "InvalidInputError",
+    "ParentGuardianRequiredError",
+    "PaymentReceiptRequiredError",
     "PermissionDeniedError",
     "SubmissionChildNotFoundError",
     "SubmissionInvariantViolationError",
@@ -240,6 +242,23 @@ class DeadlinePassedError(ApplicationError):
     """A competition deadline for the requested operation (payment/upload) has passed."""
 
     code: ClassVar[str] = "deadline_passed"
+
+
+class ParentGuardianRequiredError(ApplicationError):
+    """The competition requires a verified guardian that some participant lacks."""
+
+    code: ClassVar[str] = "parent_guardian_required"
+
+
+class PaymentReceiptRequiredError(ApplicationError):
+    """The competition requires a payment receipt the order does not carry yet.
+
+    Raised at submit when the chosen formats forbid uploading the receipt later,
+    and at mark-paid otherwise — the moment the proof of payment stops being
+    optional depends on the organizer's ``allow_upload_later`` choice.
+    """
+
+    code: ClassVar[str] = "payment_receipt_required"
 
 
 class ApplicationStateConflictError(ApplicationError):

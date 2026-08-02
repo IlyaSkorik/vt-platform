@@ -39,6 +39,7 @@ from apps.applications.infrastructure.acl import (
     DjangoCompetitionServiceCatalog,
     DjangoEducationalOrganizationDirectory,
     DjangoIdentityReadModel,
+    DjangoParticipantGuardianRegistry,
 )
 from apps.applications.infrastructure.messaging import (
     DjangoApplicantNotifier,
@@ -147,6 +148,7 @@ def build_submit_application_handler() -> SubmitApplicationHandler:
         identity=DjangoIdentityReadModel(),
         notifier=DjangoApplicantNotifier(),
         payment_window=timedelta(hours=settings.APPLICATION_PAYMENT_WINDOW_HOURS),
+        guardians=DjangoParticipantGuardianRegistry(),
     )
 
 
@@ -172,6 +174,7 @@ def build_mark_paid_handler() -> MarkApplicationPaidHandler:
         catalog=DjangoCompetitionCatalog(),
         clock=SystemClock(),
         events=NullEventPublisher(),
+        services=DjangoCompetitionServiceCatalog(),
     )
 
 
