@@ -55,7 +55,7 @@ def make_full_user() -> User:
         created_at=datetime(2026, 1, 1, 12, 0, tzinfo=UTC),
         updated_at=datetime(2026, 2, 1, 9, 30, tzinfo=UTC),
         version=7,
-        phone=PhoneNumber("+79991234567"),
+        phone=PhoneNumber("+375291234567"),
         consent_version=ConsentVersion("2026-01"),
         email_verified_at=datetime(2026, 1, 2, 8, 0, tzinfo=UTC),
         phone_verified_at=datetime(2026, 1, 3, 8, 0, tzinfo=UTC),
@@ -111,7 +111,7 @@ def test_to_model_maps_every_column_from_a_full_aggregate() -> None:
 
     assert model.id == user.id.value
     assert model.email == "ivan.petrov@example.com"
-    assert model.phone == "+79991234567"
+    assert model.phone == "+375291234567"
     assert model.first_name == "Ivan"
     assert model.last_name == "Petrov"
     assert model.middle_name == "Sergeevich"
@@ -160,7 +160,7 @@ def test_to_domain_rehydrates_every_field_from_a_full_row() -> None:
     model = UserModel(
         id=user_id.value,
         email="ivan.petrov@example.com",
-        phone="+79991234567",
+        phone="+375291234567",
         first_name="Ivan",
         last_name="Petrov",
         middle_name="Sergeevich",
@@ -182,7 +182,7 @@ def test_to_domain_rehydrates_every_field_from_a_full_row() -> None:
 
     assert user.id == user_id
     assert user.email == Email("ivan.petrov@example.com")
-    assert user.phone == PhoneNumber("+79991234567")
+    assert user.phone == PhoneNumber("+375291234567")
     assert user.full_name == FullName("Ivan", "Petrov", "Sergeevich")
     assert user.locale == Locale("ru-RU")
     assert user.timezone == Timezone("Europe/Moscow")
@@ -266,7 +266,7 @@ def test_update_model_overwrites_every_column_in_place() -> None:
     assert returned is model  # mutated in place, not a new instance
     assert model.id == replacement.id.value
     assert model.email == replacement.email.value
-    assert model.phone == "+79991234567"
+    assert model.phone == "+375291234567"
     assert model.middle_name == "Sergeevich"
     assert model.consent_version == "2026-01"
     assert model.version == 7

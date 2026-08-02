@@ -164,13 +164,13 @@ class TestChangeEmail:
 
 class TestChangePhone:
     def test_sets_the_number_and_reports_it_back(self, client: APIClient) -> None:
-        response = client.put(PHONE_URL, {"phone": "+79991234567"}, format="json")
+        response = client.put(PHONE_URL, {"phone": "+375291234567"}, format="json")
 
         assert response.status_code == 200, response.data
-        assert response.data["data"]["phone"] == "+79991234567"
+        assert response.data["data"]["phone"] == "+375291234567"
         assert response.data["data"]["phoneVerified"] is False
         # And the composed account reads back the same number the settings screen set.
-        assert _me(client)["phone"] == "+79991234567"
+        assert _me(client)["phone"] == "+375291234567"
 
     def test_a_malformed_number_is_refused(self, client: APIClient) -> None:
         response = client.put(PHONE_URL, {"phone": "12"}, format="json")
@@ -179,4 +179,4 @@ class TestChangePhone:
         assert response["Content-Type"] == _PROBLEM_CT
 
     def test_requires_a_session(self) -> None:
-        assert APIClient().put(PHONE_URL, {"phone": "+79991234567"}, format="json").status_code == 401
+        assert APIClient().put(PHONE_URL, {"phone": "+375291234567"}, format="json").status_code == 401

@@ -323,7 +323,7 @@ class TestPortsAreUsable:
             verification_url="https://vt.example/verify?t=x",
             locale=Locale.default(),
         )
-        sms.send_verification_code(phone=PhoneNumber("+79991234567"), code="123456")
+        sms.send_verification_code(phone=PhoneNumber("+375291234567"), code="123456")
         notify.notify(
             recipient=recipient,
             subject="Signed in",

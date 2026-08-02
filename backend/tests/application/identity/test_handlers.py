@@ -151,7 +151,7 @@ class TestRegisterUserHandler:
             first_name="Anna",
             last_name="Ivanova",
             middle_name="Petrovna",
-            phone="+79991234567",
+            phone="+375291234567",
             locale="en-US",
             timezone="Europe/Moscow",
         )
@@ -159,7 +159,7 @@ class TestRegisterUserHandler:
         result = self._handler(repo, hasher, uuids).handle(command)
 
         assert result.user.email == "new.user@example.com"
-        assert result.user.phone == "+79991234567"
+        assert result.user.phone == "+375291234567"
         assert result.user.middle_name == "Petrovna"
         assert result.user.locale == "en-US"
         assert result.user.timezone == "Europe/Moscow"
@@ -205,13 +205,13 @@ class TestRegisterUserHandler:
 
     def test_register_rejects_duplicate_phone(self) -> None:
         repo = FakeUserRepository()
-        repo.seed(make_user(email="other@example.com", phone="+79991234567"))
+        repo.seed(make_user(email="other@example.com", phone="+375291234567"))
         command = RegisterUserCommand(
             email="fresh@example.com",
             password=STRONG_PASSWORD,
             first_name="Anna",
             last_name="Ivanova",
-            phone="+79991234567",
+            phone="+375291234567",
         )
 
         with pytest.raises(PhoneAlreadyInUseError):
@@ -497,27 +497,27 @@ class TestChangePhoneHandler:
     def test_sets_phone(self) -> None:
         repo = FakeUserRepository()
         user = repo.seed(make_user())
-        command = ChangePhoneCommand(user_id=user.id.json(), new_phone="+79991234567")
+        command = ChangePhoneCommand(user_id=user.id.json(), new_phone="+375291234567")
 
         result = self._handler(repo).handle(command)
 
-        assert result.user.phone == "+79991234567"
+        assert result.user.phone == "+375291234567"
         assert result.user.is_phone_verified is False
         assert isinstance(result.events[0], PhoneChanged)
 
     def test_rejects_phone_used_by_another_user(self) -> None:
         repo = FakeUserRepository()
         user = repo.seed(make_user(email="a@example.com"))
-        repo.seed(make_user(email="b@example.com", phone="+79991234567"))
-        command = ChangePhoneCommand(user_id=user.id.json(), new_phone="+79991234567")
+        repo.seed(make_user(email="b@example.com", phone="+375291234567"))
+        command = ChangePhoneCommand(user_id=user.id.json(), new_phone="+375291234567")
 
         with pytest.raises(PhoneAlreadyInUseError):
             self._handler(repo).handle(command)
 
     def test_same_phone_is_state_conflict(self) -> None:
         repo = FakeUserRepository()
-        user = repo.seed(make_user(phone="+79991234567"))
-        command = ChangePhoneCommand(user_id=user.id.json(), new_phone="+79991234567")
+        user = repo.seed(make_user(phone="+375291234567"))
+        command = ChangePhoneCommand(user_id=user.id.json(), new_phone="+375291234567")
 
         with pytest.raises(UserStateConflictError) as excinfo:
             self._handler(repo).handle(command)
@@ -535,7 +535,7 @@ class TestVerifyPhoneHandler:
 
     def test_verifies_phone(self) -> None:
         repo = FakeUserRepository()
-        user = repo.seed(make_user(phone="+79991234567"))
+        user = repo.seed(make_user(phone="+375291234567"))
         command = VerifyPhoneCommand(user_id=user.id.json(), issued_at=NOW - timedelta(minutes=1))
 
         result = self._handler(repo).handle(command)

@@ -58,7 +58,7 @@ class TestCommandImmutability:
             RegisterUserCommand(email="a@b.com", password="p", first_name="A", last_name="B"),
             VerifyEmailCommand(user_id="u", sent_at=NOW),
             ChangeEmailCommand(user_id="u", new_email="a@b.com", current_password="p"),
-            ChangePhoneCommand(user_id="u", new_phone="+79991234567"),
+            ChangePhoneCommand(user_id="u", new_phone="+375291234567"),
             VerifyPhoneCommand(user_id="u", issued_at=NOW),
             ChangePasswordCommand(user_id="u", current_password="old", new_password="p"),
             GrantConsentCommand(user_id="u", consent_version="1.0"),

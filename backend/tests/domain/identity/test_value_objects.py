@@ -182,46 +182,40 @@ class TestEmail:
 
 class TestPhoneNumber:
     def test_normalizes_to_e164(self) -> None:
-        assert PhoneNumber("+7 999 123-45-67").value == "+79991234567"
         assert PhoneNumber("+375 (29) 123-45-67").value == "+375291234567"
+        assert PhoneNumber("+375.17.123.45.67").value == "+375171234567"
 
     def test_equality_by_normalized_value(self) -> None:
-        assert PhoneNumber("+7 999 123 45 67") == PhoneNumber("+79991234567")
+        assert PhoneNumber("+375 29 123 45 67") == PhoneNumber("+375291234567")
 
-    def test_russian_country_code_and_national_number(self) -> None:
-        phone = PhoneNumber("+79991234567")
-        assert phone.country_code == "+7"
-        assert phone.national_number == "9991234567"
-
-    def test_belarusian_country_code_and_national_number(self) -> None:
+    def test_country_code_and_national_number(self) -> None:
         phone = PhoneNumber("+375291234567")
         assert phone.country_code == "+375"
         assert phone.national_number == "291234567"
 
-    def test_russian_formatting(self) -> None:
-        assert PhoneNumber("+79991234567").formatted() == "+7 999 123-45-67"
-
-    def test_belarusian_formatting(self) -> None:
+    def test_formatting(self) -> None:
         assert PhoneNumber("+375291234567").formatted() == "+375 29 123-45-67"
+        assert PhoneNumber("+375171234567").formatted() == "+375 17 123-45-67"
 
     def test_formatter_registry_is_the_single_source_of_truth(self) -> None:
         # Formatting is data-driven: each supported code has a formatter whose
         # declared national length matches what it produces.
-        assert set(SUPPORTED_PHONE_FORMATTERS) == {"+7", "+375"}
+        assert set(SUPPORTED_PHONE_FORMATTERS) == {"+375"}
         for code, formatter in SUPPORTED_PHONE_FORMATTERS.items():
             assert formatter.country_code == code
             assert sum(size for size, _ in formatter.groups) == formatter.national_length
 
     def test_str(self) -> None:
-        assert str(PhoneNumber("+79991234567")) == "+79991234567"
+        assert str(PhoneNumber("+375291234567")) == "+375291234567"
 
     def test_rejects_unsupported_country(self) -> None:
-        for value in ["+14155552671", "+441632960961", "+4915112345678"]:
+        """Belarus is where the festivals are; nothing else is a number to dial."""
+        for value in ["+79991234567", "+380671234567", "+14155552671", "+441632960961", "+4915112345678"]:
             with pytest.raises(InvalidPhoneNumberError):
                 PhoneNumber(value)
 
-    def test_rejects_supported_country_with_wrong_length(self) -> None:
-        for value in ["+7999123456", "+7999123456789", "+37529123456", "+3752912345678"]:
+    def test_rejects_belarusian_number_of_the_wrong_length(self) -> None:
+        for value in ["+37529123456", "+3752912345678"]:
             with pytest.raises(InvalidPhoneNumberError):
                 PhoneNumber(value)
 
@@ -229,20 +223,20 @@ class TestPhoneNumber:
         invalid = [
             "",
             "   ",
-            "79991234567",  # no leading '+'
+            "375291234567",  # no leading '+'
             "+0900000000",  # cannot start with 0
             "+123",  # too short
             "phone",
-            "+7-999-ABC-45-67",  # letters
+            "+375-29-ABC-45-67",  # letters
         ]
         for value in invalid:
             with pytest.raises(InvalidPhoneNumberError):
                 PhoneNumber(value)
 
     def test_is_immutable(self) -> None:
-        phone = PhoneNumber("+79991234567")
+        phone = PhoneNumber("+375291234567")
         with pytest.raises(dataclasses.FrozenInstanceError):
-            phone.value = "+375291234567"  # type: ignore[misc]
+            phone.value = "+375441234567"  # type: ignore[misc]
 
 
 # ---------------------------------------------------------------------------
@@ -523,7 +517,7 @@ class TestFactoryMethods:
 
     def test_from_string_factories(self) -> None:
         assert Email.from_string("A@B.COM") == Email("a@b.com")
-        assert PhoneNumber.from_string("+7 999 123-45-67").value == "+79991234567"
+        assert PhoneNumber.from_string("+375 29 123-45-67").value == "+375291234567"
         assert ConsentVersion.from_string("1.0") == ConsentVersion("1.0")
         assert Locale.from_string("ru_ru") == Locale("ru-RU")
         assert Timezone.from_string("UTC") == Timezone.utc()
@@ -533,7 +527,7 @@ class TestFactoryMethods:
 
     def test_string_representations(self) -> None:
         assert str(Email("a@b.com")) == "a@b.com"
-        assert str(PhoneNumber("+79991234567")) == "+79991234567"
+        assert str(PhoneNumber("+375291234567")) == "+375291234567"
         assert str(ConsentVersion("1.0")) == "1.0"
         assert str(Locale.default()) == "ru-RU"
         assert str(Timezone.utc()) == "UTC"

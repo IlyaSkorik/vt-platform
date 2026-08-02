@@ -201,7 +201,7 @@ class TestRegistration:
         assert registered.version == 1
 
     def test_register_accepts_optional_preferences(self, user_id: UserId, email: Email, full_name: FullName, password_hash: PasswordHash) -> None:
-        phone = PhoneNumber("+79991234567")
+        phone = PhoneNumber("+375291234567")
         user, _ = User.register(
             user_id=user_id,
             email=email,
@@ -231,7 +231,7 @@ class TestRehydration:
             created_at=created,
             updated_at=updated,
             version=7,
-            phone=PhoneNumber("+79991234567"),
+            phone=PhoneNumber("+375291234567"),
             consent_version=ConsentVersion("1.0"),
             email_verified_at=updated,
             phone_verified_at=updated,
@@ -244,7 +244,7 @@ class TestRehydration:
         assert user.created_at == created
         assert user.updated_at == updated
         assert user.version == 7
-        assert user.phone == PhoneNumber("+79991234567")
+        assert user.phone == PhoneNumber("+375291234567")
         assert user.consent_version == ConsentVersion("1.0")
         assert user.is_email_verified()
         assert user.is_phone_verified()
@@ -352,22 +352,22 @@ class TestVerifyEmail:
 
 class TestChangePhone:
     def test_change_phone_sets_number(self, registered: User) -> None:
-        phone = PhoneNumber("+79991234567")
+        phone = PhoneNumber("+375291234567")
         events = registered.change_phone(phone, now=NOW)
         assert [type(e) for e in events] == [PhoneChanged]
         assert registered.phone == phone
         assert not registered.is_phone_verified()
 
     def test_change_phone_replaces_and_resets_verification(self, registered: User, phone_policy: PhoneVerificationPolicy) -> None:
-        registered.change_phone(PhoneNumber("+79991234567"), now=NOW)
+        registered.change_phone(PhoneNumber("+375291234567"), now=NOW)
         registered.verify_phone(policy=phone_policy, issued_at=NOW, now=NOW)
         assert registered.is_phone_verified()
-        registered.change_phone(PhoneNumber("+79997654321"), now=NOW)
-        assert registered.phone == PhoneNumber("+79997654321")
+        registered.change_phone(PhoneNumber("+375447654321"), now=NOW)
+        assert registered.phone == PhoneNumber("+375447654321")
         assert not registered.is_phone_verified()
 
     def test_change_phone_no_op_is_rejected(self, registered: User) -> None:
-        phone = PhoneNumber("+79991234567")
+        phone = PhoneNumber("+375291234567")
         registered.change_phone(phone, now=NOW)
         with pytest.raises(PhoneNotChangedError):
             registered.change_phone(phone, now=NOW)
@@ -375,7 +375,7 @@ class TestChangePhone:
 
 class TestVerifyPhone:
     def test_verify_phone_marks_verified(self, registered: User, phone_policy: PhoneVerificationPolicy) -> None:
-        registered.change_phone(PhoneNumber("+79991234567"), now=NOW)
+        registered.change_phone(PhoneNumber("+375291234567"), now=NOW)
         events = registered.verify_phone(policy=phone_policy, issued_at=NOW, now=NOW)
         assert [type(e) for e in events] == [PhoneVerified]
         assert registered.is_phone_verified()
@@ -386,13 +386,13 @@ class TestVerifyPhone:
             registered.verify_phone(policy=phone_policy, issued_at=NOW, now=NOW)
 
     def test_verify_phone_twice_is_rejected(self, registered: User, phone_policy: PhoneVerificationPolicy) -> None:
-        registered.change_phone(PhoneNumber("+79991234567"), now=NOW)
+        registered.change_phone(PhoneNumber("+375291234567"), now=NOW)
         registered.verify_phone(policy=phone_policy, issued_at=NOW, now=NOW)
         with pytest.raises(PhoneAlreadyVerifiedError):
             registered.verify_phone(policy=phone_policy, issued_at=NOW, now=NOW)
 
     def test_verify_phone_after_code_expired_is_rejected(self, registered: User, phone_policy: PhoneVerificationPolicy) -> None:
-        registered.change_phone(PhoneNumber("+79991234567"), now=NOW)
+        registered.change_phone(PhoneNumber("+375291234567"), now=NOW)
         issued_at = NOW - timedelta(minutes=11)
         with pytest.raises(VerificationExpiredError):
             registered.verify_phone(policy=phone_policy, issued_at=issued_at, now=NOW)
@@ -718,7 +718,7 @@ class TestEventGeneration:
     ) -> None:
         produced: list[DomainEvent] = []
         produced += registered.verify_email(policy=email_policy, sent_at=NOW, now=NOW)
-        produced += registered.change_phone(PhoneNumber("+79991234567"), now=NOW)
+        produced += registered.change_phone(PhoneNumber("+375291234567"), now=NOW)
         produced += registered.grant_consent(ConsentVersion("1.0"), policy=consent_policy, now=NOW)
         produced += registered.change_password(PasswordHash.from_hash("$argon2id$v=19$m=1$c2FsdHNhbHQ$RGlnZXN0VmFs"), now=NOW)
         produced += registered.lock(reason="x", until=NOW + timedelta(hours=1), now=NOW)

@@ -56,7 +56,7 @@ _NOW = datetime(2026, 7, 7, 12, 0, tzinfo=UTC)
 def make_user(
     *,
     email: str = "ivan.petrov@example.com",
-    phone: str | None = "+79991234567",
+    phone: str | None = "+375291234567",
 ) -> User:
     """A freshly-registered aggregate (version 1, active, unverified)."""
     user, _events = User.register(
@@ -233,7 +233,7 @@ def test_get_by_phone_returns_the_user(repository: DjangoUserRepository) -> None
     user = make_user()
     repository.save(user)
 
-    found = repository.get_by_phone(PhoneNumber("+79991234567"))
+    found = repository.get_by_phone(PhoneNumber("+375291234567"))
 
     assert found is not None
     assert found.id == user.id
@@ -260,9 +260,9 @@ def test_exists_by_email_and_phone(repository: DjangoUserRepository) -> None:
     repository.save(user)
 
     assert repository.exists_by_email(user.email) is True
-    assert repository.exists_by_phone(PhoneNumber("+79991234567")) is True
+    assert repository.exists_by_phone(PhoneNumber("+375291234567")) is True
     assert repository.exists_by_email(Email("nobody@example.com")) is False
-    assert repository.exists_by_phone(PhoneNumber("+375291234567")) is False
+    assert repository.exists_by_phone(PhoneNumber("+375447654321")) is False
 
 
 # ---------------------------------------------------------------------------
@@ -329,7 +329,7 @@ def test_delete_on_absent_user_is_a_noop(repository: DjangoUserRepository) -> No
 
 @pytest.mark.django_db
 def test_email_is_reusable_after_soft_delete(repository: DjangoUserRepository) -> None:
-    first = make_user(email="shared@example.com", phone="+79991234567")
+    first = make_user(email="shared@example.com", phone="+375291234567")
     repository.save(first)
     repository.delete(first)
 
@@ -350,7 +350,7 @@ def test_email_is_reusable_after_soft_delete(repository: DjangoUserRepository) -
 def test_duplicate_active_email_raises_integrity_violation(
     repository: DjangoUserRepository,
 ) -> None:
-    repository.save(make_user(email="dup@example.com", phone="+79991234567"))
+    repository.save(make_user(email="dup@example.com", phone="+375291234567"))
     clashing = make_user(email="dup@example.com", phone="+375291234567")
 
     with pytest.raises(IntegrityViolationError):
@@ -361,8 +361,8 @@ def test_duplicate_active_email_raises_integrity_violation(
 def test_duplicate_active_phone_raises_integrity_violation(
     repository: DjangoUserRepository,
 ) -> None:
-    repository.save(make_user(email="a@example.com", phone="+79991234567"))
-    clashing = make_user(email="b@example.com", phone="+79991234567")
+    repository.save(make_user(email="a@example.com", phone="+375291234567"))
+    clashing = make_user(email="b@example.com", phone="+375291234567")
 
     with pytest.raises(IntegrityViolationError):
         repository.save(clashing)

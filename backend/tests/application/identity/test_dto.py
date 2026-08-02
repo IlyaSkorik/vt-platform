@@ -43,14 +43,14 @@ def _register(*, phone: str | None, middle: str | None) -> User:
 
 class TestUserDto:
     def test_projects_populated_user(self) -> None:
-        user = _register(phone="+79991234567", middle="Ivanovich")
+        user = _register(phone="+375291234567", middle="Ivanovich")
         user.grant_consent(ConsentVersion("1.0"), policy=CONSENT_POLICY, now=NOW)
         user.lock(reason="fraud", until=NOW + timedelta(hours=1), now=NOW)
 
         dto = UserDto.from_user(user, now=NOW)
 
         assert dto.id == user.id.json()
-        assert dto.phone == "+79991234567"
+        assert dto.phone == "+375291234567"
         assert dto.middle_name == "Ivanovich"
         assert dto.full_name == "Ivan Ivanovich Petrov"
         assert dto.consent_version == "1.0"

@@ -255,7 +255,7 @@ class _PhoneFormatter:
     object itself never changes.
     """
 
-    #: E.164 country calling code, including the leading ``+`` (e.g. ``+7``).
+    #: E.164 country calling code, including the leading ``+`` (e.g. ``+375``).
     country_code: str
     #: Exact number of national digits expected after the calling code.
     national_length: int
@@ -274,11 +274,14 @@ class _PhoneFormatter:
         return f"{self.country_code} {''.join(chunks)}"
 
 
-#: Extensible registry of supported countries. Only Russia and Belarus are
-#: served today (ARCH-001 §8.6); other calling codes are rejected outright rather
-#: than stored in a shape the platform cannot format or dial.
+#: Extensible registry of supported countries. Belarus is the only one the
+#: platform serves: its festivals are held there, its participants live there, and
+#: the number is what an organizer dials on the day. Every other calling code is
+#: rejected outright rather than stored in a shape nobody here will ring.
+#:
+#: The registry stays a registry — a second country is one entry, not a rewrite of
+#: this value object — but it is deliberately not populated speculatively.
 SUPPORTED_PHONE_FORMATTERS: Final[dict[str, _PhoneFormatter]] = {
-    "+7": _PhoneFormatter("+7", 10, ((3, ""), (3, " "), (2, "-"), (2, "-"))),
     "+375": _PhoneFormatter("+375", 9, ((2, ""), (3, " "), (2, "-"), (2, "-"))),
 }
 # Match longer calling codes first so a prefix is never claimed by a shorter one.
@@ -305,7 +308,7 @@ def _normalize_phone(value: str) -> str:
     if not cleaned:
         raise InvalidPhoneNumberError("Phone number must not be empty.")
     if not _E164_RE.match(cleaned):
-        raise InvalidPhoneNumberError(f"Phone number must be in E.164 format (e.g. '+79991234567'), got {value!r}.")
+        raise InvalidPhoneNumberError(f"Phone number must be in E.164 format (e.g. '+375291234567'), got {value!r}.")
     _match_formatter(cleaned, original=value)  # validate country + length
     return cleaned
 
@@ -333,7 +336,7 @@ class PhoneNumber:
 
     @property
     def country_code(self) -> str:
-        """The E.164 country calling code including the ``+`` (e.g. ``+7``)."""
+        """The E.164 country calling code including the ``+`` (e.g. ``+375``)."""
         return _match_formatter(self.value, original=self.value).country_code
 
     @property
@@ -344,8 +347,8 @@ class PhoneNumber:
     def formatted(self) -> str:
         """A human-readable rendering using the country's grouping rules::
 
-        +79991234567  -> +7 999 123-45-67
         +375291234567 -> +375 29 123-45-67
+        +375171234567 -> +375 17 123-45-67
         """
         formatter = _match_formatter(self.value, original=self.value)
         return formatter.format(self.national_number)

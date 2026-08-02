@@ -68,7 +68,7 @@ def _sample_events(aggregate_id: UserId) -> list[DomainEvent]:
             locale=Locale("ru-RU"),
         ),
         EmailVerified(aggregate_id=aggregate_id, email=Email("ivan@example.com")),
-        PhoneVerified(aggregate_id=aggregate_id, phone=PhoneNumber("+79991234567")),
+        PhoneVerified(aggregate_id=aggregate_id, phone=PhoneNumber("+375291234567")),
         PasswordChanged(aggregate_id=aggregate_id),
         PasswordResetRequested(
             aggregate_id=aggregate_id,
@@ -275,8 +275,8 @@ class TestEventPayloads:
         assert event.locale.is_english()
 
     def test_phone_verified(self, aggregate_id: UserId) -> None:
-        event = PhoneVerified(aggregate_id=aggregate_id, phone=PhoneNumber("+7 999 123-45-67"))
-        assert event.phone == PhoneNumber("+79991234567")
+        event = PhoneVerified(aggregate_id=aggregate_id, phone=PhoneNumber("+375 29 123-45-67"))
+        assert event.phone == PhoneNumber("+375291234567")
 
     def test_password_reset_requested_carries_deadline(self, aggregate_id: UserId) -> None:
         expires_at = datetime(2026, 7, 6, 12, 0, tzinfo=UTC)
