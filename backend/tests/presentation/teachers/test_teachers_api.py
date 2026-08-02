@@ -54,7 +54,7 @@ def test_requires_authentication(client: APIClient) -> None:
 
 
 def test_add_returns_resource_envelope(auth_client: APIClient) -> None:
-    response = _add(auth_client, middleName="Petrovna", email="anna@school.ru", phone="+79991234567", role="Choreographer")
+    response = _add(auth_client, middleName="Petrovna", email="anna@school.ru", phone="+375291234567", role="Choreographer")
     assert response.status_code == 201
     data = response.data["data"]
     assert data["type"] == "teacher"

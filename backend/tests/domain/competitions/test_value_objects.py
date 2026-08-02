@@ -186,7 +186,7 @@ class TestContactValue:
             ContactValue("  ")
 
     def test_trimmed(self) -> None:
-        assert ContactValue("  +7 900  ").value == "+7 900"
+        assert ContactValue("  +375 29  ").value == "+375 29"
 
 
 class TestCompetitionSettings:

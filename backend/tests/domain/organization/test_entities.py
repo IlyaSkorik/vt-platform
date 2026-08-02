@@ -98,8 +98,8 @@ class TestOrganization:
 
     def test_update_profile_replaces_and_emits_event(self) -> None:
         org = _org()
-        events = org.update_profile(OrganizationProfile(phone="+7 900", email="a@b.ru"), now=NOW)
-        assert org.profile.phone == "+7 900"
+        events = org.update_profile(OrganizationProfile(phone="+375 29", email="a@b.ru"), now=NOW)
+        assert org.profile.phone == "+375 29"
         assert org.profile.email == "a@b.ru"
         assert org.version == 2  # seed=1, update=2
         assert isinstance(events[0], OrganizationProfileUpdated)
@@ -113,7 +113,7 @@ class TestOrganization:
         org = _org()
         org.suspend(now=NOW)
         with pytest.raises(OrganizationSuspendedError):
-            org.update_profile(OrganizationProfile(phone="+7 900"), now=NOW)
+            org.update_profile(OrganizationProfile(phone="+375 29"), now=NOW)
 
     def test_update_profile_renames_and_emits_rename_event(self) -> None:
         org = _org()
@@ -130,12 +130,12 @@ class TestOrganization:
     def test_update_profile_renames_and_updates_profile_in_one_bump(self) -> None:
         org = _org()
         events = org.update_profile(
-            OrganizationProfile(phone="+7 900"),
+            OrganizationProfile(phone="+375 29"),
             name=OrganizationName("Новое имя"),
             now=NOW,
         )
         assert org.name == OrganizationName("Новое имя")
-        assert org.profile.phone == "+7 900"
+        assert org.profile.phone == "+375 29"
         assert org.version == 2  # both changes, still one version bump
         assert {type(event) for event in events} == {OrganizationRenamed, OrganizationProfileUpdated}
 

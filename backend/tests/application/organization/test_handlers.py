@@ -670,19 +670,19 @@ class TestUpdateOrganizationProfileHandler:
         view = self._handler(orgs, events, members).handle(
             UpdateOrganizationProfileCommand(
                 updated_by=owner.json(),
-                phone="+7 900 000-00-00",
+                phone="+375 29 000-00-00",
                 email="hello@vzlet.ru",
                 website="https://vzlet.ru",
                 legal_information="ООО «Взлёт», ИНН 000",
             )
         )
 
-        assert view.phone == "+7 900 000-00-00"
+        assert view.phone == "+375 29 000-00-00"
         assert view.email == "hello@vzlet.ru"
         assert view.website == "https://vzlet.ru"
         assert view.legal_information == "ООО «Взлёт», ИНН 000"
         assert len(orgs.saved) == 1
-        assert orgs.saved[0].profile.phone == "+7 900 000-00-00"
+        assert orgs.saved[0].profile.phone == "+375 29 000-00-00"
         assert any(isinstance(event, OrganizationProfileUpdated) for event in events.published)
 
     def test_renames_organization(self) -> None:

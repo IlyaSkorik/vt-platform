@@ -120,8 +120,8 @@ class TestOrganizationProfile:
         assert profile.legal_information is None
 
     def test_strips_whitespace_and_collapses_blanks_to_none(self) -> None:
-        profile = OrganizationProfile(phone="  +7 900  ", email="   ")
-        assert profile.phone == "+7 900"
+        profile = OrganizationProfile(phone="  +375 29  ", email="   ")
+        assert profile.phone == "+375 29"
         assert profile.email is None
 
     def test_compares_by_value(self) -> None:

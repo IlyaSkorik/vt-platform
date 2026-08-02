@@ -6,7 +6,7 @@ const baseProfile: OrganizationProfile = {
   id: "org-1",
   name: "Взлёт талантов",
   slug: "vzlyot-talantov",
-  phone: "+7 900",
+  phone: "+375 29",
   email: "hello@vzlet.ru",
   website: "https://vzlet.ru",
   address: "Москва",
@@ -30,7 +30,7 @@ describe("formValuesToUpdate", () => {
   it("trims values and turns blanks into null", () => {
     const update = formValuesToUpdate({
       name: "  Взлёт  ",
-      phone: "  +7 900  ",
+      phone: "  +375 29  ",
       email: "",
       website: "   ",
       address: "Москва",
@@ -40,7 +40,7 @@ describe("formValuesToUpdate", () => {
       legalInformation: "",
     });
     expect(update.name).toBe("Взлёт");
-    expect(update.phone).toBe("+7 900");
+    expect(update.phone).toBe("+375 29");
     expect(update.email).toBeNull();
     expect(update.website).toBeNull();
     expect(update.address).toBe("Москва");

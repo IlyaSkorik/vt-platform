@@ -95,7 +95,7 @@ def test_staff_updates_profile_and_it_persists(staff_client: APIClient) -> None:
     response = staff_client.patch(
         _PROFILE_URL,
         {
-            "phone": "  +7 900 000-00-00  ",
+            "phone": "  +375 29 000-00-00  ",
             "email": "hello@vzlet.ru",
             "website": "https://vzlet.ru",
             "legalInformation": "ООО «Взлёт»",
@@ -104,7 +104,7 @@ def test_staff_updates_profile_and_it_persists(staff_client: APIClient) -> None:
     )
     assert response.status_code == 200
     data = response.data["data"]
-    assert data["phone"] == "+7 900 000-00-00"  # trimmed
+    assert data["phone"] == "+375 29 000-00-00"  # trimmed
     assert data["email"] == "hello@vzlet.ru"
     assert data["legalInformation"] == "ООО «Взлёт»"
 
@@ -128,7 +128,7 @@ def test_blank_name_is_rejected(staff_client: APIClient) -> None:
 
 
 def test_blank_field_clears_the_value(staff_client: APIClient) -> None:
-    staff_client.patch(_PROFILE_URL, {"phone": "+7 900"}, format="json")
+    staff_client.patch(_PROFILE_URL, {"phone": "+375 29"}, format="json")
     cleared = staff_client.patch(_PROFILE_URL, {"phone": ""}, format="json")
     assert cleared.status_code == 200
     assert cleared.data["data"]["phone"] is None

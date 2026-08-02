@@ -51,7 +51,7 @@ class TestCreation:
             role=TeacherRole("Concertmaster"),
             now=NOW,
             email=EmailAddress("anna@school.ru"),
-            phone=PhoneNumber("+79991234567"),
+            phone=PhoneNumber("+375291234567"),
         )
         assert teacher.is_active()
         assert teacher.is_owned_by(owner)
