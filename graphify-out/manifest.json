@@ -1465,9 +1465,9 @@
     "semantic_hash": "e234bb889ebf9de6f357121ecc3eb830"
   },
   "backend/apps/identity/domain/value_objects.py": {
-    "mtime": 1783618251.577449,
-    "ast_hash": "934a3c4da00778a168c46f4b8dec0a22",
-    "semantic_hash": "934a3c4da00778a168c46f4b8dec0a22"
+    "mtime": 1785666361.1997714,
+    "ast_hash": "7f246e2627feca0323ba77b3efae584e",
+    "semantic_hash": ""
   },
   "backend/apps/identity/infrastructure/__init__.py": {
     "mtime": 1783367029.6761498,
@@ -3275,14 +3275,14 @@
     "semantic_hash": ""
   },
   "backend/tests/application/identity/test_commands.py": {
-    "mtime": 1785663906.6470838,
-    "ast_hash": "dfd5f501643dd83dd706a4e432173649",
+    "mtime": 1785666427.795105,
+    "ast_hash": "4faec3fc30e25cadc4fa97b9d02546af",
     "semantic_hash": ""
   },
   "backend/tests/application/identity/test_dto.py": {
-    "mtime": 1783416361.594153,
-    "ast_hash": "45346048e2e1092e6718f0a7c45cda3c",
-    "semantic_hash": "45346048e2e1092e6718f0a7c45cda3c"
+    "mtime": 1785666427.795105,
+    "ast_hash": "cd53f0253d8aa2f1a3d3c72d56318f06",
+    "semantic_hash": ""
   },
   "backend/tests/application/identity/test_exceptions.py": {
     "mtime": 1783416459.7731218,
@@ -3290,14 +3290,14 @@
     "semantic_hash": "1382f02b7c3c4b46202ecbd3d63462f1"
   },
   "backend/tests/application/identity/test_handlers.py": {
-    "mtime": 1785663929.776986,
-    "ast_hash": "bb9a75d9f348d7444a89070a080c834b",
+    "mtime": 1785666427.7989218,
+    "ast_hash": "2b1651b2af9f8409a1ae27fc49ffa8c0",
     "semantic_hash": ""
   },
   "backend/tests/application/identity/test_interfaces.py": {
-    "mtime": 1783618251.5815425,
-    "ast_hash": "b696536e06340f38a467272c4a776a35",
-    "semantic_hash": "b696536e06340f38a467272c4a776a35"
+    "mtime": 1785666427.795105,
+    "ast_hash": "5766280970c2b96adec6bd020299637b",
+    "semantic_hash": ""
   },
   "backend/tests/application/identity/test_session_handlers.py": {
     "mtime": 1784485506.6793566,
@@ -3315,8 +3315,8 @@
     "semantic_hash": ""
   },
   "backend/tests/application/organization/test_handlers.py": {
-    "mtime": 1785605799.0033865,
-    "ast_hash": "b31b70311b712518388e226fae318c66",
+    "mtime": 1785666583.195776,
+    "ast_hash": "47e249e1c15a795004c990fa465a6d55",
     "semantic_hash": ""
   },
   "backend/tests/application/participants/__init__.py": {
@@ -3405,8 +3405,8 @@
     "semantic_hash": ""
   },
   "backend/tests/domain/competitions/test_value_objects.py": {
-    "mtime": 1784723609.3281157,
-    "ast_hash": "0443b70a49473823dd3c7e8c439a0125",
+    "mtime": 1785666583.195776,
+    "ast_hash": "bd07b06eeebe34627ab4d04bcc4dd761",
     "semantic_hash": ""
   },
   "backend/tests/domain/identity/__init__.py": {
@@ -3415,9 +3415,9 @@
     "semantic_hash": "b607528d999b6d8194e02a1b6ff4748d"
   },
   "backend/tests/domain/identity/test_events.py": {
-    "mtime": 1783618251.5897298,
-    "ast_hash": "afadcf578c5bd52615ac952cbe6c6d86",
-    "semantic_hash": "afadcf578c5bd52615ac952cbe6c6d86"
+    "mtime": 1785666427.791288,
+    "ast_hash": "b45b39f560f15d38a79f507037be809d",
+    "semantic_hash": ""
   },
   "backend/tests/domain/identity/test_policies.py": {
     "mtime": 1783618251.6020107,
@@ -3425,14 +3425,14 @@
     "semantic_hash": "ea1cc8a018c0b910f36e1692e243ad6f"
   },
   "backend/tests/domain/identity/test_user.py": {
-    "mtime": 1783618251.5856361,
-    "ast_hash": "b88e4c4a492d032e5103e27fda1128bc",
-    "semantic_hash": "b88e4c4a492d032e5103e27fda1128bc"
+    "mtime": 1785666556.5225453,
+    "ast_hash": "87f725fa2943c548e287fb2c9fed7e87",
+    "semantic_hash": ""
   },
   "backend/tests/domain/identity/test_value_objects.py": {
-    "mtime": 1784299800.8712938,
-    "ast_hash": "d932f968732d108f77a21ba3965dbc0b",
-    "semantic_hash": "d932f968732d108f77a21ba3965dbc0b"
+    "mtime": 1785666427.791288,
+    "ast_hash": "6173876bc6d4095a1d7a0ee0e6c5a722",
+    "semantic_hash": ""
   },
   "backend/tests/domain/organization/__init__.py": {
     "mtime": 1783591933.1198308,
@@ -3440,13 +3440,13 @@
     "semantic_hash": "9c9a630d9a9121672ce76785c61c1b12"
   },
   "backend/tests/domain/organization/test_entities.py": {
-    "mtime": 1784490305.9624019,
-    "ast_hash": "a91414a137aa3f29e2121bd221fd76e5",
+    "mtime": 1785666583.195776,
+    "ast_hash": "a8608a6a81167f683c4000cd10687524",
     "semantic_hash": ""
   },
   "backend/tests/domain/organization/test_value_objects.py": {
-    "mtime": 1784489050.3214169,
-    "ast_hash": "d2f6f11c03dd59400dfac64e202741ed",
+    "mtime": 1785666583.195776,
+    "ast_hash": "d03312653fbed7e5ca6da0cf6b8ca632",
     "semantic_hash": ""
   },
   "backend/tests/domain/participants/__init__.py": {
@@ -3480,9 +3480,9 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "backend/tests/domain/teachers/test_entities.py": {
-    "mtime": 1784227779.4887729,
-    "ast_hash": "30cab2382f5b330798a0c2681db68ee6",
-    "semantic_hash": "30cab2382f5b330798a0c2681db68ee6"
+    "mtime": 1785666427.787471,
+    "ast_hash": "e9a7688e14f36873c5f40b833b77a7ef",
+    "semantic_hash": ""
   },
   "backend/tests/domain/teachers/test_value_objects.py": {
     "mtime": 1784227779.4887729,
@@ -3540,14 +3540,14 @@
     "semantic_hash": "2519853804b3bf1e46857ec1923dbc63"
   },
   "backend/tests/infrastructure/identity/test_user_mapper.py": {
-    "mtime": 1783418713.6093946,
-    "ast_hash": "6322d9ff61f99a4da4fa83a6736c8550",
-    "semantic_hash": "6322d9ff61f99a4da4fa83a6736c8550"
+    "mtime": 1785666427.7989218,
+    "ast_hash": "9e9660f473acb962862c5fdba140de1d",
+    "semantic_hash": ""
   },
   "backend/tests/infrastructure/identity/test_user_repository.py": {
-    "mtime": 1783419442.0960338,
-    "ast_hash": "dbb8b5ffc67c6089f43b29786fb7a898",
-    "semantic_hash": "dbb8b5ffc67c6089f43b29786fb7a898"
+    "mtime": 1785666556.5225453,
+    "ast_hash": "6ddb550d3b1d8a5bc70ad89b1a89ae99",
+    "semantic_hash": ""
   },
   "backend/tests/infrastructure/identity/test_verification_token_service.py": {
     "mtime": 1783535835.7858307,
@@ -3665,9 +3665,9 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "backend/tests/presentation/teachers/test_teachers_api.py": {
-    "mtime": 1784321679.7555528,
-    "ast_hash": "68757cf54ff134a58881749e33f5b705",
-    "semantic_hash": "68757cf54ff134a58881749e33f5b705"
+    "mtime": 1785666427.802739,
+    "ast_hash": "5b99f26606733f6ea3a03b762bd4b221",
+    "semantic_hash": ""
   },
   "backend/tests/test_smoke.py": {
     "mtime": 1783367071.6496332,
@@ -6720,8 +6720,8 @@
     "semantic_hash": ""
   },
   "backend/tests/presentation/organization/test_profile_api.py": {
-    "mtime": 1784490320.3871546,
-    "ast_hash": "52186a24eb87dd5e91001b8fe610fa9f",
+    "mtime": 1785666583.199587,
+    "ast_hash": "1164eee1e192d79258a86a20977179ef",
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/organization/index.tsx": {
@@ -6740,8 +6740,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/organization/model/profile-form.test.ts": {
-    "mtime": 1784490417.3777626,
-    "ast_hash": "3f7085a5134c3209dac602b698871b01",
+    "mtime": 1785666493.1401544,
+    "ast_hash": "81d7f4c97fd5cc05026ba87144b56635",
     "semantic_hash": ""
   },
   "frontend/src/features/organization/model/profile-form.ts": {
@@ -9140,8 +9140,8 @@
     "semantic_hash": ""
   },
   "backend/tests/presentation/identity/test_account_api.py": {
-    "mtime": 1785663990.2893674,
-    "ast_hash": "c6ce959d4b8f7dab53f80c6e81ca64bc",
+    "mtime": 1785666427.802739,
+    "ast_hash": "7cb606bc65ad033d123adb2d62c32bb4",
     "semantic_hash": ""
   },
   "frontend/src/features/account-settings/api/hooks.ts": {
@@ -9155,8 +9155,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/account-settings/model/schemas.ts": {
-    "mtime": 1785664175.0367146,
-    "ast_hash": "1cb7744711a76782ba4af3e2b238e985",
+    "mtime": 1785666447.2559075,
+    "ast_hash": "502654e34cf0747015b7ed395ce87f31",
     "semantic_hash": ""
   },
   "frontend/src/features/account-settings/ui/appearance-card.tsx": {
@@ -9185,18 +9185,23 @@
     "semantic_hash": ""
   },
   "frontend/src/features/account-settings/ui/phone-card.test.tsx": {
-    "mtime": 1785664561.8150544,
-    "ast_hash": "a2bfc2109b955255c628563bde0e296f",
+    "mtime": 1785666477.0274491,
+    "ast_hash": "bc67e8e589ea188b57a54b7e3be7b621",
     "semantic_hash": ""
   },
   "frontend/src/features/account-settings/ui/phone-card.tsx": {
-    "mtime": 1785664389.7915738,
-    "ast_hash": "88842090157ab40fed10aeb74a37b7fb",
+    "mtime": 1785666454.5117667,
+    "ast_hash": "cd69efcb0c1e30f770d9e03d426343d4",
     "semantic_hash": ""
   },
   "frontend/src/pages/settings/index.tsx": {
     "mtime": 1785664593.1263368,
     "ast_hash": "f8f01deb89db7b5c7ec03e11ed70efa0",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/account-settings/model/schemas.test.ts": {
+    "mtime": 1785666850.5806823,
+    "ast_hash": "03db070298cdeb9b275e547c7fa2c2b8",
     "semantic_hash": ""
   }
 }
