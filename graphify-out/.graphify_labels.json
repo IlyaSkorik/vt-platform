@@ -1063,11 +1063,9 @@
   "1061": "TestCityResolution",
   "1062": "TestRouting",
   "1063": "FontVariantView",
-  "1064": ".to_dict",
   "1065": ".to_dict",
   "1066": "TestQueuePriority",
   "1067": ".full_name",
-  "1068": ".age_at",
   "1069": ".has_staff_permission",
   "1070": ".publish",
   "1071": "0004_organizationmodel_commission_percent_and_more.py",
@@ -1089,8 +1087,5 @@
   "1087": ".get",
   "1088": ".payment_receipts",
   "1089": ".is_approved",
-  "1090": "._money",
-  "1091": ".schedule_registration",
-  "1092": ".pricing_rule_for",
   "1093": "__init__.py"
 }
