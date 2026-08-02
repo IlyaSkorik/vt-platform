@@ -326,6 +326,10 @@ MAIL_BULK_FROM = settings.email.bulk_from or settings.email.default_from
 # emails (email-verification link, IDN-002). No trailing slash.
 FRONTEND_BASE_URL = settings.frontend_base_url.rstrip("/")
 
+# Path to the built SPA shell Django serves for browser routes, with the head
+# resolved server-side (see :mod:`config.spa`). Empty leaves it unrouted.
+SPA_INDEX_PATH = settings.spa_index_path
+
 # Base URL encoded into a diploma's QR code (``<base>/verify/<token>``). Defaults
 # to the web client; DIPLOMA_VERIFICATION_BASE_URL overrides it when authenticity
 # checks are served from a separate domain. Never hardcoded in the renderer.

@@ -88,6 +88,55 @@ describe("writeDocumentHead", () => {
   });
 });
 
+describe("taking over a server-rendered head", () => {
+  /**
+   * What `config/spa.py` splices into the shell before the bundle loads. The
+   * marker is the contract: it is how this writer knows which tags are its to
+   * update and to clear.
+   */
+  function serverRendered(): void {
+    document.title = "Весенний вокал — 2026 — Взлёт талантов";
+    document.head.innerHTML = [
+      '<meta name="description" content="Конкурс юных вокалистов" data-seo>',
+      '<meta property="og:title" content="Весенний вокал — 2026 — Взлёт талантов" data-seo>',
+      '<meta property="og:image" content="https://cdn.example.by/poster.jpg" data-seo>',
+      '<link rel="canonical" href="https://example.by/competitions/vesenniy-vokal-2026" data-seo>',
+    ].join("");
+  }
+
+  it("updates the server's tags in place instead of adding a second set", () => {
+    // The failure this prevents: two og:title tags, where the crawler and the
+    // browser both honour the first — which would be the stale server one.
+    serverRendered();
+
+    write({
+      title: "Весенний вокал — 2026",
+      description: "Конкурс юных вокалистов",
+      canonical: "https://example.by/competitions/vesenniy-vokal-2026",
+    });
+
+    expect(document.head.querySelectorAll('meta[property="og:title"]')).toHaveLength(1);
+    expect(document.head.querySelectorAll('meta[name="description"]')).toHaveLength(1);
+    expect(document.head.querySelectorAll('link[rel="canonical"]')).toHaveLength(1);
+  });
+
+  it("clears a server tag the client-side page does not set", () => {
+    serverRendered();
+
+    write({ title: "Фестивали" }, { location: "/competitions" });
+
+    expect(document.head.querySelector('meta[property="og:image"]')).toBeNull();
+  });
+
+  it("carries the canonical over to the page navigated to", () => {
+    serverRendered();
+
+    write({ title: "Фестивали", canonical: "https://example.by/competitions" }, { location: "/competitions" });
+
+    expect(canonical()).toBe("https://example.by/competitions");
+  });
+});
+
 describe("the priority contest", () => {
   it("lets a page outrank the layout that renders it", () => {
     // Effects run child-first: the page writes, then the layout's fallback.

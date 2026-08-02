@@ -13,7 +13,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.http import HttpRequest, JsonResponse
-from django.urls import include, path
+from django.urls import include, path, re_path
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -21,6 +21,7 @@ from drf_spectacular.views import (
 )
 
 from config.seo import robots_txt, sitemap_xml
+from config.spa import spa_index
 
 
 def healthz(_request: HttpRequest) -> JsonResponse:
@@ -87,3 +88,16 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# The SPA shell, served with its <head> already resolved (config.spa).
+#
+# Mounted last so it can never shadow a real route, and the negative lookahead
+# keeps it away from /api/ entirely: a client silently parsing an HTML page as
+# its JSON payload is a far worse failure than a 404. Whether a bundle is
+# actually configured is decided inside the view, per request, rather than here —
+# read at import time the setting could not be overridden in a test, nor changed
+# without rebuilding the URLconf. Unconfigured, the view raises Http404 and the
+# address behaves exactly as if this pattern were absent.
+urlpatterns += [
+    re_path(r"^(?!api/|admin/|static/|media/|healthz|readyz|robots\.txt|sitemap\.xml).*$", spa_index),
+]

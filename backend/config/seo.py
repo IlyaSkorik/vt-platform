@@ -22,7 +22,7 @@ from django.http import HttpRequest, HttpResponse
 
 from apps.competitions.composition import build_public_catalog_read_service
 
-__all__ = ["robots_txt", "sitemap_xml"]
+__all__ = ["robots_txt", "site_url", "sitemap_xml"]
 
 #: Everything behind a sign-in, plus the public-but-not-indexable pages that
 #: carry a child's name or a one-time token. This repeats what the ``noindex``
@@ -59,7 +59,7 @@ _STATIC_PAGES: tuple[tuple[str, str, str], ...] = (
 )
 
 
-def _site_url() -> str:
+def site_url() -> str:
     """The origin the public site is served from, without a trailing slash."""
     return str(settings.FRONTEND_BASE_URL).rstrip("/")
 
@@ -69,7 +69,7 @@ def robots_txt(_request: HttpRequest) -> HttpResponse:
     lines = ["User-agent: *"]
     lines.extend(f"Disallow: {path}" for path in _DISALLOWED)
     lines.append("")
-    lines.append(f"Sitemap: {_site_url()}/sitemap.xml")
+    lines.append(f"Sitemap: {site_url()}/sitemap.xml")
     return HttpResponse("\n".join(lines) + "\n", content_type="text/plain; charset=utf-8")
 
 
@@ -97,7 +97,7 @@ def _url_entry(*, location: str, lastmod: str | None, changefreq: str, priority:
 
 def sitemap_xml(_request: HttpRequest) -> HttpResponse:
     """``GET /sitemap.xml`` — the public pages, with every visible competition."""
-    base = _site_url()
+    base = site_url()
     entries = [
         _url_entry(location=f"{base}{path}", lastmod=None, changefreq=changefreq, priority=priority)
         for path, changefreq, priority in _STATIC_PAGES

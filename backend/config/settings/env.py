@@ -147,6 +147,16 @@ class Settings(BaseSettings):
         alias="FRONTEND_BASE_URL",
     )
 
+    # Absolute path to the built SPA's ``index.html``. Set it when Django serves
+    # the bundle, so browser routes are answered with their ``<head>`` already
+    # filled in — link previews in Telegram/VK are built by crawlers that never
+    # run the app's JavaScript. Empty (the default, and the case while Vite serves
+    # the SPA) leaves the catch-all unmounted entirely.
+    spa_index_path: str = Field(
+        default="",
+        alias="SPA_INDEX_PATH",
+    )
+
     # Public base URL the diploma QR code points at: the printed link is
     # ``<base>/verify/<verificationToken>``. Empty means "use frontend_base_url" —
     # set it only when authenticity checks live on their own domain. No trailing slash.
