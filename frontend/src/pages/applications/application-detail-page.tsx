@@ -8,6 +8,7 @@ import {
   useRegistration,
 } from "@/entities/application";
 import { BenefitDocumentsCard } from "@/features/application-benefit-documents";
+import { PhonogramsCard } from "@/features/application-phonograms";
 import { ReceiptCard } from "@/features/application-receipt";
 import { ROUTES } from "@/shared/config";
 import {
@@ -146,6 +147,8 @@ export function ApplicationDetailPage(): React.JSX.Element {
               </div>
             </CardContent>
           </Card>
+
+          <PhonogramsCard application={application} />
 
           <BenefitDocumentsCard application={application} />
 
