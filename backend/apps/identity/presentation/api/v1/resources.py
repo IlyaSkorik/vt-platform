@@ -39,6 +39,10 @@ def user_resource(user: UserDto) -> dict[str, Any]:
         "displayName": user.full_name,
         "status": user_status(user),
         "emailVerified": user.is_email_verified,
+        # The number itself, not just whether it is verified: this resource is only
+        # ever the caller's own account, and a settings screen cannot offer to
+        # change a value it is unable to show.
+        "phone": user.phone,
         "phoneVerified": user.is_phone_verified,
         "mfaEnabled": False,
         "locale": user.locale,

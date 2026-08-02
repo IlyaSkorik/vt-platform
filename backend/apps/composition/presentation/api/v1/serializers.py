@@ -26,6 +26,7 @@ class UserResourceSerializer(serializers.Serializer[dict[str, object]]):
     displayName = serializers.CharField()
     status = serializers.ChoiceField(choices=["registered", "active", "suspended", "deleted"])
     emailVerified = serializers.BooleanField()
+    phone = serializers.CharField(allow_null=True, required=False)
     phoneVerified = serializers.BooleanField(required=False)
     mfaEnabled = serializers.BooleanField(required=False)
     locale = serializers.CharField(required=False)

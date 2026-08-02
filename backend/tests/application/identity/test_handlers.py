@@ -32,6 +32,7 @@ from apps.identity.application.commands import (
 from apps.identity.application.events import SendVerificationEmailOnUserRegistered
 from apps.identity.application.exceptions import (
     EmailAlreadyInUseError,
+    InvalidCredentialsError,
     InvalidInputError,
     InvalidVerificationTokenError,
     PhoneAlreadyInUseError,
@@ -103,13 +104,19 @@ PHONE_POLICY = PhoneVerificationPolicy()
 CONSENT_POLICY = ConsentPolicy(current_version=ConsentVersion("1.0"))
 
 
-def make_user(*, email: str = "member@example.com", phone: str | None = None) -> User:
+#: The plaintext behind :data:`KNOWN_HASH` — what a seeded account's holder would
+#: type when a use case re-asks for the password they already have.
+CURRENT_PASSWORD = "TheirOldPass!7"
+KNOWN_HASH = FakePasswordHasher().hash(CURRENT_PASSWORD)
+
+
+def make_user(*, email: str = "member@example.com", phone: str | None = None, password_hash: PasswordHash = VALID_HASH) -> User:
     """Build a fresh (registered, unverified) ``User`` for seeding a repository."""
     user, _ = User.register(
         user_id=UserId.generate(),
         email=Email(email),
         full_name=FullName.of("Ivan", "Petrov", "Ivanovich"),
-        password_hash=VALID_HASH,
+        password_hash=password_hash,
         now=NOW,
         phone=PhoneNumber(phone) if phone is not None else None,
     )
@@ -433,35 +440,48 @@ class TestSendVerificationEmailOnUserRegistered:
 
 class TestChangeEmailHandler:
     def _handler(self, repo: FakeUserRepository) -> ChangeEmailHandler:
-        return ChangeEmailHandler(users=repo, clock=FakeClock())
+        return ChangeEmailHandler(users=repo, password_hasher=FakePasswordHasher(), clock=FakeClock())
+
+    def _seed(self, repo: FakeUserRepository, *, email: str) -> User:
+        return repo.seed(make_user(email=email, password_hash=KNOWN_HASH))
+
+    def _command(self, user: User, new_email: str, *, password: str = CURRENT_PASSWORD) -> ChangeEmailCommand:
+        return ChangeEmailCommand(user_id=user.id.json(), new_email=new_email, current_password=password)
 
     def test_changes_email(self) -> None:
         repo = FakeUserRepository()
-        user = repo.seed(make_user(email="old@example.com"))
-        command = ChangeEmailCommand(user_id=user.id.json(), new_email="brand.new@example.com")
+        user = self._seed(repo, email="old@example.com")
 
-        result = self._handler(repo).handle(command)
+        result = self._handler(repo).handle(self._command(user, "brand.new@example.com"))
 
         assert result.user.email == "brand.new@example.com"
         assert result.user.is_email_verified is False
         assert isinstance(result.events[0], EmailChanged)
 
+    def test_refuses_without_the_current_password(self) -> None:
+        """The address is the recovery channel; a session alone must not move it."""
+        repo = FakeUserRepository()
+        user = self._seed(repo, email="old@example.com")
+
+        with pytest.raises(InvalidCredentialsError):
+            self._handler(repo).handle(self._command(user, "brand.new@example.com", password="not-it"))
+        assert repo.get(user.id) is not None
+        assert repo.get(user.id).email.value == "old@example.com"  # type: ignore[union-attr]
+
     def test_rejects_email_used_by_another_user(self) -> None:
         repo = FakeUserRepository()
-        user = repo.seed(make_user(email="mine@example.com"))
+        user = self._seed(repo, email="mine@example.com")
         repo.seed(make_user(email="theirs@example.com"))
-        command = ChangeEmailCommand(user_id=user.id.json(), new_email="theirs@example.com")
 
         with pytest.raises(EmailAlreadyInUseError):
-            self._handler(repo).handle(command)
+            self._handler(repo).handle(self._command(user, "theirs@example.com"))
 
     def test_same_email_is_state_conflict(self) -> None:
         repo = FakeUserRepository()
-        user = repo.seed(make_user(email="same@example.com"))
-        command = ChangeEmailCommand(user_id=user.id.json(), new_email="same@example.com")
+        user = self._seed(repo, email="same@example.com")
 
         with pytest.raises(UserStateConflictError) as excinfo:
-            self._handler(repo).handle(command)
+            self._handler(repo).handle(self._command(user, "same@example.com"))
         assert excinfo.value.domain_code == "EmailNotChangedError"
 
 
@@ -544,8 +564,8 @@ class TestChangePasswordHandler:
 
     def test_changes_password(self) -> None:
         repo, hasher = FakeUserRepository(), FakePasswordHasher()
-        user = repo.seed(make_user())
-        command = ChangePasswordCommand(user_id=user.id.json(), new_password=STRONG_PASSWORD)
+        user = repo.seed(make_user(password_hash=KNOWN_HASH))
+        command = ChangePasswordCommand(user_id=user.id.json(), current_password=CURRENT_PASSWORD, new_password=STRONG_PASSWORD)
 
         result = self._handler(repo, hasher).handle(command)
 
@@ -553,10 +573,21 @@ class TestChangePasswordHandler:
         assert hasher.hashed == [STRONG_PASSWORD]
         assert result.user.version == user.version
 
+    def test_refuses_a_wrong_current_password(self) -> None:
+        """A session someone else is sitting in front of is not authorization."""
+        repo, hasher = FakeUserRepository(), FakePasswordHasher()
+        user = repo.seed(make_user(password_hash=KNOWN_HASH))
+        command = ChangePasswordCommand(user_id=user.id.json(), current_password="not-it", new_password=STRONG_PASSWORD)
+
+        with pytest.raises(InvalidCredentialsError):
+            self._handler(repo, hasher).handle(command)
+        # Nothing was hashed: the new password never got as far as the hasher.
+        assert hasher.hashed == []
+
     def test_rejects_weak_password(self) -> None:
         repo, hasher = FakeUserRepository(), FakePasswordHasher()
-        user = repo.seed(make_user())
-        command = ChangePasswordCommand(user_id=user.id.json(), new_password="weak")
+        user = repo.seed(make_user(password_hash=KNOWN_HASH))
+        command = ChangePasswordCommand(user_id=user.id.json(), current_password=CURRENT_PASSWORD, new_password="weak")
 
         with pytest.raises(WeakPasswordError):
             self._handler(repo, hasher).handle(command)

@@ -483,15 +483,23 @@ class ResetPasswordHandler:
 
 
 class ChangeEmailHandler:
-    """Use case: replace the account's email address (resets verification)."""
+    """Use case: replace the account's email address (resets verification).
 
-    def __init__(self, *, users: UserRepository, clock: Clock) -> None:
+    Re-asks for the current password. The address is the account's recovery
+    channel, so moving it is as consequential as changing the password itself and
+    is refused on the strength of a session alone.
+    """
+
+    def __init__(self, *, users: UserRepository, password_hasher: PasswordHasher, clock: Clock) -> None:
         self._users = users
+        self._password_hasher = password_hasher
         self._clock = clock
 
     def handle(self, command: ChangeEmailCommand) -> OperationResultDto:
         now = self._clock.utcnow()
         user = _load_user(self._users, command.user_id)
+        if not self._password_hasher.verify(command.current_password, user.password_hash):
+            raise InvalidCredentialsError("The current password is incorrect.")
         with translate_domain_errors():
             new_email = Email(command.new_email)
         owner = self._users.get_by_email(new_email)
@@ -548,7 +556,15 @@ class VerifyPhoneHandler:
 
 
 class ChangePasswordHandler:
-    """Use case: set a new password (strength-checked, then hashed)."""
+    """Use case: the account holder changes their own password.
+
+    The current password is verified first, so a session left open on somebody
+    else's machine cannot be turned into a permanent takeover. A reset driven by
+    an emailed token, where the holder has no current password to give, is
+    :class:`ResetPasswordHandler`'s job instead — and that one revokes every
+    issued credential, because it starts from no session at all. This one does
+    not: the holder is already signed in and stays signed in.
+    """
 
     def __init__(
         self,
@@ -566,6 +582,8 @@ class ChangePasswordHandler:
     def handle(self, command: ChangePasswordCommand) -> OperationResultDto:
         now = self._clock.utcnow()
         user = _load_user(self._users, command.user_id)
+        if not self._password_hasher.verify(command.current_password, user.password_hash):
+            raise InvalidCredentialsError("The current password is incorrect.")
         with translate_domain_errors():
             self._password_policy.enforce(command.new_password)
         password_hash = self._password_hasher.hash(command.new_password)

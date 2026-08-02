@@ -131,6 +131,7 @@ class UserResourceSerializer(serializers.Serializer[dict[str, object]]):
     displayName = serializers.CharField()
     status = serializers.CharField()
     emailVerified = serializers.BooleanField()
+    phone = serializers.CharField(allow_null=True, required=False)
     phoneVerified = serializers.BooleanField()
     mfaEnabled = serializers.BooleanField()
     locale = serializers.CharField()

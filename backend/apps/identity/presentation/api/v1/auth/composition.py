@@ -15,6 +15,9 @@ from __future__ import annotations
 from apps.identity.application.events import SendVerificationEmailOnUserRegistered
 from apps.identity.application.handlers import (
     AuthenticateUserHandler,
+    ChangeEmailHandler,
+    ChangePasswordHandler,
+    ChangePhoneHandler,
     ConfirmEmailVerificationHandler,
     LogoutHandler,
     RefreshTokenHandler,
@@ -39,6 +42,9 @@ from apps.identity.infrastructure.system import SystemClock, Uuid7Generator
 
 __all__ = [
     "build_authenticate_user_handler",
+    "build_change_email_handler",
+    "build_change_password_handler",
+    "build_change_phone_handler",
     "build_confirm_email_verification_handler",
     "build_current_user_handler",
     "build_event_publisher",
@@ -157,6 +163,33 @@ def build_logout_handler(tokens: TokenService | None = None) -> LogoutHandler:
 def build_current_user_handler() -> CurrentUserHandler:
     """Assemble the current user retrieval use case with its adapters."""
     return CurrentUserHandler(
+        users=DjangoUserRepository(),
+        clock=SystemClock(),
+    )
+
+
+def build_change_password_handler() -> ChangePasswordHandler:
+    """Assemble the change-your-own-password use case with its adapters."""
+    return ChangePasswordHandler(
+        users=DjangoUserRepository(),
+        password_hasher=Argon2PasswordHasher(),
+        password_policy=PasswordPolicy(),
+        clock=SystemClock(),
+    )
+
+
+def build_change_email_handler() -> ChangeEmailHandler:
+    """Assemble the change-your-own-email use case with its adapters."""
+    return ChangeEmailHandler(
+        users=DjangoUserRepository(),
+        password_hasher=Argon2PasswordHasher(),
+        clock=SystemClock(),
+    )
+
+
+def build_change_phone_handler() -> ChangePhoneHandler:
+    """Assemble the set-or-replace-your-phone use case with its adapters."""
+    return ChangePhoneHandler(
         users=DjangoUserRepository(),
         clock=SystemClock(),
     )

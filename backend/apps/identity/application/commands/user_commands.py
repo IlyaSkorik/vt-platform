@@ -148,10 +148,17 @@ class ResetPasswordCommand:
 
 @dataclass(frozen=True, slots=True)
 class ChangeEmailCommand:
-    """Replace the account's email address (resets email verification)."""
+    """Replace the account's email address (resets email verification).
+
+    ``current_password`` is re-asked at the point of change and not taken on trust
+    from the session. The address is the account's recovery channel: whoever
+    controls it controls the account, so a borrowed browser must not be enough to
+    move it somewhere its owner cannot reach.
+    """
 
     user_id: str
     new_email: str
+    current_password: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -176,9 +183,16 @@ class VerifyPhoneCommand:
 
 @dataclass(frozen=True, slots=True)
 class ChangePasswordCommand:
-    """Set a new password for the account (validated, then hashed, upstream)."""
+    """Change the account's own password (validated, then hashed, upstream).
+
+    ``current_password`` is proof that the person at the keyboard is the account
+    holder and not somebody who found the session already open. An operator- or
+    token-driven reset, where there is no current password to give, goes through
+    :class:`ResetPasswordCommand` instead.
+    """
 
     user_id: str
+    current_password: str
     new_password: str
 
 

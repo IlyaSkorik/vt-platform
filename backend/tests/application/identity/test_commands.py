@@ -49,7 +49,7 @@ class TestCommandDefaults:
 
 class TestCommandImmutability:
     def test_representative_command_is_frozen(self) -> None:
-        command = ChangeEmailCommand(user_id="u", new_email="a@b.com")
+        command = ChangeEmailCommand(user_id="u", new_email="a@b.com", current_password="p")
         with pytest.raises(dataclasses.FrozenInstanceError):
             command.new_email = "mutated"  # type: ignore[misc]
 
@@ -57,10 +57,10 @@ class TestCommandImmutability:
         commands: list[object] = [
             RegisterUserCommand(email="a@b.com", password="p", first_name="A", last_name="B"),
             VerifyEmailCommand(user_id="u", sent_at=NOW),
-            ChangeEmailCommand(user_id="u", new_email="a@b.com"),
+            ChangeEmailCommand(user_id="u", new_email="a@b.com", current_password="p"),
             ChangePhoneCommand(user_id="u", new_phone="+79991234567"),
             VerifyPhoneCommand(user_id="u", issued_at=NOW),
-            ChangePasswordCommand(user_id="u", new_password="p"),
+            ChangePasswordCommand(user_id="u", current_password="old", new_password="p"),
             GrantConsentCommand(user_id="u", consent_version="1.0"),
             WithdrawConsentCommand(user_id="u"),
             LockUserCommand(user_id="u", reason="r"),
