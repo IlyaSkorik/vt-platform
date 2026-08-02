@@ -75,22 +75,25 @@ class DjangoPublicCatalogReader:
         return [self._project(competition, organizers) for competition in competitions]
 
     def get_festival(self, festival_id: str) -> PublicFestivalDetailView | None:
+        visible = CompetitionModel.objects.filter(
+            status__in=PUBLIC_CATALOG_DOMAIN_STATUSES,
+            deleted_at__isnull=True,
+        ).prefetch_related("participation_formats", "pricing_rules", "categories", "documents")
+
+        # A slug *or* a uuid: the readable address is what the site links and what
+        # search indexes, while every uuid link already handed out — an emailed
+        # one, a printed one — has to keep resolving. Which form arrived is told
+        # apart by parsing, not by asking the caller.
         try:
             pk = uuid.UUID(str(festival_id))
         except (ValueError, TypeError, AttributeError):
-            # A malformed id can never match a real competition — treat it as a
-            # miss rather than surfacing a 500 on hostile/typo'd input.
-            return None
+            slug = str(festival_id or "").strip().lower()
+            # An empty or malformed segment can never match a real competition;
+            # a miss rather than a 500 on hostile or typo'd input.
+            competition = visible.filter(slug=slug).first() if slug else None
+        else:
+            competition = visible.filter(id=pk).first()
 
-        competition = (
-            CompetitionModel.objects.filter(
-                id=pk,
-                status__in=PUBLIC_CATALOG_DOMAIN_STATUSES,
-                deleted_at__isnull=True,
-            )
-            .prefetch_related("participation_formats", "pricing_rules", "categories", "documents")
-            .first()
-        )
         if competition is None:
             return None
 
@@ -137,6 +140,7 @@ class DjangoPublicCatalogReader:
 
         return PublicFestivalView(
             id=str(competition.id),
+            slug=competition.slug,
             title=competition.title,
             season=competition.season,
             description=competition.description,
@@ -189,6 +193,7 @@ class DjangoPublicCatalogReader:
 
         return PublicFestivalDetailView(
             id=str(competition.id),
+            slug=competition.slug,
             title=competition.title,
             season=competition.season,
             description=competition.description,

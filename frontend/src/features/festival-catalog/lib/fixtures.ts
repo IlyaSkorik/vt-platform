@@ -8,6 +8,7 @@ export function makeFestival(overrides: Partial<Festival> = {}): Festival {
   const { pricing, ...rest } = overrides;
   return {
     id: "01900000-0000-7000-8000-000000000001",
+    slug: "vesenniy-festival-2025-2026",
     title: "Весенний фестиваль",
     season: "2025/2026",
     description: "Описание фестиваля",

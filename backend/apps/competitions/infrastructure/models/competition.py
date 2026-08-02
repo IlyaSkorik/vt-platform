@@ -39,6 +39,12 @@ class CompetitionModel(BasePersistenceModel):
 
     title = models.CharField(max_length=200)
     season = models.CharField(max_length=50)
+    # The competition's public address: /competitions/<slug>. A persistence-level
+    # concern rather than a domain one — the aggregate has no opinion about URLs —
+    # derived from the title once and then frozen, because a slug that follows a
+    # renamed title silently breaks every link already handed out. Nullable so a
+    # row can exist before one is assigned; the UUID keeps working either way.
+    slug = models.SlugField(max_length=100, unique=True, null=True, blank=True, default=None)
     organizer_id = models.UUIDField()
     status = models.CharField(
         max_length=32,

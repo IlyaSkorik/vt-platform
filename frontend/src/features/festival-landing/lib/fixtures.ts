@@ -55,6 +55,7 @@ export function makeFestivalDetail(overrides: Partial<FestivalDetail> = {}): Fes
   const { pricing, landing, contacts, ...rest } = overrides;
   return {
     id: "01900000-0000-7000-8000-000000000001",
+    slug: "vesenniy-vokalniy-festival-2025-2026",
     title: "Весенний вокальный фестиваль",
     season: "2025/2026",
     description: "Описание фестиваля",

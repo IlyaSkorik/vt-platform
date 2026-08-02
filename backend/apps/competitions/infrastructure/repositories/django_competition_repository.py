@@ -49,6 +49,7 @@ from apps.competitions.infrastructure.models import (
     PricingRuleModel,
     RegulationModel,
 )
+from shared.utils.slugs import unique_slug
 
 from .exceptions import ConcurrencyConflictError, IntegrityViolationError, PersistenceError
 
@@ -114,7 +115,11 @@ class DjangoCompetitionRepository:
         """
         model = CompetitionMapper.to_model(competition)
         values = self._column_values(model)
-        update_values = {name: value for name, value in values.items() if name != "id"}
+        # The slug is this layer's, not the aggregate's: the mapper leaves it at
+        # its default, so writing it back on every update would blank the public
+        # address of a competition already linked to. It is set once, on insert,
+        # and thereafter only ever read.
+        update_values = {name: value for name, value in values.items() if name not in ("id", "slug")}
         previous_version = competition.version - 1
         pk = competition.id.value
         try:
@@ -125,6 +130,7 @@ class DjangoCompetitionRepository:
                         raise ConcurrencyConflictError(
                             f"Competition {competition.id} was modified concurrently; expected version {previous_version}."
                         )
+                    values["slug"] = self._assign_slug(competition)
                     CompetitionModel.objects.create(**values)
                 self._sync_children(pk, CompetitionMapper.to_child_rows(competition))
         except IntegrityError as exc:
@@ -173,6 +179,22 @@ class DjangoCompetitionRepository:
         _replace(AdditionalServiceModel, pk, rows.additional_services)
         _replace(ContactModel, pk, rows.contacts)
         _replace(InformationBlockModel, pk, rows.information_blocks)
+
+    @staticmethod
+    def _assign_slug(competition: Competition) -> str:
+        """The competition's permanent public address, derived at insert time.
+
+        Title and season together, because an annual festival carries the same
+        title every year and only the season separates the editions. A collision
+        beyond that — two competitions genuinely named alike in one season — is
+        numbered rather than rejected: the organizer named them, and refusing the
+        save over a URL would be the wrong place to argue about it.
+        """
+        return unique_slug(
+            f"{competition.title.value} {competition.season.value}",
+            fallback=f"competition-{str(competition.id.value)[:8]}",
+            is_taken=lambda candidate: CompetitionModel.objects.filter(slug=candidate).exists(),
+        )
 
     @staticmethod
     def _column_values(model: CompetitionModel) -> dict[str, object]:

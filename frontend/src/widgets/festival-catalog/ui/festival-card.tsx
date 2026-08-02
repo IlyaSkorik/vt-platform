@@ -12,6 +12,7 @@ import {
   resolveMediaUrl,
 } from "@/features/festival-catalog";
 import { ROUTES } from "@/shared/config";
+import { festivalPath } from "@/shared/lib";
 import { Avatar, Badge, Button, Card, CardContent, CardFooter } from "@/shared/ui";
 
 interface FestivalCardProps {
@@ -46,8 +47,8 @@ export function FestivalCard({
   const closingSoon = isClosingSoon(festival, now);
   const logo = resolveMediaUrl(festival.organizer.logo);
 
-  const detailPath = `${detailBasePath}/${festival.id}`;
-  const cabinetApplyPath = `${ROUTES.cabinetCompetitions}/${festival.id}/apply`;
+  const detailPath = festivalPath(festival, detailBasePath);
+  const cabinetApplyPath = `${festivalPath(festival, ROUTES.cabinetCompetitions)}/apply`;
   const applyPath = isAuthenticated
     ? cabinetApplyPath
     : `${ROUTES.login}?next=${encodeURIComponent(cabinetApplyPath)}`;

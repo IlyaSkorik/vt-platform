@@ -299,6 +299,10 @@ class PublicFestivalView:
     """
 
     id: str
+    #: The competition's readable public address, when it has one. ``None`` for a
+    #: row created before slugs existed and never migrated; callers fall back to
+    #: ``id``, which never stops resolving.
+    slug: str | None
     title: str
     season: str
     description: str | None
@@ -728,6 +732,7 @@ class PublicFestivalDetailView:
     """
 
     id: str
+    slug: str | None
     title: str
     season: str
     description: str | None

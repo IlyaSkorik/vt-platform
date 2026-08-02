@@ -54,6 +54,9 @@ class PublicFestivalSerializer(serializers.Serializer):
     """One competition as rendered in the public catalog."""
 
     id = serializers.CharField()
+    # The address the site links this competition at. Nullable: a competition
+    # predating slugs is still reachable — and still linkable — by its id.
+    slug = serializers.CharField(allow_null=True)
     title = serializers.CharField()
     season = serializers.CharField()
     description = serializers.CharField(allow_null=True)

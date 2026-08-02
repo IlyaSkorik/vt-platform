@@ -244,13 +244,12 @@ paths:
   /api/v1/applications/{application_id}/receipts:
     post:
       operationId: applications_upload_receipt
-      description: 'POST /api/v1/applications/{id}/receipts - attach one more payment
-        receipt.
+      description: |-
+        POST /api/v1/applications/{id}/receipts - attach one more payment receipt.
 
-
-        A collection, not a single document: an order''s fee is regularly settled
-        by several transfers, so posting again adds a receipt instead of replacing
-        the one already there.'
+        A collection, not a single document: an order's fee is regularly settled by
+        several transfers, so posting again adds a receipt instead of replacing the
+        one already there.
       summary: Attach a payment receipt
       parameters:
       - in: path
@@ -749,7 +748,14 @@ paths:
   /api/v1/competitions:
     get:
       operationId: listCompetitions
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       tags:
       - Competitions
       responses:
@@ -793,7 +799,14 @@ paths:
           description: Business rule violation.
     post:
       operationId: createCompetition
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       tags:
       - Competitions
       requestBody:
@@ -848,7 +861,14 @@ paths:
   /api/v1/competitions/{id}:
     get:
       operationId: getCompetition
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -896,7 +916,14 @@ paths:
           description: Business rule violation.
     patch:
       operationId: updateCompetition
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -956,7 +983,14 @@ paths:
   /api/v1/competitions/{id}/admission-rules:
     post:
       operationId: addAdmissionRule
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -1017,7 +1051,14 @@ paths:
   /api/v1/competitions/{id}/admission-rules/remove:
     post:
       operationId: removeAdmissionRule
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -1078,7 +1119,14 @@ paths:
   /api/v1/competitions/{id}/age-categories:
     post:
       operationId: addAgeCategory
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -1139,7 +1187,14 @@ paths:
   /api/v1/competitions/{id}/age-categories/{age_category_id}:
     patch:
       operationId: updateAgeCategory
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: age_category_id
@@ -1203,7 +1258,14 @@ paths:
           description: Business rule violation.
     delete:
       operationId: removeAgeCategory
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: age_category_id
@@ -1257,7 +1319,14 @@ paths:
   /api/v1/competitions/{id}/branding:
     patch:
       operationId: updateBranding
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -1377,7 +1446,14 @@ paths:
   /api/v1/competitions/{id}/categories:
     post:
       operationId: addCategory
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -1438,7 +1514,14 @@ paths:
   /api/v1/competitions/{id}/categories/{category_id}:
     patch:
       operationId: renameCategory
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: category_id
@@ -1502,7 +1585,14 @@ paths:
           description: Business rule violation.
     delete:
       operationId: removeCategory
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: category_id
@@ -1556,7 +1646,14 @@ paths:
   /api/v1/competitions/{id}/categories/{category_id}/registration:
     put:
       operationId: scheduleNominationRegistration
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: category_id
@@ -1621,7 +1718,14 @@ paths:
   /api/v1/competitions/{id}/categories/{category_id}/registration/resume:
     post:
       operationId: resumeNominationRegistration
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: category_id
@@ -1675,7 +1779,14 @@ paths:
   /api/v1/competitions/{id}/categories/{category_id}/registration/stop:
     post:
       operationId: stopNominationRegistration
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: category_id
@@ -1729,7 +1840,14 @@ paths:
   /api/v1/competitions/{id}/complete:
     post:
       operationId: completeCompetition
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -1778,7 +1896,14 @@ paths:
   /api/v1/competitions/{id}/configured:
     post:
       operationId: markCompetitionConfigured
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -1827,7 +1952,14 @@ paths:
   /api/v1/competitions/{id}/contacts:
     post:
       operationId: addContact
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -1888,7 +2020,14 @@ paths:
   /api/v1/competitions/{id}/contacts-configuration:
     put:
       operationId: updateContactsConfiguration
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -1949,7 +2088,14 @@ paths:
   /api/v1/competitions/{id}/contacts/{contact_id}:
     delete:
       operationId: removeContact
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: contact_id
@@ -2003,7 +2149,14 @@ paths:
   /api/v1/competitions/{id}/contacts/{contact_id}/primary:
     post:
       operationId: setPrimaryContact
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: contact_id
@@ -2057,7 +2210,14 @@ paths:
   /api/v1/competitions/{id}/deadlines:
     put:
       operationId: updateDeadlines
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -2117,7 +2277,14 @@ paths:
   /api/v1/competitions/{id}/disciplines:
     post:
       operationId: addDiscipline
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -2178,7 +2345,14 @@ paths:
   /api/v1/competitions/{id}/disciplines/{discipline_id}:
     patch:
       operationId: renameDiscipline
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: discipline_id
@@ -2242,7 +2416,14 @@ paths:
           description: Business rule violation.
     delete:
       operationId: removeDiscipline
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: discipline_id
@@ -2296,7 +2477,14 @@ paths:
   /api/v1/competitions/{id}/documents:
     post:
       operationId: addDocument
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -2357,7 +2545,14 @@ paths:
   /api/v1/competitions/{id}/documents/{document_id}:
     patch:
       operationId: updateDocument
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: document_id
@@ -2421,7 +2616,14 @@ paths:
           description: Business rule violation.
     delete:
       operationId: removeDocument
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: document_id
@@ -2475,7 +2677,14 @@ paths:
   /api/v1/competitions/{id}/documents/{document_id}/publish:
     post:
       operationId: publishDocument
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: document_id
@@ -2529,7 +2738,14 @@ paths:
   /api/v1/competitions/{id}/documents/{document_id}/unpublish:
     post:
       operationId: unpublishDocument
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: document_id
@@ -2583,7 +2799,14 @@ paths:
   /api/v1/competitions/{id}/information-blocks:
     post:
       operationId: addInformationBlock
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -2644,7 +2867,14 @@ paths:
   /api/v1/competitions/{id}/information-blocks/{block_id}:
     patch:
       operationId: updateInformationBlock
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: block_id
@@ -2708,7 +2938,14 @@ paths:
           description: Business rule violation.
     delete:
       operationId: removeInformationBlock
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: block_id
@@ -2762,7 +2999,14 @@ paths:
   /api/v1/competitions/{id}/information-blocks/{block_id}/hide:
     post:
       operationId: hideInformationBlock
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: block_id
@@ -2816,7 +3060,14 @@ paths:
   /api/v1/competitions/{id}/information-blocks/{block_id}/publish:
     post:
       operationId: publishInformationBlock
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: block_id
@@ -2870,7 +3121,14 @@ paths:
   /api/v1/competitions/{id}/landing-configuration:
     put:
       operationId: updateLandingConfiguration
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -2931,7 +3189,14 @@ paths:
   /api/v1/competitions/{id}/participant-groups:
     post:
       operationId: addParticipantGroup
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -2992,7 +3257,14 @@ paths:
   /api/v1/competitions/{id}/participant-groups/{participant_group_id}:
     patch:
       operationId: updateParticipantGroup
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -3056,7 +3328,14 @@ paths:
           description: Business rule violation.
     delete:
       operationId: removeParticipantGroup
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -3110,7 +3389,14 @@ paths:
   /api/v1/competitions/{id}/participation-formats:
     post:
       operationId: addParticipationFormat
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -3171,7 +3457,14 @@ paths:
   /api/v1/competitions/{id}/participation-formats/{format_id}:
     patch:
       operationId: updateParticipationFormat
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: format_id
@@ -3235,7 +3528,14 @@ paths:
           description: Business rule violation.
     delete:
       operationId: removeParticipationFormat
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: format_id
@@ -3289,7 +3589,14 @@ paths:
   /api/v1/competitions/{id}/pricing-rules:
     post:
       operationId: addPricingRule
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -3349,7 +3656,14 @@ paths:
           description: Business rule violation.
     patch:
       operationId: changePrice
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -3409,7 +3723,14 @@ paths:
   /api/v1/competitions/{id}/pricing-rules/remove:
     post:
       operationId: removePricingRule
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -3470,7 +3791,14 @@ paths:
   /api/v1/competitions/{id}/publish:
     post:
       operationId: publishCompetition
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -3519,7 +3847,14 @@ paths:
   /api/v1/competitions/{id}/ready:
     post:
       operationId: markCompetitionReady
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -3568,7 +3903,14 @@ paths:
   /api/v1/competitions/{id}/regulations:
     post:
       operationId: addRegulation
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -3629,7 +3971,14 @@ paths:
   /api/v1/competitions/{id}/regulations/{regulation_id}:
     delete:
       operationId: removeRegulation
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -3683,7 +4032,14 @@ paths:
   /api/v1/competitions/{id}/regulations/{regulation_id}/current:
     post:
       operationId: makeRegulationCurrent
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -3737,7 +4093,14 @@ paths:
   /api/v1/competitions/{id}/revert-to-configured:
     post:
       operationId: revertCompetitionToConfigured
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -3786,7 +4149,14 @@ paths:
   /api/v1/competitions/{id}/revert-to-draft:
     post:
       operationId: revertCompetitionToDraft
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -3835,7 +4205,14 @@ paths:
   /api/v1/competitions/{id}/services:
     post:
       operationId: addAdditionalService
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -3896,7 +4273,14 @@ paths:
   /api/v1/competitions/{id}/services/{service_id}:
     patch:
       operationId: updateAdditionalService
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -3960,7 +4344,14 @@ paths:
           description: Business rule violation.
     delete:
       operationId: removeAdditionalService
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -4014,7 +4405,14 @@ paths:
   /api/v1/competitions/{id}/services/{service_id}/disable:
     post:
       operationId: disableAdditionalService
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -4068,7 +4466,14 @@ paths:
   /api/v1/competitions/{id}/services/{service_id}/enable:
     post:
       operationId: enableAdditionalService
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -4122,7 +4527,14 @@ paths:
   /api/v1/competitions/{id}/settings:
     put:
       operationId: updateSettings
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -4183,7 +4595,14 @@ paths:
   /api/v1/competitions/{id}/start:
     post:
       operationId: startCompetition
-      description: Organizer Competition API — staff-only.
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
       parameters:
       - in: path
         name: id
@@ -4378,8 +4797,8 @@ paths:
   /api/v1/organization/profile:
     get:
       operationId: getOrganizationProfile
-      description: Return the singleton organization profile. Contact fields are null
-        until persisted.
+      description: Return the caller's own organization profile. Contact fields are
+        null until persisted.
       summary: Get organization profile
       tags:
       - Organization
@@ -4862,6 +5281,158 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/platform/dashboard:
+    get:
+      operationId: platform_dashboard
+      description: Application counts per status across all connected organizations,
+        with the participation fees behind them and the platform's commission on those
+        fees. Filterable by organization and by competition.
+      summary: Platform dashboard
+      parameters:
+      - in: query
+        name: competitionId
+        schema:
+          type: string
+        description: Narrow to one competition.
+      - in: query
+        name: organizationId
+        schema:
+          type: string
+        description: Narrow to one organization.
+      tags:
+      - Platform
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformDashboardResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Not a platform administrator.
+  /api/v1/platform/organizations:
+    get:
+      operationId: platform_list_organizations
+      description: GET/POST /api/v1/platform/organizations — the connected organizations.
+      summary: List connected organizations
+      tags:
+      - Platform
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformOrganizationListResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Not a platform administrator.
+    post:
+      operationId: platform_connect_organization
+      description: Create the organization and email its owner an invitation making
+        them its first OWNER. `slug` is derived from the name when omitted.
+      summary: Connect an organization
+      tags:
+      - Platform
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectOrganizationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConnectOrganizationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConnectOrganizationRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformOrganizationResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Malformed request.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Not a platform administrator.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: That address is already taken.
+  /api/v1/platform/organizations/{organization_id}:
+    patch:
+      operationId: platform_update_organization
+      description: PATCH /api/v1/platform/organizations/{id} — its terms, or its suspension.
+      summary: Update an organization's terms or status
+      parameters:
+      - in: path
+        name: organization_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Platform
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateOrganizationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateOrganizationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateOrganizationRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformOrganizationResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Malformed request.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Not a platform administrator.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: No such organization.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Already in that state.
   /api/v1/public/competitions/{competition_id}/registration:
     get:
       operationId: getRegistration
@@ -4891,6 +5462,63 @@ paths:
               schema:
                 $ref: '#/components/schemas/RegistrationEnvelope'
           description: ''
+  /api/v1/public/competitions/{competition_id}/results:
+    get:
+      operationId: publicCompetitionResults
+      description: |-
+        ``GET /api/v1/public/competitions/{competition_id}/results`` - the results index.
+
+        Answers an empty list for a competition that has published nothing, which is what lets
+        a landing page decide to hide the section entirely rather than show an empty heading.
+      parameters:
+      - in: path
+        name: competition_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Public Results
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishedProtocolListEnvelope'
+          description: ''
+        '404':
+          description: No response body
+  /api/v1/public/diploma-fonts/{family}/{variant}.ttf:
+    get:
+      operationId: publicDiplomaFont
+      description: |-
+        ``GET /api/v1/public/diploma-fonts/<family>/<variant>.ttf`` — a bundled font file.
+
+        Unauthenticated on purpose; see the module docstring. The path is resolved through the
+        registry's own index rather than joined onto a directory, so ``../../etc/passwd`` is a
+        lookup miss rather than a traversal.
+      parameters:
+      - in: path
+        name: family
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: variant
+        schema:
+          type: string
+        required: true
+      tags:
+      - Public Diploma Fonts
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '404':
+          description: No response body
   /api/v1/public/diplomas/verify/{verification_token}:
     get:
       operationId: verifyDiploma
@@ -5063,6 +5691,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/PublicProgramEnvelope'
           description: ''
+  /api/v1/public/protocols/{slug}:
+    get:
+      operationId: publicProtocolRetrieve
+      description: '``GET /api/v1/public/protocols/{slug}`` - one published protocol.'
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - Public Results
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProtocolEnvelope'
+          description: ''
+        '404':
+          description: No response body
   /api/v1/staff/applications/{submission_id}/actions/{action}:
     post:
       operationId: staff_applications_actions_create
@@ -5085,6 +5734,35 @@ paths:
   /api/v1/staff/applications/bulk:
     post:
       operationId: staff_applications_bulk_create
+      tags:
+      - staff
+      responses:
+        '200':
+          description: No response body
+  /api/v1/staff/applications/documents.zip:
+    get:
+      operationId: staff_applications_documents.zip_retrieve
+      description: |-
+        ``GET`` the orders' paperwork — receipts and benefit certificates — as one ZIP.
+
+        Deliberately separate from the programme's backing tracks: this is the archive
+        somebody reconciles payments and benefits from, and mixing the two would mean
+        downloading gigabytes of audio to read four PDFs.
+
+        Scoped with ``competitionId`` when given; without it, every order the organizer
+        can see. One folder per order, so the receipts and the certificate justifying the
+        amount sit together — the receipts first, because they are the documents the rest
+        of the folder explains.
+
+        An order settled by several transfers carries several receipts, and they are all
+        included, numbered in upload order (``Квитанция 1``, ``Квитанция 2``, …) so the
+        folder shows at a glance that the payment came in parts. A lone receipt keeps the
+        plain name, because numbering one document reads as a missing second one.
+
+        Orders with no receipt are named in the notes. That, and not the file count, is
+        what somebody reconciling payments is looking for: an order carrying a benefit
+        certificate but no proof of payment is precisely the case worth chasing, and
+        counting documents would call it complete.
       tags:
       - staff
       responses:
@@ -5208,6 +5886,52 @@ paths:
               schema:
                 $ref: '#/components/schemas/GenerateDocumentsResponse'
           description: ''
+  /api/v1/staff/diplomas/fonts:
+    get:
+      operationId: diplomas_fonts_list
+      description: '``GET`` the catalog and the uploads; ``POST`` a font file.'
+      tags:
+      - Diplomas
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiplomaFontCatalog'
+          description: ''
+    post:
+      operationId: diplomas_fonts_upload
+      description: '``GET`` the catalog and the uploads; ``POST`` a font file.'
+      tags:
+      - Diplomas
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DiplomaFontUpload'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiplomaFontCatalog'
+          description: ''
+  /api/v1/staff/diplomas/fonts/{font_id}:
+    delete:
+      operationId: diplomas_fonts_delete
+      description: '``DELETE`` one uploaded face.'
+      parameters:
+      - in: path
+        name: font_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Diplomas
+      responses:
+        '204':
+          description: No response body
   /api/v1/staff/diplomas/generation-archive:
     get:
       operationId: diplomas_generation_archive
@@ -6781,6 +7505,55 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProgramProblemDetail'
           description: Unprocessable.
+  /api/v1/staff/programs/{program_id}/music.zip:
+    get:
+      operationId: programsDownloadMusic
+      description: |-
+        ``GET`` every backing track of the programme as one ZIP, named by number.
+
+        A ``GET`` for the same reason the PDF export is one: it is a download the
+        organizer hands to the sound desk. Nothing is stored — the archive is assembled
+        from the already-uploaded files on each request, so it can never be stale.
+      parameters:
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      responses:
+        '200':
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
   /api/v1/staff/programs/{program_id}/progress:
     delete:
       operationId: programsResetProgress
@@ -7031,6 +7804,745 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/protocols:
+    get:
+      operationId: protocolsList
+      description: '``GET /api/v1/staff/protocols`` - list; ``POST`` - open one for
+        a nomination.'
+      parameters:
+      - in: query
+        name: competitionId
+        schema:
+          type: string
+        description: The competition whose protocols to list.
+        required: true
+      tags:
+      - Competition Results
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProtocolSummary'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Unprocessable.
+    post:
+      operationId: protocolsCreate
+      description: '``GET /api/v1/staff/protocols`` - list; ``POST`` - open one for
+        a nomination.'
+      tags:
+      - Competition Results
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProtocolRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateProtocolRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateProtocolRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/protocols/{protocol_id}:
+    get:
+      operationId: protocolsRetrieve
+      description: '``GET``, ``PATCH`` and ``DELETE`` one protocol.'
+      parameters:
+      - in: path
+        name: protocol_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Results
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Unprocessable.
+    patch:
+      operationId: protocolsUpdate
+      description: '``GET``, ``PATCH`` and ``DELETE`` one protocol.'
+      parameters:
+      - in: path
+        name: protocol_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Results
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateProtocolRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateProtocolRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateProtocolRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Unprocessable.
+    delete:
+      operationId: protocolsDestroy
+      description: '``GET``, ``PATCH`` and ``DELETE`` one protocol.'
+      parameters:
+      - in: path
+        name: protocol_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Results
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/protocols/{protocol_id}/awards:
+    put:
+      operationId: protocolsAwardRows
+      description: |-
+        ``PUT`` the results, ``DELETE`` to clear them all.
+
+        The endpoint the jury tab exists for. ``PUT`` takes one award or a whole nomination's
+        worth in a single request, and is deliberately repeatable: a jury revising a decision is
+        the normal case, not an exception.
+      parameters:
+      - in: path
+        name: protocol_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Results
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AwardRowsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AwardRowsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AwardRowsRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Unprocessable.
+    delete:
+      operationId: protocolsClearAwards
+      description: |-
+        ``PUT`` the results, ``DELETE`` to clear them all.
+
+        The endpoint the jury tab exists for. ``PUT`` takes one award or a whole nomination's
+        worth in a single request, and is deliberately repeatable: a jury revising a decision is
+        the normal case, not an exception.
+      parameters:
+      - in: path
+        name: protocol_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Results
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/protocols/{protocol_id}/candidates:
+    get:
+      operationId: protocolsCandidates
+      description: '``GET`` the competing acts of this nomination that have no row
+        yet.'
+      parameters:
+      - in: path
+        name: protocol_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Results
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProtocolCandidate'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/protocols/{protocol_id}/publication:
+    post:
+      operationId: protocolsPublish
+      description: |-
+        ``POST`` to publish the results, ``DELETE`` to take them back off the page.
+
+        Publishing is three effects in one action - the public page, the diplomas, the letters -
+        so the response carries what each of them did rather than just the protocol's new status.
+      parameters:
+      - in: path
+        name: protocol_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Results
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishProtocolRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PublishProtocolRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PublishProtocolRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicationResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Unprocessable.
+    delete:
+      operationId: protocolsUnpublish
+      description: |-
+        ``POST`` to publish the results, ``DELETE`` to take them back off the page.
+
+        Publishing is three effects in one action - the public page, the diplomas, the letters -
+        so the response carries what each of them did rather than just the protocol's new status.
+      parameters:
+      - in: path
+        name: protocol_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Results
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/protocols/{protocol_id}/rows:
+    post:
+      operationId: protocolsAddRow
+      description: '``POST`` one act''s line into the protocol.'
+      parameters:
+      - in: path
+        name: protocol_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Results
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddRowRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddRowRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddRowRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/protocols/{protocol_id}/rows/{row_id}:
+    delete:
+      operationId: protocolsRemoveRow
+      description: '``DELETE`` one row of the protocol.'
+      parameters:
+      - in: path
+        name: protocol_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: row_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Results
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/protocols/{protocol_id}/rows/numbers:
+    post:
+      operationId: protocolsRenumberRows
+      description: |-
+        ``POST`` to re-issue numbers 1..N along the current order.
+
+        Its own endpoint precisely because it invalidates numbers participants may already have
+        been told, and so must never happen as a side effect of a reorder.
+      parameters:
+      - in: path
+        name: protocol_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Results
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/protocols/{protocol_id}/rows/order:
+    put:
+      operationId: protocolsReorderRows
+      description: '``PUT`` a new order for the protocol''s rows.'
+      parameters:
+      - in: path
+        name: protocol_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Results
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderRowsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReorderRowsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReorderRowsRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/protocols/{protocol_id}/rows/sync:
+    post:
+      operationId: protocolsSyncRows
+      description: |-
+        ``POST`` to pull in every act of this nomination that has no row yet.
+
+        Append-only: existing rows keep their place **and their award**, so this is safe to
+        press after results have been entered.
+      parameters:
+      - in: path
+        name: protocol_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Results
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
           description: Unprocessable.
   /api/v1/submissions/{submission_id}:
     get:
@@ -7545,7 +9057,9 @@ paths:
     get:
       operationId: getCurrentUser
       description: Return the authenticated account (Identity) composed with its staff
-        membership (Organization). `staffMembership` is null for non-staff users.
+        membership (Organization) and whether it operates the platform itself. `staffMembership`
+        is null for non-staff users; `platformAdmin` is false for everyone but the
+        platform's own operators.
       summary: Get the current user composed with staff membership
       tags:
       - Identity
@@ -7558,6 +9072,158 @@ paths:
           description: ''
         '401':
           description: No valid session.
+  /api/v1/users/me/email:
+    put:
+      operationId: changeOwnEmail
+      description: Replace the account's email address. The current password is required,
+        because the address is the account's recovery channel. The new address starts
+        unverified and a fresh verification link is sent to it; the old one stops
+        being the account's.
+      summary: Change the signed-in account's email address
+      tags:
+      - Identity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountEmailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AccountEmailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AccountEmailRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Malformed request.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: No valid session, or the current password is wrong.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: That address already belongs to an account.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: The address is not a valid email.
+  /api/v1/users/me/password:
+    put:
+      operationId: changeOwnPassword
+      description: 'Replace the account''s password. The current password is required:
+        a session left open must not be enough to lock its owner out. The session
+        survives the change — an emailed reset (`/auth/password-reset/confirmations`)
+        is the flow that revokes every issued credential.'
+      summary: Change the signed-in account's password
+      tags:
+      - Identity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountPasswordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AccountPasswordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AccountPasswordRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Malformed request.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: No valid session, or the current password is wrong.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: The new password is too weak.
+  /api/v1/users/me/phone:
+    put:
+      operationId: changeOwnPhone
+      description: 'Set the account''s phone number. No password is asked for: unlike
+        the address, the phone is a way for an organizer to reach the applicant, not
+        a way back into the account. The number starts unverified.'
+      summary: Set or replace the signed-in account's phone number
+      tags:
+      - Identity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountPhoneRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AccountPhoneRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AccountPhoneRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Malformed request.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: No valid session, or the current password is wrong.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: That number already belongs to an account.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: The number is not a valid phone number.
 components:
   schemas:
     AcceptInvitationRequest:
@@ -7568,6 +9234,52 @@ components:
           type: string
       required:
       - token
+    AccountEmailRequest:
+      type: object
+      description: '``PUT /users/me/email`` — move the account to another address.'
+      properties:
+        email:
+          type: string
+          format: email
+        currentPassword:
+          type: string
+          writeOnly: true
+      required:
+      - currentPassword
+      - email
+    AccountPasswordRequest:
+      type: object
+      description: '``PUT /users/me/password`` — the account holder replaces their
+        own password.'
+      properties:
+        currentPassword:
+          type: string
+          writeOnly: true
+        newPassword:
+          type: string
+          writeOnly: true
+      required:
+      - currentPassword
+      - newPassword
+    AccountPhoneRequest:
+      type: object
+      description: '``PUT /users/me/phone`` — set or replace the account''s phone
+        number.'
+      properties:
+        phone:
+          type: string
+      required:
+      - phone
+    AccountResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/UserResource'
+        meta:
+          $ref: '#/components/schemas/Meta'
+      required:
+      - data
+      - meta
     AddAdditionalService:
       type: object
       properties:
@@ -7966,6 +9678,22 @@ components:
       - publicationDate
       - title
       - version
+    AddRowRequest:
+      type: object
+      description: Validate an add-row body - the act slotted in on the day.
+      properties:
+        submissionId:
+          type: string
+          format: uuid
+        position:
+          type: integer
+          minimum: 1
+        award:
+          oneOf:
+          - $ref: '#/components/schemas/AwardKindEnum'
+          - $ref: '#/components/schemas/NullEnum'
+      required:
+      - submissionId
     AddTeacherRequest:
       type: object
       description: Validate an add-teacher request body.
@@ -8245,6 +9973,43 @@ components:
         * `IMAGE` - IMAGE
         * `DOCUMENT` - DOCUMENT
         * `BENEFIT` - BENEFIT
+    AwardKindEnum:
+      enum:
+      - GRAND_PRIX
+      - GRAND_PRIX_NOMINEE
+      - LAUREATE_I
+      - LAUREATE_II
+      - LAUREATE_III
+      - DIPLOMANT_I
+      - DIPLOMANT_II
+      - DIPLOMANT_III
+      - PARTICIPANT
+      type: string
+      description: |-
+        * `GRAND_PRIX` - GRAND_PRIX
+        * `GRAND_PRIX_NOMINEE` - GRAND_PRIX_NOMINEE
+        * `LAUREATE_I` - LAUREATE_I
+        * `LAUREATE_II` - LAUREATE_II
+        * `LAUREATE_III` - LAUREATE_III
+        * `DIPLOMANT_I` - DIPLOMANT_I
+        * `DIPLOMANT_II` - DIPLOMANT_II
+        * `DIPLOMANT_III` - DIPLOMANT_III
+        * `PARTICIPANT` - PARTICIPANT
+    AwardRowsRequest:
+      type: object
+      description: |-
+        Validate the results a jury is saving.
+
+        A list of ``{rowId, award}`` rather than a map, because ``award: null`` has to be
+        expressible - clearing a result is an edit a jury makes, and a map with a missing key
+        could not tell that apart from "leave this one alone".
+      properties:
+        awards:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProtocolAwardEntry'
+      required:
+      - awards
     BillingModelEnum:
       enum:
       - PER_PARTICIPANT
@@ -8270,6 +10035,32 @@ components:
           maxLength: 120
       required:
       - title
+    ColumnsEnum:
+      enum:
+      - POSITION
+      - PARTICIPANT
+      - TITLE
+      - AWARD
+      - NOMINATION
+      - DISCIPLINE
+      - PARTICIPANT_GROUP
+      - AGE_CATEGORY
+      - PARTICIPATION_FORMAT
+      - TEACHERS
+      - ORGANIZATION
+      type: string
+      description: |-
+        * `POSITION` - POSITION
+        * `PARTICIPANT` - PARTICIPANT
+        * `TITLE` - TITLE
+        * `AWARD` - AWARD
+        * `NOMINATION` - NOMINATION
+        * `DISCIPLINE` - DISCIPLINE
+        * `PARTICIPANT_GROUP` - PARTICIPANT_GROUP
+        * `AGE_CATEGORY` - AGE_CATEGORY
+        * `PARTICIPATION_FORMAT` - PARTICIPATION_FORMAT
+        * `TEACHERS` - TEACHERS
+        * `ORGANIZATION` - ORGANIZATION
     CompetitionDetail:
       type: object
       properties:
@@ -8482,6 +10273,32 @@ components:
       - title
       - updatedAt
       - version
+    ConnectOrganizationRequest:
+      type: object
+      description: 'Connect a new organization: its name, its address, its owner and
+        the terms.'
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        slug:
+          oneOf:
+          - type: string
+            maxLength: 100
+            pattern: ^[-a-zA-Z0-9_]+$
+          - type: string
+            maxLength: 0
+        ownerEmail:
+          type: string
+          format: email
+        commissionPercent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          default: '0.00'
+      required:
+      - name
+      - ownerEmail
     CreateApplicationRequest:
       type: object
       description: Validate a create-application request body.
@@ -8533,7 +10350,6 @@ components:
           - string
           - 'null'
       required:
-      - organizerId
       - season
       - title
     CreateDiplomaRequest:
@@ -8602,6 +10418,34 @@ components:
       required:
       - competitionId
       - name
+    CreateProtocolRequest:
+      type: object
+      description: |-
+        Validate a create-protocol body.
+
+        ``name`` is optional: a protocol with no name given takes its nomination's, which is
+        what an organizer would have typed anyway. ``seed`` defaults on - the point of opening
+        a protocol is to get the day's running order in it.
+      properties:
+        competitionId:
+          type: string
+          format: uuid
+        nominationId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 200
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/ColumnsEnum'
+        seed:
+          type: boolean
+          default: true
+      required:
+      - competitionId
+      - nominationId
     CreateShareRequest:
       type: object
       description: |-
@@ -8690,7 +10534,10 @@ components:
           oneOf:
           - $ref: '#/components/schemas/StaffMembership'
           - type: 'null'
+        platformAdmin:
+          type: boolean
       required:
+      - platformAdmin
       - staffMembership
       - user
     CurrentUserMeta:
@@ -8710,6 +10557,69 @@ components:
       required:
       - data
       - meta
+    DiplomaFontCatalog:
+      type: object
+      properties:
+        families:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiplomaFontFamily'
+        uploaded:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiplomaUploadedFont'
+      required:
+      - families
+      - uploaded
+    DiplomaFontFamily:
+      type: object
+      properties:
+        family:
+          type: string
+        source:
+          $ref: '#/components/schemas/SourceEnum'
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiplomaFontVariant'
+        substitutedBy:
+          type:
+          - string
+          - 'null'
+        id:
+          type:
+          - string
+          - 'null'
+      required:
+      - family
+      - id
+      - source
+      - substitutedBy
+      - variants
+    DiplomaFontUpload:
+      type: object
+      properties:
+        file:
+          type: string
+          format: uri
+      required:
+      - file
+    DiplomaFontVariant:
+      type: object
+      properties:
+        variant:
+          type: string
+        bold:
+          type: boolean
+        italic:
+          type: boolean
+        fileUrl:
+          type: string
+      required:
+      - bold
+      - fileUrl
+      - italic
+      - variant
     DiplomaResponse:
       type: object
       description: A diploma in the registry.
@@ -8807,6 +10717,32 @@ components:
       - participant
       - performance
       - teachers
+    DiplomaUploadedFont:
+      type: object
+      properties:
+        id:
+          type: string
+        family:
+          type: string
+        variant:
+          type: string
+        originalFilename:
+          type: string
+        fileUrl:
+          type: string
+        sizeBytes:
+          type: integer
+        uploadedAt:
+          type: string
+          format: date-time
+      required:
+      - family
+      - fileUrl
+      - id
+      - originalFilename
+      - sizeBytes
+      - uploadedAt
+      - variant
     DiplomaVerification:
       type: object
       description: |-
@@ -10206,6 +12142,17 @@ components:
           type: integer
           minimum: 0
           default: 0
+    PatchedUpdateOrganizationRequest:
+      type: object
+      description: Change an organization's commercial terms or suspend/reactivate
+        it.
+      properties:
+        commissionPercent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        status:
+          $ref: '#/components/schemas/UpdateOrganizationRequestStatusEnum'
     PatchedUpdateParticipantGroup:
       type: object
       properties:
@@ -10276,6 +12223,21 @@ components:
           - string
           - 'null'
           format: date-time
+    PatchedUpdateProtocolRequest:
+      type: object
+      description: |-
+        Validate a partial protocol update.
+
+        An absent field means "unchanged"; an empty ``columns`` list resets the public page to
+        the default column set rather than publishing nothing.
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/ColumnsEnum'
     PatchedUpdateShareRequest:
       type: object
       description: Validate a rename/re-column body for a published edition (its slug
@@ -10332,6 +12294,79 @@ components:
         * `BEFORE_REVIEW` - BEFORE_REVIEW
         * `BEFORE_APPROVAL` - BEFORE_APPROVAL
         * `BEFORE_COMPETITION` - BEFORE_COMPETITION
+    PlatformDashboard:
+      type: object
+      properties:
+        statusCounts:
+          type: object
+          additionalProperties:
+            type: integer
+        applications:
+          type: integer
+        expectedFees:
+          type: string
+        settledFees:
+          type: string
+        expectedCommission:
+          type: string
+        settledCommission:
+          type: string
+        organizations:
+          type: array
+          items:
+            $ref: '#/components/schemas/_OrganizationBreakdown'
+        competitions:
+          type: array
+          items:
+            $ref: '#/components/schemas/_CompetitionOption'
+      required:
+      - applications
+      - competitions
+      - expectedCommission
+      - expectedFees
+      - organizations
+      - settledCommission
+      - settledFees
+      - statusCounts
+    PlatformDashboardResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/PlatformMeta'
+        data:
+          $ref: '#/components/schemas/PlatformDashboard'
+      required:
+      - data
+      - meta
+    PlatformMeta:
+      type: object
+      properties:
+        requestId:
+          type: string
+      required:
+      - requestId
+    PlatformOrganizationListResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/PlatformMeta'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/_Organization'
+      required:
+      - data
+      - meta
+    PlatformOrganizationResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/PlatformMeta'
+        data:
+          $ref: '#/components/schemas/_Organization'
+      required:
+      - data
+      - meta
     PreviewApplication:
       type: object
       description: An application selectable for diploma preview.
@@ -10905,6 +12940,365 @@ components:
       required:
       - guardianId
       - relationshipType
+    ProtocolAwardEntry:
+      type: object
+      properties:
+        rowId:
+          type: string
+          format: uuid
+        award:
+          oneOf:
+          - $ref: '#/components/schemas/AwardKindEnum'
+          - $ref: '#/components/schemas/NullEnum'
+      required:
+      - award
+      - rowId
+    ProtocolAwardOption:
+      type: object
+      properties:
+        value:
+          $ref: '#/components/schemas/AwardKindEnum'
+        label:
+          type: string
+        seniority:
+          type: integer
+      required:
+      - label
+      - seniority
+      - value
+    ProtocolCandidate:
+      type: object
+      description: A competing act of this nomination that has no row in the protocol
+        yet.
+      properties:
+        submissionId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        nomination:
+          type:
+          - string
+          - 'null'
+        discipline:
+          type:
+          - string
+          - 'null'
+        ageCategory:
+          type:
+          - string
+          - 'null'
+        participantGroup:
+          type:
+          - string
+          - 'null'
+        participationFormat:
+          type:
+          - string
+          - 'null'
+        participants:
+          type: array
+          items:
+            type: string
+        teachers:
+          type: array
+          items:
+            type: string
+        organization:
+          type:
+          - string
+          - 'null'
+      required:
+      - ageCategory
+      - discipline
+      - nomination
+      - organization
+      - participantGroup
+      - participants
+      - participationFormat
+      - submissionId
+      - teachers
+      - title
+    ProtocolColumnResource:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+      required:
+      - key
+      - label
+    ProtocolDetail:
+      type: object
+      description: 'One protocol in full: its rows, its results and its publication
+        state.'
+      properties:
+        id:
+          type: string
+          format: uuid
+        competitionId:
+          type: string
+          format: uuid
+        nominationId:
+          type: string
+          format: uuid
+        nomination:
+          type:
+          - string
+          - 'null'
+        competitionTitle:
+          type:
+          - string
+          - 'null'
+        name:
+          type: string
+        status:
+          $ref: '#/components/schemas/ProtocolStatusEnum'
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProtocolRowResource'
+        availableColumns:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProtocolColumnResource'
+        publicColumns:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProtocolColumnResource'
+        awardOptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProtocolAwardOption'
+        revision:
+          type: integer
+        slug:
+          type:
+          - string
+          - 'null'
+        path:
+          type:
+          - string
+          - 'null'
+        publishedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        hasUnpublishedChanges:
+          type: boolean
+        seededFromProgramId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+      required:
+      - availableColumns
+      - awardOptions
+      - competitionId
+      - competitionTitle
+      - createdAt
+      - hasUnpublishedChanges
+      - id
+      - name
+      - nomination
+      - nominationId
+      - path
+      - publicColumns
+      - publishedAt
+      - revision
+      - rows
+      - seededFromProgramId
+      - slug
+      - status
+      - updatedAt
+      - version
+    ProtocolProblemDetail:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        requestId:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - detail
+      - instance
+      - requestId
+      - status
+      - title
+      - type
+    ProtocolRowResource:
+      type: object
+      description: 'One row of the jury''s table: the act, and what it won.'
+      properties:
+        id:
+          type: string
+          format: uuid
+        number:
+          type: integer
+        submissionId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        award:
+          oneOf:
+          - $ref: '#/components/schemas/AwardKindEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        awardLabel:
+          type:
+          - string
+          - 'null'
+        leadParticipant:
+          type:
+          - string
+          - 'null'
+        participants:
+          type: array
+          items:
+            type: string
+        teachers:
+          type: array
+          items:
+            type: string
+        nomination:
+          type:
+          - string
+          - 'null'
+        discipline:
+          type:
+          - string
+          - 'null'
+        ageCategory:
+          type:
+          - string
+          - 'null'
+        participantGroup:
+          type:
+          - string
+          - 'null'
+        participationFormat:
+          type:
+          - string
+          - 'null'
+        organization:
+          type:
+          - string
+          - 'null'
+        missingPerformance:
+          type: boolean
+      required:
+      - ageCategory
+      - award
+      - awardLabel
+      - discipline
+      - id
+      - leadParticipant
+      - missingPerformance
+      - nomination
+      - number
+      - organization
+      - participantGroup
+      - participants
+      - participationFormat
+      - submissionId
+      - teachers
+      - title
+    ProtocolStatusEnum:
+      enum:
+      - DRAFT
+      - PUBLISHED
+      type: string
+      description: |-
+        * `DRAFT` - DRAFT
+        * `PUBLISHED` - PUBLISHED
+    ProtocolSummary:
+      type: object
+      description: A protocol as the list of a competition's protocols shows it.
+      properties:
+        id:
+          type: string
+          format: uuid
+        competitionId:
+          type: string
+          format: uuid
+        nominationId:
+          type: string
+          format: uuid
+        nomination:
+          type:
+          - string
+          - 'null'
+        name:
+          type: string
+        status:
+          $ref: '#/components/schemas/ProtocolStatusEnum'
+        rowCount:
+          type: integer
+        decidedCount:
+          type: integer
+        revision:
+          type: integer
+        slug:
+          type:
+          - string
+          - 'null'
+        path:
+          type:
+          - string
+          - 'null'
+        publishedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        hasUnpublishedChanges:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - competitionId
+      - createdAt
+      - decidedCount
+      - hasUnpublishedChanges
+      - id
+      - name
+      - nomination
+      - nominationId
+      - path
+      - publishedAt
+      - revision
+      - rowCount
+      - slug
+      - status
+      - updatedAt
     PublicCatalogMeta:
       type: object
       description: Response envelope metadata (API-000 §5).
@@ -10919,6 +13313,10 @@ components:
       properties:
         id:
           type: string
+        slug:
+          type:
+          - string
+          - 'null'
         title:
           type: string
         season:
@@ -11013,6 +13411,7 @@ components:
       - registrationEnd
       - registrationStart
       - season
+      - slug
       - status
       - title
       - updatedAt
@@ -11075,6 +13474,10 @@ components:
       properties:
         id:
           type: string
+        slug:
+          type:
+          - string
+          - 'null'
         title:
           type: string
         season:
@@ -11185,6 +13588,7 @@ components:
       - registrationStart
       - regulation
       - season
+      - slug
       - status
       - title
       - updatedAt
@@ -11654,6 +14058,85 @@ components:
       - id
       - kind
       - progress
+    PublicProtocolColumn:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+      required:
+      - key
+      - label
+    PublicProtocolEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/_PublicProtocol'
+        meta:
+          type: object
+          additionalProperties: {}
+      required:
+      - data
+      - meta
+    PublicationResult:
+      type: object
+      description: |-
+        What one publication did: the protocol, plus what it issued and sent.
+
+        The counts are what the confirmation shows. ``diplomasMissing`` is the one an organizer
+        must not miss: those participants have a result and no document, which normally means
+        the nomination has no diploma template assigned yet.
+      properties:
+        protocol:
+          $ref: '#/components/schemas/ProtocolDetail'
+        diplomasAwarded:
+          type: integer
+        diplomasCreated:
+          type: integer
+        diplomasMissing:
+          type: integer
+        lettersSent:
+          type: integer
+        lettersSkipped:
+          type: integer
+      required:
+      - diplomasAwarded
+      - diplomasCreated
+      - diplomasMissing
+      - lettersSent
+      - lettersSkipped
+      - protocol
+    PublishProtocolRequest:
+      type: object
+      description: |-
+        Validate a publish body.
+
+        Both fields are optional and both are decisions made in the publish dialog: which
+        columns the page shows, and whether the participants are written to. ``notify`` defaults
+        on - a letter is the point of publishing - and is turned off for a re-publication that
+        only corrects what the page shows.
+      properties:
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/ColumnsEnum'
+        notify:
+          type: boolean
+          default: true
+    PublishedProtocolListEnvelope:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/_PublishedProtocolLink'
+        meta:
+          type: object
+          additionalProperties: {}
+      required:
+      - data
+      - meta
     RecordConsentsRequest:
       type: object
       description: Validate a record-consents request body.
@@ -12060,6 +14543,17 @@ components:
             format: uuid
       required:
       - itemIds
+    ReorderRowsRequest:
+      type: object
+      description: 'Validate a reorder body: the complete new order, top to bottom.'
+      properties:
+        rowIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+      - rowIds
     RoleEnum:
       enum:
       - OWNER
@@ -12218,6 +14712,14 @@ components:
           $ref: '#/components/schemas/ProgressEnum'
       required:
       - progress
+    SourceEnum:
+      enum:
+      - BUNDLED
+      - UPLOADED
+      type: string
+      description: |-
+        * `BUNDLED` - BUNDLED
+        * `UPLOADED` - UPLOADED
     StaffInvitationDetail:
       type: object
       description: Serialize an invitation-detail resource.
@@ -12304,6 +14806,9 @@ components:
           type: string
         status:
           $ref: '#/components/schemas/StaffMembershipStatusEnum'
+        organizationId:
+          type: string
+          format: uuid
       required:
       - role
       - status
@@ -12899,6 +15404,14 @@ components:
             $ref: '#/components/schemas/_LandingBlockInput'
       required:
       - blocks
+    UpdateOrganizationRequestStatusEnum:
+      enum:
+      - ACTIVE
+      - SUSPENDED
+      type: string
+      description: |-
+        * `ACTIVE` - ACTIVE
+        * `SUSPENDED` - SUSPENDED
     UploadAttachmentRequest:
       type: object
       description: Validate a multipart upload request.
@@ -12953,6 +15466,10 @@ components:
           type: string
         emailVerified:
           type: boolean
+        phone:
+          type:
+          - string
+          - 'null'
         phoneVerified:
           type: boolean
         mfaEnabled:
@@ -13186,6 +15703,26 @@ components:
       - registrationOpensAt
       - registrationStopped
       - sortOrder
+    _CompetitionOption:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        organizationId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        organizationName:
+          type: string
+      required:
+      - id
+      - organizationId
+      - organizationName
+      - title
     _CompetitionSnapshot:
       type: object
       properties:
@@ -13860,6 +16397,76 @@ components:
       - discipline
       - participant_group
       - title
+    _Organization:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        status:
+          type: string
+        commissionPercent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - commissionPercent
+      - createdAt
+      - id
+      - name
+      - slug
+      - status
+    _OrganizationBreakdown:
+      type: object
+      properties:
+        organizationId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        name:
+          type: string
+        status:
+          type: string
+        commissionPercent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        competitions:
+          type: integer
+        applications:
+          type: integer
+        statusCounts:
+          type: object
+          additionalProperties:
+            type: integer
+        expectedFees:
+          type: string
+        settledFees:
+          type: string
+        expectedCommission:
+          type: string
+        settledCommission:
+          type: string
+      required:
+      - applications
+      - commissionPercent
+      - competitions
+      - expectedCommission
+      - expectedFees
+      - name
+      - organizationId
+      - settledCommission
+      - settledFees
+      - status
+      - statusCounts
     _OrganizationSnapshot:
       type: object
       properties:
@@ -14143,6 +16750,95 @@ components:
       - disciplineId
       - participantGroupId
       - participationFormatId
+    _PublicProtocol:
+      type: object
+      description: 'A published protocol: its heading, its columns and its rows.'
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        competitionTitle:
+          type:
+          - string
+          - 'null'
+        nomination:
+          type:
+          - string
+          - 'null'
+        revision:
+          type: integer
+        publishedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicProtocolColumn'
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/_PublicProtocolRow'
+      required:
+      - columns
+      - competitionTitle
+      - name
+      - nomination
+      - publishedAt
+      - revision
+      - rows
+      - slug
+    _PublicProtocolRow:
+      type: object
+      description: |-
+        One row of the published table.
+
+        ``cells`` is aligned with the view's ``columns``: a column the organizer did not publish
+        produces no cell, so a hidden column cannot be read off the wire. ``award`` is carried
+        for styling only - Гран-при is drawn differently - and is null on an undecided row.
+      properties:
+        cells:
+          type: array
+          items:
+            type: string
+        award:
+          oneOf:
+          - $ref: '#/components/schemas/AwardKindEnum'
+          - $ref: '#/components/schemas/NullEnum'
+      required:
+      - award
+      - cells
+    _PublishedProtocolLink:
+      type: object
+      description: 'One entry of a competition''s "Результаты" section: a link, and
+        what it is.'
+      properties:
+        nomination:
+          type:
+          - string
+          - 'null'
+        name:
+          type: string
+        slug:
+          type: string
+        path:
+          type: string
+        revision:
+          type: integer
+        publishedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - name
+      - nomination
+      - path
+      - publishedAt
+      - revision
+      - slug
     _Regulation:
       type: object
       properties:

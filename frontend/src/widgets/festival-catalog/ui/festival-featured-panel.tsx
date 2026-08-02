@@ -9,10 +9,11 @@ import {
   selectUpcoming,
 } from "@/features/festival-catalog";
 import { ROUTES } from "@/shared/config";
+import { festivalPath } from "@/shared/lib";
 import { Badge, Card, CardContent } from "@/shared/ui";
 
-function festivalPath(id: string): string {
-  return `${ROUTES.cabinetCompetitions}/${id}`;
+function cabinetPath(festival: Festival): string {
+  return festivalPath(festival, ROUTES.cabinetCompetitions);
 }
 
 function FeaturedFestival({ festival }: { festival: Festival }): React.JSX.Element {
@@ -22,7 +23,7 @@ function FeaturedFestival({ festival }: { festival: Festival }): React.JSX.Eleme
   return (
     <Card className="overflow-hidden">
       <Link
-        to={festivalPath(festival.id)}
+        to={cabinetPath(festival)}
         className="block outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <div className="relative aspect-[16/10] bg-muted">
@@ -61,7 +62,7 @@ function UpcomingRow({ festival }: { festival: Festival }): React.JSX.Element {
   const period = formatPeriod(festival.competitionStart, festival.competitionEnd);
   return (
     <Link
-      to={festivalPath(festival.id)}
+      to={cabinetPath(festival)}
       className="group flex items-center gap-3 rounded-md p-2 outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className="min-w-0 flex-1">
