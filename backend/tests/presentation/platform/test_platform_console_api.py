@@ -9,12 +9,15 @@ same way the deployment would.
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 from decimal import Decimal
 
 import pytest
 from django.core import mail
 from rest_framework.test import APIClient
 
+from apps.applications.domain.value_objects import Currency, Money, TotalPriceSnapshot
+from apps.applications.infrastructure.mappers.application_mapper import ApplicationMapper
 from apps.applications.infrastructure.models import ApplicationModel
 from apps.competitions.infrastructure.models import CompetitionModel
 from apps.identity.presentation.api.v1.auth import composition as identity_composition
@@ -61,12 +64,27 @@ def organization_owner() -> APIClient:
     return client
 
 
+def _total_price(amount: str) -> dict[str, str]:
+    """The price snapshot exactly as ``ApplicationMapper._total_to_json`` writes it.
+
+    Written out longhand rather than invented, because a fixture that invents its
+    own key shape lets the console read zero forever while the suite stays green.
+    """
+    return {
+        "total": amount,
+        "submissions_total": amount,
+        "services_total": "0.00",
+        "currency": "BYN",
+        "calculated_at": "2026-01-01T00:00:00+00:00",
+    }
+
+
 def _order(*, competition_id: uuid.UUID, status: str, amount: str | None) -> ApplicationModel:
     return ApplicationModel.objects.create(
         competition_id=competition_id,
         applicant_id=uuid.uuid4(),
         status=status,
-        total_price={"amount": amount, "currency": "BYN"} if amount is not None else None,
+        total_price=_total_price(amount) if amount is not None else None,
     )
 
 
@@ -233,6 +251,30 @@ class TestDashboard:
         data = operator.get(_DASHBOARD).data["data"]
 
         assert str(competition.id) in [option["id"] for option in data["competitions"]]
+
+    def test_reads_the_price_shape_the_mapper_actually_writes(self, operator: APIClient) -> None:
+        # The console once read the total under a key nothing ever wrote, so every
+        # order showed as free while the counts looked right. Priced here through
+        # the mapper itself, so the console and the writer cannot drift apart again.
+        _, competition = self._connected_with_a_festival(operator, name="Гармония", commission="10")
+        snapshot = TotalPriceSnapshot(
+            total=Money.of("250.00", Currency.BYN),
+            submissions_total=Money.of("200.00", Currency.BYN),
+            services_total=Money.of("50.00", Currency.BYN),
+            calculated_at=datetime(2026, 1, 1, tzinfo=UTC),
+        )
+        ApplicationModel.objects.create(
+            competition_id=competition.id,
+            applicant_id=uuid.uuid4(),
+            status="PAID",
+            # Deliberately the mapper's own writer: it is the contract under test.
+            total_price=ApplicationMapper._total_to_json(snapshot),
+        )
+
+        data = operator.get(_DASHBOARD).data["data"]
+
+        assert data["settledFees"] == "250.00"
+        assert data["settledCommission"] == "25.00"
 
     def test_an_order_with_no_price_yet_counts_without_inventing_money(self, operator: APIClient) -> None:
         _, competition = self._connected_with_a_festival(operator, name="Гармония", commission="10")

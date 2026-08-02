@@ -216,7 +216,9 @@ class OrganizerProcessingWorkspaceView(_StaffView):
             total_price = row.get("total_price") or {}
             application_meta_by_id[application_id] = {
                 "receipt_refs": receipt_refs,
-                "total_amount": str(total_price.get("amount") or "").strip() or None,
+                # The snapshot's grand total lives under "total" (see ApplicationMapper);
+                # "amount" is the single-Money key, accepted so an older row still reads.
+                "total_amount": str(total_price.get("total") or total_price.get("amount") or "").strip() or None,
                 "total_currency": str(total_price.get("currency") or "").strip() or None,
             }
             refs = row.get("submission_refs") or []

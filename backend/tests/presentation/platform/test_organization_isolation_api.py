@@ -142,7 +142,13 @@ class TestApplicationsAreScopedToTheirOrganization:
             competition_id=uuid.UUID(competition_id),
             applicant_id=uuid.uuid4(),
             status="SUBMITTED",
-            total_price={"amount": "100.00", "currency": "BYN"},
+            total_price={
+                "total": "100.00",
+                "submissions_total": "100.00",
+                "services_total": "0.00",
+                "currency": "BYN",
+                "calculated_at": "2026-01-01T00:00:00+00:00",
+            },
         )
 
     def test_the_workspace_offers_only_the_callers_competitions(self, first_organization, second_organization) -> None:

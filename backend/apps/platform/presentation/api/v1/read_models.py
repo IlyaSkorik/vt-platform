@@ -41,11 +41,20 @@ _SETTLED_STATUSES = frozenset({"PAID", "COMPLETED"})
 
 
 def _amount(total_price: object) -> Decimal:
-    """The order's total as a decimal, or zero when it has no priced lines yet."""
+    """The order's total as a decimal, or zero when it has no priced lines yet.
+
+    The snapshot is written by ``ApplicationMapper._total_to_json`` under ``total``
+    — the order's grand total, submissions plus services. ``amount`` is accepted as
+    well because that is the key a single ``Money`` is written under elsewhere in
+    the same column family, and reading a total as zero is a silent wrong number.
+    """
     if not isinstance(total_price, dict):
         return Decimal("0")
+    raw = total_price.get("total")
+    if raw is None:
+        raw = total_price.get("amount")
     try:
-        return Decimal(str(total_price.get("amount") or "0"))
+        return Decimal(str(raw or "0"))
     except (InvalidOperation, TypeError, ValueError):
         return Decimal("0")
 
