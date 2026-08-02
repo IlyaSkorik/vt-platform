@@ -291,6 +291,10 @@ components:
           type: string
           enum: [registered, active, suspended]
         emailVerified: { type: boolean }
+        # The number itself, not only whether it is confirmed: this resource is
+        # always the caller's own account, and the settings screen cannot offer
+        # to change a value it is unable to show.
+        phone: { type: string, nullable: true }
         phoneVerified: { type: boolean }
         mfaEnabled: { type: boolean }
         locale: { type: string }

@@ -264,7 +264,7 @@ const routes: RouteObject[] = [
               },
               {
                 path: ROUTES.cabinetSettings.slice(1),
-                lazy: workspacePlaceholder(participantItem(ROUTES.cabinetSettings), "participant"),
+                lazy: lazyPage(() => import("@/pages/settings"), "SettingsPage"),
               },
             ],
           },

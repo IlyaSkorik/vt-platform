@@ -12,16 +12,23 @@ export {
   useLogin,
   useLogout,
   useRegister,
+  useResendVerification,
   useResetPassword,
   useVerifyEmail,
 } from "./api";
 export { applyProblemToForm, formLevelMessage } from "./lib/problem-to-form";
 export {
+  // The platform's email and password rules themselves, not just the forms built
+  // from them: the account-settings feature sets the same credentials from a
+  // different screen, and two copies of "what counts as a strong password" would
+  // drift the moment one of them changed.
+  emailSchema,
   type ForgotPasswordValues,
   forgotPasswordSchema,
   type LoginValues,
   loginSchema,
   PASSWORD_MIN_LENGTH,
+  passwordSchema,
   type RegisterValues,
   type ResetPasswordValues,
   registerSchema,
