@@ -278,6 +278,56 @@ class TestContentEditing:
         with pytest.raises(DuplicateAttachmentError):
             s.add_attachment(attachment_id=AttachmentId.generate(), attachment_type=AttachmentType.MUSIC, file=file, now=NOW)
 
+    def test_several_music_files_may_ride_on_one_submission(self) -> None:
+        """An act performed to more than one track brings more than one file."""
+        s = _draft()
+        for name in ("s3://intro.mp3", "s3://main.mp3", "s3://finale.mp3"):
+            s.add_attachment(attachment_id=AttachmentId.generate(), attachment_type=AttachmentType.MUSIC, file=FileReference(name), now=NOW)
+        assert [a.file.value for a in s.attachments] == ["s3://intro.mp3", "s3://main.mp3", "s3://finale.mp3"]
+
+    def test_music_still_attachable_once_the_entry_is_accepted(self) -> None:
+        """The state a running order is built from is the state a track is wanted in."""
+        s = _accepted()
+        s.add_attachment(
+            attachment_id=AttachmentId.generate(), attachment_type=AttachmentType.MUSIC, file=FileReference("s3://late.mp3"), now=NOW
+        )
+        assert [a.type for a in s.attachments] == [AttachmentType.MUSIC]
+
+    def test_music_still_attachable_once_the_entry_is_scheduled(self) -> None:
+        s = _accepted()
+        s.schedule(now=NOW)
+        s.add_attachment(
+            attachment_id=AttachmentId.generate(), attachment_type=AttachmentType.MUSIC, file=FileReference("s3://late.mp3"), now=NOW
+        )
+        assert len(s.attachments) == 1
+
+    def test_an_accepted_entry_can_have_its_track_replaced(self) -> None:
+        s = _accepted()
+        attachment_id = AttachmentId.generate()
+        s.add_attachment(attachment_id=attachment_id, attachment_type=AttachmentType.MUSIC, file=FileReference("s3://wrong.mp3"), now=NOW)
+        s.remove_attachment(attachment_id=attachment_id, now=NOW)
+        s.add_attachment(
+            attachment_id=AttachmentId.generate(), attachment_type=AttachmentType.MUSIC, file=FileReference("s3://right.mp3"), now=NOW
+        )
+        assert [a.file.value for a in s.attachments] == ["s3://right.mp3"]
+
+    def test_music_is_refused_once_the_performance_took_place(self) -> None:
+        s = _accepted()
+        s.schedule(now=NOW)
+        s.complete(now=NOW)
+        with pytest.raises(SubmissionNotEditableError):
+            s.add_attachment(
+                attachment_id=AttachmentId.generate(), attachment_type=AttachmentType.MUSIC, file=FileReference("s3://late.mp3"), now=NOW
+            )
+
+    def test_other_attachment_kinds_stay_frozen_with_the_content(self) -> None:
+        """Only the backing track outlives the freeze: paperwork is a claim about the entry."""
+        s = _accepted()
+        with pytest.raises(SubmissionNotEditableError):
+            s.add_attachment(
+                attachment_id=AttachmentId.generate(), attachment_type=AttachmentType.DOCUMENT, file=FileReference("s3://doc.pdf"), now=NOW
+            )
+
     def test_add_attachment_emits_event(self) -> None:
         s = _draft()
         events = s.add_attachment(

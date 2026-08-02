@@ -7,6 +7,8 @@ validated against the competition upload policy, stored and attached.
 
 from __future__ import annotations
 
+from pathlib import PurePosixPath
+
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
@@ -76,6 +78,57 @@ def test_upload_stores_and_attaches(auth_client: APIClient) -> None:
     # key, and the edge resolves it against whichever storage is configured. Before object
     # storage this worked only because the client guessed a `/media/` prefix.
     assert attachments[0]["fileReference"].startswith("/media/applications/attachments/")
+
+
+def _force_status(submission_id: str, status: str) -> None:
+    """Put a submission into a later lifecycle state, the way the organizer would."""
+    from apps.applications.infrastructure.models.submission import SubmissionModel
+
+    SubmissionModel.objects.filter(id=submission_id).update(status=status)
+
+
+def test_several_phonograms_may_be_attached_to_one_submission(auth_client: APIClient) -> None:
+    """One act, several tracks: an intro and the number itself are two files."""
+    submission_id = _submission_in_application(auth_client)
+    for name in ("intro.mp3", "main.mp3"):
+        response = auth_client.post(
+            f"/api/v1/submissions/{submission_id}/attachments",
+            {"file": SimpleUploadedFile(name, b"ID3 fake audio bytes", content_type="audio/mpeg"), "attachmentType": "MUSIC"},
+            format="multipart",
+        )
+        assert response.status_code == 201, response.data
+    attachments = response.data["data"]["attachments"]
+    assert [PurePosixPath(a["fileReference"]).name for a in attachments] == ["intro.mp3", "main.mp3"]
+
+
+def test_a_phonogram_may_still_be_uploaded_after_the_entry_is_accepted(auth_client: APIClient) -> None:
+    """The state a running order is built from is the state a track is wanted in.
+
+    An entry only reaches a programme once it is ``ACCEPTED``; if the content freeze
+    also froze the phonogram, the organizer's archive could never be anything but empty.
+    """
+    submission_id = _submission_in_application(auth_client)
+    _force_status(submission_id, "ACCEPTED")
+    response = auth_client.post(
+        f"/api/v1/submissions/{submission_id}/attachments",
+        {"file": SimpleUploadedFile("late.mp3", b"ID3 fake audio bytes", content_type="audio/mpeg"), "attachmentType": "MUSIC"},
+        format="multipart",
+    )
+    assert response.status_code == 201, response.data
+    assert response.data["data"]["attachments"][0]["type"] == "MUSIC"
+
+
+def test_paperwork_stays_frozen_once_the_entry_is_accepted(auth_client: APIClient) -> None:
+    """Only the backing track outlives the freeze — a document is a claim about the entry."""
+    submission_id = _submission_in_application(auth_client)
+    _force_status(submission_id, "ACCEPTED")
+    response = auth_client.post(
+        f"/api/v1/submissions/{submission_id}/attachments",
+        {"file": SimpleUploadedFile("spravka.pdf", b"%PDF-1.4", content_type="application/pdf"), "attachmentType": "DOCUMENT"},
+        format="multipart",
+    )
+    assert response.status_code == 409
+    assert response["Content-Type"] == "application/problem+json"
 
 
 def test_upload_rejects_unsupported_type(auth_client: APIClient) -> None:

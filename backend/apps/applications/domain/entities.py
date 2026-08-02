@@ -219,6 +219,37 @@ _EDITABLE_STATUSES: Final = frozenset({SubmissionStatus.DRAFT, SubmissionStatus.
 #: Statuses in which the organizer may record a review iteration.
 _REVIEWABLE_STATUSES: Final = frozenset({SubmissionStatus.SUBMITTED, SubmissionStatus.UNDER_REVIEW})
 
+#: Attachment kinds that outlive the content freeze.
+#:
+#: A backing track is not a claim about the entry — it is the material the act is
+#: performed to, and it is wanted right up to the day. The competition already has a
+#: deadline of its own for it (``MUSIC_UPLOAD``), deliberately later than the
+#: application deadline, and a running order is built only from entries that are
+#: ``ACCEPTED`` or beyond. Freezing the track together with the content therefore made
+#: that deadline unreachable: by the time an entry could take a slot in the programme,
+#: nobody — not the applicant, not the organizer — could put a phonogram on it, and the
+#: sound desk's archive came out empty. Everything else (participants, teachers, the
+#: performance itself, benefit paperwork) stays frozen: those are the entry's content,
+#: and the organizer accepted *that*.
+_LATE_ATTACHMENT_TYPES: Final = frozenset({AttachmentType.MUSIC})
+
+#: Statuses in which a late attachment kind may still be added or removed: the entry is
+#: live. ``COMPLETED`` and ``CANCELLED`` are out — the performance took place, or there
+#: will not be one, and in both cases there is nothing left to cue.
+_LIVE_STATUSES: Final = frozenset(
+    {
+        SubmissionStatus.DRAFT,
+        SubmissionStatus.SUBMITTED,
+        SubmissionStatus.UNDER_REVIEW,
+        SubmissionStatus.REQUIRES_CORRECTION,
+        SubmissionStatus.APPROVED,
+        SubmissionStatus.WAITING_PAYMENT,
+        SubmissionStatus.PAID,
+        SubmissionStatus.ACCEPTED,
+        SubmissionStatus.SCHEDULED,
+    }
+)
+
 
 # ===========================================================================
 # Child entities
@@ -853,8 +884,13 @@ class Submission:
         now: datetime,
         caption: str | None = None,
     ) -> list[DomainEvent]:
-        """Add an attachment reference. Rejects duplicates (the same file referenced twice)."""
-        self._ensure_editable()
+        """Add an attachment reference. Rejects duplicates (the same file referenced twice).
+
+        A submission may carry **several** attachments of the same kind: an act can be
+        performed to more than one phonogram (a backing track and a fanfare, a two-part
+        number), and each is its own file. The only thing refused is the same file twice.
+        """
+        self._ensure_attachable(attachment_type)
         if any(a.file == file for a in self._attachments.values()):
             raise DuplicateAttachmentError(f"An attachment referencing {file.value!r} is already in this submission.")
         attachment = Attachment.create(attachment_id=attachment_id, attachment_type=attachment_type, file=file, caption=caption)
@@ -863,8 +899,13 @@ class Submission:
         return [AttachmentAdded(aggregate_id=self._id.value, attachment_id=attachment_id, attachment_type=attachment_type)]
 
     def remove_attachment(self, *, attachment_id: AttachmentId, now: datetime) -> list[DomainEvent]:
-        """Remove an attachment reference."""
-        self._ensure_editable()
+        """Remove an attachment reference.
+
+        Removable exactly as long as its kind was attachable: a track that can still be
+        added can still be replaced, which is what "заменить фонограмму" is.
+        """
+        attachment = self._attachments.get(attachment_id)
+        self._ensure_attachable(attachment.type if attachment is not None else None)
         if attachment_id not in self._attachments:
             raise AttachmentNotFoundError(f"No attachment {attachment_id} in this submission.")
         del self._attachments[attachment_id]
@@ -1054,6 +1095,23 @@ class Submission:
         if self._status not in _EDITABLE_STATUSES:
             raise SubmissionNotEditableError(
                 f"Submission content can only be changed while DRAFT, SUBMITTED or REQUIRES_CORRECTION, not while {self._status.value}."
+            )
+
+    def _ensure_attachable(self, attachment_type: AttachmentType | None) -> None:
+        """Whether a file of this kind may be attached or detached right now.
+
+        Most kinds are content and follow the content freeze. The kinds in
+        :data:`_LATE_ATTACHMENT_TYPES` follow the entry instead: they may come and go
+        for as long as the entry is live, because they are needed *after* it has been
+        accepted. ``None`` (an attachment id that matches nothing) takes the strict
+        path — the caller is about to be told it does not exist anyway.
+        """
+        if attachment_type is None or attachment_type not in _LATE_ATTACHMENT_TYPES:
+            self._ensure_editable()
+            return
+        if self._status not in _LIVE_STATUSES:
+            raise SubmissionNotEditableError(
+                f"A {attachment_type.value} file can only be attached while the submission is live, not while {self._status.value}."
             )
 
     def _transition_to(self, target: SubmissionStatus, *, now: datetime) -> None:
