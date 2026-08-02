@@ -34,29 +34,52 @@ export const changeEmailSchema = z.object({
 export type ChangeEmailValues = z.infer<typeof changeEmailSchema>;
 
 /**
- * A phone number in the shape the backend's value object accepts: E.164, so a
- * leading ``+`` and 10–15 digits. Everything else a person might type — spaces,
- * brackets, dashes, a Russian leading ``8`` — is normalized before it gets here.
+ * A Belarusian number, in the shape the backend's value object accepts.
+ *
+ * ``+375`` and nine national digits — the only calling code the platform serves,
+ * because that is where its festivals are held and where an organizer dials on the
+ * day. Everything else a person might type (spaces, brackets, dashes, a leading
+ * ``8`` or ``0``) is normalized before it gets here.
  */
 export const changePhoneSchema = z.object({
   phone: z
     .string()
     .min(1, "Укажите номер телефона")
-    .regex(/^\+\d{10,15}$/, "Введите номер в международном формате, например +79991234567"),
+    .regex(/^\+375\d{9}$/, "Введите белорусский номер, например +375 29 123-45-67"),
 });
 export type ChangePhoneValues = z.infer<typeof changePhoneSchema>;
 
 /**
  * Turn what a person typed into what the API takes.
  *
- * Russian numbers are habitually written starting with ``8``; the same number in
- * E.164 starts ``+7``. Rejecting that as malformed would be pedantry about a
- * convention the whole country uses, so it is translated instead.
+ * Belarusian numbers are written several ways and all of them are the same number:
+ * ``+375 29 123-45-67`` in full, ``8 029 123-45-67`` when dialling within the
+ * country, ``029 123-45-67`` locally, and just ``29 123-45-67`` when the operator
+ * code is understood. Refusing any of those as malformed would be pedantry about
+ * conventions the whole country uses, so they are translated instead.
+ *
+ * Anything that is not one of those shapes is returned with a bare ``+`` and left
+ * for the schema to refuse — guessing at a number nobody can dial is worse than
+ * saying it is wrong.
  */
 export function normalizePhone(input: string): string {
   const digits = input.replace(/\D/g, "");
-  if (digits.length === 11 && digits.startsWith("8")) {
-    return `+7${digits.slice(1)}`;
+  // Already international, with or without the domestic trunk prefix in front.
+  if (digits.length === 12 && digits.startsWith("375")) {
+    return `+${digits}`;
+  }
+  if (digits.length === 13 && digits.startsWith("8375")) {
+    return `+${digits.slice(1)}`;
+  }
+  // Domestic: 8 + 0 + code + number, or 0 + code + number, or the bare nine.
+  if (digits.length === 11 && digits.startsWith("80")) {
+    return `+375${digits.slice(2)}`;
+  }
+  if (digits.length === 10 && digits.startsWith("0")) {
+    return `+375${digits.slice(1)}`;
+  }
+  if (digits.length === 9) {
+    return `+375${digits}`;
   }
   return digits ? `+${digits}` : "";
 }

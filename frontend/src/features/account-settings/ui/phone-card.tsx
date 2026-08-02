@@ -86,8 +86,8 @@ export function PhoneCard({ phone, onChanged }: PhoneCardProps): React.JSX.Eleme
             label="Номер телефона"
             type="tel"
             autoComplete="tel"
-            placeholder="+7 999 123-45-67"
-            description="В международном формате. Номер, начинающийся с 8, приведём к +7 сами."
+            placeholder="+375 29 123-45-67"
+            description="Белорусский номер. Можно ввести как 8 029…, 029… или просто 29… — приведём к +375 сами."
             error={errors.phone?.message}
             {...register("phone", {
               // Normalized on leaving the field rather than on every keystroke, so
