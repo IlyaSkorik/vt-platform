@@ -1,5 +1,6 @@
 import { Download, FileText, Frown, RotateCcw } from "lucide-react";
 import {
+  type DocumentKindConfig,
   documentKind,
   documentRecipient,
   documentSubtitle,
@@ -9,9 +10,23 @@ import {
 import { resolveMediaUrl } from "@/shared/lib";
 import { Badge, Button, Card, CardContent, EmptyState, Skeleton } from "@/shared/ui";
 
+/**
+ * The tint each kind of document is marked with.
+ *
+ * Colour carries no information the text does not also carry — a diploma says
+ * "Диплом" — so it is deliberately quiet: enough to tell two kinds apart while
+ * scanning a long list, never the only thing saying which is which.
+ */
+const TONE_CLASSES: Record<DocumentKindConfig["tone"], string> = {
+  diploma: "bg-warning/10 text-warning",
+  gratitude: "bg-success/10 text-success",
+  neutral: "bg-muted text-muted-foreground",
+};
+
 /** One document row: what it is, which competition, and a download. */
 function DocumentRow({ document }: { document: MyDocument }): React.JSX.Element {
   const kind = documentKind(document.documentType);
+  const KindIcon = kind.icon;
   const subtitle = documentSubtitle(document);
   const recipient = documentRecipient(document);
   const href = resolveMediaUrl(document.fileUrl);
@@ -19,8 +34,11 @@ function DocumentRow({ document }: { document: MyDocument }): React.JSX.Element 
   return (
     <li className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
       <div className="flex min-w-0 items-start gap-3">
-        <span aria-hidden="true" className="text-2xl leading-none">
-          {kind.icon}
+        <span
+          aria-hidden="true"
+          className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${TONE_CLASSES[kind.tone]}`}
+        >
+          <KindIcon className="size-5" />
         </span>
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">

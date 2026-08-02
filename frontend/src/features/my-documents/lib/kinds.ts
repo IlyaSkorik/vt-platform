@@ -1,11 +1,23 @@
+import { Award, FileText, HeartHandshake, type LucideIcon } from "lucide-react";
+
 import type { DocumentType, MyDocument } from "./types";
 
 /** How one kind of document presents itself in the cabinet. */
 export interface DocumentKindConfig {
   /** Row heading, e.g. "Диплом". */
   label: string;
-  /** Emoji marker — the cabinet's own visual shorthand, per the design. */
-  icon: string;
+  /**
+   * The row's marker.
+   *
+   * A drawn icon, not an emoji: emoji are rendered by the operating system, so
+   * the same two documents looked like a gold trophy and folded hands on one
+   * machine and like flat grey glyphs on another, at whatever weight and colour
+   * the font felt like. These follow the interface — one stroke weight, the
+   * theme's colours, and the same shape everywhere.
+   */
+  icon: LucideIcon;
+  /** The tint the marker is drawn in, distinguishing the kinds at a glance. */
+  tone: "diploma" | "gratitude" | "neutral";
   /** Whether this kind carries a registry number worth showing. */
   showsNumber: boolean;
   /** Whether this kind can bear a jury result. */
@@ -23,13 +35,19 @@ export interface DocumentKindConfig {
 export const DOCUMENT_KINDS: Record<string, DocumentKindConfig> = {
   DIPLOMA: {
     label: "Диплом",
-    icon: "🏆",
+    // A rosette: what is actually printed on the document, and what the degree
+    // badge beside it is a result of.
+    icon: Award,
+    tone: "diploma",
     showsNumber: true,
     showsDegree: true,
   },
   THANK_YOU: {
     label: "Благодарность",
-    icon: "🙏",
+    // Two hands, not one trophy: a letter of thanks ranks nobody. It says the
+    // teacher's work was seen, which is a different thing from winning.
+    icon: HeartHandshake,
+    tone: "gratitude",
     showsNumber: false,
     showsDegree: false,
   },
@@ -38,7 +56,8 @@ export const DOCUMENT_KINDS: Record<string, DocumentKindConfig> = {
 /** Fallback for a kind this client build does not know yet. */
 const UNKNOWN_KIND: DocumentKindConfig = {
   label: "Документ",
-  icon: "📄",
+  icon: FileText,
+  tone: "neutral",
   showsNumber: false,
   showsDegree: false,
 };

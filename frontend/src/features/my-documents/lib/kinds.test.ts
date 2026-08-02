@@ -24,6 +24,23 @@ describe("documentKind", () => {
     expect(documentKind("THANK_YOU").label).toBe("Благодарность");
   });
 
+  it("marks each kind with a drawn icon rather than an emoji", () => {
+    // An emoji is rendered by the operating system: the same row looked like a
+    // gold trophy on one machine and a flat grey glyph on another.
+    for (const kind of [
+      documentKind("DIPLOMA"),
+      documentKind("THANK_YOU"),
+      documentKind("CERTIFICATE"),
+    ]) {
+      expect(typeof kind.icon).not.toBe("string");
+    }
+  });
+
+  it("gives the diploma and the thank-you letter tints of their own", () => {
+    expect(documentKind("DIPLOMA").tone).not.toBe(documentKind("THANK_YOU").tone);
+    expect(documentKind("CERTIFICATE").tone).toBe("neutral");
+  });
+
   it("shows a number and a degree only for the diploma", () => {
     expect(DOCUMENT_KINDS.DIPLOMA).toMatchObject({ showsNumber: true, showsDegree: true });
     // A thank-you letter is not numbered and ranks nothing.
