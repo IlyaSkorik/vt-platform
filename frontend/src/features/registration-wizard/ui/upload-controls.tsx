@@ -14,6 +14,14 @@ type UploadKind = {
   label: string;
   hint: string;
   accept: string;
+  /**
+   * Whether an act can bring more than one file of this kind.
+   *
+   * A number is not always performed to a single track — a backing track plus a
+   * fanfare, a two-part routine, a separate soundcheck cut — and the sound desk is
+   * handed all of them. A video is one recording of one performance.
+   */
+  multiple: boolean;
   /** The server's size limit, when the projection tells the client what it is. */
   maxBytes?: number;
 };
@@ -21,6 +29,11 @@ type UploadKind = {
 /** A file size a person reads, rounded the way a file manager would show it. */
 function megabytes(bytes: number): string {
   return `${(bytes / BYTES_PER_MB).toFixed(1).replace(".0", "")} МБ`;
+}
+
+/** The last segment of a stored file reference — what the applicant recognises. */
+function fileName(reference: string): string {
+  return decodeURIComponent(reference.split("/").pop() || reference);
 }
 
 /**
@@ -55,9 +68,10 @@ function uploadKinds(requirement: RegistrationUploadRequirement | undefined): Up
   if (requirement.musicRequired || requirement.musicAllowedFormats.length > 0) {
     kinds.push({
       attachmentType: "MUSIC",
-      label: requirement.musicRequired ? "Фонограмма (обязательно)" : "Фонограмма",
-      hint: `${requirement.musicAllowedFormats.join(", ")} · до ${requirement.musicMaxUploadSizeMb} МБ`,
+      label: requirement.musicRequired ? "Фонограммы (обязательно)" : "Фонограммы",
+      hint: `${requirement.musicAllowedFormats.join(", ")} · до ${requirement.musicMaxUploadSizeMb} МБ за файл · можно несколько`,
       accept: requirement.musicAllowedFormats.map((ext) => `.${ext}`).join(",") || "audio/*",
+      multiple: true,
       maxBytes: requirement.musicMaxUploadSizeMb * BYTES_PER_MB,
     });
   }
@@ -70,6 +84,7 @@ function uploadKinds(requirement: RegistrationUploadRequirement | undefined): Up
       label: "Видео",
       hint: "Видеофайл выступления",
       accept: "video/*",
+      multiple: false,
     });
   }
   // The payment receipt is no longer a per-performance upload: it proves payment of
@@ -99,27 +114,40 @@ function UploadRow({
     }
   };
 
-  const onFileChosen = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) {
+  /**
+   * Upload every chosen file, one after the other.
+   *
+   * Sequential on purpose, never in parallel: the submission is one aggregate behind
+   * an optimistic version check, so two uploads racing on it would have the second
+   * rejected as a concurrent modification and silently lose that track.
+   */
+  const onFilesChosen = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = [...(event.target.files ?? [])];
+    if (files.length === 0) {
       return;
     }
-    // Refused here rather than after the upload: sending a file the server is
-    // certain to reject costs the applicant the whole wait on a slow connection,
-    // and the limit is already known from the competition's own requirements.
-    if (kind.maxBytes != null && file.size > kind.maxBytes) {
-      toast.error(`Файл ${megabytes(file.size)}, а допустимо до ${megabytes(kind.maxBytes)}`);
-      clearInput();
-      return;
+    for (const file of files) {
+      // Refused here rather than after the upload: sending a file the server is
+      // certain to reject costs the applicant the whole wait on a slow connection,
+      // and the limit is already known from the competition's own requirements.
+      if (kind.maxBytes != null && file.size > kind.maxBytes) {
+        toast.error(
+          `${file.name}: ${megabytes(file.size)}, а допустимо до ${megabytes(kind.maxBytes)}`,
+        );
+        continue;
+      }
+      try {
+        await upload.mutateAsync({ file, attachmentType: kind.attachmentType });
+      } catch (error) {
+        // One bad file must not abandon the rest of the selection.
+        toast.error(`${file.name}: ${refusalMessage(error, kind)}`);
+      }
     }
-    upload.mutate(
-      { file, attachmentType: kind.attachmentType },
-      {
-        onError: (error) => toast.error(refusalMessage(error, kind)),
-        onSettled: clearInput,
-      },
-    );
+    clearInput();
   };
+
+  const addLabel =
+    existing.length === 0 ? "Загрузить" : kind.multiple ? "Добавить ещё" : "Заменить";
 
   return (
     <div className="flex flex-col gap-2 rounded-md border border-border p-3">
@@ -134,7 +162,7 @@ function UploadRow({
           loading={upload.isPending}
           onClick={() => inputRef.current?.click()}
         >
-          {existing.length > 0 ? "Заменить" : "Загрузить"}
+          {addLabel}
         </Button>
       </div>
       {existing.length === 0 ? (
@@ -142,7 +170,11 @@ function UploadRow({
       ) : null}
       {existing.map((attachment) => (
         <div key={attachment.id} className="flex items-center justify-between gap-2">
-          <Badge variant="success">{attachment.caption || "Загружено"}</Badge>
+          <Badge variant="success" className="min-w-0">
+            <span className="truncate">
+              {attachment.caption || fileName(attachment.fileReference)}
+            </span>
+          </Badge>
           <Button
             variant="ghost"
             size="xs"
@@ -157,9 +189,10 @@ function UploadRow({
         ref={inputRef}
         type="file"
         accept={kind.accept}
+        multiple={kind.multiple}
         className="hidden"
         aria-label={kind.label}
-        onChange={onFileChosen}
+        onChange={(event) => void onFilesChosen(event)}
       />
     </div>
   );

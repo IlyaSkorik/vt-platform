@@ -37,6 +37,9 @@ function aRequirement(
   } as RegistrationUploadRequirement;
 }
 
+const MUSIC_LABEL = "Фонограммы (обязательно)";
+const MUSIC_HINT = "mp3, wav · до 25 МБ за файл · можно несколько";
+
 const EMPTY_SUBMISSION = { attachments: [] } as unknown as SubmissionResource;
 
 /** A File of a given size without allocating the bytes. */
@@ -48,8 +51,9 @@ function aFile(name: string, sizeBytes: number, type = "audio/mpeg"): File {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  upload.mockResolvedValue(EMPTY_SUBMISSION);
   vi.mocked(useUploadAttachment).mockReturnValue({
-    mutate: upload,
+    mutateAsync: upload,
     isPending: false,
   } as unknown as ReturnType<typeof useUploadAttachment>);
   vi.mocked(useRemoveAttachment).mockReturnValue({
@@ -58,11 +62,14 @@ beforeEach(() => {
   } as unknown as ReturnType<typeof useRemoveAttachment>);
 });
 
-function renderControls(requirement = aRequirement()) {
+function renderControls(
+  requirement = aRequirement(),
+  submission: SubmissionResource = EMPTY_SUBMISSION,
+) {
   return render(
     <UploadControls
       submissionId={SUBMISSION_ID}
-      submission={EMPTY_SUBMISSION}
+      submission={submission}
       requirement={requirement}
     />,
   );
@@ -73,73 +80,97 @@ describe("UploadControls", () => {
     renderControls();
 
     await userEvent.upload(
-      screen.getByLabelText("Фонограмма (обязательно)"),
+      screen.getByLabelText(MUSIC_LABEL),
       aFile("track.mp3", 42 * 1024 * 1024),
     );
 
     expect(upload).not.toHaveBeenCalled();
-    expect(toast.error).toHaveBeenCalledWith("Файл 42 МБ, а допустимо до 25 МБ");
+    expect(toast.error).toHaveBeenCalledWith("track.mp3: 42 МБ, а допустимо до 25 МБ");
   });
 
   it("sends a file that fits", async () => {
     renderControls();
 
-    await userEvent.upload(
-      screen.getByLabelText("Фонограмма (обязательно)"),
-      aFile("track.mp3", 3 * 1024 * 1024),
-    );
+    await userEvent.upload(screen.getByLabelText(MUSIC_LABEL), aFile("track.mp3", 3 * 1024 * 1024));
 
     await waitFor(() => expect(upload).toHaveBeenCalled());
     expect(toast.error).not.toHaveBeenCalled();
   });
 
-  it("names the limit when the server is the one that refuses", async () => {
-    upload.mockImplementation((_input, handlers) => {
-      handlers.onError(new ApiError("File too large", { status: 413 }));
-    });
+  it("sends every phonogram of a multi-file selection, one at a time", async () => {
     renderControls();
 
-    await userEvent.upload(
-      screen.getByLabelText("Фонограмма (обязательно)"),
-      aFile("track.mp3", 3 * 1024 * 1024),
-    );
+    await userEvent.upload(screen.getByLabelText(MUSIC_LABEL), [
+      aFile("part-1.mp3", 1024),
+      aFile("part-2.mp3", 2048),
+    ]);
+
+    await waitFor(() => expect(upload).toHaveBeenCalledTimes(2));
+    expect(upload.mock.calls.map(([input]) => (input.file as File).name)).toEqual([
+      "part-1.mp3",
+      "part-2.mp3",
+    ]);
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it("keeps uploading the rest of the selection when one file is refused", async () => {
+    upload.mockRejectedValueOnce(new ApiError("File too large", { status: 413 }));
+    renderControls();
+
+    await userEvent.upload(screen.getByLabelText(MUSIC_LABEL), [
+      aFile("huge.mp3", 1024),
+      aFile("fine.mp3", 1024),
+    ]);
+
+    await waitFor(() => expect(upload).toHaveBeenCalledTimes(2));
+    expect(toast.error).toHaveBeenCalledWith("huge.mp3: Файл слишком большой. Допустимо до 25 МБ.");
+  });
+
+  it("offers to add another track once one is attached", () => {
+    renderControls(aRequirement(), {
+      attachments: [
+        { id: "a1", type: "MUSIC", fileReference: "/media/x/Катюша.mp3", caption: null },
+      ],
+    } as unknown as SubmissionResource);
+
+    expect(screen.getByRole("button", { name: "Добавить ещё" })).toBeInTheDocument();
+    expect(screen.getByText("Катюша.mp3")).toBeInTheDocument();
+  });
+
+  it("names the limit when the server is the one that refuses", async () => {
+    upload.mockRejectedValue(new ApiError("File too large", { status: 413 }));
+    renderControls();
+
+    await userEvent.upload(screen.getByLabelText(MUSIC_LABEL), aFile("track.mp3", 3 * 1024 * 1024));
 
     await waitFor(() =>
-      expect(toast.error).toHaveBeenCalledWith("Файл слишком большой. Допустимо до 25 МБ."),
+      expect(toast.error).toHaveBeenCalledWith(
+        "track.mp3: Файл слишком большой. Допустимо до 25 МБ.",
+      ),
     );
   });
 
   it("says what format is wanted when the type is refused", async () => {
-    upload.mockImplementation((_input, handlers) => {
-      handlers.onError(new ApiError("Unsupported", { status: 415 }));
-    });
+    upload.mockRejectedValue(new ApiError("Unsupported", { status: 415 }));
     renderControls();
 
-    await userEvent.upload(
-      screen.getByLabelText("Фонограмма (обязательно)"),
-      aFile("track.mp3", 1024),
-    );
+    await userEvent.upload(screen.getByLabelText(MUSIC_LABEL), aFile("track.mp3", 1024));
 
     await waitFor(() =>
       expect(toast.error).toHaveBeenCalledWith(
-        "Такой формат файла не принимается. Нужен: mp3, wav · до 25 МБ",
+        `track.mp3: Такой формат файла не принимается. Нужен: ${MUSIC_HINT}`,
       ),
     );
   });
 
   it("falls back to a plain message for an unexpected failure", async () => {
-    upload.mockImplementation((_input, handlers) => {
-      handlers.onError(new Error("network down"));
-    });
+    upload.mockRejectedValue(new Error("network down"));
     renderControls();
 
-    await userEvent.upload(
-      screen.getByLabelText("Фонограмма (обязательно)"),
-      aFile("track.mp3", 1024),
-    );
+    await userEvent.upload(screen.getByLabelText(MUSIC_LABEL), aFile("track.mp3", 1024));
 
     await waitFor(() =>
-      expect(toast.error).toHaveBeenCalledWith("Не удалось загрузить: Фонограмма (обязательно)"),
+      expect(toast.error).toHaveBeenCalledWith(`track.mp3: Не удалось загрузить: ${MUSIC_LABEL}`),
     );
   });
 
