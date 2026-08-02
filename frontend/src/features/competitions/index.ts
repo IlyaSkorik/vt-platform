@@ -320,9 +320,12 @@ export {
   regulationDraftSchema,
 } from "./model/schemas";
 export {
+  COMPETITION_SECTION_GROUPS,
   COMPETITION_SECTIONS,
   type CompetitionSection,
+  type CompetitionSectionGroup,
   type CompetitionSectionId,
+  competitionSectionsOfGroup,
   DEFAULT_COMPETITION_SECTION,
   findCompetitionSection,
 } from "./model/sections";

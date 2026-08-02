@@ -39,10 +39,50 @@ export interface CompetitionSection {
   implemented: boolean;
 }
 
+/**
+ * The sidebar's groups, in order.
+ *
+ * A flat list of fourteen sections gave no clue which ones belong together, so they
+ * are grouped by the question the organizer is answering: what the festival *is*,
+ * what it is *divided into*, what an applicant *does*, and what it *costs*. Each
+ * section appears in exactly one group, and the group order is the rough order a
+ * festival gets set up in — describe it, structure it, open it, price it.
+ */
+export interface CompetitionSectionGroup {
+  title: string;
+  sectionIds: readonly CompetitionSectionId[];
+}
+
+export const COMPETITION_SECTION_GROUPS: readonly CompetitionSectionGroup[] = [
+  {
+    title: "Основное",
+    sectionIds: ["general", "regulations", "public-information", "contacts"],
+  },
+  {
+    title: "Структура",
+    sectionIds: [
+      "categories",
+      "participant-groups",
+      "age-categories",
+      "participation-formats",
+      "admission-rules",
+    ],
+  },
+  {
+    title: "Участие",
+    sectionIds: ["registration", "settings", "documents"],
+  },
+  {
+    title: "Деньги",
+    sectionIds: ["pricing", "additional-services"],
+  },
+];
+
 export const COMPETITION_SECTIONS: readonly CompetitionSection[] = [
   { id: "general", title: "Общее", icon: Sparkles, implemented: true },
   { id: "regulations", title: "Положение", icon: BookOpen, implemented: true },
-  { id: "documents", title: "Документы", icon: FileText, implemented: true },
+  { id: "public-information", title: "Публичная информация", icon: Globe, implemented: true },
+  { id: "contacts", title: "Контакты", icon: Phone, implemented: true },
   { id: "categories", title: "Номинации и дисциплины", icon: FolderTree, implemented: true },
   { id: "participant-groups", title: "Группы участников", icon: Users, implemented: true },
   { id: "age-categories", title: "Возрастные категории", icon: Tags, implemented: true },
@@ -53,18 +93,26 @@ export const COMPETITION_SECTIONS: readonly CompetitionSection[] = [
     implemented: true,
   },
   { id: "admission-rules", title: "Правила допуска", icon: ShieldCheck, implemented: true },
-  { id: "pricing", title: "Цены", icon: CircleDollarSign, implemented: true },
   { id: "registration", title: "Регистрация", icon: CalendarClock, implemented: true },
+  { id: "settings", title: "Правила участия", icon: Settings, implemented: true },
+  { id: "documents", title: "Документы", icon: FileText, implemented: true },
+  { id: "pricing", title: "Цены", icon: CircleDollarSign, implemented: true },
   {
     id: "additional-services",
     title: "Доп. услуги",
     icon: Sparkles,
     implemented: true,
   },
-  { id: "settings", title: "Правила участия", icon: Settings, implemented: true },
-  { id: "contacts", title: "Контакты", icon: Phone, implemented: true },
-  { id: "public-information", title: "Публичная информация", icon: Globe, implemented: true },
 ];
+
+/** The sections of one group, resolved and in the group's declared order. */
+export function competitionSectionsOfGroup(
+  group: CompetitionSectionGroup,
+): readonly CompetitionSection[] {
+  return group.sectionIds.flatMap(
+    (id) => COMPETITION_SECTIONS.find((section) => section.id === id) ?? [],
+  );
+}
 
 export const DEFAULT_COMPETITION_SECTION: CompetitionSectionId = "general";
 

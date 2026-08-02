@@ -38,6 +38,7 @@ import {
   Select,
   toast,
 } from "@/shared/ui";
+import { PerformanceDiscountCard } from "@/widgets/competition-settings";
 import { PublicationChecklistPanel } from "@/widgets/competition-workspace/ui/publication-checklist-panel";
 import { type BulkMode, PricingBulkDialog, PricingBulkToolbar } from "./pricing-bulk-dialog";
 import { PricingCard } from "./pricing-card";
@@ -249,6 +250,8 @@ export function PricingSection({
               Цены задаются только для существующих комбинаций допуска.
             </Alert>
           ) : null}
+
+          <PerformanceDiscountCard competition={competition} disabled={isReadOnly} />
 
           <PageSection
             title="Цены"
