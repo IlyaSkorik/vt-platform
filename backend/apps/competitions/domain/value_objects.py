@@ -1810,10 +1810,12 @@ class CompetitionSettings:
     allow_application_editing: bool = True
     allow_withdrawing_applications: bool = True
 
-    # Participant data
-    require_teacher: bool = False
+    # Participant data. A credited teacher and a note about the act are what nearly
+    # every festival asks for, so both start on; a competition that wants neither
+    # turns them off rather than every organizer having to turn them on.
+    require_teacher: bool = True
     require_parent_guardian: bool = False
-    participant_comment_enabled: bool = False
+    participant_comment_enabled: bool = True
 
     # Documents (generic engine — no hardcoded document types)
     require_document_upload: bool = False
