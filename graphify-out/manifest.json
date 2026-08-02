@@ -295,8 +295,8 @@
     "semantic_hash": "987fe99adc390b99afc2e3a893b1b0bc"
   },
   "backend/apps/applications/domain/entities.py": {
-    "mtime": 1785584407.0131,
-    "ast_hash": "1b3c931a6039d64a39c0cffe7ed97ff8",
+    "mtime": 1785662112.6265748,
+    "ast_hash": "e2cd141425882007f896c3335887853e",
     "semantic_hash": ""
   },
   "backend/apps/applications/domain/events.py": {
@@ -3380,8 +3380,8 @@
     "semantic_hash": "f60e33b9bbb710230b8516379b9874af"
   },
   "backend/tests/domain/applications/test_entities.py": {
-    "mtime": 1785147058.1144404,
-    "ast_hash": "45346fc18883af6f8e1254aef0fd4798",
+    "mtime": 1785661942.4037097,
+    "ast_hash": "c28f6497f5f7bcf6fc62009782baaefa",
     "semantic_hash": ""
   },
   "backend/tests/domain/applications/test_value_objects.py": {
@@ -3595,8 +3595,8 @@
     "semantic_hash": ""
   },
   "backend/tests/presentation/applications/test_attachments_api.py": {
-    "mtime": 1785269308.149916,
-    "ast_hash": "df05cbd3662937f87d514b1db5f0b4cf",
+    "mtime": 1785662060.9971848,
+    "ast_hash": "312eda8af519d18e67fc919bbb62e8b2",
     "semantic_hash": ""
   },
   "backend/tests/presentation/applications/test_submission_content_api.py": {
@@ -4580,8 +4580,8 @@
     "semantic_hash": "1fb47b0625317a7fa6a311e280e3dadf"
   },
   "frontend/src/features/registration-wizard/ui/upload-controls.tsx": {
-    "mtime": 1785410286.2815368,
-    "ast_hash": "6792609f48b7c8836c17924e4c2901e0",
+    "mtime": 1785662192.0418923,
+    "ast_hash": "8a8e8a15655f1c6839e85d2ee5ad8efe",
     "semantic_hash": ""
   },
   "frontend/src/features/staff-invitations/api/staff-invitations.ts": {
@@ -4600,8 +4600,8 @@
     "semantic_hash": "621bb559106784619e68da992ee75246"
   },
   "frontend/src/pages/applications/application-detail-page.tsx": {
-    "mtime": 1785402460.3239474,
-    "ast_hash": "7699f9e3e84e7ee7b88f61bca00b1cdb",
+    "mtime": 1785661850.1914735,
+    "ast_hash": "05ab60319f93fb9f7376abbf97c29b2a",
     "semantic_hash": ""
   },
   "frontend/src/pages/applications/festival-apply-page.tsx": {
@@ -8855,8 +8855,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/registration-wizard/ui/upload-controls.test.tsx": {
-    "mtime": 1785410286.2815368,
-    "ast_hash": "565289acabb88ce8db96e72e2911701a",
+    "mtime": 1785662192.0382252,
+    "ast_hash": "e608b13c85e724ccbb5636051d417f53",
     "semantic_hash": ""
   },
   "backend/apps/competitions/infrastructure/migrations/0016_attach_competitions_to_the_seeded_organization.py": {
@@ -9102,6 +9102,21 @@
   "frontend/src/applications/platform/pages/organizations/index.tsx": {
     "mtime": 1785605198.7985013,
     "ast_hash": "208a8d119ca21c01bdd59675b3f1374a",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/application-phonograms/index.ts": {
+    "mtime": 1785661839.849516,
+    "ast_hash": "6b39049066bfae0b6e6f2e06567de17d",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/application-phonograms/ui/phonograms-card.test.tsx": {
+    "mtime": 1785661904.0981421,
+    "ast_hash": "a4a58ac1472951dd7f1bd98b4cb873b6",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/application-phonograms/ui/phonograms-card.tsx": {
+    "mtime": 1785662243.282584,
+    "ast_hash": "347d76af77b6c57c133f15e36c2fb1cc",
     "semantic_hash": ""
   }
 }

@@ -1085,5 +1085,14 @@
   "1083": "__init__.py",
   "1084": "__init__.py",
   "1085": "__init__.py",
-  "1086": "__init__.py"
+  "1086": "__init__.py",
+  "1087": ".save",
+  "1088": ".delete",
+  "1089": ".is_approved",
+  "1090": "._money",
+  "1091": "problems.py",
+  "1092": "useRemoveAdditionalServiceMutation",
+  "1093": "useRemoveDocumentMutation",
+  "1094": "useUpdateGeneralInformationMutation",
+  "1095": "useUpdateCompetitionSettingsMutation"
 }
