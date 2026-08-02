@@ -126,22 +126,39 @@ class Env:
 
     def add_submission(self) -> AddSubmissionToApplicationHandler:
         return AddSubmissionToApplicationHandler(
-            applications=self.applications, submissions=self.submissions, clock=self.clock, uuids=self.uuids, events=self.events
+            applications=self.applications,
+            submissions=self.submissions,
+            catalog=self.catalog,
+            clock=self.clock,
+            uuids=self.uuids,
+            events=self.events,
         )
 
     def remove_submission(self) -> RemoveSubmissionFromApplicationHandler:
         return RemoveSubmissionFromApplicationHandler(
-            applications=self.applications, submissions=self.submissions, clock=self.clock, events=self.events
+            applications=self.applications,
+            submissions=self.submissions,
+            catalog=self.catalog,
+            clock=self.clock,
+            events=self.events,
         )
 
     def select_service(self) -> SelectAdditionalServiceHandler:
-        return SelectAdditionalServiceHandler(applications=self.applications, submissions=self.submissions, services=self.services, clock=self.clock)
+        return SelectAdditionalServiceHandler(
+            applications=self.applications,
+            submissions=self.submissions,
+            catalog=self.catalog,
+            services=self.services,
+            clock=self.clock,
+        )
 
     def record_consents(self) -> RecordConsentsHandler:
-        return RecordConsentsHandler(applications=self.applications, clock=self.clock)
+        return RecordConsentsHandler(applications=self.applications, catalog=self.catalog, clock=self.clock)
 
     def select_org(self) -> SelectEducationalOrganizationHandler:
-        return SelectEducationalOrganizationHandler(applications=self.applications, directory=self.directory, clock=self.clock)
+        return SelectEducationalOrganizationHandler(
+            applications=self.applications, catalog=self.catalog, directory=self.directory, clock=self.clock
+        )
 
     def submit(self) -> SubmitApplicationHandler:
         return SubmitApplicationHandler(
@@ -171,7 +188,9 @@ class Env:
         return RemoveApplicationReceiptHandler(applications=self.applications, clock=self.clock, events=self.events)
 
     def get(self) -> GetApplicationHandler:
-        return GetApplicationHandler(applications=self.applications, submissions=self.submissions, clock=self.clock)
+        return GetApplicationHandler(
+            applications=self.applications, submissions=self.submissions, catalog=self.catalog, clock=self.clock
+        )
 
     def list(self) -> ListApplicationsHandler:
         return ListApplicationsHandler(applications=self.applications)

@@ -106,7 +106,9 @@ class FakeCompetitionCatalog:
         policy: SubmissionParticipationPolicy | None = None,
         price: Money | None = None,
         calculation_type: PriceCalculationType = PriceCalculationType.PER_PARTICIPANT,
+        additional_performance_discount_percent: int = 0,
     ) -> None:
+        self.discount_percent = additional_performance_discount_percent
         self.known = known
         self.open_for_submissions = open_for_submissions
         self.accepts_payment_flag = accepts_payment
@@ -133,6 +135,9 @@ class FakeCompetitionCatalog:
 
     def accepts_upload(self, *, competition_id: CompetitionId, attachment_kind: str, now: datetime) -> bool:
         return self.accepts_upload_flag
+
+    def additional_performance_discount_percent(self, *, competition_id: CompetitionId) -> int:
+        return self.discount_percent
 
     def participation_policy(
         self,
