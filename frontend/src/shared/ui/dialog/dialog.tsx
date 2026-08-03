@@ -55,9 +55,11 @@ export const DialogContent = forwardRef<HTMLDivElement, DialogContentProps>(func
         ref={ref}
         data-slot="dialog-content"
         className={cn(
-          // `modal-*` carries the centring offset inside its keyframes — see the note in
-          // motion.css — so this must stay centred with the same two translate classes.
-          "fixed left-1/2 top-1/2 z-[var(--z-modal)] flex w-full max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-lg border bg-popover p-6 text-popover-foreground shadow-elevation-3 data-[state=closed]:animate-modal-out data-[state=open]:animate-modal-in",
+          // Fades only — no scale. The centring here is a `transform`, and anything else
+          // in that matrix grows the box out of the middle of the screen instead of out
+          // of its own centre, which looks like the dialog flying in from a corner. See
+          // the note in motion.css.
+          "fixed left-1/2 top-1/2 z-[var(--z-modal)] flex w-full max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-lg border bg-popover p-6 text-popover-foreground shadow-elevation-3 data-[state=closed]:animate-fade-out data-[state=open]:animate-fade-in",
           className,
         )}
         {...props}

@@ -30,7 +30,10 @@ export const TooltipContent = forwardRef<HTMLDivElement, TooltipContentProps>(
           data-slot="tooltip-content"
           sideOffset={sideOffset}
           className={cn(
-            "z-[var(--z-tooltip)] max-w-xs rounded-md border bg-popover px-3 py-1.5 text-xs text-popover-foreground shadow-elevation-2",
+            // Radix reports a tooltip's open state as `delayed-open` or `instant-open`
+            // rather than `open`, so both need naming; a bare `data-[state=open]` here
+            // would silently never match.
+            "z-[var(--z-tooltip)] max-w-xs rounded-md border bg-popover px-3 py-1.5 text-xs text-popover-foreground shadow-elevation-2 data-[state=closed]:animate-fade-out data-[state=delayed-open]:animate-fade-in data-[state=instant-open]:animate-fade-in",
             className,
           )}
           {...props}

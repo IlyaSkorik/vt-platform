@@ -64,7 +64,10 @@ export const SelectContent = forwardRef<
         data-slot="select-content"
         position={position}
         className={cn(
-          "relative z-[var(--z-popover)] max-h-(--radix-select-content-available-height) min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover text-popover-foreground shadow-elevation-2 pointer-events-auto",
+          // Fades only. The popper below positions itself with a `translate`, so an
+          // animation touching `transform` would fight it — and a listbox that slides is
+          // harder to read than one that simply arrives.
+          "relative z-[var(--z-popover)] max-h-(--radix-select-content-available-height) min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover text-popover-foreground shadow-elevation-2 pointer-events-auto data-[state=closed]:animate-fade-out data-[state=open]:animate-fade-in",
           position === "popper" &&
             "w-full min-w-(--radix-select-trigger-width) data-[side=bottom]:translate-y-1 data-[side=top]:-translate-y-1",
           className,
