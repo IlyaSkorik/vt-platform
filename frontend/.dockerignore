@@ -1,0 +1,28 @@
+# Keep the build context small and the image reproducible.
+#
+# `node_modules` is the important one: copying the host's tree in would both slow the build and
+# risk shipping platform-specific binaries built for a different libc than the Alpine builder.
+node_modules
+dist
+dist-ssr
+coverage
+storybook-static
+playwright-report
+test-results
+.vite
+
+# Local configuration and secrets never belong in an image; VITE_* values arrive as build args.
+.env
+.env.*
+!.env.example
+
+# Editor, VCS and OS noise.
+.git
+.gitignore
+.idea
+.vscode
+.DS_Store
+*.log
+
+# Generated API client: regenerated from the OpenAPI schema, not a build input here.
+src/shared/api/generated
