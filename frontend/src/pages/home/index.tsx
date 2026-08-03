@@ -80,12 +80,21 @@ export function HomePage(): React.JSX.Element {
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: "url('/home-hero-bg.png')" }}
         />
+        {/* Darkens the photograph so the copy reads against it. Theme-invariant:
+            in the light theme this used to tint the image with the page's white
+            and left the hero glaring. */}
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-b from-background/65 via-background/80 to-background"
+          className="absolute inset-0 bg-gradient-to-b from-scrim-media/65 via-scrim-media/80 to-scrim-media/90"
+        />
+        {/* Separate layer for the hand-off: only the bottom quarter blends into
+            the page, so the scrim above it stays at full strength. */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-gradient-to-b from-transparent from-75% to-background"
         />
         <div className="relative mx-auto flex min-h-screen w-full max-w-336 items-center px-4 md:px-8">
-          <div className="space-y-5">
+          <div className="space-y-5 text-on-scrim">
             <Badge variant="outline" size="sm" icon={<Sparkles className="size-3.5" />}>
               Платформа творческих мероприятий
             </Badge>
@@ -93,17 +102,13 @@ export function HomePage(): React.JSX.Element {
               <h1 className="text-balance text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
                 Взлёт талантов
               </h1>
-              <p className="max-w-2xl text-pretty text-base text-muted-foreground sm:text-lg">
+              <p className="max-w-2xl text-pretty text-base text-on-scrim-muted sm:text-lg">
                 Здесь проходят детские творческие фестивали: находите мероприятия, подавайте заявки,
                 смотрите результаты и скачивайте дипломы.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2.5 pt-1">
-              <Button
-                asChild
-                size="lg"
-                className="min-w-[13.5rem] text-foreground hover:text-foreground"
-              >
+              <Button asChild size="lg" className="min-w-[13.5rem]">
                 <a href="#active-events">Найти мероприятие</a>
               </Button>
               <Button asChild size="lg" variant="outline" className="min-w-[9rem]">
@@ -310,7 +315,7 @@ export function HomePage(): React.JSX.Element {
                 Проводите собственные фестивали? Используйте платформу «Взлёт талантов» для
                 автоматизации проведения мероприятий.
               </p>
-              <Button asChild size="lg" className="text-foreground hover:text-foreground">
+              <Button asChild size="lg">
                 <Link to="mailto:hello@vzlet-talantov.by">Свяжитесь с нами</Link>
               </Button>
             </div>

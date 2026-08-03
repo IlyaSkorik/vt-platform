@@ -22,6 +22,16 @@
   --brand-secondary: var(--gold-500);
   --brand-accent: var(--rocket-500);
 
+  /* --- Content over media (photo heroes) ----------------------------------
+   * Theme-INVARIANT on purpose, unlike `--scrim`. A photograph needs the same
+   * darkening whatever the UI theme is around it, and the copy on top has to
+   * read against the photo — not against the page it is nowhere near. Letting
+   * these flip is what made the light theme wash its hero out to white and then
+   * print dark text on the glare. */
+  --scrim-media: oklch(0.13 0.012 250);
+  --text-on-scrim: oklch(0.985 0.002 240);
+  --text-on-scrim-muted: oklch(0.84 0.006 240);
+
   /* --- shadcn/ui-compatible aliases --------------------------------------
    * Derived from the semantic layer so the in-repo component library keeps
    * working unchanged. Because var() is resolved late, these single
