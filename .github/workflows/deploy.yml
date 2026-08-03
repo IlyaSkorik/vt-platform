@@ -1,24 +1,31 @@
-# Deploy (ARCH-001 §18.4).
+# Deploy (ARCH-001 §18.4) — via a self-hosted runner on the deployment host.
 #
-# Immutable, git-SHA-tagged images; migrations run as a pre-deploy job before the new image rolls
-# out; production requires manual approval. §18.4 also describes an auto-deploying stage
-# environment — wired here as an optional job that is skipped until the `stage` environment
-# exists, so this file does not pretend to a host nobody has provisioned.
+# Images are built on GitHub's runners and pushed to GHCR tagged with the commit SHA; the rollout
+# then happens on the machine itself, through a self-hosted runner. No SSH keys, no `known_hosts`,
+# no shell quoting across a remote heredoc — the deploy steps are ordinary local commands.
 #
-# **What has to be configured before the first run** (Settings → Environments → `production`):
+# It also removes a whole failure mode: the runner's workspace is a checkout of the very commit
+# whose images are being deployed, so `docker-compose.prod.yml` and the postgres/redis/nginx
+# configuration it mounts can never be a different version from the code that is running.
 #
-#   Required reviewers   — this is what makes the production deploy "gated"; without it the job
-#                          runs unattended, which §18.4 does not want.
-#   Secrets
-#     SSH_HOST           — the deployment host
-#     SSH_USER           — a user in the `docker` group
-#     SSH_PRIVATE_KEY    — its private key
-#     SSH_PORT           — optional, defaults to 22
-#   Variables
-#     DEPLOY_PATH        — where the repository is checked out on the host (e.g. /srv/vt-platform)
+# **Security note, because self-hosted runners have one sharp edge.** A self-hosted runner must
+# never execute code from a fork. This workflow is triggered only by pushes to `main` and by
+# manual dispatch, so a pull request cannot reach it. Keep it that way: adding `pull_request`
+# here would let anyone who opens a PR run arbitrary commands on the production host.
 #
-# The host keeps `backend/.env` with the real secrets. It is never in the repository and never
-# passed through Actions: the deploy only tells the host which image tags to run.
+# **What has to exist before the first run:**
+#
+#   1. A self-hosted runner registered on the host, labelled `production`
+#      (Settings → Actions → Runners → New self-hosted runner), running as a user in the
+#      `docker` group.
+#   2. Environment `production` (Settings → Environments) with **required reviewers** — that
+#      approval is what makes this gated — and:
+#        Variables  ENV_FILE_PATH  absolute path to the host's real .env
+#                                  (default /srv/vt-platform/backend/.env)
+#                   PUBLIC_URL     https://… — the post-deploy check calls /healthz on it
+#
+# The real secrets live only in that .env file on the host. They are never in the repository and
+# never pass through Actions: this workflow only decides which image tags to run.
 name: Deploy
 
 on:
@@ -44,6 +51,8 @@ env:
 jobs:
   publish:
     name: Publish images
+    # GitHub-hosted on purpose: building is CPU- and disk-hungry, and doing it on the production
+    # box would compete with the application it is about to replace.
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -96,94 +105,87 @@ jobs:
 
   deploy:
     name: Deploy to production
-    runs-on: ubuntu-latest
+    # The label the runner on the deployment host is registered with.
+    runs-on: [self-hosted, production]
     needs: [publish]
-    # The gate. Approval and the host's credentials both live on this environment, so a deploy
-    # cannot happen without someone approving it.
+    permissions:
+      contents: read
+      packages: read
+    # The gate: approval lives on this environment, so a rollout cannot happen unattended.
     environment:
       name: production
       url: ${{ vars.PUBLIC_URL }}
+    env:
+      # The compose project name is fixed inside the compose file, so containers and named volumes
+      # are found no matter which directory this runs from — which is what lets the deploy work out
+      # of the runner's own workspace instead of a separately maintained checkout.
+      ENV_FILE: ${{ vars.ENV_FILE_PATH || '/srv/vt-platform/backend/.env' }}
+      BACKEND_IMAGE: ${{ needs.publish.outputs.backend_image }}
+      FRONTEND_IMAGE: ${{ needs.publish.outputs.frontend_image }}
+      SHA: ${{ needs.publish.outputs.sha }}
     steps:
+      # The workspace becomes the deployed commit, so the compose file and every mounted config
+      # match the images below by construction.
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.publish.outputs.sha }}
 
-      - name: Configure SSH
+      - name: Check the host is configured
         run: |
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          # Pinning the host key rather than disabling checking: a deploy that trusts any host
-          # that answers is a deploy that can be redirected.
-          ssh-keyscan -p "${{ secrets.SSH_PORT || 22 }}" -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+          if [ ! -f "$ENV_FILE" ]; then
+            echo "::error::$ENV_FILE not found on this host. It holds the real secrets and is"
+            echo "::error::deliberately outside the repository — see OPS-001 §3."
+            exit 1
+          fi
+          # Compose reads POSTGRES_PASSWORD from its own environment for the `:?` guard, and the
+          # backup step below needs the database name and user the host actually configured.
+          set -a; . "$ENV_FILE"; set +a
+          {
+            echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD"
+            echo "POSTGRES_USER=${POSTGRES_USER:-vt_platform}"
+            echo "POSTGRES_DB=${POSTGRES_DB:-vt_platform}"
+          } >> "$GITHUB_ENV"
 
-      - name: Deploy
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_PORT: ${{ secrets.SSH_PORT || 22 }}
-          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
-          SHA: ${{ needs.publish.outputs.sha }}
-          BACKEND_IMAGE: ${{ needs.publish.outputs.backend_image }}
-          FRONTEND_IMAGE: ${{ needs.publish.outputs.frontend_image }}
-          GHCR_USER: ${{ github.actor }}
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Back the database up
         run: |
-          ssh -p "$SSH_PORT" -i ~/.ssh/id_ed25519 "$SSH_USER@$SSH_HOST" bash -euo pipefail <<REMOTE
-          cd "$DEPLOY_PATH"
+          # OPS-008 §9 wants a dump before every deploy. It is cheap, and it is the only thing
+          # that makes a failed migration recoverable rather than merely visible.
+          mkdir -p /srv/vt-platform/backups
+          out="/srv/vt-platform/backups/pre-deploy-$SHA.dump"
+          if docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" \
+               exec -T postgres pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB" > "$out" 2>/dev/null; then
+            echo "dumped $(du -h "$out" | cut -f1) to $out"
+          else
+            rm -f "$out"
+            echo "no running database to dump — first deploy, continuing"
+          fi
 
-          echo "::group::Fetch the deployment definition at $SHA"
-          # The compose file and the postgres/redis/nginx configuration are versioned with the
-          # code, so the host has to move to the same commit as the images it is about to run.
-          git fetch --quiet origin
-          git checkout --quiet "$SHA"
-          echo "::endgroup::"
+      - name: Pull the new images
+        run: docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" pull backend nginx
 
-          echo "$GHCR_TOKEN" | docker login $REGISTRY -u "$GHCR_USER" --password-stdin
+      - name: Migrate (pre-deploy, expand phase)
+        run: |
+          # Explicit rather than left to the compose dependency, so the migration output lands in
+          # the deploy log under its own heading and a failure names itself. The rollout below
+          # starts the migrate service too — by then a no-op reporting "no migrations to apply".
+          docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" run --rm migrate
 
-          export BACKEND_IMAGE="$BACKEND_IMAGE"
-          export FRONTEND_IMAGE="$FRONTEND_IMAGE"
-          export ENV_FILE=./backend/.env
-          COMPOSE="docker compose -f docker-compose.prod.yml --env-file ./backend/.env"
+      - name: Roll out
+        run: |
+          docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" \
+            up -d --wait --wait-timeout 300
 
-          # The host's own .env is the authority on the database name and user; hard-coding the
-          # defaults here would dump the wrong database on any deployment that renamed them.
-          # POSTGRES_PASSWORD also has to be exported for compose's \`:?\` guard on it.
-          set -a; . ./backend/.env; set +a
-
-          echo "::group::Back the database up before touching it"
-          # OPS-008 §9: a dump before every deploy. Cheap, and the only thing that makes a failed
-          # migration recoverable rather than merely visible.
-          mkdir -p backups
-          \$COMPOSE exec -T postgres pg_dump -Fc -U "\$POSTGRES_USER" "\$POSTGRES_DB" \
-            > "backups/pre-deploy-$SHA.dump" \
-            || echo "no running database to dump — first deploy, continuing"
-          echo "::endgroup::"
-
-          echo "::group::Pull the new images"
-          \$COMPOSE pull backend nginx
-          echo "::endgroup::"
-
-          echo "::group::Migrate (pre-deploy, expand phase)"
-          # Runs to completion before anything new serves traffic. A failure here stops the
-          # deploy with the previous version still up.
-          \$COMPOSE run --rm migrate
-          echo "::endgroup::"
-
-          echo "::group::Roll out"
-          \$COMPOSE up -d --wait --wait-timeout 300
-          echo "::endgroup::"
-
-          # Prune only what this host no longer references, so an older tag stays pullable for a
-          # rollback while the disk does not grow forever.
-          docker image prune -f --filter "until=168h" >/dev/null || true
-          REMOTE
-
-      - name: Verify the deployment answers
+      - name: Verify from outside
         env:
           PUBLIC_URL: ${{ vars.PUBLIC_URL }}
         run: |
-          if [ -z "$PUBLIC_URL" ]; then
+          if [ -z "${PUBLIC_URL:-}" ]; then
             echo "PUBLIC_URL is not set; skipping the external check"
             exit 0
           fi
@@ -195,3 +197,16 @@ jobs:
           done
           echo "::error::the deployment never answered 200 on /healthz"
           exit 1
+
+      - name: Logs on failure
+        if: failure()
+        run: |
+          docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" ps
+          docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" logs --tail 80
+
+      - name: Reclaim disk
+        if: always()
+        run: |
+          # Only what this host no longer references, and only past a week, so an older tag stays
+          # pullable for a rollback while the disk does not grow forever.
+          docker image prune -f --filter "until=168h" >/dev/null || true

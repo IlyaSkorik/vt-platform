@@ -17,6 +17,7 @@ Documents in this domain use the `OPS-` prefix (e.g. `OPS-001-environments.md`).
 
 | ID | Title | Status |
 |----|-------|--------|
+| [OPS-001](OPS-001-deploy-runbook.md) | Deployment runbook (single server) | Active |
 | [OPS-007](OPS-007-object-storage.md) | Object storage for uploads and generated documents | Active |
 | [OPS-008](OPS-008-single-server-sizing.md) | Single-server sizing & tuning (PostgreSQL, gunicorn, Celery, Redis, nginx) | Active |
 | [OPS-009](OPS-009-mail-provider-quotas.md) | Mail provider quotas and how the platform stays inside them | Active |
@@ -25,9 +26,11 @@ Documents in this domain use the `OPS-` prefix (e.g. `OPS-001-environments.md`).
 
 ## Future Documents
 
-- `OPS-001` — Environments & configuration.
-- `OPS-002` — Docker & container strategy.
-- `OPS-003` — CI/CD pipeline (GitHub Actions).
+- `OPS-002` — Docker & container strategy. The images themselves are in place
+  (`backend/Dockerfile`, `frontend/Dockerfile`, `docker-compose.prod.yml`); what is unwritten is
+  the reasoning behind them as a document.
+- `OPS-003` — CI/CD pipeline. Implemented in `.github/workflows/ci.yml` and `deploy.yml`; the
+  deployment half is described in [OPS-001](OPS-001-deploy-runbook.md).
 - `OPS-004` — Observability (logging, metrics, tracing, alerting).
 - `OPS-005` — Backup & disaster-recovery runbooks.
 - `OPS-006` — Incident-response & on-call runbooks.
