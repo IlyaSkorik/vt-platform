@@ -83,7 +83,7 @@ class TestTemplateInvariants:
 
     def test_same_invariants_as_competition(self) -> None:
         t = CompetitionTemplate.create(template_id=TemplateId.generate(), name=TemplateName("t"), now=NOW)
-        cat = t.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
+        t.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
         with pytest.raises(DuplicateCategoryError):
             t.add_category(category_id=CategoryId.generate(), name=CategoryName("Vocal"), now=NOW)
         grp = t.add_participant_group(

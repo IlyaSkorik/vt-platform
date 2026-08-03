@@ -228,18 +228,26 @@ class TestSubmit:
         assert isinstance(submitted, ApplicationSubmitted)
         assert submitted.amount == "300.00"
 
-    def test_composition_frozen_after_submit(self) -> None:
+    def test_composition_still_open_after_submit(self) -> None:
+        """A submitted order still takes another entry — the applicant is not done
+        until they pay, and adding a second act must not mean starting over."""
         application = _submitted_application(amount="300.00")
+        application.attach_submission(ref=_ref(status=SubmissionStatus.SUBMITTED), now=NOW)
+        assert application.submission_count == 2
+
+    def test_composition_frozen_once_payment_is_awaited(self) -> None:
+        """Requesting payment is what closes the order: the applicant has been quoted
+        a figure, so the basket it was computed from can no longer change."""
+        application = _awaiting_payment_application(amount="300.00")
         with pytest.raises(ApplicationNotEditableError):
             application.attach_submission(ref=_ref(status=SubmissionStatus.SUBMITTED), now=NOW)
 
-    def test_total_is_immutable_after_submit(self) -> None:
-        application = _new_application()
-        ref = _ref(status=SubmissionStatus.SUBMITTED, amount="300.00")
-        application.attach_submission(ref=ref, now=NOW)
-        application.submit(now=NOW)
+    def test_total_is_immutable_once_payment_is_awaited(self) -> None:
+        """Past the quote a refresh still updates the cached snapshot but must not
+        move the total — otherwise a late organizer edit would change what is owed."""
+        application = _awaiting_payment_application(amount="300.00")
+        ref = application.submission_refs[0]
         frozen_total = application.total_price
-        # A later refresh moving the submission to APPROVED must not change the total.
         later = NOW + timedelta(days=1)
         application.refresh_submission_ref(ref=_ref(status=SubmissionStatus.APPROVED, amount="999.00", submission_id=ref.submission_id), now=later)
         assert application.total_price == frozen_total
@@ -381,4 +389,19 @@ def _submitted_application(*, amount: str) -> Application:
     application = _new_application()
     application.attach_submission(ref=_ref(status=SubmissionStatus.SUBMITTED, amount=amount), now=NOW)
     application.submit(now=NOW)
+    return application
+
+
+def _awaiting_payment_application(*, amount: str) -> Application:
+    """An order past the point of no return: quoted a total and waiting to be paid.
+
+    This — not ``submit`` — is where the order's composition and total freeze, so it
+    is the fixture the immutability tests need.
+    """
+    application = _new_application()
+    ref = _ref(status=SubmissionStatus.SUBMITTED, amount=amount)
+    application.attach_submission(ref=ref, now=NOW)
+    application.submit(now=NOW)
+    application.refresh_submission_ref(ref=_ref(status=SubmissionStatus.APPROVED, amount=amount, submission_id=ref.submission_id), now=NOW)
+    application.request_payment(now=NOW)
     return application

@@ -163,9 +163,7 @@ class Env:
         return RecordConsentsHandler(applications=self.applications, catalog=self.catalog, clock=self.clock)
 
     def select_org(self) -> SelectEducationalOrganizationHandler:
-        return SelectEducationalOrganizationHandler(
-            applications=self.applications, catalog=self.catalog, directory=self.directory, clock=self.clock
-        )
+        return SelectEducationalOrganizationHandler(applications=self.applications, catalog=self.catalog, directory=self.directory, clock=self.clock)
 
     def submit(self) -> SubmitApplicationHandler:
         return SubmitApplicationHandler(
@@ -179,7 +177,7 @@ class Env:
         )
 
     def request_payment(self) -> RequestApplicationPaymentHandler:
-        return RequestApplicationPaymentHandler(applications=self.applications, submissions=self.submissions, clock=self.clock)
+        return RequestApplicationPaymentHandler(applications=self.applications, submissions=self.submissions, catalog=self.catalog, clock=self.clock)
 
     def mark_paid(self) -> MarkApplicationPaidHandler:
         return MarkApplicationPaidHandler(
@@ -196,15 +194,13 @@ class Env:
         return RemoveApplicationReceiptHandler(applications=self.applications, clock=self.clock, events=self.events)
 
     def get(self) -> GetApplicationHandler:
-        return GetApplicationHandler(
-            applications=self.applications, submissions=self.submissions, catalog=self.catalog, clock=self.clock
-        )
+        return GetApplicationHandler(applications=self.applications, submissions=self.submissions, catalog=self.catalog, clock=self.clock)
 
     def list(self) -> ListApplicationsHandler:
-        return ListApplicationsHandler(applications=self.applications)
+        return ListApplicationsHandler(applications=self.applications, submissions=self.submissions, catalog=self.catalog, clock=self.clock)
 
     def drafts(self) -> ListDraftApplicationsHandler:
-        return ListDraftApplicationsHandler(applications=self.applications)
+        return ListDraftApplicationsHandler(applications=self.applications, submissions=self.submissions, catalog=self.catalog, clock=self.clock)
 
     # -- test helpers driving the separate Submission workflow --------------
 
@@ -232,9 +228,7 @@ class Env:
             name=PersonName(first_name="Anna", last_name="Ivanova"),
             birth_date=BirthDate(date(2014, 5, 1)),
             gender=Gender.FEMALE,
-            registry_participant_id=(
-                RegistryParticipantId.from_uuid(SubmissionId.generate().value) if from_registry else None
-            ),
+            registry_participant_id=(RegistryParticipantId.from_uuid(SubmissionId.generate().value) if from_registry else None),
             now=NOW,
         )
         submission.set_price_snapshot(price_snapshot=PriceSnapshot(price=Money.of("300.00"), calculated_at=NOW), now=NOW)

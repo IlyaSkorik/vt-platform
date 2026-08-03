@@ -154,8 +154,18 @@ def test_full_organizer_workflow(staff_client: APIClient) -> None:
     category_id = cat.data["data"]["categories"][0]["id"]
 
     staff_client.post(f"{detail}/disciplines", {"categoryId": category_id, "name": "Solo"}, format="json")
-    staff_client.post(f"{detail}/age-categories", {"categoryId": category_id, "name": "7-10", "minAge": 7, "maxAge": 10}, format="json")
-    staff_client.post(f"{detail}/participant-groups", {"categoryId": category_id, "name": "Solo", "minCount": 1, "maxCount": 1}, format="json")
+    # A participant group is competition-wide, and an age band hangs off the group
+    # rather than the category: "7-10" means something different for a soloist than
+    # for a twelve-strong ensemble, so the group has to exist first.
+    groups = staff_client.post(f"{detail}/participant-groups", {"name": "Solo", "minCount": 1, "maxCount": 1}, format="json")
+    assert groups.status_code == 201, groups.data
+    participant_group_id = groups.data["data"]["participantGroups"][0]["id"]
+    age = staff_client.post(
+        f"{detail}/age-categories",
+        {"participantGroupId": participant_group_id, "name": "7-10", "minAge": 7, "maxAge": 10},
+        format="json",
+    )
+    assert age.status_code == 201, age.data
     view = staff_client.post(f"{detail}/participation-formats", {"name": "Очно"}, format="json").data["data"]
 
     combination = {

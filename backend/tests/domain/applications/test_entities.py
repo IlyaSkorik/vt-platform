@@ -290,17 +290,13 @@ class TestContentEditing:
     def test_music_still_attachable_once_the_entry_is_accepted(self) -> None:
         """The state a running order is built from is the state a track is wanted in."""
         s = _accepted()
-        s.add_attachment(
-            attachment_id=AttachmentId.generate(), attachment_type=AttachmentType.MUSIC, file=FileReference("s3://late.mp3"), now=NOW
-        )
+        s.add_attachment(attachment_id=AttachmentId.generate(), attachment_type=AttachmentType.MUSIC, file=FileReference("s3://late.mp3"), now=NOW)
         assert [a.type for a in s.attachments] == [AttachmentType.MUSIC]
 
     def test_music_still_attachable_once_the_entry_is_scheduled(self) -> None:
         s = _accepted()
         s.schedule(now=NOW)
-        s.add_attachment(
-            attachment_id=AttachmentId.generate(), attachment_type=AttachmentType.MUSIC, file=FileReference("s3://late.mp3"), now=NOW
-        )
+        s.add_attachment(attachment_id=AttachmentId.generate(), attachment_type=AttachmentType.MUSIC, file=FileReference("s3://late.mp3"), now=NOW)
         assert len(s.attachments) == 1
 
     def test_an_accepted_entry_can_have_its_track_replaced(self) -> None:
@@ -308,9 +304,7 @@ class TestContentEditing:
         attachment_id = AttachmentId.generate()
         s.add_attachment(attachment_id=attachment_id, attachment_type=AttachmentType.MUSIC, file=FileReference("s3://wrong.mp3"), now=NOW)
         s.remove_attachment(attachment_id=attachment_id, now=NOW)
-        s.add_attachment(
-            attachment_id=AttachmentId.generate(), attachment_type=AttachmentType.MUSIC, file=FileReference("s3://right.mp3"), now=NOW
-        )
+        s.add_attachment(attachment_id=AttachmentId.generate(), attachment_type=AttachmentType.MUSIC, file=FileReference("s3://right.mp3"), now=NOW)
         assert [a.file.value for a in s.attachments] == ["s3://right.mp3"]
 
     def test_music_is_refused_once_the_performance_took_place(self) -> None:
@@ -337,9 +331,24 @@ class TestContentEditing:
         )
         assert isinstance(events[0], AttachmentAdded)
 
-    def test_editing_blocked_after_submit(self) -> None:
+    def test_editing_still_allowed_after_submit(self) -> None:
+        """Submitting does not freeze content — the organizer has not looked at it yet.
+
+        An applicant who spots a typo in a name the minute after sending the entry
+        fixes it themselves rather than writing to the organizer.
+        """
         fx = _solo_ready()
         fx.submission.submit(policy=fx.solo_policy, now=NOW)
+        fx.submission.add_participant(
+            participant_id=ParticipantId.generate(), name=_person("New"), birth_date=BirthDate(date(2013, 1, 1)), gender=Gender.MALE, now=NOW
+        )
+        assert len(fx.submission.participants) == 2
+
+    def test_editing_blocked_once_review_begins(self) -> None:
+        """The freeze lands when the organizer starts reviewing, not when the entry arrives."""
+        fx = _solo_ready()
+        fx.submission.submit(policy=fx.solo_policy, now=NOW)
+        fx.submission.begin_review(now=NOW)
         with pytest.raises(SubmissionNotEditableError):
             fx.submission.add_participant(
                 participant_id=ParticipantId.generate(), name=_person("New"), birth_date=BirthDate(date(2013, 1, 1)), gender=Gender.MALE, now=NOW
@@ -360,9 +369,20 @@ class TestPriceSnapshot:
         assert s.price_snapshot is not None
         assert s.price_snapshot.amount == Money.of("1200").amount
 
-    def test_frozen_after_submit(self) -> None:
+    def test_recompute_still_allowed_after_submit(self) -> None:
+        """Content stays editable after submit, so the price it implies must follow it."""
         fx = _solo_ready()
         fx.submission.submit(policy=fx.solo_policy, now=NOW)
+        fx.submission.set_price_snapshot(price_snapshot=PriceSnapshot(price=Money.of("1800"), calculated_at=NOW), now=NOW)
+        assert fx.submission.price_snapshot is not None
+        assert fx.submission.price_snapshot.amount == Money.of("1800").amount
+
+    def test_frozen_once_review_begins(self) -> None:
+        """Past the content freeze the snapshot is permanent, so later Competition
+        pricing changes can never reprice an entry the organizer is already judging."""
+        fx = _solo_ready()
+        fx.submission.submit(policy=fx.solo_policy, now=NOW)
+        fx.submission.begin_review(now=NOW)
         with pytest.raises(PriceSnapshotLockedError):
             fx.submission.set_price_snapshot(price_snapshot=PriceSnapshot(price=Money.of("1"), calculated_at=NOW), now=NOW)
 
@@ -521,6 +541,7 @@ class TestLifecycle:
         events = s.cancel_by_organizer(now=NOW)
 
         assert s.status is SubmissionStatus.CANCELLED
+        assert isinstance(events[0], SubmissionCancelled)
         assert events[0].previous_status is SubmissionStatus.SCHEDULED
 
     def test_not_even_the_organizer_can_cancel_a_performed_submission(self) -> None:
@@ -541,6 +562,7 @@ class TestLifecycle:
         events = s.cancel_by_organizer(now=NOW)
 
         assert s.status is SubmissionStatus.CANCELLED
+        assert isinstance(events[0], SubmissionCancelled)
         assert events[0].previous_status is SubmissionStatus.SUBMITTED
 
 

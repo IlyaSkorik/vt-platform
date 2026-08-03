@@ -116,19 +116,19 @@ class Env:
         )
 
     def set_performance(self) -> SetPerformanceHandler:
-        return SetPerformanceHandler(submissions=self.submissions, clock=self.clock, events=self.events)
+        return SetPerformanceHandler(submissions=self.submissions, catalog=self.catalog, clock=self.clock, events=self.events)
 
     def add_participant(self) -> AddParticipantHandler:
-        return AddParticipantHandler(submissions=self.submissions, clock=self.clock, uuids=self.uuids, events=self.events)
+        return AddParticipantHandler(submissions=self.submissions, catalog=self.catalog, clock=self.clock, uuids=self.uuids, events=self.events)
 
     def update_participant(self) -> UpdateParticipantHandler:
-        return UpdateParticipantHandler(submissions=self.submissions, clock=self.clock, uuids=self.uuids, events=self.events)
+        return UpdateParticipantHandler(submissions=self.submissions, catalog=self.catalog, clock=self.clock, uuids=self.uuids, events=self.events)
 
     def remove_participant(self) -> RemoveParticipantHandler:
-        return RemoveParticipantHandler(submissions=self.submissions, clock=self.clock, events=self.events)
+        return RemoveParticipantHandler(submissions=self.submissions, catalog=self.catalog, clock=self.clock, events=self.events)
 
     def add_teacher(self) -> AddTeacherHandler:
-        return AddTeacherHandler(submissions=self.submissions, clock=self.clock, uuids=self.uuids, events=self.events)
+        return AddTeacherHandler(submissions=self.submissions, catalog=self.catalog, clock=self.clock, uuids=self.uuids, events=self.events)
 
     def attach_file(self) -> AttachFileHandler:
         return AttachFileHandler(submissions=self.submissions, clock=self.clock, uuids=self.uuids, events=self.events)
