@@ -39,7 +39,7 @@ export const DrawerOverlay = forwardRef<HTMLDivElement, DrawerOverlayProps>(func
       ref={ref}
       data-slot="drawer-overlay"
       className={cn(
-        "fixed inset-0 z-[var(--z-overlay)] bg-foreground/40 backdrop-blur-sm transition-opacity data-[state=closed]:opacity-0 data-[state=open]:opacity-100",
+        "fixed inset-0 z-[var(--z-overlay)] bg-scrim backdrop-blur-sm transition-opacity data-[state=closed]:opacity-0 data-[state=open]:opacity-100",
         className,
       )}
       {...props}

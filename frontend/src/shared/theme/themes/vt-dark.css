@@ -19,6 +19,12 @@
   --surface-elevated: oklch(0.205 0.018 245);
   --surface-overlay: oklch(0.205 0.012 240);
 
+  /* Near-black and heavier than the light theme's: the page beneath is already
+     dark, so the scrim has to go *below* it to read as a recessed backdrop
+     rather than a haze. Tinting it with the theme's blue keeps it from looking
+     like a dead grey hole. */
+  --scrim: oklch(0.03 0.008 240 / 0.72);
+
   /* Text */
   --text-primary: oklch(0.985 0.002 240);
   --text-secondary: oklch(0.85 0.006 240);

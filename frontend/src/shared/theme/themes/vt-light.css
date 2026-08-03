@@ -24,6 +24,11 @@
   --surface-elevated: var(--neutral-0);
   --surface-overlay: var(--neutral-0);
 
+  /* The scrim behind a modal. Carries its own alpha rather than relying on an
+     opacity modifier, because the colour that dims a light page is not the same
+     colour that dims a dark one — see the dark theme's darker, heavier value. */
+  --scrim: oklch(0.19 0.03 275 / 0.4);
+
   /* Text */
   --text-primary: var(--neutral-900);
   --text-secondary: var(--neutral-700);
