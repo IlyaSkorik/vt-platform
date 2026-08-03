@@ -1,0 +1,199 @@
+# Production stack for the single-server deployment (OPS-008, ARCH-001 §16–§17).
+#
+# Differs from `backend/docker-compose.yml` in kind, not degree: that one is the development
+# stack (runserver, bind-mounted source, mailhog, minio). Here nothing is bind-mounted, the
+# images are immutable, and the only published port is nginx's.
+#
+#   docker compose -f docker-compose.prod.yml --env-file backend/.env up -d --build
+#
+# **TLS terminates in front of this stack** — the provider's load balancer, or nginx/Caddy on
+# the host. Certificates are deliberately not managed here: renewal is a host concern with its
+# own schedule, and baking certbot into an image that also serves assets couples two things
+# that fail for unrelated reasons. To terminate TLS in *this* nginx instead (the shape OPS-008
+# §7 describes), drop a server block into the `nginx_tls` mount and publish 443; the container
+# includes `/etc/nginx/tls/*.conf` and ignores the directory when it is empty.
+name: vt-platform-prod
+
+# Every Django-side service runs the same image with a different command (ARCH-001 §17.2), and
+# needs the same environment. Defined once here rather than copied four times, because the
+# copies in the dev compose are exactly how `EMAIL_*` drifted between them.
+x-django: &django
+  image: ${BACKEND_IMAGE:-vt-backend:local}
+  build:
+    context: ./backend
+    dockerfile: Dockerfile
+  restart: unless-stopped
+  env_file:
+    - ${ENV_FILE:-./backend/.env}
+  environment:
+    DJANGO_SETTINGS_MODULE: config.settings.production
+    POSTGRES_HOST: postgres
+    REDIS_URL: redis://redis:6379/0
+    CELERY_BROKER_URL: redis://redis:6379/1
+    CELERY_RESULT_BACKEND: redis://redis:6379/2
+    # Django needs the built index.html on disk to inject the `<head>` into; nginx publishes
+    # it into this volume on start. Empty would silently unmount the SPA catch-all and every
+    # browser route would 404.
+    SPA_INDEX_PATH: /srv/spa/index.html
+  volumes:
+    # Only reached while S3_BUCKET is unset. Shared with the workers on purpose: a diploma is
+    # rendered by a worker and downloaded through nginx, so they must see one filesystem.
+    - media:/app/media
+    - spa:/srv/spa:ro
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    migrate:
+      condition: service_completed_successfully
+
+services:
+  # --- Pre-deploy migration job (ARCH-001 §18.4) ----------------------------
+  #
+  # A one-shot service rather than a step in the API's command: with several containers off one
+  # image, putting `migrate` in each start-up races them against each other on every deploy.
+  # Everything else waits for this to exit 0, so a failed migration stops the deploy instead of
+  # producing a half-migrated database serving traffic.
+  migrate:
+    image: ${BACKEND_IMAGE:-vt-backend:local}
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: python manage.py migrate --noinput
+    restart: "no"
+    env_file:
+      - ${ENV_FILE:-./backend/.env}
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.production
+      POSTGRES_HOST: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # --- API ------------------------------------------------------------------
+  backend:
+    <<: *django
+    # Sizing lives in gunicorn.conf.py (OPS-008 §4); the image's CMD points at it.
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.production
+      POSTGRES_HOST: postgres
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      SPA_INDEX_PATH: /srv/spa/index.html
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-3}
+      # nginx is a separate container, so the trusted proxy is not 127.0.0.1. Without this
+      # gunicorn drops X-Forwarded-Proto, Django reads every request as plain HTTP and
+      # SECURE_SSL_REDIRECT sends it into a redirect loop. Safe because the port below is
+      # never published — nginx is the only thing that can reach it.
+      GUNICORN_FORWARDED_ALLOW_IPS: "*"
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz').read()"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+  # --- Background work (OPS-008 §5) -----------------------------------------
+  #
+  # Two workers because the work is nothing alike. This one is CPU-bound, long and
+  # memory-hungry: print runs and sweeps. The child limit matters more than usual — a run holds
+  # a template PDF and every rendered page, and uploads each to the bucket.
+  worker:
+    <<: *django
+    command: >
+      celery -A config worker -l info
+      --concurrency ${CELERY_CONCURRENCY:-2}
+      --max-tasks-per-child 50
+      --time-limit 3600 --soft-time-limit 3300
+    # CMD-SHELL, not CMD: the node name contains the container hostname, and the exec form does
+    # not expand variables. `$$` is compose's escape for a literal `$` handed to the container.
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A config inspect ping -d celery@$$HOSTNAME | grep -q pong"]
+      interval: 60s
+      timeout: 15s
+      start_period: 45s
+      retries: 3
+
+  # Mail is not CPU work at all: each message spends ~2.8 s waiting on an SSL handshake, so one
+  # slot could never reach the provider's 30-a-minute allowance (OPS-009). Four slots clear it
+  # and still leave a password reset from waiting behind a diploma print run.
+  mail-worker:
+    <<: *django
+    command: celery -A config worker -l info -Q mail --concurrency 4
+
+  beat:
+    <<: *django
+    # --schedule on a writable path; the unpaid-order sweep recomputes from the database each
+    # run, so it survives restarts without a persisted schedule.
+    command: celery -A config beat -l info --schedule /tmp/celerybeat-schedule
+
+  # --- Edge: SPA + reverse proxy --------------------------------------------
+  nginx:
+    image: ${FRONTEND_IMAGE:-vt-frontend:local}
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Empty: the client calls the same origin it was served from, and nginx fronts both.
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:8080"
+    volumes:
+      # Written by this container's entrypoint, read by Django for the SEO head.
+      - spa:/srv/spa
+      - media:/srv/media:ro
+      # Drop a TLS server block in here to terminate TLS in nginx; empty by default.
+      - ${NGINX_TLS_DIR:-./deploy/nginx/tls}:/etc/nginx/tls:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # --- Data -----------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    # `config_file` replaces the image's own; the mounted file therefore has to set
+    # listen_addresses itself, since the built-in default (localhost) would refuse every
+    # connection from another container. Tuning per OPS-008 §3.
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-vt_platform}
+      POSTGRES_USER: ${POSTGRES_USER:-vt_platform}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in production}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deploy/postgres/vt-platform.conf:/etc/postgresql/postgresql.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vt_platform}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - ./deploy/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      # appendonly is on (OPS-008 §6): a restart must not lose queued tasks.
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
+  # Uploads and generated documents while S3_BUCKET is unset. With a bucket configured this
+  # stays empty — and the deployment stops having local state worth backing up (OPS-007).
+  media:
+  # The built SPA, published from the frontend image on every start so backend and nginx agree
+  # on which bundle is live.
+  spa:
