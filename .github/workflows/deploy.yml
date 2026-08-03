@@ -166,6 +166,19 @@ jobs:
             echo "no running database to dump — first deploy, continuing"
           fi
 
+          # Keep the five most recent and delete the rest.
+          #
+          # Without this the deploy is a slow disk-space leak: a dump is 1–3 GB per season
+          # (OPS-008 §2) on a 50 GB disk, one per deploy, forever — and it would fill up months
+          # later, during a deploy, which is the worst moment for the disk to be full.
+          #
+          # Five is enough to roll back through a bad week. These are a *safety net for this
+          # rollout*, not the backup strategy: nightly dumps belong off the machine (OPS-008 §9).
+          ls -1t /srv/vt-platform/backups/pre-deploy-*.dump 2>/dev/null | tail -n +6 | while read -r old; do
+            echo "pruning $(basename "$old")"
+            rm -f "$old"
+          done
+
       - name: Pull the new images
         # `spa`, not `nginx`: nginx runs from a stock upstream image whose reference never changes,
         # which is what keeps it from being recreated. The frontend build arrives in the `spa`

@@ -157,6 +157,32 @@ this container's problem, which is why it is not the default.
 Whichever you choose, HTTPS is not optional: `SECURE_SSL_REDIRECT` answers plain HTTP with a 301,
 and `SECURE_HSTS_SECONDS` is a year with preload.
 
+### Renewal, and the half of it that is not automatic
+
+Let's Encrypt renewal *is* automatic: the certbot package installs a systemd timer that runs
+`certbot renew` twice a day and renews once fewer than 30 days remain. Nothing to schedule.
+
+What is not automatic is **reloading the server that serves the certificate**. certbot writes the
+new file and the running process keeps the old one in memory until something tells it otherwise.
+
+* **Option B** — `certbot --nginx` installs the reload hook itself. Nothing to do.
+* **Option C** — certbot has no idea a container exists. Without a hook the renewal is invisible to
+  it, and roughly ninety days after launch the site serves an expired certificate while a valid one
+  sits on disk beside it. Add the hook when you choose this option, not later:
+
+  ```bash
+  # /etc/letsencrypt/renewal-hooks/deploy/reload-vt-nginx.sh   (chmod +x)
+  #!/bin/sh
+  cd /srv/vt-platform || exit 0
+  docker compose -f docker-compose.prod.yml --env-file ./backend/.env exec -T nginx nginx -s reload
+  ```
+
+  Then prove it works rather than waiting three months to find out:
+  `certbot renew --dry-run --run-deploy-hooks`.
+
+Either way, put an expiry check somewhere you will see it — a 90-day certificate is exactly long
+enough for everyone to forget it exists.
+
 ---
 
 ## 5. Configure the GitHub environment
@@ -290,6 +316,44 @@ The deploy takes a dump before every rollout. That is not a backup strategy on i
 | Volume | provider snapshot, daily | provider |
 | Bucket | object versioning + a lifecycle rule expiring noncurrent versions after 30 days | provider |
 | `DJANGO_SECRET_KEY`, S3 credentials | password manager | — |
+
+The pre-deploy dumps in `/srv/vt-platform/backups/` are a safety net for *that rollout* — the
+workflow keeps the five most recent and prunes the rest, because a 1–3 GB dump per deploy on a
+50 GB disk fills it up months later, during a deploy, which is the worst possible moment.
+
+### The nightly job, to the same bucket
+
+Not written yet, and worth doing early. The shape:
+
+```bash
+# /etc/cron.daily/vt-backup   (chmod +x)
+#!/bin/sh
+set -eu
+cd /srv/vt-platform
+set -a; . ./backend/.env; set +a
+stamp=$(date -u +%Y%m%dT%H%M%SZ)
+out="/tmp/vt-$stamp.dump"
+
+docker compose -f docker-compose.prod.yml --env-file ./backend/.env \
+  exec -T postgres pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB" > "$out"
+
+# Straight to the bucket — the point is that it is not on this machine.
+aws --endpoint-url "$S3_ENDPOINT_URL" s3 cp "$out" "s3://$S3_BUCKET/backups/db/vt-$stamp.dump"
+rm -f "$out"
+```
+
+Two notes on the retention, since "keep the last seven" is the obvious instinct:
+
+* **Let the bucket expire them, not the script.** A lifecycle rule on `backups/db/` with an
+  expiration of 7 days does it server-side, so a broken cron cannot silently stop pruning while
+  still uploading — or worse, prune while failing to upload.
+* **Seven daily copies is one week of history.** It restores yesterday, and it cannot restore the
+  state before a mistake nobody noticed for ten days. If that matters, add a monthly rule keeping
+  one copy for a year; object storage is cheap enough that the decision is about intent, not cost.
+
+Use the same credentials the application already has, but a **separate prefix** — and if the
+provider allows a second key scoped to `backups/`, use one. The application's key can delete media;
+a backup should not be reachable by anything that a compromised application key can reach.
 
 The part that gets skipped is the restore rehearsal. A dump nobody has restored is a hope.
 
