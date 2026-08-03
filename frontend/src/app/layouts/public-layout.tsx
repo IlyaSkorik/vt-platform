@@ -19,7 +19,11 @@ export function PublicLayout(): React.JSX.Element {
 
   return (
     <div className="flex min-h-svh flex-col bg-background">
-      <header className="sticky top-0 z-[var(--z-sticky)] border-border border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+      {/* The bar floats over the content the whole time it is on screen, and the hero
+          it floats over is a photograph — so the separation is carried by a brand-tinted
+          glow rather than by a grey line, which reads as a seam against an image. The
+          border stays as the fallback where a hairline is all that is wanted. */}
+      <header className="sticky top-0 z-[var(--z-sticky)] border-border border-b bg-background/90 shadow-glow-primary backdrop-blur supports-[backdrop-filter]:bg-background/70">
         <div className="mx-auto flex h-16 w-full max-w-336 items-center justify-between gap-3 px-4 md:px-8">
           <div className="flex min-w-0 items-center gap-3 md:gap-5">
             <Link

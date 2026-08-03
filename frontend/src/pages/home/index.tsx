@@ -74,7 +74,9 @@ export function HomePage(): React.JSX.Element {
     <>
       <JsonLd id="organization" data={organizationSchema()} />
       <JsonLd id="website" data={webSiteSchema()} />
-      <section className="relative min-h-screen w-full overflow-hidden border-border border-b">
+      {/* No bottom border: the glow below is the separator now, and a hairline on top of
+          it made the hand-off into the page read as a cut rather than as a fade. */}
+      <section className="relative min-h-screen w-full overflow-hidden">
         <div
           aria-hidden="true"
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -92,6 +94,21 @@ export function HomePage(): React.JSX.Element {
         <div
           aria-hidden="true"
           className="absolute inset-0 bg-gradient-to-b from-transparent from-75% to-background"
+        />
+        {/* The brand glow above the bottom edge. Above the hand-off layer on purpose:
+            below it, the fade to `--background` washed it out to nothing.
+
+            `glow-on-media` rather than `primary`: the light theme's brand blue is deep
+            enough to read as a shadow on a white page rather than as light. The token
+            carries the per-theme adjustment so this stays one gesture — see the note in
+            vt-light.css.
+
+            Transparent at *both* ends, peaking mid-band: a gradient that peaked at the
+            edge put its brightest pixel exactly where the hero stops, drawing the seam it
+            was meant to dissolve. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-transparent via-glow-on-media/40 to-transparent md:h-80"
         />
         <div className="relative mx-auto flex min-h-screen w-full max-w-336 items-center px-4 md:px-8">
           <div className="space-y-5 text-on-scrim">
@@ -138,12 +155,21 @@ export function HomePage(): React.JSX.Element {
             {festivalsQuery.isPending ? (
               <LoadingState label="Загружаем активные мероприятия…" />
             ) : (
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              // `rise-in` on the container, not on each card: the list arrives as one
+              // thing once the query resolves, and staggering it would draw attention to
+              // the loading rather than away from it.
+              <div className="grid animate-rise-in gap-5 md:grid-cols-2 xl:grid-cols-3">
                 {activeFestivals.map((festival) => {
                   const status = catalogStatusConfig(festival.status);
                   const detailPath = festivalPath(festival, ROUTES.competitions);
                   return (
-                    <Card key={festival.id} className="shadow-none">
+                    <Card
+                      key={festival.id}
+                      // Lifts on hover, because this card *does* lead somewhere. The
+                      // non-interactive cards further down deliberately do not — a card
+                      // that rises under the cursor and then does nothing is a lie.
+                      className="shadow-none transition-[box-shadow,transform] duration-[var(--duration-normal)] ease-standard hover:-translate-y-0.5 hover:shadow-md"
+                    >
                       <div className="aspect-[16/9] overflow-hidden rounded-t-xl bg-muted">
                         {resolveMediaUrl(festival.coverImage) ? (
                           <img
@@ -261,7 +287,7 @@ export function HomePage(): React.JSX.Element {
             {festivalsQuery.isPending ? (
               <LoadingState label="Загружаем ближайшие мероприятия…" />
             ) : (
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid animate-rise-in gap-3 md:grid-cols-2">
                 {upcomingFestivals.map((festival) => (
                   <Card key={festival.id} className="shadow-none">
                     <CardContent className="flex items-center justify-between gap-3 pt-5">
@@ -291,7 +317,7 @@ export function HomePage(): React.JSX.Element {
             {festivalsQuery.isPending ? (
               <LoadingState label="Загружаем последние результаты…" />
             ) : (
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid animate-rise-in gap-3 md:grid-cols-2">
                 {latestResults.map((festival) => (
                   <Card key={festival.id} className="shadow-none">
                     <CardContent className="flex items-center justify-between gap-3 pt-5">

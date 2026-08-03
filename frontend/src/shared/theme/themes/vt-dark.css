@@ -65,6 +65,11 @@
   --shadow-color: oklch(0 0 0 / 0.32);
   --shadow-color-strong: oklch(0 0 0 / 0.55);
 
+  /* The brand glow laid over a photograph — see the note in vt-light.css for why this
+   * one is theme-variant. Here the interactive blue is already brighter than everything
+   * around it, so it needs no adjustment. */
+  --glow-on-media: var(--interactive-primary);
+
   /* Charts */
   --chart-1: oklch(0.74 0.17 220);
   --chart-2: oklch(0.78 0.14 190);

@@ -32,7 +32,11 @@ export const DialogOverlay = forwardRef<HTMLDivElement, DialogOverlayProps>(func
       ref={ref}
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 z-[var(--z-overlay)] bg-scrim backdrop-blur-sm transition-opacity data-[state=closed]:opacity-0 data-[state=open]:opacity-100",
+        // Keyframes, not a transition: Radix inserts this already in its open state, so
+        // a transition has nothing to move from — which is why the scrim used to appear
+        // in one frame. The animation also holds the node long enough for the closing
+        // half to be seen, since Radix waits for `animationend` before unmounting.
+        "fixed inset-0 z-[var(--z-overlay)] bg-scrim backdrop-blur-sm data-[state=closed]:animate-fade-out data-[state=open]:animate-fade-in",
         className,
       )}
       {...props}
@@ -51,7 +55,9 @@ export const DialogContent = forwardRef<HTMLDivElement, DialogContentProps>(func
         ref={ref}
         data-slot="dialog-content"
         className={cn(
-          "fixed left-1/2 top-1/2 z-[var(--z-modal)] flex w-full max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-lg border bg-popover p-6 text-popover-foreground shadow-elevation-3 transition-all data-[state=closed]:opacity-0 data-[state=open]:opacity-100",
+          // `modal-*` carries the centring offset inside its keyframes — see the note in
+          // motion.css — so this must stay centred with the same two translate classes.
+          "fixed left-1/2 top-1/2 z-[var(--z-modal)] flex w-full max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-lg border bg-popover p-6 text-popover-foreground shadow-elevation-3 data-[state=closed]:animate-modal-out data-[state=open]:animate-modal-in",
           className,
         )}
         {...props}

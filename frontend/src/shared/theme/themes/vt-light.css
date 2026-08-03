@@ -66,6 +66,17 @@
   --shadow-color: color-mix(in oklab, var(--blue-900) 12%, transparent);
   --shadow-color-strong: color-mix(in oklab, var(--blue-900) 18%, transparent);
 
+  /* The brand glow laid over a photograph — the hero's bottom edge.
+   *
+   * Theme-VARIANT, unlike the `--scrim-media` family next to it in semantic.css: those
+   * are invariant because copy over a photo must read against the photo, which does not
+   * change. This does change, because a glow only glows if it is lighter than what is
+   * under it, and the bottom of that band is over the page — white here, near-black in
+   * the dark theme. `--interactive-primary` is the deep brand blue, which reads as a
+   * shadow on white rather than as light; this is the same hue taken bright enough to
+   * register. */
+  --glow-on-media: var(--sky-500);
+
   /* Data-visualisation series. */
   --chart-1: var(--blue-800);
   --chart-2: var(--rocket-500);

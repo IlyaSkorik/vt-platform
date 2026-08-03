@@ -4,9 +4,15 @@ import { cva } from "class-variance-authority";
  * Button visual contract. All colours resolve through semantic Tailwind
  * utilities (which are wired to `var(--…)` tokens), never raw palette values —
  * so a theme switch restyles every button without touching this file.
+ *
+ * Motion: the transition covers shadow and transform as well as colour, and a press
+ * shrinks the button very slightly. This is the one place worth spending motion on —
+ * it is the control the reader actually touches, and the acknowledgement is what makes
+ * a tap feel received rather than merely registered. Kept at 2% so it reads as give,
+ * not as bounce; the global reduced-motion reset removes it entirely.
  */
 export const buttonVariants = cva(
-  "inline-flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 shrink-0 select-none [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "inline-flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-[color,background-color,border-color,box-shadow,transform] duration-[var(--duration-fast)] ease-standard active:scale-[0.98] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100 aria-disabled:pointer-events-none aria-disabled:opacity-50 aria-disabled:active:scale-100 shrink-0 select-none [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {

@@ -11,11 +11,19 @@ import type {
   DrawerTitleProps,
 } from "./types";
 
+/**
+ * Position plus the motion that belongs to it: a sheet has to leave by the edge it
+ * arrived from, so the two cannot be chosen independently. Keyframes rather than a
+ * transition, because Radix mounts the panel already open and keeps a closing one
+ * until its animation ends — with a transition the panel simply appeared.
+ */
 const SIDE_STYLES: Record<DrawerSide, string> = {
-  left: "inset-y-0 left-0 h-full w-3/4 max-w-sm border-r",
-  right: "inset-y-0 right-0 h-full w-3/4 max-w-sm border-l",
-  top: "inset-x-0 top-0 w-full max-h-[80vh] border-b",
-  bottom: "inset-x-0 bottom-0 w-full max-h-[80vh] border-t",
+  left: "inset-y-0 left-0 h-full w-3/4 max-w-sm border-r data-[state=open]:animate-slide-in-from-left data-[state=closed]:animate-slide-out-to-left",
+  right:
+    "inset-y-0 right-0 h-full w-3/4 max-w-sm border-l data-[state=open]:animate-slide-in-from-right data-[state=closed]:animate-slide-out-to-right",
+  top: "inset-x-0 top-0 w-full max-h-[80vh] border-b data-[state=open]:animate-slide-in-from-top data-[state=closed]:animate-slide-out-to-top",
+  bottom:
+    "inset-x-0 bottom-0 w-full max-h-[80vh] border-t data-[state=open]:animate-slide-in-from-bottom data-[state=closed]:animate-slide-out-to-bottom",
 };
 
 /**
@@ -39,7 +47,7 @@ export const DrawerOverlay = forwardRef<HTMLDivElement, DrawerOverlayProps>(func
       ref={ref}
       data-slot="drawer-overlay"
       className={cn(
-        "fixed inset-0 z-[var(--z-overlay)] bg-scrim backdrop-blur-sm transition-opacity data-[state=closed]:opacity-0 data-[state=open]:opacity-100",
+        "fixed inset-0 z-[var(--z-overlay)] bg-scrim backdrop-blur-sm data-[state=closed]:animate-fade-out data-[state=open]:animate-fade-in",
         className,
       )}
       {...props}
@@ -66,7 +74,7 @@ export const DrawerContent = forwardRef<HTMLDivElement, DrawerContentProps>(func
         data-slot="drawer-content"
         data-side={side}
         className={cn(
-          "fixed z-[var(--z-modal)] flex flex-col gap-4 bg-popover p-6 text-popover-foreground shadow-elevation-3 transition-transform",
+          "fixed z-[var(--z-modal)] flex flex-col gap-4 bg-popover p-6 text-popover-foreground shadow-elevation-3",
           SIDE_STYLES[side],
           className,
         )}

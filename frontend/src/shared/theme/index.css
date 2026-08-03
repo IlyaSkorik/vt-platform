@@ -84,6 +84,7 @@
   --color-inverse: var(--text-inverse);
   --color-on-scrim: var(--text-on-scrim);
   --color-on-scrim-muted: var(--text-on-scrim-muted);
+  --color-glow-on-media: var(--glow-on-media);
   --color-brand: var(--brand-primary);
   --color-brand-secondary: var(--brand-secondary);
   --color-brand-accent: var(--brand-accent);
