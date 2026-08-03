@@ -179,7 +179,7 @@ export function HomePage(): React.JSX.Element {
                           {festival.description || "Подробности доступны на странице мероприятия."}
                         </p>
                         <div className="grid gap-2">
-                          <Button asChild size="sm" className="w-full text-inverse">
+                          <Button asChild size="sm" className="w-full">
                             <Link to={detailPath}>Открыть мероприятие</Link>
                           </Button>
                           {status.apply.visible ? (

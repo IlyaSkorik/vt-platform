@@ -76,6 +76,12 @@
   --color-surface-overlay: var(--surface-overlay);
   --color-scrim: var(--scrim);
   --color-scrim-media: var(--scrim-media);
+  /* Bridged even though the themes have always declared it: an unbridged token is
+   * worse than a missing one. `text-inverse` generated no rule, and because
+   * tailwind-merge still treats it as a text-colour utility it *displaced* the
+   * variant's own colour — leaving the element with none and inheriting whatever
+   * the page had. A working utility fails loudly instead. */
+  --color-inverse: var(--text-inverse);
   --color-on-scrim: var(--text-on-scrim);
   --color-on-scrim-muted: var(--text-on-scrim-muted);
   --color-brand: var(--brand-primary);
