@@ -1,18 +1,134 @@
 /**
- * Motion tokens — durations and easing curves.
+ * Motion tokens — durations, easing curves and the named animations built from them.
  *
- * Easings are declared with `@theme` so Tailwind emits `ease-standard`,
- * `ease-emphasized`, … utilities. Durations are plain custom properties
- * (Tailwind's `duration-*` utilities take literal values), referenced from
- * hand-written transitions/animations.
+ * Easings and animations are declared with `@theme` so Tailwind emits
+ * `ease-standard`, `animate-fade-in`, … utilities. Durations are plain custom
+ * properties (Tailwind's `duration-*` utilities take literal values), referenced
+ * from the animations below and from hand-written transitions.
  *
- * The reduced-motion preference is honoured globally in the base layer.
+ * Why the animations live here rather than on the components: an overlay that
+ * appears must be *removed* with the mirror of the motion that introduced it, and
+ * that pairing is only obvious when the two are written next to each other. Radix
+ * keeps a closing node mounted until its animation ends, which is why these are
+ * keyframes and not transitions — a transition cannot run on an element that is
+ * inserted already in its final state, which is why dialogs used to pop.
+ *
+ * The reduced-motion preference is honoured globally in the base layer, which
+ * collapses every duration here to nothing.
  */
 @theme {
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-emphasized: cubic-bezier(0.3, 0, 0, 1);
   --ease-decelerate: cubic-bezier(0, 0, 0, 1);
   --ease-accelerate: cubic-bezier(0.3, 0, 1, 1);
+
+  /* --- Scrims and other plain fades ------------------------------------- */
+  --animate-fade-in: fade-in var(--duration-normal) var(--ease-decelerate);
+  --animate-fade-out: fade-out var(--duration-fast) var(--ease-accelerate);
+
+  /* --- The centred modal ------------------------------------------------
+   * The translate is part of the keyframe, not merely the class list: a modal is
+   * centred with `-translate-x-1/2 -translate-y-1/2`, and an animation touching
+   * `transform` replaces that wholesale. Baking the offset in keeps the box put
+   * while it scales. Anything using these must be centred the same way. */
+  --animate-modal-in: modal-in var(--duration-normal) var(--ease-decelerate);
+  --animate-modal-out: modal-out var(--duration-fast) var(--ease-accelerate);
+
+  /* --- Edge-anchored sheets --------------------------------------------- */
+  --animate-slide-in-from-left: slide-in-from-left var(--duration-slow) var(--ease-emphasized);
+  --animate-slide-out-to-left: slide-out-to-left var(--duration-normal) var(--ease-accelerate);
+  --animate-slide-in-from-right: slide-in-from-right var(--duration-slow) var(--ease-emphasized);
+  --animate-slide-out-to-right: slide-out-to-right var(--duration-normal) var(--ease-accelerate);
+  --animate-slide-in-from-top: slide-in-from-top var(--duration-slow) var(--ease-emphasized);
+  --animate-slide-out-to-top: slide-out-to-top var(--duration-normal) var(--ease-accelerate);
+  --animate-slide-in-from-bottom: slide-in-from-bottom var(--duration-slow) var(--ease-emphasized);
+  --animate-slide-out-to-bottom: slide-out-to-bottom var(--duration-normal) var(--ease-accelerate);
+
+  /* --- Content settling into place --------------------------------------
+   * A short rise used where a block of content arrives after the page did (a
+   * loaded list, a revealed panel). Deliberately small: 4px reads as the content
+   * settling, while anything larger reads as the layout still moving. */
+  --animate-rise-in: rise-in var(--duration-slow) var(--ease-decelerate);
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes modal-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+  @keyframes modal-out {
+    from {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.98);
+    }
+  }
+
+  @keyframes slide-in-from-left {
+    from {
+      transform: translateX(-100%);
+    }
+  }
+  @keyframes slide-out-to-left {
+    to {
+      transform: translateX(-100%);
+    }
+  }
+  @keyframes slide-in-from-right {
+    from {
+      transform: translateX(100%);
+    }
+  }
+  @keyframes slide-out-to-right {
+    to {
+      transform: translateX(100%);
+    }
+  }
+  @keyframes slide-in-from-top {
+    from {
+      transform: translateY(-100%);
+    }
+  }
+  @keyframes slide-out-to-top {
+    to {
+      transform: translateY(-100%);
+    }
+  }
+  @keyframes slide-in-from-bottom {
+    from {
+      transform: translateY(100%);
+    }
+  }
+  @keyframes slide-out-to-bottom {
+    to {
+      transform: translateY(100%);
+    }
+  }
+
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
 }
 
 :root {

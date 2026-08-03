@@ -17,6 +17,21 @@
   --shadow-lg: 0 12px 24px -6px var(--shadow-color-strong), 0 4px 8px -4px var(--shadow-color);
   --shadow-xl: 0 24px 48px -12px var(--shadow-color-strong);
 
+  /* A brand-tinted glow, deliberately outside the elevation scale.
+   *
+   * Elevation answers "how far above the page is this?"; this answers something
+   * else — "this edge belongs to the product". It is for the surfaces that sit over
+   * content permanently, where a neutral drop shadow reads as a seam rather than as
+   * a rim of light. Two layers: a hairline that carries the colour, and a wide soft
+   * spread that carries the glow.
+   *
+   * Mixed from `--primary`, so it follows the brand in both themes rather than
+   * needing a per-theme value; kept faint enough to be felt rather than noticed.
+   */
+  --shadow-glow-primary:
+    0 1px 0 0 color-mix(in oklab, var(--primary) 22%, transparent),
+    0 10px 30px -18px color-mix(in oklab, var(--primary) 70%, transparent);
+
   /* Compatibility aliases (shared/ui shadcn components). */
   --shadow-elevation-1: var(--shadow-xs);
   --shadow-elevation-2: var(--shadow-md);
