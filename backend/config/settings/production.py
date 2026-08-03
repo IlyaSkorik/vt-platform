@@ -7,12 +7,55 @@ object — nothing sensitive is hard-coded.
 
 from __future__ import annotations
 
+import os
+
+from django.core.exceptions import ImproperlyConfigured
+
 from .base import *
 
 DEBUG = False
 
+# --- Refuse to boot on a development secret ---------------------------------
+#
+# `DJANGO_SECRET_KEY` has a default so the dev stack starts with no configuration at all
+# (env.py). That default must never reach a deployment: it signs sessions, password-reset
+# links and — per OPS-007 — decides where diploma files are written, so a known value is a
+# full compromise of all three.
+#
+# `manage.py check --deploy` reports this, but a check nobody runs is not a control. Failing
+# at import means a misconfigured container exits immediately and visibly instead of coming
+# up and serving traffic that only looks fine.
+#
+# `collectstatic` runs in the image build, where no real secret exists or should. It sets a
+# throwaway value, which passes: what is rejected is the *known* default, not any short key.
+_INSECURE_SECRET_KEY = "insecure-dev-secret-key-change-me"
+
+if SECRET_KEY == _INSECURE_SECRET_KEY:
+    raise ImproperlyConfigured(
+        "DJANGO_SECRET_KEY is still the development default. Generate one per environment, "
+        "e.g. `python -c 'import secrets; print(secrets.token_urlsafe(64))'`, and keep it in "
+        "the secret store (OPS-008 §9) — rotating it invalidates sessions and password-reset "
+        "links, and changes where new diploma files are written (OPS-007)."
+    )
+
+# ALLOWED_HOSTS defaults to ["localhost"], which in a deployment answers every real request
+# with a 400. That is loud rather than dangerous, but it is a misconfiguration either way and
+# cheaper to catch here than in the logs.
+if not os.environ.get("DJANGO_ALLOWED_HOSTS"):
+    raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS is unset. Set it to the deployment's hostname(s), comma-separated.")
+
 # --- Transport & cookie security (ARCH-001 §21.2) -------------------------
 SECURE_SSL_REDIRECT = True
+
+# The liveness and readiness probes (ARCH-001 §17.4) are the one thing that must answer over
+# plain HTTP. A container healthcheck and most load balancers probe the port directly, with no
+# `X-Forwarded-Proto` to say otherwise — so `SECURE_SSL_REDIRECT` answers 301, the probe never
+# sees a 200, and the container is marked unhealthy forever while the application is fine.
+# (Worse, a client that follows the redirect then speaks TLS to a plain port and the server logs
+# "Invalid HTTP request" instead of anything that points at the cause.)
+#
+# Exempting them is safe: both return a fixed JSON literal and read nothing.
+SECURE_REDIRECT_EXEMPT = [r"^healthz$", r"^readyz$"]
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SECURE_HSTS_SECONDS = 31_536_000  # 1 year
