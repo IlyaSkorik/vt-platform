@@ -16,6 +16,7 @@ from apps.competitions.domain.landing_configuration import (
     LandingConfiguration,
     PartnerCard,
 )
+from shared.utils.json_values import as_int
 
 __all__ = ["landing_config_from_json", "landing_config_to_json"]
 
@@ -113,10 +114,19 @@ def _str_or_none(value: object) -> str | None:
 
 
 def _sort_order(value: object) -> int:
-    try:
-        return max(0, int(value))  # type: ignore[arg-type]
-    except (TypeError, ValueError):
-        return 0
+    return as_int(value, minimum=0)
+
+
+def _rows(value: object) -> list[dict[str, object]]:
+    """The nested JSON arrays-of-objects, narrowed once.
+
+    Bound to a local before the ``isinstance`` check: the previous
+    ``data.get(k, []) if isinstance(data.get(k), list) else []`` called ``get`` twice,
+    so the check narrowed a different expression than the one whose value was used.
+    """
+    if not isinstance(value, list):
+        return []
+    return [row for row in value if isinstance(row, dict)]
 
 
 def _block_from_json(data: dict[str, object]) -> LandingBlock | None:
@@ -132,33 +142,28 @@ def _block_from_json(data: dict[str, object]) -> LandingBlock | None:
         return None
 
     cards: list[JuryCard] = []
-    for raw in data.get("cards", []) if isinstance(data.get("cards"), list) else []:
-        if isinstance(raw, dict):
-            card = _jury_card_from_json(raw)
-            if card is not None:
-                cards.append(card)
+    for row in _rows(data.get("cards")):
+        card = _jury_card_from_json(row)
+        if card is not None:
+            cards.append(card)
 
     partners: list[PartnerCard] = []
-    for raw in data.get("partners", []) if isinstance(data.get("partners"), list) else []:
-        if isinstance(raw, dict):
-            card = _partner_card_from_json(raw)
-            if card is not None:
-                partners.append(card)
+    for row in _rows(data.get("partners")):
+        partner = _partner_card_from_json(row)
+        if partner is not None:
+            partners.append(partner)
 
     images: list[GalleryImage] = []
-    for raw in data.get("images", []) if isinstance(data.get("images"), list) else []:
-        if isinstance(raw, dict):
-            image = _gallery_image_from_json(raw)
-            if image is not None:
-                images.append(image)
+    for row in _rows(data.get("images")):
+        image = _gallery_image_from_json(row)
+        if image is not None:
+            images.append(image)
 
     faq_items: list[FaqItem] = []
-    faq_raw = data.get("faq_items", data.get("faqItems", []))
-    for raw in faq_raw if isinstance(faq_raw, list) else []:
-        if isinstance(raw, dict):
-            item = _faq_item_from_json(raw)
-            if item is not None:
-                faq_items.append(item)
+    for row in _rows(data.get("faq_items", data.get("faqItems"))):
+        faq_item = _faq_item_from_json(row)
+        if faq_item is not None:
+            faq_items.append(faq_item)
 
     try:
         return LandingBlock(

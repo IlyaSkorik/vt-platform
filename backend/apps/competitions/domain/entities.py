@@ -64,6 +64,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import InitVar, dataclass, field
 from datetime import date, datetime
+from enum import Enum
 from typing import TYPE_CHECKING, Final
 
 from .contacts_configuration import ContactsConfiguration
@@ -216,8 +217,22 @@ __all__ = [
 #: Opaque capability token proving the root's construction went through a factory.
 _CREATION_TOKEN: Final = object()
 
+
+class _Unset(Enum):
+    """The type of the "argument not supplied" sentinel.
+
+    A single-member ``Enum`` rather than a bare ``object()``. The checker narrows enum
+    members as literals, so ``if x is not _SENTINEL:`` genuinely removes the sentinel
+    from the union inside the branch — which is the entire point of having one. A bare
+    ``object()`` can only be typed as ``object``, so it fitted no parameter's
+    annotation and every partial-update signature below was an error.
+    """
+
+    TOKEN = "UNSET"
+
+
 #: Sentinel for distinguishing "not supplied" from ``None`` in partial updates.
-_SENTINEL: Final = object()
+_SENTINEL: Final = _Unset.TOKEN
 
 #: The lifecycle transitions the aggregate permits. ``COMPLETED`` is terminal.
 #: Registration is scheduled per nomination, so there is no competition-wide
@@ -278,13 +293,9 @@ def ensure_admission_combination_valid(
         raise AgeCategoryGroupMismatchError("The age category does not belong to the stated participant group.")
     participation_format = formats.get(combination.participation_format_id)
     if participation_format is None:
-        raise ParticipationFormatNotFoundError(
-            f"No participation format {combination.participation_format_id} in this configuration."
-        )
+        raise ParticipationFormatNotFoundError(f"No participation format {combination.participation_format_id} in this configuration.")
     if not participation_format.enabled:
-        raise ParticipationFormatNotEnabledError(
-            f"Participation format {combination.participation_format_id} is not enabled."
-        )
+        raise ParticipationFormatNotEnabledError(f"Participation format {combination.participation_format_id} is not enabled.")
 
 
 def ensure_age_range_free(
@@ -425,7 +436,7 @@ class Category:
         self,
         *,
         name: CategoryName | None = None,
-        description: CategoryDescription | None = _SENTINEL,
+        description: CategoryDescription | None | _Unset = _SENTINEL,
         sort_order: int | None = None,
     ) -> None:
         if name is not None:
@@ -605,7 +616,7 @@ class AgeCategory:
         name: AgeCategoryName | None = None,
         age_range: AgeRange | None = None,
         age_category_type: AgeCategoryType | None = None,
-        mixed_calculation_method: MixedAgeCalculationMethod | None = _SENTINEL,
+        mixed_calculation_method: MixedAgeCalculationMethod | None | _Unset = _SENTINEL,
         sort_order: int | None = None,
     ) -> None:
         if name is not None:
@@ -628,8 +639,7 @@ class AgeCategory:
 
     def __repr__(self) -> str:
         return (
-            f"AgeCategory(id={self._id!r}, participant_group_id={self._participant_group_id!r}, "
-            f"name={self._name.value!r}, range={self._age_range})"
+            f"AgeCategory(id={self._id!r}, participant_group_id={self._participant_group_id!r}, name={self._name.value!r}, range={self._age_range})"
         )
 
 
@@ -715,7 +725,7 @@ class ParticipantGroup:
         *,
         name: ParticipantGroupName | None = None,
         count_range: ParticipantCountRange | None = None,
-        description: ParticipantGroupDescription | None = _SENTINEL,
+        description: ParticipantGroupDescription | None | _Unset = _SENTINEL,
         sort_order: int | None = None,
     ) -> None:
         if name is not None:
@@ -813,7 +823,7 @@ class ParticipationFormat:
         self,
         *,
         name: ParticipationFormatName | None = None,
-        description: ParticipationFormatDescription | None = _SENTINEL,
+        description: ParticipationFormatDescription | None | _Unset = _SENTINEL,
         enabled: bool | None = None,
         sort_order: int | None = None,
     ) -> None:
@@ -1100,9 +1110,7 @@ class AdditionalService:
     ) -> AdditionalService:
         formats = frozenset(available_format_ids)
         if not formats:
-            raise EmptyAdditionalServiceFormatsError(
-                "An additional service must be available for at least one participation format."
-            )
+            raise EmptyAdditionalServiceFormatsError("An additional service must be available for at least one participation format.")
         return cls(
             _id=service_id,
             _name=name,
@@ -1201,9 +1209,7 @@ class AdditionalService:
     ) -> None:
         formats = frozenset(available_format_ids)
         if not formats:
-            raise EmptyAdditionalServiceFormatsError(
-                "An additional service must be available for at least one participation format."
-            )
+            raise EmptyAdditionalServiceFormatsError("An additional service must be available for at least one participation format.")
         self._name = name
         self._price = price
         self._description = description
@@ -1225,10 +1231,7 @@ class AdditionalService:
         return hash(self._id)
 
     def __repr__(self) -> str:
-        return (
-            f"AdditionalService(id={self._id!r}, name={self._name.value!r}, "
-            f"billing={self._billing_model.value}, enabled={self._enabled})"
-        )
+        return f"AdditionalService(id={self._id!r}, name={self._name.value!r}, billing={self._billing_model.value}, enabled={self._enabled})"
 
 
 @dataclass(slots=True, eq=False, repr=False)
@@ -1979,7 +1982,7 @@ class Competition:
         category_id: CategoryId,
         now: datetime,
         name: CategoryName | None = None,
-        description: CategoryDescription | None = _SENTINEL,
+        description: CategoryDescription | None | _Unset = _SENTINEL,
         sort_order: int | None = None,
     ) -> None:
         self._ensure_configurable()
@@ -2091,7 +2094,7 @@ class Competition:
         name: AgeCategoryName | None = None,
         age_range: AgeRange | None = None,
         age_category_type: AgeCategoryType | None = None,
-        mixed_calculation_method: MixedAgeCalculationMethod | None = _SENTINEL,
+        mixed_calculation_method: MixedAgeCalculationMethod | None | _Unset = _SENTINEL,
         sort_order: int | None = None,
     ) -> None:
         """Partial update of an age category (name, age_range, type, method, sort_order)."""
@@ -2099,8 +2102,7 @@ class Competition:
         age_category = self._require_age_category(age_category_id)
         group_id = age_category.participant_group_id
         if name is not None and any(
-            aid != age_category_id and a.participant_group_id == group_id and a.name == name
-            for aid, a in self._age_categories.items()
+            aid != age_category_id and a.participant_group_id == group_id and a.name == name for aid, a in self._age_categories.items()
         ):
             raise DuplicateAgeCategoryNameError(f"An age category named {name.value!r} already exists in this participant group.")
         if age_range is not None:
@@ -2163,15 +2165,13 @@ class Competition:
         now: datetime,
         name: ParticipantGroupName | None = None,
         count_range: ParticipantCountRange | None = None,
-        description: ParticipantGroupDescription | None = _SENTINEL,
+        description: ParticipantGroupDescription | None | _Unset = _SENTINEL,
         sort_order: int | None = None,
     ) -> None:
         """Partial update of a participant group (name, range, description, sort_order)."""
         self._ensure_configurable()
         group = self._require_participant_group(participant_group_id)
-        if name is not None and any(
-            gid != participant_group_id and g.name == name for gid, g in self._participant_groups.items()
-        ):
+        if name is not None and any(gid != participant_group_id and g.name == name for gid, g in self._participant_groups.items()):
             raise DuplicateParticipantGroupError(f"A participant group named {name.value!r} already exists.")
         group.update(
             name=name,
@@ -2231,7 +2231,7 @@ class Competition:
         format_id: ParticipationFormatId,
         now: datetime,
         name: ParticipationFormatName | None = None,
-        description: ParticipationFormatDescription | None = _SENTINEL,
+        description: ParticipationFormatDescription | None | _Unset = _SENTINEL,
         enabled: bool | None = None,
         sort_order: int | None = None,
     ) -> list[DomainEvent]:

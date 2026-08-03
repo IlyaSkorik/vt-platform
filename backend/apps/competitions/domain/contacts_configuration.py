@@ -157,4 +157,4 @@ class ContactsConfiguration:
 
     def with_changes(self, **changes: object) -> ContactsConfiguration:
         """A copy with the given fields overridden (rejects unknown names)."""
-        return replace(self, **changes)
+        return replace(self, **changes)  # type: ignore[arg-type]

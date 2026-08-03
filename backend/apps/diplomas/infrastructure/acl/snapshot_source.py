@@ -70,10 +70,12 @@ def _clean(value: Any) -> str | None:
 
 
 def _lead_participant(submission: SubmissionModel) -> dict[str, Any]:
-    for participant in submission.participants or []:
+    # `participants` is a JSON column — see the identical narrowing in the preview
+    # builder; the rows are untyped until checked.
+    participants = [row for row in submission.participants or [] if isinstance(row, dict)]
+    for participant in participants:
         if _clean(participant.get("display_name")):
             return participant
-    participants = submission.participants or []
     return participants[0] if participants else {}
 
 
@@ -160,9 +162,7 @@ class DjangoDiplomaSnapshotSource:
     def template_exists(self, template_id: uuid.UUID) -> bool:
         return TemplateModel.objects.filter(id=template_id, deleted_at__isnull=True).exists()
 
-    def list_submission_ids(
-        self, competition_id: uuid.UUID, *, category_id: uuid.UUID | None = None
-    ) -> list[uuid.UUID]:
+    def list_submission_ids(self, competition_id: uuid.UUID, *, category_id: uuid.UUID | None = None) -> list[uuid.UUID]:
         """The entries a document is due for, narrowed to one nomination if asked.
 
         Only entries actually in the competition — see

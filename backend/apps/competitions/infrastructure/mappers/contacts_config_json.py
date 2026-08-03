@@ -14,6 +14,7 @@ from apps.competitions.domain.contacts_configuration import (
     TeamContact,
     VenueDetails,
 )
+from shared.utils.json_values import as_int
 
 __all__ = ["contacts_config_from_json", "contacts_config_to_json"]
 
@@ -83,9 +84,7 @@ def contacts_config_from_json(data: object) -> ContactsConfiguration:
                 team_contacts.append(parsed)
 
     return ContactsConfiguration(
-        use_organization_contacts=bool(
-            data.get("use_organization_contacts", default.use_organization_contacts)
-        ),
+        use_organization_contacts=bool(data.get("use_organization_contacts", default.use_organization_contacts)),
         override=ContactProfileOverride(
             organization_name=_str_or_none(override_raw.get("organization_name")),
             phone=_str_or_none(override_raw.get("phone")),
@@ -125,11 +124,7 @@ def _team_contact_from_json(data: dict[str, object]) -> TeamContact | None:
         return None
     if not isinstance(raw_name, str) or not raw_name.strip():
         return None
-    sort_raw = data.get("sort_order", 0)
-    try:
-        sort_order = int(sort_raw)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
-        sort_order = 0
+    sort_order = as_int(data.get("sort_order"), minimum=0)
     try:
         return TeamContact(
             id=raw_id,

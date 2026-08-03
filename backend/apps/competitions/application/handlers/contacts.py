@@ -21,6 +21,7 @@ from apps.competitions.domain.value_objects import (
     ContactType,
     ContactValue,
 )
+from shared.utils.json_values import as_int
 
 from ._support import CompetitionCommandHandler
 
@@ -46,11 +47,7 @@ def _contacts_config_from_command(command: UpdateContactsConfigCommand) -> Conta
 
     team: list[TeamContact] = []
     for raw in command.team_contacts:
-        sort_raw = raw.get("sort_order", 0)
-        try:
-            sort_order = int(sort_raw)  # type: ignore[arg-type]
-        except (TypeError, ValueError):
-            sort_order = 0
+        sort_order = as_int(raw.get("sort_order"), minimum=0)
         team.append(
             TeamContact(
                 id=str(raw["id"]),

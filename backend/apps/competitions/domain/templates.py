@@ -34,6 +34,7 @@ from .entities import (
     Discipline,
     ParticipantGroup,
     ParticipationFormat,
+    _Unset,
     ensure_admission_combination_valid,
     ensure_age_range_free,
 )
@@ -369,7 +370,7 @@ class CompetitionTemplate:
         format_id: ParticipationFormatId,
         now: datetime,
         name: ParticipationFormatName | None = None,
-        description: ParticipationFormatDescription | None = _SENTINEL,
+        description: ParticipationFormatDescription | None | _Unset = _SENTINEL,
         enabled: bool | None = None,
         sort_order: int | None = None,
     ) -> None:

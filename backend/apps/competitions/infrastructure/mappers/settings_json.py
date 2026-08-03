@@ -19,6 +19,7 @@ from apps.competitions.domain.value_objects import (
     VideoRequirements,
     VideoSubmissionMode,
 )
+from shared.utils.json_values import as_int
 
 __all__ = ["settings_from_json", "settings_to_json"]
 
@@ -71,14 +72,10 @@ def _from_legacy(data: dict[str, object], default: CompetitionSettings) -> Compe
     return CompetitionSettings(
         allow_multiple_applications=bool(data.get("allow_multiple_applications", default.allow_multiple_applications)),
         allow_application_editing=bool(data.get("allow_application_editing", default.allow_application_editing)),
-        allow_withdrawing_applications=bool(
-            data.get("allow_participant_changes", default.allow_withdrawing_applications)
-        ),
+        allow_withdrawing_applications=bool(data.get("allow_participant_changes", default.allow_withdrawing_applications)),
         require_teacher=bool(data.get("require_teacher", default.require_teacher)),
         require_parent_guardian=bool(data.get("require_parent_consent", default.require_parent_guardian)),
-        participant_comment_enabled=bool(
-            data.get("require_comment_for_application", default.participant_comment_enabled)
-        ),
+        participant_comment_enabled=bool(data.get("require_comment_for_application", default.participant_comment_enabled)),
         require_document_upload=bool(data.get("require_identity_document", default.require_document_upload)),
         allow_additional_documents_later=True,
         allow_replacing_documents=True,
@@ -120,48 +117,31 @@ def _from_modern(data: dict[str, object], default: CompetitionSettings) -> Compe
                 if parsed is not None:
                     format_requirements.append(parsed)
 
-    discount_raw = data.get("additional_performance_discount_percent", default.additional_performance_discount_percent)
-    try:
-        discount_percent = int(discount_raw)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
-        discount_percent = default.additional_performance_discount_percent
+    discount_percent = as_int(
+        data.get("additional_performance_discount_percent"),
+        default=default.additional_performance_discount_percent,
+    )
 
     return CompetitionSettings(
         allow_multiple_applications=bool(data.get("allow_multiple_applications", default.allow_multiple_applications)),
         allow_application_editing=bool(data.get("allow_application_editing", default.allow_application_editing)),
-        allow_withdrawing_applications=bool(
-            data.get("allow_withdrawing_applications", default.allow_withdrawing_applications)
-        ),
+        allow_withdrawing_applications=bool(data.get("allow_withdrawing_applications", default.allow_withdrawing_applications)),
         require_teacher=bool(data.get("require_teacher", default.require_teacher)),
         require_parent_guardian=bool(data.get("require_parent_guardian", default.require_parent_guardian)),
-        participant_comment_enabled=bool(
-            data.get("participant_comment_enabled", default.participant_comment_enabled)
-        ),
+        participant_comment_enabled=bool(data.get("participant_comment_enabled", default.participant_comment_enabled)),
         require_document_upload=bool(data.get("require_document_upload", default.require_document_upload)),
-        allow_additional_documents_later=bool(
-            data.get("allow_additional_documents_later", default.allow_additional_documents_later)
-        ),
+        allow_additional_documents_later=bool(data.get("allow_additional_documents_later", default.allow_additional_documents_later)),
         allow_replacing_documents=bool(data.get("allow_replacing_documents", default.allow_replacing_documents)),
         payment_required=bool(data.get("payment_required", default.payment_required)),
         payment_timing=timing,
         payment_methods=tuple(methods),
         additional_performance_discount_percent=discount_percent,
-        require_personal_data_consent=bool(
-            data.get("require_personal_data_consent", default.require_personal_data_consent)
-        ),
+        require_personal_data_consent=bool(data.get("require_personal_data_consent", default.require_personal_data_consent)),
         require_media_consent=bool(data.get("require_media_consent", default.require_media_consent)),
-        require_regulations_acceptance=bool(
-            data.get("require_regulations_acceptance", default.require_regulations_acceptance)
-        ),
-        manual_application_approval=bool(
-            data.get("manual_application_approval", default.manual_application_approval)
-        ),
-        automatic_approval_after_payment=bool(
-            data.get("automatic_approval_after_payment", default.automatic_approval_after_payment)
-        ),
-        allow_returning_for_correction=bool(
-            data.get("allow_returning_for_correction", default.allow_returning_for_correction)
-        ),
+        require_regulations_acceptance=bool(data.get("require_regulations_acceptance", default.require_regulations_acceptance)),
+        manual_application_approval=bool(data.get("manual_application_approval", default.manual_application_approval)),
+        automatic_approval_after_payment=bool(data.get("automatic_approval_after_payment", default.automatic_approval_after_payment)),
+        allow_returning_for_correction=bool(data.get("allow_returning_for_correction", default.allow_returning_for_correction)),
         format_requirements=tuple(format_requirements),
     )
 
@@ -221,11 +201,7 @@ def _format_requirements_from_json(data: dict[str, object]) -> ParticipationForm
             except ValueError:
                 continue
 
-    max_size = music_data.get("max_upload_size_mb", 25)
-    try:
-        max_upload_size_mb = int(max_size)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
-        max_upload_size_mb = 25
+    max_upload_size_mb = as_int(music_data.get("max_upload_size_mb"), default=25)
 
     return ParticipationFormatRequirements(
         participation_format_id=format_id,

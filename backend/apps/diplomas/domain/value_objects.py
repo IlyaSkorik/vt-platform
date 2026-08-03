@@ -14,7 +14,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+
+#: A decoded JSON object as it arrives from the persistence layer.
+#:
+#: ``object`` rather than ``Any``: the domain layer bans explicit ``Any`` (mypy.ini),
+#: and here the ban earns its keep. These snapshots are read back out of a JSON
+#: column that may have been written by an older revision of this file, so the code
+#: genuinely does not know the shape and must narrow every read. With ``Any`` the
+#: helpers below type-checked while silently trusting whatever was in the column.
+type JsonDict = dict[str, object]
 
 __all__ = [
     "AwardSnapshot",
@@ -44,11 +52,45 @@ class DiplomaStatus(Enum):
     CANCELLED = "CANCELLED"
 
 
-def _clean(value: Any) -> str | None:
+def _clean(value: object) -> str | None:
     if value is None:
         return None
     text = str(value).strip()
     return text or None
+
+
+def _mapping(value: object) -> JsonDict:
+    """Narrow a nested JSON value to an object, treating anything else as absent.
+
+    A snapshot that has lost a whole sub-object prints with that section blank,
+    which is what a missing key already did — better than raising while rendering
+    a diploma that has already been issued.
+    """
+    if not isinstance(value, dict):
+        return {}
+    return {str(key): item for key, item in value.items()}
+
+
+def _rows(value: object) -> list[JsonDict]:
+    """Narrow a nested JSON array of objects, treating anything else as empty."""
+    if not isinstance(value, list):
+        return []
+    return [_mapping(row) for row in value]
+
+
+def _age(value: object) -> int | None:
+    """Narrow a stored age. Anything that is not a whole number reads as unknown.
+
+    Age is printed, never computed with, and a diploma is routinely created before
+    it is known — so an unparseable value means "do not print an age", not an error.
+    """
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str) and value.strip().lstrip("-").isdigit():
+        return int(value.strip())
+    return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,13 +100,12 @@ class ParticipantSnapshot:
     display_name: str
     age: int | None = None
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> JsonDict:
         return {"display_name": self.display_name, "age": self.age}
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> ParticipantSnapshot:
-        age = data.get("age")
-        return cls(display_name=str(data.get("display_name") or ""), age=int(age) if age is not None else None)
+    def from_dict(cls, data: JsonDict) -> ParticipantSnapshot:
+        return cls(display_name=str(data.get("display_name") or ""), age=_age(data.get("age")))
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,11 +115,11 @@ class TeacherSnapshot:
     name: str
     role: str | None = None
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> JsonDict:
         return {"name": self.name, "role": self.role}
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> TeacherSnapshot:
+    def from_dict(cls, data: JsonDict) -> TeacherSnapshot:
         return cls(name=str(data.get("name") or ""), role=_clean(data.get("role")))
 
 
@@ -88,11 +129,11 @@ class OrganizationSnapshot:
 
     name: str | None = None
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> JsonDict:
         return {"name": self.name}
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> OrganizationSnapshot:
+    def from_dict(cls, data: JsonDict) -> OrganizationSnapshot:
         return cls(name=_clean(data.get("name")))
 
 
@@ -105,7 +146,7 @@ class NominationSnapshot:
     participant_group: str | None = None
     age_category: str | None = None
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> JsonDict:
         return {
             "title": self.title,
             "discipline": self.discipline,
@@ -114,7 +155,7 @@ class NominationSnapshot:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> NominationSnapshot:
+    def from_dict(cls, data: JsonDict) -> NominationSnapshot:
         return cls(
             title=_clean(data.get("title")),
             discipline=_clean(data.get("discipline")),
@@ -129,11 +170,11 @@ class PerformanceSnapshot:
 
     title: str | None = None
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> JsonDict:
         return {"title": self.title}
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> PerformanceSnapshot:
+    def from_dict(cls, data: JsonDict) -> PerformanceSnapshot:
         return cls(title=_clean(data.get("title")))
 
 
@@ -145,11 +186,11 @@ class CompetitionSnapshot:
     date: str | None = None
     city: str | None = None
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> JsonDict:
         return {"title": self.title, "date": self.date, "city": self.city}
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> CompetitionSnapshot:
+    def from_dict(cls, data: JsonDict) -> CompetitionSnapshot:
         return cls(
             title=_clean(data.get("title")),
             date=_clean(data.get("date")),
@@ -164,11 +205,11 @@ class AwardSnapshot:
 
     degree: str | None = None
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> JsonDict:
         return {"degree": self.degree}
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> AwardSnapshot:
+    def from_dict(cls, data: JsonDict) -> AwardSnapshot:
         return cls(degree=_clean(data.get("degree")))
 
 
@@ -188,7 +229,7 @@ class DiplomaSnapshot:
     competition: CompetitionSnapshot = field(default_factory=CompetitionSnapshot)
     award: AwardSnapshot = field(default_factory=AwardSnapshot)
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> JsonDict:
         return {
             "participant": self.participant.to_dict(),
             "teachers": [teacher.to_dict() for teacher in self.teachers],
@@ -200,13 +241,13 @@ class DiplomaSnapshot:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> DiplomaSnapshot:
+    def from_dict(cls, data: JsonDict) -> DiplomaSnapshot:
         return cls(
-            participant=ParticipantSnapshot.from_dict(data.get("participant") or {}),
-            teachers=tuple(TeacherSnapshot.from_dict(row) for row in data.get("teachers") or []),
-            organization=OrganizationSnapshot.from_dict(data.get("organization") or {}),
-            nomination=NominationSnapshot.from_dict(data.get("nomination") or {}),
-            performance=PerformanceSnapshot.from_dict(data.get("performance") or {}),
-            competition=CompetitionSnapshot.from_dict(data.get("competition") or {}),
-            award=AwardSnapshot.from_dict(data.get("award") or {}),
+            participant=ParticipantSnapshot.from_dict(_mapping(data.get("participant"))),
+            teachers=tuple(TeacherSnapshot.from_dict(row) for row in _rows(data.get("teachers"))),
+            organization=OrganizationSnapshot.from_dict(_mapping(data.get("organization"))),
+            nomination=NominationSnapshot.from_dict(_mapping(data.get("nomination"))),
+            performance=PerformanceSnapshot.from_dict(_mapping(data.get("performance"))),
+            competition=CompetitionSnapshot.from_dict(_mapping(data.get("competition"))),
+            award=AwardSnapshot.from_dict(_mapping(data.get("award"))),
         )

@@ -97,10 +97,12 @@ def _clean(value: object | None) -> str:
 
 def _lead_participant(submission: SubmissionModel) -> dict[str, Any]:
     """The first participant carrying a display name (the one a diploma names)."""
-    for participant in submission.participants or []:
+    # `participants` is a JSON column, so its rows arrive untyped; narrowing here stops
+    # that Any escaping into the caller as a "dict" it never verified.
+    participants = [row for row in submission.participants or [] if isinstance(row, dict)]
+    for participant in participants:
         if _clean(participant.get("display_name")):
             return participant
-    participants = submission.participants or []
     return participants[0] if participants else {}
 
 

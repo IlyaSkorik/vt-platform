@@ -962,9 +962,7 @@ class AgeCategoryName:
     value: str
 
     def __post_init__(self) -> None:
-        object.__setattr__(
-            self, "value", _validate_name(self.value, error=InvalidAgeCategoryNameError, label="Age category name", maximum=_NAME_MAX)
-        )
+        object.__setattr__(self, "value", _validate_name(self.value, error=InvalidAgeCategoryNameError, label="Age category name", maximum=_NAME_MAX))
 
     def __str__(self) -> str:
         return self.value
@@ -1007,9 +1005,7 @@ class ParticipantGroupDescription:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if len(stripped) > _CATEGORY_DESCRIPTION_MAX:
-            raise InvalidParticipantGroupDescriptionError(
-                f"Participant group description must be at most {_CATEGORY_DESCRIPTION_MAX} characters."
-            )
+            raise InvalidParticipantGroupDescriptionError(f"Participant group description must be at most {_CATEGORY_DESCRIPTION_MAX} characters.")
         object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:
@@ -1333,10 +1329,7 @@ class AdmissionCombination:
     participation_format_id: ParticipationFormatId
 
     def __str__(self) -> str:
-        return (
-            f"{self.category_id}/{self.discipline_id}/{self.age_category_id}/"
-            f"{self.participant_group_id}/{self.participation_format_id}"
-        )
+        return f"{self.category_id}/{self.discipline_id}/{self.age_category_id}/{self.participant_group_id}/{self.participation_format_id}"
 
 
 @dataclass(frozen=True, slots=True)
@@ -1394,10 +1387,7 @@ class PricingRule:
         )
 
     def __str__(self) -> str:
-        return (
-            f"PricingRule({self.combination} @ {self.price_per_participant} "
-            f"[{self.calculation_type.value}])"
-        )
+        return f"PricingRule({self.combination} @ {self.price_per_participant} [{self.calculation_type.value}])"
 
 
 # ---------------------------------------------------------------------------
@@ -1725,9 +1715,7 @@ class MusicRequirements:
         if not isinstance(self.max_upload_size_mb, int) or isinstance(self.max_upload_size_mb, bool):
             raise InvalidCompetitionSettingsError("Music max upload size must be an integer.")
         if self.max_upload_size_mb < 1 or self.max_upload_size_mb > _MAX_UPLOAD_SIZE_MB_LIMIT:
-            raise InvalidCompetitionSettingsError(
-                f"Music max upload size must be between 1 and {_MAX_UPLOAD_SIZE_MB_LIMIT} MB."
-            )
+            raise InvalidCompetitionSettingsError(f"Music max upload size must be between 1 and {_MAX_UPLOAD_SIZE_MB_LIMIT} MB.")
         normalized = tuple(ext.strip().lower().lstrip(".") for ext in self.allowed_formats if ext.strip())
         if self.require_upload and not normalized:
             raise InvalidCompetitionSettingsError("At least one audio format is required when music upload is required.")
@@ -1858,9 +1846,7 @@ class CompetitionSettings:
             seen.add(item.participation_format_id)
 
         if self.automatic_approval_after_payment and not self.payment_required:
-            raise InvalidCompetitionSettingsError(
-                "Automatic approval after payment requires payment to be required."
-            )
+            raise InvalidCompetitionSettingsError("Automatic approval after payment requires payment to be required.")
 
     @classmethod
     def default(cls) -> CompetitionSettings:
@@ -1868,8 +1854,15 @@ class CompetitionSettings:
         return cls()
 
     def with_changes(self, **changes: object) -> CompetitionSettings:
-        """A copy with the given fields overridden (rejects unknown names)."""
-        return replace(self, **changes)
+        """A copy with the given fields overridden (rejects unknown names).
+
+        The ``**changes`` mapping is heterogeneous by nature — one call may set a
+        ``bool`` and a ``PaymentTiming`` at once — so no annotation can describe it
+        precisely enough for the checker to match each key against its field. The
+        guarantee is a runtime one: ``replace`` raises ``TypeError`` on an unknown or
+        ill-typed name, which the value-object tests assert.
+        """
+        return replace(self, **changes)  # type: ignore[arg-type]
 
     def requirements_for(self, format_id: ParticipationFormatId) -> ParticipationFormatRequirements:
         """Explicit requirements for ``format_id``, or defaults if not configured yet."""
@@ -1887,11 +1880,7 @@ class CompetitionSettings:
 
     def upsert_format_requirements(self, requirements: ParticipationFormatRequirements) -> CompetitionSettings:
         """Replace or append requirements for one participation format."""
-        others = tuple(
-            item
-            for item in self.format_requirements
-            if item.participation_format_id != requirements.participation_format_id
-        )
+        others = tuple(item for item in self.format_requirements if item.participation_format_id != requirements.participation_format_id)
         return replace(self, format_requirements=(*others, requirements))
 
 

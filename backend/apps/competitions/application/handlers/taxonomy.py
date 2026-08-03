@@ -20,6 +20,7 @@ from apps.competitions.application.dto.commands import (
     UpdateParticipantGroupCommand,
 )
 from apps.competitions.application.dto.views import CompetitionDetailView
+from apps.competitions.domain.entities import _SENTINEL, _Unset
 from apps.competitions.domain.value_objects import (
     AgeCategoryId,
     AgeCategoryName,
@@ -244,9 +245,7 @@ class AddAgeCategoryHandler(CompetitionCommandHandler):
             now=self._clock.utcnow(),
             age_category_type=AgeCategoryType(command.age_category_type),
             mixed_calculation_method=(
-                MixedAgeCalculationMethod(command.mixed_calculation_method)
-                if command.mixed_calculation_method is not None
-                else None
+                MixedAgeCalculationMethod(command.mixed_calculation_method) if command.mixed_calculation_method is not None else None
             ),
             sort_order=command.sort_order,
         )
@@ -267,24 +266,24 @@ class UpdateAgeCategoryHandler(CompetitionCommandHandler):
         if command.min_age is not None and command.max_age is not None:
             age_range = AgeRange(min_age=command.min_age, max_age=command.max_age)
 
-        kwargs: dict = {
-            "age_category_id": AgeCategoryId.from_string(command.age_category_id),
-            "name": AgeCategoryName(command.name) if command.name is not None else None,
-            "age_range": age_range,
-            "age_category_type": AgeCategoryType(command.age_category_type)
-            if command.age_category_type is not None
-            else None,
-            "sort_order": command.sort_order,
-            "now": self._clock.utcnow(),
-        }
+        # `mixed_calculation_method` is the one field where "not mentioned in this
+        # request" and "explicitly cleared" mean different things, which is exactly what
+        # the domain's sentinel default expresses. Passing it directly replaces a
+        # dynamically built `**kwargs` dict that no checker could match to the method's
+        # parameters — the conditional omission was the only reason for the dict.
+        mixed_method: MixedAgeCalculationMethod | None | _Unset = _SENTINEL
         if command.age_category_type is not None or command.mixed_calculation_method is not None:
-            kwargs["mixed_calculation_method"] = (
-                MixedAgeCalculationMethod(command.mixed_calculation_method)
-                if command.mixed_calculation_method is not None
-                else None
-            )
+            mixed_method = MixedAgeCalculationMethod(command.mixed_calculation_method) if command.mixed_calculation_method is not None else None
 
-        competition.update_age_category(**kwargs)
+        competition.update_age_category(
+            age_category_id=AgeCategoryId.from_string(command.age_category_id),
+            name=AgeCategoryName(command.name) if command.name is not None else None,
+            age_range=age_range,
+            age_category_type=AgeCategoryType(command.age_category_type) if command.age_category_type is not None else None,
+            mixed_calculation_method=mixed_method,
+            sort_order=command.sort_order,
+            now=self._clock.utcnow(),
+        )
 
         return self._persist(competition)
 
@@ -347,8 +346,6 @@ class UpdateParticipantGroupHandler(CompetitionCommandHandler):
         self,
         command: UpdateParticipantGroupCommand,
     ) -> CompetitionDetailView:
-        from apps.competitions.domain.entities import _SENTINEL
-
         competition = self._require(command.competition_id)
 
         count_range: ParticipantCountRange | None = None
@@ -358,19 +355,20 @@ class UpdateParticipantGroupHandler(CompetitionCommandHandler):
                 max_count=command.max_count,
             )
 
-        description: object = _SENTINEL
+        # Typed as the union the domain actually accepts, rather than `object` behind a
+        # silenced argument: `update_description` false means "leave it alone", which is
+        # a different request from "clear it", and the sentinel is what says so.
+        description: ParticipantGroupDescription | None | _Unset = _SENTINEL
         if command.update_description:
             description = (
-                ParticipantGroupDescription(command.description)
-                if command.description is not None and command.description.strip()
-                else None
+                ParticipantGroupDescription(command.description) if command.description is not None and command.description.strip() else None
             )
 
         competition.update_participant_group(
             participant_group_id=ParticipantGroupId.from_string(command.participant_group_id),
             name=ParticipantGroupName(command.name) if command.name is not None else None,
             count_range=count_range,
-            description=description,  # type: ignore[arg-type]
+            description=description,
             sort_order=command.sort_order,
             now=self._clock.utcnow(),
         )

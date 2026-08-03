@@ -30,6 +30,7 @@ from apps.competitions.domain.value_objects import (
     VideoRequirements,
     VideoSubmissionMode,
 )
+from shared.utils.json_values import as_int
 
 from ._support import CompetitionCommandHandler
 
@@ -74,7 +75,7 @@ def _format_requirements(raw_items: list[dict[str, object]]) -> tuple[Participat
                     require_upload=bool(music_raw.get("require_upload", False)),
                     allow_replacement=bool(music_raw.get("allow_replacement", True)),
                     allowed_formats=allowed_formats,
-                    max_upload_size_mb=int(music_raw.get("max_upload_size_mb", 25)),  # type: ignore[arg-type]
+                    max_upload_size_mb=as_int(music_raw.get("max_upload_size_mb"), default=25),
                 ),
                 video=VideoRequirements(
                     mode=VideoSubmissionMode(str(video_raw.get("mode", VideoSubmissionMode.NOT_REQUIRED.value))),

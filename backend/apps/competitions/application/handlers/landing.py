@@ -13,6 +13,7 @@ from apps.competitions.domain.landing_configuration import (
     LandingConfiguration,
     PartnerCard,
 )
+from shared.utils.json_values import as_int
 
 from ._support import CompetitionCommandHandler
 
@@ -27,10 +28,7 @@ def _optional_str(value: object) -> str | None:
 
 
 def _sort_order(value: object) -> int:
-    try:
-        return int(value)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
-        return 0
+    return as_int(value, minimum=0)
 
 
 def _landing_config_from_command(command: UpdateLandingConfigCommand) -> LandingConfiguration:
@@ -102,11 +100,7 @@ def _landing_config_from_command(command: UpdateLandingConfigCommand) -> Landing
                 )
 
         body = raw.get("body")
-        body_value: str | None = (
-            ("" if body is None else str(body))
-            if block_type is LandingBlockType.CONTENT
-            else _optional_str(body)
-        )
+        body_value: str | None = ("" if body is None else str(body)) if block_type is LandingBlockType.CONTENT else _optional_str(body)
 
         blocks.append(
             LandingBlock(

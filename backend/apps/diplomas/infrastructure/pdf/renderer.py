@@ -80,7 +80,9 @@ def _color(value: Any) -> HexColor:
 def _string_width(text: str, font: str, size: float, char_space: float) -> float:
     from reportlab.pdfbase.pdfmetrics import stringWidth
 
-    width = stringWidth(text, font, size)
+    # reportlab ships no stubs (mypy.ini), so `stringWidth` is untyped; converting at
+    # the boundary keeps that Any from leaking into the layout maths downstream.
+    width = float(stringWidth(text, font, size))
     if char_space and text:
         width += char_space * (len(text) - 1)
     return width
