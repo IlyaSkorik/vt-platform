@@ -185,12 +185,9 @@ function FormatRequirementsAccordion({
             disabled={readOnly}
             onChange={(v) => update({ music: { ...requirements.music, requireUpload: v } })}
           />
-          <SwitchRow
-            label="Разрешить замену"
-            checked={requirements.music.allowReplacement}
-            comingSoon
-            onChange={(v) => update({ music: { ...requirements.music, allowReplacement: v } })}
-          />
+          {/* "Разрешить замену" is not rendered: `allow_replacement` is stored and echoed back
+              but never read outside the competitions module, so the switch promised a rule
+              nothing enforces. Hidden rather than badged, for the same reason as the others. */}
           <div>
             <p className="mb-1.5 font-medium text-sm">Допустимые аудиоформаты</p>
             <p className="mb-1.5 text-muted-foreground text-xs">
