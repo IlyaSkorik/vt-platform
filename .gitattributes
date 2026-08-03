@@ -1,0 +1,29 @@
+# Line endings: LF in the repository *and* in the working tree.
+#
+# `eol=lf` is the part that matters. The repository was already all-LF, but a Windows
+# clone with `core.autocrlf=true` (the installer's default) rewrites files to CRLF on
+# checkout — and then biome reports every one of them as misformatted while `git diff`
+# shows nothing at all, because the index was LF the whole time. Formatting was
+# therefore not reproducible across machines, and `--write` produced changes that
+# could not be committed and came back on the next checkout.
+#
+# Pinning it here overrides whatever each developer has configured locally, which is
+# the only way this stays fixed.
+* text=auto eol=lf
+
+# Assets Git must never touch. Content detection already catches these; declaring them
+# means a corrupted font or screenshot can never be blamed on eol conversion.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.pdf binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.zip binary
+*.mp3 binary
+*.mp4 binary
