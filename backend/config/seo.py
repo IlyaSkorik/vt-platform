@@ -99,8 +99,7 @@ def sitemap_xml(_request: HttpRequest) -> HttpResponse:
     """``GET /sitemap.xml`` — the public pages, with every visible competition."""
     base = site_url()
     entries = [
-        _url_entry(location=f"{base}{path}", lastmod=None, changefreq=changefreq, priority=priority)
-        for path, changefreq, priority in _STATIC_PAGES
+        _url_entry(location=f"{base}{path}", lastmod=None, changefreq=changefreq, priority=priority) for path, changefreq, priority in _STATIC_PAGES
     ]
 
     for festival in build_public_catalog_read_service().list_festivals():
@@ -118,8 +117,6 @@ def sitemap_xml(_request: HttpRequest) -> HttpResponse:
 
     document = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-        + "\n".join(entries)
-        + "\n</urlset>\n"
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + "\n".join(entries) + "\n</urlset>\n"
     )
     return HttpResponse(document, content_type="application/xml; charset=utf-8")

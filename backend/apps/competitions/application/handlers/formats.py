@@ -61,9 +61,7 @@ class UpdateParticipationFormatHandler(CompetitionCommandHandler):
         description: object = _SENTINEL
         if command.update_description:
             description = (
-                ParticipationFormatDescription(command.description)
-                if command.description is not None and command.description.strip()
-                else None
+                ParticipationFormatDescription(command.description) if command.description is not None and command.description.strip() else None
             )
 
         events = competition.update_participation_format(

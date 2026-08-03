@@ -30,9 +30,7 @@ __all__ = [
 ]
 
 
-def invitation_status(
-    invitation: StaffInvitation, *, policy: InvitationExpiryPolicy, now: datetime
-) -> str:
+def invitation_status(invitation: StaffInvitation, *, policy: InvitationExpiryPolicy, now: datetime) -> str:
     """Derive an invitation's lifecycle status for the roster read model.
 
     ``accepted`` and ``revoked`` are terminal facts on the aggregate; ``expired``

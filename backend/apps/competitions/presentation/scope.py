@@ -15,7 +15,10 @@ import uuid
 
 from rest_framework.request import Request
 
-from apps.organization.presentation.scope import callers_organization_id, is_platform_operator
+from apps.organization.presentation.scope import (
+    callers_organization_id,
+    is_platform_operator,
+)
 
 __all__ = ["callers_organization_id", "is_platform_operator", "may_reach_competition"]
 

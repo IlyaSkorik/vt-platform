@@ -24,6 +24,7 @@ __all__ = [
     "AccountResponseSerializer",
 ]
 
+
 class AccountPasswordRequestSerializer(serializers.Serializer[dict[str, object]]):
     """``PUT /users/me/password`` — the account holder replaces their own password."""
 

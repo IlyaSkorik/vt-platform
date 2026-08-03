@@ -256,10 +256,7 @@ class DjangoCompetitionServiceCatalog:
         if competition is None:
             return ReceiptRequirement.none()
         settings = competition.settings
-        demanding = [
-            settings.requirements_for(CompParticipationFormatId.from_string(fid)).payment_receipt
-            for fid in participation_format_ids
-        ]
+        demanding = [settings.requirements_for(CompParticipationFormatId.from_string(fid)).payment_receipt for fid in participation_format_ids]
         requiring = [receipt for receipt in demanding if receipt.require_receipt]
         if not requiring:
             return ReceiptRequirement.none()

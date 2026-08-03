@@ -26,9 +26,7 @@ class DjangoDiplomaRepository:
         return uuid7()
 
     def exists_for_submission(self, submission_id: uuid.UUID) -> bool:
-        return DiplomaModel.objects.filter(
-            submission_id=submission_id, deleted_at__isnull=True
-        ).exists()
+        return DiplomaModel.objects.filter(submission_id=submission_id, deleted_at__isnull=True).exists()
 
     def add(self, diploma: Diploma) -> None:
         DiplomaMapper.to_model(diploma).save(force_insert=True)
@@ -44,9 +42,7 @@ class DjangoDiplomaRepository:
         return DiplomaMapper.to_domain(model) if model is not None else None
 
     def get_by_submission(self, submission_id: uuid.UUID) -> Diploma | None:
-        model = DiplomaModel.objects.filter(
-            submission_id=submission_id, deleted_at__isnull=True
-        ).first()
+        model = DiplomaModel.objects.filter(submission_id=submission_id, deleted_at__isnull=True).first()
         return DiplomaMapper.to_domain(model) if model is not None else None
 
     def list_by_competition(self, competition_id: uuid.UUID) -> list[Diploma]:

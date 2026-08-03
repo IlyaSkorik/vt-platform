@@ -37,9 +37,7 @@ class DiplomaNumberSequenceModel(BasePersistenceModel):
         verbose_name_plural = "diploma number sequences"
         constraints = [
             *BasePersistenceModel.Meta.constraints,
-            models.UniqueConstraint(
-                fields=["scope"], name="diplomas_number_sequence_scope_unique"
-            ),
+            models.UniqueConstraint(fields=["scope"], name="diplomas_number_sequence_scope_unique"),
         ]
 
     def __str__(self) -> str:

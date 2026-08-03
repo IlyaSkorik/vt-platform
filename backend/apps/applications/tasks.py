@@ -13,7 +13,7 @@ from django.conf import settings
 from django.utils import timezone
 
 
-@shared_task(name="applications.sweep_unpaid_applications")
+@shared_task(name="applications.sweep_unpaid_applications")  # type: ignore[untyped-decorator]  # celery ships no stubs
 def sweep_unpaid_applications() -> None:
     """Auto-cancel submitted orders whose payment receipt never arrived in time.
 

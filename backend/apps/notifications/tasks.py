@@ -35,7 +35,9 @@ _MAX_RETRIES = 12
 _MAX_BACKOFF_SECONDS = 600
 
 
-@shared_task(bind=True, name="notifications.deliver_email", max_retries=_MAX_RETRIES)
+# Celery ships no inline type information (mypy.ini declares it stub-less), so the
+# decorator is untyped and would silently make every task function untyped too.
+@shared_task(bind=True, name="notifications.deliver_email", max_retries=_MAX_RETRIES)  # type: ignore[untyped-decorator]
 def deliver_email(self: Any, payload: dict[str, Any]) -> str:
     """Send one already-validated message, within this mailbox's allowance."""
     message = rebuild_message(payload)

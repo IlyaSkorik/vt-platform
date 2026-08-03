@@ -21,9 +21,7 @@ __all__ = ["DjangoTemplateAssignments"]
 class DjangoTemplateAssignments:
     """Concrete ``TemplateAssignments`` over the Django ORM."""
 
-    def for_nomination(
-        self, *, competition_id: uuid.UUID, category_id: uuid.UUID, document_type: DocumentType
-    ) -> AssignedTemplate | None:
+    def for_nomination(self, *, competition_id: uuid.UUID, category_id: uuid.UUID, document_type: DocumentType) -> AssignedTemplate | None:
         row = (
             AssignmentModel.objects.filter(
                 competition_id=competition_id,

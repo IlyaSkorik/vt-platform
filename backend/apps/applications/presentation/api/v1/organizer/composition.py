@@ -33,17 +33,12 @@ def organization_competition_ids() -> list[str]:
     §21.6): the registry is only ever asked about participation inside this set,
     so a child's participation in any other organization can never surface.
     """
-    return [
-        str(row["id"])
-        for row in CompetitionModel.objects.filter(deleted_at__isnull=True).values("id")
-    ]
+    return [str(row["id"]) for row in CompetitionModel.objects.filter(deleted_at__isnull=True).values("id")]
 
 
 def organization_competitions() -> list[dict[str, str]]:
     """The organization's competitions (id + title) for filter dropdowns."""
     return [
         {"id": str(row["id"]), "title": str(row["title"])}
-        for row in CompetitionModel.objects.filter(deleted_at__isnull=True)
-        .values("id", "title")
-        .order_by("title")
+        for row in CompetitionModel.objects.filter(deleted_at__isnull=True).values("id", "title").order_by("title")
     ]

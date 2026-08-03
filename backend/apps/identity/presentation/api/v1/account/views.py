@@ -142,9 +142,7 @@ class AccountEmailView(_AccountView):
             # Sent from here rather than from a subscriber on `EmailChanged`: an
             # address the platform cannot reach is an account nobody can recover,
             # so the change is not reported as done unless the challenge went out.
-            composition.build_request_email_verification_handler().handle(
-                RequestEmailVerificationCommand(email=result.user.email)
-            )
+            composition.build_request_email_verification_handler().handle(RequestEmailVerificationCommand(email=result.user.email))
         except ApplicationError as exc:
             return application_problem(exc, instance=request.path, request=request)
         return self._envelope(request, result.user)

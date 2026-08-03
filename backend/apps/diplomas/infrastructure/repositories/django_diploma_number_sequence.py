@@ -30,9 +30,7 @@ class DjangoDiplomaNumberSequence:
 
     def next_value(self, *, scope: str) -> int:
         with transaction.atomic():
-            DiplomaNumberSequenceModel.objects.get_or_create(
-                scope=scope, defaults={"current_number": 0}
-            )
+            DiplomaNumberSequenceModel.objects.get_or_create(scope=scope, defaults={"current_number": 0})
             row = DiplomaNumberSequenceModel.objects.select_for_update().get(scope=scope)
             row.current_number += 1
             row.updated_at = timezone.now()

@@ -9,7 +9,7 @@ from __future__ import annotations
 from celery import shared_task
 
 
-@shared_task(name="diplomas.generate_print_package")
+@shared_task(name="diplomas.generate_print_package")  # type: ignore[untyped-decorator]  # celery ships no stubs
 def generate_print_package(job_id: str) -> None:
     """Run one print-package job: create missing diplomas, render PDFs, build ZIP."""
     from django.utils import timezone
@@ -32,9 +32,7 @@ def generate_print_package(job_id: str) -> None:
 
     try:
         targets = resolve_targets(job.competition_id, job.category_ids or [])
-        result = build_batch_service().generate_print_package(
-            competition_id=job.competition_id, targets=targets, now=timezone.now(), force=job.force
-        )
+        result = build_batch_service().generate_print_package(competition_id=job.competition_id, targets=targets, now=timezone.now(), force=job.force)
     except Exception as exc:
         job.status = PrintJobStatusChoices.FAILED
         job.error = str(exc)[:2000]

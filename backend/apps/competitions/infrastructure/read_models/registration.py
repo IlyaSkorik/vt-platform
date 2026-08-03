@@ -9,11 +9,18 @@ edge). No business rule is re-implemented here.
 
 from __future__ import annotations
 
-from apps.competitions.application.read_models.public_catalog import PUBLIC_CATALOG_DOMAIN_STATUSES
-from apps.competitions.application.read_models.registration import RegistrationView, project_registration
+from apps.competitions.application.read_models.public_catalog import (
+    PUBLIC_CATALOG_DOMAIN_STATUSES,
+)
+from apps.competitions.application.read_models.registration import (
+    RegistrationView,
+    project_registration,
+)
 from apps.competitions.domain.value_objects import CompetitionId
 from apps.competitions.infrastructure.models import CompetitionModel
-from apps.competitions.infrastructure.repositories.django_competition_repository import DjangoCompetitionRepository
+from apps.competitions.infrastructure.repositories.django_competition_repository import (
+    DjangoCompetitionRepository,
+)
 from apps.competitions.infrastructure.system.clock import SystemClock
 
 __all__ = ["DjangoRegistrationReader"]

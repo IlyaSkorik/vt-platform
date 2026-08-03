@@ -5,6 +5,10 @@ Output-only, read-model serializers: they render the flat
 with camelCase field names (API-000 §5). They validate no input — the catalog is
 a GET with no body — and are deliberately independent of the organizer control
 panel's serializers.
+
+The ``Serializer[object]`` parameter is the instance type these render *from*, and
+here that is a read-model dataclass, not a mapping — which is why it is ``object``
+rather than the ``dict[str, object]`` the input-validating serializers next door use.
 """
 
 from __future__ import annotations
@@ -21,13 +25,13 @@ __all__ = [
 ]
 
 
-class PublicCatalogMetaSerializer(serializers.Serializer):
+class PublicCatalogMetaSerializer(serializers.Serializer[object]):
     """Response envelope metadata (API-000 §5)."""
 
     requestId = serializers.CharField()
 
 
-class PublicFestivalOrganizerSerializer(serializers.Serializer):
+class PublicFestivalOrganizerSerializer(serializers.Serializer[object]):
     """Organizer identity for a catalog card."""
 
     id = serializers.CharField()
@@ -35,14 +39,14 @@ class PublicFestivalOrganizerSerializer(serializers.Serializer):
     logo = serializers.CharField(allow_null=True)
 
 
-class PublicFestivalFormatSerializer(serializers.Serializer):
+class PublicFestivalFormatSerializer(serializers.Serializer[object]):
     """A participation format with its normalized display mode."""
 
     name = serializers.CharField()
     mode = serializers.CharField(allow_null=True)
 
 
-class PublicFestivalPricingSerializer(serializers.Serializer):
+class PublicFestivalPricingSerializer(serializers.Serializer[object]):
     """The "from X" price summary."""
 
     amountFrom = serializers.DecimalField(source="amount_from", max_digits=12, decimal_places=2, allow_null=True)
@@ -50,7 +54,7 @@ class PublicFestivalPricingSerializer(serializers.Serializer):
     multiple = serializers.BooleanField()
 
 
-class PublicFestivalSerializer(serializers.Serializer):
+class PublicFestivalSerializer(serializers.Serializer[object]):
     """One competition as rendered in the public catalog."""
 
     id = serializers.CharField()
@@ -79,17 +83,20 @@ class PublicFestivalSerializer(serializers.Serializer):
     updatedAt = serializers.DateTimeField(source="updated_at", allow_null=True)
 
 
-class PublicFestivalListEnvelopeSerializer(serializers.Serializer):
+class PublicFestivalListEnvelopeSerializer(serializers.Serializer[object]):
     """The full ``GET /public/festivals`` response envelope."""
 
-    data = PublicFestivalSerializer(many=True)
+    # `data` is the envelope's own key (API-000 §5) and shadows DRF's `Serializer.data`
+    # property. These envelopes are schema declarations for drf-spectacular — nothing
+    # ever reads `.data` off them — so the shadowing is harmless and the key must stay.
+    data = PublicFestivalSerializer(many=True)  # type: ignore[assignment]
     meta = PublicCatalogMetaSerializer()
 
 
 # --- Detail (landing page) ----------------------------------------------------
 
 
-class PublicFestivalJuryCardSerializer(serializers.Serializer):
+class PublicFestivalJuryCardSerializer(serializers.Serializer[object]):
     """A jury/expert card in a landing JURY block."""
 
     id = serializers.CharField()
@@ -99,7 +106,7 @@ class PublicFestivalJuryCardSerializer(serializers.Serializer):
     description = serializers.CharField(allow_null=True)
 
 
-class PublicFestivalPartnerCardSerializer(serializers.Serializer):
+class PublicFestivalPartnerCardSerializer(serializers.Serializer[object]):
     """A partner/sponsor card in a landing PARTNERS block."""
 
     id = serializers.CharField()
@@ -108,7 +115,7 @@ class PublicFestivalPartnerCardSerializer(serializers.Serializer):
     website = serializers.CharField(allow_null=True)
 
 
-class PublicFestivalGalleryImageSerializer(serializers.Serializer):
+class PublicFestivalGalleryImageSerializer(serializers.Serializer[object]):
     """An image in a landing GALLERY block."""
 
     id = serializers.CharField()
@@ -116,7 +123,7 @@ class PublicFestivalGalleryImageSerializer(serializers.Serializer):
     caption = serializers.CharField(allow_null=True)
 
 
-class PublicFestivalFaqItemSerializer(serializers.Serializer):
+class PublicFestivalFaqItemSerializer(serializers.Serializer[object]):
     """A question/answer pair in a landing FAQ block."""
 
     id = serializers.CharField()
@@ -124,7 +131,7 @@ class PublicFestivalFaqItemSerializer(serializers.Serializer):
     answer = serializers.CharField()
 
 
-class PublicFestivalLandingBlockSerializer(serializers.Serializer):
+class PublicFestivalLandingBlockSerializer(serializers.Serializer[object]):
     """One enabled landing block, in display order, with its typed payload."""
 
     id = serializers.CharField()
@@ -141,13 +148,13 @@ class PublicFestivalLandingBlockSerializer(serializers.Serializer):
     faq = PublicFestivalFaqItemSerializer(many=True)
 
 
-class PublicFestivalLandingSerializer(serializers.Serializer):
+class PublicFestivalLandingSerializer(serializers.Serializer[object]):
     """The public landing page: enabled blocks in display order."""
 
     blocks = PublicFestivalLandingBlockSerializer(many=True)
 
 
-class PublicFestivalSocialLinksSerializer(serializers.Serializer):
+class PublicFestivalSocialLinksSerializer(serializers.Serializer[object]):
     """Public social links for the footer."""
 
     vk = serializers.CharField(allow_null=True)
@@ -155,7 +162,7 @@ class PublicFestivalSocialLinksSerializer(serializers.Serializer):
     telegram = serializers.CharField(allow_null=True)
 
 
-class PublicFestivalTeamMemberSerializer(serializers.Serializer):
+class PublicFestivalTeamMemberSerializer(serializers.Serializer[object]):
     """A named contact person shown on the public page."""
 
     id = serializers.CharField()
@@ -166,7 +173,7 @@ class PublicFestivalTeamMemberSerializer(serializers.Serializer):
     description = serializers.CharField(allow_null=True)
 
 
-class PublicFestivalEmergencySerializer(serializers.Serializer):
+class PublicFestivalEmergencySerializer(serializers.Serializer[object]):
     """Optional emergency/urgent contact line."""
 
     phone = serializers.CharField(allow_null=True)
@@ -174,7 +181,7 @@ class PublicFestivalEmergencySerializer(serializers.Serializer):
     notes = serializers.CharField(allow_null=True)
 
 
-class PublicFestivalVenueSerializer(serializers.Serializer):
+class PublicFestivalVenueSerializer(serializers.Serializer[object]):
     """The venue section — competition venue merged with contact details."""
 
     name = serializers.CharField(allow_null=True)
@@ -186,7 +193,7 @@ class PublicFestivalVenueSerializer(serializers.Serializer):
     directions = serializers.CharField(allow_null=True)
 
 
-class PublicFestivalContactsSerializer(serializers.Serializer):
+class PublicFestivalContactsSerializer(serializers.Serializer[object]):
     """The public contacts module: organizer identity, channels, team, venue."""
 
     organizationName = serializers.CharField(source="organization_name", allow_null=True)
@@ -201,7 +208,7 @@ class PublicFestivalContactsSerializer(serializers.Serializer):
     legalInformation = serializers.CharField(source="legal_information", allow_null=True)
 
 
-class PublicFestivalRegulationSerializer(serializers.Serializer):
+class PublicFestivalRegulationSerializer(serializers.Serializer[object]):
     """The competition's current regulation ("Положение фестиваля")."""
 
     title = serializers.CharField()
@@ -210,7 +217,7 @@ class PublicFestivalRegulationSerializer(serializers.Serializer):
     fileReference = serializers.CharField(source="file_reference")
 
 
-class PublicFestivalDocumentSerializer(serializers.Serializer):
+class PublicFestivalDocumentSerializer(serializers.Serializer[object]):
     """One publicly-visible competition document shown on the landing page."""
 
     id = serializers.CharField()
@@ -229,10 +236,10 @@ class PublicFestivalDetailSerializer(PublicFestivalSerializer):
     documents = PublicFestivalDocumentSerializer(many=True)
 
 
-class PublicFestivalDetailEnvelopeSerializer(serializers.Serializer):
+class PublicFestivalDetailEnvelopeSerializer(serializers.Serializer[object]):
     """The full ``GET /public/festivals/{id}`` response envelope."""
 
-    data = PublicFestivalDetailSerializer()
+    data = PublicFestivalDetailSerializer()  # type: ignore[assignment]
     meta = PublicCatalogMetaSerializer()
 
 
@@ -241,7 +248,7 @@ class PublicFestivalDetailEnvelopeSerializer(serializers.Serializer):
 # ---------------------------------------------------------------------------
 
 
-class RegistrationCompetitionSerializer(serializers.Serializer):
+class RegistrationCompetitionSerializer(serializers.Serializer[object]):
     """Competition summary for the registration flow."""
 
     id = serializers.CharField()
@@ -252,7 +259,7 @@ class RegistrationCompetitionSerializer(serializers.Serializer):
     venueAddress = serializers.CharField(source="venue_address", allow_null=True)
 
 
-class RegistrationDeadlinesSerializer(serializers.Serializer):
+class RegistrationDeadlinesSerializer(serializers.Serializer[object]):
     """Independent registration deadlines (null = no cut-off)."""
 
     application = serializers.DateTimeField(allow_null=True)
@@ -262,7 +269,7 @@ class RegistrationDeadlinesSerializer(serializers.Serializer):
     correction = serializers.DateTimeField(allow_null=True)
 
 
-class RegistrationNominationSerializer(serializers.Serializer):
+class RegistrationNominationSerializer(serializers.Serializer[object]):
     id = serializers.CharField()
     name = serializers.CharField()
     description = serializers.CharField(allow_null=True)
@@ -273,14 +280,14 @@ class RegistrationNominationSerializer(serializers.Serializer):
     registrationClosesAt = serializers.DateTimeField(source="registration_closes_at", allow_null=True)
 
 
-class RegistrationDisciplineSerializer(serializers.Serializer):
+class RegistrationDisciplineSerializer(serializers.Serializer[object]):
     id = serializers.CharField()
     nominationId = serializers.CharField(source="nomination_id")
     name = serializers.CharField()
     sortOrder = serializers.IntegerField(source="sort_order")
 
 
-class RegistrationAgeCategorySerializer(serializers.Serializer):
+class RegistrationAgeCategorySerializer(serializers.Serializer[object]):
     id = serializers.CharField()
     participantGroupId = serializers.CharField(source="participant_group_id")
     name = serializers.CharField()
@@ -289,7 +296,7 @@ class RegistrationAgeCategorySerializer(serializers.Serializer):
     sortOrder = serializers.IntegerField(source="sort_order")
 
 
-class RegistrationParticipantGroupSerializer(serializers.Serializer):
+class RegistrationParticipantGroupSerializer(serializers.Serializer[object]):
     id = serializers.CharField()
     name = serializers.CharField()
     minCount = serializers.IntegerField(source="min_count")
@@ -297,13 +304,13 @@ class RegistrationParticipantGroupSerializer(serializers.Serializer):
     sortOrder = serializers.IntegerField(source="sort_order")
 
 
-class RegistrationFormatSerializer(serializers.Serializer):
+class RegistrationFormatSerializer(serializers.Serializer[object]):
     id = serializers.CharField()
     name = serializers.CharField()
     sortOrder = serializers.IntegerField(source="sort_order")
 
 
-class RegistrationAdmissionRuleSerializer(serializers.Serializer):
+class RegistrationAdmissionRuleSerializer(serializers.Serializer[object]):
     nominationId = serializers.CharField(source="nomination_id")
     disciplineId = serializers.CharField(source="discipline_id")
     ageCategoryId = serializers.CharField(source="age_category_id")
@@ -311,24 +318,27 @@ class RegistrationAdmissionRuleSerializer(serializers.Serializer):
     participationFormatId = serializers.CharField(source="participation_format_id")
 
 
-class RegistrationServiceSerializer(serializers.Serializer):
+class RegistrationServiceSerializer(serializers.Serializer[object]):
     id = serializers.CharField()
     name = serializers.CharField()
     amount = serializers.CharField()
     currency = serializers.CharField()
     billingModel = serializers.CharField(source="billing_model")
-    required = serializers.BooleanField()
+    # `required` is this service's wire key, not DRF's own `Field.required` flag it
+    # happens to shadow; same for `label` below. The wire contract wins over the
+    # collision (API-000 §7), which is why the assignment is silenced rather than renamed.
+    required = serializers.BooleanField()  # type: ignore[assignment]
     availableFormatIds = serializers.ListField(source="available_format_ids", child=serializers.CharField())
     description = serializers.CharField(allow_null=True)
 
 
-class RegistrationConsentRequirementSerializer(serializers.Serializer):
+class RegistrationConsentRequirementSerializer(serializers.Serializer[object]):
     code = serializers.CharField()
-    label = serializers.CharField()
-    required = serializers.BooleanField()
+    label = serializers.CharField()  # type: ignore[assignment]
+    required = serializers.BooleanField()  # type: ignore[assignment]
 
 
-class RegistrationUploadRequirementSerializer(serializers.Serializer):
+class RegistrationUploadRequirementSerializer(serializers.Serializer[object]):
     participationFormatId = serializers.CharField(source="participation_format_id")
     musicRequired = serializers.BooleanField(source="music_required")
     musicAllowedFormats = serializers.ListField(source="music_allowed_formats", child=serializers.CharField())
@@ -337,7 +347,7 @@ class RegistrationUploadRequirementSerializer(serializers.Serializer):
     receiptRequired = serializers.BooleanField(source="receipt_required")
 
 
-class RegistrationSerializer(serializers.Serializer):
+class RegistrationSerializer(serializers.Serializer[object]):
     """The single Registration projection consumed by the wizard."""
 
     competition = RegistrationCompetitionSerializer()
@@ -354,8 +364,8 @@ class RegistrationSerializer(serializers.Serializer):
     uploadRequirements = RegistrationUploadRequirementSerializer(source="upload_requirements", many=True)
 
 
-class RegistrationEnvelopeSerializer(serializers.Serializer):
+class RegistrationEnvelopeSerializer(serializers.Serializer[object]):
     """The ``{data, meta}`` envelope for the registration projection."""
 
-    data = RegistrationSerializer()
+    data = RegistrationSerializer()  # type: ignore[assignment]
     meta = PublicCatalogMetaSerializer()

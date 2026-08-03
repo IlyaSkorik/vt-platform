@@ -818,17 +818,11 @@ class SubmissionStatusChange:
 
     def __post_init__(self) -> None:
         if self.from_status is not None and not isinstance(self.from_status, SubmissionStatus):
-            raise InvalidSubmissionStatusChangeError(
-                f"from_status must be a SubmissionStatus or None, got {type(self.from_status)!r}."
-            )
+            raise InvalidSubmissionStatusChangeError(f"from_status must be a SubmissionStatus or None, got {type(self.from_status)!r}.")
         if not isinstance(self.to_status, SubmissionStatus):
-            raise InvalidSubmissionStatusChangeError(
-                f"to_status must be a SubmissionStatus, got {type(self.to_status)!r}."
-            )
+            raise InvalidSubmissionStatusChangeError(f"to_status must be a SubmissionStatus, got {type(self.to_status)!r}.")
         if not isinstance(self.occurred_at, datetime):
-            raise InvalidSubmissionStatusChangeError(
-                f"occurred_at must be a datetime, got {type(self.occurred_at)!r}."
-            )
+            raise InvalidSubmissionStatusChangeError(f"occurred_at must be a datetime, got {type(self.occurred_at)!r}.")
 
 
 class Gender(StrEnum):

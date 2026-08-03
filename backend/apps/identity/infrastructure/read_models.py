@@ -40,11 +40,7 @@ class DjangoUserDirectory:
         ids = {uid for uid in user_ids if uid is not None}
         if not ids:
             return {}
-        rows = (
-            UserModel.objects.filter(id__in=ids, deleted_at__isnull=True)
-            .values(*self._CARD_COLUMNS)
-            .iterator()
-        )
+        rows = UserModel.objects.filter(id__in=ids, deleted_at__isnull=True).values(*self._CARD_COLUMNS).iterator()
         return {row["id"]: self._card(row) for row in rows}
 
     @staticmethod

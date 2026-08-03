@@ -86,11 +86,7 @@ def list_templates(*, document_type: str | None = None) -> list[dict[str, Any]]:
     query = TemplateModel.objects.filter(deleted_at__isnull=True)
     if document_type:
         query = query.filter(type=document_type)
-    rows = list(
-        query.annotate(usage=Count("assignments", filter=Q(assignments__deleted_at__isnull=True))).order_by(
-            "type", "name"
-        )
-    )
+    rows = list(query.annotate(usage=Count("assignments", filter=Q(assignments__deleted_at__isnull=True))).order_by("type", "name"))
     documents = _current_documents_by_template([str(row.id) for row in rows])
     return [_template_json(row, row.usage, documents.get(str(row.id))) for row in rows]
 
@@ -101,9 +97,7 @@ def create_template(*, name: str, document_type: str, description: str = "") -> 
     ``document_type`` is required: a layout is authored for one kind of document,
     so a template with no declared kind could not be safely rendered as anything.
     """
-    row = TemplateModel.objects.create(
-        name=name.strip(), description=description.strip(), type=document_type
-    )
+    row = TemplateModel.objects.create(name=name.strip(), description=description.strip(), type=document_type)
     return _template_json(row, 0, None)
 
 
@@ -163,9 +157,7 @@ def replace_template_layout(*, template_id: str, fields: list[dict[str, Any]]) -
         policy = policy_for(DocumentType(template.type))
         rejected = sorted({str(field.get("type") or "") for field in fields if not policy.allows_field(str(field.get("type") or ""))})
         if rejected:
-            raise FieldTypeNotAllowedError(
-                f"Документ типа «{template.type}» не может содержать поля: {', '.join(rejected)}."
-            )
+            raise FieldTypeNotAllowedError(f"Документ типа «{template.type}» не может содержать поля: {', '.join(rejected)}.")
 
         # Hard-delete the previous layout: fields have no history of their own yet
         # (versioning lives on the template revision), so a clean replace is correct.
@@ -250,9 +242,7 @@ def create_assignment(*, competition_id: str, category_id: str, template_id: str
     A batch of one: see :func:`create_assignments` for the slot derivation and the
     errors raised.
     """
-    return create_assignments(
-        competition_id=competition_id, category_ids=[category_id], template_id=template_id
-    )[0]
+    return create_assignments(competition_id=competition_id, category_ids=[category_id], template_id=template_id)[0]
 
 
 def create_assignments(*, competition_id: str, category_ids: list[str], template_id: str) -> list[dict[str, Any]]:
@@ -305,9 +295,7 @@ def create_assignments(*, competition_id: str, category_ids: list[str], template
                 ]
             )
         except IntegrityError as exc:  # pragma: no cover - unique race
-            raise AssignmentConflictError(
-                "This nomination already has a template of that type assigned."
-            ) from exc
+            raise AssignmentConflictError("This nomination already has a template of that type assigned.") from exc
     return list_assignments_by_ids([str(row.id) for row in rows])
 
 

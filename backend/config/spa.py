@@ -42,10 +42,7 @@ __all__ = ["head_facts_for", "spa_index"]
 
 _SITE_NAME = "Взлёт талантов"
 
-_DEFAULT_DESCRIPTION = (
-    "Афиша детских творческих фестивалей и конкурсов: условия участия, номинации, "
-    "сроки подачи заявок и результаты."
-)
+_DEFAULT_DESCRIPTION = "Афиша детских творческих фестивалей и конкурсов: условия участия, номинации, сроки подачи заявок и результаты."
 
 #: Prefixes whose pages must never be indexed — the same set ``robots.txt``
 #: disallows and the route guards mark, restated here because a preview crawler

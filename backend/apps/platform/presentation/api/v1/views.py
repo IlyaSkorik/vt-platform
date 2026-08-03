@@ -53,10 +53,38 @@ _TAG = "Platform"
 #: read back over the phone. Deliberately simple and lossy: the operator can always
 #: pass an explicit slug when the automatic one is not what they want.
 _TRANSLITERATION = {
-    "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ё": "e", "ж": "zh",
-    "з": "z", "и": "i", "й": "y", "к": "k", "л": "l", "м": "m", "н": "n", "о": "o",
-    "п": "p", "р": "r", "с": "s", "т": "t", "у": "u", "ф": "f", "х": "h", "ц": "ts",
-    "ч": "ch", "ш": "sh", "щ": "sch", "ъ": "", "ы": "y", "ь": "", "э": "e", "ю": "yu",
+    "а": "a",
+    "б": "b",
+    "в": "v",
+    "г": "g",
+    "д": "d",
+    "е": "e",
+    "ё": "e",
+    "ж": "zh",
+    "з": "z",
+    "и": "i",
+    "й": "y",
+    "к": "k",
+    "л": "l",
+    "м": "m",
+    "н": "n",
+    "о": "o",
+    "п": "p",
+    "р": "r",
+    "с": "s",
+    "т": "t",
+    "у": "u",
+    "ф": "f",
+    "х": "h",
+    "ц": "ts",
+    "ч": "ch",
+    "ш": "sh",
+    "щ": "sch",
+    "ъ": "",
+    "ы": "y",
+    "ь": "",
+    "э": "e",
+    "ю": "yu",
     "я": "ya",
 }
 
@@ -112,8 +140,7 @@ class PlatformOrganizationsView(_PlatformView):
         operation_id="platform_connect_organization",
         summary="Connect an organization",
         description=(
-            "Create the organization and email its owner an invitation making them its first OWNER. "
-            "`slug` is derived from the name when omitted."
+            "Create the organization and email its owner an invitation making them its first OWNER. `slug` is derived from the name when omitted."
         ),
         request=ConnectOrganizationRequestSerializer,
         responses={

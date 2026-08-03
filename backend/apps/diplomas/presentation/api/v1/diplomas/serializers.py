@@ -109,7 +109,7 @@ class LayoutFieldRequestSerializer(serializers.Serializer[dict[str, object]]):
     rotation = serializers.FloatField(required=False, default=0)
     sortOrder = serializers.IntegerField(required=False, default=0, min_value=0)
     style = FieldStyleSerializer(required=False)  # type: ignore[assignment]
-    config = FieldConfigSerializer(required=False)  # type: ignore[assignment]
+    config = FieldConfigSerializer(required=False)
 
 
 class SaveLayoutRequestSerializer(serializers.Serializer[dict[str, object]]):
@@ -136,7 +136,7 @@ class TemplateFieldResponseSerializer(serializers.Serializer[dict[str, object]])
     rotation = serializers.FloatField()
     sortOrder = serializers.IntegerField()
     style = FieldStyleSerializer()  # type: ignore[assignment]
-    config = FieldConfigSerializer()  # type: ignore[assignment]
+    config = FieldConfigSerializer()
     createdAt = serializers.DateTimeField()
     updatedAt = serializers.DateTimeField()
 
@@ -334,7 +334,7 @@ class DiplomaSnapshotSerializer(serializers.Serializer[dict[str, object]]):
     """The frozen dataset a diploma is printed from (values only, no ids)."""
 
     participant = _ParticipantSnapshotSerializer()
-    teachers = _TeacherSnapshotSerializer(many=True)  # type: ignore[assignment]
+    teachers = _TeacherSnapshotSerializer(many=True)
     organization = _OrganizationSnapshotSerializer()
     nomination = _NominationSnapshotSerializer()
     performance = _PerformanceSnapshotSerializer()
@@ -352,7 +352,7 @@ class DiplomaResponseSerializer(serializers.Serializer[dict[str, object]]):
     submissionId = serializers.UUIDField()
     templateId = serializers.UUIDField()
     status = serializers.ChoiceField(choices=["DRAFT", "GENERATED", "ISSUED", "CANCELLED"])
-    snapshot = DiplomaSnapshotSerializer()  # type: ignore[assignment]
+    snapshot = DiplomaSnapshotSerializer()
     printPdfPath = serializers.CharField(allow_null=True, allow_blank=True)
     officialPdfPath = serializers.CharField(allow_null=True, allow_blank=True)
     issuedAt = serializers.DateTimeField(allow_null=True)
@@ -426,4 +426,4 @@ class PrintPackageSummaryResponseSerializer(serializers.Serializer[dict[str, obj
     """Per-nomination print-package summary for a competition."""
 
     competitionId = serializers.UUIDField()
-    nominations = PrintPackageNominationSerializer(many=True)  # type: ignore[assignment]
+    nominations = PrintPackageNominationSerializer(many=True)

@@ -43,10 +43,17 @@ from apps.competitions.domain.landing_configuration import (
     LandingBlockType,
     LandingConfiguration,
 )
-from apps.competitions.infrastructure.mappers.contacts_config_json import contacts_config_from_json
-from apps.competitions.infrastructure.mappers.landing_config_json import landing_config_from_json
+from apps.competitions.infrastructure.mappers.contacts_config_json import (
+    contacts_config_from_json,
+)
+from apps.competitions.infrastructure.mappers.landing_config_json import (
+    landing_config_from_json,
+)
 from apps.competitions.infrastructure.models import CompetitionModel, RegulationModel
-from apps.organization.application.read_models import OrganizationDirectory, OrganizerCardView
+from apps.organization.application.read_models import (
+    OrganizationDirectory,
+    OrganizerCardView,
+)
 
 __all__ = ["DjangoPublicCatalogReader"]
 
@@ -266,9 +273,7 @@ class DjangoPublicCatalogReader:
     @staticmethod
     def _documents(competition: CompetitionModel) -> list[PublicFestivalDocumentView]:
         published_public = [
-            document
-            for document in competition.documents.all()
-            if document.published and is_public_document_visibility(document.visibility)
+            document for document in competition.documents.all() if document.published and is_public_document_visibility(document.visibility)
         ]
         published_public.sort(key=lambda document: (document.sort_order, document.title))
         return [
@@ -293,9 +298,7 @@ class DjangoPublicCatalogReader:
         regulation_id = competition.current_regulation_id
         if regulation_id is None:
             return None
-        regulation = RegulationModel.objects.filter(
-            id=regulation_id, competition_id=competition.id
-        ).first()
+        regulation = RegulationModel.objects.filter(id=regulation_id, competition_id=competition.id).first()
         if regulation is None:
             return None
         return PublicFestivalRegulationView(

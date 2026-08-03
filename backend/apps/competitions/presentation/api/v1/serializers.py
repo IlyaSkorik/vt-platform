@@ -489,7 +489,10 @@ class AddAdditionalServiceSerializer(serializers.Serializer[dict[str, object]]):
         allow_empty=False,
         min_length=1,
     )
-    required = serializers.BooleanField(required=False, default=False)
+    # `required` is this service's own wire key — whether the service is compulsory
+    # for an applicant — and shadows DRF's `Field.required` flag it collides with. The
+    # wire contract wins (API-000 §7), so the assignment is silenced, not renamed.
+    required = serializers.BooleanField(required=False, default=False)  # type: ignore[assignment]
     enabled = serializers.BooleanField(required=False, default=True)
     sortOrder = serializers.IntegerField(source="sort_order", required=False, default=0, min_value=0)
 
@@ -511,7 +514,7 @@ class UpdateAdditionalServiceSerializer(serializers.Serializer[dict[str, object]
         allow_empty=False,
         min_length=1,
     )
-    required = serializers.BooleanField(required=False, default=False)
+    required = serializers.BooleanField(required=False, default=False)  # type: ignore[assignment]
     sortOrder = serializers.IntegerField(source="sort_order", required=False, default=0, min_value=0)
 
 
@@ -795,7 +798,7 @@ class _AdditionalServiceSerializer(serializers.Serializer[dict[str, object]]):
     description = serializers.CharField(allow_null=True)
     billingModel = serializers.CharField(source="billing_model")
     participationFormatIds = serializers.ListField(child=serializers.CharField(), source="participation_format_ids")
-    required = serializers.BooleanField()
+    required = serializers.BooleanField()  # type: ignore[assignment]
     enabled = serializers.BooleanField()
     sortOrder = serializers.IntegerField(source="sort_order")
 

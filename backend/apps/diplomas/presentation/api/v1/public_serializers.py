@@ -17,13 +17,13 @@ __all__ = [
 ]
 
 
-class DiplomaVerificationMetaSerializer(serializers.Serializer):
+class DiplomaVerificationMetaSerializer(serializers.Serializer[object]):
     """Response envelope metadata (API-000 §5)."""
 
     requestId = serializers.CharField()
 
 
-class DiplomaVerificationSerializer(serializers.Serializer):
+class DiplomaVerificationSerializer(serializers.Serializer[object]):
     """One verified diploma as shown on its public authenticity page.
 
     Every printed fact is nullable because a snapshot may legitimately lack it
@@ -48,8 +48,10 @@ class DiplomaVerificationSerializer(serializers.Serializer):
     verified = serializers.BooleanField()
 
 
-class DiplomaVerificationEnvelopeSerializer(serializers.Serializer):
+class DiplomaVerificationEnvelopeSerializer(serializers.Serializer[object]):
     """The full ``GET /public/diplomas/verify/{token}`` response envelope."""
 
-    data = DiplomaVerificationSerializer()
+    # `data` is the envelope's own wire key (API-000 §5), shadowing DRF's
+    # `Serializer.data` property; this class exists only to describe the schema.
+    data = DiplomaVerificationSerializer()  # type: ignore[assignment]
     meta = DiplomaVerificationMetaSerializer()

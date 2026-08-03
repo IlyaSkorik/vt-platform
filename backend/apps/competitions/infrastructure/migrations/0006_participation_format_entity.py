@@ -10,7 +10,6 @@ from django.db import migrations, models
 
 import apps.competitions.infrastructure.models.base
 
-
 _FORMAT_NAMES = {
     "OFFLINE": "Очно",
     "ONLINE": "Онлайн",

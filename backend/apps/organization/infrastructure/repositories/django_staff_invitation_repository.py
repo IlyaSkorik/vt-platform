@@ -71,11 +71,7 @@ class DjangoStaffInvitationRepository:
     def list_by_organization(self, organization_id: OrganizationId) -> Sequence[StaffInvitation]:
         """Return all non-deleted invitations of the organization (newest first)."""
         try:
-            models = list(
-                StaffInvitationModel.objects.filter(
-                    organization_id=organization_id.value, deleted_at__isnull=True
-                ).order_by("-created_at")
-            )
+            models = list(StaffInvitationModel.objects.filter(organization_id=organization_id.value, deleted_at__isnull=True).order_by("-created_at"))
         except DatabaseError as exc:  # pragma: no cover - defensive
             raise PersistenceError("Failed to list invitations.") from exc
         return [StaffInvitationMapper.to_domain(model) for model in models]

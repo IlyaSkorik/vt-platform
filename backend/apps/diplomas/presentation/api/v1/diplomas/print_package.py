@@ -118,25 +118,18 @@ def print_package_summary(competition_id: uuid.UUID) -> dict[str, Any]:
     denominators over the same entries — and a per-teacher kind also reports the
     entries it cannot address at all.
     """
-    assignments = {
-        document_type: _assignments_by_category(competition_id, document_type)
-        for document_type in DocumentType
-    }
+    assignments = {document_type: _assignments_by_category(competition_id, document_type) for document_type in DocumentType}
     # A slot is only "ready" to generate when its template also has a PDF.
-    assigned_template_ids = {
-        item["templateId"] for slots in assignments.values() for item in slots.values()
-    }
+    assigned_template_ids = {item["templateId"] for slots in assignments.values() for item in slots.values()}
     templates_with_pdf = {
         str(template_id)
-        for template_id in TemplateDocumentModel.objects.filter(
-            template__id__in=assigned_template_ids, deleted_at__isnull=True
-        ).values_list("template_id", flat=True)
+        for template_id in TemplateDocumentModel.objects.filter(template__id__in=assigned_template_ids, deleted_at__isnull=True).values_list(
+            "template_id", flat=True
+        )
     }
     category_names = {
         str(row["id"]): str(row["name"])
-        for row in CategoryModel.objects.filter(
-            competition_id=competition_id, deleted_at__isnull=True
-        ).values("id", "name")
+        for row in CategoryModel.objects.filter(competition_id=competition_id, deleted_at__isnull=True).values("id", "name")
     }
 
     from apps.applications.infrastructure.models.submission import SubmissionModel
@@ -163,15 +156,13 @@ def print_package_summary(competition_id: uuid.UUID) -> dict[str, Any]:
             unaddressable[category_id] += 1
 
     existing: dict[DocumentType, Counter[str]] = {kind: Counter() for kind in DocumentType}
-    for submission_id in DiplomaModel.objects.filter(
-        competition_id=competition_id, deleted_at__isnull=True
-    ).values_list("submission_id", flat=True):
+    for submission_id in DiplomaModel.objects.filter(competition_id=competition_id, deleted_at__isnull=True).values_list("submission_id", flat=True):
         issued_in = category_of.get(str(submission_id))
         if issued_in is not None:
             existing[DocumentType.DIPLOMA][issued_in] += 1
-    for raw_type, submission_id in IssuedDocumentModel.objects.filter(
-        competition_id=competition_id, deleted_at__isnull=True
-    ).values_list("document_type", "submission_id"):
+    for raw_type, submission_id in IssuedDocumentModel.objects.filter(competition_id=competition_id, deleted_at__isnull=True).values_list(
+        "document_type", "submission_id"
+    ):
         issued_in = category_of.get(str(submission_id))
         if issued_in is None:
             continue
@@ -252,13 +243,9 @@ def start_print_package(
     if not targets:
         raise PrintTemplateNotReadyError("No nomination with an assigned template to generate.")
     for target in targets:
-        if not TemplateModel.objects.filter(
-            id=target.template_id, deleted_at__isnull=True
-        ).exists():
+        if not TemplateModel.objects.filter(id=target.template_id, deleted_at__isnull=True).exists():
             raise PrintTemplateNotReadyError("A selected template was not found.")
-        if not TemplateDocumentModel.objects.filter(
-            template__id=target.template_id, deleted_at__isnull=True
-        ).exists():
+        if not TemplateDocumentModel.objects.filter(template__id=target.template_id, deleted_at__isnull=True).exists():
             raise PrintTemplateNotReadyError("A selected template has no PDF to print over.")
 
     job = PrintJobModel.objects.create(

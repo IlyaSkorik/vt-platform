@@ -201,10 +201,7 @@ class DjangoOrganizerParticipantRegistry:
             return {}
 
         competition_name = {
-            str(row["id"]): str(row["title"])
-            for row in CompetitionModel.objects.filter(
-                deleted_at__isnull=True, id__in=scope
-            ).values("id", "title")
+            str(row["id"]): str(row["title"]) for row in CompetitionModel.objects.filter(deleted_at__isnull=True, id__in=scope).values("id", "title")
         }
         taxonomy = self._taxonomy_names(scope)
         application_id_by_submission = self._application_ids_by_submission()
@@ -237,9 +234,7 @@ class DjangoOrganizerParticipantRegistry:
                     accumulators[key] = acc
                 acc.note_identity(updated_at=model.updated_at, participant=participant)
                 acc.competition_ids.add(competition_id)
-                if acc.last_activity is None or (
-                    model.updated_at is not None and model.updated_at > acc.last_activity
-                ):
+                if acc.last_activity is None or (model.updated_at is not None and model.updated_at > acc.last_activity):
                     acc.last_activity = model.updated_at
                 for teacher in teachers:
                     acc.teachers.setdefault(f"{teacher.name}|{teacher.role}", teacher)
@@ -269,12 +264,8 @@ class DjangoOrganizerParticipantRegistry:
                             nomination=taxonomy["nomination"].get(str(performance.get("nomination_id") or "")),
                             discipline=taxonomy["discipline"].get(str(performance.get("discipline_id") or "")),
                             age_category=taxonomy["age_category"].get(str(performance.get("age_category_id") or "")),
-                            participant_group=taxonomy["participant_group"].get(
-                                str(performance.get("participant_group_id") or "")
-                            ),
-                            participation_format=taxonomy["participation_format"].get(
-                                str(performance.get("participation_format_id") or "")
-                            ),
+                            participant_group=taxonomy["participant_group"].get(str(performance.get("participant_group_id") or "")),
+                            participation_format=taxonomy["participation_format"].get(str(performance.get("participation_format_id") or "")),
                             comment=_clean(performance.get("comment")),
                         )
                     )
@@ -361,9 +352,7 @@ class DjangoOrganizerParticipantRegistry:
         def names(model: Any) -> dict[str, str]:
             return {
                 str(row["id"]): str(row["name"])
-                for row in model.objects.filter(
-                    deleted_at__isnull=True, competition_id__in=scope
-                ).values("id", "name")
+                for row in model.objects.filter(deleted_at__isnull=True, competition_id__in=scope).values("id", "name")
             }
 
         return {
@@ -456,7 +445,4 @@ def _matches(summary: RegistryParticipantSummary, filters: RegistryFilters) -> b
         org_needle = filters.organization.strip().lower()
         if not any(org_needle in org.name.lower() for org in summary.organizations):
             return False
-    return not (
-        filters.has_documents is not None
-        and (summary.documents_count > 0) != filters.has_documents
-    )
+    return not (filters.has_documents is not None and (summary.documents_count > 0) != filters.has_documents)

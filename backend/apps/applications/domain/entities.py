@@ -209,9 +209,7 @@ _LEGAL_TRANSITIONS: Final[dict[SubmissionStatus, frozenset[SubmissionStatus]]] =
 #:
 #: ``COMPLETED`` is absent deliberately: the performance took place, so cancelling it
 #: would rewrite history — and its diploma may already be in the register.
-_ORGANIZER_ONLY_CANCELLABLE_STATUSES: Final = frozenset(
-    {SubmissionStatus.ACCEPTED, SubmissionStatus.SCHEDULED}
-)
+_ORGANIZER_ONLY_CANCELLABLE_STATUSES: Final = frozenset({SubmissionStatus.ACCEPTED, SubmissionStatus.SCHEDULED})
 
 #: Statuses in which the submission's content (performance, participants, teachers,
 #: attachments, price snapshot) may still be edited. Beyond these it is frozen.
@@ -1042,9 +1040,7 @@ class Submission:
         :meth:`cancel_by_organizer`.
         """
         if self._status in _ORGANIZER_ONLY_CANCELLABLE_STATUSES:
-            raise IllegalStatusTransitionError(
-                f"A submission that is {self._status.value} can only be cancelled by the organizer."
-            )
+            raise IllegalStatusTransitionError(f"A submission that is {self._status.value} can only be cancelled by the organizer.")
         return self._cancel(now=now)
 
     def cancel_by_organizer(self, *, now: datetime) -> list[DomainEvent]:
@@ -1087,9 +1083,7 @@ class Submission:
         if policy.requires_teacher and not self._teachers:
             raise TeacherRequiredError("This competition requires a teacher to be credited before the submission can be submitted.")
         if not policy.allows_participant_comment and self._performance.comment:
-            raise ParticipantCommentNotAcceptedError(
-                "This competition does not accept a participant comment on the performance."
-            )
+            raise ParticipantCommentNotAcceptedError("This competition does not accept a participant comment on the performance.")
         present_types = {attachment.type for attachment in self._attachments.values()}
         missing = policy.required_attachment_types() - present_types
         if missing:
@@ -1190,9 +1184,7 @@ _APPLICATION_EDITABLE_STATUSES: Final = frozenset({ApplicationStatus.DRAFT, Appl
 #: any time before the order is settled. Some festivals require payment upfront, so
 #: a receipt may be uploaded while the order is still a DRAFT in the wizard, through
 #: submission and while awaiting payment; a paid/completed/cancelled order is settled.
-_APPLICATION_RECEIPT_STATUSES: Final = frozenset(
-    {ApplicationStatus.DRAFT, ApplicationStatus.SUBMITTED, ApplicationStatus.WAITING_PAYMENT}
-)
+_APPLICATION_RECEIPT_STATUSES: Final = frozenset({ApplicationStatus.DRAFT, ApplicationStatus.SUBMITTED, ApplicationStatus.WAITING_PAYMENT})
 
 #: How many payment receipts one order may carry. Paying the total in several
 #: transfers is ordinary; twenty slips for one order is a stuck client, not an
@@ -1587,9 +1579,7 @@ class Application:
         :meth:`remove_payment_receipt`.
         """
         if self._status not in _APPLICATION_RECEIPT_STATUSES:
-            raise PaymentReceiptNotAllowedError(
-                f"A payment receipt cannot be attached once the application is settled ({self._status.value})."
-            )
+            raise PaymentReceiptNotAllowedError(f"A payment receipt cannot be attached once the application is settled ({self._status.value}).")
         if len(self._payment_receipts) >= _MAX_PAYMENT_RECEIPTS:
             raise TooManyPaymentReceiptsError(
                 f"The application already carries {len(self._payment_receipts)} payment receipts (the maximum is {_MAX_PAYMENT_RECEIPTS})."
@@ -1608,9 +1598,7 @@ class Application:
         leave the wrong slip in the organizer's folder.
         """
         if self._status not in _APPLICATION_RECEIPT_STATUSES:
-            raise PaymentReceiptNotAllowedError(
-                f"A payment receipt cannot be removed once the application is settled ({self._status.value})."
-            )
+            raise PaymentReceiptNotAllowedError(f"A payment receipt cannot be removed once the application is settled ({self._status.value}).")
         remaining = [receipt for receipt in self._payment_receipts if receipt.id != receipt_id]
         if len(remaining) == len(self._payment_receipts):
             raise PaymentReceiptNotFoundError(f"No payment receipt {receipt_id.json()} on this application.")

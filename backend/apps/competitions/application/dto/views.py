@@ -28,7 +28,11 @@ from apps.competitions.domain.entities import (
     ParticipationFormat,
 )
 from apps.competitions.domain.landing_configuration import LandingConfiguration
-from apps.competitions.domain.value_objects import AdmissionRule, CompetitionSettings, PricingRule
+from apps.competitions.domain.value_objects import (
+    AdmissionRule,
+    CompetitionSettings,
+    PricingRule,
+)
 
 __all__ = [
     "AddedChildResult",
@@ -784,7 +788,6 @@ class CompetitionDetailView:
             disciplines=tuple(DisciplineView.of(d) for d in competition.disciplines),
             age_categories=tuple(AgeCategoryView.of(a) for a in competition.age_categories),
             participant_groups=tuple(ParticipantGroupView.of(g) for g in competition.participant_groups),
-
             admission_rules=tuple(AdmissionRuleView.of(r) for r in competition.admission_rules),
             pricing_rules=tuple(PricingRuleView.of(p) for p in competition.pricing_rules),
             regulations=tuple(RegulationView.of(r, is_current=r.id == current_id) for r in competition.regulations),

@@ -10,6 +10,8 @@ referenced thing exist).
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from apps.applications.application.exceptions import (
     ApplicationError,
     PermissionDeniedError,
@@ -22,6 +24,7 @@ from apps.applications.application.interfaces import (
     SubmissionRepository,
 )
 from apps.applications.domain.entities import Submission
+from apps.applications.domain.events import DomainEvent
 from apps.applications.domain.value_objects import (
     ReviewerId,
     SubmissionId,
@@ -78,7 +81,7 @@ def ensure_reviewer(organization: OrganizationReadModel, reviewer_id: ReviewerId
         raise PermissionDeniedError("This user is not authorized to review submissions.")
 
 
-def try_resubmit_after_correction_edit(*, submission: Submission, catalog: CompetitionCatalog, now) -> list:
+def try_resubmit_after_correction_edit(*, submission: Submission, catalog: CompetitionCatalog, now: datetime) -> list[DomainEvent]:
     """Auto-resubmit a corrected submission back to SUBMITTED when valid.
 
     Used after applicant edits while the submission is in REQUIRES_CORRECTION.

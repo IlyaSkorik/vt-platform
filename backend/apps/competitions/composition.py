@@ -20,7 +20,10 @@ from apps.competitions.application.handlers import (
 )
 from apps.competitions.application.handlers._support import CompetitionCommandHandler
 from apps.competitions.infrastructure.messaging import EventDispatcher
-from apps.competitions.infrastructure.read_models import DjangoPublicCatalogReader, DjangoRegistrationReader
+from apps.competitions.infrastructure.read_models import (
+    DjangoPublicCatalogReader,
+    DjangoRegistrationReader,
+)
 from apps.competitions.infrastructure.repositories import DjangoCompetitionRepository
 from apps.competitions.infrastructure.system import SystemClock, Uuid7Generator
 from apps.organization.composition import build_organization_directory

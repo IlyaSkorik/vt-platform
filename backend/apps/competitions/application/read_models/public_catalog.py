@@ -29,7 +29,10 @@ from enum import StrEnum
 from typing import Protocol, runtime_checkable
 
 from apps.competitions.domain.contacts_configuration import ContactsConfiguration
-from apps.competitions.domain.landing_configuration import LandingBlock, LandingConfiguration
+from apps.competitions.domain.landing_configuration import (
+    LandingBlock,
+    LandingConfiguration,
+)
 
 __all__ = [
     "PUBLIC_CATALOG_DOMAIN_STATUSES",
@@ -454,14 +457,8 @@ def _project_block(block: LandingBlock) -> PublicFestivalLandingBlockView:
             )
             for card in _sorted_children(block.partners)
         ),
-        images=tuple(
-            PublicFestivalGalleryImageView(id=image.id, url=image.url, caption=image.caption)
-            for image in _sorted_children(block.images)
-        ),
-        faq=tuple(
-            PublicFestivalFaqItemView(id=item.id, question=item.question, answer=item.answer)
-            for item in _sorted_children(block.faq_items)
-        ),
+        images=tuple(PublicFestivalGalleryImageView(id=image.id, url=image.url, caption=image.caption) for image in _sorted_children(block.images)),
+        faq=tuple(PublicFestivalFaqItemView(id=item.id, question=item.question, answer=item.answer) for item in _sorted_children(block.faq_items)),
     )
 
 

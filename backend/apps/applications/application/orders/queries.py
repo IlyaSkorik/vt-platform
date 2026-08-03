@@ -6,6 +6,8 @@ applicant who owns an order may read it (and only their own orders are listed).
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from apps.applications.application.dto.orders import ApplicationSummaryView, ApplicationView
 from apps.applications.application.dto.queries import (
     GetApplicationQuery,
@@ -85,7 +87,7 @@ class GetApplicationHandler:
             )
         return ApplicationView.from_application(application)
 
-    def _try_submit_submission(self, submission: Submission, *, now) -> None:
+    def _try_submit_submission(self, submission: Submission, *, now: datetime) -> None:
         performance = submission.performance
         if performance is None:
             return
@@ -138,13 +140,11 @@ class ListApplicationsHandler:
                     app,
                     self._submissions,
                     now=now,
-                    additional_performance_discount_percent=self._catalog.additional_performance_discount_percent(
-                        competition_id=app.competition_id
-                    ),
+                    additional_performance_discount_percent=self._catalog.additional_performance_discount_percent(competition_id=app.competition_id),
                 )
         return tuple(ApplicationSummaryView.from_application(app) for app in apps)
 
-    def _try_submit_submission(self, submission: Submission, *, now) -> None:
+    def _try_submit_submission(self, submission: Submission, *, now: datetime) -> None:
         performance = submission.performance
         if performance is None:
             return
@@ -190,8 +190,6 @@ class ListDraftApplicationsHandler:
                 app,
                 self._submissions,
                 now=now,
-                additional_performance_discount_percent=self._catalog.additional_performance_discount_percent(
-                    competition_id=app.competition_id
-                ),
+                additional_performance_discount_percent=self._catalog.additional_performance_discount_percent(competition_id=app.competition_id),
             )
         return tuple(ApplicationSummaryView.from_application(app) for app in apps)

@@ -100,9 +100,7 @@ class DiplomaSnapshotSource(Protocol):
         ``award.degree`` is left ``None`` — the jury result is filled in later."""
         ...
 
-    def list_submission_ids(
-        self, competition_id: uuid.UUID, *, category_id: uuid.UUID | None = None
-    ) -> list[uuid.UUID]:
+    def list_submission_ids(self, competition_id: uuid.UUID, *, category_id: uuid.UUID | None = None) -> list[uuid.UUID]:
         """Live submission ids of a competition — one performance each. Narrowed to
         a nomination (category) when ``category_id`` is given."""
         ...
@@ -127,9 +125,7 @@ class TemplateAssignments(Protocol):
     asks "which template fills this nomination's thank-you slot?" and gets an id.
     """
 
-    def for_nomination(
-        self, *, competition_id: uuid.UUID, category_id: uuid.UUID, document_type: DocumentType
-    ) -> AssignedTemplate | None:
+    def for_nomination(self, *, competition_id: uuid.UUID, category_id: uuid.UUID, document_type: DocumentType) -> AssignedTemplate | None:
         """The template assigned to this nomination for this kind, or None."""
         ...
 
@@ -149,17 +145,13 @@ class IssuedDocumentRepository(Protocol):
         """Persist changes to an existing document."""
         ...
 
-    def get_for_submission(
-        self, submission_id: uuid.UUID, document_type: DocumentType, recipient: str = ""
-    ) -> IssuedDocument | None:
+    def get_for_submission(self, submission_id: uuid.UUID, document_type: DocumentType, recipient: str = "") -> IssuedDocument | None:
         """The live document of this kind for a performance and recipient, or None.
 
         ``recipient`` is empty for a kind issued once per performance."""
         ...
 
-    def list_by_competition(
-        self, competition_id: uuid.UUID, document_type: DocumentType
-    ) -> list[IssuedDocument]:
+    def list_by_competition(self, competition_id: uuid.UUID, document_type: DocumentType) -> list[IssuedDocument]:
         """Every live document of this kind for a competition, newest first."""
         ...
 
@@ -168,7 +160,7 @@ class IssuedDocumentRepository(Protocol):
 class TemplateAssets:
     """A template's print inputs: its placed fields and its backing PDF bytes."""
 
-    fields: list[dict]
+    fields: list[dict[str, object]]
     backing_pdf: bytes
 
 
@@ -231,9 +223,7 @@ class PrintPackageWorkspace(Protocol):
         """Bundle ``(arcname, media_path)`` pairs into a ZIP; return its path."""
         ...
 
-    def store_documents_zip(
-        self, *, competition_id: uuid.UUID, document_type: str, items: list[tuple[str, str]]
-    ) -> str:
+    def store_documents_zip(self, *, competition_id: uuid.UUID, document_type: str, items: list[tuple[str, str]]) -> str:
         """Bundle one kind's documents into a ZIP; return its path.
 
         Separate from :meth:`store_zip` for the same reason as

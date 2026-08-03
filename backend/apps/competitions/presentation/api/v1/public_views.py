@@ -18,7 +18,10 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.competitions.composition import build_public_catalog_read_service, build_registration_read_service
+from apps.competitions.composition import (
+    build_public_catalog_read_service,
+    build_registration_read_service,
+)
 from apps.competitions.presentation.api.v1.problems import problem_response, request_id
 from apps.competitions.presentation.api.v1.public_serializers import (
     PublicFestivalDetailEnvelopeSerializer,

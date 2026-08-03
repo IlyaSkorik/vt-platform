@@ -19,13 +19,13 @@ __all__ = [
 ]
 
 
-class _MetaSerializer(serializers.Serializer[dict[str, object]]):
+class _MetaSerializer(serializers.Serializer[object]):
     """Response envelope metadata (API-000 §5)."""
 
     requestId = serializers.CharField()
 
 
-class ParticipantDocumentSerializer(serializers.Serializer[dict[str, object]]):
+class ParticipantDocumentSerializer(serializers.Serializer[object]):
     """One document the participant may download.
 
     ``number`` and ``degree`` are null for kinds that have neither — a thank-you
@@ -49,8 +49,10 @@ class ParticipantDocumentSerializer(serializers.Serializer[dict[str, object]]):
     issuedAt = serializers.DateTimeField(source="issued_at", allow_null=True)
 
 
-class ParticipantDocumentsEnvelopeSerializer(serializers.Serializer[dict[str, object]]):
+class ParticipantDocumentsEnvelopeSerializer(serializers.Serializer[object]):
     """The full ``GET /me/documents`` response envelope."""
 
-    data = ParticipantDocumentSerializer(many=True)
+    # `data` is the envelope's own wire key (API-000 §5), shadowing DRF's
+    # `Serializer.data` property; this class only ever describes the schema.
+    data = ParticipantDocumentSerializer(many=True)  # type: ignore[assignment]
     meta = _MetaSerializer()

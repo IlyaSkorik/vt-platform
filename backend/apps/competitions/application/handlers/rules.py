@@ -89,8 +89,7 @@ class AddPricingRuleHandler(CompetitionCommandHandler):
                 amount=command.amount,
                 currency=command.currency,
             ),
-            calculation_type=self._pricing_calculation_type(command.calculation_type)
-            or PricingCalculationType.PER_PARTICIPANT,
+            calculation_type=self._pricing_calculation_type(command.calculation_type) or PricingCalculationType.PER_PARTICIPANT,
             now=self._clock.utcnow(),
         )
 

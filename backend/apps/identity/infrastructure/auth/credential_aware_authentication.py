@@ -23,7 +23,7 @@ tokens would remain valid until they expire on their own
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from rest_framework_simplejwt.authentication import JWTStatelessUserAuthentication
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
@@ -39,7 +39,13 @@ __all__ = ["CredentialAwareJWTAuthentication"]
 class CredentialAwareJWTAuthentication(JWTStatelessUserAuthentication):
     """Stateless JWT authentication that honours a per-account credential cut-off."""
 
-    def get_user(self, validated_token: Any) -> TokenUser:
+    # The base declares `get_user` as returning SimpleJWT's `AuthUser` TypeVar, which is
+    # constrained to `AbstractBaseUser | TokenUser` and appears in no parameter — so the
+    # library's own signature is unresolvable and no override can satisfy it. The
+    # stateless base this class extends always builds a `TokenUser`, so naming that
+    # concrete type is the accurate contract for callers; the override check is what
+    # gets silenced, not the body.
+    def get_user(self, validated_token: Any) -> TokenUser:  # type: ignore[override]
         """Resolve the token's user, rejecting a token voided by a credential change.
 
         Defers to the stateless base to build the token-derived user, then loads the
@@ -51,7 +57,10 @@ class CredentialAwareJWTAuthentication(JWTStatelessUserAuthentication):
         ``iat`` fails closed to the base behaviour rather than silently passing an
         outdated token.
         """
-        user = super().get_user(validated_token)
+        # One cast at the boundary rather than defensive narrowing at each use: the
+        # stateless base's contract is that it builds a `TokenUser` from the token's
+        # claims — it never touches the user table — so this is the real runtime type.
+        user = cast(TokenUser, super().get_user(validated_token))
         issued_at_epoch = validated_token.get("iat")
         if issued_at_epoch is None:
             return user

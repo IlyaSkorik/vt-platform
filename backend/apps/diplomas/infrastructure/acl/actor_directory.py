@@ -28,11 +28,7 @@ def actor_label(user_id: uuid.UUID | None) -> str:
     """
     if user_id is None:
         return ""
-    row = (
-        UserModel.objects.filter(id=user_id, deleted_at__isnull=True)
-        .values("first_name", "last_name", "email")
-        .first()
-    )
+    row = UserModel.objects.filter(id=user_id, deleted_at__isnull=True).values("first_name", "last_name", "email").first()
     if row is None:
         return ""
     name = " ".join(part for part in (row["last_name"], row["first_name"]) if str(part or "").strip())

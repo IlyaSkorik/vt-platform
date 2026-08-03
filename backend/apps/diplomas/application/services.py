@@ -59,9 +59,7 @@ class DiplomaService:
 
         diploma = Diploma.create(
             diploma_id=self._repository.new_id(),
-            number=self._numbers.next_number(
-                competition_year=built.competition_year or now.year
-            ),
+            number=self._numbers.next_number(competition_year=built.competition_year or now.year),
             verification_token=secrets.token_urlsafe(_TOKEN_BYTES),
             competition_id=built.competition_id,
             submission_id=submission_id,

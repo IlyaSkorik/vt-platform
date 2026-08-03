@@ -77,9 +77,7 @@ def list_runs(competition_id: uuid.UUID | None = None) -> list[dict[str, Any]]:
 
     titles = {
         str(row["id"]): str(row["title"])
-        for row in CompetitionModel.objects.filter(
-            id__in={run.competition_id for run in runs}, deleted_at__isnull=True
-        ).values("id", "title")
+        for row in CompetitionModel.objects.filter(id__in={run.competition_id for run in runs}, deleted_at__isnull=True).values("id", "title")
     }
 
     return [

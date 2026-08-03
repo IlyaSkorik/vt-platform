@@ -74,11 +74,7 @@ def generate_documents(
 
     # No documents at all means nothing to print: an empty archive would only give
     # the organizer a broken download to puzzle over.
-    zip_url = (
-        service.bundle(competition_id=competition_id, document_type=kind, items=items)
-        if bundle and items
-        else None
-    )
+    zip_url = service.bundle(competition_id=competition_id, document_type=kind, items=items) if bundle and items else None
 
     # One line of history per run, for the archive the organizer re-downloads from.
     archive.record_run(

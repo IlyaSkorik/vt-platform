@@ -195,10 +195,7 @@ def _detail_json(detail: RegistryParticipantDetail) -> dict[str, Any]:
         "documents": [_document_json(doc) for doc in detail.documents],
         "history": [_history_json(entry) for entry in detail.history],
         "notes": [_note_json(note) for note in detail.notes],
-        "awards": [
-            {"title": award.title, "competition": award.competition, "date": award.date}
-            for award in detail.awards
-        ],
+        "awards": [{"title": award.title, "competition": award.competition, "date": award.date} for award in detail.awards],
     }
 
 

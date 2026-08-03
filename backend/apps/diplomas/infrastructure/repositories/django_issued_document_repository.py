@@ -35,9 +35,7 @@ class DjangoIssuedDocumentRepository:
             return
         IssuedDocumentMapper.update_model(model, document).save()
 
-    def get_for_submission(
-        self, submission_id: uuid.UUID, document_type: DocumentType, recipient: str = ""
-    ) -> IssuedDocument | None:
+    def get_for_submission(self, submission_id: uuid.UUID, document_type: DocumentType, recipient: str = "") -> IssuedDocument | None:
         """The live document of this kind for a performance and recipient, or None.
 
         ``recipient`` is empty for a kind issued once per performance; for a
@@ -51,9 +49,7 @@ class DjangoIssuedDocumentRepository:
         ).first()
         return IssuedDocumentMapper.to_domain(model) if model is not None else None
 
-    def list_by_competition(
-        self, competition_id: uuid.UUID, document_type: DocumentType
-    ) -> list[IssuedDocument]:
+    def list_by_competition(self, competition_id: uuid.UUID, document_type: DocumentType) -> list[IssuedDocument]:
         """Every live document of this kind for a competition, newest first."""
         rows = IssuedDocumentModel.objects.filter(
             competition_id=competition_id,

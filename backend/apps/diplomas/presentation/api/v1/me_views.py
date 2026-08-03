@@ -15,6 +15,8 @@ rules make it the participant's to see.
 
 from __future__ import annotations
 
+import uuid
+
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -33,6 +35,22 @@ from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 _TAG = "My Documents"
 
 
+def _applicant_uuid(raw_user_id: object) -> uuid.UUID:
+    """The caller's own id as a UUID.
+
+    ``request.user`` is typed by django-stubs as a generic Django user, whose ``id``
+    is an ``int``; this platform's accounts are keyed by UUID, so the value has to be
+    re-read rather than passed straight through. A subject that is not a UUID at all
+    is folded into a deterministic one so the lookup stays total instead of raising —
+    it will simply match no documents.
+    """
+    text = str(raw_user_id).strip()
+    try:
+        return uuid.UUID(text)
+    except ValueError:
+        return uuid.uuid5(uuid.NAMESPACE_URL, f"participant-owner:{text}")
+
+
 class MyDocumentsView(APIView):
     """List the authenticated participant's issued documents."""
 
@@ -46,5 +64,5 @@ class MyDocumentsView(APIView):
     )
     def get(self, request: Request) -> Response:
         # Scoped to the caller. The applicant id never comes from the request.
-        found = build_participant_documents_read_service().list_for_applicant(request.user.id)
+        found = build_participant_documents_read_service().list_for_applicant(_applicant_uuid(request.user.pk))
         return problems.envelope(request, ParticipantDocumentSerializer(found, many=True).data)

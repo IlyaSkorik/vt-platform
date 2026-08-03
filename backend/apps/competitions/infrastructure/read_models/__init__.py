@@ -11,6 +11,8 @@ from __future__ import annotations
 from apps.competitions.infrastructure.read_models.public_catalog import (
     DjangoPublicCatalogReader,
 )
-from apps.competitions.infrastructure.read_models.registration import DjangoRegistrationReader
+from apps.competitions.infrastructure.read_models.registration import (
+    DjangoRegistrationReader,
+)
 
 __all__ = ["DjangoPublicCatalogReader", "DjangoRegistrationReader"]

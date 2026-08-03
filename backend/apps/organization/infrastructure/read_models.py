@@ -45,22 +45,13 @@ class DjangoOrganizationDirectory:
         ids = {oid for oid in organizer_ids if oid is not None}
         if not ids:
             return {}
-        rows = (
-            OrganizationModel.objects.filter(id__in=ids, deleted_at__isnull=True)
-            .values(*self._CARD_COLUMNS)
-            .iterator()
-        )
+        rows = OrganizationModel.objects.filter(id__in=ids, deleted_at__isnull=True).values(*self._CARD_COLUMNS).iterator()
         return {row["id"]: self._card(row) for row in rows}
 
     def default_organizer(self) -> OrganizerCardView | None:
         # Mirrors DjangoOrganizationRepository.get_default: the earliest-created
         # active row is the authoritative singleton organization.
-        row = (
-            OrganizationModel.objects.filter(deleted_at__isnull=True)
-            .order_by("created_at")
-            .values(*self._CARD_COLUMNS)
-            .first()
-        )
+        row = OrganizationModel.objects.filter(deleted_at__isnull=True).order_by("created_at").values(*self._CARD_COLUMNS).first()
         return self._card(row) if row is not None else None
 
     @staticmethod

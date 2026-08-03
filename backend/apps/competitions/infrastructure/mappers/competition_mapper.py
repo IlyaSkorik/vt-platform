@@ -102,7 +102,10 @@ from apps.competitions.infrastructure.mappers.landing_config_json import (
     landing_config_from_json,
     landing_config_to_json,
 )
-from apps.competitions.infrastructure.mappers.settings_json import settings_from_json, settings_to_json
+from apps.competitions.infrastructure.mappers.settings_json import (
+    settings_from_json,
+    settings_to_json,
+)
 from apps.competitions.infrastructure.models import (
     AdditionalServiceModel,
     AdmissionRuleModel,
@@ -260,9 +263,7 @@ class CompetitionMapper:
                     name=AgeCategoryName(row.name),
                     age_range=AgeRange(row.min_age, row.max_age),
                     age_category_type=AgeCategoryType(row.type) if row.type else AgeCategoryType.STANDARD,
-                    mixed_calculation_method=(
-                        MixedAgeCalculationMethod(row.mixed_calculation_method) if row.mixed_calculation_method else None
-                    ),
+                    mixed_calculation_method=(MixedAgeCalculationMethod(row.mixed_calculation_method) if row.mixed_calculation_method else None),
                     sort_order=row.sort_order,
                 )
                 for row in age_categories
@@ -327,9 +328,7 @@ class CompetitionMapper:
                     price=Money(amount=row.amount, currency=Currency(row.currency)),
                     description=ServiceDescription(row.description) if row.description else None,
                     billing_model=ServiceBillingModel(row.billing_model),
-                    available_format_ids=[
-                        ParticipationFormatId.from_string(str(format_id)) for format_id in (row.available_format_ids or [])
-                    ],
+                    available_format_ids=[ParticipationFormatId.from_string(str(format_id)) for format_id in (row.available_format_ids or [])],
                     required=row.required,
                     enabled=row.enabled,
                     sort_order=row.sort_order,
