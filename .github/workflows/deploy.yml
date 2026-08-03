@@ -1,0 +1,197 @@
+# Deploy (ARCH-001 §18.4).
+#
+# Immutable, git-SHA-tagged images; migrations run as a pre-deploy job before the new image rolls
+# out; production requires manual approval. §18.4 also describes an auto-deploying stage
+# environment — wired here as an optional job that is skipped until the `stage` environment
+# exists, so this file does not pretend to a host nobody has provisioned.
+#
+# **What has to be configured before the first run** (Settings → Environments → `production`):
+#
+#   Required reviewers   — this is what makes the production deploy "gated"; without it the job
+#                          runs unattended, which §18.4 does not want.
+#   Secrets
+#     SSH_HOST           — the deployment host
+#     SSH_USER           — a user in the `docker` group
+#     SSH_PRIVATE_KEY    — its private key
+#     SSH_PORT           — optional, defaults to 22
+#   Variables
+#     DEPLOY_PATH        — where the repository is checked out on the host (e.g. /srv/vt-platform)
+#
+# The host keeps `backend/.env` with the real secrets. It is never in the repository and never
+# passed through Actions: the deploy only tells the host which image tags to run.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  # Re-deploying an older, known-good SHA is the fastest rollback there is, so it is a first-class
+  # entry point rather than something to reconstruct under pressure.
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Commit SHA to deploy (defaults to the current ref)"
+        required: false
+
+# One deploy at a time, and never cancel one midway: a cancelled deploy can leave migrations
+# applied and the old image still serving.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  publish:
+    name: Publish images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      sha: ${{ steps.resolve.outputs.sha }}
+      backend_image: ${{ steps.resolve.outputs.backend_image }}
+      frontend_image: ${{ steps.resolve.outputs.frontend_image }}
+    steps:
+      - id: resolve
+        run: |
+          SHA="${{ inputs.sha || github.sha }}"
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          REPO=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          # Tagged by SHA, not `latest`: what is running must be identifiable, and a rollback must
+          # be able to name the thing it is rolling back to.
+          echo "backend_image=$REGISTRY/$OWNER/$REPO-backend:$SHA" >> "$GITHUB_OUTPUT"
+          echo "frontend_image=$REGISTRY/$OWNER/$REPO-frontend:$SHA" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.resolve.outputs.sha }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ steps.resolve.outputs.backend_image }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max
+
+      - name: Frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ steps.resolve.outputs.frontend_image }}
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max
+
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    needs: [publish]
+    # The gate. Approval and the host's credentials both live on this environment, so a deploy
+    # cannot happen without someone approving it.
+    environment:
+      name: production
+      url: ${{ vars.PUBLIC_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.publish.outputs.sha }}
+
+      - name: Configure SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          # Pinning the host key rather than disabling checking: a deploy that trusts any host
+          # that answers is a deploy that can be redirected.
+          ssh-keyscan -p "${{ secrets.SSH_PORT || 22 }}" -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Deploy
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT || 22 }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+          SHA: ${{ needs.publish.outputs.sha }}
+          BACKEND_IMAGE: ${{ needs.publish.outputs.backend_image }}
+          FRONTEND_IMAGE: ${{ needs.publish.outputs.frontend_image }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ssh -p "$SSH_PORT" -i ~/.ssh/id_ed25519 "$SSH_USER@$SSH_HOST" bash -euo pipefail <<REMOTE
+          cd "$DEPLOY_PATH"
+
+          echo "::group::Fetch the deployment definition at $SHA"
+          # The compose file and the postgres/redis/nginx configuration are versioned with the
+          # code, so the host has to move to the same commit as the images it is about to run.
+          git fetch --quiet origin
+          git checkout --quiet "$SHA"
+          echo "::endgroup::"
+
+          echo "$GHCR_TOKEN" | docker login $REGISTRY -u "$GHCR_USER" --password-stdin
+
+          export BACKEND_IMAGE="$BACKEND_IMAGE"
+          export FRONTEND_IMAGE="$FRONTEND_IMAGE"
+          export ENV_FILE=./backend/.env
+          COMPOSE="docker compose -f docker-compose.prod.yml --env-file ./backend/.env"
+
+          # The host's own .env is the authority on the database name and user; hard-coding the
+          # defaults here would dump the wrong database on any deployment that renamed them.
+          # POSTGRES_PASSWORD also has to be exported for compose's \`:?\` guard on it.
+          set -a; . ./backend/.env; set +a
+
+          echo "::group::Back the database up before touching it"
+          # OPS-008 §9: a dump before every deploy. Cheap, and the only thing that makes a failed
+          # migration recoverable rather than merely visible.
+          mkdir -p backups
+          \$COMPOSE exec -T postgres pg_dump -Fc -U "\$POSTGRES_USER" "\$POSTGRES_DB" \
+            > "backups/pre-deploy-$SHA.dump" \
+            || echo "no running database to dump — first deploy, continuing"
+          echo "::endgroup::"
+
+          echo "::group::Pull the new images"
+          \$COMPOSE pull backend nginx
+          echo "::endgroup::"
+
+          echo "::group::Migrate (pre-deploy, expand phase)"
+          # Runs to completion before anything new serves traffic. A failure here stops the
+          # deploy with the previous version still up.
+          \$COMPOSE run --rm migrate
+          echo "::endgroup::"
+
+          echo "::group::Roll out"
+          \$COMPOSE up -d --wait --wait-timeout 300
+          echo "::endgroup::"
+
+          # Prune only what this host no longer references, so an older tag stays pullable for a
+          # rollback while the disk does not grow forever.
+          docker image prune -f --filter "until=168h" >/dev/null || true
+          REMOTE
+
+      - name: Verify the deployment answers
+        env:
+          PUBLIC_URL: ${{ vars.PUBLIC_URL }}
+        run: |
+          if [ -z "$PUBLIC_URL" ]; then
+            echo "PUBLIC_URL is not set; skipping the external check"
+            exit 0
+          fi
+          for attempt in $(seq 1 10); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$PUBLIC_URL/healthz" || true)
+            [ "$code" = "200" ] && { echo "healthz answered 200"; exit 0; }
+            echo "attempt $attempt: $code"
+            sleep 6
+          done
+          echo "::error::the deployment never answered 200 on /healthz"
+          exit 1

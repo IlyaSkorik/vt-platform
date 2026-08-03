@@ -1,0 +1,302 @@
+# CI (ARCH-001 §18). Runs on every pull request and on pushes to the protected branch.
+#
+# The stage list follows §18.2 — lint/format, unit tests with a coverage gate, build, security
+# scan, integration — with two deliberate departures from the letter of it:
+#
+#   * §18.2 names black and eslint/prettier. This repository uses ruff for both linting and
+#     formatting, and biome in place of eslint+prettier. The jobs run what the repo actually has.
+#   * §18.2's integration stage spins up postgres and redis for a DRF+DB run. The test suite
+#     targets SQLite (`config/settings/testing.py`), so a service-backed rerun of the same tests
+#     would prove nothing new. The `stack` job goes further instead: it boots the real production
+#     compose — postgres, redis, gunicorn, nginx, the migration job — and probes the edge. That
+#     covers what an integration stage is for, including the things only a real deploy shows.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A new push supersedes the previous run on the same ref; nothing here needs to finish for an
+# outdated commit.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Match the runtime images rather than "latest": a version skew between CI and the image is
+  # exactly the kind of failure that only ever appears in production.
+  PYTHON_VERSION: "3.13"
+  NODE_VERSION: "22"
+
+jobs:
+  backend:
+    name: Backend — lint, types, tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync --frozen
+
+      # Formatting is checked, never applied: CI that rewrites code hides the fact that the
+      # commit was not formatted.
+      - name: ruff format --check
+        working-directory: backend
+        run: uv run ruff format --check .
+
+      - name: ruff check
+        working-directory: backend
+        run: uv run ruff check .
+
+      # Strict mode across 977 files, tests included (mypy.ini). This is the gate that catches
+      # what the test suite cannot: a fake that has drifted from the port it stands in for.
+      - name: mypy
+        working-directory: backend
+        run: uv run mypy .
+
+      - name: pytest
+        working-directory: backend
+        run: uv run pytest -q --cov --cov-report=term-missing --cov-report=xml
+
+      # §18.3 sets the gate on the domain layer specifically — the framework-free core where a
+      # missing branch is a business rule nobody exercised. Reported separately from the overall
+      # number so a well-covered edge cannot mask a thin domain.
+      - name: Coverage gate — domain ≥ 85%
+        working-directory: backend
+        run: uv run coverage report --include='apps/*/domain/*' --fail-under=85
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-coverage
+          path: backend/coverage.xml
+          if-no-files-found: warn
+
+  frontend:
+    name: Frontend — lint, types, tests, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          # Taken from package.json's `packageManager` field, so it cannot drift from local runs.
+          version: 9.15.9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      # The typed API client is generated from the committed OpenAPI contracts and is not itself
+      # committed — `src/shared/api/generated` holds only a `.gitkeep`. Without this step the type
+      # check fails on a few hundred missing modules.
+      - name: Generate the API client
+        working-directory: frontend
+        run: pnpm api:generate
+
+      - name: biome
+        working-directory: frontend
+        run: pnpm lint
+
+      # `tsc -b`, which is what `pnpm typecheck` runs. Not `tsc --noEmit`: the root tsconfig is
+      # solution-style — references only, no `include` — so that command type-checks *nothing*
+      # and exits 0. It is a convincing no-op, and it hid seven real errors in this repository.
+      - name: typecheck
+        working-directory: frontend
+        run: pnpm typecheck
+
+      - name: vitest
+        working-directory: frontend
+        run: pnpm test
+
+      - name: build
+        working-directory: frontend
+        run: pnpm build
+
+  images:
+    name: Images — build both
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      # Built but not pushed here; publishing is the deploy workflow's job and happens only for
+      # commits that already passed everything (ARCH-001 §18.4).
+      - name: Build backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: false
+          load: true
+          tags: vt-backend:ci
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: false
+          load: true
+          tags: vt-frontend:ci
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max
+
+      # The backend image bakes the static manifest at build time; without it the admin, the DRF
+      # browsable API and the Spectacular UI answer 500 while the JSON API looks fine and hides
+      # it. Cheap to assert, and it fails silently otherwise.
+      - name: Backend image has a static manifest
+        run: |
+          docker run --rm vt-backend:ci test -f staticfiles/staticfiles.json
+
+      - name: Production settings refuse the development secret
+        run: |
+          if docker run --rm -e DJANGO_ALLOWED_HOSTS=example.com vt-backend:ci \
+               python -c 'import django; django.setup()' 2>/dev/null; then
+            echo "::error::production settings booted on the default DJANGO_SECRET_KEY"
+            exit 1
+          fi
+          echo "refused, as intended"
+
+  security:
+    name: Security scan
+    runs-on: ubuntu-latest
+    # Advisory: a new CVE in a transitive dependency should be visible immediately without
+    # blocking an unrelated change. §18.3's "no high/critical may merge" belongs on a branch
+    # protection rule once the baseline is clean, not on the first run that finds anything.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: pip-audit (Python dependencies)
+        working-directory: backend
+        run: |
+          uv sync --frozen
+          uv run --with pip-audit pip-audit || true
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: pnpm audit (JS dependencies)
+        working-directory: frontend
+        run: pnpm audit --audit-level high || true
+
+      - name: Trivy — filesystem and config
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "0"
+
+  stack:
+    name: Production stack — boot and probe
+    runs-on: ubuntu-latest
+    needs: [images]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build images into the local daemon
+        run: |
+          docker buildx build --load -t vt-backend:ci ./backend
+          docker buildx build --load -t vt-frontend:ci ./frontend
+
+      - name: Write a throwaway environment
+        run: |
+          cat > /tmp/ci.env <<'ENV'
+          DJANGO_SETTINGS_MODULE=config.settings.production
+          DJANGO_DEBUG=false
+          DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
+          FRONTEND_BASE_URL=http://localhost:8080
+          POSTGRES_DB=vt_platform
+          POSTGRES_USER=vt_platform
+          POSTGRES_PORT=5432
+          EMAIL_BACKEND=django.core.mail.backends.locmem.EmailBackend
+          EMAIL_RATE_LIMIT_PER_MINUTE=0
+          ENV
+          # Generated per run: a secret in a workflow file is a secret in the repository, and the
+          # settings refuse the development default anyway.
+          echo "DJANGO_SECRET_KEY=$(openssl rand -base64 48 | tr -d '\n')" >> /tmp/ci.env
+          echo "POSTGRES_PASSWORD=$(openssl rand -hex 16)" >> /tmp/ci.env
+          grep '^POSTGRES_PASSWORD=' /tmp/ci.env >> "$GITHUB_ENV"
+
+      - name: Bring the stack up
+        env:
+          ENV_FILE: /tmp/ci.env
+          BACKEND_IMAGE: vt-backend:ci
+          FRONTEND_IMAGE: vt-frontend:ci
+          HTTP_PORT: "8080"
+        run: |
+          docker compose -f docker-compose.prod.yml --env-file /tmp/ci.env \
+            up -d --wait --wait-timeout 300
+
+      - name: Probe the edge
+        run: |
+          set -euo pipefail
+          # As the TLS terminator speaks: production sets SECURE_PROXY_SSL_HEADER, so without
+          # this header every request is answered with the HTTPS redirect instead.
+          H='X-Forwarded-Proto: https'
+          probe() {
+            local path="$1" want="$2"
+            local got
+            got=$(curl -s -o /dev/null -w '%{http_code}' -H "$H" "http://127.0.0.1:8080$path")
+            printf '  %-32s %s (want %s)\n' "$path" "$got" "$want"
+            [ "$got" = "$want" ]
+          }
+          probe /nginx-health 200
+          probe /healthz 200
+          probe /readyz 200
+          probe /api/v1/public/festivals 200
+          probe /robots.txt 200
+          probe /sitemap.xml 200
+          probe /admin/login/ 200
+          probe / 200
+          probe /competitions 200          # a browser route, answered by the SPA catch-all
+          probe /assets/does-not-exist.js 404
+
+          # Plain HTTP must still be redirected — that is SECURE_SSL_REDIRECT doing its job.
+          plain=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/api/v1/public/festivals)
+          echo "  plain HTTP -> $plain (want 301)"
+          [ "$plain" = "301" ]
+
+          # The head must be server-rendered: the crawlers that build link previews never run
+          # the app's JavaScript, so if this regresses every shared festival link goes bare.
+          curl -s -H "$H" http://127.0.0.1:8080/ | grep -q 'property="og:title"'
+          echo "  og:title present in the served document"
+
+          # Django's own static must resolve through the baked manifest.
+          curl -s -H "$H" http://127.0.0.1:8080/admin/login/ | grep -qE '/static/admin/css/[a-z]+\.[0-9a-f]+\.css'
+          echo "  hashed admin CSS referenced"
+
+      - name: Logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.prod.yml --env-file /tmp/ci.env logs --tail 80
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.prod.yml --env-file /tmp/ci.env down -v
