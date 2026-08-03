@@ -2,7 +2,7 @@ import { UserCircle2 } from "lucide-react";
 import { Link, Outlet } from "react-router";
 import { useAuth } from "@/app/providers";
 import { APP_NAME, ROUTES } from "@/shared/config";
-import { Button } from "@/shared/ui";
+import { BrandMark, Button } from "@/shared/ui";
 import { SiteFooter } from "./site-footer";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -30,12 +30,10 @@ export function PublicLayout(): React.JSX.Element {
               to={ROUTES.home}
               className="group inline-flex items-center gap-2 rounded-md pr-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <span
-                aria-hidden="true"
-                className="flex size-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 font-extrabold text-primary-foreground text-sm shadow-sm transition-transform group-hover:scale-105"
-              >
-                ВТ
-              </span>
+              {/* Keeps this header's own size, radius and hover lift — those were never
+                  about the initials. The gradient is gone: it existed to give two flat
+                  letters some depth, and behind an actual mark it only muddies the comet. */}
+              <BrandMark className="size-9 rounded-lg shadow-sm transition-transform group-hover:scale-105" />
               <span className="truncate font-semibold text-foreground text-lg tracking-tight">
                 {APP_NAME}
               </span>
