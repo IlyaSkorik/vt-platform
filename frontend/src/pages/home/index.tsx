@@ -346,7 +346,7 @@ export function HomePage(): React.JSX.Element {
                 автоматизации проведения мероприятий.
               </p>
               <Button asChild size="lg">
-                <Link to="tel:375257506371">Свяжитесь с нами</Link>
+                <Link to="tel:+375257506371">Свяжитесь с нами</Link>
               </Button>
             </div>
           </section>
