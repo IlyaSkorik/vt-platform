@@ -22,6 +22,15 @@
   --brand-secondary: var(--gold-500);
   --brand-accent: var(--rocket-500);
 
+  /* The comet knocked out of the logo plate. Always the light one, in both themes.
+   *
+   * `--primary-foreground` is the token this looks like it should be — it is literally
+   * "what goes on top of primary" — but it is theme-variant, and in the dark theme it is
+   * near-black, because that theme's primary is a bright cyan that wants dark text on it.
+   * Correct for a button label, wrong for this: a comet that turns dark stops reading as
+   * a comet. The plate still follows the theme; only the mark cut out of it is fixed. */
+  --brand-mark: var(--neutral-0);
+
   /* --- Content over media (photo heroes) ----------------------------------
    * Theme-INVARIANT on purpose, unlike `--scrim`. A photograph needs the same
    * darkening whatever the UI theme is around it, and the copy on top has to

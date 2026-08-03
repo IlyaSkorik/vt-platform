@@ -15,6 +15,8 @@ export type { AvatarProps, AvatarSize } from "./avatar";
 export { Avatar } from "./avatar";
 export type { BadgeProps } from "./badge";
 export { Badge, badgeVariants } from "./badge";
+export type { BrandMarkProps } from "./brand-mark";
+export { BrandMark } from "./brand-mark";
 export type { ButtonProps } from "./button";
 export { Button, buttonVariants } from "./button";
 export type {

@@ -9,6 +9,7 @@ import { WorkspaceSwitcher } from "@/applications/workspace-switcher";
 import { ROUTES } from "@/shared/config";
 import { cn } from "@/shared/lib";
 import {
+  BrandMark,
   Button,
   Drawer,
   DrawerContent,
@@ -165,12 +166,7 @@ function StaffSidebar({
           to={ROUTES.staff}
           className="flex items-center gap-2 rounded-md font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <span
-            aria-hidden="true"
-            className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary font-bold text-primary-foreground text-sm"
-          >
-            VT
-          </span>
+          <BrandMark className="size-8 rounded-md" />
           {!collapsed && (
             <span className="flex min-w-0 flex-col">
               <span className="truncate">Панель управления</span>

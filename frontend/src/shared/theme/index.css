@@ -88,6 +88,7 @@
   --color-brand: var(--brand-primary);
   --color-brand-secondary: var(--brand-secondary);
   --color-brand-accent: var(--brand-accent);
+  --color-brand-mark: var(--brand-mark);
 
   /* Status utilities. */
   --color-success: var(--success);

@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/app/layouts/theme-toggle";
 import { UserMenu } from "@/app/layouts/user-menu";
 import { ROUTES } from "@/shared/config";
 import { cn } from "@/shared/lib";
+import { BrandMark } from "@/shared/ui";
 
 const SKIP_TARGET_ID = "platform-main";
 
@@ -35,12 +36,7 @@ export function PlatformLayout(): React.JSX.Element {
           to={ROUTES.platform}
           className="flex items-center gap-2 rounded-md font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <span
-            aria-hidden="true"
-            className="flex size-8 shrink-0 items-center justify-center rounded-md bg-foreground font-bold text-background text-sm"
-          >
-            VT
-          </span>
+          <BrandMark className="size-8 rounded-md" />
           <span className="flex min-w-0 flex-col">
             <span className="truncate">Платформа</span>
             <span className="truncate font-normal text-muted-foreground text-xs">
