@@ -3,8 +3,8 @@ import { APP_NAME, ROUTES } from "@/shared/config";
 
 export function SiteFooter(): React.JSX.Element {
   const entrepreneurName = "Скорик Илья Андреевич";
-  const legalStatus = "Самозанятый";
-  const unp = "УНП: ..";
+  const legalStatus = "Плательщик налога на профессиональный доход";
+  const unp = "УНП: AE9395951";
 
   return (
     <footer className="border-border/70 border-t bg-background/80 px-4 pt-8 pb-4 md:px-8">
