@@ -131,7 +131,10 @@ describe("taking over a server-rendered head", () => {
   it("carries the canonical over to the page navigated to", () => {
     serverRendered();
 
-    write({ title: "Фестивали", canonical: "https://example.by/competitions" }, { location: "/competitions" });
+    write(
+      { title: "Фестивали", canonical: "https://example.by/competitions" },
+      { location: "/competitions" },
+    );
 
     expect(canonical()).toBe("https://example.by/competitions");
   });
