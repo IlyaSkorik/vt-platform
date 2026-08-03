@@ -14,6 +14,14 @@ vi.mock("@/features/festival-catalog", async (importOriginal) => ({
   usePublicFestivals: vi.fn(),
 }));
 
+// The cards this renders read the session to build their apply link. These tests are
+// about the list — search, empty state — so the session is fixed rather than varied here;
+// where the link itself points is asserted in festival-card.test.tsx.
+vi.mock("@/app/providers", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/app/providers")>()),
+  useAuth: vi.fn(() => ({ isAuthenticated: true })),
+}));
+
 const mockedHook = vi.mocked(usePublicFestivals);
 
 type QueryResult = UseQueryResult<Festival[], ApiError>;
