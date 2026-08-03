@@ -17,7 +17,7 @@ function LegalPage({
   useSeo({ title, description });
 
   return (
-    <PageContainer size="wide">
+    <PageContainer size="wide" className="px-4 md:px-8">
       <PageHeader>
         <PageTitle>{title}</PageTitle>
         <PageDescription>{description}</PageDescription>

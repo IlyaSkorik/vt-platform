@@ -27,7 +27,7 @@ export function PublicFestivalCatalogPage(): React.JSX.Element {
   const festivals = usePublicFestivals().data ?? [];
 
   return (
-    <PageContainer size="wide">
+    <PageContainer size="wide" className="px-4 md:px-8">
       <JsonLd
         id="festival-list"
         data={festivalListSchema(festivals, { basePath: ROUTES.competitions })}
@@ -96,7 +96,7 @@ export function PublicFestivalLandingPage(): React.JSX.Element {
   );
 
   return (
-    <PageContainer size="wide">
+    <PageContainer size="wide" className="px-4 md:px-8">
       {festival ? (
         <>
           <JsonLd id="festival-event" data={festivalEventSchema(festival, { path })} />

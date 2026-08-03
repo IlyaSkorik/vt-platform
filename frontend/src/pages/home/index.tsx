@@ -119,7 +119,11 @@ export function HomePage(): React.JSX.Element {
         </div>
       </section>
 
-      <PageContainer size="wide">
+      {/* The public layout does not pad its outlet the way the staff and cabinet
+          shells do — the hero above is deliberately full-bleed — so pages under it
+          carry their own gutters. Without these the copy ran into both edges on a
+          phone. */}
+      <PageContainer size="wide" className="px-4 md:px-8">
         <PageContent className="space-y-16 py-10 md:py-14">
           <section id="active-events" className="scroll-mt-24 space-y-5">
             <div className="flex flex-wrap items-end justify-between gap-3">
