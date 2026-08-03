@@ -251,7 +251,11 @@ class TestTaxonomyInvariants:
         )
         with pytest.raises(OverlappingAgeRangeError):
             c.add_age_category(
-                age_category_id=AgeCategoryId.generate(), participant_group_id=grp.id, name=AgeCategoryName("8-10"), age_range=AgeRange(8, 10), now=NOW
+                age_category_id=AgeCategoryId.generate(),
+                participant_group_id=grp.id,
+                name=AgeCategoryName("8-10"),
+                age_range=AgeRange(8, 10),
+                now=NOW,
             )
 
     def test_non_overlapping_age_range_allowed(self) -> None:

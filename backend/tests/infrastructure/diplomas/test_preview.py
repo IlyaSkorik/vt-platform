@@ -132,9 +132,7 @@ def test_teachers_with_different_roles_go_on_separate_lines() -> None:
     bindings = preview.resolve_preview_bindings(str(submission.id))
 
     assert bindings is not None
-    assert bindings[preview.TEACHER_DISPLAY_NAME] == (
-        "Педагог: Петрова Мария\nКонцертмейстер: Сидоров Пётр"
-    )
+    assert bindings[preview.TEACHER_DISPLAY_NAME] == ("Педагог: Петрова Мария\nКонцертмейстер: Сидоров Пётр")
 
 
 def test_resolve_unknown_application_returns_none() -> None:

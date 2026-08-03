@@ -75,22 +75,32 @@ class TestPerformanceTitle:
             PerformanceTitle("   ")
 
 
-_REFERENCES = {
-    "nomination_id": NominationId.from_uuid(SubmissionId.generate().value),
-    "discipline_id": DisciplineId.from_uuid(SubmissionId.generate().value),
-    "age_category_id": AgeCategoryId.from_uuid(SubmissionId.generate().value),
-    "participant_group_id": ParticipantGroupId.from_uuid(SubmissionId.generate().value),
-    "participation_format_id": ParticipationFormatId.from_uuid(SubmissionId.generate().value),
-}
+#: The combination a fixture performance names. Separate constants rather than one dict,
+#: so each keeps its own type where it is used.
+_NOMINATION_ID = NominationId.from_uuid(SubmissionId.generate().value)
+_DISCIPLINE_ID = DisciplineId.from_uuid(SubmissionId.generate().value)
+_AGE_CATEGORY_ID = AgeCategoryId.from_uuid(SubmissionId.generate().value)
+_PARTICIPANT_GROUP_ID = ParticipantGroupId.from_uuid(SubmissionId.generate().value)
+_PARTICIPATION_FORMAT_ID = ParticipationFormatId.from_uuid(SubmissionId.generate().value)
 
 
 def _performance(comment: str | None = None) -> Performance:
-    """A valid performance; ``comment`` omitted means "the applicant added no note"."""
+    """A valid performance; ``comment`` omitted means "the applicant added no note".
+
+    Every field is passed by name rather than splatted from a dict: a `**mapping` call
+    cannot be matched against the constructor's parameters, so nothing here was being
+    checked — and the conditional second splat also hid whether omitting the comment
+    and passing the default were the same thing. They are, and this now says so.
+    """
     return Performance(
         title=PerformanceTitle("Swan Lake"),
         duration=Duration.of(minutes=3, seconds=30),
-        **_REFERENCES,
-        **({} if comment is None else {"comment": comment}),
+        nomination_id=_NOMINATION_ID,
+        discipline_id=_DISCIPLINE_ID,
+        age_category_id=_AGE_CATEGORY_ID,
+        participant_group_id=_PARTICIPANT_GROUP_ID,
+        participation_format_id=_PARTICIPATION_FORMAT_ID,
+        comment="" if comment is None else comment,
     )
 
 

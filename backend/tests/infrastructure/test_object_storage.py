@@ -41,7 +41,7 @@ class TestReferencesFollowTheStorage:
 
     @override_settings(STORAGES=S3_STORAGES)
     def test_a_bucket_reference_is_an_absolute_url(self) -> None:
-        storages._storages.pop("default", None)
+        storages._storages.pop("default", None)  # type: ignore[attr-defined]  # private cache; no public reset exists
         reference = default_storage.url("competitions/1/poster.jpg")
         assert reference.startswith("https://")
         assert reference.endswith("/competitions/1/poster.jpg")
@@ -50,7 +50,7 @@ class TestReferencesFollowTheStorage:
 
     @override_settings(STORAGES=S3_STORAGES)
     def test_a_key_survives_the_round_trip_through_a_bucket_url(self) -> None:
-        storages._storages.pop("default", None)
+        storages._storages.pop("default", None)  # type: ignore[attr-defined]  # private cache; no public reset exists
         key = "diplomas/documents/a/thank_you/tok/Петрова Ольга.pdf"
         assert _storage_key(default_storage.url(key)) == key
 
@@ -60,7 +60,7 @@ class TestReferencesFollowTheStorage:
 
     def teardown_method(self) -> None:
         # The override is gone; make the next reader of ``default_storage`` build it fresh.
-        storages._storages.pop("default", None)
+        storages._storages.pop("default", None)  # type: ignore[attr-defined]  # private cache; no public reset exists
 
 
 class TestAttachmentUrls:

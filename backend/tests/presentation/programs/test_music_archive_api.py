@@ -33,9 +33,7 @@ def _stored(name: str, content: bytes = b"backing track") -> str:
 
 def _attach_music(submission_id: str, *references: str) -> None:
     submission = SubmissionModel.objects.get(id=submission_id)
-    submission.attachments = [
-        {"id": str(uuid.uuid4()), "type": "MUSIC", "file": reference, "caption": None} for reference in references
-    ]
+    submission.attachments = [{"id": str(uuid.uuid4()), "type": "MUSIC", "file": reference, "caption": None} for reference in references]
     submission.save(update_fields=["attachments"])
 
 
@@ -51,11 +49,9 @@ def _archive(response: Any) -> zipfile.ZipFile:
 
 
 class TestMusicArchive:
-    def test_the_archive_carries_one_track_per_number(self, staff_client, scope) -> None:  # noqa: F811
+    def test_the_archive_carries_one_track_per_number(self, staff_client: APIClient, scope: tuple[str, str]) -> None:  # noqa: F811
         competition_id, nomination_id = scope
-        submission_id = _act(
-            competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200, performer="Иванова Анна"
-        )
+        submission_id = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200, performer="Иванова Анна")
         _attach_music(submission_id, _stored("track.mp3"))
         program_id = _filled_program(staff_client, scope)
 
@@ -66,7 +62,7 @@ class TestMusicArchive:
             assert archive.namelist() == ["01 — Иванова Анна — Катюша.mp3"]
             assert archive.read("01 — Иванова Анна — Катюша.mp3") == b"backing track"
 
-    def test_a_number_without_a_track_is_named_in_the_notes(self, staff_client, scope) -> None:  # noqa: F811
+    def test_a_number_without_a_track_is_named_in_the_notes(self, staff_client: APIClient, scope: tuple[str, str]) -> None:  # noqa: F811
         competition_id, nomination_id = scope
         _act(competition_id=competition_id, nomination_id=nomination_id, title="Гимн", seconds=180, performer="Петров Пётр")
         program_id = _filled_program(staff_client, scope)
@@ -77,7 +73,7 @@ class TestMusicArchive:
             assert archive.namelist() == ["ПРОЧТИ.txt"]
             assert "Петров Пётр" in archive.read("ПРОЧТИ.txt").decode()
 
-    def test_a_track_missing_from_storage_costs_only_itself(self, staff_client, scope) -> None:  # noqa: F811
+    def test_a_track_missing_from_storage_costs_only_itself(self, staff_client: APIClient, scope: tuple[str, str]) -> None:  # noqa: F811
         competition_id, nomination_id = scope
         present = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200, performer="Иванова Анна")
         absent = _act(competition_id=competition_id, nomination_id=nomination_id, title="Гимн", seconds=180, performer="Петров Пётр")
@@ -91,11 +87,9 @@ class TestMusicArchive:
             assert "02 — Иванова Анна — Катюша.mp3" in archive.namelist()
             assert "Петров Пётр" in archive.read("ПРОЧТИ.txt").decode()
 
-    def test_two_tracks_of_the_same_name_both_survive(self, staff_client, scope) -> None:  # noqa: F811
+    def test_two_tracks_of_the_same_name_both_survive(self, staff_client: APIClient, scope: tuple[str, str]) -> None:  # noqa: F811
         competition_id, nomination_id = scope
-        submission_id = _act(
-            competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200, performer="Иванова Анна"
-        )
+        submission_id = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200, performer="Иванова Анна")
         _attach_music(submission_id, _stored("a.mp3", b"first"), _stored("b.mp3", b"second"))
         program_id = _filled_program(staff_client, scope)
 
@@ -106,6 +100,6 @@ class TestMusicArchive:
                 "01 — Иванова Анна — Катюша.mp3",
             ]
 
-    def test_a_non_staff_caller_is_refused(self, outsider_client, scope, staff_client) -> None:  # noqa: F811
+    def test_a_non_staff_caller_is_refused(self, outsider_client: APIClient, scope: tuple[str, str], staff_client: APIClient) -> None:  # noqa: F811
         program_id = _filled_program(staff_client, scope)
         assert outsider_client.get(f"{_PROGRAMS}/{program_id}/music.zip").status_code == 403

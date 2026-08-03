@@ -114,13 +114,13 @@ def _published_program(
 
 
 class TestPublicAccess:
-    def test_a_link_needs_no_account(self, staff_client, scope) -> None:
+    def test_a_link_needs_no_account(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, _program_id, _items = _published_program(staff_client, scope)
         response = APIClient().get(f"{_PUBLIC}/{slug}")
         assert response.status_code == 200
         assert response.data["data"]["name"] == "Для ведущего"
 
-    def test_an_unknown_link_is_an_indistinguishable_404(self, staff_client, scope) -> None:
+    def test_an_unknown_link_is_an_indistinguishable_404(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         _published_program(staff_client, scope)
         response = APIClient().get(f"{_PUBLIC}/Nobody234")
         assert response.status_code == 404
@@ -129,13 +129,13 @@ class TestPublicAccess:
     def test_a_malformed_link_is_the_same_404(self) -> None:
         assert APIClient().get(f"{_PUBLIC}/!!!").status_code == 404
 
-    def test_a_revoked_link_stops_resolving(self, staff_client, scope) -> None:
+    def test_a_revoked_link_stops_resolving(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, program_id, _items = _published_program(staff_client, scope)
         share_id = staff_client.get(f"{_PROGRAMS}/{program_id}/shares").data["data"][0]["id"]
         staff_client.delete(f"{_PROGRAMS}/{program_id}/shares/{share_id}")
         assert APIClient().get(f"{_PUBLIC}/{slug}").status_code == 404
 
-    def test_deleting_the_programme_takes_the_link_down(self, staff_client, scope) -> None:
+    def test_deleting_the_programme_takes_the_link_down(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, program_id, _items = _published_program(staff_client, scope)
         staff_client.delete(f"{_PROGRAMS}/{program_id}")
         assert APIClient().get(f"{_PUBLIC}/{slug}").status_code == 404
@@ -156,21 +156,21 @@ class TestTheHostsEdition:
         rows = APIClient().get(f"{_PUBLIC}/{slug}").data["data"]["rows"]
         return slug, program_id, rows
 
-    def test_the_host_link_says_it_may_control_and_carries_row_handles(self, staff_client, scope) -> None:
+    def test_the_host_link_says_it_may_control_and_carries_row_handles(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, _program_id, rows = self._host_link(staff_client, scope)
         data = APIClient().get(f"{_PUBLIC}/{slug}").data["data"]
 
         assert data["controlsRunningOrder"] is True
         assert all(row["id"] for row in rows)
 
-    def test_a_read_only_link_says_it_may_not_and_carries_no_handles(self, staff_client, scope) -> None:
+    def test_a_read_only_link_says_it_may_not_and_carries_no_handles(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, _program_id, _items = _published_program(staff_client, scope, name="Экран")
         data = APIClient().get(f"{_PUBLIC}/{slug}").data["data"]
 
         assert data["controlsRunningOrder"] is False
         assert all(row["id"] is None for row in data["rows"])
 
-    def test_the_host_marks_an_act_on_stage_and_everyone_sees_it(self, staff_client, scope) -> None:
+    def test_the_host_marks_an_act_on_stage_and_everyone_sees_it(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, program_id, rows = self._host_link(staff_client, scope)
         # A second edition of the *same* programme - what the audience screen reads.
         screen_slug = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Экран"}, format="json").data["data"]["share"]["slug"]
@@ -187,7 +187,7 @@ class TestTheHostsEdition:
         screen = APIClient().get(f"{_PUBLIC}/{screen_slug}").data["data"]
         assert screen["rows"][0]["progress"] == "ON_STAGE"
 
-    def test_putting_the_next_act_on_stage_finishes_the_previous_one(self, staff_client, scope) -> None:
+    def test_putting_the_next_act_on_stage_finishes_the_previous_one(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, _program_id, rows = self._host_link(staff_client, scope)
         client = APIClient()
         client.put(f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/progress", {"progress": "ON_STAGE"}, format="json")
@@ -195,7 +195,7 @@ class TestTheHostsEdition:
 
         assert [row["progress"] for row in second.data["data"]["rows"]] == ["PERFORMED", "ON_STAGE"]
 
-    def test_the_host_rearranges_what_is_still_to_come(self, staff_client, scope) -> None:
+    def test_the_host_rearranges_what_is_still_to_come(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, _program_id, rows = self._host_link(staff_client, scope)
         ids = [row["id"] for row in rows]
 
@@ -205,7 +205,7 @@ class TestTheHostsEdition:
         # Numbers were frozen at publication, so they travelled with their participants.
         assert [row["cells"][0] for row in response.data["data"]["rows"]] == ["2", "1"]
 
-    def test_a_read_only_link_cannot_drive_the_day(self, staff_client, scope) -> None:
+    def test_a_read_only_link_cannot_drive_the_day(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         # And is refused indistinguishably from a slug that does not exist, so an audience
         # link cannot be probed for whether it happens to be the host's.
         _host_slug, program_id, rows = self._host_link(staff_client, scope)
@@ -223,7 +223,7 @@ class TestTheHostsEdition:
         response = APIClient().put(f"{_PUBLIC}/Nobody234/rows/{uuid.uuid4()}/progress", {"progress": "ON_STAGE"}, format="json")
         assert response.status_code == 404
 
-    def test_an_unknown_progress_state_is_rejected(self, staff_client, scope) -> None:
+    def test_an_unknown_progress_state_is_rejected(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, _program_id, rows = self._host_link(staff_client, scope)
         response = APIClient().put(
             f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/progress",
@@ -232,12 +232,12 @@ class TestTheHostsEdition:
         )
         assert response.status_code == 400
 
-    def test_an_incomplete_reorder_from_the_host_is_rejected(self, staff_client, scope) -> None:
+    def test_an_incomplete_reorder_from_the_host_is_rejected(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, _program_id, rows = self._host_link(staff_client, scope)
         response = APIClient().put(f"{_PUBLIC}/{slug}/order", {"itemIds": [rows[0]["id"]]}, format="json")
         assert response.status_code == 422
 
-    def test_the_organizer_can_reset_the_day(self, staff_client, scope) -> None:
+    def test_the_organizer_can_reset_the_day(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, program_id, rows = self._host_link(staff_client, scope)
         APIClient().put(f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/progress", {"progress": "PERFORMED"}, format="json")
 
@@ -247,7 +247,7 @@ class TestTheHostsEdition:
 
 
 class TestPublicContent:
-    def test_the_screen_is_a_table_of_the_published_columns(self, staff_client, scope) -> None:
+    def test_the_screen_is_a_table_of_the_published_columns(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, _program_id, _items = _published_program(staff_client, scope)
         data = APIClient().get(f"{_PUBLIC}/{slug}").data["data"]
         assert data["competitionTitle"] == "Весенний фестиваль"
@@ -259,7 +259,7 @@ class TestPublicContent:
             ["2", "10:04", "Иванов Иван", "Катюша"],
         ]
 
-    def test_the_organizer_chooses_which_columns_a_link_shows(self, staff_client, scope) -> None:
+    def test_the_organizer_chooses_which_columns_a_link_shows(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, _program_id, _items = _published_program(
             staff_client,
             scope,
@@ -270,7 +270,7 @@ class TestPublicContent:
         assert [column["label"] for column in data["columns"]] == ["Время", "Номер", "Длительность", "Комментарий"]
         assert data["rows"][1]["cells"] == ["10:04", "Катюша", "3:20", "Выход с точки 3"]
 
-    def test_an_unpublished_column_is_absent_from_the_payload(self, staff_client, scope) -> None:
+    def test_an_unpublished_column_is_absent_from_the_payload(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         # The confidentiality property: whoever holds the link cannot read a column the
         # organizer did not publish.
         slug, _program_id, _items = _published_program(staff_client, scope, columns=["TIME", "TITLE"])
@@ -280,13 +280,13 @@ class TestPublicContent:
         assert "Выход с точки 3" not in flattened
         assert "Иванов Иван" not in flattened
 
-    def test_the_public_times_are_the_organizers_times(self, staff_client, scope) -> None:
+    def test_the_public_times_are_the_organizers_times(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, program_id, _items = _published_program(staff_client, scope, columns=["TIME"])
         organizer = staff_client.get(f"{_PROGRAMS}/{program_id}").data["data"]
         public = APIClient().get(f"{_PUBLIC}/{slug}").data["data"]
         assert [item["schedule"]["startsAt"].strftime("%H:%M") for item in organizer["items"]] == [row["cells"][0] for row in public["rows"]]
 
-    def test_a_partial_edition_publishes_only_its_own_rows(self, staff_client, scope) -> None:
+    def test_a_partial_edition_publishes_only_its_own_rows(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, _program_id, _items = _published_program(staff_client, scope, name="Только второй номер", item_slice=slice(1, 2))
         data = APIClient().get(f"{_PUBLIC}/{slug}").data["data"]
         assert len(data["rows"]) == 1
@@ -296,7 +296,7 @@ class TestPublicContent:
         # Its real slot time is preserved, not recomputed from the edition.
         assert data["rows"][0]["cells"][1] == "10:04"
 
-    def test_the_public_payload_carries_no_internal_identifiers(self, staff_client, scope) -> None:
+    def test_the_public_payload_carries_no_internal_identifiers(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, _program_id, _items = _published_program(staff_client, scope)
         data = APIClient().get(f"{_PUBLIC}/{slug}").data["data"]
         assert "id" not in data
@@ -305,7 +305,7 @@ class TestPublicContent:
             # A read-only edition carries no handle on a row - only the host's does.
             assert row["id"] is None
 
-    def test_breaks_appear_on_the_screen(self, staff_client, scope) -> None:
+    def test_breaks_appear_on_the_screen(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, program_id, _items = _published_program(staff_client, scope)
         staff_client.post(f"{_PROGRAMS}/{program_id}/items", {"title": "Перерыв", "durationSeconds": 900}, format="json")
         data = APIClient().get(f"{_PUBLIC}/{slug}").data["data"]
@@ -313,7 +313,7 @@ class TestPublicContent:
         # A break has no participant, so that cell is blank rather than a placeholder.
         assert data["rows"][-1]["cells"] == ["3", "10:08", "", "Перерыв"]
 
-    def test_a_whole_programme_edition_keeps_following_the_programme(self, staff_client, scope) -> None:
+    def test_a_whole_programme_edition_keeps_following_the_programme(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, program_id, _items = _published_program(staff_client, scope, name="Экран у сцены")
         staff_client.post(f"{_PROGRAMS}/{program_id}/items", {"title": "Обед", "durationSeconds": 2400}, format="json")
         data = APIClient().get(f"{_PUBLIC}/{slug}").data["data"]
@@ -328,7 +328,7 @@ class TestRevalidation:
     survives an unchanged programme, and one that does not survive a changed one.
     """
 
-    def test_a_read_carries_a_validator(self, staff_client, scope) -> None:
+    def test_a_read_carries_a_validator(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, _program_id, _items = _published_program(staff_client, scope)
         response = APIClient().get(f"{_PUBLIC}/{slug}")
         assert response["ETag"]
@@ -336,7 +336,7 @@ class TestRevalidation:
         # asks whether it is still current.
         assert response["Cache-Control"] == "private, no-cache"
 
-    def test_polling_an_unchanged_programme_costs_a_304(self, staff_client, scope) -> None:
+    def test_polling_an_unchanged_programme_costs_a_304(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, _program_id, _items = _published_program(staff_client, scope)
         first = APIClient().get(f"{_PUBLIC}/{slug}")
 
@@ -346,13 +346,13 @@ class TestRevalidation:
         # The validator is repeated, so the next poll can send it back too.
         assert again["ETag"] == first["ETag"]
 
-    def test_a_weak_validator_is_matched_without_its_prefix(self, staff_client, scope) -> None:
+    def test_a_weak_validator_is_matched_without_its_prefix(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, _program_id, _items = _published_program(staff_client, scope)
         etag = APIClient().get(f"{_PUBLIC}/{slug}")["ETag"]
         assert etag.startswith('W/"')
         assert APIClient().get(f"{_PUBLIC}/{slug}", HTTP_IF_NONE_MATCH=etag.removeprefix("W/")).status_code == 304
 
-    def test_marking_a_row_invalidates_the_validator(self, staff_client, scope) -> None:
+    def test_marking_a_row_invalidates_the_validator(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, _program_id, _items = _published_program(staff_client, scope, name="Программа ведущего", controls=True)
         first = APIClient().get(f"{_PUBLIC}/{slug}")
         row_id = first.data["data"]["rows"][0]["id"]
@@ -364,7 +364,7 @@ class TestRevalidation:
         assert after["ETag"] != first["ETag"]
         assert after.data["data"]["rows"][0]["progress"] == "ON_STAGE"
 
-    def test_editing_the_programme_invalidates_the_validator(self, staff_client, scope) -> None:
+    def test_editing_the_programme_invalidates_the_validator(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, program_id, _items = _published_program(staff_client, scope, name="Экран у сцены")
         first = APIClient().get(f"{_PUBLIC}/{slug}")
 
@@ -374,7 +374,7 @@ class TestRevalidation:
         assert after.status_code == 200
         assert len(after.data["data"]["rows"]) == 3
 
-    def test_two_editions_of_one_programme_never_share_a_validator(self, staff_client, scope) -> None:
+    def test_two_editions_of_one_programme_never_share_a_validator(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         """Otherwise one edition's link could revalidate into another's columns."""
         slug_a, program_id, _items = _published_program(staff_client, scope, name="Для жюри", columns=["TIME", "TITLE"])
         share_b = staff_client.post(
@@ -389,7 +389,7 @@ class TestRevalidation:
         assert response_b.status_code == 200
         assert [column["key"] for column in response_b.data["data"]["columns"]] == ["POSITION", "TITLE"]
 
-    def test_a_304_answers_from_one_query(self, staff_client, scope) -> None:
+    def test_a_304_answers_from_one_query(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         """The whole point: an unchanged poll must not load the aggregate or the catalog.
 
         Asserting the exact count rather than "fewer than a full read" on purpose - if this
@@ -408,7 +408,7 @@ class TestRevalidation:
             assert APIClient().get(f"{_PUBLIC}/{slug}").status_code == 200
         assert len(rebuilt.captured_queries) > 1
 
-    def test_a_revoked_link_is_not_served_from_the_cache(self, staff_client, scope) -> None:
+    def test_a_revoked_link_is_not_served_from_the_cache(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         """A link taken down mid-event must stop resolving, warm cache or not."""
         slug, program_id, _items = _published_program(staff_client, scope)
         first = APIClient().get(f"{_PUBLIC}/{slug}")

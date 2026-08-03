@@ -146,9 +146,7 @@ def test_a_batch_with_one_taken_nomination_creates_nothing() -> None:
     competition_id = str(uuid.uuid4())
     taken = str(uuid.uuid4())
     free = str(uuid.uuid4())
-    composition.create_assignment(
-        competition_id=competition_id, category_id=taken, template_id=str(template.id)
-    )
+    composition.create_assignment(competition_id=competition_id, category_id=taken, template_id=str(template.id))
 
     with pytest.raises(AssignmentConflictError):
         composition.create_assignments(
@@ -167,13 +165,9 @@ def test_a_batch_only_fills_the_templates_own_slot() -> None:
     thanks = TemplateModel.objects.create(type="THANK_YOU", name="Благодарность")
     competition_id = str(uuid.uuid4())
     nominations = [str(uuid.uuid4()) for _ in range(2)]
-    composition.create_assignments(
-        competition_id=competition_id, category_ids=nominations, template_id=str(diploma.id)
-    )
+    composition.create_assignments(competition_id=competition_id, category_ids=nominations, template_id=str(diploma.id))
 
-    composition.create_assignments(
-        competition_id=competition_id, category_ids=nominations, template_id=str(thanks.id)
-    )
+    composition.create_assignments(competition_id=competition_id, category_ids=nominations, template_id=str(thanks.id))
 
     by_type: dict[str, set[str]] = {}
     for item in composition.list_assignments():
@@ -196,9 +190,7 @@ def test_replace_layout_persists_and_bumps_revision() -> None:
     template = _template()
     before = composition.get_template_layout(str(template.id))["revision"]
 
-    saved = composition.replace_template_layout(
-        template_id=str(template.id), fields=[_field(x=0.1), _field(x=0.5)]
-    )
+    saved = composition.replace_template_layout(template_id=str(template.id), fields=[_field(x=0.1), _field(x=0.5)])
 
     assert len(saved["fields"]) == 2
     assert saved["revision"] == before + 1
@@ -209,9 +201,7 @@ def test_replace_layout_persists_and_bumps_revision() -> None:
 
 def test_replace_layout_is_a_full_replace() -> None:
     template = _template()
-    composition.replace_template_layout(
-        template_id=str(template.id), fields=[_field(), _field(), _field()]
-    )
+    composition.replace_template_layout(template_id=str(template.id), fields=[_field(), _field(), _field()])
     composition.replace_template_layout(template_id=str(template.id), fields=[_field(x=0.9)])
 
     layout = composition.get_template_layout(str(template.id))
@@ -331,9 +321,7 @@ def test_set_document_unknown_template_raises() -> None:
 def test_create_template_starts_empty_library() -> None:
     assert composition.list_templates() == []
 
-    created = composition.create_template(
-        name="Диплом заочный", document_type="DIPLOMA", description=""
-    )
+    created = composition.create_template(name="Диплом заочный", document_type="DIPLOMA", description="")
 
     assert created["name"] == "Диплом заочный"
     assert created["type"] == "DIPLOMA"

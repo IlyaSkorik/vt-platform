@@ -127,6 +127,8 @@ class TestSubmissionRepository:
         submission = _build_submission()
         repo.save(submission)
         row = SubmissionModel.objects.get(id=submission.id.value)
+        # The column is JSON, so the ORM types it as possibly absent.
+        assert row.performance is not None
         del row.performance["comment"]
         row.save(update_fields=["performance"])
 

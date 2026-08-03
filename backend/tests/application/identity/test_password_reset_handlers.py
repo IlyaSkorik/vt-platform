@@ -9,7 +9,7 @@ failure modes).
 
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import pytest
 
@@ -164,7 +164,7 @@ class TestResetPasswordHandler:
             clock=FakeClock(),
         )
 
-    def _issue_token(self, tokens: FakeVerificationTokenService, user: User, *, issued_at=NOW) -> str:
+    def _issue_token(self, tokens: FakeVerificationTokenService, user: User, *, issued_at: datetime = NOW) -> str:
         tokens.issue_link(user_id=user.id, issued_at=issued_at)
         return tokens.links[-1].split("token=")[1]
 

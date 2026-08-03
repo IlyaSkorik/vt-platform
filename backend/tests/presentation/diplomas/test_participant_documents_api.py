@@ -64,9 +64,7 @@ _SNAPSHOT = {
 }
 
 
-def _thank_you(
-    submission: SubmissionModel, *, published: bool = True, recipient: str = "Петрова Ольга"
-) -> IssuedDocumentModel:
+def _thank_you(submission: SubmissionModel, *, published: bool = True, recipient: str = "Петрова Ольга") -> IssuedDocumentModel:
     return IssuedDocumentModel.objects.create(
         document_type="THANK_YOU",
         competition_id=submission.competition_id,

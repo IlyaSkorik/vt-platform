@@ -72,6 +72,9 @@ def _festival() -> uuid.UUID:
     organizer actually runs.
     """
     organization_id = OrganizationModel.objects.filter(deleted_at__isnull=True).order_by("created_at").values_list("id", flat=True).first()
+    # The organizer fixture provisions one; without it the archive would be empty and
+    # every assertion below would pass for the wrong reason.
+    assert organization_id is not None, "expected a provisioned organization"
     competition = CompetitionModel.objects.create(
         organizer_id=organization_id,
         status="PUBLISHED",
@@ -100,7 +103,8 @@ def _receipts_json(references: tuple[str, ...]) -> list[dict[str, Any]]:
     )
     for reference in references:
         application.upload_payment_receipt(file=FileReference(reference), now=NOW)
-    return ApplicationMapper.to_model(application).payment_receipts
+    receipts: list[dict[str, Any]] = ApplicationMapper.to_model(application).payment_receipts
+    return receipts
 
 
 def _order(
@@ -131,7 +135,7 @@ def _archive(response: Any) -> zipfile.ZipFile:
 
 
 class TestDocumentsArchive:
-    def test_a_receipt_and_its_benefit_certificate_land_in_one_folder(self, staff_client) -> None:
+    def test_a_receipt_and_its_benefit_certificate_land_in_one_folder(self, staff_client: APIClient) -> None:
         competition_id = _festival()
         order = _order(
             competition_id=competition_id,
@@ -151,7 +155,7 @@ class TestDocumentsArchive:
             ]
             assert archive.read(f"Иванова Анна — {short}/Квитанция.pdf") == b"receipt"
 
-    def test_an_order_paid_in_several_transfers_keeps_every_slip(self, staff_client) -> None:
+    def test_an_order_paid_in_several_transfers_keeps_every_slip(self, staff_client: APIClient) -> None:
         # A group fee split between a school and a parent arrives as two payments.
         # Keeping only one of the slips would leave the folder short of the sum.
         competition_id = _festival()
@@ -170,7 +174,7 @@ class TestDocumentsArchive:
             ]
             assert archive.read(f"Иванова Анна — {short}/Квитанция 2.jpg") == b"second"
 
-    def test_an_order_with_no_paperwork_is_listed_rather_than_silently_absent(self, staff_client) -> None:
+    def test_an_order_with_no_paperwork_is_listed_rather_than_silently_absent(self, staff_client: APIClient) -> None:
         competition_id = _festival()
         _order(competition_id=competition_id, performer="Петров Пётр")
 
@@ -179,7 +183,7 @@ class TestDocumentsArchive:
             assert archive.namelist() == ["ПРОЧТИ.txt"]
             assert "Без квитанции: Петров Пётр" in archive.read("ПРОЧТИ.txt").decode()
 
-    def test_a_benefit_without_a_receipt_is_still_flagged(self, staff_client) -> None:
+    def test_a_benefit_without_a_receipt_is_still_flagged(self, staff_client: APIClient) -> None:
         # The case worth chasing: a claim for a reduced fee with no proof that the
         # reduced fee was ever paid. Counting documents would call this folder done.
         competition_id = _festival()
@@ -194,7 +198,7 @@ class TestDocumentsArchive:
             assert any(name.endswith("Справка о льготе.pdf") for name in archive.namelist())
             assert "Без квитанции: Петров Пётр" in archive.read("ПРОЧТИ.txt").decode()
 
-    def test_an_order_that_paid_is_not_flagged(self, staff_client) -> None:
+    def test_an_order_that_paid_is_not_flagged(self, staff_client: APIClient) -> None:
         competition_id = _festival()
         _order(competition_id=competition_id, performer="Иванова Анна", receipts=(_stored("r.pdf", b"r"),))
 
@@ -202,7 +206,7 @@ class TestDocumentsArchive:
         with _archive(response) as archive:
             assert "ПРОЧТИ.txt" not in archive.namelist()
 
-    def test_the_archive_is_scoped_to_the_competition_asked_for(self, staff_client) -> None:
+    def test_the_archive_is_scoped_to_the_competition_asked_for(self, staff_client: APIClient) -> None:
         wanted, other = _festival(), _festival()
         _order(competition_id=wanted, performer="Иванова Анна", receipts=(_stored("a.pdf", b"a"),))
         _order(competition_id=other, performer="Сидоров Иван", receipts=(_stored("b.pdf", b"b"),))
@@ -212,7 +216,7 @@ class TestDocumentsArchive:
             assert all("Сидоров" not in name for name in archive.namelist())
             assert any("Иванова Анна" in name for name in archive.namelist())
 
-    def test_music_never_enters_the_paperwork_archive(self, staff_client) -> None:
+    def test_music_never_enters_the_paperwork_archive(self, staff_client: APIClient) -> None:
         competition_id = _festival()
         order = _order(competition_id=competition_id, performer="Иванова Анна", receipts=(_stored("r.pdf", b"r"),))
         submission_id = order.submission_refs[0]["submission_id"]
@@ -224,5 +228,5 @@ class TestDocumentsArchive:
         with _archive(response) as archive:
             assert all(not name.endswith(".mp3") for name in archive.namelist())
 
-    def test_a_non_staff_caller_is_refused(self, outsider_client) -> None:
+    def test_a_non_staff_caller_is_refused(self, outsider_client: APIClient) -> None:
         assert outsider_client.get(_ARCHIVE).status_code == 403

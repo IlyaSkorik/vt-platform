@@ -9,8 +9,14 @@ from __future__ import annotations
 
 import hashlib
 import uuid
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    # Imported inside __init__ at runtime to keep this module importable before the app
+    # registry is ready; the annotation still needs the name.
+    from apps.identity.application.read_models import UserCardView
 
 from apps.organization.application.interfaces import IssuedInvitationToken
 from apps.organization.domain.entities import Organization, StaffInvitation, StaffMembership
@@ -198,7 +204,7 @@ class FakeUserDirectory:
         from apps.identity.application.read_models import UserCardView
 
         self._card_cls = UserCardView
-        self._by_id: dict[uuid.UUID, object] = {}
+        self._by_id: dict[uuid.UUID, UserCardView] = {}
 
     def add(
         self,
@@ -210,8 +216,12 @@ class FakeUserDirectory:
     ) -> None:
         self._by_id[user_id] = self._card_cls(id=str(user_id), email=email, display_name=display_name, status=status)
 
-    def resolve(self, user_ids: object) -> dict[uuid.UUID, object]:
-        ids = {uid for uid in user_ids if uid is not None}
+    # Mirrors the `UserDirectory` port exactly. It used to take `object` and return
+    # `dict[..., object]`, which is not that signature — so the fake silently stopped
+    # satisfying the protocol it exists to stand in for, and the handler it is passed to
+    # rejected it.
+    def resolve(self, user_ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, UserCardView]:
+        ids = set(user_ids)
         return {uid: card for uid, card in self._by_id.items() if uid in ids}
 
 

@@ -91,7 +91,7 @@ class TestCreation:
 
     def test_the_constructor_cannot_be_called_directly(self) -> None:
         with pytest.raises(InvalidProgramDataError):
-            Program(  # type: ignore[call-arg]
+            Program(
                 _token=object(),
                 _id=uuid.uuid4(),
                 _competition_id=uuid.uuid4(),

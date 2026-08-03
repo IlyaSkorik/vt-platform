@@ -15,6 +15,7 @@ import io
 import uuid
 import zipfile
 from datetime import UTC, date, datetime
+from typing import TYPE_CHECKING, Any
 from urllib.parse import unquote
 
 import pytest
@@ -40,6 +41,13 @@ from apps.diplomas.infrastructure.models import (
 )
 from apps.diplomas.presentation.api.v1.diplomas import composition, documents
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from pytest_django.fixtures import SettingsWrapper
+
+    from apps.diplomas.application.issued_documents import IssuedDocumentResult
+
 pytestmark = pytest.mark.django_db
 
 _NOW = datetime(2026, 5, 20, 12, 0, tzinfo=UTC)
@@ -56,7 +64,7 @@ def _key(reference: str) -> str:
 
 
 @pytest.fixture(autouse=True)
-def _media_root(settings, tmp_path):
+def _media_root(settings: SettingsWrapper, tmp_path: Path) -> None:
     settings.MEDIA_ROOT = str(tmp_path)
 
 
@@ -150,7 +158,7 @@ def _assign(competition: CompetitionModel, category: CategoryModel, template: Te
     )
 
 
-def _generate(competition: CompetitionModel, category: CategoryModel, *, force: bool = False):
+def _generate(competition: CompetitionModel, category: CategoryModel, *, force: bool = False) -> IssuedDocumentResult:
     return build_issued_document_generation_service().generate_for_nomination(
         competition_id=competition.id,
         category_id=category.id,
@@ -332,7 +340,7 @@ class TestLayoutRules:
 class TestAddressing:
     """A thank-you letter is addressed to a person, so the recipient shapes the run."""
 
-    def _generate_for(self, teachers: list[dict[str, str]]):
+    def _generate_for(self, teachers: list[dict[str, str]]) -> IssuedDocumentResult:
         competition = _competition()
         vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
         _submission(competition, vocals, "Иванов Иван", teachers=teachers)
@@ -485,7 +493,7 @@ class TestPrintableBundle:
     set (not just what one run rendered) under names an organizer can sort by hand.
     """
 
-    def _run(self, competition: CompetitionModel, categories: list[CategoryModel], *, bundle: bool):
+    def _run(self, competition: CompetitionModel, categories: list[CategoryModel], *, bundle: bool) -> dict[str, Any]:
         return documents.generate_documents(
             competition_id=competition.id,
             category_ids=[category.id for category in categories],
@@ -591,7 +599,7 @@ class TestPublicationIsTheRunsChoice:
     cabinet is only ever filled by the one that asks for it.
     """
 
-    def _run(self, competition: CompetitionModel, category: CategoryModel, **kwargs):
+    def _run(self, competition: CompetitionModel, category: CategoryModel, **kwargs: Any) -> dict[str, Any]:
         return documents.generate_documents(
             competition_id=competition.id,
             category_ids=[category.id],

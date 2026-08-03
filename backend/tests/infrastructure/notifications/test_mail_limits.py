@@ -202,6 +202,9 @@ class TestDelivery:
         sent = mail.outbox[0]
         assert sent.subject == "Заявка подана"
         assert sent.to == ["applicant@example.com"]
+        # `alternatives` exists only on `EmailMultiAlternatives`, which is what the mailer
+        # actually sends; `mail.outbox` is typed as the plain `EmailMessage` base class.
+        assert isinstance(sent, EmailMultiAlternatives)
         assert sent.alternatives[0][1] == "text/html"
 
     def test_a_burst_larger_than_the_allowance_still_delivers_what_it_may(self) -> None:

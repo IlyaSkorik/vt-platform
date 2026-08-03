@@ -16,6 +16,7 @@ import io
 import uuid
 import zipfile
 from datetime import date
+from typing import TYPE_CHECKING, Any
 
 import pytest
 import qrcode
@@ -41,13 +42,18 @@ from apps.diplomas.infrastructure.pdf.renderer import (
 )
 from apps.diplomas.presentation.api.v1.diplomas import composition, print_package
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from pytest_django.fixtures import SettingsWrapper
+
 _DOMAIN = "https://vzlettalantov.by"
 _HOST = "vzlettalantov.by"
 _TOKEN = "AbC123-token_value"
 
 
 @pytest.fixture(autouse=True)
-def _verification_domain(settings):
+def _verification_domain(settings: SettingsWrapper) -> None:
     settings.DIPLOMA_VERIFICATION_BASE_URL = _DOMAIN
 
 
@@ -75,16 +81,21 @@ def _decoded_matrix(pdf: bytes, *, modules: int) -> list[list[bool]]:
     """
     images = PdfReader(io.BytesIO(pdf)).pages[0].images
     assert len(images) == 1, "expected exactly one embedded image (the QR code)"
-    grey = images[0].image.convert("L")
+    # pypdf types the decoded image as optional, and `getpixel` as possibly returning a
+    # tuple or nothing at all. Asserting the shape here rather than at each use keeps the
+    # comprehension readable and makes a surprise a clear failure instead of a TypeError.
+    source = images[0].image
+    assert source is not None, "the embedded image could not be decoded"
+    grey = source.convert("L")
     width, _ = grey.size
     step = width / modules
-    return [
-        [
-            grey.getpixel((int((column + 0.5) * step), int((row + 0.5) * step))) < 128
-            for column in range(modules)
-        ]
-        for row in range(modules)
-    ]
+
+    def is_dark(column: int, row: int) -> bool:
+        value = grey.getpixel((int((column + 0.5) * step), int((row + 0.5) * step)))
+        assert isinstance(value, int), f"expected a greyscale sample, got {value!r}"
+        return value < 128
+
+    return [[is_dark(column, row) for column in range(modules)] for row in range(modules)]
 
 
 def _assert_qr_encodes(pdf: bytes, url: str) -> None:
@@ -139,13 +150,13 @@ def test_verification_url_uses_the_configured_domain() -> None:
     assert verification_url(_TOKEN) == f"{_DOMAIN}/verify/{_TOKEN}"
 
 
-def test_verification_url_tolerates_a_trailing_slash(settings) -> None:
+def test_verification_url_tolerates_a_trailing_slash(settings: SettingsWrapper) -> None:
     settings.DIPLOMA_VERIFICATION_BASE_URL = f"{_DOMAIN}/"
 
     assert verification_url(_TOKEN) == f"{_DOMAIN}/verify/{_TOKEN}"
 
 
-def test_verification_url_completes_a_scheme_less_domain(settings) -> None:
+def test_verification_url_completes_a_scheme_less_domain(settings: SettingsWrapper) -> None:
     """A bare host is the easy misconfiguration, and the costly one.
 
     Without a scheme the payload is not a URL: a scanner shows plain text, or
@@ -157,14 +168,14 @@ def test_verification_url_completes_a_scheme_less_domain(settings) -> None:
     assert verification_url(_TOKEN) == f"https://vzlettalantov.by/verify/{_TOKEN}"
 
 
-def test_verification_url_keeps_an_explicit_http_scheme(settings) -> None:
+def test_verification_url_keeps_an_explicit_http_scheme(settings: SettingsWrapper) -> None:
     # Local development points the QR at the dev client over plain http.
     settings.DIPLOMA_VERIFICATION_BASE_URL = "http://localhost:5173"
 
     assert verification_url(_TOKEN) == f"http://localhost:5173/verify/{_TOKEN}"
 
 
-def test_scheme_less_and_scheme_full_domains_agree(settings) -> None:
+def test_scheme_less_and_scheme_full_domains_agree(settings: SettingsWrapper) -> None:
     settings.DIPLOMA_VERIFICATION_BASE_URL = "vzlettalantov.by"
     bare = verification_url(_TOKEN)
     settings.DIPLOMA_VERIFICATION_BASE_URL = "https://vzlettalantov.by"
@@ -191,9 +202,7 @@ def test_qr_block_embeds_a_code_for_the_verification_url() -> None:
 
 
 def test_caption_is_three_lines_headline_number_and_host() -> None:
-    assert qr_caption_lines(
-        number="VT-2026-000042", verification_url=f"{_DOMAIN}/verify/{_TOKEN}"
-    ) == [
+    assert qr_caption_lines(number="VT-2026-000042", verification_url=f"{_DOMAIN}/verify/{_TOKEN}") == [
         "Подлинность гарантирована!",
         "№VT-2026-000042",
         f"Проверить на {_HOST}",
@@ -263,10 +272,10 @@ class TestPrintPackageCycle:
     """Create → number → PDF → QR → ZIP, through the real generation path."""
 
     @pytest.fixture(autouse=True)
-    def _media_root(self, settings, tmp_path):
+    def _media_root(self, settings: SettingsWrapper, tmp_path: Path) -> None:
         settings.MEDIA_ROOT = str(tmp_path)
 
-    def _generate(self) -> tuple[DiplomaModel, dict]:
+    def _generate(self) -> tuple[DiplomaModel, dict[str, Any]]:
         competition = CompetitionModel.objects.create(
             title="Восходящие таланты",
             season="2026",
@@ -276,15 +285,9 @@ class TestPrintPackageCycle:
         )
         category = CategoryModel.objects.create(competition=competition, name="Вокал")
         template = TemplateModel.objects.create(type="DIPLOMA", name="Вокал A4")
-        key = default_storage.save(
-            f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf())
-        )
-        TemplateDocumentModel.objects.create(
-            template=template, file_reference=f"/media/{key}", page_count=1
-        )
-        composition.replace_template_layout(
-            template_id=str(template.id), fields=[_name_field(), _qr_field()]
-        )
+        key = default_storage.save(f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf()))
+        TemplateDocumentModel.objects.create(template=template, file_reference=f"/media/{key}", page_count=1)
+        composition.replace_template_layout(template_id=str(template.id), fields=[_name_field(), _qr_field()])
         composition.create_assignment(
             competition_id=str(competition.id),
             category_id=str(category.id),
@@ -304,7 +307,9 @@ class TestPrintPackageCycle:
 
     def _stored(self, media_path: str) -> bytes:
         with default_storage.open(media_path[len("/media/") :], "rb") as handle:
-            return handle.read()
+            # Django's storage API is untyped here; the conversion keeps that Any out of
+            # the callers, which hand the result straight to zipfile.
+            return bytes(handle.read())
 
     def test_generated_diploma_has_a_formatted_number_and_a_working_qr(self) -> None:
         diploma, job = self._generate()

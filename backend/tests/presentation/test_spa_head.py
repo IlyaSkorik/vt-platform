@@ -8,11 +8,21 @@ of the response — not about what the app would eventually render.
 from __future__ import annotations
 
 import re
+from typing import TYPE_CHECKING
 
 import pytest
 from django.test import Client, override_settings
 
 from config.spa import HeadFacts, head_facts_for, render_document, render_head
+
+if TYPE_CHECKING:
+    # The ORM models are imported inside the helpers so this module can be collected
+    # before Django's app registry is ready; annotations still need the names.
+    import uuid
+    from pathlib import Path
+
+    from apps.competitions.infrastructure.models import CompetitionModel
+    from apps.organization.infrastructure.models import OrganizationModel
 
 pytestmark = pytest.mark.django_db
 
@@ -28,13 +38,13 @@ _SHELL = """<!doctype html>
 """
 
 
-def _organization(name: str = "Дом талантов"):
+def _organization(name: str = "Дом талантов") -> OrganizationModel:
     from apps.organization.infrastructure.models import OrganizationModel
 
     return OrganizationModel.objects.create(name=name, slug="dom-talantov")
 
 
-def _competition(*, organizer_id, title: str, status: str = "PUBLISHED", **extra):
+def _competition(*, organizer_id: uuid.UUID, title: str, status: str = "PUBLISHED", **extra: object) -> CompetitionModel:
     from apps.competitions.infrastructure.models import CompetitionModel
 
     return CompetitionModel.objects.create(
@@ -46,7 +56,7 @@ def _competition(*, organizer_id, title: str, status: str = "PUBLISHED", **extra
     )
 
 
-def _shell(tmp_path):
+def _shell(tmp_path: Path) -> str:
     index = tmp_path / "index.html"
     index.write_text(_SHELL, encoding="utf-8")
     return str(index)
@@ -109,9 +119,7 @@ class TestResolvingTheHead:
             description="Конкурс юных вокалистов Минской области.",
         )
 
-        assert head_facts_for("/competitions/vesenniy-vokal-2026").description == (
-            "Конкурс юных вокалистов Минской области."
-        )
+        assert head_facts_for("/competitions/vesenniy-vokal-2026").description == ("Конкурс юных вокалистов Минской области.")
 
     def test_builds_a_description_from_the_facts_when_there_is_none(self) -> None:
         # Not a generic fallback line: a description repeated across every
@@ -213,7 +221,7 @@ class TestServingTheShell:
         # still reach the ordinary 404 rather than a page.
         assert Client().get("/nothing-here").status_code == 404
 
-    def test_serves_the_shell_for_a_browser_route(self, tmp_path) -> None:
+    def test_serves_the_shell_for_a_browser_route(self, tmp_path: Path) -> None:
         with override_settings(SPA_INDEX_PATH=_shell(tmp_path)):
             response = Client().get("/competitions")
 
@@ -222,7 +230,7 @@ class TestServingTheShell:
         assert b"og:title" in response.content
         assert b'<div id="root">' in response.content
 
-    def test_names_a_competition_in_the_bytes_a_crawler_reads(self, tmp_path) -> None:
+    def test_names_a_competition_in_the_bytes_a_crawler_reads(self, tmp_path: Path) -> None:
         # The whole point: a preview crawler fetches once and never runs the app,
         # so the festival's name has to be in this response, not in what React
         # would eventually render.
@@ -236,7 +244,7 @@ class TestServingTheShell:
         assert 'property="og:title"' in body
         assert "/competitions/vesenniy-vokal-2026" in body
 
-    def test_never_answers_an_api_address_with_the_shell(self, tmp_path) -> None:
+    def test_never_answers_an_api_address_with_the_shell(self, tmp_path: Path) -> None:
         # A client silently parsing an HTML page as its JSON payload is a far
         # worse failure than a 404, so the catch-all must not reach /api/.
         with override_settings(SPA_INDEX_PATH=_shell(tmp_path)):
@@ -245,7 +253,7 @@ class TestServingTheShell:
         assert response.status_code == 404
         assert b'<div id="root">' not in response.content
 
-    def test_leaves_the_admin_alone(self, tmp_path) -> None:
+    def test_leaves_the_admin_alone(self, tmp_path: Path) -> None:
         with override_settings(SPA_INDEX_PATH=_shell(tmp_path)):
             response = Client().get("/admin/")
 

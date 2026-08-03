@@ -102,14 +102,10 @@ def test_counter_is_independent_of_the_diplomas_table() -> None:
     competition = _competition(start=date(2026, 5, 15))
     template = TemplateModel.objects.create(type="DIPLOMA", name="Шаблон")
     service = _service()
-    first = service.create_diploma(
-        submission_id=_submission(competition).id, template_id=template.id, now=_NOW
-    )
+    first = service.create_diploma(submission_id=_submission(competition).id, template_id=template.id, now=_NOW)
 
     DiplomaModel.objects.all().delete()
-    second = service.create_diploma(
-        submission_id=_submission(competition).id, template_id=template.id, now=_NOW
-    )
+    second = service.create_diploma(submission_id=_submission(competition).id, template_id=template.id, now=_NOW)
 
     assert first.number == "VT-2026-000001"
     assert second.number == "VT-2026-000002"
@@ -122,9 +118,7 @@ def test_number_carries_the_competition_year_not_the_system_year() -> None:
     competition = _competition(start=date(2026, 5, 15))
     template = TemplateModel.objects.create(type="DIPLOMA", name="Шаблон")
 
-    diploma = _service().create_diploma(
-        submission_id=_submission(competition).id, template_id=template.id, now=_NOW
-    )
+    diploma = _service().create_diploma(submission_id=_submission(competition).id, template_id=template.id, now=_NOW)
 
     # Created in 2030 (``_NOW``), but the competition is held in 2026.
     assert diploma.number == "VT-2026-000001"
@@ -134,9 +128,7 @@ def test_year_falls_back_to_the_season_when_dates_are_unset() -> None:
     competition = _competition(start=None, season="2028")
     template = TemplateModel.objects.create(type="DIPLOMA", name="Шаблон")
 
-    diploma = _service().create_diploma(
-        submission_id=_submission(competition).id, template_id=template.id, now=_NOW
-    )
+    diploma = _service().create_diploma(submission_id=_submission(competition).id, template_id=template.id, now=_NOW)
 
     assert diploma.number == "VT-2028-000001"
 
@@ -145,8 +137,6 @@ def test_year_falls_back_to_the_creation_year_without_dates_or_season() -> None:
     competition = _competition(start=None, season="сезон 2029/2030")
     template = TemplateModel.objects.create(type="DIPLOMA", name="Шаблон")
 
-    diploma = _service().create_diploma(
-        submission_id=_submission(competition).id, template_id=template.id, now=_NOW
-    )
+    diploma = _service().create_diploma(submission_id=_submission(competition).id, template_id=template.id, now=_NOW)
 
     assert diploma.number == "VT-2030-000001"

@@ -14,6 +14,7 @@ import uuid
 from datetime import UTC, date, datetime
 
 import pytest
+from rest_framework.response import Response
 from rest_framework.test import APIClient
 
 from apps.applications.infrastructure.models.submission import SubmissionModel
@@ -58,9 +59,7 @@ def _submission(competition: CompetitionModel, *, category: CategoryModel | None
         competition_id=competition.id,
         applicant_id=uuid.uuid4(),
         status="SUBMITTED",
-        participants=[
-            {"display_name": "Иванов Иван", "member_count": 1, "birth_date": date(2014, 1, 1).isoformat()}
-        ],
+        participants=[{"display_name": "Иванов Иван", "member_count": 1, "birth_date": date(2014, 1, 1).isoformat()}],
         teachers=[{"first_name": "Мария", "last_name": "Петрова", "middle_name": "", "role": "Педагог"}],
         performance={"title": "Этюд", "nomination_id": str(category.id) if category else ""},
     )
@@ -75,7 +74,7 @@ def _diploma() -> Diploma:
     return _service().create_diploma(submission_id=submission.id, template_id=template.id, now=_NOW)
 
 
-def _verify(token: str):
+def _verify(token: str) -> Response:
     return APIClient().get(f"/api/v1/public/diplomas/verify/{token}")
 
 

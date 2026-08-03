@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, date, datetime
+from typing import Any
 
 import pytest
 
@@ -32,7 +33,7 @@ REGISTRY_P1 = str(uuid.uuid4())
 REGISTRY_P2 = str(uuid.uuid4())
 
 
-def _participant(registry_id: str, *, first: str, last: str, birth: str, gender: str) -> dict:
+def _participant(registry_id: str, *, first: str, last: str, birth: str, gender: str) -> dict[str, Any]:
     return {
         "id": str(uuid.uuid4()),
         "display_name": f"{last} {first}",
@@ -50,10 +51,10 @@ def _make_submission(
     *,
     competition_id: str,
     status: str,
-    participants: list[dict],
-    teachers: list[dict] | None = None,
-    attachments: list[dict] | None = None,
-    notes: list[dict] | None = None,
+    participants: list[dict[str, Any]],
+    teachers: list[dict[str, Any]] | None = None,
+    attachments: list[dict[str, Any]] | None = None,
+    notes: list[dict[str, Any]] | None = None,
     comment: str | None = None,
     updated: datetime,
 ) -> SubmissionModel:
@@ -137,9 +138,7 @@ def _seed() -> None:
         )
     # A participant's educational organization lives in the Participants registry,
     # linked by the registry_participant_id the submission denormalizes.
-    org = EducationalOrganizationModel.objects.create(
-        owner_id=uuid.uuid4(), name="Школа №1", organization_type="school"
-    )
+    org = EducationalOrganizationModel.objects.create(owner_id=uuid.uuid4(), name="Школа №1", organization_type="school")
     registry = ParticipantRegistryModel.objects.create(
         id=uuid.UUID(REGISTRY_P1),
         owner_id=uuid.uuid4(),
@@ -148,15 +147,13 @@ def _seed() -> None:
         birth_date=date(2015, 5, 1),
         gender="male",
     )
-    ParticipantOrganizationMembershipModel.objects.create(
-        participant=registry, organization=org, is_primary=True
-    )
+    ParticipantOrganizationMembershipModel.objects.create(participant=registry, organization=org, is_primary=True)
 
 
 SCOPE = (COMP_A, COMP_B)
 
 
-def test_projection_groups_confirmed_submissions_per_child(registry, _seed) -> None:
+def test_projection_groups_confirmed_submissions_per_child(registry: DjangoOrganizerParticipantRegistry, _seed: None) -> None:
     rows = registry.list(competition_ids=SCOPE, filters=RegistryFilters())
     by_name = {row.full_name: row for row in rows}
     assert set(by_name) == {"Петров Пётр", "Сидорова Анна"}
@@ -173,7 +170,7 @@ def test_projection_groups_confirmed_submissions_per_child(registry, _seed) -> N
     assert petrov.documents_count == 1
 
 
-def test_scope_excludes_out_of_scope_and_other_competitions(registry, _seed) -> None:
+def test_scope_excludes_out_of_scope_and_other_competitions(registry: DjangoOrganizerParticipantRegistry, _seed: None) -> None:
     # Confidentiality: the child's participation in COMP_OTHER never surfaces,
     # even though it is a confirmed submission for the same registry id.
     petrov = next(r for r in registry.list(competition_ids=SCOPE, filters=RegistryFilters()) if r.last_name == "Петров")
@@ -183,21 +180,17 @@ def test_scope_excludes_out_of_scope_and_other_competitions(registry, _seed) -> 
     assert [r.last_name for r in only_b] == ["Сидорова"]
 
 
-def test_competition_filter_narrows_list(registry, _seed) -> None:
+def test_competition_filter_narrows_list(registry: DjangoOrganizerParticipantRegistry, _seed: None) -> None:
     rows = registry.list(competition_ids=SCOPE, filters=RegistryFilters(competition_id=COMP_B))
     assert {r.last_name for r in rows} == {"Сидорова"}
 
 
-def test_query_and_gender_filters(registry, _seed) -> None:
-    assert {r.last_name for r in registry.list(competition_ids=SCOPE, filters=RegistryFilters(query="сидор"))} == {
-        "Сидорова"
-    }
-    assert {r.last_name for r in registry.list(competition_ids=SCOPE, filters=RegistryFilters(gender="male"))} == {
-        "Петров"
-    }
+def test_query_and_gender_filters(registry: DjangoOrganizerParticipantRegistry, _seed: None) -> None:
+    assert {r.last_name for r in registry.list(competition_ids=SCOPE, filters=RegistryFilters(query="сидор"))} == {"Сидорова"}
+    assert {r.last_name for r in registry.list(competition_ids=SCOPE, filters=RegistryFilters(gender="male"))} == {"Петров"}
 
 
-def test_detail_returns_full_card_across_scope(registry, _seed) -> None:
+def test_detail_returns_full_card_across_scope(registry: DjangoOrganizerParticipantRegistry, _seed: None) -> None:
     petrov = next(r for r in registry.list(competition_ids=SCOPE, filters=RegistryFilters()) if r.last_name == "Петров")
     detail = registry.get(competition_ids=SCOPE, key=petrov.key)
     assert detail is not None
@@ -208,7 +201,7 @@ def test_detail_returns_full_card_across_scope(registry, _seed) -> None:
     assert len(detail.history) == 2
 
 
-def test_detail_surfaces_the_performance_comment_when_the_applicant_left_one(registry) -> None:
+def test_detail_surfaces_the_performance_comment_when_the_applicant_left_one(registry: DjangoOrganizerParticipantRegistry) -> None:
     """The organizer's participant card carries the note; rows without one stay None."""
     _make_submission(
         competition_id=COMP_A,
@@ -235,5 +228,5 @@ def test_detail_surfaces_the_performance_comment_when_the_applicant_left_one(reg
     assert comments["Сидорова"] == [None]
 
 
-def test_detail_missing_key_returns_none(registry, _seed) -> None:
+def test_detail_missing_key_returns_none(registry: DjangoOrganizerParticipantRegistry, _seed: None) -> None:
     assert registry.get(competition_ids=SCOPE, key="r:does-not-exist") is None

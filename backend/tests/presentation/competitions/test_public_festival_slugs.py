@@ -9,21 +9,33 @@ already in circulation.
 
 from __future__ import annotations
 
-import uuid
+from typing import TYPE_CHECKING
 
 import pytest
 from rest_framework.test import APIClient
 
+from apps.competitions.infrastructure.models.base import uuid7
+
+if TYPE_CHECKING:
+    import uuid
+
+    from apps.competitions.domain.entities import Competition
+    from apps.competitions.infrastructure.models import CompetitionModel
+    from apps.competitions.infrastructure.repositories.django_competition_repository import (
+        DjangoCompetitionRepository,
+    )
+    from apps.organization.infrastructure.models import OrganizationModel
+
 pytestmark = pytest.mark.django_db
 
 
-def _organization(name: str = "Дом талантов"):
+def _organization(name: str = "Дом талантов") -> OrganizationModel:
     from apps.organization.infrastructure.models import OrganizationModel
 
     return OrganizationModel.objects.create(name=name, slug="dom-talantov")
 
 
-def _competition(*, organizer_id, title: str, status: str = "PUBLISHED", **extra):
+def _competition(*, organizer_id: uuid.UUID, title: str, status: str = "PUBLISHED", **extra: object) -> CompetitionModel:
     from apps.competitions.infrastructure.models import CompetitionModel
 
     return CompetitionModel.objects.create(
@@ -95,14 +107,14 @@ class TestResolvingACompetition:
 
 
 class TestAssigningTheAddress:
-    def _repository(self):
+    def _repository(self) -> DjangoCompetitionRepository:
         from apps.competitions.infrastructure.repositories.django_competition_repository import (
             DjangoCompetitionRepository,
         )
 
         return DjangoCompetitionRepository()
 
-    def _new_competition(self, *, title: str):
+    def _new_competition(self, *, title: str) -> Competition:
         from datetime import UTC, datetime
 
         from apps.competitions.domain.entities import Competition
@@ -117,7 +129,9 @@ class TestAssigningTheAddress:
             competition_id=CompetitionId.generate(),
             title=CompetitionTitle(title),
             season=Season("2025/2026"),
-            organizer_id=OrganizerId(uuid.uuid7()),
+            # The project's own generator, not `uuid.uuid7()`: that landed in the stdlib
+            # only in 3.14, while the toolchain targets 3.13 (mypy.ini, ruff.toml).
+            organizer_id=OrganizerId(uuid7()),
             now=datetime(2026, 1, 1, tzinfo=UTC),
         )
         return competition

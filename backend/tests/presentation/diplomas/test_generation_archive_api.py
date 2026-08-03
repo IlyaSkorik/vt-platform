@@ -11,12 +11,13 @@ from __future__ import annotations
 import io
 import uuid
 from datetime import date
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from reportlab.pdfgen import canvas
+from rest_framework.response import Response
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -29,6 +30,11 @@ from apps.identity.presentation.api.v1.auth import composition as identity_compo
 from apps.organization.application.dto.commands import ProvisionOwnerCommand
 from apps.organization.composition import build_provision_owner_handler
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from pytest_django.fixtures import SettingsWrapper
+
 pytestmark = pytest.mark.django_db
 
 _PASSWORD = "V3ry$ecurePass!"
@@ -36,7 +42,7 @@ _ARCHIVE = "/api/v1/staff/diplomas/generation-archive"
 
 
 @pytest.fixture(autouse=True)
-def _media_root(settings, tmp_path):
+def _media_root(settings: SettingsWrapper, tmp_path: Path) -> None:
     settings.MEDIA_ROOT = str(tmp_path)
 
 
@@ -48,11 +54,7 @@ def _authenticated(client: APIClient, email: str, *, first: str, last: str) -> s
     )
     # Mint the token directly: the login gate refuses unverified accounts, and these
     # tests need an authenticated caller rather than the verify flow.
-    access = str(
-        identity_composition.build_token_service().issue(
-            subject=registration.data["data"]["id"]
-        ).access_token
-    )
+    access = str(identity_composition.build_token_service().issue(subject=registration.data["data"]["id"]).access_token)
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
     return access
 
@@ -86,12 +88,8 @@ def _backing_pdf() -> bytes:
 
 def _template(name: str, document_type: str) -> TemplateModel:
     template = TemplateModel.objects.create(type=document_type, name=name)
-    key = default_storage.save(
-        f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf())
-    )
-    TemplateDocumentModel.objects.create(
-        template=template, file_reference=f"/media/{key}", page_count=1
-    )
+    key = default_storage.save(f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf()))
+    TemplateDocumentModel.objects.create(template=template, file_reference=f"/media/{key}", page_count=1)
     composition.replace_template_layout(
         template_id=str(template.id),
         fields=[
@@ -139,7 +137,7 @@ def _assign(competition: CompetitionModel, category: CategoryModel, template: Te
     )
 
 
-def _generate_letters(client: APIClient, competition: CompetitionModel, category: CategoryModel, **body: Any):
+def _generate_letters(client: APIClient, competition: CompetitionModel, category: CategoryModel, **body: Any) -> Response:
     return client.post(
         "/api/v1/staff/diplomas/documents/generate",
         {
@@ -155,13 +153,12 @@ def _generate_letters(client: APIClient, competition: CompetitionModel, category
 def _runs(client: APIClient, **params: str) -> list[dict[str, Any]]:
     response = client.get(_ARCHIVE, params or None)
     assert response.status_code == 200, response.data
-    return response.data["data"]
+    runs: list[dict[str, Any]] = response.data["data"]
+    return runs
 
 
 class TestHistory:
-    def test_a_print_run_is_archived_with_its_author_and_its_zip(
-        self, staff_client: APIClient
-    ) -> None:
+    def test_a_print_run_is_archived_with_its_author_and_its_zip(self, staff_client: APIClient) -> None:
         competition, vocals = _competition()
         _assign(competition, vocals, _template("Благодарность", "THANK_YOU"))
         _generate_letters(staff_client, competition, vocals, bundle=True, publish=False)
@@ -179,9 +176,7 @@ class TestHistory:
         assert str(run["zipUrl"]).endswith("ThankYou.zip")
         assert run["createdAt"]
 
-    def test_a_publish_run_is_archived_with_nothing_to_download(
-        self, staff_client: APIClient
-    ) -> None:
+    def test_a_publish_run_is_archived_with_nothing_to_download(self, staff_client: APIClient) -> None:
         competition, vocals = _competition()
         _assign(competition, vocals, _template("Благодарность", "THANK_YOU"))
         _generate_letters(staff_client, competition, vocals)

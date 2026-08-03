@@ -10,6 +10,7 @@ from __future__ import annotations
 import uuid
 
 import pytest
+from django.http import StreamingHttpResponse
 from rest_framework.test import APIClient
 
 from apps.applications.infrastructure.models import ApplicationModel
@@ -94,14 +95,14 @@ def _create_competition(client: APIClient, title: str) -> str:
 
 
 class TestCompetitionsAreScopedToTheirOrganization:
-    def test_a_competition_is_filed_under_the_creators_organization(self, second_organization) -> None:
+    def test_a_competition_is_filed_under_the_creators_organization(self, second_organization: tuple[APIClient, str]) -> None:
         client, organization_id = second_organization
         competition_id = _create_competition(client, "Созвездие — сезон")
 
         stored = CompetitionModel.objects.get(id=competition_id)
         assert str(stored.organizer_id) == organization_id
 
-    def test_the_list_shows_only_the_callers_own(self, first_organization, second_organization) -> None:
+    def test_the_list_shows_only_the_callers_own(self, first_organization: APIClient, second_organization: tuple[APIClient, str]) -> None:
         client, _ = second_organization
         _create_competition(first_organization, "Взлёт — сезон")
         _create_competition(client, "Созвездие — сезон")
@@ -113,7 +114,9 @@ class TestCompetitionsAreScopedToTheirOrganization:
         assert "Созвездие — сезон" not in first_titles
         assert second_titles == ["Созвездие — сезон"]
 
-    def test_reaching_another_organizations_competition_is_refused(self, first_organization, second_organization) -> None:
+    def test_reaching_another_organizations_competition_is_refused(
+        self, first_organization: APIClient, second_organization: tuple[APIClient, str]
+    ) -> None:
         client, _ = second_organization
         theirs = _create_competition(first_organization, "Взлёт — сезон")
 
@@ -121,7 +124,7 @@ class TestCompetitionsAreScopedToTheirOrganization:
         assert client.post(f"{_COMPETITIONS}/{theirs}/categories", {"name": "Вокал"}, format="json").status_code == 403
 
     def test_the_platform_operator_reads_across_organizations_from_their_own_console(
-        self, operator, first_organization, second_organization
+        self, operator: APIClient, first_organization: APIClient, second_organization: tuple[APIClient, str]
     ) -> None:
         # Not through the organizer API: that one belongs to an organization's
         # staff, and the operator is staff of none. Their view of everything is
@@ -151,7 +154,9 @@ class TestApplicationsAreScopedToTheirOrganization:
             },
         )
 
-    def test_the_workspace_offers_only_the_callers_competitions(self, first_organization, second_organization) -> None:
+    def test_the_workspace_offers_only_the_callers_competitions(
+        self, first_organization: APIClient, second_organization: tuple[APIClient, str]
+    ) -> None:
         client, _ = second_organization
         _create_competition(first_organization, "Взлёт — сезон")
         _create_competition(client, "Созвездие — сезон")
@@ -161,7 +166,9 @@ class TestApplicationsAreScopedToTheirOrganization:
 
         assert "Взлёт — сезон" not in titles
 
-    def test_the_paperwork_archive_stops_at_the_organization_boundary(self, first_organization, second_organization) -> None:
+    def test_the_paperwork_archive_stops_at_the_organization_boundary(
+        self, first_organization: APIClient, second_organization: tuple[APIClient, str]
+    ) -> None:
         client, _ = second_organization
         theirs = _create_competition(first_organization, "Взлёт — сезон")
         self._order_for(theirs)
@@ -170,4 +177,7 @@ class TestApplicationsAreScopedToTheirOrganization:
 
         assert response.status_code == 200
         # Nothing of the other organization's — the filter cannot widen the scope.
+        # A ZIP download is a streamed FileResponse; the test client's response type is
+        # the non-streaming alias, so the body is reached through the concrete class.
+        assert isinstance(response, StreamingHttpResponse)
         assert b"".join(response.streaming_content)

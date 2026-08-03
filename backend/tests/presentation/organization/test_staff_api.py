@@ -109,9 +109,7 @@ def test_support_can_read_but_not_manage() -> None:
     assert support.get(_INVITATIONS_URL).status_code == 200
     assert support.get(_MEMBERS_URL).status_code == 200
     # A non-admin staff member cannot create an invitation.
-    forbidden = support.post(
-        _INVITATIONS_URL, {"email": "new@example.com", "role": "SUPPORT"}, format="json"
-    )
+    forbidden = support.post(_INVITATIONS_URL, {"email": "new@example.com", "role": "SUPPORT"}, format="json")
     assert forbidden.status_code == 403
 
 
@@ -121,9 +119,7 @@ def test_support_can_read_but_not_manage() -> None:
 
 
 def test_owner_creates_lists_and_revokes_invitation(owner_client: APIClient) -> None:
-    created = owner_client.post(
-        _INVITATIONS_URL, {"email": "invitee@example.com", "role": "MODERATOR"}, format="json"
-    )
+    created = owner_client.post(_INVITATIONS_URL, {"email": "invitee@example.com", "role": "MODERATOR"}, format="json")
     assert created.status_code == 201
     invitation = created.data["data"]
     assert invitation["email"] == "invitee@example.com"
@@ -149,9 +145,7 @@ def test_revoke_unknown_invitation_is_404(owner_client: APIClient) -> None:
 
 def test_director_may_invite() -> None:
     director, _ = _member_client("director@example.com", StaffRole.DIRECTOR)
-    created = director.post(
-        _INVITATIONS_URL, {"email": "bydirector@example.com", "role": "SUPPORT"}, format="json"
-    )
+    created = director.post(_INVITATIONS_URL, {"email": "bydirector@example.com", "role": "SUPPORT"}, format="json")
     assert created.status_code == 201
 
 
@@ -175,9 +169,7 @@ def test_owner_lists_members(owner_client: APIClient) -> None:
 
 def test_owner_changes_member_role(owner_client: APIClient) -> None:
     _, membership_id = _member_client("tochange@example.com", StaffRole.SUPPORT)
-    response = owner_client.patch(
-        f"{_MEMBERS_URL}/{membership_id}", {"role": "MODERATOR"}, format="json"
-    )
+    response = owner_client.patch(f"{_MEMBERS_URL}/{membership_id}", {"role": "MODERATOR"}, format="json")
     assert response.status_code == 200
     assert response.data["data"]["role"] == "MODERATOR"
 
@@ -193,17 +185,13 @@ def test_owner_revokes_member(owner_client: APIClient) -> None:
 
 
 def test_cannot_revoke_last_owner(owner_client: APIClient) -> None:
-    owner_id = next(
-        row["id"] for row in owner_client.get(_MEMBERS_URL).data["data"] if row["role"] == "OWNER"
-    )
+    owner_id = next(row["id"] for row in owner_client.get(_MEMBERS_URL).data["data"] if row["role"] == "OWNER")
     response = owner_client.post(f"{_MEMBERS_URL}/{owner_id}/revoke")
     assert response.status_code == 409
 
 
 def test_cannot_demote_last_owner(owner_client: APIClient) -> None:
-    owner_id = next(
-        row["id"] for row in owner_client.get(_MEMBERS_URL).data["data"] if row["role"] == "OWNER"
-    )
+    owner_id = next(row["id"] for row in owner_client.get(_MEMBERS_URL).data["data"] if row["role"] == "OWNER")
     response = owner_client.patch(f"{_MEMBERS_URL}/{owner_id}", {"role": "DIRECTOR"}, format="json")
     assert response.status_code == 409
 
@@ -217,9 +205,7 @@ def test_support_cannot_change_roles(owner_client: APIClient) -> None:
 
 def test_change_role_invalid_role_is_400(owner_client: APIClient) -> None:
     _, membership_id = _member_client("badrole@example.com", StaffRole.SUPPORT)
-    response = owner_client.patch(
-        f"{_MEMBERS_URL}/{membership_id}", {"role": "SUPREME_LEADER"}, format="json"
-    )
+    response = owner_client.patch(f"{_MEMBERS_URL}/{membership_id}", {"role": "SUPREME_LEADER"}, format="json")
     assert response.status_code == 400
 
 
@@ -230,9 +216,7 @@ def test_change_role_invalid_role_is_400(owner_client: APIClient) -> None:
 
 def _issue_invitation(owner_user_id: str, email: str, role: StaffRole) -> str:
     """Issue an invitation via the composition root; return its raw token."""
-    result = build_invite_staff_handler().handle(
-        InviteStaffCommand(email=email, role=role.value, invited_by=owner_user_id)
-    )
+    result = build_invite_staff_handler().handle(InviteStaffCommand(email=email, role=role.value, invited_by=owner_user_id))
     return result.raw_token
 
 

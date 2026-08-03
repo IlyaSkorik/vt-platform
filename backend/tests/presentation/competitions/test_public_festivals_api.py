@@ -9,20 +9,28 @@ single-competition landing detail are exercised end to end (reader → serialize
 from __future__ import annotations
 
 import uuid
+from typing import TYPE_CHECKING
 
 import pytest
 from rest_framework.test import APIClient
 
+if TYPE_CHECKING:
+    # The ORM models are imported inside the helpers so this module can be collected
+    # before Django's app registry is ready; annotations still need the names, and
+    # `from __future__ import annotations` keeps them unevaluated at runtime.
+    from apps.competitions.infrastructure.models import CategoryModel, CompetitionModel
+    from apps.organization.infrastructure.models import OrganizationModel
+
 pytestmark = pytest.mark.django_db
 
 
-def _organization(name: str = "Дом талантов"):
+def _organization(name: str = "Дом талантов") -> OrganizationModel:
     from apps.organization.infrastructure.models import OrganizationModel
 
     return OrganizationModel.objects.create(name=name, slug="dom-talantov")
 
 
-def _competition(*, organizer_id, status: str, title: str, **extra):
+def _competition(*, organizer_id: uuid.UUID, status: str, title: str, **extra: object) -> CompetitionModel:
     from apps.competitions.infrastructure.models import CompetitionModel
 
     return CompetitionModel.objects.create(
@@ -34,7 +42,7 @@ def _competition(*, organizer_id, status: str, title: str, **extra):
     )
 
 
-def _open_nomination(competition):
+def _open_nomination(competition: CompetitionModel) -> CategoryModel:
     """Seed a nomination with an open registration window (public status → REGISTRATION_OPEN)."""
     from datetime import UTC, datetime
 
@@ -88,9 +96,7 @@ class TestPublicFestivalDetailEndpoint:
         from apps.competitions.infrastructure.models import CompetitionModel, RegulationModel
 
         org = _organization()
-        competition = _competition(
-            organizer_id=org.id, status="PUBLISHED", title="Весенний фестиваль"
-        )
+        competition = _competition(organizer_id=org.id, status="PUBLISHED", title="Весенний фестиваль")
         regulation = RegulationModel.objects.create(
             competition=competition,
             title="Положение фестиваля 2026",
@@ -98,9 +104,7 @@ class TestPublicFestivalDetailEndpoint:
             publication_date=datetime.date(2026, 6, 1),
             file_reference="/media/regulations/fest-2026.pdf",
         )
-        CompetitionModel.objects.filter(pk=competition.pk).update(
-            current_regulation_id=regulation.id
-        )
+        CompetitionModel.objects.filter(pk=competition.pk).update(current_regulation_id=regulation.id)
 
         response = APIClient().get(f"/api/v1/public/festivals/{competition.id}")
 
@@ -116,9 +120,7 @@ class TestPublicFestivalDetailEndpoint:
         from apps.competitions.infrastructure.models import DocumentModel
 
         org = _organization()
-        competition = _competition(
-            organizer_id=org.id, status="PUBLISHED", title="Фестиваль документов"
-        )
+        competition = _competition(organizer_id=org.id, status="PUBLISHED", title="Фестиваль документов")
         DocumentModel.objects.create(
             competition=competition,
             title="Программа фестиваля",
@@ -149,9 +151,7 @@ class TestPublicFestivalDetailEndpoint:
 
     def test_regulation_is_null_when_absent(self) -> None:
         org = _organization()
-        competition = _competition(
-            organizer_id=org.id, status="PUBLISHED", title="Без положения"
-        )
+        competition = _competition(organizer_id=org.id, status="PUBLISHED", title="Без положения")
 
         response = APIClient().get(f"/api/v1/public/festivals/{competition.id}")
 

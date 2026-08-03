@@ -78,7 +78,9 @@ def test_cancels_submitted_order_without_receipt_and_notifies() -> None:
 
     handler.handle(application.id.json())
 
-    assert applications.get(application.id).status is ApplicationStatus.CANCELLED
+    reloaded = applications.get(application.id)
+    assert reloaded is not None
+    assert reloaded.status is ApplicationStatus.CANCELLED
     assert notifier.cancelled == ["applicant@example.com"]
 
 
@@ -90,7 +92,9 @@ def test_keeps_order_when_receipt_attached() -> None:
 
     handler.handle(application.id.json())
 
-    assert applications.get(application.id).status is ApplicationStatus.SUBMITTED
+    reloaded = applications.get(application.id)
+    assert reloaded is not None
+    assert reloaded.status is ApplicationStatus.SUBMITTED
     assert notifier.cancelled == []
 
 
@@ -102,7 +106,9 @@ def test_noop_when_already_paid() -> None:
 
     handler.handle(application.id.json())
 
-    assert applications.get(application.id).status is ApplicationStatus.PAID
+    reloaded = applications.get(application.id)
+    assert reloaded is not None
+    assert reloaded.status is ApplicationStatus.PAID
     assert notifier.cancelled == []
 
 

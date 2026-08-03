@@ -107,24 +107,26 @@ def _create_program(client: APIClient, scope: tuple[str, str], **overrides: Any)
     }
     response = client.post(_PROGRAMS, body, format="json")
     assert response.status_code == 201, response.data
-    return response.data["data"]
+    # DRF types `Response.data` as Any; naming the shape here keeps that out of callers.
+    created: dict[str, Any] = response.data["data"]
+    return created
 
 
 class TestAccess:
-    def test_an_anonymous_caller_is_refused(self, scope) -> None:
+    def test_an_anonymous_caller_is_refused(self, scope: tuple[str, str]) -> None:
         assert APIClient().get(f"{_PROGRAMS}?competitionId={scope[0]}").status_code in (401, 403)
 
-    def test_a_non_staff_user_is_refused(self, outsider_client, scope) -> None:
+    def test_a_non_staff_user_is_refused(self, outsider_client: APIClient, scope: tuple[str, str]) -> None:
         assert outsider_client.get(f"{_PROGRAMS}?competitionId={scope[0]}").status_code == 403
 
-    def test_listing_requires_a_competition(self, staff_client) -> None:
+    def test_listing_requires_a_competition(self, staff_client: APIClient) -> None:
         response = staff_client.get(_PROGRAMS)
         assert response.status_code == 400
         assert response.data["title"] == "Validation failed"
 
 
 class TestProgramLifecycle:
-    def test_a_program_is_created_and_listed(self, staff_client, scope) -> None:
+    def test_a_program_is_created_and_listed(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         created = _create_program(staff_client, scope)
         assert created["name"] == "Вокал, 1 отделение"
         assert created["items"] == []
@@ -134,30 +136,30 @@ class TestProgramLifecycle:
         assert [row["id"] for row in listed.data["data"]] == [created["id"]]
         assert listed.data["meta"]["total"] == 1
 
-    def test_a_program_is_retrieved_and_renamed(self, staff_client, scope) -> None:
+    def test_a_program_is_retrieved_and_renamed(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id = _create_program(staff_client, scope)["id"]
         renamed = staff_client.patch(f"{_PROGRAMS}/{program_id}", {"name": "Вокал, 2 отделение"}, format="json")
         assert renamed.status_code == 200
         assert renamed.data["data"]["name"] == "Вокал, 2 отделение"
 
-    def test_a_blank_name_is_rejected_at_the_edge(self, staff_client, scope) -> None:
+    def test_a_blank_name_is_rejected_at_the_edge(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         competition_id, _nomination_id = scope
         response = staff_client.post(_PROGRAMS, {"competitionId": competition_id, "name": ""}, format="json")
         assert response.status_code == 400
 
-    def test_an_unknown_program_is_a_problem_document(self, staff_client) -> None:
+    def test_an_unknown_program_is_a_problem_document(self, staff_client: APIClient) -> None:
         response = staff_client.get(f"{_PROGRAMS}/{uuid.uuid4()}")
         assert response.status_code == 404
         assert response.data["title"] == "Resource not found"
 
-    def test_a_program_can_be_deleted(self, staff_client, scope) -> None:
+    def test_a_program_can_be_deleted(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id = _create_program(staff_client, scope)["id"]
         assert staff_client.delete(f"{_PROGRAMS}/{program_id}").status_code == 204
         assert staff_client.get(f"{_PROGRAMS}/{program_id}").status_code == 404
 
 
 class TestBuildingFromANomination:
-    def test_candidates_come_from_the_applications_context(self, staff_client, scope) -> None:
+    def test_candidates_come_from_the_applications_context(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         competition_id, nomination_id = scope
         _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
         _act(competition_id=competition_id, nomination_id=nomination_id, title="Калинка", seconds=180)
@@ -169,7 +171,7 @@ class TestBuildingFromANomination:
         assert response.status_code == 200
         assert sorted(row["title"] for row in response.data["data"]) == ["Калинка", "Катюша"]
 
-    def test_filling_builds_the_running_order_with_computed_times(self, staff_client, scope) -> None:
+    def test_filling_builds_the_running_order_with_computed_times(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         competition_id, nomination_id = scope
         _act(competition_id=competition_id, nomination_id=nomination_id, title="Акт A", seconds=200)
         _act(competition_id=competition_id, nomination_id=nomination_id, title="Акт B", seconds=200)
@@ -184,7 +186,7 @@ class TestBuildingFromANomination:
         assert items[0]["schedule"]["slotSeconds"] == 240
         assert items[0]["durationSeconds"] == 200
 
-    def test_a_single_act_is_added_by_id_and_carries_its_note(self, staff_client, scope) -> None:
+    def test_a_single_act_is_added_by_id_and_carries_its_note(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         competition_id, nomination_id = scope
         submission_id = _act(
             competition_id=competition_id,
@@ -205,14 +207,14 @@ class TestBuildingFromANomination:
         assert item["comment"] == "Выход с точки 3"
         assert item["teachers"] == ["Иванова Мария"]
 
-    def test_an_act_that_is_not_competing_cannot_be_scheduled(self, staff_client, scope) -> None:
+    def test_an_act_that_is_not_competing_cannot_be_scheduled(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         competition_id, nomination_id = scope
         submission_id = _act(competition_id=competition_id, nomination_id=nomination_id, title="Черновик", seconds=180, status="UNDER_REVIEW")
         program_id = _create_program(staff_client, scope)["id"]
         response = staff_client.post(f"{_PROGRAMS}/{program_id}/items", {"submissionId": submission_id}, format="json")
         assert response.status_code == 422
 
-    def test_the_same_act_twice_is_a_conflict(self, staff_client, scope) -> None:
+    def test_the_same_act_twice_is_a_conflict(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         competition_id, nomination_id = scope
         submission_id = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
         program_id = _create_program(staff_client, scope)["id"]
@@ -222,7 +224,7 @@ class TestBuildingFromANomination:
 
 
 class TestBreaks:
-    def test_a_break_is_inserted_and_re_times_the_rest(self, staff_client, scope) -> None:
+    def test_a_break_is_inserted_and_re_times_the_rest(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         competition_id, nomination_id = scope
         _act(competition_id=competition_id, nomination_id=nomination_id, title="Акт A", seconds=180)
         _act(competition_id=competition_id, nomination_id=nomination_id, title="Акт B", seconds=180)
@@ -240,7 +242,7 @@ class TestBreaks:
         assert items[1]["title"] == "Перерыв"
         assert items[2]["schedule"]["startsAt"] == datetime(2026, 8, 1, 10, 18, tzinfo=UTC)
 
-    def test_a_break_is_edited_and_removed(self, staff_client, scope) -> None:
+    def test_a_break_is_edited_and_removed(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id = _create_program(staff_client, scope)["id"]
         created = staff_client.post(f"{_PROGRAMS}/{program_id}/items", {"title": "Обед", "durationSeconds": 1800}, format="json")
         item_id = created.data["data"]["items"][0]["id"]
@@ -253,7 +255,7 @@ class TestBreaks:
         assert removed.status_code == 200
         assert removed.data["data"]["items"] == []
 
-    def test_a_future_kind_of_service_block_already_works(self, staff_client, scope) -> None:
+    def test_a_future_kind_of_service_block_already_works(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id = _create_program(staff_client, scope)["id"]
         response = staff_client.post(
             f"{_PROGRAMS}/{program_id}/items",
@@ -263,7 +265,7 @@ class TestBreaks:
         assert response.status_code == 201, response.data
         assert response.data["data"]["items"][0]["kind"] == "AWARD"
 
-    def test_an_unknown_kind_is_rejected(self, staff_client, scope) -> None:
+    def test_an_unknown_kind_is_rejected(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id = _create_program(staff_client, scope)["id"]
         response = staff_client.post(
             f"{_PROGRAMS}/{program_id}/items",
@@ -274,7 +276,7 @@ class TestBreaks:
 
 
 class TestBufferAndOrder:
-    def test_the_buffer_is_changed_and_the_schedule_follows(self, staff_client, scope) -> None:
+    def test_the_buffer_is_changed_and_the_schedule_follows(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         competition_id, nomination_id = scope
         _act(competition_id=competition_id, nomination_id=nomination_id, title="Акт A", seconds=180)
         _act(competition_id=competition_id, nomination_id=nomination_id, title="Акт B", seconds=180)
@@ -288,7 +290,7 @@ class TestBufferAndOrder:
         assert response.data["data"]["items"][0]["durationSeconds"] == 180
         assert response.data["data"]["items"][1]["schedule"]["startsAt"] == datetime(2026, 8, 1, 10, 4, tzinfo=UTC)
 
-    def test_the_order_is_replaced_wholesale(self, staff_client, scope) -> None:
+    def test_the_order_is_replaced_wholesale(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         competition_id, nomination_id = scope
         _act(competition_id=competition_id, nomination_id=nomination_id, title="Акт A", seconds=100)
         _act(competition_id=competition_id, nomination_id=nomination_id, title="Акт B", seconds=200)
@@ -300,7 +302,7 @@ class TestBufferAndOrder:
         assert response.status_code == 200
         assert [item["id"] for item in response.data["data"]["items"]] == list(reversed(ids))
 
-    def test_reordering_an_unpublished_programme_renumbers_it(self, staff_client, scope) -> None:
+    def test_reordering_an_unpublished_programme_renumbers_it(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         # Nothing has been handed out yet, so the numbers just follow the order.
         program_id, ids = self._three_act_program(staff_client, scope)
 
@@ -315,14 +317,14 @@ class TestBufferAndOrder:
         assert [item["id"] for item in items] == [ids[0], ids[2], ids[1]]
         assert [item["number"] for item in items] == [1, 2, 3]
 
-    def test_publishing_freezes_the_numbers(self, staff_client, scope) -> None:
+    def test_publishing_freezes_the_numbers(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id, _ids = self._three_act_program(staff_client, scope)
         created = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Экран"}, format="json")
 
         assert created.data["data"]["program"]["numbersFrozen"] is True
         assert created.data["data"]["program"]["numbersFrozenAt"] is not None
 
-    def test_reordering_a_published_programme_keeps_the_numbers(self, staff_client, scope) -> None:
+    def test_reordering_a_published_programme_keeps_the_numbers(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         # A participant asked to perform later: the row moves, номер 3 stays номер 3, and
         # the programme reads 1, 3, 2 - which is what everybody was told.
         program_id, ids = self._three_act_program(staff_client, scope)
@@ -340,7 +342,7 @@ class TestBufferAndOrder:
         # The running order itself is still contiguous - only the numbers jump.
         assert [item["schedule"]["position"] for item in items] == [1, 2, 3]
 
-    def test_renumbering_is_a_separate_deliberate_action(self, staff_client, scope) -> None:
+    def test_renumbering_is_a_separate_deliberate_action(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id, ids = self._three_act_program(staff_client, scope)
         staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Экран"}, format="json")
         staff_client.put(f"{_PROGRAMS}/{program_id}/items/order", {"itemIds": [ids[2], ids[0], ids[1]]}, format="json")
@@ -359,7 +361,7 @@ class TestBufferAndOrder:
         assert [item["number"] for item in filled.data["data"]["items"]] == [1, 2, 3]
         return program_id, [item["id"] for item in filled.data["data"]["items"]]
 
-    def test_an_incomplete_order_is_rejected(self, staff_client, scope) -> None:
+    def test_an_incomplete_order_is_rejected(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         competition_id, nomination_id = scope
         _act(competition_id=competition_id, nomination_id=nomination_id, title="Акт A", seconds=100)
         _act(competition_id=competition_id, nomination_id=nomination_id, title="Акт B", seconds=200)
@@ -370,13 +372,13 @@ class TestBufferAndOrder:
         response = staff_client.put(f"{_PROGRAMS}/{program_id}/items/order", {"itemIds": [first]}, format="json")
         assert response.status_code == 422
 
-    def test_an_over_long_buffer_is_rejected(self, staff_client, scope) -> None:
+    def test_an_over_long_buffer_is_rejected(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id = _create_program(staff_client, scope)["id"]
         assert staff_client.patch(f"{_PROGRAMS}/{program_id}", {"bufferSeconds": 7200}, format="json").status_code == 400
 
 
 class TestTheProgrammeTable:
-    def test_the_programme_exposes_every_column_it_can_carry(self, staff_client, scope) -> None:
+    def test_the_programme_exposes_every_column_it_can_carry(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program = _create_program(staff_client, scope)
         keys = [column["key"] for column in program["availableColumns"]]
         assert keys == [
@@ -396,7 +398,7 @@ class TestTheProgrammeTable:
         ]
         assert {column["key"]: column["label"] for column in program["availableColumns"]}["TEACHERS"] == "Педагог"
 
-    def test_a_row_carries_a_value_for_every_column(self, staff_client, scope) -> None:
+    def test_a_row_carries_a_value_for_every_column(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         competition_id, nomination_id = scope
         _act(
             competition_id=competition_id,
@@ -420,7 +422,7 @@ class TestTheProgrammeTable:
 
 
 class TestCustomColumns:
-    def test_a_column_is_added_filled_and_published(self, staff_client, scope) -> None:
+    def test_a_column_is_added_filled_and_published(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         competition_id, nomination_id = scope
         _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
         program_id = _create_program(staff_client, scope)["id"]
@@ -450,7 +452,7 @@ class TestCustomColumns:
         assert share.status_code == 201, share.data
         assert [c["label"] for c in share.data["data"]["share"]["columns"]] == ["Время", "Номер", "Микрофон"]
 
-    def test_a_column_is_renamed_without_losing_its_values(self, staff_client, scope) -> None:
+    def test_a_column_is_renamed_without_losing_its_values(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         competition_id, nomination_id = scope
         _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
         program_id = _create_program(staff_client, scope)["id"]
@@ -464,7 +466,7 @@ class TestCustomColumns:
         assert renamed.data["data"]["availableColumns"][-1]["label"] == "Микрофон (тип)"
         assert renamed.data["data"]["items"][0]["customValues"] == {key: "на стойке"}
 
-    def test_removing_a_column_clears_its_cells(self, staff_client, scope) -> None:
+    def test_removing_a_column_clears_its_cells(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         competition_id, nomination_id = scope
         _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
         program_id = _create_program(staff_client, scope)["id"]
@@ -477,11 +479,11 @@ class TestCustomColumns:
         assert all(not column["custom"] for column in removed.data["data"]["availableColumns"])
         assert removed.data["data"]["items"][0]["customValues"] == {}
 
-    def test_a_blank_column_title_is_rejected(self, staff_client, scope) -> None:
+    def test_a_blank_column_title_is_rejected(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id = _create_program(staff_client, scope)["id"]
         assert staff_client.post(f"{_PROGRAMS}/{program_id}/columns", {"title": "  "}, format="json").status_code == 400
 
-    def test_a_built_in_column_cannot_be_filled_in_by_hand(self, staff_client, scope) -> None:
+    def test_a_built_in_column_cannot_be_filled_in_by_hand(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         competition_id, nomination_id = scope
         _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
         program_id = _create_program(staff_client, scope)["id"]
@@ -494,7 +496,7 @@ class TestCustomColumns:
         )
         assert response.status_code == 400
 
-    def test_publishing_an_unknown_custom_column_is_refused(self, staff_client, scope) -> None:
+    def test_publishing_an_unknown_custom_column_is_refused(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id = _create_program(staff_client, scope)["id"]
         response = staff_client.post(
             f"{_PROGRAMS}/{program_id}/shares",
@@ -511,11 +513,11 @@ class TestPdfExport:
         competition_id, nomination_id = scope
         _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200, comment="Выход с точки 3")
         _act(competition_id=competition_id, nomination_id=nomination_id, title="Калинка", seconds=200)
-        program_id = _create_program(staff_client, scope)["id"]
+        program_id = str(_create_program(staff_client, scope)["id"])
         staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill")
         return program_id
 
-    def test_the_export_is_a_pdf_attachment(self, staff_client, scope) -> None:
+    def test_the_export_is_a_pdf_attachment(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id = self._program_with_two_acts(staff_client, scope)
 
         response = staff_client.get(f"{_PROGRAMS}/{program_id}/export.pdf?columns=POSITION,TIME,TITLE")
@@ -526,13 +528,13 @@ class TestPdfExport:
         assert response.content.startswith(b"%PDF-")
         assert len(response.content) > 1000
 
-    def test_every_column_is_exported_when_none_is_chosen(self, staff_client, scope) -> None:
+    def test_every_column_is_exported_when_none_is_chosen(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id = self._program_with_two_acts(staff_client, scope)
         response = staff_client.get(f"{_PROGRAMS}/{program_id}/export.pdf")
         assert response.status_code == 200
         assert response.content.startswith(b"%PDF-")
 
-    def test_a_custom_column_can_be_exported(self, staff_client, scope) -> None:
+    def test_a_custom_column_can_be_exported(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id = self._program_with_two_acts(staff_client, scope)
         key = staff_client.post(f"{_PROGRAMS}/{program_id}/columns", {"title": "Микрофон"}, format="json").data["data"]["availableColumns"][-1]["key"]
 
@@ -540,27 +542,27 @@ class TestPdfExport:
         assert response.status_code == 200
         assert response.content.startswith(b"%PDF-")
 
-    def test_an_empty_programme_still_exports(self, staff_client, scope) -> None:
+    def test_an_empty_programme_still_exports(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         # A programme is often printed before it is finished; an empty page beats an error.
         program_id = _create_program(staff_client, scope)["id"]
         response = staff_client.get(f"{_PROGRAMS}/{program_id}/export.pdf?columns=TIME,TITLE")
         assert response.status_code == 200
         assert response.content.startswith(b"%PDF-")
 
-    def test_an_unknown_column_is_a_problem_document(self, staff_client, scope) -> None:
+    def test_an_unknown_column_is_a_problem_document(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id = self._program_with_two_acts(staff_client, scope)
         response = staff_client.get(f"{_PROGRAMS}/{program_id}/export.pdf?columns=NOT_A_COLUMN")
         assert response.status_code == 400
 
-    def test_an_unknown_programme_cannot_be_exported(self, staff_client) -> None:
+    def test_an_unknown_programme_cannot_be_exported(self, staff_client: APIClient) -> None:
         assert staff_client.get(f"{_PROGRAMS}/{uuid.uuid4()}/export.pdf").status_code == 404
 
-    def test_the_export_is_staff_only(self, outsider_client, scope) -> None:
+    def test_the_export_is_staff_only(self, outsider_client: APIClient, scope: tuple[str, str]) -> None:
         assert outsider_client.get(f"{_PROGRAMS}/{uuid.uuid4()}/export.pdf").status_code == 403
 
 
 class TestPublicEditions:
-    def test_an_edition_is_published_with_its_columns_and_a_copyable_path(self, staff_client, scope) -> None:
+    def test_an_edition_is_published_with_its_columns_and_a_copyable_path(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         competition_id, nomination_id = scope
         _act(competition_id=competition_id, nomination_id=nomination_id, title="Акт A", seconds=200)
         program_id = _create_program(staff_client, scope)["id"]
@@ -584,7 +586,7 @@ class TestPublicEditions:
         assert share["itemCount"] == 1
         assert share["coversWholeProgram"] is False
 
-    def test_an_edition_published_without_columns_falls_back_to_the_defaults(self, staff_client, scope) -> None:
+    def test_an_edition_published_without_columns_falls_back_to_the_defaults(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id = _create_program(staff_client, scope)["id"]
         created = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Экран у сцены"}, format="json")
         assert [column["key"] for column in created.data["data"]["share"]["columns"]] == [
@@ -594,7 +596,7 @@ class TestPublicEditions:
             "TITLE",
         ]
 
-    def test_an_unknown_column_is_rejected(self, staff_client, scope) -> None:
+    def test_an_unknown_column_is_rejected(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id = _create_program(staff_client, scope)["id"]
         response = staff_client.post(
             f"{_PROGRAMS}/{program_id}/shares",
@@ -603,7 +605,7 @@ class TestPublicEditions:
         )
         assert response.status_code == 400
 
-    def test_the_columns_of_a_live_link_can_be_changed(self, staff_client, scope) -> None:
+    def test_the_columns_of_a_live_link_can_be_changed(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id = _create_program(staff_client, scope)["id"]
         created = staff_client.post(
             f"{_PROGRAMS}/{program_id}/shares",
@@ -626,13 +628,13 @@ class TestPublicEditions:
         # The link itself is permanent, so anything already handed out keeps working.
         assert updated.data["data"]["share"]["slug"] == share["slug"]
 
-    def test_an_empty_edition_update_is_rejected(self, staff_client, scope) -> None:
+    def test_an_empty_edition_update_is_rejected(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id = _create_program(staff_client, scope)["id"]
         created = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Ведущий"}, format="json")
         share_id = created.data["data"]["share"]["id"]
         assert staff_client.patch(f"{_PROGRAMS}/{program_id}/shares/{share_id}", {}, format="json").status_code == 400
 
-    def test_editions_are_listed_and_can_be_revoked(self, staff_client, scope) -> None:
+    def test_editions_are_listed_and_can_be_revoked(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id = _create_program(staff_client, scope)["id"]
         created = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Экран у сцены"}, format="json")
         share_id = created.data["data"]["share"]["id"]
@@ -645,7 +647,7 @@ class TestPublicEditions:
         assert revoked.status_code == 200
         assert revoked.data["data"]["shares"] == []
 
-    def test_an_edition_cannot_select_a_foreign_item(self, staff_client, scope) -> None:
+    def test_an_edition_cannot_select_a_foreign_item(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id = _create_program(staff_client, scope)["id"]
         response = staff_client.post(
             f"{_PROGRAMS}/{program_id}/shares",
@@ -654,7 +656,7 @@ class TestPublicEditions:
         )
         assert response.status_code == 422
 
-    def test_the_number_of_editions_is_not_limited(self, staff_client, scope) -> None:
+    def test_the_number_of_editions_is_not_limited(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id = _create_program(staff_client, scope)["id"]
         slugs = set()
         for name in ("Звукорежиссёр", "Ведущий", "Жюри", "Экран", "Утреннее отделение"):

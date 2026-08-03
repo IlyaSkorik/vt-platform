@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+from rest_framework.response import Response
 from rest_framework.test import APIClient
 
 from apps.applications.infrastructure.models.base import uuid7
@@ -167,7 +168,7 @@ def test_several_receipts_accumulate_and_one_can_be_taken_back(auth_client: APIC
     competition_id = _seed_open_competition()
     app_id = _create(auth_client, competition_id).data["data"]["id"]
 
-    def _upload(name: str):
+    def _upload(name: str) -> Response:
         upload = SimpleUploadedFile(name, b"%PDF-1.4 paid", content_type="application/pdf")
         return auth_client.post(f"/api/v1/applications/{app_id}/receipts", {"file": upload}, format="multipart")
 

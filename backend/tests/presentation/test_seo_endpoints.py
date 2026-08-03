@@ -8,23 +8,30 @@ like an endpoint: what they list, and more importantly what they refuse to list.
 from __future__ import annotations
 
 import uuid
+from typing import TYPE_CHECKING
 from xml.etree import ElementTree
 
 import pytest
 from django.test import Client
+
+if TYPE_CHECKING:
+    # The ORM models are imported inside the helpers so this module can be collected
+    # before Django's app registry is ready; annotations still need the names.
+    from apps.competitions.infrastructure.models import CompetitionModel
+    from apps.organization.infrastructure.models import OrganizationModel
 
 pytestmark = pytest.mark.django_db
 
 _SITEMAP_NS = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
 
 
-def _organization(name: str = "Дом талантов"):
+def _organization(name: str = "Дом талантов") -> OrganizationModel:
     from apps.organization.infrastructure.models import OrganizationModel
 
     return OrganizationModel.objects.create(name=name, slug="dom-talantov")
 
 
-def _competition(*, organizer_id, status: str, title: str, slug: str | None = None):
+def _competition(*, organizer_id: uuid.UUID, status: str, title: str, slug: str | None = None) -> CompetitionModel:
     from apps.competitions.infrastructure.models import CompetitionModel
 
     return CompetitionModel.objects.create(
@@ -36,8 +43,13 @@ def _competition(*, organizer_id, status: str, title: str, slug: str | None = No
     )
 
 
-def _locations(response) -> list[str]:
-    root = ElementTree.fromstring(response.content)
+def _locations(document: bytes) -> list[str]:
+    """The <loc> values in a sitemap document.
+
+    Takes the bytes rather than the response: that is all it parses, and the test
+    client's response type is a private django-stubs alias no annotation should name.
+    """
+    root = ElementTree.fromstring(document)
     return [element.text or "" for element in root.findall("s:url/s:loc", _SITEMAP_NS)]
 
 
@@ -74,7 +86,7 @@ class TestSitemap:
         ElementTree.fromstring(response.content)
 
     def test_lists_the_public_static_pages(self) -> None:
-        locations = _locations(Client().get("/sitemap.xml"))
+        locations = _locations(Client().get("/sitemap.xml").content)
 
         assert any(location.endswith("/") for location in locations)
         assert any(location.endswith("/competitions") for location in locations)
@@ -84,7 +96,7 @@ class TestSitemap:
         org = _organization()
         _competition(organizer_id=org.id, status="PUBLISHED", title="Весенний вокал", slug="vesenniy-vokal-2025-2026")
 
-        locations = _locations(Client().get("/sitemap.xml"))
+        locations = _locations(Client().get("/sitemap.xml").content)
 
         assert any(location.endswith("/competitions/vesenniy-vokal-2025-2026") for location in locations)
 
@@ -94,7 +106,7 @@ class TestSitemap:
         org = _organization()
         competition = _competition(organizer_id=org.id, status="PUBLISHED", title="Старый фестиваль")
 
-        locations = _locations(Client().get("/sitemap.xml"))
+        locations = _locations(Client().get("/sitemap.xml").content)
 
         assert any(location.endswith(f"/competitions/{competition.id}") for location in locations)
 
@@ -104,7 +116,7 @@ class TestSitemap:
         org = _organization()
         _competition(organizer_id=org.id, status="DRAFT", title="Черновик", slug="chernovik")
 
-        locations = _locations(Client().get("/sitemap.xml"))
+        locations = _locations(Client().get("/sitemap.xml").content)
 
         assert not any("chernovik" in location for location in locations)
 
@@ -112,13 +124,11 @@ class TestSitemap:
         from django.utils import timezone
 
         org = _organization()
-        competition = _competition(
-            organizer_id=org.id, status="PUBLISHED", title="Удалённый", slug="udalenniy"
-        )
+        competition = _competition(organizer_id=org.id, status="PUBLISHED", title="Удалённый", slug="udalenniy")
         competition.deleted_at = timezone.now()
         competition.save(update_fields=["deleted_at"])
 
-        locations = _locations(Client().get("/sitemap.xml"))
+        locations = _locations(Client().get("/sitemap.xml").content)
 
         assert not any("udalenniy" in location for location in locations)
 
@@ -126,7 +136,7 @@ class TestSitemap:
         org = _organization()
         _competition(organizer_id=org.id, status="PUBLISHED", title="Фестиваль", slug="festival-2025")
 
-        locations = _locations(Client().get("/sitemap.xml"))
+        locations = _locations(Client().get("/sitemap.xml").content)
 
         assert locations
         assert all(location.startswith("http://") or location.startswith("https://") for location in locations)
@@ -137,7 +147,7 @@ class TestSitemap:
         org = _organization()
         competition = _competition(organizer_id=org.id, status="PUBLISHED", title="🎵")
 
-        locations = _locations(Client().get("/sitemap.xml"))
+        locations = _locations(Client().get("/sitemap.xml").content)
 
         assert any(str(competition.id) in location for location in locations)
         assert uuid.UUID(locations[-1].rsplit("/", 1)[-1])

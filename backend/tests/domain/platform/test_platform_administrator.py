@@ -12,7 +12,7 @@ from decimal import Decimal
 import pytest
 
 from apps.organization.domain.entities import Organization
-from apps.organization.domain.events import OrganizationCommissionRateChanged, OrganizationConnected
+from apps.organization.domain.events import DomainEvent, OrganizationCommissionRateChanged, OrganizationConnected
 from apps.organization.domain.exceptions import InvalidCommissionRateError
 from apps.organization.domain.value_objects import (
     CommissionRate,
@@ -79,7 +79,7 @@ class TestPlatformAdministrator:
 
     def test_direct_construction_is_refused(self) -> None:
         with pytest.raises(DirectConstructionError):
-            PlatformAdministrator(  # type: ignore[call-arg]
+            PlatformAdministrator(
                 _token=object(),
                 _id=PlatformAdministratorId.generate(),
                 _user_id=PlatformUserId.from_uuid(PlatformAdministratorId.generate().value),
@@ -118,7 +118,7 @@ class TestCommissionRate:
 
 
 class TestConnectingAnOrganization:
-    def _connected(self, *, commission: str = "10") -> tuple[Organization, list]:
+    def _connected(self, *, commission: str = "10") -> tuple[Organization, list[DomainEvent]]:
         return Organization.connect(
             organization_id=OrganizationId.generate(),
             name=OrganizationName("Звёздный дождь"),

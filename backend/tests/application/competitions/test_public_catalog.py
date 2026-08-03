@@ -11,7 +11,9 @@ Two layers:
 
 from __future__ import annotations
 
+import uuid
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -25,6 +27,15 @@ from apps.competitions.application.read_models import (
     resolve_landing_cover,
     resolve_poster_image,
 )
+
+if TYPE_CHECKING:
+    # Import-time only: the ORM models and the read service are imported *inside* the
+    # helpers below so this module can be collected before Django's app registry is
+    # ready. Annotations still need the names, and under `from __future__ import
+    # annotations` they are never evaluated at runtime — so this block costs nothing.
+    from apps.competitions.infrastructure.models import CategoryModel, CompetitionModel
+    from apps.competitions.infrastructure.read_models import DjangoPublicCatalogReader
+    from apps.organization.infrastructure.models import OrganizationModel
 
 # ---------------------------------------------------------------------------
 # Pure projection rules
@@ -53,10 +64,7 @@ class TestPublicStatusProjection:
         # Registration is per nomination: PUBLISHED reads as accepting only while a
         # nomination is open, coming-soon while one is still upcoming, else closed.
         assert public_status_for("PUBLISHED", has_open_nomination=True) == "REGISTRATION_OPEN"
-        assert (
-            public_status_for("PUBLISHED", has_open_nomination=False, has_upcoming_nomination=True)
-            == "COMING_SOON"
-        )
+        assert public_status_for("PUBLISHED", has_open_nomination=False, has_upcoming_nomination=True) == "COMING_SOON"
         assert public_status_for("PUBLISHED") == "REGISTRATION_CLOSED"
 
     @pytest.mark.parametrize("hidden", ["DRAFT", "CONFIGURED", "READY"])
@@ -125,7 +133,9 @@ class TestPosterResolution:
 
 class TestLandingCoverResolution:
     def test_reads_hero_block_cover(self) -> None:
-        config = {"blocks": [{"type": "HERO", "cover_image": "/media/hero.jpg"}]}
+        # Annotated, not inferred: `dict` is invariant in its value type, so an inferred
+        # `dict[str, list[dict[str, str]]]` is not a `dict[str, object]` the reader takes.
+        config: dict[str, object] = {"blocks": [{"type": "HERO", "cover_image": "/media/hero.jpg"}]}
         assert resolve_landing_cover(config) == "/media/hero.jpg"
 
     def test_none_when_no_hero_cover(self) -> None:
@@ -136,7 +146,7 @@ class TestLandingCoverResolution:
 
 class TestCityResolution:
     def test_reads_city_from_contacts_venue_details(self) -> None:
-        config = {"venue_details": {"city": "Минск"}}
+        config: dict[str, object] = {"venue_details": {"city": "Минск"}}
         assert resolve_city(config) == "Минск"
 
     def test_none_when_absent_blank_or_malformed(self) -> None:
@@ -154,13 +164,13 @@ class TestCityResolution:
 @pytest.mark.django_db
 class TestDjangoPublicCatalogReader:
     @staticmethod
-    def _organization(name: str = "Дом талантов"):
+    def _organization(name: str = "Дом талантов") -> OrganizationModel:
         from apps.organization.infrastructure.models import OrganizationModel
 
         return OrganizationModel.objects.create(name=name, slug="dom-talantov")
 
     @staticmethod
-    def _competition(*, organizer_id, status: str, title: str, **extra):
+    def _competition(*, organizer_id: uuid.UUID, status: str, title: str, **extra: object) -> CompetitionModel:
         from apps.competitions.infrastructure.models import CompetitionModel
 
         return CompetitionModel.objects.create(
@@ -172,7 +182,7 @@ class TestDjangoPublicCatalogReader:
         )
 
     @staticmethod
-    def _open_nomination(competition):
+    def _open_nomination(competition: CompetitionModel) -> CategoryModel:
         from datetime import UTC, datetime
 
         from apps.competitions.infrastructure.models import CategoryModel
@@ -184,7 +194,7 @@ class TestDjangoPublicCatalogReader:
             registration_closes_at=datetime(2100, 1, 1, tzinfo=UTC),
         )
 
-    def _reader(self):
+    def _reader(self) -> DjangoPublicCatalogReader:
         from apps.competitions.composition import build_public_catalog_read_service
 
         return build_public_catalog_read_service()
@@ -504,13 +514,13 @@ class TestContactsProjection:
 @pytest.mark.django_db
 class TestDjangoPublicCatalogReaderDetail:
     @staticmethod
-    def _organization(name: str = "Дом талантов"):
+    def _organization(name: str = "Дом талантов") -> OrganizationModel:
         from apps.organization.infrastructure.models import OrganizationModel
 
         return OrganizationModel.objects.create(name=name, slug="dom-talantov")
 
     @staticmethod
-    def _competition(*, organizer_id, status: str, title: str, **extra):
+    def _competition(*, organizer_id: uuid.UUID, status: str, title: str, **extra: object) -> CompetitionModel:
         from apps.competitions.infrastructure.models import CompetitionModel
 
         return CompetitionModel.objects.create(
@@ -522,7 +532,7 @@ class TestDjangoPublicCatalogReaderDetail:
         )
 
     @staticmethod
-    def _open_nomination(competition):
+    def _open_nomination(competition: CompetitionModel) -> CategoryModel:
         from datetime import UTC, datetime
 
         from apps.competitions.infrastructure.models import CategoryModel
@@ -534,7 +544,7 @@ class TestDjangoPublicCatalogReaderDetail:
             registration_closes_at=datetime(2100, 1, 1, tzinfo=UTC),
         )
 
-    def _reader(self):
+    def _reader(self) -> DjangoPublicCatalogReader:
         from apps.competitions.composition import build_public_catalog_read_service
 
         return build_public_catalog_read_service()
@@ -638,7 +648,7 @@ class TestDjangoPublicCatalogReaderDetail:
         assert card.cover_image == "/media/afisha.jpg"  # Афиша — на карточке каталога
         assert detail.cover_image == "/media/cover.jpg"  # Обложка — на лендинге
 
-    def _with_regulation(self, competition):
+    def _with_regulation(self, competition: CompetitionModel) -> None:
         import datetime
 
         from apps.competitions.infrastructure.models import CompetitionModel, RegulationModel
@@ -650,9 +660,7 @@ class TestDjangoPublicCatalogReaderDetail:
             publication_date=datetime.date(2026, 5, 1),
             file_reference="/media/reg.pdf",
         )
-        CompetitionModel.objects.filter(pk=competition.pk).update(
-            current_regulation_id=regulation.id
-        )
+        CompetitionModel.objects.filter(pk=competition.pk).update(current_regulation_id=regulation.id)
 
     def test_default_config_shows_regulation_block(self) -> None:
         org = self._organization()
@@ -703,9 +711,7 @@ class TestDjangoPublicCatalogReaderDetail:
         from apps.competitions.infrastructure.models import DocumentModel
 
         org = self._organization()
-        competition = self._competition(
-            organizer_id=org.id, status="RUNNING", title="Документный фестиваль"
-        )
+        competition = self._competition(organizer_id=org.id, status="RUNNING", title="Документный фестиваль")
         DocumentModel.objects.create(
             competition=competition,
             title="Программа",
