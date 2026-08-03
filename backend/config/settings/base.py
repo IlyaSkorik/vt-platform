@@ -352,6 +352,24 @@ CELERY_RESULT_BACKEND = str(settings.celery_result_backend)
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TIMEZONE = TIME_ZONE
 
+# Acknowledge a task when it *finishes*, not when it is picked up — and hand it back if the
+# worker dies holding it.
+#
+# This is what a deploy depends on. Celery's default acknowledges on delivery, so the message is
+# already gone from the broker while the work runs: a worker stopped mid-task (a rollout, an OOM
+# kill, a lost machine) takes the task with it. Nothing errors and nothing retries — a print run
+# that was most of the way through three thousand diplomas simply never finishes, and the only
+# evidence is a job that stays unfinished forever.
+#
+# The cost of late acknowledgement is that a task can run twice: once interrupted, once
+# redelivered. That is the right trade here because the long tasks are re-runnable by design —
+# the unpaid-order sweep recomputes from the database each run (see CELERY_BEAT_SCHEDULE below),
+# and print generation skips diplomas that already carry a rendered PDF unless asked to force
+# them. A task that is *not* safe to run twice must say so itself; it cannot rely on the broker
+# to guarantee it, because the broker never could.
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+
 # Two mailboxes double the send rate, but on their own they do not fix ordering: with one
 # queue a password reset still waits behind five hundred batch notices. Redis has no native
 # priorities, so Celery emulates them with one list per step - which is why the steps have

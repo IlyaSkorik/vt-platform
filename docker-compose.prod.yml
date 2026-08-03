@@ -90,6 +90,14 @@ services:
       GUNICORN_FORWARDED_ALLOW_IPS: "*"
     expose:
       - "8000"
+    # Long enough for gunicorn to finish what it is holding. Docker's default is 10 s, which is
+    # *shorter than the application's own drain*: `gunicorn.conf.py` sets graceful_timeout 30, so
+    # the default SIGKILLs the container while gunicorn is still politely finishing requests, and
+    # whoever was mid-upload or mid-export loses it. 45 gives the drain its 30 plus margin.
+    #
+    # Not 120 (the request timeout): anything still running after 30 s has already been abandoned
+    # by gunicorn itself, so waiting longer only makes deploys slower without saving work.
+    stop_grace_period: 45s
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz').read()"]
       interval: 30s
@@ -109,6 +117,12 @@ services:
       --concurrency ${CELERY_CONCURRENCY:-2}
       --max-tasks-per-child 50
       --time-limit 3600 --soft-time-limit 3300
+    # Three minutes to finish the task in hand on shutdown. A print run can take far longer than
+    # that (`--time-limit` is an hour), so this is a deliberate bound rather than a promise: with
+    # `CELERY_TASK_ACKS_LATE` the interrupted task is redelivered instead of lost, and generation
+    # skips diplomas that already carry a rendered PDF — so a re-run resumes rather than restarts.
+    # Waiting an hour on every deploy to avoid repeating a few pages would be the wrong trade.
+    stop_grace_period: 180s
     # CMD-SHELL, not CMD: the node name contains the container hostname, and the exec form does
     # not expand variables. `$$` is compose's escape for a literal `$` handed to the container.
     healthcheck:
@@ -124,12 +138,17 @@ services:
   mail-worker:
     <<: *django
     command: celery -A config worker -l info -Q mail --concurrency 4
+    # A message costs ~2.8 s, almost all of it the SSL handshake (OPS-009), so 30 s is several
+    # times what four in-flight messages need.
+    stop_grace_period: 30s
 
   beat:
     <<: *django
     # --schedule on a writable path; the unpaid-order sweep recomputes from the database each
     # run, so it survives restarts without a persisted schedule.
     command: celery -A config beat -l info --schedule /tmp/celerybeat-schedule
+    # Beat holds no work of its own — it only enqueues.
+    stop_grace_period: 15s
 
   # --- Edge: SPA + reverse proxy --------------------------------------------
   nginx:
@@ -168,6 +187,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./deploy/postgres/vt-platform.conf:/etc/postgresql/postgresql.conf:ro
+    # A shutdown checkpoint can take longer than Docker's 10 s default, and a SIGKILL mid-write
+    # means recovery on the next start. Cheap insurance on the one service that holds the data.
+    stop_grace_period: 60s
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vt_platform}"]
       interval: 5s
@@ -182,6 +204,9 @@ services:
       - ./deploy/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
       # appendonly is on (OPS-008 §6): a restart must not lose queued tasks.
       - redis_data:/data
+    # Time to flush the append-only file. The queue it protects is the reason appendonly is on
+    # at all, so it should not be cut off while writing it.
+    stop_grace_period: 30s
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
