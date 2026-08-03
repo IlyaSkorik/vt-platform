@@ -1,7 +1,0 @@
-# Mount point for an optional TLS server block, kept in git so the bind mount in
-# docker-compose.prod.yml has something to point at.
-#
-# Empty by default: TLS terminates in front of the stack (see the header of
-# docker-compose.prod.yml). To terminate it in nginx instead, drop a file here — nginx includes
-# /etc/nginx/tls/*.conf at http level — publish 443 in the compose file, and mount the
-# certificates in as well. OPS-008 §7 has the server block to start from.

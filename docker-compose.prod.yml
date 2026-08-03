@@ -150,8 +150,16 @@ services:
     # Beat holds no work of its own — it only enqueues.
     stop_grace_period: 15s
 
-  # --- Edge: SPA + reverse proxy --------------------------------------------
-  nginx:
+  # --- Edge: publish the SPA, then serve it ---------------------------------
+  #
+  # A one-shot job, not a server. It copies the built bundle and the nginx configuration out of the
+  # frontend image into the volumes below and exits. That is what keeps nginx's own service
+  # definition identical between deploys — and therefore keeps compose from recreating the one
+  # container that owns the published port.
+  #
+  # Measured: recreating nginx costs ~14 s of *refused connections*, because nothing is listening.
+  # Leaving it alone and restarting only the API costs ~1.4 s of 502, which nginx itself retries.
+  spa:
     image: ${FRONTEND_IMAGE:-vt-frontend:local}
     build:
       context: ./frontend
@@ -159,16 +167,38 @@ services:
       args:
         # Empty: the client calls the same origin it was served from, and nginx fronts both.
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+    restart: "no"
+    volumes:
+      - spa:/srv/spa
+      - nginx_conf:/srv/nginx-conf
+
+  nginx:
+    # The stock upstream image, pinned. Nothing project-specific is baked in, so this reference
+    # does not change when the frontend does — which is the entire point.
+    image: nginxinc/nginx-unprivileged:1.27-alpine
     restart: unless-stopped
     ports:
       - "${HTTP_PORT:-80}:8080"
     volumes:
-      # Written by this container's entrypoint, read by Django for the SEO head.
-      - spa:/srv/spa
+      # Both written by `spa` above. The bundle volume is also mounted by the Django services,
+      # which read index.html out of it to inject the <head>.
+      - nginx_conf:/etc/nginx/conf.d:ro
+      - spa:/srv/spa:ro
       - media:/srv/media:ro
-      # Drop a TLS server block in here to terminate TLS in nginx; empty by default.
-      - ${NGINX_TLS_DIR:-./deploy/nginx/tls}:/etc/nginx/tls:ro
+      # Drop a TLS server block in here to terminate TLS in nginx; empty by default. A path on the
+      # host, not in the repository checkout: the deploy replaces that checkout, and a bind mount
+      # whose source disappears breaks the container on its next restart.
+      - ${NGINX_TLS_DIR:-/srv/vt-platform/nginx/tls}:/etc/nginx/tls:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/nginx-health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+    stop_grace_period: 15s
     depends_on:
+      spa:
+        condition: service_completed_successfully
       backend:
         condition: service_healthy
 
@@ -219,6 +249,8 @@ volumes:
   # Uploads and generated documents while S3_BUCKET is unset. With a bucket configured this
   # stays empty — and the deployment stops having local state worth backing up (OPS-007).
   media:
-  # The built SPA, published from the frontend image on every start so backend and nginx agree
-  # on which bundle is live.
+  # The built SPA, published by the `spa` job so nginx and Django agree on which bundle is live.
   spa:
+  # nginx's configuration, published the same way — which is what lets nginx run from a stock
+  # image whose reference never changes between deploys.
+  nginx_conf:

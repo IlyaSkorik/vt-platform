@@ -38,38 +38,35 @@ ARG VITE_API_BASE_URL=""
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 RUN pnpm build
 
-# --- Stage 2: nginx runtime ------------------------------------------------
+# --- Stage 2: the publisher ------------------------------------------------
 #
-# The *unprivileged* variant, not plain `nginx:alpine`. ARCH-001 §17.1 asks for non-root
-# containers, and the stock image fights that: run it as a normal user and it cannot write
-# `/run/nginx.pid`, warns that its own `user` directive is meaningless, and needs a handful of
-# chowns and a patched nginx.conf to behave. This image is built for it — uid 101, pid under
-# /tmp, listening on 8080 already — so the requirement costs nothing instead of a pile of fixes.
+# This image does not serve anything. It carries the built bundle and the nginx configuration and,
+# when run, copies both into the volumes the stack reads from — then exits. nginx itself runs from
+# the stock upstream image (see `docker-compose.prod.yml`).
+#
+# **Why it works that way.** When nginx ran from this image, every frontend build produced a new
+# image tag, so compose recreated the nginx container on every deploy: measured, ~14 seconds during
+# which the published port had no listener at all — a refused connection, not even a 502. Treating
+# the bundle and the config as data leaves nginx's service definition unchanged between deploys, so
+# there is nothing for compose to recreate, and the only restart left is the API's (~1.4 s).
+#
+# Still based on the *unprivileged* nginx image: it already has the right uid and the nginx binary,
+# which keeps `nginx -t` available for validating the config that ships here (ARCH-001 §17.1).
 FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
 
-# Root only to place files and fix ownership; the image drops back to nginx below.
+# Root only to place files; the image drops back to nginx below.
 USER root
 
-# The bundle lives at /opt/spa and is published to the shared volume at start-up; see
-# docker-entrypoint.sh for why it is a copy and not the served directory itself.
 COPY --from=builder /app/dist /opt/spa
+COPY deploy/nginx/default.conf /opt/nginx-conf/default.conf
+COPY deploy/nginx/proxy.conf.inc /opt/nginx-conf/proxy.conf.inc
+COPY deploy/nginx/docker-entrypoint.sh /usr/local/bin/vt-publish.sh
+RUN chmod +x /usr/local/bin/vt-publish.sh
 
-COPY deploy/nginx/default.conf /etc/nginx/conf.d/default.conf
-COPY deploy/nginx/proxy.conf /etc/nginx/vt-proxy.conf
-COPY deploy/nginx/docker-entrypoint.sh /usr/local/bin/vt-entrypoint.sh
-RUN chmod +x /usr/local/bin/vt-entrypoint.sh
-
-# /srv/spa is written by the entrypoint on every start, so it has to belong to the runtime user;
-# /srv/media is a read-only mount and only needs to exist.
-RUN mkdir -p /srv/spa /srv/media \
-    && chown -R nginx:nginx /srv/spa
+# The publish targets. Created here so the volumes mount onto directories the runtime user owns.
+RUN mkdir -p /srv/spa /srv/nginx-conf /srv/media \
+    && chown -R nginx:nginx /srv/spa /srv/nginx-conf
 
 USER nginx
 
-EXPOSE 8080
-
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget -q -O /dev/null http://127.0.0.1:8080/nginx-health || exit 1
-
-ENTRYPOINT ["/usr/local/bin/vt-entrypoint.sh"]
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/usr/local/bin/vt-publish.sh"]

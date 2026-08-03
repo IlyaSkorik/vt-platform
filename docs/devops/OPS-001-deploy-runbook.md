@@ -41,9 +41,10 @@ compose file and the configuration it mounts can never be a different version fr
 adduser --disabled-password --gecos "" deploy
 usermod -aG docker deploy
 
-# Only the real .env and the pre-deploy dumps live here. The application files come from the
-# runner's own workspace, so there is no second checkout to keep in step.
-install -d -o deploy -g deploy /srv/vt-platform/backend /srv/vt-platform/backups
+# Only the real .env, the pre-deploy dumps and an optional TLS block live here. The application
+# files come from the runner's own workspace, so there is no second checkout to keep in step.
+install -d -o deploy -g deploy \
+  /srv/vt-platform/backend /srv/vt-platform/backups /srv/vt-platform/nginx/tls
 ```
 
 Register the runner as the `deploy` user. Take the exact download URL and token from
@@ -147,9 +148,11 @@ the request was secure.
 `X-Forwarded-Proto $scheme` and keep `client_max_body_size` at least `512m`, or a video upload
 dies with a 413 before Django sees it. OPS-008 §7 has the full server block.
 
-**C — inside the stack's nginx.** Put a server block in `deploy/nginx/tls/` (the container
-includes `/etc/nginx/tls/*.conf`), mount the certificates, and publish 443 in the compose file.
-Certificate renewal then becomes this container's problem, which is why it is not the default.
+**C — inside the stack's nginx.** Put a server block in `/srv/vt-platform/nginx/tls/` (the
+container includes `/etc/nginx/tls/*.conf`), mount the certificates, and publish 443 in the compose
+file. A path on the host, not in the repository: the deploy replaces the checkout, and a bind mount
+whose source disappears breaks the container on its next restart. Certificate renewal then becomes
+this container's problem, which is why it is not the default.
 
 Whichever you choose, HTTPS is not optional: `SECURE_SSL_REDIRECT` answers plain HTTP with a 301,
 and `SECURE_HSTS_SECONDS` is a year with preload.
@@ -221,7 +224,46 @@ From here on: **push to `main` → approve the deploy → done.**
 
 ---
 
-## 7. Rollback
+## 7. What a deploy costs
+
+Pushing to `main` takes nothing down. CI and the image build run on GitHub's runners, and the
+rollout job then waits for the approval in §5 — production serves the old version throughout, for
+as long as the approval takes.
+
+Once approved, the host dumps the database, pulls the new images and runs migrations **while the
+old code is still serving**. Only the last step touches the running services. Measured on this
+stack by polling the edge five times a second:
+
+| What changed | Failed requests | Why |
+|---|---|---|
+| Frontend only | **none at all** | the bundle and nginx config are published into volumes by a one-shot job; nginx is never recreated |
+| Backend (or both) | **~0.2 s — two requests** | the API container is replaced; nginx stays up, returns 502 for that instant and retries |
+
+For reference, the shape this replaced recreated nginx on every frontend build: ~14 seconds during
+which the published port had no listener at all, so clients got a refused connection rather than
+even an error page.
+
+Nothing in flight is lost in that window. Each service is stopped with a grace period matched to
+what it holds — 45 s for the API, above gunicorn's own 30 s drain — and Celery acknowledges tasks
+on completion (`CELERY_TASK_ACKS_LATE`), so a worker stopped mid-print hands the task back instead
+of taking it to the grave. A redelivered print run resumes: generation renders only what has no
+PDF yet.
+
+**The one thing that can still cost minutes is a migration.** It runs before the rollout, against
+the live database, with the old code serving — so a statement that takes a heavy lock stalls
+requests for as long as it holds one, and no amount of container choreography helps. Before
+approving a release that adds a migration, look at what it does:
+
+- `AddIndex` on a populated table locks writes for the whole build. Use
+  `AddIndexConcurrently` with `atomic = False`. (Nothing in the repository does this yet — six
+  migrations use plain `AddIndex`, harmless on the empty database they were written against.)
+- `AlterField` may rewrite the table.
+- `RemoveField` / `DeleteModel` must never ship in the same release as the code that stops using
+  the column. Expand first, contract in a later release (ARCH-001 §18.4).
+
+---
+
+## 8. Rollback
 
 Re-deploying an older commit is the rollback, and it is a first-class entry point rather than
 something to reconstruct while the site is down:
@@ -237,7 +279,7 @@ took before it — `backups/pre-deploy-<sha>.dump` on the server.
 
 ---
 
-## 8. Backups
+## 9. Backups
 
 The deploy takes a dump before every rollout. That is not a backup strategy on its own — OPS-008
 §9 is:
@@ -257,7 +299,7 @@ references are in the dump and the objects are untouched.
 
 ---
 
-## 9. What is deliberately not here yet
+## 10. What is deliberately not here yet
 
 - **No stage environment.** ARCH-001 §18.4 describes one that deploys automatically on merge.
   `deploy.yml` has no `stage` job, because there is no host for it — add both together.

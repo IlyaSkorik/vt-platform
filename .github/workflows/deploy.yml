@@ -167,7 +167,10 @@ jobs:
           fi
 
       - name: Pull the new images
-        run: docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" pull backend nginx
+        # `spa`, not `nginx`: nginx runs from a stock upstream image whose reference never changes,
+        # which is what keeps it from being recreated. The frontend build arrives in the `spa`
+        # publisher instead.
+        run: docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" pull backend spa
 
       - name: Migrate (pre-deploy, expand phase)
         run: |
@@ -178,8 +181,17 @@ jobs:
 
       - name: Roll out
         run: |
+          # `up` publishes the new bundle and config through the one-shot `spa` job, then recreates
+          # only what actually changed. Measured on this stack: a frontend-only change costs zero
+          # failed requests (nginx is never recreated), and an API change costs ~0.2 s of 502 that
+          # nginx retries on the client's behalf.
           docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" \
             up -d --wait --wait-timeout 300
+
+          # The config volume was just refreshed; a reload picks it up without dropping a
+          # connection. A no-op when nothing changed, so it is unconditional.
+          docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" \
+            exec -T nginx nginx -s reload
 
       - name: Verify from outside
         env:
