@@ -507,13 +507,24 @@ class CompetitionViewSet(viewsets.ViewSet):
                     out[key] = str(out[key])
             return out
 
+        def _child_rows(value: object) -> list[dict[str, object]]:
+            """The nested card/image/FAQ arrays, narrowed before iteration.
+
+            A validated body reaches here as ``dict[str, object]``, so each nested
+            collection is an ``object`` until it is checked — iterating it directly
+            only looked safe.
+            """
+            if not isinstance(value, list):
+                return []
+            return [row for row in value if isinstance(row, dict)]
+
         blocks: list[dict[str, object]] = []
         for raw in kwargs.get("blocks", []):
             block = _normalize_uuid_fields(raw, "id")
-            block["cards"] = [_normalize_uuid_fields(card, "id") for card in block.get("cards", [])]
-            block["partners"] = [_normalize_uuid_fields(card, "id") for card in block.get("partners", [])]
-            block["images"] = [_normalize_uuid_fields(image, "id") for image in block.get("images", [])]
-            block["faq_items"] = [_normalize_uuid_fields(item, "id") for item in block.get("faq_items", [])]
+            block["cards"] = [_normalize_uuid_fields(card, "id") for card in _child_rows(block.get("cards"))]
+            block["partners"] = [_normalize_uuid_fields(card, "id") for card in _child_rows(block.get("partners"))]
+            block["images"] = [_normalize_uuid_fields(image, "id") for image in _child_rows(block.get("images"))]
+            block["faq_items"] = [_normalize_uuid_fields(item, "id") for item in _child_rows(block.get("faq_items"))]
             blocks.append(block)
 
         return self._run(

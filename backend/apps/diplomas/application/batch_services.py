@@ -94,9 +94,7 @@ class DiplomaBatchGenerationService:
 
         for target in targets:
             assets = assets_by_template[target.template_id]
-            for submission_id in self._snapshots.list_submission_ids(
-                competition_id, category_id=target.category_id
-            ):
+            for submission_id in self._snapshots.list_submission_ids(competition_id, category_id=target.category_id):
                 diploma = self._repository.get_by_submission(submission_id)
                 if diploma is None:
                     built = self._snapshots.build(submission_id)
@@ -104,9 +102,7 @@ class DiplomaBatchGenerationService:
                         continue
                     diploma = Diploma.create(
                         diploma_id=self._repository.new_id(),
-                        number=self._numbers.next_number(
-                            competition_year=built.competition_year or now.year
-                        ),
+                        number=self._numbers.next_number(competition_year=built.competition_year or now.year),
                         verification_token=secrets.token_urlsafe(_TOKEN_BYTES),
                         competition_id=built.competition_id,
                         submission_id=submission_id,
@@ -126,13 +122,17 @@ class DiplomaBatchGenerationService:
                         number=diploma.number,
                         verification_token=diploma.verification_token,
                     )
-                    path = self._workspace.store_pdf(
-                        competition_id=competition_id, number=diploma.number, data=data
-                    )
+                    path = self._workspace.store_pdf(competition_id=competition_id, number=diploma.number, data=data)
                     diploma = diploma.with_print_pdf(path, now=now)
                     self._repository.update(diploma)
 
-                items.append((f"{diploma.number}.pdf", diploma.print_pdf_path))
+                pdf_path = diploma.print_pdf_path
+                if pdf_path is None:
+                    # Not reachable while the branch above always stores a path, but
+                    # skipping beats putting a null into the ZIP manifest: one
+                    # unrenderable diploma must not fail the whole batch.
+                    continue
+                items.append((f"{diploma.number}.pdf", pdf_path))
 
         zip_path = self._workspace.store_zip(competition_id=competition_id, items=items)
         return BatchResult(created=created, skipped=skipped, zip_path=zip_path)

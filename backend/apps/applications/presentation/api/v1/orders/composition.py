@@ -164,7 +164,12 @@ def build_auto_cancel_unpaid_handler() -> AutoCancelUnpaidApplicationHandler:
 
 
 def build_request_payment_handler() -> RequestApplicationPaymentHandler:
-    return RequestApplicationPaymentHandler(applications=_applications(), submissions=_submissions(), clock=SystemClock())
+    return RequestApplicationPaymentHandler(
+        applications=_applications(),
+        submissions=_submissions(),
+        catalog=DjangoCompetitionCatalog(),
+        clock=SystemClock(),
+    )
 
 
 def build_mark_paid_handler() -> MarkApplicationPaidHandler:

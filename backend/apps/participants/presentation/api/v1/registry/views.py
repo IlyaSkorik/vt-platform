@@ -91,9 +91,7 @@ def _participant_resource(model: ParticipantRegistryModel, *, applications_count
         "notes": model.notes,
         "archived": model.archived,
         "applicationsCount": applications_count,
-        "primaryOrganization": _organization_resource(primary_membership.organization)
-        if primary_membership is not None
-        else None,
+        "primaryOrganization": _organization_resource(primary_membership.organization) if primary_membership is not None else None,
         "organizations": [
             {
                 **_organization_resource(membership.organization),
@@ -135,14 +133,22 @@ def _applications_count_by_participant(*, owner_id: uuid.UUID, participant_ids: 
             submission_participants[submission_id] = participant_refs
 
     counts = dict.fromkeys(participant_ids, 0)
-    applications = ApplicationModel.objects.filter(
-        deleted_at__isnull=True,
-        applicant_id=owner_id,
-    ).exclude(status="DRAFT").values("submission_refs")
-    for row in applications:
-        refs = row.get("submission_refs") or []
+    applications = (
+        ApplicationModel.objects.filter(
+            deleted_at__isnull=True,
+            applicant_id=owner_id,
+        )
+        .exclude(status="DRAFT")
+        .values("submission_refs")
+    )
+    # A distinct loop variable: the two `.values()` querysets yield different row
+    # shapes, and reusing `row` had the checker apply the submission shape here.
+    for order_row in applications:
+        refs = order_row.get("submission_refs")
         touched: set[str] = set()
-        for ref in refs:
+        for ref in refs if isinstance(refs, list) else []:
+            if not isinstance(ref, dict):
+                continue
             submission_id = str(ref.get("submission_id") or "")
             touched.update(submission_participants.get(submission_id, set()))
         for participant_id in touched:
@@ -293,9 +299,7 @@ class ParticipantRegistryCollectionView(_AuthView):
     )
     def get(self, request: Request) -> Response:
         owner_id = _owner_uuid(request.user.id)
-        qs = ParticipantRegistryModel.objects.filter(owner_id=owner_id, deleted_at__isnull=True).order_by(
-            "-updated_at"
-        )
+        qs = ParticipantRegistryModel.objects.filter(owner_id=owner_id, deleted_at__isnull=True).order_by("-updated_at")
         search = _optional_str(request.query_params.get("q"))
         if search is not None:
             qs = qs.filter(
@@ -325,8 +329,15 @@ class ParticipantRegistryCollectionView(_AuthView):
 
         organization_id = _optional_str(request.query_params.get("organizationId"))
         if organization_id is not None:
+            # The column is a UUID, so the raw query string has to be parsed rather than
+            # handed to the ORM as text. A malformed filter now returns nothing instead
+            # of raising a 500 from deep inside the queryset.
+            try:
+                organization_uuid = uuid.UUID(organization_id)
+            except ValueError:
+                return _envelope(request, [])
             qs = qs.filter(
-                organization_memberships__organization_id=organization_id,
+                organization_memberships__organization_id=organization_uuid,
                 organization_memberships__deleted_at__isnull=True,
             )
 
@@ -347,10 +358,7 @@ class ParticipantRegistryCollectionView(_AuthView):
             owner_id=owner_id,
             participant_ids={str(model.id) for model in models},
         )
-        data = [
-            _participant_resource(model, applications_count=app_counts.get(str(model.id), 0))
-            for model in models
-        ]
+        data = [_participant_resource(model, applications_count=app_counts.get(str(model.id), 0)) for model in models]
         return _envelope(request, data)
 
     @extend_schema(tags=[_TAG], request=ParticipantRegistryWriteSerializer)

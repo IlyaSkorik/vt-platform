@@ -265,7 +265,10 @@ class OrganizerProcessingWorkspaceView(_StaffView):
             has_corrections = model.status == "REQUIRES_CORRECTION"
             if model.status not in {"REQUIRES_CORRECTION", "SCHEDULED", "COMPLETED", "CANCELLED"}:
                 queue_key = "READY" if receipt_refs else "WAITING_PAYMENT"
-            row = {
+            # Named `card`, not `row`: `row` is already the loop variable for the
+            # `.values()` querysets above, and reusing it made the checker treat this
+            # response payload as one of those database row shapes.
+            card: dict[str, Any] = {
                 "id": str(model.id),
                 "applicationId": application_id or None,
                 "applicationNumber": (application_id or str(model.id))[:8].upper(),
@@ -288,7 +291,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                 },
                 "capabilities": _capabilities(model.status),
             }
-            all_rows.append(row)
+            all_rows.append(card)
 
             if query and query not in haystack:
                 continue
@@ -312,7 +315,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                 continue
             if has_missing_files_filter in {"true", "false"} and has_missing_files != (has_missing_files_filter == "true"):
                 continue
-            rows.append(row)
+            rows.append(card)
 
         queue_source = [item for item in all_rows if item.get("competitionId") == competition_filter] if competition_filter else all_rows
         queue_counts = Counter(item["queue"] for item in queue_source)
@@ -519,7 +522,10 @@ class OrganizerProcessingActionView(_StaffView):
                     return Response({"detail": "Укажите комментарий для участника перед возвратом на исправление."}, status=400)
                 application_id, _, competition_id = _application_meta_for_submission(submission_id)
                 target_submission_ids = _submission_ids_for_application(application_id) or [submission_id]
-                processed_ids: list[str] = []
+                # Re-uses the binding annotated in the `approve` branch above — the two
+                # branches are mutually exclusive, and re-annotating one name twice in a
+                # single scope is what the checker rejects.
+                processed_ids = []
                 result = None
                 for target_id in target_submission_ids:
                     model = SubmissionModel.objects.get(id=target_id, deleted_at__isnull=True)
@@ -772,6 +778,13 @@ class OrganizerProcessingActionView(_StaffView):
                 return Response({"detail": "Unknown action."}, status=400)
         except ApplicationError as exc:
             return problems.application_problem(exc, instance=request.path, request=request)
+
+        # Every branch above either returns or leaves a result, but nothing in the
+        # structure enforces that — a new action that forgets to assign would have
+        # raised AttributeError here and surfaced as a 500. An explicit guard turns
+        # that into an honest conflict response.
+        if result is None:
+            return Response({"detail": "Действие не дало результата."}, status=409)
 
         body = {"id": result.submission.id, "status": result.submission.status, "capabilities": _capabilities(result.submission.status)}
         rid = problems.request_id(request)

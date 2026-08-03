@@ -152,7 +152,7 @@ def build_dashboard(*, organization_id: str | None = None, competition_id: str |
     organizations = list(OrganizationModel.objects.filter(deleted_at__isnull=True).order_by("created_at"))
     organization_names = {org.id: org.name for org in organizations}
 
-    owner_of, titles, competitions_per_organization = _competition_scope(
+    owner_of, _titles, competitions_per_organization = _competition_scope(
         organization_filter=organization_id,
         competition_filter=competition_id,
     )
@@ -206,13 +206,15 @@ def build_dashboard(*, organization_id: str | None = None, competition_id: str |
     if orphan_ids and not organization_id:
         orphan = _Totals()
         for organizer_id in orphan_ids:
-            totals = per_organization.get(organizer_id)
-            if totals is None:
+            # A distinct name: `totals` is already bound as a non-optional `_Totals`
+            # elsewhere in this function, so reusing it hid the `None` this can return.
+            orphan_totals = per_organization.get(organizer_id)
+            if orphan_totals is None:
                 continue
-            for status, count in totals.status_counts.items():
+            for status, count in orphan_totals.status_counts.items():
                 orphan.status_counts[status] = orphan.status_counts.get(status, 0) + count
-            orphan.applications += totals.applications
-            orphan.expected_fees += totals.expected_fees
+            orphan.applications += orphan_totals.applications
+            orphan.expected_fees += orphan_totals.expected_fees
             orphan.settled_fees += totals.settled_fees
         if orphan.applications or any(competitions_per_organization.get(o, 0) for o in orphan_ids):
             breakdowns.append(

@@ -457,6 +457,17 @@ class TokenService(Protocol):
         """Blacklist ``refresh_token`` so the session can no longer be renewed."""
         ...
 
+    def subject_of(self, refresh_token: str) -> str:
+        """Return the subject (the account's opaque id) carried by ``refresh_token``.
+
+        The refresh use case needs to know *whose* session is being renewed before it
+        can load that account and apply the credential cut-off, and it must learn it
+        from the token rather than the request. Raises
+        :class:`~apps.identity.application.exceptions.InvalidTokenError` for a token
+        that cannot be decoded or carries no subject.
+        """
+        ...
+
     def issued_at_of(self, refresh_token: str) -> datetime:
         """Return the instant ``refresh_token`` was issued (its ``iat`` claim).
 

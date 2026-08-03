@@ -36,11 +36,7 @@ class DjangoParticipantDocumentsReader:
     """Concrete ``ParticipantDocumentsReadService`` over the Django ORM."""
 
     def list_for_applicant(self, applicant_id: uuid.UUID) -> list[ParticipantDocumentView]:
-        submission_ids = list(
-            SubmissionModel.objects.filter(
-                applicant_id=applicant_id, deleted_at__isnull=True
-            ).values_list("id", flat=True)
-        )
+        submission_ids = list(SubmissionModel.objects.filter(applicant_id=applicant_id, deleted_at__isnull=True).values_list("id", flat=True))
         if not submission_ids:
             return []
 
@@ -76,20 +72,23 @@ class DjangoParticipantDocumentsReader:
             deleted_at__isnull=True,
             published_at__isnull=False,
         ).exclude(pdf_path="")
-        for row in issued:
-            snapshot = DiplomaSnapshot.from_dict(row.snapshot or {})
+        # A distinct loop variable: reusing `row` made the checker keep the diploma
+        # loop's model type here, so every field read off an issued document looked
+        # like a missing attribute.
+        for issued_row in issued:
+            issued_snapshot = DiplomaSnapshot.from_dict(issued_row.snapshot or {})
             documents.append(
                 ParticipantDocumentView(
-                    id=row.id,
-                    document_type=DocumentType(row.document_type),
+                    id=issued_row.id,
+                    document_type=DocumentType(issued_row.document_type),
                     number=None,
-                    participant_name=snapshot.participant.display_name or None,
-                    competition_title=snapshot.competition.title,
-                    nomination=_nomination(snapshot),
+                    participant_name=issued_snapshot.participant.display_name or None,
+                    competition_title=issued_snapshot.competition.title,
+                    nomination=_nomination(issued_snapshot),
                     degree=None,
-                    recipient=row.recipient or "",
-                    file_url=row.pdf_path,
-                    issued_at=row.published_at,
+                    recipient=issued_row.recipient or "",
+                    file_url=issued_row.pdf_path,
+                    issued_at=issued_row.published_at,
                 )
             )
 

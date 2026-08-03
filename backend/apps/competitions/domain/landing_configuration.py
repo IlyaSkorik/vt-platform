@@ -42,6 +42,7 @@ SYSTEM_BLOCK_FAQ_ID: str = "01900000-0000-7000-8000-000000000006"
 SYSTEM_BLOCK_REGULATION_ID: str = "01900000-0000-7000-8000-000000000007"
 SYSTEM_BLOCK_DOCUMENTS_ID: str = "01900000-0000-7000-8000-000000000008"
 
+
 class LandingBlockType(StrEnum):
     """Block kinds available on the public competition landing page."""
 
@@ -203,17 +204,21 @@ class LandingBlock:
         else:
             object.__setattr__(self, "content_format", _optional_str(self.content_format))
 
-        for item in self.cards:
-            if not isinstance(item, JuryCard):
+        # Each loop binds its own name: reusing one `item` made the checker infer the
+        # first loop's element type for all four and reject the rest as mismatches.
+        # The checks themselves stay — these collections are built from a JSON column,
+        # so the annotations are a claim to verify at construction, not a guarantee.
+        for card in self.cards:
+            if not isinstance(card, JuryCard):
                 raise InvalidLandingConfigurationError("Jury cards must be JuryCard values.")
-        for item in self.partners:
-            if not isinstance(item, PartnerCard):
+        for partner in self.partners:
+            if not isinstance(partner, PartnerCard):
                 raise InvalidLandingConfigurationError("Partner cards must be PartnerCard values.")
-        for item in self.images:
-            if not isinstance(item, GalleryImage):
+        for image in self.images:
+            if not isinstance(image, GalleryImage):
                 raise InvalidLandingConfigurationError("Gallery images must be GalleryImage values.")
-        for item in self.faq_items:
-            if not isinstance(item, FaqItem):
+        for faq_item in self.faq_items:
+            if not isinstance(faq_item, FaqItem):
                 raise InvalidLandingConfigurationError("FAQ items must be FaqItem values.")
 
         self._validate_unique_child_ids(self.cards, label="jury card")
@@ -284,19 +289,17 @@ class LandingBlock:
             or self.body is not None
             or self.content_format is not None
         ):
-            raise InvalidLandingConfigurationError(
-                f"{self.type.value} block must not carry title, subtitle, cover_image, body, or content_format."
-            )
+            raise InvalidLandingConfigurationError(f"{self.type.value} block must not carry title, subtitle, cover_image, body, or content_format.")
 
     def _assert_no_payload(self, *, allow_collections: bool) -> None:
         self._assert_no_text_payload()
         if not allow_collections and (self.cards or self.partners or self.images or self.faq_items):
-            raise InvalidLandingConfigurationError(
-                f"{self.type.value} block must not carry cards, partners, images, or FAQ items."
-            )
+            raise InvalidLandingConfigurationError(f"{self.type.value} block must not carry cards, partners, images, or FAQ items.")
 
     def with_changes(self, **changes: object) -> LandingBlock:
-        return replace(self, **changes)
+        # Heterogeneous by nature (see CompetitionSettings.with_changes): the checker
+        # cannot match each key against its field, and `replace` enforces it at runtime.
+        return replace(self, **changes)  # type: ignore[arg-type]
 
 
 @dataclass(frozen=True, slots=True)
@@ -331,9 +334,7 @@ class LandingConfiguration:
             LandingBlockType.DOCUMENTS,
         ):
             if type_counts.get(system_type, 0) > 1:
-                raise InvalidLandingConfigurationError(
-                    f"Landing configuration allows at most one {system_type.value} block."
-                )
+                raise InvalidLandingConfigurationError(f"Landing configuration allows at most one {system_type.value} block.")
 
     @classmethod
     def default(cls) -> LandingConfiguration:
@@ -398,7 +399,7 @@ class LandingConfiguration:
 
     def with_changes(self, **changes: object) -> LandingConfiguration:
         """A copy with the given fields overridden (rejects unknown names)."""
-        return replace(self, **changes)
+        return replace(self, **changes)  # type: ignore[arg-type]
 
     def sorted_blocks(self) -> tuple[LandingBlock, ...]:
         """Blocks ordered by ``sort_order``, then id."""

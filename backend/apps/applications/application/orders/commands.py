@@ -472,18 +472,14 @@ class SubmitApplicationHandler:
             application,
             self._submissions,
             now=now,
-            additional_performance_discount_percent=self._catalog.additional_performance_discount_percent(
-                competition_id=application.competition_id
-            ),
+            additional_performance_discount_percent=self._catalog.additional_performance_discount_percent(competition_id=application.competition_id),
         )
         format_ids = order_participation_format_ids(load_order_submissions(application, self._submissions))
         required_consents = self._services.required_consent_codes(competition_id=application.competition_id)
         required_services = self._services.required_service_ids(competition_id=application.competition_id, participation_format_ids=format_ids)
         receipt = self._services.receipt_requirement(competition_id=application.competition_id, participation_format_ids=format_ids)
         if receipt.required and receipt.due_at_submit and not application.has_payment_receipt:
-            raise PaymentReceiptRequiredError(
-                "This competition requires the payment receipt to be attached before the application is submitted."
-            )
+            raise PaymentReceiptRequiredError("This competition requires the payment receipt to be attached before the application is submitted.")
         with translate_application_domain_errors():
             order_events = application.submit(required_consent_codes=required_consents, required_service_ids=required_services, now=now)
         self._applications.save(application)
@@ -501,9 +497,7 @@ class SubmitApplicationHandler:
         Skipped when no registry is wired, so callers that never configured one
         behave as before.
         """
-        if self._guardians is None or not self._services.requires_parent_guardian(
-            competition_id=application.competition_id
-        ):
+        if self._guardians is None or not self._services.requires_parent_guardian(competition_id=application.competition_id):
             return
 
         registered: set[str] = set()
@@ -540,9 +534,7 @@ class SubmitApplicationHandler:
             self._notifier.notify_application_submitted(email=applicant.email, applicant_name=applicant.display_name)
             return
         deadline = now + self._payment_window
-        self._notifier.notify_application_awaiting_payment(
-            email=applicant.email, applicant_name=applicant.display_name, deadline=deadline
-        )
+        self._notifier.notify_application_awaiting_payment(email=applicant.email, applicant_name=applicant.display_name, deadline=deadline)
 
     def _submit_one(self, submission: Submission, *, now: datetime) -> None:
         performance = submission.performance
@@ -570,9 +562,17 @@ class SubmitApplicationHandler:
 class RequestApplicationPaymentHandler:
     """Use case: move the order to awaiting payment (requires all submissions approved)."""
 
-    def __init__(self, *, applications: ApplicationRepository, submissions: SubmissionRepository, clock: Clock) -> None:
+    def __init__(
+        self,
+        *,
+        applications: ApplicationRepository,
+        submissions: SubmissionRepository,
+        catalog: CompetitionCatalog,
+        clock: Clock,
+    ) -> None:
         self._applications = applications
         self._submissions = submissions
+        self._catalog = catalog
         self._clock = clock
 
     def handle(self, command: RequestApplicationPaymentCommand) -> ApplicationOperationResultDto:
@@ -583,9 +583,7 @@ class RequestApplicationPaymentHandler:
             application,
             self._submissions,
             now=now,
-            additional_performance_discount_percent=self._catalog.additional_performance_discount_percent(
-                competition_id=application.competition_id
-            ),
+            additional_performance_discount_percent=self._catalog.additional_performance_discount_percent(competition_id=application.competition_id),
         )
         with translate_application_domain_errors():
             order_events = application.request_payment(now=now)
@@ -662,9 +660,7 @@ class MarkApplicationPaidHandler:
             participation_format_ids=format_ids,
         )
         if receipt.required:
-            raise PaymentReceiptRequiredError(
-                "This competition requires a payment receipt before the application can be marked paid."
-            )
+            raise PaymentReceiptRequiredError("This competition requires a payment receipt before the application can be marked paid.")
 
 
 class CompleteApplicationHandler:
