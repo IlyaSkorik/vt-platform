@@ -3,36 +3,50 @@ import { z } from "zod";
 /**
  * Typed, validated access to build-time environment variables.
  *
- * Vite exposes only `VITE_`-prefixed variables to the client. We validate them
- * once at module load so a misconfigured deployment fails fast and loudly
- * rather than surfacing as obscure runtime errors deep in the app.
+ * In production the frontend and API are served from the same origin through
+ * nginx, therefore VITE_API_BASE_URL may be left empty. In that case we use
+ * the relative "/api/v1" endpoint.
  */
 const envSchema = z.object({
-  VITE_API_BASE_URL: z.url().default("http://localhost:8000/api/v1"),
+  VITE_API_BASE_URL: z
+    .string()
+    .default("")
+    .transform((v) => v.trim())
+    .refine(
+      (v) => v === "" || z.url().safeParse(v).success,
+      "Must be empty or a valid absolute URL",
+    ),
+
   VITE_API_TIMEOUT: z.coerce.number().int().positive().default(15_000),
-  VITE_APP_ENV: z.enum(["development", "stage", "production"]).default("development"),
-  // The origin the site is served from, used to build absolute canonical and
-  // Open Graph URLs. Crawlers and social-network previews reject relative ones,
-  // and a canonical pointing at the wrong host is worse than none at all — so
-  // this is a deployment fact, not a constant.
+
+  VITE_APP_ENV: z
+    .enum(["development", "stage", "production"])
+    .default("development"),
+
   VITE_SITE_URL: z.url().default("https://vzlettalantov.by"),
 });
 
 const parsed = envSchema.safeParse(import.meta.env);
 
 if (!parsed.success) {
-  // Surface every offending variable together; do not boot in a broken state.
-  const issues = z.prettifyError(parsed.error);
-  throw new Error(`Invalid environment configuration:\n${issues}`);
+  throw new Error(
+    `Invalid environment configuration:\n${z.prettifyError(parsed.error)}`,
+  );
 }
 
-/** Validated, immutable application environment. */
+/**
+ * Empty VITE_API_BASE_URL means "same origin".
+ * This keeps production configuration minimal and avoids hardcoding domains.
+ */
+const apiBaseUrl =
+  parsed.data.VITE_API_BASE_URL === ""
+    ? "/api/v1"
+    : parsed.data.VITE_API_BASE_URL.replace(/\/+$/, "");
+
 export const env = Object.freeze({
-  apiBaseUrl: parsed.data.VITE_API_BASE_URL,
+  apiBaseUrl,
   apiTimeout: parsed.data.VITE_API_TIMEOUT,
   appEnv: parsed.data.VITE_APP_ENV,
-  // Normalized without a trailing slash so callers can always concatenate a
-  // leading-slash path without producing a double slash.
   siteUrl: parsed.data.VITE_SITE_URL.replace(/\/+$/, ""),
   isProduction: parsed.data.VITE_APP_ENV === "production",
   isDev: import.meta.env.DEV,
