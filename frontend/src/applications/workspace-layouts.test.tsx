@@ -2,10 +2,12 @@ import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ParticipantLayout } from "@/applications/participant/layouts/participant-layout";
+import { PlatformLayout } from "@/applications/platform/layouts/platform-layout";
 import { StaffLayout } from "@/applications/staff/layouts/staff-layout";
 
 const authState = {
   staffMembership: null as null | { role: string; status: string },
+  isPlatformAdmin: false,
 };
 
 vi.mock("@/app/providers", () => ({
@@ -18,6 +20,7 @@ vi.mock("@/app/providers", () => ({
     user: { displayName: "Ирина", email: "staff@example.com" },
     staffMembership: authState.staffMembership,
     isStaff: authState.staffMembership?.status === "ACTIVE",
+    isPlatformAdmin: authState.isPlatformAdmin,
     isAuthenticated: true,
     sessionExpired: false,
     refresh: vi.fn(),
@@ -61,9 +64,22 @@ function getFirstWorkspaceSwitcher(): HTMLElement {
   return switcher;
 }
 
+function renderPlatform(): void {
+  render(
+    <MemoryRouter initialEntries={["/platform"]}>
+      <Routes>
+        <Route element={<PlatformLayout />}>
+          <Route path="/platform" element={<p>Platform content</p>} />
+        </Route>
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+
 describe("workspace layouts", () => {
   beforeEach(() => {
     authState.staffMembership = null;
+    authState.isPlatformAdmin = false;
   });
 
   it("renders participant workspace without staff switcher for regular users", () => {
@@ -90,6 +106,37 @@ describe("workspace layouts", () => {
     expect(within(switcher).getByRole("link", { name: /Панель управления/ })).toHaveAttribute(
       "href",
       "/staff",
+    );
+    expect(within(switcher).queryByRole("link", { name: /Платформа/ })).not.toBeInTheDocument();
+  });
+
+  it("offers the platform console to an operator who belongs to no organization", () => {
+    // The grant is a command against an account, so this is the ordinary shape of a
+    // platform operator — not an edge case. Gating the switcher on staff membership
+    // used to leave them with no link into `/platform` at all.
+    authState.isPlatformAdmin = true;
+    renderParticipant();
+
+    const switcher = getFirstWorkspaceSwitcher();
+    expect(within(switcher).getByRole("link", { name: /Платформа/ })).toHaveAttribute(
+      "href",
+      "/platform",
+    );
+    // `/staff` would bounce straight back here without a membership, so it is not offered.
+    expect(
+      within(switcher).queryByRole("link", { name: /Панель управления/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("lets the platform shell switch back out", () => {
+    authState.isPlatformAdmin = true;
+    renderPlatform();
+
+    expect(screen.getByText("Platform content")).toBeInTheDocument();
+    const switcher = getFirstWorkspaceSwitcher();
+    expect(within(switcher).getByRole("link", { name: /Личный кабинет/ })).toHaveAttribute(
+      "href",
+      "/cabinet",
     );
   });
 

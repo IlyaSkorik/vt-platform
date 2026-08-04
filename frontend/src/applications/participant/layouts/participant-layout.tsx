@@ -197,7 +197,13 @@ export function ParticipantErrorState(): React.JSX.Element {
 }
 
 export function ParticipantLayout(): React.JSX.Element {
-  const { staffMembership } = useAuth();
+  const { staffMembership, isPlatformAdmin } = useAuth();
+  // The cabinet is the one shell every account gets, so the switcher appears here
+  // only when there is somewhere to switch *to*. Staff membership is not that
+  // condition on its own: platform access is granted by command, to an account that
+  // often belongs to no organization at all, and gating on membership alone left
+  // those operators with no way into `/platform` but typing the URL.
+  const hasOtherWorkspace = staffMembership != null || isPlatformAdmin;
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -238,7 +244,7 @@ export function ParticipantLayout(): React.JSX.Element {
             <ParticipantBreadcrumbs />
           </div>
           <div className="flex shrink-0 items-center gap-1">
-            {staffMembership ? <WorkspaceSwitcher className="hidden xl:flex" /> : null}
+            {hasOtherWorkspace ? <WorkspaceSwitcher className="hidden xl:flex" /> : null}
             <IconButton
               variant="ghost"
               size="sm"
@@ -249,7 +255,7 @@ export function ParticipantLayout(): React.JSX.Element {
             <UserMenu />
           </div>
         </header>
-        {staffMembership ? (
+        {hasOtherWorkspace ? (
           <div className="bg-muted/20 px-4 py-2 xl:hidden">
             <WorkspaceSwitcher />
           </div>

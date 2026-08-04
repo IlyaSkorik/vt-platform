@@ -18,9 +18,12 @@ const linkClassName = ({ isActive }: { isActive: boolean }) =>
   );
 
 export function WorkspaceSwitcher({ className }: WorkspaceSwitcherProps): React.JSX.Element {
-  // The platform console is only offered to whoever actually operates the
-  // platform; for everyone else the switcher stays the two workspaces it was.
-  const { isPlatformAdmin } = useAuth();
+  // Each destination is offered only to whoever the matching route guard would
+  // actually admit, so the switcher never links somewhere that bounces back:
+  // `/staff` needs a membership (`StaffRoute`), `/platform` needs the grant
+  // (`PlatformRoute`), and the two are independent — a platform operator need
+  // not belong to any organization, and an organization's owner is not an operator.
+  const { staffMembership, isPlatformAdmin } = useAuth();
 
   return (
     <nav
@@ -31,10 +34,12 @@ export function WorkspaceSwitcher({ className }: WorkspaceSwitcherProps): React.
         <User className="size-4" aria-hidden="true" />
         <span>Личный кабинет</span>
       </NavLink>
-      <NavLink to={ROUTES.staff} className={linkClassName}>
-        <BriefcaseBusiness className="size-4" aria-hidden="true" />
-        <span>Панель управления</span>
-      </NavLink>
+      {staffMembership ? (
+        <NavLink to={ROUTES.staff} className={linkClassName}>
+          <BriefcaseBusiness className="size-4" aria-hidden="true" />
+          <span>Панель управления</span>
+        </NavLink>
+      ) : null}
       {isPlatformAdmin ? (
         <NavLink to={ROUTES.platform} className={linkClassName}>
           <ShieldCheck className="size-4" aria-hidden="true" />

@@ -4,6 +4,7 @@ import { Link, NavLink, Outlet } from "react-router";
 import { SiteFooter } from "@/app/layouts/site-footer";
 import { ThemeToggle } from "@/app/layouts/theme-toggle";
 import { UserMenu } from "@/app/layouts/user-menu";
+import { WorkspaceSwitcher } from "@/applications/workspace-switcher";
 import { ROUTES } from "@/shared/config";
 import { cn } from "@/shared/lib";
 import { BrandMark } from "@/shared/ui";
@@ -68,10 +69,17 @@ export function PlatformLayout(): React.JSX.Element {
           })}
         </nav>
         <div className="ml-auto flex shrink-0 items-center gap-1">
+          {/* The way back out. Every other shell carries the switcher, and without it the
+              console is a one-way door: an operator who is also an organizer would have to
+              type `/staff` to return to it. */}
+          <WorkspaceSwitcher className="hidden xl:flex" />
           <ThemeToggle />
           <UserMenu />
         </div>
       </header>
+      <div className="bg-muted/20 px-4 py-2 xl:hidden">
+        <WorkspaceSwitcher />
+      </div>
       <main
         id={SKIP_TARGET_ID}
         tabIndex={-1}
