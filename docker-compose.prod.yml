@@ -178,7 +178,7 @@ services:
     image: nginxinc/nginx-unprivileged:1.27-alpine
     restart: unless-stopped
     ports:
-      - "${HTTP_PORT:-80}:8080"
+      - "127.0.0.1:8080:8080"
     volumes:
       # Both written by `spa` above. The bundle volume is also mounted by the Django services,
       # which read index.html out of it to inject the <head>.
