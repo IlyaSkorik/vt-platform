@@ -165,17 +165,29 @@ def head_facts_for(path: str) -> HeadFacts:
         segment = normalized.removeprefix("/competitions/").split("/", 1)[0]
         return _festival_facts(segment)
 
+    # Both descriptions are the ones the pages declare client-side
+    # (``src/pages/legal/*``). Kept identical on purpose: a policy is a page people
+    # arrive at from a search result or a pasted link, so the preview is often all
+    # they read before deciding whether the service is trustworthy with a child's data.
     if normalized == "/privacy-policy":
         return HeadFacts(
             title="Политика обработки персональных данных",
-            description="Какие персональные данные обрабатывает платформа и для каких целей.",
+            description=(
+                "Какие персональные данные обрабатывает платформа «Взлёт талантов», в каких целях, на "
+                "каких правовых основаниях, кому предоставляются, сроки хранения и порядок реализации "
+                "прав субъекта персональных данных."
+            ),
             canonical_path="/privacy-policy",
         )
 
     if normalized == "/cookies":
         return HeadFacts(
             title="Политика использования cookies",
-            description="Какие cookies использует платформа и зачем.",
+            description=(
+                "Состав применяемых на платформе «Взлёт талантов» файлов cookie, цели и сроки их "
+                "использования, порядок управления ими. Аналитические файлы cookie применяются после "
+                "получения согласия."
+            ),
             canonical_path="/cookies",
         )
 

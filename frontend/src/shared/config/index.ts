@@ -1,4 +1,4 @@
-export { APP_NAME } from "./app";
+export { APP_NAME, SUPPORT_EMAIL } from "./app";
 export { type Env, env } from "./env";
 export {
   NAVIGATION,
