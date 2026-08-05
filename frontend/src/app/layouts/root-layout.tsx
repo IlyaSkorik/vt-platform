@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { Outlet, ScrollRestoration } from "react-router";
+import { CookieBanner } from "@/features/cookie-consent";
 
 /**
  * Root layout — the outermost route element.
@@ -8,6 +9,11 @@ import { Outlet, ScrollRestoration } from "react-router";
  * lazily-loaded route modules. It renders no chrome itself; nested layouts
  * (auth, cabinet) own their visual shells. A skip link keeps keyboard
  * navigation accessible (WCAG 2.1 AA).
+ *
+ * The cookie bar is mounted here rather than in the public layout because the
+ * decision it collects is about the visitor, not about a section of the site: it
+ * has to be asked once, wherever they land — including a diploma-verification
+ * link or a programme page that never passes through the marketing shell.
  */
 export function RootLayout(): React.JSX.Element {
   return (
@@ -24,6 +30,7 @@ export function RootLayout(): React.JSX.Element {
         </Suspense>
       </div>
       <ScrollRestoration />
+      <CookieBanner />
     </>
   );
 }

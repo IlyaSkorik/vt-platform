@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { CookieSettingsButton } from "@/features/cookie-consent";
 import { APP_NAME, ROUTES } from "@/shared/config";
 
 export function SiteFooter(): React.JSX.Element {
@@ -21,8 +22,12 @@ export function SiteFooter(): React.JSX.Element {
               Политика обработки персональных данных
             </Link>
             <Link to={ROUTES.cookiesPolicy} className="hover:text-foreground hover:underline">
-              Политика обработки файлов cookies
+              Политика использования файлов cookie
             </Link>
+            {/* The way back to the cookie decision. It belongs here, in the one place
+                present on every page, because that is where the policy tells visitors
+                to look for it (LEGAL-002 §2.4, §7.1). */}
+            <CookieSettingsButton className="cursor-pointer hover:text-foreground hover:underline" />
           </div>
         </div>
 
