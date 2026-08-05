@@ -35,6 +35,7 @@ docs/
 ├── ai/                        AI-*    AI usage, governance, prompts
 │   └── prompts/               Reusable, versioned prompt library
 ├── roadmap/                   RM-*    Product & technical roadmap
+├── legal/                     LEGAL-* Published legal policies (Russian)
 └── diagrams/                  DIA-*   Visual models
     ├── c4/                    System context / container / component
     ├── erd/                   Entity-relationship diagrams
@@ -68,6 +69,7 @@ Example: `ARCH-001-vt-platform-architecture.md`, `ADR-0001-modular-monolith.md`.
 | `AI`   | AI usage & governance | `docs/ai/` |
 | `RM`   | Roadmap | `docs/roadmap/` |
 | `DIA`  | Diagrams | `docs/diagrams/` |
+| `LEGAL`| Legal & compliance (published policies) | `docs/legal/` |
 
 **Rules**
 - Numbers are **immutable once assigned** and never reused, even if a document is superseded (mark it `Superseded by …` instead of deleting the number).
@@ -88,6 +90,8 @@ Example: `ARCH-001-vt-platform-architecture.md`, `ADR-0001-modular-monolith.md`.
 | DIA-001 | Entity Relationship Model v1.0 (Logical Data Model) | Draft for review | [diagrams/DIA-001-entity-relationship-model.md](diagrams/DIA-001-entity-relationship-model.md) |
 | API-000 | REST API Standards v1.0 | Approved (normative) | [api/API-000-rest-api-standards.md](api/API-000-rest-api-standards.md) |
 | API-001 | Identity API v1.0 | Draft for review | [api/API-001-identity.md](api/API-001-identity.md) |
+| LEGAL-001 | Политика в отношении обработки персональных данных v1.0 | In force since 2026-08-06 | [legal/LEGAL-001-privacy-policy.md](legal/LEGAL-001-privacy-policy.md) |
+| LEGAL-002 | Политика использования файлов cookie v1.0 | In force since 2026-08-06 | [legal/LEGAL-002-cookies-policy.md](legal/LEGAL-002-cookies-policy.md) |
 
 > Additional documents are registered here as they are authored. Each README in a subdirectory maintains its own local index of that domain's documents.
 
@@ -106,6 +110,7 @@ Example: `ARCH-001-vt-platform-architecture.md`, `ADR-0001-modular-monolith.md`.
 | DevOps | [devops/README.md](devops/README.md) |
 | AI | [ai/README.md](ai/README.md) |
 | Roadmap | [roadmap/README.md](roadmap/README.md) |
+| Legal | [legal/README.md](legal/README.md) |
 | Diagrams | [diagrams/README.md](diagrams/README.md) |
 
 ---
