@@ -430,6 +430,7 @@ class TestSubmitAndPay:
         result = env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
 
         assert result.application.status == "SUBMITTED"
+
     def test_submit_enforces_required_services(self) -> None:
         env = Env(services=FakeCompetitionServiceCatalog(required_services=frozenset({uuid7_str()})))
         app_id, applicant = _create_app(env)

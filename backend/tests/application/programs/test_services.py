@@ -70,9 +70,10 @@ class Env:
         *performances: CatalogPerformance,
         slugs: tuple[str, ...] = ("Sound2345",),
         music: dict[uuid.UUID, tuple[str, ...]] | None = None,
+        media: dict[uuid.UUID, tuple[str, ...]] | None = None,
     ) -> None:
         self.repository = InMemoryProgramRepository()
-        self.catalog = StubPerformanceCatalog(*performances, music=music)
+        self.catalog = StubPerformanceCatalog(*performances, music=music, media=media)
         self.slugs = ScriptedSlugFactory(*slugs)
         self.service = ProgramService(
             programs=self.repository,
@@ -707,3 +708,48 @@ class TestPublicRead:
         program = env.service.get_program(program_id)
         assert program.items[0].missing_performance is True
         assert program.items[0].schedule.starts_at == datetime(2026, 8, 1, 10, 0, tzinfo=UTC)
+
+
+class TestMediaArchive:
+    """The screen operator's archive: the same shape as the sound desk's, other files."""
+
+    def test_collects_video_and_photographs_in_running_order(self) -> None:
+        act = _act("Катюша", 200, performer="Иванова Анна")
+        env = Env(act, media={act.submission_id: ("uploads/clip.mp4", "uploads/photo.jpg")})
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+
+        archive = env.service.media_archive(program_id=program_id)
+
+        assert [file.filename for file in archive.files] == [
+            "01 — Иванова Анна — Катюша.mp4",
+            "01 — Иванова Анна — Катюша.jpg",
+        ]
+
+    def test_an_act_with_no_media_is_listed_rather_than_omitted(self) -> None:
+        # The person collecting the material has to know which numbers to chase; an
+        # archive that silently skips them looks complete when it is not.
+        act = _act("Живой номер", 180, performer="Петров Иван")
+        env = Env(act, media={})
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+
+        archive = env.service.media_archive(program_id=program_id)
+
+        assert archive.files == ()
+        assert archive.missing == ("01 — Петров Иван — Живой номер",)
+
+    def test_the_two_archives_do_not_borrow_each_other_s_files(self) -> None:
+        # One archive per desk: the sound desk searching through video, or the screen
+        # operator through phonograms, is the thing separate downloads exist to avoid.
+        act = _act("Катюша", 200, performer="Иванова Анна")
+        env = Env(
+            act,
+            music={act.submission_id: ("uploads/track.mp3",)},
+            media={act.submission_id: ("uploads/clip.mp4",)},
+        )
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+
+        assert [f.filename for f in env.service.music_archive(program_id=program_id).files] == ["01 — Иванова Анна — Катюша.mp3"]
+        assert [f.filename for f in env.service.media_archive(program_id=program_id).files] == ["01 — Иванова Анна — Катюша.mp4"]

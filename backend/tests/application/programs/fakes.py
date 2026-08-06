@@ -96,11 +96,13 @@ class StubPerformanceCatalog:
         competition: str = "Весенний фестиваль",
         nomination: str = "Вокал",
         music: dict[uuid.UUID, tuple[str, ...]] | None = None,
+        media: dict[uuid.UUID, tuple[str, ...]] | None = None,
     ) -> None:
         self.performances = list(performances)
         self._competition = competition
         self._nomination = nomination
         self._music = music or {}
+        self._media = media or {}
 
     def competing_performances(
         self,
@@ -119,6 +121,9 @@ class StubPerformanceCatalog:
     def music_references(self, submission_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, tuple[str, ...]]:
         wanted = set(submission_ids)
         return {key: value for key, value in self._music.items() if key in wanted}
+
+    def media_references(self, submission_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, tuple[str, ...]]:
+        return {sid: self._media[sid] for sid in submission_ids if sid in self._media}
 
     def competition_title(self, competition_id: uuid.UUID) -> str | None:
         return self._competition

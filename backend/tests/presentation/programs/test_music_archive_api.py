@@ -32,8 +32,12 @@ def _stored(name: str, content: bytes = b"backing track") -> str:
 
 
 def _attach_music(submission_id: str, *references: str) -> None:
+    _attach(submission_id, "MUSIC", *references)
+
+
+def _attach(submission_id: str, kind: str, *references: str) -> None:
     submission = SubmissionModel.objects.get(id=submission_id)
-    submission.attachments = [{"id": str(uuid.uuid4()), "type": "MUSIC", "file": reference, "caption": None} for reference in references]
+    submission.attachments = [{"id": str(uuid.uuid4()), "type": kind, "file": reference, "caption": None, "sizeBytes": 0} for reference in references]
     submission.save(update_fields=["attachments"])
 
 
@@ -103,3 +107,47 @@ class TestMusicArchive:
     def test_a_non_staff_caller_is_refused(self, outsider_client: APIClient, scope: tuple[str, str], staff_client: APIClient) -> None:  # noqa: F811
         program_id = _filled_program(staff_client, scope)
         assert outsider_client.get(f"{_PROGRAMS}/{program_id}/music.zip").status_code == 403
+
+
+class TestMediaArchive:
+    """``media.zip`` — the screen operator's download, end to end."""
+
+    def test_video_and_photographs_arrive_in_one_archive(self, staff_client: APIClient, scope: tuple[str, str]) -> None:  # noqa: F811
+        competition_id, nomination_id = scope
+        submission_id = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200, performer="Иванова Анна")
+        submission = SubmissionModel.objects.get(id=submission_id)
+        submission.attachments = [
+            {"id": str(uuid.uuid4()), "type": "VIDEO", "file": _stored("clip.mp4", b"video"), "caption": None, "sizeBytes": 5},
+            {"id": str(uuid.uuid4()), "type": "IMAGE", "file": _stored("photo.jpg", b"photo"), "caption": None, "sizeBytes": 5},
+        ]
+        submission.save(update_fields=["attachments"])
+        program_id = _filled_program(staff_client, scope)
+
+        response = staff_client.get(f"{_PROGRAMS}/{program_id}/media.zip")
+
+        assert response.status_code == 200
+        with _archive(response) as archive:
+            assert sorted(archive.namelist()) == [
+                "01 — Иванова Анна — Катюша.jpg",
+                "01 — Иванова Анна — Катюша.mp4",
+            ]
+
+    def test_phonograms_stay_out_of_the_media_archive(self, staff_client: APIClient, scope: tuple[str, str]) -> None:  # noqa: F811
+        competition_id, nomination_id = scope
+        submission_id = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200, performer="Иванова Анна")
+        _attach_music(submission_id, _stored("track.mp3", b"sound"))
+        program_id = _filled_program(staff_client, scope)
+
+        response = staff_client.get(f"{_PROGRAMS}/{program_id}/media.zip")
+
+        assert response.status_code == 200
+        with _archive(response) as archive:
+            # No media at all, so the act is named in the notes instead of contributing a
+            # file — and the phonogram it did bring belongs to the other archive.
+            assert [name for name in archive.namelist() if name.endswith(".mp3")] == []
+
+    def test_the_archive_needs_staff(self) -> None:
+        # A programme names children and their performances; the download is staff-only for
+        # the same reason the programme screen is.
+        anonymous = APIClient().get(f"{_PROGRAMS}/00000000-0000-7000-8000-000000000000/media.zip")
+        assert anonymous.status_code == 401

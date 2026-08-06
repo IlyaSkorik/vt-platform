@@ -126,6 +126,15 @@ class PerformanceCatalog(Protocol):
         """
         ...
 
+    def media_references(self, submission_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, tuple[str, ...]]:
+        """The stored media references of each act — video and photographs, in upload order.
+
+        A separate question from :meth:`music_references` because it answers a different
+        need on the day: the screen operator wants what will be projected, and mixing it
+        into the sound desk's archive would hand each of them the other's files.
+        """
+        ...
+
     def competition_title(self, competition_id: uuid.UUID) -> str | None:
         """The competition's title, for the heading of a public program."""
         ...

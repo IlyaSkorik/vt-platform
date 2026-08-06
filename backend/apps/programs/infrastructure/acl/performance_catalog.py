@@ -39,6 +39,8 @@ __all__ = ["COMPETING_SUBMISSION_STATUSES", "DjangoPerformanceCatalog"]
 #: ones that may occupy a slot in a running order.
 #: The attachment kind a backing track is stored under in the Applications context.
 _MUSIC: Final = "MUSIC"
+#: What the media archive collects: one block on the entry form, so one archive here.
+_MEDIA: Final = frozenset({"VIDEO", "IMAGE"})
 
 COMPETING_SUBMISSION_STATUSES: Final[tuple[str, ...]] = (
     SubmissionStatus.ACCEPTED.value,
@@ -111,6 +113,20 @@ class DjangoPerformanceCatalog:
 
     def music_references(self, submission_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, tuple[str, ...]]:
         """The backing tracks each act uploaded, read straight off the submission rows."""
+        return self._references_of_kinds(submission_ids, kinds=frozenset({_MUSIC}))
+
+    def media_references(self, submission_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, tuple[str, ...]]:
+        """The video and photographs each act uploaded, in upload order."""
+        return self._references_of_kinds(submission_ids, kinds=_MEDIA)
+
+    @staticmethod
+    def _references_of_kinds(submission_ids: Sequence[uuid.UUID], *, kinds: frozenset[str]) -> dict[uuid.UUID, tuple[str, ...]]:
+        """File references of the given attachment kinds, keyed by submission.
+
+        One query for the whole set, and acts with nothing of that kind are simply absent
+        from the result — the caller distinguishes "brought none" from "not asked about"
+        by which ids it passed in.
+        """
         if not submission_ids:
             return {}
         rows = SubmissionModel.objects.filter(id__in=list(submission_ids), deleted_at__isnull=True).values_list("id", "attachments")
@@ -118,7 +134,7 @@ class DjangoPerformanceCatalog:
         for submission_id, attachments in rows:
             files = tuple(
                 reference
-                for reference in (_clean((entry or {}).get("file")) for entry in attachments or [] if (entry or {}).get("type") == _MUSIC)
+                for reference in (_clean((entry or {}).get("file")) for entry in attachments or [] if (entry or {}).get("type") in kinds)
                 if reference
             )
             if files:

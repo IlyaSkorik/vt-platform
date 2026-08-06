@@ -15,7 +15,7 @@ with it any chance of the client rendering a stale schedule.
 from __future__ import annotations
 
 import uuid
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from datetime import datetime, timedelta
 from pathlib import PurePosixPath
 from typing import Final
@@ -36,9 +36,9 @@ from apps.programs.application.commands import (
     UpdateShareCommand,
 )
 from apps.programs.application.dto import (
+    ArchiveFileView,
     ColumnView,
-    MusicArchiveView,
-    MusicFileView,
+    ProgramArchiveView,
     ProgramDetailView,
     ProgramItemView,
     ProgramShareView,
@@ -429,12 +429,31 @@ class ProgramService:
             raise ExportUnavailableError("No table renderer is configured for this context.")
         return self._tables.render(self.program_table(program_id=program_id, columns=columns))
 
-    def music_archive(self, *, program_id: str) -> MusicArchiveView:
+    def music_archive(self, *, program_id: str) -> ProgramArchiveView:
         """Every backing track of the programme, named for the running order.
 
-        What the sound desk needs the morning of the event: the tracks in the order
-        they will be played, under names that say which number each belongs to, and a
-        list of the slots that brought no track at all.
+        What the sound desk needs the morning of the event: the tracks in the order they
+        will be played, under names that say which number each belongs to, and a list of
+        the slots that brought no track at all.
+        """
+        return self._archive(program_id=program_id, references=self._catalog.music_references)
+
+    def media_archive(self, *, program_id: str) -> ProgramArchiveView:
+        """Every video and photograph of the programme, named for the running order.
+
+        The screen operator's counterpart to the sound desk's archive, and a separate
+        download for a reason: handing either of them the other's files means searching
+        through material they will never play.
+        """
+        return self._archive(program_id=program_id, references=self._catalog.media_references)
+
+    def _archive(
+        self,
+        *,
+        program_id: str,
+        references: Callable[[Sequence[uuid.UUID]], dict[uuid.UUID, tuple[str, ...]]],
+    ) -> ProgramArchiveView:
+        """One archive of whatever files ``references`` resolves, in running order.
 
         A slot's own number leads the name when the programme has frozen its numbers;
         before that it has none, and the position in the running order stands in — the
@@ -443,9 +462,9 @@ class ProgramService:
         program = self._load(program_id)
         acts = [item for item in program.items if item.submission_id is not None]
         performances = self._resolve_performances(acts)
-        references = self._catalog.music_references([item.submission_id for item in acts if item.submission_id is not None])
+        resolved = references([item.submission_id for item in acts if item.submission_id is not None])
 
-        files: list[MusicFileView] = []
+        files: list[ArchiveFileView] = []
         missing: list[str] = []
         for position, item in enumerate(program.items, start=1):
             if item.submission_id is None:
@@ -453,14 +472,17 @@ class ProgramService:
             number = item.number or position
             performance = performances.get(item.submission_id)
             label = _act_label(number, performance)
-            tracks = references.get(item.submission_id, ())
-            if not tracks:
+            act_files = resolved.get(item.submission_id, ())
+            if not act_files:
                 missing.append(label)
                 continue
-            for reference in tracks:
-                files.append(MusicFileView(number=number, filename=f"{label}{_extension(reference)}", reference=reference))
+            for reference in act_files:
+                # Same name for every file of one act, extension aside: the archive writer
+                # already de-duplicates collisions ("… (2).mp3"), and inventing a second
+                # numbering scheme here would rename every existing music download.
+                files.append(ArchiveFileView(number=number, filename=f"{label}{_extension(reference)}", reference=reference))
 
-        return MusicArchiveView(title=str(program.name), files=tuple(files), missing=tuple(missing))
+        return ProgramArchiveView(title=str(program.name), files=tuple(files), missing=tuple(missing))
 
     # ------------------------------------------------------------------
     # The day itself (driven from the host's link)

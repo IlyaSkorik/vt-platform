@@ -22,6 +22,7 @@ from .views import (
     ProgramItemNumbersView,
     ProgramItemOrderView,
     ProgramItemsFillView,
+    ProgramMediaArchiveView,
     ProgramMusicArchiveView,
     ProgramProgressView,
     ProgramShareCollectionView,
@@ -45,6 +46,7 @@ urlpatterns = [
     path("staff/programs/<str:program_id>/progress", ProgramProgressView.as_view(), name="progress"),
     path("staff/programs/<str:program_id>/export.pdf", ProgramExportView.as_view(), name="export-pdf"),
     path("staff/programs/<str:program_id>/music.zip", ProgramMusicArchiveView.as_view(), name="music-archive"),
+    path("staff/programs/<str:program_id>/media.zip", ProgramMediaArchiveView.as_view(), name="media-archive"),
     path("staff/programs/<str:program_id>/shares", ProgramShareCollectionView.as_view(), name="shares"),
     path("staff/programs/<str:program_id>/shares/<str:share_id>", ProgramShareDetailView.as_view(), name="share-detail"),
 ]

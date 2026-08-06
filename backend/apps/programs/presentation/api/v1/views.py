@@ -626,6 +626,33 @@ class ProgramMusicArchiveView(_StaffView):
         return zip_response(members, filename=f"{_download_stem(archive.title)} — фонограммы.zip", notes=notes)
 
 
+class ProgramMediaArchiveView(_StaffView):
+    """``GET`` every video and photograph of the programme as one ZIP, named by number.
+
+    The screen operator's counterpart to ``music.zip``, and separate from it on purpose:
+    one archive per desk means neither has to search through the other's material. Nothing
+    is stored — the archive is assembled from the already-uploaded files on each request,
+    so it can never be stale.
+    """
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="programsDownloadMedia",
+        responses={
+            (200, "application/zip"): OpenApiTypes.BINARY,
+            **_PROBLEM_RESPONSES,
+        },
+    )
+    def get(self, request: Request, program_id: str) -> HttpResponseBase | Response:
+        try:
+            archive = build_program_service().media_archive(program_id=program_id)
+        except ProgramError as exc:
+            return self._problem(exc, request)
+        members = [ArchiveMember(arcname=file.filename, reference=file.reference) for file in archive.files]
+        notes = [f"Без медиафайлов: {label}" for label in archive.missing]
+        return zip_response(members, filename=f"{_download_stem(archive.title)} — медиафайлы.zip", notes=notes)
+
+
 class ProgramProgressView(_StaffView):
     """``DELETE`` to put every slot back to pending (the organizer's reset)."""
 
