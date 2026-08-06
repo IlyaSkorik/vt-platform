@@ -7505,6 +7505,56 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProgramProblemDetail'
           description: Unprocessable.
+  /api/v1/staff/programs/{program_id}/media.zip:
+    get:
+      operationId: programsDownloadMedia
+      description: |-
+        ``GET`` every video and photograph of the programme as one ZIP, named by number.
+
+        The screen operator's counterpart to ``music.zip``, and separate from it on purpose:
+        one archive per desk means neither has to search through the other's material. Nothing
+        is stored — the archive is assembled from the already-uploaded files on each request,
+        so it can never be stale.
+      parameters:
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      responses:
+        '200':
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
   /api/v1/staff/programs/{program_id}/music.zip:
     get:
       operationId: programsDownloadMusic

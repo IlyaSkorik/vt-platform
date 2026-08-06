@@ -1,6 +1,7 @@
 import {
   ArrowDown,
   ArrowUp,
+  Clapperboard,
   Columns3,
   Copy,
   FileDown,
@@ -18,6 +19,7 @@ import {
   type ColumnKey,
   DEFAULT_EXPORT_COLUMNS,
   DEFAULT_SHARE_COLUMNS,
+  downloadProgramMedia,
   downloadProgramMusic,
   downloadProgramPdf,
   ITEM_KIND_LABELS,
@@ -814,6 +816,7 @@ function ExportPanel({ program }: { program: Program }): React.JSX.Element {
   const [columns, setColumns] = useState<ColumnKey[]>(DEFAULT_EXPORT_COLUMNS);
   const [busy, setBusy] = useState(false);
   const [musicBusy, setMusicBusy] = useState(false);
+  const [mediaBusy, setMediaBusy] = useState(false);
 
   const toggle = (key: ColumnKey, checked: boolean) => {
     setColumns((current) =>
@@ -845,6 +848,17 @@ function ExportPanel({ program }: { program: Program }): React.JSX.Element {
     }
   };
 
+  const downloadMedia = async () => {
+    setMediaBusy(true);
+    try {
+      await downloadProgramMedia(program.id, program.name);
+    } catch {
+      toast.error("Не удалось собрать архив медиафайлов");
+    } finally {
+      setMediaBusy(false);
+    }
+  };
+
   return (
     <div className="flex min-w-0 flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -857,6 +871,16 @@ function ExportPanel({ program }: { program: Program }): React.JSX.Element {
             onClick={() => void downloadMusic()}
           >
             <Music className="size-4" /> Скачать фонограммы
+          </Button>
+          {/* Beside the music, not merged with it: one archive per desk, so the screen
+              operator is not handed phonograms and the sound desk is not handed video. */}
+          <Button
+            variant="outline"
+            size="sm"
+            loading={mediaBusy}
+            onClick={() => void downloadMedia()}
+          >
+            <Clapperboard className="size-4" /> Скачать видеоматериалы
           </Button>
           <Button
             variant="outline"

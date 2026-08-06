@@ -339,6 +339,17 @@ export async function downloadProgramMusic(programId: string, fallbackName: stri
 }
 
 /**
+ * Download every video and photograph of the programme as one ZIP, named by number.
+ *
+ * The screen operator's counterpart to the music archive, and a separate download for the
+ * same reason the desks are separate: neither should have to search through the other's
+ * material. Assembled per request, so it can never be out of date with the running order.
+ */
+export async function downloadProgramMedia(programId: string, fallbackName: string): Promise<void> {
+  await saveAs(`staff/programs/${programId}/media.zip`, `${fallbackName} — медиафайлы.zip`);
+}
+
+/**
  * Fetch a staff-gated download and hand the blob to the browser.
  *
  * Fetched rather than linked: these endpoints need the same auth as everything else,

@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useCompetitionDetail, useCompetitionsList } from "@/features/competitions";
 import {
+  downloadProgramMedia as downloadProgramMediaImpl,
   downloadProgramMusic as downloadProgramMusicImpl,
   downloadProgramPdf as downloadProgramPdfImpl,
   type Program,
@@ -56,6 +57,7 @@ vi.mock("@/features/program-builder", async (importOriginal) => ({
   useRemoveColumn: vi.fn(),
   useFillCells: vi.fn(),
   downloadProgramPdf: vi.fn(),
+  downloadProgramMedia: vi.fn(),
   downloadProgramMusic: vi.fn(),
 }));
 
@@ -112,6 +114,7 @@ const removeColumn = vi.fn();
 const fillCells = vi.fn();
 const downloadProgramPdf = vi.mocked(downloadProgramPdfImpl);
 const downloadProgramMusic = vi.mocked(downloadProgramMusicImpl);
+const downloadProgramMedia = vi.mocked(downloadProgramMediaImpl);
 
 function mutation(mutate: ReturnType<typeof vi.fn>) {
   return { mutate, mutateAsync: mutate, isPending: false } as never;
@@ -986,5 +989,41 @@ describe("StaffProgramPage — public links", () => {
 
     expect(screen.getByText("Номер снят")).toBeInTheDocument();
     expect(screen.getByText(/больше не участвуют в фестивале/)).toBeInTheDocument();
+  });
+});
+
+describe("StaffProgramPage — collecting the video material", () => {
+  it("downloads the media archive for the programme on screen", async () => {
+    stub();
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: /Скачать видеоматериалы/ }));
+
+    await waitFor(() => expect(downloadProgramMedia).toHaveBeenCalled());
+    expect(downloadProgramMedia.mock.calls[0]).toEqual([PROGRAM_ID, "Вокал, 1 отделение"]);
+  });
+
+  it("is a separate archive from the phonograms", async () => {
+    // One archive per desk: pressing one must not fetch the other's files, or the screen
+    // operator ends up searching a zip full of backing tracks.
+    stub();
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: /Скачать видеоматериалы/ }));
+
+    await waitFor(() => expect(downloadProgramMedia).toHaveBeenCalled());
+    expect(downloadProgramMusic).not.toHaveBeenCalled();
+  });
+
+  it("says so when the archive cannot be assembled", async () => {
+    stub();
+    downloadProgramMedia.mockRejectedValueOnce(new Error("boom"));
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: /Скачать видеоматериалы/ }));
+
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith("Не удалось собрать архив медиафайлов"),
+    );
   });
 });
