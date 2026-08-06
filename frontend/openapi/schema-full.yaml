@@ -14756,6 +14756,8 @@ components:
           type: integer
         videoMode:
           type: string
+        videoRequired:
+          type: boolean
         videoAllowedFormats:
           type: array
           items:
@@ -14773,6 +14775,7 @@ components:
       - videoAllowedFormats
       - videoMaxUploadSizeMb
       - videoMode
+      - videoRequired
     RelationshipTypeEnum:
       enum:
       - mother
@@ -16576,9 +16579,9 @@ components:
     _MusicRequirements:
       type: object
       properties:
-        requireUpload:
-          type: boolean
         allowReplacement:
+          type: boolean
+        requireUpload:
           type: boolean
         allowedFormats:
           type: array
@@ -17512,6 +17515,8 @@ components:
             type: string
         allowReplacement:
           type: boolean
+        requireUpload:
+          type: boolean
         allowedFormats:
           type: array
           items:
@@ -17524,6 +17529,7 @@ components:
       - allowedProviders
       - maxUploadSizeMb
       - mode
+      - requireUpload
     _VideoRequirementsInput:
       type: object
       properties:
@@ -17534,6 +17540,8 @@ components:
           items:
             $ref: '#/components/schemas/AllowedProvidersEnum'
         allowReplacement:
+          type: boolean
+        requireUpload:
           type: boolean
         allowedFormats:
           type: array

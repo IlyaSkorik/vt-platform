@@ -245,6 +245,13 @@ function FormatRequirementsAccordion({
               matter — an in-person festival takes the file to play on the hall's screen. */}
           {requirements.video.mode === "FILE_ONLY" || requirements.video.mode === "URL_OR_FILE" ? (
             <>
+              <SwitchRow
+                label="Требовать видео"
+                description="Выключено — файл можно приложить, но заявку примут и без него."
+                checked={requirements.video.requireUpload}
+                disabled={readOnly}
+                onChange={(v) => update({ video: { ...requirements.video, requireUpload: v } })}
+              />
               <div>
                 <p className="mb-1.5 font-medium text-sm">Допустимые видеоформаты</p>
                 <p className="mb-1.5 text-muted-foreground text-xs">

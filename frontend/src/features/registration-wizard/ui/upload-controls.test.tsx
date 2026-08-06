@@ -34,6 +34,7 @@ function aRequirement(
     videoMode: "NONE",
     videoAllowedFormats: ["mp4", "mov"],
     videoMaxUploadSizeMb: 200,
+    videoRequired: false,
     receiptRequired: false,
     ...overrides,
   } as RegistrationUploadRequirement;
@@ -189,7 +190,7 @@ describe("UploadControls", () => {
     );
 
     await userEvent.upload(
-      screen.getByLabelText("Видео (обязательно)"),
+      screen.getByLabelText("Видео"),
       aFile("clip.mp4", 300 * 1024 * 1024, "video/mp4"),
     );
 
@@ -208,11 +209,26 @@ describe("UploadControls", () => {
     );
 
     await userEvent.upload(
-      screen.getByLabelText("Видео (обязательно)"),
+      screen.getByLabelText("Видео"),
       aFile("clip.mp4", 5 * 1024 * 1024, "video/mp4"),
     );
 
     await waitFor(() => expect(upload).toHaveBeenCalled());
+  });
+
+  it("marks the video as required only when the festival demands it", async () => {
+    renderControls(
+      aRequirement({
+        musicRequired: false,
+        musicAllowedFormats: [],
+        videoMode: "FILE_ONLY",
+        videoRequired: true,
+      }),
+    );
+
+    // Collected-but-optional and demanded are different promises to the applicant, and
+    // the mode alone no longer tells them apart.
+    expect(screen.getByLabelText("Видео (обязательно)")).toBeInTheDocument();
   });
 
   it("states the organizer's own formats and limit in the hint", async () => {

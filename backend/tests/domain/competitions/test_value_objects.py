@@ -451,6 +451,17 @@ class TestVideoRequirements:
         with pytest.raises(InvalidCompetitionSettingsError):
             VideoRequirements(max_upload_size_mb=True)  # type: ignore[arg-type]
 
+    def test_a_video_may_be_collected_without_being_required(self) -> None:
+        # The case that did not exist before: an in-person festival wants the file for the
+        # hall's screen but will not turn an entry away for its absence.
+        video = VideoRequirements(mode=VideoSubmissionMode.FILE_ONLY, require_upload=False)
+        assert video.allows_file_upload
+        assert not video.require_upload
+
+    def test_requiring_a_video_nobody_collects_is_a_contradiction(self) -> None:
+        with pytest.raises(InvalidCompetitionSettingsError):
+            VideoRequirements(mode=VideoSubmissionMode.NOT_REQUIRED, require_upload=True)
+
     @pytest.mark.parametrize(
         ("mode", "expected"),
         [

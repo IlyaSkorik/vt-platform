@@ -82,7 +82,9 @@ function uploadKinds(requirement: RegistrationUploadRequirement | undefined): Up
     // that is the difference between entering the festival and giving up.
     kinds.push({
       attachmentType: "VIDEO",
-      label: requirement.videoMode === "FILE_ONLY" ? "Видео (обязательно)" : "Видео",
+      // Whether it is demanded is its own setting now: a festival may collect the file
+      // for the hall's screen without turning an entry away for its absence.
+      label: requirement.videoRequired ? "Видео (обязательно)" : "Видео",
       hint: `${requirement.videoAllowedFormats.join(", ")} · до ${requirement.videoMaxUploadSizeMb} МБ`,
       accept: requirement.videoAllowedFormats.map((ext) => `.${ext}`).join(",") || "video/*",
       multiple: false,

@@ -78,6 +78,7 @@ export function defaultFormatRequirements(participationFormatId: string): _Forma
       mode: "NOT_REQUIRED",
       allowedProviders: ["YOUTUBE", "VK_VIDEO", "RUTUBE", "VIMEO"],
       allowReplacement: true,
+      requireUpload: false,
       allowedFormats: ["mp4", "mov", "m4v", "webm"],
       // Generous next to music's 25 MB: a minute of phone video is tens of megabytes,
       // and a limit that refuses an ordinary entry is a limit nobody can meet.

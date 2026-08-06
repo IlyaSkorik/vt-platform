@@ -1751,6 +1751,13 @@ class VideoRequirements:
         VideoProvider.VIMEO,
     )
     allow_replacement: bool = True
+    #: Whether the video is a condition of entry or merely accepted.
+    #:
+    #: Separate from ``mode``, which says through *which channel* a video arrives, not
+    #: whether it must arrive at all. An in-person festival often wants the file for the
+    #: hall's screen but will not turn an entry away for its absence; a remote one cannot
+    #: judge without it. Both are ``FILE_ONLY``, and only this flag tells them apart.
+    require_upload: bool = False
     allowed_formats: tuple[str, ...] = _DEFAULT_VIDEO_FORMATS
     #: Default is generous next to music's 25 MB: a minute of phone video is tens of
     #: megabytes, and a limit that refuses an ordinary entry is a limit nobody can meet.
@@ -1764,6 +1771,8 @@ class VideoRequirements:
             raise InvalidCompetitionSettingsError("At least one video provider is required for URL submissions.")
         object.__setattr__(self, "allowed_providers", providers)
 
+        if self.require_upload and self.mode is VideoSubmissionMode.NOT_REQUIRED:
+            raise InvalidCompetitionSettingsError("Video cannot be required while no video is collected.")
         if not isinstance(self.max_upload_size_mb, int) or isinstance(self.max_upload_size_mb, bool):
             raise InvalidCompetitionSettingsError("Video max upload size must be an integer.")
         if self.max_upload_size_mb < 1 or self.max_upload_size_mb > _MAX_UPLOAD_SIZE_MB_LIMIT:

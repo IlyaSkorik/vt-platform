@@ -121,3 +121,6 @@ def test_upload_requirements_carry_the_video_limits() -> None:
         assert isinstance(requirement["videoAllowedFormats"], list)
         assert requirement["videoAllowedFormats"]
         assert requirement["videoMaxUploadSizeMb"] >= 1
+        # Whether the video is a condition of entry travels too: the wizard labels the
+        # control and blocks submission on it, and it must not guess.
+        assert isinstance(requirement["videoRequired"], bool)
