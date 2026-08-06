@@ -14754,28 +14754,28 @@ components:
             type: string
         musicMaxUploadSizeMb:
           type: integer
-        videoMode:
+        mediaMode:
           type: string
-        videoRequired:
+        mediaRequired:
           type: boolean
-        videoAllowedFormats:
+        mediaAllowedFormats:
           type: array
           items:
             type: string
-        videoMaxUploadSizeMb:
+        mediaMaxTotalSizeMb:
           type: integer
         receiptRequired:
           type: boolean
       required:
+      - mediaAllowedFormats
+      - mediaMaxTotalSizeMb
+      - mediaMode
+      - mediaRequired
       - musicAllowedFormats
       - musicMaxUploadSizeMb
       - musicRequired
       - participationFormatId
       - receiptRequired
-      - videoAllowedFormats
-      - videoMaxUploadSizeMb
-      - videoMode
-      - videoRequired
     RelationshipTypeEnum:
       enum:
       - mother
@@ -15878,10 +15878,13 @@ components:
           type:
           - string
           - 'null'
+        sizeBytes:
+          type: integer
       required:
       - caption
       - fileReference
       - id
+      - sizeBytes
       - type
     _AwardSnapshot:
       type: object
@@ -16281,15 +16284,15 @@ components:
           type: string
         music:
           $ref: '#/components/schemas/_MusicRequirements'
-        video:
-          $ref: '#/components/schemas/_VideoRequirements'
+        media:
+          $ref: '#/components/schemas/_MediaRequirements'
         paymentReceipt:
           $ref: '#/components/schemas/_PaymentReceiptRequirements'
       required:
+      - media
       - music
       - participationFormatId
       - paymentReceipt
-      - video
     _FormatRequirementsInput:
       type: object
       properties:
@@ -16298,15 +16301,15 @@ components:
           format: uuid
         music:
           $ref: '#/components/schemas/_MusicRequirementsInput'
-        video:
-          $ref: '#/components/schemas/_VideoRequirementsInput'
+        media:
+          $ref: '#/components/schemas/_MediaRequirementsInput'
         paymentReceipt:
           $ref: '#/components/schemas/_PaymentReceiptRequirementsInput'
       required:
+      - media
       - music
       - participationFormatId
       - paymentReceipt
-      - video
     _GalleryImage:
       type: object
       properties:
@@ -16569,6 +16572,57 @@ components:
             $ref: '#/components/schemas/_LandingBlock'
       required:
       - blocks
+    _MediaRequirements:
+      type: object
+      properties:
+        mode:
+          type: string
+        allowedProviders:
+          type: array
+          items:
+            type: string
+        allowReplacement:
+          type: boolean
+        requireUpload:
+          type: boolean
+        allowedFormats:
+          type: array
+          items:
+            type: string
+        maxTotalSizeMb:
+          type: integer
+      required:
+      - allowReplacement
+      - allowedFormats
+      - allowedProviders
+      - maxTotalSizeMb
+      - mode
+      - requireUpload
+    _MediaRequirementsInput:
+      type: object
+      properties:
+        mode:
+          $ref: '#/components/schemas/ModeEnum'
+        allowedProviders:
+          type: array
+          items:
+            $ref: '#/components/schemas/AllowedProvidersEnum'
+        allowReplacement:
+          type: boolean
+        requireUpload:
+          type: boolean
+        allowedFormats:
+          type: array
+          items:
+            type: string
+        maxTotalSizeMb:
+          type: integer
+          maximum: 512
+          minimum: 1
+      required:
+      - allowReplacement
+      - allowedProviders
+      - mode
     _Meta:
       type: object
       properties:
@@ -16579,9 +16633,9 @@ components:
     _MusicRequirements:
       type: object
       properties:
-        allowReplacement:
-          type: boolean
         requireUpload:
+          type: boolean
+        allowReplacement:
           type: boolean
         allowedFormats:
           type: array
@@ -17504,54 +17558,3 @@ components:
           type:
           - string
           - 'null'
-    _VideoRequirements:
-      type: object
-      properties:
-        mode:
-          type: string
-        allowedProviders:
-          type: array
-          items:
-            type: string
-        allowReplacement:
-          type: boolean
-        requireUpload:
-          type: boolean
-        allowedFormats:
-          type: array
-          items:
-            type: string
-        maxUploadSizeMb:
-          type: integer
-      required:
-      - allowReplacement
-      - allowedFormats
-      - allowedProviders
-      - maxUploadSizeMb
-      - mode
-      - requireUpload
-    _VideoRequirementsInput:
-      type: object
-      properties:
-        mode:
-          $ref: '#/components/schemas/ModeEnum'
-        allowedProviders:
-          type: array
-          items:
-            $ref: '#/components/schemas/AllowedProvidersEnum'
-        allowReplacement:
-          type: boolean
-        requireUpload:
-          type: boolean
-        allowedFormats:
-          type: array
-          items:
-            type: string
-        maxUploadSizeMb:
-          type: integer
-          maximum: 512
-          minimum: 1
-      required:
-      - allowReplacement
-      - allowedProviders
-      - mode

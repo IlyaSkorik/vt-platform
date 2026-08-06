@@ -35,18 +35,22 @@ export type VideoProvider = "YOUTUBE" | "VK_VIDEO" | "RUTUBE" | "VIMEO";
  * — a competition configured with one keeps its value — but are not offered until
  * a video link is something an applicant can actually supply.
  */
-export const VIDEO_MODE_OPTIONS: { value: VideoMode; label: string }[] = [
+export const MEDIA_MODE_OPTIONS: { value: VideoMode; label: string }[] = [
   { value: "NOT_REQUIRED", label: "Не требуется" },
-  { value: "FILE_ONLY", label: "Требовать файл" },
+  { value: "FILE_ONLY", label: "Собирать файлы" },
 ];
 
-export const VIDEO_FORMAT_OPTIONS: { value: string; label: string }[] = [
+export const MEDIA_FORMAT_OPTIONS: { value: string; label: string }[] = [
   { value: "mp4", label: "MP4" },
   { value: "mov", label: "MOV" },
   { value: "m4v", label: "M4V" },
   { value: "webm", label: "WebM" },
   { value: "mkv", label: "MKV" },
   { value: "avi", label: "AVI" },
+  { value: "jpg", label: "JPG" },
+  { value: "jpeg", label: "JPEG" },
+  { value: "png", label: "PNG" },
+  { value: "webp", label: "WebP" },
 ];
 
 export const VIDEO_PROVIDER_OPTIONS: { value: VideoProvider; label: string }[] = [
@@ -74,15 +78,16 @@ export function defaultFormatRequirements(participationFormatId: string): _Forma
       allowedFormats: ["mp3", "wav", "m4a", "aac"],
       maxUploadSizeMb: 25,
     },
-    video: {
+    media: {
       mode: "NOT_REQUIRED",
       allowedProviders: ["YOUTUBE", "VK_VIDEO", "RUTUBE", "VIMEO"],
       allowReplacement: true,
       requireUpload: false,
-      allowedFormats: ["mp4", "mov", "m4v", "webm"],
-      // Generous next to music's 25 MB: a minute of phone video is tens of megabytes,
-      // and a limit that refuses an ordinary entry is a limit nobody can meet.
-      maxUploadSizeMb: 200,
+      allowedFormats: ["mp4", "mov", "m4v", "webm", "jpg", "jpeg", "png"],
+      // The ceiling is on the sum of a performance's files, and generous next to music's
+      // 25 MB: a minute of phone video is tens of megabytes, and a limit that refuses an
+      // ordinary entry is a limit nobody can meet.
+      maxTotalSizeMb: 200,
     },
     paymentReceipt: {
       requireReceipt: false,

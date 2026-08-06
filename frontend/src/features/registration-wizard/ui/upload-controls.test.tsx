@@ -31,10 +31,10 @@ function aRequirement(
     musicRequired: true,
     musicAllowedFormats: ["mp3", "wav"],
     musicMaxUploadSizeMb: 25,
-    videoMode: "NONE",
-    videoAllowedFormats: ["mp4", "mov"],
-    videoMaxUploadSizeMb: 200,
-    videoRequired: false,
+    mediaMode: "NONE",
+    mediaAllowedFormats: ["mp4", "mov", "jpg"],
+    mediaMaxTotalSizeMb: 200,
+    mediaRequired: false,
     receiptRequired: false,
     ...overrides,
   } as RegistrationUploadRequirement;
@@ -177,20 +177,20 @@ describe("UploadControls", () => {
     );
   });
 
-  it("refuses a video over the organizer's limit before uploading it", async () => {
+  it("refuses media over the organizer's total before uploading it", async () => {
     // The point of stating the limit client-side: a 300 MB file on a phone connection
     // must not be sent only to be refused at the end of it.
     renderControls(
       aRequirement({
         musicRequired: false,
         musicAllowedFormats: [],
-        videoMode: "FILE_ONLY",
-        videoMaxUploadSizeMb: 200,
+        mediaMode: "FILE_ONLY",
+        mediaMaxTotalSizeMb: 200,
       }),
     );
 
     await userEvent.upload(
-      screen.getByLabelText("Видео"),
+      screen.getByLabelText("Медиа"),
       aFile("clip.mp4", 300 * 1024 * 1024, "video/mp4"),
     );
 
@@ -198,37 +198,88 @@ describe("UploadControls", () => {
     expect(upload).not.toHaveBeenCalled();
   });
 
-  it("uploads a video within the limit", async () => {
+  it("uploads media within the total", async () => {
     renderControls(
       aRequirement({
         musicRequired: false,
         musicAllowedFormats: [],
-        videoMode: "FILE_ONLY",
-        videoMaxUploadSizeMb: 200,
+        mediaMode: "FILE_ONLY",
+        mediaMaxTotalSizeMb: 200,
       }),
     );
 
     await userEvent.upload(
-      screen.getByLabelText("Видео"),
+      screen.getByLabelText("Медиа"),
       aFile("clip.mp4", 5 * 1024 * 1024, "video/mp4"),
     );
 
     await waitFor(() => expect(upload).toHaveBeenCalled());
   });
 
-  it("marks the video as required only when the festival demands it", async () => {
+  it("marks media as required only when the festival demands it", async () => {
     renderControls(
       aRequirement({
         musicRequired: false,
         musicAllowedFormats: [],
-        videoMode: "FILE_ONLY",
-        videoRequired: true,
+        mediaMode: "FILE_ONLY",
+        mediaRequired: true,
       }),
     );
 
     // Collected-but-optional and demanded are different promises to the applicant, and
     // the mode alone no longer tells them apart.
-    expect(screen.getByLabelText("Видео (обязательно)")).toBeInTheDocument();
+    expect(screen.getByLabelText("Медиа (обязательно)")).toBeInTheDocument();
+  });
+
+  it("counts photographs and video against one budget", async () => {
+    // The heart of the change: several files are the normal case, and what the organizer
+    // limits is their sum. A photo that fits on its own must still be refused once the
+    // video has eaten the budget.
+    renderControls(
+      aRequirement({
+        musicRequired: false,
+        musicAllowedFormats: [],
+        mediaMode: "FILE_ONLY",
+        mediaAllowedFormats: ["mp4", "jpg"],
+        mediaMaxTotalSizeMb: 100,
+      }),
+      {
+        attachments: [
+          {
+            id: "a1",
+            type: "VIDEO",
+            fileReference: "s3://clip.mp4",
+            caption: null,
+            sizeBytes: 90 * 1024 * 1024,
+          },
+        ],
+      } as unknown as SubmissionResource,
+    );
+
+    await userEvent.upload(
+      screen.getByLabelText("Медиа"),
+      aFile("photo.jpg", 20 * 1024 * 1024, "image/jpeg"),
+    );
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalled());
+    expect(upload).not.toHaveBeenCalled();
+  });
+
+  it("sends a photograph as an image, not as a video", async () => {
+    renderControls(
+      aRequirement({
+        musicRequired: false,
+        musicAllowedFormats: [],
+        mediaMode: "FILE_ONLY",
+        mediaAllowedFormats: ["mp4", "jpg"],
+      }),
+    );
+
+    await userEvent.upload(screen.getByLabelText("Медиа"), aFile("photo.jpg", 1024, "image/jpeg"));
+
+    await waitFor(() =>
+      expect(upload).toHaveBeenCalledWith(expect.objectContaining({ attachmentType: "IMAGE" })),
+    );
   });
 
   it("states the organizer's own formats and limit in the hint", async () => {
@@ -236,12 +287,12 @@ describe("UploadControls", () => {
       aRequirement({
         musicRequired: false,
         musicAllowedFormats: [],
-        videoMode: "URL_OR_FILE",
-        videoAllowedFormats: ["mp4", "webm"],
-        videoMaxUploadSizeMb: 120,
+        mediaMode: "URL_OR_FILE",
+        mediaAllowedFormats: ["mp4", "webm"],
+        mediaMaxTotalSizeMb: 120,
       }),
     );
 
-    expect(screen.getByText("mp4, webm · до 120 МБ")).toBeInTheDocument();
+    expect(screen.getByText("mp4, webm · суммарно до 120 МБ")).toBeInTheDocument();
   });
 });

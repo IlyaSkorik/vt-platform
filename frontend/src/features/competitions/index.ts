@@ -275,12 +275,12 @@ export {
   AUDIO_FORMAT_OPTIONS,
   defaultCompetitionSettings,
   defaultFormatRequirements,
+  MEDIA_FORMAT_OPTIONS,
+  MEDIA_MODE_OPTIONS,
   mergeSettingsWithFormats,
   PAYMENT_METHOD_OPTIONS,
   PAYMENT_TIMING_OPTIONS,
   settingsToUpdatePayload,
-  VIDEO_FORMAT_OPTIONS,
-  VIDEO_MODE_OPTIONS,
   VIDEO_PROVIDER_OPTIONS,
 } from "./lib/settings";
 export {

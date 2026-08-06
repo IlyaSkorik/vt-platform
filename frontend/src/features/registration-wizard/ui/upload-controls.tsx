@@ -9,22 +9,50 @@ import { useRemoveAttachment, useUploadAttachment } from "../api/hooks";
 
 const BYTES_PER_MB = 1024 * 1024;
 
+/** The attachment types the wire knows; a row may cover more than one. */
+type AttachmentKind = "MUSIC" | "VIDEO" | "IMAGE";
+
 type UploadKind = {
-  attachmentType: "MUSIC" | "VIDEO";
+  /** Row identity, and the type single-type rows upload as. */
+  id: "MUSIC" | "MEDIA";
+  /**
+   * The attachment types this row owns — what it lists, and what counts toward its
+   * limit. Media covers video and photographs together, because the organizer
+   * configured one ceiling over both.
+   */
+  types: readonly AttachmentKind[];
   label: string;
   hint: string;
   accept: string;
   /**
-   * Whether an act can bring more than one file of this kind.
+   * Whether an act can bring more than one file.
    *
-   * A number is not always performed to a single track — a backing track plus a
-   * fanfare, a two-part routine, a separate soundcheck cut — and the sound desk is
-   * handed all of them. A video is one recording of one performance.
+   * A number is not always performed to a single track — a backing track plus a fanfare,
+   * a two-part routine — and photographs come in handfuls, so both rows take several.
    */
   multiple: boolean;
-  /** The server's size limit, when the projection tells the client what it is. */
+  /** The server's limit, when the projection tells the client what it is. */
   maxBytes?: number;
+  /**
+   * Whether ``maxBytes`` bounds the sum of the row's files rather than each of them.
+   *
+   * Media is a shared budget: several photographs and a video are the normal case, and a
+   * per-file limit would either wave ten of them through or refuse one legitimate one.
+   */
+  sharedBudget?: boolean;
 };
+
+/** Photographs, by extension — everything else in a media row travels as video. */
+const IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "heic", "heif"]);
+
+/** Which attachment type a chosen file becomes. */
+function attachmentTypeFor(kind: UploadKind, file: File): AttachmentKind {
+  if (kind.id === "MUSIC") {
+    return "MUSIC";
+  }
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+  return IMAGE_EXTENSIONS.has(extension) ? "IMAGE" : "VIDEO";
+}
 
 /** A file size a person reads, rounded the way a file manager would show it. */
 function megabytes(bytes: number): string {
@@ -67,7 +95,8 @@ function uploadKinds(requirement: RegistrationUploadRequirement | undefined): Up
   const kinds: UploadKind[] = [];
   if (requirement.musicRequired || requirement.musicAllowedFormats.length > 0) {
     kinds.push({
-      attachmentType: "MUSIC",
+      id: "MUSIC",
+      types: ["MUSIC"],
       label: requirement.musicRequired ? "Фонограммы (обязательно)" : "Фонограммы",
       hint: `${requirement.musicAllowedFormats.join(", ")} · до ${requirement.musicMaxUploadSizeMb} МБ за файл · можно несколько`,
       accept: requirement.musicAllowedFormats.map((ext) => `.${ext}`).join(",") || "audio/*",
@@ -75,20 +104,23 @@ function uploadKinds(requirement: RegistrationUploadRequirement | undefined): Up
       maxBytes: requirement.musicMaxUploadSizeMb * BYTES_PER_MB,
     });
   }
-  if (requirement.videoMode === "FILE_ONLY" || requirement.videoMode === "URL_OR_FILE") {
-    // The organizer's own limits now travel in the projection, so the control states
-    // them and refuses an oversized file before it is uploaded — a 300 MB video that
-    // only fails after the upload wastes the applicant's connection, and on a phone
-    // that is the difference between entering the festival and giving up.
+  if (requirement.mediaMode === "FILE_ONLY" || requirement.mediaMode === "URL_OR_FILE") {
+    // One row for video and photographs, on the organizer's own limits, and the limit is
+    // stated here so an oversized selection is refused before it is sent: an upload that
+    // only fails at the end costs the applicant the whole wait, and on a phone that is the
+    // difference between entering the festival and giving up.
     kinds.push({
-      attachmentType: "VIDEO",
-      // Whether it is demanded is its own setting now: a festival may collect the file
-      // for the hall's screen without turning an entry away for its absence.
-      label: requirement.videoRequired ? "Видео (обязательно)" : "Видео",
-      hint: `${requirement.videoAllowedFormats.join(", ")} · до ${requirement.videoMaxUploadSizeMb} МБ`,
-      accept: requirement.videoAllowedFormats.map((ext) => `.${ext}`).join(",") || "video/*",
-      multiple: false,
-      maxBytes: requirement.videoMaxUploadSizeMb * BYTES_PER_MB,
+      id: "MEDIA",
+      types: ["VIDEO", "IMAGE"],
+      // Whether it is demanded is its own setting: a festival may collect files for the
+      // hall's screen without turning an entry away for their absence.
+      label: requirement.mediaRequired ? "Медиа (обязательно)" : "Медиа",
+      hint: `${requirement.mediaAllowedFormats.join(", ")} · суммарно до ${requirement.mediaMaxTotalSizeMb} МБ`,
+      accept:
+        requirement.mediaAllowedFormats.map((ext) => `.${ext}`).join(",") || "video/*,image/*",
+      multiple: true,
+      maxBytes: requirement.mediaMaxTotalSizeMb * BYTES_PER_MB,
+      sharedBudget: true,
     });
   }
   // The payment receipt is no longer a per-performance upload: it proves payment of
@@ -108,8 +140,15 @@ function UploadRow({
   const inputRef = useRef<HTMLInputElement>(null);
   const upload = useUploadAttachment(submissionId);
   const remove = useRemoveAttachment(submissionId);
-  const existing = submission.attachments.filter(
-    (attachment) => attachment.type === kind.attachmentType,
+  const existing = submission.attachments.filter((attachment) =>
+    kind.types.includes(attachment.type as AttachmentKind),
+  );
+  // What the shared ceiling is measured against. A zero size is an attachment stored
+  // before sizes were tracked: counted as nothing here, and the server still has the
+  // final word.
+  const attachedBytes = existing.reduce(
+    (total, attachment) => total + ((attachment as { sizeBytes?: number }).sizeBytes ?? 0),
+    0,
   );
 
   const clearInput = () => {
@@ -130,18 +169,27 @@ function UploadRow({
     if (files.length === 0) {
       return;
     }
+    // Grows as this selection is accepted, so ten files chosen at once are measured
+    // against the same budget the server will apply — not each against the whole of it.
+    let budgetUsed = attachedBytes;
     for (const file of files) {
       // Refused here rather than after the upload: sending a file the server is
       // certain to reject costs the applicant the whole wait on a slow connection,
       // and the limit is already known from the competition's own requirements.
-      if (kind.maxBytes != null && file.size > kind.maxBytes) {
-        toast.error(
-          `${file.name}: ${megabytes(file.size)}, а допустимо до ${megabytes(kind.maxBytes)}`,
-        );
-        continue;
+      if (kind.maxBytes != null) {
+        const wouldUse = kind.sharedBudget === true ? budgetUsed + file.size : file.size;
+        if (wouldUse > kind.maxBytes) {
+          toast.error(
+            kind.sharedBudget === true
+              ? `${file.name}: не помещается — уже занято ${megabytes(budgetUsed)} из ${megabytes(kind.maxBytes)}`
+              : `${file.name}: ${megabytes(file.size)}, а допустимо до ${megabytes(kind.maxBytes)}`,
+          );
+          continue;
+        }
       }
       try {
-        await upload.mutateAsync({ file, attachmentType: kind.attachmentType });
+        await upload.mutateAsync({ file, attachmentType: attachmentTypeFor(kind, file) });
+        budgetUsed += file.size;
       } catch (error) {
         // One bad file must not abandon the rest of the selection.
         toast.error(`${file.name}: ${refusalMessage(error, kind)}`);
@@ -223,12 +271,7 @@ export function UploadControls({
   return (
     <div className="flex flex-col gap-3">
       {kinds.map((kind) => (
-        <UploadRow
-          key={kind.attachmentType}
-          submissionId={submissionId}
-          kind={kind}
-          submission={submission}
-        />
+        <UploadRow key={kind.id} submissionId={submissionId} kind={kind} submission={submission} />
       ))}
     </div>
   );

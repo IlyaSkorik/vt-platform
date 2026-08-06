@@ -6,12 +6,12 @@ import {
   buildCompetitionReadiness,
   type CompetitionSectionId,
   defaultCompetitionSettings,
+  MEDIA_FORMAT_OPTIONS,
+  MEDIA_MODE_OPTIONS,
   mergeSettingsWithFormats,
   type PublicationChecklist,
   settingsToUpdatePayload,
   useUpdateCompetitionSettingsMutation,
-  VIDEO_FORMAT_OPTIONS,
-  VIDEO_MODE_OPTIONS,
 } from "@/features/competitions";
 import { ApiError } from "@/shared/api";
 import type {
@@ -174,7 +174,7 @@ function FormatRequirementsAccordion({
         />
         <span className="min-w-0 flex-1 truncate">{formatName}</span>
         <Badge variant="secondary" size="sm">
-          Музыка · Видео · Квитанция
+          Музыка · Медиа · Квитанция
         </Badge>
       </summary>
       <div className="space-y-1 border-border border-t px-4 py-4">
@@ -221,17 +221,17 @@ function FormatRequirementsAccordion({
           />
         </MaterialBlock>
 
-        <MaterialBlock icon={<Video className="size-3.5" />} title="Видео">
+        <MaterialBlock icon={<Video className="size-3.5" />} title="Медиа">
           <div>
             <p className="mb-1.5 font-medium text-sm">Режим</p>
             <Select
-              options={VIDEO_MODE_OPTIONS}
-              value={requirements.video.mode}
+              options={MEDIA_MODE_OPTIONS}
+              value={requirements.media.mode}
               onValueChange={(v) =>
                 update({
-                  video: {
-                    ...requirements.video,
-                    mode: (v as _FormatRequirements["video"]["mode"]) ?? "NOT_REQUIRED",
+                  media: {
+                    ...requirements.media,
+                    mode: (v as _FormatRequirements["media"]["mode"]) ?? "NOT_REQUIRED",
                   },
                 })
               }
@@ -243,42 +243,42 @@ function FormatRequirementsAccordion({
               an upload that never happens are noise, and the fields would invite the
               organizer to tune a limit nothing enforces. Video is not only a remote-entry
               matter — an in-person festival takes the file to play on the hall's screen. */}
-          {requirements.video.mode === "FILE_ONLY" || requirements.video.mode === "URL_OR_FILE" ? (
+          {requirements.media.mode === "FILE_ONLY" || requirements.media.mode === "URL_OR_FILE" ? (
             <>
               <SwitchRow
-                label="Требовать видео"
-                description="Выключено — файл можно приложить, но заявку примут и без него."
-                checked={requirements.video.requireUpload}
+                label="Требовать медиа"
+                description="Выключено — файлы можно приложить, но заявку примут и без них."
+                checked={requirements.media.requireUpload}
                 disabled={readOnly}
-                onChange={(v) => update({ video: { ...requirements.video, requireUpload: v } })}
+                onChange={(v) => update({ media: { ...requirements.media, requireUpload: v } })}
               />
               <div>
-                <p className="mb-1.5 font-medium text-sm">Допустимые видеоформаты</p>
+                <p className="mb-1.5 font-medium text-sm">Допустимые форматы видео и фото</p>
                 <p className="mb-1.5 text-muted-foreground text-xs">
                   Загрузка файла другого расширения будет отклонена.
                 </p>
                 <CheckboxGroup
-                  options={VIDEO_FORMAT_OPTIONS}
-                  value={requirements.video.allowedFormats as string[]}
+                  options={MEDIA_FORMAT_OPTIONS}
+                  value={requirements.media.allowedFormats as string[]}
                   disabled={readOnly}
-                  onChange={(v) => update({ video: { ...requirements.video, allowedFormats: v } })}
+                  onChange={(v) => update({ media: { ...requirements.media, allowedFormats: v } })}
                 />
               </div>
               <Input
-                label="Максимальный размер (МБ)"
+                label="Суммарный размер всех файлов (МБ)"
                 type="number"
                 min={1}
                 max={512}
-                description="Участник увидит этот лимит до загрузки, а сервер откажет файлу больше него."
-                value={String(requirements.video.maxUploadSizeMb)}
+                description="Лимит на все медиафайлы номера вместе. Участник увидит его до загрузки, а сервер откажет, когда сумма не помещается."
+                value={String(requirements.media.maxTotalSizeMb)}
                 disabled={readOnly}
                 onChange={(event) => {
                   const next = Number(event.target.value);
                   if (!Number.isFinite(next)) return;
                   update({
-                    video: {
-                      ...requirements.video,
-                      maxUploadSizeMb: Math.min(512, Math.max(1, Math.round(next))),
+                    media: {
+                      ...requirements.media,
+                      maxTotalSizeMb: Math.min(512, Math.max(1, Math.round(next))),
                     },
                   });
                 }}
@@ -532,7 +532,7 @@ export function SettingsSection({
 
         <SectionCard
           title="Материалы заявки"
-          description="Требования к музыке, видео и квитанции — отдельно для каждого формата участия."
+          description="Требования к музыке, медиа и квитанции — отдельно для каждого формата участия."
         >
           {formats.length === 0 ? (
             <EmptyState
