@@ -75,14 +75,14 @@ export function buildPublicationChecklist(competition: CompetitionDetail): Publi
   const taxonomyItems: PublicationChecklistItem[] = [
     {
       id: "categories",
-      label: "Хотя бы одна номинация",
+      label: "Хотя бы один жанр",
       done: competition.categories.length > 0,
       sectionId: "categories",
       blocking: true,
     },
     {
       id: "disciplines",
-      label: "Хотя бы одна дисциплина",
+      label: "Хотя бы одна номинация",
       done: competition.disciplines.length > 0,
       sectionId: "categories",
       blocking: true,

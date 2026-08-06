@@ -25,7 +25,7 @@ export const DIPLOMA_SECTIONS: readonly DiplomaSection[] = [
   {
     id: "assignments",
     title: "Назначение",
-    description: "Какой шаблон применяется для фестиваля и номинации.",
+    description: "Какой шаблон применяется для фестиваля и жанра.",
     icon: FileStack,
   },
   {

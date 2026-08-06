@@ -28,8 +28,8 @@ import {
 } from "@/shared/ui";
 
 const STEPS = [
-  { id: 1, title: "Номинация" },
-  { id: 2, title: "Дисциплины" },
+  { id: 1, title: "Жанр" },
+  { id: 2, title: "Номинации" },
   { id: 3, title: "Группы участников" },
   { id: 4, title: "Возрастные категории" },
   { id: 5, title: "Форматы участия" },
@@ -187,7 +187,7 @@ export function RuleBuilderDialog({
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
           {step === 1 ? (
             <div className="space-y-3">
-              <p className="text-muted-foreground text-sm">Выберите номинацию.</p>
+              <p className="text-muted-foreground text-sm">Выберите жанр.</p>
               <ul className="grid gap-2 sm:grid-cols-2">
                 {nominations.map((item) => {
                   const selected = draft.categoryId === item.id;
@@ -224,8 +224,8 @@ export function RuleBuilderDialog({
 
           {step === 2 ? (
             <MultiSelectStep
-              title="Дисциплины этой номинации"
-              empty="В номинации нет дисциплин."
+              title="Номинации этого жанра"
+              empty="В жанре нет номинаций."
               items={disciplines.map((item) => ({
                 id: item.id,
                 label: item.name,

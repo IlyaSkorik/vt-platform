@@ -68,7 +68,7 @@ function landingDescription(festival: {
   const own = festival.description?.trim();
   if (own) return own.length > 300 ? `${own.slice(0, 297).trimEnd()}…` : own;
   const where = festival.city ? ` в городе ${festival.city}` : "";
-  return `«${festival.title}» — творческий фестиваль сезона ${festival.season}${where}. Номинации, сроки регистрации, стоимость участия и подача заявки онлайн.`;
+  return `«${festival.title}» — творческий фестиваль сезона ${festival.season}${where}. Жанры, сроки регистрации, стоимость участия и подача заявки онлайн.`;
 }
 
 export function PublicFestivalLandingPage(): React.JSX.Element {

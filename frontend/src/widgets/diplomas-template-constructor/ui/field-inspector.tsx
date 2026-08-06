@@ -144,7 +144,7 @@ function NominationBlockSection({
       <SectionTitle>Источник данных</SectionTitle>
       <Input
         aria-label="Префикс"
-        placeholder="Префикс, напр. «Номинация:»"
+        placeholder="Префикс, напр. «Жанр:»"
         value={config.prefix ?? ""}
         onChange={(event) => onConfigChange({ prefix: event.target.value })}
       />

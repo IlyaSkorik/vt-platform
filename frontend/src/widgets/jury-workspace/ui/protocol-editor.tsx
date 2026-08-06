@@ -212,8 +212,8 @@ export function ProtocolEditor({ protocol }: ProtocolEditorProps): React.JSX.Ele
 
       {protocol.rows.length === 0 ? (
         <p className="rounded-lg border border-border border-dashed px-3 py-6 text-center text-muted-foreground text-sm">
-          В протоколе нет строк. Нажмите «Обновить состав», чтобы подтянуть выступления этой
-          номинации в порядке программы.
+          В протоколе нет строк. Нажмите «Обновить состав», чтобы подтянуть выступления этой жанра в
+          порядке программы.
         </p>
       ) : (
         <div className="scrollbar-custom overflow-x-auto rounded-lg border border-border">

@@ -136,7 +136,7 @@ export const MOCK_NOTIFICATIONS: readonly NotificationItem[] = [
     id: "n-3",
     kind: "info",
     title: "Новая заявка",
-    body: "«Танцевальная весна»: подана заявка в номинацию «Современный танец».",
+    body: "«Танцевальная весна»: подана заявка в жанр «Современный танец».",
     createdAt: at(-5 * HOUR),
     read: false,
   },

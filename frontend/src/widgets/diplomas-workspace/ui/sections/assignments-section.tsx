@@ -132,7 +132,7 @@ function CreateAssignmentDialog({ competitionId }: { competitionId: string }): R
         // The picker hides assigned nominations, so this means the list went stale —
         // nothing was created, and a refetch will show what changed.
         const slot = documentTypeConfig(documentType).slotLabel.toLocaleLowerCase("ru-RU");
-        toast.error(`Для одной из номинаций уже назначен ${slot}. Обновите список.`);
+        toast.error(`Для одного из жанров уже назначен ${slot}. Обновите список.`);
         return;
       }
       const message =
@@ -243,7 +243,7 @@ function NominationPicker({
     <fieldset className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between gap-2">
         <legend className="font-medium text-foreground text-sm">
-          Номинации
+          Жанры
           <span className="ml-0.5 text-danger" aria-hidden="true">
             *
           </span>
@@ -258,10 +258,10 @@ function NominationPicker({
       {!competitionChosen ? (
         <p className="text-muted-foreground text-sm">Сначала выберите фестиваль.</p>
       ) : loading ? (
-        <p className="text-muted-foreground text-sm">Загружаем номинации…</p>
+        <p className="text-muted-foreground text-sm">Загружаем жанры…</p>
       ) : nominations.length === 0 ? (
         <p className="text-muted-foreground text-sm">
-          У каждой номинации этого фестиваля уже назначен {slotLabel}. Освободите слот, удалив
+          У каждого жанра этого фестиваля уже назначен {slotLabel}. Освободите слот, удалив
           назначение в таблице.
         </p>
       ) : (
@@ -324,7 +324,7 @@ export function AssignmentsSection(): React.JSX.Element {
     () => [
       {
         accessorKey: "nomination",
-        header: "Номинация",
+        header: "Жанр",
         cell: ({ row }) => row.original.nomination ?? "—",
       },
       {
@@ -365,7 +365,7 @@ export function AssignmentsSection(): React.JSX.Element {
               size="sm"
               onClick={() => void handleDelete(row.original)}
               disabled={deleteAssignment.isPending}
-              aria-label={`Удалить назначение для номинации ${row.original.nomination ?? ""}`}
+              aria-label={`Удалить назначение для жанра ${row.original.nomination ?? ""}`}
             >
               <Trash2 className="size-4" aria-hidden="true" />
             </Button>
@@ -391,14 +391,14 @@ export function AssignmentsSection(): React.JSX.Element {
 
       {!competitionId ? (
         <p className="text-muted-foreground text-sm">
-          Выберите фестиваль, чтобы увидеть его назначения и связать шаблоны с номинациями.
+          Выберите фестиваль, чтобы увидеть его назначения и связать шаблоны с жанрами.
         </p>
       ) : (
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-2">
             <p className="text-muted-foreground text-sm">
-              Каждая номинация имеет отдельный шаблон диплома и шаблон благодарности — так у разных
-              номинаций могут быть разные дизайны.
+              Каждый жанр имеет отдельный шаблон диплома и шаблон благодарности — так у разных
+              жанров могут быть разные дизайны.
             </p>
             <CreateAssignmentDialog competitionId={competitionId} />
           </div>
@@ -409,7 +409,7 @@ export function AssignmentsSection(): React.JSX.Element {
             emptyContent={
               <EmptyState
                 title="Назначений пока нет"
-                description="Создайте первое назначение, чтобы связать шаблон с номинацией этого фестиваля."
+                description="Создайте первое назначение, чтобы связать шаблон с жанром этого фестиваля."
               />
             }
           />

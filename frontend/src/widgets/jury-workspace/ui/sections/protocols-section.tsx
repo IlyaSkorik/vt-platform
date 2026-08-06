@@ -118,15 +118,15 @@ export function ProtocolsSection(): React.JSX.Element {
           description="Протоколы ведутся по номинациям выбранного фестиваля."
         />
       ) : competitionDetailQuery.isLoading || protocolsQuery.isLoading ? (
-        <LoadingState label="Загружаем номинации…" />
+        <LoadingState label="Загружаем жанры…" />
       ) : nominations.length === 0 ? (
         <EmptyState
-          title="У фестиваля нет номинаций"
-          description="Добавьте номинации в разделе «Номинации и дисциплины» фестиваля — протокол ведётся по номинации."
+          title="У фестиваля нет жанров"
+          description="Добавьте жанры в разделе «Жанры и номинации» фестиваля — протокол ведётся по жанру."
         />
       ) : (
         <div className="flex min-h-0 min-w-0 flex-col gap-4 lg:flex-row">
-          <nav aria-label="Номинации" className="w-full shrink-0 lg:w-72">
+          <nav aria-label="Жанры" className="w-full shrink-0 lg:w-72">
             <ul className="flex flex-col gap-1">
               {nominations.map((nomination) => {
                 const isActive = nomination.id === selectedNominationId;
@@ -178,8 +178,8 @@ export function ProtocolsSection(): React.JSX.Element {
           <div className="min-w-0 flex-1">
             {selected == null ? (
               <EmptyState
-                title="Выберите номинацию"
-                description="Слева — номинации фестиваля. Для каждой ведётся свой протокол."
+                title="Выберите жанр"
+                description="Слева — жанры фестиваля. Для каждого ведётся свой протокол."
               />
             ) : selected.protocol == null ? (
               <EmptyState

@@ -41,7 +41,7 @@ export function diplomaFactRows(diploma: VerifiedDiploma): DiplomaFactRow[] {
     ["participantName", "Участник", diploma.participantName, "text"],
     ["competitionTitle", "Фестиваль", diploma.competitionTitle, "text"],
     ["competitionDate", "Дата проведения", formatCompetitionDate(diploma.competitionDate), "text"],
-    ["nomination", "Номинация", diploma.nomination, "text"],
+    ["nomination", "Жанр", diploma.nomination, "text"],
     ["performance", "Произведение", diploma.performance, "text"],
     ["teacher", "Педагог", diploma.teacher, "text"],
     ["organization", "Организация", diploma.organization, "text"],

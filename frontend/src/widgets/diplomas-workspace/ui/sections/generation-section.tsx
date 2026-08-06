@@ -195,7 +195,7 @@ export function GenerationSection(): React.JSX.Element {
 
       {!competitionId ? (
         <p className="text-muted-foreground text-sm">
-          Выберите фестиваль, чтобы увидеть сводку по номинациям и сформировать комплект дипломов.
+          Выберите фестиваль, чтобы увидеть сводку по жанрам и сформировать комплект дипломов.
         </p>
       ) : summaryQuery.isLoading ? (
         <div className="flex justify-center py-10">
@@ -203,13 +203,13 @@ export function GenerationSection(): React.JSX.Element {
         </div>
       ) : nominations.length === 0 ? (
         <Alert variant="warning" title="Нет данных">
-          У фестиваля нет номинаций с выступлениями.
+          У фестиваля нет жанров с выступлениями.
         </Alert>
       ) : (
         <>
           {selectable.length === 0 ? (
             <Alert variant="warning" title="Нельзя сформировать">
-              Ни у одной номинации нет назначенного шаблона с загруженным PDF. Назначьте шаблон в
+              Ни у одного жанра нет назначенного шаблона с загруженным PDF. Назначьте шаблон в
               разделе «Назначение» и загрузите его PDF в конструкторе.
             </Alert>
           ) : null}
@@ -273,9 +273,9 @@ export function GenerationSection(): React.JSX.Element {
                 <p className="text-muted-foreground text-sm">
                   По шаблону благодарности каждой выбранной номинации — отдельная благодарность
                   каждому педагогу. Первое действие публикует их в личных кабинетах участников.
-                  Второе только готовит файлы и отдаёт ZIP со всеми благодарностями выбранных
-                  номинаций (по папкам номинаций) — в кабинетах они не появятся, пока не нажать
-                  «Сформировать и опубликовать в ЛК».
+                  Второе только готовит файлы и отдаёт ZIP со всеми благодарностями выбранных жанров
+                  (по папкам жанров) — в кабинетах они не появятся, пока не нажать «Сформировать и
+                  опубликовать в ЛК».
                 </p>
                 {thanksZipUrl ? (
                   <div>
@@ -387,7 +387,7 @@ function RunAction({
         {label}
       </Button>
       <span className="text-muted-foreground text-sm">
-        Номинаций: <span className="font-semibold text-foreground">{run.categoryIds.length}</span> ·
+        Жанров: <span className="font-semibold text-foreground">{run.categoryIds.length}</span> ·
         будет создано: <span className="font-semibold text-foreground">{run.willCreate}</span>
         {run.skipped > 0 ? (
           <span className="text-warning">
@@ -422,12 +422,12 @@ function NominationTable({
           <tr>
             <th className="w-10 px-3 py-2">
               <Checkbox
-                aria-label="Выбрать все номинации"
+                aria-label="Выбрать все жанры"
                 checked={allSelected ? true : someSelected ? "indeterminate" : false}
                 onCheckedChange={(checked) => onToggleAll(checked === true)}
               />
             </th>
-            <th className="px-3 py-2 text-left font-medium">Номинация</th>
+            <th className="px-3 py-2 text-left font-medium">Жанр</th>
             <th className="px-3 py-2 text-right font-medium">Выступлений</th>
             <th className="px-3 py-2 text-left font-medium">Диплом</th>
             <th className="px-3 py-2 text-left font-medium">Благодарность</th>
@@ -438,7 +438,7 @@ function NominationTable({
             <tr key={item.categoryId} className="border-border border-t">
               <td className="px-3 py-2 align-top">
                 <Checkbox
-                  aria-label={`Выбрать номинацию ${item.nomination ?? ""}`}
+                  aria-label={`Выбрать жанр ${item.nomination ?? ""}`}
                   checked={selected.has(item.categoryId)}
                   disabled={!item.diploma.ready && !item.thankYou.ready}
                   onCheckedChange={(checked) => onToggle(item.categoryId, checked === true)}

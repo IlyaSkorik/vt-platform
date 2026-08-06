@@ -5,7 +5,7 @@ export function CategoriesSkeleton(): React.JSX.Element {
   return (
     <div
       role="status"
-      aria-label="Загрузка номинаций"
+      aria-label="Загрузка жанров"
       className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]"
     >
       <div className="space-y-4">

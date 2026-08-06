@@ -23,14 +23,14 @@ export const JURY_SECTIONS: readonly JurySection[] = [
   {
     id: "protocols",
     title: "Протоколы",
-    description: "Результаты по номинациям в порядке выступления, и их публикация.",
+    description: "Результаты по жанрам в порядке выступления, и их публикация.",
     icon: FileSpreadsheet,
     implemented: true,
   },
   {
     id: "members",
     title: "Состав жюри",
-    description: "Кто судит фестиваль и в каких номинациях.",
+    description: "Кто судит фестиваль и в каких жанрах.",
     icon: Users,
     implemented: false,
   },

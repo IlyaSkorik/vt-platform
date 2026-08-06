@@ -104,7 +104,7 @@ export function PublishProtocolDialog({ protocol }: PublishProtocolDialogProps):
       // diploma template assigned yet.
       if (result.diplomasMissing > 0) {
         toast.error(
-          `Без диплома осталось ${result.diplomasMissing} — проверьте, назначен ли шаблон диплома этой номинации.`,
+          `Без диплома осталось ${result.diplomasMissing} — проверьте, назначен ли шаблон диплома этого жанра.`,
         );
       }
       if (notify && result.lettersSkipped > 0) {

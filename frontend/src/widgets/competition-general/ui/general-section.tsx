@@ -385,7 +385,7 @@ export function GeneralSection({
                 <CardTitle className="text-base">Период регистрации (анонс)</CardTitle>
                 <CardDescription>
                   Даты для публичной афиши фестиваля. Фактический приём заявок задаётся по каждой
-                  номинации отдельно в разделе «Номинации» и определяется именно там.
+                  жанра отдельно в разделе «Жанры» и определяется именно там.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 pt-4 md:grid-cols-2">

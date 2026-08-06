@@ -55,7 +55,7 @@ export function RegistrationSection({
 
           <PageSection
             title="Регистрация по номинациям"
-            description="Задайте окно приёма заявок для каждой номинации или остановите приём досрочно. Приём в номинации открыт только внутри её окна; общего срока регистрации нет."
+            description="Задайте окно приёма заявок для каждого жанра или остановите приём досрочно. Приём в жанре открыт только внутри его окна; общего срока регистрации нет."
           >
             <Card className="shadow-none">
               <CardHeader className="pb-3">
@@ -64,8 +64,8 @@ export function RegistrationSection({
               <CardContent className="space-y-3">
                 {nominations.length === 0 ? (
                   <EmptyState
-                    title="Номинаций пока нет"
-                    description="Сначала добавьте номинации — расписание регистрации задаётся для каждой из них."
+                    title="Жанров пока нет"
+                    description="Сначала добавьте жанры — расписание регистрации задаётся для каждого из них."
                     action={
                       <Button type="button" onClick={() => onNavigateSection("categories")}>
                         Перейти к номинациям
@@ -96,8 +96,8 @@ export function RegistrationSection({
               <CardTitle className="text-base">Как это работает</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-muted-foreground text-sm">
-              <p>1. У каждой номинации своё окно приёма заявок (начало и конец).</p>
-              <p>2. Вне окна или до его настройки приём в номинации закрыт.</p>
+              <p>1. У каждого жанра своё окно приёма заявок (начало и конец).</p>
+              <p>2. Вне окна или до его настройки приём в жанре закрыт.</p>
               <p>3. Кнопка «Остановить регистрацию» закрывает приём досрочно, не трогая даты.</p>
             </CardContent>
           </Card>

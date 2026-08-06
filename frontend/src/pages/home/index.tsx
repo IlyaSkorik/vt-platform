@@ -258,7 +258,7 @@ export function HomePage(): React.JSX.Element {
                   <CardTitle className="text-base">Посмотреть результаты</CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground">
-                  Следите за публикацией итогов номинаций и протоколов.
+                  Следите за публикацией итогов жанров и протоколов.
                 </CardContent>
               </Card>
               <Card className="shadow-none">

@@ -40,7 +40,7 @@ export function StaffJudgesPage(): React.JSX.Element {
         ) : (
           <EmptyState
             title={`${section.title} — в разработке`}
-            description={`${section.description} Пока итоги ведутся в разделе «Протоколы»: результаты по номинациям, публикация и электронные дипломы.`}
+            description={`${section.description} Пока итоги ведутся в разделе «Протоколы»: результаты по жанрам, публикация и электронные дипломы.`}
           />
         )}
       </JuryWorkspaceLayout>

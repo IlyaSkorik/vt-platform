@@ -19,9 +19,7 @@ const envSchema = z.object({
 
   VITE_API_TIMEOUT: z.coerce.number().int().positive().default(15_000),
 
-  VITE_APP_ENV: z
-    .enum(["development", "stage", "production"])
-    .default("development"),
+  VITE_APP_ENV: z.enum(["development", "stage", "production"]).default("development"),
 
   VITE_SITE_URL: z.url().default("https://vzlettalantov.by"),
 });
@@ -29,9 +27,7 @@ const envSchema = z.object({
 const parsed = envSchema.safeParse(import.meta.env);
 
 if (!parsed.success) {
-  throw new Error(
-    `Invalid environment configuration:\n${z.prettifyError(parsed.error)}`,
-  );
+  throw new Error(`Invalid environment configuration:\n${z.prettifyError(parsed.error)}`);
 }
 
 /**

@@ -725,7 +725,7 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                                   <CardContent className="border-t border-border pt-3">
                                     <div className="space-y-1">
                                       <p className="text-xs text-muted-foreground">
-                                        Номинация: {performance.nominationName ?? "—"} · Дисциплина:{" "}
+                                        Жанр: {performance.nominationName ?? "—"} · Номинация:{" "}
                                         {performance.disciplineName ?? "—"}
                                       </p>
                                       <p className="text-xs text-muted-foreground">

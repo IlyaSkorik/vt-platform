@@ -27,7 +27,7 @@ export function FestivalApplyPlaceholderPage(): React.JSX.Element {
         <EmptyPage
           icon={<ClipboardList aria-hidden="true" />}
           title="Подача заявки скоро откроется"
-          description="Здесь появится мастер регистрации: выбор номинации, участников и оплата."
+          description="Здесь появится мастер регистрации: выбор жанра, участников и оплата."
           action={<BackToCatalog />}
         />
       </PageContent>

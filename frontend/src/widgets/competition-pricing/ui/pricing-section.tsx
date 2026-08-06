@@ -278,14 +278,14 @@ export function PricingSection({
                   <div className="space-y-3">
                     <Input
                       label="Поиск"
-                      placeholder="Номинация, дисциплина, возраст, группа, формат, цена"
+                      placeholder="Жанр, номинация, возраст, группа, формат, цена"
                       value={search}
                       onChange={(event) => setSearch(event.target.value)}
                       leadingIcon={<Search aria-hidden="true" />}
                     />
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                       {filterSelect(
-                        "Номинация",
+                        "Жанр",
                         filters.categoryId,
                         competition.categories.map((item) => ({
                           value: item.id,
@@ -299,7 +299,7 @@ export function PricingSection({
                           })),
                       )}
                       {filterSelect(
-                        "Дисциплина",
+                        "Номинация",
                         filters.disciplineId,
                         competition.disciplines
                           .filter(

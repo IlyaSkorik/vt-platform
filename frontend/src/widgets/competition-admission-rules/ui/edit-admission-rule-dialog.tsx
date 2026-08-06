@@ -136,18 +136,18 @@ export function EditAdmissionRuleDialog({
 
         <div className="grid gap-3 py-1">
           <Select
-            label="Номинация"
+            label="Жанр"
             value={categoryId}
             onValueChange={handleCategoryChange}
             options={nominations.map((item) => ({ value: item.id, label: item.name }))}
-            placeholder="Выберите номинацию"
+            placeholder="Выберите жанр"
           />
           <Select
-            label="Дисциплина"
+            label="Номинация"
             value={disciplineId}
             onValueChange={setDisciplineId}
             options={disciplines.map((item) => ({ value: item.id, label: item.name }))}
-            placeholder="Выберите дисциплину"
+            placeholder="Выберите номинацию"
             disabled={!categoryId}
           />
           <Select

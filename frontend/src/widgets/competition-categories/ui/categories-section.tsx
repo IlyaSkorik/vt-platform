@@ -141,7 +141,7 @@ export function CategoriesSection({
       const result = await addCategory.mutateAsync({
         competitionId: competition.id,
         payload: createCategoryPayload({
-          name: "Новая номинация",
+          name: "Новый жанр",
           sortOrder: nextCategorySortOrder(competition.categories),
         }),
       });
@@ -154,10 +154,10 @@ export function CategoriesSection({
         setEditCategoryName(created.name);
       }
       onAutosaveStateChange("saved");
-      toast.success("Номинация добавлена");
+      toast.success("Жанр добавлен");
     } catch (error) {
       onAutosaveStateChange("error");
-      toast.error(apiErrorMessage(error, "Не удалось добавить номинацию"));
+      toast.error(apiErrorMessage(error, "Не удалось добавить жанр"));
     }
   };
 
@@ -180,10 +180,10 @@ export function CategoriesSection({
         payload: { name: trimmed },
       });
       onAutosaveStateChange("saved");
-      toast.success("Номинация переименована");
+      toast.success("Жанр переименован");
     } catch (error) {
       onAutosaveStateChange("error");
-      toast.error(apiErrorMessage(error, "Не удалось переименовать номинацию"));
+      toast.error(apiErrorMessage(error, "Не удалось переименовать жанр"));
     }
     setEditingCategoryId(null);
   };
@@ -221,13 +221,13 @@ export function CategoriesSection({
           competitionId: competition.id,
           categoryId: deleteTarget.item.id,
         });
-        toast.success("Номинация удалена");
+        toast.success("Жанр удалён");
       } else {
         await removeDiscipline.mutateAsync({
           competitionId: competition.id,
           disciplineId: deleteTarget.item.id,
         });
-        toast.success("Дисциплина удалена");
+        toast.success("Номинация удалена");
       }
       onAutosaveStateChange("saved");
       setDeleteTarget(null);
@@ -235,8 +235,8 @@ export function CategoriesSection({
       onAutosaveStateChange("error");
       const fallback =
         deleteTarget.type === "category"
-          ? "Не удалось удалить номинацию"
-          : "Не удалось удалить дисциплину";
+          ? "Не удалось удалить жанр"
+          : "Не удалось удалить номинацию";
       toast.error(apiErrorMessage(error, fallback));
     }
   };
@@ -255,7 +255,7 @@ export function CategoriesSection({
       toast.success("Порядок номинаций обновлён");
     } catch (error) {
       onAutosaveStateChange("error");
-      toast.error(apiErrorMessage(error, "Не удалось изменить порядок номинаций"));
+      toast.error(apiErrorMessage(error, "Не удалось изменить порядок жанров"));
     }
   };
 
@@ -279,10 +279,10 @@ export function CategoriesSection({
     try {
       await reorderDisciplines.mutateAsync({ competitionId: competition.id, updates });
       onAutosaveStateChange("saved");
-      toast.success("Порядок дисциплин обновлён");
+      toast.success("Порядок номинаций обновлён");
     } catch (error) {
       onAutosaveStateChange("error");
-      toast.error(apiErrorMessage(error, "Не удалось изменить порядок дисциплин"));
+      toast.error(apiErrorMessage(error, "Не удалось изменить порядок номинаций"));
     }
   };
 
@@ -303,12 +303,12 @@ export function CategoriesSection({
         }),
       });
       onAutosaveStateChange("saved");
-      toast.success("Дисциплина добавлена");
+      toast.success("Номинация добавлена");
       setNewDisciplineName("");
       setTimeout(() => addDisciplineInputRef.current?.focus(), 0);
     } catch (error) {
       onAutosaveStateChange("error");
-      toast.error(apiErrorMessage(error, "Не удалось добавить дисциплину"));
+      toast.error(apiErrorMessage(error, "Не удалось добавить номинацию"));
     }
   };
 
@@ -331,20 +331,20 @@ export function CategoriesSection({
         payload: { name: trimmed },
       });
       onAutosaveStateChange("saved");
-      toast.success("Дисциплина переименована");
+      toast.success("Номинация переименована");
     } catch (error) {
       onAutosaveStateChange("error");
-      toast.error(apiErrorMessage(error, "Не удалось переименовать дисциплину"));
+      toast.error(apiErrorMessage(error, "Не удалось переименовать номинацию"));
     }
     setEditingDisciplineId(null);
   };
 
   const deleteDialogTitle =
-    deleteTarget?.type === "category" ? "Удалить номинацию?" : "Удалить дисциплину?";
+    deleteTarget?.type === "category" ? "Удалить жанр?" : "Удалить номинацию?";
   const deleteDialogDescription = deleteTarget
     ? deleteTarget.type === "category"
-      ? `Номинация «${deleteTarget.item.name}» и все её дисциплины будут удалены из фестиваля.`
-      : `Дисциплина «${deleteTarget.item.name}» будет удалена из фестиваля.`
+      ? `Жанр «${deleteTarget.item.name}» и все его номинации будут удалены из фестиваля.`
+      : `Номинация «${deleteTarget.item.name}» будет удалена из фестиваля.`
     : "";
 
   return (
@@ -353,18 +353,18 @@ export function CategoriesSection({
         <div className="space-y-6">
           {isReadOnly ? (
             <Alert variant="warning" title="Раздел только для просмотра">
-              Номинации и дисциплины можно изменять только в статусах «Черновик» и «Настроен».
+              Жанры и номинации можно изменять только в статусах «Черновик» и «Настроен».
             </Alert>
           ) : null}
 
           <PageSection
-            title="Номинации и дисциплины"
-            description="Таксономия фестиваля: номинации объединяют дисциплины и формируют структуру программы."
+            title="Жанры и номинации"
+            description="Таксономия фестиваля: жанры объединяют номинации и формируют структуру программы."
           >
             <Card className="shadow-none">
               <CardHeader className="gap-4 pb-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
-                  <CardTitle className="text-base">Структура номинаций</CardTitle>
+                  <CardTitle className="text-base">Структура жанров</CardTitle>
                   {!isReadOnly ? (
                     <Button
                       type="button"
@@ -372,14 +372,14 @@ export function CategoriesSection({
                       loading={addCategory.isPending}
                     >
                       <Plus className="size-4" aria-hidden="true" />
-                      Добавить номинацию
+                      Добавить жанр
                     </Button>
                   ) : null}
                 </div>
 
                 <Input
                   label="Поиск"
-                  placeholder="Название номинации или дисциплины"
+                  placeholder="Название жанра или номинации"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   leadingIcon={<Search aria-hidden="true" />}
@@ -390,13 +390,11 @@ export function CategoriesSection({
                 {filteredTree.length === 0 ? (
                   <EmptyState
                     title={
-                      competition.categories.length === 0
-                        ? "Номинаций пока нет"
-                        : "Ничего не найдено"
+                      competition.categories.length === 0 ? "Жанров пока нет" : "Ничего не найдено"
                     }
                     description={
                       competition.categories.length === 0
-                        ? "Добавьте первую номинацию, чтобы начать формировать программу фестиваля."
+                        ? "Добавьте первый жанр, чтобы начать формировать программу фестиваля."
                         : "Измените поисковый запрос."
                     }
                     action={
@@ -406,13 +404,13 @@ export function CategoriesSection({
                           onClick={() => void handleAddCategory()}
                           loading={addCategory.isPending}
                         >
-                          Добавить номинацию
+                          Добавить жанр
                         </Button>
                       ) : undefined
                     }
                   />
                 ) : (
-                  <ul className="space-y-3" aria-label="Список номинаций фестиваля">
+                  <ul className="space-y-3" aria-label="Список жанров фестиваля">
                     {filteredTree.map((node) => {
                       const isExpanded = expandedIds.has(node.category.id);
                       return (
@@ -456,9 +454,7 @@ export function CategoriesSection({
                               type="button"
                               className="mt-1 shrink-0 text-muted-foreground transition-transform"
                               aria-expanded={isExpanded}
-                              aria-label={
-                                isExpanded ? "Свернуть номинацию" : "Развернуть номинацию"
-                              }
+                              aria-label={isExpanded ? "Свернуть жанр" : "Развернуть жанр"}
                               onClick={() => toggleExpanded(node.category.id)}
                             >
                               <ChevronDown
@@ -546,7 +542,7 @@ export function CategoriesSection({
                                   type="button"
                                   size="sm"
                                   variant="ghost"
-                                  aria-label="Редактировать название номинации"
+                                  aria-label="Редактировать название жанра"
                                   icon={<Pencil aria-hidden="true" />}
                                   onClick={() => {
                                     setEditingCategoryId(node.category.id);
@@ -557,7 +553,7 @@ export function CategoriesSection({
                                   type="button"
                                   size="sm"
                                   variant="ghost"
-                                  aria-label="Удалить номинацию"
+                                  aria-label="Удалить жанр"
                                   icon={<Trash2 aria-hidden="true" />}
                                   onClick={() =>
                                     setDeleteTarget({ type: "category", item: node.category })
@@ -572,7 +568,7 @@ export function CategoriesSection({
                               {node.disciplines.length > 0 ? (
                                 <ul
                                   className="space-y-2"
-                                  aria-label={`Дисциплины номинации ${node.category.name}`}
+                                  aria-label={`Номинации жанра ${node.category.name}`}
                                 >
                                   {node.disciplines.map((discipline) => (
                                     <li
@@ -660,7 +656,7 @@ export function CategoriesSection({
                                             type="button"
                                             size="sm"
                                             variant="ghost"
-                                            aria-label="Редактировать дисциплину"
+                                            aria-label="Редактировать номинацию"
                                             icon={<Pencil className="size-3" aria-hidden="true" />}
                                             onClick={() => {
                                               setEditingDisciplineId(discipline.id);
@@ -671,7 +667,7 @@ export function CategoriesSection({
                                             type="button"
                                             size="sm"
                                             variant="ghost"
-                                            aria-label="Удалить дисциплину"
+                                            aria-label="Удалить номинацию"
                                             icon={<Trash2 className="size-3" aria-hidden="true" />}
                                             onClick={() =>
                                               setDeleteTarget({
@@ -687,7 +683,7 @@ export function CategoriesSection({
                                 </ul>
                               ) : (
                                 <p className="py-2 text-center text-muted-foreground text-sm">
-                                  В этой номинации пока нет дисциплин.
+                                  В этом жанре пока нет номинаций.
                                 </p>
                               )}
 
@@ -698,7 +694,7 @@ export function CategoriesSection({
                                       <Input
                                         ref={addDisciplineInputRef}
                                         className="h-7 flex-1 text-sm"
-                                        placeholder="Название дисциплины"
+                                        placeholder="Название номинации"
                                         value={newDisciplineName}
                                         onChange={(e) => setNewDisciplineName(e.target.value)}
                                         onKeyDown={(e) => {
@@ -742,7 +738,7 @@ export function CategoriesSection({
                                       }}
                                     >
                                       <Plus className="size-3.5" aria-hidden="true" />
-                                      Добавить дисциплину
+                                      Добавить номинацию
                                     </Button>
                                   )}
                                 </div>
@@ -762,11 +758,11 @@ export function CategoriesSection({
         <aside className="space-y-4 xl:sticky xl:top-4 xl:self-start">
           <Card className="shadow-none">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Как работать с номинациями</CardTitle>
+              <CardTitle className="text-base">Как работать с жанрами</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-muted-foreground text-sm">
-              <p>1. Создайте номинации — крупные направления фестиваля.</p>
-              <p>2. Внутри каждой номинации добавьте дисциплины.</p>
+              <p>1. Создайте жанры — крупные направления фестиваля.</p>
+              <p>2. Внутри каждого жанра добавьте номинации.</p>
               <p>3. Перетаскивайте элементы, чтобы задать порядок отображения.</p>
             </CardContent>
           </Card>
@@ -807,7 +803,7 @@ export function CategoriesSection({
 function pluralDisciplines(count: number): string {
   const mod10 = count % 10;
   const mod100 = count % 100;
-  if (mod10 === 1 && mod100 !== 11) return "дисциплина";
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "дисциплины";
-  return "дисциплин";
+  if (mod10 === 1 && mod100 !== 11) return "номинация";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "номинации";
+  return "номинаций";
 }

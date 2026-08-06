@@ -25,7 +25,7 @@ const DIMENSION_OPTIONS: Array<{ value: CopyPricingDimension; label: string }> =
   { value: "format", label: "Формат участия" },
   { value: "group", label: "Группа участников" },
   { value: "age", label: "Возрастная категория" },
-  { value: "nomination", label: "Номинация целиком" },
+  { value: "nomination", label: "Жанр целиком" },
 ];
 
 export function PricingCopyDialog({

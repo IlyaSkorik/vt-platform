@@ -45,7 +45,7 @@ export type TemplateFieldTypeId =
   | "participant_age"
   | "teacher"
   | "organization"
-  // Номинация, дисциплина, группа и возрастная категория — один составной блок.
+  // Жанр, номинация, группа и возрастная категория — один составной блок.
   | "nomination_block"
   | "work"
   | "competition_name"
@@ -70,17 +70,17 @@ export interface NominationPart {
 /**
  * The parts a nomination block can show, in canonical display order. Selecting
  * parts in the inspector never reorders them — the block always reads
- * номинация → дисциплина → группа → возрастная категория.
+ * жанр → номинация → группа → возрастная категория.
  */
 export const NOMINATION_PARTS: readonly NominationPart[] = [
-  { key: "title", label: "Номинация", binding: NOMINATION_TITLE },
-  { key: "discipline", label: "Дисциплина", binding: NOMINATION_DISCIPLINE },
+  { key: "title", label: "Жанр", binding: NOMINATION_TITLE },
+  { key: "discipline", label: "Номинация", binding: NOMINATION_DISCIPLINE },
   { key: "participant_group", label: "Группа участников", binding: NOMINATION_PARTICIPANT_GROUP },
   { key: "age_category", label: "Возрастная категория", binding: NOMINATION_AGE_CATEGORY },
 ];
 
 /** Default leading label of a nomination block. */
-export const DEFAULT_NOMINATION_PREFIX = "Номинация:";
+export const DEFAULT_NOMINATION_PREFIX = "Жанр:";
 
 /**
  * First line of the QR block's fixed caption. Mirrors the backend renderer's
@@ -111,7 +111,7 @@ export function qrCaptionLines(number: string, host: string): string[] {
 export interface TemplateFieldConfig {
   /** Nomination block: part keys to include (rendered in canonical order). */
   parts?: NominationPartKey[];
-  /** Nomination block: leading label, e.g. "Номинация:". */
+  /** Nomination block: leading label, e.g. "Жанр:". */
   prefix?: string;
 }
 
@@ -131,7 +131,7 @@ export type TemplateFieldGroup =
   | "Участник"
   | "Педагог"
   | "Организация"
-  | "Номинация"
+  | "Жанр"
   | "Произведение"
   | "Фестиваль"
   | "Результат"
@@ -143,7 +143,7 @@ export const FIELD_GROUPS: readonly TemplateFieldGroup[] = [
   "Участник",
   "Педагог",
   "Организация",
-  "Номинация",
+  "Жанр",
   "Произведение",
   "Фестиваль",
   "Результат",
@@ -183,7 +183,7 @@ export const FIELD_TYPES: readonly TemplateFieldType[] = [
     group: "Организация",
     icon: Building2,
   },
-  { id: "nomination_block", label: "Номинация", binding: "data", group: "Номинация", icon: Tag },
+  { id: "nomination_block", label: "Жанр", binding: "data", group: "Жанр", icon: Tag },
   { id: "work", label: "Произведение", binding: "data", group: "Произведение", icon: Music },
   {
     id: "competition_name",

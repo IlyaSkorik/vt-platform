@@ -77,7 +77,7 @@ export function ResultsSection({ festivalId }: ResultsSectionProps): React.JSX.E
     <LandingSection
       id="results"
       title="Результаты"
-      subtitle="Итоги по номинациям. Участникам электронные дипломы доступны в личном кабинете."
+      subtitle="Итоги по жанрам. Участникам электронные дипломы доступны в личном кабинете."
     >
       <ul className="space-y-3">
         {protocols.map((protocol) => (

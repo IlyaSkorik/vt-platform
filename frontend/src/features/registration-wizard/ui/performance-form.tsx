@@ -205,20 +205,19 @@ function PerformanceFormInner({
     <div className="flex flex-col gap-4">
       {noOpenNominations ? (
         <Alert variant="warning" title="Приём заявок закрыт">
-          Сейчас нет номинаций, открытых для регистрации. Проверьте сроки приёма заявок по
-          номинациям.
+          Сейчас нет жанров, открытых для регистрации. Проверьте сроки приёма заявок по жанрам.
         </Alert>
       ) : null}
       <div className="grid gap-3 sm:grid-cols-2">
         <Select
-          label="Номинация"
+          label="Жанр"
           placeholder="Выберите"
           options={nominationOptions}
           value={selection.nominationId ?? ""}
           onValueChange={(value: string) => setAxis("nominationId", value)}
         />
         <Select
-          label="Дисциплина"
+          label="Номинация"
           placeholder="Выберите"
           disabled={!selection.nominationId}
           options={disciplineOptions}
@@ -305,7 +304,7 @@ function PerformanceFormInner({
           ? "Сохранение…"
           : canSave
             ? "Изменения сохраняются автоматически"
-            : "Заполните номинацию, название и длительность номера"}
+            : "Заполните жанр, название и длительность номера"}
       </p>
 
       <Divider />

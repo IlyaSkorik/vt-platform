@@ -282,7 +282,7 @@ export function buildAdmissionCoverageWarnings(
       warnings.push({
         id: `nomination-${category.id}`,
         kind: "nomination",
-        message: `Номинация «${category.name}» не используется ни в одном правиле допуска.`,
+        message: `Жанр «${category.name}» не используется ни в одном правиле допуска.`,
         sectionId: "categories",
       });
     }
@@ -294,7 +294,7 @@ export function buildAdmissionCoverageWarnings(
       warnings.push({
         id: `discipline-${discipline.id}`,
         kind: "discipline",
-        message: `Дисциплина «${discipline.name}»${
+        message: `Номинация «${discipline.name}»${
           nomination ? ` (${nomination.name})` : ""
         } не имеет правил допуска.`,
         sectionId: "categories",

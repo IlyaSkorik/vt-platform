@@ -236,14 +236,14 @@ export function AdmissionRulesSection({
 
           {prerequisitesMissing && !isReadOnly ? (
             <Alert variant="warning" title="Сначала заполните таксономию">
-              Для конструктора нужны номинации, дисциплины, возрастные категории, группы участников
-              и хотя бы один включённый формат участия.
+              Для конструктора нужны жанры, номинации, возрастные категории, группы участников и
+              хотя бы один включённый формат участия.
             </Alert>
           ) : null}
 
           <PageSection
             title="Правила допуска"
-            description="Разрешённые комбинации номинация → дисциплина → возраст → группа → формат. Основа цен, заявок и публикации."
+            description="Разрешённые комбинации жанр → номинация → возраст → группа → формат. Основа цен, заявок и публикации."
           >
             <Card className="shadow-none">
               <CardHeader className="gap-4 pb-3">
@@ -261,14 +261,14 @@ export function AdmissionRulesSection({
                   <div className="space-y-3">
                     <Input
                       label="Поиск"
-                      placeholder="Номинация, дисциплина, возраст, группа, формат"
+                      placeholder="Жанр, номинация, возраст, группа, формат"
                       value={search}
                       onChange={(event) => setSearch(event.target.value)}
                       leadingIcon={<Search aria-hidden="true" />}
                     />
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                       {filterSelect(
-                        "Номинация",
+                        "Жанр",
                         filters.categoryId,
                         competition.categories.map((item) => ({
                           value: item.id,
@@ -282,7 +282,7 @@ export function AdmissionRulesSection({
                           })),
                       )}
                       {filterSelect(
-                        "Дисциплина",
+                        "Номинация",
                         filters.disciplineId,
                         competition.disciplines
                           .filter(
@@ -372,13 +372,13 @@ export function AdmissionRulesSection({
             <CardContent className="space-y-3 text-sm">
               <StatRow label="Правил" value={String(stats.totalRules)} />
               <StatRow label="Создано за сессию" value={String(sessionCreated)} />
-              <StatRow label="Покрытие дисциплин" value={`${stats.disciplineCoveragePercent}%`} />
+              <StatRow label="Покрытие номинаций" value={`${stats.disciplineCoveragePercent}%`} />
               <StatRow
-                label="Номинации с правилами"
+                label="Жанры с правилами"
                 value={`${stats.nominationsWithRules} / ${stats.nominationsTotal}`}
               />
               <StatRow
-                label="Дисциплины с правилами"
+                label="Номинации с правилами"
                 value={`${stats.disciplinesWithRules} / ${stats.disciplinesTotal}`}
               />
             </CardContent>

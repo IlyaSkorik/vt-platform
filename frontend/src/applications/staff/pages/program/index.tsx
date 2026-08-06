@@ -163,7 +163,7 @@ export function StaffProgramPage(): React.JSX.Element {
             ) : (
               <EmptyState
                 title="Программа не выбрана"
-                description="Выберите программу слева или создайте новую — например, отдельную на каждую номинацию."
+                description="Выберите программу слева или создайте новую — например, отдельный на каждый жанр."
               />
             )}
           </div>
@@ -197,7 +197,7 @@ function ProgramList({
     return (
       <EmptyState
         title="Программ пока нет"
-        description="Создайте первую программу — обычно по одной на номинацию."
+        description="Создайте первую программу — обычно по одной на жанр."
       />
     );
   }
@@ -274,7 +274,7 @@ function CreateProgramCard({
           onChange={(event) => setName(event.target.value)}
         />
         <Select
-          label="Номинация"
+          label="Жанр"
           placeholder="Весь фестиваль"
           options={nominations}
           value={nominationId}
