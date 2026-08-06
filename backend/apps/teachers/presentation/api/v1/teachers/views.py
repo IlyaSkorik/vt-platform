@@ -72,6 +72,8 @@ def _teacher_resource(dto: TeacherDto) -> dict[str, Any]:
         "role": dto.role,
         "email": dto.email,
         "phone": dto.phone,
+        "consentRecorded": dto.consent_recorded,
+        "consentVersion": dto.consent_version,
         "status": dto.status,
         "archivedAt": _iso(dto.archived_at),
         "createdAt": _iso(dto.created_at),
@@ -141,6 +143,8 @@ class TeacherCollectionView(_AuthenticatedView):
             role=str(data["role"]),
             email=_optional_str(data.get("email")),
             phone=_optional_str(data.get("phone")),
+            consent_id=str(data["consentId"]),
+            consent_version=str(data["consentVersion"]),
         )
         try:
             result = composition.build_add_teacher_handler().handle(command)

@@ -30,6 +30,7 @@ from apps.teachers.application.queries import GetTeacherDirectoryQuery, GetTeach
 from apps.teachers.domain.entities import Teacher
 from apps.teachers.domain.events import DomainEvent
 from apps.teachers.domain.value_objects import (
+    ConsentReference,
     EmailAddress,
     OwnerId,
     PersonName,
@@ -115,6 +116,11 @@ class AddTeacherHandler:
         email = _optional_email(command.email)
         phone = _optional_phone(command.phone)
         teacher_id = TeacherId.from_uuid(self._uuids.new())
+        consent = (
+            ConsentReference.of(command.consent_id, command.consent_version)
+            if command.consent_id is not None and command.consent_version is not None
+            else None
+        )
         teacher, domain_events = Teacher.create(
             teacher_id=teacher_id,
             owner_id=owner,
@@ -123,6 +129,7 @@ class AddTeacherHandler:
             now=now,
             email=email,
             phone=phone,
+            consent=consent,
         )
         self._teachers.save(teacher)
         return _result(teacher, domain_events)

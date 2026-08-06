@@ -97,6 +97,24 @@ export const PARTICIPANT_CONSENT: ConsentDefinition = {
 };
 
 /**
+ * The consent that authorises holding a teacher's details.
+ *
+ * A teacher in somebody's directory is an adult whose data is being entered by another
+ * person, and the platform never speaks to them at that moment. So the statement made
+ * here is the one §5.4 of the policy requires of whoever enters another person's data:
+ * their consent has already been obtained. The wording is a confirmation, not a consent
+ * given on the teacher's behalf — nobody can consent for an adult who is not present.
+ */
+export const TEACHER_CONSENT: ConsentDefinition = {
+  code: "third_party_data_processing",
+  version: V1,
+  required: true,
+  summary:
+    "Согласие педагога на обработку его персональных данных получено, и я подтверждаю его предоставление.",
+  text: "Я подтверждаю, что получил(а) согласие указанного педагога на обработку его персональных данных Оператором и на их предоставление организаторам мероприятий: фамилии, имени, отчества, должности (преподаваемой дисциплины), адреса электронной почты и номера телефона (при указании) — в целях подготовки и проведения фестивалей и конкурсов, включая указание педагога в заявках, протоколах результатов, программах выступлений и документах по итогам мероприятия (разделы 5, 8 и 9 Политики в отношении обработки персональных данных). Педагог вправе отозвать согласие в любое время, обратившись к Оператору по адресу support@vzlettalantov.by; отзыв влечёт прекращение обработки его персональных данных и их удаление в порядке, установленном разделами 11 и 13 Политики.",
+};
+
+/**
  * Application-level consents, keyed by the code the registration projection sends.
  *
  * The festival decides which of them it asks for; the wording is not the festival's to

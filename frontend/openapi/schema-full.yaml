@@ -9834,7 +9834,13 @@ components:
       - submissionId
     AddTeacherRequest:
       type: object
-      description: Validate an add-teacher request body.
+      description: |-
+        Validate an add-teacher request body.
+
+        The consent is required here and nowhere else: a teacher is an adult whose details
+        somebody else is entering, so the basis for holding them is that adult's own consent
+        (LEGAL-001 §5.4). Once it is on file, an edit to a phone number has no reason to ask
+        for it again.
       properties:
         firstName:
           type: string
@@ -9854,7 +9860,15 @@ components:
           type:
           - string
           - 'null'
+        consentId:
+          type: string
+          format: uuid
+        consentVersion:
+          type: string
+          maxLength: 40
       required:
+      - consentId
+      - consentVersion
       - firstName
       - lastName
       - role
@@ -12467,7 +12481,8 @@ components:
           type: boolean
     PatchedUpdateTeacherRequest:
       type: object
-      description: Validate an update-teacher request body (same shape as add).
+      description: Validate an update-teacher request body — the details, without
+        the consent.
       properties:
         firstName:
           type: string

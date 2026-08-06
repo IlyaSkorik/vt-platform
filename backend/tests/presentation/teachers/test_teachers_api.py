@@ -43,10 +43,49 @@ def auth_client(client: APIClient) -> APIClient:
     return _auth(client, email="owner@example.com")
 
 
+def _record_consent(client: APIClient) -> str:
+    """Record the teacher's own consent in the Identity journal, returning its id."""
+    response = client.post(
+        "/api/v1/users/me/consents",
+        {"consentType": "third_party_data_processing", "version": "1.0"},
+        format="json",
+    )
+    assert response.status_code == 201, response.data
+    return str(response.data["data"][0]["id"])
+
+
 def _add(client: APIClient, **overrides: Any) -> Any:
-    body: dict[str, Any] = {"firstName": "Anna", "lastName": "Ivanova", "role": "Teacher"}
+    """Add a teacher, with the consent the endpoint now requires unless overridden."""
+    body: dict[str, Any] = {
+        "firstName": "Anna",
+        "lastName": "Ivanova",
+        "role": "Teacher",
+        "consentId": _record_consent(client),
+        "consentVersion": "1.0",
+    }
     body.update(overrides)
     return client.post("/api/v1/teachers", body, format="json")
+
+
+def test_add_refuses_without_the_teacher_s_consent(auth_client: APIClient) -> None:
+    # A teacher is an adult whose details somebody else is entering, so the basis for
+    # holding them is that adult's own consent (LEGAL-001 §5.4) — and the platform, not
+    # the form, is what refuses without it.
+    response = auth_client.post(
+        "/api/v1/teachers",
+        {"firstName": "Anna", "lastName": "Ivanova", "role": "Teacher"},
+        format="json",
+    )
+    assert response.status_code == 400, response.data
+    assert response["Content-Type"].startswith("application/problem+json")
+    assert auth_client.get("/api/v1/teachers").data["data"] == []
+
+
+def test_add_records_the_consent_on_the_teacher(auth_client: APIClient) -> None:
+    response = _add(auth_client)
+    assert response.status_code == 201, response.data
+    assert response.data["data"]["consentRecorded"] is True
+    assert response.data["data"]["consentVersion"] == "1.0"
 
 
 def test_requires_authentication(client: APIClient) -> None:

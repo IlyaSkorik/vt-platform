@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from apps.teachers.domain.entities import Teacher
 from apps.teachers.domain.value_objects import (
+    ConsentReference,
     EmailAddress,
     OwnerId,
     PersonName,
@@ -44,6 +45,11 @@ class TeacherMapper:
             updated_at=model.updated_at,
             email=EmailAddress(model.email) if model.email is not None else None,
             phone=PhoneNumber(model.phone) if model.phone is not None else None,
+            consent=(
+                ConsentReference(consent_id=model.consent_id, consent_version=model.consent_version)
+                if model.consent_id is not None and model.consent_version is not None
+                else None
+            ),
             archived_at=model.archived_at,
             deleted_at=model.deleted_at,
             version=model.version,
@@ -73,6 +79,8 @@ class TeacherMapper:
             "role": entity.role.value,
             "email": entity.email.value if entity.email is not None else None,
             "phone": entity.phone.value if entity.phone is not None else None,
+            "consent_id": entity.consent.consent_id if entity.consent is not None else None,
+            "consent_version": entity.consent.consent_version if entity.consent is not None else None,
             "status": entity.status.value,
             "archived_at": entity.archived_at,
             "created_at": entity.created_at,

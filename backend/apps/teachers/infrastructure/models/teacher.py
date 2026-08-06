@@ -32,6 +32,11 @@ class TeacherModel(BasePersistenceModel):
     email = models.CharField(max_length=320, null=True, blank=True, default=None)
     phone = models.CharField(max_length=32, null=True, blank=True, default=None)
 
+    # The Identity consent that permits holding this adult's details, obtained by
+    # whoever entered them (LEGAL-001 §5.4). Nullable for rows that predate the rule.
+    consent_id = models.UUIDField(null=True, blank=True, default=None)
+    consent_version = models.CharField(max_length=40, null=True, blank=True, default=None)
+
     status = models.CharField(max_length=16, choices=_STATUS_CHOICES)
     archived_at = models.DateTimeField(null=True, blank=True, default=None)
 

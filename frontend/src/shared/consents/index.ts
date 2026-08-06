@@ -12,5 +12,6 @@ export {
   applicationConsent,
   type ConsentDefinition,
   PARTICIPANT_CONSENT,
+  TEACHER_CONSENT,
 } from "./definitions";
 export { ConsentCheckbox } from "./ui/consent-checkbox";

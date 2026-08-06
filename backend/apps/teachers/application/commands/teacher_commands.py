@@ -30,6 +30,10 @@ class AddTeacherCommand:
     middle_name: str | None = None
     email: str | None = None
     phone: str | None = None
+    #: The teacher's own consent to having their details held, obtained by whoever is
+    #: entering them (LEGAL-001 §5.4). Both parts travel together or neither does.
+    consent_id: str | None = None
+    consent_version: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

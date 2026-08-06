@@ -116,15 +116,23 @@ class ConsentType(StrEnum):
 
     A :class:`~enum.StrEnum`, so each member *is* its wire value and serializes to a
     plain string with no extra handling. The set reflects the legal bases the
-    platform tracks for a children's competition service (DATA-001 §4.1): the minor
-    data-processing consent is distinct from the general one because a guardian, not
-    the child, grants it.
+    platform tracks for a children's competition service (DATA-001 §4.1). Two of them
+    are about somebody other than the grantor: a guardian consents for a child, and
+    whoever enters an adult's details confirms that adult's consent. Both are kept
+    apart from the general one, because "I permit this" and "they permitted this" are
+    different statements and only one of them the account holder can make about
+    themselves.
     """
 
     TERMS_OF_SERVICE = "terms_of_service"
     PRIVACY_POLICY = "privacy_policy"
     DATA_PROCESSING = "data_processing"
     MINOR_DATA_PROCESSING = "minor_data_processing"
+    #: An adult's data entered by somebody else — a teacher added to a roster by the
+    #: guardian or organizer who names them. Distinct from ``DATA_PROCESSING`` because
+    #: the person consenting is not the person whose data it is: whoever enters it must
+    #: have obtained that consent first (LEGAL-001 §5.4).
+    THIRD_PARTY_DATA_PROCESSING = "third_party_data_processing"
     MARKETING = "marketing"
 
 

@@ -5,6 +5,7 @@ import {
   applicationConsent,
   type ConsentDefinition,
   PARTICIPANT_CONSENT,
+  TEACHER_CONSENT,
 } from "./index";
 
 /**
@@ -19,6 +20,7 @@ import {
 const ALL: readonly ConsentDefinition[] = [
   ...ACCOUNT_CONSENTS,
   PARTICIPANT_CONSENT,
+  TEACHER_CONSENT,
   ...Object.values(APPLICATION_CONSENTS),
 ];
 
@@ -74,6 +76,18 @@ describe("consent catalogue", () => {
 
   it("has no wording for a code it does not know", () => {
     expect(applicationConsent("something_invented")).toBeUndefined();
+  });
+
+  it("confirms a teacher's consent rather than pretending to give it", () => {
+    // Nobody can consent on behalf of an adult who is not in the room, so the wording
+    // is a confirmation that their consent was already obtained (LEGAL-001 §5.4) — and
+    // it must not be the code the account holder uses for their own data.
+    expect(TEACHER_CONSENT.code).toBe("third_party_data_processing");
+    expect(TEACHER_CONSENT.required).toBe(true);
+    expect(TEACHER_CONSENT.summary).toMatch(/подтвержда/i);
+    expect(ACCOUNT_CONSENTS.map((consent) => consent.code)).not.toContain(TEACHER_CONSENT.code);
+    // And it tells the teacher how to take it back.
+    expect(TEACHER_CONSENT.text).toMatch(/отозвать/i);
   });
 
   it("tells the participant consent apart from the account's own", () => {

@@ -16,6 +16,7 @@ from rest_framework import serializers
 __all__ = [
     "AddTeacherRequestSerializer",
     "ProblemDetailSerializer",
+    "TeacherDetailsSerializer",
     "TeacherDirectoryResponseSerializer",
     "TeacherResponseSerializer",
     "UpdateTeacherRequestSerializer",
@@ -27,8 +28,8 @@ __all__ = [
 # ---------------------------------------------------------------------------
 
 
-class AddTeacherRequestSerializer(serializers.Serializer[dict[str, object]]):
-    """Validate an add-teacher request body."""
+class TeacherDetailsSerializer(serializers.Serializer[dict[str, object]]):
+    """The teacher's details, shared by adding and updating."""
 
     firstName = serializers.CharField()
     lastName = serializers.CharField()
@@ -38,8 +39,21 @@ class AddTeacherRequestSerializer(serializers.Serializer[dict[str, object]]):
     phone = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
 
-class UpdateTeacherRequestSerializer(AddTeacherRequestSerializer):
-    """Validate an update-teacher request body (same shape as add)."""
+class AddTeacherRequestSerializer(TeacherDetailsSerializer):
+    """Validate an add-teacher request body.
+
+    The consent is required here and nowhere else: a teacher is an adult whose details
+    somebody else is entering, so the basis for holding them is that adult's own consent
+    (LEGAL-001 §5.4). Once it is on file, an edit to a phone number has no reason to ask
+    for it again.
+    """
+
+    consentId = serializers.UUIDField()
+    consentVersion = serializers.CharField(max_length=40)
+
+
+class UpdateTeacherRequestSerializer(TeacherDetailsSerializer):
+    """Validate an update-teacher request body — the details, without the consent."""
 
 
 # ---------------------------------------------------------------------------

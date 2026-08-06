@@ -5,12 +5,14 @@ import { useNavigate, useParams, useSearchParams } from "react-router";
 
 import { fetchTeacher, teacherDirectoryKeys, useTeachers } from "@/entities/teacher";
 import { toApiError } from "@/shared/api";
+import { recordOwnConsent } from "@/shared/api/generated/identity/identity";
 import type { AddTeacherRequest } from "@/shared/api/generated/model-teachers";
 import {
   teachersCreate,
   teachersUpdate,
 } from "@/shared/api/generated/teacher-directory/teacher-directory";
 import { ROUTES } from "@/shared/config";
+import { ConsentCheckbox, TEACHER_CONSENT } from "@/shared/consents";
 import { formatPersonName } from "@/shared/lib";
 import {
   Button,
@@ -61,7 +63,9 @@ const REQUIRED_FIELDS = [
   "role",
 ] as const satisfies readonly (keyof TeacherFormValues)[];
 
-function toRequest(values: TeacherFormValues): AddTeacherRequest {
+function toRequest(
+  values: TeacherFormValues,
+): Omit<AddTeacherRequest, "consentId" | "consentVersion"> {
   return {
     firstName: values.firstName.trim(),
     lastName: values.lastName.trim(),
@@ -164,6 +168,7 @@ export function TeacherProfilePage(): React.JSX.Element {
   // Set by a save attempt that could not go through, which is what turns the
   // required markers into per-field messages.
   const [submitted, setSubmitted] = useState(false);
+  const [teacherConsent, setTeacherConsent] = useState(false);
 
   const teacherQuery = useQuery({
     enabled: !isCreateMode && teacherId != null,
@@ -188,7 +193,26 @@ export function TeacherProfilePage(): React.JSX.Element {
 
   const createMutation = useMutation({
     mutationFn: async (form: TeacherFormValues): Promise<string> => {
-      const response = await teachersCreate(toRequest(form));
+      // The journal entry first, and its id travels with the teacher: the row the
+      // cabinet reads then carries the basis for holding this adult's details rather
+      // than pointing at nothing (LEGAL-001 §5.4, §13.3). Creation is refused
+      // server-side without it, so an interrupted flow leaves no teacher on file.
+      const consent = await recordOwnConsent({
+        consentType: TEACHER_CONSENT.code,
+        version: TEACHER_CONSENT.version,
+      });
+      if (consent.status !== 201) {
+        throw new Error("Не удалось записать согласие педагога.");
+      }
+      const consentId = consent.data.data[0]?.id;
+      if (consentId == null) {
+        throw new Error("Не удалось записать согласие педагога.");
+      }
+      const response = await teachersCreate({
+        ...toRequest(form),
+        consentId,
+        consentVersion: TEACHER_CONSENT.version,
+      });
       if (response.status !== 201) {
         throw new Error("Failed to create teacher");
       }
@@ -253,6 +277,12 @@ export function TeacherProfilePage(): React.JSX.Element {
 
   function handleSave(): void {
     if (!canSave) {
+      setSubmitted(true);
+      return;
+    }
+    // Only on creation: once the consent is on file, editing a phone number has no
+    // reason to ask for it again.
+    if (isCreateMode && !teacherConsent) {
       setSubmitted(true);
       return;
     }
@@ -327,7 +357,19 @@ export function TeacherProfilePage(): React.JSX.Element {
             description="Необязательно"
           />
         </div>
-        <div className="space-y-2">
+        <div className="space-y-3">
+          {isCreateMode ? (
+            <ConsentCheckbox
+              consent={TEACHER_CONSENT}
+              checked={teacherConsent}
+              error={
+                submitted && !teacherConsent
+                  ? "Без согласия педагога добавить его в справочник нельзя"
+                  : undefined
+              }
+              onChange={setTeacherConsent}
+            />
+          ) : null}
           {/* Deliberately clickable while incomplete: a disabled button gives no
               reason, whereas this one names the fields that are still empty. */}
           <Button loading={pending} onClick={handleSave}>

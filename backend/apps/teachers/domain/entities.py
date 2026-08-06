@@ -32,6 +32,7 @@ from .exceptions import (
     TeacherNotEditableError,
 )
 from .value_objects import (
+    ConsentReference,
     EmailAddress,
     OwnerId,
     PersonName,
@@ -63,6 +64,8 @@ class Teacher:
     _updated_at: datetime
     _email: EmailAddress | None = None
     _phone: PhoneNumber | None = None
+    #: The Identity consent that permits holding this adult's details.
+    _consent: ConsentReference | None = None
     _archived_at: datetime | None = None
     _deleted_at: datetime | None = None
     _version: int = 1
@@ -88,8 +91,14 @@ class Teacher:
         now: datetime,
         email: EmailAddress | None = None,
         phone: PhoneNumber | None = None,
+        consent: ConsentReference | None = None,
     ) -> tuple[Teacher, list[DomainEvent]]:
-        """Create a brand-new ACTIVE directory entry."""
+        """Create a brand-new ACTIVE directory entry.
+
+        ``consent`` references the teacher's own consent to having their details held,
+        obtained by whoever is entering them (LEGAL-001 §5.4). Optional here because the
+        aggregate cannot know which flow it is in; the API refuses a creation without it.
+        """
         teacher = cls(
             _token=_CREATION_TOKEN,
             _id=teacher_id,
@@ -101,6 +110,7 @@ class Teacher:
             _updated_at=now,
             _email=email,
             _phone=phone,
+            _consent=consent,
         )
         return teacher, [TeacherAdded(aggregate_id=teacher_id.value, owner_id=owner_id, role=role)]
 
@@ -117,6 +127,7 @@ class Teacher:
         updated_at: datetime,
         email: EmailAddress | None = None,
         phone: PhoneNumber | None = None,
+        consent: ConsentReference | None = None,
         archived_at: datetime | None = None,
         deleted_at: datetime | None = None,
         version: int = 1,
@@ -133,6 +144,7 @@ class Teacher:
             _updated_at=updated_at,
             _email=email,
             _phone=phone,
+            _consent=consent,
             _archived_at=archived_at,
             _deleted_at=deleted_at,
             _version=version,
@@ -165,6 +177,11 @@ class Teacher:
     @property
     def phone(self) -> PhoneNumber | None:
         return self._phone
+
+    @property
+    def consent(self) -> ConsentReference | None:
+        """The consent on file for holding this teacher's details, if any."""
+        return self._consent
 
     @property
     def status(self) -> TeacherStatus:

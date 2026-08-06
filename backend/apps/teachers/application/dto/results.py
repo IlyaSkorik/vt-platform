@@ -33,6 +33,10 @@ class TeacherDto:
     role: str
     email: str | None
     phone: str | None
+    #: Whether a consent for holding this adult's details is on file, and under which
+    #: version of the text — exposed so the cabinet can show it rather than assume it.
+    consent_recorded: bool
+    consent_version: str | None
     status: str
     archived_at: datetime | None
     created_at: datetime
@@ -52,6 +56,8 @@ class TeacherDto:
             role=teacher.role.value,
             email=teacher.email.value if teacher.email is not None else None,
             phone=teacher.phone.value if teacher.phone is not None else None,
+            consent_recorded=teacher.consent is not None,
+            consent_version=(teacher.consent.consent_version if teacher.consent is not None else None),
             status=teacher.status.value,
             archived_at=teacher.archived_at,
             created_at=teacher.created_at,

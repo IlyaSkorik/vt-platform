@@ -31,6 +31,7 @@ from .exceptions import (
 )
 
 __all__ = [
+    "ConsentReference",
     "EmailAddress",
     "OwnerId",
     "PersonName",
@@ -268,3 +269,32 @@ class TeacherStatus(StrEnum):
 
     ACTIVE = "ACTIVE"
     ARCHIVED = "ARCHIVED"
+
+
+@dataclass(frozen=True, slots=True)
+class ConsentReference:
+    """A by-identity reference to the Identity consent that authorizes this entry.
+
+    A teacher in somebody's directory is an adult whose details were entered by
+    somebody else, so the basis for holding them is that adult's own consent, obtained
+    by whoever entered them (LEGAL-001 §5.4). This context records only the reference —
+    the consent's UUID and the exact version of the text accepted — never the text
+    itself, which belongs to Identity. Compared by value.
+    """
+
+    consent_id: uuid.UUID
+    consent_version: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.consent_id, uuid.UUID):  # defensive: wrong type
+            raise ValueError("ConsentReference.consent_id must be a uuid.UUID.")
+        version = self.consent_version.strip()
+        if not version or len(version) > 40:
+            raise ValueError("ConsentReference.consent_version must be non-empty and at most 40 characters.")
+        object.__setattr__(self, "consent_version", version)
+
+    @classmethod
+    def of(cls, consent_id: str | uuid.UUID, consent_version: str) -> ConsentReference:
+        """Build from a raw id, parsing it at the boundary."""
+        parsed = consent_id if isinstance(consent_id, uuid.UUID) else uuid.UUID(str(consent_id))
+        return cls(consent_id=parsed, consent_version=consent_version)
