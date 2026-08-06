@@ -100,6 +100,10 @@ class _VideoRequirementsInputSerializer(serializers.Serializer[dict[str, object]
         source="allowed_providers",
     )
     allowReplacement = serializers.BooleanField(source="allow_replacement")
+    # Optional so an organizer editing only the mode need not restate the upload rules,
+    # and so settings saved before video uploads existed still validate.
+    allowedFormats = serializers.ListField(child=serializers.CharField(), source="allowed_formats", required=False)
+    maxUploadSizeMb = serializers.IntegerField(source="max_upload_size_mb", min_value=1, max_value=512, required=False)
 
 
 class _PaymentReceiptRequirementsInputSerializer(serializers.Serializer[dict[str, object]]):
@@ -579,6 +583,8 @@ class _VideoRequirementsSerializer(serializers.Serializer[dict[str, object]]):
     mode = serializers.CharField()
     allowedProviders = serializers.ListField(child=serializers.CharField(), source="allowed_providers")
     allowReplacement = serializers.BooleanField(source="allow_replacement")
+    allowedFormats = serializers.ListField(child=serializers.CharField(), source="allowed_formats")
+    maxUploadSizeMb = serializers.IntegerField(source="max_upload_size_mb")
 
 
 class _PaymentReceiptRequirementsSerializer(serializers.Serializer[dict[str, object]]):

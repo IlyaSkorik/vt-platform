@@ -141,6 +141,10 @@ class RegistrationUploadRequirementView:
     music_allowed_formats: list[str]
     music_max_upload_size_mb: int
     video_mode: str
+    #: Only meaningful when ``video_mode`` allows a file; sent regardless so the client
+    #: never has to guess a limit it would then enforce differently from the server.
+    video_allowed_formats: list[str]
+    video_max_upload_size_mb: int
     receipt_required: bool
 
 
@@ -283,6 +287,8 @@ def project_registration(competition: Competition, *, now: datetime) -> Registra
             music_allowed_formats=list(requirement.music.allowed_formats),
             music_max_upload_size_mb=requirement.music.max_upload_size_mb,
             video_mode=requirement.video.mode.value,
+            video_allowed_formats=list(requirement.video.allowed_formats),
+            video_max_upload_size_mb=requirement.video.max_upload_size_mb,
             receipt_required=requirement.payment_receipt.require_receipt,
         )
         for requirement in settings.format_requirements

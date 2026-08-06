@@ -8,6 +8,8 @@ the root row's JSON column without treating every field as a boolean.
 from __future__ import annotations
 
 from apps.competitions.domain.value_objects import (
+    _DEFAULT_AUDIO_FORMATS,
+    _DEFAULT_VIDEO_FORMATS,
     CompetitionSettings,
     MusicRequirements,
     ParticipationFormatId,
@@ -159,6 +161,8 @@ def _format_requirements_to_json(item: ParticipationFormatRequirements) -> dict[
             "mode": item.video.mode.value,
             "allowed_providers": [provider.value for provider in item.video.allowed_providers],
             "allow_replacement": item.video.allow_replacement,
+            "allowed_formats": list(item.video.allowed_formats),
+            "max_upload_size_mb": item.video.max_upload_size_mb,
         },
         "payment_receipt": {
             "require_receipt": item.payment_receipt.require_receipt,
@@ -166,6 +170,19 @@ def _format_requirements_to_json(item: ParticipationFormatRequirements) -> dict[
             "allow_replacement": item.payment_receipt.allow_replacement,
         },
     }
+
+
+def _formats(raw: object, *, default: tuple[str, ...]) -> tuple[str, ...]:
+    """Extension list off a stored blob, falling back to the kind's default.
+
+    An empty or malformed list reads as "not configured": the value object refuses to
+    accept a format-less requirement that allows uploads, so handing it the default is
+    the only reading that both loads and stays valid.
+    """
+    if not isinstance(raw, list):
+        return default
+    parsed = tuple(str(item) for item in raw if str(item).strip())
+    return parsed or default
 
 
 def _format_requirements_from_json(data: dict[str, object]) -> ParticipationFormatRequirements | None:
@@ -183,9 +200,6 @@ def _format_requirements_from_json(data: dict[str, object]) -> ParticipationForm
     assert isinstance(music_data, dict)
     assert isinstance(video_data, dict)
     assert isinstance(receipt_data, dict)
-
-    formats_raw = music_data.get("allowed_formats", [])
-    formats = tuple(str(item) for item in formats_raw) if isinstance(formats_raw, list) else ()
 
     try:
         mode = VideoSubmissionMode(str(video_data.get("mode", VideoSubmissionMode.NOT_REQUIRED.value)))
@@ -208,13 +222,15 @@ def _format_requirements_from_json(data: dict[str, object]) -> ParticipationForm
         music=MusicRequirements(
             require_upload=bool(music_data.get("require_upload", False)),
             allow_replacement=bool(music_data.get("allow_replacement", True)),
-            allowed_formats=formats,
+            allowed_formats=_formats(music_data.get("allowed_formats"), default=_DEFAULT_AUDIO_FORMATS),
             max_upload_size_mb=max_upload_size_mb,
         ),
         video=VideoRequirements(
             mode=mode,
             allowed_providers=tuple(providers),
             allow_replacement=bool(video_data.get("allow_replacement", True)),
+            allowed_formats=_formats(video_data.get("allowed_formats"), default=_DEFAULT_VIDEO_FORMATS),
+            max_upload_size_mb=as_int(video_data.get("max_upload_size_mb"), default=200),
         ),
         payment_receipt=PaymentReceiptRequirements(
             require_receipt=bool(receipt_data.get("require_receipt", False)),

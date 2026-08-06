@@ -92,6 +92,8 @@ from .exceptions import (
 )
 
 __all__ = [
+    "_DEFAULT_AUDIO_FORMATS",
+    "_DEFAULT_VIDEO_FORMATS",
     "AdmissionCombination",
     "AdmissionRule",
     "AgeCategoryId",
@@ -1665,6 +1667,7 @@ class RegistrationWindow:
 
 
 _DEFAULT_AUDIO_FORMATS: Final[tuple[str, ...]] = ("mp3", "wav", "m4a", "aac")
+_DEFAULT_VIDEO_FORMATS: Final[tuple[str, ...]] = ("mp4", "mov", "m4v", "webm")
 _MAX_UPLOAD_SIZE_MB_LIMIT: Final = 512
 
 
@@ -1728,7 +1731,17 @@ class MusicRequirements:
 
 @dataclass(frozen=True, slots=True)
 class VideoRequirements:
-    """Video submission policy for one participation format."""
+    """Video submission policy for one participation format.
+
+    A video is not only how a remote entry is judged — an in-person festival wants the
+    file too, to play on the hall's screen — so the upload side carries the same two
+    controls music does: which extensions are accepted, and how large a file may be. The
+    organizer sets both, because what a phone produces for a three-minute number differs
+    by an order of magnitude between festivals.
+
+    ``mode`` decides whether a URL, a file, or either is expected; the format and size
+    limits apply whenever a file is allowed at all.
+    """
 
     mode: VideoSubmissionMode = VideoSubmissionMode.NOT_REQUIRED
     allowed_providers: tuple[VideoProvider, ...] = (
@@ -1738,6 +1751,10 @@ class VideoRequirements:
         VideoProvider.VIMEO,
     )
     allow_replacement: bool = True
+    allowed_formats: tuple[str, ...] = _DEFAULT_VIDEO_FORMATS
+    #: Default is generous next to music's 25 MB: a minute of phone video is tens of
+    #: megabytes, and a limit that refuses an ordinary entry is a limit nobody can meet.
+    max_upload_size_mb: int = 200
 
     def __post_init__(self) -> None:
         if not isinstance(self.mode, VideoSubmissionMode):
@@ -1746,6 +1763,20 @@ class VideoRequirements:
         if self.mode in {VideoSubmissionMode.URL_ONLY, VideoSubmissionMode.URL_OR_FILE} and not providers:
             raise InvalidCompetitionSettingsError("At least one video provider is required for URL submissions.")
         object.__setattr__(self, "allowed_providers", providers)
+
+        if not isinstance(self.max_upload_size_mb, int) or isinstance(self.max_upload_size_mb, bool):
+            raise InvalidCompetitionSettingsError("Video max upload size must be an integer.")
+        if self.max_upload_size_mb < 1 or self.max_upload_size_mb > _MAX_UPLOAD_SIZE_MB_LIMIT:
+            raise InvalidCompetitionSettingsError(f"Video max upload size must be between 1 and {_MAX_UPLOAD_SIZE_MB_LIMIT} MB.")
+        normalized = tuple(ext.strip().lower().lstrip(".") for ext in self.allowed_formats if ext.strip())
+        if self.allows_file_upload and not normalized:
+            raise InvalidCompetitionSettingsError("At least one video format is required when a file may be uploaded.")
+        object.__setattr__(self, "allowed_formats", normalized or _DEFAULT_VIDEO_FORMATS)
+
+    @property
+    def allows_file_upload(self) -> bool:
+        """Whether this format accepts a video *file* at all."""
+        return self.mode in {VideoSubmissionMode.FILE_ONLY, VideoSubmissionMode.URL_OR_FILE}
 
     @classmethod
     def default(cls) -> VideoRequirements:

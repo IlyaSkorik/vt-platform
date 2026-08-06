@@ -107,3 +107,17 @@ def test_draft_competition_is_hidden() -> None:
 def test_v4_uuid_is_hidden() -> None:
     # A well-formed but non-v7 id never matches a real competition id.
     assert APIClient().get(_url(str(uuid.uuid4()))).status_code == 404
+
+
+def test_upload_requirements_carry_the_video_limits() -> None:
+    # An in-person festival collects the file for the hall's screen, so the wizard needs
+    # the same two facts for video it already has for music: which extensions and how
+    # large. Sent whatever the mode is, so the client never invents a limit of its own
+    # that the server would then enforce differently.
+    competition_id = _seed_competition()
+    data = APIClient().get(_url(competition_id)).data["data"]
+
+    for requirement in data["uploadRequirements"]:
+        assert isinstance(requirement["videoAllowedFormats"], list)
+        assert requirement["videoAllowedFormats"]
+        assert requirement["videoMaxUploadSizeMb"] >= 1
