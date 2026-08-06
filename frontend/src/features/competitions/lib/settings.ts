@@ -40,6 +40,15 @@ export const VIDEO_MODE_OPTIONS: { value: VideoMode; label: string }[] = [
   { value: "FILE_ONLY", label: "Требовать файл" },
 ];
 
+export const VIDEO_FORMAT_OPTIONS: { value: string; label: string }[] = [
+  { value: "mp4", label: "MP4" },
+  { value: "mov", label: "MOV" },
+  { value: "m4v", label: "M4V" },
+  { value: "webm", label: "WebM" },
+  { value: "mkv", label: "MKV" },
+  { value: "avi", label: "AVI" },
+];
+
 export const VIDEO_PROVIDER_OPTIONS: { value: VideoProvider; label: string }[] = [
   { value: "YOUTUBE", label: "YouTube" },
   { value: "VK_VIDEO", label: "VK Видео" },
@@ -69,6 +78,10 @@ export function defaultFormatRequirements(participationFormatId: string): _Forma
       mode: "NOT_REQUIRED",
       allowedProviders: ["YOUTUBE", "VK_VIDEO", "RUTUBE", "VIMEO"],
       allowReplacement: true,
+      allowedFormats: ["mp4", "mov", "m4v", "webm"],
+      // Generous next to music's 25 MB: a minute of phone video is tens of megabytes,
+      // and a limit that refuses an ordinary entry is a limit nobody can meet.
+      maxUploadSizeMb: 200,
     },
     paymentReceipt: {
       requireReceipt: false,

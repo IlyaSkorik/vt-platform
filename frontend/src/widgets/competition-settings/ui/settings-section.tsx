@@ -10,6 +10,7 @@ import {
   type PublicationChecklist,
   settingsToUpdatePayload,
   useUpdateCompetitionSettingsMutation,
+  VIDEO_FORMAT_OPTIONS,
   VIDEO_MODE_OPTIONS,
 } from "@/features/competitions";
 import { ApiError } from "@/shared/api";
@@ -238,6 +239,45 @@ function FormatRequirementsAccordion({
               placeholder="Выберите режим…"
             />
           </div>
+          {/* The upload rules appear only once a file is actually collected: settings for
+              an upload that never happens are noise, and the fields would invite the
+              organizer to tune a limit nothing enforces. Video is not only a remote-entry
+              matter — an in-person festival takes the file to play on the hall's screen. */}
+          {requirements.video.mode === "FILE_ONLY" || requirements.video.mode === "URL_OR_FILE" ? (
+            <>
+              <div>
+                <p className="mb-1.5 font-medium text-sm">Допустимые видеоформаты</p>
+                <p className="mb-1.5 text-muted-foreground text-xs">
+                  Загрузка файла другого расширения будет отклонена.
+                </p>
+                <CheckboxGroup
+                  options={VIDEO_FORMAT_OPTIONS}
+                  value={requirements.video.allowedFormats as string[]}
+                  disabled={readOnly}
+                  onChange={(v) => update({ video: { ...requirements.video, allowedFormats: v } })}
+                />
+              </div>
+              <Input
+                label="Максимальный размер (МБ)"
+                type="number"
+                min={1}
+                max={512}
+                description="Участник увидит этот лимит до загрузки, а сервер откажет файлу больше него."
+                value={String(requirements.video.maxUploadSizeMb)}
+                disabled={readOnly}
+                onChange={(event) => {
+                  const next = Number(event.target.value);
+                  if (!Number.isFinite(next)) return;
+                  update({
+                    video: {
+                      ...requirements.video,
+                      maxUploadSizeMb: Math.min(512, Math.max(1, Math.round(next))),
+                    },
+                  });
+                }}
+              />
+            </>
+          ) : null}
         </MaterialBlock>
 
         <MaterialBlock icon={<Receipt className="size-3.5" />} title="Квитанция">

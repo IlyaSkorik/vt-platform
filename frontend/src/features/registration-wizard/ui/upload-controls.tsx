@@ -76,15 +76,17 @@ function uploadKinds(requirement: RegistrationUploadRequirement | undefined): Up
     });
   }
   if (requirement.videoMode === "FILE_ONLY" || requirement.videoMode === "URL_OR_FILE") {
-    // No `maxBytes`: the platform's video limit is not part of the Registration
-    // projection, so the client cannot state it and an oversized video is only
-    // refused once it has been sent.
+    // The organizer's own limits now travel in the projection, so the control states
+    // them and refuses an oversized file before it is uploaded — a 300 MB video that
+    // only fails after the upload wastes the applicant's connection, and on a phone
+    // that is the difference between entering the festival and giving up.
     kinds.push({
       attachmentType: "VIDEO",
-      label: "Видео",
-      hint: "Видеофайл выступления",
-      accept: "video/*",
+      label: requirement.videoMode === "FILE_ONLY" ? "Видео (обязательно)" : "Видео",
+      hint: `${requirement.videoAllowedFormats.join(", ")} · до ${requirement.videoMaxUploadSizeMb} МБ`,
+      accept: requirement.videoAllowedFormats.map((ext) => `.${ext}`).join(",") || "video/*",
       multiple: false,
+      maxBytes: requirement.videoMaxUploadSizeMb * BYTES_PER_MB,
     });
   }
   // The payment receipt is no longer a per-performance upload: it proves payment of

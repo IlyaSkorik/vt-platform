@@ -279,6 +279,7 @@ export {
   PAYMENT_METHOD_OPTIONS,
   PAYMENT_TIMING_OPTIONS,
   settingsToUpdatePayload,
+  VIDEO_FORMAT_OPTIONS,
   VIDEO_MODE_OPTIONS,
   VIDEO_PROVIDER_OPTIONS,
 } from "./lib/settings";

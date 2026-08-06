@@ -32,6 +32,8 @@ function aRequirement(
     musicAllowedFormats: ["mp3", "wav"],
     musicMaxUploadSizeMb: 25,
     videoMode: "NONE",
+    videoAllowedFormats: ["mp4", "mov"],
+    videoMaxUploadSizeMb: 200,
     receiptRequired: false,
     ...overrides,
   } as RegistrationUploadRequirement;
@@ -174,16 +176,56 @@ describe("UploadControls", () => {
     );
   });
 
-  it("lets a video through unchecked, since the client is not told its limit", async () => {
+  it("refuses a video over the organizer's limit before uploading it", async () => {
+    // The point of stating the limit client-side: a 300 MB file on a phone connection
+    // must not be sent only to be refused at the end of it.
     renderControls(
-      aRequirement({ musicRequired: false, musicAllowedFormats: [], videoMode: "FILE_ONLY" }),
+      aRequirement({
+        musicRequired: false,
+        musicAllowedFormats: [],
+        videoMode: "FILE_ONLY",
+        videoMaxUploadSizeMb: 200,
+      }),
     );
 
     await userEvent.upload(
-      screen.getByLabelText("Видео"),
+      screen.getByLabelText("Видео (обязательно)"),
       aFile("clip.mp4", 300 * 1024 * 1024, "video/mp4"),
     );
 
+    await waitFor(() => expect(toast.error).toHaveBeenCalled());
+    expect(upload).not.toHaveBeenCalled();
+  });
+
+  it("uploads a video within the limit", async () => {
+    renderControls(
+      aRequirement({
+        musicRequired: false,
+        musicAllowedFormats: [],
+        videoMode: "FILE_ONLY",
+        videoMaxUploadSizeMb: 200,
+      }),
+    );
+
+    await userEvent.upload(
+      screen.getByLabelText("Видео (обязательно)"),
+      aFile("clip.mp4", 5 * 1024 * 1024, "video/mp4"),
+    );
+
     await waitFor(() => expect(upload).toHaveBeenCalled());
+  });
+
+  it("states the organizer's own formats and limit in the hint", async () => {
+    renderControls(
+      aRequirement({
+        musicRequired: false,
+        musicAllowedFormats: [],
+        videoMode: "URL_OR_FILE",
+        videoAllowedFormats: ["mp4", "webm"],
+        videoMaxUploadSizeMb: 120,
+      }),
+    );
+
+    expect(screen.getByText("mp4, webm · до 120 МБ")).toBeInTheDocument();
   });
 });
