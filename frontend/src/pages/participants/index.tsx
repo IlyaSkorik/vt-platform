@@ -532,16 +532,26 @@ export function ParticipantsProfilePage(): React.JSX.Element {
 
   const createMutation = useMutation({
     mutationFn: async (values: ParticipantFormValues): Promise<string> => {
-      const response = await apiClient.post("participants/registry", { json: toPayload(values) });
-      const payload = (await response.json()) as { data: { id: string } };
-      // Recorded after the child exists, because the entry names them: the journal has
-      // to say which participant this consent was about, or a later withdrawal cannot
-      // be resolved to the right one.
-      await recordOwnConsent({
+      // The journal entry comes first, and its id travels with the child: the record the
+      // platform reads and the evidence that permits it are then the same fact, rather
+      // than two rows that happen to agree (LEGAL-001 §6.3, §13.3). Creation is refused
+      // server-side without it, so an interrupted flow leaves no child on file.
+      const consent = await recordOwnConsent({
         consentType: PARTICIPANT_CONSENT.code,
         version: PARTICIPANT_CONSENT.version,
-        subjectParticipantId: payload.data.id,
       });
+      if (consent.status !== 201) {
+        throw new Error("Не удалось записать согласие законного представителя.");
+      }
+      const consentId = consent.data.data[0]?.id;
+      const response = await apiClient.post("participants/registry", {
+        json: {
+          ...toPayload(values),
+          consentId,
+          consentVersion: PARTICIPANT_CONSENT.version,
+        },
+      });
+      const payload = (await response.json()) as { data: { id: string } };
       return payload.data.id;
     },
     onSuccess: (createdId) => {

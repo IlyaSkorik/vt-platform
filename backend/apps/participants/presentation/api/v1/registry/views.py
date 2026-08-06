@@ -90,6 +90,10 @@ def _participant_resource(model: ParticipantRegistryModel, *, applications_count
         "avatarUrl": model.avatar_url,
         "notes": model.notes,
         "archived": model.archived,
+        # Whether a basis for holding this child's data is on file, and which text it
+        # was given under. Exposed so the cabinet can show it rather than assume it.
+        "consentRecorded": model.consent_id is not None,
+        "consentVersion": model.consent_version,
         "applicationsCount": applications_count,
         "primaryOrganization": _organization_resource(primary_membership.organization) if primary_membership is not None else None,
         "organizations": [
@@ -371,6 +375,15 @@ class ParticipantRegistryCollectionView(_AuthView):
         payload_problem = _validate_participant_payload(payload, request)
         if payload_problem is not None:
             return payload_problem
+        # A child's record may not come into existence without the representative's
+        # consent, and the platform is what enforces that rather than the form
+        # (LEGAL-001 §6.3). Creation therefore refuses; updates do not have to resend it.
+        if payload.get("consentId") is None:
+            return problems.validation_problem(
+                {"consentId": ["Требуется согласие законного представителя на обработку данных участника."]},
+                instance=request.path,
+                request=request,
+            )
         with transaction.atomic():
             participant_type = str(payload.get("participantType") or "solo")
             first_name = "" if participant_type == "collective" else str(payload.get("firstName") or "").strip()
@@ -389,6 +402,8 @@ class ParticipantRegistryCollectionView(_AuthView):
                 gender=gender,
                 avatar_url=_optional_str(payload.get("avatarUrl")),
                 notes=str(payload.get("notes") or "").strip(),
+                consent_id=payload.get("consentId"),
+                consent_version=_optional_str(payload.get("consentVersion")),
             )
             membership_problem = _save_memberships(
                 request=request,

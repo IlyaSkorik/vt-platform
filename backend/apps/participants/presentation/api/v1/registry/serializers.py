@@ -19,6 +19,18 @@ class ParticipantRegistryWriteSerializer(serializers.Serializer[dict[str, object
     avatarUrl = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     notes = serializers.CharField(required=False, allow_blank=True)
     organizations = ParticipantOrganizationLinkSerializer(many=True)
+    #: The legal representative's consent from the Identity journal. Optional on the
+    #: wire so an update need not resend it; creation refuses without it (see the view).
+    consentId = serializers.UUIDField(required=False, allow_null=True)
+    consentVersion = serializers.CharField(max_length=40, required=False, allow_null=True)
+
+    def validate(self, attrs: dict[str, object]) -> dict[str, object]:
+        """Refuse half a consent reference — it is evidence or it is nothing."""
+        has_id = attrs.get("consentId") is not None
+        has_version = attrs.get("consentVersion") not in (None, "")
+        if has_id != has_version:
+            raise serializers.ValidationError({"consentVersion": "consentId and consentVersion must be provided together."})
+        return attrs
 
 
 class OrganizationWriteSerializer(serializers.Serializer[dict[str, object]]):

@@ -24,6 +24,13 @@ class ParticipantRegistryModel(BasePersistenceModel):
     notes = models.TextField(blank=True, default="")
     archived = models.BooleanField(default=False)
 
+    # The Identity consent journal entry that authorizes holding this child's data.
+    # Recorded here, on the row the platform actually reads, rather than only on the
+    # Participants aggregate: a basis that lives on a record nobody queries is not a
+    # basis anyone can check (LEGAL-001 §6.3, §13.3).
+    consent_id = models.UUIDField(null=True, blank=True, default=None)
+    consent_version = models.CharField(max_length=40, null=True, blank=True, default=None)
+
     class Meta(BasePersistenceModel.Meta):
         db_table = "participants_registry"
         verbose_name = "participant registry entry"

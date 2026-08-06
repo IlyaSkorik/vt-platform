@@ -11829,6 +11829,16 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ParticipantOrganizationLink'
+        consentId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        consentVersion:
+          type:
+          - string
+          - 'null'
+          maxLength: 40
       required:
       - organizations
     ParticipantRegistryWriteGenderEnum:
@@ -12135,6 +12145,16 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ParticipantOrganizationLink'
+        consentId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        consentVersion:
+          type:
+          - string
+          - 'null'
+          maxLength: 40
     PatchedRenameCategory:
       type: object
       properties:
