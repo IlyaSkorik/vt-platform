@@ -53,6 +53,11 @@ class CreateParticipantCommand:
     created_by_id: str
     created_by_type: str
     middle_name: str | None = None
+    #: The Identity consent that authorizes this child's data, recorded together with
+    #: the participant. A record created without one would be data held on a child with
+    #: no basis on file, which the platform must not allow (LEGAL-001 §6.3).
+    consent_id: str | None = None
+    consent_version: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

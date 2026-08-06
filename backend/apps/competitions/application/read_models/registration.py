@@ -160,12 +160,34 @@ class RegistrationView:
     upload_requirements: list[RegistrationUploadRequirementView] = field(default_factory=list)
 
 
-#: The consent flags the Competition settings expose, projected to stable codes the
-#: Applications context records. ``code`` matches the wizard's ``recordConsents``.
-_CONSENT_FLAGS: tuple[tuple[str, str, str], ...] = (
-    ("personal_data", "Согласие на обработку персональных данных", "require_personal_data_consent"),
+#: Consents no festival may waive, projected to the stable codes the Applications
+#: context records. ``code`` matches the wizard's ``recordConsents``.
+#:
+#: These are not settings. A child's data is processed on the basis of the legal
+#: representative's consent, and the results of a festival are published on the basis
+#: of consent to distribution (LEGAL-001 §4.1, §8.3) — an organizer who could switch
+#: either off would be collecting data with nothing behind it. They are therefore
+#: always required, whatever the competition's own flags say.
+_MANDATORY_CONSENTS: tuple[tuple[str, str], ...] = (
+    ("personal_data", "Согласие законного представителя на обработку персональных данных участника"),
+    ("distribution", "Согласие на распространение персональных данных (протоколы, программы, документы по итогам)"),
+)
+
+#: Consents the competition's settings decide on: needed by some festivals, irrelevant
+#: to others, and never a precondition for the platform holding the data at all.
+_OPTIONAL_CONSENT_FLAGS: tuple[tuple[str, str, str], ...] = (
     ("media", "Согласие на фото- и видеосъёмку", "require_media_consent"),
     ("regulations", "Принятие положения фестиваля", "require_regulations_acceptance"),
+)
+
+#: Offered on every application and required by none: publishing a creative work in the
+#: open sections needs its own consent, and withholding it costs the applicant nothing
+#: (LEGAL-001 §8.5).
+_ELECTIVE_CONSENTS: tuple[tuple[str, str], ...] = (
+    (
+        "work_publication",
+        "Согласие на публикацию творческой работы в открытом доступе",
+    ),
 )
 
 
@@ -247,7 +269,12 @@ def project_registration(competition: Competition, *, now: datetime) -> Registra
         if service.is_enabled
     ]
     required_consents = [
-        RegistrationConsentRequirementView(code=code, label=label, required=bool(getattr(settings, flag))) for code, label, flag in _CONSENT_FLAGS
+        *(RegistrationConsentRequirementView(code=code, label=label, required=True) for code, label in _MANDATORY_CONSENTS),
+        *(
+            RegistrationConsentRequirementView(code=code, label=label, required=bool(getattr(settings, flag)))
+            for code, label, flag in _OPTIONAL_CONSENT_FLAGS
+        ),
+        *(RegistrationConsentRequirementView(code=code, label=label, required=False) for (code, label) in _ELECTIVE_CONSENTS),
     ]
     upload_requirements = [
         RegistrationUploadRequirementView(

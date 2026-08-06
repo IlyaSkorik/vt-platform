@@ -189,6 +189,12 @@ class CreateParticipantHandler:
                 now=now,
                 pseudonymization_policy=self._pseudonymization_policy,
             )
+            # Recorded inside the same unit of work as the creation: the guardian's
+            # consent and the child's record are one fact, and half of it is worse than
+            # neither (LEGAL-001 §6.3).
+            if command.consent_id is not None and command.consent_version is not None:
+                consent = ConsentReference.of(command.consent_id, command.consent_version)
+                events.extend(participant.record_consent(consent=consent, now=now))
         self._participants.save(participant)
         return _result(participant, events)
 

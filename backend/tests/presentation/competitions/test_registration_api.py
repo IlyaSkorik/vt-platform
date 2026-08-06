@@ -68,10 +68,19 @@ def test_returns_single_projection_for_open_competition() -> None:
     ):
         assert key in data
         assert isinstance(data[key], list)
-    # Required consents are projected from the competition's own settings defaults.
+    # Two consents are the platform's, not the organizer's: a child's data is held on
+    # the representative's consent and results are published on consent to
+    # distribution, so neither is a setting a festival can switch off
+    # (LEGAL-001 §4.1, §8.3).
     codes = {consent["code"]: consent["required"] for consent in data["requiredConsents"]}
     assert codes["personal_data"] is True
+    assert codes["distribution"] is True
+    # The festival decides on these.
+    assert "media" in codes
     assert "regulations" in codes
+    # Offered always, required never: withholding it only means the work is not
+    # published in the open sections (LEGAL-001 §8.5).
+    assert codes["work_publication"] is False
 
 
 def test_unauthenticated_access_is_allowed() -> None:

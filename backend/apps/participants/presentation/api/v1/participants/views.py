@@ -149,6 +149,8 @@ class ParticipantCollectionView(_AuthenticatedView):
             display_alias=str(data["displayAlias"]),
             created_by_id=str(request.user.id),
             created_by_type=str(data["createdByType"]),
+            consent_id=(str(data["consentId"]) if data.get("consentId") is not None else None),
+            consent_version=(str(data["consentVersion"]) if data.get("consentVersion") else None),
         )
         try:
             result = composition.build_create_participant_handler().handle(command)

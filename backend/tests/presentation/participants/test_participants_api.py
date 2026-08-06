@@ -15,6 +15,7 @@ import pytest
 from rest_framework.test import APIClient
 
 from apps.identity.presentation.api.v1.auth import composition
+from apps.participants.domain.value_objects import _generate_uuid7
 from apps.participants.infrastructure.repositories import DjangoParticipantRepository
 from apps.participants.infrastructure.system import SystemClock
 
@@ -74,6 +75,36 @@ def test_create_returns_resource_envelope(auth_client: APIClient) -> None:
     assert data["status"] == "created"
     assert response["Location"].startswith("/api/v1/participants/")
     assert response.data["meta"]["requestId"]
+
+
+def test_create_records_the_guardian_consent_that_authorizes_the_child(auth_client: APIClient) -> None:
+    # A child's record and the consent that permits holding it are one fact: the API
+    # takes both in one request so neither can exist without the other
+    # (LEGAL-001 §6.3).
+    response = _create(
+        auth_client,
+        alias="Comet-11",
+        consentId=str(_generate_uuid7()),
+        consentVersion="1.0",
+    )
+    assert response.status_code == 201, response.data
+    assert response.data["data"]["consentRecorded"] is True
+
+
+def test_create_refuses_half_a_consent_reference(auth_client: APIClient) -> None:
+    # An id without the version does not say what was agreed to, and a version without
+    # an id points at nothing. Either alone is not evidence.
+    response = _create(auth_client, alias="Comet-12", consentId=str(_generate_uuid7()))
+    assert response.status_code == 400, response.data
+    assert response["Content-Type"].startswith("application/problem+json")
+
+
+def test_create_without_consent_records_none(auth_client: APIClient) -> None:
+    # Still permitted at creation time — a teacher may enter the child before the
+    # guardian has consented — but the participant then cannot be activated.
+    response = _create(auth_client, alias="Comet-13")
+    assert response.status_code == 201
+    assert response.data["data"]["consentRecorded"] is False
 
 
 def test_retrieve_returns_participant(auth_client: APIClient) -> None:
@@ -197,7 +228,6 @@ def test_activation_blocked_without_consent(auth_client: APIClient) -> None:
 def test_full_activation_flow(auth_client: APIClient) -> None:
     from apps.participants.application.commands import RecordConsentCommand
     from apps.participants.application.handlers import RecordConsentHandler
-    from apps.participants.domain.value_objects import _generate_uuid7
 
     participant_id = _create(auth_client).data["data"]["id"]
     guardian_id = "019f0000-0000-7000-8000-0000000000bb"

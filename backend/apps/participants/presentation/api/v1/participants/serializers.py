@@ -37,6 +37,19 @@ class CreateParticipantRequestSerializer(serializers.Serializer[dict[str, object
     dateOfBirth = serializers.DateField()
     displayAlias = serializers.CharField()
     createdByType = serializers.ChoiceField(choices=["guardian", "teacher"], required=False, default="guardian")
+    #: The legal representative's consent for this child, as recorded in the Identity
+    #: journal (``POST /users/me/consents``). Both parts travel together: an id without
+    #: the version of the text accepted would not say what was agreed to.
+    consentId = serializers.UUIDField(required=False, allow_null=True)
+    consentVersion = serializers.CharField(max_length=40, required=False, allow_null=True)
+
+    def validate(self, attrs: dict[str, object]) -> dict[str, object]:
+        """Refuse half a consent reference — it is evidence or it is nothing."""
+        has_id = attrs.get("consentId") is not None
+        has_version = attrs.get("consentVersion") not in (None, "")
+        if has_id != has_version:
+            raise serializers.ValidationError({"consentVersion": "consentId and consentVersion must be provided together."})
+        return attrs
 
 
 class ProposeGuardianLinkRequestSerializer(serializers.Serializer[dict[str, object]]):
