@@ -516,10 +516,19 @@ class FileStorage(Protocol):
 
 @dataclass(frozen=True, slots=True)
 class UploadConstraints:
-    """The validation limits for one kind of upload (max size + allowed extensions)."""
+    """The validation limits for one kind of upload.
+
+    ``max_bytes`` bounds the single file being uploaded. ``shared_budget_kinds`` names the
+    kinds whose sizes are counted **together** against it — media is configured as one
+    ceiling over a performance's photographs *and* video, because several files are the
+    normal case and a per-file limit either waves ten of them through or refuses one
+    legitimate one. Empty means the limit is per file, which is how music and documents
+    work.
+    """
 
     max_bytes: int
     allowed_extensions: frozenset[str]
+    shared_budget_kinds: frozenset[str] = frozenset()
 
     def allows_extension(self, extension: str) -> bool:
         """Whether ``extension`` (lower-case, no dot) is permitted."""

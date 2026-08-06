@@ -28,6 +28,9 @@ class _AttachmentResourceSerializer(serializers.Serializer[dict[str, object]]):
     type = serializers.CharField()
     fileReference = serializers.CharField()
     caption = serializers.CharField(allow_null=True)
+    #: Zero for attachments stored before sizes were tracked; the client treats that as
+    #: "unknown" and lets the server have the final word on the total.
+    sizeBytes = serializers.IntegerField()
 
 
 class SubmissionAttachmentsResourceSerializer(serializers.Serializer[dict[str, object]]):

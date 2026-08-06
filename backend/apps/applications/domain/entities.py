@@ -59,7 +59,7 @@ is shaped so these land as *additions*, not rewrites:
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime
 from decimal import Decimal
@@ -468,22 +468,50 @@ class Attachment:
     and its :class:`~apps.applications.domain.value_objects.AttachmentType`; the
     file's bytes and storage are an infrastructure concern. An optional caption
     carries a human label.
+
+    ``size_bytes`` is the exception to "no file detail here", and it earns its place: the
+    media ceiling applies to the *sum* of a performance's files, so the aggregate has to
+    be able to answer how much has already been attached without asking storage about
+    every file. Attachments recorded before this was tracked read as ``0`` — they were
+    accepted under a per-file rule, and counting them as nothing is the reading that
+    cannot retroactively invalidate a submission.
     """
 
     _id: AttachmentId
     _type: AttachmentType
     _file: FileReference
     _caption: str | None = None
+    _size_bytes: int = 0
 
     @classmethod
-    def create(cls, *, attachment_id: AttachmentId, attachment_type: AttachmentType, file: FileReference, caption: str | None = None) -> Attachment:
-        return cls(_id=attachment_id, _type=attachment_type, _file=file, _caption=cls._clean_caption(caption))
+    def create(
+        cls,
+        *,
+        attachment_id: AttachmentId,
+        attachment_type: AttachmentType,
+        file: FileReference,
+        caption: str | None = None,
+        size_bytes: int = 0,
+    ) -> Attachment:
+        return cls(
+            _id=attachment_id,
+            _type=attachment_type,
+            _file=file,
+            _caption=cls._clean_caption(caption),
+            _size_bytes=max(0, size_bytes),
+        )
 
     @classmethod
     def rehydrate(
-        cls, *, attachment_id: AttachmentId, attachment_type: AttachmentType, file: FileReference, caption: str | None = None
+        cls,
+        *,
+        attachment_id: AttachmentId,
+        attachment_type: AttachmentType,
+        file: FileReference,
+        caption: str | None = None,
+        size_bytes: int = 0,
     ) -> Attachment:
-        return cls(_id=attachment_id, _type=attachment_type, _file=file, _caption=caption)
+        return cls(_id=attachment_id, _type=attachment_type, _file=file, _caption=caption, _size_bytes=max(0, size_bytes))
 
     @staticmethod
     def _clean_caption(caption: str | None) -> str | None:
@@ -507,6 +535,11 @@ class Attachment:
     @property
     def caption(self) -> str | None:
         return self._caption
+
+    @property
+    def size_bytes(self) -> int:
+        """The file's size, or ``0`` for attachments recorded before it was tracked."""
+        return self._size_bytes
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Attachment) and other._id == self._id
@@ -882,20 +915,37 @@ class Submission:
         file: FileReference,
         now: datetime,
         caption: str | None = None,
+        size_bytes: int = 0,
     ) -> list[DomainEvent]:
         """Add an attachment reference. Rejects duplicates (the same file referenced twice).
 
         A submission may carry **several** attachments of the same kind: an act can be
         performed to more than one phonogram (a backing track and a fanfare, a two-part
-        number), and each is its own file. The only thing refused is the same file twice.
+        number), and photographs come in handfuls. The only thing refused is the same file
+        twice.
         """
         self._ensure_attachable(attachment_type)
         if any(a.file == file for a in self._attachments.values()):
             raise DuplicateAttachmentError(f"An attachment referencing {file.value!r} is already in this submission.")
-        attachment = Attachment.create(attachment_id=attachment_id, attachment_type=attachment_type, file=file, caption=caption)
+        attachment = Attachment.create(
+            attachment_id=attachment_id,
+            attachment_type=attachment_type,
+            file=file,
+            caption=caption,
+            size_bytes=size_bytes,
+        )
         self._attachments[attachment_id] = attachment
         self._touch(now)
         return [AttachmentAdded(aggregate_id=self._id.value, attachment_id=attachment_id, attachment_type=attachment_type)]
+
+    def attached_bytes(self, kinds: Collection[str]) -> int:
+        """Total size of the attachments whose kind is in ``kinds``.
+
+        What a shared ceiling is measured against. Sizes recorded as ``0`` (attachments
+        from before they were tracked) simply do not add to it, which under-counts rather
+        than retroactively pushing an existing submission over its limit.
+        """
+        return sum(a.size_bytes for a in self._attachments.values() if a.type.value in kinds)
 
     def remove_attachment(self, *, attachment_id: AttachmentId, now: datetime) -> list[DomainEvent]:
         """Remove an attachment reference.

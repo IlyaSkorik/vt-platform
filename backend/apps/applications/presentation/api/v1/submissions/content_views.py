@@ -94,7 +94,10 @@ def _submission_resource(dto: SubmissionView) -> dict[str, Any]:
             }
             for t in dto.teachers
         ],
-        "attachments": [{"id": a.id, "type": a.type, "fileReference": file_url(a.file_reference), "caption": a.caption} for a in dto.attachments],
+        "attachments": [
+            {"id": a.id, "type": a.type, "fileReference": file_url(a.file_reference), "caption": a.caption, "sizeBytes": a.size_bytes}
+            for a in dto.attachments
+        ],
         "statusHistory": [
             {"fromStatus": from_status, "toStatus": to_status, "occurredAt": _iso(occurred_at)}
             for from_status, to_status, occurred_at in dto.status_history

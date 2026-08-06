@@ -38,7 +38,10 @@ def _attachments_resource(result: SubmissionOperationResultDto) -> dict[str, Any
     return {
         "id": dto.id,
         "status": dto.status,
-        "attachments": [{"id": a.id, "type": a.type, "fileReference": file_url(a.file_reference), "caption": a.caption} for a in dto.attachments],
+        "attachments": [
+            {"id": a.id, "type": a.type, "fileReference": file_url(a.file_reference), "caption": a.caption, "sizeBytes": a.size_bytes}
+            for a in dto.attachments
+        ],
     }
 
 

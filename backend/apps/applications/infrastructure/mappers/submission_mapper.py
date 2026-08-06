@@ -215,6 +215,7 @@ class SubmissionMapper:
             "type": attachment.type.value,
             "file": attachment.file.value,
             "caption": attachment.caption,
+            "sizeBytes": attachment.size_bytes,
         }
 
     @staticmethod
@@ -224,6 +225,9 @@ class SubmissionMapper:
             attachment_type=AttachmentType(data["type"]),
             file=FileReference(data["file"]),
             caption=data["caption"],
+            # Absent on rows written before sizes were tracked; zero keeps them out of the
+            # shared budget rather than invalidating what was already accepted.
+            size_bytes=int(data.get("sizeBytes") or 0),
         )
 
     @staticmethod

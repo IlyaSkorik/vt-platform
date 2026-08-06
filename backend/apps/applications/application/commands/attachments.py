@@ -156,9 +156,15 @@ class UploadAttachmentHandler:
             attachment_kind=attachment_type.value,
             participation_format_id=participation_format_id,
         )
-        if len(command.content) > constraints.max_bytes:
+        incoming = len(command.content)
+        # A shared ceiling is measured against what is already attached: media is one
+        # budget over a performance's photographs and video, so the question is not "is
+        # this file too big" but "does it still fit".
+        already = submission.attached_bytes(constraints.shared_budget_kinds) if constraints.shared_budget_kinds else 0
+        if already + incoming > constraints.max_bytes:
             raise FileTooLargeError(
-                f"The file is {len(command.content)} bytes; the maximum for {attachment_type.value} is {constraints.max_bytes} bytes."
+                f"The file is {incoming} bytes and {already} bytes are already attached; "
+                f"the maximum for {attachment_type.value} is {constraints.max_bytes} bytes in total."
             )
         extension = PurePosixPath(command.filename).suffix.lstrip(".").lower()
         if not constraints.allows_extension(extension):
@@ -174,6 +180,7 @@ class UploadAttachmentHandler:
                 file=file_reference,
                 now=now,
                 caption=command.caption,
+                size_bytes=incoming,
             )
         domain_events += try_resubmit_after_correction_edit(submission=submission, catalog=self._catalog, now=now)
         self._submissions.save(submission)

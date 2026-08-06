@@ -114,3 +114,46 @@ def test_upload_unknown_submission_is_not_found() -> None:
     env = _Env()
     with pytest.raises(SubmissionNotFoundError):
         env.handler.handle(_command(SubmissionId.generate().json(), uuid7_str()))
+
+
+def test_media_files_share_one_size_budget() -> None:
+    """Photographs and video count together, which is the whole point of the change.
+
+    A performance normally arrives as several files. A per-file limit either waves ten of
+    them through or refuses one legitimate one; what the organizer is protecting is their
+    storage and the applicant's connection, and both care about the sum.
+    """
+    applicant = UserId.from_uuid(SubmissionId.generate().value)
+    env = _Env(
+        policy=FakeCompetitionUploadPolicy(
+            max_bytes=100,
+            allowed_extensions=frozenset({"mp4", "jpg"}),
+            shared_budget_kinds=frozenset({"VIDEO", "IMAGE"}),
+        )
+    )
+    submission = _draft_submission(applicant)
+    env.submissions.save(submission)
+
+    env.handler.handle(_command(submission.id.json(), applicant.json(), filename="clip.mp4", content=b"x" * 60, attachment_type="VIDEO"))
+    # 60 already attached, and a photograph of 30 still fits.
+    env.handler.handle(_command(submission.id.json(), applicant.json(), filename="photo.jpg", content=b"y" * 30, attachment_type="IMAGE"))
+
+    # 90 attached: a second photograph of 30 does not, even though 30 is far below the
+    # ceiling on its own.
+    with pytest.raises(FileTooLargeError):
+        env.handler.handle(_command(submission.id.json(), applicant.json(), filename="photo2.jpg", content=b"z" * 30, attachment_type="IMAGE"))
+    assert len(env.storage.saved) == 2
+
+
+def test_a_per_file_limit_ignores_what_is_already_attached() -> None:
+    # Music has no shared budget, so two tracks of 60 against a 100-byte per-file limit are
+    # both fine — the change must not quietly turn every limit into a total.
+    applicant = UserId.from_uuid(SubmissionId.generate().value)
+    env = _Env(policy=FakeCompetitionUploadPolicy(max_bytes=100, allowed_extensions=frozenset({"mp3"})))
+    submission = _draft_submission(applicant)
+    env.submissions.save(submission)
+
+    env.handler.handle(_command(submission.id.json(), applicant.json(), filename="a.mp3", content=b"x" * 60))
+    env.handler.handle(_command(submission.id.json(), applicant.json(), filename="b.mp3", content=b"y" * 60))
+
+    assert len(env.storage.saved) == 2

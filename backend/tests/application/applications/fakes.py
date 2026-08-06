@@ -316,9 +316,20 @@ class FakeFileStorage:
 class FakeCompetitionUploadPolicy:
     """Configurable :class:`CompetitionUploadPolicy` stand-in (one constraint for all kinds)."""
 
-    def __init__(self, *, max_bytes: int = 25 * 1024 * 1024, allowed_extensions: frozenset[str] = frozenset({"mp3", "pdf", "mp4", "png"})) -> None:
+    def __init__(
+        self,
+        *,
+        max_bytes: int = 25 * 1024 * 1024,
+        allowed_extensions: frozenset[str] = frozenset({"mp3", "pdf", "mp4", "png", "jpg"}),
+        shared_budget_kinds: frozenset[str] = frozenset(),
+    ) -> None:
         self._max_bytes = max_bytes
         self._allowed = allowed_extensions
+        self._shared = shared_budget_kinds
 
     def limits_for(self, *, competition_id: CompetitionId, attachment_kind: str, participation_format_id: str | None = None) -> UploadConstraints:
-        return UploadConstraints(max_bytes=self._max_bytes, allowed_extensions=self._allowed)
+        return UploadConstraints(
+            max_bytes=self._max_bytes,
+            allowed_extensions=self._allowed,
+            shared_budget_kinds=self._shared,
+        )

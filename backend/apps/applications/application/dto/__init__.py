@@ -138,6 +138,9 @@ class AttachmentView:
     type: str
     file_reference: str
     caption: str | None
+    #: Needed by the client, not only by the server: the media ceiling is on the total, so
+    #: the wizard has to know what is already attached to refuse a file before sending it.
+    size_bytes: int
 
     @classmethod
     def from_attachment(cls, attachment: Attachment) -> AttachmentView:
@@ -147,6 +150,7 @@ class AttachmentView:
             type=attachment.type.value,
             file_reference=attachment.file.value,
             caption=attachment.caption,
+            size_bytes=attachment.size_bytes,
         )
 
 
