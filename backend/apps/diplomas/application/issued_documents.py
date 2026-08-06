@@ -96,7 +96,7 @@ def _arcname(snapshot: DiplomaSnapshot, recipient: str) -> str:
     performance is kept in the name too, so a teacher thanked twice gets two
     distinguishable sheets rather than a bare ``(2)``.
     """
-    folder = _safe(snapshot.nomination.title) or "Без номинации"
+    folder = _safe(snapshot.nomination.title) or "Без жанра"
     participant = _safe(snapshot.participant.display_name) or "Без имени"
     addressee = _safe(recipient)
     stem = f"{addressee} — {participant}" if addressee else participant

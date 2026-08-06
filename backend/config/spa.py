@@ -42,7 +42,7 @@ __all__ = ["head_facts_for", "spa_index"]
 
 _SITE_NAME = "Взлёт талантов"
 
-_DEFAULT_DESCRIPTION = "Афиша детских творческих фестивалей и конкурсов: условия участия, номинации, сроки подачи заявок и результаты."
+_DEFAULT_DESCRIPTION = "Афиша детских творческих фестивалей и конкурсов: условия участия, жанры и номинации, сроки подачи заявок и результаты."
 
 #: Prefixes whose pages must never be indexed — the same set ``robots.txt``
 #: disallows and the route guards mark, restated here because a preview crawler
@@ -113,7 +113,7 @@ def _festival_facts(segment: str) -> HeadFacts:
         where = f" в городе {festival.city}" if festival.city else ""
         description = (
             f"«{festival.title}» — творческий фестиваль сезона {festival.season}{where}. "
-            "Номинации, сроки регистрации, стоимость участия и подача заявки онлайн."
+            "Жанры и номинации, сроки регистрации, стоимость участия и подача заявки онлайн."
         )
 
     return HeadFacts(
@@ -142,7 +142,7 @@ def head_facts_for(path: str) -> HeadFacts:
             title=f"{_SITE_NAME} — фестивали и конкурсы детского творчества",
             standalone_title=True,
             description=(
-                "Афиша детских творческих фестивалей и конкурсов: условия участия, номинации, "
+                "Афиша детских творческих фестивалей и конкурсов: условия участия, жанры и номинации, "
                 "сроки подачи заявок и результаты. Подайте заявку онлайн на платформе "
                 "«Взлёт талантов»."
             ),
@@ -155,7 +155,7 @@ def head_facts_for(path: str) -> HeadFacts:
         return HeadFacts(
             title="Фестивали и конкурсы детского творчества",
             description=(
-                "Каталог открытых творческих фестивалей и конкурсов: номинации, возрастные "
+                "Каталог открытых творческих фестивалей и конкурсов: жанры, номинации, возрастные "
                 "категории, сроки регистрации и стоимость участия. Заявка подаётся онлайн."
             ),
             canonical_path="/competitions",

@@ -100,14 +100,19 @@ class ProgramColumn(StrEnum):
 #: The header each column is printed under. Kept beside the enum so the organizer's
 #: table and every published edition name a column identically - Russian is the
 #: platform's language (ARCH-001), so these are the values, not a translation layer.
+#: **Display vocabulary.** The code's ``NOMINATION`` is shown to people as «Жанр», and
+#: ``DISCIPLINE`` as «Номинация». The identifiers keep the older names on purpose — they
+#: run through the API contract, the stored protocol snapshots and every client — while
+#: the words the platform speaks to organizers and participants changed. This mapping is
+#: the whole of that shift; nothing else needs to know about it.
 COLUMN_LABELS: Final[dict[ProgramColumn, str]] = {
     ProgramColumn.POSITION: "№",
     ProgramColumn.TIME: "Время",
     ProgramColumn.PARTICIPANT: "Участник",
     ProgramColumn.TITLE: "Номер",
     ProgramColumn.DURATION: "Длительность",
-    ProgramColumn.NOMINATION: "Номинация",
-    ProgramColumn.DISCIPLINE: "Дисциплина",
+    ProgramColumn.NOMINATION: "Жанр",
+    ProgramColumn.DISCIPLINE: "Номинация",
     ProgramColumn.PARTICIPANT_GROUP: "Состав участников",
     ProgramColumn.AGE_CATEGORY: "Возрастная категория",
     ProgramColumn.PARTICIPATION_FORMAT: "Формат участия",

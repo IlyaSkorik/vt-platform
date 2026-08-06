@@ -41,9 +41,11 @@ __all__ = [
     "project_verification",
 ]
 
-#: Nomination axes, in the canonical order they are printed in, joined into the
-#: single "Номинация" line the page shows. Mirrors the diploma's nomination block
-#: (see ``infrastructure.pdf.field_values``) so page and paper agree.
+#: The axes, in the canonical order they are printed in, joined into the single line
+#: the page shows under «Жанр». Mirrors the diploma's own block (see
+#: ``infrastructure.pdf.field_values``) so page and paper agree. The first part is the
+#: genre and the second the nomination — the code keeps the older identifiers
+#: (``title``/``discipline``); only the displayed words changed.
 _NOMINATION_PARTS = ("title", "discipline", "participant_group", "age_category")
 
 

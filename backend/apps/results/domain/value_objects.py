@@ -152,13 +152,18 @@ class ProtocolColumn(StrEnum):
 
 
 #: The header each column is printed under.
+#: **Display vocabulary.** The code's ``NOMINATION`` is shown to people as «Жанр», and
+#: ``DISCIPLINE`` as «Номинация». The identifiers keep the older names on purpose — they
+#: run through the API contract, the stored protocol snapshots and every client — while
+#: the words the platform speaks to organizers and participants changed. This mapping is
+#: the whole of that shift; nothing else needs to know about it.
 COLUMN_LABELS: Final[dict[ProtocolColumn, str]] = {
     ProtocolColumn.POSITION: "№",
     ProtocolColumn.PARTICIPANT: "Участник",
     ProtocolColumn.TITLE: "Номер",
     ProtocolColumn.AWARD: "Результат",
-    ProtocolColumn.NOMINATION: "Номинация",
-    ProtocolColumn.DISCIPLINE: "Дисциплина",
+    ProtocolColumn.NOMINATION: "Жанр",
+    ProtocolColumn.DISCIPLINE: "Номинация",
     ProtocolColumn.PARTICIPANT_GROUP: "Состав участников",
     ProtocolColumn.AGE_CATEGORY: "Возрастная категория",
     ProtocolColumn.PARTICIPATION_FORMAT: "Формат участия",
