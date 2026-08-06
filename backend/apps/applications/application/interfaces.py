@@ -420,10 +420,6 @@ class CompetitionServiceCatalog(Protocol):
         """Return the consent codes the competition requires before an application may be submitted."""
         ...
 
-    def requires_parent_guardian(self, *, competition_id: CompetitionId) -> bool:
-        """Whether every performer must have a verified parent/guardian on file."""
-        ...
-
     def required_service_ids(self, *, competition_id: CompetitionId, participation_format_ids: frozenset[str]) -> frozenset[str]:
         """Return the ids of services the competition mandates for the given formats.
 

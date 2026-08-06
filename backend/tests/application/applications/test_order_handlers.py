@@ -44,7 +44,6 @@ from apps.applications.application.exceptions import (
     DeadlinePassedError,
     EducationalOrganizationNotFoundError,
     FileTooLargeError,
-    ParentGuardianRequiredError,
     PaymentReceiptRequiredError,
     PermissionDeniedError,
     UnsupportedFileTypeError,
@@ -173,7 +172,6 @@ class Env:
             services=self.services,
             clock=self.clock,
             events=self.events,
-            guardians=self.guardians,
         )
 
     def request_payment(self) -> RequestApplicationPaymentHandler:
@@ -405,50 +403,33 @@ class TestSubmitAndPay:
         result = env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
         assert result.application.status == "SUBMITTED"
 
-    def test_submit_rejects_participant_without_active_guardian(self) -> None:
-        env = Env(
-            services=FakeCompetitionServiceCatalog(requires_parent_guardian=True),
-            guardians=FakeParticipantGuardianRegistry(all_covered=False),
-        )
+    def test_submit_does_not_ask_about_guardian_links(self) -> None:
+        """A missing guardian link no longer blocks a submission.
+
+        The per-festival "every participant must have a verified guardian in the registry"
+        setting is gone, and with it the gate. What remains is the guardian's *consent*,
+        which is required unconditionally when the child's record is created — a stronger
+        guarantee, and one an organizer cannot switch off.
+        """
+        env = Env(guardians=FakeParticipantGuardianRegistry(all_covered=False))
         app_id, applicant = _create_app(env)
         submission_id = _add_submission(env, app_id, applicant)
         env.build_submittable(submission_id, from_registry=True)
-        with pytest.raises(ParentGuardianRequiredError):
-            env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
 
-    def test_submit_rejects_manually_typed_participant_who_has_no_registry_record(self) -> None:
-        env = Env(
-            services=FakeCompetitionServiceCatalog(requires_parent_guardian=True),
-            guardians=FakeParticipantGuardianRegistry(all_covered=True),
-        )
+        result = env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
+
+        assert result.application.status == "SUBMITTED"
+
+    def test_submit_accepts_a_manually_typed_participant(self) -> None:
+        # No registry record at all used to be an automatic refusal under that setting.
+        env = Env(guardians=FakeParticipantGuardianRegistry(all_covered=False))
         app_id, applicant = _create_app(env)
         submission_id = _add_submission(env, app_id, applicant)
         env.build_submittable(submission_id, from_registry=False)
-        with pytest.raises(ParentGuardianRequiredError):
-            env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
 
-    def test_submit_passes_when_every_participant_has_a_guardian(self) -> None:
-        env = Env(
-            services=FakeCompetitionServiceCatalog(requires_parent_guardian=True),
-            guardians=FakeParticipantGuardianRegistry(all_covered=True),
-        )
-        app_id, applicant = _create_app(env)
-        submission_id = _add_submission(env, app_id, applicant)
-        env.build_submittable(submission_id, from_registry=True)
         result = env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
-        assert result.application.status == "SUBMITTED"
 
-    def test_guardian_check_skipped_when_competition_does_not_ask(self) -> None:
-        env = Env(
-            services=FakeCompetitionServiceCatalog(requires_parent_guardian=False),
-            guardians=FakeParticipantGuardianRegistry(all_covered=False),
-        )
-        app_id, applicant = _create_app(env)
-        submission_id = _add_submission(env, app_id, applicant)
-        env.build_submittable(submission_id)
-        result = env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
         assert result.application.status == "SUBMITTED"
-
     def test_submit_enforces_required_services(self) -> None:
         env = Env(services=FakeCompetitionServiceCatalog(required_services=frozenset({uuid7_str()})))
         app_id, applicant = _create_app(env)

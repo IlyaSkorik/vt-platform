@@ -521,13 +521,11 @@ export function SettingsSection({
             disabled={isReadOnly}
             onChange={(v) => update({ participantCommentEnabled: v })}
           />
-          <SwitchRow
-            label="Данные родителя / опекуна обязательны"
-            description="У каждого участника должен быть подтверждённый опекун в реестре."
-            checked={settings.requireParentGuardian}
-            disabled={isReadOnly}
-            onChange={(v) => update({ requireParentGuardian: v })}
-          />
+          {/* "Данные родителя / опекуна обязательны" is not rendered, and the gate behind
+              it is gone: the guardian's *consent* is now required unconditionally when a
+              child's record is created, which is the stronger guarantee and not an
+              organizer's to switch off. `requireParentGuardian` is still stored and echoed
+              back for compatibility; nothing reads it. */}
         </SectionCard>
 
         <SectionCard

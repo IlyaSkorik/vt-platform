@@ -265,11 +265,6 @@ class DjangoCompetitionServiceCatalog:
             due_at_submit=any(not receipt.allow_upload_later for receipt in requiring),
         )
 
-    def requires_parent_guardian(self, *, competition_id: CompetitionId) -> bool:
-        """Whether the competition insists every performer has a guardian on file."""
-        competition = self._repo.get(CompCompetitionId.from_uuid(competition_id.value))
-        return competition is not None and competition.settings.require_parent_guardian
-
     def required_consent_codes(self, *, competition_id: CompetitionId) -> frozenset[str]:
         """The consent codes the competition's settings mandate before submission.
 

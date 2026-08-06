@@ -46,7 +46,6 @@ from apps.applications.application.exceptions import (
     DeadlinePassedError,
     EducationalOrganizationNotFoundError,
     FileTooLargeError,
-    ParentGuardianRequiredError,
     PaymentReceiptRequiredError,
     SubmissionInvariantViolationError,
     UnsupportedFileTypeError,
@@ -63,7 +62,6 @@ from apps.applications.application.interfaces import (
     EventPublisher,
     FileStorage,
     IdentityReadModel,
-    ParticipantGuardianRegistry,
     SubmissionRepository,
     UuidGenerator,
 )
@@ -442,7 +440,6 @@ class SubmitApplicationHandler:
         identity: IdentityReadModel | None = None,
         notifier: ApplicantNotifier | None = None,
         payment_window: timedelta = _PAYMENT_RECEIPT_WINDOW,
-        guardians: ParticipantGuardianRegistry | None = None,
     ) -> None:
         self._applications = applications
         self._submissions = submissions
@@ -453,14 +450,11 @@ class SubmitApplicationHandler:
         self._identity = identity
         self._notifier = notifier
         self._payment_window = payment_window
-        self._guardians = guardians
 
     def handle(self, command: SubmitApplicationCommand) -> ApplicationOperationResultDto:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
-
-        self._ensure_guardians_on_file(application)
 
         for ref in application.submission_refs:
             submission = self._submissions.get(ref.submission_id)
@@ -485,38 +479,6 @@ class SubmitApplicationHandler:
         self._applications.save(application)
         self._notify_submitted(application, now=now)
         return ApplicationOperationResultDto.of(application, tuple(order_events))
-
-    def _ensure_guardians_on_file(self, application: Application) -> None:
-        """Refuse the submit when the competition wants a guardian and one is absent.
-
-        Checked once for the whole order rather than per submission: the same child
-        can appear in several performances, and one missing guardian should read as
-        one problem. Guardian links are held by the Participants registry and keyed
-        by the *registry* id, so a manually typed participant — one with no registry
-        record at all — can never satisfy the requirement and is counted as missing.
-        Skipped when no registry is wired, so callers that never configured one
-        behave as before.
-        """
-        if self._guardians is None or not self._services.requires_parent_guardian(competition_id=application.competition_id):
-            return
-
-        registered: set[str] = set()
-        unregistered = 0
-        for submission in load_order_submissions(application, self._submissions):
-            for participant in submission.participants:
-                registry_id = participant.registry_participant_id
-                if registry_id is None:
-                    unregistered += 1
-                else:
-                    registered.add(registry_id.json())
-
-        missing = self._guardians.participants_without_active_guardian(participant_ids=frozenset(registered))
-        total_missing = len(missing) + unregistered
-        if total_missing:
-            raise ParentGuardianRequiredError(
-                f"This competition requires a verified parent or guardian for every participant; "
-                f"{total_missing} of {len(registered) + unregistered} have none on file."
-            )
 
     def _notify_submitted(self, application: Application, *, now: datetime) -> None:
         """Email the applicant that the order is submitted.
