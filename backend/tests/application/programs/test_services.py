@@ -288,7 +288,8 @@ class TestMusicArchive:
         env.service.fill_from_scope(program_id)
 
         archive = env.service.music_archive(program_id=program_id)
-        assert [file.filename for file in archive.files] == ["01 — Иванова Анна — Катюша.mp3"]
+        # A folder per act, the uploaded file's own name inside it.
+        assert [file.filename for file in archive.files] == ["01 — Иванова Анна — Катюша/abc123.mp3"]
         assert archive.missing == ()
 
     def test_a_slot_without_a_track_is_reported_rather_than_dropped(self) -> None:
@@ -313,18 +314,32 @@ class TestMusicArchive:
 
         archive = env.service.music_archive(program_id=program_id)
         assert [file.filename for file in archive.files] == [
-            "01 — Иванова Анна — Катюша.mp3",
-            "01 — Иванова Анна — Катюша.wav",
+            "01 — Иванова Анна — Катюша/a.mp3",
+            "01 — Иванова Анна — Катюша/b.wav",
         ]
 
-    def test_a_slash_in_a_title_does_not_invent_a_folder(self) -> None:
+    def test_a_slash_in_a_title_does_not_invent_a_nested_folder(self) -> None:
+        # There is one folder per act by design; a slash in the title must not turn it into
+        # two, or "Зима/Весна" would scatter one act across a tree.
         act = _act("Зима/Весна", 200, performer="Иванова Анна")
         env = Env(act, music={act.submission_id: ("uploads/a.mp3",)})
         program_id = env.program()
         env.service.fill_from_scope(program_id)
 
         archive = env.service.music_archive(program_id=program_id)
-        assert "/" not in archive.files[0].filename
+        assert archive.files[0].filename.count("/") == 1
+        assert archive.files[0].filename == "01 — Иванова Анна — Зима Весна/a.mp3"
+
+    def test_a_key_with_no_usable_name_falls_back_to_the_act_label(self) -> None:
+        # Nothing recognisable at the tail of the key, so the act's own name stands in
+        # rather than an extensionless mystery file.
+        act = _act("Катюша", 200, performer="Иванова Анна")
+        env = Env(act, music={act.submission_id: ("uploads/2026/abc123",)})
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+
+        archive = env.service.music_archive(program_id=program_id)
+        assert archive.files[0].filename == "01 — Иванова Анна — Катюша/01 — Иванова Анна — Катюша"
 
     def test_an_unknown_programme_is_not_found(self) -> None:
         env = Env()
@@ -722,8 +737,8 @@ class TestMediaArchive:
         archive = env.service.media_archive(program_id=program_id)
 
         assert [file.filename for file in archive.files] == [
-            "01 — Иванова Анна — Катюша.mp4",
-            "01 — Иванова Анна — Катюша.jpg",
+            "01 — Иванова Анна — Катюша/clip.mp4",
+            "01 — Иванова Анна — Катюша/photo.jpg",
         ]
 
     def test_an_act_with_no_media_is_listed_rather_than_omitted(self) -> None:
@@ -751,5 +766,5 @@ class TestMediaArchive:
         program_id = env.program()
         env.service.fill_from_scope(program_id)
 
-        assert [f.filename for f in env.service.music_archive(program_id=program_id).files] == ["01 — Иванова Анна — Катюша.mp3"]
-        assert [f.filename for f in env.service.media_archive(program_id=program_id).files] == ["01 — Иванова Анна — Катюша.mp4"]
+        assert [f.filename for f in env.service.music_archive(program_id=program_id).files] == ["01 — Иванова Анна — Катюша/track.mp3"]
+        assert [f.filename for f in env.service.media_archive(program_id=program_id).files] == ["01 — Иванова Анна — Катюша/clip.mp4"]

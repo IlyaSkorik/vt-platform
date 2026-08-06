@@ -138,6 +138,19 @@ def _extension(reference: str) -> str:
     return PurePosixPath(reference).suffix.lower()
 
 
+def _stored_name(reference: str, *, fallback: str) -> str:
+    """The applicant's own file name, as it should appear inside the act's folder.
+
+    Storage keeps the uploaded name as the last segment of the key, and that is the most
+    useful thing to show: inside a folder already titled with the number and the performer,
+    ``track.mp3`` and ``photo-2.jpg`` say which file is which, where a repeated act label
+    would not. Sanitised, so nothing in the name can climb out of its folder; a key with no
+    usable tail falls back to the act's own label.
+    """
+    name = _safe(PurePosixPath(reference).name)
+    return name if PurePosixPath(name).suffix else f"{fallback}{_extension(reference)}"
+
+
 class ProgramService:
     """Everything an organizer does to a program, and the one public read."""
 
@@ -477,10 +490,18 @@ class ProgramService:
                 missing.append(label)
                 continue
             for reference in act_files:
-                # Same name for every file of one act, extension aside: the archive writer
-                # already de-duplicates collisions ("… (2).mp3"), and inventing a second
-                # numbering scheme here would rename every existing music download.
-                files.append(ArchiveFileView(number=number, filename=f"{label}{_extension(reference)}", reference=reference))
+                # A folder per act, everything of that act inside it. An act brings several
+                # files often enough — two phonograms, a video and a handful of photographs —
+                # and a flat archive of two hundred names sorted by number is worse to work
+                # from than twenty folders. Two files that arrive under one name still both
+                # survive: the archive writer numbers the collision inside the folder.
+                files.append(
+                    ArchiveFileView(
+                        number=number,
+                        filename=f"{label}/{_stored_name(reference, fallback=label)}",
+                        reference=reference,
+                    )
+                )
 
         return ProgramArchiveView(title=str(program.name), files=tuple(files), missing=tuple(missing))
 
