@@ -220,3 +220,60 @@ def test_rename_and_delete_category_are_both_reachable(staff_client: APIClient) 
     removed = staff_client.delete(f"{detail}/categories/{category_id}")
     assert removed.status_code == 200
     assert removed.data["data"]["categories"] == []
+
+
+def test_settings_round_trip_carries_the_media_requirements(staff_client: APIClient) -> None:
+    """Save the organizer's media rules and read them back on the detail screen.
+
+    This is the round trip three separate places have to agree on — the write serializer,
+    the stored blob, and the detail projection with its own DTO — and the failure mode is
+    ugly: a value accepted on save and missing from the projection is a 500 on the page
+    the organizer opens next, while every unit test still passes.
+    """
+    competition_id = _create_competition(staff_client).data["data"]["id"]
+    detail = f"/api/v1/competitions/{competition_id}"
+    created = staff_client.post(f"{detail}/participation-formats", {"name": "Очно"}, format="json")
+    assert created.status_code == 201, created.data
+    format_id = created.data["data"]["participationFormats"][0]["id"]
+
+    settings = staff_client.get(detail).data["data"]["settings"]
+    payload = {key: value for key, value in settings.items() if key not in {"formatRequirements"}}
+    payload["formatRequirements"] = [
+        {
+            "participationFormatId": format_id,
+            "music": {
+                "requireUpload": True,
+                "allowReplacement": True,
+                "allowedFormats": ["mp3"],
+                "maxUploadSizeMb": 30,
+            },
+            # An in-person festival collecting the file for the hall's screen: the mode
+            # takes a file, and the size ceiling is the organizer's own.
+            "video": {
+                "mode": "FILE_ONLY",
+                "allowedProviders": ["YOUTUBE"],
+                "allowReplacement": True,
+                # Collected but not demanded: the festival plays what it gets and does not
+                # refuse an entry that arrives without a file.
+                "requireUpload": False,
+                "allowedFormats": ["mp4", "mov"],
+                "maxUploadSizeMb": 150,
+            },
+            "paymentReceipt": {
+                "requireReceipt": False,
+                "allowUploadLater": True,
+                "allowReplacement": True,
+            },
+        }
+    ]
+
+    saved = staff_client.put(f"{detail}/settings", payload, format="json")
+    assert saved.status_code == 200, saved.data
+
+    read_back = staff_client.get(detail)
+    assert read_back.status_code == 200, read_back.data
+    requirement = read_back.data["data"]["settings"]["formatRequirements"][0]
+    assert requirement["music"]["maxUploadSizeMb"] == 30
+    assert requirement["video"]["maxUploadSizeMb"] == 150
+    assert requirement["video"]["allowedFormats"] == ["mp4", "mov"]
+    assert requirement["video"]["requireUpload"] is False

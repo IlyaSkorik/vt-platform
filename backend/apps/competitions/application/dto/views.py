@@ -111,6 +111,13 @@ class VideoRequirementsView:
     mode: str
     allowed_providers: tuple[str, ...]
     allow_replacement: bool
+    #: Whether a video is a condition of entry, as opposed to merely accepted.
+    require_upload: bool
+    #: Mirrors the music view: which extensions may be uploaded and the ceiling in MB.
+    #: Sent whatever the mode is, so the organizer's screen can render the fields the
+    #: moment they switch to collecting a file.
+    allowed_formats: tuple[str, ...]
+    max_upload_size_mb: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -186,6 +193,9 @@ class SettingsView:
                         mode=item.video.mode.value,
                         allowed_providers=tuple(provider.value for provider in item.video.allowed_providers),
                         allow_replacement=item.video.allow_replacement,
+                        require_upload=item.video.require_upload,
+                        allowed_formats=tuple(item.video.allowed_formats),
+                        max_upload_size_mb=item.video.max_upload_size_mb,
                     ),
                     payment_receipt=PaymentReceiptRequirementsView(
                         require_receipt=item.payment_receipt.require_receipt,

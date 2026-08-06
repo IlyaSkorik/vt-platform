@@ -63,8 +63,6 @@ def _format_requirements(raw_items: list[dict[str, object]]) -> tuple[Participat
         assert isinstance(video_raw, dict)
         assert isinstance(receipt_raw, dict)
 
-        formats = music_raw.get("allowed_formats", [])
-        allowed_formats = tuple(str(item) for item in formats) if isinstance(formats, list) else ()
         providers_raw = video_raw.get("allowed_providers", [])
         providers = tuple(VideoProvider(str(item)) for item in providers_raw) if isinstance(providers_raw, list) else ()
 
@@ -74,13 +72,16 @@ def _format_requirements(raw_items: list[dict[str, object]]) -> tuple[Participat
                 music=MusicRequirements(
                     require_upload=bool(music_raw.get("require_upload", False)),
                     allow_replacement=bool(music_raw.get("allow_replacement", True)),
-                    allowed_formats=allowed_formats,
+                    allowed_formats=_extensions(music_raw.get("allowed_formats")),
                     max_upload_size_mb=as_int(music_raw.get("max_upload_size_mb"), default=25),
                 ),
                 video=VideoRequirements(
                     mode=VideoSubmissionMode(str(video_raw.get("mode", VideoSubmissionMode.NOT_REQUIRED.value))),
                     allowed_providers=providers,
                     allow_replacement=bool(video_raw.get("allow_replacement", True)),
+                    require_upload=bool(video_raw.get("require_upload", False)),
+                    allowed_formats=_extensions(video_raw.get("allowed_formats")),
+                    max_upload_size_mb=as_int(video_raw.get("max_upload_size_mb"), default=200),
                 ),
                 payment_receipt=PaymentReceiptRequirements(
                     require_receipt=bool(receipt_raw.get("require_receipt", False)),
@@ -90,6 +91,16 @@ def _format_requirements(raw_items: list[dict[str, object]]) -> tuple[Participat
             )
         )
     return tuple(result)
+
+
+def _extensions(raw: object) -> tuple[str, ...]:
+    """The submitted extension list, or empty when the client omitted it.
+
+    Empty is deliberate rather than a default: the value object substitutes its own
+    default for an empty list, so omitting the field means "leave it as the platform has
+    it" instead of silently pinning whatever this layer happens to think it should be.
+    """
+    return tuple(str(item) for item in raw) if isinstance(raw, list) else ()
 
 
 def _settings_from_command(command: UpdateSettingsCommand) -> CompetitionSettings:
