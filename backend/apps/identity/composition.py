@@ -12,11 +12,16 @@ call; there is no shared mutable state.
 
 from __future__ import annotations
 
-from apps.identity.infrastructure.read_models import DjangoUserDirectory
+from apps.identity.infrastructure.read_models import DjangoConsentDirectory, DjangoUserDirectory
 
-__all__ = ["build_user_directory"]
+__all__ = ["build_consent_directory", "build_user_directory"]
 
 
 def build_user_directory() -> DjangoUserDirectory:
     """Assemble the published cross-context user directory read model."""
     return DjangoUserDirectory()
+
+
+def build_consent_directory() -> DjangoConsentDirectory:
+    """Assemble the seam other contexts use to verify a consent reference."""
+    return DjangoConsentDirectory()

@@ -14,9 +14,10 @@ from collections.abc import Iterable
 from typing import Any
 
 from apps.identity.application.read_models import UserCardView
-from apps.identity.infrastructure.models import UserModel
+from apps.identity.infrastructure.models import UserConsentModel, UserModel
+from apps.identity.infrastructure.models.consent import ConsentStatus
 
-__all__ = ["DjangoUserDirectory"]
+__all__ = ["DjangoConsentDirectory", "DjangoUserDirectory"]
 
 
 class DjangoUserDirectory:
@@ -55,3 +56,43 @@ class DjangoUserDirectory:
             display_name=display_name,
             status=status,
         )
+
+
+class DjangoConsentDirectory:
+    """Answers one question for other contexts: is this consent real, and theirs?
+
+    **Why it exists.** Other contexts store a consent *reference* — the Participants
+    registry keeps one against a child, the Teacher directory against an adult — and a
+    reference that nobody checks is not evidence of anything. Without this seam a client
+    could send any UUID, or somebody else's consent, or one it had already withdrawn, and
+    the row would look just as compliant as a real one.
+
+    Consent stays owned by Identity: this publishes a verdict, never the record, so no
+    other context learns the shape of the journal (ARCH-001 §7.3, §9.2).
+    """
+
+    #: The statuses that mean "in force right now".
+    _ACTIVE = (ConsentStatus.GRANTED, ConsentStatus.ACTIVE)
+
+    def is_in_force(self, consent_id: str, *, user_id: str, consent_type: str) -> bool:
+        """Whether ``consent_id`` is an active consent of that type held by that account.
+
+        All three conditions matter, and for different reasons: the type, because a
+        marketing opt-in must not pass as permission to hold a child's data; the account,
+        because one user must not be able to lean on another's consent; the status,
+        because a withdrawn consent is precisely the case the whole journal exists to
+        make visible. A malformed id is simply not in force — the caller gets the same
+        answer as for an unknown one, and learns nothing from the difference.
+        """
+        try:
+            parsed = uuid.UUID(str(consent_id))
+            owner = uuid.UUID(str(user_id))
+        except (TypeError, ValueError):
+            return False
+        return UserConsentModel.objects.filter(
+            id=parsed,
+            user_id=owner,
+            consent_type=consent_type,
+            status__in=self._ACTIVE,
+            deleted_at__isnull=True,
+        ).exists()
