@@ -1,11 +1,19 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { teachersCreate } from "@/shared/api/generated/teacher-directory/teacher-directory";
+import { TEACHER_CONSENT } from "@/shared/consents";
 import { TeacherProfilePage } from "./index";
+
+vi.mock("@/shared/api/generated/identity/identity", () => ({
+  recordOwnConsent: vi.fn(async () => ({
+    status: 201,
+    data: { data: [{ id: "01900000-0000-7000-8000-00000000c0de" }] },
+  })),
+}));
 
 vi.mock("@/shared/api/generated/teacher-directory/teacher-directory", () => ({
   teachersCreate: vi.fn(),
@@ -75,16 +83,39 @@ describe("TeacherProfilePage", () => {
     await user.type(screen.getByLabelText("Имя", { exact: false }), "Мария");
     await user.type(screen.getByLabelText("Отчество", { exact: false }), "Сергеевна");
     await user.type(screen.getByLabelText("Роль", { exact: false }), "Педагог");
+    // The teacher's own consent — an adult's details entered by somebody else are held
+    // on that adult's consent (LEGAL-001 §5.4), so the form will not save without it.
+    await user.click(screen.getByRole("checkbox"));
     await user.click(screen.getByRole("button", { name: "Сохранить" }));
 
-    // Absent contacts travel as null, not as empty strings.
-    expect(mockedCreate).toHaveBeenCalledWith({
-      lastName: "Петрова",
-      firstName: "Мария",
-      middleName: "Сергеевна",
-      role: "Педагог",
-      email: null,
-      phone: null,
-    });
+    // Absent contacts travel as null, not as empty strings, and the consent reference
+    // travels with the teacher.
+    await waitFor(() =>
+      expect(mockedCreate).toHaveBeenCalledWith({
+        lastName: "Петрова",
+        firstName: "Мария",
+        middleName: "Сергеевна",
+        role: "Педагог",
+        email: null,
+        phone: null,
+        consentId: "01900000-0000-7000-8000-00000000c0de",
+        consentVersion: TEACHER_CONSENT.version,
+      }),
+    );
+  });
+  it("refuses to save without the teacher's own consent", async () => {
+    const user = userEvent.setup();
+    render(wrap(<TeacherProfilePage />));
+
+    await user.type(screen.getByLabelText("Фамилия", { exact: false }), "Петрова");
+    await user.type(screen.getByLabelText("Имя", { exact: false }), "Мария");
+    await user.type(screen.getByLabelText("Роль", { exact: false }), "Педагог");
+    await user.click(screen.getByRole("button", { name: "Сохранить" }));
+
+    // Nothing was sent: the platform, not the form's good intentions, is what refuses.
+    expect(mockedCreate).not.toHaveBeenCalled();
+    expect(
+      screen.getByText("Без согласия педагога добавить его в справочник нельзя"),
+    ).toBeInTheDocument();
   });
 });
