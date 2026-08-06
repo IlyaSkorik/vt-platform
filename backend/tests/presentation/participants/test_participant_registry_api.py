@@ -134,5 +134,54 @@ class TestRegistryCreationRequiresConsent:
         # which text was accepted (LEGAL-001 §13.3).
         assert "minor_data_processing" in types
 
+    def test_refuses_a_consent_belonging_to_another_account(self, auth_client: APIClient) -> None:
+        # A second account's genuine consent is still not this caller's basis for holding
+        # a child's data.
+        other = APIClient()
+        registration = other.post(
+            "/api/v1/auth/registration",
+            {
+                "email": "someone-else@example.com",
+                "password": _PASSWORD,
+                "firstName": "Anna",
+                "lastName": "Ivanova",
+            },
+            format="json",
+        )
+        assert registration.status_code == 201
+        access = composition.build_token_service().issue(subject=registration.data["data"]["id"]).access_token
+        other.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        foreign_consent = _record_consent(other)
+        organization_id = _organization(auth_client)
+
+        response = auth_client.post(
+            REGISTRY_URL,
+            _child(
+                consentId=foreign_consent,
+                consentVersion="1.0",
+                organizations=[{"organizationId": organization_id, "isPrimary": True}],
+            ),
+            format="json",
+        )
+
+        assert response.status_code == 400, response.data
+
+    def test_refuses_a_withdrawn_consent(self, auth_client: APIClient) -> None:
+        consent_id = _record_consent(auth_client)
+        assert auth_client.delete("/api/v1/users/me/consents/minor_data_processing").status_code == 204
+        organization_id = _organization(auth_client)
+
+        response = auth_client.post(
+            REGISTRY_URL,
+            _child(
+                consentId=consent_id,
+                consentVersion="1.0",
+                organizations=[{"organizationId": organization_id, "isPrimary": True}],
+            ),
+            format="json",
+        )
+
+        assert response.status_code == 400, response.data
+
     def test_the_registry_is_the_caller_s_own(self) -> None:
         assert APIClient().post(REGISTRY_URL, _child(), format="json").status_code == 401

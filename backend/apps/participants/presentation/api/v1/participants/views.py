@@ -29,6 +29,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.identity import composition as identity_composition
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.participants.application.commands import (
     ActivateParticipantCommand,
@@ -119,6 +120,30 @@ class _AuthenticatedView(APIView):
 # ---------------------------------------------------------------------------
 
 
+#: The consent a child's record rests on: the legal representative's (LEGAL-001 §6.3).
+_MINOR_CONSENT_TYPE = "minor_data_processing"
+
+
+def _consent_problem(request: Request, consent_id: str) -> Response | None:
+    """Refuse a consent reference that is not an active consent of the caller's.
+
+    Supplied by the client, so unchecked it proves nothing: any UUID, another account's
+    consent, or one already withdrawn would leave a child's record looking exactly as
+    lawful as a real one. Identity owns the journal and publishes only the verdict.
+    """
+    if identity_composition.build_consent_directory().is_in_force(
+        consent_id,
+        user_id=str(request.user.id),
+        consent_type=_MINOR_CONSENT_TYPE,
+    ):
+        return None
+    return problems.validation_problem(
+        {"consentId": ["Согласие не найдено, отозвано или относится к другому виду обработки."]},
+        instance=request.path,
+        request=request,
+    )
+
+
 class ParticipantCollectionView(_AuthenticatedView):
     """POST /api/v1/participants — register a new participant (DATA-004 §4.3)."""
 
@@ -141,6 +166,10 @@ class ParticipantCollectionView(_AuthenticatedView):
         if not serializer.is_valid():
             return problems.validation_problem(serializer.errors, instance=instance, request=request)
         data = serializer.validated_data
+        if data.get("consentId") is not None:
+            consent_problem = _consent_problem(request, str(data["consentId"]))
+            if consent_problem is not None:
+                return consent_problem
         command = CreateParticipantCommand(
             first_name=str(data["firstName"]),
             last_name=str(data["lastName"]),

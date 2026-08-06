@@ -49,6 +49,17 @@ def auth_client(client: APIClient) -> APIClient:
     return client
 
 
+def _record_minor_consent(client: APIClient) -> str:
+    """Record the representative's consent in the Identity journal, returning its id."""
+    response = client.post(
+        "/api/v1/users/me/consents",
+        {"consentType": "minor_data_processing", "version": "1.0"},
+        format="json",
+    )
+    assert response.status_code == 201, response.data
+    return str(response.data["data"][0]["id"])
+
+
 def _create(client: APIClient, *, alias: str = "Falcon-99", **overrides: Any) -> Any:
     body: dict[str, Any] = {
         "firstName": "Ivan",
@@ -84,7 +95,7 @@ def test_create_records_the_guardian_consent_that_authorizes_the_child(auth_clie
     response = _create(
         auth_client,
         alias="Comet-11",
-        consentId=str(_generate_uuid7()),
+        consentId=_record_minor_consent(auth_client),
         consentVersion="1.0",
     )
     assert response.status_code == 201, response.data
@@ -94,9 +105,48 @@ def test_create_records_the_guardian_consent_that_authorizes_the_child(auth_clie
 def test_create_refuses_half_a_consent_reference(auth_client: APIClient) -> None:
     # An id without the version does not say what was agreed to, and a version without
     # an id points at nothing. Either alone is not evidence.
-    response = _create(auth_client, alias="Comet-12", consentId=str(_generate_uuid7()))
+    response = _create(auth_client, alias="Comet-12", consentId=_record_minor_consent(auth_client))
     assert response.status_code == 400, response.data
     assert response["Content-Type"].startswith("application/problem+json")
+
+
+def test_create_refuses_a_consent_that_is_not_the_caller_s_own(auth_client: APIClient) -> None:
+    # The reference comes from the client, so unchecked it proves nothing: an invented
+    # UUID would leave a child's record looking exactly as lawful as a real one.
+    response = _create(
+        auth_client,
+        alias="Comet-14",
+        consentId=str(_generate_uuid7()),
+        consentVersion="1.0",
+    )
+    assert response.status_code == 400, response.data
+
+
+def test_create_refuses_a_consent_of_the_wrong_kind(auth_client: APIClient) -> None:
+    # A newsletter opt-in is not permission to hold a child's data, however real the
+    # journal entry behind it is.
+    marketing = auth_client.post(
+        "/api/v1/users/me/consents",
+        {"consentType": "marketing", "version": "1.0"},
+        format="json",
+    )
+    assert marketing.status_code == 201
+    response = _create(
+        auth_client,
+        alias="Comet-15",
+        consentId=str(marketing.data["data"][0]["id"]),
+        consentVersion="1.0",
+    )
+    assert response.status_code == 400, response.data
+
+
+def test_create_refuses_a_withdrawn_consent(auth_client: APIClient) -> None:
+    consent_id = _record_minor_consent(auth_client)
+    assert auth_client.delete("/api/v1/users/me/consents/minor_data_processing").status_code == 204
+    # The case the journal exists to make visible: the record is still there, and it says
+    # the consent is gone.
+    response = _create(auth_client, alias="Comet-16", consentId=consent_id, consentVersion="1.0")
+    assert response.status_code == 400, response.data
 
 
 def test_create_without_consent_records_none(auth_client: APIClient) -> None:

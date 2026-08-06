@@ -15,6 +15,7 @@ from rest_framework.views import APIView
 
 from apps.applications.infrastructure.models.application import ApplicationModel
 from apps.applications.infrastructure.models.submission import SubmissionModel
+from apps.identity import composition as identity_composition
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.participants.infrastructure.models import (
     EducationalOrganizationModel,
@@ -381,6 +382,19 @@ class ParticipantRegistryCollectionView(_AuthView):
         if payload.get("consentId") is None:
             return problems.validation_problem(
                 {"consentId": ["Требуется согласие законного представителя на обработку данных участника."]},
+                instance=request.path,
+                request=request,
+            )
+        # And the reference has to be real: the client sends it, so unchecked it proves
+        # nothing — any UUID, another account's consent, or a withdrawn one would leave a
+        # child's record looking exactly as lawful as a genuine one.
+        if not identity_composition.build_consent_directory().is_in_force(
+            str(payload["consentId"]),
+            user_id=str(request.user.id),
+            consent_type="minor_data_processing",
+        ):
+            return problems.validation_problem(
+                {"consentId": ["Согласие не найдено, отозвано или относится к другому виду обработки."]},
                 instance=request.path,
                 request=request,
             )
