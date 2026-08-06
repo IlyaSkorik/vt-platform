@@ -21,6 +21,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.identity import composition as identity_composition
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.teachers.application.commands import (
     AddTeacherCommand,
@@ -57,6 +58,32 @@ def _optional_str(value: object) -> str | None:
         return None
     text = str(value)
     return text if text else None
+
+
+#: The consent an entry in somebody's teacher directory rests on: the teacher's own,
+#: obtained by whoever is entering their details (LEGAL-001 §5.4).
+_TEACHER_CONSENT_TYPE = "third_party_data_processing"
+
+
+def _consent_problem(request: Request, consent_id: str) -> Response | None:
+    """Refuse a consent reference that is not an active consent of the caller's.
+
+    The reference is supplied by the client, so unchecked it proves nothing: any UUID,
+    somebody else's consent, or one already withdrawn would leave a row that looks
+    exactly as lawful as a real one. Identity owns the answer and publishes only the
+    verdict.
+    """
+    if identity_composition.build_consent_directory().is_in_force(
+        consent_id,
+        user_id=str(request.user.id),
+        consent_type=_TEACHER_CONSENT_TYPE,
+    ):
+        return None
+    return problems.validation_problem(
+        {"consentId": ["Согласие не найдено, отозвано или относится к другому виду обработки."]},
+        instance=request.path,
+        request=request,
+    )
 
 
 def _teacher_resource(dto: TeacherDto) -> dict[str, Any]:
@@ -135,6 +162,9 @@ class TeacherCollectionView(_AuthenticatedView):
         if not serializer.is_valid():
             return problems.validation_problem(serializer.errors, instance=instance, request=request)
         data = serializer.validated_data
+        consent_problem = _consent_problem(request, str(data["consentId"]))
+        if consent_problem is not None:
+            return consent_problem
         command = AddTeacherCommand(
             requested_by=str(request.user.id),
             first_name=str(data["firstName"]),

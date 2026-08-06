@@ -81,6 +81,42 @@ def test_add_refuses_without_the_teacher_s_consent(auth_client: APIClient) -> No
     assert auth_client.get("/api/v1/teachers").data["data"] == []
 
 
+def test_add_refuses_a_consent_that_is_not_the_caller_s_own(auth_client: APIClient) -> None:
+    # The reference is client-supplied, so unchecked it proves nothing: an invented UUID
+    # would leave the row looking exactly as lawful as a genuine consent.
+    response = auth_client.post(
+        "/api/v1/teachers",
+        {
+            "firstName": "Anna",
+            "lastName": "Ivanova",
+            "role": "Teacher",
+            "consentId": "018f9c2a-7e3b-7c21-9a1b-2c4e6f8a0d99",
+            "consentVersion": "1.0",
+        },
+        format="json",
+    )
+    assert response.status_code == 400, response.data
+
+
+def test_add_refuses_a_consent_of_the_wrong_kind(auth_client: APIClient) -> None:
+    # A guardian's consent about a child says nothing about an adult colleague.
+    minor = auth_client.post(
+        "/api/v1/users/me/consents",
+        {"consentType": "minor_data_processing", "version": "1.0"},
+        format="json",
+    )
+    assert minor.status_code == 201
+    response = _add(auth_client, consentId=str(minor.data["data"][0]["id"]))
+    assert response.status_code == 400, response.data
+
+
+def test_add_refuses_a_withdrawn_consent(auth_client: APIClient) -> None:
+    consent_id = _record_consent(auth_client)
+    assert auth_client.delete("/api/v1/users/me/consents/third_party_data_processing").status_code == 204
+    response = _add(auth_client, consentId=consent_id)
+    assert response.status_code == 400, response.data
+
+
 def test_add_records_the_consent_on_the_teacher(auth_client: APIClient) -> None:
     response = _add(auth_client)
     assert response.status_code == 201, response.data
