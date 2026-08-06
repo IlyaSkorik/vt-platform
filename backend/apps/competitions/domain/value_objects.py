@@ -93,7 +93,7 @@ from .exceptions import (
 
 __all__ = [
     "_DEFAULT_AUDIO_FORMATS",
-    "_DEFAULT_VIDEO_FORMATS",
+    "_DEFAULT_MEDIA_FORMATS",
     "AdmissionCombination",
     "AdmissionRule",
     "AgeCategoryId",
@@ -126,6 +126,8 @@ __all__ = [
     "FileReference",
     "InformationBlockId",
     "InformationBlockTitle",
+    "MediaRequirements",
+    "MediaSubmissionMode",
     "MixedAgeCalculationMethod",
     "Money",
     "MusicRequirements",
@@ -161,8 +163,6 @@ __all__ = [
     "TemplateName",
     "Venue",
     "VideoProvider",
-    "VideoRequirements",
-    "VideoSubmissionMode",
 ]
 
 _UUID_V7_VERSION: Final = 7
@@ -1667,7 +1667,9 @@ class RegistrationWindow:
 
 
 _DEFAULT_AUDIO_FORMATS: Final[tuple[str, ...]] = ("mp3", "wav", "m4a", "aac")
-_DEFAULT_VIDEO_FORMATS: Final[tuple[str, ...]] = ("mp4", "mov", "m4v", "webm")
+#: Video *and* photo: one block collects both, because to an organizer they are the
+#: same act — the material of the performance, whether it moves or not.
+_DEFAULT_MEDIA_FORMATS: Final[tuple[str, ...]] = ("mp4", "mov", "m4v", "webm", "jpg", "jpeg", "png")
 _MAX_UPLOAD_SIZE_MB_LIMIT: Final = 512
 
 
@@ -1687,7 +1689,7 @@ class PaymentMethod(StrEnum):
     CASH = "CASH"
 
 
-class VideoSubmissionMode(StrEnum):
+class MediaSubmissionMode(StrEnum):
     """How video evidence may be provided for a participation format."""
 
     NOT_REQUIRED = "NOT_REQUIRED"
@@ -1730,20 +1732,21 @@ class MusicRequirements:
 
 
 @dataclass(frozen=True, slots=True)
-class VideoRequirements:
-    """Video submission policy for one participation format.
+class MediaRequirements:
+    """Media submission policy for one participation format — video and photographs.
 
-    A video is not only how a remote entry is judged — an in-person festival wants the
-    file too, to play on the hall's screen — so the upload side carries the same two
-    controls music does: which extensions are accepted, and how large a file may be. The
-    organizer sets both, because what a phone produces for a three-minute number differs
-    by an order of magnitude between festivals.
+    One block for both, because to an organizer they are one decision: the material of the
+    performance. A remote entry is judged from it; an in-person one plays it on the hall's
+    screen or prints it in the programme.
 
-    ``mode`` decides whether a URL, a file, or either is expected; the format and size
-    limits apply whenever a file is allowed at all.
+    ``mode`` decides whether a URL, files, or either are expected. The size ceiling is on
+    **the total** rather than per file: several photographs and a video are a normal
+    submission, and a per-file limit either lets ten files through unchecked or refuses a
+    single legitimate one. What the organizer actually has to protect is their storage and
+    the applicant's connection, and both care about the sum.
     """
 
-    mode: VideoSubmissionMode = VideoSubmissionMode.NOT_REQUIRED
+    mode: MediaSubmissionMode = MediaSubmissionMode.NOT_REQUIRED
     allowed_providers: tuple[VideoProvider, ...] = (
         VideoProvider.YOUTUBE,
         VideoProvider.VK_VIDEO,
@@ -1751,44 +1754,45 @@ class VideoRequirements:
         VideoProvider.VIMEO,
     )
     allow_replacement: bool = True
-    #: Whether the video is a condition of entry or merely accepted.
+    #: Whether media is a condition of entry or merely accepted.
     #:
-    #: Separate from ``mode``, which says through *which channel* a video arrives, not
-    #: whether it must arrive at all. An in-person festival often wants the file for the
-    #: hall's screen but will not turn an entry away for its absence; a remote one cannot
-    #: judge without it. Both are ``FILE_ONLY``, and only this flag tells them apart.
+    #: Separate from ``mode``, which says through *which channel* it arrives, not whether
+    #: it must arrive at all. An in-person festival often wants the file for the hall's
+    #: screen but will not turn an entry away for its absence; a remote one cannot judge
+    #: without it. Both are ``FILE_ONLY``, and only this flag tells them apart.
     require_upload: bool = False
-    allowed_formats: tuple[str, ...] = _DEFAULT_VIDEO_FORMATS
-    #: Default is generous next to music's 25 MB: a minute of phone video is tens of
-    #: megabytes, and a limit that refuses an ordinary entry is a limit nobody can meet.
-    max_upload_size_mb: int = 200
+    allowed_formats: tuple[str, ...] = _DEFAULT_MEDIA_FORMATS
+    #: Ceiling on the **sum** of all media files of one performance, not on each of them.
+    #: Generous next to music's 25 MB: a minute of phone video is tens of megabytes, and a
+    #: limit that refuses an ordinary entry is a limit nobody can meet.
+    max_total_size_mb: int = 200
 
     def __post_init__(self) -> None:
-        if not isinstance(self.mode, VideoSubmissionMode):
-            raise InvalidCompetitionSettingsError("Video submission mode is invalid.")
+        if not isinstance(self.mode, MediaSubmissionMode):
+            raise InvalidCompetitionSettingsError("Media submission mode is invalid.")
         providers = tuple(dict.fromkeys(self.allowed_providers))
-        if self.mode in {VideoSubmissionMode.URL_ONLY, VideoSubmissionMode.URL_OR_FILE} and not providers:
+        if self.mode in {MediaSubmissionMode.URL_ONLY, MediaSubmissionMode.URL_OR_FILE} and not providers:
             raise InvalidCompetitionSettingsError("At least one video provider is required for URL submissions.")
         object.__setattr__(self, "allowed_providers", providers)
 
-        if self.require_upload and self.mode is VideoSubmissionMode.NOT_REQUIRED:
-            raise InvalidCompetitionSettingsError("Video cannot be required while no video is collected.")
-        if not isinstance(self.max_upload_size_mb, int) or isinstance(self.max_upload_size_mb, bool):
-            raise InvalidCompetitionSettingsError("Video max upload size must be an integer.")
-        if self.max_upload_size_mb < 1 or self.max_upload_size_mb > _MAX_UPLOAD_SIZE_MB_LIMIT:
-            raise InvalidCompetitionSettingsError(f"Video max upload size must be between 1 and {_MAX_UPLOAD_SIZE_MB_LIMIT} MB.")
+        if self.require_upload and self.mode is MediaSubmissionMode.NOT_REQUIRED:
+            raise InvalidCompetitionSettingsError("Media cannot be required while none is collected.")
+        if not isinstance(self.max_total_size_mb, int) or isinstance(self.max_total_size_mb, bool):
+            raise InvalidCompetitionSettingsError("Media max total size must be an integer.")
+        if self.max_total_size_mb < 1 or self.max_total_size_mb > _MAX_UPLOAD_SIZE_MB_LIMIT:
+            raise InvalidCompetitionSettingsError(f"Media max total size must be between 1 and {_MAX_UPLOAD_SIZE_MB_LIMIT} MB.")
         normalized = tuple(ext.strip().lower().lstrip(".") for ext in self.allowed_formats if ext.strip())
         if self.allows_file_upload and not normalized:
-            raise InvalidCompetitionSettingsError("At least one video format is required when a file may be uploaded.")
-        object.__setattr__(self, "allowed_formats", normalized or _DEFAULT_VIDEO_FORMATS)
+            raise InvalidCompetitionSettingsError("At least one media format is required when files may be uploaded.")
+        object.__setattr__(self, "allowed_formats", normalized or _DEFAULT_MEDIA_FORMATS)
 
     @property
     def allows_file_upload(self) -> bool:
-        """Whether this format accepts a video *file* at all."""
-        return self.mode in {VideoSubmissionMode.FILE_ONLY, VideoSubmissionMode.URL_OR_FILE}
+        """Whether this format accepts uploaded media *files* at all."""
+        return self.mode in {MediaSubmissionMode.FILE_ONLY, MediaSubmissionMode.URL_OR_FILE}
 
     @classmethod
-    def default(cls) -> VideoRequirements:
+    def default(cls) -> MediaRequirements:
         return cls()
 
 
@@ -1811,7 +1815,7 @@ class ParticipationFormatRequirements:
 
     participation_format_id: ParticipationFormatId
     music: MusicRequirements = field(default_factory=MusicRequirements.default)
-    video: VideoRequirements = field(default_factory=VideoRequirements.default)
+    media: MediaRequirements = field(default_factory=MediaRequirements.default)
     payment_receipt: PaymentReceiptRequirements = field(default_factory=PaymentReceiptRequirements.default)
 
     @classmethod

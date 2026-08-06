@@ -93,7 +93,7 @@ class _MusicRequirementsInputSerializer(serializers.Serializer[dict[str, object]
     maxUploadSizeMb = serializers.IntegerField(source="max_upload_size_mb", min_value=1, max_value=512)
 
 
-class _VideoRequirementsInputSerializer(serializers.Serializer[dict[str, object]]):
+class _MediaRequirementsInputSerializer(serializers.Serializer[dict[str, object]]):
     mode = serializers.ChoiceField(choices=["NOT_REQUIRED", "URL_ONLY", "FILE_ONLY", "URL_OR_FILE"])
     allowedProviders = serializers.ListField(
         child=serializers.ChoiceField(choices=["YOUTUBE", "VK_VIDEO", "RUTUBE", "VIMEO"]),
@@ -101,10 +101,11 @@ class _VideoRequirementsInputSerializer(serializers.Serializer[dict[str, object]
     )
     allowReplacement = serializers.BooleanField(source="allow_replacement")
     # Optional so an organizer editing only the mode need not restate the upload rules,
-    # and so settings saved before video uploads existed still validate.
+    # and so settings saved before media uploads existed still validate.
     requireUpload = serializers.BooleanField(source="require_upload", required=False)
     allowedFormats = serializers.ListField(child=serializers.CharField(), source="allowed_formats", required=False)
-    maxUploadSizeMb = serializers.IntegerField(source="max_upload_size_mb", min_value=1, max_value=512, required=False)
+    #: The ceiling on the **sum** of a performance's media files, not on each of them.
+    maxTotalSizeMb = serializers.IntegerField(source="max_total_size_mb", min_value=1, max_value=512, required=False)
 
 
 class _PaymentReceiptRequirementsInputSerializer(serializers.Serializer[dict[str, object]]):
@@ -116,7 +117,7 @@ class _PaymentReceiptRequirementsInputSerializer(serializers.Serializer[dict[str
 class _FormatRequirementsInputSerializer(serializers.Serializer[dict[str, object]]):
     participationFormatId = serializers.UUIDField(source="participation_format_id")
     music = _MusicRequirementsInputSerializer()
-    video = _VideoRequirementsInputSerializer()
+    media = _MediaRequirementsInputSerializer()
     paymentReceipt = _PaymentReceiptRequirementsInputSerializer(source="payment_receipt")
 
 
@@ -576,18 +577,18 @@ class _DeadlinesSerializer(serializers.Serializer[dict[str, object]]):
 class _MusicRequirementsSerializer(serializers.Serializer[dict[str, object]]):
     requireUpload = serializers.BooleanField(source="require_upload")
     allowReplacement = serializers.BooleanField(source="allow_replacement")
-    requireUpload = serializers.BooleanField(source="require_upload")
     allowedFormats = serializers.ListField(child=serializers.CharField(), source="allowed_formats")
     maxUploadSizeMb = serializers.IntegerField(source="max_upload_size_mb")
 
 
-class _VideoRequirementsSerializer(serializers.Serializer[dict[str, object]]):
+class _MediaRequirementsSerializer(serializers.Serializer[dict[str, object]]):
     mode = serializers.CharField()
     allowedProviders = serializers.ListField(child=serializers.CharField(), source="allowed_providers")
     allowReplacement = serializers.BooleanField(source="allow_replacement")
     requireUpload = serializers.BooleanField(source="require_upload")
     allowedFormats = serializers.ListField(child=serializers.CharField(), source="allowed_formats")
-    maxUploadSizeMb = serializers.IntegerField(source="max_upload_size_mb")
+    #: The ceiling on the **sum** of a performance's media files.
+    maxTotalSizeMb = serializers.IntegerField(source="max_total_size_mb")
 
 
 class _PaymentReceiptRequirementsSerializer(serializers.Serializer[dict[str, object]]):
@@ -599,7 +600,7 @@ class _PaymentReceiptRequirementsSerializer(serializers.Serializer[dict[str, obj
 class _FormatRequirementsSerializer(serializers.Serializer[dict[str, object]]):
     participationFormatId = serializers.CharField(source="participation_format_id")
     music = _MusicRequirementsSerializer()
-    video = _VideoRequirementsSerializer()
+    media = _MediaRequirementsSerializer()
     paymentReceipt = _PaymentReceiptRequirementsSerializer(source="payment_receipt")
 
 

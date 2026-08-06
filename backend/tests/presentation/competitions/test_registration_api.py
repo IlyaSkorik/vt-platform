@@ -109,7 +109,7 @@ def test_v4_uuid_is_hidden() -> None:
     assert APIClient().get(_url(str(uuid.uuid4()))).status_code == 404
 
 
-def test_upload_requirements_carry_the_video_limits() -> None:
+def test_upload_requirements_carry_the_media_limits() -> None:
     # An in-person festival collects the file for the hall's screen, so the wizard needs
     # the same two facts for video it already has for music: which extensions and how
     # large. Sent whatever the mode is, so the client never invents a limit of its own
@@ -118,9 +118,9 @@ def test_upload_requirements_carry_the_video_limits() -> None:
     data = APIClient().get(_url(competition_id)).data["data"]
 
     for requirement in data["uploadRequirements"]:
-        assert isinstance(requirement["videoAllowedFormats"], list)
-        assert requirement["videoAllowedFormats"]
-        assert requirement["videoMaxUploadSizeMb"] >= 1
+        assert isinstance(requirement["mediaAllowedFormats"], list)
+        assert requirement["mediaAllowedFormats"]
+        assert requirement["mediaMaxTotalSizeMb"] >= 1
         # Whether the video is a condition of entry travels too: the wizard labels the
         # control and blocks submission on it, and it must not guess.
-        assert isinstance(requirement["videoRequired"], bool)
+        assert isinstance(requirement["mediaRequired"], bool)

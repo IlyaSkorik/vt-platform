@@ -17,6 +17,8 @@ from apps.competitions.domain.value_objects import (
     CompetitionTitle,
     DateRange,
     FileReference,
+    MediaRequirements,
+    MediaSubmissionMode,
     MusicRequirements,
     ParticipationFormatId,
     ParticipationFormatRequirements,
@@ -27,8 +29,6 @@ from apps.competitions.domain.value_objects import (
     Season,
     Venue,
     VideoProvider,
-    VideoRequirements,
-    VideoSubmissionMode,
 )
 from shared.utils.json_values import as_int
 
@@ -57,13 +57,14 @@ def _format_requirements(raw_items: list[dict[str, object]]) -> tuple[Participat
     for raw in raw_items:
         format_id = ParticipationFormatId.from_string(str(raw["participation_format_id"]))
         music_raw = raw.get("music") if isinstance(raw.get("music"), dict) else {}
-        video_raw = raw.get("video") if isinstance(raw.get("video"), dict) else {}
+        media_candidate = raw.get("media") if isinstance(raw.get("media"), dict) else raw.get("video")
+        media_raw = media_candidate if isinstance(media_candidate, dict) else {}
         receipt_raw = raw.get("payment_receipt") if isinstance(raw.get("payment_receipt"), dict) else {}
         assert isinstance(music_raw, dict)
-        assert isinstance(video_raw, dict)
+        assert isinstance(media_raw, dict)
         assert isinstance(receipt_raw, dict)
 
-        providers_raw = video_raw.get("allowed_providers", [])
+        providers_raw = media_raw.get("allowed_providers", [])
         providers = tuple(VideoProvider(str(item)) for item in providers_raw) if isinstance(providers_raw, list) else ()
 
         result.append(
@@ -75,13 +76,13 @@ def _format_requirements(raw_items: list[dict[str, object]]) -> tuple[Participat
                     allowed_formats=_extensions(music_raw.get("allowed_formats")),
                     max_upload_size_mb=as_int(music_raw.get("max_upload_size_mb"), default=25),
                 ),
-                video=VideoRequirements(
-                    mode=VideoSubmissionMode(str(video_raw.get("mode", VideoSubmissionMode.NOT_REQUIRED.value))),
+                media=MediaRequirements(
+                    mode=MediaSubmissionMode(str(media_raw.get("mode", MediaSubmissionMode.NOT_REQUIRED.value))),
                     allowed_providers=providers,
-                    allow_replacement=bool(video_raw.get("allow_replacement", True)),
-                    require_upload=bool(video_raw.get("require_upload", False)),
-                    allowed_formats=_extensions(video_raw.get("allowed_formats")),
-                    max_upload_size_mb=as_int(video_raw.get("max_upload_size_mb"), default=200),
+                    allow_replacement=bool(media_raw.get("allow_replacement", True)),
+                    require_upload=bool(media_raw.get("require_upload", False)),
+                    allowed_formats=_extensions(media_raw.get("allowed_formats")),
+                    max_total_size_mb=as_int(media_raw.get("max_total_size_mb"), default=200),
                 ),
                 payment_receipt=PaymentReceiptRequirements(
                     require_receipt=bool(receipt_raw.get("require_receipt", False)),

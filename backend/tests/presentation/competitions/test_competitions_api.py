@@ -247,17 +247,17 @@ def test_settings_round_trip_carries_the_media_requirements(staff_client: APICli
                 "allowedFormats": ["mp3"],
                 "maxUploadSizeMb": 30,
             },
-            # An in-person festival collecting the file for the hall's screen: the mode
-            # takes a file, and the size ceiling is the organizer's own.
-            "video": {
+            # An in-person festival collecting files for the hall's screen: photographs and
+            # video under one ceiling, and that ceiling is on their total.
+            "media": {
                 "mode": "FILE_ONLY",
                 "allowedProviders": ["YOUTUBE"],
                 "allowReplacement": True,
                 # Collected but not demanded: the festival plays what it gets and does not
                 # refuse an entry that arrives without a file.
                 "requireUpload": False,
-                "allowedFormats": ["mp4", "mov"],
-                "maxUploadSizeMb": 150,
+                "allowedFormats": ["mp4", "mov", "jpg"],
+                "maxTotalSizeMb": 150,
             },
             "paymentReceipt": {
                 "requireReceipt": False,
@@ -268,12 +268,12 @@ def test_settings_round_trip_carries_the_media_requirements(staff_client: APICli
     ]
 
     saved = staff_client.put(f"{detail}/settings", payload, format="json")
-    assert saved.status_code == 200, saved.data
+    assert saved.status_code == 200, saved.data.get("errors") or saved.data
 
     read_back = staff_client.get(detail)
     assert read_back.status_code == 200, read_back.data
     requirement = read_back.data["data"]["settings"]["formatRequirements"][0]
     assert requirement["music"]["maxUploadSizeMb"] == 30
-    assert requirement["video"]["maxUploadSizeMb"] == 150
-    assert requirement["video"]["allowedFormats"] == ["mp4", "mov"]
-    assert requirement["video"]["requireUpload"] is False
+    assert requirement["media"]["maxTotalSizeMb"] == 150
+    assert requirement["media"]["allowedFormats"] == ["mp4", "mov", "jpg"]
+    assert requirement["media"]["requireUpload"] is False

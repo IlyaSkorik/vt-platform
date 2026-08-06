@@ -9,8 +9,10 @@ from __future__ import annotations
 
 from apps.competitions.domain.value_objects import (
     _DEFAULT_AUDIO_FORMATS,
-    _DEFAULT_VIDEO_FORMATS,
+    _DEFAULT_MEDIA_FORMATS,
     CompetitionSettings,
+    MediaRequirements,
+    MediaSubmissionMode,
     MusicRequirements,
     ParticipationFormatId,
     ParticipationFormatRequirements,
@@ -18,8 +20,6 @@ from apps.competitions.domain.value_objects import (
     PaymentReceiptRequirements,
     PaymentTiming,
     VideoProvider,
-    VideoRequirements,
-    VideoSubmissionMode,
 )
 from shared.utils.json_values import as_int
 
@@ -157,13 +157,13 @@ def _format_requirements_to_json(item: ParticipationFormatRequirements) -> dict[
             "allowed_formats": list(item.music.allowed_formats),
             "max_upload_size_mb": item.music.max_upload_size_mb,
         },
-        "video": {
-            "mode": item.video.mode.value,
-            "allowed_providers": [provider.value for provider in item.video.allowed_providers],
-            "allow_replacement": item.video.allow_replacement,
-            "require_upload": item.video.require_upload,
-            "allowed_formats": list(item.video.allowed_formats),
-            "max_upload_size_mb": item.video.max_upload_size_mb,
+        "media": {
+            "mode": item.media.mode.value,
+            "allowed_providers": [provider.value for provider in item.media.allowed_providers],
+            "allow_replacement": item.media.allow_replacement,
+            "require_upload": item.media.require_upload,
+            "allowed_formats": list(item.media.allowed_formats),
+            "max_total_size_mb": item.media.max_total_size_mb,
         },
         "payment_receipt": {
             "require_receipt": item.payment_receipt.require_receipt,
@@ -196,18 +196,21 @@ def _format_requirements_from_json(data: dict[str, object]) -> ParticipationForm
         return None
 
     music_data = data.get("music") if isinstance(data.get("music"), dict) else {}
-    video_data = data.get("video") if isinstance(data.get("video"), dict) else {}
+    # Written as "media" since the block covers photographs too; blobs saved before that
+    # still say "video", and a competition configured last season must keep loading.
+    media_raw = data.get("media") if isinstance(data.get("media"), dict) else data.get("video")
+    media_data = media_raw if isinstance(media_raw, dict) else {}
     receipt_data = data.get("payment_receipt") if isinstance(data.get("payment_receipt"), dict) else {}
     assert isinstance(music_data, dict)
-    assert isinstance(video_data, dict)
+    assert isinstance(media_data, dict)
     assert isinstance(receipt_data, dict)
 
     try:
-        mode = VideoSubmissionMode(str(video_data.get("mode", VideoSubmissionMode.NOT_REQUIRED.value)))
+        mode = MediaSubmissionMode(str(media_data.get("mode", MediaSubmissionMode.NOT_REQUIRED.value)))
     except ValueError:
-        mode = VideoSubmissionMode.NOT_REQUIRED
+        mode = MediaSubmissionMode.NOT_REQUIRED
 
-    providers_raw = video_data.get("allowed_providers", [])
+    providers_raw = media_data.get("allowed_providers", [])
     providers: list[VideoProvider] = []
     if isinstance(providers_raw, list):
         for item in providers_raw:
@@ -226,13 +229,19 @@ def _format_requirements_from_json(data: dict[str, object]) -> ParticipationForm
             allowed_formats=_formats(music_data.get("allowed_formats"), default=_DEFAULT_AUDIO_FORMATS),
             max_upload_size_mb=max_upload_size_mb,
         ),
-        video=VideoRequirements(
+        media=MediaRequirements(
             mode=mode,
             allowed_providers=tuple(providers),
-            allow_replacement=bool(video_data.get("allow_replacement", True)),
-            require_upload=bool(video_data.get("require_upload", False)),
-            allowed_formats=_formats(video_data.get("allowed_formats"), default=_DEFAULT_VIDEO_FORMATS),
-            max_upload_size_mb=as_int(video_data.get("max_upload_size_mb"), default=200),
+            allow_replacement=bool(media_data.get("allow_replacement", True)),
+            require_upload=bool(media_data.get("require_upload", False)),
+            allowed_formats=_formats(media_data.get("allowed_formats"), default=_DEFAULT_MEDIA_FORMATS),
+            # A legacy blob's per-file "max_upload_size_mb" becomes the total ceiling: the
+            # organizer's intent was "this big", and reading it as the sum is the stricter
+            # of the two interpretations.
+            max_total_size_mb=as_int(
+                media_data.get("max_total_size_mb", media_data.get("max_upload_size_mb")),
+                default=200,
+            ),
         ),
         payment_receipt=PaymentReceiptRequirements(
             require_receipt=bool(receipt_data.get("require_receipt", False)),

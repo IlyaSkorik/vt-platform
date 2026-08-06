@@ -29,6 +29,8 @@ from apps.competitions.domain.value_objects import (
     DeadlineKind,
     DocumentCategory,
     DocumentVisibility,
+    MediaRequirements,
+    MediaSubmissionMode,
     Money,
     ParticipantCountRange,
     ParticipationFormatId,
@@ -41,8 +43,6 @@ from apps.competitions.domain.value_objects import (
     RichTextFormat,
     ServiceName,
     TemplateName,
-    VideoRequirements,
-    VideoSubmissionMode,
 )
 
 
@@ -411,8 +411,8 @@ class TestCompetitionBranding:
         assert b.logo is None and b.banner is None and b.poster is None
 
 
-class TestVideoRequirements:
-    """A video is uploadable now, on limits the organizer sets.
+class TestMediaRequirements:
+    """Media is uploadable now, on limits the organizer sets.
 
     Same two controls music has, for the same reason: a phone's three-minute clip weighs
     what it weighs, and only the organizer knows what their storage and their hall's
@@ -420,58 +420,58 @@ class TestVideoRequirements:
     """
 
     def test_defaults_accept_a_file_of_ordinary_size(self) -> None:
-        video = VideoRequirements.default()
-        assert video.max_upload_size_mb == 200
-        assert "mp4" in video.allowed_formats
+        media = MediaRequirements.default()
+        assert media.max_total_size_mb == 200
+        assert "mp4" in media.allowed_formats
 
     def test_extensions_are_normalized_like_music(self) -> None:
-        video = VideoRequirements(
-            mode=VideoSubmissionMode.FILE_ONLY,
+        media = MediaRequirements(
+            mode=MediaSubmissionMode.FILE_ONLY,
             allowed_formats=(".MP4", " mov ", ""),
         )
-        assert video.allowed_formats == ("mp4", "mov")
+        assert media.allowed_formats == ("mp4", "mov")
 
     def test_a_file_only_format_needs_at_least_one_extension(self) -> None:
         # Otherwise the requirement says "upload a file" and rejects every file there is.
         with pytest.raises(InvalidCompetitionSettingsError):
-            VideoRequirements(mode=VideoSubmissionMode.FILE_ONLY, allowed_formats=("",))
+            MediaRequirements(mode=MediaSubmissionMode.FILE_ONLY, allowed_formats=("",))
 
     def test_a_url_only_format_may_have_no_extensions(self) -> None:
         # Nothing is uploaded, so the extension list is nobody's business — and the
         # value object hands back the default rather than an empty tuple.
-        video = VideoRequirements(mode=VideoSubmissionMode.URL_ONLY, allowed_formats=())
-        assert video.allowed_formats
+        media = MediaRequirements(mode=MediaSubmissionMode.URL_ONLY, allowed_formats=())
+        assert media.allowed_formats
 
     @pytest.mark.parametrize("size", [0, -1, 513])
     def test_the_size_limit_stays_within_the_platform_ceiling(self, size: int) -> None:
         with pytest.raises(InvalidCompetitionSettingsError):
-            VideoRequirements(max_upload_size_mb=size)
+            MediaRequirements(max_total_size_mb=size)
 
     def test_the_size_limit_must_be_a_whole_number_of_megabytes(self) -> None:
         with pytest.raises(InvalidCompetitionSettingsError):
-            VideoRequirements(max_upload_size_mb=True)  # type: ignore[arg-type]
+            MediaRequirements(max_total_size_mb=True)  # type: ignore[arg-type]
 
     def test_a_video_may_be_collected_without_being_required(self) -> None:
         # The case that did not exist before: an in-person festival wants the file for the
         # hall's screen but will not turn an entry away for its absence.
-        video = VideoRequirements(mode=VideoSubmissionMode.FILE_ONLY, require_upload=False)
-        assert video.allows_file_upload
-        assert not video.require_upload
+        media = MediaRequirements(mode=MediaSubmissionMode.FILE_ONLY, require_upload=False)
+        assert media.allows_file_upload
+        assert not media.require_upload
 
     def test_requiring_a_video_nobody_collects_is_a_contradiction(self) -> None:
         with pytest.raises(InvalidCompetitionSettingsError):
-            VideoRequirements(mode=VideoSubmissionMode.NOT_REQUIRED, require_upload=True)
+            MediaRequirements(mode=MediaSubmissionMode.NOT_REQUIRED, require_upload=True)
 
     @pytest.mark.parametrize(
         ("mode", "expected"),
         [
-            (VideoSubmissionMode.NOT_REQUIRED, False),
-            (VideoSubmissionMode.URL_ONLY, False),
-            (VideoSubmissionMode.FILE_ONLY, True),
-            (VideoSubmissionMode.URL_OR_FILE, True),
+            (MediaSubmissionMode.NOT_REQUIRED, False),
+            (MediaSubmissionMode.URL_ONLY, False),
+            (MediaSubmissionMode.FILE_ONLY, True),
+            (MediaSubmissionMode.URL_OR_FILE, True),
         ],
     )
-    def test_knows_when_a_file_may_be_uploaded(self, mode: VideoSubmissionMode, expected: bool) -> None:
+    def test_knows_when_a_file_may_be_uploaded(self, mode: MediaSubmissionMode, expected: bool) -> None:
         # What the upload policy branches on: an in-person festival collecting files for
         # the screen sets URL_OR_FILE, and that has to count as file upload.
-        assert VideoRequirements(mode=mode).allows_file_upload is expected
+        assert MediaRequirements(mode=mode).allows_file_upload is expected

@@ -39,7 +39,6 @@ from apps.applications.domain.value_objects import (
 from apps.competitions.domain.entities import Competition
 from apps.competitions.domain.value_objects import (
     AdmissionCombination,
-    VideoSubmissionMode,
 )
 from apps.competitions.domain.value_objects import (
     AgeCategoryId as CompAgeCategoryId,
@@ -169,9 +168,10 @@ class DjangoCompetitionCatalog:
             is_admissible=competition.is_admissible(combination),
             requires_teacher=settings.require_teacher,
             requires_music=requirements.music.require_upload,
-            # A URL-mode video cannot be satisfied by an uploaded file, so only a
-            # file-only requirement is enforced as a required attachment.
-            requires_video_file=requirements.video.mode is VideoSubmissionMode.FILE_ONLY,
+            # Two conditions, both necessary: the format must actually collect files (a
+            # URL-mode requirement cannot be satisfied by an upload), and the organizer
+            # must have said the media is required rather than merely accepted.
+            requires_video_file=requirements.media.allows_file_upload and requirements.media.require_upload,
             # The payment receipt is an order-level artifact uploaded after submission
             # (see the Application's PaymentReceipt), so it is not a submit-time
             # submission attachment; only genuine supporting documents are.

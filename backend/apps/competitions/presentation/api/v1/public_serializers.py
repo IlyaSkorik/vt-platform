@@ -343,10 +343,10 @@ class RegistrationUploadRequirementSerializer(serializers.Serializer[object]):
     musicRequired = serializers.BooleanField(source="music_required")
     musicAllowedFormats = serializers.ListField(source="music_allowed_formats", child=serializers.CharField())
     musicMaxUploadSizeMb = serializers.IntegerField(source="music_max_upload_size_mb")
-    videoMode = serializers.CharField(source="video_mode")
-    videoRequired = serializers.BooleanField(source="video_required")
-    videoAllowedFormats = serializers.ListField(child=serializers.CharField(), source="video_allowed_formats")
-    videoMaxUploadSizeMb = serializers.IntegerField(source="video_max_upload_size_mb")
+    mediaMode = serializers.CharField(source="media_mode")
+    mediaRequired = serializers.BooleanField(source="media_required")
+    mediaAllowedFormats = serializers.ListField(child=serializers.CharField(), source="media_allowed_formats")
+    mediaMaxTotalSizeMb = serializers.IntegerField(source="media_max_total_size_mb")
     receiptRequired = serializers.BooleanField(source="receipt_required")
 
 

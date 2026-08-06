@@ -1,15 +1,16 @@
 """``DjangoCompetitionUploadPolicy`` - the ACL projecting upload constraints.
 
-Implements the ``CompetitionUploadPolicy`` port. Music **and** video project the
-competition's configured per-format requirements — the organizer's allowed extensions
-and maximum size in MB — when a participation format is known, falling back to the
-platform defaults otherwise. Images and documents use fixed platform limits, because
-nothing about a festival changes what a scan of a receipt should weigh.
+Implements the ``CompetitionUploadPolicy`` port. Music and media project the
+competition's configured per-format requirements — the organizer's allowed extensions and
+size ceiling — when a participation format is known, falling back to the platform defaults
+otherwise. Documents use a fixed platform limit, because nothing about a festival changes
+what a scan of a receipt should weigh.
 
-Video is configurable for the same reason music is, and it is not only a remote-entry
-concern: an in-person festival wants the file to play on the hall's screen, and how large
-that file may be is a decision about the venue's equipment and the organizer's storage,
-not something this module can guess.
+Media covers video **and** photographs under one ceiling, and that ceiling is on their
+total: several photographs and a video are an ordinary submission, so limiting each file
+separately would either wave ten of them through or refuse a single legitimate one. What
+the organizer has to protect is their storage and the applicant's connection, and both
+care about the sum.
 """
 
 from __future__ import annotations
@@ -20,9 +21,9 @@ from apps.applications.application.interfaces import UploadConstraints
 from apps.applications.domain.value_objects import AttachmentType, CompetitionId
 from apps.competitions.domain.value_objects import CompetitionId as CompCompetitionId
 from apps.competitions.domain.value_objects import (
+    MediaRequirements,
     MusicRequirements,
     ParticipationFormatRequirements,
-    VideoRequirements,
 )
 from apps.competitions.domain.value_objects import ParticipationFormatId as CompParticipationFormatId
 from apps.competitions.infrastructure.repositories.django_competition_repository import DjangoCompetitionRepository
@@ -32,7 +33,9 @@ __all__ = ["DjangoCompetitionUploadPolicy"]
 _MB: Final = 1024 * 1024
 
 _DOCUMENT_EXTENSIONS: Final = frozenset({"pdf", "jpg", "jpeg", "png"})
-_IMAGE_EXTENSIONS: Final = frozenset({"jpg", "jpeg", "png", "webp"})
+
+#: The attachment kinds the media ceiling is shared across.
+_MEDIA_KINDS: Final = frozenset({AttachmentType.VIDEO.value, AttachmentType.IMAGE.value})
 
 
 class DjangoCompetitionUploadPolicy:
@@ -46,11 +49,13 @@ class DjangoCompetitionUploadPolicy:
         if kind is AttachmentType.MUSIC:
             music = self._music(competition_id, participation_format_id)
             return UploadConstraints(max_bytes=music.max_upload_size_mb * _MB, allowed_extensions=frozenset(music.allowed_formats))
-        if kind is AttachmentType.VIDEO:
-            video = self._video(competition_id, participation_format_id)
-            return UploadConstraints(max_bytes=video.max_upload_size_mb * _MB, allowed_extensions=frozenset(video.allowed_formats))
-        if kind is AttachmentType.IMAGE:
-            return UploadConstraints(max_bytes=10 * _MB, allowed_extensions=_IMAGE_EXTENSIONS)
+        if kind in {AttachmentType.VIDEO, AttachmentType.IMAGE}:
+            media = self._media(competition_id, participation_format_id)
+            return UploadConstraints(
+                max_bytes=media.max_total_size_mb * _MB,
+                allowed_extensions=frozenset(media.allowed_formats),
+                shared_budget_kinds=_MEDIA_KINDS,
+            )
         return UploadConstraints(max_bytes=25 * _MB, allowed_extensions=_DOCUMENT_EXTENSIONS)
 
     def _music(self, competition_id: CompetitionId, participation_format_id: str | None) -> MusicRequirements:
@@ -58,10 +63,10 @@ class DjangoCompetitionUploadPolicy:
         requirements = self._requirements(competition_id, participation_format_id)
         return MusicRequirements.default() if requirements is None else requirements.music
 
-    def _video(self, competition_id: CompetitionId, participation_format_id: str | None) -> VideoRequirements:
-        """The configured video requirements for the format, or the defaults."""
+    def _media(self, competition_id: CompetitionId, participation_format_id: str | None) -> MediaRequirements:
+        """The configured media requirements for the format, or the defaults."""
         requirements = self._requirements(competition_id, participation_format_id)
-        return VideoRequirements.default() if requirements is None else requirements.video
+        return MediaRequirements.default() if requirements is None else requirements.media
 
     def _requirements(self, competition_id: CompetitionId, participation_format_id: str | None) -> ParticipationFormatRequirements | None:
         """The competition's requirements for one format; ``None`` when unresolvable.
