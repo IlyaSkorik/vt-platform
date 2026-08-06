@@ -183,6 +183,77 @@ paths:
               schema:
                 $ref: "#/components/schemas/CurrentUserResponse"
         "401": { $ref: "#/components/responses/Problem" }
+  /users/me/consents:
+    get:
+      operationId: listOwnConsents
+      tags: [Identity]
+      summary: List the consents currently in force for the signed-in account.
+      description: >-
+        Pass `history=true` for the whole journal, including superseded and withdrawn
+        entries — a subject is entitled to know not only what they agreed to but when
+        it changed.
+      parameters:
+        - name: history
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: The account's consents.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsentsResponse"
+        "401": { $ref: "#/components/responses/Problem" }
+    post:
+      operationId: recordOwnConsent
+      tags: [Identity]
+      summary: Record one accepted consent at the version displayed.
+      description: >-
+        Accepting a consent already held supersedes the earlier entry rather than
+        replacing it, so the history of what was agreed to stays readable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConsentRequest"
+      responses:
+        "201":
+          description: The recorded entry.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsentsResponse"
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+  /users/me/consents/{consentType}:
+    delete:
+      operationId: withdrawOwnConsent
+      tags: [Identity]
+      summary: Withdraw a consent.
+      description: >-
+        Stamps the active entry withdrawn; the entry itself stays, because it is the
+        evidence that the processing done while the consent was in force was lawful.
+        Withdrawal is unconditional (art. 5 of Law No. 99-З), so withdrawing a consent
+        that was never given also answers 204.
+      parameters:
+        - name: consentType
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: subjectParticipantId
+          in: query
+          required: false
+          description: Set when withdrawing a consent given about one child.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204": { description: "The consent is no longer in force." }
+        "401": { $ref: "#/components/responses/Problem" }
 components:
   securitySchemes:
     bearerAuth:
@@ -235,6 +306,82 @@ components:
           default: ru-RU
         timezone:
           type: string
+        consents:
+          type: array
+          description: >-
+            Consents accepted on the registration form, each with the version of the
+            text that was displayed. Recorded in the same request as the account, so
+            no account exists without the record of its lawful basis (LEGAL-001 §13.3).
+          items:
+            $ref: "#/components/schemas/ConsentAcceptance"
+    ConsentAcceptance:
+      type: object
+      required: [consentType, version]
+      properties:
+        consentType:
+          type: string
+          maxLength: 32
+        version:
+          type: string
+          maxLength: 64
+    ConsentRecord:
+      type: object
+      required: [id, consentType, version, status]
+      properties:
+        id:
+          type: string
+        consentType:
+          type: string
+        version:
+          type: string
+        status:
+          type: string
+          enum: [requested, granted, active, withdrawn, expired, superseded]
+        purpose:
+          type: string
+          nullable: true
+        subjectParticipantId:
+          type: string
+          nullable: true
+        grantedAt:
+          type: string
+          format: date-time
+          nullable: true
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        withdrawnAt:
+          type: string
+          format: date-time
+          nullable: true
+    ConsentRequest:
+      type: object
+      required: [consentType, version]
+      properties:
+        consentType:
+          type: string
+          maxLength: 32
+        version:
+          type: string
+          maxLength: 64
+        purpose:
+          type: string
+          nullable: true
+        subjectParticipantId:
+          type: string
+          format: uuid
+          nullable: true
+    ConsentsResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConsentRecord"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
     LoginRequest:
       type: object
       required: [email, password]

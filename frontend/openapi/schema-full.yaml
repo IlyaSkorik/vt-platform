@@ -9072,6 +9072,103 @@ paths:
           description: ''
         '401':
           description: No valid session.
+  /api/v1/users/me/consents:
+    get:
+      operationId: listOwnConsents
+      description: The consents currently in force. Pass `history=true` for the whole
+        journal, including superseded and withdrawn entries — a subject is entitled
+        to know not only what they agreed to but when it changed.
+      summary: List the signed-in account's consents
+      tags:
+      - Identity
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountConsentsResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Malformed request.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: No valid session, or the current password is wrong.
+    post:
+      operationId: recordOwnConsent
+      description: Records one consent at the version of the text the client displayed.
+        Accepting a consent already held supersedes the earlier entry rather than
+        replacing it.
+      summary: Record an accepted consent
+      tags:
+      - Identity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountConsentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AccountConsentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AccountConsentRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountConsentsResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Malformed request.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: No valid session, or the current password is wrong.
+  /api/v1/users/me/consents/{consent_type}:
+    delete:
+      operationId: withdrawOwnConsent
+      description: 'Stamps the active entry withdrawn. The entry itself stays: it
+        is the evidence that the processing carried out while the consent was in force
+        was lawful.'
+      summary: Withdraw a consent
+      parameters:
+      - in: path
+        name: consent_type
+        schema:
+          type: string
+        required: true
+      tags:
+      - Identity
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Malformed request.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: No valid session, or the current password is wrong.
   /api/v1/users/me/email:
     put:
       operationId: changeOwnEmail
@@ -9234,6 +9331,47 @@ components:
           type: string
       required:
       - token
+    AccountConsentRequest:
+      type: object
+      description: |-
+        ``POST /users/me/consents`` — record one accepted consent.
+
+        ``version`` is the version of the *text the client displayed*, not a version the
+        server picks: the record has to say what the person actually read (LEGAL-001
+        §13.3). ``subjectParticipantId`` is set when an adult consents for a child, so a
+        later withdrawal resolves to the right participant.
+      properties:
+        consentType:
+          type: string
+          maxLength: 32
+        version:
+          type: string
+          maxLength: 64
+        purpose:
+          type:
+          - string
+          - 'null'
+          maxLength: 255
+        subjectParticipantId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+      required:
+      - consentType
+      - version
+    AccountConsentsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsentRecord'
+        meta:
+          $ref: '#/components/schemas/Meta'
+      required:
+      - data
+      - meta
     AccountEmailRequest:
       type: object
       description: '``PUT /users/me/email`` — move the account to another address.'
@@ -10299,6 +10437,51 @@ components:
       required:
       - name
       - ownerEmail
+    ConsentRecord:
+      type: object
+      description: One entry of the consent journal, as the API renders it.
+      properties:
+        id:
+          type: string
+        consentType:
+          type: string
+        version:
+          type: string
+        status:
+          type: string
+        purpose:
+          type:
+          - string
+          - 'null'
+        subjectParticipantId:
+          type:
+          - string
+          - 'null'
+        grantedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        expiresAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        withdrawnAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - consentType
+      - expiresAt
+      - grantedAt
+      - id
+      - purpose
+      - status
+      - subjectParticipantId
+      - version
+      - withdrawnAt
     CreateApplicationRequest:
       type: object
       description: Validate a create-application request body.
@@ -10386,6 +10569,16 @@ components:
           allOf:
           - $ref: '#/components/schemas/CreatedByTypeEnum'
           default: guardian
+        consentId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        consentVersion:
+          type:
+          - string
+          - 'null'
+          maxLength: 40
       required:
       - dateOfBirth
       - displayAlias
@@ -14274,6 +14467,19 @@ components:
       - title
       - venueAddress
       - venueName
+    RegistrationConsent:
+      type: object
+      description: One consent ticked on the registration form, with the version shown.
+      properties:
+        consentType:
+          type: string
+          maxLength: 32
+        version:
+          type: string
+          maxLength: 64
+      required:
+      - consentType
+      - version
     RegistrationConsentRequirement:
       type: object
       properties:
@@ -14449,6 +14655,10 @@ components:
           type:
           - string
           - 'null'
+        consents:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegistrationConsent'
       required:
       - email
       - firstName

@@ -47,9 +47,17 @@ export const registerSchema = z
     email: emailSchema,
     password: passwordSchema,
     confirmPassword: z.string().min(1, "Повторите пароль"),
+    // Two separate acceptances, because they are two different things: entering the
+    // agreement, and permitting the processing. A consent bundled with anything else is
+    // not freely given (LEGAL-001 §13.1).
     acceptTerms: z.literal(true, {
-      message: "Необходимо принять условия использования",
+      message: "Необходимо принять условия использования и подтвердить ознакомление с политикой",
     }),
+    acceptDataProcessing: z.literal(true, {
+      message: "Без согласия на обработку персональных данных регистрация невозможна",
+    }),
+    /** Optional by law and by design: refusing it changes nothing else. */
+    acceptMarketing: z.boolean(),
   })
   .refine((values) => values.password === values.confirmPassword, {
     message: "Пароли не совпадают",

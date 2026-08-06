@@ -43,6 +43,8 @@ describe("registerSchema", () => {
     password: STRONG_PASSWORD,
     confirmPassword: STRONG_PASSWORD,
     acceptTerms: true as const,
+    acceptDataProcessing: true as const,
+    acceptMarketing: false,
   };
 
   it("accepts a complete, valid registration", () => {
@@ -80,6 +82,20 @@ describe("registerSchema", () => {
   it("requires terms acceptance", () => {
     const result = registerSchema.safeParse({ ...base, acceptTerms: false });
     expect(result.success).toBe(false);
+  });
+
+  it("requires consent to processing, separately from the terms", () => {
+    // Two decisions, not one: a permission bundled with an agreement is not freely
+    // given, so ticking the terms alone must not be enough (LEGAL-001 §13.1).
+    const result = registerSchema.safeParse({ ...base, acceptDataProcessing: false });
+    expect(result.success).toBe(false);
+  });
+
+  it("treats the newsletter as optional", () => {
+    // Refusing it changes nothing about the registration — which is exactly what the
+    // published policy promises (LEGAL-001 §4.3).
+    expect(registerSchema.safeParse({ ...base, acceptMarketing: false }).success).toBe(true);
+    expect(registerSchema.safeParse({ ...base, acceptMarketing: true }).success).toBe(true);
   });
 
   it("requires a first and last name", () => {

@@ -32,7 +32,18 @@ async function fillValidForm(user: ReturnType<typeof userEvent.setup>): Promise<
   await user.type(screen.getByLabelText("Email"), "irina@example.com");
   await user.type(screen.getByLabelText("Пароль"), "SuperSecret123");
   await user.type(screen.getByLabelText("Подтверждение пароля"), "SuperSecret123");
-  await user.click(screen.getByRole("checkbox"));
+  await tickRequiredConsents(user);
+}
+
+/**
+ * Tick the two consents the account cannot be created without, and leave the optional
+ * one alone — which is also the assertion that it *is* optional: every test that
+ * submits successfully does so without agreeing to marketing.
+ */
+async function tickRequiredConsents(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+  const boxes = screen.getAllByRole("checkbox");
+  await user.click(boxes[0] as HTMLElement);
+  await user.click(boxes[1] as HTMLElement);
 }
 
 const originalFetch = globalThis.fetch;
@@ -56,7 +67,7 @@ describe("RegisterForm", () => {
     await user.type(screen.getByLabelText("Подтверждение пароля"), "SuperSecret123");
     await user.click(screen.getByRole("button", { name: "Зарегистрироваться" }));
 
-    expect(await screen.findByText("Необходимо принять условия использования")).toBeInTheDocument();
+    expect(await screen.findByText(/Необходимо принять условия использования/)).toBeInTheDocument();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
@@ -70,7 +81,7 @@ describe("RegisterForm", () => {
     await user.type(screen.getByLabelText("Email"), "irina@example.com");
     await user.type(screen.getByLabelText("Пароль"), "SuperSecret123");
     await user.type(screen.getByLabelText("Подтверждение пароля"), "Mismatch12345");
-    await user.click(screen.getByRole("checkbox"));
+    await tickRequiredConsents(user);
     await user.click(screen.getByRole("button", { name: "Зарегистрироваться" }));
 
     expect(await screen.findByText("Пароли не совпадают")).toBeInTheDocument();

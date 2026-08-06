@@ -15,7 +15,9 @@ import {
   participantRegistryKeys,
 } from "@/entities/participant";
 import { type ApiError, apiClient, toApiError } from "@/shared/api";
+import { recordOwnConsent } from "@/shared/api/generated/identity/identity";
 import { ROUTES } from "@/shared/config";
+import { ConsentCheckbox, PARTICIPANT_CONSENT } from "@/shared/consents";
 import { formatPersonName } from "@/shared/lib";
 import {
   Avatar,
@@ -449,6 +451,8 @@ export function ParticipantsProfilePage(): React.JSX.Element {
   const [organizationDialogOpen, setOrganizationDialogOpen] = useState(false);
   const autosaveTimer = useRef<number | null>(null);
   const isCreateMode = participantId === "new" || participantId == null;
+  const [guardianConsent, setGuardianConsent] = useState(false);
+  const [consentMissing, setConsentMissing] = useState(false);
 
   // When the Registration Wizard sends the user here to create a participant, it
   // passes where to return and which submission to attach the result to.
@@ -530,6 +534,14 @@ export function ParticipantsProfilePage(): React.JSX.Element {
     mutationFn: async (values: ParticipantFormValues): Promise<string> => {
       const response = await apiClient.post("participants/registry", { json: toPayload(values) });
       const payload = (await response.json()) as { data: { id: string } };
+      // Recorded after the child exists, because the entry names them: the journal has
+      // to say which participant this consent was about, or a later withdrawal cannot
+      // be resolved to the right one.
+      await recordOwnConsent({
+        consentType: PARTICIPANT_CONSENT.code,
+        version: PARTICIPANT_CONSENT.version,
+        subjectParticipantId: payload.data.id,
+      });
       return payload.data.id;
     },
     onSuccess: (createdId) => {
@@ -734,10 +746,40 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                     onChange={(next) => form.setValue("organizations", next, { shouldDirty: true })}
                   />
                 </CardContent>
-                <CardFooter className="justify-end">
-                  <Button onClick={() => createMutation.mutate(form.getValues())}>
-                    Создать участника
-                  </Button>
+                <CardFooter className="flex-col items-stretch gap-3">
+                  {/* The gate, not a formality: a child's record may not be created
+                      without the representative's consent, and the platform is what
+                      enforces that (LEGAL-001 §6.3). The consent is recorded in the
+                      journal against this child as soon as the record exists. */}
+                  <ConsentCheckbox
+                    consent={PARTICIPANT_CONSENT}
+                    checked={guardianConsent}
+                    error={
+                      consentMissing
+                        ? "Без согласия законного представителя создать участника нельзя"
+                        : undefined
+                    }
+                    onChange={(checked) => {
+                      setGuardianConsent(checked);
+                      if (checked) {
+                        setConsentMissing(false);
+                      }
+                    }}
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      loading={createMutation.isPending}
+                      onClick={() => {
+                        if (!guardianConsent) {
+                          setConsentMissing(true);
+                          return;
+                        }
+                        createMutation.mutate(form.getValues());
+                      }}
+                    >
+                      Создать участника
+                    </Button>
+                  </div>
                 </CardFooter>
               </Card>
             </TabsContent>

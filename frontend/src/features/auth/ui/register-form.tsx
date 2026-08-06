@@ -1,13 +1,25 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useId, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router";
-import { ROUTES } from "@/shared/config";
+import { ACCOUNT_CONSENTS, ConsentCheckbox, type ConsentDefinition } from "@/shared/consents";
 import { formatPersonName } from "@/shared/lib";
-import { Alert, Button, Checkbox, Input, PasswordInput } from "@/shared/ui";
+import { Alert, Button, Input, PasswordInput } from "@/shared/ui";
 import { useRegister } from "../api";
 import { applyProblemToForm } from "../lib/problem-to-form";
 import { PASSWORD_MIN_LENGTH, type RegisterValues, registerSchema } from "../model/schemas";
+
+/** The catalogue entry for a code, or a loud failure — a missing consent must not ship. */
+function accountConsent(code: string): ConsentDefinition {
+  const consent = ACCOUNT_CONSENTS.find((candidate) => candidate.code === code);
+  if (consent == null) {
+    throw new Error(`Missing consent definition for "${code}".`);
+  }
+  return consent;
+}
+
+const TERMS_CONSENT = accountConsent("terms_of_service");
+const DATA_PROCESSING_CONSENT = accountConsent("data_processing");
+const MARKETING_CONSENT = accountConsent("marketing");
 
 interface RegisterFormProps {
   /** Called with the registered email after the account is created. */
@@ -17,8 +29,8 @@ interface RegisterFormProps {
 /**
  * Registration form — `POST /auth/registration`.
  *
- * Enforces the client password policy and confirmation locally, requires terms
- * acceptance (IDN-010), and maps server field errors (e.g. email already in
+ * Enforces the client password policy and confirmation locally, collects the consents
+ * the account cannot be created without (and the one it can), and maps server field errors (e.g. email already in
  * use `409`, weak password `422`) back onto the offending field. New-password
  * fields hint `new-password` for password managers.
  */
@@ -44,10 +56,14 @@ export function RegisterForm({ onSuccess }: RegisterFormProps): React.JSX.Elemen
       password: "",
       confirmPassword: "",
       acceptTerms: false as unknown as true,
+      acceptDataProcessing: false as unknown as true,
+      acceptMarketing: false,
     },
   });
 
   const acceptTerms = watch("acceptTerms");
+  const acceptDataProcessing = watch("acceptDataProcessing");
+  const acceptMarketing = watch("acceptMarketing");
 
   /**
    * Registers a name field, tidying its capitalisation once the user leaves it.
@@ -128,21 +144,31 @@ export function RegisterForm({ onSuccess }: RegisterFormProps): React.JSX.Elemen
         {...register("confirmPassword")}
       />
 
-      <Checkbox
-        label={
-          <span>
-            Я принимаю{" "}
-            <Link to={ROUTES.home} className="text-primary hover:underline">
-              условия использования
-            </Link>
-          </span>
-        }
-        checked={acceptTerms === true}
-        error={errors.acceptTerms?.message}
-        onCheckedChange={(checked) =>
-          setValue("acceptTerms", (checked === true) as true, { shouldValidate: true })
-        }
-      />
+      {/* Three consents, asked separately because they are separate: the agreement,
+          the permission to process, and the newsletter nobody has to want. Each one's
+          wording and version come from the catalogue that also supplies what gets
+          recorded, so the journal names the text that was actually shown. */}
+      <div className="space-y-3">
+        <ConsentCheckbox
+          consent={TERMS_CONSENT}
+          checked={acceptTerms === true}
+          error={errors.acceptTerms?.message}
+          onChange={(checked) => setValue("acceptTerms", checked as true, { shouldValidate: true })}
+        />
+        <ConsentCheckbox
+          consent={DATA_PROCESSING_CONSENT}
+          checked={acceptDataProcessing === true}
+          error={errors.acceptDataProcessing?.message}
+          onChange={(checked) =>
+            setValue("acceptDataProcessing", checked as true, { shouldValidate: true })
+          }
+        />
+        <ConsentCheckbox
+          consent={MARKETING_CONSENT}
+          checked={acceptMarketing === true}
+          onChange={(checked) => setValue("acceptMarketing", checked, { shouldValidate: true })}
+        />
+      </div>
 
       <Button type="submit" className="w-full" loading={isSubmitting} disabled={isSubmitting}>
         Зарегистрироваться
