@@ -65,6 +65,7 @@ from apps.identity.application.exceptions import (
 )
 from apps.identity.application.interfaces import (
     Clock,
+    ConsentJournal,
     EmailGateway,
     PasswordHasher,
     UserRepository,
@@ -162,12 +163,14 @@ class RegisterUserHandler:
         password_policy: PasswordPolicy,
         clock: Clock,
         uuids: UuidGenerator,
+        consents: ConsentJournal,
     ) -> None:
         self._users = users
         self._password_hasher = password_hasher
         self._password_policy = password_policy
         self._clock = clock
         self._uuids = uuids
+        self._consents = consents
 
     def handle(self, command: RegisterUserCommand) -> OperationResultDto:
         now = self._clock.utcnow()
@@ -199,6 +202,16 @@ class RegisterUserHandler:
                 timezone=timezone,
             )
         self._users.save(user)
+        # The journal is written after the account is stored and before anything else
+        # happens with it: the record has to name a user that exists, and no data may
+        # be processed under a consent that was never recorded (LEGAL-001 §13.3).
+        for acceptance in command.consents:
+            self._consents.grant(
+                user_id=user.id.json(),
+                consent_type=acceptance.consent_type,
+                version=acceptance.version,
+                granted_at=now,
+            )
         return OperationResultDto(user=UserDto.from_user(user, now=now), events=tuple(events))
 
 

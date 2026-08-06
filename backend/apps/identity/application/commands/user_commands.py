@@ -65,6 +65,20 @@ class AuthenticateUserCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class ConsentAcceptance:
+    """One consent a registrant accepted, and the version of the text they saw.
+
+    Carried on :class:`RegisterUserCommand` rather than recorded afterwards, so the
+    account and its consent journal come into existence together: an account whose
+    consents were recorded by a second call that failed would be an account processing
+    data with no evidence of a lawful basis.
+    """
+
+    consent_type: str
+    version: str
+
+
+@dataclass(frozen=True, slots=True)
 class RegisterUserCommand:
     """Register a brand-new account from raw registration input."""
 
@@ -76,6 +90,8 @@ class RegisterUserCommand:
     phone: str | None = None
     locale: str | None = None
     timezone: str | None = None
+    #: The consents accepted on the registration form, in the order they were shown.
+    consents: tuple[ConsentAcceptance, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

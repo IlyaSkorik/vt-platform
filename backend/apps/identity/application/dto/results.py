@@ -81,6 +81,29 @@ class UserDto:
 
 
 @dataclass(frozen=True, slots=True)
+class ConsentRecordDto:
+    """One entry of the consent journal — a single grant and its fate.
+
+    The journal is what makes the published policy's promise checkable: every
+    consent is kept as its own record carrying *which* consent it was, the version
+    of the text the subject actually saw, when it was given and when (if ever) it
+    was withdrawn or superseded. The text itself is never stored here — the
+    ``(consent_type, version)`` pair identifies it, and the versioned document is
+    the copy that can be produced as evidence (LEGAL-001 §13.3).
+    """
+
+    id: str
+    consent_type: str
+    version: str
+    status: str
+    purpose: str | None
+    subject_participant_id: str | None
+    granted_at: datetime | None
+    expires_at: datetime | None
+    withdrawn_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
 class OperationResultDto:
     """The outcome of an Identity command: the affected user plus its new events.
 

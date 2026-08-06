@@ -29,10 +29,17 @@ from apps.identity.application.commands import (
     ChangePhoneCommand,
     RequestEmailVerificationCommand,
 )
-from apps.identity.application.dto import UserDto
+from apps.identity.application.commands.consent_commands import (
+    AcceptConsentCommand,
+    ListConsentsQuery,
+    WithdrawAcceptedConsentCommand,
+)
+from apps.identity.application.dto import ConsentRecordDto, UserDto
 from apps.identity.application.exceptions import ApplicationError
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.identity.presentation.api.v1.account.serializers import (
+    AccountConsentRequestSerializer,
+    AccountConsentsResponseSerializer,
     AccountEmailRequestSerializer,
     AccountPasswordRequestSerializer,
     AccountPhoneRequestSerializer,
@@ -181,3 +188,118 @@ class AccountPhoneView(_AccountView):
         except ApplicationError as exc:
             return application_problem(exc, instance=request.path, request=request)
         return self._envelope(request, result.user)
+
+
+def _consent_resource(record: ConsentRecordDto) -> dict[str, object]:
+    """One journal entry on the wire (API-000 §7 camelCase)."""
+    return {
+        "id": record.id,
+        "consentType": record.consent_type,
+        "version": record.version,
+        "status": record.status,
+        "purpose": record.purpose,
+        "subjectParticipantId": record.subject_participant_id,
+        "grantedAt": record.granted_at,
+        "expiresAt": record.expires_at,
+        "withdrawnAt": record.withdrawn_at,
+    }
+
+
+class AccountConsentCollectionView(_AccountView):
+    """``/api/v1/users/me/consents`` — read the journal, or add to it.
+
+    The journal is append-only by design: ``POST`` never edits an entry, it supersedes
+    the previous one of the same type. That is what lets the platform answer, months
+    later, which wording a person agreed to and when it changed (LEGAL-001 §13.3).
+    """
+
+    def _journal(self, request: Request, records: tuple[ConsentRecordDto, ...], *, status: int = 200) -> Response:
+        correlation_id = request_id(request)
+        return Response(
+            {"data": [_consent_resource(record) for record in records], "meta": {"requestId": correlation_id}},
+            status=status,
+            headers={"X-Request-ID": correlation_id},
+        )
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="listOwnConsents",
+        summary="List the signed-in account's consents",
+        description=(
+            "The consents currently in force. Pass `history=true` for the whole journal, "
+            "including superseded and withdrawn entries — a subject is entitled to know "
+            "not only what they agreed to but when it changed."
+        ),
+        request=None,
+        responses={200: AccountConsentsResponseSerializer, **_PROBLEM_RESPONSES},
+    )
+    def get(self, request: Request) -> Response:
+        include_history = str(request.query_params.get("history", "")).lower() in {"1", "true", "yes"}
+        query = ListConsentsQuery(user_id=str(request.user.id), include_history=include_history)
+        records = composition.build_list_consents_handler().handle(query)
+        return self._journal(request, records)
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="recordOwnConsent",
+        summary="Record an accepted consent",
+        description=(
+            "Records one consent at the version of the text the client displayed. Accepting "
+            "a consent already held supersedes the earlier entry rather than replacing it."
+        ),
+        request=AccountConsentRequestSerializer,
+        responses={201: AccountConsentsResponseSerializer, **_PROBLEM_RESPONSES},
+    )
+    def post(self, request: Request) -> Response:
+        serializer = AccountConsentRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return validation_problem(serializer.errors, instance=request.path, request=request)
+        data = serializer.validated_data
+        subject = data.get("subjectParticipantId")
+        command = AcceptConsentCommand(
+            user_id=str(request.user.id),
+            consent_type=str(data["consentType"]),
+            version=str(data["version"]),
+            purpose=(str(data["purpose"]) if data.get("purpose") not in (None, "") else None),
+            subject_participant_id=(str(subject) if subject is not None else None),
+        )
+        try:
+            record = composition.build_accept_consent_handler().handle(command)
+        except ApplicationError as exc:
+            return application_problem(exc, instance=request.path, request=request)
+        return self._journal(request, (record,), status=201)
+
+
+class AccountConsentDetailView(_AccountView):
+    """``DELETE /api/v1/users/me/consents/{consentType}`` — withdraw a consent.
+
+    Withdrawal is unconditional (art. 5 of Law No. 99-З: at any time, without giving
+    reasons), so this refuses nothing an authenticated subject asks of it. Withdrawing a
+    consent that was never given answers ``204`` as well: the caller wanted it gone, and
+    it is.
+    """
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="withdrawOwnConsent",
+        summary="Withdraw a consent",
+        description=(
+            "Stamps the active entry withdrawn. The entry itself stays: it is the evidence "
+            "that the processing carried out while the consent was in force was lawful."
+        ),
+        request=None,
+        responses={204: None, **_PROBLEM_RESPONSES},
+    )
+    def delete(self, request: Request, consent_type: str) -> Response:
+        subject = request.query_params.get("subjectParticipantId")
+        command = WithdrawAcceptedConsentCommand(
+            user_id=str(request.user.id),
+            consent_type=consent_type,
+            subject_participant_id=(str(subject) if subject else None),
+        )
+        try:
+            composition.build_withdraw_consent_handler().handle(command)
+        except ApplicationError as exc:
+            return application_problem(exc, instance=request.path, request=request)
+        correlation_id = request_id(request)
+        return Response(status=204, headers={"X-Request-ID": correlation_id})

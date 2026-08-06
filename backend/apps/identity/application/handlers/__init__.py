@@ -6,6 +6,11 @@ One handler per command: thin orchestrators over the application ports and the
 the package's public surface.
 """
 
+from apps.identity.application.handlers.consent_handlers import (
+    AcceptConsentHandler,
+    ListConsentsHandler,
+    WithdrawAcceptedConsentHandler,
+)
 from apps.identity.application.handlers.session_handlers import (
     LogoutHandler,
     RefreshTokenHandler,
@@ -31,6 +36,7 @@ from apps.identity.application.handlers.user_handlers import (
 )
 
 __all__ = [
+    "AcceptConsentHandler",
     "AuthenticateUserHandler",
     "ChangeEmailHandler",
     "ChangePasswordHandler",
@@ -38,6 +44,7 @@ __all__ = [
     "ConfirmEmailVerificationHandler",
     "DeleteUserHandler",
     "GrantConsentHandler",
+    "ListConsentsHandler",
     "LockUserHandler",
     "LogoutHandler",
     "RefreshTokenHandler",
@@ -49,5 +56,6 @@ __all__ = [
     "UnlockUserHandler",
     "VerifyEmailHandler",
     "VerifyPhoneHandler",
+    "WithdrawAcceptedConsentHandler",
     "WithdrawConsentHandler",
 ]

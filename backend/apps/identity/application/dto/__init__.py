@@ -5,7 +5,7 @@ Plain, serialization-agnostic input/output shapes for use cases. Result DTOs
 package's public surface; see :mod:`apps.identity.application.dto.results`.
 """
 
-from apps.identity.application.dto.results import OperationResultDto, UserDto
+from apps.identity.application.dto.results import ConsentRecordDto, OperationResultDto, UserDto
 from apps.identity.application.dto.tokens import TokenPairDto
 
-__all__ = ["OperationResultDto", "TokenPairDto", "UserDto"]
+__all__ = ["ConsentRecordDto", "OperationResultDto", "TokenPairDto", "UserDto"]

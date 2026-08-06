@@ -89,6 +89,7 @@ from apps.identity.domain.value_objects import (
 from tests.application.identity.fakes import (
     NOW,
     FakeClock,
+    FakeConsentJournal,
     FakeEmailGateway,
     FakePasswordHasher,
     FakeUserRepository,
@@ -141,6 +142,7 @@ class TestRegisterUserHandler:
             password_policy=PASSWORD_POLICY,
             clock=FakeClock(),
             uuids=uuids,
+            consents=FakeConsentJournal(),
         )
 
     def test_register_success_with_all_optionals(self) -> None:

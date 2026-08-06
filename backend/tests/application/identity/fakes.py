@@ -13,10 +13,10 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 
-from apps.identity.application.dto import TokenPairDto
+from apps.identity.application.dto import ConsentRecordDto, TokenPairDto
 from apps.identity.application.exceptions import (
     InvalidTokenError,
     InvalidVerificationTokenError,
@@ -266,3 +266,65 @@ class FakeEventPublisher:
 
     def publish(self, events: Sequence[DomainEvent]) -> None:
         self.published.extend(events)
+
+
+class FakeConsentJournal:
+    """Recording :class:`ConsentJournal` fake — an in-memory list of entries.
+
+    Mirrors the real adapter's two behaviours the use cases rely on: a repeat grant
+    supersedes the previous entry of the same type rather than replacing it, and a
+    withdrawal stamps the entry instead of dropping it.
+    """
+
+    def __init__(self) -> None:
+        self.entries: list[ConsentRecordDto] = []
+        self._next_id = 1
+
+    def grant(
+        self,
+        *,
+        user_id: str,
+        consent_type: str,
+        version: str,
+        granted_at: datetime,
+        purpose: str | None = None,
+        subject_participant_id: str | None = None,
+    ) -> ConsentRecordDto:
+        for index, entry in enumerate(self.entries):
+            if entry.consent_type == consent_type and entry.subject_participant_id == subject_participant_id and entry.status == "active":
+                self.entries[index] = replace(entry, status="superseded")
+        record = ConsentRecordDto(
+            id=f"consent-{self._next_id}",
+            consent_type=consent_type,
+            version=version,
+            status="active",
+            purpose=purpose,
+            subject_participant_id=subject_participant_id,
+            granted_at=granted_at,
+            expires_at=None,
+            withdrawn_at=None,
+        )
+        self._next_id += 1
+        self.entries.append(record)
+        self.granted_for = user_id
+        return record
+
+    def withdraw(
+        self,
+        *,
+        user_id: str,
+        consent_type: str,
+        withdrawn_at: datetime,
+        subject_participant_id: str | None = None,
+    ) -> ConsentRecordDto | None:
+        for index, entry in enumerate(self.entries):
+            if entry.consent_type == consent_type and entry.subject_participant_id == subject_participant_id and entry.status == "active":
+                updated = replace(entry, status="withdrawn", withdrawn_at=withdrawn_at)
+                self.entries[index] = updated
+                return updated
+        return None
+
+    def list_for_user(self, *, user_id: str, include_history: bool = False) -> tuple[ConsentRecordDto, ...]:
+        if include_history:
+            return tuple(self.entries)
+        return tuple(entry for entry in self.entries if entry.status == "active")

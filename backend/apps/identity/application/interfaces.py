@@ -33,6 +33,7 @@ Design choices worth stating once, since they shape every port below:
 Ports defined here:
 
 * :class:`UserRepository`     — persistence & retrieval of the ``User`` aggregate.
+* :class:`ConsentJournal`     — the record set of granted and withdrawn consents.
 * :class:`PasswordHasher`     — hash / verify / rehash-decision for credentials.
 * :class:`EmailGateway`       — transactional email delivery.
 * :class:`SmsGateway`         — one-time SMS code delivery.
@@ -50,7 +51,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol, runtime_checkable
 
-from apps.identity.application.dto import TokenPairDto
+from apps.identity.application.dto import ConsentRecordDto, TokenPairDto
 from apps.identity.domain.entities import User
 from apps.identity.domain.events import DomainEvent
 from apps.identity.domain.value_objects import (
@@ -64,6 +65,7 @@ from apps.identity.domain.value_objects import (
 
 __all__ = [
     "Clock",
+    "ConsentJournal",
     "EmailGateway",
     "EventPublisher",
     "NotificationGateway",
@@ -147,6 +149,53 @@ class UserRepository(Protocol):
 # ---------------------------------------------------------------------------
 # Gateway ports
 # ---------------------------------------------------------------------------
+
+
+@runtime_checkable
+class ConsentJournal(Protocol):
+    """Port: the record set of consents granted and withdrawn.
+
+    **Why it exists separately from :class:`UserRepository`.** The ``User`` aggregate
+    carries a single ``consent_version`` — the headline version of the terms the
+    account accepted. What the published policy promises is more than that: one
+    record per consent, naming which consent it was, the version of the text the
+    subject saw, when it was granted and when it was withdrawn or superseded
+    (LEGAL-001 §13.3). That is a journal, not a field, and it outlives the state it
+    describes: a withdrawal must not erase the evidence that consent once existed,
+    because that evidence is what makes the processing done under it lawful.
+
+    **Superseding rather than overwriting.** :meth:`grant` closes the previous active
+    record of the same type (and same participant) instead of updating it, so the
+    history of what was agreed to, and when the wording changed, stays readable.
+    """
+
+    def grant(
+        self,
+        *,
+        user_id: str,
+        consent_type: str,
+        version: str,
+        granted_at: datetime,
+        purpose: str | None = None,
+        subject_participant_id: str | None = None,
+    ) -> ConsentRecordDto:
+        """Record an acceptance and supersede the previous one of the same type."""
+        ...
+
+    def withdraw(
+        self,
+        *,
+        user_id: str,
+        consent_type: str,
+        withdrawn_at: datetime,
+        subject_participant_id: str | None = None,
+    ) -> ConsentRecordDto | None:
+        """Mark the active record withdrawn; ``None`` when there was nothing active."""
+        ...
+
+    def list_for_user(self, *, user_id: str, include_history: bool = False) -> tuple[ConsentRecordDto, ...]:
+        """The account's active consents, or its whole journal newest-first."""
+        ...
 
 
 @runtime_checkable

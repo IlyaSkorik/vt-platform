@@ -39,6 +39,13 @@ __all__ = [
 # ---------------------------------------------------------------------------
 
 
+class RegistrationConsentSerializer(serializers.Serializer[dict[str, object]]):
+    """One consent ticked on the registration form, with the version shown."""
+
+    consentType = serializers.CharField(max_length=32)
+    version = serializers.CharField(max_length=64)
+
+
 class RegistrationRequestSerializer(serializers.Serializer[dict[str, object]]):
     """Validate a new-account registration request body (API-001 §4.1)."""
 
@@ -50,6 +57,9 @@ class RegistrationRequestSerializer(serializers.Serializer[dict[str, object]]):
     phone = serializers.CharField(required=False, allow_null=True)
     locale = serializers.CharField(required=False, allow_null=True)
     timezone = serializers.CharField(required=False, allow_null=True)
+    #: Accepted in the same request as the account itself, so an account never exists
+    #: without the record of the basis on which its data is processed (LEGAL-001 §13.3).
+    consents = RegistrationConsentSerializer(many=True, required=False)
 
 
 class SessionCreateRequestSerializer(serializers.Serializer[dict[str, object]]):

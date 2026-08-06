@@ -10,6 +10,8 @@ from __future__ import annotations
 from django.urls import path
 
 from apps.identity.presentation.api.v1.account.views import (
+    AccountConsentCollectionView,
+    AccountConsentDetailView,
     AccountEmailView,
     AccountPasswordView,
     AccountPhoneView,
@@ -21,4 +23,10 @@ urlpatterns = [
     path("users/me/password", AccountPasswordView.as_view(), name="password"),
     path("users/me/email", AccountEmailView.as_view(), name="email"),
     path("users/me/phone", AccountPhoneView.as_view(), name="phone"),
+    path("users/me/consents", AccountConsentCollectionView.as_view(), name="consents"),
+    path(
+        "users/me/consents/<str:consent_type>",
+        AccountConsentDetailView.as_view(),
+        name="consent-detail",
+    ),
 ]

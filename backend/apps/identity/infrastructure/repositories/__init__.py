@@ -7,6 +7,7 @@ persistence. A package so repositories can be split per aggregate.
 
 from __future__ import annotations
 
+from .django_consent_journal import DjangoConsentJournal
 from .django_user_repository import DjangoUserRepository
 from .exceptions import (
     ConcurrencyConflictError,
@@ -17,6 +18,7 @@ from .exceptions import (
 
 __all__ = [
     "ConcurrencyConflictError",
+    "DjangoConsentJournal",
     "DjangoUserRepository",
     "IntegrityViolationError",
     "PersistenceError",

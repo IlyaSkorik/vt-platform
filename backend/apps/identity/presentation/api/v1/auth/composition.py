@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from apps.identity.application.events import SendVerificationEmailOnUserRegistered
 from apps.identity.application.handlers import (
+    AcceptConsentHandler,
     AuthenticateUserHandler,
     ChangeEmailHandler,
     ChangePasswordHandler,
@@ -25,7 +26,9 @@ from apps.identity.application.handlers import (
     RequestEmailVerificationHandler,
     RequestPasswordResetHandler,
     ResetPasswordHandler,
+    WithdrawAcceptedConsentHandler,
 )
+from apps.identity.application.handlers.consent_handlers import ListConsentsHandler
 from apps.identity.application.handlers.user_handlers import CurrentUserHandler
 from apps.identity.application.interfaces import EventPublisher, TokenService
 from apps.identity.domain.events import UserRegistered
@@ -37,10 +40,11 @@ from apps.identity.infrastructure.messaging import (
     SignedPasswordResetTokenService,
     SignedVerificationTokenService,
 )
-from apps.identity.infrastructure.repositories import DjangoUserRepository
+from apps.identity.infrastructure.repositories import DjangoConsentJournal, DjangoUserRepository
 from apps.identity.infrastructure.system import SystemClock, Uuid7Generator
 
 __all__ = [
+    "build_accept_consent_handler",
     "build_authenticate_user_handler",
     "build_change_email_handler",
     "build_change_password_handler",
@@ -88,6 +92,7 @@ def build_register_user_handler() -> RegisterUserHandler:
         password_policy=PasswordPolicy(),
         clock=SystemClock(),
         uuids=Uuid7Generator(),
+        consents=DjangoConsentJournal(),
     )
 
 
@@ -166,6 +171,21 @@ def build_current_user_handler() -> CurrentUserHandler:
         users=DjangoUserRepository(),
         clock=SystemClock(),
     )
+
+
+def build_accept_consent_handler() -> AcceptConsentHandler:
+    """Assemble the record-a-consent use case."""
+    return AcceptConsentHandler(consents=DjangoConsentJournal(), clock=SystemClock())
+
+
+def build_withdraw_consent_handler() -> WithdrawAcceptedConsentHandler:
+    """Assemble the withdraw-a-consent use case."""
+    return WithdrawAcceptedConsentHandler(consents=DjangoConsentJournal(), clock=SystemClock())
+
+
+def build_list_consents_handler() -> ListConsentsHandler:
+    """Assemble the read side of the consent journal."""
+    return ListConsentsHandler(consents=DjangoConsentJournal())
 
 
 def build_change_password_handler() -> ChangePasswordHandler:

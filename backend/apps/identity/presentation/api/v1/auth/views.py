@@ -32,6 +32,7 @@ from rest_framework_simplejwt.settings import api_settings as jwt_settings
 from apps.identity.application.commands import (
     AuthenticateUserCommand,
     ConfirmEmailVerificationCommand,
+    ConsentAcceptance,
     LogoutCommand,
     RefreshTokenCommand,
     RegisterUserCommand,
@@ -188,6 +189,9 @@ class RegistrationView(APIView):
             phone=_optional_str(data.get("phone")),
             locale=_optional_str(data.get("locale")),
             timezone=_optional_str(data.get("timezone")),
+            consents=tuple(
+                ConsentAcceptance(consent_type=str(item["consentType"]), version=str(item["version"])) for item in data.get("consents") or ()
+            ),
         )
         try:
             result = composition.build_register_user_handler().handle(command)
