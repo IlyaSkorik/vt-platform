@@ -9,7 +9,7 @@ export const ROUTES = {
   sessionExpired: "/session-expired",
   unauthorized: "/unauthorized",
   cabinet: "/cabinet",
-  cabinetProfile: "/cabinet/profile",
+  cabinetProfile: "/cabinet",
   cabinetParticipants: "/cabinet/participants",
   cabinetParticipantNew: "/cabinet/participants/new",
   cabinetParticipantProfile: "/cabinet/participants/:participantId",
