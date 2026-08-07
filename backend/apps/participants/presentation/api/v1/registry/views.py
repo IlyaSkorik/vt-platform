@@ -8,6 +8,7 @@ from django.db import transaction
 from django.db.models import Count, Exists, OuterRef, Q
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -23,6 +24,7 @@ from apps.participants.infrastructure.models import (
     ParticipantRegistryModel,
 )
 from apps.participants.presentation.api.v1 import problems
+from apps.participants.presentation.api.v1.registry import avatars
 from apps.participants.presentation.api.v1.registry.serializers import (
     OrganizationWriteSerializer,
     ParticipantRegistryWriteSerializer,
@@ -701,3 +703,47 @@ class EducationalOrganizationArchiveView(_AuthView):
             },
             status=200,
         )
+
+
+class ParticipantAvatarUploadView(_AuthView):
+    """POST /api/v1/participants/registry/avatar — store an avatar, return its URL.
+
+    Not scoped to a participant id on purpose: the registry form picks the picture
+    before the participant exists, so this stores the file and hands back a
+    reference the create (or update) payload then carries like any other.
+
+    An orphan is possible — pick a photo, abandon the form — and is accepted: it
+    costs one 40 KB object, where the alternative is a two-step create whose second
+    step can fail with the participant already written.
+    """
+
+    parser_classes = (MultiPartParser, FormParser)
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="participant_registry_upload_avatar",
+        summary="Upload a participant avatar",
+        description=(
+            "Accepts JPEG, PNG or WebP up to 8 MB. The image is re-encoded — rotated upright from its "
+            "EXIF orientation, cropped square, resized to 512 px and written back as JPEG — so the stored "
+            "file carries none of the original's metadata. Returns the URL to put in `avatarUrl`."
+        ),
+        request={
+            "multipart/form-data": {
+                "type": "object",
+                "properties": {"file": {"type": "string", "format": "binary"}},
+                "required": ["file"],
+            }
+        },
+        responses={
+            201: OpenApiResponse(description="Stored; `data.url` is the reference to save."),
+            400: OpenApiResponse(description="Not an image, the wrong format, or too large."),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        owner_id = _owner_uuid(request.user.id)
+        try:
+            url = avatars.store_avatar(uploaded=request.FILES.get("file"), owner_id=owner_id)
+        except avatars.AvatarRejectedError as exc:
+            return problems.validation_problem({"file": [str(exc)]}, instance=request.path, request=request)
+        return _envelope(request, {"url": url}, status=201)

@@ -7,6 +7,7 @@ from apps.participants.presentation.api.v1.registry.views import (
     EducationalOrganizationCollectionView,
     EducationalOrganizationDetailView,
     ParticipantArchiveView,
+    ParticipantAvatarUploadView,
     ParticipantRegistryCollectionView,
     ParticipantRegistryDetailView,
 )
@@ -15,6 +16,8 @@ app_name = "participant_registry"
 
 urlpatterns = [
     path("participants/registry", ParticipantRegistryCollectionView.as_view(), name="collection"),
+    # Must precede the "<participant_id>" pattern, or "avatar" is read as an id.
+    path("participants/registry/avatar", ParticipantAvatarUploadView.as_view(), name="avatar"),
     path("participants/registry/<str:participant_id>", ParticipantRegistryDetailView.as_view(), name="detail"),
     path(
         "participants/registry/<str:participant_id>/archive",

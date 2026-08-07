@@ -5281,6 +5281,32 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/participants/registry/avatar:
+    post:
+      operationId: participant_registry_upload_avatar
+      description: Accepts JPEG, PNG or WebP up to 8 MB. The image is re-encoded —
+        rotated upright from its EXIF orientation, cropped square, resized to 512
+        px and written back as JPEG — so the stored file carries none of the original's
+        metadata. Returns the URL to put in `avatarUrl`.
+      summary: Upload a participant avatar
+      tags:
+      - Participants
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      responses:
+        '201':
+          description: Stored; `data.url` is the reference to save.
+        '400':
+          description: Not an image, the wrong format, or too large.
   /api/v1/platform/dashboard:
     get:
       operationId: platform_dashboard
@@ -11975,6 +12001,7 @@ components:
           type:
           - string
           - 'null'
+          maxLength: 1024
         notes:
           type: string
         organizations:
@@ -12291,6 +12318,7 @@ components:
           type:
           - string
           - 'null'
+          maxLength: 1024
         notes:
           type: string
         organizations:

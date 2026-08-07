@@ -26,6 +26,11 @@ dependencies = [
     "pypdf>=6.14.2",
     "reportlab>=5.0.0",
     "qrcode>=8.0",
+    # Participant avatars are re-encoded on upload rather than stored as they arrive:
+    # that is what strips the EXIF (a phone photograph of a child carries GPS) and what
+    # keeps a mislabelled file from being stored as an image. Pillow already arrived
+    # through reportlab; declared here because it is now load-bearing on its own.
+    "pillow>=11.0",
     # Uploads and generated documents live in an S3 bucket in every deployed
     # environment; the filesystem backend stays the default for local work and tests.
     "django-storages[s3]>=1.14",

@@ -16,7 +16,11 @@ class ParticipantRegistryWriteSerializer(serializers.Serializer[dict[str, object
     middleName = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     birthDate = serializers.DateField(required=False, allow_null=True)
     gender = serializers.ChoiceField(choices=["female", "male", "other"], required=False, allow_null=True)
-    avatarUrl = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    #: A reference to a stored file, minted by the avatar upload endpoint — not the
+    #: image itself. `max_length` is what enforces that: an inline `data:` URL is
+    #: orders of magnitude longer, and this field used to accept one, which is how
+    #: photographs ended up inline in a text column instead of in the bucket.
+    avatarUrl = serializers.CharField(max_length=1024, required=False, allow_null=True, allow_blank=True)
     notes = serializers.CharField(required=False, allow_blank=True)
     organizations = ParticipantOrganizationLinkSerializer(many=True)
     #: The legal representative's consent from the Identity journal. Optional on the
