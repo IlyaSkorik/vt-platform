@@ -18,7 +18,7 @@ from django.core.files.storage import default_storage, storages
 from django.test import override_settings
 
 from apps.applications.presentation.api.v1.files import file_url
-from apps.diplomas.infrastructure.pdf.workspace import _storage_key, _unguessable
+from apps.diplomas.infrastructure.pdf.workspace import _unguessable, storage_key_of
 
 #: A bucket that does not exist, reached through an endpoint that is never called: every
 #: assertion below is about URLs and keys, which django-storages computes locally.
@@ -52,11 +52,11 @@ class TestReferencesFollowTheStorage:
     def test_a_key_survives_the_round_trip_through_a_bucket_url(self) -> None:
         storages._storages.pop("default", None)  # type: ignore[attr-defined]  # private cache; no public reset exists
         key = "diplomas/documents/a/thank_you/tok/Петрова Ольга.pdf"
-        assert _storage_key(default_storage.url(key)) == key
+        assert storage_key_of(default_storage.url(key)) == key
 
     def test_a_key_survives_the_round_trip_through_a_media_path(self) -> None:
         key = "diplomas/documents/a/thank_you/tok/Петрова Ольга.pdf"
-        assert _storage_key(default_storage.url(key)) == key
+        assert storage_key_of(default_storage.url(key)) == key
 
     def teardown_method(self) -> None:
         # The override is gone; make the next reader of ``default_storage`` build it fresh.

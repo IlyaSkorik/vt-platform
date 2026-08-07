@@ -33,7 +33,7 @@ from apps.diplomas.infrastructure.pdf.qr import verification_url
 from apps.diplomas.infrastructure.pdf.renderer import render_diploma_pdf
 from apps.diplomas.presentation.api.v1.diplomas import composition
 
-__all__ = ["DjangoPrintPackageWorkspace"]
+__all__ = ["DjangoPrintPackageWorkspace", "storage_key_of"]
 
 #: An ASCII key that no real file uses, minted only to find out what a reference looks
 #: like in front of the key. Never read or written.
@@ -47,7 +47,7 @@ _ARCHIVE_SPOOL_BYTES = 4 * 1024 * 1024
 _COPY_CHUNK_BYTES = 256 * 1024
 
 
-def _storage_key(reference: str) -> str:
+def storage_key_of(reference: str) -> str:
     """Turn a stored reference back into the storage key it was minted from.
 
     The inverse of :func:`_reference`, and it has to work for both shapes a reference
@@ -105,7 +105,7 @@ class DjangoPrintPackageWorkspace:
         document = TemplateDocumentModel.objects.filter(template__id=template_id, deleted_at__isnull=True).order_by("-created_at").first()
         if document is None:
             return None
-        key = _storage_key(document.file_reference)
+        key = storage_key_of(document.file_reference)
         if not default_storage.exists(key):
             return None
         with default_storage.open(key, "rb") as handle:
@@ -216,7 +216,7 @@ class DjangoPrintPackageWorkspace:
         with tempfile.SpooledTemporaryFile(max_size=_ARCHIVE_SPOOL_BYTES) as spool:
             with zipfile.ZipFile(spool, "w", zipfile.ZIP_DEFLATED) as archive:
                 for arcname, reference in items:
-                    storage_key = _storage_key(reference)
+                    storage_key = storage_key_of(reference)
                     if not default_storage.exists(storage_key):
                         continue
                     with default_storage.open(storage_key, "rb") as source, archive.open(arcname, "w") as target:
