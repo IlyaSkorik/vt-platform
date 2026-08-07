@@ -77,6 +77,20 @@ describe("DatePicker", () => {
     expect(trigger.getAttribute("aria-describedby")).toContain("message");
   });
 
+  it("navigates months and years with the platform's own select, not the browser's", async () => {
+    // The reported bug: a native `<select>` popup is drawn by the browser, takes
+    // no token and ignored the theme — on dark it was white text on a white list.
+    // No stylesheet can reach that popup, so the only fix is not to render one.
+    const user = userEvent.setup();
+    render(<Controlled initial="2026-05-20" />);
+
+    await user.click(screen.getByRole("button", { name: /мая 2026/ }));
+
+    expect(document.querySelectorAll("select")).toHaveLength(0);
+    // Radix renders each as a combobox: month and year.
+    expect(screen.getAllByRole("combobox")).toHaveLength(2);
+  });
+
   it("does not open when disabled", async () => {
     const user = userEvent.setup();
     render(<DatePicker label="Дата" value="" onChange={vi.fn()} disabled />);

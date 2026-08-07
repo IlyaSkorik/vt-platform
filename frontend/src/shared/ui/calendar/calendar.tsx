@@ -1,9 +1,42 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DayPicker, getDefaultClassNames } from "react-day-picker";
+import { DayPicker, type DropdownProps, getDefaultClassNames } from "react-day-picker";
 import { ru } from "react-day-picker/locale";
 
 import { cn } from "@/shared/lib/cn";
+import { Select } from "../select";
 import type { CalendarProps } from "./types";
+
+/**
+ * The month and year dropdowns, as our own `Select` rather than a native one.
+ *
+ * The library renders `<select>`, and a native dropdown's popup is drawn by the
+ * browser: it takes no token, ignores the theme, and on dark themes came out as
+ * white text on a white list. Swapping the component is also the only way — the
+ * popup is not part of the page and no stylesheet reaches it.
+ *
+ * `onChange` is handed a change event because that is what the library expects
+ * from a `<select>`; it reads `target.value` and nothing else, so the shape is
+ * enough. Narrower than a cast on the whole component, and it fails loudly if
+ * that ever stops being true.
+ */
+function CaptionDropdown({ options, value, onChange, "aria-label": ariaLabel }: DropdownProps) {
+  return (
+    <Select
+      size="sm"
+      className="w-auto gap-1 border-none px-2 font-medium shadow-none hover:bg-accent"
+      {...(value != null ? { value: String(value) } : {})}
+      {...(ariaLabel != null ? { "aria-label": ariaLabel } : {})}
+      onValueChange={(next) =>
+        onChange?.({ target: { value: next } } as React.ChangeEvent<HTMLSelectElement>)
+      }
+      options={(options ?? []).map((option) => ({
+        value: String(option.value),
+        label: option.label,
+        disabled: option.disabled,
+      }))}
+    />
+  );
+}
 
 /**
  * Calendar — the month grid, styled onto the platform's tokens.
@@ -66,11 +99,12 @@ export function Calendar({
         month: "flex flex-col gap-3",
         month_caption: "flex items-center justify-center px-9",
         dropdowns: "flex items-center gap-1.5",
-        dropdown_root: "relative",
-        dropdown:
-          "absolute inset-0 h-full w-full cursor-pointer opacity-0 [&>option]:text-foreground",
-        caption_label:
-          "inline-flex items-center gap-1 rounded-md px-2 py-1 font-medium text-sm capitalize hover:bg-accent",
+        dropdown_root: "",
+        dropdown: "",
+        // The library still renders a caption label beside the dropdowns, saying
+        // the same thing twice. Hidden rather than removed: it is what a screen
+        // reader announces the grid by.
+        caption_label: "sr-only",
         nav: "absolute inset-x-0 top-0 flex items-center justify-between",
         button_previous:
           "inline-flex size-8 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-40",
@@ -93,6 +127,7 @@ export function Calendar({
         hidden: "invisible",
       }}
       components={{
+        Dropdown: CaptionDropdown,
         Chevron: ({ orientation, ...rest }) =>
           orientation === "left" ? (
             <ChevronLeft className="size-4" aria-hidden="true" {...rest} />
