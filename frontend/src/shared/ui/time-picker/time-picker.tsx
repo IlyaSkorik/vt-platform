@@ -170,7 +170,12 @@ function Column({
     // legend names it without a second copy of the label in an aria attribute.
     <fieldset className="flex min-w-0 flex-col border-0 p-0">
       <legend className="px-3 pt-2 pb-1 text-muted-foreground text-xs">{label}</legend>
-      <div className="min-h-0 flex-1 overflow-y-auto px-1 pb-1">
+      {/* The base layer already gives every scrollbar the platform's own look, so
+          this is not about replacing a default one — it is about size. A 0.5rem
+          bar crowds a column fourteen characters wide; `scrollbar-slim` is the
+          same design at a quarter. Stated on the element rather than inherited,
+          because this list is rendered through a portal. */}
+      <div className="scrollbar-slim min-h-0 flex-1 overflow-y-auto px-1 pb-1">
         {values.map((entry) => {
           const text = String(entry).padStart(2, "0");
           const isSelected = text === selected;

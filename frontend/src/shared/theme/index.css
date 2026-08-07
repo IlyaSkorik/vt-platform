@@ -149,6 +149,35 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * A slimmer scrollbar, for overflow inside a compact overlay — the time picker's
+ * hour and minute columns, and anything else that is a narrow list in a popover.
+ *
+ * Not a different design, a smaller one: the base scrollbar is 0.5rem, which is
+ * right beside a wide table and crowds a column only fourteen characters across.
+ * The thumb also inherits the track's rounding rather than sitting flush, so it
+ * reads as part of the surface it floats on rather than a bar bolted to its edge.
+ * ------------------------------------------------------------------------- */
+@utility scrollbar-slim {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--muted-foreground) 30%, transparent) transparent;
+
+  &::-webkit-scrollbar {
+    width: 0.25rem;
+    height: 0.25rem;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background-color: color-mix(in oklab, var(--muted-foreground) 30%, transparent);
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklab, var(--muted-foreground) 55%, transparent);
+  }
+}
+
+/* ---------------------------------------------------------------------------
  * Base layer — global element defaults built on the token system.
  * ------------------------------------------------------------------------- */
 @layer base {
