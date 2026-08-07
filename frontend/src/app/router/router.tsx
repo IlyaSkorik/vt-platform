@@ -435,6 +435,13 @@ const routes: RouteObject[] = [
                   "PlatformOrganizationsPage",
                 ),
               },
+              {
+                path: ROUTES.platformTesting.slice(1),
+                lazy: lazyPage(
+                  () => import("@/applications/platform/pages/testing"),
+                  "PlatformTestingPage",
+                ),
+              },
             ],
           },
         ],

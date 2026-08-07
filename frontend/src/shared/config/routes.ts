@@ -67,6 +67,8 @@ export const ROUTES = {
   /** The platform operator's own console — above every connected organization. */
   platform: "/platform",
   platformOrganizations: "/platform/organizations",
+  /** The operator's test bench — load-testing generation against the live stack. */
+  platformTesting: "/platform/testing",
   profile: "/profile",
 } as const;
 

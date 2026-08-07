@@ -63,11 +63,101 @@ export type ConnectOrganizationInput = {
   commissionPercent: string;
 };
 
+/** One generation job inside a load-test run. */
+export type LoadTestJob = {
+  jobId: string;
+  status: "PENDING" | "RUNNING" | "COMPLETED" | "FAILED";
+  created: number;
+  skipped: number;
+  zipUrl: string | null;
+  error: string | null;
+};
+
+export type LoadTestRun = {
+  competitionId: string;
+  title: string;
+  createdAt: string;
+  entries: number;
+  nominations: number;
+  diplomas: number;
+  rendered: number;
+  status: "PENDING" | "RUNNING" | "COMPLETED" | "FAILED";
+  /** Wall clock from the first enqueue; still climbing while a job runs. */
+  elapsedSeconds: number | null;
+  msPerDiploma: number | null;
+  jobs: LoadTestJob[];
+};
+
+export type LoadTestOverview = {
+  runs: LoadTestRun[];
+  templates: { id: string; name: string }[];
+  totals: { runs: number; entries: number; diplomas: number };
+  maxCount: number;
+};
+
+export type StartLoadTestInput = {
+  count: number;
+  nominations: number;
+  templateId?: string;
+  split: boolean;
+  force: boolean;
+};
+
 export const platformKeys = {
   dashboard: (organizationId: string, competitionId: string) =>
     ["platform", "dashboard", organizationId, competitionId] as const,
   organizations: ["platform", "organizations"] as const,
+  loadTest: ["platform", "loadtest", "diplomas"] as const,
 };
+
+/**
+ * The load-test bench: what has been run, and what a new run can print over.
+ *
+ * Polled while anything is still in flight — generation is a background job, so
+ * the only way the page learns it finished is by asking. Once everything is
+ * terminal the polling stops rather than tapping the API forever.
+ */
+export function useLoadTestOverview() {
+  return useQuery({
+    queryKey: platformKeys.loadTest,
+    queryFn: async (): Promise<LoadTestOverview> =>
+      unwrap<LoadTestOverview>(await apiClient.get("platform/loadtest/diplomas")),
+    refetchInterval: (query) => {
+      const runs = query.state.data?.runs ?? [];
+      return runs.some((run) => run.status === "PENDING" || run.status === "RUNNING")
+        ? 3000
+        : false;
+    },
+  });
+}
+
+/** Seed a synthetic festival and send it down the real generation path. */
+export function useStartLoadTest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: StartLoadTestInput): Promise<LoadTestRun> =>
+      unwrap<LoadTestRun>(await apiClient.post("platform/loadtest/diplomas", { json: input })),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: platformKeys.loadTest });
+    },
+  });
+}
+
+/** Remove one run, or every run when `competitionId` is omitted. */
+export function useCleanupLoadTest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (
+      competitionId?: string,
+    ): Promise<{ runs: number; files: number; diplomas: number; entries: number }> => {
+      const query = competitionId ? `?competitionId=${encodeURIComponent(competitionId)}` : "";
+      return unwrap(await apiClient.delete(`platform/loadtest/diplomas${query}`));
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: platformKeys.loadTest });
+    },
+  });
+}
 
 async function unwrap<T>(response: Response): Promise<T> {
   const body = (await response.json()) as { data: T };
