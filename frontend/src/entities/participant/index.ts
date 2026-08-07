@@ -3,6 +3,7 @@ export {
   fetchParticipant,
   fetchParticipants,
   participantRegistryKeys,
+  uploadParticipantAvatar,
   useParticipants,
 } from "./api";
 export { toAddParticipantRequest } from "./lib";

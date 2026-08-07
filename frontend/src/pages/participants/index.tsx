@@ -13,6 +13,7 @@ import {
   type Participant,
   type ParticipantType,
   participantRegistryKeys,
+  uploadParticipantAvatar,
 } from "@/entities/participant";
 import { type ApiError, apiClient, toApiError } from "@/shared/api";
 import { recordOwnConsent } from "@/shared/api/generated/identity/identity";
@@ -138,13 +139,67 @@ function toRelativeTime(value: string): string {
   return `${diffDays} д назад`;
 }
 
-async function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result ?? ""));
-    reader.onerror = () => reject(new Error("Не удалось прочитать файл"));
-    reader.readAsDataURL(file);
-  });
+/**
+ * Pick an avatar, upload it, keep the reference the server hands back.
+ *
+ * The picture used to be read with `FileReader` and put into the form as a base64
+ * `data:` URL, so it travelled inside the participant payload and was stored in a
+ * database column. Here the file goes to its own endpoint and the form carries a
+ * URL — which is what every other file on the platform does.
+ *
+ * The upload runs on selection rather than on submit: it is the slow part, and a
+ * failure (too large, not really an image) should be reported while the person is
+ * still looking at the field, not after they press save.
+ */
+function AvatarField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (url: string) => void;
+}): React.JSX.Element {
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const pick = async (event: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
+    const file = event.target.files?.[0];
+    if (file == null) {
+      return;
+    }
+    setPending(true);
+    setError(null);
+    try {
+      onChange(await uploadParticipantAvatar(file));
+    } catch (caught) {
+      // The server's own message names what to do about it ("не более 8 МБ",
+      // "допустимы только JPEG…"), so it beats anything phrased here.
+      setError((caught as ApiError)?.message ?? "Не удалось загрузить изображение");
+      // Clear the input so picking the *same* file again still fires a change.
+      event.target.value = "";
+    } finally {
+      setPending(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <Input
+        label="Аватар (необязательно)"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        disabled={pending}
+        onChange={pick}
+        {...(error != null ? { error } : {})}
+      />
+      {pending ? <p className="text-muted-foreground text-xs">Загрузка…</p> : null}
+      {!pending && error == null && value.length > 0 ? (
+        <div className="flex items-center gap-2">
+          <Avatar size="sm" src={value} alt="" />
+          <span className="text-muted-foreground text-xs">Изображение загружено</span>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 function buildFilterParams(filters: {
@@ -665,24 +720,10 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                           required: "Укажите название коллектива",
                         })}
                       />
-                      <div className="space-y-2">
-                        <Input
-                          label="Аватар (необязательно)"
-                          type="file"
-                          accept="image/*"
-                          onChange={async (event) => {
-                            const file = event.target.files?.[0];
-                            if (file == null) {
-                              return;
-                            }
-                            const dataUrl = await fileToDataUrl(file);
-                            form.setValue("avatarUrl", dataUrl, { shouldDirty: true });
-                          }}
-                        />
-                        {form.watch("avatarUrl").length > 0 ? (
-                          <p className="text-muted-foreground text-xs">Изображение выбрано</p>
-                        ) : null}
-                      </div>
+                      <AvatarField
+                        value={form.watch("avatarUrl")}
+                        onChange={(url) => form.setValue("avatarUrl", url, { shouldDirty: true })}
+                      />
                     </div>
                   ) : (
                     <>
@@ -716,24 +757,10 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                           label: option.label,
                         }))}
                       />
-                      <div className="space-y-2">
-                        <Input
-                          label="Аватар (необязательно)"
-                          type="file"
-                          accept="image/*"
-                          onChange={async (event) => {
-                            const file = event.target.files?.[0];
-                            if (file == null) {
-                              return;
-                            }
-                            const dataUrl = await fileToDataUrl(file);
-                            form.setValue("avatarUrl", dataUrl, { shouldDirty: true });
-                          }}
-                        />
-                        {form.watch("avatarUrl").length > 0 ? (
-                          <p className="text-muted-foreground text-xs">Изображение выбрано</p>
-                        ) : null}
-                      </div>
+                      <AvatarField
+                        value={form.watch("avatarUrl")}
+                        onChange={(url) => form.setValue("avatarUrl", url, { shouldDirty: true })}
+                      />
                     </>
                   )}
                 </CardContent>
@@ -861,24 +888,10 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                           required: "Укажите название коллектива",
                         })}
                       />
-                      <div className="space-y-2">
-                        <Input
-                          label="Аватар (необязательно)"
-                          type="file"
-                          accept="image/*"
-                          onChange={async (event) => {
-                            const file = event.target.files?.[0];
-                            if (file == null) {
-                              return;
-                            }
-                            const dataUrl = await fileToDataUrl(file);
-                            form.setValue("avatarUrl", dataUrl, { shouldDirty: true });
-                          }}
-                        />
-                        {form.watch("avatarUrl").length > 0 ? (
-                          <p className="text-muted-foreground text-xs">Изображение выбрано</p>
-                        ) : null}
-                      </div>
+                      <AvatarField
+                        value={form.watch("avatarUrl")}
+                        onChange={(url) => form.setValue("avatarUrl", url, { shouldDirty: true })}
+                      />
                     </div>
                   ) : (
                     <>
@@ -916,24 +929,10 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                           label: option.label,
                         }))}
                       />
-                      <div className="space-y-2">
-                        <Input
-                          label="Аватар (необязательно)"
-                          type="file"
-                          accept="image/*"
-                          onChange={async (event) => {
-                            const file = event.target.files?.[0];
-                            if (file == null) {
-                              return;
-                            }
-                            const dataUrl = await fileToDataUrl(file);
-                            form.setValue("avatarUrl", dataUrl, { shouldDirty: true });
-                          }}
-                        />
-                        {form.watch("avatarUrl").length > 0 ? (
-                          <p className="text-muted-foreground text-xs">Изображение выбрано</p>
-                        ) : null}
-                      </div>
+                      <AvatarField
+                        value={form.watch("avatarUrl")}
+                        onChange={(url) => form.setValue("avatarUrl", url, { shouldDirty: true })}
+                      />
                     </>
                   ) : null}
                 </CardContent>
