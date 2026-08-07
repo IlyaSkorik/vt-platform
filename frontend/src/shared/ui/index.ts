@@ -151,6 +151,8 @@ export type { TabsContentProps, TabsListProps, TabsProps, TabsTriggerProps } fro
 export { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
 export type { TextareaProps } from "./textarea";
 export { Textarea } from "./textarea";
+export type { TimePickerProps } from "./time-picker";
+export { TimePicker } from "./time-picker";
 export type { ToasterProps } from "./toast";
 export { Toaster, toast } from "./toast";
 export type { TooltipContentProps, TooltipProps, TooltipProviderProps } from "./tooltip";

@@ -4,7 +4,6 @@ import {
   formatDateLabel,
   formatDateValue,
   joinDateTime,
-  normaliseTime,
   parseDateValue,
   splitDateTime,
 } from "./lib";
@@ -93,17 +92,5 @@ describe("joinDateTime", () => {
   it("is empty when there is no date, whatever the time says", () => {
     // A time with no day names no instant at all.
     expect(joinDateTime("", "18:30")).toBe("");
-  });
-});
-
-describe("normaliseTime", () => {
-  it("pads what a keyboard produces", () => {
-    expect(normaliseTime("9:05")).toBe("09:05");
-  });
-
-  it("refuses times that are not on a clock", () => {
-    for (const value of ["25:00", "12:60", "", "abc", "1234"]) {
-      expect(normaliseTime(value)).toBe("");
-    }
   });
 });

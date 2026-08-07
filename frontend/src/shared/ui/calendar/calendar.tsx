@@ -105,11 +105,16 @@ export function Calendar({
         // the same thing twice. Hidden rather than removed: it is what a screen
         // reader announces the grid by.
         caption_label: "sr-only",
-        nav: "absolute inset-x-0 top-0 flex items-center justify-between",
+        // `pointer-events-none` on the bar, restored on the two buttons. The nav
+        // is absolutely positioned across the full width and therefore lies over
+        // the caption — so its empty middle was swallowing every click aimed at
+        // the month and year dropdowns underneath, and only the outer few pixels
+        // of each still worked.
+        nav: "pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between",
         button_previous:
-          "inline-flex size-8 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-40",
+          "pointer-events-auto inline-flex size-8 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-40",
         button_next:
-          "inline-flex size-8 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-40",
+          "pointer-events-auto inline-flex size-8 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-40",
         month_grid: "w-full border-collapse",
         weekdays: "flex",
         weekday: "w-9 pb-1 font-normal text-[0.75rem] text-muted-foreground capitalize",

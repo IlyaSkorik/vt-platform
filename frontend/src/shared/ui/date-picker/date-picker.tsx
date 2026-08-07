@@ -3,8 +3,8 @@ import { useId, useState } from "react";
 
 import { cn } from "@/shared/lib/cn";
 import { Calendar } from "../calendar";
-import { Input } from "../input";
 import { Popover, PopoverContent, PopoverTrigger } from "../popover";
+import { TimePicker } from "../time-picker";
 import {
   formatDateLabel,
   formatDateValue,
@@ -185,17 +185,14 @@ export function DateTimePicker({
           {...(disabled != null ? { disabled } : {})}
           {...(error != null ? { error: "" } : {})}
         />
-        <Input
-          type="time"
-          className="tabular-nums"
-          containerClassName="w-28 shrink-0"
+        <TimePicker
+          containerClassName="w-32 shrink-0"
           label={timeLabel}
           value={time}
-          disabled={disabled === true || date === ""}
           // A time with no day names no instant, so the field stays inert until
           // there is one — rather than accepting input that cannot be saved.
-          {...(date === "" ? { title: "Сначала выберите дату" } : {})}
-          onChange={(event) => onChange(joinDateTime(date, event.target.value))}
+          disabled={disabled === true || date === ""}
+          onChange={(next) => onChange(joinDateTime(date, next))}
         />
       </div>
       {description != null && error == null && (

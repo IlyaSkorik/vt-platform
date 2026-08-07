@@ -3,7 +3,6 @@ export {
   formatDateLabel,
   formatDateValue,
   joinDateTime,
-  normaliseTime,
   parseDateValue,
   splitDateTime,
 } from "./lib";

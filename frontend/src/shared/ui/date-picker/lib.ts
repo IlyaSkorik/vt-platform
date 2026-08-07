@@ -13,8 +13,9 @@
  * keeps it the day the user picked.
  */
 
+import { normaliseTime } from "../time-picker/lib";
+
 const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
-const TIME_PATTERN = /^(\d{1,2}):(\d{2})$/;
 
 const displayFormatter = new Intl.DateTimeFormat("ru-RU", {
   day: "2-digit",
@@ -70,23 +71,4 @@ export function joinDateTime(date: string, time: string): string {
     return "";
   }
   return `${date}T${normaliseTime(time) || "00:00"}`;
-}
-
-/**
- * `9:5` → `09:05`, `25:00` → `""`.
- *
- * Typed input arrives half-finished and in whatever shape the person's keyboard
- * produced; this is what decides whether it is yet a time at all.
- */
-export function normaliseTime(value: string): string {
-  const match = TIME_PATTERN.exec(value.trim());
-  if (match == null) {
-    return "";
-  }
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  if (hours > 23 || minutes > 59) {
-    return "";
-  }
-  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
