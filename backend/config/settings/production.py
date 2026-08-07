@@ -65,3 +65,43 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SAMESITE = "Lax"
 X_FRAME_OPTIONS = "DENY"
+
+# --- Logging: put the traceback where the operator can read it --------------
+#
+# Django's built-in configuration filters its console handler behind
+# `require_debug_true`, so with DEBUG off an unhandled exception reaches only
+# `mail_admins` — and with no ADMINS configured, that means **nowhere**. A 500 then
+# arrives at the browser with nothing behind it anywhere on the host, which is the
+# worst possible shape for a failure that only happens in production (a bucket the
+# credentials cannot write to, say).
+#
+# So the console handler comes back unconditionally and `django.request` is pinned
+# to it. Everything in this stack logs to stdout and Docker collects it, which makes
+# `docker compose logs backend` the one place to look.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{asctime} {levelname} {name} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "root": {"handlers": ["console"], "level": "INFO"},
+    "loggers": {
+        # `propagate: False` so a 500 is logged once, not once here and again at root.
+        "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+        "django": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "celery": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        # Boto's own chatter is INFO-noisy and says nothing the request log does not.
+        "botocore": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+        "boto3": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+        "s3transfer": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+    },
+}
