@@ -19,6 +19,8 @@ export type { BrandMarkProps } from "./brand-mark";
 export { BrandMark } from "./brand-mark";
 export type { ButtonProps } from "./button";
 export { Button, buttonVariants } from "./button";
+export type { CalendarProps } from "./calendar";
+export { Calendar } from "./calendar";
 export type {
   CardContentProps,
   CardDescriptionProps,
@@ -32,6 +34,8 @@ export type { CheckboxProps, CheckboxSize } from "./checkbox";
 export { Checkbox } from "./checkbox";
 export type { ColumnDef, DataTableProps } from "./data-table";
 export { DataTable } from "./data-table";
+export type { DatePickerProps, DateTimePickerProps } from "./date-picker";
+export { DatePicker, DateTimePicker } from "./date-picker";
 export type {
   DialogContentProps,
   DialogDescriptionProps,
@@ -105,6 +109,14 @@ export type { PaginationItem, PaginationProps } from "./pagination";
 export { getPaginationRange, Pagination } from "./pagination";
 export type { PasswordInputProps } from "./password-input";
 export { PasswordInput } from "./password-input";
+export type { PopoverContentProps } from "./popover";
+export {
+  Popover,
+  PopoverAnchor,
+  PopoverClose,
+  PopoverContent,
+  PopoverTrigger,
+} from "./popover";
 export type { RadioGroupProps, RadioProps, RadioSize } from "./radio";
 export { Radio, RadioGroup } from "./radio";
 export type {

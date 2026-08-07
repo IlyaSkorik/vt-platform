@@ -38,6 +38,7 @@
     "pdfjs-dist": "5.4.296",
     "radix-ui": "^1.6.2",
     "react": "^19.2.7",
+    "react-day-picker": "^10.0.1",
     "react-dom": "^19.2.7",
     "react-hook-form": "^7.81.0",
     "react-pdf": "^10.4.1",
