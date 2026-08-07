@@ -15,6 +15,7 @@ import { STAFF_NAVIGATION, type StaffNavItem } from "@/applications/staff/naviga
 import { ROUTES } from "@/shared/config";
 import { GuestRoute, PlatformRoute, ProtectedRoute, StaffRoute } from "./guards";
 import { RouteError } from "./route-error";
+import { RouteHydrateFallback } from "./route-hydrate-fallback";
 
 /** Lazily import a page module, mapping its named export to `Component`. */
 const lazyPage =
@@ -70,10 +71,14 @@ const staffItem = (path: string) => {
  *   - `/cabinet/**` → ParticipantLayout, available to every authenticated user.
  *   - `/staff/**`   → StaffLayout, gated by CurrentUser.staffMembership.
  */
-const routes: RouteObject[] = [
+/** Exported for the tests that assert route-tree invariants; the app uses `router`. */
+export const routes: RouteObject[] = [
   {
     element: <RootLayout />,
     errorElement: <RouteError />,
+    // Every child route is `lazy`, so the first paint always waits on a chunk.
+    // Without this the router renders nothing and warns about it.
+    HydrateFallback: RouteHydrateFallback,
     children: [
       {
         element: <PublicLayout />,
@@ -456,4 +461,15 @@ const routes: RouteObject[] = [
   },
 ];
 
-export const router = createBrowserRouter(routes);
+/**
+ * Build the data router.
+ *
+ * A function rather than a module-level constant: `createBrowserRouter` starts
+ * navigating the moment it is called, so a constant made importing this module a
+ * side effect — and any test that wanted to read the route tree paid for a full
+ * navigation it never asked for. The app calls this once, which is what it did
+ * before.
+ */
+export function createAppRouter(): ReturnType<typeof createBrowserRouter> {
+  return createBrowserRouter(routes);
+}

@@ -2,4 +2,4 @@
 
 export { GuestRoute, PlatformRoute, ProtectedRoute } from "./guards";
 export { RouteError } from "./route-error";
-export { router } from "./router";
+export { createAppRouter, routes } from "./router";
