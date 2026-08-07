@@ -1,14 +1,8 @@
-import { env } from "@/shared/config";
-
-/** Resolve a stored media/file reference into a browser-loadable URL. */
-export function resolveMediaUrl(reference: string | null | undefined): string | null {
-  const value = reference?.trim();
-  if (!value) {
-    return null;
-  }
-  if (/^(https?:|blob:|data:)/i.test(value)) {
-    return value;
-  }
-  const origin = new URL(env.apiBaseUrl).origin;
-  return `${origin}${value.startsWith("/") ? value : `/${value}`}`;
-}
+/**
+ * Re-exported from `shared/lib`, where the rule lives.
+ *
+ * This used to be a third copy of the same function, carrying the same `new URL()`
+ * that throws on a relative API base. Kept as a module so the feature's existing
+ * import paths keep working.
+ */
+export { resolveMediaUrl } from "@/shared/lib";

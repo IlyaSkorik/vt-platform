@@ -1,18 +1,9 @@
-import { env } from "@/shared/config";
-
 /**
- * Resolve a stored `/media/…` file reference into an absolute URL the browser
- * can load. Absolute `http(s)` references are returned unchanged. Media lives at
- * the API origin (not under the `/api/v1` prefix), so we take the origin only.
+ * Re-exported from `shared/lib`, where the rule lives.
+ *
+ * This used to be a second copy, and it drifted: it carried its own `new URL()`
+ * that threw on a relative API base, and it lacked the `blob:`/`data:`
+ * passthrough the shared one had grown. One rule, one place — a stored reference
+ * resolves the same way whether it is a font, a gallery image or a diploma PDF.
  */
-export function resolveMediaUrl(reference: string | null | undefined): string | null {
-  const value = reference?.trim();
-  if (!value) {
-    return null;
-  }
-  if (/^https?:\/\//i.test(value)) {
-    return value;
-  }
-  const origin = new URL(env.apiBaseUrl).origin;
-  return `${origin}${value.startsWith("/") ? value : `/${value}`}`;
-}
+export { resolveMediaUrl } from "@/shared/lib";
