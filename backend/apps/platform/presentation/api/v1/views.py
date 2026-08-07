@@ -12,6 +12,7 @@ festival's name into the URL address it will be reached at.
 from __future__ import annotations
 
 import re
+import uuid
 from decimal import Decimal
 from typing import Any
 
@@ -21,8 +22,10 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.diplomas.domain.exceptions import PrintTemplateNotReadyError
+from apps.diplomas.infrastructure.acl import actor_label as diploma_actor_label
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
-from apps.identity.presentation.api.v1.problems import request_id
+from apps.identity.presentation.api.v1.problems import problem_response, request_id
 from apps.organization.application.exceptions import ApplicationError
 from apps.organization.application.handlers import (
     ChangeOrganizationStatusCommand,
@@ -37,12 +40,17 @@ from apps.organization.composition import (
 )
 from apps.organization.presentation.api.v1.staff.serializers import ProblemDetailSerializer
 from apps.organization.presentation.api.v1.staff.views import application_problem
+from apps.platform.presentation.api.v1 import loadtest
 from apps.platform.presentation.api.v1.read_models import build_dashboard
 from apps.platform.presentation.api.v1.serializers import (
     ConnectOrganizationRequestSerializer,
     DashboardResponseSerializer,
+    LoadTestCleanupResponseSerializer,
+    LoadTestOverviewResponseSerializer,
+    LoadTestRunResponseSerializer,
     OrganizationListResponseSerializer,
     OrganizationResponseSerializer,
+    StartLoadTestRequestSerializer,
     UpdateOrganizationRequestSerializer,
 )
 from apps.platform.presentation.permissions import IsPlatformAdministrator
@@ -100,6 +108,30 @@ def slugify_organization_name(name: str) -> str:
 def _envelope(data: Any, request: Request, *, status: int = 200) -> Response:
     correlation_id = request_id(request)
     return Response({"data": data, "meta": {"requestId": correlation_id}}, status=status, headers={"X-Request-ID": correlation_id})
+
+
+def _problem(request: Request, detail: str, *, title: str, status: int = 400) -> Response:
+    """A plain RFC 9457 refusal for a request this edge itself turns down."""
+    return problem_response(
+        status=status,
+        type_suffix="bad-request",
+        title=title,
+        detail=detail,
+        instance=request.path,
+        correlation_id=request_id(request),
+    )
+
+
+def _actor_id(request: Request) -> uuid.UUID | None:
+    try:
+        return uuid.UUID(str(request.user.id))
+    except (ValueError, TypeError, AttributeError):
+        return None
+
+
+def _actor_label(request: Request) -> str:
+    """Who to record on the run — the operator's own name, as the archive shows it."""
+    return diploma_actor_label(_actor_id(request)) or "платформа"
 
 
 def _organization_data(view: Any) -> dict[str, Any]:
@@ -271,3 +303,95 @@ class PlatformDashboardView(_PlatformView):
             ],
         }
         return _envelope(data, request)
+
+
+class PlatformLoadTestView(_PlatformView):
+    """GET/POST/DELETE /api/v1/platform/loadtest/diplomas — the generation load test.
+
+    Operator-only, and deliberately so: a run writes hundreds of rows and megabytes
+    of rendered PDFs into the live deployment. It stays off the real diploma
+    numbering (see :mod:`apps.platform.presentation.api.v1.loadtest`) and every
+    artefact it leaves behind is removable from this same endpoint.
+    """
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="platform_loadtest_overview",
+        summary="Load-test runs and what can be started",
+        description=(
+            "Every diploma-generation load test that still exists, with the state of its jobs, plus the "
+            "diploma templates a new run can print over and the totals currently sitting in the database."
+        ),
+        request=None,
+        responses={
+            200: LoadTestOverviewResponseSerializer,
+            403: OpenApiResponse(ProblemDetailSerializer, description="Not a platform administrator."),
+        },
+    )
+    def get(self, request: Request) -> Response:
+        data = {
+            "runs": loadtest.list_runs(),
+            "templates": loadtest.printable_templates(),
+            "totals": loadtest.sandbox_counts(),
+            "maxCount": loadtest.MAX_COUNT,
+        }
+        return _envelope(data, request)
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="platform_loadtest_start",
+        summary="Start a diploma-generation load test",
+        description=(
+            "Seeds a synthetic competition with the requested number of entries and enqueues generation "
+            "down the organizer's own print-package path — the same Celery task, worker and renderer a real "
+            "run uses. Returns immediately; poll the overview for progress."
+        ),
+        request=StartLoadTestRequestSerializer,
+        responses={
+            202: LoadTestRunResponseSerializer,
+            400: OpenApiResponse(ProblemDetailSerializer, description="Invalid parameters, or no printable template."),
+            403: OpenApiResponse(ProblemDetailSerializer, description="Not a platform administrator."),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        serializer = StartLoadTestRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payload = serializer.validated_data
+
+        template_id = payload.get("templateId")
+        try:
+            run = loadtest.start_run(
+                count=int(payload["count"]),
+                nominations=int(payload["nominations"]),
+                template_id=str(template_id) if template_id else None,
+                split=bool(payload["split"]),
+                force=bool(payload["force"]),
+                actor_id=_actor_id(request),
+                actor_label=_actor_label(request),
+            )
+        except loadtest.LoadTestTemplateUnavailableError as exc:
+            return _problem(request, str(exc), title="Нет шаблона для печати")
+        except PrintTemplateNotReadyError as exc:
+            return _problem(request, str(exc), title="Шаблон не готов к печати")
+        return _envelope(run, request, status=202)
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="platform_loadtest_cleanup",
+        summary="Delete load-test runs",
+        description=(
+            "Removes load-test competitions together with their entries, diplomas, jobs, archive records and "
+            "the files they wrote to storage. Pass `competitionId` to remove one run; omit it to remove all."
+        ),
+        parameters=[
+            OpenApiParameter(name="competitionId", type=str, required=False, description="Remove only this run."),
+        ],
+        request=None,
+        responses={
+            200: LoadTestCleanupResponseSerializer,
+            403: OpenApiResponse(ProblemDetailSerializer, description="Not a platform administrator."),
+        },
+    )
+    def delete(self, request: Request) -> Response:
+        competition_id = (request.query_params.get("competitionId") or "").strip() or None
+        return _envelope(loadtest.cleanup(competition_id=competition_id), request)

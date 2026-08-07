@@ -5314,6 +5314,94 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: Not a platform administrator.
+  /api/v1/platform/loadtest/diplomas:
+    get:
+      operationId: platform_loadtest_overview
+      description: Every diploma-generation load test that still exists, with the
+        state of its jobs, plus the diploma templates a new run can print over and
+        the totals currently sitting in the database.
+      summary: Load-test runs and what can be started
+      tags:
+      - Platform
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformLoadTestOverviewResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Not a platform administrator.
+    post:
+      operationId: platform_loadtest_start
+      description: Seeds a synthetic competition with the requested number of entries
+        and enqueues generation down the organizer's own print-package path — the
+        same Celery task, worker and renderer a real run uses. Returns immediately;
+        poll the overview for progress.
+      summary: Start a diploma-generation load test
+      tags:
+      - Platform
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartLoadTestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StartLoadTestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StartLoadTestRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformLoadTestRunResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invalid parameters, or no printable template.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Not a platform administrator.
+    delete:
+      operationId: platform_loadtest_cleanup
+      description: Removes load-test competitions together with their entries, diplomas,
+        jobs, archive records and the files they wrote to storage. Pass `competitionId`
+        to remove one run; omit it to remove all.
+      summary: Delete load-test runs
+      parameters:
+      - in: query
+        name: competitionId
+        schema:
+          type: string
+        description: Remove only this run.
+      tags:
+      - Platform
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformLoadTestCleanupResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Not a platform administrator.
   /api/v1/platform/organizations:
     get:
       operationId: platform_list_organizations
@@ -12616,6 +12704,85 @@ components:
       required:
       - data
       - meta
+    PlatformLoadTestCleanup:
+      type: object
+      properties:
+        runs:
+          type: integer
+        files:
+          type: integer
+        diplomas:
+          type: integer
+        entries:
+          type: integer
+      required:
+      - diplomas
+      - entries
+      - files
+      - runs
+    PlatformLoadTestCleanupResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/PlatformMeta'
+        data:
+          $ref: '#/components/schemas/PlatformLoadTestCleanup'
+      required:
+      - data
+      - meta
+    PlatformLoadTestOverview:
+      type: object
+      properties:
+        runs:
+          type: array
+          items:
+            $ref: '#/components/schemas/_LoadTestRun'
+        templates:
+          type: array
+          items:
+            $ref: '#/components/schemas/_LoadTestTemplate'
+        totals:
+          $ref: '#/components/schemas/PlatformLoadTestTotals'
+        maxCount:
+          type: integer
+      required:
+      - maxCount
+      - runs
+      - templates
+      - totals
+    PlatformLoadTestOverviewResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/PlatformMeta'
+        data:
+          $ref: '#/components/schemas/PlatformLoadTestOverview'
+      required:
+      - data
+      - meta
+    PlatformLoadTestRunResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/PlatformMeta'
+        data:
+          $ref: '#/components/schemas/_LoadTestRun'
+      required:
+      - data
+      - meta
+    PlatformLoadTestTotals:
+      type: object
+      properties:
+        runs:
+          type: integer
+        entries:
+          type: integer
+        diplomas:
+          type: integer
+      required:
+      - diplomas
+      - entries
+      - runs
     PlatformMeta:
       type: object
       properties:
@@ -15128,6 +15295,37 @@ components:
         * `PENDING` - PENDING
         * `ACTIVE` - ACTIVE
         * `REVOKED` - REVOKED
+    StartLoadTestRequest:
+      type: object
+      description: |-
+        Parameters of one diploma-generation load test.
+
+        ``count`` is bounded by :data:`~apps.platform.presentation.api.v1.loadtest.MAX_COUNT`:
+        seeding is a bulk insert and would happily take more, but the generation it
+        triggers is a single long task in a single worker, and past that the honest
+        thing to change is the worker rather than the tirage.
+      properties:
+        count:
+          type: integer
+          maximum: 2000
+          minimum: 1
+          default: 500
+        nominations:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 5
+        templateId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        split:
+          type: boolean
+          default: false
+        force:
+          type: boolean
+          default: false
     SubmissionAttachmentProblemDetail:
       type: object
       properties:
@@ -16622,6 +16820,90 @@ components:
             $ref: '#/components/schemas/_LandingBlock'
       required:
       - blocks
+    _LoadTestJob:
+      type: object
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        status:
+          type: string
+        created:
+          type: integer
+        skipped:
+          type: integer
+        zipUrl:
+          type:
+          - string
+          - 'null'
+        error:
+          type:
+          - string
+          - 'null'
+      required:
+      - created
+      - error
+      - jobId
+      - skipped
+      - status
+      - zipUrl
+    _LoadTestRun:
+      type: object
+      properties:
+        competitionId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        entries:
+          type: integer
+        nominations:
+          type: integer
+        diplomas:
+          type: integer
+        rendered:
+          type: integer
+        status:
+          type: string
+        elapsedSeconds:
+          type:
+          - number
+          - 'null'
+          format: double
+        msPerDiploma:
+          type:
+          - integer
+          - 'null'
+        jobs:
+          type: array
+          items:
+            $ref: '#/components/schemas/_LoadTestJob'
+      required:
+      - competitionId
+      - createdAt
+      - diplomas
+      - elapsedSeconds
+      - entries
+      - jobs
+      - msPerDiploma
+      - nominations
+      - rendered
+      - status
+      - title
+    _LoadTestTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+      required:
+      - id
+      - name
     _MediaRequirements:
       type: object
       properties:

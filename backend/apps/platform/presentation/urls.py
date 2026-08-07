@@ -6,6 +6,7 @@ from django.urls import path
 
 from apps.platform.presentation.api.v1.views import (
     PlatformDashboardView,
+    PlatformLoadTestView,
     PlatformOrganizationDetailView,
     PlatformOrganizationsView,
 )
@@ -16,4 +17,7 @@ urlpatterns = [
     path("platform/dashboard", PlatformDashboardView.as_view(), name="dashboard"),
     path("platform/organizations", PlatformOrganizationsView.as_view(), name="organizations"),
     path("platform/organizations/<str:organization_id>", PlatformOrganizationDetailView.as_view(), name="organization-detail"),
+    # The operator's own test bench: seed a synthetic festival, run generation on it
+    # for real, and remove every trace afterwards.
+    path("platform/loadtest/diplomas", PlatformLoadTestView.as_view(), name="loadtest-diplomas"),
 ]
