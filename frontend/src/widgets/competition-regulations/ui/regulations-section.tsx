@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { applyProblemToForm } from "@/features/auth";
 import type {
   AutosaveState,
@@ -40,6 +40,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  DatePicker,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -104,6 +105,7 @@ export function RegulationsSection({
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     watch,
@@ -299,12 +301,20 @@ export function RegulationsSection({
                       error={errors.version?.message}
                       {...register("version")}
                     />
-                    <Input
-                      label="Дата публикации"
-                      type="date"
-                      required
-                      error={errors.publicationDate?.message}
-                      {...register("publicationDate")}
+                    <Controller
+                      control={control}
+                      name="publicationDate"
+                      render={({ field }) => (
+                        <DatePicker
+                          label="Дата публикации"
+                          required
+                          value={field.value}
+                          onChange={field.onChange}
+                          {...(errors.publicationDate?.message != null
+                            ? { error: errors.publicationDate.message }
+                            : {})}
+                        />
+                      )}
                     />
                     <div className="md:col-span-2">
                       <Textarea

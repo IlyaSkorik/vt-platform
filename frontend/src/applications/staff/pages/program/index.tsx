@@ -56,6 +56,7 @@ import {
   Card,
   CardContent,
   Checkbox,
+  DateTimePicker,
   Divider,
   EmptyState,
   Input,
@@ -282,12 +283,7 @@ function CreateProgramCard({
           value={nominationId}
           onValueChange={setNominationId}
         />
-        <Input
-          label="Начало"
-          type="datetime-local"
-          value={startsAt}
-          onChange={(event) => setStartsAt(event.target.value)}
-        />
+        <DateTimePicker label="Начало" value={startsAt} onChange={setStartsAt} />
         <Button onClick={submit} loading={create.isPending} disabled={name.trim().length === 0}>
           Создать программу
         </Button>
@@ -343,11 +339,10 @@ function ProgramSettings({ program }: { program: Program }): React.JSX.Element {
           onValueChange={(value: string) => update.setBuffer(Number(value))}
           description="Добавляется к каждому выступлению при расчёте расписания и не меняет длительность номера."
         />
-        <Input
+        <DateTimePicker
           label="Начало программы"
-          type="datetime-local"
           value={toLocalInput(program.startsAt)}
-          onChange={(event) => update.setStart(event.target.value)}
+          onChange={update.setStart}
         />
       </div>
     </div>

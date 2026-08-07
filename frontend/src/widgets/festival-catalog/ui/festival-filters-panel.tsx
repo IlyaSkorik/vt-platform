@@ -11,7 +11,7 @@ import {
   participationModeLabel,
 } from "@/features/festival-catalog";
 import { cn } from "@/shared/lib";
-import { Button, Card, CardContent, Input } from "@/shared/ui";
+import { Button, Card, CardContent, DatePicker } from "@/shared/ui";
 
 interface FilterChipProps {
   active: boolean;
@@ -139,23 +139,19 @@ export function FestivalFiltersPanel({
         <div className="space-y-2">
           <p className="text-sm font-medium text-foreground">Даты проведения</p>
           <div className="flex flex-wrap items-end gap-3">
-            <Input
-              type="date"
+            <DatePicker
               label="С"
+              placeholder="Не раньше"
               value={filters.competitionFrom ?? ""}
-              onChange={(event) =>
-                onChange({ ...filters, competitionFrom: event.target.value || null })
-              }
-              containerClassName="w-40"
+              onChange={(value) => onChange({ ...filters, competitionFrom: value || null })}
+              containerClassName="w-48"
             />
-            <Input
-              type="date"
+            <DatePicker
               label="По"
+              placeholder="Не позже"
               value={filters.competitionTo ?? ""}
-              onChange={(event) =>
-                onChange({ ...filters, competitionTo: event.target.value || null })
-              }
-              containerClassName="w-40"
+              onChange={(value) => onChange({ ...filters, competitionTo: value || null })}
+              containerClassName="w-48"
             />
           </div>
         </div>

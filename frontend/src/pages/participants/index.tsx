@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Archive, ArrowLeft, Medal, Plus, Search, Trash2, UserPen } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import {
   fetchOrganizations,
@@ -31,6 +31,7 @@ import {
   CardHeader,
   CardTitle,
   Checkbox,
+  DatePicker,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -740,12 +741,28 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                         {...registerName("lastName", { required: "Укажите фамилию" })}
                       />
                       <Input label="Отчество" {...registerName("middleName")} />
-                      <Input
-                        type="date"
-                        label="Дата рождения"
-                        required
-                        error={form.formState.errors.birthDate?.message}
-                        {...form.register("birthDate", { required: "Укажите дату рождения" })}
+                      {/* `Controller`, not `setValue`: the picker is not an input the
+                          form can register, and without this the "укажите дату
+                          рождения" rule would quietly stop being enforced. */}
+                      <Controller
+                        control={form.control}
+                        name="birthDate"
+                        rules={{ required: "Укажите дату рождения" }}
+                        render={({ field }) => (
+                          <DatePicker
+                            label="Дата рождения"
+                            required
+                            // The year dropdown is what makes this workable: a child's
+                            // birth year is a decade back, and nobody should page
+                            // through a hundred and thirty months to reach it.
+                            toYear={new Date().getFullYear()}
+                            value={field.value}
+                            onChange={field.onChange}
+                            {...(form.formState.errors.birthDate?.message != null
+                              ? { error: form.formState.errors.birthDate.message }
+                              : {})}
+                          />
+                        )}
                       />
                       <Select
                         label="Пол"
@@ -912,12 +929,28 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                   )}
                   {form.watch("participantType") === "solo" ? (
                     <>
-                      <Input
-                        type="date"
-                        label="Дата рождения"
-                        required
-                        error={form.formState.errors.birthDate?.message}
-                        {...form.register("birthDate", { required: "Укажите дату рождения" })}
+                      {/* `Controller`, not `setValue`: the picker is not an input the
+                          form can register, and without this the "укажите дату
+                          рождения" rule would quietly stop being enforced. */}
+                      <Controller
+                        control={form.control}
+                        name="birthDate"
+                        rules={{ required: "Укажите дату рождения" }}
+                        render={({ field }) => (
+                          <DatePicker
+                            label="Дата рождения"
+                            required
+                            // The year dropdown is what makes this workable: a child's
+                            // birth year is a decade back, and nobody should page
+                            // through a hundred and thirty months to reach it.
+                            toYear={new Date().getFullYear()}
+                            value={field.value}
+                            onChange={field.onChange}
+                            {...(form.formState.errors.birthDate?.message != null
+                              ? { error: form.formState.errors.birthDate.message }
+                              : {})}
+                          />
+                        )}
                       />
                       <Select
                         label="Пол"

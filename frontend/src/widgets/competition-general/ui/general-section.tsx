@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { applyProblemToForm } from "@/features/auth";
 import type {
   AutosaveState,
@@ -32,6 +32,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  DatePicker,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -79,6 +80,7 @@ export function GeneralSection({
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     watch,
@@ -389,19 +391,35 @@ export function GeneralSection({
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 pt-4 md:grid-cols-2">
-                <Input
-                  label="Начало регистрации (анонс)"
-                  type="date"
-                  error={errors.registrationStart?.message}
-                  disabled={isReadOnly}
-                  {...register("registrationStart")}
+                <Controller
+                  control={control}
+                  name="registrationStart"
+                  render={({ field }) => (
+                    <DatePicker
+                      label="Начало регистрации (анонс)"
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      disabled={isReadOnly}
+                      {...(errors.registrationStart?.message != null
+                        ? { error: errors.registrationStart.message }
+                        : {})}
+                    />
+                  )}
                 />
-                <Input
-                  label="Окончание регистрации (анонс)"
-                  type="date"
-                  error={errors.registrationEnd?.message}
-                  disabled={isReadOnly}
-                  {...register("registrationEnd")}
+                <Controller
+                  control={control}
+                  name="registrationEnd"
+                  render={({ field }) => (
+                    <DatePicker
+                      label="Окончание регистрации (анонс)"
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      disabled={isReadOnly}
+                      {...(errors.registrationEnd?.message != null
+                        ? { error: errors.registrationEnd.message }
+                        : {})}
+                    />
+                  )}
                 />
               </CardContent>
               <CardHeader className="pb-0">
@@ -409,19 +427,35 @@ export function GeneralSection({
                 <CardDescription>Когда проходит фестиваль.</CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 pt-4 md:grid-cols-2">
-                <Input
-                  label="Начало фестиваля"
-                  type="date"
-                  error={errors.competitionStart?.message}
-                  disabled={isReadOnly}
-                  {...register("competitionStart")}
+                <Controller
+                  control={control}
+                  name="competitionStart"
+                  render={({ field }) => (
+                    <DatePicker
+                      label="Начало фестиваля"
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      disabled={isReadOnly}
+                      {...(errors.competitionStart?.message != null
+                        ? { error: errors.competitionStart.message }
+                        : {})}
+                    />
+                  )}
                 />
-                <Input
-                  label="Окончание фестиваля"
-                  type="date"
-                  error={errors.competitionEnd?.message}
-                  disabled={isReadOnly}
-                  {...register("competitionEnd")}
+                <Controller
+                  control={control}
+                  name="competitionEnd"
+                  render={({ field }) => (
+                    <DatePicker
+                      label="Окончание фестиваля"
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      disabled={isReadOnly}
+                      {...(errors.competitionEnd?.message != null
+                        ? { error: errors.competitionEnd.message }
+                        : {})}
+                    />
+                  )}
                 />
               </CardContent>
             </Card>

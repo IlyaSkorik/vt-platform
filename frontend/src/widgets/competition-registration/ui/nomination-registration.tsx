@@ -7,7 +7,7 @@ import {
 } from "@/features/competitions";
 import { ApiError } from "@/shared/api";
 import type { _Category } from "@/shared/api/generated/model-competitions";
-import { Badge, Button, Input, toast } from "@/shared/ui";
+import { Badge, Button, DateTimePicker, toast } from "@/shared/ui";
 
 interface NominationRegistrationProps {
   competitionId: string;
@@ -148,20 +148,18 @@ export function NominationRegistration({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Input
+        <DateTimePicker
           label="Начало приёма заявок"
-          type="datetime-local"
           value={opensAt}
           disabled={disabled}
-          onChange={(event) => setOpensAt(event.target.value)}
+          onChange={setOpensAt}
         />
-        <Input
+        <DateTimePicker
           label="Окончание приёма заявок"
-          type="datetime-local"
           value={closesAt}
           disabled={disabled}
-          error={invalidRange ? "Раньше начала" : undefined}
-          onChange={(event) => setClosesAt(event.target.value)}
+          onChange={setClosesAt}
+          {...(invalidRange ? { error: "Раньше начала" } : {})}
         />
       </div>
       <p className="text-muted-foreground text-xs">
