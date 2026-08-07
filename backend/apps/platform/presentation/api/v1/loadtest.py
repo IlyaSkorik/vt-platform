@@ -55,6 +55,11 @@ from apps.diplomas.infrastructure.models import (
     TemplateModel,
 )
 from apps.diplomas.infrastructure.pdf.workspace import storage_key_of
+from apps.participants.infrastructure.models.registry import (
+    EducationalOrganizationModel,
+    ParticipantOrganizationMembershipModel,
+    ParticipantRegistryModel,
+)
 
 __all__ = [
     "MARKER",
@@ -118,9 +123,16 @@ def resolve_template(template_id: str | None) -> uuid.UUID:
 def seed_run(*, count: int, nominations: int, template_id: uuid.UUID) -> tuple[CompetitionModel, list[str]]:
     """Create the synthetic competition, its taxonomy, its entries and assignments.
 
-    The taxonomy rows are not decoration. The snapshot builder resolves a name for
-    each of the four taxonomy ids on every entry, so leaving them blank would skip
-    the very queries a real run makes and flatter the measurement.
+    None of the surrounding rows are decoration — they are what the snapshot builder
+    goes looking for on **every** entry, and an entry that leaves them blank skips
+    the queries a real run makes and flatters the measurement. The four taxonomy ids
+    each cost a name lookup; the registry participant costs a membership join to find
+    the organization printed on the diploma.
+
+    Between them they also fill every binding a diploma template can carry, so the
+    rendered pages come out looking like the real thing rather than a page of blanks
+    — the one exception being the award degree, which is genuinely absent from a
+    print-package copy because the ceremony has not happened yet.
     """
     stamp = timezone.now().strftime("%d.%m.%Y %H:%M")
     competition = CompetitionModel.objects.create(
@@ -153,6 +165,33 @@ def seed_run(*, count: int, nominations: int, template_id: uuid.UUID) -> tuple[C
         for index, category in enumerate(categories)
     ]
 
+    # The registry side. A diploma prints the participant's *organization*, and the
+    # snapshot reaches it through the registry entry the submission points at — so
+    # without these rows that field prints nothing and its lookup never runs. Owned
+    # by the competition's own (throwaway) organizer id, which is how cleanup finds
+    # them again: the registry has no competition to scope by.
+    school = EducationalOrganizationModel.objects.create(
+        owner_id=competition.organizer_id,
+        name=f"Тестовая школа искусств {stamp}",
+        organization_type="school",
+        city="Тестовый город",
+    )
+    registry = [
+        ParticipantRegistryModel(
+            owner_id=competition.organizer_id,
+            first_name=f"Участник{index + 1:04d}",
+            last_name="Нагрузочный",
+            birth_date=date(2014, 5, 17),
+            gender="other",
+        )
+        for index in range(count)
+    ]
+    ParticipantRegistryModel.objects.bulk_create(registry, batch_size=500)
+    ParticipantOrganizationMembershipModel.objects.bulk_create(
+        [ParticipantOrganizationMembershipModel(participant=entry, organization=school, is_primary=True) for entry in registry],
+        batch_size=500,
+    )
+
     submissions = []
     for index in range(count):
         slot = index % nominations
@@ -168,7 +207,13 @@ def seed_run(*, count: int, nominations: int, template_id: uuid.UUID) -> tuple[C
                     "participant_group_id": str(group.id),
                     "age_category_id": str(age.id),
                 },
-                participants=[{"display_name": f"Участник Нагрузочный {index + 1:04d}", "birth_date": "2014-05-17"}],
+                participants=[
+                    {
+                        "display_name": f"Нагрузочный Участник{index + 1:04d}",
+                        "birth_date": "2014-05-17",
+                        "registry_participant_id": str(registry[index].id),
+                    }
+                ],
                 teachers=[{"last_name": "Педагогов", "first_name": f"Педагог{index % 37}", "role": "Преподаватель"}],
             )
         )
@@ -299,9 +344,14 @@ def cleanup(*, competition_id: str | None = None) -> dict[str, int]:
     runs = CompetitionModel.objects.filter(settings__load_test=MARKER)
     if competition_id is not None:
         runs = runs.filter(id=competition_id)
-    competition_ids = list(runs.values_list("id", flat=True))
-    if not competition_ids:
+    # The organizer ids are read *before* the competitions go: they are the only
+    # handle on the registry rows a run created, and the registry has no competition
+    # column to find them by afterwards.
+    seeded = list(runs.values_list("id", "organizer_id"))
+    if not seeded:
         return {"runs": 0, "files": 0, "diplomas": 0, "entries": 0}
+    competition_ids = [row[0] for row in seeded]
+    owner_ids = [row[1] for row in seeded]
 
     diplomas = DiplomaModel.objects.filter(competition_id__in=competition_ids)
     references: list[str] = []
@@ -322,8 +372,11 @@ def cleanup(*, competition_id: str | None = None) -> dict[str, int]:
     GenerationRunModel.objects.filter(competition_id__in=competition_ids).delete()
     AssignmentModel.objects.filter(competition_id__in=competition_ids).delete()
     removed_entries = SubmissionModel.objects.filter(competition_id__in=competition_ids).delete()[0]
-    # Taxonomy rows cascade from the competition.
+    # Taxonomy rows cascade from the competition; memberships cascade from the
+    # registry entry, so only the two owned tables need naming.
     CompetitionModel.objects.filter(id__in=competition_ids).delete()
+    ParticipantRegistryModel.objects.filter(owner_id__in=owner_ids).delete()
+    EducationalOrganizationModel.objects.filter(owner_id__in=owner_ids).delete()
 
     # The sandbox counter too, but only once nothing is left that it numbered:
     # dropping it while another run is mid-flight would hand out numbers it has

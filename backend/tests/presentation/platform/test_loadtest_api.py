@@ -30,6 +30,10 @@ from apps.diplomas.infrastructure.models import (
 from apps.identity.presentation.api.v1.auth import composition as identity_composition
 from apps.organization.application.dto.commands import ProvisionOwnerCommand
 from apps.organization.composition import build_provision_owner_handler
+from apps.participants.infrastructure.models.registry import (
+    EducationalOrganizationModel,
+    ParticipantRegistryModel,
+)
 from apps.platform.application.dto import GrantPlatformAdministratorCommand
 from apps.platform.composition import build_grant_platform_administrator_handler
 from apps.platform.presentation.api.v1.loadtest import MARKER, SANDBOX_YEAR
@@ -127,6 +131,33 @@ def test_operator_starts_a_run_and_generation_produces_every_diploma(operator: A
     assert listed["jobs"][0]["zipUrl"]
 
 
+def test_seeded_entries_fill_every_field_a_diploma_can_print(operator: APIClient, template: TemplateModel) -> None:
+    """A blank field is a query that never ran — and a page that measures nothing.
+
+    Every binding a diploma template offers is checked here, because each one costs
+    the generator something (a taxonomy name lookup, the registry membership join)
+    and a run that leaves them empty reports a speed production will never see. The
+    award degree is the deliberate exception: a print-package copy is made before
+    the ceremony, so it has no degree in production either.
+    """
+    response = operator.post(_LOADTEST, {"count": 2, "nominations": 1}, format="json")
+
+    snapshot = DiplomaModel.objects.filter(competition_id=response.data["data"]["competitionId"]).first().snapshot
+    assert snapshot["participant"]["display_name"]
+    assert snapshot["participant"]["age"] is not None
+    assert snapshot["teachers"] and snapshot["teachers"][0]["name"]
+    assert snapshot["organization"]["name"]
+    assert snapshot["nomination"]["title"]
+    assert snapshot["nomination"]["discipline"]
+    assert snapshot["nomination"]["participant_group"]
+    assert snapshot["nomination"]["age_category"]
+    assert snapshot["performance"]["title"]
+    assert snapshot["competition"]["title"]
+    assert snapshot["competition"]["date"]
+    assert snapshot["competition"]["city"]
+    assert snapshot["award"]["degree"] is None
+
+
 def test_split_enqueues_one_job_per_nomination(operator: APIClient, template: TemplateModel) -> None:
     """The queue-pressure shape: several jobs competing, not one long one."""
     response = operator.post(_LOADTEST, {"count": 6, "nominations": 3, "split": True}, format="json")
@@ -164,6 +195,10 @@ def test_cleanup_removes_the_run_and_leaves_real_data_alone(operator: APIClient,
     assert not SubmissionModel.objects.exists()
     assert not DiplomaModel.objects.exists()
     assert not DiplomaNumberSequenceModel.objects.filter(scope=str(SANDBOX_YEAR)).exists()
+    # The registry rows too — they live outside the competition and would otherwise
+    # be orphaned, since nothing links them back to a run once it is gone.
+    assert not ParticipantRegistryModel.objects.exists()
+    assert not EducationalOrganizationModel.objects.exists()
     # The template it printed over, and anything that was never part of a run, survive.
     assert TemplateModel.objects.filter(id=template.id).exists()
     assert CompetitionModel.objects.filter(id=real.id).exists()
