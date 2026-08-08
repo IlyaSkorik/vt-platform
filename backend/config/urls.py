@@ -84,6 +84,8 @@ urlpatterns = [
     path("api/v1/", include("apps.results.presentation.public_urls")),
     # The participant's own issued documents ("Мои документы").
     path("api/v1/", include("apps.diplomas.presentation.me_urls")),
+    # The participant's own notification feed ("Уведомления").
+    path("api/v1/", include("apps.notifications.presentation.urls")),
 ]
 
 if settings.DEBUG:

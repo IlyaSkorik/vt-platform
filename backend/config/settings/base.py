@@ -143,6 +143,7 @@ MIGRATION_MODULES = {
     "diplomas": "apps.diplomas.infrastructure.migrations",
     "programs": "apps.programs.infrastructure.migrations",
     "results": "apps.results.infrastructure.migrations",
+    "notifications": "apps.notifications.infrastructure.migrations",
 }
 
 # --- Password validation --------------------------------------------------
