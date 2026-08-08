@@ -154,6 +154,36 @@ export default defineConfig({
       },
     },
   },
+  vtNotifications: {
+    input: {
+      target: "./openapi/schema-full.yaml",
+      override: {
+        transformer: "./openapi/strip-api-version-prefix.ts",
+      },
+      filters: {
+        // The cabinet's own notification feed — authenticated but not staff-gated,
+        // so kept apart from the organizer tag like the other "me" contracts.
+        tags: ["Notifications"],
+      },
+    },
+    output: {
+      mode: "tags-split",
+      target: "./src/shared/api/generated",
+      schemas: "./src/shared/api/generated/model-notifications",
+      client: "react-query",
+      httpClient: "fetch",
+      clean: false,
+      override: {
+        mutator: {
+          path: "./src/shared/api/orval-mutator.ts",
+          name: "customInstance",
+        },
+        query: {
+          useQuery: true,
+        },
+      },
+    },
+  },
   vtMyDocuments: {
     input: {
       target: "./openapi/schema-full.yaml",

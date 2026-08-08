@@ -4794,6 +4794,60 @@ paths:
               schema:
                 $ref: '#/components/schemas/ParticipantDocumentsEnvelope'
           description: ''
+  /api/v1/me/notifications:
+    get:
+      operationId: listMyNotifications
+      description: GET /api/v1/me/notifications — the caller's feed.
+      summary: List my notifications
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: How many entries to return, newest first (capped server-side).
+      tags:
+      - Notifications
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationFeedEnvelope'
+          description: ''
+  /api/v1/me/notifications/{notification_id}/read:
+    post:
+      operationId: markNotificationRead
+      description: POST /api/v1/me/notifications/{id}/read — mark one entry read.
+      summary: Mark one notification read
+      parameters:
+      - in: path
+        name: notification_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Notifications
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadReceiptEnvelope'
+          description: ''
+  /api/v1/me/notifications/read:
+    post:
+      operationId: markAllNotificationsRead
+      description: POST /api/v1/me/notifications/read — mark the whole feed read.
+      summary: Mark every notification read
+      tags:
+      - Notifications
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadReceiptEnvelope'
+          description: ''
   /api/v1/organization/profile:
     get:
       operationId: getOrganizationProfile
@@ -11748,6 +11802,64 @@ components:
         * `URL_ONLY` - URL_ONLY
         * `FILE_ONLY` - FILE_ONLY
         * `URL_OR_FILE` - URL_OR_FILE
+    Notification:
+      type: object
+      description: One entry in the feed, already in the words the recipient reads.
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: '#/components/schemas/NotificationKindEnum'
+        title:
+          type: string
+        body:
+          type: string
+        link:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        readAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - body
+      - createdAt
+      - id
+      - kind
+      - link
+      - readAt
+      - title
+    NotificationFeedEnvelope:
+      type: object
+      description: The full ``GET /me/notifications`` response envelope.
+      properties:
+        data:
+          $ref: '#/components/schemas/_Feed'
+        meta:
+          $ref: '#/components/schemas/_Meta'
+      required:
+      - data
+      - meta
+    NotificationKindEnum:
+      enum:
+      - APPLICATION_SUBMITTED
+      - PAYMENT_EXPECTED
+      - APPLICATION_CANCELLED
+      - CORRECTION_REQUESTED
+      - FILES_REQUESTED
+      - RESULTS_PUBLISHED
+      type: string
+      description: |-
+        * `APPLICATION_SUBMITTED` - APPLICATION_SUBMITTED
+        * `PAYMENT_EXPECTED` - PAYMENT_EXPECTED
+        * `APPLICATION_CANCELLED` - APPLICATION_CANCELLED
+        * `CORRECTION_REQUESTED` - CORRECTION_REQUESTED
+        * `FILES_REQUESTED` - FILES_REQUESTED
+        * `RESULTS_PUBLISHED` - RESULTS_PUBLISHED
     NullEnum:
       type: 'null'
     OrganizationProfile:
@@ -14610,6 +14722,17 @@ components:
       required:
       - data
       - meta
+    ReadReceiptEnvelope:
+      type: object
+      description: The response envelope of both "mark read" endpoints.
+      properties:
+        data:
+          $ref: '#/components/schemas/_ReadReceipt'
+        meta:
+          $ref: '#/components/schemas/_Meta'
+      required:
+      - data
+      - meta
     RecordConsentsRequest:
       type: object
       description: Validate a record-consents request body.
@@ -16553,6 +16676,19 @@ components:
       - answer
       - id
       - question
+    _Feed:
+      type: object
+      description: 'The feed itself: the entries plus the count the bell renders.'
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+        unreadCount:
+          type: integer
+      required:
+      - items
+      - unreadCount
     _FormatRequirements:
       type: object
       properties:
@@ -17494,6 +17630,18 @@ components:
       - publishedAt
       - revision
       - slug
+    _ReadReceipt:
+      type: object
+      description: What changed, so the client can reconcile without refetching the
+        feed.
+      properties:
+        unreadCount:
+          type: integer
+        markedCount:
+          type: integer
+      required:
+      - markedCount
+      - unreadCount
     _Regulation:
       type: object
       properties:
