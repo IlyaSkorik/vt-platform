@@ -1,6 +1,29 @@
-import { CalendarDays, ClipboardList, MailPlus, Medal, UserCheck, Users } from "lucide-react";
+import {
+  Award,
+  CalendarDays,
+  ClipboardList,
+  FileText,
+  Inbox,
+  MailPlus,
+  Medal,
+  Plus,
+  Wallet,
+} from "lucide-react";
+import { useMemo } from "react";
+import { createSearchParams, Link } from "react-router";
 
 import {
+  competitionStatusLabel,
+  competitionStatusVariant,
+  useCompetitionsList,
+} from "@/features/competitions";
+import { ROLE_LABELS, useStaffInvitations } from "@/features/staff-invitations";
+import { type OverviewApplication, useStaffOverview } from "@/features/staff-overview";
+import { ROUTES } from "@/shared/config";
+import {
+  Alert,
+  Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -12,95 +35,387 @@ import {
   PageDescription,
   PageHeader,
   PageTitle,
+  Skeleton,
 } from "@/shared/ui";
 
-const operationalCards = [
+/** How many rows a summary card shows before handing over to its section. */
+const PREVIEW_LIMIT = 5;
+
+/**
+ * The queues the desk is actually worked from, in the order they are worked.
+ *
+ * The workspace computes counts for five; ARCHIVE (cancelled) is left off — it is
+ * where things go to stop needing anybody, so a number on the front screen would
+ * only compete for attention with the four that do.
+ */
+const WORKED_QUEUES: ReadonlyArray<{
+  key: string;
+  title: string;
+  hint: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tone: string;
+}> = [
   {
-    title: "Заявки на проверке",
-    value: "—",
-    description: "Очередь появится после запуска модуля заявок.",
+    key: "NEW",
+    title: "На доработке",
+    hint: "Ждут решения организатора",
+    icon: Inbox,
+    tone: "bg-warning/10 text-warning",
+  },
+  {
+    key: "WAITING_PAYMENT",
+    title: "Ожидают оплату",
+    hint: "Квитанция ещё не приложена",
+    icon: Wallet,
+    tone: "bg-warning/10 text-warning",
+  },
+  {
+    key: "READY",
+    title: "Готовы к фестивалю",
+    hint: "Приняты и оплачены",
     icon: ClipboardList,
+    tone: "bg-success/10 text-success",
   },
   {
-    title: "Ближайшие фестивали",
-    value: "—",
-    description: "План событий подключается отдельным модулем.",
-    icon: Medal,
-  },
-  {
-    title: "Жюри онлайн",
-    value: "—",
-    description: "Статусы судей будут доступны после интеграции.",
-    icon: UserCheck,
-  },
-  {
-    title: "Сегодня в расписании",
-    value: "—",
-    description: "Расписание не показывает выдуманные данные.",
+    key: "RUNNING",
+    title: "Назначены",
+    hint: "Стоят в программе",
     icon: CalendarDays,
+    tone: "bg-primary/10 text-primary",
   },
 ];
 
+function formatDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const at = new Date(iso);
+  return Number.isNaN(at.getTime())
+    ? "—"
+    : at.toLocaleDateString("ru-RU", { day: "2-digit", month: "long" });
+}
+
+/** Deep-link into the workspace, already filtered to the queue that was clicked. */
+function queueLink(key: string): string {
+  return `${ROUTES.staffApplications}?${createSearchParams({ queue: key }).toString()}`;
+}
+
+/** Deep-link straight to one application's card in the workspace. */
+function applicationLink(item: OverviewApplication): string {
+  return `${ROUTES.staffApplications}?${createSearchParams({
+    queue: item.queue,
+    selected: item.id,
+  }).toString()}`;
+}
+
+function QueueTile({
+  title,
+  hint,
+  count,
+  icon: Icon,
+  tone,
+  to,
+  loading,
+}: {
+  title: string;
+  hint: string;
+  count: number;
+  icon: React.ComponentType<{ className?: string }>;
+  tone: string;
+  to: string;
+  loading: boolean;
+}): React.JSX.Element {
+  return (
+    <Card className="shadow-none transition-colors hover:border-primary/40">
+      <Link
+        to={to}
+        className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <CardDescription>{title}</CardDescription>
+              {loading ? (
+                <Skeleton className="mt-2 h-8 w-12" />
+              ) : (
+                <CardTitle className="mt-2 text-2xl">{count}</CardTitle>
+              )}
+            </div>
+            <div className={`flex size-9 items-center justify-center rounded-md ${tone}`}>
+              <Icon className="size-4" aria-hidden="true" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground text-sm">{hint}</p>
+        </CardContent>
+      </Link>
+    </Card>
+  );
+}
+
+/**
+ * The organizer's home screen.
+ *
+ * What is on the desk right now, and one click to whichever part of it needs
+ * somebody — rather than four cards reading "—" above a promise that the module
+ * will be connected later.
+ *
+ * Everything here comes from the same workspace projection the applications screen
+ * is built on, so a number on this page and the queue it opens can never disagree.
+ */
 export function StaffDashboardPage(): React.JSX.Element {
+  const overview = useStaffOverview();
+  const competitions = useCompetitionsList();
+  const invitations = useStaffInvitations();
+
+  const counts = useMemo(() => {
+    const map = new Map((overview.data?.queues ?? []).map((queue) => [queue.key, queue.count]));
+    return (key: string) => map.get(key) ?? 0;
+  }, [overview.data]);
+
+  const recent = useMemo(
+    () =>
+      [...(overview.data?.applications ?? [])]
+        .sort((a, b) => new Date(b.submissionDate).getTime() - new Date(a.submissionDate).getTime())
+        .slice(0, PREVIEW_LIMIT),
+    [overview.data],
+  );
+
+  const activeCompetitions = useMemo(
+    () =>
+      [...(competitions.data ?? [])]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, PREVIEW_LIMIT),
+    [competitions.data],
+  );
+
+  const pendingInvitations = useMemo(
+    () =>
+      (invitations.data ?? []).filter((item) => item.status === "pending").slice(0, PREVIEW_LIMIT),
+    [invitations.data],
+  );
+
   return (
     <PageContainer size="wide">
-      <PageHeader>
+      <PageHeader
+        actions={
+          <Button asChild size="sm">
+            <Link to={ROUTES.staffCompetitionsNew}>
+              <Plus className="size-4" />
+              Новый фестиваль
+            </Link>
+          </Button>
+        }
+      >
         <PageTitle>Панель управления</PageTitle>
         <PageDescription>
-          Операционное пространство организации: заявки, фестивали, расписание, команда и доступы.
+          Что сейчас на столе: очередь заявок, фестивали и доступы команды.
         </PageDescription>
       </PageHeader>
-      <PageContent>
+      <PageContent className="flex flex-col gap-6">
+        {overview.isError ? (
+          <Alert variant="danger">
+            Не удалось загрузить очередь заявок. Обновите страницу или откройте раздел «Заявки».
+          </Alert>
+        ) : null}
+
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {operationalCards.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Card key={item.title} className="shadow-none">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <CardDescription>{item.title}</CardDescription>
-                      <CardTitle className="mt-2 text-2xl">{item.value}</CardTitle>
-                    </div>
-                    <div className="flex size-9 items-center justify-center rounded-md bg-muted text-muted-foreground">
-                      <Icon className="size-4" aria-hidden="true" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground text-sm">{item.description}</p>
-                </CardContent>
-              </Card>
-            );
-          })}
+          {WORKED_QUEUES.map((queue) => (
+            <QueueTile
+              key={queue.key}
+              title={queue.title}
+              hint={queue.hint}
+              count={counts(queue.key)}
+              icon={queue.icon}
+              tone={queue.tone}
+              to={queueLink(queue.key)}
+              loading={overview.isLoading}
+            />
+          ))}
         </div>
+
         <div className="grid gap-4 lg:grid-cols-2">
           <Card className="shadow-none">
-            <CardHeader>
-              <CardTitle>Последние приглашения</CardTitle>
-              <CardDescription>
-                Реальные приглашения появятся после подключения раздела.
-              </CardDescription>
+            <CardHeader className="flex flex-row items-start justify-between gap-3">
+              <div>
+                <CardTitle>Последние заявки</CardTitle>
+                <CardDescription>Самые свежие поступления по всем фестивалям.</CardDescription>
+              </div>
+              <Button asChild variant="ghost" size="sm">
+                <Link to={ROUTES.staffApplications}>Все заявки</Link>
+              </Button>
             </CardHeader>
-            <CardContent>
-              <EmptyState
-                icon={<MailPlus aria-hidden="true" />}
-                title="Приглашений пока нет"
-                description="Здесь будет видна недавняя активность по доступам сотрудников."
-              />
+            <CardContent className="py-0">
+              {overview.isLoading ? (
+                <div className="flex flex-col gap-3 py-3">
+                  <Skeleton className="h-12" />
+                  <Skeleton className="h-12" />
+                </div>
+              ) : recent.length === 0 ? (
+                <EmptyState
+                  icon={<Inbox aria-hidden="true" />}
+                  title="Заявок пока нет"
+                  description="Как только участники начнут подавать заявки, они появятся здесь."
+                />
+              ) : (
+                <ul className="flex flex-col divide-y divide-border">
+                  {recent.map((item) => (
+                    <li key={item.id}>
+                      <Link
+                        to={applicationLink(item)}
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-md px-1 py-3 outline-none hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <span className="min-w-0">
+                          <span className="block text-sm font-medium">
+                            №{item.applicationNumber} · {item.competition}
+                          </span>
+                          <span className="mt-1 block text-xs text-muted-foreground">
+                            {item.organization || "Без организации"} · выступлений:{" "}
+                            {item.performancesCount} · {formatDate(item.submissionDate)}
+                          </span>
+                        </span>
+                        {item.badges?.hasCorrections ? (
+                          <Badge variant="warning">На исправлении</Badge>
+                        ) : item.badges?.hasMissingFiles ? (
+                          <Badge variant="warning">Нет файлов</Badge>
+                        ) : (
+                          <Badge variant="neutral">{item.status}</Badge>
+                        )}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </CardContent>
           </Card>
+
+          <Card className="shadow-none">
+            <CardHeader className="flex flex-row items-start justify-between gap-3">
+              <div>
+                <CardTitle>Фестивали</CardTitle>
+                <CardDescription>Последние созданные и их состояние.</CardDescription>
+              </div>
+              <Button asChild variant="ghost" size="sm">
+                <Link to={ROUTES.staffCompetitions}>Все фестивали</Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="py-0">
+              {competitions.isLoading ? (
+                <div className="flex flex-col gap-3 py-3">
+                  <Skeleton className="h-12" />
+                  <Skeleton className="h-12" />
+                </div>
+              ) : activeCompetitions.length === 0 ? (
+                <EmptyState
+                  icon={<Medal aria-hidden="true" />}
+                  title="Фестивалей пока нет"
+                  description="Создайте первый фестиваль, чтобы принимать заявки."
+                />
+              ) : (
+                <ul className="flex flex-col divide-y divide-border">
+                  {activeCompetitions.map((competition) => (
+                    <li key={competition.id}>
+                      <Link
+                        to={`${ROUTES.staffCompetitions}/${competition.id}`}
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-md px-1 py-3 outline-none hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <span className="min-w-0">
+                          <span className="block text-sm font-medium">{competition.title}</span>
+                          <span className="mt-1 block text-xs text-muted-foreground">
+                            {competition.season}
+                          </span>
+                        </span>
+                        <Badge variant={competitionStatusVariant(competition.status)}>
+                          {competitionStatusLabel(competition.status)}
+                        </Badge>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card className="shadow-none">
+            <CardHeader className="flex flex-row items-start justify-between gap-3">
+              <div>
+                <CardTitle>Приглашения в команду</CardTitle>
+                <CardDescription>Отправленные и ещё не принятые.</CardDescription>
+              </div>
+              <Button asChild variant="ghost" size="sm">
+                <Link to={ROUTES.staffInvitations}>Все приглашения</Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="py-0">
+              {invitations.isLoading ? (
+                <div className="flex flex-col gap-3 py-3">
+                  <Skeleton className="h-12" />
+                </div>
+              ) : pendingInvitations.length === 0 ? (
+                <EmptyState
+                  icon={<MailPlus aria-hidden="true" />}
+                  title="Непринятых приглашений нет"
+                  description="Пригласите сотрудника, чтобы дать ему доступ к панели."
+                />
+              ) : (
+                <ul className="flex flex-col divide-y divide-border">
+                  {pendingInvitations.map((invitation) => (
+                    <li
+                      key={invitation.id}
+                      className="flex flex-wrap items-center justify-between gap-2 px-1 py-3"
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium">{invitation.email}</span>
+                        <span className="mt-1 block text-xs text-muted-foreground">
+                          {ROLE_LABELS[invitation.role] ?? invitation.role} · до{" "}
+                          {formatDate(invitation.expiresAt)}
+                        </span>
+                      </span>
+                      <Badge variant="info">Ожидает</Badge>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+
           <Card className="shadow-none">
             <CardHeader>
               <CardTitle>Быстрые действия</CardTitle>
-              <CardDescription>Операционные команды без имитации бизнес-данных.</CardDescription>
+              <CardDescription>Частые операции — без лишней навигации.</CardDescription>
             </CardHeader>
-            <CardContent>
-              <EmptyState
-                icon={<Users aria-hidden="true" />}
-                title="Действия появятся вместе с модулями"
-                description="Пока фундамент готовит место для будущих рабочих сценариев."
-              />
+            <CardContent className="flex flex-wrap gap-2">
+              <Button asChild variant="outline" size="sm">
+                <Link to={ROUTES.staffCompetitionsNew}>
+                  <Plus className="size-4" />
+                  Новый фестиваль
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to={ROUTES.staffInvitations}>
+                  <MailPlus className="size-4" />
+                  Пригласить сотрудника
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to={ROUTES.staffProgram}>
+                  <CalendarDays className="size-4" />
+                  Программа
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to={ROUTES.staffDiplomas}>
+                  <Award className="size-4" />
+                  Дипломы
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to={ROUTES.staffFinance}>
+                  <FileText className="size-4" />
+                  Финансы
+                </Link>
+              </Button>
             </CardContent>
           </Card>
         </div>
