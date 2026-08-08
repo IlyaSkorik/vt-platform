@@ -230,6 +230,10 @@ export const routes: RouteObject[] = [
                     path: ":applicationId",
                     lazy: lazyPage(() => import("@/pages/applications"), "ApplicationDetailPage"),
                   },
+                  {
+                    path: ":applicationId/edit",
+                    lazy: lazyPage(() => import("@/pages/applications"), "ApplicationEditPage"),
+                  },
                 ],
               },
               {

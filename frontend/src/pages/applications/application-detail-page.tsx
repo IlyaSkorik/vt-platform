@@ -51,9 +51,15 @@ export function ApplicationDetailPage(): React.JSX.Element {
   // если организатор запросил исправления или недостающие файлы (hasCorrections).
   const canEdit =
     (registrationOpen || application.hasCorrections) && EDITABLE.has(application.status);
-  const editTo = `${generatePath(ROUTES.cabinetFestivalApply, {
-    festivalId: application.competitionId,
-  })}?${createSearchParams({ applicationId: application.id }).toString()}`;
+  // Черновик — это ещё не заявка: его дозаполняют в мастере подачи. Поданную заявку
+  // правят на отдельном экране редактирования, где сказано, что она уже у организатора
+  // и что о правках ему сообщат.
+  const isDraft = application.status === "DRAFT";
+  const editTo = isDraft
+    ? `${generatePath(ROUTES.cabinetFestivalApply, {
+        festivalId: application.competitionId,
+      })}?${createSearchParams({ applicationId: application.id }).toString()}`
+    : generatePath(ROUTES.cabinetApplicationEdit, { applicationId: application.id });
 
   return (
     <PageContainer>
@@ -64,7 +70,7 @@ export function ApplicationDetailPage(): React.JSX.Element {
               <Button asChild variant="secondary" size="sm">
                 <Link to={editTo}>
                   <Pencil className="size-4" />
-                  Редактировать
+                  {isDraft ? "Продолжить заполнение" : "Редактировать заявку"}
                 </Link>
               </Button>
             ) : null}

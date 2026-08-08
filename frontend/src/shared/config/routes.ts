@@ -18,6 +18,11 @@ export const ROUTES = {
   cabinetTeacherProfile: "/cabinet/teachers/:teacherId",
   cabinetApplications: "/cabinet/applications",
   cabinetApplication: "/cabinet/applications/:applicationId",
+  /**
+   * Amending an application the organizer has already received — a screen of its
+   * own, not a second pass through the submission wizard.
+   */
+  cabinetApplicationEdit: "/cabinet/applications/:applicationId/edit",
   cabinetCompetitions: "/cabinet/competitions",
   cabinetFestival: "/cabinet/competitions/:festivalId",
   cabinetFestivalApply: "/cabinet/competitions/:festivalId/apply",

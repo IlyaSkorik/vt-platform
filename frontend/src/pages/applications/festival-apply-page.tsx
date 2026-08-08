@@ -66,8 +66,9 @@ export function FestivalApplyPage(): React.JSX.Element {
 
   const selectedApplication = useMemo(() => {
     if (!applications || competitionId === null) return null;
-    // An explicit ?applicationId= (e.g. "edit" from an application card) opens that
-    // exact application regardless of status, so an already-submitted one stays editable.
+    // An explicit ?applicationId= opens that exact application whatever its status.
+    // A submitted one is not filled in here — `WizardBody` sends it on to the edit
+    // screen — but it has to be resolved first for the redirect to know where to go.
     if (targetApplicationId) {
       const exact = applications.find(
         (application) =>
@@ -165,8 +166,6 @@ function WizardBody({
     text: string;
   } | null>(null);
 
-  const isEditableStatus = application?.status === "DRAFT" || application?.status === "SUBMITTED";
-
   if (applicationLoading || registrationLoading || !application || !registration) {
     return (
       <PageContainer>
@@ -177,9 +176,17 @@ function WizardBody({
     );
   }
 
-  // Редактирование доступно пока открыта регистрация, а также после её
-  // закрытия — если организатор запросил исправления/недостающие файлы.
-  const canEdit = (registration.registrationOpen || application.hasCorrections) && isEditableStatus;
+  // Мастер — только для черновика. Поданную заявку правят на экране редактирования:
+  // здесь всё написано так, будто её ещё предстоит подать, и «Подать заявку» внизу
+  // делает непонятным, дополняют существующую заявку или заводят вторую. Прежние
+  // ссылки вида ?applicationId=<поданная> продолжают работать — через этот редирект.
+  if (application.status !== "DRAFT") {
+    return <Navigate to={generatePath(ROUTES.cabinetApplicationEdit, { applicationId })} replace />;
+  }
+
+  // Заполнение доступно пока открыта регистрация, а также после её закрытия —
+  // если организатор запросил исправления/недостающие файлы.
+  const canEdit = registration.registrationOpen || application.hasCorrections;
   if (!canEdit) {
     return <Navigate to={generatePath(ROUTES.cabinetApplication, { applicationId })} replace />;
   }
@@ -356,7 +363,7 @@ function ReviewStep({
                 : "—"}
             </span>
           </div>
-          {application.status === "DRAFT" && blockers.length > 0 ? (
+          {blockers.length > 0 ? (
             <Alert variant="warning">
               <ul className="list-disc pl-4">
                 {blockers.map((blocker) => (
@@ -366,28 +373,21 @@ function ReviewStep({
             </Alert>
           ) : null}
           {submit.isError ? <Alert variant="danger">{errorMessage(submit.error)}</Alert> : null}
-          {application.status === "DRAFT" ? (
-            <div className="flex justify-end">
-              <Button
-                disabled={!canSubmit}
-                loading={submit.isPending}
-                onClick={() =>
-                  submit.mutate(undefined, {
-                    onSuccess: () => {
-                      void navigate(ROUTES.cabinetApplications);
-                    },
-                  })
-                }
-              >
-                Подать заявку
-              </Button>
-            </div>
-          ) : (
-            <Alert variant="success">
-              Заявка отправлена. <Link to={ROUTES.cabinetApplications}>Перейти к моим заявкам</Link>
-              .
-            </Alert>
-          )}
+          <div className="flex justify-end">
+            <Button
+              disabled={!canSubmit}
+              loading={submit.isPending}
+              onClick={() =>
+                submit.mutate(undefined, {
+                  onSuccess: () => {
+                    void navigate(ROUTES.cabinetApplications);
+                  },
+                })
+              }
+            >
+              Подать заявку
+            </Button>
+          </div>
         </CardContent>
       </Card>
       <BenefitDocumentsCard application={application} />
