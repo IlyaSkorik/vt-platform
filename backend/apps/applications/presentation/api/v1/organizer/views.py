@@ -255,10 +255,23 @@ class OrganizerProcessingWorkspaceView(_StaffView):
             teachers_text = " ".join(
                 " ".join(filter(None, [str(item.get("last_name") or ""), str(item.get("first_name") or "")])).strip() for item in teachers
             )
-            haystack = " ".join(
-                [str(model.id), title, applicant, competition_name.get(str(model.competition_id), ""), organization_name, teachers_text]
-            ).lower()
             application_id = application_by_submission.get(str(model.id), "")
+            # The order number is what the organizer sees on the card and what every
+            # letter about the order quotes, so it has to be what they can paste back
+            # into the search box.
+            application_number = (application_id or str(model.id))[:8].upper()
+            haystack = " ".join(
+                [
+                    str(model.id),
+                    application_id,
+                    application_number,
+                    title,
+                    applicant,
+                    competition_name.get(str(model.competition_id), ""),
+                    organization_name,
+                    teachers_text,
+                ]
+            ).lower()
             app_meta = application_meta_by_id.get(application_id or "", {})
             receipt_refs = list(app_meta.get("receipt_refs") or [])
             payment = "RECEIPT_ATTACHED" if receipt_refs else "RECEIPT_MISSING"
@@ -271,7 +284,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
             card: dict[str, Any] = {
                 "id": str(model.id),
                 "applicationId": application_id or None,
-                "applicationNumber": (application_id or str(model.id))[:8].upper(),
+                "applicationNumber": application_number,
                 "competitionId": str(model.competition_id),
                 "competition": competition_name.get(str(model.competition_id), "—"),
                 "applicant": applicant,
