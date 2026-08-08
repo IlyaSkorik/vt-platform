@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from .application import ApplicationModel
 from .base import BasePersistenceModel, uuid7
+from .revision import ApplicationRevisionModel
 from .submission import SubmissionModel
 
-__all__ = ["ApplicationModel", "BasePersistenceModel", "SubmissionModel", "uuid7"]
+__all__ = ["ApplicationModel", "ApplicationRevisionModel", "BasePersistenceModel", "SubmissionModel", "uuid7"]

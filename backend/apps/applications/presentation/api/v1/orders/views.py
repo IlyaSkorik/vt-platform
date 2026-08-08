@@ -46,6 +46,7 @@ from apps.applications.application.dto.queries import (
 )
 from apps.applications.application.exceptions import ApplicationError
 from apps.applications.infrastructure.models.submission import SubmissionModel
+from apps.applications.infrastructure.revisions import note_application_revision
 from apps.applications.presentation.api.v1 import problems
 from apps.applications.presentation.api.v1.files import file_url
 from apps.applications.presentation.api.v1.orders import composition
@@ -172,6 +173,15 @@ def _uid(request: Request) -> str:
     return str(request.user.id)
 
 
+def _note(application_id: str, change: str) -> None:
+    """Journal one applicant edit, so the organizer hears about it if the order is placed.
+
+    A no-op for a draft nobody has seen yet — the journal itself decides that. Called
+    only after the handler succeeded, so nothing is ever reported that did not happen.
+    """
+    note_application_revision(application_id=application_id, change=change)
+
+
 class _AuthenticatedView(APIView):
     authentication_classes = (CredentialAwareJWTAuthentication,)
     permission_classes = (IsAuthenticated,)
@@ -259,6 +269,7 @@ class ApplicationSubmissionsView(_AuthenticatedView):
             result = composition.build_add_submission_handler().handle(command)
         except ApplicationError as exc:
             return problems.application_problem(exc, instance=request.path, request=request)
+        _note(application_id, "Добавлено новое выступление")
         return _envelope(request, _application_resource(result.application), status=201)
 
 
@@ -278,6 +289,7 @@ class ApplicationSubmissionDetailView(_AuthenticatedView):
             result = composition.build_remove_submission_handler().handle(command)
         except ApplicationError as exc:
             return problems.application_problem(exc, instance=request.path, request=request)
+        _note(application_id, "Выступление удалено из заявки")
         return _envelope(request, _application_resource(result.application), status=200)
 
 
@@ -303,6 +315,8 @@ class ApplicationServicesView(_AuthenticatedView):
             result = composition.build_select_service_handler().handle(command)
         except ApplicationError as exc:
             return problems.application_problem(exc, instance=request.path, request=request)
+        selected = next((line for line in result.application.services if line.service_id == command.service_id), None)
+        _note(application_id, f"Добавлена дополнительная услуга: {selected.name}" if selected else "Добавлена дополнительная услуга")
         return _envelope(request, _application_resource(result.application), status=200)
 
 
@@ -322,6 +336,7 @@ class ApplicationServiceDetailView(_AuthenticatedView):
             result = composition.build_remove_service_handler().handle(command)
         except ApplicationError as exc:
             return problems.application_problem(exc, instance=request.path, request=request)
+        _note(application_id, "Убрана дополнительная услуга")
         return _envelope(request, _application_resource(result.application), status=200)
 
 
@@ -345,6 +360,7 @@ class ApplicationConsentsView(_AuthenticatedView):
             result = composition.build_record_consents_handler().handle(command)
         except ApplicationError as exc:
             return problems.application_problem(exc, instance=request.path, request=request)
+        _note(application_id, "Изменён состав согласий")
         return _envelope(request, _application_resource(result.application), status=200)
 
 
@@ -371,6 +387,8 @@ class ApplicationEducationalOrganizationView(_AuthenticatedView):
             result = composition.build_select_educational_organization_handler().handle(command)
         except ApplicationError as exc:
             return problems.application_problem(exc, instance=request.path, request=request)
+        name = result.application.organization_name
+        _note(application_id, f"Изменена образовательная организация: {name}" if name else "Изменена образовательная организация")
         return _envelope(request, _application_resource(result.application), status=200)
 
 
@@ -481,6 +499,7 @@ class ApplicationReceiptsView(_AuthenticatedView):
             result = composition.build_upload_receipt_handler().handle(command)
         except ApplicationError as exc:
             return problems.application_problem(exc, instance=request.path, request=request)
+        _note(application_id, "Прикреплена квитанция об оплате")
         return _envelope(request, _application_resource(result.application), status=200)
 
 
@@ -508,4 +527,5 @@ class ApplicationReceiptDetailView(_AuthenticatedView):
             result = composition.build_remove_receipt_handler().handle(command)
         except ApplicationError as exc:
             return problems.application_problem(exc, instance=request.path, request=request)
+        _note(application_id, "Удалена квитанция об оплате")
         return _envelope(request, _application_resource(result.application), status=200)

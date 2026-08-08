@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from django.contrib import admin
 
-from apps.applications.infrastructure.models import ApplicationModel, SubmissionModel
+from apps.applications.infrastructure.models import ApplicationModel, ApplicationRevisionModel, SubmissionModel
 
 
 class _ReadOnlyTimestampsAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
@@ -21,4 +21,4 @@ class _ReadOnlyTimestampsAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     readonly_fields = ("created_at", "updated_at", "deleted_at")
 
 
-admin.site.register([SubmissionModel, ApplicationModel], _ReadOnlyTimestampsAdmin)
+admin.site.register([SubmissionModel, ApplicationModel, ApplicationRevisionModel], _ReadOnlyTimestampsAdmin)

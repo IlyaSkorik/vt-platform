@@ -20,6 +20,7 @@ from rest_framework.views import APIView
 from apps.applications.application.dto import SubmissionOperationResultDto
 from apps.applications.application.dto.commands import RemoveAttachmentCommand, UploadAttachmentCommand
 from apps.applications.application.exceptions import ApplicationError
+from apps.applications.infrastructure.revisions import note_submission_revision
 from apps.applications.presentation.api.v1 import problems
 from apps.applications.presentation.api.v1.files import file_url
 from apps.applications.presentation.api.v1.submissions import composition
@@ -31,6 +32,16 @@ from apps.applications.presentation.api.v1.submissions.serializers import (
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 
 _TAG = "Submission Attachments"
+
+#: Attachment kinds in the words the organizer's notice uses. An unknown kind falls
+#: back to the neutral "вложение" rather than leaking the wire enum into a letter.
+_FILE_KINDS = {
+    "MUSIC": "фонограмма",
+    "VIDEO": "видео",
+    "IMAGE": "фото",
+    "DOCUMENT": "документ",
+    "BENEFIT": "документ на льготу",
+}
 
 
 def _attachments_resource(result: SubmissionOperationResultDto) -> dict[str, Any]:
@@ -93,6 +104,10 @@ class SubmissionAttachmentsView(_AuthenticatedView):
             result = composition.build_upload_attachment_handler().handle(command)
         except ApplicationError as exc:
             return problems.application_problem(exc, instance=request.path, request=request)
+        # Journalled for the organizer, but only once the order has been placed — a
+        # file swapped into a draft nobody has read yet is not news. The kind matters
+        # more than the file name: a replaced phonogram changes what will be played.
+        note_submission_revision(submission_id=submission_id, change=f"Загружен файл ({_FILE_KINDS.get(command.attachment_type, 'вложение')})")
         return _envelope(request, _attachments_resource(result), status=201)
 
 
@@ -112,4 +127,5 @@ class SubmissionAttachmentDetailView(_AuthenticatedView):
             result = composition.build_remove_attachment_handler().handle(command)
         except ApplicationError as exc:
             return problems.application_problem(exc, instance=request.path, request=request)
+        note_submission_revision(submission_id=submission_id, change="Удалён прикреплённый файл")
         return _envelope(request, _attachments_resource(result), status=200)

@@ -28,6 +28,7 @@ from apps.applications.application.dto.commands import (
 )
 from apps.applications.application.dto.queries import GetSubmissionQuery
 from apps.applications.application.exceptions import ApplicationError
+from apps.applications.infrastructure.revisions import note_submission_revision
 from apps.applications.presentation.api.v1 import problems
 from apps.applications.presentation.api.v1.files import file_url
 from apps.applications.presentation.api.v1.submissions import composition
@@ -121,6 +122,18 @@ def _result(request: Request, result: SubmissionOperationResultDto, *, status: i
     return _envelope(request, _submission_resource(result.submission), status=status)
 
 
+def _note(submission_id: str, change: str, result: SubmissionOperationResultDto) -> None:
+    """Journal one applicant edit against whichever placed order carries this performance.
+
+    A no-op while the order is still a draft — the journal decides that. The
+    performance's own title is appended when it has one, because an organizer reading
+    "добавлен педагог" wants to know to *which* number of a multi-entry application.
+    """
+    performance = result.submission.performance
+    title = (performance.title if performance is not None else "") or ""
+    note_submission_revision(submission_id=submission_id, change=f"{change} (выступление «{title}»)" if title.strip() else change)
+
+
 class _AuthenticatedView(APIView):
     authentication_classes = (CredentialAwareJWTAuthentication,)
     permission_classes = (IsAuthenticated,)
@@ -175,6 +188,7 @@ class SubmissionPerformanceView(_AuthenticatedView):
             result = composition.build_set_performance_handler().handle(command)
         except ApplicationError as exc:
             return problems.application_problem(exc, instance=request.path, request=request)
+        _note(submission_id, "Изменены данные выступления", result)
         return _result(request, result, status=200)
 
 
@@ -215,6 +229,8 @@ class SubmissionParticipantsView(_AuthenticatedView):
             result = composition.build_add_participant_handler().handle(command)
         except ApplicationError as exc:
             return problems.application_problem(exc, instance=request.path, request=request)
+        who = " ".join(filter(None, [command.last_name, command.first_name])).strip() or command.display_name or ""
+        _note(submission_id, f"Добавлен участник: {who}" if who else "Добавлен участник", result)
         return _result(request, result, status=201)
 
 
@@ -234,6 +250,7 @@ class SubmissionParticipantDetailView(_AuthenticatedView):
             result = composition.build_remove_participant_handler().handle(command)
         except ApplicationError as exc:
             return problems.application_problem(exc, instance=request.path, request=request)
+        _note(submission_id, "Удалён участник", result)
         return _result(request, result, status=200)
 
 
@@ -267,6 +284,7 @@ class SubmissionTeachersView(_AuthenticatedView):
             result = composition.build_add_teacher_handler().handle(command)
         except ApplicationError as exc:
             return problems.application_problem(exc, instance=request.path, request=request)
+        _note(submission_id, f"Добавлен педагог: {command.last_name} {command.first_name}".strip(), result)
         return _result(request, result, status=201)
 
 
@@ -286,6 +304,7 @@ class SubmissionTeacherDetailView(_AuthenticatedView):
             result = composition.build_remove_teacher_handler().handle(command)
         except ApplicationError as exc:
             return problems.application_problem(exc, instance=request.path, request=request)
+        _note(submission_id, "Удалён педагог", result)
         return _result(request, result, status=200)
 
 
