@@ -67,13 +67,13 @@ def _draft(client: APIClient, competition_id: str) -> str:
     return str(client.post("/api/v1/applications", {"competitionId": competition_id}, format="json").data["data"]["id"])
 
 
-def _place(application_id: str) -> None:
-    """Move the order to SUBMITTED without replaying the whole submit flow.
+def _place(application_id: str, *, status: str = "SUBMITTED") -> None:
+    """Move the order out of DRAFT without replaying the whole submit flow.
 
     The submit use case has its own tests; what matters here is only that the order is
     in a state the organizer has seen, which is exactly what the journal keys off.
     """
-    ApplicationModel.objects.filter(pk=application_id).update(status="SUBMITTED", submitted_at=timezone.now())
+    ApplicationModel.objects.filter(pk=application_id).update(status=status, submitted_at=timezone.now())
 
 
 def _age_journal(*, minutes: int) -> None:
@@ -87,6 +87,30 @@ def test_editing_a_draft_is_not_journalled(auth_client: APIClient) -> None:
     auth_client.post(f"/api/v1/applications/{application_id}/submissions")
 
     assert ApplicationRevisionModel.objects.count() == 0
+
+
+@pytest.mark.parametrize("status", ["SUBMITTED", "WAITING_PAYMENT", "PAID"])
+def test_every_order_the_organizer_has_seen_is_journalled(auth_client: APIClient, status: str) -> None:
+    """Including PAID — the case a status allowlist used to miss.
+
+    An order paid early sits in PAID while registration is still open, and its
+    backing track may still be swapped right up to the music deadline. That is the
+    change the sound desk most needs to hear about, and it used to go unreported.
+    """
+    application_id = _draft(auth_client, _seed_open_competition())
+    _place(application_id)
+    # The performance has to exist before the order settles: an order's composition
+    # freezes past SUBMITTED, so this is also the only order these statuses can have.
+    submission_id = auth_client.post(f"/api/v1/applications/{application_id}/submissions").data["data"]["submissions"][0]["submissionId"]
+    _place(application_id, status=status)
+
+    auth_client.post(
+        f"/api/v1/submissions/{submission_id}/teachers",
+        {"firstName": "Мария", "lastName": "Иванова", "role": "TEACHER"},
+        format="json",
+    )
+
+    assert ApplicationRevisionModel.objects.filter(change__startswith="Добавлен педагог").count() == 1
 
 
 def test_editing_a_placed_order_is_journalled(auth_client: APIClient) -> None:

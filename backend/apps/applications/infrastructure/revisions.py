@@ -34,10 +34,19 @@ __all__ = ["DjangoRevisionJournal", "note_application_revision", "note_submissio
 
 _logger: Final = logging.getLogger(__name__)
 
-#: Order statuses in which an edit is news to the organizer. A DRAFT has never been
-#: seen by anybody, and a settled order cannot be edited at all - in both cases there
-#: is nothing to report.
-_REPORTABLE_STATUSES: Final = ("SUBMITTED", "WAITING_PAYMENT")
+#: The one status in which an edit is *not* news: a draft nobody has seen yet.
+#:
+#: The journal asks only "has the organizer seen this order", never "may this be
+#: edited". Whether an edit is allowed at all is already decided by the registration
+#: and upload deadlines every handler checks, and by the aggregates' own freezes -
+#: restating those rules here would mean a change the platform accepted going
+#: unreported because the journal disagreed about whether it could have happened.
+#:
+#: That is not hypothetical: an order paid early sits in PAID while registration is
+#: still open, and its backing track may still be swapped, because a track is wanted
+#: right up to the day. Listing "the editable statuses" here left exactly that change
+#: silent - the one the sound desk most needs to hear about.
+_UNREPORTED_STATUS: Final = "DRAFT"
 
 #: The recorded description is display text in a letter; a runaway value (a pasted
 #: performance title, say) is truncated rather than rejected, because losing the tail
@@ -58,7 +67,8 @@ def note_application_revision(*, application_id: str, change: str) -> None:
     """Record one edit to an order, if that order has already been placed."""
     try:
         row = (
-            ApplicationModel.objects.filter(pk=application_id, deleted_at__isnull=True, status__in=_REPORTABLE_STATUSES)
+            ApplicationModel.objects.filter(pk=application_id, deleted_at__isnull=True)
+            .exclude(status=_UNREPORTED_STATUS)
             .values_list("id", "competition_id", "applicant_id")
             .first()
         )
@@ -92,12 +102,15 @@ def _application_for_submission(submission_id: str) -> _Target | None:
     if submission is None:
         return None
     applicant_id, competition_id = submission
-    candidates = ApplicationModel.objects.filter(
-        applicant_id=applicant_id,
-        competition_id=competition_id,
-        status__in=_REPORTABLE_STATUSES,
-        deleted_at__isnull=True,
-    ).values_list("id", "submission_refs")
+    candidates = (
+        ApplicationModel.objects.filter(
+            applicant_id=applicant_id,
+            competition_id=competition_id,
+            deleted_at__isnull=True,
+        )
+        .exclude(status=_UNREPORTED_STATUS)
+        .values_list("id", "submission_refs")
+    )
     wanted = str(submission_id)
     for candidate_id, refs in candidates:
         if any(isinstance(ref, dict) and str(ref.get("submission_id") or "") == wanted for ref in refs or []):
