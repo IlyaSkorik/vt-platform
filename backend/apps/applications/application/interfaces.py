@@ -69,6 +69,7 @@ __all__ = [
     "ApplicationRepository",
     "Clock",
     "CompetitionCatalog",
+    "CompetitionOrganizerDirectory",
     "CompetitionPriceQuote",
     "CompetitionServiceCatalog",
     "CompetitionUploadPolicy",
@@ -78,8 +79,12 @@ __all__ = [
     "FileStorage",
     "IdentityReadModel",
     "OrganizationReadModel",
+    "OrganizerContacts",
+    "OrganizerNotifier",
     "ParticipantGuardianRegistry",
+    "PendingRevisions",
     "ReceiptRequirement",
+    "RevisionJournal",
     "SubmissionRepository",
     "UploadConstraints",
     "UuidGenerator",
@@ -293,6 +298,94 @@ class ApplicantNotifier(Protocol):
 
     def notify_application_auto_cancelled(self, *, email: str, applicant_name: str) -> None:
         """The order was auto-cancelled because no receipt was attached in time."""
+        ...
+
+
+# ---------------------------------------------------------------------------
+# Post-submission revisions: journal, organizer directory, organizer notifier
+# ---------------------------------------------------------------------------
+#
+# An order stays editable after it is placed (registration is still open, or the
+# organizer asked for corrections). The organizer has already read it, so a silent
+# change is the one thing that must not happen - but a letter per keystroke is not a
+# notification, it is noise. The three ports below carry the compromise: edits are
+# journalled as they happen, and a periodic sweep folds each order's pending edits
+# into one letter.
+
+
+@dataclass(frozen=True, slots=True)
+class PendingRevisions:
+    """Every not-yet-reported edit to one submitted order, folded into one digest."""
+
+    application_id: str
+    competition_id: str
+    applicant_id: str
+    #: The recorded change descriptions, oldest first, ready to list in a letter.
+    changes: tuple[str, ...]
+    first_at: datetime
+    last_at: datetime
+
+
+@runtime_checkable
+class RevisionJournal(Protocol):
+    """Port: the append-only record of edits made to orders after they were placed."""
+
+    def pending(self, *, quiet_since: datetime) -> Sequence[PendingRevisions]:
+        """Return the orders whose edits are unreported and have settled down.
+
+        ``quiet_since`` is the cut-off the *newest* pending edit must predate. An
+        applicant working through a form produces a change every few seconds; the
+        quiet period is what turns that stream into a single digest instead of a
+        digest per pause.
+        """
+        ...
+
+    def mark_notified(self, *, application_id: str, up_to: datetime, now: datetime) -> None:
+        """Stamp every pending edit of ``application_id`` recorded up to ``up_to`` as reported.
+
+        Bounded by ``up_to`` rather than "all pending", so an edit made while the
+        digest was being sent is carried into the next one instead of being lost.
+        """
+        ...
+
+
+@dataclass(frozen=True, slots=True)
+class OrganizerContacts:
+    """Where to write to reach the people running a competition."""
+
+    competition_title: str
+    emails: tuple[str, ...]
+
+
+@runtime_checkable
+class CompetitionOrganizerDirectory(Protocol):
+    """Port: the ACL resolving a competition to its organizer's mailboxes."""
+
+    def get_organizer(self, *, competition_id: CompetitionId) -> OrganizerContacts | None:
+        """Return the competition's title and organizer mailboxes, or ``None`` if unknown.
+
+        ``None`` and "known competition with no mailbox on file" are different
+        answers, and the caller treats both as "nobody to tell" - but only the
+        second is a configuration gap worth logging.
+        """
+        ...
+
+
+@runtime_checkable
+class OrganizerNotifier(Protocol):
+    """Port: transactional emails sent to an organizer about an applicant's actions."""
+
+    def notify_application_revised(
+        self,
+        *,
+        emails: Sequence[str],
+        competition_title: str,
+        applicant_name: str,
+        application_id: str,
+        changes: Sequence[str],
+        revised_at: datetime,
+    ) -> None:
+        """An already-submitted order was edited; ``changes`` is what the applicant did."""
         ...
 
 

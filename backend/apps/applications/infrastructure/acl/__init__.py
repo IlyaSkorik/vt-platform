@@ -11,11 +11,13 @@ from .competition import DjangoCompetitionCatalog, DjangoCompetitionServiceCatal
 from .educational_organizations import DjangoEducationalOrganizationDirectory
 from .identity import DjangoIdentityReadModel
 from .organization import DjangoOrganizationReadModel
+from .organizer import DjangoCompetitionOrganizerDirectory
 from .participants import DjangoParticipantGuardianRegistry
 from .upload_policy import DjangoCompetitionUploadPolicy
 
 __all__ = [
     "DjangoCompetitionCatalog",
+    "DjangoCompetitionOrganizerDirectory",
     "DjangoCompetitionServiceCatalog",
     "DjangoCompetitionUploadPolicy",
     "DjangoEducationalOrganizationDirectory",

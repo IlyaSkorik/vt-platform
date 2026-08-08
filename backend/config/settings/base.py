@@ -339,6 +339,11 @@ DIPLOMA_VERIFICATION_BASE_URL = (settings.diploma_verification_base_url or setti
 # auto-cancelled. Configurable via APPLICATION_PAYMENT_WINDOW_HOURS (default 48).
 APPLICATION_PAYMENT_WINDOW_HOURS = settings.application_payment_window_hours
 
+# How long an order edited after submission must go quiet before the organizer is
+# told what changed — the pause that folds one editing session into one letter.
+# Configurable via APPLICATION_REVISION_QUIET_MINUTES (default 5).
+APPLICATION_REVISION_QUIET_MINUTES = settings.application_revision_quiet_minutes
+
 # --- Cache & Celery (Redis; ARCH-001 §6.1, §7.5) --------------------------
 CACHES = {
     "default": {
@@ -418,6 +423,13 @@ CELERY_BEAT_SCHEDULE = {
     "sweep-unpaid-applications": {
         "task": "applications.sweep_unpaid_applications",
         "schedule": settings.application_payment_sweep_minutes * 60.0,
+    },
+    # Durable in the same way: the journal in the database is the source of truth, so
+    # a restart at any point loses no edit and re-sends none. Interval via
+    # APPLICATION_REVISION_DIGEST_MINUTES (default 15).
+    "notify-application-revisions": {
+        "task": "applications.notify_application_revisions",
+        "schedule": settings.application_revision_digest_minutes * 60.0,
     },
 }
 

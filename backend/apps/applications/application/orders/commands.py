@@ -57,11 +57,15 @@ from apps.applications.application.interfaces import (
     ApplicationRepository,
     Clock,
     CompetitionCatalog,
+    CompetitionOrganizerDirectory,
     CompetitionServiceCatalog,
     EducationalOrganizationDirectory,
     EventPublisher,
     FileStorage,
     IdentityReadModel,
+    OrganizerNotifier,
+    PendingRevisions,
+    RevisionJournal,
     SubmissionRepository,
     UuidGenerator,
 )
@@ -99,6 +103,7 @@ __all__ = [
     "CompleteApplicationHandler",
     "CreateApplicationHandler",
     "MarkApplicationPaidHandler",
+    "NotifyOrganizerOfRevisionsHandler",
     "RecordConsentsHandler",
     "RemoveAdditionalServiceHandler",
     "RemoveApplicationReceiptHandler",
@@ -132,6 +137,11 @@ _PAYMENT_RECEIPT_WINDOW = timedelta(hours=48)
 
 #: Order statuses from which an unpaid order may still be auto-cancelled.
 _AUTO_CANCELLABLE_STATUSES = frozenset({ApplicationStatus.SUBMITTED, ApplicationStatus.WAITING_PAYMENT})
+
+#: How long an order must go unedited before its journalled edits are reported to the
+#: organizer. Filling in a teacher, then a participant, then a phonogram is one act of
+#: editing; without a pause to wait for, it would be three letters.
+_REVISION_QUIET_PERIOD = timedelta(minutes=5)
 
 #: Fixed constraints for the order-level payment receipt (a PDF or an image scan).
 #: Unlike per-performance uploads there is no competition format to key off, so the
@@ -736,6 +746,69 @@ class AutoCancelUnpaidApplicationHandler:
         applicant = self._identity.get_applicant(user_id=application.applicant_id)
         if applicant is not None:
             self._notifier.notify_application_auto_cancelled(email=applicant.email, applicant_name=applicant.display_name)
+
+
+class NotifyOrganizerOfRevisionsHandler:
+    """Use case: tell each organizer, once, that a placed order has been edited.
+
+    Invoked by the periodic sweep rather than by a request: the applicant's edits are
+    journalled as they are made, and this folds every edit to one order into one
+    letter. The quiet period is what makes that fold meaningful - an order still being
+    edited is skipped entirely and picked up by a later run, so an editing session
+    produces one notice rather than one per pause.
+
+    Idempotent by construction: the journal rows carried into a letter are stamped as
+    reported, bounded by the digest's own last instant, so an edit made *while* the
+    letter was going out is carried into the next one instead of being lost or sent
+    twice.
+    """
+
+    def __init__(
+        self,
+        *,
+        journal: RevisionJournal,
+        organizers: CompetitionOrganizerDirectory,
+        identity: IdentityReadModel,
+        notifier: OrganizerNotifier,
+        clock: Clock,
+        quiet_period: timedelta = _REVISION_QUIET_PERIOD,
+    ) -> None:
+        self._journal = journal
+        self._organizers = organizers
+        self._identity = identity
+        self._notifier = notifier
+        self._clock = clock
+        self._quiet_period = quiet_period
+
+    def handle(self) -> int:
+        """Send the due digests; returns how many orders were reported on."""
+        now = self._clock.utcnow()
+        sent = 0
+        for digest in self._journal.pending(quiet_since=now - self._quiet_period):
+            if self._notify(digest):
+                sent += 1
+            # Stamped either way. A digest nobody can be told about (a deleted
+            # competition, an organization with no mailbox on file) would otherwise be
+            # retried every sweep forever, and the retry cannot succeed.
+            self._journal.mark_notified(application_id=digest.application_id, up_to=digest.last_at, now=now)
+        return sent
+
+    def _notify(self, digest: PendingRevisions) -> bool:
+        with translate_domain_errors():
+            competition_id = CompetitionId.from_string(digest.competition_id)
+        organizer = self._organizers.get_organizer(competition_id=competition_id)
+        if organizer is None or not organizer.emails:
+            return False
+        applicant = self._identity.get_applicant(user_id=parse_user_id(digest.applicant_id))
+        self._notifier.notify_application_revised(
+            emails=organizer.emails,
+            competition_title=organizer.competition_title,
+            applicant_name=applicant.display_name if applicant is not None else "—",
+            application_id=digest.application_id,
+            changes=digest.changes,
+            revised_at=digest.last_at,
+        )
+        return True
 
 
 class SyncApplicationHandler:

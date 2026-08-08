@@ -24,6 +24,7 @@ from apps.applications.application.orders import (
     ListApplicationsHandler,
     ListDraftApplicationsHandler,
     MarkApplicationPaidHandler,
+    NotifyOrganizerOfRevisionsHandler,
     RecordConsentsHandler,
     RemoveAdditionalServiceHandler,
     RemoveApplicationReceiptHandler,
@@ -36,15 +37,18 @@ from apps.applications.application.orders import (
 )
 from apps.applications.infrastructure.acl import (
     DjangoCompetitionCatalog,
+    DjangoCompetitionOrganizerDirectory,
     DjangoCompetitionServiceCatalog,
     DjangoEducationalOrganizationDirectory,
     DjangoIdentityReadModel,
 )
 from apps.applications.infrastructure.messaging import (
     DjangoApplicantNotifier,
+    DjangoOrganizerNotifier,
     NullEventPublisher,
 )
 from apps.applications.infrastructure.repositories import DjangoApplicationRepository, DjangoSubmissionRepository
+from apps.applications.infrastructure.revisions import DjangoRevisionJournal
 from apps.applications.infrastructure.storage import DjangoFileStorage
 from apps.applications.infrastructure.system import SystemClock, Uuid7Generator
 
@@ -58,6 +62,7 @@ __all__ = [
     "build_list_applications_handler",
     "build_list_drafts_handler",
     "build_mark_paid_handler",
+    "build_notify_revisions_handler",
     "build_record_consents_handler",
     "build_remove_receipt_handler",
     "build_remove_service_handler",
@@ -158,6 +163,17 @@ def build_auto_cancel_unpaid_handler() -> AutoCancelUnpaidApplicationHandler:
         events=NullEventPublisher(),
         identity=DjangoIdentityReadModel(),
         notifier=DjangoApplicantNotifier(),
+    )
+
+
+def build_notify_revisions_handler() -> NotifyOrganizerOfRevisionsHandler:
+    return NotifyOrganizerOfRevisionsHandler(
+        journal=DjangoRevisionJournal(),
+        organizers=DjangoCompetitionOrganizerDirectory(),
+        identity=DjangoIdentityReadModel(),
+        notifier=DjangoOrganizerNotifier(),
+        clock=SystemClock(),
+        quiet_period=timedelta(minutes=settings.APPLICATION_REVISION_QUIET_MINUTES),
     )
 
 

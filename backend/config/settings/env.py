@@ -182,6 +182,23 @@ class Settings(BaseSettings):
         alias="APPLICATION_PAYMENT_SWEEP_MINUTES",
     )
 
+    # How often (minutes) the Celery Beat sweep looks for orders edited after they were
+    # submitted, to tell the organizer what changed.
+    application_revision_digest_minutes: float = Field(
+        default=15.0,
+        gt=0,
+        alias="APPLICATION_REVISION_DIGEST_MINUTES",
+    )
+
+    # How long an order must go unedited before its edits are reported. This is what
+    # turns one editing session into one letter instead of one letter per pause; raise
+    # it if organizers still see an edit split across two notices.
+    application_revision_quiet_minutes: float = Field(
+        default=5.0,
+        gt=0,
+        alias="APPLICATION_REVISION_QUIET_MINUTES",
+    )
+
     # --- Object storage for uploads and generated documents ---
     #
     # Set ``S3_BUCKET`` and the platform stores every upload, diploma and archive in that

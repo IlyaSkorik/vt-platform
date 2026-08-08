@@ -43,3 +43,22 @@ def sweep_unpaid_applications() -> None:
     handler = build_auto_cancel_unpaid_handler()
     for application_id in overdue_ids:
         handler.handle(str(application_id))
+
+
+@shared_task(name="applications.notify_application_revisions")  # type: ignore[untyped-decorator]  # celery ships no stubs
+def notify_application_revisions() -> int:
+    """Tell organizers about orders that were edited after being submitted.
+
+    An order stays editable while registration is open, so an applicant can change a
+    performance the organizer has already read. Each such edit is journalled as it
+    happens; this run folds every pending edit of an order into one letter, then marks
+    those journal rows reported.
+
+    Durable and re-runnable for the same reason as the sweep above: the journal in the
+    database is the source of truth, so nothing is lost to a restart, and a row already
+    stamped as reported is never sent again. Orders still being edited are skipped by
+    the use case's quiet period and picked up by a later run.
+    """
+    from apps.applications.presentation.api.v1.orders.composition import build_notify_revisions_handler
+
+    return int(build_notify_revisions_handler().handle())
