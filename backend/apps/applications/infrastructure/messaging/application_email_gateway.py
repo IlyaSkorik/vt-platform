@@ -1,10 +1,21 @@
-"""``DjangoApplicantNotifier`` — transactional emails about an order's lifecycle.
+"""``DjangoApplicantNotifier`` — telling an applicant what happened to their order.
 
 Concrete adapter for the :class:`~apps.applications.application.interfaces.
-ApplicantNotifier` port over Django core mail (SMTP against Mailhog in dev, a real
-provider in prod). Mirrors the Identity email gateway: a plain-text body plus an
-HTML alternative rendered through the shared :mod:`apps.emailing` template. The
-application layer depends only on the port; the transport is a settings concern.
+ApplicantNotifier` port. Each notice goes out on **both** channels the platform has:
+
+* a letter, over Django core mail (SMTP against Mailhog in dev, a real provider in
+  prod) — a plain-text body plus an HTML alternative rendered through the shared
+  :mod:`apps.emailing` template, mirroring the Identity gateway;
+* an entry in the applicant's cabinet feed, over
+  :mod:`apps.notifications.infrastructure.feed`.
+
+Both, not either. Mail is how somebody finds out without looking, and it is also
+what gets filtered, mislaid, or sent to an address they stopped reading; the cabinet
+is where they go when they suspect they missed something. Writing both here rather
+than at the call site keeps the wording of the two in one place — a letter and a
+feed entry that disagree about what happened are worse than one channel.
+
+The application layer depends only on the port; the transport is a settings concern.
 """
 
 from __future__ import annotations
@@ -18,7 +29,9 @@ from django.conf import settings
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 
 from apps.emailing import render_transactional_email_html
+from apps.notifications.infrastructure import feed
 from apps.notifications.infrastructure.email import send_bulk, send_priority
+from apps.notifications.infrastructure.models import NotificationKind
 
 __all__ = ["DjangoApplicantNotifier"]
 
@@ -45,7 +58,19 @@ class DjangoApplicantNotifier:
         self._from_email = from_email if from_email is not None else settings.DEFAULT_FROM_EMAIL
         self._applications_url = f"{settings.FRONTEND_BASE_URL.rstrip('/')}/cabinet/applications"
 
-    def notify_application_submitted(self, *, email: str, applicant_name: str) -> None:
+    @staticmethod
+    def _cabinet_link(application_id: str) -> str:
+        """Where the feed entry takes the reader: their own card for this order."""
+        return f"/cabinet/applications/{application_id}"
+
+    def notify_application_submitted(self, *, user_id: str, email: str, applicant_name: str, application_id: str) -> None:
+        feed.publish(
+            recipient_id=user_id,
+            kind=NotificationKind.APPLICATION_SUBMITTED,
+            title="Заявка подана",
+            body="Мы получили вашу заявку вместе с квитанцией об оплате.",
+            link=self._cabinet_link(application_id),
+        )
         body = (
             f"Здравствуйте, {applicant_name}!\n\n"
             "Ваша заявка успешно подана. Мы получили её вместе с квитанцией об оплате.\n\n"
@@ -68,8 +93,15 @@ class DjangoApplicantNotifier:
             deliver=send_bulk,
         )
 
-    def notify_application_awaiting_payment(self, *, email: str, applicant_name: str, deadline: datetime) -> None:
+    def notify_application_awaiting_payment(self, *, user_id: str, email: str, applicant_name: str, application_id: str, deadline: datetime) -> None:
         deadline_text = _format_deadline(deadline)
+        feed.publish(
+            recipient_id=user_id,
+            kind=NotificationKind.PAYMENT_EXPECTED,
+            title="Заявка подана — ожидается оплата",
+            body=f"Прикрепите квитанцию об оплате до {deadline_text}, иначе заявка автоматически отменится.",
+            link=self._cabinet_link(application_id),
+        )
         body = (
             f"Здравствуйте, {applicant_name}!\n\n"
             "Ваша заявка подана. Пожалуйста, оплатите её и прикрепите квитанцию "
@@ -94,7 +126,14 @@ class DjangoApplicantNotifier:
             deliver=send_priority,
         )
 
-    def notify_application_auto_cancelled(self, *, email: str, applicant_name: str) -> None:
+    def notify_application_auto_cancelled(self, *, user_id: str, email: str, applicant_name: str, application_id: str) -> None:
+        feed.publish(
+            recipient_id=user_id,
+            kind=NotificationKind.APPLICATION_CANCELLED,
+            title="Заявка автоматически отменена",
+            body="Квитанция об оплате не была прикреплена в срок. Пока открыта регистрация, можно подать новую заявку.",
+            link=self._cabinet_link(application_id),
+        )
         body = (
             f"Здравствуйте, {applicant_name}!\n\n"
             "Ваша заявка автоматически отменена: квитанция об оплате не была прикреплена в срок.\n\n"

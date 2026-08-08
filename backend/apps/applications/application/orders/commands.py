@@ -491,7 +491,7 @@ class SubmitApplicationHandler:
         return ApplicationOperationResultDto.of(application, tuple(order_events))
 
     def _notify_submitted(self, application: Application, *, now: datetime) -> None:
-        """Email the applicant that the order is submitted.
+        """Tell the applicant the order is submitted.
 
         With a receipt already attached it is a plain confirmation; otherwise it asks
         for payment by the deadline. The actual auto-cancellation is handled by the
@@ -503,10 +503,21 @@ class SubmitApplicationHandler:
         if applicant is None:
             return
         if application.has_payment_receipt:
-            self._notifier.notify_application_submitted(email=applicant.email, applicant_name=applicant.display_name)
+            self._notifier.notify_application_submitted(
+                user_id=applicant.user_id,
+                email=applicant.email,
+                applicant_name=applicant.display_name,
+                application_id=application.id.json(),
+            )
             return
         deadline = now + self._payment_window
-        self._notifier.notify_application_awaiting_payment(email=applicant.email, applicant_name=applicant.display_name, deadline=deadline)
+        self._notifier.notify_application_awaiting_payment(
+            user_id=applicant.user_id,
+            email=applicant.email,
+            applicant_name=applicant.display_name,
+            application_id=application.id.json(),
+            deadline=deadline,
+        )
 
     def _submit_one(self, submission: Submission, *, now: datetime) -> None:
         performance = submission.performance
@@ -745,7 +756,12 @@ class AutoCancelUnpaidApplicationHandler:
             return
         applicant = self._identity.get_applicant(user_id=application.applicant_id)
         if applicant is not None:
-            self._notifier.notify_application_auto_cancelled(email=applicant.email, applicant_name=applicant.display_name)
+            self._notifier.notify_application_auto_cancelled(
+                user_id=applicant.user_id,
+                email=applicant.email,
+                applicant_name=applicant.display_name,
+                application_id=application.id.json(),
+            )
 
 
 class NotifyOrganizerOfRevisionsHandler:

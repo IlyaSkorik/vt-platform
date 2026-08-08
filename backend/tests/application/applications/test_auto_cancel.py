@@ -34,13 +34,13 @@ class RecordingNotifier:
         self.awaiting: list[str] = []
         self.cancelled: list[str] = []
 
-    def notify_application_submitted(self, *, email: str, applicant_name: str) -> None:
+    def notify_application_submitted(self, *, user_id: str, email: str, applicant_name: str, application_id: str) -> None:
         self.submitted.append(email)
 
-    def notify_application_awaiting_payment(self, *, email: str, applicant_name: str, deadline: datetime) -> None:
+    def notify_application_awaiting_payment(self, *, user_id: str, email: str, applicant_name: str, application_id: str, deadline: datetime) -> None:
         self.awaiting.append(email)
 
-    def notify_application_auto_cancelled(self, *, email: str, applicant_name: str) -> None:
+    def notify_application_auto_cancelled(self, *, user_id: str, email: str, applicant_name: str, application_id: str) -> None:
         self.cancelled.append(email)
 
 

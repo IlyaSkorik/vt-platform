@@ -224,6 +224,7 @@ class ResultsNotifier(TypingProtocol):
     def notify_results_published(
         self,
         *,
+        user_id: str,
         email: str,
         applicant_name: str | None,
         competition_title: str | None,

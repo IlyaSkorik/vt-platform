@@ -43,6 +43,8 @@ from apps.competitions.infrastructure.models.taxonomy import (
 from apps.emailing import render_transactional_email_html
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.identity.infrastructure.models.user import UserModel
+from apps.notifications.infrastructure import feed as notification_feed
+from apps.notifications.infrastructure.models import NotificationKind
 from apps.organization.presentation.permissions import IsOrganizationStaff
 from apps.organization.presentation.scope import callers_organization_id, is_platform_operator
 from config.archive import ArchiveMember, zip_response
@@ -120,6 +122,16 @@ def _application_urls(application_id: str | None) -> tuple[str, str]:
     if application_id:
         return cabinet_url, f"{cabinet_url}/{application_id}"
     return cabinet_url, cabinet_url
+
+
+def _cabinet_path(application_id: str | None) -> str:
+    """The same destination as the letter's button, as a path.
+
+    A feed entry is read inside the cabinet that already knows its own origin, so it
+    stores where to go rather than which host to go to — the row then renders
+    correctly whatever `FRONTEND_BASE_URL` was when it was written.
+    """
+    return f"/cabinet/applications/{application_id}" if application_id else "/cabinet/applications"
 
 
 def _missing_type_label(raw: str) -> str:
@@ -594,6 +606,13 @@ class OrganizerProcessingActionView(_StaffView):
                             button_url=detail_url,
                         ),
                     )
+                    notification_feed.publish(
+                        recipient_id=recipient.id,
+                        kind=NotificationKind.CORRECTION_REQUESTED,
+                        title=f"Заявка №{application_number} возвращена на исправление",
+                        body=comment,
+                        link=_cabinet_path(application_id),
+                    )
                     for target_id in processed_ids:
                         target_model = SubmissionModel.objects.get(id=target_id, deleted_at__isnull=True)
                         messages = list(target_model.participant_messages or [])
@@ -695,6 +714,13 @@ class OrganizerProcessingActionView(_StaffView):
                             button_url=detail_url,
                         ),
                     )
+                    notification_feed.publish(
+                        recipient_id=recipient.id,
+                        kind=NotificationKind.FILES_REQUESTED,
+                        title=f"По заявке №{application_number} нужны файлы",
+                        body=f"Что нужно прикрепить: {requested_types}. {comment}".strip(),
+                        link=_cabinet_path(application_id),
+                    )
                     messages = list(model.participant_messages or [])
                     messages.append(
                         {
@@ -772,6 +798,13 @@ class OrganizerProcessingActionView(_StaffView):
                         button_label="Открыть заявку в ЛК",
                         button_url=detail_url,
                     ),
+                )
+                notification_feed.publish(
+                    recipient_id=recipient.id,
+                    kind=NotificationKind.PAYMENT_EXPECTED,
+                    title=f"Напоминание об оплате заявки №{application_number}",
+                    body="Прикрепите квитанцию об оплате, чтобы заявка пошла дальше.",
+                    link=_cabinet_path(application_id),
                 )
                 messages = list(model.participant_messages or [])
                 messages.append(

@@ -286,17 +286,24 @@ class IdentityReadModel(Protocol):
 
 @runtime_checkable
 class ApplicantNotifier(Protocol):
-    """Port: transactional emails sent to an applicant about their order's lifecycle."""
+    """Port: telling an applicant what happened to their order.
 
-    def notify_application_submitted(self, *, email: str, applicant_name: str) -> None:
+    Every method carries ``user_id`` as well as ``email`` because a notice reaches
+    the applicant by more than one channel: a letter, which can be filtered, missed
+    or sent to an address they no longer read, and their cabinet, which is where they
+    look when the letter did not arrive. Which channels an adapter actually uses is
+    its own business; the use case states the fact once.
+    """
+
+    def notify_application_submitted(self, *, user_id: str, email: str, applicant_name: str, application_id: str) -> None:
         """The order was submitted with a payment receipt already attached."""
         ...
 
-    def notify_application_awaiting_payment(self, *, email: str, applicant_name: str, deadline: datetime) -> None:
+    def notify_application_awaiting_payment(self, *, user_id: str, email: str, applicant_name: str, application_id: str, deadline: datetime) -> None:
         """The order was submitted without a receipt; payment is expected by ``deadline``."""
         ...
 
-    def notify_application_auto_cancelled(self, *, email: str, applicant_name: str) -> None:
+    def notify_application_auto_cancelled(self, *, user_id: str, email: str, applicant_name: str, application_id: str) -> None:
         """The order was auto-cancelled because no receipt was attached in time."""
         ...
 

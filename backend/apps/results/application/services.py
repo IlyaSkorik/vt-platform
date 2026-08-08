@@ -379,6 +379,7 @@ class ProtocolService:
         for applicant_id, results in grouped.items():
             performance = recipients[applicant_id]
             self._notifier.notify_results_published(
+                user_id=str(applicant_id),
                 email=str(performance.applicant_email),
                 applicant_name=performance.applicant_name,
                 competition_title=competition,

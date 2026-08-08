@@ -26,7 +26,9 @@ from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 
 from apps.emailing import render_transactional_email_html
+from apps.notifications.infrastructure import feed
 from apps.notifications.infrastructure.email import send_bulk
+from apps.notifications.infrastructure.models import NotificationKind
 
 __all__ = ["DjangoResultsNotifier"]
 
@@ -44,6 +46,7 @@ class DjangoResultsNotifier:
     def notify_results_published(
         self,
         *,
+        user_id: str,
         email: str,
         applicant_name: str | None,
         competition_title: str | None,
@@ -56,6 +59,17 @@ class DjangoResultsNotifier:
         scope = " · ".join(part for part in (competition_title, nomination_title) if part)
         lines = "\n".join(f"— {title}: {award}" for title, award in results)
         full_protocol_url = f"{self._base_url}{protocol_url}"
+
+        # The same news in the cabinet. Results letters go out per nomination during a
+        # festival's closing hours, which is exactly when an inbox is least reliable and
+        # a participant is most likely to go looking for the answer themselves.
+        feed.publish(
+            recipient_id=user_id,
+            kind=NotificationKind.RESULTS_PUBLISHED,
+            title="Результаты опубликованы" + (f" — {scope}" if scope else ""),
+            body=f"{lines}\n\nЭлектронный диплом доступен в разделе «Мои документы».",
+            link="/cabinet/documents",
+        )
 
         body = (
             f"{greeting}\n\n"
