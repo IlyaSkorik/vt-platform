@@ -1,4 +1,4 @@
-import { Bell, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { SiteFooter } from "@/app/layouts/site-footer";
@@ -10,6 +10,7 @@ import {
   type ParticipantNavItem,
 } from "@/applications/participant/navigation";
 import { WorkspaceSwitcher } from "@/applications/workspace-switcher";
+import { NotificationBell } from "@/features/notifications";
 import { APP_NAME, ROUTES } from "@/shared/config";
 import { cn } from "@/shared/lib";
 import {
@@ -245,12 +246,7 @@ export function ParticipantLayout(): React.JSX.Element {
           </div>
           <div className="flex shrink-0 items-center gap-1">
             {hasOtherWorkspace ? <WorkspaceSwitcher className="hidden xl:flex" /> : null}
-            <IconButton
-              variant="ghost"
-              size="sm"
-              aria-label="Уведомления"
-              icon={<Bell aria-hidden="true" />}
-            />
+            <NotificationBell />
             <ThemeToggle />
             <UserMenu />
           </div>

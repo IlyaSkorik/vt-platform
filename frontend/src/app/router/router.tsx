@@ -5,10 +5,6 @@ import { NotFoundLayout } from "@/app/layouts/not-found-layout";
 import { PublicLayout } from "@/app/layouts/public-layout";
 import { RootLayout } from "@/app/layouts/root-layout";
 import { ParticipantLayout } from "@/applications/participant/layouts/participant-layout";
-import {
-  PARTICIPANT_NAVIGATION,
-  type ParticipantNavItem,
-} from "@/applications/participant/navigation";
 import { PlatformLayout } from "@/applications/platform/layouts/platform-layout";
 import { StaffLayout } from "@/applications/staff/layouts/staff-layout";
 import { STAFF_NAVIGATION, type StaffNavItem } from "@/applications/staff/navigation";
@@ -28,31 +24,22 @@ const lazyPage =
     return { Component };
   };
 
-const workspacePlaceholder =
-  (item: ParticipantNavItem | StaffNavItem, tone: "participant" | "staff") => async () => {
-    const { WorkspacePlaceholderPage } = await import(
-      tone === "participant"
-        ? "@/applications/participant/pages/placeholder"
-        : "@/applications/staff/pages/placeholder"
-    );
-    return {
-      Component: () => (
-        <WorkspacePlaceholderPage
-          title={item.title}
-          description={item.description}
-          icon={item.icon}
-          tone={tone}
-        />
-      ),
-    } satisfies { Component: React.ComponentType };
-  };
-
-const participantItem = (path: string) => {
-  const item = PARTICIPANT_NAVIGATION.find((candidate) => candidate.path === path);
-  if (item == null) {
-    throw new Error(`Missing participant navigation for ${path}`);
-  }
-  return item;
+const workspacePlaceholder = (item: StaffNavItem, tone: "participant" | "staff") => async () => {
+  const { WorkspacePlaceholderPage } = await import(
+    tone === "participant"
+      ? "@/applications/participant/pages/placeholder"
+      : "@/applications/staff/pages/placeholder"
+  );
+  return {
+    Component: () => (
+      <WorkspacePlaceholderPage
+        title={item.title}
+        description={item.description}
+        icon={item.icon}
+        tone={tone}
+      />
+    ),
+  } satisfies { Component: React.ComponentType };
 };
 
 const staffItem = (path: string) => {
@@ -266,10 +253,7 @@ export const routes: RouteObject[] = [
               },
               {
                 path: ROUTES.cabinetNotifications.slice(1),
-                lazy: workspacePlaceholder(
-                  participantItem(ROUTES.cabinetNotifications),
-                  "participant",
-                ),
+                lazy: lazyPage(() => import("@/pages/notifications"), "NotificationsPage"),
               },
               {
                 path: ROUTES.cabinetSettings.slice(1),

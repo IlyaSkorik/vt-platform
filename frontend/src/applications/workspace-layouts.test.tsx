@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -28,15 +29,24 @@ vi.mock("@/app/providers", () => ({
   }),
 }));
 
+/**
+ * The cabinet shell fetches: its bell reads the notification feed to badge itself,
+ * so the layout needs a QueryClient even though these tests are about navigation.
+ * Retries are off — the request has nowhere to go here, and the bell renders its
+ * unbadged state from no data, which is exactly what these tests want behind them.
+ */
 function renderParticipant(): void {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
-    <MemoryRouter initialEntries={["/cabinet"]}>
-      <Routes>
-        <Route element={<ParticipantLayout />}>
-          <Route path="/cabinet" element={<p>Личный контент</p>} />
-        </Route>
-      </Routes>
-    </MemoryRouter>,
+    <QueryClientProvider client={client}>
+      <MemoryRouter initialEntries={["/cabinet"]}>
+        <Routes>
+          <Route element={<ParticipantLayout />}>
+            <Route path="/cabinet" element={<p>Личный контент</p>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 
