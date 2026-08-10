@@ -128,6 +128,11 @@ class ConsentType(StrEnum):
     PRIVACY_POLICY = "privacy_policy"
     DATA_PROCESSING = "data_processing"
     MINOR_DATA_PROCESSING = "minor_data_processing"
+    #: An adult *participant*, entered by whoever enters them, on their own consent
+    #: (LEGAL-001 §6.2). Kept apart from ``THIRD_PARTY_DATA_PROCESSING`` even though the
+    #: statement made is the same one: the two authorise different records, and a single
+    #: type would let a teacher's consent stand as the basis for holding a participant.
+    PARTICIPANT_DATA_PROCESSING = "participant_data_processing"
     #: An adult's data entered by somebody else — a teacher added to a roster by the
     #: guardian or organizer who names them. Distinct from ``DATA_PROCESSING`` because
     #: the person consenting is not the person whose data it is: whoever enters it must

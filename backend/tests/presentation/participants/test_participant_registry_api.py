@@ -219,7 +219,7 @@ class TestTheBasisFollowsTheParticipantsAge:
         assert auth_client.get(REGISTRY_URL).data["data"] == []
 
     def test_creates_an_adult_on_their_own_confirmed_consent(self, auth_client: APIClient) -> None:
-        consent_id = _record_consent(auth_client, "third_party_data_processing")
+        consent_id = _record_consent(auth_client, "participant_data_processing")
         organization_id = _organization(auth_client)
 
         response = auth_client.post(
@@ -238,7 +238,7 @@ class TestTheBasisFollowsTheParticipantsAge:
     def test_refuses_a_child_held_on_the_adult_basis(self, auth_client: APIClient) -> None:
         # The mirror image, and the one that matters more: a child's record must not rest
         # on "the participant consented themselves".
-        consent_id = _record_consent(auth_client, "third_party_data_processing")
+        consent_id = _record_consent(auth_client, "participant_data_processing")
         organization_id = _organization(auth_client)
 
         response = auth_client.post(
@@ -252,6 +252,27 @@ class TestTheBasisFollowsTheParticipantsAge:
         )
 
         assert response.status_code == 400, response.data
+
+    def test_refuses_a_teachers_consent_as_the_basis_for_a_participant(self, auth_client: APIClient) -> None:
+        # An adult participant and a teacher are both grown-ups entered by somebody else,
+        # and the statement made about each is the same. They are still different people,
+        # and a consent given about one authorises nothing about the other — which is the
+        # whole reason the two carry separate types rather than sharing one.
+        consent_id = _record_consent(auth_client, "third_party_data_processing")
+        organization_id = _organization(auth_client)
+
+        response = auth_client.post(
+            REGISTRY_URL,
+            _adult(
+                consentId=consent_id,
+                consentVersion="1.0",
+                organizations=[{"organizationId": organization_id, "isPrimary": True}],
+            ),
+            format="json",
+        )
+
+        assert response.status_code == 400, response.data
+        assert auth_client.get(REGISTRY_URL).data["data"] == []
 
     def test_a_collective_keeps_the_representatives_consent(self, auth_client: APIClient) -> None:
         # A collective's row is not a person: its stated date says nothing about whether

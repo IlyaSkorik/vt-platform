@@ -59,10 +59,12 @@ def _age(birth_date: date) -> int:
 _ADULT_AGE = 18
 
 #: A minor's data is held on the representative's consent; an adult's on their own, which
-#: the person entering it confirms having obtained — the same basis, and so the same
-#: journal type, as a teacher entered by somebody else (LEGAL-001 §5.4).
+#: the person entering it confirms having obtained (LEGAL-001 §5.4, §6.2). The adult type
+#: is the participant's own rather than the shared third-party one, so that a consent
+#: recorded while adding a *teacher* can never stand as the basis for holding a
+#: participant — same statement, different subject, different record.
 _MINOR_CONSENT_TYPE = "minor_data_processing"
-_ADULT_CONSENT_TYPE = "third_party_data_processing"
+_ADULT_CONSENT_TYPE = "participant_data_processing"
 
 _MISSING_CONSENT_DETAIL = {
     _MINOR_CONSENT_TYPE: "Требуется согласие законного представителя на обработку данных участника.",

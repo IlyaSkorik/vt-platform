@@ -26,6 +26,7 @@ class ConsentType(models.TextChoices):
     PRIVACY_POLICY = "privacy_policy", "Privacy Policy"
     DATA_PROCESSING = "data_processing", "Data Processing"
     MINOR_DATA_PROCESSING = "minor_data_processing", "Minor Data Processing"
+    PARTICIPANT_DATA_PROCESSING = "participant_data_processing", "Participant Data Processing"
     THIRD_PARTY_DATA_PROCESSING = "third_party_data_processing", "Third-Party Data Processing"
     MARKETING = "marketing", "Marketing"
 

@@ -103,11 +103,16 @@ export const PARTICIPANT_CONSENT: ConsentDefinition = {
  * (LEGAL-001 §6.2). But the platform never speaks to them at the moment their record is
  * entered, exactly as with a teacher, so the statement made here is the same one §5.4 of
  * the policy requires of whoever enters another person's data: their consent has already
- * been obtained. It shares `third_party_data_processing` with the teacher consent for
- * that reason — the basis is identical, only the subject differs.
+ * been obtained.
+ *
+ * It carries its own code rather than sharing the teacher's `third_party_data_processing`,
+ * though the statement is word for word the same kind. What the two authorise is not the
+ * same: with one type, a consent recorded while adding a teacher would pass the check
+ * that guards a participant's record, and the journal could not say which person any
+ * entry was about.
  */
 export const ADULT_PARTICIPANT_CONSENT: ConsentDefinition = {
-  code: "third_party_data_processing",
+  code: "participant_data_processing",
   version: V1,
   required: true,
   summary:

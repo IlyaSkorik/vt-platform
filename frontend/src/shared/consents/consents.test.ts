@@ -114,10 +114,21 @@ describe("consent catalogue", () => {
     // consent was obtained.
     const adult = participantConsent({ birthDate: bornAged(18), on: TODAY });
     expect(adult).toBe(ADULT_PARTICIPANT_CONSENT);
-    expect(adult.code).toBe("third_party_data_processing");
+    expect(adult.code).toBe("participant_data_processing");
     expect(adult.summary).toMatch(/подтвержда/i);
     expect(adult.text).not.toMatch(/законн(ый|ого) представител/i);
     expect(adult.text).toMatch(/изображени/i);
+  });
+
+  it("does not let a teacher's consent double as a participant's", () => {
+    // The two say the same thing — "I hold this adult's consent" — about different
+    // people, and what a consent authorises is the whole of what its type means. Sharing
+    // one code would make a consent recorded while adding a teacher pass the check that
+    // guards a participant's record, and leave the journal unable to say who any entry
+    // was about.
+    expect(ADULT_PARTICIPANT_CONSENT.code).not.toBe(TEACHER_CONSENT.code);
+    const codes = ALL.map((consent) => consent.code);
+    expect(new Set(codes).size).toBe(codes.length);
   });
 
   it("keeps a minor on the representative's consent right up to the birthday", () => {
