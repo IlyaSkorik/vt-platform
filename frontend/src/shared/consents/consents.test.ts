@@ -97,4 +97,13 @@ describe("consent catalogue", () => {
     expect(ACCOUNT_CONSENTS.map((consent) => consent.code)).not.toContain(PARTICIPANT_CONSENT.code);
     expect(PARTICIPANT_CONSENT.text).toMatch(/законн/i);
   });
+
+  it("names the participant's photograph among the data it covers", () => {
+    // The registry stores an avatar for every participant it holds — see
+    // `backend/apps/participants/presentation/api/v1/registry/avatars.py`, and
+    // `avatar_url` on `ParticipantRegistryModel`. A category of data the consent does
+    // not name is a category that may not be processed at all (art. 4 §5 and art. 5 of
+    // Law 99-З), so the enumeration in the text has to keep pace with the columns.
+    expect(PARTICIPANT_CONSENT.text).toMatch(/изображени/i);
+  });
 });
