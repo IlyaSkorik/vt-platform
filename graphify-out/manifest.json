@@ -1440,8 +1440,8 @@
     "semantic_hash": ""
   },
   "backend/apps/identity/domain/events.py": {
-    "mtime": 1786014464.355233,
-    "ast_hash": "14ff704aab676d986633334edccbaae2",
+    "mtime": 1786393314.971531,
+    "ast_hash": "e3fb9e8684346605bc3d46c49fa4d3fe",
     "semantic_hash": ""
   },
   "backend/apps/identity/domain/exceptions.py": {
@@ -1550,8 +1550,8 @@
     "semantic_hash": "438b749fe98fb0c6fcd7af4a38b2d984"
   },
   "backend/apps/identity/infrastructure/models/consent.py": {
-    "mtime": 1786014464.355464,
-    "ast_hash": "dd86126ca2fe9424d4ad2edfdae7c17e",
+    "mtime": 1786393317.4435308,
+    "ast_hash": "a28bdb9db4b991e7dc612ab8e84ef555",
     "semantic_hash": ""
   },
   "backend/apps/identity/infrastructure/models/email_verification.py": {
@@ -2660,8 +2660,8 @@
     "semantic_hash": ""
   },
   "backend/apps/participants/presentation/api/v1/registry/views.py": {
-    "mtime": 1786134800.0696816,
-    "ast_hash": "7f734f84c5cc7ea60581acee72ceb89a",
+    "mtime": 1786393368.2361252,
+    "ast_hash": "71952979a58a03325bfc7a042138589a",
     "semantic_hash": ""
   },
   "backend/apps/participants/presentation/urls.py": {
@@ -4655,8 +4655,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/participants/index.tsx": {
-    "mtime": 1786136608.6781626,
-    "ast_hash": "63bf1ef6e5cfd83aef3c5c58d93f2e0c",
+    "mtime": 1786392814.0250673,
+    "ast_hash": "e8716e10b1f8983719fe9a5a2eb6bd7c",
     "semantic_hash": ""
   },
   "frontend/src/pages/placeholder/index.tsx": {
@@ -9450,8 +9450,8 @@
     "semantic_hash": ""
   },
   "backend/tests/presentation/participants/test_participant_registry_api.py": {
-    "mtime": 1786015931.7471216,
-    "ast_hash": "8a61a96276d77ace389c1e19c484a55b",
+    "mtime": 1786393411.2828624,
+    "ast_hash": "adfa1e9a46c272fc3f1b934c7d0c787f",
     "semantic_hash": ""
   },
   "backend/tests/presentation/platform/test_loadtest_api.py": {
@@ -9605,8 +9605,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/legal/privacy-policy.tsx": {
-    "mtime": 1786391727.4315658,
-    "ast_hash": "9557b222692a5717b43a683b497ed00a",
+    "mtime": 1786392814.0250673,
+    "ast_hash": "7bdd87e17a40d2f00e50b10abe50a07f",
     "semantic_hash": ""
   },
   "frontend/src/pages/notifications/index.ts": {
@@ -9620,18 +9620,18 @@
     "semantic_hash": ""
   },
   "frontend/src/shared/consents/consents.test.ts": {
-    "mtime": 1786391625.3488405,
-    "ast_hash": "acdd73386d577242a47d9b5cbb7b1209",
+    "mtime": 1786393387.7087362,
+    "ast_hash": "f175060cd73be93d3fa61fb9c8aac9d7",
     "semantic_hash": ""
   },
   "frontend/src/shared/consents/definitions.ts": {
-    "mtime": 1786391614.4955676,
-    "ast_hash": "77443af90788e9fa32407545a4cb1db2",
+    "mtime": 1786393376.5436685,
+    "ast_hash": "25b19ad9527f5fb5a55ceed5dee3a519",
     "semantic_hash": ""
   },
   "frontend/src/shared/consents/index.ts": {
-    "mtime": 1786014912.1187296,
-    "ast_hash": "41cbac661cfcd4816ba6e50c95d22376",
+    "mtime": 1786392814.0250673,
+    "ast_hash": "efdb7148211f7776cd85271bd68428bf",
     "semantic_hash": ""
   },
   "frontend/src/shared/consents/ui/consent-checkbox.tsx": {
@@ -9775,8 +9775,8 @@
     "semantic_hash": ""
   },
   "docs/legal/LEGAL-001-privacy-policy.md": {
-    "mtime": 1786391630.6635668,
-    "ast_hash": "febf4d71e8ec87b1511d78f0a12b4ae7",
+    "mtime": 1786392814.0250673,
+    "ast_hash": "22bfee11aa73878e164231345720c70e",
     "semantic_hash": ""
   },
   "docs/legal/LEGAL-002-cookies-policy.md": {
@@ -9792,6 +9792,16 @@
   "frontend/public/logo.svg": {
     "mtime": 1785860600.9462526,
     "ast_hash": "76a7b20133f6b45daf28cd076e5a693b",
+    "semantic_hash": ""
+  },
+  "backend/apps/identity/infrastructure/migrations/0004_participant_consent_type.py": {
+    "mtime": 1786393357.3115296,
+    "ast_hash": "3915351c813652be75da20f714a75e86",
+    "semantic_hash": ""
+  },
+  "backend/tests/infrastructure/identity/test_participant_consent_type_migration.py": {
+    "mtime": 1786393533.2250853,
+    "ast_hash": "777757ecaaea46287136da49e4c4b487",
     "semantic_hash": ""
   }
 }
