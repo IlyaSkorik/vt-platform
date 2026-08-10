@@ -8,10 +8,12 @@
 
 export {
   ACCOUNT_CONSENTS,
+  ADULT_PARTICIPANT_CONSENT,
   APPLICATION_CONSENTS,
   applicationConsent,
   type ConsentDefinition,
   PARTICIPANT_CONSENT,
+  participantConsent,
   TEACHER_CONSENT,
 } from "./definitions";
 export { ConsentCheckbox } from "./ui/consent-checkbox";

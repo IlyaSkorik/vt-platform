@@ -43,11 +43,11 @@ def auth_client() -> APIClient:
     return client
 
 
-def _record_consent(client: APIClient) -> str:
-    """Record the representative's consent and return the journal entry's id."""
+def _record_consent(client: APIClient, consent_type: str = "minor_data_processing") -> str:
+    """Record a consent of that type and return the journal entry's id."""
     response = client.post(
         CONSENTS_URL,
-        {"consentType": "minor_data_processing", "version": "1.0"},
+        {"consentType": consent_type, "version": "1.0"},
         format="json",
     )
     assert response.status_code == 201, response.data
@@ -76,6 +76,11 @@ def _child(**overrides: Any) -> dict[str, Any]:
     }
     body.update(overrides)
     return body
+
+
+def _adult(**overrides: Any) -> dict[str, Any]:
+    """The same body for someone who is plainly over eighteen today."""
+    return _child(firstName="Anna", lastName="Sidorova", birthDate="1994-06-20", gender="female", **overrides)
 
 
 class TestRegistryCreationRequiresConsent:
@@ -185,3 +190,85 @@ class TestRegistryCreationRequiresConsent:
 
     def test_the_registry_is_the_caller_s_own(self) -> None:
         assert APIClient().post(REGISTRY_URL, _child(), format="json").status_code == 401
+
+
+class TestTheBasisFollowsTheParticipantsAge:
+    """Which consent authorises the record is decided by the age, server-side.
+
+    Nobody is the legal representative of an adult, so holding an adult participant on a
+    ``minor_data_processing`` consent means holding them on a statement that was never
+    true (LEGAL-001 §6.2). The endpoint derives the required type from the submitted
+    birth date, which is also what stops a caller choosing the weaker basis themselves.
+    """
+
+    def test_refuses_an_adult_held_on_a_representatives_consent(self, auth_client: APIClient) -> None:
+        consent_id = _record_consent(auth_client, "minor_data_processing")
+        organization_id = _organization(auth_client)
+
+        response = auth_client.post(
+            REGISTRY_URL,
+            _adult(
+                consentId=consent_id,
+                consentVersion="1.0",
+                organizations=[{"organizationId": organization_id, "isPrimary": True}],
+            ),
+            format="json",
+        )
+
+        assert response.status_code == 400, response.data
+        assert auth_client.get(REGISTRY_URL).data["data"] == []
+
+    def test_creates_an_adult_on_their_own_confirmed_consent(self, auth_client: APIClient) -> None:
+        consent_id = _record_consent(auth_client, "third_party_data_processing")
+        organization_id = _organization(auth_client)
+
+        response = auth_client.post(
+            REGISTRY_URL,
+            _adult(
+                consentId=consent_id,
+                consentVersion="1.0",
+                organizations=[{"organizationId": organization_id, "isPrimary": True}],
+            ),
+            format="json",
+        )
+
+        assert response.status_code == 201, response.data
+        assert response.data["data"]["consentRecorded"] is True
+
+    def test_refuses_a_child_held_on_the_adult_basis(self, auth_client: APIClient) -> None:
+        # The mirror image, and the one that matters more: a child's record must not rest
+        # on "the participant consented themselves".
+        consent_id = _record_consent(auth_client, "third_party_data_processing")
+        organization_id = _organization(auth_client)
+
+        response = auth_client.post(
+            REGISTRY_URL,
+            _child(
+                consentId=consent_id,
+                consentVersion="1.0",
+                organizations=[{"organizationId": organization_id, "isPrimary": True}],
+            ),
+            format="json",
+        )
+
+        assert response.status_code == 400, response.data
+
+    def test_a_collective_keeps_the_representatives_consent(self, auth_client: APIClient) -> None:
+        # A collective's row is not a person: its stated date says nothing about whether
+        # its members are children, so the stricter basis stands.
+        consent_id = _record_consent(auth_client, "minor_data_processing")
+        organization_id = _organization(auth_client)
+
+        response = auth_client.post(
+            REGISTRY_URL,
+            {
+                "participantType": "collective",
+                "collectiveName": "Ансамбль «Ручеёк»",
+                "consentId": consent_id,
+                "consentVersion": "1.0",
+                "organizations": [{"organizationId": organization_id, "isPrimary": True}],
+            },
+            format="json",
+        )
+
+        assert response.status_code == 201, response.data

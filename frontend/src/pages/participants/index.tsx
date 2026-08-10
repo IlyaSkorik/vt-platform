@@ -18,7 +18,7 @@ import {
 import { type ApiError, apiClient, toApiError } from "@/shared/api";
 import { recordOwnConsent } from "@/shared/api/generated/identity/identity";
 import { ROUTES } from "@/shared/config";
-import { ConsentCheckbox, PARTICIPANT_CONSENT } from "@/shared/consents";
+import { ConsentCheckbox, participantConsent } from "@/shared/consents";
 import { formatPersonName } from "@/shared/lib";
 import {
   Avatar,
@@ -507,7 +507,11 @@ export function ParticipantsProfilePage(): React.JSX.Element {
   const [organizationDialogOpen, setOrganizationDialogOpen] = useState(false);
   const autosaveTimer = useRef<number | null>(null);
   const isCreateMode = participantId === "new" || participantId == null;
-  const [guardianConsent, setGuardianConsent] = useState(false);
+  // Which consent was ticked, rather than whether one was. The wording depends on the
+  // participant's age, so editing the birth date across the eighteenth birthday changes
+  // the question being asked — and storing the code makes the old answer stop counting
+  // by itself, instead of carrying a tick from a text that is no longer on screen.
+  const [acceptedConsentCode, setAcceptedConsentCode] = useState<string | null>(null);
   const [consentMissing, setConsentMissing] = useState(false);
 
   // When the Registration Wizard sends the user here to create a participant, it
@@ -588,23 +592,27 @@ export function ParticipantsProfilePage(): React.JSX.Element {
 
   const createMutation = useMutation({
     mutationFn: async (values: ParticipantFormValues): Promise<string> => {
-      // The journal entry comes first, and its id travels with the child: the record the
-      // platform reads and the evidence that permits it are then the same fact, rather
-      // than two rows that happen to agree (LEGAL-001 §6.3, §13.3). Creation is refused
-      // server-side without it, so an interrupted flow leaves no child on file.
+      // The journal entry comes first, and its id travels with the participant: the
+      // record the platform reads and the evidence that permits it are then the same
+      // fact, rather than two rows that happen to agree (LEGAL-001 §6.3, §13.3).
+      // Creation is refused server-side without it, so an interrupted flow leaves
+      // nobody on file. The basis is read from the values being submitted, not from
+      // what the form last rendered — the server derives the same one from the same
+      // birth date and rejects the mismatch.
+      const definition = participantConsent(values);
       const consent = await recordOwnConsent({
-        consentType: PARTICIPANT_CONSENT.code,
-        version: PARTICIPANT_CONSENT.version,
+        consentType: definition.code,
+        version: definition.version,
       });
       if (consent.status !== 201) {
-        throw new Error("Не удалось записать согласие законного представителя.");
+        throw new Error("Не удалось записать согласие на обработку данных участника.");
       }
       const consentId = consent.data.data[0]?.id;
       const response = await apiClient.post("participants/registry", {
         json: {
           ...toPayload(values),
           consentId,
-          consentVersion: PARTICIPANT_CONSENT.version,
+          consentVersion: definition.version,
         },
       });
       const payload = (await response.json()) as { data: { id: string } };
@@ -665,6 +673,11 @@ export function ParticipantsProfilePage(): React.JSX.Element {
 
   const participant = participantQuery.data;
   const selectedOrganizations = form.watch("organizations");
+  // Derived from the live form values, so the checkbox below re-reads the birth date as
+  // it is typed. `values` is already a `form.watch()` of everything, so this costs a
+  // comparison on a render that was happening anyway.
+  const activeConsent = participantConsent(values);
+  const consentGiven = acceptedConsentCode === activeConsent.code;
 
   return (
     <PageContainer size="wide">
@@ -801,20 +814,22 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                   />
                 </CardContent>
                 <CardFooter className="flex-col items-stretch gap-3">
-                  {/* The gate, not a formality: a child's record may not be created
-                      without the representative's consent, and the platform is what
-                      enforces that (LEGAL-001 §6.3). The consent is recorded in the
-                      journal against this child as soon as the record exists. */}
+                  {/* The gate, not a formality: no participant's record may be created
+                      without a basis for holding it, and the platform is what enforces
+                      that (LEGAL-001 §6.3). Which basis it is follows the participant's
+                      own age — their representative's consent under eighteen, their own
+                      above it (§6.2) — so the wording here changes with the birth date
+                      above, and a tick given to the previous wording does not carry. */}
                   <ConsentCheckbox
-                    consent={PARTICIPANT_CONSENT}
-                    checked={guardianConsent}
+                    consent={activeConsent}
+                    checked={consentGiven}
                     error={
                       consentMissing
-                        ? "Без согласия законного представителя создать участника нельзя"
+                        ? "Без согласия на обработку данных участника создать его нельзя"
                         : undefined
                     }
                     onChange={(checked) => {
-                      setGuardianConsent(checked);
+                      setAcceptedConsentCode(checked ? activeConsent.code : null);
                       if (checked) {
                         setConsentMissing(false);
                       }
@@ -824,7 +839,7 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                     <Button
                       loading={createMutation.isPending}
                       onClick={() => {
-                        if (!guardianConsent) {
+                        if (!consentGiven) {
                           setConsentMissing(true);
                           return;
                         }

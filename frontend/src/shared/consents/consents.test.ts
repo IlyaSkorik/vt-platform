@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   ACCOUNT_CONSENTS,
+  ADULT_PARTICIPANT_CONSENT,
   APPLICATION_CONSENTS,
   applicationConsent,
   type ConsentDefinition,
   PARTICIPANT_CONSENT,
+  participantConsent,
   TEACHER_CONSENT,
 } from "./index";
 
@@ -20,9 +22,16 @@ import {
 const ALL: readonly ConsentDefinition[] = [
   ...ACCOUNT_CONSENTS,
   PARTICIPANT_CONSENT,
+  ADULT_PARTICIPANT_CONSENT,
   TEACHER_CONSENT,
   ...Object.values(APPLICATION_CONSENTS),
 ];
+
+/** A birth date that lands the participant on exactly `age` on `TODAY`. */
+const TODAY = new Date(2026, 7, 10);
+function bornAged(age: number): string {
+  return `${TODAY.getFullYear() - age}-01-15`;
+}
 
 describe("consent catalogue", () => {
   it("gives every consent a code and a version", () => {
@@ -96,6 +105,39 @@ describe("consent catalogue", () => {
     expect(PARTICIPANT_CONSENT.code).toBe("minor_data_processing");
     expect(ACCOUNT_CONSENTS.map((consent) => consent.code)).not.toContain(PARTICIPANT_CONSENT.code);
     expect(PARTICIPANT_CONSENT.text).toMatch(/законн/i);
+  });
+
+  it("asks an adult participant for their own consent, not a representative's", () => {
+    // Nobody represents an adult, so the wording that says "I am the legal
+    // representative" must not be the one an eighteen-year-old's record rests on
+    // (LEGAL-001 §6.2). It is the teacher pattern: a confirmation that the person's own
+    // consent was obtained.
+    const adult = participantConsent({ birthDate: bornAged(18), on: TODAY });
+    expect(adult).toBe(ADULT_PARTICIPANT_CONSENT);
+    expect(adult.code).toBe("third_party_data_processing");
+    expect(adult.summary).toMatch(/подтвержда/i);
+    expect(adult.text).not.toMatch(/законн(ый|ого) представител/i);
+    expect(adult.text).toMatch(/изображени/i);
+  });
+
+  it("keeps a minor on the representative's consent right up to the birthday", () => {
+    expect(participantConsent({ birthDate: bornAged(17), on: TODAY })).toBe(PARTICIPANT_CONSENT);
+    // The day before turning eighteen is still the day of a child.
+    expect(participantConsent({ birthDate: "2008-08-11", on: TODAY })).toBe(PARTICIPANT_CONSENT);
+    expect(participantConsent({ birthDate: "2008-08-10", on: TODAY })).toBe(
+      ADULT_PARTICIPANT_CONSENT,
+    );
+  });
+
+  it("falls back to the stricter basis when age cannot be established", () => {
+    // A collective is not a person and any of its members may be a child; a missing or
+    // unreadable date must not be a way of selecting the weaker basis by omission.
+    expect(
+      participantConsent({ birthDate: bornAged(40), participantType: "collective", on: TODAY }),
+    ).toBe(PARTICIPANT_CONSENT);
+    expect(participantConsent({ birthDate: null, on: TODAY })).toBe(PARTICIPANT_CONSENT);
+    expect(participantConsent({ birthDate: "", on: TODAY })).toBe(PARTICIPANT_CONSENT);
+    expect(participantConsent({ birthDate: "not-a-date", on: TODAY })).toBe(PARTICIPANT_CONSENT);
   });
 
   it("names the participant's photograph among the data it covers", () => {

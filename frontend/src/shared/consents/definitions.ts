@@ -97,6 +97,71 @@ export const PARTICIPANT_CONSENT: ConsentDefinition = {
 };
 
 /**
+ * The consent that authorises holding an adult participant's data.
+ *
+ * A participant of eighteen or over consents for themselves — nobody represents them
+ * (LEGAL-001 §6.2). But the platform never speaks to them at the moment their record is
+ * entered, exactly as with a teacher, so the statement made here is the same one §5.4 of
+ * the policy requires of whoever enters another person's data: their consent has already
+ * been obtained. It shares `third_party_data_processing` with the teacher consent for
+ * that reason — the basis is identical, only the subject differs.
+ */
+export const ADULT_PARTICIPANT_CONSENT: ConsentDefinition = {
+  code: "third_party_data_processing",
+  version: V1,
+  required: true,
+  summary:
+    "Согласие участника на обработку его персональных данных получено, и я подтверждаю его предоставление.",
+  text: "Я подтверждаю, что получил(а) согласие указанного участника на обработку его персональных данных Оператором и на их предоставление организаторам мероприятий: фамилии, имени, отчества, даты рождения (для определения возрастной категории), изображения (фотографии) участника, сведений об учреждении, коллективе и педагоге, сведений о заявках, творческих работах и результатах их оценивания — в объёме, указанном в разделе 5 Политики в отношении обработки персональных данных, в целях участия в фестивалях и конкурсах, проводимых на Платформе. Творческая работа передаётся жюри с указанием псевдонима участника. Участник вправе отозвать согласие в любое время, обратившись к Оператору по адресу support@vzlettalantov.by; отзыв влечёт прекращение обработки его персональных данных, их удаление и невозможность дальнейшего участия в мероприятии (разделы 6, 11 и 13 Политики).",
+};
+
+/** The age from which a participant consents for themselves (LEGAL-001 §6.2). */
+const ADULT_AGE = 18;
+
+/**
+ * Age in whole years on `on`, or `null` when the date is missing or unreadable.
+ *
+ * The ISO string is taken apart rather than fed to `new Date`, which reads a bare
+ * `YYYY-MM-DD` as UTC midnight and then reports its parts in local time — west of
+ * Greenwich that is the previous day, which on a birthday is a whole year.
+ */
+function ageInYears(birthDate: string | null | undefined, on: Date): number | null {
+  const parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec((birthDate ?? "").trim());
+  if (parts == null) {
+    return null;
+  }
+  const [year, month, day] = [Number(parts[1]), Number(parts[2]), Number(parts[3])];
+  const beforeBirthday =
+    on.getMonth() + 1 < month || (on.getMonth() + 1 === month && on.getDate() < day);
+  return on.getFullYear() - year - (beforeBirthday ? 1 : 0);
+}
+
+/**
+ * Which consent authorises holding this participant's data — theirs, or their
+ * representative's.
+ *
+ * An adult's record held on a "I am the legal representative" consent rests on a
+ * statement that was never true, so the choice follows the participant's own age rather
+ * than one wording being made to cover everybody (LEGAL-001 §6.2).
+ *
+ * Two cases fall back to the representative's consent, both deliberately: a collective,
+ * whose row is not a person and any of whose members may be a child, and a birth date
+ * that is missing or unreadable, where the stricter basis is the safe one.
+ */
+export function participantConsent(participant: {
+  readonly birthDate?: string | null;
+  readonly participantType?: string | null;
+  /** Reference date for the age; defaults to today. Injected by the tests. */
+  readonly on?: Date;
+}): ConsentDefinition {
+  if ((participant.participantType ?? "solo") === "collective") {
+    return PARTICIPANT_CONSENT;
+  }
+  const age = ageInYears(participant.birthDate, participant.on ?? new Date());
+  return age != null && age >= ADULT_AGE ? ADULT_PARTICIPANT_CONSENT : PARTICIPANT_CONSENT;
+}
+
+/**
  * The consent that authorises holding a teacher's details.
  *
  * A teacher in somebody's directory is an adult whose data is being entered by another

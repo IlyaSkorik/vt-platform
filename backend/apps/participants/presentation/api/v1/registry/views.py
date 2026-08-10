@@ -54,6 +54,43 @@ def _age(birth_date: date) -> int:
     return today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
 
 
+#: The age from which a participant consents for themselves rather than through a legal
+#: representative (LEGAL-001 §6.2).
+_ADULT_AGE = 18
+
+#: A minor's data is held on the representative's consent; an adult's on their own, which
+#: the person entering it confirms having obtained — the same basis, and so the same
+#: journal type, as a teacher entered by somebody else (LEGAL-001 §5.4).
+_MINOR_CONSENT_TYPE = "minor_data_processing"
+_ADULT_CONSENT_TYPE = "third_party_data_processing"
+
+_MISSING_CONSENT_DETAIL = {
+    _MINOR_CONSENT_TYPE: "Требуется согласие законного представителя на обработку данных участника.",
+    _ADULT_CONSENT_TYPE: "Требуется подтверждение согласия участника на обработку его персональных данных.",
+}
+
+
+def _required_consent_type(payload: dict[str, Any]) -> str:
+    """Which consent the registry demands for this participant, from their own age.
+
+    Derived from the submitted birth date rather than taken from the client: which basis
+    applies is precisely the thing a caller would otherwise get to choose for themselves,
+    and an adult's record held on a "I am the legal representative" consent rests on a
+    statement that was never true (LEGAL-001 §6.2).
+
+    Two cases keep the representative's consent whatever else is submitted. A collective
+    is not a person and any of its members may be a child, so its stated date says
+    nothing about who is in it. And a missing or unparsed date resolves to the stricter
+    basis, because the alternative is that omitting a field selects the weaker one.
+    """
+    if str(payload.get("participantType") or "solo") == "collective":
+        return _MINOR_CONSENT_TYPE
+    birth_date = payload.get("birthDate")
+    if not isinstance(birth_date, date):
+        return _MINOR_CONSENT_TYPE
+    return _ADULT_CONSENT_TYPE if _age(birth_date) >= _ADULT_AGE else _MINOR_CONSENT_TYPE
+
+
 def _organization_resource(model: EducationalOrganizationModel) -> dict[str, Any]:
     return {
         "id": str(model.id),
@@ -378,22 +415,25 @@ class ParticipantRegistryCollectionView(_AuthView):
         payload_problem = _validate_participant_payload(payload, request)
         if payload_problem is not None:
             return payload_problem
-        # A child's record may not come into existence without the representative's
-        # consent, and the platform is what enforces that rather than the form
-        # (LEGAL-001 §6.3). Creation therefore refuses; updates do not have to resend it.
+        # A participant's record may not come into existence without a basis for holding
+        # it, and the platform is what enforces that rather than the form (LEGAL-001
+        # §6.3). Creation therefore refuses; updates do not have to resend it.
+        required_consent_type = _required_consent_type(payload)
         if payload.get("consentId") is None:
             return problems.validation_problem(
-                {"consentId": ["Требуется согласие законного представителя на обработку данных участника."]},
+                {"consentId": [_MISSING_CONSENT_DETAIL[required_consent_type]]},
                 instance=request.path,
                 request=request,
             )
         # And the reference has to be real: the client sends it, so unchecked it proves
         # nothing — any UUID, another account's consent, or a withdrawn one would leave a
-        # child's record looking exactly as lawful as a genuine one.
+        # participant's record looking exactly as lawful as a genuine one. The type is
+        # checked against the age *the server* derived, so a caller cannot hold an adult
+        # on a representative's consent by choosing which one to send.
         if not identity_composition.build_consent_directory().is_in_force(
             str(payload["consentId"]),
             user_id=str(request.user.id),
-            consent_type="minor_data_processing",
+            consent_type=required_consent_type,
         ):
             return problems.validation_problem(
                 {"consentId": ["Согласие не найдено, отозвано или относится к другому виду обработки."]},
