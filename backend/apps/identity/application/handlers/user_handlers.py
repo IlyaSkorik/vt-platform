@@ -256,18 +256,18 @@ class AuthenticateUserHandler:
             # A malformed email identifies no account; equalize timing, then fail
             # with the same generic error as a wrong password (no enumeration).
             self._password_hasher.verify(command.password, _DUMMY_PASSWORD_HASH)
-            raise InvalidCredentialsError("Invalid email or password.") from exc
+            raise InvalidCredentialsError("Неверный адрес электронной почты или пароль") from exc
 
         user = self._users.get_by_email(email)
         if user is None:
             self._password_hasher.verify(command.password, _DUMMY_PASSWORD_HASH)
-            raise InvalidCredentialsError("Invalid email or password.")
+            raise InvalidCredentialsError("Неверный адрес электронной почты или пароль")
         if not self._password_hasher.verify(command.password, user.password_hash):
-            raise InvalidCredentialsError("Invalid email or password.")
+            raise InvalidCredentialsError("Неверный адрес электронной почты или пароль")
         if user.is_deleted() or user.is_locked(now):
-            raise AccountInactiveError("This account cannot sign in.")
+            raise AccountInactiveError("С этой учетной записью невозможно войти в систему")
         if not user.is_email_verified():
-            raise EmailNotVerifiedError("Please verify your email address before signing in.")
+            raise EmailNotVerifiedError("Пожалуйста, подтвердите свой адрес электронной почты перед входом в систему")
 
         return OperationResultDto(user=UserDto.from_user(user, now=now), events=())
 
