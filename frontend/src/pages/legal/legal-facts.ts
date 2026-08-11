@@ -56,11 +56,17 @@ export type LegalRevision = {
   readonly effectiveDate: string | null;
 };
 
-/** Approved by the operator and in force since 6 August 2026. */
+/**
+ * Approved by the operator and in force since 11 August 2026.
+ *
+ * Revision 1.1 moved the legal basis for the account's own data from the subject's
+ * consent to the performance of the Пользовательское соглашение (§4.4, §13.7). Nothing
+ * else about the processing changed — see §16.5, which says so in the published text.
+ */
 export const PRIVACY_POLICY_REVISION: LegalRevision = {
-  version: "1.0",
-  consentVersion: "privacy-policy-1.0",
-  effectiveDate: "2026-08-06",
+  version: "1.1",
+  consentVersion: "privacy-policy-1.1",
+  effectiveDate: "2026-08-11",
 };
 
 /**
