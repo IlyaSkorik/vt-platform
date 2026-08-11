@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { ROUTES } from "@/shared/config";
 import {
   ACCOUNT_CONSENTS,
   ADULT_PARTICIPANT_CONSENT,
   APPLICATION_CONSENTS,
   applicationConsent,
   type ConsentDefinition,
+  consentRecords,
   PARTICIPANT_CONSENT,
   participantConsent,
   TEACHER_CONSENT,
@@ -54,18 +56,49 @@ describe("consent catalogue", () => {
   });
 
   it("keeps the account codes distinct from one another", () => {
-    const codes = ACCOUNT_CONSENTS.flatMap((consent) => consent.records ?? [consent.code]);
+    const codes = ACCOUNT_CONSENTS.flatMap((consent) =>
+      consentRecords(consent).map((record) => record.code),
+    );
     expect(new Set(codes).size).toBe(codes.length);
   });
 
-  it("asks for permission to process separately from accepting the terms", () => {
+  it("asks the account holder to accept the agreement, not to consent to being processed", () => {
+    // The account's own data rests on the Пользовательское соглашение (LEGAL-001 §4.4), so
+    // registration takes an acceptance. A required *consent* here would be a consent the
+    // service cannot run without — which is not freely given (§13.1) — and would offer the
+    // person a withdrawal that could only ever be refused.
     const terms = ACCOUNT_CONSENTS.find((consent) => consent.code === "terms_of_service");
-    const processing = ACCOUNT_CONSENTS.find((consent) => consent.code === "data_processing");
     expect(terms?.required).toBe(true);
-    expect(processing?.required).toBe(true);
-    // The terms box may stand for the policy acknowledgement, but never for the
-    // processing consent — that one is its own decision.
-    expect(terms?.records).not.toContain("data_processing");
+    expect(terms?.kind).toBe("acceptance");
+    expect(terms?.summary).toMatch(/Пользовательское соглашение/);
+    for (const consent of ACCOUNT_CONSENTS) {
+      expect(consent.required && consent.kind === "consent", consent.code).toBe(false);
+    }
+    expect(ACCOUNT_CONSENTS.map((consent) => consent.code)).not.toContain("data_processing");
+  });
+
+  it("records the policy acknowledgement at the policy's own revision", () => {
+    // One tick, two entries — and each names the revision of the document it is about, so a
+    // stored `privacy_policy` row can be traced to the text that was in force rather than to
+    // the version of the checkbox wording.
+    const terms = ACCOUNT_CONSENTS.find((consent) => consent.code === "terms_of_service");
+    const records = consentRecords(terms as ConsentDefinition);
+    expect(records.map((record) => record.code)).toEqual(["terms_of_service", "privacy_policy"]);
+    expect(records[0]?.version).toBe(terms?.version);
+    // Every version stored has to parse as a `ConsentVersion` on the backend: dot- or
+    // dash-separated integers, nothing else.
+    for (const record of records) {
+      expect(record.version, record.code).toMatch(/^\d+([.-]\d+)*$/);
+    }
+  });
+
+  it("links the documents a person has to be able to read before ticking the box", () => {
+    // LEGAL-003 §3.3 promises the agreement and the policy are reachable from the
+    // registration form itself. The checkbox renders `documents`, so an empty list there
+    // would quietly make that clause false.
+    const terms = ACCOUNT_CONSENTS.find((consent) => consent.code === "terms_of_service");
+    expect(terms?.documents?.map((document) => document.to)).toContain(ROUTES.termsOfService);
+    expect(terms?.documents?.map((document) => document.to)).toContain(ROUTES.privacyPolicy);
   });
 
   it("leaves the newsletter optional", () => {

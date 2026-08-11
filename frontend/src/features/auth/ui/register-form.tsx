@@ -18,7 +18,6 @@ function accountConsent(code: string): ConsentDefinition {
 }
 
 const TERMS_CONSENT = accountConsent("terms_of_service");
-const DATA_PROCESSING_CONSENT = accountConsent("data_processing");
 const MARKETING_CONSENT = accountConsent("marketing");
 
 interface RegisterFormProps {
@@ -29,10 +28,11 @@ interface RegisterFormProps {
 /**
  * Registration form — `POST /auth/registration`.
  *
- * Enforces the client password policy and confirmation locally, collects the consents
- * the account cannot be created without (and the one it can), and maps server field errors (e.g. email already in
- * use `409`, weak password `422`) back onto the offending field. New-password
- * fields hint `new-password` for password managers.
+ * Enforces the client password policy and confirmation locally, records acceptance of the
+ * Пользовательское соглашение (the contract the account rests on) plus the newsletter
+ * consent nobody has to give, and maps server field errors (e.g. email already in use
+ * `409`, weak password `422`) back onto the offending field. New-password fields hint
+ * `new-password` for password managers.
  */
 export function RegisterForm({ onSuccess }: RegisterFormProps): React.JSX.Element {
   const registerAccount = useRegister();
@@ -56,13 +56,11 @@ export function RegisterForm({ onSuccess }: RegisterFormProps): React.JSX.Elemen
       password: "",
       confirmPassword: "",
       acceptTerms: false as unknown as true,
-      acceptDataProcessing: false as unknown as true,
       acceptMarketing: false,
     },
   });
 
   const acceptTerms = watch("acceptTerms");
-  const acceptDataProcessing = watch("acceptDataProcessing");
   const acceptMarketing = watch("acceptMarketing");
 
   /**
@@ -144,24 +142,16 @@ export function RegisterForm({ onSuccess }: RegisterFormProps): React.JSX.Elemen
         {...register("confirmPassword")}
       />
 
-      {/* Three consents, asked separately because they are separate: the agreement,
-          the permission to process, and the newsletter nobody has to want. Each one's
-          wording and version come from the catalogue that also supplies what gets
-          recorded, so the journal names the text that was actually shown. */}
+      {/* Two boxes, and they are different in kind: the first accepts the agreement the
+          account exists under, the second is the newsletter consent nobody has to want.
+          Both take their wording and version from the catalogue that also supplies what
+          gets recorded, so the journal names the text that was actually shown. */}
       <div className="space-y-3">
         <ConsentCheckbox
           consent={TERMS_CONSENT}
           checked={acceptTerms === true}
           error={errors.acceptTerms?.message}
           onChange={(checked) => setValue("acceptTerms", checked as true, { shouldValidate: true })}
-        />
-        <ConsentCheckbox
-          consent={DATA_PROCESSING_CONSENT}
-          checked={acceptDataProcessing === true}
-          error={errors.acceptDataProcessing?.message}
-          onChange={(checked) =>
-            setValue("acceptDataProcessing", checked as true, { shouldValidate: true })
-          }
         />
         <ConsentCheckbox
           consent={MARKETING_CONSENT}

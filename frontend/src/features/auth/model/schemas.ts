@@ -47,14 +47,13 @@ export const registerSchema = z
     email: emailSchema,
     password: passwordSchema,
     confirmPassword: z.string().min(1, "Повторите пароль"),
-    // Two separate acceptances, because they are two different things: entering the
-    // agreement, and permitting the processing. A consent bundled with anything else is
-    // not freely given (LEGAL-001 §13.1).
+    // Accepting the agreement is what creates the account, and what the account's data is
+    // processed to perform (LEGAL-001 §4.4) — so it is required, and it is the only thing
+    // required. No consent is asked for here: one that had to be given for registration to
+    // work would not be freely given (LEGAL-001 §13.1, §13.2).
     acceptTerms: z.literal(true, {
-      message: "Необходимо принять условия использования и подтвердить ознакомление с политикой",
-    }),
-    acceptDataProcessing: z.literal(true, {
-      message: "Без согласия на обработку персональных данных регистрация невозможна",
+      message:
+        "Необходимо принять Пользовательское соглашение и подтвердить ознакомление с политикой",
     }),
     /** Optional by law and by design: refusing it changes nothing else. */
     acceptMarketing: z.boolean(),

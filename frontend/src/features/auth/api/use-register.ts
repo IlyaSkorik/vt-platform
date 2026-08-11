@@ -3,7 +3,7 @@ import type { ApiError } from "@/shared/api";
 import { DEFAULT_LOCALE } from "@/shared/api";
 import { registerAccount } from "@/shared/api/generated/identity/identity";
 import type { User } from "@/shared/api/generated/model";
-import { ACCOUNT_CONSENTS } from "@/shared/consents";
+import { ACCOUNT_CONSENTS, consentRecords } from "@/shared/consents";
 import type { RegisterValues } from "../model/schemas";
 
 /**
@@ -18,15 +18,7 @@ import type { RegisterValues } from "../model/schemas";
  */
 export function useRegister(): UseMutationResult<User, ApiError, RegisterValues> {
   return useMutation<User, ApiError, RegisterValues>({
-    mutationFn: async ({
-      firstName,
-      lastName,
-      email,
-      password,
-      acceptTerms,
-      acceptDataProcessing,
-      acceptMarketing,
-    }) => {
+    mutationFn: async ({ firstName, lastName, email, password, acceptTerms, acceptMarketing }) => {
       const response = await registerAccount(
         {
           firstName,
@@ -34,10 +26,10 @@ export function useRegister(): UseMutationResult<User, ApiError, RegisterValues>
           email,
           password,
           locale: DEFAULT_LOCALE,
-          // Sent with the account, not after it: an account whose consents were
+          // Sent with the account, not after it: an account whose acceptance was
           // recorded by a second request that failed would be an account processing
-          // data with no recorded basis (LEGAL-001 §13.3).
-          consents: acceptedAccountConsents({ acceptTerms, acceptDataProcessing, acceptMarketing }),
+          // data with no recorded basis (LEGAL-001 §13.3, §13.7).
+          consents: acceptedAccountConsents({ acceptTerms, acceptMarketing }),
         },
         { headers: { "Idempotency-Key": crypto.randomUUID() } },
       );
@@ -50,26 +42,24 @@ export function useRegister(): UseMutationResult<User, ApiError, RegisterValues>
 }
 
 /**
- * The consents to record, as `(code, version)` pairs read from the catalogue.
+ * What to record, as `(code, version)` pairs read from the catalogue.
  *
- * A definition may stand for more than one journal entry (the terms box records both
- * the terms and the policy acknowledgement), so the codes come from the catalogue
- * rather than being listed again here.
+ * One tick may stand for more than one journal entry — the agreement box records both
+ * the acceptance and the policy acknowledgement, each at the revision of *its own*
+ * document — so the pairs come from `consentRecords` rather than being listed again here.
  */
 function acceptedAccountConsents(accepted: {
   acceptTerms: boolean;
-  acceptDataProcessing: boolean;
   acceptMarketing: boolean;
 }): { consentType: string; version: string }[] {
   const ticked: Record<string, boolean> = {
     terms_of_service: accepted.acceptTerms,
-    data_processing: accepted.acceptDataProcessing,
     marketing: accepted.acceptMarketing,
   };
   return ACCOUNT_CONSENTS.filter((consent) => ticked[consent.code] === true).flatMap((consent) =>
-    (consent.records ?? [consent.code]).map((code) => ({
-      consentType: code,
-      version: consent.version,
+    consentRecords(consent).map((record) => ({
+      consentType: record.code,
+      version: record.version,
     })),
   );
 }

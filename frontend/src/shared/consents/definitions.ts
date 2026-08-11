@@ -15,7 +15,28 @@
  * The texts themselves paraphrase nothing — each states the purpose, the data and the
  * consequence of refusing, and points at the clause of the published policy it rests
  * on (`docs/legal/LEGAL-001-privacy-policy.md`).
+ *
+ * Not everything here is a consent. The account's own data rests on the
+ * Пользовательское соглашение (`docs/legal/LEGAL-003-terms-of-service.md`), a contract
+ * the person enters at registration — so that box is an *acceptance*, recorded the same
+ * way and withdrawn differently. `kind` says which of the two an entry is.
  */
+
+import { ROUTES } from "@/shared/config";
+
+/** One `(code, version)` pair as it lands in the journal. */
+export type ConsentRecord = {
+  readonly code: string;
+  readonly version: string;
+};
+
+/** A published document a checkbox rests on, linked beside it so it can be read first. */
+export type ConsentDocument = {
+  /** Route of the published page. */
+  readonly to: string;
+  /** How the link is named. */
+  readonly title: string;
+};
 
 /** A consent as the platform asks for it and records it. */
 export type ConsentDefinition = {
@@ -25,54 +46,105 @@ export type ConsentDefinition = {
   readonly version: string;
   /** Whether the flow may proceed without it. */
   readonly required: boolean;
+  /**
+   * Whether ticking this box gives a permission, or accepts a document.
+   *
+   * The distinction is not cosmetic: an `acceptance` may not be withdrawn the way a
+   * consent may (withdrawing the agreement is ending it — see LEGAL-001 §13.7), and the
+   * cabinet has to offer the honest action for each.
+   */
+  readonly kind: "consent" | "acceptance";
   /** The one-line statement beside the checkbox. */
   readonly summary: string;
   /** The full wording, disclosed on request beneath the checkbox. */
   readonly text: string;
   /**
-   * Codes this one acceptance records, when it stands for more than its own.
+   * The journal entries this one tick produces, when it stands for more than its own.
    *
-   * Only the terms checkbox uses it: what that box states is that the terms are
-   * accepted *and* the policies have been read, which are two entries in the journal
-   * and one decision by the person.
+   * Only the agreement checkbox uses it: what that box states is that the agreement is
+   * accepted *and* the policy has been read, which are two entries and one decision by
+   * the person. Each entry carries the version of the document it is about, not the
+   * version of the checkbox wording — so a stored `privacy_policy` row names the policy
+   * revision that was actually in force.
    */
-  readonly records?: readonly string[];
+  readonly records?: readonly ConsentRecord[];
+  /** Documents to link beside the checkbox; defaults to the privacy policy. */
+  readonly documents?: readonly ConsentDocument[];
 };
+
+/**
+ * The `(code, version)` entries one tick of `consent` writes to the journal.
+ *
+ * Every caller that records a consent goes through here, so the codes and versions
+ * stored are the catalogue's and never a second list that can drift from it.
+ */
+export function consentRecords(consent: ConsentDefinition): readonly ConsentRecord[] {
+  return consent.records ?? [{ code: consent.code, version: consent.version }];
+}
 
 /** Current version of every consent text below. Bump per text, not globally. */
 const V1 = "1.0";
 
 /**
- * Consents collected at registration.
+ * The wording of the agreement checkbox.
  *
- * Terms acceptance and acknowledging the policies travel in one checkbox: accepting the
- * terms is entering an agreement, and confirming you have read the policies is not a
- * separate permission to process anything. The permission itself — `data_processing` —
- * is asked for separately, because a consent bundled with anything else is not freely
- * given.
+ * `2.0` because `1.0` of this box said "я принимаю условия использования Платформы" at a
+ * time when no such document was published — it accepted terms that existed only as a
+ * phrase. Version `2.0` accepts LEGAL-003 revision 1.0, an actual contract, and the two
+ * must be distinguishable in the journal.
+ */
+const TERMS_V2 = "2.0";
+
+/** Revision of the published privacy policy this wording acknowledges (LEGAL-001). */
+const PRIVACY_POLICY_REVISION = "1.1";
+
+/** The published documents, as the checkboxes link them. */
+const TERMS_DOCUMENT: ConsentDocument = {
+  to: ROUTES.termsOfService,
+  title: "Пользовательское соглашение",
+};
+const PRIVACY_POLICY_DOCUMENT: ConsentDocument = {
+  to: ROUTES.privacyPolicy,
+  title: "Политика в отношении обработки персональных данных",
+};
+const COOKIES_POLICY_DOCUMENT: ConsentDocument = {
+  to: ROUTES.cookiesPolicy,
+  title: "Политика использования файлов cookie",
+};
+
+/**
+ * What registration asks for: acceptance of the agreement, and the newsletter.
+ *
+ * The account's own data is processed to perform the Пользовательское соглашение — a
+ * contract the person enters, which art. 6 of Law 99-З makes a legal basis in its own
+ * right (LEGAL-001 §4.4). So registration asks the person to *accept a document*, not to
+ * consent to being processed: a consent that must be given for the service to work at
+ * all would not be freely given, and asking for one the law does not require invites the
+ * person to withdraw something the account cannot exist without.
+ *
+ * The newsletter stays a consent, separate and optional, exactly as it was: it is not
+ * needed to perform the agreement, so nothing but consent can carry it (§4.3).
  */
 export const ACCOUNT_CONSENTS: readonly ConsentDefinition[] = [
   {
     code: "terms_of_service",
-    version: V1,
+    version: TERMS_V2,
     required: true,
-    records: ["terms_of_service", "privacy_policy"],
+    kind: "acceptance",
+    records: [
+      { code: "terms_of_service", version: TERMS_V2 },
+      { code: "privacy_policy", version: PRIVACY_POLICY_REVISION },
+    ],
+    documents: [TERMS_DOCUMENT, PRIVACY_POLICY_DOCUMENT, COOKIES_POLICY_DOCUMENT],
     summary:
-      "Я принимаю условия использования Платформы и подтверждаю, что ознакомлен(а) с Политикой обработки персональных данных и Политикой использования файлов cookie.",
-    text: "Принимая условия использования Платформы, я подтверждаю, что ознакомлен(а) с Политикой в отношении обработки персональных данных и Политикой использования файлов cookie, включая сведения об Операторе, целях и правовых основаниях обработки, сроках хранения персональных данных и порядке реализации моих прав, установленном разделом 15 Политики.",
-  },
-  {
-    code: "data_processing",
-    version: V1,
-    required: true,
-    summary:
-      "Я даю согласие на обработку моих персональных данных для создания учётной записи, приёма заявок и направления уведомлений.",
-    text: "Я даю согласие Оператору — Скорику Илье Андреевичу (УНП AE9395951) — на обработку моих персональных данных: фамилии, имени, отчества, адреса электронной почты, номера телефона (при указании), сведений об учреждении и должности, а также сведений об учётной записи и сеансах работы. Цели обработки: регистрация и обслуживание учётной записи, аутентификация, приём и сопровождение заявок на участие, направление уведомлений, связанных с оказанием услуг, исполнение обязанностей, возложенных на Оператора законодательством. Обработка осуществляется способами и в сроки, указанные в разделах 7 и 11 Политики. Согласие может быть отозвано в любое время без объяснения причин в порядке, установленном разделом 13 Политики; отзыв влечёт прекращение обработки и удаление персональных данных, за исключением данных, хранение которых предусмотрено законодательством.",
+      "Я принимаю Пользовательское соглашение и подтверждаю, что ознакомлен(а) с Политикой в отношении обработки персональных данных и Политикой использования файлов cookie.",
+    text: "Я принимаю Пользовательское соглашение, заключаемое с Оператором — Скориком Ильёй Андреевичем (УНП AE9395951), — и подтверждаю, что ознакомлен(а) с Политикой в отношении обработки персональных данных и Политикой использования файлов cookie, включая сведения об Операторе, целях и правовых основаниях обработки, сроках хранения персональных данных и порядке реализации моих прав, установленном разделом 15 Политики. Мои персональные данные — фамилия, имя, отчество (при указании), адрес электронной почты, номер телефона (при указании), сведения об учреждении и должности, сведения об учётной записи и сеансах работы — обрабатываются в целях заключения и исполнения Пользовательского соглашения: регистрации и обслуживания учётной записи, аутентификации, разграничения прав доступа, подтверждения контактных данных и направления уведомлений, связанных с оказанием услуг. Правовым основанием такой обработки является Пользовательское соглашение (статья 6 Закона; пункт 4.4 Политики), поэтому отдельное согласие на неё не запрашивается. Соглашение может быть прекращено в любое время — удалением учётной записи в личном кабинете либо заявлением на адрес support@vzlettalantov.by; обработка персональных данных при этом прекращается, а данные удаляются в порядке, установленном разделами 11 и 13 Политики, за исключением данных, хранение которых предусмотрено законодательством.",
   },
   {
     code: "marketing",
     version: V1,
     required: false,
+    kind: "consent",
     summary:
       "Я согласен(на) получать информационные рассылки о фестивалях и конкурсах. Отказ не влияет на участие.",
     text: "Я даю согласие на обработку моего адреса электронной почты, фамилии и имени для направления информационных рассылок о фестивалях, конкурсах и иных мероприятиях, проводимых на Платформе. Отказ от предоставления этого согласия либо его отзыв не влечёт ограничения участия в мероприятиях и доступа к функциям Платформы. Согласие может быть отозвано в любое время — в личном кабинете либо по ссылке отказа, содержащейся в каждом информационном сообщении.",
@@ -91,6 +163,7 @@ export const PARTICIPANT_CONSENT: ConsentDefinition = {
   code: "minor_data_processing",
   version: V1,
   required: true,
+  kind: "consent",
   summary:
     "Согласие законного представителя участника на обработку его персональных данных получено, и я подтверждаю его предоставление.",
   text: "Я подтверждаю, что являюсь законным представителем участника либо располагаю согласием его законного представителя на обработку персональных данных участника, и даю (подтверждаю) согласие на обработку персональных данных участника: фамилии, имени, отчества, даты рождения (для определения возрастной категории), изображения (фотографии) участника, сведений об учреждении, коллективе и педагоге, сведений о заявках, творческих работах и результатах их оценивания — в объёме, указанном в разделе 5 Политики в отношении обработки персональных данных, в целях участия в фестивалях и конкурсах, проводимых на Платформе. Творческая работа передаётся жюри с указанием псевдонима участника. Согласие может быть отозвано в любое время; отзыв влечёт прекращение обработки персональных данных участника, их удаление и невозможность дальнейшего участия в мероприятии (разделы 6 и 13 Политики).",
@@ -115,6 +188,7 @@ export const ADULT_PARTICIPANT_CONSENT: ConsentDefinition = {
   code: "participant_data_processing",
   version: V1,
   required: true,
+  kind: "consent",
   summary:
     "Согласие участника на обработку его персональных данных получено, и я подтверждаю его предоставление.",
   text: "Я подтверждаю, что получил(а) согласие указанного участника на обработку его персональных данных Оператором и на их предоставление организаторам мероприятий: фамилии, имени, отчества, даты рождения (для определения возрастной категории), изображения (фотографии) участника, сведений об учреждении, коллективе и педагоге, сведений о заявках, творческих работах и результатах их оценивания — в объёме, указанном в разделе 5 Политики в отношении обработки персональных данных, в целях участия в фестивалях и конкурсах, проводимых на Платформе. Творческая работа передаётся жюри с указанием псевдонима участника. Участник вправе отозвать согласие в любое время, обратившись к Оператору по адресу support@vzlettalantov.by; отзыв влечёт прекращение обработки его персональных данных, их удаление и невозможность дальнейшего участия в мероприятии (разделы 6, 11 и 13 Политики).",
@@ -179,6 +253,7 @@ export const TEACHER_CONSENT: ConsentDefinition = {
   code: "third_party_data_processing",
   version: V1,
   required: true,
+  kind: "consent",
   summary:
     "Согласие педагога на обработку его персональных данных получено, и я подтверждаю его предоставление.",
   text: "Я подтверждаю, что получил(а) согласие указанного педагога на обработку его персональных данных Оператором и на их предоставление организаторам мероприятий: фамилии, имени, отчества, должности (преподаваемой дисциплины), адреса электронной почты и номера телефона (при указании) — в целях подготовки и проведения фестивалей и конкурсов, включая указание педагога в заявках, протоколах результатов, программах выступлений и документах по итогам мероприятия (разделы 5, 8 и 9 Политики в отношении обработки персональных данных). Педагог вправе отозвать согласие в любое время, обратившись к Оператору по адресу support@vzlettalantov.by; отзыв влечёт прекращение обработки его персональных данных и их удаление в порядке, установленном разделами 11 и 13 Политики.",
@@ -197,6 +272,7 @@ export const APPLICATION_CONSENTS: Readonly<Record<string, ConsentDefinition>> =
     code: "personal_data",
     version: V1,
     required: true,
+    kind: "consent",
     summary:
       "Согласие законного представителя на обработку персональных данных участника для участия в этом мероприятии.",
     text: "Я подтверждаю наличие согласия законного представителя каждого заявленного участника на обработку его персональных данных в целях приёма и рассмотрения заявки, проверки соответствия условиям участия, приёма творческой работы и организации её оценивания жюри — в объёме, указанном в разделе 5 Политики в отношении обработки персональных данных. Без этого согласия участие в мероприятии невозможно.",
@@ -205,6 +281,7 @@ export const APPLICATION_CONSENTS: Readonly<Record<string, ConsentDefinition>> =
     code: "distribution",
     version: V1,
     required: true,
+    kind: "consent",
     summary:
       "Согласие на распространение персональных данных участника в протоколах результатов, программах выступлений и документах по итогам мероприятия.",
     text: "Я даю согласие на распространение персональных данных участника в общедоступных разделах Платформы: фамилии и имени участника (либо наименования творческого коллектива), жанра, номинации и возрастной категории, наименования учреждения, фамилии и имени педагога, наименования творческой работы и полученной награды — в протоколе результатов, программе выступлений и на странице проверки подлинности документа по итогам мероприятия. Дата рождения, адрес, контактные данные и сведения об оплате в общедоступных разделах не размещаются. Порядок прекращения распространения установлен пунктом 8.6 Политики.",
@@ -213,6 +290,7 @@ export const APPLICATION_CONSENTS: Readonly<Record<string, ConsentDefinition>> =
     code: "media",
     version: V1,
     required: false,
+    kind: "consent",
     summary:
       "Согласие на фото- и видеосъёмку участника во время мероприятия и на использование полученных материалов для освещения мероприятия.",
     text: "Я даю согласие на фото- и видеосъёмку участника во время проведения мероприятия и на использование полученных изображений и записей для освещения мероприятия организатором, включая размещение в информационных материалах о мероприятии. Согласие может быть отозвано в порядке, установленном разделом 13 Политики.",
@@ -221,6 +299,7 @@ export const APPLICATION_CONSENTS: Readonly<Record<string, ConsentDefinition>> =
     code: "regulations",
     version: V1,
     required: false,
+    kind: "consent",
     summary: "Я ознакомлен(а) с положением мероприятия и принимаю его условия.",
     text: "Я подтверждаю, что ознакомлен(а) с положением (регламентом) мероприятия, включая требования к творческим работам, порядок оценивания, сроки и условия оплаты участия, и принимаю его условия.",
   },
@@ -228,6 +307,7 @@ export const APPLICATION_CONSENTS: Readonly<Record<string, ConsentDefinition>> =
     code: "work_publication",
     version: V1,
     required: false,
+    kind: "consent",
     summary:
       "Согласие на публикацию творческой работы участника в открытом доступе. Отказ не влияет на участие и оценивание.",
     text: "Я даю согласие на размещение творческой работы участника в общедоступных разделах Платформы. При отсутствии этого согласия доступ к творческой работе предоставляется только организатору мероприятия и жюри (с указанием псевдонима участника), а участие в мероприятии и оценивание работы производятся в полном объёме (пункт 8.5 Политики).",

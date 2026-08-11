@@ -109,6 +109,9 @@ export function ConsentsCard({
               code: consent.code,
               version: FALLBACK_CONSENT_VERSION,
               required: consent.required,
+              // Whatever the festival asks for here is a permission it needs, never a
+              // document being accepted — those live in the account, not in an application.
+              kind: "consent" as const,
               summary: consent.label,
               text: consent.label,
             };

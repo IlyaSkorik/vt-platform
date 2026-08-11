@@ -43,7 +43,6 @@ describe("registerSchema", () => {
     password: STRONG_PASSWORD,
     confirmPassword: STRONG_PASSWORD,
     acceptTerms: true as const,
-    acceptDataProcessing: true as const,
     acceptMarketing: false,
   };
 
@@ -79,16 +78,19 @@ describe("registerSchema", () => {
     }
   });
 
-  it("requires terms acceptance", () => {
+  it("requires the agreement to be accepted", () => {
+    // The account exists because the person entered the agreement, and its data is
+    // processed to perform it (LEGAL-001 §4.4) — so there is nothing to register without.
     const result = registerSchema.safeParse({ ...base, acceptTerms: false });
     expect(result.success).toBe(false);
   });
 
-  it("requires consent to processing, separately from the terms", () => {
-    // Two decisions, not one: a permission bundled with an agreement is not freely
-    // given, so ticking the terms alone must not be enough (LEGAL-001 §13.1).
-    const result = registerSchema.safeParse({ ...base, acceptDataProcessing: false });
-    expect(result.success).toBe(false);
+  it("requires nothing else beyond the agreement and the account fields", () => {
+    // No consent is asked for at registration: one that had to be given for the service to
+    // work would not be freely given (LEGAL-001 §13.1, §13.2). Marketing is the only other
+    // box, and it is optional either way.
+    expect(registerSchema.safeParse(base).success).toBe(true);
+    expect(registerSchema.safeParse({ ...base, acceptMarketing: true }).success).toBe(true);
   });
 
   it("treats the newsletter as optional", () => {

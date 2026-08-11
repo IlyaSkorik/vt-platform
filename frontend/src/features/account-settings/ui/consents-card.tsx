@@ -14,19 +14,20 @@ import {
 import { type ConsentEntry, useConsents, useGrantConsent, useWithdrawConsent } from "../api/hooks";
 
 /**
- * The consents this account has given, and the control to take them back.
+ * What this account has agreed to, and the control to take back what can be taken back.
  *
  * §13.4 of the published policy says consent may be withdrawn at any time, in the
  * cabinet among other channels. This is that channel. Withdrawal is unconditional by
  * law, so there is no confirmation dialog arguing the case and nothing to justify — one
  * button, one request.
  *
- * Two things are deliberately *not* offered here. The consents the account cannot exist
- * without (the terms, and the permission to process the data the account is made of)
- * are shown but not withdrawable: taking them back is deleting the account, which is a
- * different, heavier action with its own confirmation, and pretending a toggle does it
- * would be a lie. And the consents given about a child are not listed: those belong to
- * the child's page, where the person can see whose data they concern.
+ * Two things are deliberately *not* offered here. The Пользовательское соглашение is
+ * shown but not withdrawable, because it is not a consent: the account's data is
+ * processed to perform it (LEGAL-001 §4.4, §13.7), so taking it back is ending the
+ * agreement — deleting the account — which is a different, heavier action with its own
+ * confirmation, and pretending a toggle does it would be a lie. And the consents given
+ * about a child are not listed: those belong to the child's page, where the person can
+ * see whose data they concern.
  */
 export function ConsentsCard(): React.JSX.Element {
   const consents = useConsents();
@@ -44,11 +45,11 @@ export function ConsentsCard(): React.JSX.Element {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ShieldCheck className="size-4 text-muted-foreground" aria-hidden="true" />
-          Согласия на обработку данных
+          Документы и согласия
         </CardTitle>
         <CardDescription>
-          Что вы разрешили и на какой редакции текста. Согласие можно отозвать в любое время без
-          объяснения причин; отказ от рассылок не влияет на участие в фестивалях.
+          Что вы приняли и разрешили, и на какой редакции текста. Согласие можно отозвать в любое
+          время без объяснения причин; отказ от рассылок не влияет на участие в фестивалях.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -87,10 +88,10 @@ export function ConsentsCard(): React.JSX.Element {
 }
 
 /**
- * One consent: its wording, its state, and whatever action is honest for it.
+ * One entry: its wording, its state, and whatever action is honest for it.
  *
- * A required consent shows what it is and says plainly that withdrawing it means
- * deleting the account, rather than offering a button that would have to refuse.
+ * A required entry shows what it is and says plainly that taking it back means deleting
+ * the account, rather than offering a button that would have to refuse.
  */
 function ConsentRow({
   consent,
@@ -112,13 +113,16 @@ function ConsentRow({
       <p className="text-foreground text-sm leading-6">{consent.summary}</p>
       <p className="text-muted-foreground text-xs">
         {active
-          ? `Действует${entry?.grantedAt != null ? ` с ${formatDate(entry.grantedAt)}` : ""} · редакция текста ${entry?.version ?? consent.version}`
-          : "Не предоставлено"}
+          ? `${consent.kind === "acceptance" ? "Принято" : "Действует"}${entry?.grantedAt != null ? ` ${formatDate(entry.grantedAt)}` : ""} · редакция текста ${entry?.version ?? consent.version}`
+          : consent.kind === "acceptance"
+            ? "Не принято"
+            : "Не предоставлено"}
       </p>
       {consent.required ? (
         <p className="text-muted-foreground text-xs">
-          Обязательно для работы учётной записи. Отзыв означает удаление учётной записи — напишите
-          нам, и мы прекратим обработку и удалим данные.
+          {consent.kind === "acceptance"
+            ? "Соглашение — основание, на котором ведётся учётная запись. Прекратить его можно, удалив учётную запись: обработка персональных данных будет прекращена, а данные удалены."
+            : "Обязательно для работы учётной записи. Отзыв означает удаление учётной записи — напишите нам, и мы прекратим обработку и удалим данные."}
         </p>
       ) : (
         <Button
