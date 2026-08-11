@@ -20,15 +20,15 @@
  * Пользовательское соглашение (`docs/legal/LEGAL-003-terms-of-service.md`), a contract
  * the person enters at registration — so that box is an *acceptance*, recorded the same
  * way and withdrawn differently. `kind` says which of the two an entry is.
+ *
+ * One box records one entry, at its own version. A wording that made a second statement
+ * — «и подтверждаю, что ознакомлен(а) с…» — would need a second journal entry, a second
+ * version to keep in step with the document it is about, and a defence of why the two
+ * were asked as one; §1.5 of the agreement already incorporates the policies, so there is
+ * nothing there to obtain separately.
  */
 
 import { ROUTES } from "@/shared/config";
-
-/** One `(code, version)` pair as it lands in the journal. */
-export type ConsentRecord = {
-  readonly code: string;
-  readonly version: string;
-};
 
 /** A published document a checkbox rests on, linked beside it so it can be read first. */
 export type ConsentDocument = {
@@ -58,29 +58,9 @@ export type ConsentDefinition = {
   readonly summary: string;
   /** The full wording, disclosed on request beneath the checkbox. */
   readonly text: string;
-  /**
-   * The journal entries this one tick produces, when it stands for more than its own.
-   *
-   * Only the agreement checkbox uses it: what that box states is that the agreement is
-   * accepted *and* the policy has been read, which are two entries and one decision by
-   * the person. Each entry carries the version of the document it is about, not the
-   * version of the checkbox wording — so a stored `privacy_policy` row names the policy
-   * revision that was actually in force.
-   */
-  readonly records?: readonly ConsentRecord[];
   /** Documents to link beside the checkbox; defaults to the privacy policy. */
   readonly documents?: readonly ConsentDocument[];
 };
-
-/**
- * The `(code, version)` entries one tick of `consent` writes to the journal.
- *
- * Every caller that records a consent goes through here, so the codes and versions
- * stored are the catalogue's and never a second list that can drift from it.
- */
-export function consentRecords(consent: ConsentDefinition): readonly ConsentRecord[] {
-  return consent.records ?? [{ code: consent.code, version: consent.version }];
-}
 
 /** Current version of every consent text below. Bump per text, not globally. */
 const V1 = "1.0";
@@ -94,9 +74,6 @@ const V1 = "1.0";
  * must be distinguishable in the journal.
  */
 const TERMS_V2 = "2.0";
-
-/** Revision of the published privacy policy this wording acknowledges (LEGAL-001). */
-const PRIVACY_POLICY_REVISION = "1.1";
 
 /** The published documents, as the checkboxes link them. */
 const TERMS_DOCUMENT: ConsentDocument = {
@@ -124,6 +101,13 @@ const COOKIES_POLICY_DOCUMENT: ConsentDocument = {
  *
  * The newsletter stays a consent, separate and optional, exactly as it was: it is not
  * needed to perform the agreement, so nothing but consent can carry it (§4.3).
+ *
+ * One tick, one journal entry. The box does not also state that the policies have been
+ * read, because §1.5 of the agreement already makes both of them part of it — accepting
+ * the agreement is accepting the set. A separate acknowledgement would be a second
+ * statement to obtain, to version and to defend, for something the contract already says.
+ * Both policies are still linked beside the box, since a document incorporated into a
+ * contract has to be reachable before the contract is accepted (LEGAL-003 §3.3).
  */
 export const ACCOUNT_CONSENTS: readonly ConsentDefinition[] = [
   {
@@ -131,14 +115,10 @@ export const ACCOUNT_CONSENTS: readonly ConsentDefinition[] = [
     version: TERMS_V2,
     required: true,
     kind: "acceptance",
-    records: [
-      { code: "terms_of_service", version: TERMS_V2 },
-      { code: "privacy_policy", version: PRIVACY_POLICY_REVISION },
-    ],
     documents: [TERMS_DOCUMENT, PRIVACY_POLICY_DOCUMENT, COOKIES_POLICY_DOCUMENT],
     summary:
-      "Я принимаю Пользовательское соглашение и подтверждаю, что ознакомлен(а) с Политикой в отношении обработки персональных данных и Политикой использования файлов cookie.",
-    text: "Я принимаю Пользовательское соглашение, заключаемое с Оператором — Скориком Ильёй Андреевичем (УНП AE9395951), — и подтверждаю, что ознакомлен(а) с Политикой в отношении обработки персональных данных и Политикой использования файлов cookie, включая сведения об Операторе, целях и правовых основаниях обработки, сроках хранения персональных данных и порядке реализации моих прав, установленном разделом 15 Политики. Мои персональные данные — фамилия, имя, отчество (при указании), адрес электронной почты, номер телефона (при указании), сведения об учреждении и должности, сведения об учётной записи и сеансах работы — обрабатываются в целях заключения и исполнения Пользовательского соглашения: регистрации и обслуживания учётной записи, аутентификации, разграничения прав доступа, подтверждения контактных данных и направления уведомлений, связанных с оказанием услуг. Правовым основанием такой обработки является Пользовательское соглашение (статья 6 Закона; пункт 4.4 Политики), поэтому отдельное согласие на неё не запрашивается. Соглашение может быть прекращено в любое время — удалением учётной записи в личном кабинете либо заявлением на адрес support@vzlettalantov.by; обработка персональных данных при этом прекращается, а данные удаляются в порядке, установленном разделами 11 и 13 Политики, за исключением данных, хранение которых предусмотрено законодательством.",
+      "Я принимаю Пользовательское соглашение, определяющее условия использования Платформы.",
+    text: "Я принимаю Пользовательское соглашение, заключаемое с Оператором — Скориком Ильёй Андреевичем (УНП AE9395951). Неотъемлемой частью Соглашения являются Политика в отношении обработки персональных данных и Политика использования файлов cookie (пункт 1.5 Соглашения). Мои персональные данные — фамилия, имя, отчество (при указании), адрес электронной почты, номер телефона (при указании), сведения об учреждении и должности, сведения об учётной записи и сеансах работы — обрабатываются в целях заключения и исполнения Соглашения: регистрации и обслуживания учётной записи, аутентификации, разграничения прав доступа, подтверждения контактных данных и направления уведомлений, связанных с оказанием услуг. Правовым основанием такой обработки является Соглашение (статья 6 Закона; пункт 4.4 Политики), поэтому отдельное согласие на неё не запрашивается. Сведения об Операторе, целях и правовых основаниях обработки, сроках хранения персональных данных и порядке реализации моих прав приведены в Политике в отношении обработки персональных данных. Соглашение может быть прекращено в любое время — удалением учётной записи в личном кабинете либо заявлением на адрес support@vzlettalantov.by; обработка персональных данных при этом прекращается, а данные удаляются в порядке, установленном разделами 11 и 13 Политики, за исключением данных, хранение которых предусмотрено законодательством.",
   },
   {
     code: "marketing",

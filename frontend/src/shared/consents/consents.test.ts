@@ -6,7 +6,6 @@ import {
   APPLICATION_CONSENTS,
   applicationConsent,
   type ConsentDefinition,
-  consentRecords,
   PARTICIPANT_CONSENT,
   participantConsent,
   TEACHER_CONSENT,
@@ -56,9 +55,7 @@ describe("consent catalogue", () => {
   });
 
   it("keeps the account codes distinct from one another", () => {
-    const codes = ACCOUNT_CONSENTS.flatMap((consent) =>
-      consentRecords(consent).map((record) => record.code),
-    );
+    const codes = ACCOUNT_CONSENTS.map((consent) => consent.code);
     expect(new Set(codes).size).toBe(codes.length);
   });
 
@@ -77,28 +74,35 @@ describe("consent catalogue", () => {
     expect(ACCOUNT_CONSENTS.map((consent) => consent.code)).not.toContain("data_processing");
   });
 
-  it("records the policy acknowledgement at the policy's own revision", () => {
-    // One tick, two entries — and each names the revision of the document it is about, so a
-    // stored `privacy_policy` row can be traced to the text that was in force rather than to
-    // the version of the checkbox wording.
+  it("states only what one tick can state, and records only that", () => {
+    // The box accepts the agreement and says nothing about having read the policies: §1.5
+    // of the agreement makes both of them part of it, so there is no second statement to
+    // obtain. Wording that claimed one would need a journal entry of its own, at the
+    // revision of the document it was about — which is how a stored acknowledgement drifts
+    // into naming a revision it was never given at.
     const terms = ACCOUNT_CONSENTS.find((consent) => consent.code === "terms_of_service");
-    const records = consentRecords(terms as ConsentDefinition);
-    expect(records.map((record) => record.code)).toEqual(["terms_of_service", "privacy_policy"]);
-    expect(records[0]?.version).toBe(terms?.version);
-    // Every version stored has to parse as a `ConsentVersion` on the backend: dot- or
-    // dash-separated integers, nothing else.
-    for (const record of records) {
-      expect(record.version, record.code).toMatch(/^\d+([.-]\d+)*$/);
+    expect(terms?.summary).not.toMatch(/ознакомлен/i);
+    expect(terms?.text).not.toMatch(/подтверждаю, что ознакомлен/i);
+  });
+
+  it("stores a version the backend can parse", () => {
+    // `ConsentVersion` in `apps.identity` accepts dot- or dash-separated integers and
+    // nothing else, so a version it would reject is a registration that cannot complete.
+    for (const consent of ALL) {
+      expect(consent.version, consent.code).toMatch(/^\d+([.-]\d+)*$/);
     }
   });
 
   it("links the documents a person has to be able to read before ticking the box", () => {
-    // LEGAL-003 §3.3 promises the agreement and the policy are reachable from the
-    // registration form itself. The checkbox renders `documents`, so an empty list there
-    // would quietly make that clause false.
+    // LEGAL-003 §3.3 promises the agreement and the policies are reachable from the
+    // registration form itself, and §1.5 makes them part of the contract being accepted —
+    // so all three are linked whether or not the wording mentions them. The checkbox
+    // renders `documents`, so an empty list there would quietly make those clauses false.
     const terms = ACCOUNT_CONSENTS.find((consent) => consent.code === "terms_of_service");
-    expect(terms?.documents?.map((document) => document.to)).toContain(ROUTES.termsOfService);
-    expect(terms?.documents?.map((document) => document.to)).toContain(ROUTES.privacyPolicy);
+    const linked = terms?.documents?.map((document) => document.to);
+    expect(linked).toContain(ROUTES.termsOfService);
+    expect(linked).toContain(ROUTES.privacyPolicy);
+    expect(linked).toContain(ROUTES.cookiesPolicy);
   });
 
   it("leaves the newsletter optional", () => {

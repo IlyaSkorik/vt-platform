@@ -52,8 +52,7 @@ export const registerSchema = z
     // required. No consent is asked for here: one that had to be given for registration to
     // work would not be freely given (LEGAL-001 §13.1, §13.2).
     acceptTerms: z.literal(true, {
-      message:
-        "Необходимо принять Пользовательское соглашение и подтвердить ознакомление с политикой",
+      message: "Необходимо принять Пользовательское соглашение",
     }),
     /** Optional by law and by design: refusing it changes nothing else. */
     acceptMarketing: z.boolean(),

@@ -13,8 +13,6 @@ export {
   applicationConsent,
   type ConsentDefinition,
   type ConsentDocument,
-  type ConsentRecord,
-  consentRecords,
   PARTICIPANT_CONSENT,
   participantConsent,
   TEACHER_CONSENT,

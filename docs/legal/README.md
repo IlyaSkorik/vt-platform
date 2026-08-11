@@ -25,15 +25,16 @@ Revision 1.1 of LEGAL-001 is the revision that made this change; §16.5 of the p
 
 ### Consent-text versions and document revisions
 
-`consent_version` on a stored row is the version of the *text the person saw*, which is not always the document's revision number. The catalogue records each entry at the version of the document it is about, so the mapping is:
+`consent_version` on a stored row is the version of the *text the person saw*, which is not the same number as the document's revision:
 
 | Journal `consentType` | Version stored | Text / document |
 |---|---|---|
 | `terms_of_service` | `2.0` | The agreement checkbox wording accepting LEGAL-003 rev. 1.0. Version `1.0` of this code predates LEGAL-003: it accepted «условия использования» that were never published as a document, so the two had to be distinguishable. |
-| `privacy_policy` | `1.1` | LEGAL-001 revision 1.1 — the acknowledgement carries the policy's own revision, not the checkbox's. |
 | `marketing` | `1.0` | Unchanged newsletter consent text. |
 
 A new revision of either document means a new version here, never an edit in place.
+
+**Registration writes one row, not two.** The box accepts the agreement and states nothing about having read the policies, because LEGAL-003 §1.5 already makes both of them part of it — accepting the agreement accepts the set, which LEGAL-001 §13.7 says in the published text. There is deliberately no `privacy_policy` acknowledgement row: a second statement would need a version kept in step with the policy's own revisions, and recording an acknowledgement the wording never asked for would be recording something the person did not say. Which policy revision applied to a given acceptance is answered by the acceptance date plus the retained revision history (§16.2), not by a second row.
 
 ## Two editorial rules for these documents
 

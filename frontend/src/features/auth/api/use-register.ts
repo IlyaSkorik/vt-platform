@@ -3,7 +3,7 @@ import type { ApiError } from "@/shared/api";
 import { DEFAULT_LOCALE } from "@/shared/api";
 import { registerAccount } from "@/shared/api/generated/identity/identity";
 import type { User } from "@/shared/api/generated/model";
-import { ACCOUNT_CONSENTS, consentRecords } from "@/shared/consents";
+import { ACCOUNT_CONSENTS } from "@/shared/consents";
 import type { RegisterValues } from "../model/schemas";
 
 /**
@@ -44,9 +44,9 @@ export function useRegister(): UseMutationResult<User, ApiError, RegisterValues>
 /**
  * What to record, as `(code, version)` pairs read from the catalogue.
  *
- * One tick may stand for more than one journal entry — the agreement box records both
- * the acceptance and the policy acknowledgement, each at the revision of *its own*
- * document — so the pairs come from `consentRecords` rather than being listed again here.
+ * One box, one entry: the code and the version both come from the definition whose
+ * wording was displayed, so the journal names the text the person actually saw and never
+ * a second list of codes kept here that could drift from it.
  */
 function acceptedAccountConsents(accepted: {
   acceptTerms: boolean;
@@ -56,10 +56,8 @@ function acceptedAccountConsents(accepted: {
     terms_of_service: accepted.acceptTerms,
     marketing: accepted.acceptMarketing,
   };
-  return ACCOUNT_CONSENTS.filter((consent) => ticked[consent.code] === true).flatMap((consent) =>
-    consentRecords(consent).map((record) => ({
-      consentType: record.code,
-      version: record.version,
-    })),
-  );
+  return ACCOUNT_CONSENTS.filter((consent) => ticked[consent.code] === true).map((consent) => ({
+    consentType: consent.code,
+    version: consent.version,
+  }));
 }
