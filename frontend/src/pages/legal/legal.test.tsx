@@ -10,6 +10,7 @@ import {
 import { CookiesPolicyPage } from "./cookies-policy";
 import { LEGAL_OPERATOR } from "./legal-facts";
 import { PrivacyPolicyPage } from "./privacy-policy";
+import { TermsOfServicePage } from "./terms-of-service";
 
 /**
  * The legal pages are published documents, so what is worth testing is not that
@@ -84,6 +85,57 @@ describe("PrivacyPolicyPage", () => {
   });
 });
 
+describe("TermsOfServicePage", () => {
+  it("names the operator the agreement is concluded with", () => {
+    // A contract with an unnamed counterparty is not a contract. The operator's identity is
+    // therefore read from `legal-facts`, not repeated as a string here.
+    renderPage(<TermsOfServicePage />, ROUTES.termsOfService);
+
+    expect(screen.getAllByText(new RegExp(LEGAL_OPERATOR.name)).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(new RegExp(LEGAL_OPERATOR.unp)).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("link", { name: LEGAL_OPERATOR.email }).length).toBeGreaterThan(0);
+  });
+
+  it("states that the account's data is processed to perform it, without consent", () => {
+    // This is the whole reason the document exists: it is the contract art. 6 of the Law
+    // makes a legal basis, so LEGAL-001 §4.1 row 1 no longer rests on consent. If this
+    // clause disappears, the policy's legal basis has nothing to point at.
+    renderPage(<TermsOfServicePage />, ROUTES.termsOfService);
+
+    expect(screen.getByText(/статья 6 Закона/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/отдельное согласие Пользователя на такую обработку не требуется/),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps the newsletter a separate, withdrawable consent", () => {
+    // The one consent the change did not touch, and the clause that says refusing it costs
+    // nothing (LEGAL-001 §4.3).
+    renderPage(<TermsOfServicePage />, ROUTES.termsOfService);
+
+    expect(screen.getByText(/Информационные рассылки о фестивалях/)).toBeInTheDocument();
+    expect(screen.getAllByText(/не влекут ограничения участия/).length).toBeGreaterThan(0);
+  });
+
+  it("links the privacy policy it declares to be part of itself", () => {
+    renderPage(<TermsOfServicePage />, ROUTES.termsOfService);
+    const links = screen.getAllByRole("link", {
+      name: /Политика в отношении обработки персональных данных/,
+    });
+    expect(links.length).toBeGreaterThan(0);
+    expect(links[0]).toHaveAttribute("href", ROUTES.privacyPolicy);
+  });
+
+  it("resolves every contents link to a section", () => {
+    const { container } = render(
+      <MemoryRouter initialEntries={[ROUTES.termsOfService]}>
+        <TermsOfServicePage />
+      </MemoryRouter>,
+    );
+    expectTocAnchorsResolve(container);
+  });
+});
+
 describe("CookiesPolicyPage", () => {
   it("names every cookie the platform actually sets", () => {
     renderPage(<CookiesPolicyPage />, ROUTES.cookiesPolicy);
@@ -135,8 +187,13 @@ describe("published legal text", () => {
         <CookiesPolicyPage />
       </MemoryRouter>,
     );
+    const terms = render(
+      <MemoryRouter initialEntries={[ROUTES.termsOfService]}>
+        <TermsOfServicePage />
+      </MemoryRouter>,
+    );
 
-    for (const { container } of [privacy, cookies]) {
+    for (const { container } of [privacy, cookies, terms]) {
       const text = container.textContent ?? "";
       expect(text).not.toMatch(/\[указать/i);
       expect(text).not.toMatch(/TODO/);

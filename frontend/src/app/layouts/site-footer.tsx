@@ -18,6 +18,11 @@ export function SiteFooter(): React.JSX.Element {
         <div className="space-y-2">
           <p className="font-medium text-foreground">Документы</p>
           <div className="flex flex-col items-start gap-1">
+            {/* First, because it is the one document that is a contract: the account
+                exists because the person accepted it (LEGAL-003 §3.2). */}
+            <Link to={ROUTES.termsOfService} className="hover:text-foreground hover:underline">
+              Пользовательское соглашение
+            </Link>
             <Link to={ROUTES.privacyPolicy} className="hover:text-foreground hover:underline">
               Политика обработки персональных данных
             </Link>

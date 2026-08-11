@@ -103,6 +103,12 @@ export const routes: RouteObject[] = [
             lazy: lazyPage(() => import("@/pages/protocol"), "PublicProtocolPage"),
           },
           {
+            // The contract itself, public and unauthenticated: it has to be readable
+            // before registering, because registering is accepting it (LEGAL-003 §3.3).
+            path: ROUTES.termsOfService.slice(1),
+            lazy: lazyPage(() => import("@/pages/legal"), "TermsOfServicePage"),
+          },
+          {
             path: ROUTES.privacyPolicy.slice(1),
             lazy: lazyPage(() => import("@/pages/legal"), "PrivacyPolicyPage"),
           },

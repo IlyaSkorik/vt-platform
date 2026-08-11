@@ -63,6 +63,19 @@ export const PRIVACY_POLICY_REVISION: LegalRevision = {
   effectiveDate: "2026-08-06",
 };
 
+/**
+ * The user agreement — approved by the operator and in force since 11 August 2026.
+ *
+ * This is the contract art. 6 of the Law refers to: the account exists because the
+ * person entered it, which is why the registration form asks them to accept it rather
+ * than to consent to being processed.
+ */
+export const TERMS_OF_SERVICE_REVISION: LegalRevision = {
+  version: "1.0",
+  consentVersion: "terms-of-service-1.0",
+  effectiveDate: "2026-08-11",
+};
+
 /** Approved by the operator and in force since 6 August 2026. */
 export const COOKIES_POLICY_REVISION: LegalRevision = {
   version: "1.0",

@@ -43,6 +43,8 @@ export const ROUTES = {
    * links it under "Результаты", and so does the letter sent to every participant.
    */
   publicProtocol: "/protocol/:slug",
+  /** The contract accepted at registration — the basis the account's data rests on. */
+  termsOfService: "/terms",
   privacyPolicy: "/privacy-policy",
   cookiesPolicy: "/cookies",
   applications: "/applications",
