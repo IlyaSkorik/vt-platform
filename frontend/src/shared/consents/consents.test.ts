@@ -188,6 +188,19 @@ describe("consent catalogue", () => {
     expect(participantConsent({ birthDate: "not-a-date", on: TODAY })).toBe(PARTICIPANT_CONSENT);
   });
 
+  it("promises no safeguard the platform does not apply", () => {
+    // Every one of these texts once ended «Творческая работа передаётся жюри с указанием
+    // псевдонима участника». There is no jury flow on the platform — `apps.judging` has no
+    // API at all — so that sentence promised de-identification that never happened. An
+    // alias *is* stored per participant, which is what makes the sentence easy to re-add in
+    // good faith; it must not come back before the handover it describes exists, and then
+    // only with LEGAL-001 §6.6 amended and the version bumped again (§16.6).
+    for (const consent of ALL) {
+      expect(consent.text, consent.code).not.toMatch(/псевдоним/i);
+      expect(consent.summary, consent.code).not.toMatch(/псевдоним/i);
+    }
+  });
+
   it("names the participant's photograph among the data it covers", () => {
     // The registry stores an avatar for every participant it holds — see
     // `backend/apps/participants/presentation/api/v1/registry/avatars.py`, and

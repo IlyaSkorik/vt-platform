@@ -31,15 +31,28 @@ Revision 1.1 of LEGAL-001 is the revision that made this change; §16.5 of the p
 |---|---|---|
 | `terms_of_service` | `2.0` | The agreement checkbox wording accepting LEGAL-003 rev. 1.0. Version `1.0` of this code predates LEGAL-003: it accepted «условия использования» that were never published as a document, so the two had to be distinguishable. |
 | `marketing` | `1.0` | Unchanged newsletter consent text. |
+| `minor_data_processing`, `participant_data_processing`, `work_publication` | `2.0` | Reworded when the pseudonym sentence was removed — see below. |
+| `third_party_data_processing`, `personal_data`, `distribution`, `media`, `regulations` | `1.0` | Unchanged. |
 
 A new revision of either document means a new version here, never an edit in place.
 
 **Registration writes one row, not two.** The box accepts the agreement and states nothing about having read the policies, because LEGAL-003 §1.5 already makes both of them part of it — accepting the agreement accepts the set, which LEGAL-001 §13.7 says in the published text. There is deliberately no `privacy_policy` acknowledgement row: a second statement would need a version kept in step with the policy's own revisions, and recording an acknowledgement the wording never asked for would be recording something the person did not say. Which policy revision applied to a given acceptance is answered by the acceptance date plus the retained revision history (§16.2), not by a second row.
 
+## The pseudonym that was promised and never applied
+
+Revision 1.0 of LEGAL-001 §6.6 said a creative work reaches a jury member «с указанием псевдонима Участника, без фамилии, имени и иных сведений, позволяющих установить личность», and three consent texts repeated it. Nothing of the kind happens: `apps.judging` has domain and application layers but **no API at all**, so no work has ever been handed to a jury under a pseudonym or under a name. Revision 1.1 replaces §6.6 with the scope actually intended for evaluation, adds the jury to §6.5 and §9.1 (§6.6 was the reason they were absent), and records the correction in §16.6.
+
+This is not the same case as the analytics counters, and the distinction is the one to carry forward:
+
+- **Disclosing processing that is planned but not yet live is safe.** The text then says more happens than does, consent is collected either way, and going live breaks nothing. That is why both policies describe Yandex Metrica and Google Analytics in the present tense before the counters exist.
+- **Promising a safeguard that is not implemented is the opposite.** It tells a parent their child's work is de-identified when nothing de-identifies it. There is no version of going live that makes such a clause become true, and it is exactly the kind of statement НЦЗПД would read as a commitment.
+
+An alias **is** stored for every participant — `display_alias` on `ParticipantRegistryModel`, unique among active rows, with `PseudonymizationPolicy` guarding against the real name leaking into it — which is what makes the sentence easy to re-add in good faith. It stays out until the handover it describes exists in code. When the jury flow is built: amend §6.6 first, bump the three consent texts again, and honour §16.6, which promises subjects will be informed **before** evaluation by a jury begins. `consents.test.ts` fails on the word `псевдоним` in any consent text, so the promise cannot creep back silently.
+
 ## Two editorial rules for these documents
 
 1. **Formal legal register.** Third person, «Оператор» and «субъект персональных данных», not «мы» and «вы». Terms carry the meaning art. 1 of the Law gives them.
-2. **The documents describe what is processed, not what is not.** No inventories of data the platform never collects, no assurances about absent practices. Where a clause has to bound the scope of something, it does so affirmatively — «предоставляются исключительно сведения, перечисленные в пункте 4.2», never «иные сведения не предоставляются».
+2. **The documents describe what is processed, not what is not.** No inventories of data the platform never collects, no assurances about absent practices. Where a clause has to bound the scope of something, it does so affirmatively — «предоставляются исключительно сведения, перечисленные в пункте 4.2», never «иные сведения не предоставляются». The corollary is the one above: a clause that reads as a *protective guarantee* must describe a mechanism that exists.
 
 ## Operator details, as published
 

@@ -62,18 +62,17 @@ export type ConsentDefinition = {
   readonly documents?: readonly ConsentDocument[];
 };
 
-/** Current version of every consent text below. Bump per text, not globally. */
+/** A text that has not been reworded since it was first published. */
 const V1 = "1.0";
 
 /**
- * The wording of the agreement checkbox.
+ * A text that has been reworded once. Which texts, and why, is on each entry below.
  *
- * `2.0` because `1.0` of this box said "я принимаю условия использования Платформы" at a
- * time when no such document was published — it accepted terms that existed only as a
- * phrase. Version `2.0` accepts LEGAL-003 revision 1.0, an actual contract, and the two
- * must be distinguishable in the journal.
+ * Versions are per text, not global: `V1` and `V2` say how many wordings a given consent
+ * has had, so two entries sharing `V2` have nothing to do with each other beyond both
+ * being on their second wording.
  */
-const TERMS_V2 = "2.0";
+const V2 = "2.0";
 
 /** The published documents, as the checkboxes link them. */
 const TERMS_DOCUMENT: ConsentDocument = {
@@ -112,7 +111,10 @@ const COOKIES_POLICY_DOCUMENT: ConsentDocument = {
 export const ACCOUNT_CONSENTS: readonly ConsentDefinition[] = [
   {
     code: "terms_of_service",
-    version: TERMS_V2,
+    // `2.0`: version `1.0` of this box accepted «условия использования Платформы» at a time
+    // when no such document was published — terms that existed only as a phrase. This one
+    // accepts LEGAL-003 rev. 1.0, and the two have to be distinguishable in the journal.
+    version: V2,
     required: true,
     kind: "acceptance",
     documents: [TERMS_DOCUMENT, PRIVACY_POLICY_DOCUMENT, COOKIES_POLICY_DOCUMENT],
@@ -141,12 +143,16 @@ export const ACCOUNT_CONSENTS: readonly ConsentDefinition[] = [
  */
 export const PARTICIPANT_CONSENT: ConsentDefinition = {
   code: "minor_data_processing",
-  version: V1,
+  // `2.0`: version `1.0` ended «Творческая работа передаётся жюри с указанием псевдонима
+  // участника» — a safeguard, not a description. There is no jury flow on the platform, so
+  // nothing has ever handed a work over under a pseudonym or under a name. Dropping the
+  // sentence narrows what the representative was told, which is a different consent.
+  version: V2,
   required: true,
   kind: "consent",
   summary:
     "Согласие законного представителя участника на обработку его персональных данных получено, и я подтверждаю его предоставление.",
-  text: "Я подтверждаю, что являюсь законным представителем участника либо располагаю согласием его законного представителя на обработку персональных данных участника, и даю (подтверждаю) согласие на обработку персональных данных участника: фамилии, имени, отчества, даты рождения (для определения возрастной категории), изображения (фотографии) участника, сведений об учреждении, коллективе и педагоге, сведений о заявках, творческих работах и результатах их оценивания — в объёме, указанном в разделе 5 Политики в отношении обработки персональных данных, в целях участия в фестивалях и конкурсах, проводимых на Платформе. Творческая работа передаётся жюри с указанием псевдонима участника. Согласие может быть отозвано в любое время; отзыв влечёт прекращение обработки персональных данных участника, их удаление и невозможность дальнейшего участия в мероприятии (разделы 6 и 13 Политики).",
+  text: "Я подтверждаю, что являюсь законным представителем участника либо располагаю согласием его законного представителя на обработку персональных данных участника, и даю (подтверждаю) согласие на обработку персональных данных участника: фамилии, имени, отчества, даты рождения (для определения возрастной категории), изображения (фотографии) участника, сведений об учреждении, коллективе и педагоге, сведений о заявках, творческих работах и результатах их оценивания — в объёме, указанном в разделе 5 Политики в отношении обработки персональных данных, в целях участия в фестивалях и конкурсах, проводимых на Платформе. Согласие может быть отозвано в любое время; отзыв влечёт прекращение обработки персональных данных участника, их удаление и невозможность дальнейшего участия в мероприятии (разделы 6 и 13 Политики).",
 };
 
 /**
@@ -166,12 +172,13 @@ export const PARTICIPANT_CONSENT: ConsentDefinition = {
  */
 export const ADULT_PARTICIPANT_CONSENT: ConsentDefinition = {
   code: "participant_data_processing",
-  version: V1,
+  /** `2.0` for the same reason as {@link PARTICIPANT_CONSENT}: the pseudonym sentence went. */
+  version: V2,
   required: true,
   kind: "consent",
   summary:
     "Согласие участника на обработку его персональных данных получено, и я подтверждаю его предоставление.",
-  text: "Я подтверждаю, что получил(а) согласие указанного участника на обработку его персональных данных Оператором и на их предоставление организаторам мероприятий: фамилии, имени, отчества, даты рождения (для определения возрастной категории), изображения (фотографии) участника, сведений об учреждении, коллективе и педагоге, сведений о заявках, творческих работах и результатах их оценивания — в объёме, указанном в разделе 5 Политики в отношении обработки персональных данных, в целях участия в фестивалях и конкурсах, проводимых на Платформе. Творческая работа передаётся жюри с указанием псевдонима участника. Участник вправе отозвать согласие в любое время, обратившись к Оператору по адресу support@vzlettalantov.by; отзыв влечёт прекращение обработки его персональных данных, их удаление и невозможность дальнейшего участия в мероприятии (разделы 6, 11 и 13 Политики).",
+  text: "Я подтверждаю, что получил(а) согласие указанного участника на обработку его персональных данных Оператором и на их предоставление организаторам мероприятий: фамилии, имени, отчества, даты рождения (для определения возрастной категории), изображения (фотографии) участника, сведений об учреждении, коллективе и педагоге, сведений о заявках, творческих работах и результатах их оценивания — в объёме, указанном в разделе 5 Политики в отношении обработки персональных данных, в целях участия в фестивалях и конкурсах, проводимых на Платформе. Участник вправе отозвать согласие в любое время, обратившись к Оператору по адресу support@vzlettalantov.by; отзыв влечёт прекращение обработки его персональных данных, их удаление и невозможность дальнейшего участия в мероприятии (разделы 6, 11 и 13 Политики).",
 };
 
 /** The age from which a participant consents for themselves (LEGAL-001 §6.2). */
@@ -285,12 +292,14 @@ export const APPLICATION_CONSENTS: Readonly<Record<string, ConsentDefinition>> =
   },
   work_publication: {
     code: "work_publication",
-    version: V1,
+    // `2.0`: version `1.0` said the organizer and the jury see the work «(с указанием
+    // псевдонима участника)». They do not — see PARTICIPANT_CONSENT.
+    version: V2,
     required: false,
     kind: "consent",
     summary:
       "Согласие на публикацию творческой работы участника в открытом доступе. Отказ не влияет на участие и оценивание.",
-    text: "Я даю согласие на размещение творческой работы участника в общедоступных разделах Платформы. При отсутствии этого согласия доступ к творческой работе предоставляется только организатору мероприятия и жюри (с указанием псевдонима участника), а участие в мероприятии и оценивание работы производятся в полном объёме (пункт 8.5 Политики).",
+    text: "Я даю согласие на размещение творческой работы участника в общедоступных разделах Платформы. При отсутствии этого согласия доступ к творческой работе предоставляется только организатору мероприятия и жюри, а участие в мероприятии и оценивание работы производятся в полном объёме (пункт 8.5 Политики).",
   },
 };
 
