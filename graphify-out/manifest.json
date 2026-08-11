@@ -9605,8 +9605,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/legal/privacy-policy.tsx": {
-    "mtime": 1786479275.0669053,
-    "ast_hash": "6c57ddaaa12d699a7fdd992ef379df87",
+    "mtime": 1786479874.9508939,
+    "ast_hash": "79318c52ad7806d41a041acd78803bd2",
     "semantic_hash": ""
   },
   "frontend/src/pages/notifications/index.ts": {
@@ -9620,13 +9620,13 @@
     "semantic_hash": ""
   },
   "frontend/src/shared/consents/consents.test.ts": {
-    "mtime": 1786479229.522392,
-    "ast_hash": "32b13c853841d590404bee8a3b68f969",
+    "mtime": 1786479921.4965925,
+    "ast_hash": "499bffd7e78a919f6bd38ce22c450119",
     "semantic_hash": ""
   },
   "frontend/src/shared/consents/definitions.ts": {
-    "mtime": 1786479157.6082428,
-    "ast_hash": "8097d9b2be5ee0590e89b6bf52aa0e9a",
+    "mtime": 1786479851.8953748,
+    "ast_hash": "fe970d9de06b4830ef7842432d9a928e",
     "semantic_hash": ""
   },
   "frontend/src/shared/consents/index.ts": {
@@ -9775,8 +9775,8 @@
     "semantic_hash": ""
   },
   "docs/legal/LEGAL-001-privacy-policy.md": {
-    "mtime": 1786479185.4229066,
-    "ast_hash": "f75acfd889244b6d81d041ef731ff673",
+    "mtime": 1786479677.7891912,
+    "ast_hash": "cea8558ec10e720287572339abfe5a70",
     "semantic_hash": ""
   },
   "docs/legal/LEGAL-002-cookies-policy.md": {
@@ -9785,8 +9785,8 @@
     "semantic_hash": ""
   },
   "docs/legal/README.md": {
-    "mtime": 1786479241.712616,
-    "ast_hash": "a2edb31feb97266b48fa3a85b5460368",
+    "mtime": 1786479950.1429193,
+    "ast_hash": "26c8e19786dc01317ae9e62d1a98d768",
     "semantic_hash": ""
   },
   "frontend/public/logo.svg": {
@@ -9805,13 +9805,13 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/legal/terms-of-service.tsx": {
-    "mtime": 1786477846.8044906,
-    "ast_hash": "e5cde86361304da7e6dad510dbce1b29",
+    "mtime": 1786479747.6413412,
+    "ast_hash": "6d33dd0cf119a6ae92a86f6d2d6dbf03",
     "semantic_hash": ""
   },
   "docs/legal/LEGAL-003-terms-of-service.md": {
-    "mtime": 1786477831.526821,
-    "ast_hash": "9460f3b0ed2a0e1dccb987d5bff6806f",
+    "mtime": 1786479689.2967095,
+    "ast_hash": "f7e12a3e8fb76d405f01e53aaa8ae01d",
     "semantic_hash": ""
   }
 }
