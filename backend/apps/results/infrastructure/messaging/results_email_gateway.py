@@ -89,6 +89,8 @@ class DjangoResultsNotifier:
             # whole nomination.
             button_label="Мои документы",
             button_url=self._documents_url,
+            status="success",
+            status_label="Итоги подведены",
         )
 
         message = EmailMultiAlternatives(subject=_SUBJECT, body=body, from_email=self._from_email, to=[email])

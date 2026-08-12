@@ -89,11 +89,13 @@ class DjangoEmailGateway:
             body=body,
             html_body=render_transactional_email_html(
                 title=_VERIFICATION_SUBJECT,
-                intro=f"Здравствуйте, {full_name.first_name}! Благодарим за регистрацию на платформе «Взлет талантов».",
+                intro=f"Здравствуйте, {full_name.first_name}! Благодарим за регистрацию на платформе «Взлёт талантов».",
                 details_label="Действие",
                 details="Подтвердите адрес электронной почты, чтобы завершить регистрацию.",
                 button_label="Подтвердить email",
                 button_url=verification_url,
+                status="info",
+                status_label="Требуется подтверждение",
             ),
             to=email.value,
         )
@@ -119,6 +121,8 @@ class DjangoEmailGateway:
                 details=f"Ссылка действительна до {_format_expiry(expires_at)}.",
                 button_label="Сбросить пароль",
                 button_url=reset_url,
+                status="info",
+                status_label="Восстановление доступа",
             ),
             to=email.value,
         )

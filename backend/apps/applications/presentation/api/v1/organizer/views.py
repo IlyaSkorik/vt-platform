@@ -604,6 +604,8 @@ class OrganizerProcessingActionView(_StaffView):
                             details=comment,
                             button_label="Открыть заявку в ЛК",
                             button_url=detail_url,
+                            status="warning",
+                            status_label="На исправлении",
                         ),
                     )
                     notification_feed.publish(
@@ -712,6 +714,8 @@ class OrganizerProcessingActionView(_StaffView):
                             details=comment,
                             button_label="Загрузить файлы в ЛК",
                             button_url=detail_url,
+                            status="warning",
+                            status_label="Нужны файлы",
                         ),
                     )
                     notification_feed.publish(
@@ -797,6 +801,8 @@ class OrganizerProcessingActionView(_StaffView):
                         details="После прикрепления квитанции заявка будет готова к дальнейшей обработке.",
                         button_label="Открыть заявку в ЛК",
                         button_url=detail_url,
+                        status="warning",
+                        status_label="Ожидает квитанции",
                     ),
                 )
                 notification_feed.publish(

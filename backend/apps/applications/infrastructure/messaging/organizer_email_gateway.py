@@ -88,6 +88,8 @@ class DjangoOrganizerNotifier:
             details=details,
             button_label="Открыть заявку",
             button_url=link,
+            status="info",
+            status_label="Заявка изменена",
         )
 
         for address in emails:

@@ -86,6 +86,8 @@ class DjangoApplicantNotifier:
                 details="Заявка получена вместе с квитанцией об оплате.",
                 button_label="Мои заявки",
                 button_url=self._applications_url,
+                status="success",
+                status_label="Заявка принята",
             ),
             to=email,
             # A receipt. During a registration rush these arrive by the hundred and nobody
@@ -119,6 +121,8 @@ class DjangoApplicantNotifier:
                 details=(f"{deadline_text}. Прикрепите квитанцию об оплате до этого срока, иначе заявка автоматически отменится."),
                 button_label="Прикрепить квитанцию",
                 button_url=self._applications_url,
+                status="warning",
+                status_label="Ожидает оплаты",
             ),
             to=email,
             # Carries a deadline the applicant loses their place by missing. Late is the
@@ -150,6 +154,8 @@ class DjangoApplicantNotifier:
                 details="Квитанция об оплате не была прикреплена в срок.",
                 button_label="Мои заявки",
                 button_url=self._applications_url,
+                status="danger",
+                status_label="Отменена",
             ),
             to=email,
             # Produced by the sweep, which cancels every overdue order in one pass. The

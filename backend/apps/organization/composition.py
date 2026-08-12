@@ -263,6 +263,8 @@ class DjangoStaffInvitationEmailGateway:
             details=f"До {expires_text}",
             button_label="Принять приглашение",
             button_url=token,
+            status="info",
+            status_label="Приглашение",
         )
         message = EmailMultiAlternatives(
             subject=subject,
