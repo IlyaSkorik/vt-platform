@@ -530,8 +530,8 @@
     "semantic_hash": ""
   },
   "backend/apps/applications/presentation/api/v1/organizer/views.py": {
-    "mtime": 1786202288.1046758,
-    "ast_hash": "18412968583e9ce548f1fc2a69b65acf",
+    "mtime": 1786557534.376404,
+    "ast_hash": "2bdc8896ec3a1aa9d57505c9e664fd16",
     "semantic_hash": ""
   },
   "backend/apps/applications/presentation/api/v1/problems.py": {
@@ -1195,8 +1195,8 @@
     "semantic_hash": "c3a00c98a25ab7fabea6b6de4669ae98"
   },
   "backend/apps/emailing/templates.py": {
-    "mtime": 1785860600.7299657,
-    "ast_hash": "c16d55fd47e25f52284f50705b90c105",
+    "mtime": 1786562019.6711218,
+    "ast_hash": "e8adc73ca4525f7221c7a4deca972cbd",
     "semantic_hash": ""
   },
   "backend/apps/finance/__init__.py": {
@@ -1515,8 +1515,8 @@
     "semantic_hash": ""
   },
   "backend/apps/identity/infrastructure/messaging/email_gateway.py": {
-    "mtime": 1785860600.746674,
-    "ast_hash": "1336fe29336f96114ec6a4d57727091b",
+    "mtime": 1786557434.9331589,
+    "ast_hash": "99f88991bcfca71ced8c3c56fa904892",
     "semantic_hash": ""
   },
   "backend/apps/identity/infrastructure/messaging/event_dispatcher.py": {
@@ -2160,8 +2160,8 @@
     "semantic_hash": "487b25684440af01c453a755d3aa4f25"
   },
   "backend/apps/organization/composition.py": {
-    "mtime": 1785860600.7822812,
-    "ast_hash": "2307dc763a2234abb62cad8f4ec25b57",
+    "mtime": 1786557486.9204674,
+    "ast_hash": "f7b7dffc6ee8e700d6f1c6d66e73dc16",
     "semantic_hash": ""
   },
   "backend/apps/organization/domain/__init__.py": {
@@ -6925,8 +6925,8 @@
     "semantic_hash": ""
   },
   "backend/apps/applications/infrastructure/messaging/application_email_gateway.py": {
-    "mtime": 1786202972.1766837,
-    "ast_hash": "ce816d73c201323b946146bbc86ffe91",
+    "mtime": 1786557458.4257798,
+    "ast_hash": "d0e811658625cb0f6f87d6497797e3d2",
     "semantic_hash": ""
   },
   "backend/apps/applications/infrastructure/migrations/0004_application_submitted_at.py": {
@@ -8500,8 +8500,8 @@
     "semantic_hash": ""
   },
   "backend/apps/results/infrastructure/messaging/results_email_gateway.py": {
-    "mtime": 1786202329.1311047,
-    "ast_hash": "4de137ba6cb3d7f267021397f8dc0942",
+    "mtime": 1786557459.84843,
+    "ast_hash": "986799b11a0c073d36b75af32bafd64b",
     "semantic_hash": ""
   },
   "backend/apps/results/infrastructure/migrations/0001_initial.py": {
@@ -9315,8 +9315,8 @@
     "semantic_hash": ""
   },
   "backend/apps/applications/infrastructure/messaging/organizer_email_gateway.py": {
-    "mtime": 1786199464.7239668,
-    "ast_hash": "539fc16c0679a8a910fa32b0d7da17ed",
+    "mtime": 1786557485.6324203,
+    "ast_hash": "6935169b53ab14a04205afba391458fd",
     "semantic_hash": ""
   },
   "backend/apps/applications/infrastructure/migrations/0006_application_revision_journal.py": {
@@ -9812,6 +9812,16 @@
   "docs/legal/LEGAL-003-terms-of-service.md": {
     "mtime": 1786479689.2967095,
     "ast_hash": "f7e12a3e8fb76d405f01e53aaa8ae01d",
+    "semantic_hash": ""
+  },
+  "frontend/public/logo-email.png": {
+    "mtime": 1786561369.8980145,
+    "ast_hash": "f9d7163f2bbe574fad6e228c24a1039d",
+    "semantic_hash": ""
+  },
+  "frontend/public/logo-email-dark.png": {
+    "mtime": 1786561369.9500144,
+    "ast_hash": "84cbdcf1bf07451dbefd1563ef5fd429",
     "semantic_hash": ""
   }
 }
