@@ -321,41 +321,98 @@ The pre-deploy dumps in `/srv/vt-platform/backups/` are a safety net for *that r
 workflow keeps the five most recent and prunes the rest, because a 1–3 GB dump per deploy on a
 50 GB disk fills it up months later, during a deploy, which is the worst possible moment.
 
-### The nightly job, to the same bucket
+### The nightly job, to a bucket of its own
 
-Not written yet, and worth doing early. The shape:
+[`deploy/backup/`](../../deploy/backup/) holds it: a script, a service and a timer. Install as
+root, once:
 
 ```bash
-# /etc/cron.daily/vt-backup   (chmod +x)
-#!/bin/sh
-set -eu
-cd /srv/vt-platform
-set -a; . ./backend/.env; set +a
-stamp=$(date -u +%Y%m%dT%H%M%SZ)
-out="/tmp/vt-$stamp.dump"
-
-docker compose -f docker-compose.prod.yml --env-file ./backend/.env \
-  exec -T postgres pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB" > "$out"
-
-# Straight to the bucket — the point is that it is not on this machine.
-aws --endpoint-url "$S3_ENDPOINT_URL" s3 cp "$out" "s3://$S3_BUCKET/backups/db/vt-$stamp.dump"
-rm -f "$out"
+cd /srv/vt-platform   # or wherever the repository is checked out on the machine
+install -m 0755 deploy/backup/vt-backup.sh /usr/local/bin/vt-backup
+install -m 0644 deploy/backup/vt-backup.service deploy/backup/vt-backup.timer /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now vt-backup.timer
 ```
+
+The database credentials come from `backend/.env`; the bucket's come from `/etc/vt-backup.env`,
+which the unit reads and which the application never does (`chmod 600` — these are credentials):
+
+```
+BACKUP_S3_BUCKET=vtbackups
+BACKUP_S3_ACCESS_KEY_ID=…
+BACKUP_S3_SECRET_ACCESS_KEY=…
+BACKUP_S3_ENDPOINT_URL=https://…
+```
+
+**A bucket of its own is the point, not a detail.** The application's key can delete media, so
+everything that key reaches is destroyable by whatever destroys the application — a backup must
+not be reachable that way. Give this one a key scoped to `vtbackups` and the two share nothing
+but a provider. Set only `BACKUP_S3_BUCKET` and it borrows the application's key, which is better
+than nothing and worse than a separate key. Set neither and it falls back to `S3_BUCKET` under a
+`backups/db/` prefix, which keeps the single-bucket shape working.
+
+Run it by hand before trusting the timer:
+
+```bash
+/usr/local/bin/vt-backup          # writes one dump and reports what it put where
+systemctl list-timers vt-backup   # when it next fires
+journalctl -u vt-backup -n 50     # what the last run did
+```
+
+A failure otherwise reaches only the journal, which is the classic way to lose data: the job
+stopped in March and nobody read the log until June. Two more lines in the same
+`/etc/vt-backup.env` send it somewhere with a person behind it:
+
+```
+BACKUP_TELEGRAM_TOKEN=123456:AA…
+BACKUP_TELEGRAM_CHAT_ID=-1001234567890
+```
+
+Three things the script does that a plainer one would not, each for a reason worth keeping:
+
+* **It verifies the dump before uploading it.** `pg_dump` exiting 0 means it finished, not that
+  the archive is readable; `pg_restore --list` reads the table of contents back, which is the
+  cheapest check that would notice a truncated file. The night to find out is not the night you
+  need it.
+* **It reads the object back after uploading.** `cp` reporting success while the object is absent
+  — a wrong endpoint, a key without write permission — is exactly the failure a backup must not
+  sleep through, so the size in the listing is compared with the size on disk.
+* **It deletes a partial upload on any failure.** An incomplete object is worse than no object:
+  in a listing it looks like a backup.
 
 Two notes on the retention, since "keep the last seven" is the obvious instinct:
 
-* **Let the bucket expire them, not the script.** A lifecycle rule on `backups/db/` with an
-  expiration of 7 days does it server-side, so a broken cron cannot silently stop pruning while
+* **Let the bucket expire them, not the script.** A lifecycle rule on `vtbackups` with an
+  expiration of 7 days does it server-side, so a broken timer cannot silently stop pruning while
   still uploading — or worse, prune while failing to upload.
 * **Seven daily copies is one week of history.** It restores yesterday, and it cannot restore the
   state before a mistake nobody noticed for ten days. If that matters, add a monthly rule keeping
   one copy for a year; object storage is cheap enough that the decision is about intent, not cost.
 
-Use the same credentials the application already has, but a **separate prefix** — and if the
-provider allows a second key scoped to `backups/`, use one. The application's key can delete media;
-a backup should not be reachable by anything that a compromised application key can reach.
+### The rehearsal
 
-The part that gets skipped is the restore rehearsal. A dump nobody has restored is a hope.
+A dump nobody has restored is a hope, and this is the step that gets skipped. It takes ten
+minutes, and it is the only thing that turns the bucket into a backup:
+
+```bash
+set -a; . /srv/vt-platform/backend/.env; set +a
+KEY=$(aws --endpoint-url "$BACKUP_S3_ENDPOINT_URL" s3 ls s3://vtbackups/ | tail -1 | awk '{print $4}')
+aws --endpoint-url "$BACKUP_S3_ENDPOINT_URL" s3 cp "s3://vtbackups/$KEY" /tmp/rehearsal.dump
+
+PG=$(docker ps -q --filter label=com.docker.compose.project=vt-platform-prod \
+                  --filter label=com.docker.compose.service=postgres)
+
+# Into a scratch database, never over the live one.
+docker exec -i "$PG" psql -U "$POSTGRES_USER" -d postgres -c "CREATE DATABASE restore_check;"
+docker exec -i "$PG" pg_restore -U "$POSTGRES_USER" -d restore_check --no-owner < /tmp/rehearsal.dump
+
+# What came back: the table count, and a table you can recognise.
+docker exec -i "$PG" psql -U "$POSTGRES_USER" -d restore_check -tAc \
+  "SELECT count(*) FROM information_schema.tables WHERE table_schema='public';"
+
+docker exec -i "$PG" psql -U "$POSTGRES_USER" -d postgres -c "DROP DATABASE restore_check;"
+rm -f /tmp/rehearsal.dump
+```
 
 Note that rotating `SECRET_KEY` changes where *future* diploma files are written (OPS-007);
 restoring an old dump against a new key is fine for already-issued diplomas, because their
