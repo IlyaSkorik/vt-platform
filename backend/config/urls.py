@@ -22,6 +22,7 @@ from drf_spectacular.views import (
 
 from config.seo import robots_txt, sitemap_xml
 from config.spa import spa_index
+from config.status import status_json, status_page
 
 
 def healthz(_request: HttpRequest) -> JsonResponse:
@@ -38,6 +39,10 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("healthz", healthz, name="healthz"),
     path("readyz", readyz, name="readyz"),
+    # The probes above answer a load balancer; these answer a person and an
+    # uptime monitor. Public and unauthenticated by design (config.status).
+    path("status", status_page, name="status"),
+    path("status.json", status_json, name="status-json"),
     # What a crawler reads first. Served from the API rather than shipped as a
     # static file because the sitemap has to name the competitions that exist
     # right now, not the ones that existed at the last frontend build.
@@ -101,5 +106,10 @@ if settings.DEBUG:
 # without rebuilding the URLconf. Unconfigured, the view raises Http404 and the
 # address behaves exactly as if this pattern were absent.
 urlpatterns += [
-    re_path(r"^(?!api/|admin/|static/|media/|healthz|readyz|robots\.txt|sitemap\.xml).*$", spa_index),
+    re_path(
+        # `(?:…)` and not `(…)`: a capturing group here is handed to the view as a
+        # positional argument, and `spa_index` takes only the request.
+        r"^(?!api/|admin/|static/|media/|healthz|readyz|status(?:\.json)?$|robots\.txt|sitemap\.xml).*$",
+        spa_index,
+    ),
 ]
