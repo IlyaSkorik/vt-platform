@@ -3160,8 +3160,8 @@
     "semantic_hash": ""
   },
   "backend/config/urls.py": {
-    "mtime": 1786202064.8845713,
-    "ast_hash": "369cd2bab219b9f74291c88f9e4dacab",
+    "mtime": 1786720059.6090417,
+    "ast_hash": "aa8aa1cd79fe96f56ece9add061f4824",
     "semantic_hash": ""
   },
   "backend/config/wsgi.py": {
@@ -9215,8 +9215,8 @@
     "semantic_hash": ""
   },
   "backend/config/seo.py": {
-    "mtime": 1785860600.8508363,
-    "ast_hash": "e8134fce4cb1ed2c6b47b21ea5b7762a",
+    "mtime": 1786719859.1499102,
+    "ast_hash": "aaf8416cb674b58bbd2830c0343ef09a",
     "semantic_hash": ""
   },
   "backend/shared/utils/slugs.py": {
@@ -9822,6 +9822,16 @@
   "frontend/public/logo-email-dark.png": {
     "mtime": 1786561369.9500144,
     "ast_hash": "84cbdcf1bf07451dbefd1563ef5fd429",
+    "semantic_hash": ""
+  },
+  "backend/config/status.py": {
+    "mtime": 1786720208.1679938,
+    "ast_hash": "bf6d0a2d668e488e26d987fb9984cdc3",
+    "semantic_hash": ""
+  },
+  "backend/tests/presentation/test_status_page.py": {
+    "mtime": 1786719994.8479478,
+    "ast_hash": "22f5be9d2f41588fee4be14e60d052b5",
     "semantic_hash": ""
   }
 }
