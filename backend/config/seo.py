@@ -47,6 +47,10 @@ _DISALLOWED = (
     "/protocol/",
     # Not a page — the API. Crawling it wastes budget on JSON no one searches for.
     "/api/",
+    # The status page reports a moment, and a crawler can only ever record the
+    # wrong one: indexed, it would answer "работает ли сайт?" with whatever was
+    # true the last time a bot came by.
+    "/status",
 )
 
 #: Static public pages, with how often they are worth re-reading and how much of
