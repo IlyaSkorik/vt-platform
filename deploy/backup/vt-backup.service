@@ -1,0 +1,36 @@
+# Nightly database backup to the bucket (OPS-001 §9).
+#
+# A unit rather than a line in /etc/cron.daily for one reason that matters: the run lands in the
+# journal under its own name, so "did last night's backup work?" is `systemctl status vt-backup`
+# instead of hoping cron's mail went somewhere anybody reads.
+
+[Unit]
+Description=Nightly PostgreSQL backup to object storage
+Documentation=https://github.com/IlyaSkorik/vt-platform/blob/main/docs/devops/OPS-001-deploy-runbook.md
+# Docker holds the database this dumps and, without `aws` on the host, the CLI that uploads it.
+Requires=docker.service
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/vt-backup
+
+# The backup's own bucket and key (BACKUP_S3_*), and optionally BACKUP_TELEGRAM_TOKEN and
+# BACKUP_TELEGRAM_CHAT_ID so a failure reaches somebody. Kept out of the application's `.env` on
+# purpose: the whole point of a separate key is that the application never holds it.
+#
+# The leading `-` keeps the unit working when the file is absent — the script then falls back to
+# the application's bucket under a prefix, which is a worse shape but a working one.
+EnvironmentFile=-/etc/vt-backup.env
+
+# A dump of this database is minutes, not hours. The timeout is what stops a hung `pg_dump` from
+# holding the unit open until the next night's run collides with it.
+TimeoutStartSec=2h
+
+# Nice to the machine: the backup runs while the site is still serving, and a dump that competes
+# with a request is a slow page for somebody awake at 3am.
+Nice=10
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=multi-user.target

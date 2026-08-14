@@ -1,0 +1,21 @@
+# When the nightly backup runs (OPS-001 §9).
+
+[Unit]
+Description=Run the nightly PostgreSQL backup
+Documentation=https://github.com/IlyaSkorik/vt-platform/blob/main/docs/devops/OPS-001-deploy-runbook.md
+
+[Timer]
+# 03:30 in the machine's timezone: past the quiet hour, and far enough from midnight that a job
+# scheduled by date is not competing with everything else the system does at 00:00.
+OnCalendar=*-*-* 03:30:00
+
+# Spread the start over five minutes. Alone on one machine this changes little; it costs nothing
+# and it is the habit that keeps a fleet from stampeding the same bucket at the same second.
+RandomizedDelaySec=5m
+
+# The machine was off, or rebooting, at 03:30 — take the backup on the next boot rather than
+# skipping the night. A missed backup is a hole in the history that nothing later fills.
+Persistent=true
+
+[Install]
+WantedBy=timers.target
