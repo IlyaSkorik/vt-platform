@@ -123,7 +123,17 @@ export function HomePage(): React.JSX.Element {
               alone was right while every hero sat under a scrim; on a near-white
               illustration it prints white on white. */}
           <div className="space-y-5 text-foreground dark:text-on-scrim">
-            <Badge variant="outline" size="sm" icon={<Sparkles className="size-3.5" />}>
+            {/* Not the `outline` variant: its page-coloured fill printed a solid chip
+                onto the artwork. Glass instead — the image stays visible through it,
+                and the brand glow rings it to the same colour as the band at the
+                bottom of the hero. Tinted with the copy colour, so it darkens the
+                light theme and lightens the dark one. */}
+            <Badge
+              variant="outline"
+              size="md"
+              icon={<Sparkles />}
+              className="h-8 gap-2 border-current/20 bg-current/8 px-3.5 text-[0.8125rem] tracking-wide shadow-[0_0_28px_-8px_var(--color-glow-on-media)] backdrop-blur-md [&_svg]:size-4 [&_svg]:text-glow-on-media"
+            >
               Платформа творческих мероприятий
             </Badge>
             {/* Carries its own contrast so the scrim does not have to: a soft halo
