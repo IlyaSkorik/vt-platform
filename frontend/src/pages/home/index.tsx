@@ -116,7 +116,7 @@ export function HomePage(): React.JSX.Element {
             was meant to dissolve. */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-transparent via-glow-on-media/40 to-transparent md:h-80"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-72 bg-gradient-to-t from-transparent via-glow-on-media/25 to-transparent md:h-88 dark:via-glow-on-media/50"
         />
         <div className="relative mx-auto flex min-h-screen w-full max-w-336 items-center px-4 md:px-8">
           {/* Dark copy on the light artwork, light copy on the dark one. `on-scrim`
