@@ -4635,8 +4635,8 @@
     "semantic_hash": "f32a2bd2918e8b30b02d319376db84e6"
   },
   "frontend/src/pages/home/index.tsx": {
-    "mtime": 1786022165.568331,
-    "ast_hash": "84408963d5ea6a5308045d42cf3f500f",
+    "mtime": 1786778860.2143376,
+    "ast_hash": "7e884218520a08d68fbdd6bd5f636550",
     "semantic_hash": ""
   },
   "frontend/src/pages/legal/index.tsx": {
@@ -6665,8 +6665,8 @@
     "semantic_hash": ""
   },
   "frontend/public/home-hero-bg.png": {
-    "mtime": 1785860600.9462526,
-    "ast_hash": "ddb592c06969f41b467030ab6d8c8ca4",
+    "mtime": 1786778427.3577902,
+    "ast_hash": "42900a8c72fefab481d745a70c796a69",
     "semantic_hash": ""
   },
   ".claude/settings.json": {
@@ -9770,8 +9770,8 @@
     "semantic_hash": ""
   },
   "docs/devops/OPS-001-deploy-runbook.md": {
-    "mtime": 1785860600.8932424,
-    "ast_hash": "92ed8c5ce5f5106d47ed8277969b9a8f",
+    "mtime": 1786738010.1089115,
+    "ast_hash": "56cb0a3d47518cb476e5763744ea704e",
     "semantic_hash": ""
   },
   "docs/legal/LEGAL-001-privacy-policy.md": {
@@ -9832,6 +9832,16 @@
   "backend/tests/presentation/test_status_page.py": {
     "mtime": 1786719994.8479478,
     "ast_hash": "22f5be9d2f41588fee4be14e60d052b5",
+    "semantic_hash": ""
+  },
+  "deploy/backup/vt-backup.sh": {
+    "mtime": 1786737837.415544,
+    "ast_hash": "f4f9805cbbbf4ff78d7d3dea3acca7d6",
+    "semantic_hash": ""
+  },
+  "frontend/public/home-hero-bg-dark.png": {
+    "mtime": 1786777413.093914,
+    "ast_hash": "360cf6ebc1614c15cb27d17e905a9353",
     "semantic_hash": ""
   }
 }
