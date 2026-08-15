@@ -36,11 +36,9 @@ from django.http import Http404, HttpRequest, HttpResponse
 
 from apps.competitions.composition import build_public_catalog_read_service
 
-from .seo import site_url
+from .seo import SITE_NAME, site_url
 
 __all__ = ["head_facts_for", "spa_index"]
-
-_SITE_NAME = "Взлёт талантов"
 
 _DEFAULT_DESCRIPTION = "Афиша детских творческих фестивалей и конкурсов: условия участия, жанры и номинации, сроки подачи заявок и результаты."
 
@@ -87,7 +85,7 @@ class HeadFacts:
 
     @property
     def document_title(self) -> str:
-        return self.title if self.standalone_title else f"{self.title} — {_SITE_NAME}"
+        return self.title if self.standalone_title else f"{self.title} — {SITE_NAME}"
 
 
 def _truncate(text: str, limit: int = 300) -> str:
@@ -139,7 +137,7 @@ def head_facts_for(path: str) -> HeadFacts:
 
     if normalized == "/":
         return HeadFacts(
-            title=f"{_SITE_NAME} — фестивали и конкурсы детского творчества",
+            title=f"{SITE_NAME} — фестивали и конкурсы детского творчества",
             standalone_title=True,
             description=(
                 "Афиша детских творческих фестивалей и конкурсов: условия участия, жанры и номинации, "
@@ -192,7 +190,7 @@ def head_facts_for(path: str) -> HeadFacts:
         )
 
     if any(normalized == prefix or normalized.startswith(f"{prefix}/") for prefix in _PRIVATE_PREFIXES):
-        return HeadFacts(title=_SITE_NAME, standalone_title=True, noindex=True)
+        return HeadFacts(title=SITE_NAME, standalone_title=True, noindex=True)
 
     # An address the SPA will render as its 404 screen.
     return HeadFacts(title="Страница не найдена", noindex=True)
@@ -244,7 +242,7 @@ def render_head(facts: HeadFacts, *, media_origin: str | None = None) -> str:
         _meta("property", "og:description", facts.description),
         _meta("property", "og:type", facts.og_type),
         _meta("property", "og:url", canonical),
-        _meta("property", "og:site_name", _SITE_NAME),
+        _meta("property", "og:site_name", SITE_NAME),
         _meta("property", "og:locale", "ru_RU"),
         _meta("property", "og:image", image),
         _meta("property", "og:image:alt", facts.image_alt if image else None),
