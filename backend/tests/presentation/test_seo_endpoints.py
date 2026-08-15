@@ -1,6 +1,6 @@
-"""Integration tests for ``robots.txt`` and ``sitemap.xml``.
+"""Integration tests for ``robots.txt``, ``sitemap.xml`` and ``llms.txt``.
 
-These are the two documents a crawler reads before it reads the site, and both
+These are the documents a machine reads before it reads the site, and all three
 are generated rather than shipped as files — so they are worth testing exactly
 like an endpoint: what they list, and more importantly what they refuse to list.
 """
@@ -13,6 +13,8 @@ from xml.etree import ElementTree
 
 import pytest
 from django.test import Client
+
+from config.seo import site_url
 
 if TYPE_CHECKING:
     # The ORM models are imported inside the helpers so this module can be collected
@@ -151,3 +153,98 @@ class TestSitemap:
 
         assert any(str(competition.id) in location for location in locations)
         assert uuid.UUID(locations[-1].rsplit("/", 1)[-1])
+
+
+class TestLlmsTxt:
+    def test_is_served_as_plain_text(self) -> None:
+        response = Client().get("/llms.txt")
+
+        assert response.status_code == 200
+        # Markdown under a .txt name: text/markdown makes a browser download it.
+        assert response["Content-Type"].startswith("text/plain")
+
+    def test_opens_with_the_site_name_and_a_summary(self) -> None:
+        # The shape llmstxt.org specifies, and the part a reader short on context
+        # keeps: one H1, then one blockquote saying what the site is.
+        body = Client().get("/llms.txt").content.decode()
+        lines = body.splitlines()
+
+        assert lines[0] == "# Взлёт талантов"
+        assert any(line.startswith("> ") for line in lines[:5])
+
+    def test_links_the_public_pages_absolutely(self) -> None:
+        body = Client().get("/llms.txt").content.decode()
+
+        assert "## Основные страницы" in body
+        assert "](http" in body
+        for path in ("/competitions", "/privacy-policy", "/cookies"):
+            assert f"{path})" in body
+
+    def test_lists_a_published_competition_with_its_facts(self) -> None:
+        from datetime import date
+
+        org = _organization()
+        competition = _competition(organizer_id=org.id, status="PUBLISHED", title="Весенний вокал", slug="vesenniy-vokal")
+        competition.competition_start = date(2026, 3, 12)
+        competition.competition_end = date(2026, 3, 14)
+        competition.save(update_fields=["competition_start", "competition_end"])
+
+        body = Client().get("/llms.txt").content.decode()
+
+        assert "[Весенний вокал](" in body
+        assert "/competitions/vesenniy-vokal)" in body
+        # Dates in ISO, like the sitemap's <lastmod>: the file is read by machines
+        # first, and a dotted Russian date is a locale guess waiting to be wrong.
+        assert "конкурс 2026-03-12 — 2026-03-14" in body
+        assert "сезон 2025/2026" in body
+
+    def test_never_lists_a_draft(self) -> None:
+        # The reason this is generated at all: an unpublished competition must not
+        # reach a model any more than it reaches a crawler.
+        org = _organization()
+        _competition(organizer_id=org.id, status="DRAFT", title="Черновик", slug="chernovik")
+
+        body = Client().get("/llms.txt").content.decode()
+
+        assert "chernovik" not in body
+        assert "Черновик" not in body
+
+    def test_never_lists_a_soft_deleted_competition(self) -> None:
+        from django.utils import timezone
+
+        org = _organization()
+        competition = _competition(organizer_id=org.id, status="PUBLISHED", title="Удалённый", slug="udalenniy")
+        competition.deleted_at = timezone.now()
+        competition.save(update_fields=["deleted_at"])
+
+        body = Client().get("/llms.txt").content.decode()
+
+        assert "udalenniy" not in body
+
+    def test_names_no_page_that_carries_a_child(self) -> None:
+        # The programme, the protocol and a diploma's verification link each name a
+        # specific child. robots.txt closes them; this file must not hand them over
+        # by another door.
+        body = Client().get("/llms.txt").content.decode()
+
+        assert "](http" in body
+        for path in ("/program/", "/protocol/", "/verify/", "/cabinet/", "/staff/"):
+            assert f"]({site_url()}{path}" not in body
+
+    def test_says_so_when_nothing_is_published(self) -> None:
+        # An empty heading reads as a failed fetch; a sentence reads as the truth.
+        body = Client().get("/llms.txt").content.decode()
+
+        assert "Пока не опубликовано ни одного мероприятия." in body
+
+    def test_survives_a_title_holding_markdown_brackets(self) -> None:
+        # Titles are typed into a form. Unescaped, this one would end the link label
+        # early and turn the rest of the line into an address.
+        org = _organization()
+        _competition(organizer_id=org.id, status="PUBLISHED", title="Ритм [2026]", slug="ritm-2026")
+
+        body = Client().get("/llms.txt").content.decode()
+        line = next(line for line in body.splitlines() if "ritm-2026" in line)
+
+        assert line.startswith("- [Ритм \\[2026\\]](")
+        assert line.count("](") == 1

@@ -20,7 +20,7 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
-from config.seo import robots_txt, sitemap_xml
+from config.seo import llms_txt, robots_txt, sitemap_xml
 from config.spa import spa_index
 from config.status import status_json, status_page
 
@@ -48,6 +48,10 @@ urlpatterns = [
     # right now, not the ones that existed at the last frontend build.
     path("robots.txt", robots_txt, name="robots-txt"),
     path("sitemap.xml", sitemap_xml, name="sitemap-xml"),
+    # The same map written for a language model instead of a crawler (llmstxt.org),
+    # and generated for the same reason: it names the competitions that exist right
+    # now, and a stale answer about a deadline is worse than no answer.
+    path("llms.txt", llms_txt, name="llms-txt"),
     # OpenAPI 3.1 contract + docs (drf-spectacular, API-000 §25).
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
