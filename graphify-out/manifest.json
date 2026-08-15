@@ -7410,8 +7410,8 @@
     "semantic_hash": ""
   },
   "backend/apps/diplomas/application/interfaces.py": {
-    "mtime": 1785860600.6471958,
-    "ast_hash": "04383280bdfd8f399502850718fb41c0",
+    "mtime": 1786807748.5472312,
+    "ast_hash": "5ef5e13b95e4aaeffb2b5aaab4524538",
     "semantic_hash": ""
   },
   "backend/apps/diplomas/application/services.py": {
@@ -7430,8 +7430,8 @@
     "semantic_hash": ""
   },
   "backend/apps/diplomas/infrastructure/acl/__init__.py": {
-    "mtime": 1785860600.650623,
-    "ast_hash": "f0483a6b0d695e717a07edda90b538cb",
+    "mtime": 1786807728.3846517,
+    "ast_hash": "f7091576a8ba5b88f1073daf7126d378",
     "semantic_hash": ""
   },
   "backend/apps/diplomas/infrastructure/acl/snapshot_source.py": {
@@ -7495,8 +7495,8 @@
     "semantic_hash": ""
   },
   "backend/apps/diplomas/application/batch_services.py": {
-    "mtime": 1785860600.6471958,
-    "ast_hash": "213450dd966a35cebab818f7e608b01d",
+    "mtime": 1786807850.486256,
+    "ast_hash": "5aed06ebc4a742f4f7844eadc91b4372",
     "semantic_hash": ""
   },
   "backend/apps/diplomas/infrastructure/migrations/0010_remove_diplomamodel_pdf_path_and_more.py": {
@@ -7525,18 +7525,18 @@
     "semantic_hash": ""
   },
   "backend/apps/diplomas/infrastructure/pdf/renderer.py": {
-    "mtime": 1785860600.7222526,
-    "ast_hash": "333ad0c41921eb2c66f7666917506fdd",
+    "mtime": 1786807716.4327104,
+    "ast_hash": "0f497e8856f8aeca5c4d11ddb8850012",
     "semantic_hash": ""
   },
   "backend/apps/diplomas/infrastructure/pdf/workspace.py": {
-    "mtime": 1786123992.8760226,
-    "ast_hash": "c172e48c25618df376e213b22296f317",
+    "mtime": 1786807784.0527074,
+    "ast_hash": "ea6789cb496b10aeabb0053425f1f94a",
     "semantic_hash": ""
   },
   "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py": {
-    "mtime": 1785860600.7277653,
-    "ast_hash": "91fb56461ff89ee8819eb40507b20f6d",
+    "mtime": 1786807858.3005729,
+    "ast_hash": "31f4801da1f4c2e0af73bb5a20ed0bb2",
     "semantic_hash": ""
   },
   "backend/apps/diplomas/tasks.py": {
@@ -7545,8 +7545,8 @@
     "semantic_hash": ""
   },
   "backend/tests/infrastructure/diplomas/test_print_package.py": {
-    "mtime": 1785860600.874243,
-    "ast_hash": "e1698ea763d2c601f434c7c3a3bde8fa",
+    "mtime": 1786807920.584688,
+    "ast_hash": "80de3fe944c569f46258eedf07a389cd",
     "semantic_hash": ""
   },
   "backend/apps/diplomas/infrastructure/migrations/0011_remove_printjobmodel_template_id_and_more.py": {
@@ -9400,8 +9400,8 @@
     "semantic_hash": ""
   },
   "backend/apps/platform/management/commands/loadtest_print_package.py": {
-    "mtime": 1786123992.8913324,
-    "ast_hash": "29d9480d96c68e5ba0c515f01723f30f",
+    "mtime": 1786807874.6086926,
+    "ast_hash": "fc5176fd11fbfd1cc145a0199d510b7c",
     "semantic_hash": ""
   },
   "backend/apps/platform/presentation/api/v1/loadtest.py": {
@@ -9842,6 +9842,11 @@
   "frontend/public/home-hero-bg-dark.png": {
     "mtime": 1786777413.093914,
     "ast_hash": "360cf6ebc1614c15cb27d17e905a9353",
+    "semantic_hash": ""
+  },
+  "backend/apps/diplomas/infrastructure/acl/award_vocabulary.py": {
+    "mtime": 1786807723.9799974,
+    "ast_hash": "b913ab2874fb11850ba8aaf088770fe2",
     "semantic_hash": ""
   }
 }
