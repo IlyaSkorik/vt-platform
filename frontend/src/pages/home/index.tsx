@@ -77,10 +77,13 @@ export function HomePage(): React.JSX.Element {
       {/* No bottom border: the glow below is the separator now, and a hairline on top of
           it made the hand-off into the page read as a cut rather than as a fade. */}
       <section className="relative min-h-screen w-full overflow-hidden">
+        {/* One artwork per theme, swapped by the `.dark` class rather than by state:
+            the theme flips in CSS, and a background chosen in JS would lag it by a
+            render. Both files live in `public/`, so the paths are absolute and Vite
+            leaves them alone. */}
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: "url('/home-hero-bg.png')" }}
+          className="absolute inset-0 bg-[url('/home-hero-bg.png')] bg-cover bg-center bg-no-repeat dark:bg-[url('/home-hero-bg-dark.png')]"
         />
         {/* Darkens the photograph so the copy reads against it. Theme-invariant:
             in the light theme this used to tint the image with the page's white
