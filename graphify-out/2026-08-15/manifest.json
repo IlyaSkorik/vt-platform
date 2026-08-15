@@ -4635,8 +4635,8 @@
     "semantic_hash": "f32a2bd2918e8b30b02d319376db84e6"
   },
   "frontend/src/pages/home/index.tsx": {
-    "mtime": 1786778461.493786,
-    "ast_hash": "cd989c565fb4baf577c047ece90f83e0",
+    "mtime": 1786778860.2143376,
+    "ast_hash": "7e884218520a08d68fbdd6bd5f636550",
     "semantic_hash": ""
   },
   "frontend/src/pages/legal/index.tsx": {
@@ -9837,11 +9837,6 @@
   "deploy/backup/vt-backup.sh": {
     "mtime": 1786737837.415544,
     "ast_hash": "f4f9805cbbbf4ff78d7d3dea3acca7d6",
-    "semantic_hash": ""
-  },
-  "frontend/public/home-hero-bg2.png": {
-    "mtime": 1785860600.9462526,
-    "ast_hash": "ddb592c06969f41b467030ab6d8c8ca4",
     "semantic_hash": ""
   },
   "frontend/public/home-hero-bg-dark.png": {
