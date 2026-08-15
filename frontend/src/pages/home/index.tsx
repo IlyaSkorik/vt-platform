@@ -85,18 +85,23 @@ export function HomePage(): React.JSX.Element {
           aria-hidden="true"
           className="absolute inset-0 bg-[url('/home-hero-bg.png')] bg-cover bg-center bg-no-repeat dark:bg-[url('/home-hero-bg-dark.png')]"
         />
-        {/* Darkens the photograph so the copy reads against it. Theme-invariant:
-            in the light theme this used to tint the image with the page's white
-            and left the hero glaring. */}
+        {/* Dark theme only, and lighter than it was. The scrim used to be
+            theme-invariant, on the rule that a photograph needs the same darkening
+            whatever the UI around it does — true while both themes shared one image.
+            They no longer do: the light artwork is a near-white illustration that a
+            scrim only dirties, and the copy over it is dark rather than light, so
+            there is nothing to darken *for*. */}
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-b from-scrim-media/65 via-scrim-media/80 to-scrim-media/90"
+          className="absolute inset-0 hidden bg-gradient-to-b from-scrim-media/25 via-scrim-media/40 to-scrim-media/60 dark:block"
         />
-        {/* Separate layer for the hand-off: only the bottom quarter blends into
-            the page, so the scrim above it stays at full strength. */}
+        {/* The hand-off into the page, kept on its own layer so it does not eat into
+            the artwork above it. Short on purpose — the brand glow below is what
+            should be visible at the bottom edge, not a long slide into the page
+            background. */}
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-b from-transparent from-75% to-background"
+          className="absolute inset-0 bg-gradient-to-b from-transparent from-90% to-background"
         />
         {/* The brand glow above the bottom edge. Above the hand-off layer on purpose:
             below it, the fade to `--background` washed it out to nothing.
@@ -114,15 +119,24 @@ export function HomePage(): React.JSX.Element {
           className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-transparent via-glow-on-media/40 to-transparent md:h-80"
         />
         <div className="relative mx-auto flex min-h-screen w-full max-w-336 items-center px-4 md:px-8">
-          <div className="space-y-5 text-on-scrim">
+          {/* Dark copy on the light artwork, light copy on the dark one. `on-scrim`
+              alone was right while every hero sat under a scrim; on a near-white
+              illustration it prints white on white. */}
+          <div className="space-y-5 text-foreground dark:text-on-scrim">
             <Badge variant="outline" size="sm" icon={<Sparkles className="size-3.5" />}>
               Платформа творческих мероприятий
             </Badge>
-            <div className="max-w-4xl space-y-4">
+            {/* Carries its own contrast so the scrim does not have to: a soft halo
+                behind the glyphs holds the copy legible over a busy patch of the
+                artwork without veiling the whole frame. `--background` rather than
+                `--scrim-media` because the halo has to oppose the copy — white behind
+                dark text in the light theme, near-black behind light text in the dark
+                one — which is exactly how that token already moves. */}
+            <div className="max-w-4xl space-y-4 [text-shadow:0_2px_18px_var(--background)]">
               <h1 className="text-balance text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
                 Взлёт талантов
               </h1>
-              <p className="max-w-2xl text-pretty text-base text-on-scrim-muted sm:text-lg">
+              <p className="max-w-2xl text-pretty text-base text-muted-foreground sm:text-lg dark:text-on-scrim-muted">
                 Здесь проходят детские творческие фестивали: находите мероприятия, подавайте заявки,
                 смотрите результаты и скачивайте дипломы.
               </p>
