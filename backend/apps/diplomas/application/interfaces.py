@@ -7,6 +7,7 @@ Django; the concrete adapters live in ``apps.diplomas.infrastructure``.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -158,10 +159,17 @@ class IssuedDocumentRepository(Protocol):
 
 @dataclass(frozen=True, slots=True)
 class TemplateAssets:
-    """A template's print inputs: its placed fields and its backing PDF bytes."""
+    """A template's print inputs: its placed fields and its backing PDF bytes.
+
+    ``name`` is the template as the organizer named it ("Вокал A4"). It is carried
+    for the archive rather than for rendering: the place sheets are grouped per
+    template, and a folder named after the template is what tells the printer which
+    blanks a sheet overprints.
+    """
 
     fields: list[dict[str, object]]
     backing_pdf: bytes
+    name: str = ""
 
 
 class PrintPackageWorkspace(Protocol):
@@ -186,6 +194,13 @@ class PrintPackageWorkspace(Protocol):
         into the verification URL behind the QR code (the public domain is
         infrastructure configuration, not application knowledge). An **empty**
         token means the document is not verifiable, so no URL is built at all."""
+        ...
+
+    def render_place_sheet(self, *, assets: TemplateAssets, degree: str) -> bytes | None:
+        """Render the overprint sheet for one degree: a blank page of the template's
+        geometry carrying nothing but that degree, where the template places it.
+
+        ``None`` when the template has no Степень field — nowhere to overprint."""
         ...
 
     def store_pdf(self, *, competition_id: uuid.UUID, number: str, data: bytes) -> str:
@@ -219,8 +234,13 @@ class PrintPackageWorkspace(Protocol):
         land in the diploma print tree."""
         ...
 
-    def store_zip(self, *, competition_id: uuid.UUID, items: list[tuple[str, str]]) -> str:
-        """Bundle ``(arcname, media_path)`` pairs into a ZIP; return its path."""
+    def store_zip(self, *, competition_id: uuid.UUID, items: list[tuple[str, str]], extras: Sequence[tuple[str, bytes]] = ()) -> str:
+        """Bundle ``(arcname, media_path)`` pairs into a ZIP; return its path.
+
+        ``extras`` are ``(arcname, bytes)`` members written straight into the archive
+        rather than copied out of storage. The place sheets go in that way: they are
+        derived from the template, not from any diploma, so there is nothing to store
+        them under and nothing that would ever fetch them on their own."""
         ...
 
     def store_documents_zip(self, *, competition_id: uuid.UUID, document_type: str, items: list[tuple[str, str]]) -> str:

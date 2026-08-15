@@ -18,6 +18,7 @@ import shutil
 import tempfile
 import uuid
 import zipfile
+from collections.abc import Sequence
 from pathlib import PurePosixPath
 from urllib.parse import unquote
 
@@ -30,7 +31,7 @@ from apps.diplomas.application.interfaces import TemplateAssets
 from apps.diplomas.domain.value_objects import DiplomaSnapshot
 from apps.diplomas.infrastructure.models import TemplateDocumentModel
 from apps.diplomas.infrastructure.pdf.qr import verification_url
-from apps.diplomas.infrastructure.pdf.renderer import render_diploma_pdf
+from apps.diplomas.infrastructure.pdf.renderer import render_diploma_pdf, render_place_sheet_pdf
 from apps.diplomas.presentation.api.v1.diplomas import composition
 
 __all__ = ["DjangoPrintPackageWorkspace", "storage_key_of"]
@@ -111,7 +112,7 @@ class DjangoPrintPackageWorkspace:
         with default_storage.open(key, "rb") as handle:
             backing_pdf = handle.read()
         layout = composition.get_template_layout(str(template_id))
-        return TemplateAssets(fields=list(layout["fields"]), backing_pdf=backing_pdf)
+        return TemplateAssets(fields=list(layout["fields"]), backing_pdf=backing_pdf, name=document.template.name)
 
     def render(
         self,
@@ -132,6 +133,9 @@ class DjangoPrintPackageWorkspace:
             number=number,
             verification_url=verification_url(verification_token) if verification_token else None,
         )
+
+    def render_place_sheet(self, *, assets: TemplateAssets, degree: str) -> bytes | None:
+        return render_place_sheet_pdf(fields=assets.fields, backing_pdf=assets.backing_pdf, degree=degree)
 
     def store_pdf(self, *, competition_id: uuid.UUID, number: str, data: bytes) -> str:
         # The number stays in the key - an organizer looking at the bucket should be able
@@ -185,11 +189,11 @@ class DjangoPrintPackageWorkspace:
         default_storage.save(key, ContentFile(data))
         return _reference(key)
 
-    def store_zip(self, *, competition_id: uuid.UUID, items: list[tuple[str, str]]) -> str:
+    def store_zip(self, *, competition_id: uuid.UUID, items: list[tuple[str, str]], extras: Sequence[tuple[str, bytes]] = ()) -> str:
         # The archive is the whole set in one file, so it is the most valuable object in
         # the bucket and gets the same unguessable token as the diplomas inside it.
         token = _unguessable("print-zip", str(competition_id))
-        return self._store_archive(key=f"diplomas/print/{competition_id}/{token}/Diplomas.zip", items=items)
+        return self._store_archive(key=f"diplomas/print/{competition_id}/{token}/Diplomas.zip", items=items, extras=extras)
 
     def store_documents_zip(self, *, competition_id: uuid.UUID, document_type: str, items: list[tuple[str, str]]) -> str:
         # Named after the kind ("ThankYou.zip"), because the file name is what the
@@ -202,7 +206,7 @@ class DjangoPrintPackageWorkspace:
         return self._store_archive(key=f"diplomas/documents/{competition_id}/{kind}/{token}/{filename}.zip", items=items)
 
     @staticmethod
-    def _store_archive(*, key: str, items: list[tuple[str, str]]) -> str:
+    def _store_archive(*, key: str, items: list[tuple[str, str]], extras: Sequence[tuple[str, bytes]] = ()) -> str:
         """ZIP up ``(arcname, reference)`` pairs at ``key``, replacing any previous.
 
         Streamed on purpose, member by member and chunk by chunk, through a spool that
@@ -212,6 +216,10 @@ class DjangoPrintPackageWorkspace:
         that alone would exhaust a server twice over, and the ``getvalue()`` it used to
         end with doubled it again. Peak memory is now one chunk plus the spool threshold,
         whatever the tirage.
+
+        ``extras`` are written from memory instead of copied out of storage. They are
+        not streamed because they cannot grow with the tirage: the place sheets are a
+        fixed handful per template, each a blank page with one line of text on it.
         """
         with tempfile.SpooledTemporaryFile(max_size=_ARCHIVE_SPOOL_BYTES) as spool:
             with zipfile.ZipFile(spool, "w", zipfile.ZIP_DEFLATED) as archive:
@@ -221,6 +229,8 @@ class DjangoPrintPackageWorkspace:
                         continue
                     with default_storage.open(storage_key, "rb") as source, archive.open(arcname, "w") as target:
                         shutil.copyfileobj(source, target, length=_COPY_CHUNK_BYTES)
+                for arcname, data in extras:
+                    archive.writestr(arcname, data)
             spool.seek(0)
             if default_storage.exists(key):
                 default_storage.delete(key)
