@@ -10,6 +10,9 @@ A ``qr_block`` field is the one composite: it draws the diploma's QR code (the
 verification link) plus a three-line caption beside it — the authenticity
 headline, the diploma number, and the host to check it on. A template without the
 block simply gets no QR — nothing else changes.
+
+:func:`render_place_sheet_pdf` is the same drawing code with the background left
+out: a blank sheet carrying nothing but the degree, where the template places it.
 """
 
 from __future__ import annotations
@@ -28,7 +31,10 @@ from apps.diplomas.infrastructure.pdf.field_values import field_text
 from apps.diplomas.infrastructure.pdf.fonts import resolve_font
 from apps.diplomas.infrastructure.pdf.qr import qr_png
 
-__all__ = ["QR_HEADLINE", "qr_caption_lines", "render_diploma_pdf"]
+__all__ = ["QR_HEADLINE", "qr_caption_lines", "render_diploma_pdf", "render_place_sheet_pdf"]
+
+#: The element a place sheet draws, and the only one it draws.
+_DEGREE_FIELD_TYPE = "award_degree"
 
 _MIN_FONT_PT = 4.0
 
@@ -320,3 +326,39 @@ def render_diploma_pdf(
     out = BytesIO()
     writer.write(out)
     return out.getvalue()
+
+
+def render_place_sheet_pdf(*, fields: list[dict[str, Any]], backing_pdf: bytes, degree: str) -> bytes | None:
+    """A blank sheet carrying only ``degree``, exactly where the template places it.
+
+    The print package is produced before the ceremony, so its diplomas leave the
+    Степень field empty — the jury has not decided yet. Afterwards the awarded
+    degree has to reach a sheet that is already printed, and the only way to put it
+    there is to feed that sheet back through the printer with a page that is blank
+    apart from the degree. This renders that page: same page count and page sizes as
+    the template's backing PDF, the degree drawn with the field's own position,
+    font, size, colour and alignment, and nothing else on it at all.
+
+    Returns ``None`` when the template places no Степень field — then there is
+    nowhere to overprint and no sheet worth handing over.
+    """
+    degree_fields = [field for field in fields if field.get("type") == _DEGREE_FIELD_TYPE]
+    text = degree.strip()
+    if not degree_fields or not text:
+        return None
+
+    pages = PdfReader(BytesIO(backing_pdf)).pages
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer)
+    for index, page in enumerate(pages, start=1):
+        width = float(page.mediabox.width)
+        height = float(page.mediabox.height)
+        # Per page, before anything is drawn on it: the sheet has to line up with the
+        # printed diploma it is fed over, so its geometry is the template's.
+        c.setPageSize((width, height))
+        for field in degree_fields:
+            if int(field.get("page", 1)) == index:
+                _draw_field(c, field, text, width, height)
+        c.showPage()
+    c.save()
+    return buffer.getvalue()
