@@ -167,6 +167,17 @@ def head_facts_for(path: str) -> HeadFacts:
     # (``src/pages/legal/*``). Kept identical on purpose: a policy is a page people
     # arrive at from a search result or a pasted link, so the preview is often all
     # they read before deciding whether the service is trustworthy with a child's data.
+    if normalized == "/terms":
+        return HeadFacts(
+            title="Пользовательское соглашение",
+            description=(
+                "Условия использования платформы «Взлёт талантов»: регистрация учётной записи, подача "
+                "заявок и участие в мероприятиях, права на творческие работы, оплата участия, обработка "
+                "персональных данных, порядок изменения соглашения и разрешения споров."
+            ),
+            canonical_path="/terms",
+        )
+
     if normalized == "/privacy-policy":
         return HeadFacts(
             title="Политика обработки персональных данных",

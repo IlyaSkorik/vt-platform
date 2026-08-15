@@ -147,6 +147,24 @@ class TestResolvingTheHead:
         assert facts.noindex is True
         assert facts.canonical_path is None
 
+    @pytest.mark.parametrize(
+        ("path", "expected_title"),
+        [
+            ("/terms", "Пользовательское соглашение"),
+            ("/privacy-policy", "Политика обработки персональных данных"),
+            ("/cookies", "Политика использования cookies"),
+        ],
+    )
+    def test_every_legal_document_previews_as_itself(self, path: str, expected_title: str) -> None:
+        # `/terms` used to fall through to the 404 branch, so the agreement previewed
+        # as "Страница не найдена" wherever the link was pasted — and answered
+        # `noindex` while the sitemap offered the address.
+        facts = head_facts_for(path)
+
+        assert facts.title == expected_title
+        assert facts.canonical_path == path
+        assert facts.noindex is False
+
     def test_an_unmatched_address_is_the_404_screen(self) -> None:
         assert head_facts_for("/nothing-here").noindex is True
 
