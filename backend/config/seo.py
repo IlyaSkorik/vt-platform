@@ -77,6 +77,11 @@ _DISALLOWED = (
 _STATIC_PAGES: tuple[tuple[str, str, str], ...] = (
     ("/", "daily", "1.0"),
     ("/competitions", "daily", "0.9"),
+    # The three legal documents, at the same weight: each is a page somebody
+    # arrives at from a search or a pasted link before deciding whether to trust
+    # the service with a child's data, and each changes about as often as the law
+    # under it does.
+    ("/terms", "yearly", "0.3"),
     ("/privacy-policy", "yearly", "0.3"),
     ("/cookies", "yearly", "0.3"),
 )

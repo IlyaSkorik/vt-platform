@@ -14,7 +14,7 @@ from xml.etree import ElementTree
 import pytest
 from django.test import Client
 
-from config.seo import site_url
+from config.seo import _DISALLOWED, site_url
 
 if TYPE_CHECKING:
     # The ORM models are imported inside the helpers so this module can be collected
@@ -93,6 +93,24 @@ class TestSitemap:
         assert any(location.endswith("/") for location in locations)
         assert any(location.endswith("/competitions") for location in locations)
         assert any(location.endswith("/privacy-policy") for location in locations)
+
+    @pytest.mark.parametrize("path", ["/terms", "/privacy-policy", "/cookies"])
+    def test_lists_every_legal_document(self, path: str) -> None:
+        # All three or none: a reader deciding whether to trust the service with a
+        # child's data should be able to reach any of them from a search, and the
+        # agreement was the one missing from the map.
+        locations = _locations(Client().get("/sitemap.xml").content)
+
+        assert any(location.endswith(path) for location in locations)
+
+    @pytest.mark.parametrize("path", ["/terms", "/privacy-policy", "/cookies"])
+    def test_never_maps_a_page_it_also_disallows(self, path: str) -> None:
+        # The pair that has to agree: listing an address in the sitemap while
+        # telling the crawler to stay away from it is two contradictory instructions,
+        # and which one survives is up to the crawler.
+        body = Client().get("/robots.txt").content.decode()
+
+        assert f"Disallow: {path}" not in body
 
     def test_lists_a_published_competition_by_its_readable_address(self) -> None:
         org = _organization()
@@ -221,14 +239,16 @@ class TestLlmsTxt:
 
         assert "udalenniy" not in body
 
-    def test_names_no_page_that_carries_a_child(self) -> None:
-        # The programme, the protocol and a diploma's verification link each name a
-        # specific child. robots.txt closes them; this file must not hand them over
-        # by another door.
+    def test_links_nothing_robots_txt_disallows(self) -> None:
+        # Written against the disallow list itself rather than a copy of it, so a
+        # path closed to crawlers later cannot stay advertised here. Which is the
+        # whole failure mode: the programme, the protocol and a verification link
+        # each name a specific child, and a model handed the address by one document
+        # does not consult the other.
         body = Client().get("/llms.txt").content.decode()
 
         assert "](http" in body
-        for path in ("/program/", "/protocol/", "/verify/", "/cabinet/", "/staff/"):
+        for path in _DISALLOWED:
             assert f"]({site_url()}{path}" not in body
 
     def test_says_so_when_nothing_is_published(self) -> None:
