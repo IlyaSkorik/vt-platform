@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 import pytest
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from pypdf import PdfReader
 from reportlab.pdfgen import canvas
 
 from apps.applications.infrastructure.models.submission import SubmissionModel
@@ -44,24 +45,34 @@ def _backing_pdf() -> bytes:
     return buffer.getvalue()
 
 
-def _template_with_pdf(name: str, document_type: str = "DIPLOMA") -> TemplateModel:
+def _template_with_pdf(name: str, document_type: str = "DIPLOMA", *, degree_field: bool = False) -> TemplateModel:
     template = TemplateModel.objects.create(type=document_type, name=name)
     key = default_storage.save(f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf()))
     TemplateDocumentModel.objects.create(template=template, file_reference=f"/media/{key}", page_count=1)
-    composition.replace_template_layout(
-        template_id=str(template.id),
-        fields=[
+    fields: list[dict[str, object]] = [
+        {
+            "page": 1,
+            "type": "participant_name",
+            "binding": "participant.display_name",
+            "x": 0.1,
+            "y": 0.1,
+            "width": 0.6,
+            "height": 0.1,
+        },
+    ]
+    if degree_field:
+        fields.append(
             {
                 "page": 1,
-                "type": "participant_name",
-                "binding": "participant.display_name",
+                "type": "award_degree",
+                "binding": "award.degree",
                 "x": 0.1,
-                "y": 0.1,
+                "y": 0.4,
                 "width": 0.6,
                 "height": 0.1,
             },
-        ],
-    )
+        )
+    composition.replace_template_layout(template_id=str(template.id), fields=fields)
     return template
 
 
@@ -290,6 +301,98 @@ def test_zip_contains_a_pdf_per_generated_diploma() -> None:
     assert len(names) == 2
     for name in names:
         assert archive.read(name).startswith(b"%PDF")
+
+
+def _archive_of(job: dict[str, object]) -> zipfile.ZipFile:
+    zip_key = str(job["zipUrl"])[len("/media/") :]
+    with default_storage.open(zip_key, "rb") as handle:
+        return zipfile.ZipFile(io.BytesIO(handle.read()))
+
+
+class TestPlaceSheets:
+    """The «МЕСТА» folder: a blank overprint sheet per degree, per template.
+
+    The package is printed before the ceremony, so its diplomas carry no degree.
+    The degree reaches the printed sheet afterwards by being run over it, which
+    needs a page that is blank apart from the degree — placed exactly where that
+    template's Степень field is.
+    """
+
+    def test_archive_carries_a_sheet_per_degree(self) -> None:
+        competition = _competition()
+        vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+        _assign(competition, vocals, _template_with_pdf("Вокал A4", degree_field=True))
+        _submission(competition, "Иванов Иван", vocals)
+
+        archive = _archive_of(print_package.start_print_package(competition_id=competition.id, category_ids=[]))
+        sheets = sorted(name for name in archive.namelist() if name.startswith("МЕСТА/"))
+
+        # Every degree the jury can award, under the template the sheet overprints,
+        # numbered by seniority so the folder does not read alphabetically.
+        assert sheets == [
+            "МЕСТА/Вокал A4/1. Гран-при.pdf",
+            "МЕСТА/Вокал A4/2. Номинант на Гран-при.pdf",
+            "МЕСТА/Вокал A4/3. Лауреат I степени.pdf",
+            "МЕСТА/Вокал A4/4. Лауреат II степени.pdf",
+            "МЕСТА/Вокал A4/5. Лауреат III степени.pdf",
+            "МЕСТА/Вокал A4/6. Дипломант I степени.pdf",
+            "МЕСТА/Вокал A4/7. Дипломант II степени.pdf",
+            "МЕСТА/Вокал A4/8. Дипломант III степени.pdf",
+            "МЕСТА/Вокал A4/9. Диплом участника.pdf",
+        ]
+        # And the diplomas themselves are still there, beside the folder.
+        assert [name for name in archive.namelist() if not name.startswith("МЕСТА/")] != []
+
+    def test_a_sheet_is_the_degree_on_an_otherwise_blank_page(self) -> None:
+        """Blank is the point: the sheet is fed over an already-printed diploma, so
+        anything else on it would be printed twice."""
+        competition = _competition()
+        vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+        _assign(competition, vocals, _template_with_pdf("Вокал A4", degree_field=True))
+        _submission(competition, "Иванов Иван", vocals)
+
+        archive = _archive_of(print_package.start_print_package(competition_id=competition.id, category_ids=[]))
+        page = PdfReader(io.BytesIO(archive.read("МЕСТА/Вокал A4/3. Лауреат I степени.pdf"))).pages[0]
+
+        text = page.extract_text()
+        assert "Лауреат I степени" in text
+        # Neither the template's background nor any of the diploma's own data.
+        assert "background" not in text
+        assert "Иванов" not in text
+        # Same geometry as the template, or it would not line up in the printer.
+        assert (round(float(page.mediabox.width)), round(float(page.mediabox.height))) == (595, 842)
+
+    def test_one_set_of_sheets_per_template_not_per_nomination(self) -> None:
+        """The sheet depends on where the *template* puts the degree, so nominations
+        sharing a template share one set rather than getting a duplicate each."""
+        competition = _competition()
+        vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+        dance = CategoryModel.objects.create(competition=competition, name="Танец")
+        shared = _template_with_pdf("Общий A4", degree_field=True)
+        _assign(competition, vocals, shared)
+        _assign(competition, dance, shared)
+        _submission(competition, "Иванов Иван", vocals)
+        _submission(competition, "Петров Пётр", dance)
+
+        archive = _archive_of(print_package.start_print_package(competition_id=competition.id, category_ids=[]))
+        folders = {name.split("/")[1] for name in archive.namelist() if name.startswith("МЕСТА/")}
+
+        assert folders == {"Общий A4"}
+
+    def test_a_template_that_places_no_degree_gets_no_sheets(self) -> None:
+        """Nowhere to overprint — a sheet for it would only be printed by mistake."""
+        competition = _competition()
+        vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+        dance = CategoryModel.objects.create(competition=competition, name="Танец")
+        _assign(competition, vocals, _template_with_pdf("Вокал A4", degree_field=True))
+        _assign(competition, dance, _template_with_pdf("Танец A4"))  # no Степень field
+        _submission(competition, "Иванов Иван", vocals)
+        _submission(competition, "Петров Пётр", dance)
+
+        archive = _archive_of(print_package.start_print_package(competition_id=competition.id, category_ids=[]))
+        folders = {name.split("/")[1] for name in archive.namelist() if name.startswith("МЕСТА/")}
+
+        assert folders == {"Вокал A4"}
 
 
 def test_force_rerenders_existing_print_pdfs() -> None:

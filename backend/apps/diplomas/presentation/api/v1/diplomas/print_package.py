@@ -18,7 +18,7 @@ from apps.diplomas.application.batch_services import DiplomaBatchGenerationServi
 from apps.diplomas.application.numbering import DiplomaNumberService
 from apps.diplomas.domain.document_types import DocumentType, policy_for
 from apps.diplomas.domain.exceptions import PrintJobNotFoundError, PrintTemplateNotReadyError
-from apps.diplomas.infrastructure.acl import COMPETING_SUBMISSION_STATUSES, DjangoDiplomaSnapshotSource
+from apps.diplomas.infrastructure.acl import COMPETING_SUBMISSION_STATUSES, DjangoDiplomaSnapshotSource, awardable_degrees
 from apps.diplomas.infrastructure.models import (
     DiplomaModel,
     IssuedDocumentModel,
@@ -48,6 +48,7 @@ def build_batch_service() -> DiplomaBatchGenerationService:
         snapshots=DjangoDiplomaSnapshotSource(),
         workspace=DjangoPrintPackageWorkspace(),
         numbers=DiplomaNumberService(sequence=DjangoDiplomaNumberSequence()),
+        place_degrees=awardable_degrees(),
     )
 
 

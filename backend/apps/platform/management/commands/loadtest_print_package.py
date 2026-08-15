@@ -42,7 +42,7 @@ from django.utils import timezone
 
 from apps.diplomas.application.batch_services import DiplomaBatchGenerationService, NominationTarget
 from apps.diplomas.application.numbering import DiplomaNumberService
-from apps.diplomas.infrastructure.acl import DjangoDiplomaSnapshotSource
+from apps.diplomas.infrastructure.acl import DjangoDiplomaSnapshotSource, awardable_degrees
 from apps.diplomas.infrastructure.models import AssignmentModel, DocumentTypeChoices, PrintJobModel, PrintJobStatusChoices
 from apps.diplomas.infrastructure.pdf.workspace import DjangoPrintPackageWorkspace
 from apps.diplomas.infrastructure.repositories import (
@@ -104,6 +104,17 @@ class _TimedWorkspace:
         self.render_seconds += time.perf_counter() - started
         self.renders += 1
         self.rendered_bytes += len(data)
+        return data
+
+    def render_place_sheet(self, **kwargs: Any) -> bytes | None:
+        # Counted with the diplomas: a place sheet is the same drawing code over a
+        # blank page, and there are a handful of them against a whole tirage.
+        started = time.perf_counter()
+        data = self._inner.render_place_sheet(**kwargs)
+        self.render_seconds += time.perf_counter() - started
+        if data is not None:
+            self.renders += 1
+            self.rendered_bytes += len(data)
         return data
 
     def store_pdf(self, **kwargs: Any) -> str:
@@ -199,6 +210,7 @@ class Command(BaseCommand):
             snapshots=snapshots,  # type: ignore[arg-type]  # duck-typed timing proxy
             workspace=workspace,  # type: ignore[arg-type]
             numbers=DiplomaNumberService(sequence=DjangoDiplomaNumberSequence()),
+            place_degrees=awardable_degrees(),
         )
         targets = [NominationTarget(category_id=uuid.UUID(cid), template_id=self._template_of(competition_id, cid)) for cid in category_ids]
 

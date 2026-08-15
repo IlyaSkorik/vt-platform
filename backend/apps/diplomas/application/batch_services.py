@@ -7,12 +7,15 @@ nomination that lacks one (snapshot + number + verification token, no degree),
 renders each pre-ceremony PDF, and bundles them all into one ZIP the organizer
 prints from. Existing diplomas are skipped; any still missing a print PDF is
 rendered so the ZIP is a complete printable set.
+
+The ZIP also carries a ``МЕСТА`` folder — see :data:`PLACE_SHEETS_DIR`.
 """
 
 from __future__ import annotations
 
 import secrets
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -26,9 +29,30 @@ from apps.diplomas.application.numbering import DiplomaNumberService
 from apps.diplomas.domain.entities import Diploma
 from apps.diplomas.domain.exceptions import PrintTemplateNotReadyError
 
-__all__ = ["BatchResult", "DiplomaBatchGenerationService", "NominationTarget"]
+__all__ = ["PLACE_SHEETS_DIR", "BatchResult", "DiplomaBatchGenerationService", "NominationTarget"]
 
 _TOKEN_BYTES = 32
+
+#: Folder inside the print archive holding the overprint sheets, one per degree.
+#:
+#: The package is printed before the ceremony, so every diploma in it leaves the
+#: Степень field empty — the jury has not decided yet. The degree still has to reach
+#: a sheet that is already printed, and the way that is done in practice is to feed
+#: it back through the printer over a page that is blank apart from the degree. This
+#: folder is that set of pages: for each template in the run, one sheet per degree
+#: the jury can award, each drawn exactly where and how that template places its
+#: Степень field.
+PLACE_SHEETS_DIR = "МЕСТА"
+
+#: Characters that would turn a template's name into extra nesting (or escape the
+#: folder) if it were used verbatim as an archive path component.
+_ARCNAME_SEPARATORS = str.maketrans({"/": "-", "\\": "-", ":": "-"})
+
+
+def _arc_component(name: str, *, fallback: str) -> str:
+    """One safe path component of an archive entry, from a name a human typed."""
+    cleaned = name.translate(_ARCNAME_SEPARATORS).strip().strip(".")
+    return cleaned or fallback
 
 
 @dataclass(frozen=True, slots=True)
@@ -56,11 +80,18 @@ class DiplomaBatchGenerationService:
         snapshots: DiplomaSnapshotSource,
         workspace: PrintPackageWorkspace,
         numbers: DiplomaNumberService,
+        place_degrees: Sequence[str] = (),
     ) -> None:
+        """``place_degrees`` are the degrees the ``МЕСТА`` folder gets a sheet for, in
+        the order they should be printed in. Passed in rather than known here: which
+        awards exist is the Results context's vocabulary, and this service is not
+        allowed to reach for it (see ``infrastructure.acl.award_vocabulary``). Empty
+        means no such folder."""
         self._repository = repository
         self._snapshots = snapshots
         self._workspace = workspace
         self._numbers = numbers
+        self._place_degrees = tuple(place_degrees)
 
     def generate_print_package(
         self,
@@ -134,5 +165,45 @@ class DiplomaBatchGenerationService:
                     continue
                 items.append((f"{diploma.number}.pdf", pdf_path))
 
-        zip_path = self._workspace.store_zip(competition_id=competition_id, items=items)
+        zip_path = self._workspace.store_zip(
+            competition_id=competition_id,
+            items=items,
+            extras=self._place_sheets(assets_by_template),
+        )
         return BatchResult(created=created, skipped=skipped, zip_path=zip_path)
+
+    def _place_sheets(self, assets_by_template: dict[uuid.UUID, TemplateAssets]) -> list[tuple[str, bytes]]:
+        """The ``МЕСТА`` folder: one blank overprint sheet per template per degree.
+
+        Keyed by template, not by nomination — the sheet is a function of where the
+        template puts its Степень field, so two nominations printed over the same
+        template need one set between them. Each folder is named after its template,
+        which is how the organizer knows which stack of blanks a sheet belongs to, and
+        each sheet is numbered by seniority so the folder reads Гран-при first rather
+        than alphabetically.
+
+        A template with no Степень field contributes nothing: there is nowhere on it
+        for a degree to land, so an empty sheet would only be printed by mistake.
+        """
+        if not self._place_degrees:
+            return []
+        sheets: list[tuple[str, bytes]] = []
+        used: set[str] = set()
+        for index, assets in enumerate(assets_by_template.values(), start=1):
+            rendered = [
+                (position, degree, data)
+                for position, degree in enumerate(self._place_degrees, start=1)
+                if (data := self._workspace.render_place_sheet(assets=assets, degree=degree)) is not None
+            ]
+            if not rendered:
+                continue  # No Степень field on this template — nowhere to overprint.
+            folder = _arc_component(assets.name, fallback=f"Шаблон {index}")
+            # Two templates may carry the same name; keeping both under it would put two
+            # different sets of sheets in one folder, so the later one is distinguished.
+            while folder in used:
+                folder = f"{folder} ({index})"
+            used.add(folder)
+            for position, degree, data in rendered:
+                name = _arc_component(degree, fallback=str(position))
+                sheets.append((f"{PLACE_SHEETS_DIR}/{folder}/{position}. {name}.pdf", data))
+        return sheets
