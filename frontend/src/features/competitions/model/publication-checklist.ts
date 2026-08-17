@@ -116,6 +116,9 @@ export function buildPublicationChecklist(competition: CompetitionDetail): Publi
       blocking: true,
     },
     {
+      // Advisory: a festival may charge for nothing, or price only part of what it
+      // admits. Unpriced combinations stay admissible and simply add nothing to the
+      // applicant's total, so this never blocks publication.
       id: "pricing",
       label: "Цены для всех комбинаций допуска",
       done:
@@ -131,7 +134,7 @@ export function buildPublicationChecklist(competition: CompetitionDetail): Publi
           ),
         ),
       sectionId: "pricing",
-      blocking: true,
+      blocking: false,
     },
     {
       id: "regulation",

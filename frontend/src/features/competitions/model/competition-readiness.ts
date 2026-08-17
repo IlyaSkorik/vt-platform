@@ -52,7 +52,6 @@ const BLOCKING_SECTIONS = new Set<CompetitionSectionId>([
   "participant-groups",
   "participation-formats",
   "admission-rules",
-  "pricing",
   "regulations",
 ]);
 
@@ -86,7 +85,10 @@ export function buildCompetitionReadiness(
       case "admission-rules":
         return byId("admission-rules");
       case "pricing":
-        return byId("pricing");
+        // Optional, like services and settings: a festival that charges for nothing is
+        // fully configured. How much of the pricing table is filled in is reported by
+        // the section itself, not by the readiness list.
+        return true;
       case "additional-services":
       case "settings":
         return true;

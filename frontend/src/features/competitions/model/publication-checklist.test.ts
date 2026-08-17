@@ -179,6 +179,88 @@ function baseCompetition(overrides: Partial<CompetitionDetail> = {}): Competitio
   };
 }
 
+/** A competition with everything publication requires, priced unless told otherwise. */
+function configuredCompetition(overrides: Partial<CompetitionDetail> = {}): CompetitionDetail {
+  return baseCompetition({
+    categories: [
+      {
+        id: "c1",
+        name: "Dance",
+        description: null,
+        sortOrder: 0,
+        registrationOpensAt: null,
+        registrationClosesAt: null,
+        registrationStopped: false,
+      },
+    ],
+    disciplines: [{ id: "d1", categoryId: "c1", name: "Ballet", sortOrder: 0 }],
+    ageCategories: [
+      {
+        id: "a1",
+        participantGroupId: "g1",
+        name: "5–12 лет",
+        minAge: 5,
+        maxAge: 12,
+        sortOrder: 0,
+        type: "STANDARD",
+        mixedCalculationMethod: null,
+      },
+    ],
+    participantGroups: [
+      {
+        id: "g1",
+        name: "Solo",
+        minCount: 1,
+        maxCount: 1,
+        description: null,
+        sortOrder: 0,
+      },
+    ],
+    participationFormats: [
+      {
+        id: "f1",
+        name: "Очно",
+        description: null,
+        enabled: true,
+        sortOrder: 0,
+      },
+    ],
+    admissionRules: [
+      {
+        categoryId: "c1",
+        disciplineId: "d1",
+        ageCategoryId: "a1",
+        participantGroupId: "g1",
+        participationFormatId: "f1",
+      },
+    ],
+    pricingRules: [
+      {
+        categoryId: "c1",
+        disciplineId: "d1",
+        ageCategoryId: "a1",
+        participantGroupId: "g1",
+        participationFormatId: "f1",
+        amount: "1000.00",
+        currency: "RUB",
+        calculationType: "PER_PARTICIPANT",
+      },
+    ],
+    regulations: [
+      {
+        id: "reg-1",
+        title: "Rules",
+        version: "1.0",
+        publicationDate: "2026-01-01",
+        fileReference: "s3://r.pdf",
+        isCurrent: true,
+      },
+    ],
+    currentRegulationId: "reg-1",
+    ...overrides,
+  });
+}
+
 describe("buildPublicationChecklist", () => {
   it("marks general complete when core fields are filled", () => {
     const checklist = buildPublicationChecklist(baseCompetition());
@@ -188,87 +270,20 @@ describe("buildPublicationChecklist", () => {
   });
 
   it("is publishable when taxonomy requirements are met", () => {
-    const checklist = buildPublicationChecklist(
-      baseCompetition({
-        categories: [
-          {
-            id: "c1",
-            name: "Dance",
-            description: null,
-            sortOrder: 0,
-            registrationOpensAt: null,
-            registrationClosesAt: null,
-            registrationStopped: false,
-          },
-        ],
-        disciplines: [{ id: "d1", categoryId: "c1", name: "Ballet", sortOrder: 0 }],
-        ageCategories: [
-          {
-            id: "a1",
-            participantGroupId: "g1",
-            name: "5–12 лет",
-            minAge: 5,
-            maxAge: 12,
-            sortOrder: 0,
-            type: "STANDARD",
-            mixedCalculationMethod: null,
-          },
-        ],
-        participantGroups: [
-          {
-            id: "g1",
-            name: "Solo",
-            minCount: 1,
-            maxCount: 1,
-            description: null,
-            sortOrder: 0,
-          },
-        ],
-        participationFormats: [
-          {
-            id: "f1",
-            name: "Очно",
-            description: null,
-            enabled: true,
-            sortOrder: 0,
-          },
-        ],
-        admissionRules: [
-          {
-            categoryId: "c1",
-            disciplineId: "d1",
-            ageCategoryId: "a1",
-            participantGroupId: "g1",
-            participationFormatId: "f1",
-          },
-        ],
-        pricingRules: [
-          {
-            categoryId: "c1",
-            disciplineId: "d1",
-            ageCategoryId: "a1",
-            participantGroupId: "g1",
-            participationFormatId: "f1",
-            amount: "1000.00",
-            currency: "RUB",
-            calculationType: "PER_PARTICIPANT",
-          },
-        ],
-        regulations: [
-          {
-            id: "reg-1",
-            title: "Rules",
-            version: "1.0",
-            publicationDate: "2026-01-01",
-            fileReference: "s3://r.pdf",
-            isCurrent: true,
-          },
-        ],
-        currentRegulationId: "reg-1",
-      }),
-    );
+    const checklist = buildPublicationChecklist(configuredCompetition());
 
     expect(checklist.isPublishable).toBe(true);
     expect(checklist.blockingIncomplete).toBe(0);
+  });
+
+  it("is publishable without any prices — pricing is advisory", () => {
+    const checklist = buildPublicationChecklist(configuredCompetition({ pricingRules: [] }));
+
+    expect(checklist.isPublishable).toBe(true);
+    expect(checklist.blockingIncomplete).toBe(0);
+    expect(checklist.items.find((item) => item.id === "pricing")).toMatchObject({
+      done: false,
+      blocking: false,
+    });
   });
 });

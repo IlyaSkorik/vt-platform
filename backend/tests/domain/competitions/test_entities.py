@@ -506,10 +506,14 @@ class TestPublicationReport:
         assert PublicationIssueCode.NO_ADMISSION_RULES in codes
         assert not report.is_publishable
 
-    def test_missing_price_is_error(self) -> None:
+    def test_missing_price_is_warning_not_blocking(self) -> None:
+        # A festival may charge for nothing at all, so an unpriced combination is
+        # reported for the organizer to notice — it does not hold back publication.
         fx = _configured(priced=False)
         report = fx.competition.publication_report()
-        assert PublicationIssueCode.MISSING_PRICING_RULES in {i.code for i in report.errors}
+        assert PublicationIssueCode.MISSING_PRICING_RULES in {i.code for i in report.warnings}
+        assert PublicationIssueCode.MISSING_PRICING_RULES not in {i.code for i in report.errors}
+        assert report.is_publishable
 
     def test_missing_regulation_is_blocking_error(self) -> None:
         fx = _configured(with_regulation=False)
@@ -561,6 +565,13 @@ class TestLifecycle:
         c.mark_configured(now=NOW)
         with pytest.raises(PublicationRequirementsNotMetError):
             c.mark_ready(now=NOW)
+
+    def test_free_festival_reaches_ready(self) -> None:
+        # Nothing priced, everything else configured: a free festival is publishable.
+        fx = _configured(priced=False)
+        fx.competition.mark_configured(now=NOW)
+        fx.competition.mark_ready(now=NOW)  # no raise
+        assert isinstance(fx.competition.publish(now=NOW)[0], CompetitionPublished)
 
     def test_config_locked_after_ready(self) -> None:
         fx = _configured()

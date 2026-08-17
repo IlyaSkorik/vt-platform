@@ -2814,9 +2814,13 @@ class Competition:
             errors.append(PublicationIssue(PublicationIssueCode.NO_PARTICIPATION_FORMATS, "At least one participation format must be enabled."))
         if not self._admission_rules:
             errors.append(PublicationIssue(PublicationIssueCode.NO_ADMISSION_RULES, "At least one admission rule is required."))
+        # Pricing is optional: a festival may charge for nothing at all, or price only
+        # some of what it admits (a free nomination alongside paid ones). An unpriced
+        # combination is admissible and simply contributes nothing to the applicant's
+        # order total, so this is advisory rather than blocking.
         unpriced = sum(1 for combination in self._admission_rules if combination not in self._pricing_rules)
         if unpriced:
-            errors.append(PublicationIssue(PublicationIssueCode.MISSING_PRICING_RULES, f"{unpriced} admissible combination(s) have no price."))
+            warnings.append(PublicationIssue(PublicationIssueCode.MISSING_PRICING_RULES, f"{unpriced} admissible combination(s) have no price."))
         if self._current_regulation_id is None:
             errors.append(PublicationIssue(PublicationIssueCode.MISSING_REGULATION, "A published regulation is required."))
         used_format_ids = {combination.participation_format_id for combination in self._admission_rules}

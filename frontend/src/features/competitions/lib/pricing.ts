@@ -503,7 +503,9 @@ export function buildPricingWarnings(competition: CompetitionDetail): PricingWar
     warnings.push({
       id: "missing-prices",
       kind: "missing-price",
-      message: `${missingCount} правил допуска без цены — публикация недоступна.`,
+      // Цены необязательны: комбинация без цены остаётся допустимой и просто ничего
+      // не добавляет к сумме заявки. Публикации это не мешает.
+      message: `${missingCount} правил допуска без цены — участие по ним не войдёт в сумму заявки.`,
       sectionId: "pricing",
     });
   }
