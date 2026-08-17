@@ -7,6 +7,7 @@ import {
   ageInYears,
   clearDownstream,
   isFullyAdmissible,
+  needsAgeComposition,
   recommendedAgeCategoryId,
 } from "./admission";
 
@@ -99,6 +100,23 @@ describe("isFullyAdmissible", () => {
         participationFormatId: "live",
       }),
     ).toBe(false);
+  });
+});
+
+describe("needsAgeComposition", () => {
+  const bands = [
+    { id: "kids", type: "STANDARD" },
+    { id: "mixed", type: "MIXED" },
+  ];
+
+  it("asks for the ages only behind a mixed band", () => {
+    expect(needsAgeComposition(bands, "mixed")).toBe(true);
+    expect(needsAgeComposition(bands, "kids")).toBe(false);
+  });
+
+  it("asks for nothing while no band is chosen or the id is unknown", () => {
+    expect(needsAgeComposition(bands, undefined)).toBe(false);
+    expect(needsAgeComposition(bands, "gone")).toBe(false);
   });
 });
 

@@ -34,6 +34,7 @@ import {
   admissibleValues,
   clearDownstream,
   isFullyAdmissible,
+  needsAgeComposition,
   type PerformanceAxis,
   type PerformanceSelection,
   recommendedAgeCategoryId,
@@ -46,6 +47,31 @@ type NamedItem = { id: string; name: string; sortOrder: number };
 
 /** Mirrors the backend bound on the performance comment. */
 const COMMENT_MAX_LENGTH = 1000;
+
+/** Mirrors the backend bound on the age composition. */
+const AGE_COMPOSITION_MAX_LENGTH = 300;
+
+/**
+ * What to write in the age field, phrased around what the organizer will do with it.
+ *
+ * A mixed band is scored by reducing the group to one age, and which age that is
+ * changes what matters in the answer — an average asks for everybody, the oldest asks
+ * who the eldest is. Saying so up front beats a rejected entry later.
+ */
+function ageCompositionHint(method: string | null | undefined): string {
+  const base =
+    "Категория смешанная: укажите, участники какого возраста выходят на сцену — например, «12 детей 8–11 лет и 2 педагога 30+».";
+  if (method === "AVERAGE") {
+    return `${base} Организатор оценивает такую группу по среднему возрасту.`;
+  }
+  if (method === "OLDEST") {
+    return `${base} Организатор оценивает такую группу по возрасту старшего участника.`;
+  }
+  if (method === "YOUNGEST") {
+    return `${base} Организатор оценивает такую группу по возрасту младшего участника.`;
+  }
+  return base;
+}
 
 function options(
   items: readonly NamedItem[],
@@ -113,6 +139,9 @@ function PerformanceFormInner({
     String((submission.performance?.durationSeconds ?? 0) % 60 || ""),
   );
   const [comment, setComment] = useState(submission.performance?.comment ?? "");
+  const [ageComposition, setAgeComposition] = useState(
+    submission.performance?.ageComposition ?? "",
+  );
 
   const setPerformance = useSetPerformance(submissionId);
 
@@ -150,6 +179,11 @@ function PerformanceFormInner({
     new Date(),
   );
 
+  const mixedAge = needsAgeComposition(registration.ageCategories, selection.ageCategoryId);
+  const mixedMethod = registration.ageCategories.find(
+    (band) => band.id === selection.ageCategoryId,
+  )?.mixedCalculationMethod;
+
   const durationSeconds = (Number(minutes) || 0) * 60 + (Number(seconds) || 0);
   const admissible = isFullyAdmissible(rules, selection);
   const canSave = admissible && title.trim().length > 0 && durationSeconds > 0;
@@ -167,6 +201,7 @@ function PerformanceFormInner({
         selection.participantGroupId,
         selection.participationFormatId,
         comment.trim(),
+        ageComposition.trim(),
       ].join("|")
     : null;
   const savedSignature = useRef<string | null>(saveSignature);
@@ -186,6 +221,10 @@ function PerformanceFormInner({
           participantGroupId: selection.participantGroupId as string,
           participationFormatId: selection.participationFormatId as string,
           comment: comment.trim(),
+          // Sent whatever the category is: a value left over from a mixed band the
+          // applicant has since switched away from is harmless, and dropping it would
+          // lose what they wrote if they switch back.
+          ageComposition: ageComposition.trim(),
         },
         {
           onSuccess: () => {
@@ -198,7 +237,7 @@ function PerformanceFormInner({
       );
     }, 700);
     return () => clearTimeout(handle);
-  }, [saveSignature, savePerformance, title, durationSeconds, selection, comment]);
+  }, [saveSignature, savePerformance, title, durationSeconds, selection, comment, ageComposition]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -281,6 +320,21 @@ function PerformanceFormInner({
           />
         </div>
       </div>
+
+      {/* Смешанная возрастная категория намеренно не задаёт возраст: даты рождения в
+          заявке описывают перечисленных людей, а не номер. Кто на сцене на самом деле —
+          знает только тот, кто подаёт заявку, поэтому здесь он это и пишет. */}
+      {mixedAge ? (
+        <Textarea
+          label="Возрастной состав участников"
+          description={ageCompositionHint(mixedMethod)}
+          required
+          rows={2}
+          value={ageComposition}
+          maxLength={AGE_COMPOSITION_MAX_LENGTH}
+          onChange={(event) => setAgeComposition(event.target.value)}
+        />
+      ) : null}
 
       <Textarea
         label="Дополнительная информация для организаторов"

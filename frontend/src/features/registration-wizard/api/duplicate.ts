@@ -45,6 +45,7 @@ export function useDuplicatePerformance(applicationId: string) {
           participantGroupId: source.performance.participantGroupId,
           participationFormatId: source.performance.participationFormatId,
           comment: source.performance.comment,
+          ageComposition: source.performance.ageComposition,
         });
       }
       for (const participant of source.participants) {

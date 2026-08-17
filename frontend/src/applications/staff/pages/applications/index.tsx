@@ -60,6 +60,7 @@ type Detail = {
     participationFormatName?: string | null;
     durationSeconds?: number | null;
     comment?: string | null;
+    ageComposition?: string | null;
     participantsCount?: number | null;
     teachersCount?: number | null;
     participants?: Array<{ id: string; name: string; memberCount: number }>;
@@ -732,6 +733,13 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                                         Возраст: {performance.ageCategoryName ?? "—"} · Группа:{" "}
                                         {performance.participantGroupName ?? "—"}
                                       </p>
+                                      {/* Смешанную категорию участник расшифровывает
+                                          сам — без этого номер не подать. */}
+                                      {performance.ageComposition?.trim() ? (
+                                        <p className="text-xs text-muted-foreground">
+                                          Возрастной состав: {performance.ageComposition.trim()}
+                                        </p>
+                                      ) : null}
                                       <p className="text-xs text-muted-foreground">
                                         Формат: {performance.participationFormatName ?? "—"} ·
                                         Длительность: {performance.durationSeconds ?? 0} сек

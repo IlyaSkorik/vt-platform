@@ -5,7 +5,7 @@ import type { Registration } from "@/shared/api/generated/model-public-catalog";
 import { Badge, Button, Card, CardContent } from "@/shared/ui";
 
 import { useSubmission } from "../api/hooks";
-import { isFullyAdmissible } from "../lib/admission";
+import { isFullyAdmissible, needsAgeComposition } from "../lib/admission";
 import { PerformanceForm } from "./performance-form";
 
 function nameById(
@@ -56,6 +56,9 @@ export function PerformanceCard({
 
   const performance = submission?.performance ?? null;
   const lead = submission?.participants[0];
+  // A mixed age category is only finished once the applicant has said what ages the
+  // group is — the backend refuses the submission without it, so the card should not
+  // call it ready either.
   const complete = performance
     ? isFullyAdmissible(registration.admissionRules, {
         nominationId: performance.nominationId,
@@ -63,7 +66,9 @@ export function PerformanceCard({
         ageCategoryId: performance.ageCategoryId,
         participantGroupId: performance.participantGroupId,
         participationFormatId: performance.participationFormatId,
-      })
+      }) &&
+      (!needsAgeComposition(registration.ageCategories, performance.ageCategoryId) ||
+        performance.ageComposition.trim().length > 0)
     : false;
 
   return (

@@ -40,10 +40,12 @@ const GROUP = "01900000-0000-7000-8000-000000000004";
 const FORMAT = "01900000-0000-7000-8000-000000000005";
 
 const COMMENT = "Выход с точки 3. Нужен микрофон на стойке.";
+/** The label carries a required marker ("*"), so it is matched loosely. */
+const AGE_FIELD_LABEL = /Возрастной состав участников/;
 
 const savePerformance = vi.fn();
 
-function aRegistration(): Registration {
+function aRegistration({ mixedAge = false }: { mixedAge?: boolean } = {}): Registration {
   return {
     competition: {
       id: "01900000-0000-7000-8000-0000000000ff",
@@ -80,10 +82,12 @@ function aRegistration(): Registration {
       {
         id: AGE_CATEGORY,
         participantGroupId: GROUP,
-        name: "10-12 лет",
+        name: mixedAge ? "Смешанная" : "10-12 лет",
         minAge: 10,
-        maxAge: 12,
+        maxAge: mixedAge ? 60 : 12,
         sortOrder: 1,
+        type: mixedAge ? "MIXED" : "STANDARD",
+        mixedCalculationMethod: mixedAge ? "AVERAGE" : null,
       },
     ],
     participantGroups: [{ id: GROUP, name: "Соло", minCount: 1, maxCount: 1, sortOrder: 1 }],
@@ -104,7 +108,7 @@ function aRegistration(): Registration {
 }
 
 /** A submission whose performance is already complete and admissible. */
-function aSubmission(comment: string): SubmissionResource {
+function aSubmission(comment: string, ageComposition = ""): SubmissionResource {
   return {
     id: "01900000-0000-7000-8000-00000000000a",
     type: "submission",
@@ -119,6 +123,7 @@ function aSubmission(comment: string): SubmissionResource {
       participantGroupId: GROUP,
       participationFormatId: FORMAT,
       comment,
+      ageComposition,
     },
     participants: [],
     teachers: [],
@@ -157,12 +162,12 @@ function stubHooks(submission: SubmissionResource): void {
   );
 }
 
-function renderForm(): void {
+function renderForm({ mixedAge = false }: { mixedAge?: boolean } = {}): void {
   render(
     <MemoryRouter>
       <PerformanceForm
         submissionId="01900000-0000-7000-8000-00000000000a"
-        registration={aRegistration()}
+        registration={aRegistration({ mixedAge })}
       />
     </MemoryRouter>,
   );
@@ -235,5 +240,49 @@ describe("PerformanceForm — the applicant's note for the organizers", () => {
     renderForm();
 
     expect(screen.getByText("Изменения сохраняются автоматически")).toBeInTheDocument();
+  });
+});
+
+describe("PerformanceForm — the ages behind a mixed category", () => {
+  it("asks for nothing when the age category is a standard band", () => {
+    stubHooks(aSubmission(""));
+    renderForm();
+
+    expect(screen.queryByLabelText(AGE_FIELD_LABEL)).not.toBeInTheDocument();
+  });
+
+  it("asks for the ages, as required, when the category is a mixed one", () => {
+    stubHooks(aSubmission(""));
+    renderForm({ mixedAge: true });
+
+    const field = screen.getByLabelText(AGE_FIELD_LABEL);
+    expect(field.tagName).toBe("TEXTAREA");
+    expect(field).toBeRequired();
+  });
+
+  it("says how the organizer will read the answer back to one age", () => {
+    stubHooks(aSubmission(""));
+    renderForm({ mixedAge: true });
+
+    expect(screen.getByText(/по среднему возрасту/)).toBeInTheDocument();
+  });
+
+  it("prefills what was already stated", () => {
+    stubHooks(aSubmission("", "12 детей 8–11 лет"));
+    renderForm({ mixedAge: true });
+
+    expect(screen.getByLabelText(AGE_FIELD_LABEL)).toHaveValue("12 детей 8–11 лет");
+  });
+
+  it("autosaves the ages with the rest of the performance", async () => {
+    const user = userEvent.setup();
+    stubHooks(aSubmission(""));
+    renderForm({ mixedAge: true });
+
+    await user.type(screen.getByLabelText(AGE_FIELD_LABEL), "  дети и педагоги  ");
+
+    await waitFor(() => expect(savePerformance).toHaveBeenCalled(), { timeout: 3000 });
+    const [body] = savePerformance.mock.calls.at(-1) as [{ ageComposition: string }];
+    expect(body.ageComposition).toBe("дети и педагоги");
   });
 });

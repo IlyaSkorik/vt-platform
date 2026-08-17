@@ -105,6 +105,27 @@ export function ageInYears(birthDate: string, reference: Date): number | null {
   return age;
 }
 
+type MixedBand = { id: string; type?: string };
+
+/**
+ * Whether the chosen age category is a mixed one, and so leaves the ages of the
+ * performers for the applicant to state.
+ *
+ * A mixed band ("смешанная") is deliberately open about who may enter it: the birth
+ * dates on file describe the people listed, not the act, and only the applicant can
+ * say that it is twelve children with two adults rather than the reverse. The backend
+ * requires the answer before such a submission may be submitted.
+ */
+export function needsAgeComposition(
+  ageCategories: readonly MixedBand[],
+  ageCategoryId: string | undefined,
+): boolean {
+  if (!ageCategoryId) {
+    return false;
+  }
+  return ageCategories.find((band) => band.id === ageCategoryId)?.type === "MIXED";
+}
+
 type AgeBand = { id: string; minAge: number; maxAge: number };
 
 /** The age category whose band contains the participant's age, or ``undefined``. */
