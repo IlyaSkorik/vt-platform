@@ -51,6 +51,7 @@ class PerformanceView:
     participant_group_id: str
     participation_format_id: str
     comment: str
+    age_composition: str
 
     @classmethod
     def from_performance(cls, performance: Performance) -> PerformanceView:
@@ -64,6 +65,7 @@ class PerformanceView:
             participant_group_id=performance.participant_group_id.json(),
             participation_format_id=performance.participation_format_id.json(),
             comment=performance.comment,
+            age_composition=performance.age_composition,
         )
 
 

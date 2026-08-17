@@ -71,7 +71,9 @@ class DeleteDraftSubmissionCommand:
 class SetPerformanceCommand:
     """Set the submission's single performance (owner, editable states only).
 
-    ``comment`` is the applicant's optional note for the organizers about this act.
+    ``comment`` is the applicant's optional note for the organizers about this act;
+    ``age_composition`` is what ages the performers are, asked for by a mixed age
+    category and empty for a standard one.
     """
 
     submission_id: str
@@ -84,13 +86,16 @@ class SetPerformanceCommand:
     participant_group_id: str
     participation_format_id: str
     comment: str = ""
+    age_composition: str = ""
 
 
 @dataclass(frozen=True, slots=True)
 class UpdatePerformanceCommand:
     """Replace the submission's existing performance (owner, editable states only).
 
-    ``comment`` is the applicant's optional note for the organizers about this act.
+    ``comment`` is the applicant's optional note for the organizers about this act;
+    ``age_composition`` is what ages the performers are, asked for by a mixed age
+    category and empty for a standard one.
     """
 
     submission_id: str
@@ -103,6 +108,7 @@ class UpdatePerformanceCommand:
     participant_group_id: str
     participation_format_id: str
     comment: str = ""
+    age_composition: str = ""
 
 
 # ---------------------------------------------------------------------------

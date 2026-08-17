@@ -23,6 +23,10 @@ class SetPerformanceRequestSerializer(serializers.Serializer[dict[str, object]])
 
     ``comment`` is the applicant's optional free-text note for the organizers about
     this act (stage entry, props, equipment, backing-track quirks).
+
+    ``ageComposition`` is what ages the performers are, in the applicant's own words
+    ("12 детей 8–11 лет и 2 педагога"). A mixed age category requires it before the
+    submission may be submitted; a standard one leaves it blank.
     """
 
     title = serializers.CharField()
@@ -33,6 +37,7 @@ class SetPerformanceRequestSerializer(serializers.Serializer[dict[str, object]])
     participantGroupId = serializers.UUIDField()
     participationFormatId = serializers.UUIDField()
     comment = serializers.CharField(required=False, allow_blank=True, max_length=1_000)
+    ageComposition = serializers.CharField(required=False, allow_blank=True, max_length=300)
 
 
 class AddParticipantRequestSerializer(serializers.Serializer[dict[str, object]]):
@@ -77,6 +82,7 @@ class _PerformanceResourceSerializer(serializers.Serializer[dict[str, object]]):
     participantGroupId = serializers.UUIDField()
     participationFormatId = serializers.UUIDField()
     comment = serializers.CharField(allow_blank=True)
+    ageComposition = serializers.CharField(allow_blank=True)
 
 
 class _ParticipantResourceSerializer(serializers.Serializer[dict[str, object]]):

@@ -8987,8 +8987,11 @@ paths:
   /api/v1/submissions/{submission_id}/price:
     post:
       operationId: submissions_calculate_price
-      description: POST /api/v1/submissions/{id}/price - calculate and freeze the
-        price snapshot.
+      description: |-
+        POST /api/v1/submissions/{id}/price - calculate and freeze the price snapshot.
+
+        A combination the competition never priced answers 200 with the submission left
+        unpriced: pricing is optional, so there is nothing exceptional to report.
       summary: Calculate the price
       parameters:
       - in: path
@@ -9010,7 +9013,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SubmissionProblemDetail'
-          description: No pricing.
+          description: Not editable.
   /api/v1/submissions/{submission_id}/teachers:
     post:
       operationId: submissions_add_teacher
@@ -14836,13 +14839,21 @@ components:
           type: integer
         sortOrder:
           type: integer
+        type:
+          $ref: '#/components/schemas/TypeFd5Enum'
+        mixedCalculationMethod:
+          oneOf:
+          - $ref: '#/components/schemas/MixedCalculationMethodEnum'
+          - $ref: '#/components/schemas/NullEnum'
       required:
       - id
       - maxAge
       - minAge
+      - mixedCalculationMethod
       - name
       - participantGroupId
       - sortOrder
+      - type
     RegistrationCompetition:
       type: object
       description: Competition summary for the registration flow.
@@ -15296,6 +15307,10 @@ components:
 
         ``comment`` is the applicant's optional free-text note for the organizers about
         this act (stage entry, props, equipment, backing-track quirks).
+
+        ``ageComposition`` is what ages the performers are, in the applicant's own words
+        ("12 детей 8–11 лет и 2 педагога"). A mixed age category requires it before the
+        submission may be submitted; a standard one leaves it blank.
       properties:
         title:
           type: string
@@ -15320,6 +15335,9 @@ components:
         comment:
           type: string
           maxLength: 1000
+        ageComposition:
+          type: string
+          maxLength: 300
       required:
       - ageCategoryId
       - disciplineId
@@ -17483,8 +17501,11 @@ components:
           format: uuid
         comment:
           type: string
+        ageComposition:
+          type: string
       required:
       - ageCategoryId
+      - ageComposition
       - comment
       - disciplineId
       - durationSeconds

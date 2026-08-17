@@ -21,6 +21,7 @@ objects) and mapped to RFC 9457 Problem Details at the presentation edge
     │   ├── InvalidParticipationFormatIdError
     │   ├── InvalidPerformanceTitleError
     │   ├── InvalidPerformanceCommentError
+    │   ├── InvalidAgeCompositionError
     │   ├── InvalidDurationError
     │   ├── InvalidPersonNameError
     │   ├── InvalidBirthDateError
@@ -51,6 +52,7 @@ objects) and mapped to RFC 9457 Problem Details at the presentation edge
         ├── TeacherRequiredError
         ├── ParticipantCommentNotAcceptedError
         ├── RequiredAttachmentMissingError
+        ├── AgeCompositionRequiredError
         ├── PriceSnapshotRequiredError
         ├── CombinationNotAdmissibleError
         └── ParticipantCountMismatchError
@@ -142,6 +144,10 @@ class InvalidPerformanceTitleError(ValueObjectValidationError):
 
 class InvalidPerformanceCommentError(ValueObjectValidationError):
     """The provided value is not a valid performance comment (too long)."""
+
+
+class InvalidAgeCompositionError(ValueObjectValidationError):
+    """The provided value is not a valid description of the group's ages (too long)."""
 
 
 class InvalidDurationError(ValueObjectValidationError):
@@ -309,6 +315,10 @@ class ParticipantCommentNotAcceptedError(SubmissionInvariantError):
 
 class RequiredAttachmentMissingError(SubmissionInvariantError):
     """A file the competition requires for this format (music/video/receipt) is missing."""
+
+
+class AgeCompositionRequiredError(SubmissionInvariantError):
+    """A mixed age category was chosen without saying what ages the group actually is."""
 
 
 class PriceSnapshotRequiredError(SubmissionInvariantError):

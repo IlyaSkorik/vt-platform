@@ -46,6 +46,7 @@ from typing import Final
 
 from .exceptions import (
     InvalidAgeCategoryIdError,
+    InvalidAgeCompositionError,
     InvalidApplicationIdError,
     InvalidApplicationStatusChangeError,
     InvalidAttachmentIdError,
@@ -871,6 +872,8 @@ class Currency(StrEnum):
 
 _PERFORMANCE_TITLE_MAX: Final = 300
 _PERFORMANCE_COMMENT_MAX: Final = 1_000
+#: A sentence or two ("12 детей 8–11 лет и 2 педагога"), not an essay.
+_AGE_COMPOSITION_MAX: Final = 300
 _FIRST_NAME_MAX: Final = 120
 _LAST_NAME_MAX: Final = 120
 _MIDDLE_NAME_MAX: Final = 120
@@ -1102,6 +1105,14 @@ class Performance:
     this act (stage entry point, props, equipment, backing-track quirks). It is
     plain, length-bounded text - an empty string means "nothing to add" (the same
     "blank, not null" shape :class:`Attachment`'s caption uses).
+
+    ``age_composition`` is the applicant's own account of how old the performers
+    actually are. A mixed age category is a band the competition deliberately leaves
+    open ("смешанная"), and the birth dates on file describe the people entered, not
+    the act - a group may be children with two adults, or the other way round. Only
+    the applicant knows, so a mixed category asks them to say it in their own words;
+    for a standard category it stays empty. Same "blank, not null" text shape as
+    ``comment``.
     """
 
     title: PerformanceTitle
@@ -1112,12 +1123,17 @@ class Performance:
     participant_group_id: ParticipantGroupId
     participation_format_id: ParticipationFormatId
     comment: str = ""
+    age_composition: str = ""
 
     def __post_init__(self) -> None:
         stripped = self.comment.strip()
         if len(stripped) > _PERFORMANCE_COMMENT_MAX:
             raise InvalidPerformanceCommentError(f"Performance comment must be at most {_PERFORMANCE_COMMENT_MAX} characters.")
         object.__setattr__(self, "comment", stripped)
+        ages = self.age_composition.strip()
+        if len(ages) > _AGE_COMPOSITION_MAX:
+            raise InvalidAgeCompositionError(f"The age composition must be at most {_AGE_COMPOSITION_MAX} characters.")
+        object.__setattr__(self, "age_composition", ages)
 
     def __str__(self) -> str:
         return f"{self.title} ({self.duration})"
@@ -1320,6 +1336,9 @@ class SubmissionParticipationPolicy:
     requires_music: bool = False
     requires_video_file: bool = False
     requires_document: bool = False
+    #: Whether the chosen age category is a mixed one, and so leaves the ages of the
+    #: performers for the applicant to state (:attr:`Performance.age_composition`).
+    requires_age_composition: bool = False
     #: Whether the competition invites the applicant's free-text note about the act.
     #: When a competition does not, a note that slipped in anyway (an older draft, a
     #: client that still renders the field) is rejected rather than quietly carried

@@ -103,6 +103,7 @@ from .events import (
     TeacherRemoved,
 )
 from .exceptions import (
+    AgeCompositionRequiredError,
     ApplicationNotEditableError,
     AttachmentNotFoundError,
     CombinationNotAdmissibleError,
@@ -1013,10 +1014,11 @@ class Submission:
 
         Enforces the submission invariants: a performance exists, at least one
         participant exists, an immutable price snapshot exists **when the competition
-        priced the combination** (``policy.is_priced``), the performance's combination
-        is admissible, and the participant count matches the configured participant
-        group's band (validated against the supplied read-model ``policy`` - never by
-        importing the Competition aggregate).
+        priced the combination** (``policy.is_priced``), the ages are stated when the
+        chosen age category is a mixed one (``policy.requires_age_composition``), the
+        performance's combination is admissible, and the participant count matches the
+        configured participant group's band (validated against the supplied read-model
+        ``policy`` - never by importing the Competition aggregate).
         """
         self._assert_submittable(policy)
         previous = self._status
@@ -1131,6 +1133,8 @@ class Submission:
             raise ParticipantCountMismatchError(
                 f"Participant count {self.participant_count} does not match the configured group range {policy.participant_count_range}."
             )
+        if policy.requires_age_composition and not self._performance.age_composition:
+            raise AgeCompositionRequiredError("This age category is a mixed one: state what ages the performers are.")
         if policy.requires_teacher and not self._teachers:
             raise TeacherRequiredError("This competition requires a teacher to be credited before the submission can be submitted.")
         if not policy.allows_participant_comment and self._performance.comment:

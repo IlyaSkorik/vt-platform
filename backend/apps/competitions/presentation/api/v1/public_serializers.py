@@ -294,6 +294,14 @@ class RegistrationAgeCategorySerializer(serializers.Serializer[object]):
     minAge = serializers.IntegerField(source="min_age")
     maxAge = serializers.IntegerField(source="max_age")
     sortOrder = serializers.IntegerField(source="sort_order")
+    # A mixed band asks the applicant to say what ages the group is; the method is how
+    # the organizer will read that answer back to a single age.
+    type = serializers.ChoiceField(choices=["STANDARD", "MIXED"])
+    mixedCalculationMethod = serializers.ChoiceField(
+        source="mixed_calculation_method",
+        choices=["AVERAGE", "OLDEST", "YOUNGEST"],
+        allow_null=True,
+    )
 
 
 class RegistrationParticipantGroupSerializer(serializers.Serializer[object]):

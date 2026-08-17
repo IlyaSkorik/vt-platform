@@ -455,6 +455,9 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                             "durationSeconds": dto.performance.duration_seconds if dto.performance else None,
                             # The applicant's optional note for the organizers; blank when unset.
                             "comment": (dto.performance.comment or None) if dto.performance else None,
+                            # What ages the performers are, in the applicant's words. Only a
+                            # mixed age category asks for it, so it is usually blank.
+                            "ageComposition": (dto.performance.age_composition or None) if dto.performance else None,
                             "participantsCount": len(dto.participants),
                             "teachersCount": len(dto.teachers),
                             "participants": [{"id": p.id, "name": p.display_name, "memberCount": p.member_count} for p in dto.participants],

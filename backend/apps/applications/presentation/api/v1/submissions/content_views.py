@@ -66,6 +66,7 @@ def _submission_resource(dto: SubmissionView) -> dict[str, Any]:
                 "participantGroupId": performance.participant_group_id,
                 "participationFormatId": performance.participation_format_id,
                 "comment": performance.comment,
+                "ageComposition": performance.age_composition,
             }
             if performance is not None
             else None
@@ -183,6 +184,7 @@ class SubmissionPerformanceView(_AuthenticatedView):
             participant_group_id=str(data["participantGroupId"]),
             participation_format_id=str(data["participationFormatId"]),
             comment=str(data.get("comment") or ""),
+            age_composition=str(data.get("ageComposition") or ""),
         )
         try:
             result = composition.build_set_performance_handler().handle(command)

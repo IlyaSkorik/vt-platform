@@ -83,6 +83,37 @@ def test_returns_single_projection_for_open_competition() -> None:
     assert codes["work_publication"] is False
 
 
+def test_mixed_age_category_is_projected_with_its_calculation_method() -> None:
+    # The wizard asks the applicant what ages a mixed group is, so it has to be able to
+    # tell a mixed band from a standard one — and to say how the organizer will read
+    # the answer back to a single age.
+    from apps.competitions.infrastructure.models import AgeCategoryModel, CompetitionModel
+
+    competition_id = _seed_competition()
+    competition = CompetitionModel.objects.get(id=competition_id)
+    group_id = uuid7()
+    AgeCategoryModel.objects.create(competition=competition, participant_group_id=group_id, name="7–10 лет", min_age=7, max_age=10)
+    AgeCategoryModel.objects.create(
+        competition=competition,
+        participant_group_id=group_id,
+        name="Смешанная",
+        min_age=5,
+        max_age=60,
+        type="MIXED",
+        mixed_calculation_method="AVERAGE",
+        sort_order=1,
+    )
+
+    response = APIClient().get(_url(competition_id))
+
+    assert response.status_code == 200, response.data
+    by_name = {band["name"]: band for band in response.data["data"]["ageCategories"]}
+    assert by_name["7–10 лет"]["type"] == "STANDARD"
+    assert by_name["7–10 лет"]["mixedCalculationMethod"] is None
+    assert by_name["Смешанная"]["type"] == "MIXED"
+    assert by_name["Смешанная"]["mixedCalculationMethod"] == "AVERAGE"
+
+
 def test_unauthenticated_access_is_allowed() -> None:
     competition_id = _seed_competition()
     # No Authorization header at all.

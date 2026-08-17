@@ -88,6 +88,13 @@ class RegistrationAgeCategoryView:
     min_age: int
     max_age: int
     sort_order: int
+    #: ``STANDARD`` or ``MIXED``. A mixed band is deliberately open about who may
+    #: enter it, so the wizard asks the applicant what ages the group actually is.
+    type: str = "STANDARD"
+    #: How the organizer will reduce a mixed group to one age (``AVERAGE`` /
+    #: ``OLDEST`` / ``YOUNGEST``); ``None`` for a standard band. Told to the applicant
+    #: so what they write is the answer to the question actually being asked.
+    mixed_calculation_method: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -233,6 +240,8 @@ def project_registration(competition: Competition, *, now: datetime) -> Registra
             min_age=age.age_range.min_age,
             max_age=age.age_range.max_age,
             sort_order=age.sort_order,
+            type=age.type.value,
+            mixed_calculation_method=age.mixed_calculation_method.value if age.mixed_calculation_method is not None else None,
         )
         for age in competition.age_categories
     ]

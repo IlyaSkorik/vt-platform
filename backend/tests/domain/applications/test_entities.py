@@ -21,6 +21,7 @@ from apps.applications.domain.events import (
     SubmissionSubmitted,
 )
 from apps.applications.domain.exceptions import (
+    AgeCompositionRequiredError,
     CombinationNotAdmissibleError,
     DirectConstructionError,
     DuplicateAttachmentError,
@@ -80,9 +81,10 @@ def _new_id() -> uuid.UUID:
     return SubmissionId.generate().value
 
 
-def _performance(comment: str = "") -> Performance:
+def _performance(comment: str = "", age_composition: str = "") -> Performance:
     return Performance(
         comment=comment,
+        age_composition=age_composition,
         title=PerformanceTitle("Swan Lake"),
         duration=Duration.of(minutes=3, seconds=30),
         nomination_id=NominationId.from_uuid(_new_id()),
@@ -428,6 +430,20 @@ class TestSubmitInvariants:
         s.submit(policy=policy, now=NOW)
         assert s.status is SubmissionStatus.SUBMITTED
         assert s.price_snapshot is None
+
+    def test_mixed_age_category_requires_the_ages_to_be_stated(self) -> None:
+        # The band is deliberately open, so only the applicant can say who is on stage.
+        fx = _solo_ready()
+        mixed = SubmissionParticipationPolicy(participant_count_range=ParticipantCountRange(1, 1), requires_age_composition=True)
+        with pytest.raises(AgeCompositionRequiredError):
+            fx.submission.submit(policy=mixed, now=NOW)
+
+    def test_mixed_age_category_submits_once_the_ages_are_stated(self) -> None:
+        fx = _solo_ready()
+        fx.submission.set_performance(performance=_performance(age_composition="12 детей 8–11 лет и 2 педагога"), now=NOW)
+        mixed = SubmissionParticipationPolicy(participant_count_range=ParticipantCountRange(1, 1), requires_age_composition=True)
+        fx.submission.submit(policy=mixed, now=NOW)
+        assert fx.submission.status is SubmissionStatus.SUBMITTED
 
     def test_rejects_inadmissible_combination(self) -> None:
         fx = _solo_ready()

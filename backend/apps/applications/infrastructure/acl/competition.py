@@ -39,6 +39,7 @@ from apps.applications.domain.value_objects import (
 from apps.competitions.domain.entities import Competition
 from apps.competitions.domain.value_objects import (
     AdmissionCombination,
+    AgeCategoryType,
 )
 from apps.competitions.domain.value_objects import (
     AgeCategoryId as CompAgeCategoryId,
@@ -161,6 +162,7 @@ class DjangoCompetitionCatalog:
             participation_format_id=participation_format_id,
         )
         count_range = ParticipantCountRange(min_count=group.count_range.min_count, max_count=group.count_range.max_count)
+        age_category = next((a for a in competition.age_categories if a.id.value == age_category_id.value), None)
         settings = competition.settings
         requirements = settings.requirements_for(CompParticipationFormatId.from_uuid(participation_format_id.value))
         return SubmissionParticipationPolicy(
@@ -169,6 +171,9 @@ class DjangoCompetitionCatalog:
             # Pricing is optional per combination: an unpriced one is submitted without
             # a price snapshot rather than blocked (see the policy's `is_priced`).
             is_priced=competition.price_for(combination) is not None,
+            # A mixed age category is deliberately open about who may enter it, so the
+            # applicant is the one who says what ages the group actually is.
+            requires_age_composition=age_category is not None and age_category.type is AgeCategoryType.MIXED,
             requires_teacher=settings.require_teacher,
             requires_music=requirements.music.require_upload,
             # Two conditions, both necessary: the format must actually collect files (a

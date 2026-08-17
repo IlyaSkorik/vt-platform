@@ -70,7 +70,13 @@ from apps.applications.application.queries import (
     ListCompetitionSubmissionsHandler,
     ListMySubmissionsHandler,
 )
-from apps.applications.domain.value_objects import Money, PriceCalculationType, SubmissionStatus
+from apps.applications.domain.value_objects import (
+    Money,
+    ParticipantCountRange,
+    PriceCalculationType,
+    SubmissionParticipationPolicy,
+    SubmissionStatus,
+)
 
 from .fakes import (
     FakeClock,
@@ -189,7 +195,7 @@ def _create(env: Env, *, competition_id: str, applicant_id: str) -> str:
     return result.submission.id
 
 
-def _set_performance(env: Env, *, submission_id: str, owner: str) -> None:
+def _set_performance(env: Env, *, submission_id: str, owner: str, age_composition: str = "") -> None:
     env.set_performance().handle(
         SetPerformanceCommand(
             submission_id=submission_id,
@@ -201,6 +207,7 @@ def _set_performance(env: Env, *, submission_id: str, owner: str) -> None:
             age_category_id=uuid7_str(),
             participant_group_id=uuid7_str(),
             participation_format_id=uuid7_str(),
+            age_composition=age_composition,
         )
     )
 
@@ -452,6 +459,27 @@ class TestLifecycle:
 
         assert result.submission.status == SubmissionStatus.SUBMITTED.value
         assert result.submission.price is None
+
+    def test_submit_requires_the_ages_of_a_mixed_category(self) -> None:
+        env = Env(
+            catalog=FakeCompetitionCatalog(
+                policy=SubmissionParticipationPolicy(
+                    participant_count_range=ParticipantCountRange(min_count=1),
+                    requires_age_composition=True,
+                )
+            )
+        )
+        owner = uuid7_str()
+        submission_id = _reach_draft_ready(env, competition_id=uuid7_str(), owner=owner)
+        with pytest.raises(SubmissionInvariantViolationError):
+            env.submit().handle(SubmitSubmissionCommand(submission_id=submission_id, requested_by=owner))
+
+        _set_performance(env, submission_id=submission_id, owner=owner, age_composition="12 детей 8–11 лет и 2 педагога")
+        result = env.submit().handle(SubmitSubmissionCommand(submission_id=submission_id, requested_by=owner))
+
+        assert result.submission.status == SubmissionStatus.SUBMITTED.value
+        assert result.submission.performance is not None
+        assert result.submission.performance.age_composition == "12 детей 8–11 лет и 2 педагога"
 
     def test_submit_into_closed_competition_is_rejected(self) -> None:
         env = Env()
