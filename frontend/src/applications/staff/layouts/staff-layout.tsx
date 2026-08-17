@@ -1,10 +1,14 @@
 import { Menu, PanelLeftClose, PanelLeftOpen, Search } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { SiteFooter } from "@/app/layouts/site-footer";
 import { ThemeToggle } from "@/app/layouts/theme-toggle";
 import { UserMenu } from "@/app/layouts/user-menu";
-import { STAFF_NAVIGATION, type StaffNavItem } from "@/applications/staff/navigation";
+import {
+  isStaffWorkspaceRoute,
+  STAFF_NAVIGATION,
+  type StaffNavItem,
+} from "@/applications/staff/navigation";
 import { WorkspaceSwitcher } from "@/applications/workspace-switcher";
 import { ROUTES } from "@/shared/config";
 import { cn } from "@/shared/lib";
@@ -245,8 +249,22 @@ export function StaffErrorState(): React.JSX.Element {
 }
 
 export function StaffLayout(): React.JSX.Element {
-  const [collapsed, setCollapsed] = useState(false);
+  const { pathname } = useLocation();
+  const workspace = isStaffWorkspaceRoute(pathname);
+  const [collapsed, setCollapsed] = useState(workspace);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Crossing into a workspace folds the navigation away; leaving unfolds it again.
+  // Only the crossing does this, so a staffer who opens the menu inside a workspace
+  // keeps it open while they move around in there.
+  const wasWorkspace = useRef(workspace);
+  useEffect(() => {
+    if (workspace === wasWorkspace.current) {
+      return;
+    }
+    wasWorkspace.current = workspace;
+    setCollapsed(workspace);
+  }, [workspace]);
 
   return (
     <div className="flex min-h-svh bg-background text-foreground">

@@ -23,6 +23,31 @@ export type StaffNavItem = {
   description: string;
 };
 
+/**
+ * Whether this route is a workspace rather than a page.
+ *
+ * A constructor, a builder, a processing screen: places a staffer settles into for
+ * an hour and that use every pixel they are given — the festival workspace with its
+ * own section rail, the diploma template canvas, the programme builder, the
+ * application queue. The navigation is how you *get* to one; once inside it is a
+ * column of links taking a fifth of the screen away from the work. So the sidebar
+ * collapses itself on the way in and comes back on the way out (see StaffLayout),
+ * without touching what the staffer chose for ordinary pages.
+ */
+export function isStaffWorkspaceRoute(pathname: string): boolean {
+  if (pathname === ROUTES.staffProgram || pathname === ROUTES.staffApplications) {
+    return true;
+  }
+  if (pathname.startsWith(`${ROUTES.staffDiplomas}/`) && pathname.endsWith("/constructor")) {
+    return true;
+  }
+  // A single festival — its workspace. The list and the creation form are ordinary pages.
+  const rest = pathname.startsWith(`${ROUTES.staffCompetitions}/`)
+    ? pathname.slice(ROUTES.staffCompetitions.length + 1)
+    : null;
+  return rest != null && rest.length > 0 && rest !== "new" && !rest.includes("/");
+}
+
 export const STAFF_NAVIGATION: StaffNavItem[] = [
   {
     title: "Dashboard",
