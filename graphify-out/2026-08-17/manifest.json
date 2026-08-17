@@ -4570,8 +4570,8 @@
     "semantic_hash": "67802dca929e87b639f8d7dcd0b6f8c2"
   },
   "frontend/src/features/registration-wizard/ui/performance-form.tsx": {
-    "mtime": 1786979931.284394,
-    "ast_hash": "f2e3350cde15b506141c136cc7aa5f80",
+    "mtime": 1786980228.3052619,
+    "ast_hash": "522c7fc95fe5a0a493cf087f4bfb93e1",
     "semantic_hash": ""
   },
   "frontend/src/features/registration-wizard/ui/teacher-picker.tsx": {

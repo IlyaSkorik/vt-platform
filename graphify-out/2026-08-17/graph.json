@@ -21618,7 +21618,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_models_base_uuid7",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": "uuid7()"
     },
     {
@@ -21628,8 +21628,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_models_base_py_uuid",
-      "community": 80,
-      "community_name": "ApplicationModel",
+      "community": 244,
+      "community_name": "uuid7",
       "norm_label": "uuid"
     },
     {
@@ -21677,7 +21677,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_models_base_rationale_27",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": "generate a time-ordered uuid version 7 (rfc 9562 \u00a75.7) for primary keys."
     },
     {
@@ -22876,7 +22876,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_storage_django_file_storage_djangofilestorage_save",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": ".save()"
     },
     {
@@ -22921,7 +22921,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_storage_django_file_storage_rationale_28",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": "store ``content`` under a unique key and return that key."
     },
     {
@@ -26987,8 +26987,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_applications_tasks_py_shared_task",
-      "community": 241,
-      "community_name": "test_sweep_unpaid.py",
+      "community": 244,
+      "community_name": "uuid7",
       "norm_label": "shared_task"
     },
     {
@@ -26999,8 +26999,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_tasks_sweep_unpaid_applications",
-      "community": 241,
-      "community_name": "test_sweep_unpaid.py",
+      "community": 244,
+      "community_name": "uuid7",
       "norm_label": "sweep_unpaid_applications()"
     },
     {
@@ -27033,8 +27033,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "backend_apps_applications_tasks_rationale_18",
-      "community": 241,
-      "community_name": "test_sweep_unpaid.py",
+      "community": 244,
+      "community_name": "uuid7",
       "norm_label": "auto-cancel submitted orders whose payment receipt never arrived in time. a..."
     },
     {
@@ -34527,8 +34527,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_entities_category_rehydrate",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 4,
+      "community_name": "competitions/domain/value_objects.py",
       "norm_label": ".rehydrate()"
     },
     {
@@ -34551,8 +34551,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_entities_category_name",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 299,
+      "community_name": "Category",
       "norm_label": ".name()"
     },
     {
@@ -34611,8 +34611,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_entities_category_schedule_registration",
-      "community": 299,
-      "community_name": "Category",
+      "community": 7,
+      "community_name": "Competition",
       "norm_label": ".schedule_registration()"
     },
     {
@@ -34623,8 +34623,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_entities_category_stop_registration",
-      "community": 299,
-      "community_name": "Category",
+      "community": 7,
+      "community_name": "Competition",
       "norm_label": ".stop_registration()"
     },
     {
@@ -34635,8 +34635,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_entities_category_resume_registration",
-      "community": 299,
-      "community_name": "Category",
+      "community": 7,
+      "community_name": "Competition",
       "norm_label": ".resume_registration()"
     },
     {
@@ -34670,8 +34670,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_entities_category_rename",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 299,
+      "community_name": "Category",
       "norm_label": ".rename()"
     },
     {
@@ -35572,8 +35572,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_entities_validate_type_method_consistency",
-      "community": 4,
-      "community_name": "competitions/domain/value_objects.py",
+      "community": 7,
+      "community_name": "Competition",
       "norm_label": "_validate_type_method_consistency()"
     },
     {
@@ -36402,8 +36402,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_entities_competition_draft",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": ".draft()"
     },
     {
@@ -36891,8 +36891,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_entities_competition_current_regulation",
-      "community": 299,
-      "community_name": "Category",
+      "community": 7,
+      "community_name": "Competition",
       "norm_label": ".current_regulation()"
     },
     {
@@ -38145,8 +38145,8 @@
       "source_location": "L413",
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_entities_rationale_413",
-      "community": 299,
-      "community_name": "Category",
+      "community": 7,
+      "community_name": "Competition",
       "norm_label": "set (or replace) this nomination's registration window."
     },
     {
@@ -38156,8 +38156,8 @@
       "source_location": "L417",
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_entities_rationale_417",
-      "community": 299,
-      "community_name": "Category",
+      "community": 7,
+      "community_name": "Competition",
       "norm_label": "stop this nomination's registration early (closed regardless of the window)."
     },
     {
@@ -38167,8 +38167,8 @@
       "source_location": "L421",
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_entities_rationale_421",
-      "community": 299,
-      "community_name": "Category",
+      "community": 7,
+      "community_name": "Competition",
       "norm_label": "lift an early stop; the window's instants govern openness again."
     },
     {
@@ -38244,8 +38244,8 @@
       "source_location": "L937",
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_entities_rationale_937",
-      "community": 4,
-      "community_name": "competitions/domain/value_objects.py",
+      "community": 7,
+      "community_name": "Competition",
       "norm_label": "mixed requires a method; standard requires method is none."
     },
     {
@@ -38321,8 +38321,8 @@
       "source_location": "L1449",
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_entities_rationale_1449",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": "create a brand-new competition in the draft state. the only construction path..."
     },
     {
@@ -38376,8 +38376,8 @@
       "source_location": "L1825",
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_entities_rationale_1825",
-      "community": 299,
-      "community_name": "Category",
+      "community": 7,
+      "community_name": "Competition",
       "norm_label": "the single current regulation version, or ``none`` if none published yet."
     },
     {
@@ -42441,8 +42441,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_templates_competitiontemplate_create",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 4,
+      "community_name": "competitions/domain/value_objects.py",
       "norm_label": ".create()"
     },
     {
@@ -43007,8 +43007,8 @@
       "source_location": "L138",
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_templates_rationale_138",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 4,
+      "community_name": "competitions/domain/value_objects.py",
       "norm_label": "create a new, empty template."
     },
     {
@@ -43041,8 +43041,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_generate_uuid7",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": "_generate_uuid7()"
     },
     {
@@ -43089,8 +43089,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_competitionid_generate",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": ".generate()"
     },
     {
@@ -43187,7 +43187,7 @@
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_categoryid_generate",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".generate()"
     },
     {
@@ -43283,8 +43283,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_disciplineid_generate",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": ".generate()"
     },
     {
@@ -43380,8 +43380,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_agecategoryid_generate",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": ".generate()"
     },
     {
@@ -43477,8 +43477,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_participantgroupid_generate",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": ".generate()"
     },
     {
@@ -43574,8 +43574,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_participationformatid_generate",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": ".generate()"
     },
     {
@@ -43769,7 +43769,7 @@
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_documentid_generate",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".generate()"
     },
     {
@@ -43950,8 +43950,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_templateid_generate",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 4,
+      "community_name": "competitions/domain/value_objects.py",
       "norm_label": ".generate()"
     },
     {
@@ -44047,8 +44047,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_serviceid_generate",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": ".generate()"
     },
     {
@@ -44145,7 +44145,7 @@
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_contactid_generate",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".generate()"
     },
     {
@@ -44242,7 +44242,7 @@
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_informationblockid_generate",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".generate()"
     },
     {
@@ -44704,8 +44704,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_validate_name",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 255,
+      "community_name": "_validate_name",
       "norm_label": "_validate_name()"
     },
     {
@@ -44715,8 +44715,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_py_exception",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 255,
+      "community_name": "_validate_name",
       "norm_label": "exception"
     },
     {
@@ -44728,8 +44728,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_categoryname",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 4,
+      "community_name": "competitions/domain/value_objects.py",
       "norm_label": "categoryname"
     },
     {
@@ -44740,8 +44740,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_categoryname_post_init",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 255,
+      "community_name": "_validate_name",
       "norm_label": ".__post_init__()"
     },
     {
@@ -44752,8 +44752,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_categoryname_str",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 4,
+      "community_name": "competitions/domain/value_objects.py",
       "norm_label": ".__str__()"
     },
     {
@@ -44814,8 +44814,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_agecategoryname_post_init",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 255,
+      "community_name": "_validate_name",
       "norm_label": ".__post_init__()"
     },
     {
@@ -44851,8 +44851,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_disciplinename_post_init",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 255,
+      "community_name": "_validate_name",
       "norm_label": ".__post_init__()"
     },
     {
@@ -44876,8 +44876,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_participantgroupname",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 4,
+      "community_name": "competitions/domain/value_objects.py",
       "norm_label": "participantgroupname"
     },
     {
@@ -44888,8 +44888,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_participantgroupname_post_init",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 255,
+      "community_name": "_validate_name",
       "norm_label": ".__post_init__()"
     },
     {
@@ -44900,8 +44900,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_participantgroupname_str",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 4,
+      "community_name": "competitions/domain/value_objects.py",
       "norm_label": ".__str__()"
     },
     {
@@ -44962,8 +44962,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_participationformatname_post_init",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 255,
+      "community_name": "_validate_name",
       "norm_label": ".__post_init__()"
     },
     {
@@ -45036,8 +45036,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_regulationtitle_post_init",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 255,
+      "community_name": "_validate_name",
       "norm_label": ".__post_init__()"
     },
     {
@@ -45073,8 +45073,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_regulationversion_post_init",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 255,
+      "community_name": "_validate_name",
       "norm_label": ".__post_init__()"
     },
     {
@@ -45110,8 +45110,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_documenttitle_post_init",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 255,
+      "community_name": "_validate_name",
       "norm_label": ".__post_init__()"
     },
     {
@@ -45184,8 +45184,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_templatename_post_init",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 255,
+      "community_name": "_validate_name",
       "norm_label": ".__post_init__()"
     },
     {
@@ -45221,8 +45221,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_servicename_post_init",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 255,
+      "community_name": "_validate_name",
       "norm_label": ".__post_init__()"
     },
     {
@@ -45372,8 +45372,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_pricingcalculationtype",
-      "community": 4,
-      "community_name": "competitions/domain/value_objects.py",
+      "community": 299,
+      "community_name": "Category",
       "norm_label": "pricingcalculationtype"
     },
     {
@@ -45458,8 +45458,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_admissioncombination",
-      "community": 7,
-      "community_name": "Competition",
+      "community": 4,
+      "community_name": "competitions/domain/value_objects.py",
       "norm_label": "admissioncombination"
     },
     {
@@ -45470,8 +45470,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_admissioncombination_str",
-      "community": 7,
-      "community_name": "Competition",
+      "community": 4,
+      "community_name": "competitions/domain/value_objects.py",
       "norm_label": ".__str__()"
     },
     {
@@ -45756,8 +45756,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_informationblocktitle_post_init",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 255,
+      "community_name": "_validate_name",
       "norm_label": ".__post_init__()"
     },
     {
@@ -46116,7 +46116,7 @@
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_competitionsettings_default",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".default()"
     },
     {
@@ -46210,8 +46210,8 @@
       "source_location": "L172",
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_rationale_172",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": "generate a uuid version 7 (time-ordered) per rfc 9562 \u00a75.7. implemented..."
     },
     {
@@ -46232,8 +46232,8 @@
       "source_location": "L206",
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_rationale_206",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": "create a brand-new identity backed by a fresh uuid v7."
     },
     {
@@ -46573,8 +46573,8 @@
       "source_location": "L933",
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_rationale_933",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 4,
+      "community_name": "competitions/domain/value_objects.py",
       "norm_label": "a non-empty, length-bounded competition-category name (e.g. \"vocal\",..."
     },
     {
@@ -46617,8 +46617,8 @@
       "source_location": "L988",
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_rationale_988",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 4,
+      "community_name": "competitions/domain/value_objects.py",
       "norm_label": "a non-empty, length-bounded participant-group name (e.g. \"solo\", \"choir\")."
     },
     {
@@ -46804,8 +46804,8 @@
       "source_location": "L1236",
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_rationale_1236",
-      "community": 4,
-      "community_name": "competitions/domain/value_objects.py",
+      "community": 299,
+      "community_name": "Category",
       "norm_label": "how a pricing rule's unit amount becomes an application total...."
     },
     {
@@ -46848,8 +46848,8 @@
       "source_location": "L1317",
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_rationale_1317",
-      "community": 7,
-      "community_name": "Competition",
+      "community": 4,
+      "community_name": "competitions/domain/value_objects.py",
       "norm_label": "the five-dimensional key that identifies one admissible configuration. the..."
     },
     {
@@ -47179,7 +47179,7 @@
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_value_objects_rationale_1897",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": "the default settings a competition starts with."
     },
     {
@@ -50972,8 +50972,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_public_serializers_publiccatalogmetaserializer",
-      "community": 659,
-      "community_name": "PublicCatalogMetaSerializer",
+      "community": 90,
+      "community_name": "competitions/presentation/api/v1/public_serializers.py",
       "norm_label": "publiccatalogmetaserializer"
     },
     {
@@ -51089,8 +51089,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_public_serializers_publicfestivalfaqitemserializer",
-      "community": 90,
-      "community_name": "competitions/presentation/api/v1/public_serializers.py",
+      "community": 281,
+      "community_name": "PublicFestivalFaqItemSerializer",
       "norm_label": "publicfestivalfaqitemserializer"
     },
     {
@@ -51423,8 +51423,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_public_serializers_rationale_29",
-      "community": 659,
-      "community_name": "PublicCatalogMetaSerializer",
+      "community": 90,
+      "community_name": "competitions/presentation/api/v1/public_serializers.py",
       "norm_label": "response envelope metadata (api-000 \u00a75)."
     },
     {
@@ -51522,8 +51522,8 @@
       "source_location": "L127",
       "_origin": "ast",
       "id": "backend_apps_competitions_presentation_api_v1_public_serializers_rationale_127",
-      "community": 90,
-      "community_name": "competitions/presentation/api/v1/public_serializers.py",
+      "community": 281,
+      "community_name": "PublicFestivalFaqItemSerializer",
       "norm_label": "a question/answer pair in a landing faq block."
     },
     {
@@ -81404,7 +81404,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_identity_presentation_api_v1_auth_composition_build_token_service",
-      "community": 244,
+      "community": 184,
       "community_name": "build_token_service",
       "norm_label": "build_token_service()"
     },
@@ -81629,7 +81629,7 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "backend_apps_identity_presentation_api_v1_auth_composition_rationale_66",
-      "community": 244,
+      "community": 184,
       "community_name": "build_token_service",
       "norm_label": "assemble the simplejwt-backed :class:`tokenservice` adapter."
     },
@@ -140342,8 +140342,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_application_applications_test_sweep_unpaid",
-      "community": 241,
-      "community_name": "test_sweep_unpaid.py",
+      "community": 244,
+      "community_name": "uuid7",
       "norm_label": "test_sweep_unpaid.py"
     },
     {
@@ -140354,8 +140354,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_application_applications_test_sweep_unpaid_application",
-      "community": 241,
-      "community_name": "test_sweep_unpaid.py",
+      "community": 244,
+      "community_name": "uuid7",
       "norm_label": "_application()"
     },
     {
@@ -140365,8 +140365,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_tests_application_applications_test_sweep_unpaid_py_any",
-      "community": 241,
-      "community_name": "test_sweep_unpaid.py",
+      "community": 244,
+      "community_name": "uuid7",
       "norm_label": "any"
     },
     {
@@ -140377,8 +140377,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_application_applications_test_sweep_unpaid_receipt",
-      "community": 241,
-      "community_name": "test_sweep_unpaid.py",
+      "community": 244,
+      "community_name": "uuid7",
       "norm_label": "_receipt()"
     },
     {
@@ -140389,8 +140389,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_application_applications_test_sweep_unpaid_test_sweep_cancels_overdue_unpaid_application",
-      "community": 241,
-      "community_name": "test_sweep_unpaid.py",
+      "community": 244,
+      "community_name": "uuid7",
       "norm_label": "test_sweep_cancels_overdue_unpaid_application()"
     },
     {
@@ -140400,8 +140400,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_tests_application_applications_test_sweep_unpaid_py_settingswrapper",
-      "community": 241,
-      "community_name": "test_sweep_unpaid.py",
+      "community": 244,
+      "community_name": "uuid7",
       "norm_label": "settingswrapper"
     },
     {
@@ -140412,8 +140412,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_application_applications_test_sweep_unpaid_test_sweep_keeps_application_with_receipt",
-      "community": 241,
-      "community_name": "test_sweep_unpaid.py",
+      "community": 244,
+      "community_name": "uuid7",
       "norm_label": "test_sweep_keeps_application_with_receipt()"
     },
     {
@@ -140424,8 +140424,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_application_applications_test_sweep_unpaid_test_sweep_keeps_application_paid_in_several_transfers",
-      "community": 241,
-      "community_name": "test_sweep_unpaid.py",
+      "community": 244,
+      "community_name": "uuid7",
       "norm_label": "test_sweep_keeps_application_paid_in_several_transfers()"
     },
     {
@@ -140436,8 +140436,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_application_applications_test_sweep_unpaid_test_sweep_keeps_application_within_window",
-      "community": 241,
-      "community_name": "test_sweep_unpaid.py",
+      "community": 244,
+      "community_name": "uuid7",
       "norm_label": "test_sweep_keeps_application_within_window()"
     },
     {
@@ -140447,8 +140447,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_application_applications_test_sweep_unpaid_rationale_1",
-      "community": 241,
-      "community_name": "test_sweep_unpaid.py",
+      "community": 244,
+      "community_name": "uuid7",
       "norm_label": "db-backed tests for the periodic unpaid-order auto-cancel sweep (celery beat)."
     },
     {
@@ -140458,8 +140458,8 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "backend_tests_application_applications_test_sweep_unpaid_rationale_65",
-      "community": 241,
-      "community_name": "test_sweep_unpaid.py",
+      "community": 244,
+      "community_name": "uuid7",
       "norm_label": "one of several part-payments is still proof that payment started."
     },
     {
@@ -155626,7 +155626,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_draft",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": "_draft()"
     },
     {
@@ -155651,7 +155651,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_configured",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": "_configured()"
     },
     {
@@ -155663,7 +155663,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_completed",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": "_completed()"
     },
     {
@@ -155725,7 +155725,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testtaxonomyinvariants",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": "testtaxonomyinvariants"
     },
     {
@@ -155737,7 +155737,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testtaxonomyinvariants_test_duplicate_category_rejected",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_duplicate_category_rejected()"
     },
     {
@@ -155749,7 +155749,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testtaxonomyinvariants_test_duplicate_discipline_within_category_rejected",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_duplicate_discipline_within_category_rejected()"
     },
     {
@@ -155761,7 +155761,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testtaxonomyinvariants_test_overlapping_age_range_rejected",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_overlapping_age_range_rejected()"
     },
     {
@@ -155773,7 +155773,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testtaxonomyinvariants_test_non_overlapping_age_range_allowed",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_non_overlapping_age_range_allowed()"
     },
     {
@@ -155785,7 +155785,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testtaxonomyinvariants_test_age_range_may_repeat_across_participant_groups",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_age_range_may_repeat_across_participant_groups()"
     },
     {
@@ -155797,7 +155797,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testtaxonomyinvariants_test_overlapping_participant_range_allowed_with_distinct_names",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_overlapping_participant_range_allowed_with_distinct_names()"
     },
     {
@@ -155809,7 +155809,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testtaxonomyinvariants_test_participant_groups_are_competition_wide",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_participant_groups_are_competition_wide()"
     },
     {
@@ -155821,7 +155821,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testtaxonomyinvariants_test_update_participant_group_renames_and_resizes",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_update_participant_group_renames_and_resizes()"
     },
     {
@@ -155833,7 +155833,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testtaxonomyinvariants_test_update_participant_group_allows_overlapping_range",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_update_participant_group_allows_overlapping_range()"
     },
     {
@@ -155846,7 +155846,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testadmissionandpricing",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": "testadmissionandpricing"
     },
     {
@@ -155857,8 +155857,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testadmissionandpricing_test_admission_rule_added_event",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 4,
+      "community_name": "competitions/domain/value_objects.py",
       "norm_label": ".test_admission_rule_added_event()"
     },
     {
@@ -155870,7 +155870,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testadmissionandpricing_test_discipline_category_mismatch_rejected",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_discipline_category_mismatch_rejected()"
     },
     {
@@ -155881,8 +155881,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testadmissionandpricing_test_format_not_enabled_rejected",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 4,
+      "community_name": "competitions/domain/value_objects.py",
       "norm_label": ".test_format_not_enabled_rejected()"
     },
     {
@@ -155894,7 +155894,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testadmissionandpricing_test_duplicate_admission_rejected",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_duplicate_admission_rejected()"
     },
     {
@@ -155906,7 +155906,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testadmissionandpricing_test_pricing_requires_admission_rule",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_pricing_requires_admission_rule()"
     },
     {
@@ -155918,7 +155918,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testadmissionandpricing_test_duplicate_pricing_rejected",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_duplicate_pricing_rejected()"
     },
     {
@@ -155930,7 +155930,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testadmissionandpricing_test_pricing_events_and_price_for",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_pricing_events_and_price_for()"
     },
     {
@@ -155942,7 +155942,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testadmissionandpricing_test_offline_and_online_prices_differ",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_offline_and_online_prices_differ()"
     },
     {
@@ -155954,7 +155954,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testadmissionandpricing_test_remove_admission_blocked_while_priced",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_remove_admission_blocked_while_priced()"
     },
     {
@@ -155979,7 +155979,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testformats_test_add_and_soft_disable_events",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_add_and_soft_disable_events()"
     },
     {
@@ -156004,7 +156004,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testdeletionguards_test_remove_category_in_use_rejected",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_remove_category_in_use_rejected()"
     },
     {
@@ -156090,7 +156090,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testlifecycle",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": "testlifecycle"
     },
     {
@@ -156102,7 +156102,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testlifecycle_test_full_happy_path",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_full_happy_path()"
     },
     {
@@ -156114,7 +156114,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testlifecycle_test_illegal_transition_publish_from_draft",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_illegal_transition_publish_from_draft()"
     },
     {
@@ -156126,7 +156126,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testlifecycle_test_illegal_transition_start_from_draft",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_illegal_transition_start_from_draft()"
     },
     {
@@ -156138,7 +156138,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testlifecycle_test_mark_ready_refused_when_incomplete",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_mark_ready_refused_when_incomplete()"
     },
     {
@@ -156150,7 +156150,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testlifecycle_test_free_festival_reaches_ready",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_free_festival_reaches_ready()"
     },
     {
@@ -156162,7 +156162,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testlifecycle_test_config_locked_after_ready",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_config_locked_after_ready()"
     },
     {
@@ -156174,7 +156174,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testlifecycle_test_config_allowed_in_configured",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_config_allowed_in_configured()"
     },
     {
@@ -156186,7 +156186,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testlifecycle_test_revert_to_configured_then_edit",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_revert_to_configured_then_edit()"
     },
     {
@@ -156198,7 +156198,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testlifecycle_test_completed_is_terminal_and_immutable",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_completed_is_terminal_and_immutable()"
     },
     {
@@ -156271,7 +156271,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testregulations_test_make_missing_regulation_current_raises",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_make_missing_regulation_current_raises()"
     },
     {
@@ -156284,7 +156284,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testadditionalservices",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": "testadditionalservices"
     },
     {
@@ -156296,7 +156296,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testadditionalservices_test_add_service_scoped_to_formats_and_event",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_add_service_scoped_to_formats_and_event()"
     },
     {
@@ -156308,7 +156308,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testadditionalservices_test_per_participant_billing_multiplies_headcount",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_per_participant_billing_multiplies_headcount()"
     },
     {
@@ -156320,7 +156320,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testadditionalservices_test_requires_at_least_one_format",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_requires_at_least_one_format()"
     },
     {
@@ -156332,7 +156332,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testadditionalservices_test_enable_disable_update_remove",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_enable_disable_update_remove()"
     },
     {
@@ -156344,7 +156344,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testadditionalservices_test_format_in_use_by_service_blocks_removal",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_format_in_use_by_service_blocks_removal()"
     },
     {
@@ -156356,7 +156356,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testadditionalservices_test_missing_service_raises",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_missing_service_raises()"
     },
     {
@@ -156381,7 +156381,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testeventserialization_test_admission_and_pricing_events_serialize",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_admission_and_pricing_events_serialize()"
     },
     {
@@ -156406,7 +156406,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testsettings_test_default_settings_present",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_default_settings_present()"
     },
     {
@@ -156418,7 +156418,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testsettings_test_update_settings_emits_event",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_update_settings_emits_event()"
     },
     {
@@ -156430,7 +156430,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testsettings_test_settings_locked_after_complete",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_settings_locked_after_complete()"
     },
     {
@@ -156479,7 +156479,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testcontactsconfig_test_contacts_config_locked_after_complete",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_contacts_config_locked_after_complete()"
     },
     {
@@ -156553,7 +156553,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testdeadlines_test_update_deadlines_and_queries",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_update_deadlines_and_queries()"
     },
     {
@@ -156565,7 +156565,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testdeadlines_test_all_disallowed_when_completed",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_all_disallowed_when_completed()"
     },
     {
@@ -156662,7 +156662,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testnominationregistration_test_schedule_unknown_nomination_rejected",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_schedule_unknown_nomination_rejected()"
     },
     {
@@ -156674,7 +156674,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testnominationregistration_test_registration_control_refused_after_complete",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_registration_control_refused_after_complete()"
     },
     {
@@ -156687,7 +156687,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testcontacts",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": "testcontacts"
     },
     {
@@ -156699,7 +156699,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testcontacts_test_first_contact_becomes_primary",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_first_contact_becomes_primary()"
     },
     {
@@ -156711,7 +156711,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testcontacts_test_exactly_one_primary",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_exactly_one_primary()"
     },
     {
@@ -156723,7 +156723,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testcontacts_test_duplicate_contact_rejected",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_duplicate_contact_rejected()"
     },
     {
@@ -156735,7 +156735,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testcontacts_test_remove_primary_promotes_another",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_remove_primary_promotes_another()"
     },
     {
@@ -156747,7 +156747,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testcontacts_test_set_primary_contact",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_set_primary_contact()"
     },
     {
@@ -156759,7 +156759,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testcontacts_test_remove_missing_contact_raises",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_remove_missing_contact_raises()"
     },
     {
@@ -156784,7 +156784,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testinformationblocks_test_add_and_duplicate_title_rejected",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_add_and_duplicate_title_rejected()"
     },
     {
@@ -156796,7 +156796,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testinformationblocks_test_publish_and_hide_emit_events",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_publish_and_hide_emit_events()"
     },
     {
@@ -156821,7 +156821,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testbranding_test_update_branding_event_and_properties",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_update_branding_event_and_properties()"
     },
     {
@@ -156855,7 +156855,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_rationale_137",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": "a competition with a single fully-wired combination, offline + online. when..."
     },
     {
@@ -156866,7 +156866,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_rationale_180",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": "a publishable competition driven all the way to the terminal completed state."
     },
     {
@@ -156887,8 +156887,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_templates",
-      "community": 7,
-      "community_name": "Competition",
+      "community": 4,
+      "community_name": "competitions/domain/value_objects.py",
       "norm_label": "test_templates.py"
     },
     {
@@ -156912,8 +156912,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_templates_template",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 4,
+      "community_name": "competitions/domain/value_objects.py",
       "norm_label": "_template()"
     },
     {
@@ -156949,8 +156949,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_templates_testtemplateinvariants_test_same_invariants_as_competition",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 4,
+      "community_name": "competitions/domain/value_objects.py",
       "norm_label": ".test_same_invariants_as_competition()"
     },
     {
@@ -156961,8 +156961,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_templates_testtemplateinvariants_test_admission_reference_validated",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 4,
+      "community_name": "competitions/domain/value_objects.py",
       "norm_label": ".test_admission_reference_validated()"
     },
     {
@@ -157021,8 +157021,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_templates_rationale_1",
-      "community": 7,
-      "community_name": "Competition",
+      "community": 4,
+      "community_name": "competitions/domain/value_objects.py",
       "norm_label": "unit tests for the competitiontemplate aggregate and competition.from_template."
     },
     {
@@ -157498,7 +157498,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_value_objects_testcompetitionsettings_test_defaults",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_defaults()"
     },
     {
@@ -157510,7 +157510,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_value_objects_testcompetitionsettings_test_with_changes_is_immutable_copy",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_with_changes_is_immutable_copy()"
     },
     {
@@ -157522,7 +157522,7 @@
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_value_objects_testcompetitionsettings_test_with_changes_rejects_unknown_flag",
       "community": 213,
-      "community_name": "CategoryName",
+      "community_name": "_draft",
       "norm_label": ".test_with_changes_rejects_unknown_flag()"
     },
     {
@@ -167896,8 +167896,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_competitions_test_competition_repository",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": "test_competition_repository.py"
     },
     {
@@ -167908,8 +167908,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_competitions_test_competition_repository_draft",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": "_draft()"
     },
     {
@@ -167920,8 +167920,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_competitions_test_competition_repository_fully_configured",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": "_fully_configured()"
     },
     {
@@ -167931,8 +167931,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_competitions_test_competition_repository_py_fixture",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": "fixture"
     },
     {
@@ -167943,8 +167943,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_competitions_test_competition_repository_repo",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": "repo()"
     },
     {
@@ -167955,8 +167955,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_competitions_test_competition_repository_test_save_then_get_minimal",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": "test_save_then_get_minimal()"
     },
     {
@@ -167967,8 +167967,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_competitions_test_competition_repository_test_save_then_get_full_round_trip",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": "test_save_then_get_full_round_trip()"
     },
     {
@@ -167979,8 +167979,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_competitions_test_competition_repository_test_get_missing_returns_none",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": "test_get_missing_returns_none()"
     },
     {
@@ -167991,8 +167991,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_competitions_test_competition_repository_test_exists",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": "test_exists()"
     },
     {
@@ -168003,8 +168003,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_competitions_test_competition_repository_test_update_dispatch_and_child_sync",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": "test_update_dispatch_and_child_sync()"
     },
     {
@@ -168015,8 +168015,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_competitions_test_competition_repository_test_optimistic_concurrency_conflict",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": "test_optimistic_concurrency_conflict()"
     },
     {
@@ -168027,8 +168027,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_competitions_test_competition_repository_test_list_all_and_by_season",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": "test_list_all_and_by_season()"
     },
     {
@@ -168039,8 +168039,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_competitions_test_competition_repository_test_structural_conformance_to_port",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": "test_structural_conformance_to_port()"
     },
     {
@@ -168050,8 +168050,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_competitions_test_competition_repository_rationale_1",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": "integration tests for :class:`djangocompetitionrepository`. exercise the..."
     },
     {
@@ -168061,8 +168061,8 @@
       "source_location": "L82",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_competitions_test_competition_repository_rationale_82",
-      "community": 213,
-      "community_name": "CategoryName",
+      "community": 242,
+      "community_name": "competition_mapper.py",
       "norm_label": "a draft configured end to end so every child collection is exercised."
     },
     {
@@ -174187,7 +174187,7 @@
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_attachments_api",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": "test_attachments_api.py"
     },
     {
@@ -174199,7 +174199,7 @@
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_attachments_api_seed_open_competition",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": "_seed_open_competition()"
     },
     {
@@ -174211,7 +174211,7 @@
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_attachments_api_auth",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": "_auth()"
     },
     {
@@ -174222,7 +174222,7 @@
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_attachments_api_py_apiclient",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": "apiclient"
     },
     {
@@ -174233,7 +174233,7 @@
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_attachments_api_py_fixture",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": "fixture"
     },
     {
@@ -174245,7 +174245,7 @@
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_attachments_api_auth_client",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": "auth_client()"
     },
     {
@@ -174257,7 +174257,7 @@
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_attachments_api_submission_in_application",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": "_submission_in_application()"
     },
     {
@@ -174269,7 +174269,7 @@
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_attachments_api_test_upload_stores_and_attaches",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": "test_upload_stores_and_attaches()"
     },
     {
@@ -174281,7 +174281,7 @@
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_attachments_api_force_status",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": "_force_status()"
     },
     {
@@ -174293,7 +174293,7 @@
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_attachments_api_test_several_phonograms_may_be_attached_to_one_submission",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": "test_several_phonograms_may_be_attached_to_one_submission()"
     },
     {
@@ -174305,7 +174305,7 @@
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_attachments_api_test_a_phonogram_may_still_be_uploaded_after_the_entry_is_accepted",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": "test_a_phonogram_may_still_be_uploaded_after_the_entry_is_accepted()"
     },
     {
@@ -174317,7 +174317,7 @@
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_attachments_api_test_paperwork_stays_frozen_once_the_entry_is_accepted",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": "test_paperwork_stays_frozen_once_the_entry_is_accepted()"
     },
     {
@@ -174329,7 +174329,7 @@
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_attachments_api_test_upload_rejects_unsupported_type",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": "test_upload_rejects_unsupported_type()"
     },
     {
@@ -174341,7 +174341,7 @@
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_attachments_api_test_upload_requires_authentication",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": "test_upload_requires_authentication()"
     },
     {
@@ -174352,7 +174352,7 @@
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_attachments_api_rationale_1",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": "integration tests for the submission attachment (upload) rest api v1. exercises..."
     },
     {
@@ -174363,7 +174363,7 @@
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_attachments_api_rationale_84",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": "put a submission into a later lifecycle state, the way the organizer would."
     },
     {
@@ -174374,7 +174374,7 @@
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_attachments_api_rationale_91",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": "one act, several tracks: an intro and the number itself are two files."
     },
     {
@@ -174385,7 +174385,7 @@
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_attachments_api_rationale_105",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": "the state a running order is built from is the state a track is wanted in. an..."
     },
     {
@@ -174396,7 +174396,7 @@
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_attachments_api_rationale_122",
       "community": 244,
-      "community_name": "build_token_service",
+      "community_name": "uuid7",
       "norm_label": "only the backing track outlives the freeze \u2014 a document is a claim about the..."
     },
     {
@@ -175091,7 +175091,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_submission_content_api",
-      "community": 244,
+      "community": 184,
       "community_name": "build_token_service",
       "norm_label": "test_submission_content_api.py"
     },
@@ -175103,7 +175103,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_submission_content_api_seed_open_competition",
-      "community": 244,
+      "community": 184,
       "community_name": "build_token_service",
       "norm_label": "_seed_open_competition()"
     },
@@ -175114,7 +175114,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_submission_content_api_py_fixture",
-      "community": 244,
+      "community": 184,
       "community_name": "build_token_service",
       "norm_label": "fixture"
     },
@@ -175126,7 +175126,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_submission_content_api_auth_client",
-      "community": 244,
+      "community": 184,
       "community_name": "build_token_service",
       "norm_label": "auth_client()"
     },
@@ -175137,7 +175137,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_submission_content_api_py_apiclient",
-      "community": 244,
+      "community": 184,
       "community_name": "build_token_service",
       "norm_label": "apiclient"
     },
@@ -175149,7 +175149,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_submission_content_api_submission",
-      "community": 244,
+      "community": 184,
       "community_name": "build_token_service",
       "norm_label": "_submission()"
     },
@@ -175161,7 +175161,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_submission_content_api_performance_body",
-      "community": 244,
+      "community": 184,
       "community_name": "build_token_service",
       "norm_label": "_performance_body()"
     },
@@ -175172,7 +175172,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_submission_content_api_py_any",
-      "community": 244,
+      "community": 184,
       "community_name": "build_token_service",
       "norm_label": "any"
     },
@@ -175184,7 +175184,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_submission_content_api_test_build_performance_and_participant",
-      "community": 244,
+      "community": 184,
       "community_name": "build_token_service",
       "norm_label": "test_build_performance_and_participant()"
     },
@@ -175196,7 +175196,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_submission_content_api_test_performance_comment_round_trips",
-      "community": 244,
+      "community": 184,
       "community_name": "build_token_service",
       "norm_label": "test_performance_comment_round_trips()"
     },
@@ -175208,7 +175208,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_submission_content_api_test_performance_comment_is_optional_and_defaults_to_blank",
-      "community": 244,
+      "community": 184,
       "community_name": "build_token_service",
       "norm_label": "test_performance_comment_is_optional_and_defaults_to_blank()"
     },
@@ -175220,7 +175220,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_submission_content_api_test_performance_comment_can_be_cleared",
-      "community": 244,
+      "community": 184,
       "community_name": "build_token_service",
       "norm_label": "test_performance_comment_can_be_cleared()"
     },
@@ -175232,7 +175232,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_submission_content_api_test_performance_comment_over_the_limit_is_rejected",
-      "community": 244,
+      "community": 184,
       "community_name": "build_token_service",
       "norm_label": "test_performance_comment_over_the_limit_is_rejected()"
     },
@@ -175244,7 +175244,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_submission_content_api_test_set_performance_rejects_malformed_id",
-      "community": 244,
+      "community": 184,
       "community_name": "build_token_service",
       "norm_label": "test_set_performance_rejects_malformed_id()"
     },
@@ -175256,7 +175256,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_submission_content_api_test_get_submission_requires_owner",
-      "community": 244,
+      "community": 184,
       "community_name": "build_token_service",
       "norm_label": "test_get_submission_requires_owner()"
     },
@@ -175267,7 +175267,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_submission_content_api_rationale_1",
-      "community": 244,
+      "community": 184,
       "community_name": "build_token_service",
       "norm_label": "integration tests for the submission content rest edge (build a performance)...."
     },
@@ -175278,7 +175278,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_submission_content_api_rationale_24",
-      "community": 244,
+      "community": 184,
       "community_name": "build_token_service",
       "norm_label": "seed a competition with one open nomination; return (competition_id,..."
     },
@@ -175289,7 +175289,7 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_submission_content_api_rationale_55",
-      "community": 244,
+      "community": 184,
       "community_name": "build_token_service",
       "norm_label": "create an application + submission in an open nomination; return..."
     },
@@ -175300,7 +175300,7 @@
       "source_location": "L105",
       "_origin": "ast",
       "id": "backend_tests_presentation_applications_test_submission_content_api_rationale_105",
-      "community": 244,
+      "community": 184,
       "community_name": "build_token_service",
       "norm_label": "the applicant's note for the organizers is stored and read back verbatim."
     },
@@ -207264,7 +207264,7 @@
       "label": "AutoPricing()",
       "file_type": "code",
       "source_file": "frontend/src/features/registration-wizard/ui/performance-form.tsx",
-      "source_location": "L557",
+      "source_location": "L559",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_features_registration_wizard_ui_performance_form_autopricing",
@@ -231243,8 +231243,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "docs_architecture_readme_architecture_documentation",
-      "community": 728,
-      "community_name": "Architecture Documentation",
+      "community": 111,
+      "community_name": "ARCH-001 \u00b7 VT Platform Architecture",
       "norm_label": "architecture documentation"
     },
     {
@@ -231254,8 +231254,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "docs_architecture_readme_purpose",
-      "community": 728,
-      "community_name": "Architecture Documentation",
+      "community": 111,
+      "community_name": "ARCH-001 \u00b7 VT Platform Architecture",
       "norm_label": "purpose"
     },
     {
@@ -231265,8 +231265,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "docs_architecture_readme_scope",
-      "community": 728,
-      "community_name": "Architecture Documentation",
+      "community": 111,
+      "community_name": "ARCH-001 \u00b7 VT Platform Architecture",
       "norm_label": "scope"
     },
     {
@@ -231276,8 +231276,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "docs_architecture_readme_documents",
-      "community": 728,
-      "community_name": "Architecture Documentation",
+      "community": 111,
+      "community_name": "ARCH-001 \u00b7 VT Platform Architecture",
       "norm_label": "documents"
     },
     {
@@ -231287,8 +231287,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "docs_architecture_readme_future_documents",
-      "community": 728,
-      "community_name": "Architecture Documentation",
+      "community": 111,
+      "community_name": "ARCH-001 \u00b7 VT Platform Architecture",
       "norm_label": "future documents"
     },
     {
@@ -233089,9 +233089,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Supporting bounded context. Modules communicate via published interfaces and domain events, never cross-module ORM reach-in.",
-      "community": 184,
+      "community": 167,
       "norm_label": "institutions context",
-      "community_name": "Institutions Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_architecture_arch_001_vt_platform_architecture_context_institutions_context"
     },
@@ -233121,9 +233121,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Core bounded context. Modules communicate via published interfaces and domain events, never cross-module ORM reach-in.",
-      "community": 167,
+      "community": 241,
       "norm_label": "applications context",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Finance/Billing Context",
       "_origin": "semantic",
       "id": "docs_architecture_arch_001_vt_platform_architecture_context_applications_context"
     },
@@ -233169,9 +233169,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Core bounded context. Modules communicate via published interfaces and domain events, never cross-module ORM reach-in.",
-      "community": 255,
+      "community": 220,
       "norm_label": "results context",
-      "community_name": "Results Context",
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "_origin": "semantic",
       "id": "docs_architecture_arch_001_vt_platform_architecture_context_results_context"
     },
@@ -233185,9 +233185,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Supporting bounded context. Modules communicate via published interfaces and domain events, never cross-module ORM reach-in.",
-      "community": 167,
+      "community": 241,
       "norm_label": "finance/billing context",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Finance/Billing Context",
       "_origin": "semantic",
       "id": "docs_architecture_arch_001_vt_platform_architecture_context_finance_billing_context"
     },
@@ -233201,9 +233201,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Supporting bounded context. Modules communicate via published interfaces and domain events, never cross-module ORM reach-in.",
-      "community": 281,
+      "community": 167,
       "norm_label": "notifications context",
-      "community_name": "Notifications Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_architecture_arch_001_vt_platform_architecture_context_notifications_context"
     },
@@ -233233,9 +233233,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Supporting bounded context. Modules communicate via published interfaces and domain events, never cross-module ORM reach-in.",
-      "community": 532,
+      "community": 167,
       "norm_label": "audit context",
-      "community_name": "Audit Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_architecture_arch_001_vt_platform_architecture_context_audit_context"
     },
@@ -233297,9 +233297,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Verified institution required for bulk/analytics; tenancy scope",
-      "community": 184,
+      "community": 167,
       "norm_label": "institution (aggregate root)",
-      "community_name": "Institutions Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_institution"
     },
@@ -233329,9 +233329,9 @@
       "author": null,
       "contributor": null,
       "rationale": "No submit without consent; no accept without eligibility (+payment if paid)",
-      "community": 167,
+      "community": 241,
       "norm_label": "application (aggregate root)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Finance/Billing Context",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_application"
     },
@@ -233425,9 +233425,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Published only after judging finalized; immutable except governed correction",
-      "community": 255,
+      "community": 220,
       "norm_label": "result (aggregate root)",
-      "community_name": "Results Context",
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_result"
     },
@@ -233441,9 +233441,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Ties resolved before finalization",
-      "community": 255,
+      "community": 220,
       "norm_label": "ranking (aggregate root)",
-      "community_name": "Results Context",
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_ranking"
     },
@@ -233457,9 +233457,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Unique verification code per diploma; revoked & reissued on upheld dispute",
-      "community": 255,
+      "community": 220,
       "norm_label": "diploma (aggregate root)",
-      "community_name": "Results Context",
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_diploma"
     },
@@ -233473,9 +233473,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Single financial identity per payer",
-      "community": 167,
+      "community": 241,
       "norm_label": "billing account (aggregate root)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Finance/Billing Context",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_billing_account"
     },
@@ -233489,9 +233489,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Total = line items \u2212 discounts, one currency; paid before entitlement",
-      "community": 167,
+      "community": 241,
       "norm_label": "order (aggregate root)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Finance/Billing Context",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_order"
     },
@@ -233505,9 +233505,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Immutable once issued; corrected by void + reissue, never edited",
-      "community": 167,
+      "community": 241,
       "norm_label": "invoice (aggregate root)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Finance/Billing Context",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_invoice"
     },
@@ -233521,9 +233521,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Money captured against an order; refunds are separate compensating actions",
-      "community": 167,
+      "community": 241,
       "norm_label": "payment (aggregate root)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Finance/Billing Context",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_payment"
     },
@@ -233537,9 +233537,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Sent only on permitted channels",
-      "community": 281,
+      "community": 167,
       "norm_label": "notification (aggregate root)",
-      "community_name": "Notifications Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_notification"
     },
@@ -233553,9 +233553,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Immutable, append-only; never updated/deleted outside retention policy",
-      "community": 532,
+      "community": 167,
       "norm_label": "audit log entry (aggregate root)",
-      "community_name": "Audit Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_audit_log_entry"
     },
@@ -233905,9 +233905,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 184,
+      "community": 167,
       "norm_label": "institutionregistered (domain event)",
-      "community_name": "Institutions Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_institutionregistered"
     },
@@ -233920,9 +233920,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 184,
+      "community": 167,
       "norm_label": "institutionverified (domain event)",
-      "community_name": "Institutions Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_institutionverified"
     },
@@ -233935,9 +233935,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 184,
+      "community": 167,
       "norm_label": "teacherassigned (domain event)",
-      "community_name": "Institutions Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_teacherassigned"
     },
@@ -233950,9 +233950,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 184,
+      "community": 167,
       "norm_label": "classgroupcreated (domain event)",
-      "community_name": "Institutions Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_classgroupcreated"
     },
@@ -233965,9 +233965,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 184,
+      "community": 167,
       "norm_label": "participantjoinedinstitution (domain event)",
-      "community_name": "Institutions Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_participantjoinedinstitution"
     },
@@ -234115,9 +234115,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 241,
       "norm_label": "applicationsubmitted (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Finance/Billing Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_applicationsubmitted"
     },
@@ -234130,9 +234130,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 241,
       "norm_label": "eligibilitychecked (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Finance/Billing Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_eligibilitychecked"
     },
@@ -234145,9 +234145,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 241,
       "norm_label": "applicationaccepted (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Finance/Billing Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_applicationaccepted"
     },
@@ -234160,9 +234160,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 241,
       "norm_label": "applicationwaitlisted (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Finance/Billing Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_applicationwaitlisted"
     },
@@ -234175,9 +234175,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 241,
       "norm_label": "applicationrejected (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Finance/Billing Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_applicationrejected"
     },
@@ -234190,9 +234190,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 241,
       "norm_label": "applicationwithdrawn (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Finance/Billing Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_applicationwithdrawn"
     },
@@ -234415,9 +234415,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 255,
+      "community": 220,
       "norm_label": "rankingfinalized (domain event)",
-      "community_name": "Results Context",
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_rankingfinalized"
     },
@@ -234430,9 +234430,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 255,
+      "community": 220,
       "norm_label": "resultpublished (domain event)",
-      "community_name": "Results Context",
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_resultpublished"
     },
@@ -234445,9 +234445,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 255,
+      "community": 220,
       "norm_label": "diplomagenerated (domain event)",
-      "community_name": "Results Context",
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_diplomagenerated"
     },
@@ -234460,9 +234460,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 255,
+      "community": 220,
       "norm_label": "prizeallocated (domain event)",
-      "community_name": "Results Context",
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_prizeallocated"
     },
@@ -234475,9 +234475,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 255,
+      "community": 220,
       "norm_label": "resultdisputed (domain event)",
-      "community_name": "Results Context",
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_resultdisputed"
     },
@@ -234490,9 +234490,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 255,
+      "community": 220,
       "norm_label": "disputeresolved (domain event)",
-      "community_name": "Results Context",
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_disputeresolved"
     },
@@ -234505,9 +234505,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 241,
       "norm_label": "ordercreated (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Finance/Billing Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_ordercreated"
     },
@@ -234520,9 +234520,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 241,
       "norm_label": "discountapplied (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Finance/Billing Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_discountapplied"
     },
@@ -234535,9 +234535,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 241,
       "norm_label": "invoiceissued (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Finance/Billing Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_invoiceissued"
     },
@@ -234550,9 +234550,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 241,
       "norm_label": "paymentcaptured (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Finance/Billing Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_paymentcaptured"
     },
@@ -234565,9 +234565,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 241,
       "norm_label": "paymentfailed (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Finance/Billing Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_paymentfailed"
     },
@@ -234595,9 +234595,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 281,
+      "community": 167,
       "norm_label": "notificationqueued (domain event)",
-      "community_name": "Notifications Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_notificationqueued"
     },
@@ -234610,9 +234610,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 281,
+      "community": 167,
       "norm_label": "notificationsent (domain event)",
-      "community_name": "Notifications Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_notificationsent"
     },
@@ -234625,9 +234625,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 281,
+      "community": 167,
       "norm_label": "notificationdelivered (domain event)",
-      "community_name": "Notifications Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_notificationdelivered"
     },
@@ -234640,9 +234640,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 281,
+      "community": 167,
       "norm_label": "notificationfailed (domain event)",
-      "community_name": "Notifications Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_notificationfailed"
     },
@@ -234700,9 +234700,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 532,
+      "community": 167,
       "norm_label": "actionrecorded (domain event)",
-      "community_name": "Audit Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_actionrecorded"
     },
@@ -234715,9 +234715,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 532,
+      "community": 167,
       "norm_label": "datasubjectrequestreceived (domain event)",
-      "community_name": "Audit Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_datasubjectrequestreceived"
     },
@@ -234730,9 +234730,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 532,
+      "community": 167,
       "norm_label": "dataerased (domain event)",
-      "community_name": "Audit Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_dataerased"
     },
@@ -234745,9 +234745,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 532,
+      "community": 167,
       "norm_label": "legalholdplaced (domain event)",
-      "community_name": "Audit Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_legalholdplaced"
     },
@@ -929416,7 +929416,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/registration-wizard/ui/performance-form.tsx",
-      "source_location": "L564",
+      "source_location": "L566",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_registration_wizard_ui_performance_form_autopricing",
@@ -930371,7 +930371,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/features/registration-wizard/ui/performance-form.tsx",
-      "source_location": "L557",
+      "source_location": "L559",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_features_registration_wizard_ui_performance_form",
