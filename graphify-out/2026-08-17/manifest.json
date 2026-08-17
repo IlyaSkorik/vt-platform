@@ -3960,9 +3960,9 @@
     "semantic_hash": "d2640e81d465418b85f3daaa5273cc8a"
   },
   "frontend/src/entities/application/index.ts": {
-    "mtime": 1785860600.9711924,
-    "ast_hash": "e04fd9c4975d67a5e5deaca77e814b31",
-    "semantic_hash": "e04fd9c4975d67a5e5deaca77e814b31"
+    "mtime": 1786990108.9914722,
+    "ast_hash": "755e199cb19014b6ea9e27e5a55a8daa",
+    "semantic_hash": ""
   },
   "frontend/src/entities/application/lib/status.test.ts": {
     "mtime": 1785860600.9711924,
@@ -4600,13 +4600,13 @@
     "semantic_hash": "621bb559106784619e68da992ee75246"
   },
   "frontend/src/pages/applications/application-detail-page.tsx": {
-    "mtime": 1786199464.710732,
-    "ast_hash": "a5b4389239ef1820eb9f09e7f1cb3c14",
+    "mtime": 1786990128.4212031,
+    "ast_hash": "6e70ce188c35d8c17ce0f27d4bf0141d",
     "semantic_hash": ""
   },
   "frontend/src/pages/applications/festival-apply-page.tsx": {
-    "mtime": 1786979931.284594,
-    "ast_hash": "03d5c99fc393714d276ddf21273956ec",
+    "mtime": 1786990186.1194623,
+    "ast_hash": "b562a3fcf4e9ed4c39e8083da7c8b2f8",
     "semantic_hash": ""
   },
   "frontend/src/pages/applications/index.ts": {
@@ -4615,9 +4615,9 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/applications/my-applications-page.tsx": {
-    "mtime": 1785860601.0080059,
-    "ast_hash": "008d25b87175e87254025a5b19b10c65",
-    "semantic_hash": "008d25b87175e87254025a5b19b10c65"
+    "mtime": 1786990234.8407576,
+    "ast_hash": "adcf518a0713d3b532e1ce21fc1b9ad7",
+    "semantic_hash": ""
   },
   "frontend/src/pages/dashboard/index.tsx": {
     "mtime": 1785860601.0080059,
@@ -9580,8 +9580,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/applications/application-edit-page.tsx": {
-    "mtime": 1786199464.7239668,
-    "ast_hash": "99836e34f4506c4fd35dff4fac88b933",
+    "mtime": 1786990158.9954667,
+    "ast_hash": "696387353d3e0cc152d9be21f5e8c489",
     "semantic_hash": ""
   },
   "frontend/src/pages/legal/cookies-policy.tsx": {
@@ -9847,6 +9847,16 @@
   "backend/apps/diplomas/infrastructure/acl/award_vocabulary.py": {
     "mtime": 1786807723.9799974,
     "ast_hash": "b913ab2874fb11850ba8aaf088770fe2",
+    "semantic_hash": ""
+  },
+  "frontend/src/entities/application/lib/total.test.ts": {
+    "mtime": 1786990263.5676003,
+    "ast_hash": "966e64600fedebed5d80af5a30f9344f",
+    "semantic_hash": ""
+  },
+  "frontend/src/entities/application/lib/total.ts": {
+    "mtime": 1786990103.5674744,
+    "ast_hash": "8d119a3da4781a13112a19215e37f7b5",
     "semantic_hash": ""
   }
 }
