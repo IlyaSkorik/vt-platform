@@ -36,6 +36,14 @@ RUN pnpm api:generate
 # is what the deployment does, since nginx fronts both.
 ARG VITE_API_BASE_URL=""
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+# The analytics counters, for the same reason: an id compiled into the bundle is the
+# only way the client knows which counter it belongs to. Empty means this image
+# carries no counter at all, which is the right default for every build but the one
+# that becomes production.
+ARG VITE_YANDEX_METRICA_ID=""
+ENV VITE_YANDEX_METRICA_ID=$VITE_YANDEX_METRICA_ID
+ARG VITE_GA_MEASUREMENT_ID=""
+ENV VITE_GA_MEASUREMENT_ID=$VITE_GA_MEASUREMENT_ID
 RUN pnpm build
 
 # --- Stage 2: the publisher ------------------------------------------------

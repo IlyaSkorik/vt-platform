@@ -100,6 +100,15 @@ jobs:
           context: ./frontend
           push: true
           tags: ${{ steps.resolve.outputs.frontend_image }}
+          # The analytics counters are compiled into the bundle, so they are set here
+          # rather than on the running container. They are public identifiers — they
+          # appear in the page source of every site that uses them — so they are not
+          # secrets, and keeping them in the workflow is what makes a deploy carry
+          # them without anyone having to remember a variable. A build without them
+          # (any local `docker build`) simply ships no counter.
+          build-args: |
+            VITE_YANDEX_METRICA_ID=111697674
+            VITE_GA_MEASUREMENT_ID=G-Y7PXD7CE9E
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
 
