@@ -166,6 +166,9 @@ class DjangoCompetitionCatalog:
         return SubmissionParticipationPolicy(
             participant_count_range=count_range,
             is_admissible=competition.is_admissible(combination),
+            # Pricing is optional per combination: an unpriced one is submitted without
+            # a price snapshot rather than blocked (see the policy's `is_priced`).
+            is_priced=competition.price_for(combination) is not None,
             requires_teacher=settings.require_teacher,
             requires_music=requirements.music.require_upload,
             # Two conditions, both necessary: the format must actually collect files (a

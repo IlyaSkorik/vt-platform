@@ -416,6 +416,19 @@ class TestSubmitInvariants:
         with pytest.raises(PriceSnapshotRequiredError):
             s.submit(policy=policy, now=NOW)
 
+    def test_unpriced_combination_submits_without_a_snapshot(self) -> None:
+        # The competition never priced this combination: participating in it is free,
+        # and there is no snapshot to freeze.
+        s = _draft()
+        s.set_performance(performance=_performance(), now=NOW)
+        s.add_participant(
+            participant_id=ParticipantId.generate(), name=_person(), birth_date=BirthDate(date(2012, 5, 1)), gender=Gender.FEMALE, now=NOW
+        )
+        policy = SubmissionParticipationPolicy(participant_count_range=ParticipantCountRange(1, 1), is_priced=False)
+        s.submit(policy=policy, now=NOW)
+        assert s.status is SubmissionStatus.SUBMITTED
+        assert s.price_snapshot is None
+
     def test_rejects_inadmissible_combination(self) -> None:
         fx = _solo_ready()
         policy = SubmissionParticipationPolicy(participant_count_range=ParticipantCountRange(1, 1), is_admissible=False)

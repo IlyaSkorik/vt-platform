@@ -309,14 +309,18 @@ class SubmissionTeacherDetailView(_AuthenticatedView):
 
 
 class SubmissionPriceView(_AuthenticatedView):
-    """POST /api/v1/submissions/{id}/price - calculate and freeze the price snapshot."""
+    """POST /api/v1/submissions/{id}/price - calculate and freeze the price snapshot.
+
+    A combination the competition never priced answers 200 with the submission left
+    unpriced: pricing is optional, so there is nothing exceptional to report.
+    """
 
     @extend_schema(
         tags=[_TAG],
         operation_id="submissions_calculate_price",
         summary="Calculate the price",
         request=None,
-        responses={200: SubmissionResponseSerializer, 422: OpenApiResponse(SubmissionProblemDetailSerializer, description="No pricing.")},
+        responses={200: SubmissionResponseSerializer, 422: OpenApiResponse(SubmissionProblemDetailSerializer, description="Not editable.")},
     )
     def post(self, request: Request, submission_id: str) -> Response:
         command = CalculatePriceCommand(submission_id=submission_id, requested_by=_uid(request))

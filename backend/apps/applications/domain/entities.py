@@ -1012,10 +1012,11 @@ class Submission:
         """Submit the submission to the competition.
 
         Enforces the submission invariants: a performance exists, at least one
-        participant exists, an immutable price snapshot exists, the performance's
-        combination is admissible, and the participant count matches the configured
-        participant group's band (validated against the supplied read-model
-        ``policy`` - never by importing the Competition aggregate).
+        participant exists, an immutable price snapshot exists **when the competition
+        priced the combination** (``policy.is_priced``), the performance's combination
+        is admissible, and the participant count matches the configured participant
+        group's band (validated against the supplied read-model ``policy`` - never by
+        importing the Competition aggregate).
         """
         self._assert_submittable(policy)
         previous = self._status
@@ -1122,7 +1123,7 @@ class Submission:
             raise PerformanceRequiredError("A submission must have a performance before it can be submitted.")
         if not self._participants:
             raise ParticipantRequiredError("A submission must have at least one participant before it can be submitted.")
-        if self._price_snapshot is None:
+        if policy.is_priced and self._price_snapshot is None:
             raise PriceSnapshotRequiredError("A submission must have an immutable price snapshot before it can be submitted.")
         if not policy.is_admissible:
             raise CombinationNotAdmissibleError("The performance's configuration combination is not admissible in this competition.")

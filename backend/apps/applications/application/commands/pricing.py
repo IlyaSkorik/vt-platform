@@ -6,7 +6,6 @@ from apps.applications.application.dto import SubmissionOperationResultDto
 from apps.applications.application.dto.commands import CalculatePriceCommand
 from apps.applications.application.exceptions import (
     CompetitionClosedError,
-    CompetitionCombinationNotFoundError,
     SubmissionStateConflictError,
     translate_domain_errors,
 )
@@ -31,6 +30,9 @@ class CalculatePriceHandler:
     participant or fixed per performance), and hands the total to the domain to
     freeze. The domain forbids replacing the snapshot once the submission leaves
     the editable states.
+
+    A combination the competition never priced is left unpriced, not rejected -
+    pricing is optional, per combination.
     """
 
     def __init__(
@@ -73,7 +75,12 @@ class CalculatePriceHandler:
             participation_format_id=performance.participation_format_id,
         )
         if quote is None:
-            raise CompetitionCombinationNotFoundError("The competition has no pricing for this combination.")
+            # Pricing is optional: a festival may charge for nothing, or price only some
+            # of what it admits. An unpriced combination is not an error - the submission
+            # stays unpriced, contributes nothing to the order total, and is submittable
+            # as it is. The wizard re-prices on every edit, so this is the ordinary path
+            # for a free festival rather than an exceptional one.
+            return SubmissionOperationResultDto.of(submission, ())
 
         total = quote.total_for(submission.participant_count)
         snapshot = PriceSnapshot(price=total, calculated_at=now)

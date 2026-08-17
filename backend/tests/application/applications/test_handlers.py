@@ -57,7 +57,6 @@ from apps.applications.application.dto.queries import (
 from apps.applications.application.exceptions import (
     ApplicantNotFoundError,
     CompetitionClosedError,
-    CompetitionCombinationNotFoundError,
     CompetitionNotFoundError,
     DuplicateChildError,
     PermissionDeniedError,
@@ -402,15 +401,18 @@ class TestPricing:
         with pytest.raises(SubmissionStateConflictError):
             env.calculate_price().handle(CalculatePriceCommand(submission_id=submission_id, requested_by=owner))
 
-    def test_missing_combination_price_is_rejected(self) -> None:
+    def test_missing_combination_price_leaves_the_submission_unpriced(self) -> None:
         env = Env()
-        # The catalog reports no price for this combination.
+        # The catalog reports no price for this combination: pricing is optional, so
+        # this is a free performance rather than a misconfiguration.
         env.catalog.price = None
         owner = uuid7_str()
         submission_id = _create(env, competition_id=uuid7_str(), applicant_id=owner)
         _set_performance(env, submission_id=submission_id, owner=owner)
-        with pytest.raises(CompetitionCombinationNotFoundError):
-            env.calculate_price().handle(CalculatePriceCommand(submission_id=submission_id, requested_by=owner))
+
+        result = env.calculate_price().handle(CalculatePriceCommand(submission_id=submission_id, requested_by=owner))
+
+        assert result.submission.price is None
 
 
 class TestLifecycle:
@@ -437,6 +439,19 @@ class TestLifecycle:
         _add_participant(env, submission_id=submission_id, owner=owner)
         with pytest.raises(SubmissionInvariantViolationError):
             env.submit().handle(SubmitSubmissionCommand(submission_id=submission_id, requested_by=owner))
+
+    def test_submit_without_price_when_the_festival_charges_nothing(self) -> None:
+        env = Env()
+        env.catalog.price = None
+        owner = uuid7_str()
+        submission_id = _create(env, competition_id=uuid7_str(), applicant_id=owner)
+        _set_performance(env, submission_id=submission_id, owner=owner)
+        _add_participant(env, submission_id=submission_id, owner=owner)
+
+        result = env.submit().handle(SubmitSubmissionCommand(submission_id=submission_id, requested_by=owner))
+
+        assert result.submission.status == SubmissionStatus.SUBMITTED.value
+        assert result.submission.price is None
 
     def test_submit_into_closed_competition_is_rejected(self) -> None:
         env = Env()

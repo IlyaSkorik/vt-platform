@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Sequence
+from dataclasses import replace
 from datetime import UTC, datetime
 
 from apps.applications.application.interfaces import (
@@ -150,7 +151,12 @@ class FakeCompetitionCatalog:
         participant_group_id: object,
         participation_format_id: object,
     ) -> SubmissionParticipationPolicy | None:
-        return self.policy
+        if self.policy is None:
+            return None
+        # Mirror the real ACL: whether the combination is priced is read off the same
+        # pricing table `price_quote` answers from, so clearing `price` makes the
+        # combination free rather than leaving an unsatisfiable policy behind.
+        return replace(self.policy, is_priced=self.price is not None)
 
     def price_quote(
         self,

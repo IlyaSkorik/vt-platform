@@ -1309,6 +1309,11 @@ class SubmissionParticipationPolicy:
 
     participant_count_range: ParticipantCountRange
     is_admissible: bool = True
+    #: Whether the competition put a price on the chosen combination. Pricing is
+    #: optional per combination, so an unpriced one submits without a price snapshot
+    #: and contributes nothing to the order total; a priced one must be quoted and
+    #: frozen before it may be submitted.
+    is_priced: bool = True
     #: Competition requirements for the chosen participation format, projected so the
     #: submission can enforce them at submit without importing the Competition.
     requires_teacher: bool = False
