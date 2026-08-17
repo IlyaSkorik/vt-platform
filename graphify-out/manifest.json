@@ -3895,13 +3895,13 @@
     "semantic_hash": "43f6dc7a1ca50bf4faf541109a8a2e4c"
   },
   "frontend/src/applications/staff/layouts/staff-layout.tsx": {
-    "mtime": 1785860600.9616275,
-    "ast_hash": "c5248fbb9505195789cd197b2f8edf1a",
+    "mtime": 1786995246.5649273,
+    "ast_hash": "a8cdcc6a188a3c638c8c39a232acb1d5",
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/navigation.ts": {
-    "mtime": 1785860600.9616275,
-    "ast_hash": "f99316a123d99bab497fc94998961748",
+    "mtime": 1786995227.1862257,
+    "ast_hash": "1984fb138bf6df513d853334e1afc4d0",
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/applications/index.tsx": {
@@ -9857,6 +9857,16 @@
   "frontend/src/entities/application/lib/total.ts": {
     "mtime": 1786990103.5674744,
     "ast_hash": "8d119a3da4781a13112a19215e37f7b5",
+    "semantic_hash": ""
+  },
+  "frontend/src/applications/staff/layouts/staff-layout.test.tsx": {
+    "mtime": 1786995338.372084,
+    "ast_hash": "fb4b5a60d422f141bc297a85acbe4c59",
+    "semantic_hash": ""
+  },
+  "frontend/src/applications/staff/navigation.test.ts": {
+    "mtime": 1786995338.3542075,
+    "ast_hash": "be107c60cc609b81867bd8b73b4d8b05",
     "semantic_hash": ""
   }
 }
