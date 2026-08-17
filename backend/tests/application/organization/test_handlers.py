@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 import pytest
 
 from apps.organization.application.dto.commands import (
@@ -39,6 +41,7 @@ from apps.organization.domain.entities import Organization, StaffMembership
 from apps.organization.domain.events import OrganizationProfileUpdated, StaffInvitationIssued
 from apps.organization.domain.policies import InvitationExpiryPolicy
 from apps.organization.domain.value_objects import (
+    CommissionRate,
     OrganizationId,
     OrganizationName,
     OrganizationSlug,
@@ -391,6 +394,85 @@ class TestAcceptStaffInvitationHandler:
         assert saved_invitation is not None
         assert saved_invitation.is_pending() is False
 
+    def test_the_seat_is_in_the_organization_that_invited(self) -> None:
+        # The platform's first organization is not everybody's employer: accepting an
+        # invitation from a second one used to file the person under the first.
+        orgs = FakeOrganizationRepository()
+        members = FakeStaffMembershipRepository()
+        invitations = FakeStaffInvitationRepository()
+        events = RecordingEventPublisher()
+        _seeded_org(orgs)
+        second, _ = Organization.connect(
+            organization_id=OrganizationId.generate(),
+            name=OrganizationName("Созвездие"),
+            slug=OrganizationSlug("sozvezdie"),
+            commission_rate=CommissionRate.of(Decimal("10")),
+            now=NOW,
+        )
+        orgs.save(second)
+        raw_token = FakeTokenHasher().generate().raw_token
+        invitations.save(
+            a_staff_invitation(
+                organization_id=second.id,
+                email=StaffEmail("director@sozvezdie.by"),
+                role=StaffRole.DIRECTOR,
+                raw_token=raw_token,
+            )
+        )
+
+        result = self._handler(orgs, members, invitations, events).handle(
+            AcceptStaffInvitationCommand(
+                raw_token=raw_token,
+                accepted_by=_new_user_uuid().json(),
+                email="director@sozvezdie.by",
+            )
+        )
+
+        assert result.membership.organization_id == second.id.json()
+
+    def test_refuses_a_second_seat_in_another_organization(self) -> None:
+        # Scoping answers "which organization is this person in?" with one row, so a
+        # second active seat would quietly leave them working in the first.
+        orgs = FakeOrganizationRepository()
+        members = FakeStaffMembershipRepository()
+        invitations = FakeStaffInvitationRepository()
+        events = RecordingEventPublisher()
+        first = _seeded_org(orgs)
+        second, _ = Organization.connect(
+            organization_id=OrganizationId.generate(),
+            name=OrganizationName("Созвездие"),
+            slug=OrganizationSlug("sozvezdie"),
+            commission_rate=CommissionRate.of(Decimal("10")),
+            now=NOW,
+        )
+        orgs.save(second)
+        already_staff = _new_user_uuid()
+        membership, _ = StaffMembership.activate_for_owner(
+            membership_id=StaffMembershipId.generate(),
+            organization_id=first.id,
+            user_id=already_staff,
+            now=NOW,
+        )
+        members.save(membership)
+        raw_token = FakeTokenHasher().generate().raw_token
+        invitations.save(
+            a_staff_invitation(
+                organization_id=second.id,
+                email=StaffEmail("director@sozvezdie.by"),
+                role=StaffRole.DIRECTOR,
+                raw_token=raw_token,
+            )
+        )
+
+        with pytest.raises(UserAlreadyStaffError):
+            self._handler(orgs, members, invitations, events).handle(
+                AcceptStaffInvitationCommand(
+                    raw_token=raw_token,
+                    accepted_by=already_staff.json(),
+                    email="director@sozvezdie.by",
+                )
+            )
+
     def test_rejects_accept_twice(self) -> None:
         orgs = FakeOrganizationRepository()
         members = FakeStaffMembershipRepository()
@@ -441,7 +523,7 @@ class TestAcceptStaffInvitationHandler:
         events = RecordingEventPublisher()
         clock = FakeClock()
         hasher = FakeTokenHasher()
-        _seeded_org(orgs)
+        organization = _seeded_org(orgs)
         owner_id = _new_user_uuid()
         ProvisionOwnerHandler(
             organizations=orgs,
@@ -455,6 +537,7 @@ class TestAcceptStaffInvitationHandler:
         invited_email = StaffEmail("expired@example.com")
         raw_token = hasher.generate().raw_token
         expired_invitation = a_staff_invitation(
+            organization_id=organization.id,
             email=invited_email,
             raw_token=raw_token,
             expires_at=clock.utcnow().replace(year=clock.utcnow().year - 1),

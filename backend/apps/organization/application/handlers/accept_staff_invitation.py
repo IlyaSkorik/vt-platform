@@ -66,15 +66,29 @@ class AcceptStaffInvitationHandler:
         if invitation is None:
             raise InvalidInvitationTokenError("The invitation token is invalid or has expired.")
 
-        organization = self._organizations.get_default()
+        # The seat is in the organization that issued the invitation. Reading the
+        # default organization here instead put everyone who ever accepted one into
+        # the platform's first organization — whatever the letter said, and whatever
+        # the invitation preview showed them.
+        organization = self._organizations.get(invitation.organization_id)
         if organization is None:
-            raise OrganizationNotFoundError("The organization has not been seeded; run migrations first.")
+            raise OrganizationNotFoundError("The organization that issued this invitation no longer exists.")
 
         if invitation.email != email:
             raise PermissionDeniedError("This invitation is not for the authenticated user.")
 
-        if self._memberships.exists_active(user_id=accepted_by, organization_id=organization.id):
-            raise UserAlreadyStaffError("This user already has an active staff membership.")
+        # A person is staff of one organization at a time — that is the assumption the
+        # whole scoping layer rests on (`find_active_for_user` answers "which one" with
+        # a single row). A second seat elsewhere would not be refused by the database,
+        # it would just make the earlier one win silently, so it is refused here.
+        existing = self._memberships.find_active_for_user(accepted_by)
+        if existing is not None:
+            if existing.organization_id == organization.id:
+                raise UserAlreadyStaffError("This user already has an active staff membership.")
+            raise UserAlreadyStaffError(
+                "Этот аккаунт уже состоит в другой организации. Выйдите из неё (владелец может отозвать доступ) "
+                "или примите приглашение другим аккаунтом."
+            )
 
         with translate_domain_errors():
             invitation_events = invitation.accept(
