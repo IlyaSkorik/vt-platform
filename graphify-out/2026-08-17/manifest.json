@@ -2115,9 +2115,9 @@
     "semantic_hash": ""
   },
   "backend/apps/organization/application/handlers/accept_staff_invitation.py": {
-    "mtime": 1785860600.7822812,
-    "ast_hash": "ead146cd606722f4454d6ab4b48fc5b5",
-    "semantic_hash": "ead146cd606722f4454d6ab4b48fc5b5"
+    "mtime": 1786996791.8287675,
+    "ast_hash": "6b9a1717916952b6fdf8e096dd934785",
+    "semantic_hash": ""
   },
   "backend/apps/organization/application/handlers/create_staff_invitation.py": {
     "mtime": 1785860600.7822812,
@@ -3315,8 +3315,8 @@
     "semantic_hash": ""
   },
   "backend/tests/application/organization/test_handlers.py": {
-    "mtime": 1785860600.8611627,
-    "ast_hash": "47e249e1c15a795004c990fa465a6d55",
+    "mtime": 1786996772.5766523,
+    "ast_hash": "14fc973eef4b4eb7c2a93eabd555fbe0",
     "semantic_hash": ""
   },
   "backend/tests/application/participants/__init__.py": {

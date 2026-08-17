@@ -3775,8 +3775,8 @@
     "semantic_hash": ""
   },
   "frontend/src/app/layouts/root-layout.tsx": {
-    "mtime": 1785960311.5966544,
-    "ast_hash": "63337dc1780784b1006155595844986f",
+    "mtime": 1786998608.7637198,
+    "ast_hash": "b178871c0f02796fffbc434940bca319",
     "semantic_hash": ""
   },
   "frontend/src/app/layouts/site-footer.tsx": {
@@ -4820,8 +4820,8 @@
     "semantic_hash": "37b1999542c0943b6f36b347ac6d1d33"
   },
   "frontend/src/shared/config/env.ts": {
-    "mtime": 1786022219.2817411,
-    "ast_hash": "8c17844cc1a830fa9a79e16830cde124",
+    "mtime": 1786998540.5876925,
+    "ast_hash": "50bf478e4c12cbe7a828d68e2155cebf",
     "semantic_hash": ""
   },
   "frontend/src/shared/config/index.ts": {
@@ -9760,13 +9760,13 @@
     "semantic_hash": ""
   },
   ".github/workflows/deploy.yml": {
-    "mtime": 1785860600.5889592,
-    "ast_hash": "fd63a583341afcc8218182b774b5c386",
+    "mtime": 1786999234.5254972,
+    "ast_hash": "2d07728f955d607041a7bc6c6c9b7cfc",
     "semantic_hash": ""
   },
   "docker-compose.prod.yml": {
-    "mtime": 1785877855.6164825,
-    "ast_hash": "dd80fbc360f91e5c64663872a8f88aee",
+    "mtime": 1786998642.5767076,
+    "ast_hash": "a24fc7f9d68378969c9ad88961b00426",
     "semantic_hash": ""
   },
   "docs/devops/OPS-001-deploy-runbook.md": {
@@ -9867,6 +9867,31 @@
   "frontend/src/applications/staff/navigation.test.ts": {
     "mtime": 1786995338.3542075,
     "ast_hash": "be107c60cc609b81867bd8b73b4d8b05",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/analytics/analytics.test.tsx": {
+    "mtime": 1786998704.876137,
+    "ast_hash": "25a4258cbf5ea66a73dbd3b60f4a5551",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/analytics/analytics.tsx": {
+    "mtime": 1786998586.8197234,
+    "ast_hash": "3e6207124f084ef3ff1b0a15f77cab77",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/analytics/index.ts": {
+    "mtime": 1786998592.3757224,
+    "ast_hash": "b0d17317dbe37fc96828f1056bfb3f92",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/analytics/trackers.test.ts": {
+    "mtime": 1786999354.0078917,
+    "ast_hash": "165b95c170bacc1ad0491038d7fb9bde",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/analytics/trackers.ts": {
+    "mtime": 1786999204.181874,
+    "ast_hash": "cc068b8b1c018af8710d5b14b270f3ae",
     "semantic_hash": ""
   }
 }
