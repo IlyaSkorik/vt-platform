@@ -24,9 +24,14 @@ import {
   TabsTrigger,
 } from "@/shared/ui";
 
-function formatTotal(application: ApplicationSummaryResource): string {
+/** The order's sum, or `null` when the festival priced nothing that is in it. */
+function formatTotal(application: ApplicationSummaryResource): string | null {
+  const amount = Number(application.totalAmount);
   if (!application.totalAmount || !application.currency) {
-    return "—";
+    return null;
+  }
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return null;
   }
   return `${application.totalAmount} ${application.currency}`;
 }
@@ -48,6 +53,7 @@ function ApplicationCard({
     ? { label: "Требуется исправление", variant: "warning" as const }
     : applicationStatusPresentation(application.status);
   const detailTo = generatePath(ROUTES.cabinetApplication, { applicationId: application.id });
+  const total = formatTotal(application);
 
   return (
     <Card>
@@ -58,7 +64,10 @@ function ApplicationCard({
               #{application.id.slice(0, 8).toUpperCase()} от {formatDate(application.createdAt)}
             </CardTitle>
             <CardDescription>
-              Выступлений: {application.submissionCount} · Сумма: {formatTotal(application)}
+              {/* Сумма — только там, где она есть. Чем определяется её отсутствие,
+                  сказано в карточке заявки, а не в строке списка. */}
+              Выступлений: {application.submissionCount}
+              {total ? ` · Сумма: ${total}` : ""}
             </CardDescription>
           </div>
           <Badge variant={status.variant}>{status.label}</Badge>

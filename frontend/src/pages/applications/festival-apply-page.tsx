@@ -10,6 +10,8 @@ import {
 } from "react-router";
 
 import {
+  applicationTotalLabel,
+  REGULATION_PRICE_NOTE,
   useApplication,
   useCreateApplication,
   useMyApplications,
@@ -334,14 +336,7 @@ function ReviewStep({
   }
   const canSubmit = blockers.length === 0;
 
-  // Ничего не стоящая заявка — обычное дело: фестиваль может быть бесплатным целиком
-  // или в отдельных номинациях. Нулевой итог тогда не сумма, а её отсутствие.
-  const total = application.totalPrice;
-  const totalAmount = total ? Number(total.totalAmount) : 0;
-  const totalPrice =
-    total && Number.isFinite(totalAmount) && totalAmount > 0
-      ? `${total.totalAmount} ${total.currency}`
-      : null;
+  const totalPrice = applicationTotalLabel(application.totalPrice);
 
   return (
     <div className="flex flex-col gap-6">
@@ -363,19 +358,18 @@ function ReviewStep({
             <span>Согласий записано</span>
             <span>{application.consents.length}</span>
           </div>
-          {/* Стоимость показывается только там, где она есть: фестиваль может не
-              назначать цен вовсе, и «Итого —» тогда лишь заставляет искать, что
-              не заполнено. Цена каждого платного выступления видна бэйджем в его
-              заголовке. */}
+          {/* Сумма — там, где она есть; иначе сказано, чем стоимость определяется.
+              «Итого —» заставляло искать, что не заполнено, хотя не заполнять было
+              нечего. Цена каждого платного выступления видна бэйджем в его заголовке. */}
+          <Divider />
           {totalPrice ? (
-            <>
-              <Divider />
-              <div className="flex justify-between font-semibold">
-                <span>Итого</span>
-                <span>{totalPrice}</span>
-              </div>
-            </>
-          ) : null}
+            <div className="flex justify-between font-semibold">
+              <span>Итого</span>
+              <span>{totalPrice}</span>
+            </div>
+          ) : (
+            <p className="text-muted-foreground">{REGULATION_PRICE_NOTE}</p>
+          )}
           {blockers.length > 0 ? (
             <Alert variant="warning">
               <ul className="list-disc pl-4">

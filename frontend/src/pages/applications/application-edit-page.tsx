@@ -3,6 +3,8 @@ import { generatePath, Link, Navigate, useParams } from "react-router";
 
 import {
   applicationStatusPresentation,
+  applicationTotalLabel,
+  REGULATION_PRICE_NOTE,
   useApplication,
   useRegistration,
 } from "@/entities/application";
@@ -85,6 +87,7 @@ export function ApplicationEditPage(): React.JSX.Element {
 
   const status = applicationStatusPresentation(application.status);
   const number = applicationId.slice(0, 8).toUpperCase();
+  const totalPrice = applicationTotalLabel(application.totalPrice);
 
   return (
     <PageContainer>
@@ -168,7 +171,11 @@ export function ApplicationEditPage(): React.JSX.Element {
         <Card>
           <CardHeader>
             <CardTitle>Стоимость после правок</CardTitle>
-            <CardDescription>Итоговую сумму пересчитывает система.</CardDescription>
+            <CardDescription>
+              {totalPrice
+                ? "Итоговую сумму пересчитывает система."
+                : "Фестиваль не назначил цен на то, что входит в заявку."}
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-2 text-sm">
             {application.services.map((service) => (
@@ -182,14 +189,14 @@ export function ApplicationEditPage(): React.JSX.Element {
               </div>
             ))}
             <Divider />
-            <div className="flex justify-between font-semibold">
-              <span>Итого</span>
-              <span>
-                {application.totalPrice
-                  ? `${application.totalPrice.totalAmount} ${application.totalPrice.currency}`
-                  : "—"}
-              </span>
-            </div>
+            {totalPrice ? (
+              <div className="flex justify-between font-semibold">
+                <span>Итого</span>
+                <span>{totalPrice}</span>
+              </div>
+            ) : (
+              <p className="text-muted-foreground">{REGULATION_PRICE_NOTE}</p>
+            )}
           </CardContent>
         </Card>
 

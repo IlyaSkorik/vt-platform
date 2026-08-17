@@ -3,6 +3,8 @@ import { createSearchParams, generatePath, Link, useParams } from "react-router"
 
 import {
   applicationStatusPresentation,
+  applicationTotalLabel,
+  REGULATION_PRICE_NOTE,
   submissionStatusPresentation,
   useApplication,
   useRegistration,
@@ -55,6 +57,7 @@ export function ApplicationDetailPage(): React.JSX.Element {
   // правят на отдельном экране редактирования, где сказано, что она уже у организатора
   // и что о правках ему сообщат.
   const isDraft = application.status === "DRAFT";
+  const totalPrice = applicationTotalLabel(application.totalPrice);
   const editTo = isDraft
     ? `${generatePath(ROUTES.cabinetFestivalApply, {
         festivalId: application.competitionId,
@@ -143,14 +146,14 @@ export function ApplicationDetailPage(): React.JSX.Element {
                 </div>
               ))}
               <Divider />
-              <div className="flex justify-between font-semibold">
-                <span>Итого</span>
-                <span>
-                  {application.totalPrice
-                    ? `${application.totalPrice.totalAmount} ${application.totalPrice.currency}`
-                    : "—"}
-                </span>
-              </div>
+              {totalPrice ? (
+                <div className="flex justify-between font-semibold">
+                  <span>Итого</span>
+                  <span>{totalPrice}</span>
+                </div>
+              ) : (
+                <p className="text-muted-foreground">{REGULATION_PRICE_NOTE}</p>
+              )}
             </CardContent>
           </Card>
 
