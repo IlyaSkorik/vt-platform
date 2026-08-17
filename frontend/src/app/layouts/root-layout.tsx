@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { Outlet, ScrollRestoration } from "react-router";
+import { Analytics } from "@/app/analytics";
 import { CookieBanner } from "@/features/cookie-consent";
 
 /**
@@ -31,6 +32,9 @@ export function RootLayout(): React.JSX.Element {
       </div>
       <ScrollRestoration />
       <CookieBanner />
+      {/* Beside the banner on purpose: the counters answer to the decision it
+          collects, and both belong wherever the visitor happens to land. */}
+      <Analytics />
     </>
   );
 }
