@@ -11,7 +11,8 @@ import { PerformanceCard } from "./performance-card";
 /**
  * The Performance Builder: one collapsible card per performance (submission), with
  * add / remove / duplicate. Each card's form is driven entirely by the Registration
- * projection; each performance shows its own price.
+ * projection; a performance the festival priced carries that price as a badge in its
+ * header, and one it did not carries nothing.
  */
 export function PerformanceBuilder({
   applicationId,

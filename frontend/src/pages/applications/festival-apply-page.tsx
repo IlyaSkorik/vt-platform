@@ -285,8 +285,8 @@ function PerformancesStep({
       <CardHeader>
         <CardTitle>Выступления</CardTitle>
         <CardDescription>
-          Каждое выступление настраивается по конфигурации фестиваля; система рассчитывает его
-          стоимость.
+          Каждое выступление настраивается по конфигурации фестиваля. Если у выступления есть
+          стоимость, она показана в его заголовке.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -334,12 +334,21 @@ function ReviewStep({
   }
   const canSubmit = blockers.length === 0;
 
+  // Ничего не стоящая заявка — обычное дело: фестиваль может быть бесплатным целиком
+  // или в отдельных номинациях. Нулевой итог тогда не сумма, а её отсутствие.
+  const total = application.totalPrice;
+  const totalAmount = total ? Number(total.totalAmount) : 0;
+  const totalPrice =
+    total && Number.isFinite(totalAmount) && totalAmount > 0
+      ? `${total.totalAmount} ${total.currency}`
+      : null;
+
   return (
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
           <CardTitle>Проверка и подача</CardTitle>
-          <CardDescription>Итоговую сумму рассчитывает система.</CardDescription>
+          <CardDescription>Проверьте, что всё заполнено, и подайте заявку.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-2 text-sm">
           <div className="flex justify-between">
@@ -354,15 +363,19 @@ function ReviewStep({
             <span>Согласий записано</span>
             <span>{application.consents.length}</span>
           </div>
-          <Divider />
-          <div className="flex justify-between font-semibold">
-            <span>Итого</span>
-            <span>
-              {application.totalPrice
-                ? `${application.totalPrice.totalAmount} ${application.totalPrice.currency}`
-                : "—"}
-            </span>
-          </div>
+          {/* Стоимость показывается только там, где она есть: фестиваль может не
+              назначать цен вовсе, и «Итого —» тогда лишь заставляет искать, что
+              не заполнено. Цена каждого платного выступления видна бэйджем в его
+              заголовке. */}
+          {totalPrice ? (
+            <>
+              <Divider />
+              <div className="flex justify-between font-semibold">
+                <span>Итого</span>
+                <span>{totalPrice}</span>
+              </div>
+            </>
+          ) : null}
           {blockers.length > 0 ? (
             <Alert variant="warning">
               <ul className="list-disc pl-4">

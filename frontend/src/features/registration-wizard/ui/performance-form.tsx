@@ -11,7 +11,6 @@ import type { SubmissionResource } from "@/shared/api/generated/model-applicatio
 import type { Registration } from "@/shared/api/generated/model-public-catalog";
 import {
   Alert,
-  Badge,
   Button,
   Divider,
   EmptyState,
@@ -329,8 +328,7 @@ function PerformanceFormInner({
         />
       </div>
 
-      <Divider />
-      <PriceSection submissionId={submissionId} submission={submission} />
+      <AutoPricing submissionId={submissionId} submission={submission} />
     </div>
   );
 }
@@ -548,13 +546,23 @@ function TeachersSection({
   );
 }
 
-function PriceSection({
+/**
+ * Keeps the submission's price in step with the performance, and says what to make
+ * of the absence of one.
+ *
+ * A priced performance carries its price as the badge on the card's header, so
+ * nothing is repeated here. An unpriced one is not an error and not a blank to be
+ * filled in: pricing is optional per combination, and where the festival set none
+ * the regulation is what the applicant should go by — which is what this says, once
+ * the combination is actually chosen and the backend has answered for it.
+ */
+function AutoPricing({
   submissionId,
   submission,
 }: {
   submissionId: string;
   submission: SubmissionResource;
-}): React.JSX.Element {
+}): React.JSX.Element | null {
   const calculate = useCalculatePrice(submissionId);
   const { mutate } = calculate;
   const performance = submission.performance;
@@ -582,23 +590,22 @@ function PriceSection({
   useEffect(() => {
     if (signature && lastPriced.current !== signature) {
       lastPriced.current = signature;
-      // A combination with no configured price simply leaves the total blank.
+      // A combination the festival never priced simply stays unpriced.
       mutate();
     }
   }, [signature, mutate]);
 
+  // Nothing to say until this exact combination has been quoted and came back without
+  // a price: until then a missing price means "not asked yet", not "unpriced".
+  const quoted = signature !== null && lastPriced.current === signature && !calculate.isPending;
+  if (submission.price || !quoted) {
+    return null;
+  }
+
   return (
-    <div className="text-sm">
-      Стоимость номера:{" "}
-      {calculate.isPending ? (
-        <span className="text-muted-foreground">рассчитывается…</span>
-      ) : submission.price ? (
-        <Badge variant="success">
-          {submission.price.amount} {submission.price.currency}
-        </Badge>
-      ) : (
-        <span className="text-muted-foreground">—</span>
-      )}
-    </div>
+    <>
+      <Divider />
+      <p className="text-sm text-muted-foreground">Стоимость номера определяется положением.</p>
+    </>
   );
 }
