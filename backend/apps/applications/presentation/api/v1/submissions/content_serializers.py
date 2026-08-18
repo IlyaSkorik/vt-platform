@@ -12,6 +12,7 @@ from rest_framework import serializers
 __all__ = [
     "AddParticipantRequestSerializer",
     "CreditTeacherRequestSerializer",
+    "SetParticipantMembersRequestSerializer",
     "SetPerformanceRequestSerializer",
     "SubmissionProblemDetailSerializer",
     "SubmissionResponseSerializer",
@@ -59,6 +60,21 @@ class AddParticipantRequestSerializer(serializers.Serializer[dict[str, object]])
     memberCount = serializers.IntegerField(required=False, allow_null=True, min_value=1)
 
 
+class SetParticipantMembersRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """Validate a set-collective-members request body.
+
+    The whole roster of ФИО, replacing whatever the participant carried. An empty
+    list is valid and means "no individual documents for this entry" — the roster is
+    the request for them, so withdrawing it is how the applicant opts back out.
+    """
+
+    members = serializers.ListField(
+        child=serializers.CharField(allow_blank=True, max_length=200, trim_whitespace=True),
+        allow_empty=True,
+        max_length=200,
+    )
+
+
 class CreditTeacherRequestSerializer(serializers.Serializer[dict[str, object]]):
     """Validate an add-teacher request body.
 
@@ -95,6 +111,7 @@ class _ParticipantResourceSerializer(serializers.Serializer[dict[str, object]]):
     birthDate = serializers.DateField(allow_null=True)
     gender = serializers.CharField(allow_null=True)
     memberCount = serializers.IntegerField()
+    members = serializers.ListField(child=serializers.CharField())
 
 
 class _TeacherResourceSerializer(serializers.Serializer[dict[str, object]]):

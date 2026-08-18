@@ -80,6 +80,7 @@ from .events import (
     DomainEvent,
     EducationalOrganizationSelected,
     ParticipantAdded,
+    ParticipantMembersChanged,
     ParticipantRemoved,
     PaymentReceiptRemoved,
     PaymentReceiptUploaded,
@@ -116,6 +117,7 @@ from .exceptions import (
     IllegalApplicationStatusTransitionError,
     IllegalStatusTransitionError,
     InvalidBirthDateError,
+    InvalidCollectiveMemberError,
     InvalidParticipantMemberCountError,
     InvalidPersonNameError,
     MissingRequiredConsentError,
@@ -250,6 +252,15 @@ _LIVE_STATUSES: Final = frozenset(
     }
 )
 
+#: Longest ФИО a collective may list for one of its members. Generous: it is printed
+#: on a diploma, so a long double-barrelled name must fit rather than be truncated.
+_MAX_MEMBER_NAME_LENGTH: Final = 200
+
+#: Most people one collective may name. Well above any real ensemble (a large choir
+#: is ~100), and low enough that a runaway client cannot ask for ten thousand
+#: individual diplomas in one publication.
+_MAX_COLLECTIVE_MEMBERS: Final = 200
+
 
 # ===========================================================================
 # Child entities
@@ -277,6 +288,11 @@ class Participant:
 
     Manual, registry-less entry is still supported (``registry_participant_id`` is
     ``None``) for backward compatibility.
+
+    A collective may also name the people in it (:attr:`members`) - see
+    :meth:`_normalize_members`. The roster is optional and exists for one purpose:
+    the applicant who fills it in gets an individual diploma per named person on top
+    of the collective's own.
     """
 
     _id: ParticipantId
@@ -286,6 +302,7 @@ class Participant:
     _gender: Gender | None = None
     _registry_participant_id: RegistryParticipantId | None = None
     _member_count: int = 1
+    _members: tuple[str, ...] = ()
 
     @classmethod
     def create(
@@ -298,6 +315,7 @@ class Participant:
         display_name: str | None = None,
         registry_participant_id: RegistryParticipantId | None = None,
         member_count: int = 1,
+        members: Sequence[str] = (),
     ) -> Participant:
         resolved = cls._resolve_display_name(display_name, name)
         return cls(
@@ -308,6 +326,7 @@ class Participant:
             _gender=gender,
             _registry_participant_id=registry_participant_id,
             _member_count=cls._validate_member_count(member_count),
+            _members=cls._normalize_members(members),
         )
 
     @classmethod
@@ -321,6 +340,7 @@ class Participant:
         gender: Gender | None = None,
         registry_participant_id: RegistryParticipantId | None = None,
         member_count: int = 1,
+        members: Sequence[str] = (),
     ) -> Participant:
         return cls(
             _id=participant_id,
@@ -330,6 +350,7 @@ class Participant:
             _gender=gender,
             _registry_participant_id=registry_participant_id,
             _member_count=cls._validate_member_count(member_count),
+            _members=cls._normalize_members(members),
         )
 
     @staticmethod
@@ -338,6 +359,42 @@ class Participant:
         if not isinstance(member_count, int) or isinstance(member_count, bool) or member_count < 1:
             raise InvalidParticipantMemberCountError(f"Participant member count must be an integer >= 1, got {member_count!r}.")
         return member_count
+
+    @staticmethod
+    def _normalize_members(members: Sequence[str]) -> tuple[str, ...]:
+        """The roster as it will be printed: trimmed, blank-free and de-duplicated.
+
+        Blank rows are dropped rather than rejected, because the form the applicant
+        fills in has spare rows in it by design. Duplicates are dropped because an
+        individual document is identified by the person it names - two identical
+        names on one entry would be one document, so accepting both would silently
+        promise a diploma that cannot exist. Order is the applicant's own.
+        """
+        roster: list[str] = []
+        seen: set[str] = set()
+        for raw in members:
+            name = " ".join(str(raw).split())
+            if not name:
+                continue
+            if len(name) > _MAX_MEMBER_NAME_LENGTH:
+                raise InvalidCollectiveMemberError(f"Member name must be at most {_MAX_MEMBER_NAME_LENGTH} characters, got {len(name)}.")
+            key = name.casefold()
+            if key in seen:
+                continue
+            seen.add(key)
+            roster.append(name)
+        if len(roster) > _MAX_COLLECTIVE_MEMBERS:
+            raise InvalidCollectiveMemberError(f"A collective may name at most {_MAX_COLLECTIVE_MEMBERS} members, got {len(roster)}.")
+        return tuple(roster)
+
+    def with_members(self, members: Sequence[str]) -> None:
+        """Replace the roster in place (aggregate-internal; the root calls this).
+
+        Mutating rather than returning a copy keeps the participant's identity - and
+        with it the id the client holds and the duplicate rule - untouched: naming the
+        people in a collective is not a different participant.
+        """
+        self._members = self._normalize_members(members)
 
     @staticmethod
     def _resolve_display_name(display_name: str | None, name: PersonName | None) -> str:
@@ -374,6 +431,24 @@ class Participant:
     def member_count(self) -> int:
         """How many people this entry represents: 1 for a solo, the headcount for a collective."""
         return self._member_count
+
+    @property
+    def members(self) -> tuple[str, ...]:
+        """The named people in a collective, in the applicant's own order.
+
+        Empty for a solo, and empty for a collective whose applicant did not ask for
+        individual documents - naming the roster is what asks for them.
+        """
+        return self._members
+
+    @property
+    def wants_individual_documents(self) -> bool:
+        """Whether this entry asked for a document per named person.
+
+        The roster *is* the request: there is no separate flag to fall out of step
+        with it, so "opted in with nobody named" cannot happen.
+        """
+        return bool(self._members)
 
     @property
     def identity_key(self) -> tuple[str, ...]:
@@ -827,15 +902,18 @@ class Submission:
         display_name: str | None = None,
         registry_participant_id: RegistryParticipantId | None = None,
         member_count: int = 1,
+        members: Sequence[str] = (),
         now: datetime,
     ) -> list[DomainEvent]:
         """Add a participant (a Participant Registry snapshot: solo or collective).
 
         ``member_count`` is the headcount this entry represents: 1 for a solo person,
         the number of people for a collective/ensemble - it drives the participant-count
-        band check and per-participant pricing. Rejects a future birth date and a
-        duplicate (the same registry participant, or - for manual entries - the same
-        display name and birth date, already on this submission).
+        band check and per-participant pricing. ``members`` optionally names those
+        people, which is how the applicant asks for an individual diploma each (see
+        :meth:`set_participant_members`). Rejects a future birth date and a duplicate
+        (the same registry participant, or - for manual entries - the same display name
+        and birth date, already on this submission).
         """
         self._ensure_editable()
         if birth_date is not None and birth_date.value > now.date():
@@ -848,12 +926,32 @@ class Submission:
             display_name=display_name,
             registry_participant_id=registry_participant_id,
             member_count=member_count,
+            members=members,
         )
         if any(p.identity_key == candidate.identity_key for p in self._participants.values()):
             raise DuplicateParticipantError(f"Participant {candidate.display_name!r} is already in this submission.")
         self._participants[participant_id] = candidate
         self._touch(now)
         return [ParticipantAdded(aggregate_id=self._id.value, participant_id=participant_id)]
+
+    def set_participant_members(self, *, participant_id: ParticipantId, members: Sequence[str], now: datetime) -> list[DomainEvent]:
+        """Name the people in a collective - the applicant's request for individual documents.
+
+        Optional by design: an applicant who wants only the collective's own diploma
+        leaves the roster empty, and an applicant who wants a diploma per person fills
+        it in. Sending an empty list withdraws the request, which is why this replaces
+        the whole roster rather than appending to it.
+
+        Editable states only, like every other content change: past ``ACCEPTED`` the
+        entry is what the organizer accepted, and the names on it are part of that.
+        """
+        self._ensure_editable()
+        participant = self._participants.get(participant_id)
+        if participant is None:
+            raise ParticipantNotFoundError(f"No participant {participant_id} in this submission.")
+        participant.with_members(members)
+        self._touch(now)
+        return [ParticipantMembersChanged(aggregate_id=self._id.value, participant_id=participant_id)]
 
     def remove_participant(self, *, participant_id: ParticipantId, now: datetime) -> list[DomainEvent]:
         """Remove a participant.

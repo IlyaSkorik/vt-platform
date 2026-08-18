@@ -26,6 +26,7 @@ objects) and mapped to RFC 9457 Problem Details at the presentation edge
     │   ├── InvalidPersonNameError
     │   ├── InvalidBirthDateError
     │   ├── InvalidParticipantMemberCountError
+    │   ├── InvalidCollectiveMemberError
     │   ├── InvalidTeacherRoleError
     │   ├── InvalidFileReferenceError
     │   ├── InvalidReviewCommentError
@@ -164,6 +165,10 @@ class InvalidBirthDateError(ValueObjectValidationError):
 
 class InvalidParticipantMemberCountError(ValueObjectValidationError):
     """The provided participant member count is not a valid headcount (not an integer >= 1)."""
+
+
+class InvalidCollectiveMemberError(ValueObjectValidationError):
+    """The provided collective roster is not usable (a name too long, or too many names)."""
 
 
 class InvalidTeacherRoleError(ValueObjectValidationError):

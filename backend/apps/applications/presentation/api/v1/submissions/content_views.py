@@ -24,6 +24,7 @@ from apps.applications.application.dto.commands import (
     CalculatePriceCommand,
     RemoveParticipantCommand,
     RemoveTeacherCommand,
+    SetParticipantMembersCommand,
     SetPerformanceCommand,
 )
 from apps.applications.application.dto.queries import GetSubmissionQuery
@@ -35,6 +36,7 @@ from apps.applications.presentation.api.v1.submissions import composition
 from apps.applications.presentation.api.v1.submissions.content_serializers import (
     AddParticipantRequestSerializer,
     CreditTeacherRequestSerializer,
+    SetParticipantMembersRequestSerializer,
     SetPerformanceRequestSerializer,
     SubmissionProblemDetailSerializer,
     SubmissionResponseSerializer,
@@ -82,6 +84,9 @@ def _submission_resource(dto: SubmissionView) -> dict[str, Any]:
                 "birthDate": p.birth_date.isoformat() if p.birth_date is not None else None,
                 "gender": p.gender,
                 "memberCount": p.member_count,
+                # The named people in a collective; empty unless the applicant asked
+                # for an individual document each.
+                "members": list(p.members),
             }
             for p in dto.participants
         ],
@@ -234,6 +239,40 @@ class SubmissionParticipantsView(_AuthenticatedView):
         who = " ".join(filter(None, [command.last_name, command.first_name])).strip() or command.display_name or ""
         _note(submission_id, f"Добавлен участник: {who}" if who else "Добавлен участник", result)
         return _result(request, result, status=201)
+
+
+class SubmissionParticipantMembersView(_AuthenticatedView):
+    """PUT /api/v1/submissions/{id}/participants/{participantId}/members - name a collective's members."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="submissions_set_participant_members",
+        summary="Name the people in a collective",
+        description=(
+            "Replaces the collective's roster of ФИО. Filling it in is how the applicant asks for an "
+            "individual diploma per person alongside the collective's own; sending an empty list withdraws that."
+        ),
+        request=SetParticipantMembersRequestSerializer,
+        responses={200: SubmissionResponseSerializer, 400: OpenApiResponse(SubmissionProblemDetailSerializer, description="Malformed.")},
+    )
+    def put(self, request: Request, submission_id: str, participant_id: str) -> Response:
+        serializer = SetParticipantMembersRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return problems.validation_problem(serializer.errors, instance=request.path, request=request)
+        members = tuple(str(name) for name in serializer.validated_data["members"])
+        command = SetParticipantMembersCommand(
+            submission_id=submission_id,
+            requested_by=_uid(request),
+            participant_id=participant_id,
+            members=members,
+        )
+        try:
+            result = composition.build_set_participant_members_handler().handle(command)
+        except ApplicationError as exc:
+            return problems.application_problem(exc, instance=request.path, request=request)
+        named = len([name for name in members if name.strip()])
+        _note(submission_id, f"Указан состав коллектива: {named} чел." if named else "Состав коллектива очищен", result)
+        return _result(request, result, status=200)
 
 
 class SubmissionParticipantDetailView(_AuthenticatedView):

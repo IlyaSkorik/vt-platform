@@ -15,6 +15,7 @@ from .draft import CreateSubmissionHandler, DeleteDraftSubmissionHandler
 from .participants import (
     AddParticipantHandler,
     RemoveParticipantHandler,
+    SetParticipantMembersHandler,
     UpdateParticipantHandler,
 )
 from .payment import (
@@ -53,6 +54,7 @@ __all__ = [
     "RemoveTeacherHandler",
     "ReturnSubmissionForCorrectionHandler",
     "ScheduleSubmissionHandler",
+    "SetParticipantMembersHandler",
     "SetPerformanceHandler",
     "StartReviewHandler",
     "SubmitSubmissionHandler",

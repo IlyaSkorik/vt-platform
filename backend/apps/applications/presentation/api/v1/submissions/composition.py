@@ -9,7 +9,11 @@ from __future__ import annotations
 
 from apps.applications.application.commands.attachments import RemoveAttachmentHandler, UploadAttachmentHandler
 from apps.applications.application.commands.cancel import CancelSubmissionByReviewerHandler
-from apps.applications.application.commands.participants import AddParticipantHandler, RemoveParticipantHandler
+from apps.applications.application.commands.participants import (
+    AddParticipantHandler,
+    RemoveParticipantHandler,
+    SetParticipantMembersHandler,
+)
 from apps.applications.application.commands.payment import (
     AcceptSubmissionHandler,
     CompleteSubmissionHandler,
@@ -54,6 +58,7 @@ __all__ = [
     "build_remove_teacher_handler",
     "build_return_for_correction_handler",
     "build_schedule_submission_handler",
+    "build_set_participant_members_handler",
     "build_set_performance_handler",
     "build_start_review_handler",
     "build_upload_attachment_handler",
@@ -87,6 +92,15 @@ def build_add_participant_handler() -> AddParticipantHandler:
         catalog=DjangoCompetitionCatalog(),
         clock=SystemClock(),
         uuids=Uuid7Generator(),
+        events=NullEventPublisher(),
+    )
+
+
+def build_set_participant_members_handler() -> SetParticipantMembersHandler:
+    return SetParticipantMembersHandler(
+        submissions=_submissions(),
+        catalog=DjangoCompetitionCatalog(),
+        clock=SystemClock(),
         events=NullEventPublisher(),
     )
 

@@ -67,6 +67,7 @@ __all__ = [
     "DomainEvent",
     "EducationalOrganizationSelected",
     "ParticipantAdded",
+    "ParticipantMembersChanged",
     "ParticipantRemoved",
     "PaymentReceiptRemoved",
     "PaymentReceiptUploaded",
@@ -174,6 +175,18 @@ class PerformanceDefined(DomainEvent):
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ParticipantAdded(DomainEvent):
     """A participant was added to the submission."""
+
+    participant_id: ParticipantId
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ParticipantMembersChanged(DomainEvent):
+    """A collective's roster of named members was replaced (possibly emptied).
+
+    Its own event rather than a re-used ``ParticipantAdded``: the roster is what asks
+    for an individual document per person, so "who is named on this entry" is a fact
+    worth reading back out of the stream on its own.
+    """
 
     participant_id: ParticipantId
 

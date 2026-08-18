@@ -86,6 +86,9 @@ class ParticipantView:
     gender: str | None
     registry_participant_id: str | None
     member_count: int
+    #: The named people in a collective — empty unless the applicant asked for an
+    #: individual document each.
+    members: tuple[str, ...] = ()
 
     @classmethod
     def from_participant(cls, participant: Participant) -> ParticipantView:
@@ -104,6 +107,7 @@ class ParticipantView:
             gender=gender.value if gender is not None else None,
             registry_participant_id=registry_id.json() if registry_id is not None else None,
             member_count=participant.member_count,
+            members=participant.members,
         )
 
 

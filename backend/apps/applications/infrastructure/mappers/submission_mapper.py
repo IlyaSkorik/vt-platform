@@ -168,6 +168,10 @@ class SubmissionMapper:
             "gender": gender.value if gender is not None else None,
             "registry_participant_id": registry_id.json() if registry_id is not None else None,
             "member_count": participant.member_count,
+            # The named people in a collective, when the applicant asked for a document
+            # each. Absent on rows written before the roster existed, which reads back
+            # as "not asked for" — exactly what it was.
+            "members": list(participant.members),
         }
 
     @staticmethod
@@ -186,6 +190,7 @@ class SubmissionMapper:
             gender=Gender(gender_raw) if gender_raw else None,
             registry_participant_id=RegistryParticipantId.from_string(registry_raw) if registry_raw else None,
             member_count=int(data.get("member_count", 1)),
+            members=[str(row) for row in data.get("members") or [] if str(row).strip()],
         )
 
     @staticmethod

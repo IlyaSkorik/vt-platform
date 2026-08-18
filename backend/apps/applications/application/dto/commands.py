@@ -31,6 +31,7 @@ __all__ = [
     "RemoveTeacherCommand",
     "ReturnSubmissionForCorrectionCommand",
     "ScheduleSubmissionCommand",
+    "SetParticipantMembersCommand",
     "SetPerformanceCommand",
     "StartReviewCommand",
     "SubmitSubmissionCommand",
@@ -157,6 +158,21 @@ class UpdateParticipantCommand:
     birth_date: str
     gender: str
     middle_name: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class SetParticipantMembersCommand:
+    """Name the people in a collective (owner, editable states only).
+
+    The whole roster, replacing whatever was there — an empty list withdraws the
+    request. Naming the people *is* the request for an individual document each, so
+    there is no separate opt-in flag to keep in step with it.
+    """
+
+    submission_id: str
+    requested_by: str
+    participant_id: str
+    members: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

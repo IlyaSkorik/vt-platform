@@ -158,3 +158,82 @@ def test_get_submission_requires_owner(auth_client: APIClient) -> None:
     access = identity_composition.build_token_service().issue(subject=registration.data["data"]["id"]).access_token
     other.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
     assert other.get(f"/api/v1/submissions/{submission_id}").status_code in (403, 404)
+
+
+def _collective(client: APIClient, submission_id: str, nomination_id: str) -> str:
+    """Attach a collective to the submission; return its participant id."""
+    client.put(f"/api/v1/submissions/{submission_id}/performance", _performance_body(nomination_id), format="json")
+    added = client.post(
+        f"/api/v1/submissions/{submission_id}/participants",
+        {"displayName": "Ансамбль «Созвездие»", "memberCount": 3},
+        format="json",
+    )
+    assert added.status_code == 201, added.data
+    return str(added.data["data"]["participants"][0]["id"])
+
+
+def test_collective_members_round_trip(auth_client: APIClient) -> None:
+    """Naming the people in a collective is how the applicant asks for individual diplomas."""
+    submission_id, nomination_id = _submission(auth_client)
+    participant_id = _collective(auth_client, submission_id, nomination_id)
+
+    saved = auth_client.put(
+        f"/api/v1/submissions/{submission_id}/participants/{participant_id}/members",
+        {"members": ["  Иванова Мария Петровна ", "", "Петров Пётр Петрович"]},
+        format="json",
+    )
+
+    assert saved.status_code == 200, saved.data
+    # Trimmed, blank rows dropped (the form has spare rows by design), order kept.
+    assert saved.data["data"]["participants"][0]["members"] == ["Иванова Мария Петровна", "Петров Пётр Петрович"]
+    fetched = auth_client.get(f"/api/v1/submissions/{submission_id}")
+    assert fetched.data["data"]["participants"][0]["members"] == ["Иванова Мария Петровна", "Петров Пётр Петрович"]
+
+
+def test_collective_members_are_optional_and_start_empty(auth_client: APIClient) -> None:
+    submission_id, nomination_id = _submission(auth_client)
+    _collective(auth_client, submission_id, nomination_id)
+
+    fetched = auth_client.get(f"/api/v1/submissions/{submission_id}")
+
+    # An applicant who wants only the collective's own diploma never touches the roster.
+    assert fetched.data["data"]["participants"][0]["members"] == []
+
+
+def test_collective_members_can_be_withdrawn(auth_client: APIClient) -> None:
+    submission_id, nomination_id = _submission(auth_client)
+    participant_id = _collective(auth_client, submission_id, nomination_id)
+    url = f"/api/v1/submissions/{submission_id}/participants/{participant_id}/members"
+    auth_client.put(url, {"members": ["Иванова Мария Петровна"]}, format="json")
+
+    cleared = auth_client.put(url, {"members": []}, format="json")
+
+    assert cleared.status_code == 200, cleared.data
+    assert cleared.data["data"]["participants"][0]["members"] == []
+
+
+def test_naming_members_keeps_the_participant_id(auth_client: APIClient) -> None:
+    """A roster change is not a different participant — the client's id stays valid."""
+    submission_id, nomination_id = _submission(auth_client)
+    participant_id = _collective(auth_client, submission_id, nomination_id)
+
+    saved = auth_client.put(
+        f"/api/v1/submissions/{submission_id}/participants/{participant_id}/members",
+        {"members": ["Иванова Мария Петровна"]},
+        format="json",
+    )
+
+    assert str(saved.data["data"]["participants"][0]["id"]) == participant_id
+
+
+def test_naming_members_of_an_unknown_participant_is_not_found(auth_client: APIClient) -> None:
+    submission_id, nomination_id = _submission(auth_client)
+    _collective(auth_client, submission_id, nomination_id)
+
+    response = auth_client.put(
+        f"/api/v1/submissions/{submission_id}/participants/{uuid7()}/members",
+        {"members": ["Иванова Мария Петровна"]},
+        format="json",
+    )
+
+    assert response.status_code == 404

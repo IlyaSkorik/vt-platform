@@ -28,6 +28,7 @@ from apps.applications.domain.exceptions import (
     DuplicateParticipantError,
     IllegalStatusTransitionError,
     InvalidBirthDateError,
+    InvalidCollectiveMemberError,
     InvalidParticipantMemberCountError,
     InvalidPersonNameError,
     ParticipantCommentNotAcceptedError,
@@ -685,6 +686,92 @@ class TestRegistryLinkedParticipants:
                 registry_participant_id=RegistryParticipantId.from_uuid(_new_id()),
                 now=NOW,
             )
+
+
+class TestCollectiveRoster:
+    """Naming the people in a collective — the applicant's request for a diploma each."""
+
+    def _collective(self, members: list[str] | None = None) -> tuple[Submission, ParticipantId]:
+        submission = _draft()
+        participant_id = ParticipantId.generate()
+        submission.add_participant(
+            participant_id=participant_id,
+            display_name='Ensemble "Constellation"',
+            member_count=3,
+            **({"members": members} if members is not None else {}),
+            now=NOW,
+        )
+        return submission, participant_id
+
+    def test_a_collective_names_nobody_by_default(self) -> None:
+        submission, _ = self._collective()
+        participant = submission.participants[0]
+
+        # Optional by design: an applicant who wants only the collective's own diploma
+        # never fills the roster in.
+        assert participant.members == ()
+        assert not participant.wants_individual_documents
+
+    def test_naming_members_is_the_request(self) -> None:
+        submission, participant_id = self._collective()
+
+        submission.set_participant_members(participant_id=participant_id, members=["Ivanova Maria", "Petrov Petr"], now=NOW)
+
+        participant = submission.participants[0]
+        assert participant.members == ("Ivanova Maria", "Petrov Petr")
+        assert participant.wants_individual_documents
+
+    def test_the_roster_is_trimmed_and_blank_rows_dropped(self) -> None:
+        submission, participant_id = self._collective()
+
+        submission.set_participant_members(participant_id=participant_id, members=["  Ivanova   Maria  ", "", "   "], now=NOW)
+
+        # The form the applicant fills in has spare rows in it by design.
+        assert submission.participants[0].members == ("Ivanova Maria",)
+
+    def test_duplicate_names_collapse(self) -> None:
+        submission, participant_id = self._collective()
+
+        submission.set_participant_members(participant_id=participant_id, members=["Ivanova Maria", "ivanova maria"], now=NOW)
+
+        # An individual document is identified by the person it names, so two identical
+        # names would be one document — accepting both would promise one that cannot exist.
+        assert submission.participants[0].members == ("Ivanova Maria",)
+
+    def test_an_empty_roster_withdraws_the_request(self) -> None:
+        submission, participant_id = self._collective(["Ivanova Maria"])
+
+        submission.set_participant_members(participant_id=participant_id, members=[], now=NOW)
+
+        assert submission.participants[0].members == ()
+        assert not submission.participants[0].wants_individual_documents
+
+    def test_naming_members_keeps_the_participant(self) -> None:
+        submission, participant_id = self._collective()
+
+        events = submission.set_participant_members(participant_id=participant_id, members=["Ivanova Maria"], now=NOW)
+
+        # A roster change is not a different participant: the id the client holds stays.
+        assert submission.participants[0].id == participant_id
+        assert [type(event).__name__ for event in events] == ["ParticipantMembersChanged"]
+
+    def test_an_over_long_name_is_rejected(self) -> None:
+        submission, participant_id = self._collective()
+
+        with pytest.raises(InvalidCollectiveMemberError):
+            submission.set_participant_members(participant_id=participant_id, members=["я" * 201], now=NOW)
+
+    def test_too_many_members_are_rejected(self) -> None:
+        submission, participant_id = self._collective()
+
+        with pytest.raises(InvalidCollectiveMemberError):
+            submission.set_participant_members(participant_id=participant_id, members=[f"Member {i}" for i in range(201)], now=NOW)
+
+    def test_an_unknown_participant_cannot_be_given_a_roster(self) -> None:
+        submission, _ = self._collective()
+
+        with pytest.raises(ParticipantNotFoundError):
+            submission.set_participant_members(participant_id=ParticipantId.generate(), members=["Ivanova Maria"], now=NOW)
 
 
 class TestDirectoryLinkedTeachers:
