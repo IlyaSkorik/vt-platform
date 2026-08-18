@@ -22,6 +22,16 @@ const THANK_YOU_FIELD_TYPES: ReadonlySet<TemplateFieldTypeId> = new Set([
   "free_text",
 ]);
 
+/**
+ * The one element only an individual diploma may place — mirrors the backend policy,
+ * which rejects it on any other layout.
+ *
+ * The collective's own sheet has no single member to name, so a field bound to one
+ * would print nothing there and mislead whoever placed it. Everything else is shared:
+ * an individual diploma is the collective's diploma with this one line added.
+ */
+const MEMBER_ONLY_FIELD_TYPES: ReadonlySet<TemplateFieldTypeId> = new Set(["member_name"]);
+
 /** How one kind presents itself in the organizer workspace. */
 export interface DocumentTypeConfig {
   /** Singular noun for the document, e.g. "Диплом". */
@@ -58,6 +68,14 @@ export const DOCUMENT_TYPES: Record<string, DocumentTypeConfig> = {
     // A diploma credits a teacher in a stated capacity.
     teacherRoles: true,
   },
+  INDIVIDUAL_DIPLOMA: {
+    label: "Индивидуальный диплом",
+    slotLabel: "Шаблон индивидуального диплома",
+    tone: "primary",
+    hint: "Диплом участнику коллектива: всё то же, плюс поле «ФИО участника». Выпускается каждому названному участнику при публикации протокола.",
+    // The same award as the collective's diploma, so a teacher is credited the same way.
+    teacherRoles: true,
+  },
   THANK_YOU: {
     label: "Благодарность",
     slotLabel: "Шаблон благодарности",
@@ -69,7 +87,7 @@ export const DOCUMENT_TYPES: Record<string, DocumentTypeConfig> = {
 };
 
 /** Kinds in the order the workspace offers them. */
-export const DOCUMENT_TYPE_ORDER: DocumentType[] = ["DIPLOMA", "THANK_YOU"];
+export const DOCUMENT_TYPE_ORDER: DocumentType[] = ["DIPLOMA", "INDIVIDUAL_DIPLOMA", "THANK_YOU"];
 
 /** Fallback for a kind this client build does not know yet. */
 const UNKNOWN: DocumentTypeConfig = {
@@ -96,9 +114,10 @@ export const DOCUMENT_TYPE_OPTIONS = DOCUMENT_TYPE_ORDER.map((value) => ({
 /**
  * Whether a template of this kind may place that element.
  *
- * A diploma may carry the whole catalogue; a thank-you letter only its own short
- * list. An unknown kind is treated as unrestricted rather than empty, so a client
- * running behind the backend still shows a usable palette.
+ * An individual diploma may carry the whole catalogue; a diploma all of it but the
+ * member's name; a thank-you letter only its own short list. An unknown kind is treated
+ * as unrestricted rather than empty, so a client running behind the backend still shows
+ * a usable palette.
  */
 export function allowsFieldType(
   documentType: DocumentType | string,
@@ -106,6 +125,9 @@ export function allowsFieldType(
 ): boolean {
   if (documentType === "THANK_YOU") {
     return THANK_YOU_FIELD_TYPES.has(fieldType);
+  }
+  if (documentType === "DIPLOMA") {
+    return !MEMBER_ONLY_FIELD_TYPES.has(fieldType);
   }
   return true;
 }

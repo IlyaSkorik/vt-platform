@@ -12,6 +12,7 @@ import {
   Tag,
   Trophy,
   Type,
+  UserRound,
   Users,
 } from "lucide-react";
 import {
@@ -42,6 +43,9 @@ import {
 export type TemplateFieldTypeId =
   // Соло-участник (ФИО) и коллектив — это одно поле «имя участника».
   | "participant_name"
+  // ФИО одного участника коллектива. Только для индивидуального диплома: на дипломе
+  // коллектива называть некого.
+  | "member_name"
   | "participant_age"
   | "teacher"
   | "organization"
@@ -173,6 +177,13 @@ export const FIELD_TYPES: readonly TemplateFieldType[] = [
     binding: "data",
     group: "Участник",
     icon: Users,
+  },
+  {
+    id: "member_name",
+    label: "ФИО участника коллектива",
+    binding: "data",
+    group: "Участник",
+    icon: UserRound,
   },
   { id: "participant_age", label: "Возраст", binding: "data", group: "Участник", icon: Cake },
   { id: "teacher", label: "ФИО педагога", binding: "data", group: "Педагог", icon: GraduationCap },

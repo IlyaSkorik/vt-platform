@@ -3,10 +3,22 @@ import { FIELD_TYPES } from "./constructor";
 import { allowsFieldType, documentTypeConfig } from "./document-types";
 
 describe("allowsFieldType", () => {
-  it("lets a diploma carry the whole catalogue", () => {
+  it("lets an individual diploma carry the whole catalogue", () => {
     for (const field of FIELD_TYPES) {
-      expect(allowsFieldType("DIPLOMA", field.id)).toBe(true);
+      expect(allowsFieldType("INDIVIDUAL_DIPLOMA", field.id)).toBe(true);
     }
+  });
+
+  it("lets a diploma carry everything but the member's name", () => {
+    // The collective's own sheet has no one member to name, so a field bound to one
+    // would print nothing there.
+    for (const field of FIELD_TYPES) {
+      expect(allowsFieldType("DIPLOMA", field.id)).toBe(field.id !== "member_name");
+    }
+  });
+
+  it("keeps the member's name off a thank-you letter too", () => {
+    expect(allowsFieldType("THANK_YOU", "member_name")).toBe(false);
   });
 
   it("limits a thank-you letter to who, who taught them, and where", () => {
@@ -47,6 +59,9 @@ describe("allowsFieldType", () => {
 describe("documentTypeConfig", () => {
   it("names the slot each kind fills on a nomination", () => {
     expect(documentTypeConfig("DIPLOMA").slotLabel).toBe("Шаблон диплома");
+    expect(documentTypeConfig("INDIVIDUAL_DIPLOMA").slotLabel).toBe(
+      "Шаблон индивидуального диплома",
+    );
     expect(documentTypeConfig("THANK_YOU").slotLabel).toBe("Шаблон благодарности");
   });
 

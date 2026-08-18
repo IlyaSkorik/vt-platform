@@ -430,6 +430,11 @@ function NominationTable({
             <th className="px-3 py-2 text-left font-medium">Жанр</th>
             <th className="px-3 py-2 text-right font-medium">Выступлений</th>
             <th className="px-3 py-2 text-left font-medium">Диплом</th>
+            {/* Not a run of its own: individual diplomas are issued to the named
+                members of a collective when the protocol is published. The column is
+                here so an organizer can see the template is in place — and how many
+                sheets that publication will produce — before it happens. */}
+            <th className="px-3 py-2 text-left font-medium">Индивидуальные</th>
             <th className="px-3 py-2 text-left font-medium">Благодарность</th>
           </tr>
         </thead>
@@ -452,6 +457,9 @@ function NominationTable({
                 <SlotCell slot={item.diploma} />
               </td>
               <td className="px-3 py-2 align-top">
+                <SlotCell slot={item.individualDiploma} atPublication />
+              </td>
+              <td className="px-3 py-2 align-top">
                 <SlotCell slot={item.thankYou} />
               </td>
             </tr>
@@ -462,8 +470,21 @@ function NominationTable({
   );
 }
 
-/** One nomination's template and forecast for a single kind of document. */
-function SlotCell({ slot }: { slot: DocumentSlot }): React.JSX.Element {
+/**
+ * One nomination's template and forecast for a single kind of document.
+ *
+ * `atPublication` marks a kind no run on this page issues: individual diplomas are
+ * created when the protocol is published, so the forecast is what that publication will
+ * produce rather than what a button here would. Saying so is the difference between a
+ * count an organizer can act on and one they wait for in vain.
+ */
+function SlotCell({
+  slot,
+  atPublication = false,
+}: {
+  slot: DocumentSlot;
+  atPublication?: boolean;
+}): React.JSX.Element {
   if (slot.templateId == null) {
     return <span className="text-warning">шаблон не назначен</span>;
   }
@@ -474,7 +495,8 @@ function SlotCell({ slot }: { slot: DocumentSlot }): React.JSX.Element {
     <div className="flex flex-col">
       <span className="text-foreground">{slot.templateName}</span>
       <span className="text-muted-foreground text-xs tabular-nums">
-        будет создано: {slot.willCreate} · уже есть: {slot.existing}
+        {atPublication ? "при публикации: " : "будет создано: "}
+        {slot.willCreate} · уже есть: {slot.existing}
         {slot.withoutRecipient > 0 ? ` · без педагога: ${slot.withoutRecipient}` : ""}
       </span>
     </div>

@@ -26,6 +26,7 @@ import {
   submissionsRemoveParticipant,
   submissionsRemoveTeacher,
   submissionsRetrieve,
+  submissionsSetParticipantMembers,
   submissionsSetPerformance,
 } from "@/shared/api/generated/submissions/submissions";
 
@@ -68,6 +69,24 @@ export function useSetPerformance(submissionId: string) {
 export function useAddParticipant(submissionId: string) {
   return useSubmissionMutation<AddParticipantRequest>(submissionId, (body) =>
     submissionsAddParticipant(submissionId, body),
+  );
+}
+
+/** Input for {@link useSetParticipantMembers}: whose roster, and the whole roster. */
+export type SetParticipantMembersInput = { participantId: string; members: string[] };
+
+/**
+ * Name the people in a collective — the applicant's request for an individual diploma
+ * each, on top of the collective's own.
+ *
+ * The whole roster every time, because that is what the endpoint replaces: an empty
+ * list withdraws the request rather than leaving the previous names in place.
+ */
+export function useSetParticipantMembers(submissionId: string) {
+  return useSubmissionMutation<SetParticipantMembersInput>(
+    submissionId,
+    ({ participantId, members }) =>
+      submissionsSetParticipantMembers(submissionId, participantId, { members }),
   );
 }
 

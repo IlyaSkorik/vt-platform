@@ -5,6 +5,7 @@ import {
   COMPETITION_TITLE,
   DIPLOMA_ISSUE_DATE,
   DIPLOMA_NUMBER,
+  MEMBER_FULL_NAME,
   NOMINATION_AGE_CATEGORY,
   NOMINATION_DISCIPLINE,
   NOMINATION_PARTICIPANT_GROUP,
@@ -52,12 +53,16 @@ const PREVIEW_VALUES: Record<PreviewMode, Record<TemplateFieldBinding, string>> 
     ...SHARED_VALUES,
     [PARTICIPANT_DISPLAY_NAME]: "Иванов Иван Иванович",
     [PARTICIPANT_AGE]: "11",
+    // A solo entry has no collective, so no member is named on its diploma.
+    [MEMBER_FULL_NAME]: "",
   },
   collective: {
     ...SHARED_VALUES,
     [PARTICIPANT_DISPLAY_NAME]: "Ансамбль «Созвездие»",
     [PARTICIPANT_AGE]: "",
     [NOMINATION_PARTICIPANT_GROUP]: "Ансамбль",
+    // One of the people named in that ensemble — what an individual diploma adds.
+    [MEMBER_FULL_NAME]: "Петрова Мария Ильинична",
   },
 };
 

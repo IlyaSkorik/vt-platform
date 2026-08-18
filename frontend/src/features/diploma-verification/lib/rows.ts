@@ -39,6 +39,9 @@ export function diplomaFactRows(diploma: VerifiedDiploma): DiplomaFactRow[] {
   > = [
     ["number", "Номер диплома", diploma.number, "identifier"],
     ["participantName", "Участник", diploma.participantName, "text"],
+    // Only an individual diploma has one, and then it is the name on the sheet in the
+    // holder's hands — the row above is the collective they performed in.
+    ["memberName", "ФИО участника", diploma.memberName, "text"],
     ["competitionTitle", "Фестиваль", diploma.competitionTitle, "text"],
     ["competitionDate", "Дата проведения", formatCompetitionDate(diploma.competitionDate), "text"],
     ["nomination", "Жанр", diploma.nomination, "text"],

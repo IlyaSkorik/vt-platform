@@ -62,6 +62,7 @@ const VOCALS_ROW: PrintPackageNomination = {
   nomination: "Вокал",
   submissions: 1,
   diploma: slot({ templateName: "Вокал A4" }),
+  individualDiploma: slot({ templateName: "Вокал: участнику", willCreate: 3 }),
   thankYou: slot({ templateName: "Вокал: благодарность", willCreate: 2 }),
 };
 
@@ -70,6 +71,7 @@ const DANCE_ROW: PrintPackageNomination = {
   nomination: "Танец",
   submissions: 1,
   diploma: slot({ templateName: "Танец A4" }),
+  individualDiploma: EMPTY_SLOT,
   thankYou: EMPTY_SLOT,
 };
 
@@ -139,9 +141,9 @@ describe("GenerationSection", () => {
     expect(screen.getByText("Вокал A4")).toBeInTheDocument();
     expect(screen.getByText("Вокал: благодарность")).toBeInTheDocument();
     expect(screen.getByText("Танец A4")).toBeInTheDocument();
-    // «Танец» has no thank-you template, and the table says so instead of
-    // borrowing the diploma one's readiness.
-    expect(screen.getByText("шаблон не назначен")).toBeInTheDocument();
+    // «Танец» has neither a thank-you nor an individual-diploma template, and the
+    // table says so for each instead of borrowing the diploma one's readiness.
+    expect(screen.getAllByText("шаблон не назначен")).toHaveLength(2);
   });
 
   it("sends only thank-you-ready nominations to a letter run", async () => {

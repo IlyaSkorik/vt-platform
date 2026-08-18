@@ -18,6 +18,11 @@ export type TemplateFieldBinding = string;
 
 export const PARTICIPANT_DISPLAY_NAME: TemplateFieldBinding = "participant.display_name";
 export const PARTICIPANT_AGE: TemplateFieldBinding = "participant.age";
+/**
+ * The ФИО of one named member of a collective. Resolves to nothing on a document that
+ * belongs to the performance itself, so only an individual diploma binds to it.
+ */
+export const MEMBER_FULL_NAME: TemplateFieldBinding = "member.full_name";
 export const TEACHER_DISPLAY_NAME: TemplateFieldBinding = "teacher.display_name";
 export const ORGANIZATION_NAME: TemplateFieldBinding = "organization.name";
 export const NOMINATION_TITLE: TemplateFieldBinding = "nomination.title";
@@ -41,6 +46,7 @@ export const DIPLOMA_ISSUE_DATE: TemplateFieldBinding = "diploma.issue_date";
 export const KNOWN_BINDINGS = {
   participantDisplayName: PARTICIPANT_DISPLAY_NAME,
   participantAge: PARTICIPANT_AGE,
+  memberFullName: MEMBER_FULL_NAME,
   teacherDisplayName: TEACHER_DISPLAY_NAME,
   organizationName: ORGANIZATION_NAME,
   nominationTitle: NOMINATION_TITLE,
@@ -64,6 +70,7 @@ export const KNOWN_BINDINGS = {
  */
 const DEFAULT_BINDINGS: Partial<Record<TemplateFieldTypeId, TemplateFieldBinding>> = {
   participant_name: PARTICIPANT_DISPLAY_NAME,
+  member_name: MEMBER_FULL_NAME,
   participant_age: PARTICIPANT_AGE,
   teacher: TEACHER_DISPLAY_NAME,
   organization: ORGANIZATION_NAME,

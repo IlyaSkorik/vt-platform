@@ -6161,6 +6161,7 @@ paths:
           type: string
           enum:
           - DIPLOMA
+          - INDIVIDUAL_DIPLOMA
           - THANK_YOU
         description: Formatting rules to preview with (defaults to DIPLOMA).
       tags:
@@ -6313,6 +6314,7 @@ paths:
           type: string
           enum:
           - DIPLOMA
+          - INDIVIDUAL_DIPLOMA
           - THANK_YOU
         description: Return only templates of this kind (a nomination's thank-you
           slot uses this).
@@ -8946,6 +8948,51 @@ paths:
               schema:
                 $ref: '#/components/schemas/SubmissionProblemDetail'
           description: Not found.
+  /api/v1/submissions/{submission_id}/participants/{participant_id}/members:
+    put:
+      operationId: submissions_set_participant_members
+      description: Replaces the collective's roster of ФИО. Filling it in is how the
+        applicant asks for an individual diploma per person alongside the collective's
+        own; sending an empty list withdraws that.
+      summary: Name the people in a collective
+      parameters:
+      - in: path
+        name: participant_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: submission_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Submissions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetParticipantMembersRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SetParticipantMembersRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SetParticipantMembersRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionProblemDetail'
+          description: Malformed.
   /api/v1/submissions/{submission_id}/performance:
     put:
       operationId: submissions_set_performance
@@ -11189,6 +11236,10 @@ components:
           type:
           - string
           - 'null'
+        memberName:
+          type:
+          - string
+          - 'null'
         competitionTitle:
           type:
           - string
@@ -11233,6 +11284,7 @@ components:
       - competitionTitle
       - degree
       - issueDate
+      - memberName
       - nomination
       - number
       - officialPdfUrl
@@ -11291,10 +11343,12 @@ components:
     DocumentTypeEnum:
       enum:
       - DIPLOMA
+      - INDIVIDUAL_DIPLOMA
       - THANK_YOU
       type: string
       description: |-
         * `DIPLOMA` - DIPLOMA
+        * `INDIVIDUAL_DIPLOMA` - INDIVIDUAL_DIPLOMA
         * `THANK_YOU` - THANK_YOU
     EmailVerificationConfirm:
       type: object
@@ -11710,6 +11764,7 @@ components:
     LayoutFieldRequestTypeEnum:
       enum:
       - participant_name
+      - member_name
       - participant_age
       - teacher
       - organization
@@ -11725,6 +11780,7 @@ components:
       type: string
       description: |-
         * `participant_name` - participant_name
+        * `member_name` - member_name
         * `participant_age` - participant_age
         * `teacher` - teacher
         * `organization` - organization
@@ -13057,11 +13113,14 @@ components:
           type: integer
         diploma:
           $ref: '#/components/schemas/DocumentSlot'
+        individualDiploma:
+          $ref: '#/components/schemas/DocumentSlot'
         thankYou:
           $ref: '#/components/schemas/DocumentSlot'
       required:
       - categoryId
       - diploma
+      - individualDiploma
       - nomination
       - submissions
       - thankYou
@@ -15300,6 +15359,23 @@ components:
       required:
       - data
       - meta
+    SetParticipantMembersRequest:
+      type: object
+      description: |-
+        Validate a set-collective-members request body.
+
+        The whole roster of ФИО, replacing whatever the participant carried. An empty
+        list is valid and means "no individual documents for this entry" — the roster is
+        the request for them, so withdrawing it is how the applicant opts back out.
+      properties:
+        members:
+          type: array
+          items:
+            type: string
+            maxLength: 200
+          maxItems: 200
+      required:
+      - members
     SetPerformanceRequest:
       type: object
       description: |-
@@ -17347,6 +17423,10 @@ components:
           - 'null'
         memberCount:
           type: integer
+        members:
+          type: array
+          items:
+            type: string
       required:
       - birthDate
       - displayName
@@ -17355,6 +17435,7 @@ components:
       - id
       - lastName
       - memberCount
+      - members
       - middleName
       - registryParticipantId
     _ParticipantSnapshot:

@@ -5,6 +5,8 @@ export function makeVerifiedDiploma(overrides: Partial<VerifiedDiploma> = {}): V
   return {
     number: "VT-2026-000001",
     participantName: "Иванов Иван",
+    // A solo entry: only an individual diploma names a member of a collective.
+    memberName: null,
     competitionTitle: "Восходящие таланты",
     competitionDate: "15.05.2026",
     nomination: "Вокал",

@@ -39,6 +39,7 @@ import {
   type PerformanceSelection,
   recommendedAgeCategoryId,
 } from "../lib/admission";
+import { CollectiveMembers, isCollectiveEntry } from "./collective-members";
 import { ParticipantPicker } from "./participant-picker";
 import { TeacherPicker } from "./teacher-picker";
 import { UploadControls } from "./upload-controls";
@@ -475,24 +476,31 @@ function ParticipantsSection({
         />
       ) : (
         submission.participants.map((participant) => (
-          <div key={participant.id} className="flex items-center justify-between gap-2">
-            <span className="text-sm">
-              {participant.displayName}
-              {participant.birthDate ? ` · ${participant.birthDate}` : ""}
-              {participant.memberCount > 1 ? ` · ${participant.memberCount} чел.` : ""}
-            </span>
-            <Button
-              variant="ghost"
-              size="xs"
-              loading={remove.isPending}
-              onClick={() =>
-                remove.mutate(participant.id, {
-                  onError: () => toast.error("Не удалось удалить участника"),
-                })
-              }
-            >
-              Удалить
-            </Button>
+          <div key={participant.id} className="flex flex-col gap-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm">
+                {participant.displayName}
+                {participant.birthDate ? ` · ${participant.birthDate}` : ""}
+                {participant.memberCount > 1 ? ` · ${participant.memberCount} чел.` : ""}
+              </span>
+              <Button
+                variant="ghost"
+                size="xs"
+                loading={remove.isPending}
+                onClick={() =>
+                  remove.mutate(participant.id, {
+                    onError: () => toast.error("Не удалось удалить участника"),
+                  })
+                }
+              >
+                Удалить
+              </Button>
+            </div>
+            {/* Only a collective can have a roster: a solo participant is already
+                named on their own diploma. */}
+            {isCollectiveEntry(participant) ? (
+              <CollectiveMembers submissionId={submissionId} participant={participant} />
+            ) : null}
           </div>
         ))
       )}

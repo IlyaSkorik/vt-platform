@@ -1,4 +1,4 @@
-import { Award, FileText, HeartHandshake, type LucideIcon } from "lucide-react";
+import { Award, FileText, HeartHandshake, type LucideIcon, UserRound } from "lucide-react";
 
 import type { DocumentType, MyDocument } from "./types";
 
@@ -38,6 +38,15 @@ export const DOCUMENT_KINDS: Record<string, DocumentKindConfig> = {
     // A rosette: what is actually printed on the document, and what the degree
     // badge beside it is a result of.
     icon: Award,
+    tone: "diploma",
+    showsNumber: true,
+    showsDegree: true,
+  },
+  INDIVIDUAL_DIPLOMA: {
+    label: "Индивидуальный диплом",
+    // A single figure, not the rosette: the same award as the collective's diploma,
+    // but this one is addressed to one person inside it.
+    icon: UserRound,
     tone: "diploma",
     showsNumber: true,
     showsDegree: true,
@@ -83,10 +92,11 @@ export function documentSubtitle(document: MyDocument): string | null {
 /**
  * Who the document is addressed to, when that is what distinguishes it.
  *
- * A thank-you letter is issued per teacher, so one entry can produce several rows
- * that are otherwise identical — the recipient is the only thing telling them
- * apart, and the download would be a coin toss without it. Empty for a document
- * that belongs to the performance itself, like a diploma.
+ * A thank-you letter is issued per teacher and an individual diploma per member of a
+ * collective, so one entry can produce several rows that are otherwise identical — the
+ * recipient is the only thing telling them apart, and the download would be a coin toss
+ * without it. Empty for a document that belongs to the performance itself, like the
+ * collective's own diploma.
  */
 export function documentRecipient(document: MyDocument): string | null {
   return document.recipient?.trim() || null;
