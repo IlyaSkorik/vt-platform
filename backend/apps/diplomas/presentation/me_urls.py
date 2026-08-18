@@ -9,10 +9,11 @@ from __future__ import annotations
 
 from django.urls import path
 
-from .api.v1.me_views import MyDocumentsView
+from .api.v1.me_views import MyDocumentsView, MyIndividualDiplomasArchiveView
 
 app_name = "my_documents"
 
 urlpatterns = [
     path("me/documents", MyDocumentsView.as_view(), name="documents"),
+    path("me/documents/archive", MyIndividualDiplomasArchiveView.as_view(), name="documents-archive"),
 ]

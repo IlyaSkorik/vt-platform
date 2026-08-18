@@ -37,6 +37,9 @@ class ParticipantDocumentSerializer(serializers.Serializer[object]):
     # Dotted source: the DTO carries the ``DocumentType`` enum, and the wire wants
     # its value.
     documentType = serializers.ChoiceField(source="document_type.value", choices=DOCUMENT_TYPES)
+    #: The entry this document was issued for — what groups an ensemble's individual
+    #: diplomas into one bundle the cabinet can offer as a single archive.
+    submissionId = serializers.UUIDField(source="submission_id")
     number = serializers.CharField(allow_null=True)
     participantName = serializers.CharField(source="participant_name", allow_null=True)
     competitionTitle = serializers.CharField(source="competition_title", allow_null=True)

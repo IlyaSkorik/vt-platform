@@ -54,6 +54,7 @@ class DjangoParticipantDocumentsReader:
                 ParticipantDocumentView(
                     id=row.id,
                     document_type=DocumentType(row.document_type or DocumentType.DIPLOMA.value),
+                    submission_id=row.submission_id,
                     number=row.number,
                     participant_name=snapshot.participant.display_name or None,
                     competition_title=snapshot.competition.title,
@@ -84,6 +85,7 @@ class DjangoParticipantDocumentsReader:
                 ParticipantDocumentView(
                     id=issued_row.id,
                     document_type=DocumentType(issued_row.document_type),
+                    submission_id=issued_row.submission_id,
                     number=None,
                     participant_name=issued_snapshot.participant.display_name or None,
                     competition_title=issued_snapshot.competition.title,
