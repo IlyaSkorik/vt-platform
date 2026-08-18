@@ -4794,6 +4794,38 @@ paths:
               schema:
                 $ref: '#/components/schemas/ParticipantDocumentsEnvelope'
           description: ''
+  /api/v1/me/documents/archive:
+    get:
+      operationId: downloadMyIndividualDiplomas
+      description: |-
+        One entry's individual diplomas as a single ZIP download.
+
+        A ``GET`` because it is a download, and assembled per request because nothing is
+        worth storing: the members are already-rendered PDFs, and a stored bundle would
+        have to be invalidated every time a corrected protocol re-renders one of them.
+
+        The entry is named in the query, but it is not a permission: the bundle is
+        filtered out of *the caller's own* documents, so somebody else's submission id
+        matches nothing and returns a 404 rather than their diplomas.
+      summary: Download one entry's individual diplomas as one ZIP
+      parameters:
+      - in: query
+        name: submissionId
+        schema:
+          type: string
+          format: uuid
+        description: The entry whose individual diplomas to bundle.
+        required: true
+      tags:
+      - My Documents
+      responses:
+        '200':
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+          description: ''
   /api/v1/me/notifications:
     get:
       operationId: listMyNotifications
@@ -12064,6 +12096,9 @@ components:
           format: uuid
         documentType:
           $ref: '#/components/schemas/DocumentTypeEnum'
+        submissionId:
+          type: string
+          format: uuid
         number:
           type:
           - string
@@ -12104,6 +12139,7 @@ components:
       - number
       - participantName
       - recipient
+      - submissionId
     ParticipantDocumentsEnvelope:
       type: object
       description: The full ``GET /me/documents`` response envelope.

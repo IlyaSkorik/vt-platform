@@ -5,4 +5,5 @@ export {
   documentRecipient,
   documentSubtitle,
 } from "./kinds";
+export { type DocumentRow, documentRows } from "./rows";
 export type { DocumentType, MyDocument } from "./types";

@@ -6,13 +6,15 @@
  * cabinet's "Мои документы" page. Widgets compose these; nothing reaches past this
  * barrel.
  */
-export { myDocumentsKeys, useMyDocuments } from "./api";
+export { downloadIndividualDiplomas, myDocumentsKeys, useMyDocuments } from "./api";
 export {
   DOCUMENT_KINDS,
   type DocumentKindConfig,
+  type DocumentRow,
   type DocumentType,
   documentKind,
   documentRecipient,
+  documentRows,
   documentSubtitle,
   type MyDocument,
 } from "./lib";

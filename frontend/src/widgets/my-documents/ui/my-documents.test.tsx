@@ -1,16 +1,36 @@
 import type { UseQueryResult } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { type MyDocument, useMyDocuments } from "@/features/my-documents";
+import {
+  downloadIndividualDiplomas,
+  type MyDocument,
+  useMyDocuments,
+} from "@/features/my-documents";
 import type { ApiError } from "@/shared/api";
 import { MyDocuments } from "./my-documents";
 
 vi.mock("@/features/my-documents", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/features/my-documents")>()),
   useMyDocuments: vi.fn(),
+  downloadIndividualDiplomas: vi.fn(),
 }));
 
 const mockedHook = vi.mocked(useMyDocuments);
+const mockedArchive = vi.mocked(downloadIndividualDiplomas);
+
+/** One member's own diploma inside a collective's entry. */
+function makeIndividual(recipient: string, id: string): MyDocument {
+  return makeDocument({
+    id,
+    documentType: "INDIVIDUAL_DIPLOMA",
+    number: `VT-2026-00000${id}`,
+    participantName: "Ансамбль «Созвездие»",
+    degree: "Лауреат I степени",
+    recipient,
+    fileUrl: `/media/diplomas/official/x/${id}.pdf`,
+  });
+}
 
 type QueryResult = UseQueryResult<MyDocument[], ApiError>;
 
@@ -29,6 +49,7 @@ function makeDocument(overrides: Partial<MyDocument> = {}): MyDocument {
   return {
     id: "01900000-0000-7000-8000-000000000001",
     documentType: "THANK_YOU",
+    submissionId: "01900000-0000-7000-8000-0000000000aa",
     number: null,
     participantName: "Иванов Иван",
     competitionTitle: "Восходящие таланты",
@@ -121,5 +142,49 @@ describe("MyDocuments", () => {
     mockQuery({ isError: true, error: { status: 500 } as ApiError });
     render(<MyDocuments />);
     expect(screen.getByRole("button", { name: /повторить/i })).toBeInTheDocument();
+  });
+});
+
+describe("MyDocuments — an ensemble's individual diplomas", () => {
+  it("collapses them into one row with one archive", () => {
+    mockQuery({
+      data: [
+        makeIndividual("Иванова Мария", "1"),
+        makeIndividual("Петров Пётр", "2"),
+        makeIndividual("Сидорова Анна", "3"),
+      ],
+    });
+
+    render(<MyDocuments />);
+
+    // One row, not three, and the count is what says why.
+    expect(screen.getByText("Индивидуальный диплом")).toBeInTheDocument();
+    expect(screen.getByText("3 шт.")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /Скачать архив/ })).toHaveLength(1);
+    expect(screen.queryByText("Иванова Мария")).not.toBeInTheDocument();
+  });
+
+  it("downloads the entry's archive", async () => {
+    const user = userEvent.setup();
+    mockQuery({ data: [makeIndividual("Иванова Мария", "1"), makeIndividual("Петров Пётр", "2")] });
+
+    render(<MyDocuments />);
+    await user.click(screen.getByRole("button", { name: /Скачать архив/ }));
+
+    await waitFor(() => expect(mockedArchive).toHaveBeenCalledTimes(1));
+    // Scoped to the entry, which is what the server bundles by.
+    expect(mockedArchive).toHaveBeenCalledWith("01900000-0000-7000-8000-0000000000aa");
+  });
+
+  it("still reaches one member's own sheet", async () => {
+    const user = userEvent.setup();
+    mockQuery({ data: [makeIndividual("Иванова Мария", "1"), makeIndividual("Петров Пётр", "2")] });
+
+    render(<MyDocuments />);
+    await user.click(screen.getByRole("button", { name: /Показать по одному/ }));
+
+    // A parent came for exactly one diploma and should not unpack a ZIP for it.
+    expect(screen.getByText("Иванова Мария")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Скачать диплом: Петров Пётр/ })).toBeInTheDocument();
   });
 });

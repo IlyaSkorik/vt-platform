@@ -1,14 +1,25 @@
-import { Download, FileText, Frown, RotateCcw } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Download,
+  FileArchive,
+  FileText,
+  Frown,
+  RotateCcw,
+} from "lucide-react";
+import { useState } from "react";
 import {
   type DocumentKindConfig,
   documentKind,
   documentRecipient,
+  documentRows,
   documentSubtitle,
+  downloadIndividualDiplomas,
   type MyDocument,
   useMyDocuments,
 } from "@/features/my-documents";
 import { resolveMediaUrl } from "@/shared/lib";
-import { Badge, Button, Card, CardContent, EmptyState, Skeleton } from "@/shared/ui";
+import { Badge, Button, Card, CardContent, EmptyState, Skeleton, toast } from "@/shared/ui";
 
 /**
  * The tint each kind of document is marked with.
@@ -75,6 +86,121 @@ function DocumentRow({ document }: { document: MyDocument }): React.JSX.Element 
             Скачать
           </a>
         </Button>
+      ) : null}
+    </li>
+  );
+}
+
+/**
+ * One entry's individual diplomas as a single row: what they are, and one archive.
+ *
+ * The count is the point of the row — twelve members are twelve documents that differ
+ * only in the name on them, and offering twelve buttons is offering a chore. The list
+ * underneath is collapsed rather than absent, because a parent came for exactly one
+ * sheet and should not have to unpack a ZIP to get it.
+ */
+function DocumentBundleRow({
+  submissionId,
+  documents,
+}: {
+  submissionId: string;
+  documents: MyDocument[];
+}): React.JSX.Element {
+  const [expanded, setExpanded] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const kind = documentKind(documents[0]?.documentType ?? "");
+  const KindIcon = kind.icon;
+  const subtitle = documents[0] ? documentSubtitle(documents[0]) : null;
+  const degree = documents[0]?.degree;
+  const ExpandIcon = expanded ? ChevronDown : ChevronRight;
+
+  const download = async () => {
+    setDownloading(true);
+    try {
+      await downloadIndividualDiplomas(submissionId);
+    } catch {
+      toast.error("Не удалось скачать архив. Попробуйте ещё раз.");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  return (
+    <li className="py-4 first:pt-0 last:pb-0">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+        <div className="flex min-w-0 items-start gap-3">
+          <span
+            aria-hidden="true"
+            className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${TONE_CLASSES[kind.tone]}`}
+          >
+            <KindIcon className="size-5" />
+          </span>
+          <div className="min-w-0 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-semibold text-foreground">{kind.label}</p>
+              <Badge variant="secondary" size="sm">
+                {documents.length} шт.
+              </Badge>
+              {kind.showsDegree && degree ? (
+                <Badge variant="success" size="sm">
+                  {degree}
+                </Badge>
+              ) : null}
+            </div>
+            {subtitle ? (
+              <p className="wrap-anywhere text-muted-foreground text-sm">{subtitle}</p>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => setExpanded((open) => !open)}
+              aria-expanded={expanded}
+              className="-mx-1 flex items-center gap-1 rounded px-1 text-primary text-sm hover:underline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
+            >
+              <ExpandIcon aria-hidden="true" className="size-4" />
+              {expanded ? "Скрыть список" : `Показать по одному (${documents.length})`}
+            </button>
+          </div>
+        </div>
+        <Button
+          variant="outline"
+          className="w-full shrink-0 sm:w-auto"
+          loading={downloading}
+          onClick={() => void download()}
+          aria-label={`Скачать архив: ${kind.label}, ${documents.length} шт.${subtitle ? ` — ${subtitle}` : ""} (ZIP)`}
+        >
+          <FileArchive aria-hidden="true" />
+          Скачать архивом
+        </Button>
+      </div>
+
+      {expanded ? (
+        <ul className="mt-3 space-y-1 border-border border-l pl-4 sm:ml-13">
+          {documents.map((document) => {
+            const href = resolveMediaUrl(document.fileUrl);
+            const who = documentRecipient(document) ?? document.participantName ?? "Без имени";
+            return (
+              <li
+                key={document.id}
+                className="flex flex-wrap items-center justify-between gap-2 py-1"
+              >
+                <span className="wrap-anywhere text-foreground/80 text-sm">{who}</span>
+                {href ? (
+                  <Button asChild variant="ghost" size="xs">
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Скачать диплом: ${who} (PDF, откроется в новой вкладке)`}
+                    >
+                      <Download aria-hidden="true" />
+                      Скачать
+                    </a>
+                  </Button>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
       ) : null}
     </li>
   );
@@ -153,9 +279,17 @@ export function MyDocuments(): React.JSX.Element {
     <Card>
       <CardContent className="px-6 py-6 sm:px-8">
         <ul className="divide-y divide-border">
-          {query.data.map((document) => (
-            <DocumentRow key={document.id} document={document} />
-          ))}
+          {documentRows(query.data).map((row) =>
+            row.kind === "bundle" ? (
+              <DocumentBundleRow
+                key={row.key}
+                submissionId={row.submissionId}
+                documents={row.documents}
+              />
+            ) : (
+              <DocumentRow key={row.key} document={row.document} />
+            ),
+          )}
         </ul>
       </CardContent>
     </Card>
