@@ -6,6 +6,7 @@
  */
 export { apiClient, toApiError } from "./client";
 export { DEFAULT_LOCALE, HEADER } from "./config";
+export { filenameFromDisposition, saveAuthenticatedDownload } from "./download";
 export {
   ApiError,
   type ProblemDetails,

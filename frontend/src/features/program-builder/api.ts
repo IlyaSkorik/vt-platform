@@ -13,7 +13,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
-import { type ApiError, apiClient, toApiError } from "@/shared/api";
+import { type ApiError, apiClient, saveAuthenticatedDownload, toApiError } from "@/shared/api";
 
 import type {
   AddBlockInput,
@@ -324,7 +324,10 @@ export async function downloadProgramPdf(
   fallbackName: string,
 ): Promise<void> {
   const query = columns.length > 0 ? `?columns=${encodeURIComponent(columns.join(","))}` : "";
-  await saveAs(`staff/programs/${programId}/export.pdf${query}`, `${fallbackName}.pdf`);
+  await saveAuthenticatedDownload(
+    `staff/programs/${programId}/export.pdf${query}`,
+    `${fallbackName}.pdf`,
+  );
 }
 
 /**
@@ -335,7 +338,10 @@ export async function downloadProgramPdf(
  * running order it was downloaded from.
  */
 export async function downloadProgramMusic(programId: string, fallbackName: string): Promise<void> {
-  await saveAs(`staff/programs/${programId}/music.zip`, `${fallbackName} — фонограммы.zip`);
+  await saveAuthenticatedDownload(
+    `staff/programs/${programId}/music.zip`,
+    `${fallbackName} — фонограммы.zip`,
+  );
 }
 
 /**
@@ -346,51 +352,10 @@ export async function downloadProgramMusic(programId: string, fallbackName: stri
  * material. Assembled per request, so it can never be out of date with the running order.
  */
 export async function downloadProgramMedia(programId: string, fallbackName: string): Promise<void> {
-  await saveAs(`staff/programs/${programId}/media.zip`, `${fallbackName} — медиафайлы.zip`);
-}
-
-/**
- * Fetch a staff-gated download and hand the blob to the browser.
- *
- * Fetched rather than linked: these endpoints need the same auth as everything else,
- * and a plain `<a href>` would arrive without it. The server's own filename wins when
- * it sends one — it knows the programme's real, Cyrillic name.
- */
-async function saveAs(path: string, fallbackName: string): Promise<void> {
-  let blob: Blob;
-  let disposition: string | null;
-  try {
-    const response = await apiClient(path);
-    blob = await response.blob();
-    disposition = response.headers.get("Content-Disposition");
-  } catch (error) {
-    throw await toApiError(error);
-  }
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filenameFrom(disposition) ?? fallbackName;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  // Revoking immediately can cancel the download in some browsers; a tick is enough.
-  setTimeout(() => URL.revokeObjectURL(url), 1_000);
-}
-
-/** Read the server's chosen filename out of a Content-Disposition header. */
-function filenameFrom(disposition: string | null): string | null {
-  if (!disposition) {
-    return null;
-  }
-  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
-  if (encoded?.[1]) {
-    try {
-      return decodeURIComponent(encoded[1]);
-    } catch {
-      // A malformed header is not worth failing a download over.
-    }
-  }
-  return /filename="([^"]+)"/i.exec(disposition)?.[1] ?? null;
+  await saveAuthenticatedDownload(
+    `staff/programs/${programId}/media.zip`,
+    `${fallbackName} — медиафайлы.zip`,
+  );
 }
 
 /** Put every slot back to pending — the organizer's reset after a rehearsal. */
