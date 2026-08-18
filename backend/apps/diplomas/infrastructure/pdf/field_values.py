@@ -85,6 +85,10 @@ def _by_binding(binding: str, snapshot: DiplomaSnapshot, *, number: str, teacher
         case "participant.age":
             age = snapshot.participant.age
             return str(age) if age is not None else None
+        case "member.full_name":
+            # Only an individual diploma has one. On the collective's own sheet the
+            # snapshot carries no member, so the field is simply not drawn.
+            return _clean(snapshot.member.full_name) if snapshot.member is not None else None
         case "teacher.display_name":
             return _teacher_roster(snapshot, roles=teacher_roles)
         case "organization.name":

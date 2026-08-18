@@ -41,6 +41,12 @@ class SnapshotBuild:
     competition_id: uuid.UUID
     snapshot: DiplomaSnapshot
     competition_year: int | None = None
+    #: The people named inside this entry's collective, in the applicant's order.
+    #:
+    #: Empty for a solo entry and for a collective whose applicant did not name anyone
+    #: — naming them is what asks for a document each, so an empty roster is a request
+    #: not made rather than data missing.
+    members: tuple[str, ...] = ()
 
 
 class DiplomaNumberSequence(Protocol):
@@ -62,8 +68,8 @@ class DiplomaRepository(Protocol):
         """Mint a fresh, time-ordered diploma id."""
         ...
 
-    def exists_for_submission(self, submission_id: uuid.UUID) -> bool:
-        """Whether a (live) diploma already exists for this performance."""
+    def exists_for_submission(self, submission_id: uuid.UUID, document_type: DocumentType = DocumentType.DIPLOMA, recipient: str = "") -> bool:
+        """Whether a (live) diploma of this kind already exists for this performance."""
         ...
 
     def add(self, diploma: Diploma) -> None:
@@ -78,8 +84,16 @@ class DiplomaRepository(Protocol):
         """Load a diploma by id, or None if it does not exist."""
         ...
 
-    def get_by_submission(self, submission_id: uuid.UUID) -> Diploma | None:
-        """Load the (live) diploma for a performance, or None."""
+    def get_by_submission(
+        self,
+        submission_id: uuid.UUID,
+        document_type: DocumentType = DocumentType.DIPLOMA,
+        recipient: str = "",
+    ) -> Diploma | None:
+        """Load the (live) diploma of this kind for a performance and recipient, or None.
+
+        ``recipient`` is empty for the performance's own diploma and the member's name
+        for a kind issued per member of a collective."""
         ...
 
     def list_by_competition(self, competition_id: uuid.UUID) -> list[Diploma]:

@@ -92,6 +92,29 @@ def _age(participant: dict[str, Any]) -> int | None:
     return years if years >= 0 else None
 
 
+def _members(participant: dict[str, Any]) -> tuple[str, ...]:
+    """The people named inside a collective, as the applicant typed them.
+
+    The Applications context already normalized this list (trimmed, blank-free,
+    de-duplicated) when the applicant saved it; re-cleaning here is the same defence
+    every other read in this module applies to a JSON column, not a second rule.
+
+    Read from the **lead** participant only, like every other field of the snapshot: an
+    individual diploma names its member *and* the collective they performed in, and the
+    collective it names is the lead one. Taking rosters from a second participant row
+    would print those people under the wrong ensemble's name.
+    """
+    raw = participant.get("members")
+    if not isinstance(raw, list):
+        return ()
+    names: list[str] = []
+    for row in raw:
+        name = _clean(row)
+        if name is not None:
+            names.append(name)
+    return tuple(names)
+
+
 def _teachers(submission: SubmissionModel) -> tuple[TeacherSnapshot, ...]:
     result: list[TeacherSnapshot] = []
     for teacher in submission.teachers or []:
@@ -220,4 +243,5 @@ class DjangoDiplomaSnapshotSource:
             competition_id=submission.competition_id,
             snapshot=snapshot,
             competition_year=_competition_year(competition),
+            members=_members(lead),
         )

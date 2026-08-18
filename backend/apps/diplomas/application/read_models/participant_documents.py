@@ -40,7 +40,10 @@ __all__ = [
 #: hidden if someone forgets to rank it.
 DOCUMENT_TYPE_ORDER: dict[DocumentType, int] = {
     DocumentType.DIPLOMA: 0,
-    DocumentType.THANK_YOU: 1,
+    # The individual diplomas sit right under the collective's own, because that is the
+    # order they are read in: what the ensemble won, then who was in it.
+    DocumentType.INDIVIDUAL_DIPLOMA: 1,
+    DocumentType.THANK_YOU: 2,
 }
 
 

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from apps.diplomas.domain.document_types import DocumentType
 from apps.diplomas.domain.entities import Diploma
 from apps.diplomas.domain.value_objects import DiplomaSnapshot, DiplomaStatus
 from apps.diplomas.infrastructure.models import DiplomaModel
@@ -29,6 +30,8 @@ class DiplomaMapper:
             submission_id=model.submission_id,
             template_id=model.template_id,
             status=DiplomaStatus(model.status),
+            document_type=DocumentType(model.document_type or DocumentType.DIPLOMA.value),
+            recipient=model.recipient or "",
             snapshot=DiplomaSnapshot.from_dict(model.snapshot or {}),
             created_at=model.created_at,
             updated_at=model.updated_at,
@@ -60,6 +63,8 @@ class DiplomaMapper:
             "submission_id": entity.submission_id,
             "template_id": entity.template_id,
             "status": entity.status.value,
+            "document_type": entity.document_type.value,
+            "recipient": entity.recipient,
             "snapshot": entity.snapshot.to_dict(),
             "print_pdf_path": entity.print_pdf_path or "",
             "official_pdf_path": entity.official_pdf_path or "",

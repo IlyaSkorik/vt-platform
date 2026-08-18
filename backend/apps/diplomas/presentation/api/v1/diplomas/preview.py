@@ -37,6 +37,7 @@ from apps.participants.infrastructure.models import ParticipantOrganizationMembe
 
 __all__ = [
     "BINDINGS",
+    "MEMBER_FULL_NAME",
     "MISSING",
     "PARTICIPANT_DISPLAY_NAME",
     "list_preview_applications",
@@ -47,6 +48,7 @@ __all__ = [
 
 PARTICIPANT_DISPLAY_NAME = "participant.display_name"
 PARTICIPANT_AGE = "participant.age"
+MEMBER_FULL_NAME = "member.full_name"
 TEACHER_DISPLAY_NAME = "teacher.display_name"
 ORGANIZATION_NAME = "organization.name"
 NOMINATION_TITLE = "nomination.title"
@@ -65,6 +67,7 @@ DIPLOMA_ISSUE_DATE = "diploma.issue_date"
 BINDINGS: tuple[str, ...] = (
     PARTICIPANT_DISPLAY_NAME,
     PARTICIPANT_AGE,
+    MEMBER_FULL_NAME,
     TEACHER_DISPLAY_NAME,
     ORGANIZATION_NAME,
     NOMINATION_TITLE,
@@ -122,6 +125,18 @@ def _age_of(participant: dict[str, Any]) -> str:
     today = date.today()
     years = today.year - born.year - ((today.month, today.day) < (born.month, born.day))
     return str(years) if years >= 0 else MISSING
+
+
+def _first_member(participant: dict[str, Any]) -> str:
+    """The first named member of a collective, or ``MISSING`` if nobody is named."""
+    raw = participant.get("members")
+    if not isinstance(raw, list):
+        return MISSING
+    for row in raw:
+        name = _clean(row)
+        if name:
+            return name
+    return MISSING
 
 
 def _person_full_name(entry: dict[str, Any]) -> str:
@@ -240,6 +255,9 @@ def resolve_preview_bindings(application_id: str, *, document_type: str = "DIPLO
 
     values[PARTICIPANT_DISPLAY_NAME] = _clean(lead.get("display_name")) or MISSING
     values[PARTICIPANT_AGE] = _age_of(lead)
+    # The first person the applicant named in this collective — the editor is showing
+    # what one member's sheet will say, and every other one differs only here.
+    values[MEMBER_FULL_NAME] = _first_member(lead)
     values[TEACHER_DISPLAY_NAME] = _teacher_roster(submission, roles=policy.teacher_roles)
     values[ORGANIZATION_NAME] = _organization_name(lead)
 

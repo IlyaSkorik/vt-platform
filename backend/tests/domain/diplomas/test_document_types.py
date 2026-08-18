@@ -55,12 +55,41 @@ class TestPolicyTable:
 
         assert {t.value for t in DocumentType} == set(DocumentTypeChoices.values)
 
-    def test_the_layout_serializer_accepts_every_diploma_field(self) -> None:
+    def test_the_layout_serializer_accepts_every_placeable_field(self) -> None:
         from apps.diplomas.presentation.api.v1.diplomas.serializers import _FIELD_TYPES
 
-        # The diploma set is the full catalogue; drift here would silently make a
-        # field unplaceable or unvalidated.
-        assert policy_for(DocumentType.DIPLOMA).field_types == frozenset(_FIELD_TYPES)
+        # The serializer validates layouts of every kind, so its whitelist is the union
+        # of the kinds' own sets — the per-kind policy is what narrows a single layout.
+        # Drift here would silently make a field unplaceable or unvalidated.
+        placeable = frozenset().union(*(policy_for(kind).field_types for kind in DocumentType))
+        assert placeable == frozenset(_FIELD_TYPES)
+
+    def test_only_an_individual_diploma_may_name_a_member(self) -> None:
+        # The collective's own sheet has no one member to name, so a field bound to one
+        # would print nothing there.
+        assert policy_for(DocumentType.INDIVIDUAL_DIPLOMA).allows_field("member_name")
+        assert not policy_for(DocumentType.DIPLOMA).allows_field("member_name")
+        assert not policy_for(DocumentType.THANK_YOU).allows_field("member_name")
+
+    def test_an_individual_diploma_is_a_diploma_plus_one_field(self) -> None:
+        individual = policy_for(DocumentType.INDIVIDUAL_DIPLOMA)
+        diploma = policy_for(DocumentType.DIPLOMA)
+
+        # Same award, same register, same deliberate publication — it differs from the
+        # collective's diploma in exactly one field and in who it is addressed to.
+        assert individual.numbered
+        assert individual.verifiable
+        assert individual.awards_degree
+        assert individual.is_registry_document
+        assert not individual.publishes_on_generation
+        assert individual.field_types == diploma.field_types | {"member_name"}
+
+    def test_only_an_individual_diploma_is_issued_per_member(self) -> None:
+        assert policy_for(DocumentType.INDIVIDUAL_DIPLOMA).per_member
+        assert not policy_for(DocumentType.DIPLOMA).per_member
+        assert not policy_for(DocumentType.THANK_YOU).per_member
+        # Fanning out over performers is not fanning out over teachers.
+        assert not policy_for(DocumentType.INDIVIDUAL_DIPLOMA).per_teacher
 
 
 class TestThankYouFields:

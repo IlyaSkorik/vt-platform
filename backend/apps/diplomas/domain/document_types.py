@@ -18,10 +18,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-__all__ = ["DIPLOMA_FIELD_TYPES", "THANK_YOU_FIELD_TYPES", "DocumentPolicy", "DocumentType", "policy_for"]
+__all__ = [
+    "DIPLOMA_FIELD_TYPES",
+    "INDIVIDUAL_DIPLOMA_FIELD_TYPES",
+    "THANK_YOU_FIELD_TYPES",
+    "DocumentPolicy",
+    "DocumentType",
+    "policy_for",
+]
 
-#: Every element kind a template layout can carry. Mirrors the editor's catalogue
-#: and the layout serializer's whitelist.
+#: Every element kind a collective's own diploma can carry. Mirrors the editor's
+#: catalogue and the layout serializer's whitelist.
 DIPLOMA_FIELD_TYPES: frozenset[str] = frozenset(
     {
         "participant_name",
@@ -39,6 +46,16 @@ DIPLOMA_FIELD_TYPES: frozenset[str] = frozenset(
         "free_text",
     }
 )
+
+#: What an individual diploma may carry: everything a diploma carries, plus the one
+#: field that makes it individual.
+#:
+#: The two kinds are otherwise the same document — same award, same competition, same
+#: collective named on it — which is why this is the diploma's own set plus a single
+#: element rather than a list of its own. ``member_name`` is deliberately absent from
+#: :data:`DIPLOMA_FIELD_TYPES`: the collective's sheet has no one member to name, so a
+#: field bound to one would print nothing and mislead whoever placed it.
+INDIVIDUAL_DIPLOMA_FIELD_TYPES: frozenset[str] = DIPLOMA_FIELD_TYPES | {"member_name"}
 
 #: What a thank-you letter may carry, and nothing more.
 #:
@@ -68,6 +85,7 @@ class DocumentType(Enum):
     """
 
     DIPLOMA = "DIPLOMA"
+    INDIVIDUAL_DIPLOMA = "INDIVIDUAL_DIPLOMA"
     THANK_YOU = "THANK_YOU"
 
 
@@ -112,6 +130,13 @@ class DocumentPolicy:
     #: diploma belongs to the performance and lists every teacher on one sheet.
     per_teacher: bool
 
+    #: Whether one document is issued **per named member of a collective**, on top of
+    #: whatever the performance itself receives. An ensemble of twelve that named its
+    #: twelve people gets twelve of these; an entry that named nobody gets none, which
+    #: is how the applicant opts out. Independent of :attr:`per_teacher`: this fans out
+    #: over the performers, that one over the people who taught them.
+    per_member: bool = False
+
     def allows_field(self, field_type: str) -> bool:
         """Whether this kind of document may carry that element."""
         return field_type in self.field_types
@@ -140,6 +165,22 @@ _POLICIES: dict[DocumentType, DocumentPolicy] = {
         field_types=DIPLOMA_FIELD_TYPES,
         teacher_roles=True,
         per_teacher=False,
+    ),
+    # The individual diploma: the same award, addressed to one person inside the
+    # collective that won it. Numbered and verifiable like any diploma — it is the
+    # document that child actually holds, and a QR that failed to verify it would make
+    # it worthless — and published by the same publication that publishes the
+    # collective's, because it carries the same degree from the same protocol.
+    DocumentType.INDIVIDUAL_DIPLOMA: DocumentPolicy(
+        document_type=DocumentType.INDIVIDUAL_DIPLOMA,
+        numbered=True,
+        verifiable=True,
+        awards_degree=True,
+        publishes_on_generation=False,
+        field_types=INDIVIDUAL_DIPLOMA_FIELD_TYPES,
+        teacher_roles=True,
+        per_teacher=False,
+        per_member=True,
     ),
     # The thank-you letter: a courtesy, not an award. Nothing to rank, nothing to
     # verify, nothing to number — so it can reach the participant immediately.

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import uuid
 
+from apps.diplomas.domain.document_types import DocumentType
 from apps.diplomas.domain.entities import Diploma
 from apps.diplomas.infrastructure.mappers import DiplomaMapper
 from apps.diplomas.infrastructure.models import DiplomaModel
@@ -25,8 +26,13 @@ class DjangoDiplomaRepository:
     def new_id(self) -> uuid.UUID:
         return uuid7()
 
-    def exists_for_submission(self, submission_id: uuid.UUID) -> bool:
-        return DiplomaModel.objects.filter(submission_id=submission_id, deleted_at__isnull=True).exists()
+    def exists_for_submission(self, submission_id: uuid.UUID, document_type: DocumentType = DocumentType.DIPLOMA, recipient: str = "") -> bool:
+        return DiplomaModel.objects.filter(
+            submission_id=submission_id,
+            document_type=document_type.value,
+            recipient=recipient,
+            deleted_at__isnull=True,
+        ).exists()
 
     def add(self, diploma: Diploma) -> None:
         DiplomaMapper.to_model(diploma).save(force_insert=True)
@@ -41,8 +47,24 @@ class DjangoDiplomaRepository:
         model = DiplomaModel.objects.filter(id=diploma_id, deleted_at__isnull=True).first()
         return DiplomaMapper.to_domain(model) if model is not None else None
 
-    def get_by_submission(self, submission_id: uuid.UUID) -> Diploma | None:
-        model = DiplomaModel.objects.filter(submission_id=submission_id, deleted_at__isnull=True).first()
+    def get_by_submission(
+        self,
+        submission_id: uuid.UUID,
+        document_type: DocumentType = DocumentType.DIPLOMA,
+        recipient: str = "",
+    ) -> Diploma | None:
+        """The one live diploma of this kind, for this performance and recipient.
+
+        Scoped by kind and recipient rather than by submission alone: since individual
+        diplomas share this table, an unscoped read would hand back an ensemble
+        member's diploma when the caller asked for the collective's.
+        """
+        model = DiplomaModel.objects.filter(
+            submission_id=submission_id,
+            document_type=document_type.value,
+            recipient=recipient,
+            deleted_at__isnull=True,
+        ).first()
         return DiplomaMapper.to_domain(model) if model is not None else None
 
     def list_by_competition(self, competition_id: uuid.UUID) -> list[Diploma]:

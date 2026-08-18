@@ -53,13 +53,16 @@ class DjangoParticipantDocumentsReader:
             documents.append(
                 ParticipantDocumentView(
                     id=row.id,
-                    document_type=DocumentType.DIPLOMA,
+                    document_type=DocumentType(row.document_type or DocumentType.DIPLOMA.value),
                     number=row.number,
                     participant_name=snapshot.participant.display_name or None,
                     competition_title=snapshot.competition.title,
                     nomination=_nomination(snapshot),
                     degree=snapshot.award.degree,
-                    recipient="",
+                    # An individual diploma is one of many on the same entry, telling
+                    # them apart by the member each names — the same job the recipient
+                    # does for a thank-you letter.
+                    recipient=row.recipient or "",
                     file_url=row.official_pdf_path,
                     issued_at=row.issued_at or row.updated_at,
                 )

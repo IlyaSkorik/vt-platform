@@ -10,8 +10,11 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
+from apps.diplomas.domain.document_types import DocumentType, policy_for
+
 __all__ = [
     "DOCUMENT_TYPES",
+    "GENERATED_DOCUMENT_TYPES",
     "AssignmentResponseSerializer",
     "CreateAssignmentRequestSerializer",
     "CreateDiplomaRequestSerializer",
@@ -55,6 +58,9 @@ class PreviewBindingsSerializer(serializers.Serializer[dict[str, object]]):
 # "nomination_block" field whose chosen parts live in ``config``.
 _FIELD_TYPES = [
     "participant_name",
+    # Only an individual diploma may place this; the per-kind policy is what rejects
+    # it on any other layout (see ``composition.replace_template_layout``).
+    "member_name",
     "participant_age",
     "teacher",
     "organization",
@@ -164,9 +170,16 @@ class TemplateDocumentResponseSerializer(serializers.Serializer[dict[str, object
     uploadedAt = serializers.DateTimeField()
 
 
-#: The kinds of document a template can produce. Mirrors the domain
-#: ``DocumentType``; a test asserts the two stay in step.
-DOCUMENT_TYPES = ["DIPLOMA", "THANK_YOU"]
+#: The kinds of document a template can produce, **derived** from the domain
+#: ``DocumentType`` rather than restated — a new kind is placeable in the editor the
+#: moment it exists, which is the whole point of the policy table.
+DOCUMENT_TYPES = [kind.value for kind in DocumentType]
+
+#: The kinds this API generates directly: the unnumbered, unverifiable ones. A
+#: registry document (any diploma) draws a permanent number and is issued by
+#: publishing the results, so routing one here would bypass numbering entirely — the
+#: application service rejects it, and this keeps it out of the contract too.
+GENERATED_DOCUMENT_TYPES = [kind.value for kind in DocumentType if not policy_for(kind).is_registry_document]
 
 
 class CreateTemplateRequestSerializer(serializers.Serializer[dict[str, object]]):
@@ -231,8 +244,8 @@ class GenerateDocumentsRequestSerializer(serializers.Serializer[dict[str, object
 
     competitionId = serializers.UUIDField()
     categoryIds = serializers.ListField(child=serializers.UUIDField(), allow_empty=False)
-    # Only unnumbered, unverifiable kinds are accepted; DIPLOMA is rejected.
-    documentType = serializers.ChoiceField(choices=["THANK_YOU"])
+    # Only unnumbered, unverifiable kinds are accepted; any diploma is rejected.
+    documentType = serializers.ChoiceField(choices=GENERATED_DOCUMENT_TYPES)
     # Re-render even for performances that already have this document.
     force = serializers.BooleanField(required=False, default=False)
     #: Also archive the run's documents into one ZIP for offline printing, reported
@@ -419,6 +432,9 @@ class PrintPackageNominationSerializer(serializers.Serializer[dict[str, object]]
     nomination = serializers.CharField(allow_null=True)
     submissions = serializers.IntegerField()
     diploma = DocumentSlotSerializer()
+    #: One per person the applicants named inside their collectives — nought where
+    #: nobody was named, which is how an entry opts out.
+    individualDiploma = DocumentSlotSerializer()
     thankYou = DocumentSlotSerializer()
 
 

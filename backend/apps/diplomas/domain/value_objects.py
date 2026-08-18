@@ -29,6 +29,7 @@ __all__ = [
     "CompetitionSnapshot",
     "DiplomaSnapshot",
     "DiplomaStatus",
+    "MemberSnapshot",
     "NominationSnapshot",
     "OrganizationSnapshot",
     "ParticipantSnapshot",
@@ -106,6 +107,25 @@ class ParticipantSnapshot:
     @classmethod
     def from_dict(cls, data: JsonDict) -> ParticipantSnapshot:
         return cls(display_name=str(data.get("display_name") or ""), age=_age(data.get("age")))
+
+
+@dataclass(frozen=True, slots=True)
+class MemberSnapshot:
+    """One named person inside a collective, as printed on their own diploma.
+
+    Present only on an individual diploma. The collective's own sheet leaves it
+    ``None``, so a ``member.full_name`` field placed there resolves to nothing and is
+    not drawn — the same "no value, no field" rule every other binding follows.
+    """
+
+    full_name: str
+
+    def to_dict(self) -> JsonDict:
+        return {"full_name": self.full_name}
+
+    @classmethod
+    def from_dict(cls, data: JsonDict) -> MemberSnapshot:
+        return cls(full_name=str(data.get("full_name") or ""))
 
 
 @dataclass(frozen=True, slots=True)
@@ -222,6 +242,9 @@ class DiplomaSnapshot:
     """
 
     participant: ParticipantSnapshot
+    #: The one person this document is for, when it is an individual diploma inside a
+    #: collective. ``None`` on every document that belongs to the performance itself.
+    member: MemberSnapshot | None = None
     teachers: tuple[TeacherSnapshot, ...] = ()
     organization: OrganizationSnapshot = field(default_factory=OrganizationSnapshot)
     nomination: NominationSnapshot = field(default_factory=NominationSnapshot)
@@ -232,6 +255,7 @@ class DiplomaSnapshot:
     def to_dict(self) -> JsonDict:
         return {
             "participant": self.participant.to_dict(),
+            "member": self.member.to_dict() if self.member is not None else None,
             "teachers": [teacher.to_dict() for teacher in self.teachers],
             "organization": self.organization.to_dict(),
             "nomination": self.nomination.to_dict(),
@@ -242,8 +266,13 @@ class DiplomaSnapshot:
 
     @classmethod
     def from_dict(cls, data: JsonDict) -> DiplomaSnapshot:
+        member = data.get("member")
         return cls(
             participant=ParticipantSnapshot.from_dict(_mapping(data.get("participant"))),
+            # A snapshot written before individual diplomas existed has no member key,
+            # and one whose member sub-object is missing or nameless is not individual —
+            # both read as "belongs to the performance", which is what they were.
+            member=MemberSnapshot.from_dict(_mapping(member)) if isinstance(member, dict) and _clean(member.get("full_name")) else None,
             teachers=tuple(TeacherSnapshot.from_dict(row) for row in _rows(data.get("teachers"))),
             organization=OrganizationSnapshot.from_dict(_mapping(data.get("organization"))),
             nomination=NominationSnapshot.from_dict(_mapping(data.get("nomination"))),

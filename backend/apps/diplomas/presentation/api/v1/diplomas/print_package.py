@@ -106,6 +106,21 @@ def _named_teachers(teachers: Any) -> int:
     return count
 
 
+def _named_members(participants: Any) -> int:
+    """How many individual diplomas an entry's collective roster is worth.
+
+    The **lead** participant's roster only, mirroring the snapshot source: an
+    individual diploma names its member under the collective the diploma names, and
+    that is the lead one.
+    """
+    rows = [row for row in participants or [] if isinstance(row, dict)]
+    lead = next((row for row in rows if str(row.get("display_name") or "").strip()), rows[0] if rows else {})
+    roster = lead.get("members")
+    if not isinstance(roster, list):
+        return 0
+    return sum(1 for name in roster if str(name or "").strip())
+
+
 def print_package_summary(competition_id: uuid.UUID) -> dict[str, Any]:
     """Per-nomination stats for **every** document type, one slot each.
 
@@ -115,9 +130,9 @@ def print_package_summary(competition_id: uuid.UUID) -> dict[str, Any]:
     page offer nominations for a kind they had no template for.
 
     Each slot's forecast follows its own policy. A diploma is issued per
-    performance, a thank-you letter per named teacher, so the two count different
-    denominators over the same entries — and a per-teacher kind also reports the
-    entries it cannot address at all.
+    performance, a thank-you letter per named teacher, an individual diploma per named
+    member of a collective — three different denominators over the same entries. A
+    per-teacher kind also reports the entries it cannot address at all.
     """
     assignments = {document_type: _assignments_by_category(competition_id, document_type) for document_type in DocumentType}
     # A slot is only "ready" to generate when its template also has a PDF.
@@ -139,13 +154,14 @@ def print_package_summary(competition_id: uuid.UUID) -> dict[str, Any]:
     submissions: Counter[str] = Counter()
     recipients: Counter[str] = Counter()
     unaddressable: Counter[str] = Counter()
+    members: Counter[str] = Counter()
     # The same narrowing the generation pipeline applies, so «Выступлений» is the
     # number a run will actually walk rather than every entry ever filed.
     for row in SubmissionModel.objects.filter(
         competition_id=competition_id,
         deleted_at__isnull=True,
         status__in=COMPETING_SUBMISSION_STATUSES,
-    ).values("id", "performance", "teachers"):
+    ).values("id", "performance", "teachers", "participants"):
         category_id = str((row["performance"] or {}).get("nomination_id") or "")
         if not category_id:
             continue
@@ -155,12 +171,22 @@ def print_package_summary(competition_id: uuid.UUID) -> dict[str, Any]:
         recipients[category_id] += named
         if not named:
             unaddressable[category_id] += 1
+        members[category_id] += _named_members(row["participants"])
 
     existing: dict[DocumentType, Counter[str]] = {kind: Counter() for kind in DocumentType}
-    for submission_id in DiplomaModel.objects.filter(competition_id=competition_id, deleted_at__isnull=True).values_list("submission_id", flat=True):
+    for raw_type, submission_id in DiplomaModel.objects.filter(competition_id=competition_id, deleted_at__isnull=True).values_list(
+        "document_type", "submission_id"
+    ):
         issued_in = category_of.get(str(submission_id))
-        if issued_in is not None:
-            existing[DocumentType.DIPLOMA][issued_in] += 1
+        if issued_in is None:
+            continue
+        try:
+            # Scoped by kind: the register now holds individual diplomas too, and
+            # counting them as the collective's would report a nomination as done
+            # before a single collective sheet existed.
+            existing[DocumentType(raw_type)][issued_in] += 1
+        except ValueError:  # pragma: no cover - a type the enum no longer knows
+            continue
     for raw_type, submission_id in IssuedDocumentModel.objects.filter(competition_id=competition_id, deleted_at__isnull=True).values_list(
         "document_type", "submission_id"
     ):
@@ -175,8 +201,16 @@ def print_package_summary(competition_id: uuid.UUID) -> dict[str, Any]:
     def slot(document_type: DocumentType, category_id: str) -> dict[str, Any]:
         assignment = assignments[document_type].get(category_id)
         ready = assignment is not None and assignment["templateId"] in templates_with_pdf
-        per_teacher = policy_for(document_type).per_teacher
-        total = recipients[category_id] if per_teacher else submissions[category_id]
+        policy = policy_for(document_type)
+        per_teacher = policy.per_teacher
+        if per_teacher:
+            total = recipients[category_id]
+        elif policy.per_member:
+            # One per person the applicants named, not one per entry: an ensemble that
+            # named nobody contributes nothing to this slot.
+            total = members[category_id]
+        else:
+            total = submissions[category_id]
         done = existing[document_type][category_id]
         return {
             "templateId": assignment["templateId"] if assignment else None,
@@ -200,6 +234,7 @@ def print_package_summary(competition_id: uuid.UUID) -> dict[str, Any]:
             "nomination": category_names.get(category_id),
             "submissions": submissions[category_id],
             "diploma": slot(DocumentType.DIPLOMA, category_id),
+            "individualDiploma": slot(DocumentType.INDIVIDUAL_DIPLOMA, category_id),
             "thankYou": slot(DocumentType.THANK_YOU, category_id),
         }
         for category_id in listed

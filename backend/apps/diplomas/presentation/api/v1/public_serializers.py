@@ -36,6 +36,7 @@ class DiplomaVerificationSerializer(serializers.Serializer[object]):
 
     number = serializers.CharField()
     participantName = serializers.CharField(source="participant_name", allow_null=True)
+    memberName = serializers.CharField(source="member_name", allow_null=True)
     competitionTitle = serializers.CharField(source="competition_title", allow_null=True)
     competitionDate = serializers.CharField(source="competition_date", allow_null=True)
     nomination = serializers.CharField(allow_null=True)

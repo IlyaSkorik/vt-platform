@@ -15,6 +15,7 @@ import uuid
 from dataclasses import dataclass, replace
 from datetime import datetime
 
+from apps.diplomas.domain.document_types import DocumentType
 from apps.diplomas.domain.value_objects import AwardSnapshot, DiplomaSnapshot, DiplomaStatus
 
 __all__ = ["Diploma"]
@@ -34,6 +35,15 @@ class Diploma:
     snapshot: DiplomaSnapshot
     created_at: datetime
     updated_at: datetime
+    #: Which numbered, verifiable kind this is: the performance's own diploma, or the
+    #: individual diploma of one named member of its collective. Both live in this
+    #: aggregate because both draw a registry number and a verification token; nothing
+    #: else about them differs, which is why this is a field rather than a subclass.
+    document_type: DocumentType = DocumentType.DIPLOMA
+    #: The person this diploma is for, for a kind issued per member — empty for the
+    #: performance's own diploma. Part of the diploma's identity: twelve members of one
+    #: ensemble hold twelve distinct diplomas of one submission.
+    recipient: str = ""
     print_pdf_path: str | None = None
     official_pdf_path: str | None = None
     issued_at: datetime | None = None
@@ -51,6 +61,8 @@ class Diploma:
         template_id: uuid.UUID,
         snapshot: DiplomaSnapshot,
         now: datetime,
+        document_type: DocumentType = DocumentType.DIPLOMA,
+        recipient: str = "",
     ) -> Diploma:
         """Create a fresh diploma in ``DRAFT``.
 
@@ -68,6 +80,8 @@ class Diploma:
             snapshot=snapshot,
             created_at=now,
             updated_at=now,
+            document_type=document_type,
+            recipient=recipient,
             print_pdf_path=None,
             official_pdf_path=None,
             issued_at=None,
@@ -92,6 +106,8 @@ class Diploma:
         official_pdf_path: str | None,
         issued_at: datetime | None,
         version: int,
+        document_type: DocumentType = DocumentType.DIPLOMA,
+        recipient: str = "",
     ) -> Diploma:
         """Reconstruct from persistence (no validation, no state change)."""
         return cls(
@@ -105,6 +121,8 @@ class Diploma:
             snapshot=snapshot,
             created_at=created_at,
             updated_at=updated_at,
+            document_type=document_type,
+            recipient=recipient,
             print_pdf_path=print_pdf_path,
             official_pdf_path=official_pdf_path,
             issued_at=issued_at,

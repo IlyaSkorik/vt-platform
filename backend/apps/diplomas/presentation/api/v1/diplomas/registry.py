@@ -41,6 +41,9 @@ def _diploma_json(diploma: Diploma) -> dict[str, Any]:
         "submissionId": str(diploma.submission_id),
         "templateId": str(diploma.template_id),
         "status": diploma.status.value,
+        "documentType": diploma.document_type.value,
+        # The member an individual diploma names; empty for the collective's own.
+        "recipient": diploma.recipient,
         "snapshot": diploma.snapshot.to_dict(),
         "printPdfPath": diploma.print_pdf_path,
         "officialPdfPath": diploma.official_pdf_path,

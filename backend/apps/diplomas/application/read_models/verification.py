@@ -72,6 +72,10 @@ class DiplomaVerificationView:
 
     number: str
     participant_name: str | None
+    #: The person an individual diploma names, inside the collective above. ``None`` on
+    #: a diploma that belongs to the performance itself — which is what tells the page
+    #: whether it is verifying an ensemble's diploma or one child's.
+    member_name: str | None
     competition_title: str | None
     competition_date: str | None
     nomination: str | None
@@ -129,6 +133,7 @@ def project_verification(
     return DiplomaVerificationView(
         number=number,
         participant_name=_clean(snapshot.participant.display_name),
+        member_name=_clean(snapshot.member.full_name) if snapshot.member is not None else None,
         competition_title=_clean(snapshot.competition.title),
         competition_date=_clean(snapshot.competition.date),
         nomination=_nomination(snapshot),
