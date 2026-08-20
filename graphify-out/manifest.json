@@ -3610,8 +3610,8 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "backend/tests/presentation/competitions/test_competitions_api.py": {
-    "mtime": 1786034277.844575,
-    "ast_hash": "964471fb2a6a3742e2cd6f867a934997",
+    "mtime": 1787237444.9933174,
+    "ast_hash": "76cbb712885c1de576c0482f7a58df6f",
     "semantic_hash": ""
   },
   "backend/tests/presentation/competitions/test_openapi.py": {
@@ -5910,8 +5910,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/competition-settings/ui/settings-section.tsx": {
-    "mtime": 1786039061.8728962,
-    "ast_hash": "7f6ded2c07e19396143599dd02b1c43d",
+    "mtime": 1787238645.0080628,
+    "ast_hash": "d963ad0ac7596b81e73b6c2f5bdda42a",
     "semantic_hash": ""
   },
   "frontend/src/widgets/competition-settings/ui/settings-skeleton.tsx": {
@@ -9305,8 +9305,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/competition-settings/ui/performance-discount-card.tsx": {
-    "mtime": 1785860601.0664618,
-    "ast_hash": "9db7877ce6ed04e694cda6d53c1c17c0",
+    "mtime": 1787238740.476929,
+    "ast_hash": "6109d5900491c0f48e4bd97706c37ba2",
     "semantic_hash": ""
   },
   "backend/apps/applications/infrastructure/acl/organizer.py": {
@@ -9932,6 +9932,11 @@
   "frontend/src/shared/api/download.ts": {
     "mtime": 1787079733.6214714,
     "ast_hash": "77ac642df824fbcc5e4d82e9da69c94b",
+    "semantic_hash": ""
+  },
+  "frontend/src/widgets/competition-settings/ui/settings-section.test.tsx": {
+    "mtime": 1787238584.0550117,
+    "ast_hash": "90454ad516e26665bede4639dca2107f",
     "semantic_hash": ""
   }
 }
