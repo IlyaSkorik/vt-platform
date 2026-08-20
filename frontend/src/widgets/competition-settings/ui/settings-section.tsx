@@ -398,16 +398,43 @@ export function SettingsSection({
   );
 
   const [settings, setSettings] = useState<_Settings>(effectiveSettings);
+  /**
+   * The rules as edited, readable outside a render.
+   *
+   * An edit is applied against this rather than inside a ``setSettings`` updater: the
+   * updater is called twice under StrictMode, and a save that now goes out at once
+   * would go out twice with it.
+   */
+  const settingsRef = useRef(settings);
 
   useEffect(() => {
+    settingsRef.current = effectiveSettings;
     setSettings(effectiveSettings);
   }, [effectiveSettings]);
 
   const autosaveTimer = useRef<number | null>(null);
   const saveGeneration = useRef(0);
+  /**
+   * The change the server has not been told about yet.
+   *
+   * Kept so a save still waiting out its debounce can be *flushed* when the section
+   * unmounts instead of dropped with the timer. Dropping it is how a rule an organizer
+   * set never reaches the festival: flip «Педагог обязателен» off, click straight to
+   * another section, and the switch reads off on the screen while entries without a
+   * teacher are still refused at submit.
+   */
+  const pendingSave = useRef<_Settings | null>(null);
+  /**
+   * Saves run one after another: the endpoint replaces the whole bag under an
+   * optimistic version check, so two in flight at once make the second a conflict.
+   */
+  const saveQueue = useRef<Promise<void>>(Promise.resolve());
 
   const persist = useCallback(
     async (next: _Settings) => {
+      if (pendingSave.current === next) {
+        pendingSave.current = null;
+      }
       saveGeneration.current += 1;
       const gen = saveGeneration.current;
       onAutosaveStateChange("saving");
@@ -433,52 +460,87 @@ export function SettingsSection({
     [competition.id, updateSettings, onAutosaveStateChange],
   );
 
-  const scheduleSave = useCallback(
-    (next: _Settings) => {
+  const persistRef = useRef(persist);
+  useEffect(() => {
+    persistRef.current = persist;
+  }, [persist]);
+
+  const enqueueSave = useCallback((next: _Settings) => {
+    saveQueue.current = saveQueue.current.then(() => persistRef.current(next));
+  }, []);
+
+  /**
+   * Send ``next``, either now or once the typing stops.
+   *
+   * A switch is one deliberate act with nothing to coalesce, so it is saved at once —
+   * there is no window in which the organizer can walk away from an unsent change. The
+   * debounce is for the fields that arrive a keystroke at a time (the upload ceilings).
+   */
+  const commit = useCallback(
+    (next: _Settings, { immediate }: { immediate: boolean }) => {
       if (autosaveTimer.current != null) {
         window.clearTimeout(autosaveTimer.current);
+        autosaveTimer.current = null;
+      }
+      pendingSave.current = next;
+      if (immediate) {
+        enqueueSave(next);
+        return;
       }
       onAutosaveStateChange("dirty");
       autosaveTimer.current = window.setTimeout(() => {
-        void persist(next);
+        autosaveTimer.current = null;
+        enqueueSave(next);
       }, AUTOSAVE_DELAY_MS);
     },
-    [persist, onAutosaveStateChange],
+    [enqueueSave, onAutosaveStateChange],
+  );
+
+  const apply = useCallback(
+    (next: _Settings, options: { immediate: boolean }) => {
+      settingsRef.current = next;
+      setSettings(next);
+      commit(next, options);
+    },
+    [commit],
   );
 
   const update = useCallback(
     (patch: Partial<_Settings>) => {
       if (isReadOnly) return;
-      setSettings((prev) => {
-        const next = { ...prev, ...patch };
-        scheduleSave(next);
-        return next;
-      });
+      apply({ ...settingsRef.current, ...patch }, { immediate: true });
     },
-    [isReadOnly, scheduleSave],
+    [isReadOnly, apply],
   );
 
   const updateFormatRequirements = useCallback(
     (updated: _FormatRequirements) => {
       if (isReadOnly) return;
-      setSettings((prev) => {
-        const next: _Settings = {
+      const prev = settingsRef.current;
+      apply(
+        {
           ...prev,
           formatRequirements: prev.formatRequirements.map((item) =>
             item.participationFormatId === updated.participationFormatId ? updated : item,
           ),
-        };
-        scheduleSave(next);
-        return next;
-      });
+        },
+        // Debounced: this card carries the upload ceilings, typed a digit at a time.
+        { immediate: false },
+      );
     },
-    [isReadOnly, scheduleSave],
+    [isReadOnly, apply],
   );
 
   useEffect(
     () => () => {
       if (autosaveTimer.current != null) {
         window.clearTimeout(autosaveTimer.current);
+        autosaveTimer.current = null;
+      }
+      const unsaved = pendingSave.current;
+      if (unsaved != null) {
+        pendingSave.current = null;
+        saveQueue.current = saveQueue.current.then(() => persistRef.current(unsaved));
       }
     },
     [],
