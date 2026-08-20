@@ -11,7 +11,6 @@ import {
 import { ROUTES } from "@/shared/config";
 import {
   Avatar,
-  Badge,
   Button,
   Dialog,
   DialogContent,
@@ -63,7 +62,7 @@ export function ParticipantPicker({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>Выберите участника</DialogTitle>
           <DialogDescription>
@@ -148,8 +147,11 @@ function ParticipantRow({
   );
   const memberCount = Number(count) || 0;
   const canSelectCollective = memberCount > 0;
+  // Stacks on a phone. The collective controls (a headcount field and «Выбрать») cannot
+  // shrink, and on one row inside the dialog they squeezed the name down to nothing — the
+  // picker showed an avatar and a cut-off badge, and nothing to pick by.
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
+    <div className="flex flex-col gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
       <div className="flex min-w-0 items-center gap-3">
         <Avatar
           {...(participant.avatarUrl ? { src: participant.avatarUrl } : {})}
@@ -164,10 +166,11 @@ function ParticipantRow({
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center justify-end gap-2">
         {collective ? (
           <>
-            <Badge variant="secondary">Коллектив</Badge>
+            {/* No «Коллектив» badge here: the line above already says it, and on a phone
+                the repetition was 85 px taken from the name. */}
             <Input
               type="number"
               min={1}

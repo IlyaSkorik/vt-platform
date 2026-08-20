@@ -65,7 +65,7 @@ export function TeacherPicker({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>Выберите педагога</DialogTitle>
           <DialogDescription>
