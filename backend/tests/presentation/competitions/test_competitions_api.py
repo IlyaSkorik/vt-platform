@@ -277,3 +277,56 @@ def test_settings_round_trip_carries_the_media_requirements(staff_client: APICli
     assert requirement["media"]["maxTotalSizeMb"] == 150
     assert requirement["media"]["allowedFormats"] == ["mp4", "mov", "jpg"]
     assert requirement["media"]["requireUpload"] is False
+
+
+def _submission_policy(competition_id: str, participant_group_id: str) -> Any:
+    """The policy an applicant's submission is held to, read through the Applications ACL.
+
+    The ACL is the last hop of the settings switch and the only one the applicant
+    actually feels: whatever it projects here is what ``Submission.submit`` enforces.
+    """
+    from apps.applications.domain.value_objects import (
+        AgeCategoryId,
+        DisciplineId,
+        NominationId,
+        ParticipantGroupId,
+        ParticipationFormatId,
+    )
+    from apps.applications.domain.value_objects import CompetitionId as AppCompetitionId
+    from apps.applications.infrastructure.acl import DjangoCompetitionCatalog
+
+    return DjangoCompetitionCatalog().participation_policy(
+        competition_id=AppCompetitionId.from_uuid(uuid.UUID(competition_id)),
+        nomination_id=NominationId.from_uuid(_uuid7()),
+        discipline_id=DisciplineId.from_uuid(_uuid7()),
+        age_category_id=AgeCategoryId.from_uuid(_uuid7()),
+        participant_group_id=ParticipantGroupId.from_uuid(uuid.UUID(participant_group_id)),
+        participation_format_id=ParticipationFormatId.from_uuid(_uuid7()),
+    )
+
+
+def test_turning_the_teacher_requirement_off_reaches_the_submission_policy(staff_client: APIClient) -> None:
+    """«Педагог обязателен», off, is what the applicant's submit is actually held to.
+
+    Four layers have to agree for that switch to mean anything — the write serializer,
+    the stored blob, the detail projection, and the Applications ACL that projects it
+    onto the submission policy — and the failure mode is silent: the organizer turns the
+    requirement off, the screen shows it off, and entries without a teacher are still
+    refused at submit.
+    """
+    competition_id = _create_competition(staff_client).data["data"]["id"]
+    detail = f"/api/v1/competitions/{competition_id}"
+    group = staff_client.post(f"{detail}/participant-groups", {"name": "Solo", "minCount": 1, "maxCount": 1}, format="json")
+    assert group.status_code == 201, group.data
+    group_id = group.data["data"]["participantGroups"][0]["id"]
+
+    stored = staff_client.get(detail).data["data"]["settings"]
+    # The platform's default: nearly every festival credits a teacher, so it starts on.
+    assert stored["requireTeacher"] is True
+    assert _submission_policy(competition_id, group_id).requires_teacher is True
+
+    saved = staff_client.put(f"{detail}/settings", {**stored, "requireTeacher": False}, format="json")
+    assert saved.status_code == 200, saved.data.get("errors") or saved.data
+    assert saved.data["data"]["settings"]["requireTeacher"] is False
+    assert staff_client.get(detail).data["data"]["settings"]["requireTeacher"] is False
+    assert _submission_policy(competition_id, group_id).requires_teacher is False
