@@ -1,16 +1,16 @@
 # Graph Report - vt-platform  (2026-08-20)
 
 ## Corpus Check
-- 1942 files · ~1,096,766 words
+- 1943 files · ~1,196,369 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 20372 nodes · 65694 edges · 960 communities (546 shown, 414 thin omitted)
+- 20382 nodes · 65704 edges · 943 communities (548 shown, 395 thin omitted)
 - Extraction: 73% EXTRACTED · 27% INFERRED · 0% AMBIGUOUS · INFERRED: 17658 edges (avg confidence: 0.5)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `613878fe`
+- Built from commit: `e73f5e39`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -21,41 +21,41 @@
 - User
 - competitions/domain/value_objects.py
 - LandingConfiguration
-- DisplayAlias
+- GuardianshipPolicy
 - Competition
-- ConsentVersion
+- PasswordPolicy
 - Submission
-- EmailVerificationPolicy
+- ConsentPolicy
 - Clock
 - Protocol
 - results/presentation/api/v1/public_views.py
 - _program
-- Participant
+- DisplayAlias
 - StaffMembership
-- DjangoProgramRepository
+- DiplomaSnapshot
 - FontSource
 - application/read_models/public_catalog.py
 - Env
 - .from_hash
 - Политика в отношении обработки персональных данных
-- competitions/presentation/api/v1/serializers.py
+- identity/application/exceptions.py
 - Env
 - FakeOrganizationRepository
 - account-settings/index.ts
 - notifications/presentation/api/v1/views.py
-- application_problem
+- staff/views.py
 - festival-catalog/lib/index.ts
-- participants/infrastructure/models/__init__.py
+- loadtest.py
 - organization/infrastructure/models/__init__.py
-- datetime
+- Participant
 - DjangoParticipantRepository
-- Consent
+- test_upload_handlers.py
 - _org
 - participants/test_handlers.py
 - Program
 - staff-participants/index.ts
 - test_participant.py
-- _solo_ready
+- competitions/infrastructure/models/__init__.py
 - performance-form.tsx
 - test_revision_notices.py
 - v1/diplomas/composition.py
@@ -63,10 +63,10 @@
 - Email
 - participants_views.py
 - .to_dict
-- translate_domain_errors
-- _draft
+- CompetitionClosedError
+- TestContentEditing
 - UserConsentModel
-- CompetitionDetailView
+- CompetitionTemplate
 - translate_domain_errors
 - festival-catalog.tsx
 - test_participant_avatar_api.py
@@ -75,20 +75,20 @@
 - additional-services.ts
 - button.stories.tsx
 - app-shell.tsx
-- DocumentType
+- diplomas/views.py
 - features/festival-landing/index.ts
 - program-builder/api.ts
-- FakeEmailGateway
+- content_views.py
 - documents.ts
 - APIClient
 - test_qr_block_render.py
-- test_print_package.py
+- print_package.py
 - trackers.ts
 - FakeUserRepository
 - ProgramService
-- OwnerId
+- TeacherRole
 - pricing.ts
-- participants/views.py
+- _envelope
 - ui/index.ts
 - compilerOptions
 - FontFace
@@ -101,17 +101,17 @@
 - register-form.stories.tsx
 - competitions-api.ts
 - teacher_handlers.py
-- build
+- loadtest_print_package.py
 - platform/presentation/api/v1/views.py
 - teachers/views.py
 - application/api/hooks.ts
 - competitions/presentation/api/v1/public_serializers.py
 - pdf-viewer.tsx
 - drawer.tsx
-- SignedVerificationTokenService
+- auth/composition.py
 - IsOrganizationStaff
-- Env
-- me_views.py
+- SubmissionModel
+- application/read_models/verification.py
 - compilerOptions
 - TestDjangoPublicCatalogReaderDetail
 - status.py
@@ -123,12 +123,12 @@
 - APIClient
 - diplomas-api.ts
 - .get
-- print_package.py
+- Diploma
 - teachers/test_handlers.py
 - test_competitions_api.py
 - ARCH-001 · VT Platform Architecture
-- participants/test_dto.py
-- DiplomaSnapshot
+- ParticipantDto
+- DocumentType
 - contacts.ts
 - notification-center.tsx
 - render_transactional_email_html
@@ -139,7 +139,7 @@
 - mock-data.ts
 - binding.ts
 - registration-wizard/api/hooks.ts
-- account/views.py
+- auth/views.py
 - APIClient
 - Identity & Access Context
 - participant/index.ts
@@ -147,7 +147,7 @@
 - badge.stories.tsx
 - pricing-section.tsx
 - landing-sections.tsx
-- identity/test_interfaces.py
+- UserRepository
 - test_applications_api.py
 - test_mail_limits.py
 - landing.ts
@@ -158,9 +158,9 @@
 - upload-controls.tsx
 - diplomas/index.ts
 - SubmissionMapper
-- build_schedule
+- optimistic_upsert
 - competitions/domain/entities.py
-- landing_config_json.py
+- landing_config_from_json
 - layouts/index.ts
 - organization/presentation/scope.py
 - data-table.stories.tsx
@@ -179,8 +179,8 @@
 - festival-landing.tsx
 - diplomas-workspace/index.ts
 - test_password_reset_handlers.py
-- django_teacher_repository.py
-- DjangoPerformanceCatalog
+- TeacherModel
+- results/infrastructure/acl/performance_catalog.py
 - test_user_mapper.py
 - DATA-003 · Domain Event Catalog
 - components.json
@@ -188,7 +188,7 @@
 - login-form.tsx
 - model/status.ts
 - tabs.tsx
-- Uuid7Generator
+- competition_problem
 - ProtocolService
 - fonts.ts
 - constructor-layout.tsx
@@ -199,7 +199,7 @@
 - providers/index.tsx
 - router.tsx
 - applications/index.tsx
-- test_submission_content_api.py
+- build_token_service
 - regulations-section.tsx
 - config/index.ts
 - stat-card.stories.tsx
@@ -209,7 +209,7 @@
 - settings.ts
 - src/pages/participants/index.tsx
 - competitions-list/index.ts
-- .register
+- FontFaceRepository
 - OPS-001 — Deployment runbook (single server)
 - test_teachers_api.py
 - DjangoProtocolRepository
@@ -228,13 +228,13 @@
 - textarea.stories.tsx
 - toast.stories.tsx
 - organization/index.ts
-- RegulationVersion
-- IssuedDocument
+- ParticipantCountRange
+- policy_for
 - APIClient
 - test_thank_you_generation.py
 - seo/index.ts
 - teachers/presentation/api/v1/problems.py
-- Any
+- results/composition.py
 - DATA-001 · Business Data Model
 - staff-layout.tsx
 - PlatformAdministrator
@@ -245,7 +245,7 @@
 - HeadFacts
 - Festival Catalog Filter Panel
 - participant-layout.tsx
-- config/urls.py
+- teachers/composition.py
 - staff-invitations.ts
 - divider.stories.tsx
 - empty-state.stories.tsx
@@ -255,11 +255,11 @@
 - settings-section.tsx
 - welcome-header.stories.tsx
 - definitions.ts
-- test_organizer_participant_registry.py
+- test_generation_archive_api.py
 - _result
-- test_competition_repository.py
+- DjangoCompetitionRepository
 - use-public-festival.ts
-- uuid7
+- ApplicationModel
 - auth/api/index.ts
 - contacts-section.tsx
 - festival-catalog/lib/format.ts
@@ -268,7 +268,7 @@
 - diplomas/infrastructure/models/__init__.py
 - festival-grid.tsx
 - FontVariant
-- DjangoPerformanceCatalog
+- programs/infrastructure/acl/performance_catalog.py
 - shared/lib/index.ts
 - competitions/composition.py
 - includes
@@ -280,8 +280,8 @@
 - general-section.tsx
 - participation-formats-section.tsx
 - TestLocale
-- DiplomaError
-- .test_priority_and_bulk_are_queued_at_different_priorities
+- diplomas/presentation/api/v1/problems.py
+- test_participant_mapper.py
 - AI Documentation
 - Clean Architecture layering
 - Diagrams
@@ -289,7 +289,7 @@
 - biome.json
 - Festival Contacts editing screen
 - staff-overview/api/hooks.ts
-- ._to_columns
+- PersistenceError
 - festival-filters-panel.tsx
 - cta.ts
 - diploma-verification.tsx
@@ -304,7 +304,7 @@
 - allow
 - ErrorBoundary
 - festivals/index.ts
-- request_id
+- participants/presentation/api/v1/problems.py
 - participant-groups.ts
 - competitions/apps.py
 - testing/index.test.tsx
@@ -320,7 +320,7 @@
 - festival-landing.screenshots.spec.ts
 - VT Platform Frontend
 - landing-footer.tsx
-- auth/views.py
+- FakeUserRepository
 - .price_quote
 - card.tsx
 - participants/fakes.py
@@ -358,10 +358,10 @@
 - Пользовательское соглашение
 - 0004_age_category_nomination_scope.py
 - 0009_additional_service_formats_billing.py
-- test_organization_isolation_api.py
+- v1/read_models.py
 - 0004_participant_consent_type.py
 - .is_open
-- DjangoPublicCatalogReader
+- OrganizerCardView
 - performance-card.tsx
 - 0005_registry_consent_reference.py
 - 0002_consent_reference.py
@@ -369,7 +369,7 @@
 - style
 - workspace-switcher.tsx
 - receipt-card.tsx
-- test_sweep_unpaid.py
+- UUID
 - cookies-policy.tsx
 - login/index.tsx
 - preview.py
@@ -435,8 +435,8 @@
 - applications/presentation/api/__init__.py
 - test_notifications_api.py
 - organizer/__init__.py
-- Uuid7Generator
-- Request
+- SystemClock
+- revisions.py
 - applications/presentation/__init__.py
 - applications/presentation/urls.py
 - audit/application/commands/__init__.py
@@ -476,9 +476,9 @@
 - nomination-registration.tsx
 - programs/infrastructure/models/__init__.py
 - DjangoCompetitionUploadPolicy
-- DjangoConsentDirectory
+- test_registration_api.py
 - programs/presentation/api/v1/public_views.py
-- participants/test_value_objects.py
+- parametrize
 - features/my-documents/index.ts
 - generation-section.test.tsx
 - Legal Documentation
@@ -495,20 +495,20 @@
 - apps/competitions/__init__.py
 - competitions/presentation/api/__init__.py
 - competitions/presentation/api/v1/__init__.py
-- FontFileRejectedError
+- apps/diplomas/composition.py
 - orders/serializers.py
 - APIClient
 - test_seo_endpoints.py
 - platform/composition.py
-- TestMoney
-- UserEmailVerificationModel
+- .patch
+- BasePersistenceModel
 - 0006_templatefieldmodel_value.py
 - .to_dict
 - competitions/presentation/__init__.py
 - composition/__init__.py
 - composition/presentation/api/__init__.py
 - composition/presentation/api/v1/__init__.py
-- UserCardView
+- applications/presentation/api/v1/problems.py
 - composition/presentation/__init__.py
 - composition/presentation/urls.py
 - finance/application/commands/__init__.py
@@ -541,7 +541,7 @@
 - identity/application/dto/commands.py
 - test_organizer_capabilities.py
 - identity/application/dto/queries.py
-- TestBrokenDependency
+- TestCollectiveRoster
 - FakeEventPublisher
 - identity/application/__init__.py
 - identity/application/queries/__init__.py
@@ -550,13 +550,13 @@
 - identity/domain/services.py
 - content_serializers.py
 - identity/infrastructure/__init__.py
-- InvitationExpiryPolicy
+- .generate
 - avatars.py
 - identity/infrastructure/migrations/__init__.py
 - IssuedInvitationToken
-- TestServingTheShell
+- DjangoCompetitionOrganizerDirectory
 - identity/presentation/api/__init__.py
-- .of
+- Organization
 - Business Documentation
 - identity/presentation/api/v1/__init__.py
 - identity/presentation/api/v1/permissions/__init__.py
@@ -637,7 +637,7 @@
 - participant-picker.tsx
 - notifications/infrastructure/mappers/__init__.py
 - notifications/infrastructure/migrations/__init__.py
-- .publish
+- .parse
 - notifications/infrastructure/repositories/__init__.py
 - apps/notifications/__init__.py
 - notifications/presentation/api/__init__.py
@@ -650,7 +650,7 @@
 - apps/organization/__init__.py
 - _competition
 - organization/presentation/__init__.py
-- CompetitionAlreadyPublishedError
+- TestPublicStatusProjection
 - participants/application/dto/commands.py
 - platform/application/interfaces.py
 - participants/application/dto/queries.py
@@ -662,7 +662,7 @@
 - participants/domain/services.py
 - participants/infrastructure/__init__.py
 - TestNominationRegistration
-- Command
+- festival-apply.screenshots.spec.ts
 - 0003_registry_participant_type_avatar.py
 - participants/infrastructure/migrations/__init__.py
 - identity/infrastructure/admin.py
@@ -700,22 +700,23 @@
 - performances/presentation/api/__init__.py
 - performances/presentation/api/v1/__init__.py
 - performances/presentation/__init__.py
-- organizer/views.py
+- ApplicationError
 - _protocol
 - regulations.ts
-- Command
-- TestPublicationReport
+- .__init__
+- _to_money
 - festival-catalog.screenshots.spec.ts
 - Command
 - application/read_models/registration.py
-- BasePersistenceModel
+- UserSessionModel
 - results/domain/events.py
 - .get_applicant
 - results/domain/__init__.py
+- TestPosterResolution
 - protocol-editor.tsx
-- DjangoRevisionJournal
-- .participants_without_active_guardian
-- PlatformConfig
+- .current_time
+- DomainEvent
+- 0006_participation_format_entity.py
 - results/infrastructure/__init__.py
 - Institutions Context
 - results/infrastructure/migrations/__init__.py
@@ -723,17 +724,17 @@
 - use-public-festivals.ts
 - apps/results/__init__.py
 - results/presentation/api/__init__.py
-- .now
+- applications/infrastructure/system/clock.py
 - results/presentation/__init__.py
-- .is_open_ended
+- OrganizationConfig
 - Architecture Decision Records (ADR)
 - submissions/composition.py
 - teachers/application/__init__.py
-- .full_name
+- .age_in_years
 - teachers/domain/__init__.py
 - teachers/infrastructure/__init__.py
 - Notifications Context
-- .is_approved
+- .now
 - apps/teachers/__init__.py
 - teachers/presentation/api/__init__.py
 - teacher-picker.tsx
@@ -774,25 +775,21 @@
 - .contains
 - staff/pages/program/index.tsx
 - .age_at
-- .__init__
+- TestParticipantCountRange
 - use-constructor-fields.ts
 - 0004_templatefieldmodel_style.py
 - .overlaps
 - LandingBlock
 - @storybook/addon-docs
 - storybook
-- .now
+- TestRegistrationDeadlines
 - registration-block.tsx
 - FakeUuidGenerator
-- TestEnums
-- TestRichText
-- .receipt_requirement
-- .to_dict
+- .attached_bytes
+- .publish
 - main.tsx
 - main.ts
 - preview.tsx
-- .to_dict
-- _utcnow
 - MinIO object store service
 - vt-platform-backend
 - .has_staff_permission
@@ -800,29 +797,15 @@
 - 0007_templatefieldmodel_config.py
 - PlatformUserId
 - .publish
-- build_token_service
+- test_documents_archive_api.py
 - OPS-008 — Single-server sizing & tuning
-- .new
-- GetCompetitionHandler
-- build_command_handler
 - 0015_remove_registration_and_archived_statuses.py
-- .empty
 - .requirements_for
 - organization/composition.py
-- .publish
-- .new
 - program-horizontal-scroll.spec.ts
-- TestBoundedNames
-- TestContactValue
 - 0002_usermodel_credentials_invalidated_at.py
-- .size_bytes
-- .identity_key
 - .of
-- .member_count
 - CLAUDE.md
-- .members
-- .wants_individual_documents
-- .json
 - .contains
 - organization/index.tsx
 - 0009_diplomamodel_diplomas_diploma_unique_per_performance.py
@@ -929,7 +912,7 @@
 - **Frontend Feature-Sliced Design layers** — frontend_src_widgets_readme_widgets_layer, frontend_src_features_readme_features_layer, frontend_src_entities_readme_entities_layer, frontend_readme_shared_layer [EXTRACTED 1.00]
 - **Festival Catalog public read flow** — frontend_docs_festival_catalog_festival_catalog, frontend_docs_festival_catalog_use_public_festivals, frontend_docs_festival_catalog_public_read_model, frontend_docs_festival_catalog_public_status [EXTRACTED 1.00]
 
-## Communities (960 total, 414 thin omitted)
+## Communities (943 total, 395 thin omitted)
 
 ### Community 0 - "date-picker.tsx"
 Cohesion: 0.09
@@ -937,103 +920,103 @@ Nodes (35): DatePicker(), DateTimePicker(), BirthDate, DateAndTime, Disabled, Em
 
 ### Community 1 - "ContactProfileOverride"
 Cohesion: 0.06
-Nodes (49): Replace the competition's contacts-module configuration wholesale., UpdateContactsConfigCommand, AddContactHandler, _contacts_config_from_command(), _optional_str(), Use cases: competition contacts (legacy channels + contacts-module config)., Set the primary competition contact., Remove a competition contact. (+41 more)
+Nodes (39): Replace the competition's contacts-module configuration wholesale., UpdateContactsConfigCommand, AddContactHandler, _contacts_config_from_command(), _optional_str(), Use cases: competition contacts (legacy channels + contacts-module config)., Set the primary competition contact., Remove a competition contact. (+31 more)
 
 ### Community 2 - "organization/application/interfaces.py"
 Cohesion: 0.02
-Nodes (187): Command DTOs for the Organization bounded context. Input shapes for state-…, Revoke an active staff membership., RevokeStaffMembershipCommand, invitation_status(), InvitationOperationResultDto, InvitationView, MembershipOperationResultDto, datetime (+179 more)
+Nodes (187): invitation_status(), InvitationOperationResultDto, InvitationView, MembershipOperationResultDto, datetime, Result & view DTOs for the Organization application layer. Immutable,…, Project a :class:`StaffInvitation` into a DTO (excludes the token hash).…, A flat read view of a staff member: the membership joined to its user card.… (+179 more)
 
 ### Community 3 - "User"
 Cohesion: 0.02
-Nodes (84): ConsentType, datetime, DomainEvent, PhoneNumber, UserId, The user-account aggregate root of the Identity context. Construct via…, Create a brand-new account and the fact that it was registered. Every argument…, Reconstruct an existing aggregate from persisted state. A pure hydration step:… (+76 more)
+Nodes (86): ConsentType, datetime, DomainEvent, PhoneNumber, UserId, The user-account aggregate root of the Identity context. Construct via…, Create a brand-new account and the fact that it was registered. Every argument…, Reconstruct an existing aggregate from persisted state. A pure hydration step:… (+78 more)
 
 ### Community 4 - "competitions/domain/value_objects.py"
 Cohesion: 0.06
-Nodes (207): _extensions(), _format_requirements(), Use cases: update general information, branding, settings and deadlines., The submitted extension list, or empty when the client omitted it. Empty is…, _settings_from_command(), MIXED requires a method; STANDARD requires method is None., _validate_type_method_consistency(), InvalidAgeCategoryIdError (+199 more)
+Nodes (214): ``DjangoCompetitionUploadPolicy`` - the ACL projecting upload constraints.…, _format_requirements(), MIXED requires a method; STANDARD requires method is None., _validate_type_method_consistency(), InvalidAgeCategoryIdError, InvalidAgeCategoryNameError, InvalidAgeRangeError, InvalidCategoryDescriptionError (+206 more)
 
 ### Community 5 - "LandingConfiguration"
 Cohesion: 0.08
 Nodes (46): Data-transfer objects for the Competitions application layer. Plain,…, AddedChildResult, AdditionalServiceView, AdmissionRuleView, AgeCategoryView, BrandingView, CategoryView, CompetitionSummaryView (+38 more)
 
-### Community 6 - "DisplayAlias"
-Cohesion: 0.03
-Nodes (86): Create a brand-new participant and the fact that it was created (EVT-PRT-001).…, The birth date from which the age group is derived (PRT-002)., The pseudonym shown to judging (JDG-006)., Change the judging alias, keeping it non-identifying (JDG-006)., AgeGroupUndefinedError, AliasRevealsIdentityError, ConsentNotRecordedError, GuardianAlreadyLinkedError (+78 more)
+### Community 6 - "GuardianshipPolicy"
+Cohesion: 0.07
+Nodes (38): AgeGroupUndefinedError, PolicyConfigurationError, ValueError, Raised when a business policy is constructed with invalid configuration.…, No configured age band covers the participant's derived age (PRT-002). Age…, ActivationBlockReason, AgeGroupPolicy, GuardianshipPolicy (+30 more)
 
 ### Community 7 - "Competition"
-Cohesion: 0.01
-Nodes (120): Competition, ensure_admission_combination_valid(), ensure_age_range_free(), AgeCategoryId, date, datetime, DisciplineId, DomainEvent (+112 more)
-
-### Community 8 - "ConsentVersion"
 Cohesion: 0.02
-Nodes (96): PolicyConfigurationError, A proposed password does not satisfy the active :class:`PasswordPolicy`.…, Raised when a business policy is constructed with invalid configuration.…, WeakPasswordError, AccountLockPolicy, AttemptDecision, ConsentPolicy, ConsentRequirement (+88 more)
+Nodes (85): Return all non-deleted competitions in ``season``., Return all non-deleted competitions., Persist ``competition`` and its whole graph (insert or update), honouring its…, Competition, ensure_age_range_free(), AgeCategoryId, datetime, DisciplineId (+77 more)
+
+### Community 8 - "PasswordPolicy"
+Cohesion: 0.03
+Nodes (91): PolicyConfigurationError, ValueError, A proposed password does not satisfy the active :class:`PasswordPolicy`.…, Raised when a business policy is constructed with invalid configuration.…, WeakPasswordError, AccountLockPolicy, AttemptDecision, ConsentRequirement (+83 more)
 
 ### Community 9 - "Submission"
 Cohesion: 0.01
-Nodes (163): Return the submission with ``submission_id`` (whole aggregate), or ``None``., Persist ``submission`` and its whole graph (insert or update), honouring its…, Persist ``application`` and its whole graph (insert or update), honouring its…, Build the order's cached snapshot of a submission from its current state. The…, ref_from_submission(), Application, ApplicationStatus, BirthDate (+155 more)
+Nodes (330): AttachmentView, ParticipantView, PerformanceView, PriceView, A flat read view of a :class:`Teacher` child entity., A flat read view of an :class:`Attachment` child entity., Project an :class:`Attachment` into its read view., A flat read view of a :class:`Review` iteration. (+322 more)
 
-### Community 10 - "EmailVerificationPolicy"
+### Community 10 - "ConsentPolicy"
 Cohesion: 0.03
-Nodes (139): InvalidInputError, A command carried a value the domain refused to construct (bad…, ChangePhoneCommand, ConfirmEmailVerificationCommand, GrantConsentCommand, Confirm an email address from the signed token carried by the emailed link. The…, Set or replace the account's phone number (resets phone verification)., Record acceptance of a versioned consent document. ``consent_type`` is the… (+131 more)
+Nodes (122): InvalidInputError, A command carried a value the domain refused to construct (bad…, Command messages for the Identity & Access bounded context. One command = one…, AuthenticateUserCommand, ChangeEmailCommand, ChangePasswordCommand, ChangePhoneCommand, ConfirmEmailVerificationCommand (+114 more)
 
 ### Community 11 - "Clock"
 Cohesion: 0.03
-Nodes (330): AttachFileHandler, Clock, EventPublisher, UuidGenerator, Attachment use cases: attach a file, remove an attachment., Use case: validate, store and attach an uploaded file to the submission.…, Use case: attach a file reference to the submission., Use case: remove an attachment reference from the submission. (+322 more)
+Nodes (221): AttachFileHandler, Clock, EventPublisher, UuidGenerator, Attachment use cases: attach a file, remove an attachment., Use case: validate, store and attach an uploaded file to the submission.…, Use case: attach a file reference to the submission., Use case: remove an attachment reference from the submission. (+213 more)
 
 ### Community 12 - "Protocol"
 Cohesion: 0.02
-Nodes (106): ACL over the Results context: every degree a jury can award. The Diplomas…, Use cases of the Results bounded context. One service over one aggregate: every…, Protocol, ProtocolRow, AwardKind, datetime, ProtocolColumn, PublicSlug (+98 more)
+Nodes (113): ACL over the Results context: every degree a jury can award. The Diplomas…, CreateProtocolCommand, Command DTOs for the Results use cases. Framework-neutral input shapes:…, Start a protocol for one nomination. ``seed`` is the normal path: the rows are…, Rename a protocol and/or change which columns its public page shows., Apply a new order to the protocol's rows, numbers travelling with them., ReorderRowsCommand, UpdateProtocolCommand (+105 more)
 
 ### Community 13 - "results/presentation/api/v1/public_views.py"
-Cohesion: 0.09
-Nodes (33): PublicProtocolView, What a public protocol link resolves to: a table, and what it was cut to., envelope(), problem_response(), protocol_problem(), Any, Response, RFC 9457 Problem Details rendering for the Results REST API v1. Maps this… (+25 more)
+Cohesion: 0.05
+Nodes (50): AwardOptionView, ColumnView, ProtocolDetailView, ProtocolRowView, ProtocolTableView, PublicationResultView, PublicProtocolRowView, PublicProtocolView (+42 more)
 
 ### Community 14 - "_program"
 Cohesion: 0.04
-Nodes (30): Rename the public edition (its slug, and therefore its link, is permanent)., PublicSlug, Reference a built-in column., A non-empty, length-bounded name for a public share ("Программа…, The unguessable token in a public program URL (``/program/AbX82K``). The slug…, Mint a fresh random slug (~57 bits of entropy at the default length)., ShareName, _add_act() (+22 more)
+Nodes (46): Rename the public edition (its slug, and therefore its link, is permanent)., PublicSlug, Reference a built-in column., A non-empty, length-bounded name for a public share ("Программа…, The unguessable token in a public program URL (``/program/AbX82K``). The slug…, Mint a fresh random slug (~57 bits of entropy at the default length)., ShareName, DjangoProgramRepository (+38 more)
 
-### Community 15 - "Participant"
+### Community 15 - "DisplayAlias"
 Cohesion: 0.03
-Nodes (136): ``DjangoParticipantGuardianRegistry`` — the ACL over the Participants context.…, Application ports (contracts) required by Participants use cases. The…, Participant, ParticipantId, Domain entities for the Participants bounded context. The :class:`Participant`…, The participant aggregate root of the Participants context (DIA-001 §4.2).…, Reconstruct an existing aggregate from persisted state. A pure hydration step:…, The participant's immutable identity. (+128 more)
+Nodes (161): ``DjangoParticipantGuardianRegistry`` — the ACL over the Participants context.…, Result DTOs for the Participants application layer. Immutable output shapes…, Application ports (contracts) required by Participants use cases. The…, ParticipantId, Domain entities for the Participants bounded context. The :class:`Participant`…, Create a brand-new participant and the fact that it was created (EVT-PRT-001).…, Reconstruct an existing aggregate from persisted state. A pure hydration step:…, Propose a guardian relationship (awaiting verification). A straightforward… (+153 more)
 
 ### Community 16 - "StaffMembership"
 Cohesion: 0.02
-Nodes (186): Whether the user already has an ACTIVE membership (uniqueness pre-check)., Return all non-deleted memberships of the organization., Return the invitation with ``invitation_id``, or ``None``., Return the invitation whose token digest is ``token_hash``, or ``None``., Return an open invitation for ``email`` in the organization, or ``None``., Return all non-deleted invitations of the organization., Return the membership with ``membership_id``, or ``None``., Return the user's ACTIVE membership in the organization, or ``None``. **The… (+178 more)
+Nodes (205): Whether the user already has an ACTIVE membership (uniqueness pre-check)., Return all non-deleted memberships of the organization., Return the invitation with ``invitation_id``, or ``None``., Return the invitation whose token digest is ``token_hash``, or ``None``., Return an open invitation for ``email`` in the organization, or ``None``., Return all non-deleted invitations of the organization., Return the membership with ``membership_id``, or ``None``., Return the user's ACTIVE membership in the organization, or ``None``. **The… (+197 more)
 
-### Community 17 - "DjangoProgramRepository"
-Cohesion: 0.11
-Nodes (18): Create an empty program. Items and shares are added afterwards., DjangoProgramRepository, Loads and stores :class:`Program` aggregates in PostgreSQL., Whether any share - live or revoked - has ever used this slug., (share id, program version) from one row, with the same liveness rules as…, Persistence adapters for the Programs bounded context., _act(), _break() (+10 more)
+### Community 17 - "DiplomaSnapshot"
+Cohesion: 0.05
+Nodes (64): Render one diploma PDF from the template assets and a snapshot.…, _age(), AwardSnapshot, _clean(), CompetitionSnapshot, DiplomaSnapshot, _mapping(), MemberSnapshot (+56 more)
 
 ### Community 18 - "FontSource"
-Cohesion: 0.10
-Nodes (33): BundledFontProvider, FontCatalogView, FontFaceInspector, FontFaceRepository, FontFileStore, FontInspection, FontLibraryService, FontVariantView (+25 more)
+Cohesion: 0.09
+Nodes (35): FontCatalogView, FontInspection, FontLibraryService, FontVariantView, The font catalog an organizer picks from, and the uploads that extend it. One…, The catalog, and the uploads that extend it., Drop one uploaded face from the library. The file itself is left in storage: a…, What reading a font file told us about it. ``family`` and ``variant`` come from… (+27 more)
 
 ### Community 19 - "application/read_models/public_catalog.py"
-Cohesion: 0.05
-Nodes (61): Read-side (CQRS) projections for the Competitions bounded context. These are…, aggregate_pricing(), classify_participation_mode(), _hero_cover_image(), is_public_document_visibility(), ParticipationMode, _project_block(), project_contacts() (+53 more)
+Cohesion: 0.04
+Nodes (78): Read-side (CQRS) projections for the Competitions bounded context. These are…, aggregate_pricing(), classify_participation_mode(), _hero_cover_image(), is_public_document_visibility(), OrganizerContactFacts, ParticipationMode, _project_block() (+70 more)
 
 ### Community 20 - "Env"
 Cohesion: 0.05
-Nodes (51): AddRowCommand, AwardRowsCommand, CreateProtocolCommand, PublishProtocolCommand, Command DTOs for the Results use cases. Framework-neutral input shapes:…, Start a protocol for one nomination. ``seed`` is the normal path: the rows are…, Rename a protocol and/or change which columns its public page shows., Add one competing act to the protocol by hand. For the act that was slotted in… (+43 more)
+Nodes (44): AddRowCommand, AwardRowsCommand, PublishProtocolCommand, Add one competing act to the protocol by hand. For the act that was slotted in…, Write one or more results. Carries pairs rather than a map so ``(row, None)``…, Publish the current results as a new revision. ``columns`` is accepted here as…, CatalogPerformance, One competing act as the Results context needs to see it. A flat, resolved… (+36 more)
 
 ### Community 21 - ".from_hash"
-Cohesion: 0.07
-Nodes (22): _Argon2Hasher, Wrap an already-computed digest. If ``algorithm`` is omitted it is derived from…, Argon2PasswordHasher, Argon2id password hasher — the concrete :class:`PasswordHasher` adapter.…, Constant-time Argon2id implementation of the ``PasswordHasher`` port. Wraps a…, Hash ``password`` into a storable Argon2id :class:`PasswordHash`., Whether ``password`` matches ``hash`` (constant-time; never raises). Argon2…, Whether ``hash`` should be recomputed with current/stronger parameters.… (+14 more)
+Cohesion: 0.13
+Nodes (6): Wrap an already-computed digest. If ``algorithm`` is omitted it is derived from…, Hash ``password`` into a storable Argon2id :class:`PasswordHash`., _registered(), TestResetPassword, TestChangePassword, TestPasswordHash
 
 ### Community 22 - "Политика в отношении обработки персональных данных"
 Cohesion: 0.12
 Nodes (17): 10. Трансграничная передача персональных данных, 11. Сроки хранения персональных данных, 12. Меры по обеспечению защиты персональных данных, 13. Согласие субъекта персональных данных и его отзыв, 14. Файлы cookie, 15. Права субъекта персональных данных и порядок их реализации, 16. Порядок актуализации Политики. Заключительные положения, 1. Общие положения (+9 more)
 
-### Community 23 - "competitions/presentation/api/v1/serializers.py"
-Cohesion: 0.03
-Nodes (83): AddAdditionalServiceSerializer, AddAdmissionRuleSerializer, AddAgeCategorySerializer, AddCategorySerializer, AddContactSerializer, AddDisciplineSerializer, AddDocumentSerializer, AddInformationBlockSerializer (+75 more)
+### Community 23 - "identity/application/exceptions.py"
+Cohesion: 0.05
+Nodes (49): OperationResultDto, The outcome of an Identity command: the affected user plus its new events.…, Project ``user`` into a DTO, resolving lock status at ``now``., AccountInactiveError, ApplicationError, EmailAlreadyInUseError, EmailNotVerifiedError, InvalidCredentialsError (+41 more)
 
 ### Community 24 - "Env"
 Cohesion: 0.04
-Nodes (57): AddBlockCommand, AddColumnCommand, AddPerformanceCommand, CreateProgramCommand, CreateShareCommand, EditItemCommand, Command DTOs for the Programs use cases. Framework-neutral input shapes:…, Publish a named edition of the program behind a fresh public slug. ``columns``… (+49 more)
+Nodes (59): AddBlockCommand, AddColumnCommand, AddPerformanceCommand, CreateProgramCommand, CreateShareCommand, EditItemCommand, FillCellsCommand, Command DTOs for the Programs use cases. Framework-neutral input shapes:… (+51 more)
 
 ### Community 25 - "FakeOrganizationRepository"
-Cohesion: 0.07
-Nodes (69): PermissionDeniedError, The current actor is not permitted to perform the requested action., AcceptStaffInvitationCommand, ChangeStaffRoleCommand, InviteStaffCommand, ProvisionOwnerCommand, Provision the first OWNER for an existing user (bootstrap, internal only).…, Invite a person (by email) to join staff with a role. (+61 more)
+Cohesion: 0.06
+Nodes (69): PermissionDeniedError, The current actor is not permitted to perform the requested action., AcceptStaffInvitationCommand, ChangeStaffRoleCommand, InviteStaffCommand, Invite a person (by email) to join staff with a role., Accept a staff invitation using the raw token from the emailed link.…, Revoke a still-pending staff invitation before it is accepted. (+61 more)
 
 ### Community 26 - "account-settings/index.ts"
 Cohesion: 0.08
@@ -1043,57 +1026,57 @@ Nodes (38): AccountEnvelope, ChangeEmailInput, ChangePasswordInput, ChangePhoneI
 Cohesion: 0.12
 Nodes (24): NotificationFeedEnvelopeSerializer, NotificationSerializer, One entry in the feed, already in the words the recipient reads., The full ``GET /me/notifications`` response envelope., The response envelope of both "mark read" endpoints., ReadReceiptEnvelopeSerializer, _AuthenticatedView, _envelope() (+16 more)
 
-### Community 28 - "application_problem"
-Cohesion: 0.05
-Nodes (55): _envelope(), OrganizationProfileUpdateSerializer, OrganizationProfileView, APIView, extend_schema, Request, Response, Wrap an ``OrganizationProfileView`` read model in the standard ``{data, meta}``… (+47 more)
+### Community 28 - "staff/views.py"
+Cohesion: 0.04
+Nodes (72): Protocol, UUID, The published cross-context read model of Identity user cards.…, Published read model of a user's identity for display in another context. Flat…, Port: resolve Identity user ids to their public :class:`UserCardView`. A batch…, Return a mapping of the given ids to their user card view., UserCardView, UserDirectory (+64 more)
 
 ### Community 29 - "festival-catalog/lib/index.ts"
 Cohesion: 0.17
 Nodes (22): CatalogFilterOptions, CONFIG, PARTICIPATION_MODES, participationModeConfig, participationModeLabel(), BadgeVariant, CatalogStatusAction, catalogStatusConfig (+14 more)
 
-### Community 30 - "participants/infrastructure/models/__init__.py"
-Cohesion: 0.08
-Nodes (30): ParticipantsConfig, AppConfig, Django AppConfig for the Participants bounded context. Purpose Register the…, App configuration for the Participants bounded context., Register the ORM models and admin, which live in the infrastructure layer.…, Django admin registrations for the Participants bounded context. Operational…, Base admin exposing the audit timestamps as read-only. Timestamps are written…, _ReadOnlyTimestampsAdmin (+22 more)
+### Community 30 - "loadtest.py"
+Cohesion: 0.07
+Nodes (43): ParticipantsConfig, AppConfig, Django AppConfig for the Participants bounded context. Purpose Register the…, App configuration for the Participants bounded context., Register the ORM models and admin, which live in the infrastructure layer.…, Django admin registrations for the Participants bounded context. Operational…, Base admin exposing the audit timestamps as read-only. Timestamps are written…, _ReadOnlyTimestampsAdmin (+35 more)
 
 ### Community 31 - "organization/infrastructure/models/__init__.py"
-Cohesion: 0.04
-Nodes (58): _clean_email(), DjangoCompetitionOrganizerDirectory, CompetitionId, ``DjangoCompetitionOrganizerDirectory`` - the ACL that answers "who runs this…, The organization's own contact mailbox, when it has one on file., Last resort: the mailboxes of the organization's active responsible staff., Return ``value`` as a plausible email address, or ``None``. Deliberately…, Competition/Organization/Identity ACL implementing… (+50 more)
+Cohesion: 0.07
+Nodes (35): ``DjangoCompetitionOrganizerDirectory`` - the ACL that answers "who runs this…, Django AppConfig for the Organization bounded context., Django admin registrations for the Organization bounded context. Operational…, Base admin exposing the audit timestamps as read-only. Timestamps are written…, _ReadOnlyTimestampsAdmin, Migration, BasePersistenceModel, Meta (+27 more)
 
-### Community 32 - "datetime"
-Cohesion: 0.05
-Nodes (32): ConsentReference, datetime, DomainEvent, PersonName, TeacherId, UUID, The participant's minimized real name (access-restricted, PRT-006)., The recorded active consent reference, or ``None`` (PRT-001). (+24 more)
+### Community 32 - "Participant"
+Cohesion: 0.04
+Nodes (56): Participant, ConsentReference, datetime, DomainEvent, PersonName, TeacherId, UUID, The participant aggregate root of the Participants context (DIA-001 §4.2).… (+48 more)
 
 ### Community 33 - "DjangoParticipantRepository"
 Cohesion: 0.06
-Nodes (54): DjangoParticipantGuardianRegistry, Participants ACL implementing the ``ParticipantGuardianRegistry`` port., Return the ids among ``participant_ids`` that lack an active guardian link., GuardianLinkModel, Meta, BasePersistenceModel, Database row for a guardian↔participant relationship (persistence only)., Meta (+46 more)
+Nodes (50): DjangoParticipantGuardianRegistry, Participants ACL implementing the ``ParticipantGuardianRegistry`` port., Return the ids among ``participant_ids`` that lack an active guardian link., GuardianLinkModel, Meta, BasePersistenceModel, Database row for a guardian↔participant relationship (persistence only)., DjangoParticipantRepository (+42 more)
 
-### Community 34 - "Consent"
-Cohesion: 0.04
-Nodes (37): ApplicationStatusChangeView, ConsentView, PaymentReceiptView, Result & view DTOs for the Application (order) use cases. Immutable, primitive-…, A flat read view of the order's frozen total price snapshot., A flat read view of one order status-history entry., A flat read view of one of the order's payment receipts., A flat read view of a cached submission reference on the order. (+29 more)
+### Community 34 - "test_upload_handlers.py"
+Cohesion: 0.09
+Nodes (28): Build the order's cached snapshot of a submission from its current state. The…, ref_from_submission(), Create a brand-new identity backed by a fresh UUID v7., FakeCompetitionUploadPolicy, Configurable :class:`CompetitionUploadPolicy` stand-in (one constraint for all…, _amounts(), _attach(), _order_of_two() (+20 more)
 
 ### Community 35 - "_org"
-Cohesion: 0.15
-Nodes (5): The profile of an organization that has not filled in any contact details., _org(), Organization, TestOrganization, TestOrganizationProfile
+Cohesion: 0.24
+Nodes (4): The profile of an organization that has not filled in any contact details., _org(), Organization, TestOrganization
 
 ### Community 36 - "participants/test_handlers.py"
 Cohesion: 0.04
-Nodes (138): Command messages for the Participants bounded context. One command = one intent…, ActivateParticipantCommand, ArchiveParticipantCommand, AuthorizeInstitutionCommand, CreateParticipantCommand, ProposeGuardianLinkCommand, Command messages for the Participants bounded context. A command is an…, Correct a participant's minimized real name. (+130 more)
+Nodes (130): Command messages for the Participants bounded context. One command = one intent…, ActivateParticipantCommand, ArchiveParticipantCommand, AuthorizeInstitutionCommand, CreateParticipantCommand, ProposeGuardianLinkCommand, Command messages for the Participants bounded context. A command is an…, Correct a participant's minimized real name. (+122 more)
 
 ### Community 37 - "Program"
 Cohesion: 0.02
-Nodes (147): Use cases of the Programs bounded context. One service over one aggregate:…, CustomColumn, Program, ProgramItem, ProgramShare, datetime, ProgramItemKind, PublicSlug (+139 more)
+Nodes (151): Use cases of the Programs bounded context. One service over one aggregate:…, CustomColumn, Program, ProgramItem, ProgramShare, datetime, ProgramItemKind, PublicSlug (+143 more)
 
 ### Community 38 - "staff-participants/index.ts"
 Cohesion: 0.05
 Nodes (49): applicationHref(), EMPTY_FILTERS, ParticipantDetail(), ParticipationRow(), queueForStatus(), QuickFilterKey, StaffParticipantsPage(), statusLabel() (+41 more)
 
 ### Community 39 - "test_participant.py"
-Cohesion: 0.07
-Nodes (51): Render a JSON-safe payload of the whole event, business data included. The…, Render a single field value as a JSON-safe primitive. Keeps…, _serialize(), _generate_uuid7(), Create a brand-new identity backed by a fresh UUID v7., Create a brand-new identity backed by a fresh UUID v7., Create a brand-new identity backed by a fresh UUID v7., Create a brand-new identity backed by a fresh UUID v7. (+43 more)
+Cohesion: 0.05
+Nodes (62): _ensure_uuid7(), _generate_uuid7(), _parse_uuid(), UUID, ValueObjectValidationError, Guard that ``value`` is a :class:`uuid.UUID` of version 7., Create a brand-new identity backed by a fresh UUID v7., Build a ``ParticipantId`` from an existing :class:`uuid.UUID`. (+54 more)
 
-### Community 40 - "_solo_ready"
-Cohesion: 0.08
-Nodes (10): _new_id(), _performance(), _policy(), UUID, A DRAFT submission with a performance, one participant and a frozen price., Submitting does not freeze content — the organizer has not looked at it yet. An…, The freeze lands when the organizer starts reviewing, not when the entry…, Content stays editable after submit, so the price it implies must follow it. (+2 more)
+### Community 40 - "competitions/infrastructure/models/__init__.py"
+Cohesion: 0.07
+Nodes (42): Build every unsaved child row of ``entity``, keyed to the competition., Migration, BasePersistenceModel, Meta, Abstract base persistence model for the Competitions bounded context. A…, Abstract base carrying the columns every Competitions table shares. Concrete…, CompetitionStatusChoices, ``CompetitionModel`` — persistence for the :class:`Competition` aggregate root.… (+34 more)
 
 ### Community 41 - "performance-form.tsx"
 Cohesion: 0.21
@@ -1104,44 +1087,44 @@ Cohesion: 0.21
 Nodes (22): notify_application_revisions(), Tell organizers about orders that were edited after being submitted. An order…, _age_journal(), _auth(), auth_client(), _draft(), _place(), APIClient (+14 more)
 
 ### Community 43 - "v1/diplomas/composition.py"
-Cohesion: 0.07
-Nodes (66): AssignmentConflictError, AssignmentNotFoundError, FieldTypeNotAllowedError, Domain error vocabulary for the Diplomas bounded context. Each error carries a…, Raised when a referenced template does not exist., Raised when a referenced assignment does not exist., Raised when a (competition, nomination) pair already has an assignment., Raised when a layout carries an element its document kind cannot print. A… (+58 more)
+Cohesion: 0.08
+Nodes (61): AssignmentNotFoundError, Raised when a referenced template does not exist., Raised when a referenced assignment does not exist., TemplateNotFoundError, create_assignment(), create_assignments(), create_template(), _current_documents_by_template() (+53 more)
 
 ### Community 44 - "DjangoUserRepository"
-Cohesion: 0.05
-Nodes (74): Any, Resolve the token's user, rejecting a token voided by a credential change.…, DjangoConsentJournal, datetime, ``DjangoConsentJournal`` — the ORM-backed adapter for the consent journal. The…, Stamp the active record withdrawn. ``None`` when nothing was active., The account's active consents, or its whole journal newest-first., The rows currently in force for one (account, consent, participant) triple. A… (+66 more)
+Cohesion: 0.04
+Nodes (73): ConsentRecordDto, One entry of the consent journal — a single grant and its fate. The journal is…, datetime, Record an acceptance and supersede the previous one of the same type., Mark the active record withdrawn; ``None`` when there was nothing active., The current instant as a timezone-aware datetime (possibly non-UTC zone)., The current instant as a timezone-aware **UTC** datetime., Return the instant ``refresh_token`` was issued (its ``iat`` claim). Lets a use… (+65 more)
 
 ### Community 45 - "Email"
 Cohesion: 0.02
-Nodes (209): Result DTOs for the Identity & Access application layer. Immutable output…, Send an email-ownership verification link to ``email``., Send a password-reset link to ``email``, valid until ``expires_at``., Domain entities for the Identity & Access bounded context. The :class:`User`…, The preferred timezone (storage stays UTC regardless)., ConsentGranted, ConsentType, ConsentWithdrawn (+201 more)
+Nodes (221): Side-effect handlers that react to Identity domain events (ARCH-001 §4.8).…, Clock, EmailGateway, Application ports (contracts) required by Identity & Access use cases. The…, Port: deliver transactional emails to a user's address. **Why it exists.**…, Send an email-ownership verification link to ``email``., Send a password-reset link to ``email``, valid until ``expires_at``., Port: the source of the current instant, injected rather than read globally.… (+213 more)
 
 ### Community 46 - "participants_views.py"
-Cohesion: 0.11
-Nodes (47): Organizer-facing **Participant Registry** read model (a projection port). The…, A competitive act (one per submission) the participant performed., A file uploaded within one of the participant's submissions., A single participation event in this organization's competitions., An internal organizer note recorded against one of the submissions., A participant award. Reserved contract: awards/results are owned by the…, The dense-table row: identity + aggregate counts, no heavy detail., The full participant card: the summary plus every related collection. (+39 more)
+Cohesion: 0.07
+Nodes (79): Organizer-facing **Participant Registry** read model (a projection port). The…, A competitive act (one per submission) the participant performed., A file uploaded within one of the participant's submissions., A single participation event in this organization's competitions., An internal organizer note recorded against one of the submissions., A participant award. Reserved contract: awards/results are owned by the…, The dense-table row: identity + aggregate counts, no heavy detail., The full participant card: the summary plus every related collection. (+71 more)
 
 ### Community 47 - ".to_dict"
 Cohesion: 0.50
 Nodes (3): Render a JSON-safe payload with an ``event_type`` discriminator. Every…, Render a single field value as a JSON-safe primitive. Maps domain value objects…, _serialize()
 
-### Community 48 - "translate_domain_errors"
+### Community 48 - "CompetitionClosedError"
 Cohesion: 0.04
-Nodes (80): _parse_attachment_type(), CancelSubmissionByReviewerHandler, CancelSubmissionHandler, Clock, EventPublisher, Cancellation use case: the applicant withdraws the submission., Use case: cancel (withdraw) the submission on the applicant's behalf. The…, Use case: cancel (reject) a submission by organizer decision. Reaches further… (+72 more)
+Nodes (107): _parse_attachment_type(), CancelSubmissionByReviewerHandler, CancelSubmissionHandler, Clock, EventPublisher, Cancellation use case: the applicant withdraws the submission., Use case: cancel (withdraw) the submission on the applicant's behalf. The…, Use case: cancel (reject) a submission by organizer decision. Reaches further… (+99 more)
 
-### Community 49 - "_draft"
-Cohesion: 0.05
-Nodes (12): _accepted(), _draft(), _person(), ParticipantId, PersonName, A submission walked all the way to ACCEPTED — committed to the running order., An act performed to more than one track brings more than one file., The state a running order is built from is the state a track is wanted in. (+4 more)
+### Community 49 - "TestContentEditing"
+Cohesion: 0.03
+Nodes (30): Create a brand-new submission in the DRAFT state. The only construction path…, _generate_uuid7(), UUID, Generate a UUID version 7 (time-ordered) per RFC 9562 §5.7. Implemented…, _accepted(), _draft(), _new_id(), _performance() (+22 more)
 
 ### Community 50 - "UserConsentModel"
-Cohesion: 0.13
-Nodes (14): ConsentStatus, ConsentType, Meta, BasePersistenceModel, ``UserConsentModel`` — persistence for a versioned consent record. CONSENT…, The legal basis a consent record covers (mirrors DATA-001 §4.1 wire values)., Consent lifecycle states (DATA-001 §4.1)., Database row for one consent grant (persistence only). (+6 more)
+Cohesion: 0.22
+Nodes (7): ConsentType, Meta, BasePersistenceModel, ``UserConsentModel`` — persistence for a versioned consent record. CONSENT…, The legal basis a consent record covers (mirrors DATA-001 §4.1 wire values)., Database row for one consent grant (persistence only)., UserConsentModel
 
-### Community 51 - "CompetitionDetailView"
-Cohesion: 0.02
-Nodes (98): AddAdditionalServiceCommand, AddAgeCategoryCommand, AddContactCommand, AddDisciplineCommand, AddDocumentCommand, AddInformationBlockCommand, AddParticipantGroupCommand, AddParticipationFormatCommand (+90 more)
+### Community 51 - "CompetitionTemplate"
+Cohesion: 0.05
+Nodes (29): Clock, CompetitionTemplateRepository, EventPublisher, datetime, DomainEvent, Protocol, UUID, Application ports (contracts) required by Competitions use cases. The… (+21 more)
 
 ### Community 52 - "translate_domain_errors"
-Cohesion: 0.10
-Nodes (28): ActivationBlockedError, ApplicationError, InvalidInputError, ParticipantStateConflictError, PolicyViolationError, Exception, Application-layer exceptions for the Participants bounded context. The…, The operation is illegal in the participant's current state. The application… (+20 more)
+Cohesion: 0.06
+Nodes (49): ActivationBlockedError, ApplicationError, InvalidInputError, ParticipantNotFoundError, ParticipantStateConflictError, PolicyViolationError, Exception, Application-layer exceptions for the Participants bounded context. The… (+41 more)
 
 ### Community 53 - "festival-catalog.tsx"
 Cohesion: 0.11
@@ -1153,11 +1136,11 @@ Nodes (24): auth_client(), _image(), _media_root(), Any, APIClient, fixture, Pat
 
 ### Community 55 - "_message"
 Cohesion: 0.06
-Nodes (24): _clean_quota(), _message(), Any, EmailMultiAlternatives, fixture, override_settings, Otherwise one busy sender would starve every other., The bug this replaced: a full window plus a fresh one, back to back. Measured… (+16 more)
+Nodes (26): _clean_quota(), _message(), Any, EmailMultiAlternatives, fixture, override_settings, Otherwise one busy sender would starve every other., The bug this replaced: a full window plus a fresh one, back to back. Measured… (+18 more)
 
 ### Community 56 - "submissions/views.py"
-Cohesion: 0.06
-Nodes (46): Remove an attachment reference from the submission (owner)., Upload and attach a file to the submission (owner, editable states only).…, RemoveAttachmentCommand, UploadAttachmentCommand, note_submission_revision(), Record one edit to a performance, against whichever placed order carries it., file_url(), Turning a stored attachment key into something a browser can open. An… (+38 more)
+Cohesion: 0.08
+Nodes (34): Remove an attachment reference from the submission (owner)., Upload and attach a file to the submission (owner, editable states only).…, RemoveAttachmentCommand, UploadAttachmentCommand, note_submission_revision(), Record one edit to a performance, against whichever placed order carries it., file_url(), Turning a stored attachment key into something a browser can open. An… (+26 more)
 
 ### Community 57 - "additional-services.ts"
 Cohesion: 0.11
@@ -1171,9 +1154,9 @@ Nodes (19): Button, AllSizes, AllVariants, AsChildLink, Danger, Disabled, Ghost,
 Cohesion: 0.06
 Nodes (27): AppShell(), ShellFrame(), CollapsedSidebar, Desktop, meta, Mobile, NestedRouteBreadcrumbs, Story (+19 more)
 
-### Community 60 - "DocumentType"
-Cohesion: 0.04
-Nodes (99): DocumentType, Enum, A kind of document the platform issues. Also the *template* type: a template is…, AssignmentResponseSerializer, _AwardSnapshotSerializer, _CompetitionSnapshotSerializer, CreateAssignmentRequestSerializer, CreateDiplomaRequestSerializer (+91 more)
+### Community 60 - "diplomas/views.py"
+Cohesion: 0.09
+Nodes (38): _actor(), DiplomaAssignmentDetailView, DiplomaAssignmentsView, DiplomaGenerationArchiveView, DiplomaPreviewApplicationsView, DiplomaPreviewBindingsView, DiplomaPrintJobDetailView, DiplomaPrintPackageSummaryView (+30 more)
 
 ### Community 61 - "features/festival-landing/index.ts"
 Cohesion: 0.17
@@ -1183,9 +1166,9 @@ Nodes (24): bodyBlocks(), heroBlock(), ordered(), makeBlock(), makeContacts(), m
 Cohesion: 0.21
 Nodes (26): stub(), Envelope, fetchCandidates(), fetchProgram(), fetchPrograms(), request(), useAddBlock(), useAddColumn() (+18 more)
 
-### Community 63 - "FakeEmailGateway"
-Cohesion: 0.08
-Nodes (16): FakeEmailGateway, FakeEventPublisher, FakeNotificationGateway, FakePasswordHasher, FakeSmsGateway, FakeUuidGenerator, FakeVerificationTokenService, Recording ``EmailGateway`` fake. (+8 more)
+### Community 63 - "content_views.py"
+Cohesion: 0.13
+Nodes (46): AddParticipantCommand, AddTeacherCommand, CalculatePriceCommand, Add a participant to the submission (owner, editable states only). Normally a…, Name the people in a collective (owner, editable states only). The whole…, Remove a participant from the submission (owner; not the last one)., Add a teacher in a configurable role (owner, editable states only)., Remove a teacher from the submission (owner). (+38 more)
 
 ### Community 64 - "documents.ts"
 Cohesion: 0.07
@@ -1199,33 +1182,33 @@ Nodes (17): client(), Any, APIClient, fixture, End-to-end REST tests for the Ide
 Cohesion: 0.03
 Nodes (95): A template's print inputs: its placed fields and its backing PDF bytes.…, Render the overprint sheet for one degree: a blank page of the template's…, TemplateAssets, qr_png(), QR code generation for a diploma's verification link. Produces a PNG entirely…, Complete a scheme-less base URL (``vzlettalantov.by`` → ``https://…``). A QR…, ``https://<configured domain>/verify/<token>`` for a diploma's token., PNG bytes of the QR code encoding ``data``. Error correction ``M`` (~15%… (+87 more)
 
-### Community 67 - "test_print_package.py"
+### Community 67 - "print_package.py"
 Cohesion: 0.06
-Nodes (64): PrintJobNotFoundError, Raised when a referenced print job does not exist., list_runs(), Any, UUID, The generation archive: record a finished run, list the history. Every way of…, Append one completed run to the archive. Never raises into its caller's face:…, The generation history, newest first, optionally for one competition. The… (+56 more)
+Nodes (70): PrintJobNotFoundError, Raised when a referenced print job does not exist., list_runs(), Any, UUID, The generation archive: record a finished run, list the history. Every way of…, Append one completed run to the archive. Never raises into its caller's face:…, The generation history, newest first, optionally for one competition. The… (+62 more)
 
 ### Community 68 - "trackers.ts"
 Cohesion: 0.10
 Nodes (32): Analytics(), consent, analyticsConfigured(), appendScript(), forgetCookie(), gaId(), gtag(), isAnalyticsCookie() (+24 more)
 
 ### Community 69 - "FakeUserRepository"
-Cohesion: 0.18
-Nodes (4): FakeUserRepository, PhoneNumber, UserId, In-memory ``UserRepository`` that stores aggregates by id.
+Cohesion: 0.13
+Nodes (7): FakeClock, FakeUserRepository, datetime, PhoneNumber, UserId, Frozen ``Clock`` fake returning a fixed instant., In-memory ``UserRepository`` that stores aggregates by id.
 
 ### Community 70 - "ProgramService"
 Cohesion: 0.04
-Nodes (62): ProgramArchiveView, ProgramShareView, ProgramSummaryView, A program as it appears in a list of programs., Every file of one kind in a programme, plus the slots that have none.…, A public edition of the program, as listed in the constructor., _act_label(), _clock() (+54 more)
+Nodes (72): ProgramArchiveView, ProgramShareView, ProgramSummaryView, PublicProgramView, A program as it appears in a list of programs., Every file of one kind in a programme, plus the slots that have none.…, What a public link resolves to: a table, and the columns it was cut to., A public edition of the program, as listed in the constructor. (+64 more)
 
-### Community 71 - "OwnerId"
-Cohesion: 0.04
-Nodes (77): Result DTOs for the Teacher Directory application layer. Immutable, primitive-…, Application ports (contracts) required by Teacher Directory use cases. The…, Domain entities for the Teacher Directory bounded context. One aggregate - the…, Reactivate an archived entry (ARCHIVED -> ACTIVE)., DomainEvent, datetime, Domain events emitted by the Teacher Directory bounded context. Past-tense…, The current instant as a timezone-aware **UTC** datetime (default factory). (+69 more)
+### Community 71 - "TeacherRole"
+Cohesion: 0.05
+Nodes (63): Domain entities for the Teacher Directory bounded context. One aggregate - the…, An archived teacher was reactivated back into the directory., TeacherReactivated, DirectConstructionError, IllegalTeacherStatusTransitionError, InvalidEmailAddressError, InvalidOwnerIdError, InvalidPersonNameError (+55 more)
 
 ### Community 72 - "pricing.ts"
 Cohesion: 0.09
 Nodes (41): admissionRuleKey, AdmissionRuleLabels, filterAdmissionRules(), resolveAdmissionRuleLabels(), sortAdmissionRules(), applyBulkOperation(), buildPricingMap(), buildPricingRows() (+33 more)
 
-### Community 73 - "participants/views.py"
+### Community 73 - "_envelope"
 Cohesion: 0.07
-Nodes (44): Participants REST API v1 — participant resource endpoints. The versioned HTTP…, CreateParticipantRequestSerializer, GuardianLinkResourceSerializer, ParticipantMetaSerializer, ParticipantResourceSerializer, ProposeGuardianLinkRequestSerializer, Serializers for the Participants API endpoints (API-000 §7, §25). Serializers…, Validate a create-participant request body. (+36 more)
+Nodes (42): CreateParticipantRequestSerializer, GuardianLinkResourceSerializer, ParticipantMetaSerializer, ParticipantResourceSerializer, ProposeGuardianLinkRequestSerializer, Serializers for the Participants API endpoints (API-000 §7, §25). Serializers…, Validate a create-participant request body., Refuse half a consent reference — it is evidence or it is nothing. (+34 more)
 
 ### Community 74 - "ui/index.ts"
 Cohesion: 0.10
@@ -1236,8 +1219,8 @@ Cohesion: 0.06
 Nodes (33): compilerOptions, allowImportingTsExtensions, exactOptionalPropertyTypes, forceConsistentCasingInFileNames, isolatedModules, jsx, lib, module (+25 more)
 
 ### Community 76 - "FontFace"
-Cohesion: 0.09
-Nodes (28): Every uploaded face in the renderer's vocabulary., FontFace, One font file: a family, a variant, and where to read it from. ``reference`` is…, bundled_faces(), bundled_font_path(), _candidates(), _display_family(), DjangoBundledFontProvider (+20 more)
+Cohesion: 0.10
+Nodes (26): FontFace, One font file: a family, a variant, and where to read it from. ``reference`` is…, bundled_faces(), bundled_font_path(), _candidates(), _display_family(), DjangoBundledFontProvider, Path (+18 more)
 
 ### Community 77 - "devDependencies"
 Cohesion: 0.06
@@ -1252,8 +1235,8 @@ Cohesion: 0.05
 Nodes (26): AgeCategoryId, CompetitionId, datetime, DisciplineId, ParticipantGroupId, ParticipationFormatId, ServiceId, Return all non-deleted submissions for ``competition_id``. (+18 more)
 
 ### Community 80 - "Teacher"
-Cohesion: 0.08
-Nodes (16): ConsentReference, datetime, DomainEvent, PersonName, PhoneNumber, TeacherId, TeacherRole, Reconstruct the aggregate from persistence (no re-validation, no events). (+8 more)
+Cohesion: 0.05
+Nodes (37): UUID, Application ports (contracts) required by Teacher Directory use cases. The…, Return a brand-new time-ordered UUID version 7., ConsentReference, datetime, DomainEvent, PersonName, PhoneNumber (+29 more)
 
 ### Community 81 - "APIClient"
 Cohesion: 0.18
@@ -1272,16 +1255,16 @@ Cohesion: 0.04
 Nodes (132): BulkAdmissionRulesResult, BulkPricingResult, complete(), createAdditionalService(), createAdmissionRule(), createAgeCategory(), createAgeCategoryWithConflictRetry(), createCategory() (+124 more)
 
 ### Community 85 - "teacher_handlers.py"
-Cohesion: 0.09
-Nodes (36): Data-transfer objects for the Teacher Directory application layer. Plain,…, OperationResultDto, Teacher, A flat, immutable read view of the ``Teacher`` aggregate., Project ``teacher`` into a DTO, flattening its value objects., The outcome of a command: the affected teacher plus the events it produced., TeacherDto, ApplicationError (+28 more)
+Cohesion: 0.07
+Nodes (43): Command messages for the Teacher Directory bounded context. One command = one…, ArchiveTeacherCommand, Command messages for the Teacher Directory bounded context. A command is an…, Archive a teacher (hide from the directory, preserve for history)., Reactivate an archived teacher back into the directory., ReactivateTeacherCommand, Data-transfer objects for the Teacher Directory application layer. Plain,…, OperationResultDto (+35 more)
 
-### Community 86 - "build"
-Cohesion: 0.16
-Nodes (7): build(), bundled(), families_of(), InMemoryRepository, datetime, UUID, TestCatalog
+### Community 86 - "loadtest_print_package.py"
+Cohesion: 0.07
+Nodes (29): _arc_component(), BatchResult, DiplomaBatchGenerationService, NominationTarget, datetime, UUID, Mass print-package generation. A competition assigns a template **per…, Create missing diplomas per nomination, render print PDFs, bundle a ZIP. With… (+21 more)
 
 ### Community 87 - "platform/presentation/api/v1/views.py"
-Cohesion: 0.05
-Nodes (64): ChangeOrganizationStatusCommand, ConnectOrganizationCommand, Connect a new organization and invite the person who will run it.…, Set what share of its participation fees an organization owes the platform., Suspend a connected organization, or bring a suspended one back., SetCommissionRateCommand, build_list_organizations_handler(), Assemble the platform's organization roster read use case. (+56 more)
+Cohesion: 0.09
+Nodes (39): _CompetitionOptionSerializer, ConnectOrganizationRequestSerializer, _LoadTestJobSerializer, _LoadTestRunSerializer, _LoadTestTemplateSerializer, _OrganizationBreakdownSerializer, _OrganizationSerializer, Serializers for the platform operator's console — request validation and… (+31 more)
 
 ### Community 88 - "teachers/views.py"
 Cohesion: 0.08
@@ -1303,33 +1286,33 @@ Nodes (11): PreviewContext, PreviewData, PreviewDataProvider(), usePreviewData()
 Cohesion: 0.13
 Nodes (24): Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter(), DrawerHeader(), DrawerOverlay, DrawerPortal (+16 more)
 
-### Community 93 - "SignedVerificationTokenService"
-Cohesion: 0.06
-Nodes (32): InvalidVerificationTokenError, An email-verification token could not be accepted. Raised by the confirm-email…, The decoded contents of an email-verification token. A framework-free carrier…, Verify ``token``'s integrity and return its payload, or raise on failure., VerificationToken, EventDispatcher, DomainEvent, _E (+24 more)
+### Community 93 - "auth/composition.py"
+Cohesion: 0.02
+Nodes (96): _Argon2Hasher, Clock, EmailGateway, React to ``UserRegistered`` by emailing an email-verification link (IDN-002).…, Send the verification email for a freshly registered account., SendVerificationEmailOnUserRegistered, Application-layer event handling for the Identity & Access bounded context.…, Authentication adapters for the Identity & Access bounded context. Concrete… (+88 more)
 
 ### Community 94 - "IsOrganizationStaff"
 Cohesion: 0.04
-Nodes (117): IsOrganizationStaff, APIView, BasePermission, Request, Grant access only to users with an active Organization staff membership.…, FillCellsCommand, Rename a custom column, keeping every value already filled into it., Write hand-filled values for one slot, keyed by custom column key. A blank… (+109 more)
+Nodes (115): IsOrganizationStaff, APIView, BasePermission, Request, Grant access only to users with an active Organization staff membership.…, Rename a custom column, keeping every value already filled into it., RenameColumnCommand, Application layer of the Programs bounded context (use cases and their ports). (+107 more)
 
-### Community 95 - "Env"
+### Community 95 - "SubmissionModel"
 Cohesion: 0.03
-Nodes (102): ApplicationInvariantViolationError, ApplicationReferenceNotFoundError, A referenced submission/service line is not present on the application., An order invariant would be violated (no submissions, missing consent, not all…, AdditionalServiceQuote, ApplicantInfo, EducationalOrganizationInfo, A flat projection of an applicant's Identity profile (display data only). The… (+94 more)
+Nodes (164): AddSubmissionToApplicationCommand, CancelApplicationCommand, ConsentInput, CreateApplicationCommand, MarkApplicationPaidCommand, Command DTOs for the Application (order) use cases. Framework-neutral, frozen,…, Submit the order: submit each attached submission, then place the order., Move the order to awaiting payment (requires all submissions approved). (+156 more)
 
-### Community 96 - "me_views.py"
-Cohesion: 0.04
-Nodes (65): Read-side projections of the Diplomas bounded context (CQRS read side). Pure,…, archive_entry_name(), archive_filename(), bundled_documents(), ParticipantDocumentsReadService, ParticipantDocumentView, DocumentType, Protocol (+57 more)
+### Community 96 - "application/read_models/verification.py"
+Cohesion: 0.12
+Nodes (21): _clean(), DiplomaVerificationReadService, DiplomaVerificationView, _nomination(), project_verification(), Any, datetime, Protocol (+13 more)
 
 ### Community 97 - "compilerOptions"
 Cohesion: 0.07
 Nodes (27): compilerOptions, allowImportingTsExtensions, isolatedModules, lib, module, moduleDetection, moduleResolution, noEmit (+19 more)
 
 ### Community 98 - "TestDjangoPublicCatalogReaderDetail"
-Cohesion: 0.21
+Cohesion: 0.22
 Nodes (4): django_db, UUID, TestDjangoPublicCatalogReader, TestDjangoPublicCatalogReaderDetail
 
 ### Community 99 - "status.py"
-Cohesion: 0.15
-Nodes (24): _check_broker(), _check_cache(), _check_database(), _check_disk(), _collect(), Component, _no_store(), Any (+16 more)
+Cohesion: 0.11
+Nodes (28): _check_broker(), _check_cache(), _check_database(), _check_disk(), _collect(), Component, _no_store(), Any (+20 more)
 
 ### Community 100 - "shared/api/index.ts"
 Cohesion: 0.17
@@ -1345,11 +1328,11 @@ Nodes (9): LandingImageUploadField(), LandingImageUploadFieldProps, LandingPrevi
 
 ### Community 103 - "UploadedFontView"
 Cohesion: 0.11
-Nodes (29): FontCatalogFamilyView, One uploaded face, as the library screen lists it., Every uploaded face, newest first., The uploaded faces, for the library screen., One family the editor may offer, with every face it can actually draw., UploadedFontView, build_font_library_service(), Assemble the font catalog and the upload path behind it. The catalog is what… (+21 more)
+Nodes (28): FontCatalogFamilyView, One uploaded face, as the library screen lists it., The uploaded faces, for the library screen., One family the editor may offer, with every face it can actually draw., UploadedFontView, build_font_library_service(), Assemble the font catalog and the upload path behind it. The catalog is what…, invalidate_uploaded_fonts() (+20 more)
 
 ### Community 104 - "results/application/interfaces.py"
-Cohesion: 0.03
-Nodes (67): AwardedDiploma, AwardRegister, Clock, PerformanceCatalog, ProtocolRepository, datetime, Protocol, UUID (+59 more)
+Cohesion: 0.04
+Nodes (48): AwardedDiploma, AwardRegister, Clock, PerformanceCatalog, ProtocolRepository, datetime, Protocol, UUID (+40 more)
 
 ### Community 105 - "APIClient"
 Cohesion: 0.06
@@ -1357,35 +1340,35 @@ Nodes (37): _archive(), _attach(), _attach_music(), _filled_program(), Any, APIC
 
 ### Community 106 - "diplomas-api.ts"
 Cohesion: 0.08
-Nodes (57): DiplomaTemplateQuery, fetchAssignments(), fetchGenerationArchive(), fetchLayout(), fetchPreviewApplications(), fetchPreviewBindings(), fetchPrintJob(), fetchPrintSummary() (+49 more)
+Nodes (56): DiplomaTemplateQuery, fetchAssignments(), fetchGenerationArchive(), fetchLayout(), fetchPreviewApplications(), fetchPreviewBindings(), fetchPrintJob(), fetchPrintSummary() (+48 more)
 
 ### Community 107 - ".get"
-Cohesion: 0.15
-Nodes (19): OrganizerParticipantRegistry, Protocol, Port: project the organizer's participant registry from submissions.…, Return the full card for ``key``, or ``None`` if absent from scope., build_organizer_participant_registry(), organization_competition_ids(), organization_competitions(), Composition root for the organizer read-model surface. Wires the framework-free… (+11 more)
+Cohesion: 0.13
+Nodes (20): OrganizerParticipantRegistry, Protocol, Port: project the organizer's participant registry from submissions.…, Return the matching participant summaries (already filtered/sorted)., Return the full card for ``key``, or ``None`` if absent from scope., build_organizer_participant_registry(), organization_competition_ids(), organization_competitions() (+12 more)
 
-### Community 108 - "print_package.py"
+### Community 108 - "Diploma"
 Cohesion: 0.03
-Nodes (125): DiplomaAwardService, Records results on diplomas and issues them to their participants., _arc_component(), BatchResult, DiplomaBatchGenerationService, NominationTarget, datetime, UUID (+117 more)
+Nodes (105): DiplomaAwardService, datetime, UUID, Write ``(submission id, degree)`` onto each diploma and issue it. Returns one…, Issue one diploma per named member of a collective; return how many. Each…, The collective's snapshot addressed to one of its members., Records results on diplomas and issues them to their participants., Persist a new diploma. (+97 more)
 
 ### Community 109 - "teachers/test_handlers.py"
-Cohesion: 0.04
-Nodes (69): Replace a teacher's details (owner, editable states only). Like participants,…, UpdateTeacherCommand, Command messages for the Teacher Directory bounded context. One command = one…, AddTeacherCommand, ArchiveTeacherCommand, Command messages for the Teacher Directory bounded context. A command is an…, Add a brand-new teacher to the acting user's personal directory., Update an existing teacher's display/contact details. (+61 more)
+Cohesion: 0.08
+Nodes (31): AddTeacherCommand, Add a brand-new teacher to the acting user's personal directory., Update an existing teacher's display/contact details., UpdateTeacherCommand, Query use cases for the Teacher Directory bounded context. The **read side**:…, GetTeacherDirectoryQuery, GetTeacherQuery, Query messages for the Teacher Directory bounded context. Immutable, transport-… (+23 more)
 
 ### Community 110 - "test_competitions_api.py"
-Cohesion: 0.13
-Nodes (31): _create_competition(), participant_client(), Any, APIClient, fixture, UUID, Integration tests for the Competitions REST API v1 (organizer control panel).…, An illegal lifecycle transition (DRAFT → RUNNING) is a 409. (+23 more)
+Cohesion: 0.10
+Nodes (36): System adapters for the Competitions bounded context. Concrete implementations…, UUID, Fresh, time-ordered UUID version 7 values (API-000 §23)., Return a brand-new UUID version 7., Uuid7Generator, _create_competition(), participant_client(), Any (+28 more)
 
 ### Community 111 - "ARCH-001 · VT Platform Architecture"
 Cohesion: 0.06
 Nodes (37): CONTRIBUTING · Collaboration Guide, ARCH-001 · VT Platform Architecture, ADR-0001 · Adopt Modular Monolith over microservices for v1, ADR-0002 · Django 6 + DRF as backend framework, ADR-0003 · PostgreSQL as single system of record; media in S3, ADR-0004 · Schema-per-bounded-context in PostgreSQL, ADR-0005 · Clean Architecture layering per module, ADR-0006 · JWT (short access + rotating refresh) authentication (+29 more)
 
-### Community 112 - "participants/test_dto.py"
-Cohesion: 0.15
-Nodes (17): Data-transfer objects for the Participants application layer. Plain,…, GuardianLinkDto, OperationResultDto, ParticipantDto, Participant, Result DTOs for the Participants application layer. Immutable output shapes…, The outcome of a Participants command: the affected participant plus its…, A flat read view of a guardian relationship inside the aggregate. (+9 more)
+### Community 112 - "ParticipantDto"
+Cohesion: 0.13
+Nodes (15): Data-transfer objects for the Participants application layer. Plain,…, GuardianLinkDto, OperationResultDto, ParticipantDto, Participant, The outcome of a Participants command: the affected participant plus its…, A flat read view of a guardian relationship inside the aggregate., Project a :class:`GuardianLink` value object into a DTO. (+7 more)
 
-### Community 113 - "DiplomaSnapshot"
+### Community 113 - "DocumentType"
 Cohesion: 0.02
-Nodes (167): datetime, UUID, Writing the jury's result onto a diploma, and issuing it to the participant.…, Write ``(submission id, degree)`` onto each diploma and issue it. Returns one…, Issue one diploma per named member of a collective; return how many. Each…, The collective's snapshot addressed to one of its members., ``place_degrees`` are the degrees the ``МЕСТА`` folder gets a sheet for, in the…, AssignedTemplate (+159 more)
+Nodes (186): Writing the jury's result onto a diploma, and issuing it to the participant.…, ``place_degrees`` are the degrees the ``МЕСТА`` folder gets a sheet for, in the…, AssignedTemplate, DiplomaNumberSequence, DiplomaRepository, DiplomaSnapshotSource, IssuedDocumentRepository, PrintPackageWorkspace (+178 more)
 
 ### Community 114 - "contacts.ts"
 Cohesion: 0.08
@@ -1396,16 +1379,16 @@ Cohesion: 0.11
 Nodes (23): APPLICATION_STATUS, formatRelativeTime(), ActivityEvent, ActivityKind, ApplicationSummary, CompetitionSummary, NotificationItem, NotificationKind (+15 more)
 
 ### Community 116 - "render_transactional_email_html"
-Cohesion: 0.08
-Nodes (23): _format_deadline(), datetime, ``DjangoApplicantNotifier`` — telling an applicant what happened to their…, Queue a single message on the channel the caller chose., Render the payment deadline in Minsk local time (e.g. ``24.07.2026 22:17…, Where the feed entry takes the reader: their own card for this order., DjangoOrganizerNotifier, datetime (+15 more)
+Cohesion: 0.07
+Nodes (26): DjangoApplicantNotifier, _format_deadline(), datetime, ``DjangoApplicantNotifier`` — telling an applicant what happened to their…, Queue a single message on the channel the caller chose., Render the payment deadline in Minsk local time (e.g. ``24.07.2026 22:17…, Applicant email notifier (``ApplicantNotifier`` port), via Django core mail., Where the feed entry takes the reader: their own card for this order. (+18 more)
 
 ### Community 117 - "features/notifications/index.ts"
 Cohesion: 0.29
 Nodes (11): unwrap(), useMarkAllNotificationsRead(), useMarkNotificationRead(), useNotificationFeed(), notificationKeys, FALLBACK, formatNotificationTime(), notificationPresentation (+3 more)
 
 ### Community 118 - "test_participants_api.py"
-Cohesion: 0.06
-Nodes (54): datetime, System clock — the concrete :class:`Clock` adapter. Implements the…, The current instant from the real clock, always timezone-aware., The current instant in the platform's configured display timezone., The current instant as a timezone-aware UTC datetime (API-000 §22)., SystemClock, Ambient-dependency adapters for the Participants bounded context. Concrete…, UUID (+46 more)
+Cohesion: 0.07
+Nodes (48): datetime, System clock — the concrete :class:`Clock` adapter. Implements the…, The current instant from the real clock, always timezone-aware., The current instant in the platform's configured display timezone., The current instant as a timezone-aware UTC datetime (API-000 §22)., SystemClock, Ambient-dependency adapters for the Participants bounded context. Concrete…, UUID (+40 more)
 
 ### Community 119 - "taxonomy.ts"
 Cohesion: 0.20
@@ -1420,16 +1403,16 @@ Cohesion: 0.05
 Nodes (44): MOCK_ACTIVITY, MOCK_APPLICATIONS, MOCK_COMPETITIONS, MOCK_EVENTS, MOCK_NOTIFICATIONS, MOCK_STATS, NOW, makeClient() (+36 more)
 
 ### Community 122 - "binding.ts"
-Cohesion: 0.13
-Nodes (24): AWARD_DEGREE, COMPETITION_CITY, COMPETITION_DATE, COMPETITION_TITLE, DEFAULT_BINDINGS, DIPLOMA_ISSUE_DATE, DIPLOMA_NUMBER, KNOWN_BINDINGS (+16 more)
+Cohesion: 0.09
+Nodes (33): GenerateDocumentsPayload, AWARD_DEGREE, COMPETITION_CITY, COMPETITION_DATE, COMPETITION_TITLE, DEFAULT_BINDINGS, DIPLOMA_ISSUE_DATE, DIPLOMA_NUMBER (+25 more)
 
 ### Community 123 - "registration-wizard/api/hooks.ts"
 Cohesion: 0.19
 Nodes (19): SetParticipantMembersInput, submissionKey(), unwrap(), UploadAttachmentInput, useAddParticipant(), useAddTeacher(), useCalculatePrice(), useRemoveParticipant() (+11 more)
 
-### Community 124 - "account/views.py"
-Cohesion: 0.02
-Nodes (146): ApplicationError, Exception, Base class for Competitions application-layer errors, carrying a stable…, competition_problem(), _domain_rendering(), ApplicationError, Request, Response (+138 more)
+### Community 124 - "auth/views.py"
+Cohesion: 0.03
+Nodes (147): extend_schema, Request, Response, AcceptConsentCommand, ListConsentsQuery, Commands and queries for the consent journal. Separate from…, Record that a subject accepted one consent, at the version they were shown.…, Withdraw the active consent of one type, optionally for one participant.… (+139 more)
 
 ### Community 125 - "APIClient"
 Cohesion: 0.18
@@ -1459,9 +1442,9 @@ Nodes (15): BulkMode, BulkToolbarProps, MODE_LABELS, PricingBulkDialog(), Pricin
 Cohesion: 0.09
 Nodes (24): ContentSection(), ContentSectionProps, CATEGORY_LABELS, DocumentsSection(), DocumentsSectionProps, FaqSection(), FaqSectionProps, GalleryImageView (+16 more)
 
-### Community 132 - "identity/test_interfaces.py"
-Cohesion: 0.03
-Nodes (74): Clock, EmailGateway, Side-effect handlers that react to Identity domain events (ARCH-001 §4.8).…, Clock, Clock, EmailGateway, UuidGenerator, Clock (+66 more)
+### Community 132 - "UserRepository"
+Cohesion: 0.04
+Nodes (44): Clock, EmailGateway, UuidGenerator, EventPublisher, NotificationGateway, PasswordHasher, DomainEvent, PhoneNumber (+36 more)
 
 ### Community 133 - "test_applications_api.py"
 Cohesion: 0.25
@@ -1496,24 +1479,24 @@ Cohesion: 0.17
 Nodes (14): useRemoveAttachment(), useUploadAttachment(), AttachmentKind, attachmentTypeFor(), fileName(), IMAGE_EXTENSIONS, megabytes(), refusalMessage() (+6 more)
 
 ### Community 141 - "diplomas/index.ts"
-Cohesion: 0.08
-Nodes (42): GenerateDocumentsPayload, TemplateFieldBinding, DEFAULT_FIELD_STYLE, DEFAULT_FREE_TEXT, DEFAULT_NOMINATION_PREFIX, defaultConfigForType(), FIELD_GROUPS, FIELD_TYPES (+34 more)
+Cohesion: 0.11
+Nodes (33): TemplateFieldBinding, DEFAULT_FIELD_STYLE, DEFAULT_FREE_TEXT, DEFAULT_NOMINATION_PREFIX, defaultConfigForType(), FIELD_GROUPS, FIELD_TYPES, NOMINATION_PARTS (+25 more)
 
 ### Community 142 - "SubmissionMapper"
-Cohesion: 0.02
-Nodes (59): Django AppConfig for the Applications bounded context., UUID, Build a ``SubmissionId`` from an existing :class:`uuid.UUID`., Build a :class:`Duration` from a whole number of seconds., Build a :class:`Duration` from minutes and/or seconds., Django admin registrations for the Applications bounded context. Operational…, Base admin exposing the audit timestamps as read-only. (``admin.ModelAdmin`` is…, _ReadOnlyTimestampsAdmin (+51 more)
+Cohesion: 0.04
+Nodes (40): Build a ``SubmissionId`` from an existing :class:`uuid.UUID`., Build a :class:`Duration` from a whole number of seconds., ApplicationMapper, Any, Bidirectional, stateless translator between the ``Application`` aggregate and…, Reconstruct the ``Application`` aggregate from its row (no re-validation, no…, Build a brand-new, **unsaved** ``ApplicationModel`` from an aggregate., Project ``entity`` onto an existing ``model`` in place, returning it. (+32 more)
 
-### Community 143 - "build_schedule"
-Cohesion: 0.18
-Nodes (10): build_schedule(), datetime, ProgramItem, Place every item on the timeline, in order. ``position`` is 1-based because it…, _act(), _break(), ProgramItem, TestBuffer (+2 more)
+### Community 143 - "optimistic_upsert"
+Cohesion: 0.05
+Nodes (31): OrganizationMapper, Organization, Bidirectional translator between ``Organization`` and ``OrganizationModel``., Build a brand-new, unsaved ``OrganizationModel`` from an aggregate., Flatten an aggregate into ``OrganizationModel`` column values., Build a brand-new, unsaved ``StaffMembershipModel`` from an aggregate., Flatten an aggregate into ``StaffMembershipModel`` column values., _column_values() (+23 more)
 
 ### Community 144 - "competitions/domain/entities.py"
 Cohesion: 0.03
-Nodes (187): AdditionalService, AgeCategory, Category, CompetitionDocument, CompetitionRegulation, Contact, Discipline, InformationBlock (+179 more)
+Nodes (221): AdditionalService, AgeCategory, Category, CompetitionDocument, CompetitionRegulation, Contact, Discipline, ensure_admission_combination_valid() (+213 more)
 
-### Community 145 - "landing_config_json.py"
-Cohesion: 0.14
-Nodes (18): Seed the system blocks (CONTENT starts empty). HERO, REGULATION, DOCUMENTS and…, _block_from_json(), _faq_item_from_json(), _gallery_image_from_json(), _jury_card_from_json(), landing_config_from_json(), _partner_card_from_json(), LandingBlock (+10 more)
+### Community 145 - "landing_config_from_json"
+Cohesion: 0.22
+Nodes (4): Seed the system blocks (CONTENT starts empty). HERO, REGULATION, DOCUMENTS and…, landing_config_from_json(), Rebuild landing configuration from JSON, falling back to defaults., TestLandingProjection
 
 ### Community 146 - "layouts/index.ts"
 Cohesion: 0.20
@@ -1552,8 +1535,12 @@ Cohesion: 0.09
 Nodes (12): Clock, UuidGenerator, ParticipantRepository, Participant, ParticipantId, Persist ``participant`` (insert or update), honouring its optimistic version., Remove ``participant`` from storage. This is a *storage* deletion; the…, Port: persistence and retrieval of the :class:`Participant` aggregate root.… (+4 more)
 
 ### Community 155 - "competitions/presentation/api/v1/public_views.py"
-Cohesion: 0.14
-Nodes (26): build_registration_read_service(), Assemble the Registration read model (the wizard's single projection)., PublicFestivalDetailEnvelopeSerializer, PublicFestivalDetailSerializer, PublicFestivalListEnvelopeSerializer, PublicFestivalSerializer, One competition's full public landing view (catalog facts + landing + contacts)., The full ``GET /public/festivals/{id}`` response envelope. (+18 more)
+Cohesion: 0.12
+Nodes (28): build_public_catalog_read_service(), Assemble the public festival catalog read model (participant-facing). A read-…, PublicFestivalDetailEnvelopeSerializer, PublicFestivalDetailSerializer, PublicFestivalListEnvelopeSerializer, PublicFestivalSerializer, One competition's full public landing view (catalog facts + landing + contacts)., The full ``GET /public/festivals/{id}`` response envelope. (+20 more)
+
+### Community 156 - "_grant"
+Cohesion: 0.13
+Nodes (9): PlatformAccessReader, PlatformAccessReadService, Protocol, UUID, The published cross-context read model of platform-operator access.…, Port: answer "is this user a platform administrator?" for other contexts., Concrete :class:`PlatformAccessReadService` over the Platform repository. A…, _grant() (+1 more)
 
 ### Community 157 - "applications/index.ts"
 Cohesion: 0.16
@@ -1577,19 +1564,19 @@ Nodes (17): FestivalLanding(), FestivalLandingProps, mockedHook, QueryResult, La
 
 ### Community 162 - "diplomas-workspace/index.ts"
 Cohesion: 0.10
-Nodes (20): DATE_FORMATTER, DATE_TIME_FORMATTER, format(), formatDate(), formatDateTime(), ArchiveSection(), DownloadCell(), PRINT_RUN (+12 more)
+Nodes (21): DATE_FORMATTER, DATE_TIME_FORMATTER, format(), formatDate(), formatDateTime(), ArchiveSection(), DownloadCell(), PRINT_RUN (+13 more)
 
 ### Community 163 - "test_password_reset_handlers.py"
-Cohesion: 0.05
-Nodes (53): Command messages for the Identity & Access bounded context. One command = one…, AuthenticateUserCommand, ChangeEmailCommand, ChangePasswordCommand, ConsentAcceptance, DeleteUserCommand, LockUserCommand, Command messages for the Identity & Access bounded context. A command is an… (+45 more)
+Cohesion: 0.12
+Nodes (21): Begin password recovery: email a reset link to the account owning ``email``.…, Set a new password from the signed token carried by the emailed reset link. The…, RequestPasswordResetCommand, ResetPasswordCommand, Rich constructor mirroring the field order., FakeEmailGateway, FakePasswordHasher, FakeVerificationTokenService (+13 more)
 
-### Community 164 - "django_teacher_repository.py"
-Cohesion: 0.05
-Nodes (48): AppConfig, Django AppConfig for the Teacher Directory bounded context., Register the ORM models and admin, which live under ``infrastructure/``. Models…, App configuration for the Teacher Directory bounded context., TeachersConfig, Django admin registrations for the Teacher Directory bounded context.…, Base admin exposing the audit timestamps as read-only. (``admin.ModelAdmin`` is…, _ReadOnlyTimestampsAdmin (+40 more)
+### Community 164 - "TeacherModel"
+Cohesion: 0.07
+Nodes (28): AppConfig, Django AppConfig for the Teacher Directory bounded context., Register the ORM models and admin, which live under ``infrastructure/``. Models…, App configuration for the Teacher Directory bounded context., TeachersConfig, Django admin registrations for the Teacher Directory bounded context.…, Base admin exposing the audit timestamps as read-only. (``admin.ModelAdmin`` is…, _ReadOnlyTimestampsAdmin (+20 more)
 
-### Community 165 - "DjangoPerformanceCatalog"
+### Community 165 - "results/infrastructure/acl/performance_catalog.py"
 Cohesion: 0.17
-Nodes (14): _clean(), DjangoPerformanceCatalog, _person(), Any, CatalogPerformance, UUID, Turn submission rows into flat catalog values, batching every lookup., Applicant id → the account's email and display name, in one query. The address… (+6 more)
+Nodes (15): _clean(), DjangoPerformanceCatalog, _person(), Any, CatalogPerformance, UUID, ``DjangoPerformanceCatalog`` - the Results context's window onto other…, Turn submission rows into flat catalog values, batching every lookup. (+7 more)
 
 ### Community 166 - "test_user_mapper.py"
 Cohesion: 0.14
@@ -1619,13 +1606,13 @@ Nodes (13): compareCompetitions(), CompetitionsListFilters, filterAndSortCompeti
 Cohesion: 0.23
 Nodes (13): Default, meta, Story, Vertical, WithDisabled, Tabs, TabsContent, TabsList (+5 more)
 
-### Community 173 - "Uuid7Generator"
-Cohesion: 0.14
-Nodes (12): datetime, System clock — the concrete :class:`Clock` adapter., The current instant from the real clock, always timezone-aware., The current instant in the platform's configured display timezone., The current instant as a timezone-aware UTC datetime (API-000 §22)., SystemClock, System adapters for the Competitions bounded context. Concrete implementations…, UUID (+4 more)
+### Community 173 - "competition_problem"
+Cohesion: 0.09
+Nodes (23): GetCompetitionQuery, Fetch a single competition's full detail by id., build_get_competition_handler(), build_list_competitions_handler(), Assemble the single-competition read use case., Assemble the competition-listing read use case., competition_problem(), ApplicationError (+15 more)
 
 ### Community 174 - "ProtocolService"
-Cohesion: 0.04
-Nodes (58): AwardOptionView, ColumnView, ProtocolDetailView, ProtocolRowView, ProtocolSummaryView, ProtocolTableView, PublicationResultView, PublicProtocolRowView (+50 more)
+Cohesion: 0.06
+Nodes (41): ProtocolSummaryView, A protocol as it appears in the list of a competition's protocols., ProtocolService, AwardKind, CatalogPerformance, ColumnView, datetime, Protocol (+33 more)
 
 ### Community 175 - "fonts.ts"
 Cohesion: 0.11
@@ -1644,8 +1631,8 @@ Cohesion: 0.13
 Nodes (18): _applicant(), _diploma(), _individual(), APIClient, fixture, Path, SettingsWrapper, UUID (+10 more)
 
 ### Community 179 - "test_public_festivals_api.py"
-Cohesion: 0.25
-Nodes (7): _competition(), _open_nomination(), _organization(), UUID, Integration tests for the public Festival endpoints (participant-facing).…, Seed a nomination with an open registration window (public status →…, TestPublicFestivalDetailEndpoint
+Cohesion: 0.29
+Nodes (5): _competition(), _organization(), UUID, Integration tests for the public Festival endpoints (participant-facing).…, TestPublicFestivalDetailEndpoint
 
 ### Community 180 - "Festival Landing/Detail Screen"
 Cohesion: 0.12
@@ -1663,9 +1650,9 @@ Nodes (12): router, AppProviders(), GuestRoute(), PlatformRoute(), ProtectedRout
 Cohesion: 0.16
 Nodes (18): attachmentTypeLabel(), CANCEL_NEEDS_CONFIRMATION, Capability, Detail, fetchWorkspace(), Item, nextId(), paymentStatusLabel() (+10 more)
 
-### Community 184 - "test_submission_content_api.py"
-Cohesion: 0.17
-Nodes (27): auth_client(), _collective(), _performance_body(), Any, APIClient, fixture, Integration tests for the Submission content REST edge (build a performance).…, The applicant's note for the organizers is stored and read back verbatim. (+19 more)
+### Community 184 - "build_token_service"
+Cohesion: 0.16
+Nodes (29): build_token_service(), Assemble the SimpleJWT-backed :class:`TokenService` adapter., auth_client(), _collective(), _performance_body(), Any, APIClient, fixture (+21 more)
 
 ### Community 185 - "regulations-section.tsx"
 Cohesion: 0.14
@@ -1680,8 +1667,8 @@ Cohesion: 0.25
 Nodes (7): DownwardTrend, Empty, Errored, Loading, meta, Story, Success
 
 ### Community 188 - "TeacherRepository"
-Cohesion: 0.07
-Nodes (23): Clock, UuidGenerator, Clock, EventPublisher, datetime, DomainEvent, Protocol, Teacher (+15 more)
+Cohesion: 0.14
+Nodes (9): Clock, UuidGenerator, Teacher, TeacherId, Port: persistence & retrieval of the :class:`Teacher` aggregate. Loads and…, Return the teacher with ``teacher_id`` (any state), or ``None``., Return the owner's directory entries, newest first, optionally with archived…, Persist ``teacher`` (insert or update), honouring its optimistic version. (+1 more)
 
 ### Community 189 - "scripts"
 Cohesion: 0.12
@@ -1703,9 +1690,9 @@ Nodes (12): buildFilterParams(), formatDate(), genderOptions, initialsFromName()
 Cohesion: 0.19
 Nodes (10): CompetitionCard(), CompetitionCardProps, CompetitionsEmptyState(), CompetitionsEmptyStateProps, CompetitionsErrorState(), CompetitionsGrid(), CompetitionsGridProps, CompetitionsListSkeleton() (+2 more)
 
-### Community 194 - ".register"
-Cohesion: 0.10
-Nodes (12): datetime, UUID, Mint a fresh, time-ordered id., Whether the library already holds this family in this variant., Record an uploaded face., Soft-delete one face; return its storage reference, or ``None`` if unknown., Persist the file; return the ``/media/…`` reference it is read back by., The public URL a browser fetches this bundled face from. (+4 more)
+### Community 194 - "FontFaceRepository"
+Cohesion: 0.06
+Nodes (25): BundledFontProvider, FontFaceInspector, FontFaceRepository, FontFileStore, datetime, Protocol, UUID, Reads a font file and decides whether a diploma can be drawn with it. (+17 more)
 
 ### Community 195 - "OPS-001 — Deployment runbook (single server)"
 Cohesion: 0.14
@@ -1716,8 +1703,8 @@ Cohesion: 0.19
 Nodes (23): _add(), _auth(), auth_client(), client(), Any, APIClient, fixture, Integration tests for the Teacher Directory REST API v1. Driven through DRF's… (+15 more)
 
 ### Community 197 - "DjangoProtocolRepository"
-Cohesion: 0.11
-Nodes (18): Any, Protocol, ProtocolRow, The root row's columns (id excluded - it is the lookup key)., One row's columns, stamped with its 1-based ordinal in the protocol.…, DjangoProtocolRepository, atomic, Protocol (+10 more)
+Cohesion: 0.12
+Nodes (17): Any, Protocol, ProtocolRow, The root row's columns (id excluded - it is the lookup key)., One row's columns, stamped with its 1-based ordinal in the protocol.…, DjangoProtocolRepository, atomic, Protocol (+9 more)
 
 ### Community 198 - "competitions/index.ts"
 Cohesion: 0.05
@@ -1779,21 +1766,21 @@ Nodes (10): AllVariants, Default, ErrorToast, meta, Story, Success, WithAction, 
 Cohesion: 0.20
 Nodes (14): fetchOrganizationProfile(), OrganizationProfile, OrganizationProfileEnvelope, organizationProfileKeys, OrganizationProfileUpdate, updateOrganizationProfile(), useOrganizationProfileQuery(), useUpdateOrganizationProfileMutation() (+6 more)
 
-### Community 213 - "RegulationVersion"
+### Community 213 - "ParticipantCountRange"
 Cohesion: 0.03
-Nodes (31): Create a DRAFT competition pre-populated from a reusable ``template``. The…, Create a new, empty template., _generate_uuid7(), ParticipantCountRange, ParticipantGroupName, Exception, A regulation version label (e.g. ``"1.0"``, ``"2025.1"``)., Generate a UUID version 7 (time-ordered) per RFC 9562 §5.7. Implemented… (+23 more)
+Nodes (38): CompetitionId, Create a brand-new competition in the DRAFT state. The only construction path…, Create a DRAFT competition pre-populated from a reusable ``template``. The…, Create a new, empty template., _generate_uuid7(), ParticipantCountRange, ParticipantGroupName, Exception (+30 more)
 
-### Community 214 - "IssuedDocument"
-Cohesion: 0.05
-Nodes (32): Persist a new document., Persist changes to an existing document., policy_for(), The rules for a document kind. Raises :class:`KeyError` for a kind with no…, IssuedDocument, datetime, DocumentType, UUID (+24 more)
+### Community 214 - "policy_for"
+Cohesion: 0.08
+Nodes (15): policy_for(), The rules for a document kind. Raises :class:`KeyError` for a kind with no…, datetime, DocumentType, UUID, Reconstruct from persistence (no validation, no state change)., Record the rendered PDF, publishing it unless the caller withholds that. Two…, Publish an already-rendered document, without re-rendering it. The second half… (+7 more)
 
 ### Community 215 - "APIClient"
 Cohesion: 0.13
 Nodes (12): client(), _me(), Any, APIClient, fixture, End-to-end REST tests for the account self-service API (``/users/me/*``).…, An authenticated client for a verified account with a known password., Unlike an emailed reset: the holder is here, and is not signed out mid-task. (+4 more)
 
 ### Community 216 - "test_thank_you_generation.py"
-Cohesion: 0.07
-Nodes (36): IssuedDocumentResult, Outcome of one generation run for one nomination. Counts **documents**, not…, build_issued_document_generation_service(), Assemble generation for non-registry documents (thank-you letters today).…, generate_documents(), Any, UUID, Read/write helpers for the non-registry document REST surface. Keeps the views… (+28 more)
+Cohesion: 0.05
+Nodes (63): _addressees(), _arcname(), IssuedDocumentGenerationService, IssuedDocumentResult, _prepare_layout(), Any, datetime, DocumentType (+55 more)
 
 ### Community 217 - "seo/index.ts"
 Cohesion: 0.15
@@ -1803,9 +1790,9 @@ Nodes (23): applyRobots(), resetDocumentHeadState(), SEO_PRIORITY, SeoDescriptor
 Cohesion: 0.26
 Nodes (12): application_problem(), problem_response(), Any, ApplicationError, Response, RFC 9457 Problem Details rendering for the Teacher Directory REST API v1. Every…, Return the request's correlation id, minting one if the client sent none., Build an ``application/problem+json`` :class:`Response` (RFC 9457). (+4 more)
 
-### Community 219 - "Any"
-Cohesion: 0.24
-Nodes (14): _application_json(), _detail_json(), _document_json(), _facets(), _history_json(), _note_json(), _organization_json(), _performance_json() (+6 more)
+### Community 219 - "results/composition.py"
+Cohesion: 0.09
+Nodes (19): Composition root for the Results bounded context. The one place a framework-…, DjangoRunningOrderSource, UUID, Concrete :class:`~apps.results.application.interfaces.RunningOrderSource`., This nomination's performance slots, in the order they were scheduled to run. A…, The programme the order came from - the oldest, when there are several.…, This nomination's live programmes, oldest first. Includes the competition's…, Outbound messaging adapters for the Results bounded context. (+11 more)
 
 ### Community 220 - "DATA-001 · Business Data Model"
 Cohesion: 0.13
@@ -1816,8 +1803,8 @@ Cohesion: 0.20
 Nodes (3): findStaffItem(), StaffBreadcrumbs(), StaffLayout()
 
 ### Community 222 - "PlatformAdministrator"
-Cohesion: 0.09
-Nodes (21): PlatformAdministrator, datetime, The ``PlatformAdministrator`` aggregate — who operates the platform itself. One…, Whether this grant currently confers platform-operator access., Withdraw the grant, leaving the record of it behind., Restore a revoked grant, rather than issuing a second one for the same account., A standing grant of platform-operator access to one Identity account.…, Grant platform-operator access to an account (the management-command path). (+13 more)
+Cohesion: 0.08
+Nodes (22): PlatformAdministrator, datetime, The ``PlatformAdministrator`` aggregate — who operates the platform itself. One…, Whether this grant currently confers platform-operator access., Withdraw the grant, leaving the record of it behind., Restore a revoked grant, rather than issuing a second one for the same account., A standing grant of platform-operator access to one Identity account.…, Grant platform-operator access to an account (the management-command path). (+14 more)
 
 ### Community 223 - "icon-button.stories.tsx"
 Cohesion: 0.21
@@ -1832,20 +1819,20 @@ Cohesion: 0.27
 Nodes (9): AgeCategoriesSection(), AgeCategoriesSectionProps, pluralAgeCategories(), rangesOverlap(), validateAgeCategoryDraft(), AgeCategoriesSkeleton(), AgeCategoryFormDialog(), AgeCategoryFormDialogProps (+1 more)
 
 ### Community 226 - "_component"
-Cohesion: 0.14
-Nodes (14): _overall(), _component(), Integration tests for the public status page. The page's whole value is that it…, A cached status page reports a moment that has passed., Nothing to fetch — no bundle, no font, no stylesheet, no image. This is the…, `/status` must reach this view, not the SPA shell's regex., Replace the real dependency probes with a fixed verdict., How component states combine into the one word at the top of the page. (+6 more)
+Cohesion: 0.12
+Nodes (16): _overall(), _component(), fixture, MonkeyPatch, Integration tests for the public status page. The page's whole value is that it…, A cached status page reports a moment that has passed., Nothing to fetch — no bundle, no font, no stylesheet, no image. This is the…, `/status` must reach this view, not the SPA shell's regex. (+8 more)
 
 ### Community 227 - "HeadFacts"
-Cohesion: 0.15
-Nodes (16): _absolute(), _festival_facts(), HeadFacts, _meta(), Serving the SPA's ``index.html`` with its ``<head>`` already filled in. Google…, Make a stored path absolute; crawlers reject a relative ``og:image``.…, One tag, marked ``data-seo`` so the client owns it after hydration. The…, The tags to splice into ``<head>`` for ``facts``. ``media_origin`` is where… (+8 more)
+Cohesion: 0.12
+Nodes (21): _absolute(), _festival_facts(), HeadFacts, _meta(), HttpRequest, HttpResponse, Serving the SPA's ``index.html`` with its ``<head>`` already filled in. Google…, Make a stored path absolute; crawlers reject a relative ``og:image``.… (+13 more)
 
 ### Community 228 - "Festival Catalog Filter Panel"
 Cohesion: 0.21
 Nodes (12): Festival Catalog Desktop Filters Screenshot, Category Facet (Вокал, ИЗО, Театр, Хор, Хореография...), Chip Toggle Multi-Select Pattern, City Facet (Брест, Витебск, Гомель, Минск, Могилёв), Event Date Range Facet (Даты проведения С / По), Festival Catalog Filter Panel, Participation Format Facet (Очно / Онлайн / Гибрид), Registration Status Facet (Открыта / Закрывается) (+4 more)
 
-### Community 230 - "config/urls.py"
-Cohesion: 0.16
-Nodes (13): HttpRequest, HttpResponse, The built shell, cached until the file changes. ``mtime`` is part of the key…, Serve the SPA shell for a browser route, head first., spa_index(), _template(), healthz(), HttpRequest (+5 more)
+### Community 230 - "teachers/composition.py"
+Cohesion: 0.11
+Nodes (27): Command & query handlers (use cases) for the Teacher Directory bounded context.…, AddTeacherHandler, ArchiveTeacherHandler, GetTeacherDirectoryHandler, GetTeacherHandler, Use case: add a new teacher to the acting user's personal directory., Use case: update an existing teacher's display/contact details., Use case: archive a teacher (never a physical delete). (+19 more)
 
 ### Community 231 - "staff-invitations.ts"
 Cohesion: 0.08
@@ -1883,25 +1870,25 @@ Nodes (10): dateFormatter, greetingFor(), Afternoon, Evening, Loading, meta, Mor
 Cohesion: 0.19
 Nodes (17): ALL, TODAY, ACCOUNT_CONSENTS, ADULT_PARTICIPANT_CONSENT, ageInYears(), APPLICATION_CONSENTS, applicationConsent(), ConsentDefinition (+9 more)
 
-### Community 240 - "test_organizer_participant_registry.py"
+### Community 240 - "test_generation_archive_api.py"
 Cohesion: 0.17
-Nodes (19): Return the matching participant summaries (already filtered/sorted)., Server-side narrowing of the participant list (all optional). Everything is…, RegistryFilters, _make_submission(), _participant(), Any, datetime, fixture (+11 more)
+Nodes (21): _assign(), _authenticated(), _backing_pdf(), _competition(), _generate_letters(), _media_root(), participant_client(), Any (+13 more)
 
 ### Community 241 - "_result"
 Cohesion: 0.36
 Nodes (11): _envelope(), _iso(), _note(), Any, extend_schema, Request, Response, Journal one applicant edit against whichever placed order carries this… (+3 more)
 
-### Community 242 - "test_competition_repository.py"
-Cohesion: 0.04
-Nodes (69): ``DjangoCompetitionUploadPolicy`` - the ACL projecting upload constraints.…, CompetitionId, Create a brand-new competition in the DRAFT state. The only construction path…, _combination(), Build every unsaved child row of ``entity``, keyed to the competition., Rebuild the five-part admission combination from a rule row., Domain <-> persistence mappers for the Competitions bounded context. Translate…, AdditionalServiceModel (+61 more)
+### Community 242 - "DjangoCompetitionRepository"
+Cohesion: 0.07
+Nodes (32): DjangoCompetitionRepository, CompetitionId, Model, UUID, Return all non-deleted competitions (newest first)., Persist ``competition`` and its whole graph (insert or update), honouring its…, Load every child collection for ``model`` and reconstruct the aggregate., Replace every child table's rows for ``pk`` with the aggregate's current set. (+24 more)
 
 ### Community 243 - "use-public-festival.ts"
 Cohesion: 0.38
 Nodes (7): festivalLandingKeys, fetchPublicFestival(), unwrapFestival(), usePublicFestival(), fetchPublicRegistration(), unwrapRegistration(), usePublicRegistration()
 
-### Community 244 - "uuid7"
-Cohesion: 0.11
-Nodes (25): Migration, Migration, UUID, Abstract base persistence model for the Applications bounded context. A…, Generate a time-ordered UUID version 7 (RFC 9562 §5.7) for primary keys., uuid7(), Store ``content`` under a unique key and return that key., _auth() (+17 more)
+### Community 244 - "ApplicationModel"
+Cohesion: 0.05
+Nodes (58): Django AppConfig for the Applications bounded context., Django admin registrations for the Applications bounded context. Operational…, Base admin exposing the audit timestamps as read-only. (``admin.ModelAdmin`` is…, _ReadOnlyTimestampsAdmin, Migration, Migration, ApplicationModel, Meta (+50 more)
 
 ### Community 245 - "auth/api/index.ts"
 Cohesion: 0.44
@@ -1924,8 +1911,8 @@ Cohesion: 0.24
 Nodes (9): Migration, UUID, Seed the singleton organization ("Взлёт талантов"). The platform runs exactly…, Generate a UUID v7 (matches the persistence base model's generator)., Insert the singleton organization if it does not already exist., Remove the seeded organization (reverse), matched by its fixed slug., seed_organization(), unseed_organization() (+1 more)
 
 ### Community 250 - "diplomas/infrastructure/models/__init__.py"
-Cohesion: 0.02
-Nodes (121): DiplomasConfig, AppConfig, Django AppConfig for the Diplomas bounded context. Diplomas is a standalone…, App configuration for the Diplomas bounded context., Django admin registrations for the Diplomas bounded context. Operational…, Base admin exposing the audit timestamps as read-only. (``admin.ModelAdmin`` is…, _ReadOnlyTimestampsAdmin, Migration (+113 more)
+Cohesion: 0.03
+Nodes (106): DiplomasConfig, AppConfig, Django AppConfig for the Diplomas bounded context. Diplomas is a standalone…, App configuration for the Diplomas bounded context., Django admin registrations for the Diplomas bounded context. Operational…, Base admin exposing the audit timestamps as read-only. (``admin.ModelAdmin`` is…, _ReadOnlyTimestampsAdmin, Migration (+98 more)
 
 ### Community 251 - "festival-grid.tsx"
 Cohesion: 0.15
@@ -1933,19 +1920,19 @@ Nodes (10): FestivalCard(), FestivalCardProps, organizerInitials(), FestivalCard
 
 ### Community 252 - "FontVariant"
 Cohesion: 0.06
-Nodes (26): Register the ORM models and admin, which live under ``infrastructure/``. Models…, FontVariant, normalize_family(), StrEnum, The font vocabulary a diploma is drawn with. A diploma is the one artifact on…, The comparison key for a family name: spaces removed, case folded. "PT Sans",…, One of the four faces a family is drawn in. The names double as the filename…, The variant a bold/italic pair asks for. (+18 more)
+Nodes (23): Register the ORM models and admin, which live under ``infrastructure/``. Models…, FontVariant, normalize_family(), StrEnum, The comparison key for a family name: spaces removed, case folded. "PT Sans",…, One of the four faces a family is drawn in. The names double as the filename…, The variant a bold/italic pair asks for., Which faces to accept instead, best first, when this one is absent. A family… (+15 more)
 
-### Community 253 - "DjangoPerformanceCatalog"
+### Community 253 - "programs/infrastructure/acl/performance_catalog.py"
 Cohesion: 0.13
-Nodes (17): Anti-corruption layer of the Programs bounded context., _clean(), DjangoPerformanceCatalog, _person(), Any, CatalogPerformance, UUID, Resolve the acts a program's existing slots point at. (+9 more)
+Nodes (18): Anti-corruption layer of the Programs bounded context., _clean(), DjangoPerformanceCatalog, _person(), Any, CatalogPerformance, UUID, ``DjangoPerformanceCatalog`` - the Programs context's window onto other… (+10 more)
 
 ### Community 254 - "shared/lib/index.ts"
 Cohesion: 0.14
 Nodes (15): RFC-9562, cn(), isExternalDocLink(), isGoogleDocsUrl(), toEmbeddableDocUrl(), festivalPath(), festivalSegment(), apiOrigin() (+7 more)
 
 ### Community 255 - "competitions/composition.py"
-Cohesion: 0.17
-Nodes (8): Composition root for the Competitions bounded context. The one place framework-…, EventDispatcher, DomainEvent, _E, Route domain events to synchronously-invoked, in-process subscribers.…, Register ``handler`` to be invoked for every event of ``event_type``., Dispatch ``events`` in order to every subscriber of each event's type., Messaging adapters for the Competitions bounded context. Concrete…
+Cohesion: 0.07
+Nodes (26): build_command_handler(), build_registration_read_service(), Composition root for the Competitions bounded context. The one place framework-…, Assemble any Competition command handler with its concrete adapters., Assemble the Registration read model (the wizard's single projection)., EventDispatcher, DomainEvent, _E (+18 more)
 
 ### Community 256 - "includes"
 Cohesion: 0.20
@@ -1979,13 +1966,13 @@ Nodes (6): GeneralLivePreview(), GeneralLivePreviewProps, GeneralSection(), Gene
 Cohesion: 0.33
 Nodes (6): ParticipationFormatFormDialog(), ParticipationFormatFormDialogProps, ParticipationFormatFormValues, ParticipationFormatsSection(), ParticipationFormatsSectionProps, ParticipationFormatsSkeleton()
 
-### Community 265 - "DiplomaError"
-Cohesion: 0.09
-Nodes (31): DiplomaError, Exception, Base class for Diplomas domain/application errors., diploma_problem(), envelope(), problem_response(), Any, Response (+23 more)
+### Community 265 - "diplomas/presentation/api/v1/problems.py"
+Cohesion: 0.10
+Nodes (28): diploma_problem(), envelope(), problem_response(), Any, Response, RFC 9457 Problem Details rendering for the Diplomas REST API v1. Maps the…, Render DRF serializer errors as a ``400`` validation Problem Details doc., Return the request's correlation id, minting one if the client sent none. (+20 more)
 
-### Community 266 - ".test_priority_and_bulk_are_queued_at_different_priorities"
-Cohesion: 0.33
-Nodes (4): MonkeyPatch, Two mailboxes double the send rate; they do not reorder the queue. With one…, Without this the priority above is nearly decorative. Celery applies priority…, TestQueuePriority
+### Community 266 - "test_participant_mapper.py"
+Cohesion: 0.13
+Nodes (21): Domain <-> persistence mappers for the Participants bounded context. Translate…, ParticipantMapper, Participant, Build a brand-new, **unsaved** ``ParticipantModel`` (parent only) from an…, Project ``entity`` onto an existing parent ``model`` in place, returning it., Build **unsaved** guardian-link rows for the aggregate, keyed to the…, Flatten an aggregate into the ``ParticipantModel`` column values (parent only)., Bidirectional translator between the ``Participant`` aggregate and its rows.… (+13 more)
 
 ### Community 267 - "AI Documentation"
 Cohesion: 0.25
@@ -2015,9 +2002,9 @@ Nodes (9): Organizer Workspace: Contacts (desktop screenshot), Contacts complete
 Cohesion: 0.46
 Nodes (6): fetchOverview(), OverviewApplication, OverviewQueue, StaffOverview, staffOverviewKeys, useStaffOverview()
 
-### Community 274 - "._to_columns"
-Cohesion: 0.18
-Nodes (9): Build a brand-new, **unsaved** root ``CompetitionModel`` from an aggregate., Flatten an aggregate into the root ``CompetitionModel`` column values., contacts_config_to_json(), Serialize contacts configuration for the competitions.contacts_config JSON…, landing_config_to_json(), Serialize landing configuration for the competitions.landing_config JSON column., _format_requirements_to_json(), Serialize settings for the competitions.settings JSON column. (+1 more)
+### Community 274 - "PersistenceError"
+Cohesion: 0.13
+Nodes (17): Teacher, TeacherId, Return the teacher with ``teacher_id`` (any non-deleted state), or ``None``., Return the owner's directory entries, newest first, optionally with archived…, Persist ``teacher`` (insert or update), honouring its optimistic version., Flatten a mapped ``TeacherModel`` into its concrete column values., ConcurrencyConflictError, IntegrityViolationError (+9 more)
 
 ### Community 275 - "festival-filters-panel.tsx"
 Cohesion: 0.29
@@ -2048,8 +2035,8 @@ Cohesion: 0.22
 Nodes (7): Meta, PhoneVerificationStatus, BasePersistenceModel, ``UserPhoneVerificationModel`` — persistence for one-time SMS phone…, Phone-verification lifecycle states (DATA-001 §4.1:…, Database row for one phone-verification attempt (persistence only)., UserPhoneVerificationModel
 
 ### Community 282 - "seo.py"
-Cohesion: 0.12
-Nodes (24): PublicFestivalView, A single competition as seen in the public catalog — flat and serializable.…, build_public_catalog_read_service(), Assemble the public festival catalog read model (participant-facing). A read-…, _festival_facts(), _inline(), _lastmod(), llms_txt() (+16 more)
+Cohesion: 0.11
+Nodes (27): _festival_facts(), _inline(), _lastmod(), llms_txt(), date, datetime, HttpRequest, HttpResponse (+19 more)
 
 ### Community 283 - "Identity API (OpenAPI contract)"
 Cohesion: 0.32
@@ -2075,9 +2062,9 @@ Nodes (3): ErrorBoundary, ErrorBoundaryProps, ErrorBoundaryState
 Cohesion: 0.36
 Nodes (3): FestivalCatalogPage(), FestivalLandingPage(), FestivalApplyPlaceholderPage()
 
-### Community 289 - "request_id"
-Cohesion: 0.27
-Nodes (11): application_problem(), problem_response(), Any, ApplicationError, Response, Render DRF serializer errors as a ``400`` validation Problem Details doc.…, Return the request's correlation id, minting one if the client sent none., Build an ``application/problem+json`` :class:`Response` (RFC 9457). (+3 more)
+### Community 289 - "participants/presentation/api/v1/problems.py"
+Cohesion: 0.26
+Nodes (12): application_problem(), problem_response(), Any, ApplicationError, Response, RFC 9457 Problem Details rendering for the Participants REST API v1. Every…, Render DRF serializer errors as a ``400`` validation Problem Details doc.…, Return the request's correlation id, minting one if the client sent none. (+4 more)
 
 ### Community 290 - "participant-groups.ts"
 Cohesion: 0.27
@@ -2104,7 +2091,7 @@ Cohesion: 0.28
 Nodes (6): DiplomasWorkspaceHeader(), DiplomasWorkspaceHeaderProps, DiplomasWorkspaceLayout(), DiplomasWorkspaceLayoutProps, DiplomasWorkspaceSidebar(), DiplomasWorkspaceSidebarProps
 
 ### Community 296 - "TestIdentifiers"
-Cohesion: 0.15
+Cohesion: 0.14
 Nodes (5): _generate_uuid7(), UUID, Build from a raw id, parsing it at the boundary., Generate a UUID version 7 (time-ordered) per RFC 9562 §5.7. Implemented…, TestIdentifiers
 
 ### Community 297 - "Backend pre-commit gate pipeline"
@@ -2116,8 +2103,8 @@ Cohesion: 0.23
 Nodes (14): fieldTextClassName(), fieldTextStyle(), genericFor(), overflows(), useAutoShrinkFont(), DragState, FieldPointerHandlers, UseFieldMovementArgs (+6 more)
 
 ### Community 299 - "competitions/presentation/api/v1/views.py"
-Cohesion: 0.02
-Nodes (149): AddAdmissionRuleCommand, AddCategoryCommand, AddPricingRuleCommand, ChangePriceCommand, CompleteCompetitionCommand, MakeRegulationCurrentCommand, MarkConfiguredCommand, MarkReadyCommand (+141 more)
+Cohesion: 0.01
+Nodes (319): AddAdditionalServiceCommand, AddAdmissionRuleCommand, AddAgeCategoryCommand, AddCategoryCommand, AddContactCommand, AddDisciplineCommand, AddDocumentCommand, AddInformationBlockCommand (+311 more)
 
 ### Community 300 - "Public festivals read model (CQRS)"
 Cohesion: 0.33
@@ -2139,9 +2126,9 @@ Nodes (7): Pre-paint theme FOUC script, Feature-Sliced Design, Frontend shared l
 Cohesion: 0.33
 Nodes (5): ContactLinkProps, LandingFooter(), LandingFooterProps, SocialLink, socialLinks()
 
-### Community 305 - "auth/views.py"
-Cohesion: 0.02
-Nodes (133): URL routes for the composition edge (mounted under ``/api/v1/``)., CurrentUserView, APIView, ``GET /users/me`` — the current-user composition endpoint. Composes two…, GET /api/v1/users/me — the composed current-user resource., LogoutCommand, Session/token command messages for the Identity & Access bounded context. Where…, Exchange a valid rotating refresh token for a fresh access/refresh pair.… (+125 more)
+### Community 305 - "FakeUserRepository"
+Cohesion: 0.03
+Nodes (65): LogoutCommand, Session/token command messages for the Identity & Access bounded context. Where…, Exchange a valid rotating refresh token for a fresh access/refresh pair.…, Revoke the current session by blacklisting its refresh token. Logout…, RefreshTokenCommand, Token DTOs for the Identity & Access application layer. The output shape of the…, An issued/rotated access + refresh token pair with client metadata., TokenPairDto (+57 more)
 
 ### Community 306 - ".price_quote"
 Cohesion: 0.20
@@ -2152,8 +2139,8 @@ Cohesion: 0.23
 Nodes (17): Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, ContentOnly, Default (+9 more)
 
 ### Community 308 - "participants/fakes.py"
-Cohesion: 0.12
-Nodes (15): FakeClock, FakeEventPublisher, FakeUuidGenerator, datetime, DomainEvent, UUID, In-memory fakes for the Participants application ports. Framework-free,…, :class:`Clock` fake frozen at a fixed instant. (+7 more)
+Cohesion: 0.06
+Nodes (29): Clock, EventPublisher, datetime, DomainEvent, Protocol, UUID, Port: the source of the current instant, injected rather than read globally.…, The current instant as a timezone-aware datetime (possibly non-UTC zone). (+21 more)
 
 ### Community 309 - "backend Docker service"
 Cohesion: 0.40
@@ -2263,9 +2250,9 @@ Nodes (3): assign_category_to_age_categories(), Migration, Assign orphan age cat
 Cohesion: 0.50
 Nodes (3): backfill_available_formats(), Migration, Scope existing services to all formats of their competition (legacy → multi-…
 
-### Community 343 - "test_organization_isolation_api.py"
-Cohesion: 0.19
-Nodes (14): _create_competition(), first_organization(), _make_owner_of(), operator(), APIClient, fixture, The boundary between two connected organizations. Connecting a second…, Activate an OWNER membership directly — the invitation flow's end state. (+6 more)
+### Community 343 - "v1/read_models.py"
+Cohesion: 0.16
+Nodes (17): _amount(), build_dashboard(), _competition_scope(), CompetitionOption, DashboardView, OrganizationBreakdown, Decimal, UUID (+9 more)
 
 ### Community 344 - "0004_participant_consent_type.py"
 Cohesion: 0.29
@@ -2275,9 +2262,9 @@ Nodes (6): Migration, Give an adult participant's consent a type of its own. An 
 Cohesion: 0.40
 Nodes (3): datetime, Whether ``kind`` is still open at ``now`` (open when unset or not yet past)., Whether the window admits applications at ``now`` (closed while unconfigured).
 
-### Community 346 - "DjangoPublicCatalogReader"
-Cohesion: 0.07
-Nodes (27): PublicFestivalFormatView, PublicFestivalOrganizerView, The organizer identity rendered on a catalog card (context-local shape)., One participation format, with its normalized display mode (may be ``None``)., DjangoPublicCatalogReader, UUID, Resolve organizer cards, backfilling misses with the singleton org. A…, Guarantee REGULATION / DOCUMENTS markers for configs that predate them. The… (+19 more)
+### Community 346 - "OrganizerCardView"
+Cohesion: 0.16
+Nodes (11): OrganizationDirectory, OrganizerCardView, Published read model of an organizer's public identity. The *entire* contract…, Port: resolve organizer ids to their public :class:`OrganizerCardView`. A batch…, Return a mapping of the given ids to their organizer card view., Return the singleton organization's card, or ``None`` if unseeded. The platform…, DjangoOrganizationDirectory, Any (+3 more)
 
 ### Community 347 - "performance-card.tsx"
 Cohesion: 0.52
@@ -2295,9 +2282,9 @@ Nodes (4): style, noNonNullAssertion, useConst, useImportType
 Cohesion: 0.31
 Nodes (4): fileName(), RECEIPT_STATUSES, ReceiptCard(), remove
 
-### Community 354 - "test_sweep_unpaid.py"
-Cohesion: 0.30
-Nodes (13): shared_task, Auto-cancel submitted orders whose payment receipt never arrived in time. A…, sweep_unpaid_applications(), _application(), Any, SettingsWrapper, DB-backed tests for the periodic unpaid-order auto-cancel sweep (Celery Beat)., One of several part-payments is still proof that payment started. (+5 more)
+### Community 354 - "UUID"
+Cohesion: 0.12
+Nodes (4): UUID, Build a ``CompetitionId`` from an existing :class:`uuid.UUID`., _combination(), Rebuild the five-part admission combination from a rule row.
 
 ### Community 355 - "cookies-policy.tsx"
 Cohesion: 0.13
@@ -2336,8 +2323,8 @@ Cohesion: 0.33
 Nodes (6): API Documentation, Documents, Future Documents, Prefix, Purpose, Scope
 
 ### Community 368 - "GrantPlatformAdministratorCommand"
-Cohesion: 0.14
-Nodes (18): GrantPlatformAdministratorCommand, PlatformAdministratorView, Flat, framework-free read views and commands for the Platform context., Grant platform-operator access to an existing account (by its Identity id)., Withdraw platform-operator access from an account., A flat read view of one administrator grant., RevokePlatformAdministratorCommand, PlatformAdministratorNotFoundError (+10 more)
+Cohesion: 0.09
+Nodes (28): GrantPlatformAdministratorCommand, PlatformAdministratorView, Flat, framework-free read views and commands for the Platform context., Grant platform-operator access to an existing account (by its Identity id)., Withdraw platform-operator access from an account., A flat read view of one administrator grant., RevokePlatformAdministratorCommand, ApplicationError (+20 more)
 
 ### Community 373 - "staff/pages/dashboard/index.tsx"
 Cohesion: 0.43
@@ -2352,24 +2339,24 @@ Cohesion: 0.27
 Nodes (6): ACTIONS, QuickAction, QuickActions(), Default, meta, Story
 
 ### Community 422 - "test_notifications_api.py"
-Cohesion: 0.22
-Nodes (16): publish(), Add one entry to ``recipient_id``'s feed. Never raises., _account(), APIClient, Integration tests for the cabinet notification feed. Driven through DRF's…, An authenticated client and the id of the account behind it., _seed(), test_another_accounts_entry_cannot_be_marked_even_with_its_id() (+8 more)
+Cohesion: 0.19
+Nodes (17): publish(), Add one entry to ``recipient_id``'s feed. Never raises., Infrastructure layer (adapters) for Notifications., _account(), APIClient, Integration tests for the cabinet notification feed. Driven through DRF's…, An authenticated client and the id of the account behind it., _seed() (+9 more)
 
-### Community 424 - "Uuid7Generator"
+### Community 424 - "SystemClock"
+Cohesion: 0.13
+Nodes (15): datetime, System clock - the concrete :class:`Clock` adapter over the real wall clock., The current instant from the real clock, always timezone-aware., The current instant in the platform's configured display timezone., The current instant as a timezone-aware UTC datetime (API-000 §22)., SystemClock, Ambient-dependency adapters (clock, uuid) for the Teacher Directory context., UUID (+7 more)
+
+### Community 425 - "revisions.py"
 Cohesion: 0.15
-Nodes (10): datetime, System clock - the concrete :class:`Clock` adapter over the real wall clock., The current instant in the platform's configured display timezone., The current instant as a timezone-aware UTC datetime (API-000 §22)., Ambient-dependency adapters (clock, uuid) for the Teacher Directory context., UUID, UUID v7 generator - the concrete :class:`UuidGenerator` adapter (API-000 §23).…, Fresh, time-ordered UUID version 7 values (API-000 §23). (+2 more)
-
-### Community 425 - "Request"
-Cohesion: 0.31
-Nodes (11): _application_resource(), _envelope(), _iso(), _note(), Any, extend_schema, Request, Response (+3 more)
+Nodes (23): _application_for_submission(), DjangoRevisionJournal, note_application_revision(), datetime, Recording, and later replaying, the edits an applicant makes to a placed order.…, Append one journal row for ``target``., Read side of the revision journal (the ``RevisionJournal`` port), over the ORM., The placed order an edit is being journalled against. (+15 more)
 
 ### Community 454 - "filter-festivals.ts"
 Cohesion: 0.22
 Nodes (17): applyCatalog(), ascNullsLast(), countBy(), deriveFilterOptions(), filterFestivals(), hasActiveFilters(), matchesCategories(), matchesCities() (+9 more)
 
 ### Community 456 - "CompetitionModel"
-Cohesion: 0.04
-Nodes (94): ``SubmissionModel`` - persistence representation of the ``Submission``…, Migration, Migration, Promote participation formats from JSON enum codes to a child entity table., BasePersistenceModel, Meta, UUID, Abstract base persistence model for the Competitions bounded context. A… (+86 more)
+Cohesion: 0.11
+Nodes (37): CompetitionModel, Meta, BasePersistenceModel, Database row for the competition aggregate root (persistence only)., CategoryModel, Database row for a competition category (persistence only)., AwardOutcome, What happened to one performance's diploma. ``file_url`` is ``None`` when the… (+29 more)
 
 ### Community 461 - "UserModel"
 Cohesion: 0.26
@@ -2381,23 +2368,23 @@ Nodes (11): apiErrorMessage(), deriveState(), formatInstant(), isoToLocalInput()
 
 ### Community 463 - "programs/infrastructure/models/__init__.py"
 Cohesion: 0.04
-Nodes (58): ProgramsConfig, AppConfig, Django AppConfig for the Programs bounded context. Programs owns the **running…, App configuration for the Programs bounded context., Register the ORM models and admin, which live under ``infrastructure/``. Models…, ProgramAdmin, ProgramItemInline, ProgramShareAdmin (+50 more)
+Nodes (60): ProgramsConfig, AppConfig, Django AppConfig for the Programs bounded context. Programs owns the **running…, App configuration for the Programs bounded context., Register the ORM models and admin, which live under ``infrastructure/``. Models…, ProgramAdmin, ProgramItemInline, ProgramShareAdmin (+52 more)
 
 ### Community 464 - "DjangoCompetitionUploadPolicy"
 Cohesion: 0.27
 Nodes (6): DjangoCompetitionUploadPolicy, CompetitionId, Competition ACL implementing the ``CompetitionUploadPolicy`` port., The configured music requirements for the format, or the defaults., The configured media requirements for the format, or the defaults., The competition's requirements for one format; ``None`` when unresolvable. A…
 
-### Community 465 - "DjangoConsentDirectory"
-Cohesion: 0.33
-Nodes (5): build_consent_directory(), Assemble the seam other contexts use to verify a consent reference., DjangoConsentDirectory, Answers one question for other contexts: is this consent real, and theirs?…, Whether ``consent_id`` is an active consent of that type held by that account.…
+### Community 465 - "test_registration_api.py"
+Cohesion: 0.29
+Nodes (14): UUID, Generate a time-ordered UUID version 7 (RFC 9562 §5.7) for primary keys.…, uuid7(), Integration tests for the public Registration read projection. ``GET…, _seed_competition(), test_draft_competition_is_hidden(), test_malformed_id_is_404_not_500(), test_mixed_age_category_is_projected_with_its_calculation_method() (+6 more)
 
 ### Community 466 - "programs/presentation/api/v1/public_views.py"
-Cohesion: 0.06
-Nodes (51): HostReorderCommand, Mark how far one slot has got, as the host announces the day. ``slug``…, Rearrange the running order from the host's link, mid-event., SetItemProgressCommand, PublicProgramView, What a public link resolves to: a table, and the columns it was cut to., ProgramShare, Mark how far one slot has got, from the host's own link. Answers with the… (+43 more)
+Cohesion: 0.08
+Nodes (43): HostReorderCommand, Mark how far one slot has got, as the host announces the day. ``slug``…, Rearrange the running order from the host's link, mid-event., SetItemProgressCommand, envelope(), problem_response(), program_problem(), Any (+35 more)
 
-### Community 467 - "participants/test_value_objects.py"
-Cohesion: 0.06
-Nodes (41): AgeGroup, Parse an ISO-8601 date string (``YYYY-MM-DD``)., A derived, tamper-resistant age band for fair comparison (PRT-002, DIA-001…, Whether ``age`` (full years) falls within this inclusive band., Whether this band shares any age with ``other`` (used to validate a set)., Parse and normalize a display alias., parametrize, ParticipantId (+33 more)
+### Community 467 - "parametrize"
+Cohesion: 0.57
+Nodes (7): parametrize, ParticipantId, ValueObjectValidationError, test_identifier_generate_is_uuid7_and_round_trips(), test_identifier_rejects_malformed_string(), test_identifier_rejects_non_uuid7(), test_identifier_rejects_wrong_type()
 
 ### Community 468 - "features/my-documents/index.ts"
 Cohesion: 0.10
@@ -2419,9 +2406,9 @@ Nodes (8): API_TIMEOUT_MS, DEFAULT_LOCALE, HEADER, RETRY_LIMIT, RETRYABLE_METHOD
 Cohesion: 0.22
 Nodes (9): 1. Общие положения, 2. Правовые основания и порядок получения согласия, 3. Строго необходимые файлы cookie, 4. Аналитические файлы cookie, 5. Данные, сохраняемые в браузере, 6. Файлы cookie при просмотре встроенных документов, 7. Порядок управления файлами cookie, 8. Порядок актуализации. Контактные данные (+1 more)
 
-### Community 484 - "FontFileRejectedError"
-Cohesion: 0.12
-Nodes (19): FontFileRejectedError, Raised when an uploaded file cannot be used to draw a diploma. Covers both…, font_cache_dir(), FontFileCache, Path, A local copy of an uploaded font file, for a renderer that can only open paths.…, Where local copies live. Configurable because the right answer depends on the…, Turns a stored font reference into a path reportlab can open. (+11 more)
+### Community 484 - "apps/diplomas/composition.py"
+Cohesion: 0.10
+Nodes (21): Composition root for the Diplomas bounded context. The one place a framework-…, font_cache_dir(), FontFileCache, Path, A local copy of an uploaded font file, for a renderer that can only open paths.…, Where local copies live. Configurable because the right answer depends on the…, Turns a stored font reference into a path reportlab can open., A readable local path for ``reference``, or ``None`` if it cannot be produced.… (+13 more)
 
 ### Community 485 - "orders/serializers.py"
 Cohesion: 0.13
@@ -2429,7 +2416,7 @@ Nodes (14): ApplicationMetaSerializer, ApplicationResourceSerializer, Applicatio
 
 ### Community 486 - "APIClient"
 Cohesion: 0.09
-Nodes (20): _act(), _published_program(), Any, APIClient, fixture, Integration tests for the public programme screen (anyone-facing). The contract…, The link the organizer hands the host is the one that may drive the day., Publish a host edition; returns (slug, program_id, its rows). (+12 more)
+Nodes (16): _act(), _published_program(), Any, APIClient, The link the organizer hands the host is the one that may drive the day., Publish a host edition; returns (slug, program_id, its rows)., Every open screen asks every few seconds; almost every answer should be "no…, Otherwise one edition's link could revalidate into another's columns. (+8 more)
 
 ### Community 488 - "test_seo_endpoints.py"
 Cohesion: 0.12
@@ -2437,31 +2424,35 @@ Nodes (10): _competition(), _locations(), _organization(), parametrize, UUID, In
 
 ### Community 489 - "platform/composition.py"
 Cohesion: 0.08
-Nodes (28): PlatformAccessReader, Concrete :class:`PlatformAccessReadService` over the Platform repository. A…, build_grant_platform_administrator_handler(), build_list_platform_administrators_handler(), build_platform_access_read_service(), build_revoke_platform_administrator_handler(), Composition root for the Platform bounded context. The one place framework-free…, Assemble the published cross-context platform-access read model. (+20 more)
+Nodes (26): build_grant_platform_administrator_handler(), build_list_platform_administrators_handler(), build_platform_access_read_service(), build_revoke_platform_administrator_handler(), Composition root for the Platform bounded context. The one place framework-free…, Assemble the published cross-context platform-access read model., DjangoPlatformAdministratorRepository, ORM adapter for the :class:`PlatformAdministrator` aggregate. (+18 more)
 
-### Community 491 - "UserEmailVerificationModel"
-Cohesion: 0.22
-Nodes (7): EmailVerificationStatus, Meta, BasePersistenceModel, ``UserEmailVerificationModel`` — persistence for email-ownership verification.…, Email-verification lifecycle states (DATA-001 §4.1:…, Database row for one email-verification attempt (persistence only)., UserEmailVerificationModel
+### Community 490 - ".patch"
+Cohesion: 0.19
+Nodes (12): _envelope(), OrganizationProfileUpdateSerializer, OrganizationProfileView, APIView, extend_schema, Request, Response, Wrap an ``OrganizationProfileView`` read model in the standard ``{data, meta}``… (+4 more)
+
+### Community 491 - "BasePersistenceModel"
+Cohesion: 0.19
+Nodes (11): BasePersistenceModel, Meta, Abstract base carrying the columns every Identity table shares. Concrete models…, EmailVerificationStatus, Meta, BasePersistenceModel, ``UserEmailVerificationModel`` — persistence for email-ownership verification.…, Email-verification lifecycle states (DATA-001 §4.1:… (+3 more)
 
 ### Community 493 - ".to_dict"
 Cohesion: 0.50
 Nodes (3): Render a JSON-safe payload with an ``event_type`` discriminator. Every…, Render a single field value as a JSON-safe primitive. Maps domain value objects…, _serialize()
 
-### Community 498 - "UserCardView"
-Cohesion: 0.18
-Nodes (9): Protocol, UUID, The published cross-context read model of Identity user cards.…, Published read model of a user's identity for display in another context. Flat…, Port: resolve Identity user ids to their public :class:`UserCardView`. A batch…, Return a mapping of the given ids to their user card view., UserCardView, UserDirectory (+1 more)
+### Community 498 - "applications/presentation/api/v1/problems.py"
+Cohesion: 0.26
+Nodes (12): application_problem(), problem_response(), Any, ApplicationError, Response, RFC 9457 Problem Details rendering for the Applications REST API v1. Maps the…, Render DRF serializer errors as a ``400`` validation Problem Details doc., Return the request's correlation id, minting one if the client sent none. (+4 more)
 
 ### Community 527 - "identity/infrastructure/models/__init__.py"
 Cohesion: 0.24
 Nodes (7): Migration, UUID, Abstract base persistence model for the Identity & Access bounded context. A…, Generate a time-ordered UUID version 7 (RFC 9562 §5.7) for primary keys.…, uuid7(), ORM models (adapters) for the Identity & Access bounded context. Django models…, ``UserModel`` — persistence representation of the ``User`` aggregate root. Maps…
 
 ### Community 529 - "test_organizer_capabilities.py"
-Cohesion: 0.29
-Nodes (10): _keys(), parametrize, Unit tests for the organizer workspace's per-status action list.…, The applicant can no longer withdraw here, so the organizer must be able to.…, COMPLETED is terminal: the performance happened, and its diploma may already be…, test_a_performed_entry_offers_nothing(), test_an_accepted_entry_can_also_be_moved_into_the_running_order(), test_an_entry_in_the_running_order_can_still_be_cancelled() (+2 more)
+Cohesion: 0.24
+Nodes (12): _capabilities(), What the organizer may do to a submission in this status. Cancellation stays on…, _keys(), parametrize, Unit tests for the organizer workspace's per-status action list.…, The applicant can no longer withdraw here, so the organizer must be able to.…, COMPLETED is terminal: the performance happened, and its diploma may already be…, test_a_performed_entry_offers_nothing() (+4 more)
 
-### Community 531 - "TestBrokenDependency"
-Cohesion: 0.22
-Nodes (6): fixture, MonkeyPatch, What happens when the thing being checked is the thing that is broken., The check reports the failure instead of propagating it. A health check that…, The page is unauthenticated, so a failure names no host and no port.…, TestBrokenDependency
+### Community 531 - "TestCollectiveRoster"
+Cohesion: 0.27
+Nodes (3): ParticipantId, Naming the people in a collective — the applicant's request for a diploma each., TestCollectiveRoster
 
 ### Community 532 - "FakeEventPublisher"
 Cohesion: 0.40
@@ -2471,9 +2462,9 @@ Nodes (3): FakeEventPublisher, DomainEvent, Recording :class:`EventPublisher` fa
 Cohesion: 0.18
 Nodes (10): _ParticipantResourceSerializer, _PerformanceResourceSerializer, Request/response serializers for the Submission content endpoints (API-000 §7,…, The full submission resource (root + child graph)., _SubmissionAttachmentResourceSerializer, _SubmissionMetaSerializer, _SubmissionPriceSerializer, SubmissionResourceSerializer (+2 more)
 
-### Community 540 - "InvitationExpiryPolicy"
-Cohesion: 0.07
-Nodes (26): Create a PENDING membership recorded from an accepted-invitation flow. Emits no…, Create an immediately-ACTIVE OWNER membership (the bootstrap path). The…, PolicyConfigurationError, ValueError, Raised when a business policy is constructed with invalid configuration.…, InvitationExpiryPolicy, datetime, Decides when a staff invitation link stops being acceptable. The single knob is… (+18 more)
+### Community 540 - ".generate"
+Cohesion: 0.09
+Nodes (17): Create a PENDING membership recorded from an accepted-invitation flow. Emits no…, Create an immediately-ACTIVE OWNER membership (the bootstrap path). The…, _generate_uuid7(), UUID, Create a brand-new identity backed by a fresh UUID v7., Parse a canonical UUID string, or raise :class:`InvalidOrganizationIdError`., Create a brand-new identity backed by a fresh UUID v7., Build a ``StaffMembershipId`` from an existing :class:`uuid.UUID`. (+9 more)
 
 ### Community 541 - "avatars.py"
 Cohesion: 0.27
@@ -2483,13 +2474,13 @@ Nodes (10): AvatarRejectedError, _normalise(), Any, Exception, UUID, Participant
 Cohesion: 0.29
 Nodes (4): IssuedInvitationToken, A freshly minted invitation secret paired with its digest. :attr:`raw_token` is…, Mint a fresh raw secret and its :class:`InvitationTokenHash`., Mint a fresh URL-safe raw secret and its :class:`InvitationTokenHash`.
 
-### Community 544 - "TestServingTheShell"
-Cohesion: 0.50
-Nodes (3): Path, _shell(), TestServingTheShell
+### Community 544 - "DjangoCompetitionOrganizerDirectory"
+Cohesion: 0.24
+Nodes (8): _clean_email(), DjangoCompetitionOrganizerDirectory, CompetitionId, The organization's own contact mailbox, when it has one on file., Last resort: the mailboxes of the organization's active responsible staff., Return ``value`` as a plausible email address, or ``None``. Deliberately…, Competition/Organization/Identity ACL implementing…, The mailboxes this competition publishes: its override plus its named team.
 
-### Community 546 - ".of"
-Cohesion: 0.33
-Nodes (3): Decimal, Build :class:`Money` from a string/int/Decimal amount (never a float)., The snapshotted amount.
+### Community 546 - "Organization"
+Cohesion: 0.18
+Nodes (6): Organization, Return the organization with ``organization_id``, or ``None``., Return the platform's own organization, or ``None`` if not yet seeded., Return the organization holding ``slug``, or ``None`` (uniqueness check)., Return every connected organization, oldest first., Persist ``organization`` (insert or update), honouring its version.
 
 ### Community 547 - "Business Documentation"
 Cohesion: 0.33
@@ -2503,6 +2494,10 @@ Nodes (10): Results Context, Diploma (Aggregate Root), Ranking (Aggregate Root),
 Cohesion: 0.67
 Nodes (3): initials(), ParticipantPicker(), ParticipantRow()
 
+### Community 627 - ".parse"
+Cohesion: 0.22
+Nodes (5): This column as a reference a share can select., UUID, Reference a custom column by id., Read a wire key: ``"TIME"`` or ``"custom:<uuid>"``., Build a duration from minutes and/or seconds.
+
 ### Community 636 - "PublicCatalogReadService"
 Cohesion: 0.18
 Nodes (7): PublicCatalogReadService, Protocol, Structural type for a landing block's ordered children (jury/partners/…). Read-…, Port: read the public catalog and individual public competitions. The…, Return every publicly-visible competition, newest first., Return one publicly-visible competition's full landing view. ``None`` when no…, _SortableChild
@@ -2510,6 +2505,10 @@ Nodes (7): PublicCatalogReadService, Protocol, Structural type for a landing blo
 ### Community 638 - "_competition"
 Cohesion: 0.36
 Nodes (4): _competition(), _organization(), UUID, TestResolvingACompetition
+
+### Community 640 - "TestPublicStatusProjection"
+Cohesion: 0.24
+Nodes (4): parametrize, TestModeClassification, TestPublicStatusProjection, ParticipationMode
 
 ### Community 643 - "platform/application/interfaces.py"
 Cohesion: 0.12
@@ -2527,9 +2526,9 @@ Nodes (4): cacheOrganizerId(), createSessionOrganizerId(), readCachedOrganizerId
 Cohesion: 0.31
 Nodes (3): _published(), A publishable competition driven to PUBLISHED; returns it and its nomination id., TestNominationRegistration
 
-### Community 653 - "Command"
-Cohesion: 0.40
-Nodes (4): Command, Any, BaseCommand, Provision the first OWNER staff membership for an existing user account.
+### Community 653 - "festival-apply.screenshots.spec.ts"
+Cohesion: 0.22
+Nodes (9): application, emptySubmission, filledSubmission, json(), mockWizard(), participant, registration, screenshotDir (+1 more)
 
 ### Community 656 - "identity/infrastructure/admin.py"
 Cohesion: 0.18
@@ -2543,9 +2542,9 @@ Nodes (4): actor_label(), UUID, ``actor_label`` — how the generation archive n
 Cohesion: 0.33
 Nodes (9): AWS_ACCESS_KEY_ID, AWS_DEFAULT_REGION, aws_s3(), AWS_SECRET_ACCESS_KEY, cleanup(), log(), notify(), pg() (+1 more)
 
-### Community 691 - "organizer/views.py"
-Cohesion: 0.07
-Nodes (64): AcceptSubmissionHandler, CompleteSubmissionHandler, MarkPaidHandler, MarkWaitingPaymentHandler, Clock, EventPublisher, Payment & acceptance lifecycle use cases (organizer-driven)., Use case: move accepted submission into running competition (organizer). (+56 more)
+### Community 691 - "ApplicationError"
+Cohesion: 0.08
+Nodes (63): AcceptSubmissionHandler, CompleteSubmissionHandler, MarkPaidHandler, MarkWaitingPaymentHandler, Payment & acceptance lifecycle use cases (organizer-driven)., Use case: move accepted submission into running competition (organizer)., Use case: mark running submission as completed (organizer)., Use case: move the approved submission to awaiting payment (organizer). (+55 more)
 
 ### Community 692 - "_protocol"
 Cohesion: 0.10
@@ -2555,9 +2554,9 @@ Nodes (6): _protocol(), TestAwards, TestCreation, TestPublication, TestRehydrati
 Cohesion: 0.18
 Nodes (14): buildRegulationChangeLog(), clearRegulationDraft(), createEmptyRegulationDraft(), draftToAddRegulationPayload(), findCurrentRegulation(), loadRegulationChangeNotes(), loadRegulationDraft(), RegulationChangeLogEntry (+6 more)
 
-### Community 694 - "Command"
-Cohesion: 0.40
-Nodes (4): Command, Any, BaseCommand, Revoke platform-operator access from an account, by email.
+### Community 695 - "_to_money"
+Cohesion: 0.33
+Nodes (5): Money, ServiceId, Translate a Competition ``Money`` into this context's ``Money`` (by value)., _to_money(), CompMoney
 
 ### Community 696 - "festival-catalog.screenshots.spec.ts"
 Cohesion: 0.25
@@ -2568,28 +2567,32 @@ Cohesion: 0.40
 Nodes (4): Command, Any, BaseCommand, Grant platform-operator access to an existing user account, by email.
 
 ### Community 698 - "application/read_models/registration.py"
-Cohesion: 0.12
-Nodes (24): project_registration(), datetime, The Registration read model - a single projection for the Registration Wizard.…, Project a ``Competition`` aggregate into the single Registration view., RegistrationAdmissionRuleView, RegistrationAgeCategoryView, RegistrationCompetitionView, RegistrationConsentRequirementView (+16 more)
-
-### Community 699 - "BasePersistenceModel"
 Cohesion: 0.19
-Nodes (11): BasePersistenceModel, Meta, Abstract base carrying the columns every Identity table shares. Concrete models…, Meta, BasePersistenceModel, ``UserSessionModel`` — persistence for an authenticated session.…, Session lifecycle states (DATA-001 §4.1:…, Database row for one authenticated session (persistence only). (+3 more)
+Nodes (17): project_registration(), datetime, The Registration read model - a single projection for the Registration Wizard.…, Project a ``Competition`` aggregate into the single Registration view., RegistrationAdmissionRuleView, RegistrationAgeCategoryView, RegistrationCompetitionView, RegistrationConsentRequirementView (+9 more)
+
+### Community 699 - "UserSessionModel"
+Cohesion: 0.22
+Nodes (7): Meta, BasePersistenceModel, ``UserSessionModel`` — persistence for an authenticated session.…, Session lifecycle states (DATA-001 §4.1:…, Database row for one authenticated session (persistence only)., SessionStatus, UserSessionModel
 
 ### Community 701 - ".get_applicant"
 Cohesion: 0.40
 Nodes (3): UserId, Whether an Identity user with ``user_id`` exists., Return the applicant's display information, or ``None`` if unknown.
 
+### Community 703 - "TestPosterResolution"
+Cohesion: 0.47
+Nodes (3): Pick the catalog-card image: the festival poster ("Афиша"). Falls back to the…, resolve_poster_image(), TestPosterResolution
+
 ### Community 704 - "protocol-editor.tsx"
 Cohesion: 0.12
 Nodes (15): DATE_TIME_FORMATTER, formatPublishedAt(), JuryWorkspaceHeader(), JuryWorkspaceHeaderProps, JuryWorkspaceLayout(), JuryWorkspaceLayoutProps, JuryWorkspaceSidebar(), JuryWorkspaceSidebarProps (+7 more)
 
-### Community 705 - "DjangoRevisionJournal"
-Cohesion: 0.50
-Nodes (3): DjangoRevisionJournal, datetime, Read side of the revision journal (the ``RevisionJournal`` port), over the ORM.
+### Community 705 - ".current_time"
+Cohesion: 0.33
+Nodes (4): datetime, timedelta, The current wall-clock time as a timezone-aware datetime in this zone. Aware…, The current offset from UTC, accounting for DST at this moment. Returned as a…
 
-### Community 707 - "PlatformConfig"
-Cohesion: 0.29
-Nodes (5): PlatformConfig, AppConfig, Django AppConfig for the Platform bounded context., Register the ORM models, which live in the infrastructure layer. Models are…, App configuration for the Platform bounded context.
+### Community 706 - "DomainEvent"
+Cohesion: 0.47
+Nodes (3): DomainEvent, parametrize, TestHierarchy
 
 ### Community 709 - "Institutions Context"
 Cohesion: 0.38
@@ -2603,9 +2606,13 @@ Nodes (31): AppConfig, Django AppConfig for the Results bounded context. Results
 Cohesion: 0.57
 Nodes (4): festivalCatalogKeys, fetchPublicFestivals(), unwrapFestivals(), usePublicFestivals()
 
-### Community 715 - ".now"
-Cohesion: 0.50
-Nodes (3): datetime, The current instant in the platform's configured display timezone., The current instant as a timezone-aware UTC datetime (API-000 §22).
+### Community 715 - "applications/infrastructure/system/clock.py"
+Cohesion: 0.33
+Nodes (4): datetime, System clock - the concrete :class:`Clock` adapter over the real wall clock., The current instant in the platform's configured display timezone., The current instant as a timezone-aware UTC datetime (API-000 §22).
+
+### Community 717 - "OrganizationConfig"
+Cohesion: 0.40
+Nodes (4): OrganizationConfig, AppConfig, Register the ORM models and admin, which live in the infrastructure layer.…, App configuration for the Organization bounded context.
 
 ### Community 718 - "Architecture Decision Records (ADR)"
 Cohesion: 0.25
@@ -2613,11 +2620,19 @@ Nodes (8): Architecture Decision Records (ADR), Baseline Decision Register, Futu
 
 ### Community 719 - "submissions/composition.py"
 Cohesion: 0.07
-Nodes (75): DjangoCompetitionCatalog, Competition ACL implementing the ``CompetitionCatalog`` port., DjangoEducationalOrganizationDirectory, Institutions/Participants ACL implementing the…, DjangoIdentityReadModel, Identity ACL implementing the ``IdentityReadModel`` port., Anti-corruption adapters: read models over sibling bounded contexts.…, DjangoOrganizationReadModel (+67 more)
+Nodes (73): DjangoCompetitionCatalog, Competition ACL implementing the ``CompetitionCatalog`` port., DjangoEducationalOrganizationDirectory, Institutions/Participants ACL implementing the…, DjangoIdentityReadModel, Identity ACL implementing the ``IdentityReadModel`` port., Anti-corruption adapters: read models over sibling bounded contexts.…, DjangoOrganizationReadModel (+65 more)
+
+### Community 721 - ".age_in_years"
+Cohesion: 0.40
+Nodes (3): date, Full years of age at ``reference`` (PRT-002; never negative for valid data).…, Whether the birth date lies strictly after ``reference`` (a future birth).
 
 ### Community 724 - "Notifications Context"
 Cohesion: 0.40
 Nodes (6): Notifications Context, Notification (Aggregate Root), NotificationDelivered (Domain Event), NotificationFailed (Domain Event), NotificationQueued (Domain Event), NotificationSent (Domain Event)
+
+### Community 725 - ".now"
+Cohesion: 0.40
+Nodes (3): datetime, The current instant as a timezone-aware datetime (possibly non-UTC)., The current instant as a timezone-aware **UTC** datetime.
 
 ### Community 730 - "Backend Documentation"
 Cohesion: 0.33
@@ -2631,21 +2646,13 @@ Nodes (6): Documents, Frontend Documentation, Future Documents, Prefix, Purpose,
 Cohesion: 0.12
 Nodes (4): ProgramSettings(), StaffProgramPage(), toLocalInput(), useUpdateProgramSettings()
 
-### Community 767 - ".__init__"
-Cohesion: 0.50
-Nodes (3): Clock, EventPublisher, UuidGenerator
-
 ### Community 768 - "use-constructor-fields.ts"
 Cohesion: 0.18
 Nodes (17): createField(), DUPLICATE_OFFSET, MIN_HEIGHT, MIN_WIDTH, ConstructorFieldsProvider(), clampPosition(), FieldRect, normalizeRect() (+9 more)
 
 ### Community 773 - "LandingBlock"
-Cohesion: 0.06
-Nodes (31): Replace the competition's public-landing configuration wholesale., UpdateLandingConfigCommand, _landing_config_from_command(), _optional_str(), Use cases: competition public-landing configuration., Replace competition public-landing configuration., _sort_order(), UpdateLandingConfigHandler (+23 more)
-
-### Community 776 - ".now"
-Cohesion: 0.40
-Nodes (3): datetime, The current instant as a timezone-aware datetime (possibly non-UTC zone)., The current instant as a timezone-aware **UTC** datetime.
+Cohesion: 0.04
+Nodes (55): Replace the competition's public-landing configuration wholesale., UpdateLandingConfigCommand, _landing_config_from_command(), _optional_str(), Use cases: competition public-landing configuration., _sort_order(), InvalidLandingConfigurationError, The competition public-landing configuration is invalid. (+47 more)
 
 ### Community 777 - "registration-block.tsx"
 Cohesion: 0.48
@@ -2655,37 +2662,21 @@ Nodes (6): deriveState(), formatInstant(), periodText(), RegistrationBlock(), Re
 Cohesion: 0.40
 Nodes (3): FakeUuidGenerator, UUID, :class:`UuidGenerator` fake producing fresh UUID v7 values, recording them.
 
-### Community 783 - ".to_dict"
-Cohesion: 0.50
-Nodes (3): Render a single field value as a JSON-safe primitive. Maps domain value objects…, Render a JSON-safe payload with an ``event_type`` discriminator. Every…, _serialize()
-
-### Community 798 - ".to_dict"
-Cohesion: 0.50
-Nodes (3): Render a single field value as a JSON-safe primitive., Render a JSON-safe payload with an ``event_type`` discriminator., _serialize()
-
-### Community 799 - "_utcnow"
-Cohesion: 0.67
-Nodes (3): datetime, The current instant as a timezone-aware **UTC** datetime (default factory)., _utcnow()
-
 ### Community 830 - "PlatformUserId"
-Cohesion: 0.07
-Nodes (21): PlatformAccessReadService, Protocol, UUID, The published cross-context read model of platform-operator access.…, Port: answer "is this user a platform administrator?" for other contexts., InvalidPlatformAdministratorIdError, InvalidPlatformUserIdError, ValueError (+13 more)
+Cohesion: 0.10
+Nodes (15): InvalidPlatformAdministratorIdError, InvalidPlatformUserIdError, ValueError, Raised when a value object is constructed from invalid input., The provided value is not a valid ``PlatformAdministratorId`` (must be a UUID…, The provided value is not a valid ``PlatformUserId`` reference (must be a UUID…, ValueObjectValidationError, _generate_uuid7() (+7 more)
 
-### Community 832 - "build_token_service"
-Cohesion: 0.18
-Nodes (16): build_token_service(), Assemble the SimpleJWT-backed :class:`TokenService` adapter., _archive(), _authenticated(), _festival(), _order(), outsider_client(), Any (+8 more)
+### Community 832 - "test_documents_archive_api.py"
+Cohesion: 0.22
+Nodes (16): _archive(), _authenticated(), _festival(), _order(), outsider_client(), Any, APIClient, fixture (+8 more)
 
 ### Community 833 - "OPS-008 — Single-server sizing & tuning"
 Cohesion: 0.17
 Nodes (12): 10. S3 volume, 1. What creates load, 2. The machine, 3. PostgreSQL, 4. gunicorn, 5. Celery, 6. Redis, 7. nginx (+4 more)
 
-### Community 836 - "build_command_handler"
-Cohesion: 0.67
-Nodes (3): build_command_handler(), Assemble any Competition command handler with its concrete adapters., CommandHandlerT
-
 ### Community 840 - "organization/composition.py"
 Cohesion: 0.02
-Nodes (160): Authorization for the Competitions REST edge. Organizer endpoints are staff-…, build_user_directory(), Composition root for Identity cross-context read models. The place other…, Assemble the published cross-context user directory read model., EmailGateway, InvitationTokenService, SendInvitationEmailHandler, build_accept_staff_invitation_handler() (+152 more)
+Nodes (162): Authorization for the Competitions REST edge. Organizer endpoints are staff-…, URL routes for the composition edge (mounted under ``/api/v1/``)., CurrentUserView, Any, APIView, ``GET /users/me`` — the current-user composition endpoint. Composes two…, Project the staff read model into the ``staffMembership`` payload (or ``None``)., GET /api/v1/users/me — the composed current-user resource. (+154 more)
 
 ### Community 843 - "program-horizontal-scroll.spec.ts"
 Cohesion: 0.29
@@ -2700,8 +2691,8 @@ Cohesion: 0.83
 Nodes (3): firstModeLabel(), HomePage(), isUpcoming()
 
 ### Community 862 - "CompetitionViewSet"
-Cohesion: 0.11
-Nodes (24): action, GetCompetitionQuery, ListCompetitionsQuery, Query DTOs for the Competitions bounded context. Input shapes for read use…, Fetch a single competition's full detail by id., List competitions, optionally narrowed to one season and one organizer.…, build_get_competition_handler(), Assemble the single-competition read use case. (+16 more)
+Cohesion: 0.18
+Nodes (9): action, CompetitionViewSet, extend_schema, Request, Response, Organizer Competition API — staff-only, and scoped to the caller's…, Validate a request body; return (kwargs, None) or (None, problem)., Execute a command handler and render the refreshed competition (or a problem). (+1 more)
 
 ### Community 877 - "diploma-verification.screenshots.spec.ts"
 Cohesion: 0.29
@@ -2721,7 +2712,7 @@ Nodes (10): Envelope, fetchCompetitionResults(), fetchPublicProtocol(), PublicPr
 
 ### Community 917 - "UserId"
 Cohesion: 0.03
-Nodes (385): AttachmentView, ParticipantView, PerformanceView, PriceView, A flat read view of a :class:`Teacher` child entity., A flat read view of an :class:`Attachment` child entity., A flat read view of a :class:`Review` iteration., A flat read view of a submission's immutable :class:`PriceSnapshot`. (+377 more)
+Nodes (255): ApplicationStatusChangeView, ConsentView, PaymentReceiptView, Result & view DTOs for the Application (order) use cases. Immutable, primitive-…, A flat read view of the order's frozen total price snapshot., A flat read view of one order status-history entry., A flat read view of one of the order's payment receipts., A flat read view of a cached submission reference on the order. (+247 more)
 
 ### Community 920 - "public-program/api.ts"
 Cohesion: 0.13
@@ -2740,8 +2731,8 @@ Cohesion: 0.50
 Nodes (3): backfill_numbers(), Migration, Seed item numbers from their ordinals, and each programme's counter from those.
 
 ### Community 958 - "platform/infrastructure/models/__init__.py"
-Cohesion: 0.11
-Nodes (17): Migration, BasePersistenceModel, Meta, UUID, Abstract base persistence model for the Platform bounded context. A…, Generate a time-ordered UUID version 7 (RFC 9562 §5.7) for primary keys., Abstract base carrying the columns every Platform table shares., uuid7() (+9 more)
+Cohesion: 0.09
+Nodes (20): PlatformConfig, AppConfig, Django AppConfig for the Platform bounded context., Register the ORM models, which live in the infrastructure layer. Models are…, App configuration for the Platform bounded context., Migration, BasePersistenceModel, Meta (+12 more)
 
 ### Community 959 - "protocol/index.tsx"
 Cohesion: 0.38
@@ -2764,12 +2755,12 @@ Cohesion: 0.50
 Nodes (3): freeze_already_published(), Migration, Backfill the freeze instant from each programme's earliest public edition.
 
 ### Community 991 - "Env"
-Cohesion: 0.05
-Nodes (94): AddParticipantCommand, AddTeacherCommand, AttachFileCommand, CalculatePriceCommand, CancelSubmissionCommand, CreateSubmissionCommand, DeleteDraftSubmissionCommand, Add a participant to the submission (owner, editable states only). Normally a… (+86 more)
+Cohesion: 0.07
+Nodes (46): AttachFileCommand, CancelSubmissionCommand, CreateSubmissionCommand, DeleteDraftSubmissionCommand, Replace a participant's details (owner, editable states only). The domain…, Attach a file reference to the submission (owner, editable states only)., Submit the submission to the competition (owner)., Cancel (withdraw) the submission (owner); not possible once accepted. (+38 more)
 
 ### Community 1002 - "head_facts_for"
-Cohesion: 0.24
-Nodes (7): head_facts_for(), Resolve the head for a request path. Mirrors what the corresponding page…, _competition(), _organization(), parametrize, UUID, TestResolvingTheHead
+Cohesion: 0.16
+Nodes (11): head_facts_for(), Resolve the head for a request path. Mirrors what the corresponding page…, _competition(), _organization(), parametrize, Path, UUID, Tests for the server-resolved ``<head>`` on the SPA shell. The audience for… (+3 more)
 
 ### Community 1025 - "0019_drop_decorative_settings.py"
 Cohesion: 0.33
@@ -2788,18 +2779,18 @@ Cohesion: 0.40
 Nodes (3): Mail is delivered by its own worker, and that is a deployment contract.…, Otherwise the mail worker would end up rendering diplomas., TestRouting
 
 ## Knowledge Gaps
-- **1340 isolated node(s):** `Migration`, `Migration`, `Migration`, `Migration`, `Migration` (+1335 more)
+- **1347 isolated node(s):** `Migration`, `Migration`, `Migration`, `Migration`, `Migration` (+1342 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **414 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **395 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `DomainEvent` connect `UserId` to `organization/application/interfaces.py`, `User`, `identity/test_interfaces.py`, `ConsentVersion`, `Submission`, `EmailVerificationPolicy`, `Clock`, `FakeUuidGenerator`, `.to_dict`, `FakeEventPublisher`, `.from_hash`, `FakeOrganizationRepository`, `ParticipantRepository`, `_grant`, `IssuedInvitationToken`, `Consent`, `test_password_reset_handlers.py`, `participants/test_handlers.py`, `competitions/presentation/api/v1/views.py`, `Email`, `translate_domain_errors`, `auth/views.py`, `CompetitionDetailView`, `participants/fakes.py`, `TeacherRepository`, `FakeEmailGateway`, `FakeUserRepository`, `organization/composition.py`, `submissions/composition.py`, `.of`, `teacher_handlers.py`, `SignedVerificationTokenService`, `Env`, `teachers/test_handlers.py`, `participants/test_dto.py`, `account/views.py`, `competitions/composition.py`?**
+- **Why does `DomainEvent` connect `Submission` to `organization/application/interfaces.py`, `User`, `UserRepository`, `ConsentPolicy`, `Clock`, `FakeUuidGenerator`, `FakeEventPublisher`, `UserId`, `.from_hash`, `identity/application/exceptions.py`, `FakeOrganizationRepository`, `ParticipantRepository`, `_grant`, `IssuedInvitationToken`, `test_upload_handlers.py`, `test_password_reset_handlers.py`, `participants/test_handlers.py`, `competitions/presentation/api/v1/views.py`, `DjangoUserRepository`, `Email`, `CompetitionClosedError`, `FakeUserRepository`, `CompetitionTemplate`, `participants/fakes.py`, `TeacherRepository`, `DomainEvent`, `FakeUserRepository`, `organization/composition.py`, `submissions/composition.py`, `.of`, `teacher_handlers.py`, `auth/composition.py`, `SubmissionModel`, `teachers/composition.py`, `ParticipantDto`, `auth/views.py`, `competitions/composition.py`?**
   _High betweenness centrality (0.069) - this node is a cross-community bridge._
-- **Why does `Clock` connect `Clock` to `organization/application/interfaces.py`, `identity/test_interfaces.py`, `Submission`, `EmailVerificationPolicy`, `UserId`, `FakeOrganizationRepository`, `participants/test_handlers.py`, `competitions/presentation/api/v1/views.py`, `ProtocolService`, `translate_domain_errors`, `organizer/views.py`, `FakeEmailGateway`, `FakeUserRepository`, `ProgramService`, `CompetitionId`, `platform/presentation/api/v1/views.py`, `Env`, `teachers/test_handlers.py`, `GrantPlatformAdministratorCommand`, `account/views.py`?**
+- **Why does `Clock` connect `Clock` to `organization/application/interfaces.py`, `User`, `participants/test_handlers.py`, `FakeUserRepository`, `ProgramService`, `teachers/composition.py`, `Submission`, `ConsentPolicy`, `competitions/presentation/api/v1/views.py`, `ProtocolService`, `CompetitionId`, `CompetitionClosedError`, `GrantPlatformAdministratorCommand`, `ApplicationError`, `UserId`, `FakeOrganizationRepository`, `auth/views.py`, `auth/composition.py`?**
   _High betweenness centrality (0.048) - this node is a cross-community bridge._
-- **Why does `UserId` connect `UserId` to `User`, `identity/test_interfaces.py`, `ConsentVersion`, `Submission`, `EmailVerificationPolicy`, `Clock`, `FakeUuidGenerator`, `TestLocale`, `SubmissionMapper`, `FakeEventPublisher`, `.from_hash`, `Consent`, `test_password_reset_handlers.py`, `test_user_mapper.py`, `DjangoUserRepository`, `Email`, `translate_domain_errors`, `auth/views.py`, `TestUserId`, `FakeEmailGateway`, `FakeUserRepository`, `submissions/composition.py`, `SignedVerificationTokenService`, `Env`, `account/views.py`?**
+- **Why does `UserId` connect `UserId` to `User`, `UserRepository`, `TestLocale`, `Submission`, `ConsentPolicy`, `Clock`, `FakeUuidGenerator`, `SubmissionMapper`, `TestCollectiveRoster`, `FakeEventPublisher`, `.from_hash`, `identity/application/exceptions.py`, `test_upload_handlers.py`, `test_password_reset_handlers.py`, `test_user_mapper.py`, `DjangoUserRepository`, `Email`, `CompetitionClosedError`, `TestContentEditing`, `FakeUserRepository`, `TestUserId`, `test_documents_archive_api.py`, `DomainEvent`, `FakeUserRepository`, `organization/composition.py`, `submissions/composition.py`, `auth/composition.py`, `SubmissionModel`, `auth/views.py`?**
   _High betweenness centrality (0.042) - this node is a cross-community bridge._
 - **Are the 197 inferred relationships involving `Submission` (e.g. with `CreateSubmissionHandler` and `DeleteDraftSubmissionHandler`) actually correct?**
   _`Submission` has 197 INFERRED edges - model-reasoned connections that need verification._
