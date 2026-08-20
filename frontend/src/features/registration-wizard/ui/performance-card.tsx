@@ -73,10 +73,14 @@ export function PerformanceCard({
 
   return (
     <Card>
-      <div className="flex items-center justify-between gap-3 p-4">
+      {/* Two lines on a phone, one on a desktop. The controls are ~250 px of badges and
+          icon buttons that cannot shrink, and the title is as long as the applicant
+          named their act: on one row at 360 px they were pushed off the card and clipped
+          away by the layout, so «Удалить» and «Дублировать» could not be reached at all. */}
+      <div className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
         <button
           type="button"
-          className="flex flex-1 items-center gap-3 text-left cursor-pointer"
+          className="flex min-w-0 flex-1 items-center gap-3 text-left cursor-pointer"
           onClick={() => setOpen((value) => !value)}
         >
           {open ? (
@@ -84,7 +88,7 @@ export function PerformanceCard({
           ) : (
             <ChevronDown className="size-4 shrink-0" />
           )}
-          <div>
+          <div className="min-w-0">
             <p className="font-medium">
               Выступление #{index + 1}
               {performance?.title ? ` · ${performance.title}` : ""}
@@ -100,7 +104,7 @@ export function PerformanceCard({
             </p>
           </div>
         </button>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           {submission?.price ? (
             <Badge variant="success">
               {submission.price.amount} {submission.price.currency}
@@ -112,6 +116,7 @@ export function PerformanceCard({
           <Button
             variant="ghost"
             size="xs"
+            iconOnly
             aria-label="Дублировать"
             loading={duplicating}
             onClick={onDuplicate}
@@ -121,6 +126,7 @@ export function PerformanceCard({
           <Button
             variant="ghost"
             size="xs"
+            iconOnly
             aria-label="Удалить"
             loading={removing}
             onClick={onRemove}

@@ -130,7 +130,7 @@ export function CollectiveMembers({
             </Alert>
           ) : null}
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Button
               size="sm"
               loading={save.isPending}

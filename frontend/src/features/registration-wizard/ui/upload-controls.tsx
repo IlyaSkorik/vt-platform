@@ -203,8 +203,10 @@ function UploadRow({
 
   return (
     <div className="flex flex-col gap-2 rounded-md border border-border p-3">
-      <div className="flex items-center justify-between gap-2">
-        <div>
+      {/* The hint spells out formats and ceilings, so it is long by design. It wraps and
+          the button drops below it rather than the two fighting over one row. */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
           <p className="text-sm font-medium">{kind.label}</p>
           <p className="text-xs text-muted-foreground">{kind.hint}</p>
         </div>

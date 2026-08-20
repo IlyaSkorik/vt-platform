@@ -291,7 +291,10 @@ function PerformancesStep({
           стоимость, она показана в его заголовке.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      {/* Tighter side padding on a phone: the performance cards are cards inside this
+          card, and two lots of `p-6` took a third of a 360 px screen before any content
+          got a say. */}
+      <CardContent className="px-3 sm:px-6">
         <PerformanceBuilder
           applicationId={applicationId}
           application={application}

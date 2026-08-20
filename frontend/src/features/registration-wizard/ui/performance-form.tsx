@@ -449,8 +449,10 @@ function ParticipantsSection({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-medium">
+      {/* Wraps rather than squeezes: the button's label cannot shrink, so on a narrow
+          screen it belongs on its own line instead of half off the card. */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="min-w-0 text-sm font-medium">
           Участники
           {bandLabel ? (
             <span className="ml-2 text-xs font-normal text-muted-foreground">
@@ -566,8 +568,8 @@ function TeachersSection({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-medium">Педагоги</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="min-w-0 text-sm font-medium">Педагоги</p>
         <Button variant="outline" size="sm" onClick={() => setPickerOpen(true)}>
           Выбрать педагога
         </Button>

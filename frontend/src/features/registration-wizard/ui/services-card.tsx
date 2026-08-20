@@ -41,8 +41,8 @@ export function ServicesCard({
           registration.additionalServices.map((service) => {
             const selected = selectedIds.has(service.id);
             return (
-              <div key={service.id} className="flex items-center justify-between gap-3">
-                <div>
+              <div key={service.id} className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
                   <p className="text-sm font-medium">{service.name}</p>
                   <p className="text-sm text-muted-foreground">
                     {service.amount} {service.currency}
