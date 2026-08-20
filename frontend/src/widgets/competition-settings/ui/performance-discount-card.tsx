@@ -40,22 +40,19 @@ export function PerformanceDiscountCard({
   const stored = competition.settings?.additionalPerformanceDiscountPercent ?? 0;
   const [percent, setPercent] = useState(stored);
   const timer = useRef<number | null>(null);
+  // The typed value the server has not been told about yet, so leaving the section
+  // mid-debounce sends it rather than discarding it with the timer.
+  const pending = useRef<number | null>(null);
 
   useEffect(() => {
     setPercent(stored);
   }, [stored]);
 
-  useEffect(
-    () => () => {
-      if (timer.current != null) {
-        window.clearTimeout(timer.current);
-      }
-    },
-    [],
-  );
-
   const persist = useCallback(
     async (next: number) => {
+      if (pending.current === next) {
+        pending.current = null;
+      }
       // The settings endpoint replaces the whole bag, so the current value has to be
       // sent alongside everything else rather than patched on its own.
       const base = mergeSettingsWithFormats(
@@ -79,15 +76,37 @@ export function PerformanceDiscountCard({
     [competition, updateSettings, stored],
   );
 
+  const persistRef = useRef(persist);
+  useEffect(() => {
+    persistRef.current = persist;
+  }, [persist]);
+
+  useEffect(
+    () => () => {
+      if (timer.current != null) {
+        window.clearTimeout(timer.current);
+        timer.current = null;
+      }
+      const unsaved = pending.current;
+      if (unsaved != null) {
+        pending.current = null;
+        void persistRef.current(unsaved);
+      }
+    },
+    [],
+  );
+
   const onChange = (raw: string): void => {
     const parsed = Number(raw);
     if (!Number.isFinite(parsed)) return;
     const next = Math.max(0, Math.min(100, Math.round(parsed)));
     setPercent(next);
+    pending.current = next;
     if (timer.current != null) {
       window.clearTimeout(timer.current);
     }
     timer.current = window.setTimeout(() => {
+      timer.current = null;
       void persist(next);
     }, AUTOSAVE_DELAY_MS);
   };
