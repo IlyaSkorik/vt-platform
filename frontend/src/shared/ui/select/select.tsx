@@ -33,7 +33,7 @@ export const SelectTrigger = forwardRef<
       data-slot="select-trigger"
       aria-invalid={invalid || undefined}
       className={cn(
-        "flex w-full cursor-pointer items-center justify-between gap-2 overflow-hidden rounded-md border border-input bg-background px-3 text-foreground shadow-elevation-1 outline-none transition-colors",
+        "flex w-full min-w-0 cursor-pointer items-center justify-between gap-2 overflow-hidden rounded-md border border-input bg-background px-3 text-foreground shadow-elevation-1 outline-none transition-colors",
         "focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring",
         "data-[placeholder]:text-muted-foreground",
         "disabled:cursor-not-allowed disabled:opacity-50",
@@ -195,7 +195,13 @@ export const Select = forwardRef<React.ElementRef<typeof SelectPrimitive.Trigger
         .join(" ") || undefined;
 
     return (
-      <div className={cn("flex flex-col gap-1.5", containerClassName)}>
+      // `min-w-0`: the chosen value never wraps, so its full width is this field's
+      // min-content — and an `auto` grid track or a flex row sized by its content
+      // would take that as the width to be, stretching the whole row off-screen
+      // (a phone showed 499px-wide selects on a 390px screen). Capping the minimum
+      // here means the track sizes to the space available and the value clips
+      // instead, which is the whole point of keeping it on one line.
+      <div className={cn("flex min-w-0 flex-col gap-1.5", containerClassName)}>
         {label != null && (
           <label htmlFor={triggerId} className="text-sm font-medium text-foreground">
             {label}
