@@ -50,6 +50,18 @@ export interface DocumentTypeConfig {
    * label the letter drops.
    */
   teacherRoles: boolean;
+  /**
+   * Whether a template of this kind must carry the QR block.
+   *
+   * Mirrors the backend's registry-document policy (`numbered` + `verifiable`): a
+   * diploma is an award record that anybody can check, and the block is the only
+   * place its number and verification link are printed. A layout without it yields
+   * a sheet that cannot be verified and does not even state which diploma it is —
+   * so the editor keeps the block on every such template, and the palette copy
+   * says so. A courtesy letter is neither numbered nor verifiable and must not
+   * carry it at all.
+   */
+  requiresQrBlock: boolean;
 }
 
 /**
@@ -67,6 +79,7 @@ export const DOCUMENT_TYPES: Record<string, DocumentTypeConfig> = {
     hint: "Награда участника: со степенью, номером и QR-кодом для проверки подлинности.",
     // A diploma credits a teacher in a stated capacity.
     teacherRoles: true,
+    requiresQrBlock: true,
   },
   INDIVIDUAL_DIPLOMA: {
     label: "Индивидуальный диплом",
@@ -75,6 +88,7 @@ export const DOCUMENT_TYPES: Record<string, DocumentTypeConfig> = {
     hint: "Диплом участнику коллектива: всё то же, плюс поле «ФИО участника». Выпускается каждому названному участнику при публикации протокола.",
     // The same award as the collective's diploma, so a teacher is credited the same way.
     teacherRoles: true,
+    requiresQrBlock: true,
   },
   THANK_YOU: {
     label: "Благодарность",
@@ -83,6 +97,7 @@ export const DOCUMENT_TYPES: Record<string, DocumentTypeConfig> = {
     hint: "Знак признательности: без степени, без номера и без проверки подлинности.",
     // A letter thanks a person by name; the letter itself already says what it is.
     teacherRoles: false,
+    requiresQrBlock: false,
   },
 };
 
@@ -98,6 +113,9 @@ const UNKNOWN: DocumentTypeConfig = {
   // Unrestricted, like `allowsFieldType` — a client running behind the backend
   // shows the fuller form rather than silently dropping information.
   teacherRoles: true,
+  // …but nothing is *forced* onto a kind this build does not know: a required
+  // block the backend would then reject is worse than an absent one.
+  requiresQrBlock: false,
 };
 
 /** How to present this kind, never throwing on an unknown one. */
@@ -130,4 +148,13 @@ export function allowsFieldType(
     return !MEMBER_ONLY_FIELD_TYPES.has(fieldType);
   }
   return true;
+}
+
+/**
+ * Whether a template of this kind must carry the QR block (number + verification
+ * link). The editor places it on every such template and refuses to remove the
+ * last one — see `withRequiredFields` in the constructor's field factory.
+ */
+export function requiresQrBlock(documentType: DocumentType | string): boolean {
+  return documentTypeConfig(documentType).requiresQrBlock;
 }

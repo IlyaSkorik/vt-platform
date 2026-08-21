@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { toast } from "@/shared/ui";
 import { useConstructorFieldsContext } from "../model/fields-context";
 
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -11,13 +12,14 @@ function isTypingTarget(target: EventTarget | null): boolean {
 
 /**
  * FieldShortcuts: the editor's keyboard infrastructure. Renders nothing.
- *   Delete / Backspace — remove the active field
+ *   Delete / Backspace — remove the active field (unless the document requires it)
  *   Escape            — clear the selection
  *   Ctrl/Cmd + D      — duplicate the active field
  * Ignored while typing in a form control.
  */
 export function FieldShortcuts(): null {
-  const { selectedId, removeField, duplicateField, deselect } = useConstructorFieldsContext();
+  const { selectedId, removeField, canRemoveField, duplicateField, deselect } =
+    useConstructorFieldsContext();
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
@@ -33,6 +35,11 @@ export function FieldShortcuts(): null {
       }
       if (event.key === "Delete" || event.key === "Backspace") {
         event.preventDefault();
+        // A key that quietly does nothing reads as a broken editor, so say why.
+        if (!canRemoveField(selectedId)) {
+          toast.error("Блок QR обязателен на дипломе: на нём печатаются номер и ссылка проверки.");
+          return;
+        }
         removeField(selectedId);
         return;
       }
@@ -43,7 +50,7 @@ export function FieldShortcuts(): null {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selectedId, removeField, duplicateField, deselect]);
+  }, [selectedId, removeField, canRemoveField, duplicateField, deselect]);
 
   return null;
 }

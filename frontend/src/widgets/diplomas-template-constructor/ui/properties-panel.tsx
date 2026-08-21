@@ -8,7 +8,7 @@ import { FieldInspector } from "./field-inspector";
  * the data layer — no appearance state lives here.
  */
 export function PropertiesPanel(): React.JSX.Element {
-  const { selectedField, updateGeometry, updateStyle, updateValue, updateConfig } =
+  const { selectedField, canRemoveField, updateGeometry, updateStyle, updateValue, updateConfig } =
     useConstructorFieldsContext();
 
   return (
@@ -22,6 +22,7 @@ export function PropertiesPanel(): React.JSX.Element {
       {selectedField ? (
         <FieldInspector
           field={selectedField}
+          required={!canRemoveField(selectedField.id)}
           onGeometryChange={(patch) => updateGeometry(selectedField.id, patch)}
           onStyleChange={(patch) => updateStyle(selectedField.id, patch)}
           onValueChange={(value) => updateValue(selectedField.id, value)}

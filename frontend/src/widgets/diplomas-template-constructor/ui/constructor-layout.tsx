@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   type DiplomaTemplate,
   resolveMediaUrl,
@@ -7,6 +7,7 @@ import {
 } from "@/features/diplomas";
 import { ApiError } from "@/shared/api";
 import { toast } from "@/shared/ui";
+import { requiredFieldTypes, withRequiredFields } from "../model/field-factory";
 import { ConstructorFieldsProvider, useConstructorFieldsContext } from "../model/fields-context";
 import { PreviewDataProvider } from "../model/preview-context";
 import { useLayoutPersistence } from "../model/use-layout-persistence";
@@ -33,8 +34,25 @@ export function TemplateConstructorLayout({
   template,
   initialFields,
 }: TemplateConstructorLayoutProps): React.JSX.Element {
+  // A diploma must print its number and verification link, so the editor completes
+  // the loaded layout with the QR block when it carries none — a template created
+  // before this rule gains it here rather than issuing another sheet nobody can
+  // check. Completing it means the state differs from what is stored, hence dirty:
+  // Save lights up and the guard warns on the way out.
+  const seededFields = useMemo(
+    () => withRequiredFields(initialFields, template.type),
+    [initialFields, template.type],
+  );
+  const options = useMemo(
+    () => ({
+      requiredTypes: requiredFieldTypes(template.type),
+      initialDirty: seededFields !== initialFields,
+    }),
+    [template.type, seededFields, initialFields],
+  );
+
   return (
-    <ConstructorFieldsProvider initialFields={initialFields}>
+    <ConstructorFieldsProvider initialFields={seededFields} options={options}>
       <ConstructorWorkspace template={template} />
     </ConstructorFieldsProvider>
   );

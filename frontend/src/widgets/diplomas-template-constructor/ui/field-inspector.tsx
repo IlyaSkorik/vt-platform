@@ -113,6 +113,12 @@ function NumberField({
 
 interface FieldInspectorProps {
   field: TemplateField;
+  /**
+   * The document requires this element and the editor will not let the last one go.
+   * Shown as a note so the organizer learns it here rather than from a Delete key
+   * that appears to do nothing.
+   */
+  required?: boolean;
   onGeometryChange: (patch: FieldGeometryPatch) => void;
   onStyleChange: (patch: Partial<TemplateFieldStyle>) => void;
   onValueChange: (value: string) => void;
@@ -170,6 +176,7 @@ function NominationBlockSection({
  */
 export function FieldInspector({
   field,
+  required = false,
   onGeometryChange,
   onStyleChange,
   onValueChange,
@@ -190,6 +197,12 @@ export function FieldInspector({
       <Section>
         <SectionTitle>Элемент</SectionTitle>
         <p className="font-medium text-foreground text-sm">{typeLabel(field.type)}</p>
+        {required ? (
+          <p className="text-muted-foreground text-xs">
+            Обязательный блок: на нём печатаются номер диплома и ссылка для проверки подлинности.
+            Его можно двигать и оформлять, но не удалять.
+          </p>
+        ) : null}
       </Section>
 
       {field.config?.parts ? (

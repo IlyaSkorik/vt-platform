@@ -7,6 +7,21 @@ import type {
 } from "@/features/diplomas";
 import { createField, DUPLICATE_OFFSET, MIN_HEIGHT, MIN_WIDTH } from "./field-factory";
 
+/** How the editor's state is set up for one template. */
+export interface ConstructorFieldsOptions {
+  /**
+   * Element kinds the document must always carry — the last field of such a kind
+   * cannot be removed. Empty for a document that requires nothing.
+   */
+  requiredTypes?: readonly TemplateFieldTypeId[];
+  /**
+   * Start dirty. Set when the editor had to complete the loaded layout (adding a
+   * missing required field), because the state then genuinely differs from what is
+   * stored and the organizer must be able to save it.
+   */
+  initialDirty?: boolean;
+}
+
 /** The subset of a field's geometry the inspector can edit numerically. */
 export type FieldGeometryPatch = Partial<
   Pick<TemplateField, "page" | "x" | "y" | "width" | "height">
@@ -48,8 +63,13 @@ export interface ConstructorFieldsState {
   moveField: (id: string, x: number, y: number) => void;
   /** Resize a field to a normalised rect; clamped to the page and min size. */
   resizeField: (id: string, rect: FieldRect) => void;
-  /** Remove a field (and clear the selection if it was selected). */
+  /**
+   * Remove a field (and clear the selection if it was selected). The last field of
+   * a required kind is kept — ask {@link canRemoveField} before offering the action.
+   */
   removeField: (id: string) => void;
+  /** Whether this field may be removed at all (see {@link removeField}). */
+  canRemoveField: (id: string) => boolean;
   /** Duplicate a field, offset it slightly, and select the copy. */
   duplicateField: (id: string) => void;
   /** Patch a field's geometry (inspector inputs); clamped to page + min size. */
@@ -75,10 +95,14 @@ export interface ConstructorFieldsState {
  * every mutation flips `dirty`, cleared by load (`initialize`) and save
  * (`markPristine`).
  */
-export function useConstructorFields(initialFields: TemplateField[]): ConstructorFieldsState {
+export function useConstructorFields(
+  initialFields: TemplateField[],
+  options: ConstructorFieldsOptions = {},
+): ConstructorFieldsState {
+  const { requiredTypes = [], initialDirty = false } = options;
   const [fields, setFields] = useState<TemplateField[]>(initialFields);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [dirty, setDirty] = useState(false);
+  const [dirty, setDirty] = useState(initialDirty);
 
   const addField = useCallback((type: TemplateFieldTypeId, page = 1) => {
     const field = createField(type, page);
@@ -105,11 +129,37 @@ export function useConstructorFields(initialFields: TemplateField[]): Constructo
     setDirty(true);
   }, []);
 
-  const removeField = useCallback((id: string) => {
-    setFields((prev) => prev.filter((field) => field.id !== id));
-    setSelectedId((current) => (current === id ? null : current));
-    setDirty(true);
-  }, []);
+  /**
+   * The last field of a required kind stays put: a diploma prints its number and
+   * verification link nowhere else, so removing the block would quietly turn the
+   * template into one that issues uncheckable diplomas. A second copy of the same
+   * kind is ordinary and removable.
+   */
+  const canRemoveField = useCallback(
+    (id: string) => {
+      const target = fields.find((field) => field.id === id);
+      if (target === undefined) {
+        return false;
+      }
+      if (!requiredTypes.includes(target.type)) {
+        return true;
+      }
+      return fields.filter((field) => field.type === target.type).length > 1;
+    },
+    [fields, requiredTypes],
+  );
+
+  const removeField = useCallback(
+    (id: string) => {
+      if (!canRemoveField(id)) {
+        return;
+      }
+      setFields((prev) => prev.filter((field) => field.id !== id));
+      setSelectedId((current) => (current === id ? null : current));
+      setDirty(true);
+    },
+    [canRemoveField],
+  );
 
   const duplicateField = useCallback((id: string) => {
     setFields((prev) => {
@@ -196,6 +246,7 @@ export function useConstructorFields(initialFields: TemplateField[]): Constructo
     moveField,
     resizeField,
     removeField,
+    canRemoveField,
     duplicateField,
     updateGeometry,
     updateStyle,

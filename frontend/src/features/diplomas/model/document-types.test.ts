@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { FIELD_TYPES } from "./constructor";
-import { allowsFieldType, documentTypeConfig } from "./document-types";
+import { allowsFieldType, documentTypeConfig, requiresQrBlock } from "./document-types";
 
 describe("allowsFieldType", () => {
   it("lets an individual diploma carry the whole catalogue", () => {
@@ -67,5 +67,33 @@ describe("documentTypeConfig", () => {
 
   it("falls back for a kind this build does not know", () => {
     expect(documentTypeConfig("CERTIFICATE").label).toBe("Документ");
+  });
+});
+
+describe("requiresQrBlock", () => {
+  it("requires it on both kinds of diploma", () => {
+    // Numbered and verifiable: the block is the only place the number and the
+    // verification link are printed, so a layout without one issues a sheet nobody
+    // can check.
+    expect(requiresQrBlock("DIPLOMA")).toBe(true);
+    expect(requiresQrBlock("INDIVIDUAL_DIPLOMA")).toBe(true);
+  });
+
+  it("never requires it on a thank-you letter, which may not carry one at all", () => {
+    expect(requiresQrBlock("THANK_YOU")).toBe(false);
+    expect(allowsFieldType("THANK_YOU", "qr_block")).toBe(false);
+  });
+
+  it("forces nothing onto a kind this build does not know", () => {
+    // A required block the backend would then reject is worse than an absent one.
+    expect(requiresQrBlock("CERTIFICATE")).toBe(false);
+  });
+
+  it("only requires what the kind is allowed to carry", () => {
+    for (const type of ["DIPLOMA", "INDIVIDUAL_DIPLOMA", "THANK_YOU"]) {
+      if (requiresQrBlock(type)) {
+        expect(allowsFieldType(type, "qr_block")).toBe(true);
+      }
+    }
   });
 });

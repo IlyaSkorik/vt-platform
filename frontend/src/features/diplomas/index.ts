@@ -98,6 +98,7 @@ export {
   type DocumentType,
   type DocumentTypeConfig,
   documentTypeConfig,
+  requiresQrBlock,
 } from "./model/document-types";
 export {
   cssFontStack,

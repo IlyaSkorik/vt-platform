@@ -1,6 +1,10 @@
 import { createContext, useContext } from "react";
 import type { TemplateField } from "@/features/diplomas";
-import { type ConstructorFieldsState, useConstructorFields } from "./use-constructor-fields";
+import {
+  type ConstructorFieldsOptions,
+  type ConstructorFieldsState,
+  useConstructorFields,
+} from "./use-constructor-fields";
 
 const FieldsContext = createContext<ConstructorFieldsState | null>(null);
 
@@ -12,12 +16,15 @@ const FieldsContext = createContext<ConstructorFieldsState | null>(null);
  */
 export function ConstructorFieldsProvider({
   initialFields,
+  options,
   children,
 }: {
   initialFields: TemplateField[];
+  /** Per-template rules: which element kinds are required, whether to start dirty. */
+  options?: ConstructorFieldsOptions;
   children: React.ReactNode;
 }): React.JSX.Element {
-  const value = useConstructorFields(initialFields);
+  const value = useConstructorFields(initialFields, options);
   return <FieldsContext.Provider value={value}>{children}</FieldsContext.Provider>;
 }
 
