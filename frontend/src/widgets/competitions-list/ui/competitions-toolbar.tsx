@@ -53,7 +53,7 @@ export function CompetitionsToolbar({
             value: option.value,
             label: option.label,
           }))}
-          className="w-full sm:w-40"
+          className="w-full sm:w-44"
         />
       </div>
     </div>
