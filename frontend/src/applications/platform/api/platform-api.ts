@@ -15,12 +15,30 @@ import { apiClient } from "@/shared/api";
 
 export type OrganizationStatus = "ACTIVE" | "SUSPENDED";
 
+/** Which of the two commercial terms an organization is connected under. */
+export type BillingModel = "COMMISSION_PERCENT" | "PER_PERFORMANCE_FEE";
+
+/**
+ * One band of a per-performance fee schedule: "2–5 participants cost 4.00".
+ *
+ * `maxParticipants` of `null` is the open-ended top band ("6 and up"), which every
+ * schedule ends with. The amount stays a decimal string, like all money here.
+ */
+export type PerformanceFeeTier = {
+  minParticipants: number;
+  maxParticipants: number | null;
+  amount: string;
+};
+
 export type PlatformOrganization = {
   id: string;
   name: string;
   slug: string;
   status: OrganizationStatus;
+  /** Which of the two terms below is live; the other one is what was last agreed. */
+  billingModel: BillingModel;
   commissionPercent: string;
+  feeTiers: PerformanceFeeTier[];
   createdAt: string;
 };
 
@@ -28,7 +46,9 @@ export type OrganizationBreakdown = {
   organizationId: string | null;
   name: string;
   status: string;
+  billingModel: BillingModel;
   commissionPercent: string;
+  feeTiers: PerformanceFeeTier[];
   competitions: number;
   applications: number;
   statusCounts: Record<string, number>;
@@ -60,7 +80,9 @@ export type ConnectOrganizationInput = {
   name: string;
   slug?: string;
   ownerEmail: string;
-  commissionPercent: string;
+  billingModel: BillingModel;
+  commissionPercent?: string;
+  feeTiers?: PerformanceFeeTier[];
 };
 
 /** One generation job inside a load-test run. */
@@ -207,7 +229,9 @@ export function useUpdateOrganization() {
   return useMutation({
     mutationFn: async (input: {
       id: string;
+      billingModel?: BillingModel;
       commissionPercent?: string;
+      feeTiers?: PerformanceFeeTier[];
       status?: OrganizationStatus;
     }): Promise<PlatformOrganization> => {
       const { id, ...payload } = input;

@@ -1,12 +1,22 @@
 import { useState } from "react";
 
 import {
+  type BillingModel,
   type PlatformOrganization,
   refusalMessage,
   useConnectOrganization,
   usePlatformOrganizations,
   useUpdateOrganization,
 } from "@/applications/platform/api/platform-api";
+import {
+  BILLING_MODEL_OPTIONS,
+  billingModelLabel,
+  emptyFeeTierDrafts,
+  feeTiersEqual,
+  feeTiersToDrafts,
+  validateFeeTiers,
+} from "@/applications/platform/lib/billing";
+import { FeeTierEditor } from "@/applications/platform/ui/fee-tier-editor";
 import {
   Badge,
   Button,
@@ -18,6 +28,7 @@ import {
   EmptyState,
   Input,
   LoadingState,
+  Select,
   toast,
 } from "@/shared/ui";
 
@@ -27,14 +38,29 @@ function ConnectForm(): React.JSX.Element {
   const [ownerEmail, setOwnerEmail] = useState("");
   const [commissionPercent, setCommissionPercent] = useState("0");
   const [slug, setSlug] = useState("");
+  const [billingModel, setBillingModel] = useState<BillingModel>("COMMISSION_PERCENT");
+  const [tierDrafts, setTierDrafts] = useState(emptyFeeTierDrafts);
+  const [tiersTouched, setTiersTouched] = useState(false);
+  const perPerformance = billingModel === "PER_PERFORMANCE_FEE";
 
   const submit = (event: React.FormEvent): void => {
     event.preventDefault();
+    // Under the fee model the schedule is the term being agreed, so an incomplete
+    // one stops the submit rather than travelling to the API to be refused there.
+    const { tiers } = validateFeeTiers(tierDrafts);
+    if (perPerformance && tiers === null) {
+      setTiersTouched(true);
+      toast.error("Заполните тарифную сетку: границы состава и цену каждого правила");
+      return;
+    }
     connect.mutate(
       {
         name: name.trim(),
         ownerEmail: ownerEmail.trim(),
-        commissionPercent: commissionPercent.trim() || "0",
+        billingModel,
+        ...(perPerformance
+          ? { feeTiers: tiers ?? [] }
+          : { commissionPercent: commissionPercent.trim() || "0" }),
         ...(slug.trim() ? { slug: slug.trim() } : {}),
       },
       {
@@ -44,6 +70,9 @@ function ConnectForm(): React.JSX.Element {
           setOwnerEmail("");
           setCommissionPercent("0");
           setSlug("");
+          setBillingModel("COMMISSION_PERCENT");
+          setTierDrafts(emptyFeeTierDrafts());
+          setTiersTouched(false);
         },
         onError: async (error) => {
           toast.error(await refusalMessage(error, "Не удалось подключить организацию"));
@@ -79,12 +108,12 @@ function ConnectForm(): React.JSX.Element {
             onChange={(event) => setOwnerEmail(event.target.value)}
             placeholder="director@example.com"
           />
-          <Input
-            label="Комиссия платформы, %"
-            inputMode="decimal"
-            value={commissionPercent}
-            onChange={(event) => setCommissionPercent(event.target.value)}
-            description="Доля организационного взноса, которую организация должна платформе"
+          <Select
+            label="Модель тарификации"
+            options={BILLING_MODEL_OPTIONS}
+            value={billingModel}
+            onValueChange={(value) => setBillingModel(value as BillingModel)}
+            description="Как платформа берёт своё: долей от взносов или ценой за каждый номер"
           />
           <Input
             label="Адрес в URL (необязательно)"
@@ -92,6 +121,24 @@ function ConnectForm(): React.JSX.Element {
             onChange={(event) => setSlug(event.target.value)}
             placeholder="zvezdnyy-dozhd"
           />
+          {perPerformance ? (
+            <div className="flex flex-col gap-2 sm:col-span-2">
+              <p className="font-medium text-sm">Стоимость заявки по составу номера</p>
+              <FeeTierEditor
+                drafts={tierDrafts}
+                showErrors={tiersTouched}
+                onChange={setTierDrafts}
+              />
+            </div>
+          ) : (
+            <Input
+              label="Комиссия платформы, %"
+              inputMode="decimal"
+              value={commissionPercent}
+              onChange={(event) => setCommissionPercent(event.target.value)}
+              description="Доля организационного взноса, которую организация должна платформе"
+            />
+          )}
           <div className="sm:col-span-2">
             <Button type="submit" loading={connect.isPending}>
               Подключить и отправить приглашение
@@ -110,11 +157,44 @@ function OrganizationCard({
 }): React.JSX.Element {
   const update = useUpdateOrganization();
   const [commission, setCommission] = useState(organization.commissionPercent);
+  const [billingModel, setBillingModel] = useState<BillingModel>(organization.billingModel);
+  const [tierDrafts, setTierDrafts] = useState(() => feeTiersToDrafts(organization.feeTiers));
+  const [tiersTouched, setTiersTouched] = useState(false);
   const suspended = organization.status === "SUSPENDED";
+  const perPerformance = billingModel === "PER_PERFORMANCE_FEE";
+  const { tiers } = validateFeeTiers(tierDrafts);
+  // Nothing to save when the form still says what the organization already runs on.
+  const termsUnchanged = perPerformance
+    ? organization.billingModel === "PER_PERFORMANCE_FEE" &&
+      tiers !== null &&
+      feeTiersEqual(tiers, organization.feeTiers)
+    : organization.billingModel === "COMMISSION_PERCENT" &&
+      commission.trim() === organization.commissionPercent;
 
-  const saveCommission = (): void => {
+  const saveTerms = (): void => {
+    if (perPerformance) {
+      if (tiers === null) {
+        setTiersTouched(true);
+        toast.error("Заполните тарифную сетку: границы состава и цену каждого правила");
+        return;
+      }
+      update.mutate(
+        { id: organization.id, billingModel, feeTiers: tiers },
+        {
+          onSuccess: (saved) => {
+            setTierDrafts(feeTiersToDrafts(saved.feeTiers));
+            setTiersTouched(false);
+            toast.success("Тарифная сетка сохранена");
+          },
+          onError: async (error) => {
+            toast.error(await refusalMessage(error, "Не удалось сохранить тарифы"));
+          },
+        },
+      );
+      return;
+    }
     update.mutate(
-      { id: organization.id, commissionPercent: commission.trim() },
+      { id: organization.id, billingModel, commissionPercent: commission.trim() },
       {
         onSuccess: (saved) => {
           setCommission(saved.commissionPercent);
@@ -149,27 +229,50 @@ function OrganizationCard({
             {suspended ? "Приостановлена" : "Активна"}
           </Badge>
         </div>
-        <CardDescription>/{organization.slug}</CardDescription>
+        <CardDescription>
+          /{organization.slug} · {billingModelLabel(organization.billingModel)}
+          {organization.billingModel === "COMMISSION_PERCENT"
+            ? ` ${organization.commissionPercent}%`
+            : ""}
+        </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <Input
-          label="Комиссия, %"
-          inputMode="decimal"
-          className="sm:max-w-40"
-          value={commission}
-          onChange={(event) => setCommission(event.target.value)}
-        />
-        <Button
-          variant="outline"
-          loading={update.isPending}
-          disabled={commission.trim() === organization.commissionPercent}
-          onClick={saveCommission}
-        >
-          Сохранить ставку
-        </Button>
-        <Button variant="ghost" loading={update.isPending} onClick={toggleStatus}>
-          {suspended ? "Возобновить" : "Приостановить"}
-        </Button>
+      <CardContent className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <Select
+            label="Модель тарификации"
+            className="sm:max-w-60"
+            options={BILLING_MODEL_OPTIONS}
+            value={billingModel}
+            onValueChange={(value) => setBillingModel(value as BillingModel)}
+          />
+          {perPerformance ? null : (
+            <Input
+              label="Комиссия, %"
+              inputMode="decimal"
+              className="sm:max-w-40"
+              value={commission}
+              onChange={(event) => setCommission(event.target.value)}
+            />
+          )}
+        </div>
+
+        {perPerformance ? (
+          <FeeTierEditor drafts={tierDrafts} showErrors={tiersTouched} onChange={setTierDrafts} />
+        ) : null}
+
+        <div className="flex flex-wrap gap-3">
+          <Button
+            variant="outline"
+            loading={update.isPending}
+            disabled={termsUnchanged}
+            onClick={saveTerms}
+          >
+            {perPerformance ? "Сохранить тарифы" : "Сохранить ставку"}
+          </Button>
+          <Button variant="ghost" loading={update.isPending} onClick={toggleStatus}>
+            {suspended ? "Возобновить" : "Приостановить"}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

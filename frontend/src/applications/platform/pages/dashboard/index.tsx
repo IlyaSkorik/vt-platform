@@ -4,6 +4,7 @@ import {
   type OrganizationBreakdown,
   usePlatformDashboard,
 } from "@/applications/platform/api/platform-api";
+import { formatFeeTier } from "@/applications/platform/lib/billing";
 import {
   Badge,
   Card,
@@ -71,7 +72,18 @@ function OrganizationRow({ row }: { row: OrganizationBreakdown }): React.JSX.Ele
           {row.status === "ACTIVE" ? "Активна" : "Приостановлена"}
         </Badge>
       </td>
-      <td className="py-3 pr-4 tabular-nums">{row.commissionPercent}%</td>
+      <td className="py-3 pr-4">
+        {row.billingModel === "PER_PERFORMANCE_FEE" ? (
+          <div className="flex flex-col">
+            <span>Цена за номер</span>
+            <span className="text-muted-foreground text-xs">
+              {row.feeTiers.map(formatFeeTier).join(" · ")}
+            </span>
+          </div>
+        ) : (
+          <span className="tabular-nums">{row.commissionPercent}%</span>
+        )}
+      </td>
       <td className="py-3 pr-4 tabular-nums">{money(row.expectedFees)}</td>
       <td className="py-3 pr-4 tabular-nums">{money(row.settledFees)}</td>
       <td className="py-3 pr-4 font-medium tabular-nums">{money(row.expectedCommission)}</td>
@@ -191,8 +203,9 @@ export function PlatformDashboardPage(): React.JSX.Element {
         <CardHeader>
           <CardTitle>По организациям</CardTitle>
           <CardDescription>
-            Комиссия считается по ставке организации: {STATUS_LABELS.length} статусов сворачиваются
-            в две суммы — ожидаемую и полученную.
+            Комиссия считается по условиям организации — процентом от взносов или ценой за каждый
+            номер: {STATUS_LABELS.length} статусов сворачиваются в две суммы, ожидаемую и
+            полученную.
           </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
@@ -201,7 +214,7 @@ export function PlatformDashboardPage(): React.JSX.Element {
               <tr className="border-border border-b text-left text-muted-foreground text-xs uppercase">
                 <th className="py-2 pr-4 font-medium">Организация</th>
                 <th className="py-2 pr-4 font-medium">Статус</th>
-                <th className="py-2 pr-4 font-medium">Ставка</th>
+                <th className="py-2 pr-4 font-medium">Условия</th>
                 <th className="py-2 pr-4 font-medium">Взносы ожид.</th>
                 <th className="py-2 pr-4 font-medium">Взносы получ.</th>
                 <th className="py-2 pr-4 font-medium">Комиссия ожид.</th>
