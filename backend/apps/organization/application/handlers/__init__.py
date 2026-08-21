@@ -6,10 +6,13 @@ from .connect_organization import (
     ConnectedOrganizationDto,
     ConnectOrganizationCommand,
     ConnectOrganizationHandler,
+    FeeTierRow,
     ListOrganizationsHandler,
     OrganizationSummaryView,
     SetCommissionRateCommand,
     SetCommissionRateHandler,
+    SetPerformanceFeeScheduleCommand,
+    SetPerformanceFeeScheduleHandler,
 )
 from .create_staff_invitation import InviteStaffHandler
 from .get_organization_profile import GetOrganizationProfileHandler, OrganizationProfileView
@@ -30,6 +33,7 @@ __all__ = [
     "ConnectOrganizationCommand",
     "ConnectOrganizationHandler",
     "ConnectedOrganizationDto",
+    "FeeTierRow",
     "GetOrganizationProfileHandler",
     "GetStaffInvitationHandler",
     "InviteStaffHandler",
@@ -44,5 +48,7 @@ __all__ = [
     "SendInvitationEmailHandler",
     "SetCommissionRateCommand",
     "SetCommissionRateHandler",
+    "SetPerformanceFeeScheduleCommand",
+    "SetPerformanceFeeScheduleHandler",
     "UpdateOrganizationProfileHandler",
 ]

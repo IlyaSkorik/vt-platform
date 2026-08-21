@@ -38,6 +38,7 @@ from apps.organization.application.handlers import (
     RevokeStaffMembershipHandler,
     SendInvitationEmailHandler,
     SetCommissionRateHandler,
+    SetPerformanceFeeScheduleHandler,
     UpdateOrganizationProfileHandler,
 )
 from apps.organization.application.interfaces import EmailGateway, InvitationTokenService
@@ -72,6 +73,7 @@ __all__ = [
     "build_revoke_staff_invitation_handler",
     "build_revoke_staff_membership_handler",
     "build_set_commission_rate_handler",
+    "build_set_performance_fee_schedule_handler",
     "build_staff_membership_read_service",
     "build_update_organization_profile_handler",
 ]
@@ -116,6 +118,15 @@ def build_connect_organization_handler() -> ConnectOrganizationHandler:
 def build_set_commission_rate_handler() -> SetCommissionRateHandler:
     """Assemble the commission-rate use case (platform-gated) with its adapters."""
     return SetCommissionRateHandler(
+        organizations=DjangoOrganizationRepository(),
+        clock=SystemClock(),
+        events=_build_event_dispatcher(),
+    )
+
+
+def build_set_performance_fee_schedule_handler() -> SetPerformanceFeeScheduleHandler:
+    """Assemble the per-performance fee-schedule use case (platform-gated) with its adapters."""
+    return SetPerformanceFeeScheduleHandler(
         organizations=DjangoOrganizationRepository(),
         clock=SystemClock(),
         events=_build_event_dispatcher(),

@@ -15,6 +15,7 @@ from decimal import Decimal
 
 from apps.organization.application.dto import InvitationView
 from apps.organization.application.exceptions import (
+    InvalidInputError,
     OrganizationConflictError,
     OrganizationNotFoundError,
     translate_domain_errors,
@@ -35,6 +36,7 @@ from apps.organization.domain.value_objects import (
     OrganizationName,
     OrganizationSlug,
     OrganizationStatus,
+    PerformanceFeeSchedule,
     StaffEmail,
     StaffInvitationId,
     StaffRole,
@@ -47,11 +49,28 @@ __all__ = [
     "ConnectOrganizationCommand",
     "ConnectOrganizationHandler",
     "ConnectedOrganizationDto",
+    "FeeTierRow",
     "ListOrganizationsHandler",
     "OrganizationSummaryView",
     "SetCommissionRateCommand",
     "SetCommissionRateHandler",
+    "SetPerformanceFeeScheduleCommand",
+    "SetPerformanceFeeScheduleHandler",
 ]
+
+
+@dataclass(frozen=True, slots=True)
+class FeeTierRow:
+    """One band of a per-performance fee schedule, as flat primitives.
+
+    The wire shape of a band in both directions — inbound on a command, outbound on
+    a read view — so neither the caller nor the reader has to know the domain value
+    object. ``max_participants`` of ``None`` is the open-ended top band.
+    """
+
+    min_participants: int
+    max_participants: int | None
+    amount: Decimal
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,6 +87,9 @@ class ConnectOrganizationCommand:
     owner_email: str
     commission_percent: Decimal
     connected_by: str
+    #: Supplying bands connects the organization on the per-performance fee model;
+    #: leaving them empty connects it on the percentage one.
+    fee_tiers: tuple[FeeTierRow, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,6 +98,14 @@ class SetCommissionRateCommand:
 
     organization_id: str
     commission_percent: Decimal
+
+
+@dataclass(frozen=True, slots=True)
+class SetPerformanceFeeScheduleCommand:
+    """Bill an organization a flat fee per performance, on these bands."""
+
+    organization_id: str
+    tiers: tuple[FeeTierRow, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,17 +124,31 @@ class OrganizationSummaryView:
     name: str
     slug: str
     status: str
+    billing_model: str
     commission_percent: Decimal
+    fee_tiers: tuple[FeeTierRow, ...]
     created_at: datetime
 
     @classmethod
     def from_organization(cls, organization: Organization) -> OrganizationSummaryView:
+        schedule = organization.fee_schedule
         return cls(
             id=organization.id.json(),
             name=organization.name.value,
             slug=organization.slug.value,
             status=organization.status.value,
+            billing_model=organization.billing_model.value,
             commission_percent=organization.commission_rate.percent,
+            fee_tiers=()
+            if schedule is None
+            else tuple(
+                FeeTierRow(
+                    min_participants=tier.min_participants,
+                    max_participants=tier.max_participants,
+                    amount=tier.amount,
+                )
+                for tier in schedule.tiers
+            ),
             created_at=organization.created_at,
         )
 
@@ -115,6 +159,17 @@ class ConnectedOrganizationDto:
 
     organization: OrganizationSummaryView
     owner_invitation: InvitationView
+
+
+def _schedule_of(tiers: tuple[FeeTierRow, ...]) -> PerformanceFeeSchedule | None:
+    """Build the domain schedule from flat bands, or ``None`` when none were supplied.
+
+    Raises the domain's own validation errors (gap, overlap, missing open end), so
+    callers wrap it in :func:`translate_domain_errors` like any other value object.
+    """
+    if not tiers:
+        return None
+    return PerformanceFeeSchedule.of((tier.min_participants, tier.max_participants, tier.amount) for tier in tiers)
 
 
 class ConnectOrganizationHandler:
@@ -154,6 +209,7 @@ class ConnectOrganizationHandler:
             name = OrganizationName(command.name)
             slug = OrganizationSlug(command.slug)
             commission = CommissionRate.of(command.commission_percent)
+            fee_schedule = _schedule_of(command.fee_tiers)
             owner_email = StaffEmail(command.owner_email)
             connected_by = StaffUserId.from_string(command.connected_by)
 
@@ -165,6 +221,7 @@ class ConnectOrganizationHandler:
             name=name,
             slug=slug,
             commission_rate=commission,
+            fee_schedule=fee_schedule,
             now=now,
         )
         self._organizations.save(organization)
@@ -220,6 +277,44 @@ class SetCommissionRateHandler:
             raise OrganizationNotFoundError(f"No organization {command.organization_id}.")
 
         events = organization.change_commission_rate(rate, now=self._clock.utcnow())
+        if events:
+            self._organizations.save(organization)
+            self._events.publish(events)
+        return OrganizationSummaryView.from_organization(organization)
+
+
+class SetPerformanceFeeScheduleHandler:
+    """Use case: bill an organization a flat fee per performance.
+
+    The other half of :class:`SetCommissionRateHandler`: the two use cases are the
+    two commercial terms, and calling either is what puts the organization on that
+    model. Submitting the schedule it already runs on returns quietly.
+    """
+
+    def __init__(
+        self,
+        *,
+        organizations: OrganizationRepository,
+        clock: Clock,
+        events: EventPublisher,
+    ) -> None:
+        self._organizations = organizations
+        self._clock = clock
+        self._events = events
+
+    def handle(self, command: SetPerformanceFeeScheduleCommand) -> OrganizationSummaryView:
+        with translate_domain_errors():
+            organization_id = OrganizationId.from_string(command.organization_id)
+            schedule = _schedule_of(command.tiers)
+
+        if schedule is None:
+            raise InvalidInputError("A per-performance fee schedule needs at least one band.")
+
+        organization = self._organizations.get(organization_id)
+        if organization is None:
+            raise OrganizationNotFoundError(f"No organization {command.organization_id}.")
+
+        events = organization.change_fee_schedule(schedule, now=self._clock.utcnow())
         if events:
             self._organizations.save(organization)
             self._events.publish(events)
