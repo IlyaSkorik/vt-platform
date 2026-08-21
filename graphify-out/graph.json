@@ -20045,8 +20045,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_acl_organization_djangoorganizationreadmodel_has_staff_permission",
-      "community": 827,
-      "community_name": ".has_staff_permission",
+      "community": 719,
+      "community_name": "submissions/composition.py",
       "norm_label": ".has_staff_permission()"
     },
     {
@@ -20056,8 +20056,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_acl_organization_py_userid",
-      "community": 827,
-      "community_name": ".has_staff_permission",
+      "community": 719,
+      "community_name": "submissions/composition.py",
       "norm_label": "userid"
     },
     {
@@ -20101,8 +20101,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_acl_organization_rationale_21",
-      "community": 827,
-      "community_name": ".has_staff_permission",
+      "community": 719,
+      "community_name": "submissions/composition.py",
       "norm_label": "whether ``user_id`` holds an active staff membership."
     },
     {
@@ -21204,7 +21204,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_application_email_gateway",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "application_email_gateway.py"
     },
     {
@@ -21216,7 +21216,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_application_email_gateway_format_deadline",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "_format_deadline()"
     },
     {
@@ -21227,7 +21227,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_application_email_gateway_py_datetime",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "datetime"
     },
     {
@@ -21240,7 +21240,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_application_email_gateway_djangoapplicantnotifier",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "djangoapplicantnotifier"
     },
     {
@@ -21252,7 +21252,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_application_email_gateway_djangoapplicantnotifier_init",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": ".__init__()"
     },
     {
@@ -21264,7 +21264,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_application_email_gateway_djangoapplicantnotifier_cabinet_link",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "._cabinet_link()"
     },
     {
@@ -21276,7 +21276,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_application_email_gateway_djangoapplicantnotifier_notify_application_submitted",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": ".notify_application_submitted()"
     },
     {
@@ -21288,7 +21288,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_application_email_gateway_djangoapplicantnotifier_notify_application_awaiting_payment",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": ".notify_application_awaiting_payment()"
     },
     {
@@ -21300,7 +21300,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_application_email_gateway_djangoapplicantnotifier_notify_application_auto_cancelled",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": ".notify_application_auto_cancelled()"
     },
     {
@@ -21312,7 +21312,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_application_email_gateway_djangoapplicantnotifier_send",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "._send()"
     },
     {
@@ -21323,7 +21323,7 @@
       "_origin": "ast",
       "id": "deliver",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "deliver"
     },
     {
@@ -21334,7 +21334,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_application_email_gateway_rationale_1",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "``djangoapplicantnotifier`` \u2014 telling an applicant what happened to their..."
     },
     {
@@ -21345,7 +21345,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_application_email_gateway_rationale_50",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "render the payment deadline in minsk local time (e.g. ``24.07.2026 22:17..."
     },
     {
@@ -21356,7 +21356,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_application_email_gateway_rationale_55",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "applicant email notifier (``applicantnotifier`` port), via django core mail."
     },
     {
@@ -21367,7 +21367,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_application_email_gateway_rationale_63",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "where the feed entry takes the reader: their own card for this order."
     },
     {
@@ -21378,7 +21378,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_application_email_gateway_rationale_167",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "queue a single message on the channel the caller chose."
     },
     {
@@ -21413,8 +21413,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_event_dispatcher_nulleventpublisher_publish",
-      "community": 831,
-      "community_name": ".publish",
+      "community": 719,
+      "community_name": "submissions/composition.py",
       "norm_label": ".publish()"
     },
     {
@@ -21424,8 +21424,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_event_dispatcher_py_domainevent",
-      "community": 831,
-      "community_name": ".publish",
+      "community": 719,
+      "community_name": "submissions/composition.py",
       "norm_label": "domainevent"
     },
     {
@@ -21457,8 +21457,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_event_dispatcher_rationale_23",
-      "community": 831,
-      "community_name": ".publish",
+      "community": 719,
+      "community_name": "submissions/composition.py",
       "norm_label": "accept ``events`` and drop them; a future outbox will forward them."
     },
     {
@@ -21469,7 +21469,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_organizer_email_gateway",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "organizer_email_gateway.py"
     },
     {
@@ -21482,7 +21482,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_organizer_email_gateway_djangoorganizernotifier",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "djangoorganizernotifier"
     },
     {
@@ -21494,7 +21494,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_organizer_email_gateway_djangoorganizernotifier_init",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": ".__init__()"
     },
     {
@@ -21506,7 +21506,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_organizer_email_gateway_djangoorganizernotifier_notify_application_revised",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": ".notify_application_revised()"
     },
     {
@@ -21517,7 +21517,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_organizer_email_gateway_py_datetime",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "datetime"
     },
     {
@@ -21528,7 +21528,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_organizer_email_gateway_rationale_1",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "``djangoorganizernotifier`` \u2014 the letter that says an accepted entry has..."
     },
     {
@@ -21539,7 +21539,7 @@
       "_origin": "ast",
       "id": "backend_apps_applications_infrastructure_messaging_organizer_email_gateway_rationale_43",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "organizer email notifier (``organizernotifier`` port), via django core mail."
     },
     {
@@ -36958,7 +36958,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_entities_competition_settings",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": ".settings()"
     },
@@ -42559,8 +42559,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_landing_configuration_landingconfiguration_default",
-      "community": 145,
-      "community_name": "landing_config_from_json",
+      "community": 773,
+      "community_name": "LandingBlock",
       "norm_label": ".default()"
     },
     {
@@ -42682,8 +42682,8 @@
       "source_location": "L341",
       "_origin": "ast",
       "id": "backend_apps_competitions_domain_landing_configuration_rationale_341",
-      "community": 145,
-      "community_name": "landing_config_from_json",
+      "community": 773,
+      "community_name": "LandingBlock",
       "norm_label": "seed the system blocks (content starts empty). hero, regulation, documents and..."
     },
     {
@@ -47989,8 +47989,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_competitions_infrastructure_mappers_landing_config_json_landing_config_from_json",
-      "community": 145,
-      "community_name": "landing_config_from_json",
+      "community": 773,
+      "community_name": "LandingBlock",
       "norm_label": "landing_config_from_json()"
     },
     {
@@ -48173,8 +48173,8 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "backend_apps_competitions_infrastructure_mappers_landing_config_json_rationale_84",
-      "community": 145,
-      "community_name": "landing_config_from_json",
+      "community": 773,
+      "community_name": "LandingBlock",
       "norm_label": "rebuild landing configuration from json, falling back to defaults."
     },
     {
@@ -56411,8 +56411,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_apps_diplomas_application_interfaces_templateassets",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "templateassets"
     },
     {
@@ -56460,8 +56460,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_diplomas_application_interfaces_printpackageworkspace_render_place_sheet",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": ".render_place_sheet()"
     },
     {
@@ -56806,8 +56806,8 @@
       "source_location": "L176",
       "_origin": "ast",
       "id": "backend_apps_diplomas_application_interfaces_rationale_176",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "a template's print inputs: its placed fields and its backing pdf bytes...."
     },
     {
@@ -56850,8 +56850,8 @@
       "source_location": "L214",
       "_origin": "ast",
       "id": "backend_apps_diplomas_application_interfaces_rationale_214",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "render the overprint sheet for one degree: a blank page of the template's..."
     },
     {
@@ -63465,8 +63465,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_diplomas_infrastructure_pdf_workspace_storage_key_of",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "storage_key_of()"
     },
     {
@@ -63477,8 +63477,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_diplomas_infrastructure_pdf_workspace_reference_base",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "_reference_base()"
     },
     {
@@ -63489,8 +63489,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_diplomas_infrastructure_pdf_workspace_reference",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "_reference()"
     },
     {
@@ -63501,8 +63501,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_diplomas_infrastructure_pdf_workspace_unguessable",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "_unguessable()"
     },
     {
@@ -63514,8 +63514,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_apps_diplomas_infrastructure_pdf_workspace_djangoprintpackageworkspace",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "djangoprintpackageworkspace"
     },
     {
@@ -63526,8 +63526,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_diplomas_infrastructure_pdf_workspace_djangoprintpackageworkspace_load_template",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": ".load_template()"
     },
     {
@@ -63537,8 +63537,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_diplomas_infrastructure_pdf_workspace_py_uuid",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "uuid"
     },
     {
@@ -63549,8 +63549,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_diplomas_infrastructure_pdf_workspace_djangoprintpackageworkspace_render",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": ".render()"
     },
     {
@@ -63561,8 +63561,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_diplomas_infrastructure_pdf_workspace_djangoprintpackageworkspace_render_place_sheet",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": ".render_place_sheet()"
     },
     {
@@ -63573,8 +63573,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_diplomas_infrastructure_pdf_workspace_djangoprintpackageworkspace_store_pdf",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": ".store_pdf()"
     },
     {
@@ -63585,8 +63585,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_diplomas_infrastructure_pdf_workspace_djangoprintpackageworkspace_store_official_pdf",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": ".store_official_pdf()"
     },
     {
@@ -63597,8 +63597,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_diplomas_infrastructure_pdf_workspace_djangoprintpackageworkspace_store_document_pdf",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": ".store_document_pdf()"
     },
     {
@@ -63609,8 +63609,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_diplomas_infrastructure_pdf_workspace_djangoprintpackageworkspace_store_zip",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": ".store_zip()"
     },
     {
@@ -63621,8 +63621,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_diplomas_infrastructure_pdf_workspace_djangoprintpackageworkspace_store_documents_zip",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": ".store_documents_zip()"
     },
     {
@@ -63633,8 +63633,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_diplomas_infrastructure_pdf_workspace_djangoprintpackageworkspace_store_archive",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "._store_archive()"
     },
     {
@@ -63655,8 +63655,8 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "backend_apps_diplomas_infrastructure_pdf_workspace_rationale_52",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "turn a stored reference back into the storage key it was minted from. the..."
     },
     {
@@ -63666,8 +63666,8 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "backend_apps_diplomas_infrastructure_pdf_workspace_rationale_70",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "everything a reference carries in front of the key. derived by minting a url..."
     },
     {
@@ -63677,8 +63677,8 @@
       "source_location": "L81",
       "_origin": "ast",
       "id": "backend_apps_diplomas_infrastructure_pdf_workspace_rationale_81",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "the url a stored file is reachable at - whatever the configured storage says."
     },
     {
@@ -63688,8 +63688,8 @@
       "source_location": "L86",
       "_origin": "ast",
       "id": "backend_apps_diplomas_infrastructure_pdf_workspace_rationale_86",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "a short, stable token that cannot be derived from the parts without the secret...."
     },
     {
@@ -63699,8 +63699,8 @@
       "source_location": "L103",
       "_origin": "ast",
       "id": "backend_apps_diplomas_infrastructure_pdf_workspace_rationale_103",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "concrete ``printpackageworkspace`` over django storage + the pdf renderer."
     },
     {
@@ -63710,8 +63710,8 @@
       "source_location": "L210",
       "_origin": "ast",
       "id": "backend_apps_diplomas_infrastructure_pdf_workspace_rationale_210",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "zip up ``(arcname, reference)`` pairs at ``key``, replacing any previous...."
     },
     {
@@ -67989,7 +67989,7 @@
       "_origin": "ast",
       "id": "backend_apps_emailing_init",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "emailing/__init__.py"
     },
     {
@@ -68000,7 +68000,7 @@
       "_origin": "ast",
       "id": "backend_apps_emailing_init_rationale_1",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "shared email rendering helpers used across bounded contexts."
     },
     {
@@ -68011,7 +68011,7 @@
       "_origin": "ast",
       "id": "backend_apps_emailing_templates",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "emailing/templates.py"
     },
     {
@@ -68023,7 +68023,7 @@
       "_origin": "ast",
       "id": "backend_apps_emailing_templates_dark_rules",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "_dark_rules()"
     },
     {
@@ -68035,7 +68035,7 @@
       "_origin": "ast",
       "id": "backend_apps_emailing_templates_render_transactional_email_html",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "render_transactional_email_html()"
     },
     {
@@ -68046,7 +68046,7 @@
       "_origin": "ast",
       "id": "emailstatus",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "emailstatus"
     },
     {
@@ -68057,7 +68057,7 @@
       "_origin": "ast",
       "id": "backend_apps_emailing_templates_rationale_1",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "reusable html templates for transactional emails. the layout is the \"status..."
     },
     {
@@ -68068,7 +68068,7 @@
       "_origin": "ast",
       "id": "backend_apps_emailing_templates_rationale_85",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "the dark palette as css, with every selector under ``prefix``. emitted twice:..."
     },
     {
@@ -68079,7 +68079,7 @@
       "_origin": "ast",
       "id": "backend_apps_emailing_templates_rationale_129",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "render one transactional email as a complete html document. ``status`` picks..."
     },
     {
@@ -69468,8 +69468,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_identity_application_dto_results",
-      "community": 124,
-      "community_name": "auth/views.py",
+      "community": 23,
+      "community_name": "identity/application/exceptions.py",
       "norm_label": "identity/application/dto/results.py"
     },
     {
@@ -69504,8 +69504,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_identity_application_dto_results_py_datetime",
-      "community": 124,
-      "community_name": "auth/views.py",
+      "community": 23,
+      "community_name": "identity/application/exceptions.py",
       "norm_label": "datetime"
     },
     {
@@ -69541,8 +69541,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_identity_application_dto_results_rationale_1",
-      "community": 124,
-      "community_name": "auth/views.py",
+      "community": 23,
+      "community_name": "identity/application/exceptions.py",
       "norm_label": "result dtos for the identity & access application layer. immutable output..."
     },
     {
@@ -71775,8 +71775,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_apps_identity_application_interfaces_smsgateway",
-      "community": 132,
-      "community_name": "UserRepository",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": "smsgateway"
     },
     {
@@ -71800,8 +71800,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_apps_identity_application_interfaces_notificationgateway",
-      "community": 132,
-      "community_name": "UserRepository",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": "notificationgateway"
     },
     {
@@ -72286,8 +72286,8 @@
       "source_location": "L275",
       "_origin": "ast",
       "id": "backend_apps_identity_application_interfaces_rationale_275",
-      "community": 132,
-      "community_name": "UserRepository",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": "port: deliver one-time verification codes by sms. **why it exists.** phone..."
     },
     {
@@ -72308,8 +72308,8 @@
       "source_location": "L295",
       "_origin": "ast",
       "id": "backend_apps_identity_application_interfaces_rationale_295",
-      "community": 132,
-      "community_name": "UserRepository",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": "port: deliver in-app / push notifications to a user. **why it exists.**..."
     },
     {
@@ -77163,8 +77163,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_identity_domain_value_objects_fullname_of",
-      "community": 163,
-      "community_name": "test_password_reset_handlers.py",
+      "community": 93,
+      "community_name": "auth/composition.py",
       "norm_label": ".of()"
     },
     {
@@ -77670,8 +77670,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_identity_domain_value_objects_timezone_current_time",
-      "community": 705,
-      "community_name": ".current_time",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": ".current_time()"
     },
     {
@@ -77681,8 +77681,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_identity_domain_value_objects_py_datetime",
-      "community": 705,
-      "community_name": ".current_time",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": "datetime"
     },
     {
@@ -77693,8 +77693,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_identity_domain_value_objects_timezone_offset",
-      "community": 705,
-      "community_name": ".current_time",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": ".offset()"
     },
     {
@@ -77704,8 +77704,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_identity_domain_value_objects_py_timedelta",
-      "community": 705,
-      "community_name": ".current_time",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": "timedelta"
     },
     {
@@ -77958,8 +77958,8 @@
       "source_location": "L408",
       "_origin": "ast",
       "id": "backend_apps_identity_domain_value_objects_rationale_408",
-      "community": 163,
-      "community_name": "test_password_reset_handlers.py",
+      "community": 93,
+      "community_name": "auth/composition.py",
       "norm_label": "rich constructor mirroring the field order."
     },
     {
@@ -78244,8 +78244,8 @@
       "source_location": "L730",
       "_origin": "ast",
       "id": "backend_apps_identity_domain_value_objects_rationale_730",
-      "community": 705,
-      "community_name": ".current_time",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": "the current wall-clock time as a timezone-aware datetime in this zone. aware..."
     },
     {
@@ -78255,8 +78255,8 @@
       "source_location": "L737",
       "_origin": "ast",
       "id": "backend_apps_identity_domain_value_objects_rationale_737",
-      "community": 705,
-      "community_name": ".current_time",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": "the current offset from utc, accounting for dst at this moment. returned as a..."
     },
     {
@@ -78951,8 +78951,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_mappers_init",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "identity/infrastructure/mappers/__init__.py"
     },
     {
@@ -78962,8 +78962,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_mappers_init_rationale_1",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "domain <-> persistence mappers for the identity & access bounded context...."
     },
     {
@@ -78986,8 +78986,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_mappers_user_mapper_usermapper",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "usermapper"
     },
     {
@@ -78998,8 +78998,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_mappers_user_mapper_usermapper_to_domain",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": ".to_domain()"
     },
     {
@@ -79010,8 +79010,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_mappers_user_mapper_usermapper_to_model",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": ".to_model()"
     },
     {
@@ -79022,8 +79022,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_mappers_user_mapper_usermapper_update_model",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": ".update_model()"
     },
     {
@@ -79034,8 +79034,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_mappers_user_mapper_usermapper_to_columns",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "._to_columns()"
     },
     {
@@ -79056,8 +79056,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_mappers_user_mapper_rationale_44",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "bidirectional translator between the ``user`` aggregate and ``usermodel``...."
     },
     {
@@ -79067,8 +79067,8 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_mappers_user_mapper_rationale_52",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "reconstruct the ``user`` aggregate from a persisted row. delegates to..."
     },
     {
@@ -79078,8 +79078,8 @@
       "source_location": "L87",
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_mappers_user_mapper_rationale_87",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "build a brand-new, **unsaved** ``usermodel`` from an aggregate. constructs the..."
     },
     {
@@ -79089,8 +79089,8 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_mappers_user_mapper_rationale_97",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "project ``entity`` onto an existing ``model`` in place, returning it...."
     },
     {
@@ -79100,8 +79100,8 @@
       "source_location": "L109",
       "_origin": "ast",
       "id": "backend_apps_identity_infrastructure_mappers_user_mapper_rationale_109",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "flatten an aggregate into the ``usermodel`` column values. the shared domain \u2192..."
     },
     {
@@ -85240,7 +85240,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_apps",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "notifications/apps.py"
     },
     {
@@ -85253,7 +85253,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_apps_notificationsconfig",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "notificationsconfig"
     },
     {
@@ -85264,7 +85264,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_apps_py_appconfig",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "appconfig"
     },
     {
@@ -85276,7 +85276,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_apps_notificationsconfig_ready",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": ".ready()"
     },
     {
@@ -85287,7 +85287,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_apps_rationale_1",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "django appconfig for the notifications bounded context."
     },
     {
@@ -85298,7 +85298,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_apps_rationale_7",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "app configuration for the notifications bounded context."
     },
     {
@@ -85309,7 +85309,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_apps_rationale_15",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "register the orm models and admin, which live under ``infrastructure/``. models..."
     },
     {
@@ -85495,8 +85495,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_init",
-      "community": 422,
-      "community_name": "test_notifications_api.py",
+      "community": 116,
+      "community_name": "test_mail_limits.py",
       "norm_label": "notifications/infrastructure/__init__.py"
     },
     {
@@ -85506,8 +85506,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_init_rationale_1",
-      "community": 422,
-      "community_name": "test_notifications_api.py",
+      "community": 116,
+      "community_name": "test_mail_limits.py",
       "norm_label": "infrastructure layer (adapters) for notifications."
     },
     {
@@ -85518,7 +85518,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_admin",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "notifications/infrastructure/admin.py"
     },
     {
@@ -85529,7 +85529,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_admin_py_register",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "register"
     },
     {
@@ -85542,7 +85542,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_admin_notificationadmin",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "notificationadmin"
     },
     {
@@ -85553,7 +85553,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_admin_rationale_1",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "django admin registrations for the notifications bounded context. operational..."
     },
     {
@@ -85564,7 +85564,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_admin_rationale_17",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "read-oriented admin for the cabinet notification feed."
     },
     {
@@ -85574,7 +85574,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_init",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "email/__init__.py"
     },
@@ -85585,7 +85585,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_init_rationale_1",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "outbound email delivery, held to the mail provider's per-mailbox quotas."
     },
@@ -85596,7 +85596,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_delivery",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "delivery.py"
     },
@@ -85608,7 +85608,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_delivery_serialize_message",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "serialize_message()"
     },
@@ -85619,7 +85619,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_delivery_py_emailmessage",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "emailmessage"
     },
@@ -85631,7 +85631,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_delivery_py_any",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "any"
     },
     {
@@ -85643,7 +85643,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_delivery_rebuild_message",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "rebuild_message()"
     },
     {
@@ -85654,7 +85654,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_delivery_py_emailmultialternatives",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "emailmultialternatives"
     },
     {
@@ -85666,7 +85666,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_delivery_send_priority",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "send_priority()"
     },
     {
@@ -85677,7 +85677,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_delivery_send_bulk",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "send_bulk()"
     },
@@ -85689,7 +85689,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_delivery_queue",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "_queue()"
     },
@@ -85700,7 +85700,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_delivery_rationale_1",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "the one way out of the platform for mail, and the two channels it leaves by...."
     },
@@ -85711,7 +85711,7 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_delivery_rationale_60",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "reduce a message to what a broker should carry."
     },
@@ -85723,7 +85723,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_delivery_rationale_80",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "the inverse of :func:`serialize_message`, run inside the worker."
     },
     {
@@ -85734,7 +85734,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_delivery_rationale_97",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "queue a message somebody is waiting on: a link, a reset, a deadline. leaves by..."
     },
     {
@@ -85744,7 +85744,7 @@
       "source_location": "L106",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_delivery_rationale_106",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "queue a notice produced in batches: receipts, review outcomes, sweep results...."
     },
@@ -85755,7 +85755,7 @@
       "source_location": "L116",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_delivery_rationale_116",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "validate against the provider's per-message limits, then hand over to a worker."
     },
@@ -85767,7 +85767,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "limits.py"
     },
     {
@@ -85780,7 +85780,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_maillimiterror",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "maillimiterror"
     },
     {
@@ -85791,7 +85791,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_py_exception",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "exception"
     },
     {
@@ -85803,7 +85803,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_messagetoolargeerror",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "messagetoolargeerror"
     },
@@ -85816,7 +85816,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_toomanyrecipientserror",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "toomanyrecipientserror"
     },
@@ -85830,7 +85830,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_quotaexceedederror",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "quotaexceedederror"
     },
     {
@@ -85842,7 +85842,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_quotaexceedederror_init",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": ".__init__()"
     },
     {
@@ -85853,7 +85853,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_recipient_count",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "recipient_count()"
     },
@@ -85864,7 +85864,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_py_emailmessage",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "emailmessage"
     },
@@ -85876,7 +85876,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_message_size",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "message_size()"
     },
@@ -85888,7 +85888,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_validate_message",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "validate_message()"
     },
@@ -85901,7 +85901,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_second_key",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "_second_key()"
     },
     {
@@ -85913,7 +85913,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_take",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "_take()"
     },
     {
@@ -85925,7 +85925,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_reserve_send_slot",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "reserve_send_slot()"
     },
     {
@@ -85937,7 +85937,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_seconds_until_room",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "_seconds_until_room()"
     },
     {
@@ -85949,7 +85949,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_seconds_until_window_resets",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "seconds_until_window_resets()"
     },
     {
@@ -85960,7 +85960,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_rationale_1",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "the mail provider's per-mailbox quotas, enforced before a message leaves the..."
     },
     {
@@ -85971,7 +85971,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_rationale_63",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "a message the mail provider would refuse."
     },
     {
@@ -85981,7 +85981,7 @@
       "source_location": "L67",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_rationale_67",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "over the provider's per-message size limit."
     },
@@ -85992,7 +85992,7 @@
       "source_location": "L71",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_rationale_71",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "over the provider's per-message recipient limit."
     },
@@ -86004,7 +86004,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_rationale_75",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "this mailbox has used its allowance for the moment. carries ``retry_after``:..."
     },
     {
@@ -86014,7 +86014,7 @@
       "source_location": "L88",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_rationale_88",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "everyone the provider will count for this message."
     },
@@ -86025,7 +86025,7 @@
       "source_location": "L93",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_rationale_93",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "the assembled message's size in bytes, as the provider will see it."
     },
@@ -86036,7 +86036,7 @@
       "source_location": "L99",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_rationale_99",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "raise if the provider would refuse this message outright. checked before..."
     },
@@ -86048,7 +86048,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_rationale_120",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "add one to a second's count and return the new total. ``cache.incr`` on a key..."
     },
     {
@@ -86059,7 +86059,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_rationale_137",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "claim one of this mailbox's sends, if the last sixty seconds leave room for it...."
     },
     {
@@ -86070,7 +86070,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_rationale_176",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "how long until enough of the earlier sends age out, in whole seconds (at least..."
     },
     {
@@ -86081,7 +86081,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_email_limits_rationale_198",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "how long to wait before the mailbox has a fresh allowance. at least one second."
     },
     {
@@ -86091,8 +86091,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_feed",
-      "community": 326,
-      "community_name": "feed.py",
+      "community": 422,
+      "community_name": "test_notifications_api.py",
       "norm_label": "feed.py"
     },
     {
@@ -86103,8 +86103,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_feed_as_uuid",
-      "community": 326,
-      "community_name": "feed.py",
+      "community": 422,
+      "community_name": "test_notifications_api.py",
       "norm_label": "_as_uuid()"
     },
     {
@@ -86114,8 +86114,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_feed_py_uuid",
-      "community": 326,
-      "community_name": "feed.py",
+      "community": 422,
+      "community_name": "test_notifications_api.py",
       "norm_label": "uuid"
     },
     {
@@ -86149,8 +86149,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_feed_recent_for",
-      "community": 326,
-      "community_name": "feed.py",
+      "community": 422,
+      "community_name": "test_notifications_api.py",
       "norm_label": "recent_for()"
     },
     {
@@ -86161,8 +86161,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_feed_unread_count_for",
-      "community": 326,
-      "community_name": "feed.py",
+      "community": 422,
+      "community_name": "test_notifications_api.py",
       "norm_label": "unread_count_for()"
     },
     {
@@ -86173,8 +86173,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_feed_mark_read",
-      "community": 326,
-      "community_name": "feed.py",
+      "community": 422,
+      "community_name": "test_notifications_api.py",
       "norm_label": "mark_read()"
     },
     {
@@ -86185,8 +86185,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_feed_mark_all_read",
-      "community": 326,
-      "community_name": "feed.py",
+      "community": 422,
+      "community_name": "test_notifications_api.py",
       "norm_label": "mark_all_read()"
     },
     {
@@ -86196,8 +86196,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_feed_rationale_1",
-      "community": 326,
-      "community_name": "feed.py",
+      "community": 422,
+      "community_name": "test_notifications_api.py",
       "norm_label": "the one way into a person's cabinet notification feed. every context composes..."
     },
     {
@@ -86207,8 +86207,8 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_feed_rationale_42",
-      "community": 326,
-      "community_name": "feed.py",
+      "community": 422,
+      "community_name": "test_notifications_api.py",
       "norm_label": "read ``value`` as a uuid, or ``none`` if it is not one. recipient ids arrive..."
     },
     {
@@ -86229,8 +86229,8 @@
       "source_location": "L79",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_feed_rationale_79",
-      "community": 326,
-      "community_name": "feed.py",
+      "community": 422,
+      "community_name": "test_notifications_api.py",
       "norm_label": "the recipient's newest entries, unread and read alike, newest first."
     },
     {
@@ -86240,8 +86240,8 @@
       "source_location": "L85",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_feed_rationale_85",
-      "community": 326,
-      "community_name": "feed.py",
+      "community": 422,
+      "community_name": "test_notifications_api.py",
       "norm_label": "how many of the recipient's entries are still unopened."
     },
     {
@@ -86251,8 +86251,8 @@
       "source_location": "L90",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_feed_rationale_90",
-      "community": 326,
-      "community_name": "feed.py",
+      "community": 422,
+      "community_name": "test_notifications_api.py",
       "norm_label": "mark one entry read; ``false`` if it is not this recipient's, or already read...."
     },
     {
@@ -86262,8 +86262,8 @@
       "source_location": "L106",
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_feed_rationale_106",
-      "community": 326,
-      "community_name": "feed.py",
+      "community": 422,
+      "community_name": "test_notifications_api.py",
       "norm_label": "mark every unread entry of this recipient read; returns how many were."
     },
     {
@@ -86296,7 +86296,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_migrations_0001_notification_feed",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "0001_notification_feed.py"
     },
     {
@@ -86309,7 +86309,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_migrations_0001_notification_feed_migration",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "migration"
     },
     {
@@ -86342,7 +86342,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_models_init",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "notifications/infrastructure/models/__init__.py"
     },
     {
@@ -86353,7 +86353,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_models_init_rationale_1",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "orm models (adapters) for the notifications bounded context. django models live..."
     },
     {
@@ -86364,7 +86364,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_models_base",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "notifications/infrastructure/models/base.py"
     },
     {
@@ -86376,7 +86376,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_models_base_uuid7",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "uuid7()"
     },
     {
@@ -86387,7 +86387,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_models_base_py_uuid",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "uuid"
     },
     {
@@ -86400,7 +86400,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_models_base_basepersistencemodel",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "basepersistencemodel"
     },
     {
@@ -86413,7 +86413,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_models_base_meta",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "meta"
     },
     {
@@ -86424,7 +86424,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_models_base_rationale_1",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "abstract base persistence model for the notifications bounded context. a..."
     },
     {
@@ -86435,7 +86435,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_models_base_rationale_25",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "generate a time-ordered uuid version 7 (rfc 9562 \u00a75.7) for primary keys."
     },
     {
@@ -86446,7 +86446,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_models_base_rationale_35",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "abstract base carrying the columns every notifications table shares."
     },
     {
@@ -86457,7 +86457,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_models_notification",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "notification.py"
     },
     {
@@ -86470,7 +86470,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_models_notification_notificationkind",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "notificationkind"
     },
     {
@@ -86483,7 +86483,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_models_notification_notificationmodel",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "notificationmodel"
     },
     {
@@ -86494,7 +86494,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_models_notification_py_basepersistencemodel",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "basepersistencemodel"
     },
     {
@@ -86507,7 +86507,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_models_notification_meta",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "meta"
     },
     {
@@ -86519,7 +86519,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_models_notification_notificationmodel_str",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": ".__str__()"
     },
     {
@@ -86530,7 +86530,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_models_notification_rationale_1",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "``notificationmodel`` \u2014 one entry in a person's cabinet notification feed...."
     },
     {
@@ -86541,7 +86541,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_models_notification_rationale_28",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "what happened. drives the icon and accent the cabinet renders, nothing more...."
     },
     {
@@ -86552,7 +86552,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_infrastructure_models_notification_rationale_44",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "database row for one notification (persistence only \u2014 no business logic)."
     },
     {
@@ -86651,7 +86651,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_presentation_api_v1_serializers",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "notifications/presentation/api/v1/serializers.py"
     },
     {
@@ -86664,7 +86664,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_presentation_api_v1_serializers_metaserializer",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "_metaserializer"
     },
     {
@@ -86690,7 +86690,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_presentation_api_v1_serializers_feedserializer",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "_feedserializer"
     },
     {
@@ -86716,7 +86716,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_presentation_api_v1_serializers_readreceiptserializer",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "_readreceiptserializer"
     },
     {
@@ -86740,7 +86740,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_presentation_api_v1_serializers_rationale_1",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "serializers for the cabinet notification feed. output-only read-model..."
     },
     {
@@ -86751,7 +86751,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_presentation_api_v1_serializers_rationale_24",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "response envelope metadata (api-000 \u00a75)."
     },
     {
@@ -86773,7 +86773,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_presentation_api_v1_serializers_rationale_44",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "the feed itself: the entries plus the count the bell renders."
     },
     {
@@ -86795,7 +86795,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_presentation_api_v1_serializers_rationale_60",
       "community": 326,
-      "community_name": "feed.py",
+      "community_name": "notifications/infrastructure/models/__init__.py",
       "norm_label": "what changed, so the client can reconcile without refetching the feed."
     },
     {
@@ -87083,7 +87083,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_tasks",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "notifications/tasks.py"
     },
     {
@@ -87094,7 +87094,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_tasks_py_shared_task",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "shared_task"
     },
     {
@@ -87106,7 +87106,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_tasks_deliver_email",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "deliver_email()"
     },
     {
@@ -87117,7 +87117,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_tasks_py_any",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "any"
     },
     {
@@ -87128,7 +87128,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_tasks_rationale_1",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "background delivery of transactional mail. one task per message, because the..."
     },
     {
@@ -87139,7 +87139,7 @@
       "_origin": "ast",
       "id": "backend_apps_notifications_tasks_rationale_42",
       "community": 134,
-      "community_name": "test_mail_limits.py",
+      "community_name": "reserve_send_slot",
       "norm_label": "send one already-validated message, within this mailbox's allowance."
     },
     {
@@ -95972,7 +95972,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_infrastructure_messaging_token_service_invitationtokenservice_build_accept_url",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": ".build_accept_url()"
     },
@@ -112425,8 +112425,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_platform_presentation_api_v1_loadtest_cleanup",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "cleanup()"
     },
     {
@@ -112536,8 +112536,8 @@
       "source_location": "L335",
       "_origin": "ast",
       "id": "backend_apps_platform_presentation_api_v1_loadtest_rationale_335",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "delete load-test runs \u2014 their rows *and* the files they wrote. hard deletes,..."
     },
     {
@@ -128531,8 +128531,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_results_infrastructure_messaging_results_email_gateway",
-      "community": 326,
-      "community_name": "feed.py",
+      "community": 116,
+      "community_name": "test_mail_limits.py",
       "norm_label": "results_email_gateway.py"
     },
     {
@@ -128579,8 +128579,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_results_infrastructure_messaging_results_email_gateway_rationale_1",
-      "community": 326,
-      "community_name": "feed.py",
+      "community": 116,
+      "community_name": "test_mail_limits.py",
       "norm_label": "``djangoresultsnotifier`` - the letter that says the results are in. concrete..."
     },
     {
@@ -136097,8 +136097,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_config_init",
-      "community": 659,
-      "community_name": "celery.py",
+      "community": 134,
+      "community_name": "reserve_send_slot",
       "norm_label": "config/__init__.py"
     },
     {
@@ -136108,8 +136108,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_config_init_rationale_1",
-      "community": 659,
-      "community_name": "celery.py",
+      "community": 134,
+      "community_name": "reserve_send_slot",
       "norm_label": "vt platform backend project package. ensures the celery application is imported..."
     },
     {
@@ -136267,8 +136267,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_config_celery",
-      "community": 659,
-      "community_name": "celery.py",
+      "community": 134,
+      "community_name": "reserve_send_slot",
       "norm_label": "celery.py"
     },
     {
@@ -136278,8 +136278,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_config_celery_rationale_1",
-      "community": 659,
-      "community_name": "celery.py",
+      "community": 134,
+      "community_name": "reserve_send_slot",
       "norm_label": "celery application for the vt platform backend. configures the distributed task..."
     },
     {
@@ -142352,8 +142352,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_tests_application_competitions_test_public_catalog_testlandingprojection",
-      "community": 145,
-      "community_name": "landing_config_from_json",
+      "community": 773,
+      "community_name": "LandingBlock",
       "norm_label": "testlandingprojection"
     },
     {
@@ -142364,8 +142364,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_application_competitions_test_public_catalog_testlandingprojection_test_default_config_projects_only_enabled_blocks_in_order",
-      "community": 145,
-      "community_name": "landing_config_from_json",
+      "community": 773,
+      "community_name": "LandingBlock",
       "norm_label": ".test_default_config_projects_only_enabled_blocks_in_order()"
     },
     {
@@ -142376,8 +142376,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_application_competitions_test_public_catalog_testlandingprojection_test_projects_content_jury_partners_and_sorts_children",
-      "community": 145,
-      "community_name": "landing_config_from_json",
+      "community": 773,
+      "community_name": "LandingBlock",
       "norm_label": ".test_projects_content_jury_partners_and_sorts_children()"
     },
     {
@@ -143686,8 +143686,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeemailgateway",
-      "community": 163,
-      "community_name": "test_password_reset_handlers.py",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": "fakeemailgateway"
     },
     {
@@ -143698,8 +143698,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeemailgateway_init",
-      "community": 163,
-      "community_name": "test_password_reset_handlers.py",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": ".__init__()"
     },
     {
@@ -143771,8 +143771,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_fakeverificationtokenservice_verify",
-      "community": 305,
-      "community_name": "FakeUserRepository",
+      "community": 163,
+      "community_name": "test_password_reset_handlers.py",
       "norm_label": ".verify()"
     },
     {
@@ -143979,8 +143979,8 @@
       "source_location": "L199",
       "_origin": "ast",
       "id": "backend_tests_application_identity_fakes_rationale_199",
-      "community": 163,
-      "community_name": "test_password_reset_handlers.py",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": "recording :class:`emailgateway` fake \u2014 captures calls, sends nothing."
     },
     {
@@ -145659,8 +145659,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_interfaces_fakepasswordhasher",
-      "community": 3,
-      "community_name": "User",
+      "community": 21,
+      "community_name": ".from_hash",
       "norm_label": "fakepasswordhasher"
     },
     {
@@ -145671,8 +145671,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_interfaces_fakepasswordhasher_hash",
-      "community": 3,
-      "community_name": "User",
+      "community": 21,
+      "community_name": ".from_hash",
       "norm_label": ".hash()"
     },
     {
@@ -145683,8 +145683,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_interfaces_fakepasswordhasher_verify",
-      "community": 3,
-      "community_name": "User",
+      "community": 21,
+      "community_name": ".from_hash",
       "norm_label": ".verify()"
     },
     {
@@ -145695,8 +145695,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_interfaces_fakepasswordhasher_needs_rehash",
-      "community": 3,
-      "community_name": "User",
+      "community": 21,
+      "community_name": ".from_hash",
       "norm_label": ".needs_rehash()"
     },
     {
@@ -146011,8 +146011,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_interfaces_fakeverificationtokenservice_verify",
-      "community": 3,
-      "community_name": "User",
+      "community": 21,
+      "community_name": ".from_hash",
       "norm_label": ".verify()"
     },
     {
@@ -146070,8 +146070,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_interfaces_accepts_sms_gateway",
-      "community": 132,
-      "community_name": "UserRepository",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": "_accepts_sms_gateway()"
     },
     {
@@ -146082,8 +146082,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_interfaces_accepts_notification_gateway",
-      "community": 132,
-      "community_name": "UserRepository",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": "_accepts_notification_gateway()"
     },
     {
@@ -146249,8 +146249,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_interfaces_testportsareusable_test_password_hasher_hash_verify_cycle",
-      "community": 3,
-      "community_name": "User",
+      "community": 21,
+      "community_name": ".from_hash",
       "norm_label": ".test_password_hasher_hash_verify_cycle()"
     },
     {
@@ -146297,8 +146297,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_interfaces_testportsareusable_test_event_publisher_collects_events",
-      "community": 163,
-      "community_name": "test_password_reset_handlers.py",
+      "community": 93,
+      "community_name": "auth/composition.py",
       "norm_label": ".test_event_publisher_collects_events()"
     },
     {
@@ -146341,8 +146341,8 @@
       "source_location": "L99",
       "_origin": "ast",
       "id": "backend_tests_application_identity_test_interfaces_rationale_99",
-      "community": 3,
-      "community_name": "User",
+      "community": 21,
+      "community_name": ".from_hash",
       "norm_label": "deterministic ``passwordhasher`` fake (no real cryptography)."
     },
     {
@@ -156933,8 +156933,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testpublicationreport",
-      "community": 773,
-      "community_name": "LandingBlock",
+      "community": 145,
+      "community_name": "TestPublicationReport",
       "norm_label": "testpublicationreport"
     },
     {
@@ -156945,8 +156945,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testpublicationreport_test_empty_draft_has_all_errors",
-      "community": 773,
-      "community_name": "LandingBlock",
+      "community": 145,
+      "community_name": "TestPublicationReport",
       "norm_label": ".test_empty_draft_has_all_errors()"
     },
     {
@@ -156957,8 +156957,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testpublicationreport_test_missing_price_is_warning_not_blocking",
-      "community": 773,
-      "community_name": "LandingBlock",
+      "community": 145,
+      "community_name": "TestPublicationReport",
       "norm_label": ".test_missing_price_is_warning_not_blocking()"
     },
     {
@@ -156969,8 +156969,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testpublicationreport_test_missing_regulation_is_blocking_error",
-      "community": 773,
-      "community_name": "LandingBlock",
+      "community": 145,
+      "community_name": "TestPublicationReport",
       "norm_label": ".test_missing_regulation_is_blocking_error()"
     },
     {
@@ -156981,8 +156981,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testpublicationreport_test_regulation_makes_it_publishable",
-      "community": 773,
-      "community_name": "LandingBlock",
+      "community": 145,
+      "community_name": "TestPublicationReport",
       "norm_label": ".test_regulation_makes_it_publishable()"
     },
     {
@@ -156993,8 +156993,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testpublicationreport_test_unused_format_is_warning",
-      "community": 773,
-      "community_name": "LandingBlock",
+      "community": 145,
+      "community_name": "TestPublicationReport",
       "norm_label": ".test_unused_format_is_warning()"
     },
     {
@@ -157420,8 +157420,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testlandingconfig_test_default_landing_config_present",
-      "community": 145,
-      "community_name": "landing_config_from_json",
+      "community": 773,
+      "community_name": "LandingBlock",
       "norm_label": ".test_default_landing_config_present()"
     },
     {
@@ -157444,8 +157444,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_entities_testlandingconfig_test_landing_config_locked_after_complete",
-      "community": 145,
-      "community_name": "landing_config_from_json",
+      "community": 773,
+      "community_name": "LandingBlock",
       "norm_label": ".test_landing_config_locked_after_complete()"
     },
     {
@@ -158524,8 +158524,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_value_objects_testlandingconfiguration_test_default",
-      "community": 145,
-      "community_name": "landing_config_from_json",
+      "community": 773,
+      "community_name": "LandingBlock",
       "norm_label": ".test_default()"
     },
     {
@@ -158536,8 +158536,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_value_objects_testlandingconfiguration_test_from_json_empty_uses_defaults",
-      "community": 145,
-      "community_name": "landing_config_from_json",
+      "community": 773,
+      "community_name": "LandingBlock",
       "norm_label": ".test_from_json_empty_uses_defaults()"
     },
     {
@@ -158597,8 +158597,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_value_objects_testregistrationdeadlines",
-      "community": 776,
-      "community_name": "TestRegistrationDeadlines",
+      "community": 773,
+      "community_name": "LandingBlock",
       "norm_label": "testregistrationdeadlines"
     },
     {
@@ -158609,8 +158609,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_value_objects_testregistrationdeadlines_test_empty_is_always_open",
-      "community": 776,
-      "community_name": "TestRegistrationDeadlines",
+      "community": 773,
+      "community_name": "LandingBlock",
       "norm_label": ".test_empty_is_always_open()"
     },
     {
@@ -158621,8 +158621,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_value_objects_testregistrationdeadlines_test_open_before_deadline_closed_after",
-      "community": 776,
-      "community_name": "TestRegistrationDeadlines",
+      "community": 773,
+      "community_name": "LandingBlock",
       "norm_label": ".test_open_before_deadline_closed_after()"
     },
     {
@@ -158633,8 +158633,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_value_objects_testregistrationdeadlines_test_correction_before_application_is_contradiction",
-      "community": 776,
-      "community_name": "TestRegistrationDeadlines",
+      "community": 773,
+      "community_name": "LandingBlock",
       "norm_label": ".test_correction_before_application_is_contradiction()"
     },
     {
@@ -158645,8 +158645,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_competitions_test_value_objects_testregistrationdeadlines_test_correction_after_application_ok",
-      "community": 776,
-      "community_name": "TestRegistrationDeadlines",
+      "community": 773,
+      "community_name": "LandingBlock",
       "norm_label": ".test_correction_after_application_ok()"
     },
     {
@@ -161697,8 +161697,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_user_testconsent",
-      "community": 3,
-      "community_name": "User",
+      "community": 10,
+      "community_name": "ConsentPolicy",
       "norm_label": "testconsent"
     },
     {
@@ -161709,8 +161709,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_user_testconsent_test_grant_consent_records_version",
-      "community": 3,
-      "community_name": "User",
+      "community": 10,
+      "community_name": "ConsentPolicy",
       "norm_label": ".test_grant_consent_records_version()"
     },
     {
@@ -161721,8 +161721,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_user_testconsent_test_grant_consent_uses_given_type",
-      "community": 3,
-      "community_name": "User",
+      "community": 10,
+      "community_name": "ConsentPolicy",
       "norm_label": ".test_grant_consent_uses_given_type()"
     },
     {
@@ -161733,8 +161733,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_user_testconsent_test_grant_stale_consent_is_rejected",
-      "community": 3,
-      "community_name": "User",
+      "community": 10,
+      "community_name": "ConsentPolicy",
       "norm_label": ".test_grant_stale_consent_is_rejected()"
     },
     {
@@ -161745,8 +161745,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_user_testconsent_test_withdraw_consent_clears_version",
-      "community": 3,
-      "community_name": "User",
+      "community": 10,
+      "community_name": "ConsentPolicy",
       "norm_label": ".test_withdraw_consent_clears_version()"
     },
     {
@@ -161757,8 +161757,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_user_testconsent_test_withdraw_without_consent_is_rejected",
-      "community": 3,
-      "community_name": "User",
+      "community": 10,
+      "community_name": "ConsentPolicy",
       "norm_label": ".test_withdraw_without_consent_is_rejected()"
     },
     {
@@ -163246,8 +163246,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_value_objects_testtimezone",
-      "community": 3,
-      "community_name": "User",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": "testtimezone"
     },
     {
@@ -163258,8 +163258,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_value_objects_testtimezone_test_accepts_valid_iana_names",
-      "community": 3,
-      "community_name": "User",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": ".test_accepts_valid_iana_names()"
     },
     {
@@ -163270,8 +163270,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_value_objects_testtimezone_test_utc_factory",
-      "community": 3,
-      "community_name": "User",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": ".test_utc_factory()"
     },
     {
@@ -163282,8 +163282,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_value_objects_testtimezone_test_zone_info_property",
-      "community": 3,
-      "community_name": "User",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": ".test_zone_info_property()"
     },
     {
@@ -163294,8 +163294,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_value_objects_testtimezone_test_is_utc",
-      "community": 3,
-      "community_name": "User",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": ".test_is_utc()"
     },
     {
@@ -163306,8 +163306,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_value_objects_testtimezone_test_current_time_is_timezone_aware",
-      "community": 3,
-      "community_name": "User",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": ".test_current_time_is_timezone_aware()"
     },
     {
@@ -163318,8 +163318,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_value_objects_testtimezone_test_offset",
-      "community": 3,
-      "community_name": "User",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": ".test_offset()"
     },
     {
@@ -163330,8 +163330,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_value_objects_testtimezone_test_strips_whitespace",
-      "community": 3,
-      "community_name": "User",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": ".test_strips_whitespace()"
     },
     {
@@ -163342,8 +163342,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_value_objects_testtimezone_test_equality",
-      "community": 3,
-      "community_name": "User",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": ".test_equality()"
     },
     {
@@ -163354,8 +163354,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_value_objects_testtimezone_test_rejects_invalid_timezones",
-      "community": 3,
-      "community_name": "User",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": ".test_rejects_invalid_timezones()"
     },
     {
@@ -163366,8 +163366,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_domain_identity_test_value_objects_testtimezone_test_is_immutable",
-      "community": 3,
-      "community_name": "User",
+      "community": 45,
+      "community_name": "Email",
       "norm_label": ".test_is_immutable()"
     },
     {
@@ -169058,8 +169058,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_diplomas_test_archive_streaming",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "test_archive_streaming.py"
     },
     {
@@ -169070,8 +169070,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_diplomas_test_archive_streaming_stored_documents",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "_stored_documents()"
     },
     {
@@ -169081,8 +169081,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_diplomas_test_archive_streaming_py_uuid",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "uuid"
     },
     {
@@ -169094,8 +169094,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_diplomas_test_archive_streaming_testarchivestreaming",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "testarchivestreaming"
     },
     {
@@ -169106,8 +169106,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_diplomas_test_archive_streaming_testarchivestreaming_test_a_large_archive_is_streamed_rather_than_buffered",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": ".test_a_large_archive_is_streamed_rather_than_buffered()"
     },
     {
@@ -169118,8 +169118,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_diplomas_test_archive_streaming_testarchivestreaming_test_every_member_arrives_byte_for_byte",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": ".test_every_member_arrives_byte_for_byte()"
     },
     {
@@ -169130,8 +169130,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_diplomas_test_archive_streaming_testarchivestreaming_test_a_missing_document_is_skipped_rather_than_failing_the_run",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": ".test_a_missing_document_is_skipped_rather_than_failing_the_run()"
     },
     {
@@ -169142,8 +169142,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_diplomas_test_archive_streaming_key",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "_key()"
     },
     {
@@ -169153,8 +169153,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_diplomas_test_archive_streaming_rationale_1",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "the diploma archive must not be resident in memory. one archive holds every..."
     },
     {
@@ -169164,8 +169164,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_diplomas_test_archive_streaming_rationale_40",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "write ``_members`` incompressible files and return ``(arcname, reference)``..."
     },
     {
@@ -169175,8 +169175,8 @@
       "source_location": "L77",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_diplomas_test_archive_streaming_rationale_77",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "streaming is only worth anything if the contents survive it."
     },
     {
@@ -169186,8 +169186,8 @@
       "source_location": "L106",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_diplomas_test_archive_streaming_rationale_106",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "the storage key behind a stored reference (a ``/media/...`` url in tests)."
     },
     {
@@ -172712,8 +172712,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "test_user_mapper.py"
     },
     {
@@ -172724,8 +172724,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_make_full_user",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "make_full_user()"
     },
     {
@@ -172736,8 +172736,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_make_minimal_user",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "make_minimal_user()"
     },
     {
@@ -172748,8 +172748,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_assert_users_equal",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "assert_users_equal()"
     },
     {
@@ -172760,8 +172760,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_test_to_model_maps_every_column_from_a_full_aggregate",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "test_to_model_maps_every_column_from_a_full_aggregate()"
     },
     {
@@ -172772,8 +172772,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_test_to_model_collapses_absent_value_objects_to_null_columns",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "test_to_model_collapses_absent_value_objects_to_null_columns()"
     },
     {
@@ -172784,8 +172784,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_test_to_model_returns_an_unsaved_instance",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "test_to_model_returns_an_unsaved_instance()"
     },
     {
@@ -172808,8 +172808,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_test_to_domain_maps_null_columns_to_none",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "test_to_domain_maps_null_columns_to_none()"
     },
     {
@@ -172820,8 +172820,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_test_round_trip_preserves_a_full_aggregate",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "test_round_trip_preserves_a_full_aggregate()"
     },
     {
@@ -172832,8 +172832,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_test_round_trip_preserves_a_minimal_aggregate",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "test_round_trip_preserves_a_minimal_aggregate()"
     },
     {
@@ -172844,8 +172844,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_test_update_model_overwrites_every_column_in_place",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "test_update_model_overwrites_every_column_in_place()"
     },
     {
@@ -172856,8 +172856,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_test_update_model_clears_columns_when_value_objects_become_absent",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "test_update_model_clears_columns_when_value_objects_become_absent()"
     },
     {
@@ -172868,8 +172868,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_test_update_model_round_trips_back_to_the_source_aggregate",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "test_update_model_round_trips_back_to_the_source_aggregate()"
     },
     {
@@ -172880,8 +172880,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_test_uuid_identity_is_preserved_exactly",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "test_uuid_identity_is_preserved_exactly()"
     },
     {
@@ -172892,8 +172892,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_test_version_is_preserved_verbatim_and_never_incremented",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "test_version_is_preserved_verbatim_and_never_incremented()"
     },
     {
@@ -172928,8 +172928,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_test_email_verified_timestamp_round_trips",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "test_email_verified_timestamp_round_trips()"
     },
     {
@@ -172940,8 +172940,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_test_phone_verified_timestamp_round_trips",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "test_phone_verified_timestamp_round_trips()"
     },
     {
@@ -172952,8 +172952,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_test_consent_version_round_trips",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "test_consent_version_round_trips()"
     },
     {
@@ -172964,8 +172964,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_test_locale_round_trips",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "test_locale_round_trips()"
     },
     {
@@ -172976,8 +172976,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_test_timezone_round_trips",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "test_timezone_round_trips()"
     },
     {
@@ -172988,8 +172988,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_test_password_hash_maps_algorithm_and_digest_separately",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "test_password_hash_maps_algorithm_and_digest_separately()"
     },
     {
@@ -173000,8 +173000,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_test_optional_phone_absent_round_trips_as_none",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "test_optional_phone_absent_round_trips_as_none()"
     },
     {
@@ -173011,8 +173011,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_rationale_1",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "unit tests for :class:`apps.identity.infrastructure.mappers.usermapper`. the..."
     },
     {
@@ -173022,8 +173022,8 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_rationale_42",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "a maximally-populated aggregate: phone, consent, all timestamps, locked,..."
     },
     {
@@ -173033,8 +173033,8 @@
       "source_location": "L68",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_rationale_68",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "a minimally-populated aggregate: no phone, no consent, nothing..."
     },
     {
@@ -173044,8 +173044,8 @@
       "source_location": "L83",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_identity_test_user_mapper_rationale_83",
-      "community": 166,
-      "community_name": "test_user_mapper.py",
+      "community": 3,
+      "community_name": "User",
       "norm_label": "assert two aggregates are equal by identity *and* field-by-field."
     },
     {
@@ -173492,7 +173492,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "test_mail_limits.py"
     },
@@ -173660,8 +173660,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_testperminutequota",
-      "community": 55,
-      "community_name": "_message",
+      "community": 134,
+      "community_name": "reserve_send_slot",
       "norm_label": "testperminutequota"
     },
     {
@@ -173672,8 +173672,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_testperminutequota_test_the_allowance_is_spent_and_then_refused",
-      "community": 55,
-      "community_name": "_message",
+      "community": 134,
+      "community_name": "reserve_send_slot",
       "norm_label": ".test_the_allowance_is_spent_and_then_refused()"
     },
     {
@@ -173684,8 +173684,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_testperminutequota_test_the_allowance_is_per_mailbox",
-      "community": 55,
-      "community_name": "_message",
+      "community": 134,
+      "community_name": "reserve_send_slot",
       "norm_label": ".test_the_allowance_is_per_mailbox()"
     },
     {
@@ -173696,8 +173696,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_testperminutequota_test_the_window_slides_rather_than_resetting_on_the_hour",
-      "community": 55,
-      "community_name": "_message",
+      "community": 134,
+      "community_name": "reserve_send_slot",
       "norm_label": ".test_the_window_slides_rather_than_resetting_on_the_hour()"
     },
     {
@@ -173708,8 +173708,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_testperminutequota_test_room_returns_exactly_when_the_earlier_sends_age_out",
-      "community": 55,
-      "community_name": "_message",
+      "community": 134,
+      "community_name": "reserve_send_slot",
       "norm_label": ".test_room_returns_exactly_when_the_earlier_sends_age_out()"
     },
     {
@@ -173720,8 +173720,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_testperminutequota_test_no_rolling_minute_ever_exceeds_the_allowance",
-      "community": 55,
-      "community_name": "_message",
+      "community": 134,
+      "community_name": "reserve_send_slot",
       "norm_label": ".test_no_rolling_minute_ever_exceeds_the_allowance()"
     },
     {
@@ -173732,8 +173732,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_testperminutequota_test_a_refused_attempt_does_not_spend_a_slot",
-      "community": 55,
-      "community_name": "_message",
+      "community": 134,
+      "community_name": "reserve_send_slot",
       "norm_label": ".test_a_refused_attempt_does_not_spend_a_slot()"
     },
     {
@@ -173744,8 +173744,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_testperminutequota_test_the_refusal_says_how_long_to_wait",
-      "community": 55,
-      "community_name": "_message",
+      "community": 134,
+      "community_name": "reserve_send_slot",
       "norm_label": ".test_the_refusal_says_how_long_to_wait()"
     },
     {
@@ -173756,8 +173756,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_testperminutequota_test_zero_disables_the_limiter",
-      "community": 55,
-      "community_name": "_message",
+      "community": 134,
+      "community_name": "reserve_send_slot",
       "norm_label": ".test_zero_disables_the_limiter()"
     },
     {
@@ -173768,8 +173768,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_testperminutequota_test_the_retry_waits_for_the_window_rather_than_a_fixed_delay",
-      "community": 55,
-      "community_name": "_message",
+      "community": 134,
+      "community_name": "reserve_send_slot",
       "norm_label": ".test_the_retry_waits_for_the_window_rather_than_a_fixed_delay()"
     },
     {
@@ -173952,7 +173952,7 @@
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_testqueuepriority",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "testqueuepriority"
     },
     {
@@ -173964,7 +173964,7 @@
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_testqueuepriority_test_the_worker_reserves_one_message_per_slot",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": ".test_the_worker_reserves_one_message_per_slot()"
     },
     {
@@ -173976,7 +173976,7 @@
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_testqueuepriority_test_priority_and_bulk_are_queued_at_different_priorities",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": ".test_priority_and_bulk_are_queued_at_different_priorities()"
     },
     {
@@ -173987,7 +173987,7 @@
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_py_monkeypatch",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "monkeypatch"
     },
     {
@@ -173997,7 +173997,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_rationale_1",
-      "community": 134,
+      "community": 116,
       "community_name": "test_mail_limits.py",
       "norm_label": "the mail provider's quotas, from the outside. every one of these limits fails..."
     },
@@ -174052,8 +174052,8 @@
       "source_location": "L95",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_rationale_95",
-      "community": 55,
-      "community_name": "_message",
+      "community": 134,
+      "community_name": "reserve_send_slot",
       "norm_label": "\u00a75.3.6 - 30 outgoing messages per minute per mailbox."
     },
     {
@@ -174063,8 +174063,8 @@
       "source_location": "L106",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_rationale_106",
-      "community": 55,
-      "community_name": "_message",
+      "community": 134,
+      "community_name": "reserve_send_slot",
       "norm_label": "otherwise one busy sender would starve every other."
     },
     {
@@ -174074,8 +174074,8 @@
       "source_location": "L113",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_rationale_113",
-      "community": 55,
-      "community_name": "_message",
+      "community": 134,
+      "community_name": "reserve_send_slot",
       "norm_label": "the bug this replaced: a full window plus a fresh one, back to back. measured..."
     },
     {
@@ -174085,8 +174085,8 @@
       "source_location": "L141",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_rationale_141",
-      "community": 55,
-      "community_name": "_message",
+      "community": 134,
+      "community_name": "reserve_send_slot",
       "norm_label": "the property that matters, checked by simulation rather than by argument."
     },
     {
@@ -174096,8 +174096,8 @@
       "source_location": "L157",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_rationale_157",
-      "community": 55,
-      "community_name": "_message",
+      "community": 134,
+      "community_name": "reserve_send_slot",
       "norm_label": "otherwise a retrying task would eat the allowance it is waiting for."
     },
     {
@@ -174107,8 +174107,8 @@
       "source_location": "L182",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_rationale_182",
-      "community": 55,
-      "community_name": "_message",
+      "community": 134,
+      "community_name": "reserve_send_slot",
       "norm_label": "what the test suite runs on, and what a provider without a quota would use."
     },
     {
@@ -174196,7 +174196,7 @@
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_rationale_301",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "two mailboxes double the send rate; they do not reorder the queue. with one..."
     },
     {
@@ -174207,7 +174207,7 @@
       "_origin": "ast",
       "id": "backend_tests_infrastructure_notifications_test_mail_limits_rationale_309",
       "community": 116,
-      "community_name": "render_transactional_email_html",
+      "community_name": "test_mail_limits.py",
       "norm_label": "without this the priority above is nearly decorative. celery applies priority..."
     },
     {
@@ -175039,8 +175039,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_test_object_storage",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "test_object_storage.py"
     },
     {
@@ -175052,8 +175052,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_test_object_storage_testreferencesfollowthestorage",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "testreferencesfollowthestorage"
     },
     {
@@ -175064,8 +175064,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_test_object_storage_testreferencesfollowthestorage_test_a_local_reference_is_a_media_path",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": ".test_a_local_reference_is_a_media_path()"
     },
     {
@@ -175075,8 +175075,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_test_object_storage_py_override_settings",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "override_settings"
     },
     {
@@ -175087,8 +175087,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_test_object_storage_testreferencesfollowthestorage_test_a_bucket_reference_is_an_absolute_url",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": ".test_a_bucket_reference_is_an_absolute_url()"
     },
     {
@@ -175099,8 +175099,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_test_object_storage_testreferencesfollowthestorage_test_a_key_survives_the_round_trip_through_a_bucket_url",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": ".test_a_key_survives_the_round_trip_through_a_bucket_url()"
     },
     {
@@ -175111,8 +175111,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_test_object_storage_testreferencesfollowthestorage_test_a_key_survives_the_round_trip_through_a_media_path",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": ".test_a_key_survives_the_round_trip_through_a_media_path()"
     },
     {
@@ -175123,8 +175123,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_test_object_storage_testreferencesfollowthestorage_teardown_method",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": ".teardown_method()"
     },
     {
@@ -175196,8 +175196,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_test_object_storage_testdiplomakeyscannotbeguessed",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "testdiplomakeyscannotbeguessed"
     },
     {
@@ -175208,8 +175208,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_test_object_storage_testdiplomakeyscannotbeguessed_test_the_token_depends_on_everything_it_is_given",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": ".test_the_token_depends_on_everything_it_is_given()"
     },
     {
@@ -175220,8 +175220,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_test_object_storage_testdiplomakeyscannotbeguessed_test_the_token_is_stable_so_regeneration_replaces_rather_than_orphans",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": ".test_the_token_is_stable_so_regeneration_replaces_rather_than_orphans()"
     },
     {
@@ -175232,8 +175232,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_infrastructure_test_object_storage_testdiplomakeyscannotbeguessed_test_the_token_is_not_derivable_without_the_secret",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": ".test_the_token_is_not_derivable_without_the_secret()"
     },
     {
@@ -175243,8 +175243,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_test_object_storage_rationale_1",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "what changes, and what must not, when uploads move to an s3 bucket. the..."
     },
     {
@@ -175265,8 +175265,8 @@
       "source_location": "L81",
       "_origin": "ast",
       "id": "backend_tests_infrastructure_test_object_storage_rationale_81",
-      "community": 66,
-      "community_name": "test_qr_block_render.py",
+      "community": 86,
+      "community_name": "loadtest_print_package.py",
       "norm_label": "a public-read bucket makes the key the only thing standing between a stranger..."
     },
     {
@@ -230166,8 +230166,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_widgets_diplomas_workspace_ui_sections_archive_section_test_setup",
-      "community": 162,
-      "community_name": "diplomas-workspace/index.ts",
+      "community": 106,
+      "community_name": "diplomas-api.ts",
       "norm_label": "setup()"
     },
     {
@@ -231573,7 +231573,7 @@
       "label": "PartnersSectionProps",
       "file_type": "code",
       "source_file": "frontend/src/widgets/festival-landing/ui/blocks/partners-section.tsx",
-      "source_location": "L43",
+      "source_location": "L45",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
@@ -231586,7 +231586,7 @@
       "label": "PartnersSection()",
       "file_type": "code",
       "source_file": "frontend/src/widgets/festival-landing/ui/blocks/partners-section.tsx",
-      "source_location": "L48",
+      "source_location": "L50",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_widgets_festival_landing_ui_blocks_partners_section_partnerssection",
@@ -233863,8 +233863,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "docs_architecture_readme_architecture_documentation",
-      "community": 111,
-      "community_name": "ARCH-001 \u00b7 VT Platform Architecture",
+      "community": 547,
+      "community_name": "Architecture Documentation",
       "norm_label": "architecture documentation"
     },
     {
@@ -233874,8 +233874,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "docs_architecture_readme_purpose",
-      "community": 111,
-      "community_name": "ARCH-001 \u00b7 VT Platform Architecture",
+      "community": 547,
+      "community_name": "Architecture Documentation",
       "norm_label": "purpose"
     },
     {
@@ -233885,8 +233885,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "docs_architecture_readme_scope",
-      "community": 111,
-      "community_name": "ARCH-001 \u00b7 VT Platform Architecture",
+      "community": 547,
+      "community_name": "Architecture Documentation",
       "norm_label": "scope"
     },
     {
@@ -233896,8 +233896,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "docs_architecture_readme_documents",
-      "community": 111,
-      "community_name": "ARCH-001 \u00b7 VT Platform Architecture",
+      "community": 547,
+      "community_name": "Architecture Documentation",
       "norm_label": "documents"
     },
     {
@@ -233907,8 +233907,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "docs_architecture_readme_future_documents",
-      "community": 111,
-      "community_name": "ARCH-001 \u00b7 VT Platform Architecture",
+      "community": 547,
+      "community_name": "Architecture Documentation",
       "norm_label": "future documents"
     },
     {
@@ -234006,8 +234006,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "docs_business_readme_business_documentation",
-      "community": 547,
-      "community_name": "Business Documentation",
+      "community": 220,
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "norm_label": "business documentation"
     },
     {
@@ -234017,8 +234017,8 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "docs_business_readme_purpose",
-      "community": 547,
-      "community_name": "Business Documentation",
+      "community": 220,
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "norm_label": "purpose"
     },
     {
@@ -234028,8 +234028,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "docs_business_readme_scope",
-      "community": 547,
-      "community_name": "Business Documentation",
+      "community": 220,
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "norm_label": "scope"
     },
     {
@@ -234039,8 +234039,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "docs_business_readme_prefix",
-      "community": 547,
-      "community_name": "Business Documentation",
+      "community": 220,
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "norm_label": "prefix"
     },
     {
@@ -234050,8 +234050,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "docs_business_readme_documents",
-      "community": 547,
-      "community_name": "Business Documentation",
+      "community": 220,
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "norm_label": "documents"
     },
     {
@@ -234061,8 +234061,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "docs_business_readme_future_documents",
-      "community": 547,
-      "community_name": "Business Documentation",
+      "community": 220,
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "norm_label": "future documents"
     },
     {
@@ -235805,9 +235805,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Supporting bounded context. Modules communicate via published interfaces and domain events, never cross-module ORM reach-in.",
-      "community": 220,
+      "community": 167,
       "norm_label": "finance/billing context",
-      "community_name": "DATA-001 \u00b7 Business Data Model",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_architecture_arch_001_vt_platform_architecture_context_finance_billing_context"
     },
@@ -235853,9 +235853,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Supporting bounded context. Modules communicate via published interfaces and domain events, never cross-module ORM reach-in.",
-      "community": 167,
+      "community": 166,
       "norm_label": "audit context",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Audit Context",
       "_origin": "semantic",
       "id": "docs_architecture_arch_001_vt_platform_architecture_context_audit_context"
     },
@@ -236093,9 +236093,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Single financial identity per payer",
-      "community": 220,
+      "community": 167,
       "norm_label": "billing account (aggregate root)",
-      "community_name": "DATA-001 \u00b7 Business Data Model",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_billing_account"
     },
@@ -236109,9 +236109,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Total = line items \u2212 discounts, one currency; paid before entitlement",
-      "community": 220,
+      "community": 167,
       "norm_label": "order (aggregate root)",
-      "community_name": "DATA-001 \u00b7 Business Data Model",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_order"
     },
@@ -236125,9 +236125,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Immutable once issued; corrected by void + reissue, never edited",
-      "community": 220,
+      "community": 167,
       "norm_label": "invoice (aggregate root)",
-      "community_name": "DATA-001 \u00b7 Business Data Model",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_invoice"
     },
@@ -236141,9 +236141,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Money captured against an order; refunds are separate compensating actions",
-      "community": 220,
+      "community": 167,
       "norm_label": "payment (aggregate root)",
-      "community_name": "DATA-001 \u00b7 Business Data Model",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_payment"
     },
@@ -236173,9 +236173,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Immutable, append-only; never updated/deleted outside retention policy",
-      "community": 167,
+      "community": 166,
       "norm_label": "audit log entry (aggregate root)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Audit Context",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_audit_log_entry"
     },
@@ -237125,9 +237125,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 220,
+      "community": 167,
       "norm_label": "ordercreated (domain event)",
-      "community_name": "DATA-001 \u00b7 Business Data Model",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_ordercreated"
     },
@@ -237140,9 +237140,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 220,
+      "community": 167,
       "norm_label": "discountapplied (domain event)",
-      "community_name": "DATA-001 \u00b7 Business Data Model",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_discountapplied"
     },
@@ -237155,9 +237155,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 220,
+      "community": 167,
       "norm_label": "invoiceissued (domain event)",
-      "community_name": "DATA-001 \u00b7 Business Data Model",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_invoiceissued"
     },
@@ -237170,9 +237170,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 220,
+      "community": 167,
       "norm_label": "paymentcaptured (domain event)",
-      "community_name": "DATA-001 \u00b7 Business Data Model",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_paymentcaptured"
     },
@@ -237185,9 +237185,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 220,
+      "community": 167,
       "norm_label": "paymentfailed (domain event)",
-      "community_name": "DATA-001 \u00b7 Business Data Model",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_paymentfailed"
     },
@@ -237320,9 +237320,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 166,
       "norm_label": "actionrecorded (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Audit Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_actionrecorded"
     },
@@ -237335,9 +237335,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 166,
       "norm_label": "datasubjectrequestreceived (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Audit Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_datasubjectrequestreceived"
     },
@@ -237350,9 +237350,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 166,
       "norm_label": "dataerased (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Audit Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_dataerased"
     },
@@ -237365,9 +237365,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 166,
       "norm_label": "legalholdplaced (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Audit Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_legalholdplaced"
     },
@@ -982816,7 +982816,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/widgets/festival-landing/ui/blocks/partners-section.tsx",
-      "source_location": "L48",
+      "source_location": "L50",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_widgets_festival_landing_ui_blocks_partners_section",
@@ -982827,7 +982827,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/widgets/festival-landing/ui/blocks/partners-section.tsx",
-      "source_location": "L43",
+      "source_location": "L45",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_widgets_festival_landing_ui_blocks_partners_section",
@@ -983036,7 +983036,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/widgets/festival-landing/ui/blocks/registration-block.tsx",
-      "source_location": "L89",
+      "source_location": "L93",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_widgets_festival_landing_ui_blocks_registration_block_registrationblock",
@@ -983787,7 +983787,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/widgets/festival-landing/ui/landing-hero.tsx",
-      "source_location": "L106",
+      "source_location": "L110",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_widgets_festival_landing_ui_landing_hero_landinghero",
@@ -993102,5 +993102,5 @@
       "source_file": "frontend/docs/festival-catalog.md"
     }
   ],
-  "built_at_commit": "e73f5e399e67103bb221e4de2fef9a5917d3f9de"
+  "built_at_commit": "a26ae0e2b48dd83c97e76fe2d3fcc497f466133c"
 }
