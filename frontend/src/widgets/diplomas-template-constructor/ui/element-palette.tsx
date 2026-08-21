@@ -79,7 +79,10 @@ export function ElementPalette({ documentType }: ElementPaletteProps): React.JSX
       <div className="border-border border-b px-4 py-3">
         <h2 className="font-medium text-foreground text-sm">Элементы</h2>
         <p className="mt-0.5 text-muted-foreground text-xs">
-          {documentType === "DIPLOMA"
+          {/* Keyed off what the kind may actually carry, not off one type id: an
+              individual diploma is as numbered and verifiable as any other, and
+              used to be told here that it has neither. */}
+          {allowsFieldType(documentType, "qr_block")
             ? "Нажмите, чтобы добавить элемент на страницу."
             : `Набор для документа «${kind.label}»: без степени, номера и QR-кода.`}
         </p>
