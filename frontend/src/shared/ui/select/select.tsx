@@ -33,11 +33,18 @@ export const SelectTrigger = forwardRef<
       data-slot="select-trigger"
       aria-invalid={invalid || undefined}
       className={cn(
-        "flex w-full cursor-pointer items-center justify-between gap-2 rounded-md border border-input bg-background px-3 text-foreground shadow-elevation-1 outline-none transition-colors",
+        "flex w-full cursor-pointer items-center justify-between gap-2 overflow-hidden rounded-md border border-input bg-background px-3 text-foreground shadow-elevation-1 outline-none transition-colors",
         "focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring",
         "data-[placeholder]:text-muted-foreground",
         "disabled:cursor-not-allowed disabled:opacity-50",
         "[&_svg]:size-4 [&_svg]:shrink-0",
+        // The chosen value keeps to one line and ends in an ellipsis, like a native
+        // `<select>`. A trigger is a fixed-height control sitting in a row with its
+        // neighbours: letting a long value wrap grew this one alone and spilled the
+        // second line out of the border. `min-w-0` is what lets the value shrink at
+        // all — a flex child refuses to go below its content otherwise — and the
+        // full text stays one click away in the open listbox, which does wrap.
+        "[&>span]:min-w-0 [&>span]:truncate",
         invalid && "border-danger focus-visible:ring-danger/40 focus-visible:border-danger",
         triggerSize[size],
         className,

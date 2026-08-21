@@ -46,6 +46,47 @@ describe("Select", () => {
     expect(onValueChange).toHaveBeenCalledWith("apple");
   });
 
+  it("keeps a long value on one line instead of growing the trigger", async () => {
+    // The reported bug: a value too wide for the control wrapped onto a second line,
+    // so this trigger alone grew taller than the fields beside it and the text spilled
+    // out of the border. Tailwind utilities are the mechanism and jsdom cannot compute
+    // them, so this pins the contract: the value is the trigger's own span child, and
+    // the trigger is the element that constrains it.
+    render(
+      <Select
+        label="Шрифт"
+        options={[{ value: "montserrat", label: "Montserrat (нет в библиотеке)" }]}
+        defaultValue="montserrat"
+      />,
+    );
+    const trigger = screen.getByRole("combobox");
+    const value = trigger.firstElementChild;
+
+    expect(value?.tagName).toBe("SPAN");
+    expect(value).toHaveTextContent("Montserrat (нет в библиотеке)");
+    expect(trigger.className).toContain("[&>span]:truncate");
+    // A flex child will not shrink below its content without this.
+    expect(trigger.className).toContain("[&>span]:min-w-0");
+  });
+
+  it("still offers the whole label in the open listbox", async () => {
+    // Truncating the trigger is only acceptable because nothing is lost: the full text
+    // is one click away, and the listbox is free to be wider than the control.
+    const user = userEvent.setup();
+    render(
+      <Select
+        label="Шрифт"
+        options={[{ value: "montserrat", label: "Montserrat (нет в библиотеке)" }]}
+        placeholder="Выберите"
+      />,
+    );
+    await user.click(screen.getByRole("combobox"));
+
+    expect(
+      await screen.findByRole("option", { name: "Montserrat (нет в библиотеке)" }),
+    ).toBeInTheDocument();
+  });
+
   it("marks the trigger invalid and shows the error message", () => {
     render(<Select label="Фрукт" options={options} error="Выберите фрукт" />);
     expect(screen.getByRole("combobox")).toHaveAttribute("aria-invalid", "true");
