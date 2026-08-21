@@ -9,7 +9,13 @@ export function SiteFooter(): React.JSX.Element {
 
   return (
     <footer className="border-border/70 border-t bg-background/80 px-4 pt-8 pb-4 md:px-8">
-      <div className="mx-auto grid w-full max-w-7xl gap-6 text-sm text-muted-foreground md:grid-cols-3">
+      {/* Three columns only from xl. Beside the workspace sidebar a tablet gives
+          this footer ~416px, and splitting that three ways left ~123px per column
+          — narrower than «профессиональный» or «Пользовательское», which spilled
+          into the neighbouring column. `wrap-anywhere` is the last resort: it,
+          unlike `break-words`, also lowers the intrinsic minimum the shrink-to-fit
+          link boxes are measured by. */}
+      <div className="mx-auto grid w-full max-w-7xl gap-6 wrap-anywhere text-sm text-muted-foreground md:grid-cols-2 xl:grid-cols-3">
         <div className="space-y-2">
           <p className="font-medium text-foreground">{APP_NAME}</p>
           <p>Платформа фестивалей и онлайн-подачи заявок.</p>
