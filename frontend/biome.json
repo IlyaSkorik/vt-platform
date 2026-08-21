@@ -14,7 +14,8 @@
       "!**/storybook-static",
       "!**/node_modules",
       "!src/shared/api/generated",
-      "!**/*.tsbuildinfo"
+      "!**/*.tsbuildinfo",
+      "!public/**/*.svg"
     ]
   },
   "formatter": {
