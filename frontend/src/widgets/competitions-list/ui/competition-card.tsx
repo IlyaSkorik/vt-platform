@@ -24,7 +24,10 @@ export function CompetitionCard({ competition }: CompetitionCardProps): React.JS
             <Medal className="size-5" aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1 space-y-2">
-            <CardTitle className="truncate text-base">
+            {/* Two lines rather than one nowrap line: festival names here run to
+                60+ characters, and a single ellipsized line showed the first word
+                and nothing that tells two of them apart. */}
+            <CardTitle className="line-clamp-2 break-words text-base">
               <Link
                 to={workspacePath}
                 className="outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
@@ -46,7 +49,7 @@ export function CompetitionCard({ competition }: CompetitionCardProps): React.JS
             <span className="font-medium text-foreground">Сезон:</span> {competition.season}
           </p>
           {competition.description ? (
-            <p className="line-clamp-2">
+            <p className="line-clamp-2 break-words">
               <span className="font-medium text-foreground">Описание:</span>{" "}
               {competition.description}
             </p>
