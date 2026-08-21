@@ -215,7 +215,7 @@ def build_dashboard(*, organization_id: str | None = None, competition_id: str |
                 orphan.status_counts[status] = orphan.status_counts.get(status, 0) + count
             orphan.applications += orphan_totals.applications
             orphan.expected_fees += orphan_totals.expected_fees
-            orphan.settled_fees += totals.settled_fees
+            orphan.settled_fees += orphan_totals.settled_fees
         if orphan.applications or any(competitions_per_organization.get(o, 0) for o in orphan_ids):
             breakdowns.append(
                 OrganizationBreakdown(
