@@ -78,18 +78,22 @@ export function RegistrationBlock({
         {sorted.map((nomination) => {
           const state = deriveState(nomination);
           return (
+            // The state badge never wraps ("Открыта до 20 июл. 2026 г., 23:00"
+            // is ~230px on its own), so it only shares a row with the nomination
+            // where the two-column grid is actually wide enough. Below that it
+            // sits under the text instead of pushing the card off-screen.
             <li
               key={nomination.id}
-              className="flex items-start justify-between gap-3 rounded-lg border bg-card p-4 text-card-foreground shadow-elevation-1"
+              className="flex min-w-0 flex-col items-start gap-2 rounded-lg border bg-card p-4 text-card-foreground shadow-elevation-1 xl:flex-row xl:justify-between xl:gap-3"
             >
               <div className="flex min-w-0 items-start gap-3">
                 <CalendarClock className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
                 <div className="min-w-0 space-y-0.5">
-                  <p className="font-medium">{nomination.name}</p>
+                  <p className="font-medium break-words">{nomination.name}</p>
                   <p className="text-muted-foreground text-sm">{periodText(nomination)}</p>
                 </div>
               </div>
-              <Badge variant={state.variant} size="sm" className="shrink-0">
+              <Badge variant={state.variant} size="sm" className="max-w-full shrink-0">
                 {state.label}
               </Badge>
             </li>
