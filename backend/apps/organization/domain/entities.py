@@ -34,6 +34,7 @@ from .events import (
     DomainEvent,
     OrganizationCommissionRateChanged,
     OrganizationConnected,
+    OrganizationFeeScheduleChanged,
     OrganizationProfileUpdated,
     OrganizationReactivated,
     OrganizationRenamed,
@@ -59,6 +60,7 @@ from .exceptions import (
 )
 from .policies import InvitationExpiryPolicy
 from .value_objects import (
+    BillingModel,
     CommissionRate,
     InvitationTokenHash,
     MembershipStatus,
@@ -67,6 +69,7 @@ from .value_objects import (
     OrganizationProfile,
     OrganizationSlug,
     OrganizationStatus,
+    PerformanceFeeSchedule,
     StaffEmail,
     StaffInvitationId,
     StaffMembershipId,
@@ -91,10 +94,19 @@ class Organization:
     organization can never sign itself up, and no organization can create another.
 
     Alongside its identity and profile it carries the commercial term it was
-    connected under: :class:`CommissionRate`, the share of the participation fees
-    it collects that is owed back to the platform. That term belongs to the
-    platform, not to the organization's own staff, so only a platform-level use
-    case ever calls :meth:`change_commission_rate`.
+    connected under. There are two, and exactly one applies — :attr:`billing_model`
+    says which:
+
+    * :attr:`BillingModel.COMMISSION_PERCENT` — a :class:`CommissionRate`, the
+      share of the participation fees it collects that is owed back to the platform.
+    * :attr:`BillingModel.PER_PERFORMANCE_FEE` — a :class:`PerformanceFeeSchedule`,
+      a flat price per submitted performance, banded by how many participants that
+      performance has.
+
+    Those terms belong to the platform, not to the organization's own staff, so
+    only a platform-level use case ever calls :meth:`change_commission_rate` or
+    :meth:`change_fee_schedule` — and calling either is also what *switches* the
+    organization onto that model.
 
     Guards its own status transitions. Equality/hashing is by :class:`OrganizationId`.
     """
@@ -107,7 +119,12 @@ class Organization:
     _created_at: datetime
     _updated_at: datetime
     _profile: OrganizationProfile = field(default_factory=OrganizationProfile.empty)
+    _billing_model: BillingModel = BillingModel.COMMISSION_PERCENT
     _commission_rate: CommissionRate = field(default_factory=CommissionRate.zero)
+    # The price list behind PER_PERFORMANCE_FEE; None while the percentage term
+    # applies. The two are kept side by side rather than collapsed into one field
+    # so switching back and forth does not lose the terms last agreed.
+    _fee_schedule: PerformanceFeeSchedule | None = None
     _deleted_at: datetime | None = None
     _version: int = 1
 
@@ -155,16 +172,23 @@ class Organization:
         name: OrganizationName,
         slug: OrganizationSlug,
         commission_rate: CommissionRate,
+        fee_schedule: PerformanceFeeSchedule | None = None,
         now: datetime,
     ) -> tuple[Organization, list[DomainEvent]]:
         """Connect a new organization to the platform, ACTIVE from the start.
 
-        The platform operator's path: they name the organization and the share of
-        its fees the platform is owed, and the organization begins operating at
-        once. Its first owner arrives separately, by invitation — connecting an
-        organization and handing someone the keys to it are two facts, and the
-        second one may well be accepted days later.
+        The platform operator's path: they name the organization and the terms it
+        is billed under, and the organization begins operating at once. Its first
+        owner arrives separately, by invitation — connecting an organization and
+        handing someone the keys to it are two facts, and the second one may well
+        be accepted days later.
+
+        Which model applies is *derived* rather than passed: a ``fee_schedule``
+        means the organization is billed per performance, its absence means it is
+        billed a percentage. Deriving it is what makes "the model says percent but
+        a price list is attached" unrepresentable.
         """
+        billing_model = BillingModel.COMMISSION_PERCENT if fee_schedule is None else BillingModel.PER_PERFORMANCE_FEE
         org = cls(
             _token=_CREATION_TOKEN,
             _id=organization_id,
@@ -173,9 +197,18 @@ class Organization:
             _status=OrganizationStatus.ACTIVE,
             _created_at=now,
             _updated_at=now,
+            _billing_model=billing_model,
             _commission_rate=commission_rate,
+            _fee_schedule=fee_schedule,
         )
-        event = OrganizationConnected(aggregate_id=organization_id.value, name=name, slug=slug, commission_rate=commission_rate)
+        event = OrganizationConnected(
+            aggregate_id=organization_id.value,
+            name=name,
+            slug=slug,
+            billing_model=billing_model,
+            commission_rate=commission_rate,
+            fee_schedule=fee_schedule,
+        )
         return org, [event]
 
     @classmethod
@@ -189,7 +222,9 @@ class Organization:
         created_at: datetime,
         updated_at: datetime,
         profile: OrganizationProfile | None = None,
+        billing_model: BillingModel | None = None,
         commission_rate: CommissionRate | None = None,
+        fee_schedule: PerformanceFeeSchedule | None = None,
         deleted_at: datetime | None = None,
         version: int = 1,
     ) -> Organization:
@@ -203,7 +238,9 @@ class Organization:
             _created_at=created_at,
             _updated_at=updated_at,
             _profile=profile if profile is not None else OrganizationProfile.empty(),
+            _billing_model=billing_model if billing_model is not None else BillingModel.COMMISSION_PERCENT,
             _commission_rate=commission_rate if commission_rate is not None else CommissionRate.zero(),
+            _fee_schedule=fee_schedule,
             _deleted_at=deleted_at,
             _version=version,
         )
@@ -233,9 +270,24 @@ class Organization:
         return self._profile
 
     @property
+    def billing_model(self) -> BillingModel:
+        """Which of the two commercial terms this organization is billed under."""
+        return self._billing_model
+
+    @property
     def commission_rate(self) -> CommissionRate:
-        """The share of participation fees this organization owes the platform."""
+        """The share of participation fees this organization owes the platform.
+
+        Meaningful only under :attr:`BillingModel.COMMISSION_PERCENT`; under the
+        other model it is the rate last agreed, kept so switching back does not
+        start from zero.
+        """
         return self._commission_rate
+
+    @property
+    def fee_schedule(self) -> PerformanceFeeSchedule | None:
+        """The per-performance price list, or ``None`` when a percentage applies."""
+        return self._fee_schedule
 
     @property
     def created_at(self) -> datetime:
@@ -278,22 +330,42 @@ class Organization:
         return [OrganizationReactivated(aggregate_id=self._id.value)]
 
     def change_commission_rate(self, rate: CommissionRate, *, now: datetime) -> list[DomainEvent]:
-        """Set the share of participation fees owed to the platform.
+        """Bill this organization a share of its participation fees, at ``rate``.
 
         A platform-level decision, not an organization-level one: the rate is the
         term the organization was connected under, and its own staff never reach
-        this. Setting the rate it already has is a no-op — no version bump, no
-        event — so re-saving an unchanged form does not read as a renegotiation.
+        this. Also the switch onto the percentage model — an organization billed
+        per performance moves back here the moment a rate is set. Setting the rate
+        it already has, under the model it is already on, is a no-op — no version
+        bump, no event — so re-saving an unchanged form does not read as a
+        renegotiation.
 
         Allowed while suspended: suspension stops the organization operating, but
         what it owes is exactly the kind of thing that gets renegotiated *because*
         it was suspended.
         """
-        if rate == self._commission_rate:
+        if rate == self._commission_rate and self._billing_model is BillingModel.COMMISSION_PERCENT:
             return []
         self._commission_rate = rate
+        self._billing_model = BillingModel.COMMISSION_PERCENT
         self._touch(now)
         return [OrganizationCommissionRateChanged(aggregate_id=self._id.value, commission_rate=rate)]
+
+    def change_fee_schedule(self, schedule: PerformanceFeeSchedule, *, now: datetime) -> list[DomainEvent]:
+        """Bill this organization a flat fee per performance, on ``schedule``.
+
+        The counterpart of :meth:`change_commission_rate`, with the same rules: a
+        platform-level decision, allowed while suspended, and a no-op when the
+        schedule and the model are both already in place. The percentage rate last
+        agreed is left untouched — it costs nothing to remember, and the operator
+        who switches away often switches back.
+        """
+        if schedule == self._fee_schedule and self._billing_model is BillingModel.PER_PERFORMANCE_FEE:
+            return []
+        self._fee_schedule = schedule
+        self._billing_model = BillingModel.PER_PERFORMANCE_FEE
+        self._touch(now)
+        return [OrganizationFeeScheduleChanged(aggregate_id=self._id.value, fee_schedule=schedule)]
 
     def update_profile(
         self,

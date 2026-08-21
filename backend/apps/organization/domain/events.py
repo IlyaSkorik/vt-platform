@@ -27,11 +27,13 @@ from datetime import UTC, datetime
 from enum import StrEnum
 
 from .value_objects import (
+    BillingModel,
     CommissionRate,
     InvitationTokenHash,
     OrganizationId,
     OrganizationName,
     OrganizationSlug,
+    PerformanceFeeSchedule,
     StaffEmail,
     StaffInvitationId,
     StaffMembershipId,
@@ -44,6 +46,7 @@ __all__ = [
     "DomainEvent",
     "OrganizationCommissionRateChanged",
     "OrganizationConnected",
+    "OrganizationFeeScheduleChanged",
     "OrganizationProfileUpdated",
     "OrganizationReactivated",
     "OrganizationRenamed",
@@ -87,6 +90,15 @@ def _serialize(value: object) -> object:
             return str(value)
         case CommissionRate():
             return str(value.percent)
+        case PerformanceFeeSchedule():
+            return [
+                {
+                    "min_participants": tier.min_participants,
+                    "max_participants": tier.max_participants,
+                    "amount": str(tier.amount),
+                }
+                for tier in value.tiers
+            ]
     raise TypeError(f"Cannot serialize event field of type {type(value).__name__!r}.")
 
 
@@ -130,14 +142,32 @@ class OrganizationConnected(DomainEvent):
 
     name: OrganizationName
     slug: OrganizationSlug
+    billing_model: BillingModel
     commission_rate: CommissionRate
+    fee_schedule: PerformanceFeeSchedule | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class OrganizationCommissionRateChanged(DomainEvent):
-    """The share of participation fees the organization owes the platform changed."""
+    """The organization is now billed a share of its participation fees, at this rate.
+
+    Also the fact that it is billed *that way at all*: setting a rate is what puts
+    an organization on ``BillingModel.COMMISSION_PERCENT``, so this event is both
+    "the rate changed" and "the terms are now percentage-based".
+    """
 
     commission_rate: CommissionRate
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class OrganizationFeeScheduleChanged(DomainEvent):
+    """The organization is now billed a flat fee per performance, on this schedule.
+
+    The counterpart of :class:`OrganizationCommissionRateChanged`: it carries the
+    whole price list, because a band is meaningless without the ones around it.
+    """
+
+    fee_schedule: PerformanceFeeSchedule
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

@@ -14,6 +14,9 @@ Value objects implemented here:
 * :class:`OrganizationName`    — non-empty, length-bounded display name.
 * :class:`OrganizationSlug`    — lowercase kebab-case URL-safe identifier.
 * :class:`OrganizationStatus`  — ACTIVE / SUSPENDED lifecycle enum.
+* :class:`BillingModel`        — which of the two commercial terms applies.
+* :class:`PerformanceFeeTier`  — one band of a fee schedule ("2–5 participants → 4.00").
+* :class:`PerformanceFeeSchedule` — the ordered, gap-free set of those bands.
 * :class:`StaffRole`           — the seven staff roles.
 * :class:`MembershipStatus`    — PENDING / ACTIVE / REVOKED lifecycle enum.
 * :class:`StaffEmail`          — normalized, validated invitee email address.
@@ -30,18 +33,23 @@ import os
 import re
 import time
 import uuid
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from enum import StrEnum
+from itertools import pairwise
 from typing import Final
 
 from .exceptions import (
+    InvalidBillingModelError,
     InvalidCommissionRateError,
     InvalidInvitationTokenHashError,
     InvalidOrganizationIdError,
     InvalidOrganizationNameError,
     InvalidOrganizationProfileError,
     InvalidOrganizationSlugError,
+    InvalidPerformanceFeeScheduleError,
+    InvalidPerformanceFeeTierError,
     InvalidStaffEmailError,
     InvalidStaffInvitationIdError,
     InvalidStaffMembershipIdError,
@@ -49,6 +57,7 @@ from .exceptions import (
 )
 
 __all__ = [
+    "BillingModel",
     "CommissionRate",
     "InvitationTokenHash",
     "MembershipStatus",
@@ -57,6 +66,8 @@ __all__ = [
     "OrganizationProfile",
     "OrganizationSlug",
     "OrganizationStatus",
+    "PerformanceFeeSchedule",
+    "PerformanceFeeTier",
     "StaffEmail",
     "StaffInvitationId",
     "StaffMembershipId",
@@ -359,6 +370,206 @@ class CommissionRate:
 
     def __str__(self) -> str:
         return f"{self.percent}%"
+
+
+class BillingModel(StrEnum):
+    """Which of the two commercial terms an organization is connected under.
+
+    The platform charges an organization one way or the other, never both:
+
+    * :attr:`COMMISSION_PERCENT` — a share of the participation fees the
+      organization collects (:class:`CommissionRate`). The original term.
+    * :attr:`PER_PERFORMANCE_FEE` — a flat price per submitted performance,
+      read off a :class:`PerformanceFeeSchedule` by how many participants that
+      performance has ("solo costs 2.50, a duet-to-quintet 4.00, larger 6.00"),
+      regardless of what the organization charges its own participants.
+    """
+
+    COMMISSION_PERCENT = "COMMISSION_PERCENT"
+    PER_PERFORMANCE_FEE = "PER_PERFORMANCE_FEE"
+
+    @classmethod
+    def of(cls, value: str) -> BillingModel:
+        """Parse a wire value, raising a domain error rather than a bare ``ValueError``."""
+        try:
+            return cls(value)
+        except ValueError as exc:
+            raise InvalidBillingModelError(f"{value!r} names no known billing model.") from exc
+
+
+#: Fees are money, so the scale is the minor unit — two decimals, like everything
+#: else that ends up on an invoice.
+_FEE_SCALE: Final = Decimal("0.01")
+
+#: An upper bound on a single band's price. Not a commercial rule — a typo guard,
+#: so a stray keystroke cannot bill an organization five figures per performance.
+_FEE_MAX: Final = Decimal("100000.00")
+
+#: The platform trades in a single currency (see the Applications/Competitions
+#: ``Currency`` enums, BYN-only), so a fee carries an amount and nothing else.
+FEE_CURRENCY: Final = "BYN"
+
+#: How many bands one schedule may hold. A schedule is a pricing table a human
+#: reads off; past a couple of dozen rows it is a different feature.
+_MAX_FEE_TIERS: Final = 20
+
+
+@dataclass(frozen=True, slots=True)
+class PerformanceFeeTier:
+    """One band of a fee schedule: *this many participants cost this much*.
+
+    ``min_participants``/``max_participants`` bound the headcount of a single
+    performance, inclusive on both ends; ``max_participants`` of ``None`` means the
+    band is open-ended ("6 and up"). ``amount`` is what the platform is owed for a
+    performance falling in the band — an exact :class:`~decimal.Decimal` in
+    :data:`FEE_CURRENCY`, never a float, because it is multiplied by counts and read
+    off invoices.
+    """
+
+    min_participants: int
+    max_participants: int | None
+    amount: Decimal
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "min_participants", self._count("min_participants", self.min_participants))
+        if self.max_participants is not None:
+            object.__setattr__(self, "max_participants", self._count("max_participants", self.max_participants))
+            if self.max_participants < self.min_participants:
+                raise InvalidPerformanceFeeTierError(
+                    f"Fee band upper bound {self.max_participants} is below its lower bound {self.min_participants}."
+                )
+        if isinstance(self.amount, float):
+            raise InvalidPerformanceFeeTierError("Fee amount must not be built from a float; use Decimal or str.")
+        try:
+            amount = Decimal(self.amount).quantize(_FEE_SCALE, rounding=ROUND_HALF_UP)
+        except (InvalidOperation, TypeError, ValueError) as exc:
+            raise InvalidPerformanceFeeTierError(f"{self.amount!r} is not a valid fee amount.") from exc
+        if amount < Decimal("0"):
+            raise InvalidPerformanceFeeTierError(f"Fee amount must not be negative, got {amount}.")
+        if amount > _FEE_MAX:
+            raise InvalidPerformanceFeeTierError(f"Fee amount must be at most {_FEE_MAX}, got {amount}.")
+        object.__setattr__(self, "amount", amount)
+
+    @staticmethod
+    def _count(field: str, value: object) -> int:
+        """A participant headcount bound: a plain positive ``int`` (``bool`` refused)."""
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise InvalidPerformanceFeeTierError(f"{field} must be an integer, got {value!r}.")
+        if value < 1:
+            raise InvalidPerformanceFeeTierError(f"{field} must be at least 1, got {value}.")
+        return value
+
+    @classmethod
+    def of(cls, min_participants: int, max_participants: int | None, amount: Decimal | int | str) -> PerformanceFeeTier:
+        """Build a band from primitives (a command payload, a JSON column, a test)."""
+        return cls(
+            min_participants=min_participants,
+            max_participants=max_participants,
+            amount=amount if isinstance(amount, Decimal) else Decimal(str(amount)),
+        )
+
+    @property
+    def is_open_ended(self) -> bool:
+        """Whether the band has no upper bound ("6 and up")."""
+        return self.max_participants is None
+
+    def contains(self, participant_count: int) -> bool:
+        """Whether a performance with ``participant_count`` participants falls in this band."""
+        if participant_count < self.min_participants:
+            return False
+        return self.max_participants is None or participant_count <= self.max_participants
+
+    def range_label(self) -> str:
+        """The band's headcount range as a human reads it: ``1``, ``2-5``, ``6+``."""
+        if self.max_participants is None:
+            return f"{self.min_participants}+"
+        if self.max_participants == self.min_participants:
+            return str(self.min_participants)
+        return f"{self.min_participants}-{self.max_participants}"
+
+    def __str__(self) -> str:
+        return f"{self.range_label()}: {self.amount} {FEE_CURRENCY}"
+
+
+@dataclass(frozen=True, slots=True)
+class PerformanceFeeSchedule:
+    """The full price list behind :attr:`BillingModel.PER_PERFORMANCE_FEE`.
+
+    An ordered set of :class:`PerformanceFeeTier` bands that between them cover
+    *every* headcount a performance can have: the bands are sorted, start at one
+    participant, leave no gap and no overlap, and the last one is open-ended. That
+    is what makes :meth:`fee_for` total — a schedule with a hole in it would bill
+    some performances nothing at all, silently, which is the one failure mode that
+    must not be reachable.
+
+    Bands arrive in any order and are stored sorted, so two schedules listing the
+    same bands compare equal.
+    """
+
+    tiers: tuple[PerformanceFeeTier, ...]
+
+    def __post_init__(self) -> None:
+        if isinstance(self.tiers, PerformanceFeeTier) or not isinstance(self.tiers, Iterable):
+            raise InvalidPerformanceFeeScheduleError("A fee schedule is built from an iterable of bands.")
+        tiers = tuple(self.tiers)
+        if not tiers:
+            raise InvalidPerformanceFeeScheduleError("A fee schedule must hold at least one band.")
+        if len(tiers) > _MAX_FEE_TIERS:
+            raise InvalidPerformanceFeeScheduleError(f"A fee schedule must hold at most {_MAX_FEE_TIERS} bands.")
+        if any(not isinstance(tier, PerformanceFeeTier) for tier in tiers):
+            raise InvalidPerformanceFeeScheduleError("Every band of a fee schedule must be a PerformanceFeeTier.")
+        tiers = tuple(sorted(tiers, key=lambda tier: tier.min_participants))
+        if tiers[0].min_participants != 1:
+            raise InvalidPerformanceFeeScheduleError(f"A fee schedule must start at 1 participant, starts at {tiers[0].min_participants}.")
+        for previous, current in pairwise(tiers):
+            if previous.is_open_ended:
+                raise InvalidPerformanceFeeScheduleError(f"The open-ended band {previous.range_label()} must be the last one.")
+            expected = previous.max_participants + 1  # type: ignore[operator]  # closed by the guard above
+            if current.min_participants != expected:
+                problem = "an overlap" if current.min_participants < expected else "a gap"
+                raise InvalidPerformanceFeeScheduleError(
+                    f"Bands {previous.range_label()} and {current.range_label()} leave {problem}; "
+                    f"the next band must start at {expected} participants."
+                )
+        if not tiers[-1].is_open_ended:
+            raise InvalidPerformanceFeeScheduleError(
+                f"The last band must be open-ended so every headcount is priced; {tiers[-1].range_label()} is not."
+            )
+        object.__setattr__(self, "tiers", tiers)
+
+    @classmethod
+    def of(cls, rows: Iterable[Sequence[object]]) -> PerformanceFeeSchedule:
+        """Build a schedule from ``(min, max, amount)`` triples of primitives."""
+        return cls(
+            tiers=tuple(
+                PerformanceFeeTier.of(
+                    min_participants=row[0],  # type: ignore[arg-type]
+                    max_participants=row[1],  # type: ignore[arg-type]
+                    amount=row[2],  # type: ignore[arg-type]
+                )
+                for row in rows
+            )
+        )
+
+    def fee_for(self, participant_count: int) -> Decimal:
+        """What the platform is owed for one performance with this headcount.
+
+        Total by construction: the bands cover 1..∞, so a count of at least one
+        always lands in exactly one of them. A count below one is not a performance
+        anybody can submit — it is priced off the first band rather than raising,
+        because a reporting projection must not blow up on a malformed row.
+        """
+        for tier in self.tiers:
+            if tier.contains(participant_count):
+                return tier.amount
+        return self.tiers[0].amount
+
+    def total_for(self, participant_counts: Iterable[int]) -> Decimal:
+        """What the platform is owed for a whole basket of performances."""
+        return sum((self.fee_for(count) for count in participant_counts), Decimal("0.00"))
+
+    def __str__(self) -> str:
+        return "; ".join(str(tier) for tier in self.tiers)
 
 
 # ---------------------------------------------------------------------------

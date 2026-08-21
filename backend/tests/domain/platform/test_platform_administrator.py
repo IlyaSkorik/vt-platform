@@ -1,7 +1,7 @@
-"""Unit tests for the ``PlatformAdministrator`` aggregate and the commission rate.
+"""Unit tests for the ``PlatformAdministrator`` aggregate and the commercial terms.
 
 Two small pieces of domain, both load-bearing: who may operate the platform, and
-what an organization owes it.
+what an organization owes it — a share of its fees, or a flat price per performance.
 """
 
 from __future__ import annotations
@@ -12,14 +12,26 @@ from decimal import Decimal
 import pytest
 
 from apps.organization.domain.entities import Organization
-from apps.organization.domain.events import DomainEvent, OrganizationCommissionRateChanged, OrganizationConnected
-from apps.organization.domain.exceptions import InvalidCommissionRateError
+from apps.organization.domain.events import (
+    DomainEvent,
+    OrganizationCommissionRateChanged,
+    OrganizationConnected,
+    OrganizationFeeScheduleChanged,
+)
+from apps.organization.domain.exceptions import (
+    InvalidCommissionRateError,
+    InvalidPerformanceFeeScheduleError,
+    InvalidPerformanceFeeTierError,
+)
 from apps.organization.domain.value_objects import (
+    BillingModel,
     CommissionRate,
     OrganizationId,
     OrganizationName,
     OrganizationSlug,
     OrganizationStatus,
+    PerformanceFeeSchedule,
+    PerformanceFeeTier,
 )
 from apps.platform.domain.entities import PlatformAdministrator
 from apps.platform.domain.exceptions import (
@@ -117,6 +129,68 @@ class TestCommissionRate:
         assert CommissionRate.zero().apply_to(Decimal("999.99")) == Decimal("0.00")
 
 
+class TestPerformanceFeeSchedule:
+    def _schedule(self) -> PerformanceFeeSchedule:
+        # The terms as an operator writes them down: a solo, a small group, the rest.
+        return PerformanceFeeSchedule.of([(1, 1, "2.50"), (2, 5, "4.00"), (6, None, "6.00")])
+
+    def test_a_band_prices_the_headcount_it_covers(self) -> None:
+        schedule = self._schedule()
+
+        assert [schedule.fee_for(count) for count in (1, 2, 5, 6, 40)] == [
+            Decimal("2.50"),
+            Decimal("4.00"),
+            Decimal("4.00"),
+            Decimal("6.00"),
+            Decimal("6.00"),
+        ]
+
+    def test_an_order_costs_the_sum_of_its_performances(self) -> None:
+        # A solo, a duet and an eight-strong ensemble in one order.
+        assert self._schedule().total_for([1, 2, 8]) == Decimal("12.50")
+
+    def test_bands_are_stored_sorted_so_the_order_they_arrive_in_does_not_matter(self) -> None:
+        shuffled = PerformanceFeeSchedule.of([(6, None, "6.00"), (1, 1, "2.50"), (2, 5, "4.00")])
+
+        assert shuffled == self._schedule()
+        assert str(shuffled) == "1: 2.50 BYN; 2-5: 4.00 BYN; 6+: 6.00 BYN"
+
+    def test_a_gap_between_bands_is_refused(self) -> None:
+        # A hole would bill some performances nothing at all, silently.
+        with pytest.raises(InvalidPerformanceFeeScheduleError):
+            PerformanceFeeSchedule.of([(1, 1, "2.50"), (3, None, "4.00")])
+
+    def test_an_overlap_between_bands_is_refused(self) -> None:
+        with pytest.raises(InvalidPerformanceFeeScheduleError):
+            PerformanceFeeSchedule.of([(1, 5, "2.50"), (3, None, "4.00")])
+
+    def test_a_schedule_must_start_at_one_participant(self) -> None:
+        with pytest.raises(InvalidPerformanceFeeScheduleError):
+            PerformanceFeeSchedule.of([(2, None, "4.00")])
+
+    def test_the_top_band_must_be_open_ended(self) -> None:
+        # Otherwise a bigger ensemble than anyone foresaw is priced at nothing.
+        with pytest.raises(InvalidPerformanceFeeScheduleError):
+            PerformanceFeeSchedule.of([(1, 5, "4.00")])
+
+    def test_an_empty_schedule_is_refused(self) -> None:
+        with pytest.raises(InvalidPerformanceFeeScheduleError):
+            PerformanceFeeSchedule.of([])
+
+    def test_a_float_price_is_refused(self) -> None:
+        # Same rule as the commission rate: floats and money do not mix.
+        with pytest.raises(InvalidPerformanceFeeTierError):
+            PerformanceFeeTier(min_participants=1, max_participants=None, amount=2.5)  # type: ignore[arg-type]
+
+    def test_a_band_below_one_participant_is_refused(self) -> None:
+        with pytest.raises(InvalidPerformanceFeeTierError):
+            PerformanceFeeTier.of(0, None, "1.00")
+
+    def test_a_band_whose_top_is_below_its_bottom_is_refused(self) -> None:
+        with pytest.raises(InvalidPerformanceFeeTierError):
+            PerformanceFeeTier.of(5, 2, "1.00")
+
+
 class TestConnectingAnOrganization:
     def _connected(self, *, commission: str = "10") -> tuple[Organization, list[DomainEvent]]:
         return Organization.connect(
@@ -148,6 +222,53 @@ class TestConnectingAnOrganization:
         version = organization.version
 
         assert organization.change_commission_rate(CommissionRate.of("10.00"), now=LATER) == []
+        assert organization.version == version
+
+    def test_an_organization_can_be_connected_on_the_per_performance_fee(self) -> None:
+        schedule = PerformanceFeeSchedule.of([(1, 1, "2.50"), (2, None, "4.00")])
+
+        organization, events = Organization.connect(
+            organization_id=OrganizationId.generate(),
+            name=OrganizationName("Звёздный дождь"),
+            slug=OrganizationSlug("zvezdnyy-dozhd"),
+            commission_rate=CommissionRate.zero(),
+            fee_schedule=schedule,
+            now=NOW,
+        )
+
+        # The model is derived from the terms, so "percent with a price list" cannot exist.
+        assert organization.billing_model is BillingModel.PER_PERFORMANCE_FEE
+        assert organization.fee_schedule == schedule
+        assert isinstance(events[0], OrganizationConnected)
+
+    def test_setting_a_schedule_moves_the_organization_onto_that_model(self) -> None:
+        organization, _ = self._connected(commission="10")
+        schedule = PerformanceFeeSchedule.of([(1, None, "3.00")])
+
+        events = organization.change_fee_schedule(schedule, now=LATER)
+
+        assert organization.billing_model is BillingModel.PER_PERFORMANCE_FEE
+        assert isinstance(events[0], OrganizationFeeScheduleChanged)
+        # The percentage last agreed is remembered, not erased.
+        assert organization.commission_rate.percent == Decimal("10.00")
+
+    def test_setting_a_rate_moves_it_back(self) -> None:
+        organization, _ = self._connected(commission="10")
+        organization.change_fee_schedule(PerformanceFeeSchedule.of([(1, None, "3.00")]), now=LATER)
+
+        events = organization.change_commission_rate(CommissionRate.of("10"), now=LATER)
+
+        # The rate is unchanged, but the model is not: this is still a renegotiation.
+        assert organization.billing_model is BillingModel.COMMISSION_PERCENT
+        assert isinstance(events[0], OrganizationCommissionRateChanged)
+
+    def test_setting_the_same_schedule_changes_nothing(self) -> None:
+        organization, _ = self._connected(commission="10")
+        schedule = PerformanceFeeSchedule.of([(1, None, "3.00")])
+        organization.change_fee_schedule(schedule, now=LATER)
+        version = organization.version
+
+        assert organization.change_fee_schedule(schedule, now=LATER) == []
         assert organization.version == version
 
     def test_the_rate_can_be_renegotiated_while_suspended(self) -> None:

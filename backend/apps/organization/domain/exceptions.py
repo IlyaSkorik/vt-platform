@@ -12,6 +12,9 @@ edge (ARCH-001 §7.6). No Django/DRF imports.
     │   ├── InvalidStaffUserIdError
     │   ├── InvalidOrganizationNameError
     │   ├── InvalidCommissionRateError
+    │   ├── InvalidBillingModelError
+    │   ├── InvalidPerformanceFeeTierError
+    │   ├── InvalidPerformanceFeeScheduleError
     │   ├── InvalidOrganizationSlugError
     │   ├── InvalidOrganizationProfileError
     │   ├── InvalidStaffEmailError
@@ -68,6 +71,18 @@ class InvalidOrganizationNameError(ValueObjectValidationError):
 
 class InvalidCommissionRateError(ValueObjectValidationError):
     """The provided value is not a valid commission rate (outside 0–100 percent)."""
+
+
+class InvalidBillingModelError(ValueObjectValidationError):
+    """The provided value names no known billing model."""
+
+
+class InvalidPerformanceFeeTierError(ValueObjectValidationError):
+    """The provided value is not a valid fee band (bad participant range or amount)."""
+
+
+class InvalidPerformanceFeeScheduleError(ValueObjectValidationError):
+    """The provided bands do not form a valid fee schedule (gap, overlap, or open end missing)."""
 
 
 class InvalidOrganizationSlugError(ValueObjectValidationError):
