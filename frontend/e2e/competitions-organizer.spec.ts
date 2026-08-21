@@ -67,10 +67,13 @@ const competitionDetail = {
             allowedFormats: ["mp3", "wav"],
             maxUploadSizeMb: 50,
           },
-          video: {
+          media: {
             mode: "NOT_REQUIRED",
             allowedProviders: [],
             allowReplacement: false,
+            requireUpload: false,
+            allowedFormats: [],
+            maxTotalSizeMb: 150,
           },
           paymentReceipt: {
             requireReceipt: false,
@@ -84,12 +87,15 @@ const competitionDetail = {
             requireUpload: false,
             allowReplacement: false,
             allowedFormats: [],
-            maxUploadSizeMb: null,
+            maxUploadSizeMb: 25,
           },
-          video: {
+          media: {
             mode: "URL_ONLY",
             allowedProviders: ["YOUTUBE", "VK_VIDEO"],
             allowReplacement: false,
+            requireUpload: false,
+            allowedFormats: [],
+            maxTotalSizeMb: 150,
           },
           paymentReceipt: {
             requireReceipt: true,
@@ -154,7 +160,7 @@ const competitionDetail = {
     ageCategories: [
       {
         id: "a1",
-        categoryId: "cat-1",
+        participantGroupId: "pg-1",
         name: "4–6 лет",
         minAge: 4,
         maxAge: 6,
@@ -164,7 +170,7 @@ const competitionDetail = {
       },
       {
         id: "a2",
-        categoryId: "cat-1",
+        participantGroupId: "pg-1",
         name: "7–9 лет",
         minAge: 7,
         maxAge: 9,
@@ -174,7 +180,7 @@ const competitionDetail = {
       },
       {
         id: "a3",
-        categoryId: "cat-2",
+        participantGroupId: "pg-3",
         name: "10–12 лет",
         minAge: 10,
         maxAge: 12,
@@ -631,7 +637,7 @@ test.describe("Organizer workspace screenshots", () => {
 
     await page.goto("/staff/competitions/comp-1?section=categories");
     await expect(
-      page.getByRole("heading", { name: "Номинации и дисциплины", exact: true }),
+      page.getByRole("heading", { name: "Жанры и номинации", exact: true, level: 2 }),
     ).toBeVisible();
     await expect(page.getByRole("button", { name: /^Вокал$/ })).toBeVisible();
     await page.screenshot({
@@ -654,9 +660,12 @@ test.describe("Organizer workspace screenshots", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/staff/competitions/comp-1?section=age-categories");
     await expect(
-      page.getByRole("heading", { name: "Возрастные категории", exact: true }),
+      page.getByRole("heading", { name: "Возрастные категории", exact: true, level: 2 }),
     ).toBeVisible();
-    await expect(page.getByText("4–6 лет")).toBeVisible();
+    // Groups start collapsed: the categories are inside the group they belong to.
+    await page.getByRole("button", { name: "Развернуть группу" }).first().click();
+    // The name appears twice on an expanded group: as the row's title and in its badge.
+    await expect(page.getByText("4–6 лет").first()).toBeVisible();
     await page.screenshot({
       path: path.join(screenshotDir, "06-age-categories-desktop.png"),
       fullPage: true,
@@ -677,9 +686,9 @@ test.describe("Organizer workspace screenshots", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/staff/competitions/comp-1?section=participant-groups");
     await expect(
-      page.getByRole("heading", { name: "Группы участников", exact: true }),
+      page.getByRole("heading", { name: "Группы участников", exact: true, level: 2 }),
     ).toBeVisible();
-    await expect(page.getByText("Ensemble")).toBeVisible();
+    await expect(page.getByText("Ensemble", { exact: true })).toBeVisible();
     await page.screenshot({
       path: path.join(screenshotDir, "07-participant-groups-desktop.png"),
       fullPage: true,
@@ -699,7 +708,9 @@ test.describe("Organizer workspace screenshots", () => {
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/staff/competitions/comp-1?section=participation-formats");
-    await expect(page.getByRole("heading", { name: "Форматы участия", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Форматы участия", exact: true, level: 2 }),
+    ).toBeVisible();
     await expect(page.getByText("Video Submission")).toBeVisible();
     await page.screenshot({
       path: path.join(screenshotDir, "08-participation-formats-desktop.png"),
@@ -720,8 +731,11 @@ test.describe("Organizer workspace screenshots", () => {
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/staff/competitions/comp-1?section=admission-rules");
-    await expect(page.getByRole("heading", { name: "Правила допуска", exact: true })).toBeVisible();
-    await expect(page.getByText("Эстрадный вокал")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Правила допуска", exact: true, level: 2 }),
+    ).toBeVisible();
+    // The genre heads every rule row it appears in.
+    await expect(page.getByText("Эстрадный вокал").first()).toBeVisible();
     await page.screenshot({
       path: path.join(screenshotDir, "09-admission-rules-desktop.png"),
       fullPage: true,
@@ -741,7 +755,7 @@ test.describe("Organizer workspace screenshots", () => {
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/staff/competitions/comp-1?section=pricing");
-    await expect(page.getByRole("heading", { name: "Цены", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Цены", exact: true, level: 2 })).toBeVisible();
     await expect(page.getByText("Цена за участника").first()).toBeVisible();
     await page.screenshot({
       path: path.join(screenshotDir, "10-pricing-desktop.png"),
@@ -762,7 +776,9 @@ test.describe("Organizer workspace screenshots", () => {
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/staff/competitions/comp-1?section=additional-services");
-    await expect(page.getByRole("heading", { name: "Доп. услуги", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Доп. услуги", exact: true, level: 2 }),
+    ).toBeVisible();
     await expect(page.getByText("Медаль").first()).toBeVisible();
     await page.screenshot({
       path: path.join(screenshotDir, "11-additional-services-desktop.png"),
@@ -783,7 +799,9 @@ test.describe("Organizer workspace screenshots", () => {
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/staff/competitions/comp-1?section=settings");
-    await expect(page.getByRole("heading", { name: "Правила участия", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Правила участия", exact: true, level: 2 }),
+    ).toBeVisible();
     await expect(page.getByText("Подача заявки")).toBeVisible();
     await expect(page.getByText("Материалы заявки")).toBeVisible();
     await expect(page.getByText("Готовность фестиваля")).toBeVisible();
@@ -809,7 +827,9 @@ test.describe("Organizer workspace screenshots", () => {
     await mockStaffApi(page);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/staff/competitions/comp-1?section=settings");
-    await expect(page.getByRole("heading", { name: "Правила участия", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Правила участия", exact: true, level: 2 }),
+    ).toBeVisible();
     await expect(page.getByText("Подача заявки")).toBeVisible();
     await expect(page.getByText("Материалы заявки")).toBeVisible();
     await expect(page.getByText("Готовность фестиваля")).toBeVisible();
@@ -837,7 +857,9 @@ test.describe("Organizer workspace screenshots", () => {
     await mockStaffApi(page);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/staff/competitions/comp-1?section=contacts");
-    await expect(page.getByRole("heading", { name: "Контакты", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Контакты", exact: true, level: 2 }),
+    ).toBeVisible();
     await expect(page.getByText("Источник контактов")).toBeVisible();
     await expect(page.getByText("Взлёт талантов").first()).toBeVisible();
     await expect(page.getByText("Анна Координатор")).toBeVisible();
@@ -865,7 +887,7 @@ test.describe("Organizer workspace screenshots", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/staff/competitions/comp-1?section=public-information");
     await expect(
-      page.getByRole("heading", { name: "Публичная информация", exact: true }),
+      page.getByRole("heading", { name: "Публичная информация", exact: true, level: 2 }),
     ).toBeVisible();
     await expect(page.getByRole("heading", { name: "Структура лендинга" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Предпросмотр" })).toBeVisible();
