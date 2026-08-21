@@ -5390,8 +5390,8 @@
     "semantic_hash": ""
   },
   "frontend/src/shared/ui/select/select.tsx": {
-    "mtime": 1787320198.505778,
-    "ast_hash": "227c1a32ced39ebf837e8a571e2722bf",
+    "mtime": 1787321274.3627353,
+    "ast_hash": "42209c547324989b9083c9202a400ee9",
     "semantic_hash": ""
   },
   "frontend/src/shared/ui/select/types.ts": {
@@ -6575,43 +6575,43 @@
     "semantic_hash": ""
   },
   "frontend/docs/screenshots/festival-catalog/desktop-filters.png": {
-    "mtime": 1787258588.9018586,
-    "ast_hash": "1978027896ffad01ce7e7a94f161dc98",
+    "mtime": 1787321365.29788,
+    "ast_hash": "b51205c3125b02d07c004c3dce448c21",
     "semantic_hash": ""
   },
   "frontend/docs/screenshots/festival-catalog/desktop.png": {
-    "mtime": 1787258588.907088,
-    "ast_hash": "cce88b401a9bb9f53b53e32bad7053a0",
+    "mtime": 1787321363.2320948,
+    "ast_hash": "06ece4371d8b4422ded729af3fc1180b",
     "semantic_hash": ""
   },
   "frontend/docs/screenshots/festival-catalog/mobile.png": {
-    "mtime": 1787258588.9125395,
-    "ast_hash": "a519a1d8cb5b4a9e4955380837e524c3",
+    "mtime": 1787321364.5328503,
+    "ast_hash": "cf7ea73d0faf7a3b020c14e5d103d7be",
     "semantic_hash": ""
   },
   "frontend/docs/screenshots/festival-catalog/tablet.png": {
-    "mtime": 1787258588.9161093,
-    "ast_hash": "931a45796990f6a373e87dc75d407f09",
+    "mtime": 1787321363.8841565,
+    "ast_hash": "0f5a882930146e972672002c6657890f",
     "semantic_hash": ""
   },
   "frontend/docs/screenshots/festival-landing/desktop.png": {
-    "mtime": 1787310713.8294363,
+    "mtime": 1787321366.1595001,
     "ast_hash": "08466ccf35da388659dc2f7cb70ee61a",
     "semantic_hash": ""
   },
   "frontend/docs/screenshots/festival-landing/lightbox.png": {
-    "mtime": 1787310716.9259534,
-    "ast_hash": "63271c5791f073c623f9e91fbb6b60c0",
+    "mtime": 1787321368.444267,
+    "ast_hash": "1a162dc433b7d582b73cc64a83db986c",
     "semantic_hash": ""
   },
   "frontend/docs/screenshots/festival-landing/mobile.png": {
-    "mtime": 1787310715.730115,
+    "mtime": 1787321367.5817106,
     "ast_hash": "9cacc56d178e5b8fc849bd267dbe8eac",
     "semantic_hash": ""
   },
   "frontend/docs/screenshots/festival-landing/tablet.png": {
-    "mtime": 1787310714.819784,
-    "ast_hash": "2b033215e82db35957cce809e21b9b30",
+    "mtime": 1787321366.9187772,
+    "ast_hash": "60e1610b77ad0cff3fba0842b55871a0",
     "semantic_hash": ""
   },
   "frontend/docs/screenshots/organizer-workspace/12-participation-rules-desktop.png": {
@@ -9945,18 +9945,18 @@
     "semantic_hash": ""
   },
   "frontend/docs/screenshots/festival-apply/desktop-1440.png": {
-    "mtime": 1787257979.1750727,
-    "ast_hash": "3a4a14f1643d73940e05af989eb13c5c",
+    "mtime": 1787321362.5477464,
+    "ast_hash": "f811dacc770d12c511abdf96492985f1",
     "semantic_hash": ""
   },
   "frontend/docs/screenshots/festival-apply/mobile-360.png": {
-    "mtime": 1787257976.9704723,
-    "ast_hash": "758edcbf8e5da04098b072ef6168452e",
+    "mtime": 1787321361.2560952,
+    "ast_hash": "f77942d3d7132608ecad195e38ad5ec3",
     "semantic_hash": ""
   },
   "frontend/docs/screenshots/festival-apply/mobile-390.png": {
-    "mtime": 1787257978.7504795,
-    "ast_hash": "de649406725a1a1fa5dca995db8202c0",
+    "mtime": 1787321361.8744962,
+    "ast_hash": "816057581dbc6603b18de9dd003d6c45",
     "semantic_hash": ""
   },
   "frontend/src/widgets/diplomas-template-constructor/model/required-fields.test.ts": {

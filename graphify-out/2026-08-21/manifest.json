@@ -5385,13 +5385,13 @@
     "semantic_hash": "0dd141a6be63a186c14a6059c9cc3ceb"
   },
   "frontend/src/shared/ui/select/select.test.tsx": {
-    "mtime": 1785860601.043634,
-    "ast_hash": "8cb27a589ee4c33ff20fc802f1323b21",
-    "semantic_hash": "8cb27a589ee4c33ff20fc802f1323b21"
+    "mtime": 1787320405.3463948,
+    "ast_hash": "671cd74e443e08ee96ecf2381fc59c2b",
+    "semantic_hash": ""
   },
   "frontend/src/shared/ui/select/select.tsx": {
-    "mtime": 1785860601.043634,
-    "ast_hash": "7233c9848a651842cec583d5192f7a7d",
+    "mtime": 1787320198.505778,
+    "ast_hash": "227c1a32ced39ebf837e8a571e2722bf",
     "semantic_hash": ""
   },
   "frontend/src/shared/ui/select/types.ts": {
