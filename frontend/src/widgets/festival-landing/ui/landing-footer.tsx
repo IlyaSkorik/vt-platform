@@ -19,7 +19,7 @@ function ContactLink({
     <a
       href={href}
       {...externalProps}
-      className="inline-flex items-center gap-2 rounded outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+      className="inline-flex min-w-0 max-w-full items-center gap-2 rounded outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
     >
       <Icon className="size-4 shrink-0" aria-hidden="true" />
       <span className="truncate">{children}</span>
@@ -64,17 +64,20 @@ export function LandingFooter({ contacts }: LandingFooterProps): React.JSX.Eleme
 
   return (
     <footer className="rounded-2xl border bg-muted/40 p-6 sm:p-8">
+      {/* `min-w-0` on every column: without it a long organization name or
+          e-mail sets the column's min-content width and pushes the grid wider
+          than the phone screen instead of wrapping/truncating. */}
       <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="space-y-3">
-          <p className="text-base font-semibold text-foreground">
+        <div className="min-w-0 space-y-3">
+          <p className="break-words text-base font-semibold text-foreground">
             {contacts.organizationName ?? "Организатор"}
           </p>
           {hasContacts ? (
             <div className="flex flex-col items-start gap-2 text-sm text-muted-foreground">
               {contacts.address ? (
-                <p className="flex items-start gap-2">
+                <p className="flex min-w-0 items-start gap-2">
                   <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                  <span>{contacts.address}</span>
+                  <span className="break-words">{contacts.address}</span>
                 </p>
               ) : null}
               {contacts.phone ? (
@@ -92,7 +95,7 @@ export function LandingFooter({ contacts }: LandingFooterProps): React.JSX.Eleme
         </div>
 
         {hasReach ? (
-          <div className="space-y-3">
+          <div className="min-w-0 space-y-3">
             <p className="text-sm font-semibold text-foreground">Ссылки</p>
             <div className="flex flex-col items-start gap-2 text-sm text-muted-foreground">
               {contacts.website ? (
@@ -115,12 +118,12 @@ export function LandingFooter({ contacts }: LandingFooterProps): React.JSX.Eleme
         ) : null}
 
         {contacts.team.length > 0 ? (
-          <div className="space-y-3">
+          <div className="min-w-0 space-y-3">
             <p className="text-sm font-semibold text-foreground">Контактные лица</p>
             <ul className="space-y-3 text-sm">
               {contacts.team.map((member) => (
                 <li key={member.id} className="space-y-0.5">
-                  <p className="font-medium text-foreground">{member.name}</p>
+                  <p className="break-words font-medium text-foreground">{member.name}</p>
                   {member.position ? (
                     <p className="text-muted-foreground">{member.position}</p>
                   ) : null}
