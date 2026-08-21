@@ -27,7 +27,7 @@ function ResultRow({ protocol }: { protocol: PublishedProtocolLink }): React.JSX
       <div className="flex items-start gap-3">
         <FileSpreadsheet className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
         <div className="min-w-0 space-y-0.5">
-          <p className="flex flex-wrap items-center gap-2 font-medium">
+          <p className="flex flex-wrap items-center gap-2 break-words font-medium">
             {protocol.nomination ?? protocol.name}
             {/* From the second publication on: a corrected protocol has to look like a
                 correction to somebody who already read the first one. */}

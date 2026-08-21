@@ -11,9 +11,11 @@ function PartnerTile({ partner }: { partner: PartnerCard }): React.JSX.Element {
       {logo ? (
         <img src={logo} alt={partner.name} className="h-12 max-w-full object-contain" />
       ) : (
-        <span className="text-sm font-semibold">{partner.name}</span>
+        <span className="break-words text-sm font-semibold">{partner.name}</span>
       )}
-      {logo ? <span className="text-xs text-muted-foreground">{partner.name}</span> : null}
+      {logo ? (
+        <span className="break-words text-xs text-muted-foreground">{partner.name}</span>
+      ) : null}
       {partner.website ? (
         <span className="inline-flex items-center gap-1 text-xs text-primary">
           Сайт

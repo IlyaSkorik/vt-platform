@@ -35,10 +35,10 @@ function JuryMemberCard({ card }: { card: JuryCard }): React.JSX.Element {
         )}
       </div>
       <CardContent className="space-y-1.5 pt-4">
-        <p className="font-semibold leading-snug">{card.name}</p>
+        <p className="break-words font-semibold leading-snug">{card.name}</p>
         {card.position ? <p className="text-sm font-medium text-primary">{card.position}</p> : null}
         {card.description ? (
-          <p className="text-pretty text-sm leading-relaxed text-muted-foreground">
+          <p className="text-pretty break-words text-sm leading-relaxed text-muted-foreground">
             {card.description}
           </p>
         ) : null}

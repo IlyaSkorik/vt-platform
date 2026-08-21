@@ -21,7 +21,9 @@ export function LandingSection({
   return (
     <section id={id} className="scroll-mt-8">
       <div className="mb-6 space-y-1.5">
-        <h2 className="text-pretty text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h2>
+        <h2 className="text-pretty break-words text-2xl font-semibold tracking-tight sm:text-3xl">
+          {title}
+        </h2>
         {subtitle ? <p className="max-w-2xl text-muted-foreground">{subtitle}</p> : null}
       </div>
       {children}

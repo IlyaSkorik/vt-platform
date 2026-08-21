@@ -18,13 +18,13 @@ export function FaqSection({ block }: FaqSectionProps): React.JSX.Element | null
           <li key={item.id}>
             <details className="group rounded-lg border bg-card px-4 py-3 text-card-foreground shadow-elevation-1">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                {item.question}
+                <span className="min-w-0 break-words">{item.question}</span>
                 <ChevronDown
                   className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
                   aria-hidden="true"
                 />
               </summary>
-              <p className="mt-2 whitespace-pre-line text-pretty text-sm leading-relaxed text-muted-foreground">
+              <p className="mt-2 whitespace-pre-line break-words text-pretty text-sm leading-relaxed text-muted-foreground">
                 {item.answer}
               </p>
             </details>

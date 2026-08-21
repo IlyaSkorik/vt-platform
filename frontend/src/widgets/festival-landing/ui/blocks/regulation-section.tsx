@@ -25,8 +25,8 @@ export function RegulationSection({ regulation }: RegulationSectionProps): React
       <div className="flex flex-col gap-4 rounded-lg border bg-card p-5 text-card-foreground shadow-elevation-1 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           <FileText className="mt-0.5 size-6 shrink-0 text-primary" aria-hidden="true" />
-          <div className="space-y-0.5">
-            <p className="font-medium">{regulation.title}</p>
+          <div className="min-w-0 space-y-0.5">
+            <p className="break-words font-medium">{regulation.title}</p>
             <p className="text-sm text-muted-foreground">
               Версия {regulation.version}
               {published ? ` · от ${published}` : ""}

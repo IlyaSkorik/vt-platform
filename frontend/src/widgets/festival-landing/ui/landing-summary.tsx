@@ -16,7 +16,7 @@ function SummaryRow({ icon: Icon, label, children }: SummaryRowProps): React.JSX
       <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
       <div className="min-w-0 space-y-0.5">
         <dt className="text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
-        <dd className="text-sm font-medium text-foreground">{children}</dd>
+        <dd className="break-words text-sm font-medium text-foreground">{children}</dd>
       </div>
     </div>
   );

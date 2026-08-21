@@ -71,9 +71,13 @@ export function LandingHero({ festival, applyPath }: LandingHeroProps): React.JS
         </div>
 
         <div className="space-y-3">
-          <h1 className="text-balance text-3xl font-bold tracking-tight sm:text-5xl">{title}</h1>
+          {/* `break-words`: a single long word ("фестиваль-конкурс" at 30px) is
+              wider than a 320px screen and the section clips its overflow. */}
+          <h1 className="text-balance hyphens-auto break-words text-3xl font-bold tracking-tight sm:text-5xl">
+            {title}
+          </h1>
           {subtitle ? (
-            <p className="max-w-3xl text-pretty text-base text-muted-foreground sm:text-lg">
+            <p className="max-w-3xl text-pretty break-words text-base text-muted-foreground sm:text-lg">
               {subtitle}
             </p>
           ) : null}

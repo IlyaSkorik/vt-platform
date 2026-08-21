@@ -22,7 +22,9 @@ export function ContentSection({ block }: ContentSectionProps): React.JSX.Elemen
   return (
     <LandingSection id={`block-${block.id}`} title={title || "Информация"}>
       {body ? (
-        <div className="max-w-3xl whitespace-pre-line text-pretty leading-relaxed text-muted-foreground">
+        // `break-words`: organizer text routinely carries a bare URL, and one
+        // unbreakable token is enough to stretch the whole page past the screen.
+        <div className="max-w-3xl whitespace-pre-line break-words text-pretty leading-relaxed text-muted-foreground">
           {body}
         </div>
       ) : null}

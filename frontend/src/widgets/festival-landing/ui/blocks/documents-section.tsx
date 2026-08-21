@@ -23,7 +23,7 @@ function DocumentRow({ document }: { document: FestivalDocument }): React.JSX.El
       <div className="flex items-start gap-3">
         <FileText className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
         <div className="min-w-0 space-y-0.5">
-          <p className="font-medium">{document.title}</p>
+          <p className="break-words font-medium">{document.title}</p>
           <p className="text-sm text-muted-foreground">
             {category}
             {document.description ? ` · ${document.description}` : ""}

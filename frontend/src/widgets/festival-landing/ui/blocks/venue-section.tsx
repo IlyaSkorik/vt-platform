@@ -38,9 +38,11 @@ export function VenueSection({ id, venue }: VenueSectionProps): React.JSX.Elemen
         <CardContent className="space-y-4 pt-6">
           <div className="flex items-start gap-3">
             <MapPin className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
-            <div className="space-y-0.5">
-              {venue.name ? <p className="font-semibold">{venue.name}</p> : null}
-              {venue.address ? <p className="text-muted-foreground">{venue.address}</p> : null}
+            <div className="min-w-0 space-y-0.5">
+              {venue.name ? <p className="break-words font-semibold">{venue.name}</p> : null}
+              {venue.address ? (
+                <p className="break-words text-muted-foreground">{venue.address}</p>
+              ) : null}
               {locality ? <p className="text-sm text-muted-foreground">{locality}</p> : null}
             </div>
           </div>
@@ -51,7 +53,7 @@ export function VenueSection({ id, venue }: VenueSectionProps): React.JSX.Elemen
                 className="mt-0.5 size-5 shrink-0 text-muted-foreground"
                 aria-hidden="true"
               />
-              <p className="whitespace-pre-line text-pretty text-sm leading-relaxed text-muted-foreground">
+              <p className="min-w-0 whitespace-pre-line break-words text-pretty text-sm leading-relaxed text-muted-foreground">
                 {venue.directions}
               </p>
             </div>
