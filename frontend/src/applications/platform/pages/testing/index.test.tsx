@@ -1,11 +1,9 @@
 /**
  * The test bench page.
  *
- * The API layer is mocked rather than the network: `platform-api` talks through
- * the shared Ky instance, and Ky cannot construct a request under jsdom's undici
- * (its AbortSignal fails undici's instanceof check). Stubbing at the hook seam
- * keeps this suite about the page — what it shows, what it refuses, and what it
- * asks for — which is the part worth pinning down anyway.
+ * The API layer is mocked rather than the network: stubbing at the hook seam keeps
+ * this suite about the page — what it shows, what it refuses, and what it asks for
+ * — instead of about response envelopes the query layer already owns.
  */
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import type { PerformanceFeeTier } from "@/applications/platform/api/platform-api";
+
 import {
   addFeeTierDraft,
   billingModelLabel,
@@ -167,10 +169,10 @@ describe("exampleOrderTotal", () => {
 
 describe("feeTiersEqual", () => {
   it("sees an unchanged schedule as unchanged", () => {
-    const tiers = [{ minParticipants: 1, maxParticipants: null, amount: "3.00" }];
+    const tier: PerformanceFeeTier = { minParticipants: 1, maxParticipants: null, amount: "3.00" };
 
-    expect(feeTiersEqual(tiers, [{ ...tiers[0]! }])).toBe(true);
-    expect(feeTiersEqual(tiers, [{ ...tiers[0]!, amount: "4.00" }])).toBe(false);
-    expect(feeTiersEqual(tiers, [])).toBe(false);
+    expect(feeTiersEqual([tier], [{ ...tier }])).toBe(true);
+    expect(feeTiersEqual([tier], [{ ...tier, amount: "4.00" }])).toBe(false);
+    expect(feeTiersEqual([tier], [])).toBe(false);
   });
 });

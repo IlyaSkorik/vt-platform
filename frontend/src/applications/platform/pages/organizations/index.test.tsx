@@ -1,12 +1,11 @@
 /**
  * The organizations page — the console where the operator sets the terms.
  *
- * The API layer is mocked rather than the network, for the reason spelled out in
- * the test-bench suite next door: Ky cannot construct a request under jsdom's
- * undici, so stubbing at the hook seam keeps this about the page. What is worth
- * pinning down here is the tariff editor: the operator only ever types each band's
- * upper bound, and the payload that leaves the page must carry the derived lower
- * bounds — that derivation is what makes a gap or an overlap impossible.
+ * The API layer is mocked rather than the network, like the test-bench suite next
+ * door: stubbing at the hook seam keeps this about the page. What is worth pinning
+ * down here is the tariff editor — the operator only ever types each band's upper
+ * bound, and the payload that leaves the page must carry the derived lower bounds,
+ * because that derivation is what makes a gap or an overlap impossible.
  */
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
