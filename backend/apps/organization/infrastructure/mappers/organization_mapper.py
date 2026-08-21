@@ -4,16 +4,44 @@ from __future__ import annotations
 
 from apps.organization.domain.entities import Organization
 from apps.organization.domain.value_objects import (
+    BillingModel,
     CommissionRate,
     OrganizationId,
     OrganizationName,
     OrganizationProfile,
     OrganizationSlug,
     OrganizationStatus,
+    PerformanceFeeSchedule,
 )
 from apps.organization.infrastructure.models import OrganizationModel
 
-__all__ = ["OrganizationMapper"]
+__all__ = ["OrganizationMapper", "fee_schedule_from_json"]
+
+
+def fee_schedule_from_json(rows: object) -> PerformanceFeeSchedule | None:
+    """Rebuild the fee schedule from its JSON column, or ``None`` when there is none.
+
+    A row that is not a well-formed list of bands reads as "no schedule" rather than
+    raising: rehydration re-validates nothing by contract, and an organization billed
+    a percentage has an empty column here.
+    """
+    if not isinstance(rows, list) or not rows:
+        return None
+    return PerformanceFeeSchedule.of((row["min_participants"], row["max_participants"], row["amount"]) for row in rows if isinstance(row, dict))
+
+
+def _schedule_to_json(schedule: PerformanceFeeSchedule | None) -> list[dict[str, object]]:
+    """Flatten the fee schedule into its JSON column (an empty list when unset)."""
+    if schedule is None:
+        return []
+    return [
+        {
+            "min_participants": tier.min_participants,
+            "max_participants": tier.max_participants,
+            "amount": str(tier.amount),
+        }
+        for tier in schedule.tiers
+    ]
 
 
 class OrganizationMapper:
@@ -40,7 +68,9 @@ class OrganizationMapper:
                 telegram=model.telegram,
                 legal_information=model.legal_information,
             ),
+            billing_model=BillingModel(model.billing_model),
             commission_rate=CommissionRate(model.commission_percent),
+            fee_schedule=fee_schedule_from_json(model.performance_fee_tiers),
             deleted_at=model.deleted_at,
             version=model.version,
         )
@@ -68,7 +98,9 @@ class OrganizationMapper:
             "instagram": profile.instagram,
             "telegram": profile.telegram,
             "legal_information": profile.legal_information,
+            "billing_model": entity.billing_model.value,
             "commission_percent": entity.commission_rate.percent,
+            "performance_fee_tiers": _schedule_to_json(entity.fee_schedule),
             "created_at": entity.created_at,
             "updated_at": entity.updated_at,
             "deleted_at": entity.deleted_at,
