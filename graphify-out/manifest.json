@@ -2110,8 +2110,8 @@
     "semantic_hash": ""
   },
   "backend/apps/organization/application/handlers/__init__.py": {
-    "mtime": 1785860600.7815006,
-    "ast_hash": "2fa823668d1a85ec10279119b0312eae",
+    "mtime": 1787341592.0511596,
+    "ast_hash": "126567de17313354e8e82b80d3386769",
     "semantic_hash": ""
   },
   "backend/apps/organization/application/handlers/accept_staff_invitation.py": {
@@ -2160,8 +2160,8 @@
     "semantic_hash": "487b25684440af01c453a755d3aa4f25"
   },
   "backend/apps/organization/composition.py": {
-    "mtime": 1786557486.9204674,
-    "ast_hash": "f7b7dffc6ee8e700d6f1c6d66e73dc16",
+    "mtime": 1787341592.0514464,
+    "ast_hash": "a56413108e22a3f62c0699802e7350df",
     "semantic_hash": ""
   },
   "backend/apps/organization/domain/__init__.py": {
@@ -2170,18 +2170,18 @@
     "semantic_hash": "7f2aba95bee15e92509ce5632dbedc78"
   },
   "backend/apps/organization/domain/entities.py": {
-    "mtime": 1785860600.784179,
-    "ast_hash": "898f955c5dfbaacf48f30dafb37f636f",
+    "mtime": 1787341592.0516672,
+    "ast_hash": "b1bc928f247958e24e2078e031862870",
     "semantic_hash": ""
   },
   "backend/apps/organization/domain/events.py": {
-    "mtime": 1785860600.784179,
-    "ast_hash": "6bd79a3eb23289cd25cbc40d751bf408",
+    "mtime": 1787341592.0518625,
+    "ast_hash": "be4216e91c4838d2b36e6dec9e9e5c07",
     "semantic_hash": ""
   },
   "backend/apps/organization/domain/exceptions.py": {
-    "mtime": 1785860600.784179,
-    "ast_hash": "4a5244b425866dec0b7cc1a2b4b2a146",
+    "mtime": 1787341592.05196,
+    "ast_hash": "506e076649f82ff6a33f4530764acd10",
     "semantic_hash": ""
   },
   "backend/apps/organization/domain/policies.py": {
@@ -2190,8 +2190,8 @@
     "semantic_hash": "b1a50543e38db58e60bcd5ee097d553d"
   },
   "backend/apps/organization/domain/value_objects.py": {
-    "mtime": 1785860600.784179,
-    "ast_hash": "b6de0d30a22a577ebb8e96b3ec4b6b72",
+    "mtime": 1787341592.052162,
+    "ast_hash": "8017cce610f5e6d22e4d3c501a47f314",
     "semantic_hash": ""
   },
   "backend/apps/organization/infrastructure/__init__.py": {
@@ -2210,8 +2210,8 @@
     "semantic_hash": "7e82598a5c7e1cec4ca59f73ee25714b"
   },
   "backend/apps/organization/infrastructure/mappers/organization_mapper.py": {
-    "mtime": 1785860600.7857146,
-    "ast_hash": "9b842c24fe120a893aa366e800556897",
+    "mtime": 1787341592.052212,
+    "ast_hash": "dda561d5ad42587405a5a74e07f271a8",
     "semantic_hash": ""
   },
   "backend/apps/organization/infrastructure/mappers/staff_invitation_mapper.py": {
@@ -2270,8 +2270,8 @@
     "semantic_hash": "e37c2f4b6c011816eb7776985b6eaef1"
   },
   "backend/apps/organization/infrastructure/models/organization.py": {
-    "mtime": 1785860600.7875824,
-    "ast_hash": "e549253bd11cab7dcfb4d59352e4d049",
+    "mtime": 1787341592.052212,
+    "ast_hash": "b53f1e79c6ddd7e562a64c2330c61283",
     "semantic_hash": ""
   },
   "backend/apps/organization/infrastructure/models/staff_invitation.py": {
@@ -3700,9 +3700,9 @@
     "semantic_hash": "89404e2d28a844154ed53068ee486fb6"
   },
   "frontend/e2e/competitions-organizer.spec.ts": {
-    "mtime": 1785860600.9342525,
-    "ast_hash": "0191c32f1b12159587f9a232c275a53e",
-    "semantic_hash": "0191c32f1b12159587f9a232c275a53e"
+    "mtime": 1787323431.8228998,
+    "ast_hash": "a8612ffe361b3cd2d78b11b364b59653",
+    "semantic_hash": ""
   },
   "frontend/e2e/festival-catalog.screenshots.spec.ts": {
     "mtime": 1785860600.9359894,
@@ -6615,48 +6615,48 @@
     "semantic_hash": ""
   },
   "frontend/docs/screenshots/organizer-workspace/12-participation-rules-desktop.png": {
-    "mtime": 1785860600.9222527,
-    "ast_hash": "ca03176d97e76dd1fdfe2cf9d81c75c5",
-    "semantic_hash": "ca03176d97e76dd1fdfe2cf9d81c75c5"
+    "mtime": 1787323457.4469652,
+    "ast_hash": "a71a1ec628d54ca26f72c8ab41bdd37d",
+    "semantic_hash": ""
   },
   "frontend/docs/screenshots/organizer-workspace/12-participation-rules-mobile.png": {
-    "mtime": 1785860600.9275265,
-    "ast_hash": "2daa38bc174eda20489dac46d3f88527",
-    "semantic_hash": "2daa38bc174eda20489dac46d3f88527"
+    "mtime": 1787323457.9686599,
+    "ast_hash": "0d19df78ab7482b1bcc3cd708bd1c38b",
+    "semantic_hash": ""
   },
   "frontend/docs/screenshots/organizer-workspace/12-participation-rules-tablet.png": {
-    "mtime": 1785860600.9275265,
-    "ast_hash": "d6d1f507cc431e0d1379913e59446a44",
-    "semantic_hash": "d6d1f507cc431e0d1379913e59446a44"
+    "mtime": 1787323457.763672,
+    "ast_hash": "cdb1a853a10e5a7bec87c2874083df9a",
+    "semantic_hash": ""
   },
   "frontend/docs/screenshots/organizer-workspace/13-contacts-desktop.png": {
-    "mtime": 1787258588.9488115,
-    "ast_hash": "980ea7171ce924931ba360f9af66897d",
+    "mtime": 1787323459.1869893,
+    "ast_hash": "8da1c74fcf057ba4a821669d8c1da7bf",
     "semantic_hash": ""
   },
   "frontend/docs/screenshots/organizer-workspace/13-contacts-mobile.png": {
-    "mtime": 1787258588.950763,
-    "ast_hash": "15d83491f8b248f66a5669e9aa525e20",
+    "mtime": 1787323459.7277317,
+    "ast_hash": "517f889d14b8a187adb155dc6bfb3047",
     "semantic_hash": ""
   },
   "frontend/docs/screenshots/organizer-workspace/13-contacts-tablet.png": {
-    "mtime": 1787258588.9771545,
-    "ast_hash": "142a4bf3833ffc8c0605345956cfecd5",
+    "mtime": 1787323459.5096478,
+    "ast_hash": "9f9877f44f5b58abba7a4d6d946e634d",
     "semantic_hash": ""
   },
   "frontend/docs/screenshots/organizer-workspace/14-public-information-desktop.png": {
-    "mtime": 1787258588.978954,
-    "ast_hash": "2a1747dabcd0f88da2739d6ba3959be8",
+    "mtime": 1787323460.9452994,
+    "ast_hash": "e0155cd6fa17b114b6dd9b6cc65fe907",
     "semantic_hash": ""
   },
   "frontend/docs/screenshots/organizer-workspace/14-public-information-mobile.png": {
-    "mtime": 1787258588.9801953,
-    "ast_hash": "9a571b3d983546b7fe2eba0b1e6cd9c7",
+    "mtime": 1787323461.4348962,
+    "ast_hash": "f1910bebb81a538c3b7e0a542ad35e16",
     "semantic_hash": ""
   },
   "frontend/docs/screenshots/organizer-workspace/14-public-information-tablet.png": {
-    "mtime": 1787258588.9815469,
-    "ast_hash": "7194f4f9fafd65033a3bcbb405893dd6",
+    "mtime": 1787323461.2428963,
+    "ast_hash": "9e138b53f59d84874008651d99f028b4",
     "semantic_hash": ""
   },
   "frontend/public/favicon.svg": {
@@ -8875,8 +8875,8 @@
     "semantic_hash": ""
   },
   "backend/apps/organization/application/handlers/connect_organization.py": {
-    "mtime": 1785860600.7822812,
-    "ast_hash": "d6772410bdd6d1763041663405123a4b",
+    "mtime": 1787341592.0513093,
+    "ast_hash": "e336fd55f11cd545bedbcabddacbf9b2",
     "semantic_hash": ""
   },
   "backend/apps/organization/infrastructure/migrations/0004_organizationmodel_commission_percent_and_more.py": {
@@ -9035,18 +9035,18 @@
     "semantic_hash": ""
   },
   "backend/apps/platform/presentation/api/v1/read_models.py": {
-    "mtime": 1785860600.8202882,
-    "ast_hash": "3a08c0559081e12b85da67107fbad506",
+    "mtime": 1787341592.052747,
+    "ast_hash": "0c58c88b9d45ac6e3d6ac0c1a14e96b8",
     "semantic_hash": ""
   },
   "backend/apps/platform/presentation/api/v1/serializers.py": {
-    "mtime": 1786123992.8762243,
-    "ast_hash": "987aecb22e7d561efab888e3796bb91b",
+    "mtime": 1787341592.0528762,
+    "ast_hash": "57f18d3a55aa7aa1436c71adeba68369",
     "semantic_hash": ""
   },
   "backend/apps/platform/presentation/api/v1/views.py": {
-    "mtime": 1786123992.8764193,
-    "ast_hash": "8e1b308156afc2953996d5d9d26ff0f0",
+    "mtime": 1787341592.0530431,
+    "ast_hash": "0e3db1df7c2c3bfabf1c20f4ca9658d8",
     "semantic_hash": ""
   },
   "backend/apps/platform/presentation/permissions.py": {
@@ -9065,8 +9065,8 @@
     "semantic_hash": ""
   },
   "backend/tests/domain/platform/test_platform_administrator.py": {
-    "mtime": 1785860600.8702202,
-    "ast_hash": "c42835ad6ba17324d8a4690f77acea9e",
+    "mtime": 1787341592.053296,
+    "ast_hash": "d2329293ec91b38a001debe1811b73ac",
     "semantic_hash": ""
   },
   "backend/tests/presentation/platform/__init__.py": {
@@ -9080,13 +9080,13 @@
     "semantic_hash": ""
   },
   "backend/tests/presentation/platform/test_platform_console_api.py": {
-    "mtime": 1785860600.8836555,
-    "ast_hash": "a9d3acec4d563d0def55cf0e290e952f",
+    "mtime": 1787341592.0535462,
+    "ast_hash": "e7798781724457626f314d96d708ce4c",
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/api/platform-api.ts": {
-    "mtime": 1786123992.8786957,
-    "ast_hash": "14569463bcebf5bf5bf6ef6675da4ac8",
+    "mtime": 1787341592.0538237,
+    "ast_hash": "932ba0ad6bdcde374d35aa2141e398b3",
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/layouts/platform-layout.tsx": {
@@ -9095,13 +9095,13 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/pages/dashboard/index.tsx": {
-    "mtime": 1785860600.9602664,
-    "ast_hash": "b17c81dc67cfb599228c371792eb8c75",
+    "mtime": 1787341592.0540516,
+    "ast_hash": "db295042c9eef40f5677a379bb301e3a",
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/pages/organizations/index.tsx": {
-    "mtime": 1785860600.9602664,
-    "ast_hash": "208a8d119ca21c01bdd59675b3f1374a",
+    "mtime": 1787341592.0540516,
+    "ast_hash": "6f37ebdeb44fbe84e482a386f73c9213",
     "semantic_hash": ""
   },
   "frontend/src/features/application-phonograms/index.ts": {
@@ -9962,6 +9962,156 @@
   "frontend/src/widgets/diplomas-template-constructor/model/required-fields.test.ts": {
     "mtime": 1787315599.625543,
     "ast_hash": "b729ea790c7643448dbd097741a2d074",
+    "semantic_hash": ""
+  },
+  "backend/apps/organization/infrastructure/migrations/0005_organization_billing_model.py": {
+    "mtime": 1787341592.0692775,
+    "ast_hash": "30f4518a081b7f2002001d2d4b4e2a92",
+    "semantic_hash": ""
+  },
+  "frontend/src/applications/platform/lib/billing.test.ts": {
+    "mtime": 1787341592.0699432,
+    "ast_hash": "c4229cf9e3787cb392f7dcbf223d7f97",
+    "semantic_hash": ""
+  },
+  "frontend/src/applications/platform/lib/billing.ts": {
+    "mtime": 1787341592.070065,
+    "ast_hash": "711b1f6f76984052e578ed872f023b96",
+    "semantic_hash": ""
+  },
+  "frontend/src/applications/platform/pages/organizations/index.test.tsx": {
+    "mtime": 1787341592.0702977,
+    "ast_hash": "b9834b1ecfa604f4b9a40a2cea23c6b8",
+    "semantic_hash": ""
+  },
+  "frontend/src/applications/platform/ui/fee-tier-editor.tsx": {
+    "mtime": 1787341592.0702977,
+    "ast_hash": "758fa2263a433fcf87a4e205087141aa",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/01-competitions-page.png": {
+    "mtime": 1787323442.9447527,
+    "ast_hash": "670ce9cd91e8e5fc5d6b4bcdf8f8e91a",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/02-empty-state.png": {
+    "mtime": 1787323443.5100787,
+    "ast_hash": "4c7bea4eec25dbfa4705ac12b28f2ef9",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/03-competition-workspace.png": {
+    "mtime": 1787323444.4576147,
+    "ast_hash": "b70374724b8b7535305ecf1c53bbc748",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/04-general-section.png": {
+    "mtime": 1787323444.9268982,
+    "ast_hash": "b70374724b8b7535305ecf1c53bbc748",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/05-categories-desktop.png": {
+    "mtime": 1787323445.68874,
+    "ast_hash": "e9c73fa5131045ab74bd1ac7c6c58e93",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/05-categories-mobile.png": {
+    "mtime": 1787323446.280046,
+    "ast_hash": "5dfe336ec7453d764f5177ad60857033",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/05-categories-tablet.png": {
+    "mtime": 1787323446.064897,
+    "ast_hash": "a96565b008d552f88555623eafe38dc7",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/06-age-categories-desktop.png": {
+    "mtime": 1787323447.2631462,
+    "ast_hash": "8c67ebc57544ad956b611e16c9ba67f8",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/06-age-categories-mobile.png": {
+    "mtime": 1787323447.8372028,
+    "ast_hash": "ed13b5dd1a1af3b578a321c60f262c1f",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/06-age-categories-tablet.png": {
+    "mtime": 1787323447.6230779,
+    "ast_hash": "5c9b7ee98ef2eb0735876ab5ea31ca6b",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/07-participant-groups-desktop.png": {
+    "mtime": 1787323448.5762115,
+    "ast_hash": "8494caefed19ca159b99b9619478b042",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/07-participant-groups-mobile.png": {
+    "mtime": 1787323449.116083,
+    "ast_hash": "b3ea3a28e68ca2e315df9ffd7c403216",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/07-participant-groups-tablet.png": {
+    "mtime": 1787323448.8854814,
+    "ast_hash": "21f05c01a441a6ecbed88261888dae28",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/08-participation-formats-desktop.png": {
+    "mtime": 1787323449.8967743,
+    "ast_hash": "0cd1129d443db2bb2580a81062334aea",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/08-participation-formats-mobile.png": {
+    "mtime": 1787323450.3893392,
+    "ast_hash": "da3be8c0469cbbafedfa3427d04f2967",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/08-participation-formats-tablet.png": {
+    "mtime": 1787323450.1972914,
+    "ast_hash": "10e1d03f4176cb8841b3e5c859ad3e87",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/09-admission-rules-desktop.png": {
+    "mtime": 1787323451.256521,
+    "ast_hash": "a4dec2e4d73582f70459954f242f1aec",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/09-admission-rules-mobile.png": {
+    "mtime": 1787323451.907209,
+    "ast_hash": "e07e13026647d451ba66f1fd61aef9a9",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/09-admission-rules-tablet.png": {
+    "mtime": 1787323451.6329029,
+    "ast_hash": "824a11abcdca27e6d7b31904b2518f34",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/10-pricing-desktop.png": {
+    "mtime": 1787323452.7748973,
+    "ast_hash": "1f6ca9dd0c0c8f7e0bca1f2894715138",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/10-pricing-mobile.png": {
+    "mtime": 1787323453.4854126,
+    "ast_hash": "915cc0ef7d3f7bd9d96b4f007fa6198e",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/10-pricing-tablet.png": {
+    "mtime": 1787323453.1695874,
+    "ast_hash": "4d0ddd5703bdaffecf65a1dd7c317fcf",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/11-additional-services-desktop.png": {
+    "mtime": 1787323454.2936044,
+    "ast_hash": "5c9ac541c9bfed1c60b2d5dba0808545",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/11-additional-services-mobile.png": {
+    "mtime": 1787323454.8275845,
+    "ast_hash": "3d7f3b9aba0f780620019b2180613504",
+    "semantic_hash": ""
+  },
+  "frontend/docs/screenshots/organizer-workspace/11-additional-services-tablet.png": {
+    "mtime": 1787323454.6174486,
+    "ast_hash": "e7c4745eace1f56dc0700178e214f4d8",
     "semantic_hash": ""
   }
 }
