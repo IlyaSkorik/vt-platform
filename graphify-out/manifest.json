@@ -3690,9 +3690,9 @@
     "semantic_hash": ""
   },
   "frontend/biome.json": {
-    "mtime": 1785860600.9001138,
-    "ast_hash": "15f591ae67feae216610722552cf6d9c",
-    "semantic_hash": "15f591ae67feae216610722552cf6d9c"
+    "mtime": 1787342853.7062294,
+    "ast_hash": "cf6027cf9e1911cb0408e6fbf5bf7fe7",
+    "semantic_hash": ""
   },
   "frontend/components.json": {
     "mtime": 1785860600.9001138,
@@ -6395,9 +6395,9 @@
     "semantic_hash": "2aaa701df77e108468ac5832507f5193"
   },
   "frontend/vitest.setup.ts": {
-    "mtime": 1785860601.092099,
-    "ast_hash": "6c629d123bacdf78cc6538c01fa22bc9",
-    "semantic_hash": "6c629d123bacdf78cc6538c01fa22bc9"
+    "mtime": 1787342523.1940825,
+    "ast_hash": "7f9fa6dabbf1b68b178a02bdec1ac9a8",
+    "semantic_hash": ""
   },
   "CONTRIBUTING.md": {
     "mtime": 1785860600.5889592,
@@ -9080,8 +9080,8 @@
     "semantic_hash": ""
   },
   "backend/tests/presentation/platform/test_platform_console_api.py": {
-    "mtime": 1787341592.0535462,
-    "ast_hash": "e7798781724457626f314d96d708ce4c",
+    "mtime": 1787341708.0296435,
+    "ast_hash": "cc4e77c3f42b667b820b43b97c0b0345",
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/api/platform-api.ts": {
@@ -9485,8 +9485,8 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/pages/testing/index.test.tsx": {
-    "mtime": 1786124181.1075385,
-    "ast_hash": "9d213fd8fb2597a2649860e877b5e156",
+    "mtime": 1787342768.1067092,
+    "ast_hash": "8d9122a816b7d3c8c0a98df3d547a77f",
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/pages/testing/index.tsx": {
@@ -9970,8 +9970,8 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/lib/billing.test.ts": {
-    "mtime": 1787341592.0699432,
-    "ast_hash": "c4229cf9e3787cb392f7dcbf223d7f97",
+    "mtime": 1787342822.8310962,
+    "ast_hash": "c5113d5a0c28e1e7039d7766cebbb2b1",
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/lib/billing.ts": {
@@ -9980,8 +9980,8 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/pages/organizations/index.test.tsx": {
-    "mtime": 1787341592.0702977,
-    "ast_hash": "b9834b1ecfa604f4b9a40a2cea23c6b8",
+    "mtime": 1787342768.107177,
+    "ast_hash": "56ceda2ac0220e9cd3137cd12466cc1c",
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/ui/fee-tier-editor.tsx": {
