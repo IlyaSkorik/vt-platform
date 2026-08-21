@@ -1,5 +1,5 @@
-import { Banknote, Building2, CalendarDays, Clock3, Users } from "lucide-react";
-import { formatDate, formatPeriod } from "@/features/festival-catalog";
+import { Banknote, Building2, CalendarDays, Users } from "lucide-react";
+import { formatPeriod } from "@/features/festival-catalog";
 import { type FestivalDetail, formatFromPrice, landingCta } from "@/features/festival-landing";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/shared/ui";
 import { LandingCtaButton } from "./landing-cta";
@@ -35,7 +35,6 @@ interface LandingSummaryProps {
 export function LandingSummary({ festival, applyPath }: LandingSummaryProps): React.JSX.Element {
   const cta = landingCta(festival.status);
   const period = formatPeriod(festival.competitionStart, festival.competitionEnd);
-  const deadline = formatDate(festival.applicationDeadline ?? festival.registrationEnd);
   const price = formatFromPrice(festival.pricing);
   const formatNames = festival.formats.map((format) => format.name);
 
@@ -49,11 +48,6 @@ export function LandingSummary({ festival, applyPath }: LandingSummaryProps): Re
           {period ? (
             <SummaryRow icon={CalendarDays} label="Даты проведения">
               {period}
-            </SummaryRow>
-          ) : null}
-          {deadline ? (
-            <SummaryRow icon={Clock3} label="Приём заявок до">
-              {deadline}
             </SummaryRow>
           ) : null}
           {formatNames.length > 0 ? (
