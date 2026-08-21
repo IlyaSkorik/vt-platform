@@ -30,13 +30,16 @@ from apps.organization.application.exceptions import ApplicationError
 from apps.organization.application.handlers import (
     ChangeOrganizationStatusCommand,
     ConnectOrganizationCommand,
+    FeeTierRow,
     SetCommissionRateCommand,
+    SetPerformanceFeeScheduleCommand,
 )
 from apps.organization.composition import (
     build_change_organization_status_handler,
     build_connect_organization_handler,
     build_list_organizations_handler,
     build_set_commission_rate_handler,
+    build_set_performance_fee_schedule_handler,
 )
 from apps.organization.presentation.api.v1.staff.serializers import ProblemDetailSerializer
 from apps.organization.presentation.api.v1.staff.views import application_problem
@@ -134,13 +137,39 @@ def _actor_label(request: Request) -> str:
     return diploma_actor_label(_actor_id(request)) or "платформа"
 
 
+def _fee_tiers_data(tiers: Any) -> list[dict[str, Any]]:
+    """The fee schedule on the wire: camelCase keys, the amount as a decimal string."""
+    return [
+        {
+            "minParticipants": tier.min_participants,
+            "maxParticipants": tier.max_participants,
+            "amount": str(tier.amount),
+        }
+        for tier in tiers
+    ]
+
+
+def _fee_tier_rows(payload: Any) -> tuple[FeeTierRow, ...]:
+    """Turn the validated ``feeTiers`` payload into the use case's flat bands."""
+    return tuple(
+        FeeTierRow(
+            min_participants=int(row["minParticipants"]),
+            max_participants=None if row.get("maxParticipants") is None else int(row["maxParticipants"]),
+            amount=Decimal(str(row["amount"])),
+        )
+        for row in payload
+    )
+
+
 def _organization_data(view: Any) -> dict[str, Any]:
     return {
         "id": view.id,
         "name": view.name,
         "slug": view.slug,
         "status": view.status,
+        "billingModel": view.billing_model,
         "commissionPercent": str(view.commission_percent),
+        "feeTiers": _fee_tiers_data(view.fee_tiers),
         "createdAt": view.created_at,
     }
 
@@ -195,6 +224,7 @@ class PlatformOrganizationsView(_PlatformView):
             owner_email=str(payload["ownerEmail"]),
             commission_percent=Decimal(str(payload.get("commissionPercent", Decimal("0")))),
             connected_by=str(request.user.id),
+            fee_tiers=_fee_tier_rows(payload.get("feeTiers") or ()),
         )
         try:
             result = build_connect_organization_handler().handle(command)
@@ -224,9 +254,20 @@ class PlatformOrganizationDetailView(_PlatformView):
         serializer.is_valid(raise_exception=True)
         payload = serializer.validated_data
 
+        # The commercial terms are mutually exclusive, so the model in the payload
+        # decides which use case runs; `billingModel` is inferred from the bands when
+        # the caller left it out, so a bare `commissionPercent` still means percent.
+        model = payload.get("billingModel")
         view: Any = None
         try:
-            if "commissionPercent" in payload:
+            if model == "PER_PERFORMANCE_FEE":
+                view = build_set_performance_fee_schedule_handler().handle(
+                    SetPerformanceFeeScheduleCommand(
+                        organization_id=organization_id,
+                        tiers=_fee_tier_rows(payload.get("feeTiers") or ()),
+                    )
+                )
+            elif "commissionPercent" in payload:
                 view = build_set_commission_rate_handler().handle(
                     SetCommissionRateCommand(
                         organization_id=organization_id,
@@ -281,7 +322,9 @@ class PlatformDashboardView(_PlatformView):
                     "organizationId": row.organization_id,
                     "name": row.name,
                     "status": row.status,
+                    "billingModel": row.billing_model,
                     "commissionPercent": str(row.commission_percent),
+                    "feeTiers": _fee_tiers_data(row.fee_tiers),
                     "competitions": row.competitions,
                     "applications": row.applications,
                     "statusCounts": row.status_counts,

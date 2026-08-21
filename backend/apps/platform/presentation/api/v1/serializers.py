@@ -10,8 +10,10 @@ from rest_framework import serializers
 from apps.platform.presentation.api.v1.loadtest import MAX_COUNT
 
 __all__ = [
+    "BILLING_MODELS",
     "ConnectOrganizationRequestSerializer",
     "DashboardResponseSerializer",
+    "FeeTierSerializer",
     "LoadTestCleanupResponseSerializer",
     "LoadTestOverviewResponseSerializer",
     "LoadTestRunResponseSerializer",
@@ -20,6 +22,45 @@ __all__ = [
     "StartLoadTestRequestSerializer",
     "UpdateOrganizationRequestSerializer",
 ]
+
+
+#: The two commercial terms an organization can be connected under (mirrors the
+#: domain ``BillingModel``; kept here as plain strings so the presentation edge does
+#: not import the domain enum just to spell a choice list).
+BILLING_MODELS = ("COMMISSION_PERCENT", "PER_PERFORMANCE_FEE")
+
+
+class FeeTierSerializer(serializers.Serializer[dict[str, object]]):
+    """One band of a per-performance fee schedule: a headcount range and its price.
+
+    ``maxParticipants`` may be ``null`` — the open-ended top band ("6 and up"). The
+    band set as a whole (sorted, gap-free, starting at one, open-ended at the top)
+    is validated by the domain, which owns that invariant; this only checks that
+    each row is a sane range with a sane price.
+    """
+
+    minParticipants = serializers.IntegerField(min_value=1, max_value=10000)
+    maxParticipants = serializers.IntegerField(min_value=1, max_value=10000, required=False, allow_null=True, default=None)
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0"))
+
+
+def _validate_terms(attrs: dict[str, object]) -> dict[str, object]:
+    """Refuse a payload whose billing model and terms disagree.
+
+    A per-performance model needs bands; a percentage model must not carry them. An
+    unnamed model is inferred from the bands — they are the only thing bands can
+    mean — so a caller never has to say the same thing twice.
+    """
+    tiers = attrs.get("feeTiers")
+    model = attrs.get("billingModel")
+    if model is None and tiers:
+        model = "PER_PERFORMANCE_FEE"
+        attrs["billingModel"] = model
+    if model == "PER_PERFORMANCE_FEE" and not tiers:
+        raise serializers.ValidationError({"feeTiers": "Тарифная сетка должна содержать хотя бы одно правило."})
+    if model == "COMMISSION_PERCENT" and tiers:
+        raise serializers.ValidationError({"feeTiers": "Тарифная сетка не применяется при комиссии в процентах."})
+    return attrs
 
 
 class ConnectOrganizationRequestSerializer(serializers.Serializer[dict[str, object]]):
@@ -37,6 +78,15 @@ class ConnectOrganizationRequestSerializer(serializers.Serializer[dict[str, obje
         required=False,
         default=Decimal("0"),
     )
+    # Unset means "infer it": bands connect the organization on the fee model, their
+    # absence on the percentage one.
+    billingModel = serializers.ChoiceField(choices=list(BILLING_MODELS), required=False)
+    feeTiers = FeeTierSerializer(many=True, required=False)
+
+    def validate(self, attrs: dict[str, object]) -> dict[str, object]:
+        attrs = _validate_terms(attrs)
+        attrs.setdefault("billingModel", "COMMISSION_PERCENT")
+        return attrs
 
 
 class UpdateOrganizationRequestSerializer(serializers.Serializer[dict[str, object]]):
@@ -49,12 +99,24 @@ class UpdateOrganizationRequestSerializer(serializers.Serializer[dict[str, objec
         max_value=Decimal("100"),
         required=False,
     )
+    billingModel = serializers.ChoiceField(choices=list(BILLING_MODELS), required=False)
+    feeTiers = FeeTierSerializer(many=True, required=False)
     status = serializers.ChoiceField(choices=["ACTIVE", "SUSPENDED"], required=False)
 
     def validate(self, attrs: dict[str, object]) -> dict[str, object]:
         if not attrs:
-            raise serializers.ValidationError("Provide commissionPercent, status, or both.")
+            raise serializers.ValidationError("Provide commissionPercent, billingModel, feeTiers, status, or a combination.")
+        attrs = _validate_terms(attrs)
+        if attrs.get("billingModel") == "COMMISSION_PERCENT" and "commissionPercent" not in attrs:
+            raise serializers.ValidationError({"commissionPercent": "Укажите ставку комиссии."})
         return attrs
+
+
+class _FeeTierResponseSerializer(serializers.Serializer[dict[str, object]]):
+    minParticipants = serializers.IntegerField()
+    maxParticipants = serializers.IntegerField(allow_null=True)
+    # A decimal string, like every other money figure on this console.
+    amount = serializers.CharField()
 
 
 class _OrganizationSerializer(serializers.Serializer[dict[str, object]]):
@@ -62,7 +124,9 @@ class _OrganizationSerializer(serializers.Serializer[dict[str, object]]):
     name = serializers.CharField()
     slug = serializers.CharField()
     status = serializers.CharField()
+    billingModel = serializers.ChoiceField(choices=list(BILLING_MODELS))
     commissionPercent = serializers.DecimalField(max_digits=5, decimal_places=2)
+    feeTiers = _FeeTierResponseSerializer(many=True)
     createdAt = serializers.DateTimeField()
 
 
@@ -70,7 +134,9 @@ class _OrganizationBreakdownSerializer(serializers.Serializer[dict[str, object]]
     organizationId = serializers.UUIDField(allow_null=True)
     name = serializers.CharField()
     status = serializers.CharField()
+    billingModel = serializers.ChoiceField(choices=list(BILLING_MODELS))
     commissionPercent = serializers.DecimalField(max_digits=5, decimal_places=2)
+    feeTiers = _FeeTierResponseSerializer(many=True)
     competitions = serializers.IntegerField()
     applications = serializers.IntegerField()
     statusCounts = serializers.DictField(child=serializers.IntegerField())

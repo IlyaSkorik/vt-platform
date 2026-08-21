@@ -11,6 +11,12 @@ projection over data several contexts own, kept in the presentation layer where
 its coupling is visible, rather than smuggled into a domain that would then have
 to know about all of them.
 
+What the platform is owed is computed the way that organization is billed — a
+share of its fees, or a flat price per performance banded by how many participants
+that performance has. The second one is why this projection also reads submissions:
+a per-performance fee cannot be read off an order total, only off the headcount of
+each performance in it.
+
 Money is summed as :class:`~decimal.Decimal` and never as a float: these are
 figures the operator invoices against.
 """
@@ -21,9 +27,10 @@ import uuid
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 
-from apps.applications.infrastructure.models import ApplicationModel
+from apps.applications.infrastructure.models import ApplicationModel, SubmissionModel
 from apps.competitions.infrastructure.models import CompetitionModel
-from apps.organization.domain.value_objects import CommissionRate
+from apps.organization.domain.value_objects import BillingModel, CommissionRate, PerformanceFeeSchedule, PerformanceFeeTier
+from apps.organization.infrastructure.mappers.organization_mapper import fee_schedule_from_json
 from apps.organization.infrastructure.models import OrganizationModel
 
 __all__ = ["CompetitionOption", "DashboardView", "OrganizationBreakdown", "build_dashboard"]
@@ -59,6 +66,47 @@ def _amount(total_price: object) -> Decimal:
         return Decimal("0")
 
 
+def _participant_counts(competition_ids: list[uuid.UUID]) -> dict[str, int]:
+    """How many participants each performance in scope has, keyed by submission id.
+
+    The headcount is the sum of the participants\' ``member_count``, so a collective
+    entry counts the people it brings rather than one — the same figure the
+    Submission aggregate exposes, read straight off the JSON column because this is
+    a projection and loading every aggregate to count would be absurd.
+    """
+    counts: dict[str, int] = {}
+    rows = SubmissionModel.objects.filter(deleted_at__isnull=True, competition_id__in=competition_ids).values("id", "participants")
+    for row in rows:
+        participants = row["participants"] if isinstance(row["participants"], list) else []
+        total = 0
+        for participant in participants:
+            if not isinstance(participant, dict):
+                continue
+            try:
+                total += int(participant.get("member_count", 1) or 1)
+            except (TypeError, ValueError):
+                total += 1
+        counts[str(row["id"])] = total
+    return counts
+
+
+def _performance_fee(refs: object, schedule: PerformanceFeeSchedule, counts: dict[str, int]) -> Decimal:
+    """What the platform is owed for one order under a per-performance schedule.
+
+    One band price per performance the order holds. A performance whose headcount is
+    unknown (a submission deleted from under a stale reference) is priced as a solo
+    rather than skipped: the order did include it.
+    """
+    if not isinstance(refs, list):
+        return Decimal("0.00")
+    fee = Decimal("0.00")
+    for ref in refs:
+        if not isinstance(ref, dict):
+            continue
+        fee += schedule.fee_for(counts.get(str(ref.get("submission_id")), 1))
+    return fee
+
+
 @dataclass(slots=True)
 class _Totals:
     """The running figures for one bucket (an organization, or the whole platform)."""
@@ -67,14 +115,20 @@ class _Totals:
     applications: int = 0
     expected_fees: Decimal = Decimal("0")
     settled_fees: Decimal = Decimal("0")
+    #: The per-performance fee behind the same orders. Accumulated per order rather
+    #: than derived from the totals above, because it does not come from them.
+    expected_performance_fee: Decimal = Decimal("0")
+    settled_performance_fee: Decimal = Decimal("0")
 
-    def add(self, status: str, amount: Decimal) -> None:
+    def add(self, status: str, amount: Decimal, performance_fee: Decimal = Decimal("0")) -> None:
         self.status_counts[status] = self.status_counts.get(status, 0) + 1
         self.applications += 1
         if status not in _UNBILLABLE_STATUSES:
             self.expected_fees += amount
+            self.expected_performance_fee += performance_fee
         if status in _SETTLED_STATUSES:
             self.settled_fees += amount
+            self.settled_performance_fee += performance_fee
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,7 +138,9 @@ class OrganizationBreakdown:
     organization_id: str | None
     name: str
     status: str
+    billing_model: str
     commission_percent: Decimal
+    fee_tiers: tuple[PerformanceFeeTier, ...]
     competitions: int
     applications: int
     status_counts: dict[str, int]
@@ -157,18 +213,39 @@ def build_dashboard(*, organization_id: str | None = None, competition_id: str |
         competition_filter=competition_id,
     )
 
+    # Every stored price list, and separately the organizations actually billed off
+    # one. A schedule outlives a switch back to the percentage model (the terms last
+    # agreed are remembered), so the two are not the same set — and only the second
+    # one needs the extra reads below, so an installation where nobody is on that
+    # model pays for nothing.
+    schedules: dict[uuid.UUID, PerformanceFeeSchedule] = {}
+    fee_billed: set[uuid.UUID] = set()
+    for org in organizations:
+        schedule = fee_schedule_from_json(org.performance_fee_tiers)
+        if schedule is None:
+            continue
+        schedules[org.id] = schedule
+        if org.billing_model == BillingModel.PER_PERFORMANCE_FEE:
+            fee_billed.add(org.id)
+
     per_organization: dict[uuid.UUID | None, _Totals] = {}
     platform = _Totals()
+    columns = ["competition_id", "status", "total_price"]
+    if fee_billed:
+        columns.append("submission_refs")
     application_rows = ApplicationModel.objects.filter(
         deleted_at__isnull=True,
         competition_id__in=list(owner_of),
-    ).values("competition_id", "status", "total_price")
+    ).values(*columns)
+    participant_counts = _participant_counts(list(owner_of)) if fee_billed else {}
     for row in application_rows:
         organizer_id = owner_of.get(row["competition_id"])
         bucket = per_organization.setdefault(organizer_id, _Totals())
         amount = _amount(row["total_price"])
-        bucket.add(str(row["status"]), amount)
-        platform.add(str(row["status"]), amount)
+        schedule = schedules.get(organizer_id) if organizer_id in fee_billed else None
+        fee = Decimal("0.00") if schedule is None else _performance_fee(row.get("submission_refs"), schedule, participant_counts)
+        bucket.add(str(row["status"]), amount, fee)
+        platform.add(str(row["status"]), amount, fee)
 
     breakdowns: list[OrganizationBreakdown] = []
     expected_commission_total = Decimal("0")
@@ -177,9 +254,16 @@ def build_dashboard(*, organization_id: str | None = None, competition_id: str |
         if organization_id and str(org.id) != organization_id:
             continue
         totals = per_organization.get(org.id, _Totals())
-        rate = CommissionRate(org.commission_percent)
-        expected_commission = rate.apply_to(totals.expected_fees)
-        settled_commission = rate.apply_to(totals.settled_fees)
+        schedule = schedules.get(org.id)
+        if org.id in fee_billed:
+            # Billed per performance: the figure was accumulated order by order above,
+            # and the organization\'s percentage rate says nothing about what it owes.
+            expected_commission = totals.expected_performance_fee
+            settled_commission = totals.settled_performance_fee
+        else:
+            rate = CommissionRate(org.commission_percent)
+            expected_commission = rate.apply_to(totals.expected_fees)
+            settled_commission = rate.apply_to(totals.settled_fees)
         expected_commission_total += expected_commission
         settled_commission_total += settled_commission
         breakdowns.append(
@@ -187,7 +271,11 @@ def build_dashboard(*, organization_id: str | None = None, competition_id: str |
                 organization_id=str(org.id),
                 name=org.name,
                 status=org.status,
+                billing_model=str(org.billing_model),
                 commission_percent=org.commission_percent,
+                # Reported whether or not it is what the organization is billed off:
+                # the console shows both terms and lets `billingModel` say which is live.
+                fee_tiers=() if schedule is None else schedule.tiers,
                 competitions=competitions_per_organization.get(org.id, 0),
                 applications=totals.applications,
                 status_counts=totals.status_counts,
@@ -222,7 +310,9 @@ def build_dashboard(*, organization_id: str | None = None, competition_id: str |
                     organization_id=None,
                     name="Без организации",
                     status="ACTIVE",
+                    billing_model=BillingModel.COMMISSION_PERCENT.value,
                     commission_percent=Decimal("0.00"),
+                    fee_tiers=(),
                     competitions=sum(competitions_per_organization.get(o, 0) for o in orphan_ids),
                     applications=orphan.applications,
                     status_counts=orphan.status_counts,

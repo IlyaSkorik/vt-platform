@@ -18,7 +18,7 @@ from rest_framework.test import APIClient
 
 from apps.applications.domain.value_objects import Currency, Money, TotalPriceSnapshot
 from apps.applications.infrastructure.mappers.application_mapper import ApplicationMapper
-from apps.applications.infrastructure.models import ApplicationModel
+from apps.applications.infrastructure.models import ApplicationModel, SubmissionModel
 from apps.competitions.infrastructure.models import CompetitionModel
 from apps.identity.presentation.api.v1.auth import composition as identity_composition
 from apps.organization.application.dto.commands import ProvisionOwnerCommand
@@ -79,13 +79,52 @@ def _total_price(amount: str) -> dict[str, str]:
     }
 
 
-def _order(*, competition_id: uuid.UUID, status: str, amount: str | None) -> ApplicationModel:
+def _submission_ref(*, competition_id: uuid.UUID, participants: int) -> dict[str, object]:
+    """One performance of ``participants`` people, and the order-level reference to it.
+
+    The headcount lives on the submission (as one collective entry carrying a
+    ``member_count``, the way the Submission mapper writes it) because that is where
+    the per-performance fee reads it from; the order only points at the submission.
+    """
+    submission = SubmissionModel.objects.create(
+        competition_id=competition_id,
+        applicant_id=uuid.uuid4(),
+        status="SUBMITTED",
+        participants=[{"id": str(uuid.uuid4()), "display_name": "Ансамбль", "member_count": participants, "members": []}],
+    )
+    return {
+        "submission_id": str(submission.id),
+        "performance_title": f"Номер на {participants}",
+        "participant_display_name": "Ансамбль",
+        "nomination": "Вокал",
+        "discipline": "Эстрадный вокал",
+        "status": "SUBMITTED",
+        "price": None,
+    }
+
+
+def _order(
+    *,
+    competition_id: uuid.UUID,
+    status: str,
+    amount: str | None,
+    performances: tuple[int, ...] = (),
+) -> ApplicationModel:
     return ApplicationModel.objects.create(
         competition_id=competition_id,
         applicant_id=uuid.uuid4(),
         status=status,
         total_price=_total_price(amount) if amount is not None else None,
+        submission_refs=[_submission_ref(competition_id=competition_id, participants=count) for count in performances],
     )
+
+
+#: The schedule from the operator's own example: a solo, a small group, the rest.
+_TIERS = [
+    {"minParticipants": 1, "maxParticipants": 1, "amount": "2.50"},
+    {"minParticipants": 2, "maxParticipants": 5, "amount": "4.00"},
+    {"minParticipants": 6, "maxParticipants": None, "amount": "6.00"},
+]
 
 
 class TestAccess:
@@ -159,6 +198,90 @@ class TestCommercialTerms:
         assert updated.status_code == 200, updated.data
         assert updated.data["data"]["commissionPercent"] == "15.00"
 
+    def test_connects_an_organization_on_the_per_performance_fee(self, operator: APIClient) -> None:
+        response = operator.post(
+            _ORGANIZATIONS,
+            {
+                "name": "Тарифный дом",
+                "ownerEmail": "tariff@example.com",
+                "billingModel": "PER_PERFORMANCE_FEE",
+                "feeTiers": _TIERS,
+            },
+            format="json",
+        )
+
+        assert response.status_code == 201, response.data
+        data = response.data["data"]
+        assert data["billingModel"] == "PER_PERFORMANCE_FEE"
+        assert data["feeTiers"] == [
+            {"minParticipants": 1, "maxParticipants": 1, "amount": "2.50"},
+            {"minParticipants": 2, "maxParticipants": 5, "amount": "4.00"},
+            {"minParticipants": 6, "maxParticipants": None, "amount": "6.00"},
+        ]
+
+        # And it survives the round trip through the JSON column, read back by the
+        # roster rather than echoed from the aggregate that was just built.
+        listed = operator.get(_ORGANIZATIONS).data["data"]
+        stored = next(row for row in listed if row["id"] == data["id"])
+        assert stored["feeTiers"] == data["feeTiers"]
+
+    def test_switches_an_organization_between_the_two_models(self, operator: APIClient) -> None:
+        created = operator.post(
+            _ORGANIZATIONS,
+            {"name": "Гармония", "ownerEmail": "harmony@example.com", "commissionPercent": "7"},
+            format="json",
+        ).data["data"]
+        url = f"{_ORGANIZATIONS}/{created['id']}"
+
+        switched = operator.patch(url, {"billingModel": "PER_PERFORMANCE_FEE", "feeTiers": _TIERS}, format="json")
+        assert switched.status_code == 200, switched.data
+        assert switched.data["data"]["billingModel"] == "PER_PERFORMANCE_FEE"
+        # The percentage last agreed is still there, ready if the operator switches back.
+        assert switched.data["data"]["commissionPercent"] == "7.00"
+
+        back = operator.patch(url, {"billingModel": "COMMISSION_PERCENT", "commissionPercent": "9"}, format="json")
+        assert back.data["data"]["billingModel"] == "COMMISSION_PERCENT"
+        assert back.data["data"]["commissionPercent"] == "9.00"
+        # And the price list is remembered too, symmetrically — the console reads
+        # `billingModel` to know which of the two terms is live.
+        assert len(back.data["data"]["feeTiers"]) == 3
+
+    def test_refuses_a_schedule_with_a_hole_in_it(self, operator: APIClient) -> None:
+        created = operator.post(
+            _ORGANIZATIONS,
+            {"name": "Гармония", "ownerEmail": "harmony@example.com", "commissionPercent": "7"},
+            format="json",
+        ).data["data"]
+
+        gapped = operator.patch(
+            f"{_ORGANIZATIONS}/{created['id']}",
+            {
+                "billingModel": "PER_PERFORMANCE_FEE",
+                "feeTiers": [
+                    {"minParticipants": 1, "maxParticipants": 1, "amount": "2.50"},
+                    {"minParticipants": 3, "maxParticipants": None, "amount": "4.00"},
+                ],
+            },
+            format="json",
+        )
+
+        assert gapped.status_code == 400, gapped.data
+
+    def test_refuses_a_fee_model_without_any_bands(self, operator: APIClient) -> None:
+        created = operator.post(
+            _ORGANIZATIONS,
+            {"name": "Гармония", "ownerEmail": "harmony@example.com", "commissionPercent": "7"},
+            format="json",
+        ).data["data"]
+
+        empty = operator.patch(
+            f"{_ORGANIZATIONS}/{created['id']}",
+            {"billingModel": "PER_PERFORMANCE_FEE", "feeTiers": []},
+            format="json",
+        )
+
+        assert empty.status_code == 400, empty.data
+
     def test_suspends_and_reactivates(self, operator: APIClient) -> None:
         created = operator.post(
             _ORGANIZATIONS,
@@ -222,6 +345,40 @@ class TestDashboard:
         assert data["settledFees"] == "200.00"
         assert data["expectedCommission"] == "30.00"
         assert data["settledCommission"] == "20.00"
+
+    def test_projects_the_per_performance_fee_from_the_headcounts(self, operator: APIClient) -> None:
+        # The operator's own example: a solo at 2.50, a duet at 4.00 and an
+        # eight-strong ensemble at 6.00 come to 12.50 for the order — a figure the
+        # order's own total (900.00 of participation fees) says nothing about.
+        organization = operator.post(
+            _ORGANIZATIONS,
+            {
+                "name": "Тарифный дом",
+                "ownerEmail": "tariff@example.com",
+                "billingModel": "PER_PERFORMANCE_FEE",
+                "feeTiers": _TIERS,
+            },
+            format="json",
+        ).data["data"]
+        competition = CompetitionModel.objects.create(
+            organizer_id=uuid.UUID(organization["id"]),
+            status="PUBLISHED",
+            title="Тарифный дом — сезон",
+            season="2025/2026",
+        )
+        _order(competition_id=competition.id, status="PAID", amount="900.00", performances=(1, 2, 8))
+        # A cancelled order is billable to nobody, however many performances it held.
+        _order(competition_id=competition.id, status="CANCELLED", amount="900.00", performances=(1, 2, 8))
+
+        data = operator.get(f"{_DASHBOARD}?organizationId={organization['id']}").data["data"]
+
+        row = data["organizations"][0]
+        assert row["billingModel"] == "PER_PERFORMANCE_FEE"
+        assert row["expectedCommission"] == "12.50"
+        assert row["settledCommission"] == "12.50"
+        assert data["expectedCommission"] == "12.50"
+        # The fees themselves are still reported; they are simply not what is owed.
+        assert row["expectedFees"] == "900.00"
 
     def test_filters_by_competition(self, operator: APIClient) -> None:
         _, wanted = self._connected_with_a_festival(operator, name="Гармония", commission="10")
