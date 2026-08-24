@@ -25,6 +25,13 @@ from apps.diplomas.infrastructure.repositories import (
 
 pytestmark = pytest.mark.django_db
 
+#: One organization for everything this module builds. A template and the
+#: competition it is used on have to belong to the same organizer now — the scoped
+#: listings admit a row only when both sides match — so a fresh `uuid4()` per
+#: competition would put them on opposite sides of the boundary.
+_ORGANIZER = uuid.UUID("00000000-0000-4000-8000-0000000000a1")
+
+
 # Deliberately a different year from any competition below: the number must carry
 # the *competition* year, never the creation year.
 _NOW = datetime(2030, 1, 15, 12, 0, tzinfo=UTC)
@@ -46,7 +53,7 @@ def _competition(*, start: date | None, season: str = "2026") -> CompetitionMode
     return CompetitionModel.objects.create(
         title="Восходящие таланты",
         season=season,
-        organizer_id=uuid.uuid4(),
+        organizer_id=_ORGANIZER,
         status="PUBLISHED",
         competition_start=start,
     )
@@ -100,7 +107,7 @@ def test_counter_is_independent_of_the_diplomas_table() -> None:
     from apps.diplomas.infrastructure.models import DiplomaModel
 
     competition = _competition(start=date(2026, 5, 15))
-    template = TemplateModel.objects.create(type="DIPLOMA", name="Шаблон")
+    template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type="DIPLOMA", name="Шаблон")
     service = _service()
     first = service.create_diploma(submission_id=_submission(competition).id, template_id=template.id, now=_NOW)
 
@@ -116,7 +123,7 @@ def test_counter_is_independent_of_the_diplomas_table() -> None:
 
 def test_number_carries_the_competition_year_not_the_system_year() -> None:
     competition = _competition(start=date(2026, 5, 15))
-    template = TemplateModel.objects.create(type="DIPLOMA", name="Шаблон")
+    template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type="DIPLOMA", name="Шаблон")
 
     diploma = _service().create_diploma(submission_id=_submission(competition).id, template_id=template.id, now=_NOW)
 
@@ -126,7 +133,7 @@ def test_number_carries_the_competition_year_not_the_system_year() -> None:
 
 def test_year_falls_back_to_the_season_when_dates_are_unset() -> None:
     competition = _competition(start=None, season="2028")
-    template = TemplateModel.objects.create(type="DIPLOMA", name="Шаблон")
+    template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type="DIPLOMA", name="Шаблон")
 
     diploma = _service().create_diploma(submission_id=_submission(competition).id, template_id=template.id, now=_NOW)
 
@@ -135,7 +142,7 @@ def test_year_falls_back_to_the_season_when_dates_are_unset() -> None:
 
 def test_year_falls_back_to_the_creation_year_without_dates_or_season() -> None:
     competition = _competition(start=None, season="сезон 2029/2030")
-    template = TemplateModel.objects.create(type="DIPLOMA", name="Шаблон")
+    template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type="DIPLOMA", name="Шаблон")
 
     diploma = _service().create_diploma(submission_id=_submission(competition).id, template_id=template.id, now=_NOW)
 

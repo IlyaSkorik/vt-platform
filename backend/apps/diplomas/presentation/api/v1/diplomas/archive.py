@@ -19,6 +19,7 @@ from typing import Any
 
 from apps.competitions.infrastructure.models.competition import CompetitionModel
 from apps.diplomas.infrastructure.models import GenerationRunModel
+from apps.diplomas.presentation.scope import Scope
 
 __all__ = ["list_runs", "record_run"]
 
@@ -62,17 +63,33 @@ def record_run(
         return
 
 
-def list_runs(competition_id: uuid.UUID | None = None) -> list[dict[str, Any]]:
-    """The generation history, newest first, optionally for one competition.
+def list_runs(competition_id: uuid.UUID | None = None, *, scope: Scope) -> list[dict[str, Any]]:
+    """The caller's generation history, newest first, optionally for one competition.
 
     The competition's title is resolved on read rather than frozen in the row, so a
     renamed competition reads correctly throughout its own history. A competition
     that has since been deleted resolves to ``None`` and the client shows the run
     without it — losing the name must not lose the run.
+
+    ``scope`` is required and applies even when ``competition_id`` is given. The
+    unfiltered call is the dangerous one — this endpoint's parameter is *optional*,
+    so "no competition" means "the whole history", which without a scope is every
+    organization's. The narrowing is by competition rather than by the run row,
+    because a run carries no owner of its own: it names a competition, and whoever
+    runs that competition owns the run.
     """
     rows = GenerationRunModel.objects.filter(deleted_at__isnull=True)
     if competition_id is not None:
         rows = rows.filter(competition_id=competition_id)
+    if scope.sees_nothing:
+        rows = rows.none()
+    elif (organization_id := scope.organization_id) is not None:
+        rows = rows.filter(
+            competition_id__in=CompetitionModel.objects.filter(
+                organizer_id=organization_id,
+                deleted_at__isnull=True,
+            ).values("id")
+        )
     runs = list(rows.order_by("-created_at")[:_LIMIT])
 
     titles = {

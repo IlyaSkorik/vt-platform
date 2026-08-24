@@ -12,6 +12,7 @@ import uuid
 
 import pytest
 
+from apps.competitions.infrastructure.models import CompetitionModel
 from apps.diplomas.domain.exceptions import (
     AssignmentConflictError,
     AssignmentNotFoundError,
@@ -19,41 +20,61 @@ from apps.diplomas.domain.exceptions import (
 )
 from apps.diplomas.infrastructure.models import TemplateModel
 from apps.diplomas.presentation.api.v1.diplomas import composition
+from apps.diplomas.presentation.scope import Scope
 
 pytestmark = pytest.mark.django_db
 
+#: The organization these tests act as. Templates belong to one organization and
+#: assignments are listed within one, so a fixed id keeps every row in this module
+#: on the same side of that boundary — the *crossing* is covered at the HTTP edge,
+#: in tests/presentation/platform/test_organization_isolation_api.py.
+_ORGANIZER = uuid.UUID("00000000-0000-4000-8000-0000000000a1")
+_SCOPE = Scope.for_organization(_ORGANIZER)
 
-def _template(name: str = "Диплом очный") -> TemplateModel:
-    return TemplateModel.objects.create(type="DIPLOMA", name=name)
+
+def _template(name: str = "Диплом очный", document_type: str = "DIPLOMA") -> TemplateModel:
+    return TemplateModel.objects.create(organizer_id=_ORGANIZER, type=document_type, name=name)
+
+
+def _competition(title: str = "Фестиваль") -> str:
+    """A real competition row, owned by :data:`_ORGANIZER`.
+
+    Not a bare ``uuid4`` any more: ``list_assignments`` now admits a row only when
+    the caller both owns the template and runs the competition, so an id with no
+    competition behind it is — correctly — nobody's.
+    """
+    return str(CompetitionModel.objects.create(title=title, season="2025/2026", organizer_id=_ORGANIZER, status="PUBLISHED").id)
 
 
 def test_create_and_list_assignment() -> None:
     template = _template()
-    competition_id = str(uuid.uuid4())
+    competition_id = _competition()
     category_id = str(uuid.uuid4())
 
     created = composition.create_assignment(
         competition_id=competition_id,
         category_id=category_id,
         template_id=str(template.id),
+        scope=_SCOPE,
     )
 
     assert created["competitionId"] == competition_id
     assert created["categoryId"] == category_id
     assert created["templateId"] == str(template.id)
 
-    listed = composition.list_assignments()
+    listed = composition.list_assignments(scope=_SCOPE)
     assert [item["id"] for item in listed] == [created["id"]]
 
 
 def test_duplicate_nomination_raises_conflict() -> None:
     template = _template()
-    competition_id = str(uuid.uuid4())
+    competition_id = _competition()
     category_id = str(uuid.uuid4())
     composition.create_assignment(
         competition_id=competition_id,
         category_id=category_id,
         template_id=str(template.id),
+        scope=_SCOPE,
     )
 
     with pytest.raises(AssignmentConflictError):
@@ -61,6 +82,7 @@ def test_duplicate_nomination_raises_conflict() -> None:
             competition_id=competition_id,
             category_id=category_id,
             template_id=str(template.id),
+            scope=_SCOPE,
         )
 
 
@@ -70,34 +92,37 @@ def test_unknown_template_raises_not_found() -> None:
             competition_id=str(uuid.uuid4()),
             category_id=str(uuid.uuid4()),
             template_id=str(uuid.uuid4()),
+            scope=_SCOPE,
         )
 
 
 def test_delete_assignment_then_missing() -> None:
     template = _template()
     created = composition.create_assignment(
-        competition_id=str(uuid.uuid4()),
+        competition_id=_competition(),
         category_id=str(uuid.uuid4()),
         template_id=str(template.id),
+        scope=_SCOPE,
     )
 
-    composition.delete_assignment(created["id"])
-    assert composition.list_assignments() == []
+    composition.delete_assignment(created["id"], scope=_SCOPE)
+    assert composition.list_assignments(scope=_SCOPE) == []
 
     with pytest.raises(AssignmentNotFoundError):
-        composition.delete_assignment(created["id"])
+        composition.delete_assignment(created["id"], scope=_SCOPE)
 
 
 def test_deleting_frees_the_nomination_for_reuse() -> None:
     template = _template()
-    competition_id = str(uuid.uuid4())
+    competition_id = _competition()
     category_id = str(uuid.uuid4())
     first = composition.create_assignment(
         competition_id=competition_id,
         category_id=category_id,
         template_id=str(template.id),
+        scope=_SCOPE,
     )
-    composition.delete_assignment(first["id"])
+    composition.delete_assignment(first["id"], scope=_SCOPE)
 
     # The partial unique constraint excludes soft-deleted rows, so the same
     # (competition, nomination) pair can be assigned again.
@@ -105,25 +130,27 @@ def test_deleting_frees_the_nomination_for_reuse() -> None:
         competition_id=competition_id,
         category_id=category_id,
         template_id=str(template.id),
+        scope=_SCOPE,
     )
     assert second["id"] != first["id"]
 
 
 def test_one_template_assigned_to_several_nominations_at_once() -> None:
     template = _template()
-    competition_id = str(uuid.uuid4())
+    competition_id = _competition()
     nominations = [str(uuid.uuid4()) for _ in range(3)]
 
     created = composition.create_assignments(
         competition_id=competition_id,
         category_ids=nominations,
         template_id=str(template.id),
+        scope=_SCOPE,
     )
 
     # Returned in the order asked for, so the caller can match them up.
     assert [item["categoryId"] for item in created] == nominations
     assert {item["templateId"] for item in created} == {str(template.id)}
-    assert len(composition.list_assignments()) == 3
+    assert len(composition.list_assignments(scope=_SCOPE)) == 3
 
 
 def test_a_nomination_named_twice_is_assigned_once() -> None:
@@ -131,46 +158,48 @@ def test_a_nomination_named_twice_is_assigned_once() -> None:
     category_id = str(uuid.uuid4())
 
     created = composition.create_assignments(
-        competition_id=str(uuid.uuid4()),
+        competition_id=_competition(),
         category_ids=[category_id, category_id],
         template_id=str(template.id),
+        scope=_SCOPE,
     )
 
     assert len(created) == 1
-    assert len(composition.list_assignments()) == 1
+    assert len(composition.list_assignments(scope=_SCOPE)) == 1
 
 
 def test_a_batch_with_one_taken_nomination_creates_nothing() -> None:
     """All or nothing: a half-applied batch is invisible in the table."""
     template = _template()
-    competition_id = str(uuid.uuid4())
+    competition_id = _competition()
     taken = str(uuid.uuid4())
     free = str(uuid.uuid4())
-    composition.create_assignment(competition_id=competition_id, category_id=taken, template_id=str(template.id))
+    composition.create_assignment(competition_id=competition_id, category_id=taken, template_id=str(template.id), scope=_SCOPE)
 
     with pytest.raises(AssignmentConflictError):
         composition.create_assignments(
             competition_id=competition_id,
             category_ids=[free, taken],
             template_id=str(template.id),
+            scope=_SCOPE,
         )
 
     # Only the original assignment survives — `free` was rolled back with the batch.
-    assert [item["categoryId"] for item in composition.list_assignments()] == [taken]
+    assert [item["categoryId"] for item in composition.list_assignments(scope=_SCOPE)] == [taken]
 
 
 def test_a_batch_only_fills_the_templates_own_slot() -> None:
     """A thank-you batch leaves the same nominations' diploma slots alone."""
     diploma = _template()
-    thanks = TemplateModel.objects.create(type="THANK_YOU", name="Благодарность")
-    competition_id = str(uuid.uuid4())
+    thanks = _template("Благодарность", "THANK_YOU")
+    competition_id = _competition()
     nominations = [str(uuid.uuid4()) for _ in range(2)]
-    composition.create_assignments(competition_id=competition_id, category_ids=nominations, template_id=str(diploma.id))
+    composition.create_assignments(competition_id=competition_id, category_ids=nominations, template_id=str(diploma.id), scope=_SCOPE)
 
-    composition.create_assignments(competition_id=competition_id, category_ids=nominations, template_id=str(thanks.id))
+    composition.create_assignments(competition_id=competition_id, category_ids=nominations, template_id=str(thanks.id), scope=_SCOPE)
 
     by_type: dict[str, set[str]] = {}
-    for item in composition.list_assignments():
+    for item in composition.list_assignments(scope=_SCOPE):
         by_type.setdefault(str(item["documentType"]), set()).add(str(item["categoryId"]))
     assert by_type == {"DIPLOMA": set(nominations), "THANK_YOU": set(nominations)}
 
@@ -288,14 +317,14 @@ def test_layout_unknown_template_raises() -> None:
 
 def test_set_template_document_attaches_and_replaces() -> None:
     template = _template()
-    assert composition.list_templates()[0]["document"] is None
+    assert composition.list_templates(scope=_SCOPE)[0]["document"] is None
 
     first = composition.set_template_document(
         template_id=str(template.id),
         file_reference="/media/diplomas/templates/x/a.pdf",
         original_filename="a.pdf",
     )
-    listed = composition.list_templates()[0]
+    listed = composition.list_templates(scope=_SCOPE)[0]
     assert listed["document"]["id"] == first["id"]
     assert listed["document"]["fileReference"] == "/media/diplomas/templates/x/a.pdf"
 
@@ -305,7 +334,7 @@ def test_set_template_document_attaches_and_replaces() -> None:
         file_reference="/media/diplomas/templates/x/b.pdf",
         original_filename="b.pdf",
     )
-    current = composition.list_templates()[0]["document"]
+    current = composition.list_templates(scope=_SCOPE)[0]["document"]
     assert current["id"] == second["id"]
     assert current["fileReference"] == "/media/diplomas/templates/x/b.pdf"
 
@@ -319,25 +348,26 @@ def test_set_document_unknown_template_raises() -> None:
 
 
 def test_create_template_starts_empty_library() -> None:
-    assert composition.list_templates() == []
+    assert composition.list_templates(scope=_SCOPE) == []
 
-    created = composition.create_template(name="Диплом заочный", document_type="DIPLOMA", description="")
+    created = composition.create_template(organizer_id=_ORGANIZER, name="Диплом заочный", document_type="DIPLOMA", description="")
 
     assert created["name"] == "Диплом заочный"
     assert created["type"] == "DIPLOMA"
     assert created["usageCount"] == 0
-    assert [item["id"] for item in composition.list_templates()] == [created["id"]]
+    assert [item["id"] for item in composition.list_templates(scope=_SCOPE)] == [created["id"]]
 
 
 def test_template_usage_count() -> None:
     template = _template()
-    assert composition.list_templates()[0]["usageCount"] == 0
+    assert composition.list_templates(scope=_SCOPE)[0]["usageCount"] == 0
 
     composition.create_assignment(
-        competition_id=str(uuid.uuid4()),
+        competition_id=_competition(),
         category_id=str(uuid.uuid4()),
         template_id=str(template.id),
+        scope=_SCOPE,
     )
 
-    by_id = {item["id"]: item for item in composition.list_templates()}
+    by_id = {item["id"]: item for item in composition.list_templates(scope=_SCOPE)}
     assert by_id[str(template.id)]["usageCount"] == 1

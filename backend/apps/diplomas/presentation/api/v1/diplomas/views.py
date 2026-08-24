@@ -4,22 +4,41 @@ Reads the template library (with usage counts), manages the assignment mechanism
 that binds a template to a (competition, nomination) pair, runs generation — the
 numbered diploma package asynchronously, the other kinds in the request — and lists
 the archive of completed runs.
+
+**Every endpoint here is scoped to one organization**, because the platform hosts
+several and a diploma design is not something an organizer shares. Two mechanisms,
+picked by what the request names:
+
+* A **listing** carries a :class:`~apps.diplomas.presentation.scope.Scope` into the
+  query, so it can only ever return the caller's own rows.
+* A request that names an **id** — a template, a competition, a diploma, a print
+  job — is refused up front by the guards below, before any work is done. That
+  mirrors ``CompetitionViewSet.initial``: authorization is answered in the
+  presentation layer, and the reason reaches the client as a 403.
+
+Neither is optional anywhere on this surface. Before this was true, any organizer
+could read and overwrite anyone's template by id.
 """
 
 from __future__ import annotations
 
 import uuid
+from typing import Any
 
 from django.core.files.storage import default_storage
+from django.db.models import QuerySet
 from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.diplomas.domain.exceptions import DiplomaError
 from apps.diplomas.infrastructure.acl import actor_label
+from apps.diplomas.infrastructure.models import DiplomaModel, PrintJobModel, TemplateModel
 from apps.diplomas.presentation.api.v1 import problems
 from apps.diplomas.presentation.api.v1.diplomas import (
     archive,
@@ -50,8 +69,10 @@ from apps.diplomas.presentation.api.v1.diplomas.serializers import (
     TemplateResponseSerializer,
     UploadTemplateDocumentRequestSerializer,
 )
+from apps.diplomas.presentation.scope import callers_scope, competition_organizer_id
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.organization.presentation.permissions import IsOrganizationStaff
+from apps.platform.presentation.permissions import IsPlatformAdministrator
 
 _TAG = "Diplomas"
 _MAX_PDF_BYTES = 20 * 1024 * 1024
@@ -59,7 +80,76 @@ _MAX_PDF_BYTES = 20 * 1024 * 1024
 
 class _StaffView(APIView):
     authentication_classes = (CredentialAwareJWTAuthentication,)
-    permission_classes = (IsAuthenticated, IsOrganizationStaff)
+    # Staff of an organization, **or** the platform operator. The operator is staff
+    # of nobody, so `IsOrganizationStaff` alone would refuse them — and then the
+    # unrestricted branch of every scope below would be unreachable code.
+    permission_classes = (IsAuthenticated, IsOrganizationStaff | IsPlatformAdministrator)
+
+
+# ----------------------------------------------------------------------------
+# Organization scoping
+#
+# Guards, not filters: each one answers before the endpoint does any work. They
+# raise rather than return a problem document so a new endpoint cannot forget to
+# check the return value — the request stops whether or not the caller looked.
+# ----------------------------------------------------------------------------
+
+
+def _refuse_foreign_template(request: Request, template_id: str) -> None:
+    """Refuse a template belonging to another organization.
+
+    An **absent** template is deliberately not this function's business: the
+    endpoint's own composition call raises ``TemplateNotFoundError`` and renders a
+    proper 404. Only ownership is decided here.
+    """
+    organizer_id = TemplateModel.objects.filter(id=template_id, deleted_at__isnull=True).values_list("organizer_id", flat=True).first()
+    if organizer_id is None:
+        return
+    if not callers_scope(request).admits(organizer_id):
+        raise PermissionDenied("This template belongs to another organization.")
+
+
+def _refuse_foreign_competition(request: Request, competition_id: uuid.UUID | str) -> None:
+    """Refuse a competition run by another organization.
+
+    Unlike a template, an unknown competition **is** refused here. A competition id
+    arrives as a filter on somebody else's data rather than as the addressed
+    resource, so there is no 404 waiting downstream to answer it — left to fall
+    through, an unknown id would simply widen the read.
+    """
+    if not callers_scope(request).admits(competition_organizer_id(competition_id)):
+        raise PermissionDenied("This competition belongs to another organization.")
+
+
+def _refuse_foreign_row(request: Request, rows: QuerySet[Any], row_id: uuid.UUID) -> None:
+    """Refuse a row that hangs off another organization's competition.
+
+    A diploma, a print job and a submission carry no owner of their own — each names
+    a ``competition_id``, and whoever runs that competition owns the row. An absent
+    row falls through to the endpoint's own 404, as with a template.
+
+    Takes a queryset rather than a model class because that is what it needs, and
+    ``type[Model]`` has no manager to promise: ``objects`` is attached per concrete
+    model, so the class form types as an escape hatch and this one does not.
+    """
+    competition_id = rows.filter(id=row_id, deleted_at__isnull=True).values_list("competition_id", flat=True).first()
+    if competition_id is None:
+        return
+    _refuse_foreign_competition(request, competition_id)
+
+
+def _authoring_organization(request: Request) -> uuid.UUID:
+    """The organization a write is filed under, or a refusal.
+
+    Reading across organizations and *writing into* one are different rights. The
+    platform operator holds the first and not the second: they are staff of no
+    organization, so there is no library for a template of theirs to land in. Saying
+    so is better than inventing an owner.
+    """
+    scope = callers_scope(request)
+    if scope.organization_id is None:
+        raise PermissionDenied("Создание шаблона возможно только от лица организации. Оператор платформы читает библиотеки, но не ведёт свою.")
+    return scope.organization_id
 
 
 class DiplomaTemplatesView(_StaffView):
@@ -83,7 +173,7 @@ class DiplomaTemplatesView(_StaffView):
         document_type = (request.query_params.get("type") or "").strip()
         if document_type and document_type not in DOCUMENT_TYPES:
             return problems.validation_problem({"type": ["Неизвестный тип документа."]}, instance=request.path, request=request)
-        return problems.envelope(request, composition.list_templates(document_type=document_type or None))
+        return problems.envelope(request, composition.list_templates(scope=callers_scope(request), document_type=document_type or None))
 
     @extend_schema(
         tags=[_TAG],
@@ -97,6 +187,7 @@ class DiplomaTemplatesView(_StaffView):
             return problems.validation_problem(serializer.errors, instance=request.path, request=request)
         data = serializer.validated_data
         template = composition.create_template(
+            organizer_id=_authoring_organization(request),
             name=str(data["name"]),
             document_type=str(data["type"]),
             description=str(data.get("description") or ""),
@@ -129,6 +220,11 @@ class DiplomaTemplateDocumentView(_StaffView):
                 request=request,
             )
 
+        # Before the upload, not after: `default_storage.save` below writes the file
+        # to the bucket under a path keyed by the template id, so refusing later
+        # would still have deposited a foreign PDF next to that template's own.
+        _refuse_foreign_template(request, template_id)
+
         relative_path = default_storage.save(f"diplomas/templates/{template_id}/{uuid.uuid4().hex}.pdf", uploaded)
         file_reference = default_storage.url(relative_path)
         try:
@@ -155,6 +251,9 @@ class DiplomaPreviewApplicationsView(_StaffView):
         competition_id = (request.query_params.get("competitionId") or "").strip()
         if not competition_id:
             return problems.validation_problem({"competitionId": ["Укажите фестиваль."]}, instance=request.path, request=request)
+        # Preview rows are real applications — real participants, real works. The
+        # editor only ever asks for the competition it is already open on.
+        _refuse_foreign_competition(request, competition_id)
         return problems.envelope(request, preview.list_preview_applications(competition_id))
 
 
@@ -195,7 +294,18 @@ class DiplomaPreviewBindingsView(_StaffView):
 
 
 class DiplomaTemplateLayoutView(_StaffView):
-    """Read and atomically save a template's field layout (the whole document)."""
+    """Read and atomically save a template's field layout (the whole document).
+
+    Both verbs address one template, so the ownership guard runs in :meth:`initial`
+    for the whole class rather than being repeated in each — the PUT is the one that
+    would silently rewrite another organization's design.
+    """
+
+    def initial(self, request: Request, *args: object, **kwargs: object) -> None:
+        super().initial(request, *args, **kwargs)
+        template_id = kwargs.get("template_id")
+        if isinstance(template_id, str):
+            _refuse_foreign_template(request, template_id)
 
     @extend_schema(
         tags=[_TAG],
@@ -243,7 +353,7 @@ class DiplomaAssignmentsView(_StaffView):
         responses={200: AssignmentResponseSerializer(many=True)},
     )
     def get(self, request: Request) -> Response:
-        return problems.envelope(request, composition.list_assignments())
+        return problems.envelope(request, composition.list_assignments(scope=callers_scope(request)))
 
     @extend_schema(
         tags=[_TAG],
@@ -256,11 +366,18 @@ class DiplomaAssignmentsView(_StaffView):
         if not serializer.is_valid():
             return problems.validation_problem(serializer.errors, instance=request.path, request=request)
         data = serializer.validated_data
+        # Both sides of the binding, because an assignment is the one write that
+        # *joins* them: a template of this organization onto a competition of this
+        # organization. Checking one alone would let a caller file their own design
+        # against somebody else's festival, or somebody else's design against theirs.
+        _refuse_foreign_template(request, str(data["templateId"]))
+        _refuse_foreign_competition(request, str(data["competitionId"]))
         try:
             assignments = composition.create_assignments(
                 competition_id=str(data["competitionId"]),
                 category_ids=[str(category_id) for category_id in data["categoryIds"]],
                 template_id=str(data["templateId"]),
+                scope=callers_scope(request),
             )
         except DiplomaError as exc:
             return problems.diploma_problem(exc, instance=request.path, request=request)
@@ -277,7 +394,7 @@ class DiplomaAssignmentDetailView(_StaffView):
     )
     def delete(self, request: Request, assignment_id: str) -> Response:
         try:
-            composition.delete_assignment(assignment_id)
+            composition.delete_assignment(assignment_id, scope=callers_scope(request))
         except DiplomaError as exc:
             return problems.diploma_problem(exc, instance=request.path, request=request)
         rid = problems.request_id(request)
@@ -318,6 +435,7 @@ class DiplomaRegistryView(_StaffView):
         competition_id = _parse_uuid(raw)
         if competition_id is None:
             return problems.validation_problem({"competitionId": ["Укажите фестиваль."]}, instance=request.path, request=request)
+        _refuse_foreign_competition(request, competition_id)
         return problems.envelope(request, registry.list_diplomas(competition_id))
 
     @extend_schema(
@@ -331,6 +449,13 @@ class DiplomaRegistryView(_StaffView):
         if not serializer.is_valid():
             return problems.validation_problem(serializer.errors, instance=request.path, request=request)
         data = serializer.validated_data
+        # Two ids, two organizations to check. The template is this context's row;
+        # the submission belongs to Applications and reaches its competition through
+        # `competition_id` there. Guarding only the template would let a caller stamp
+        # their own design onto another organization's performance — creating a
+        # numbered diploma, off their sequence, in somebody else's registry.
+        _refuse_foreign_template(request, str(data["templateId"]))
+        _refuse_foreign_row(request, SubmissionModel.objects.all(), data["submissionId"])
         try:
             diploma = registry.create_diploma(
                 submission_id=data["submissionId"],
@@ -360,6 +485,7 @@ class DiplomaRegistryDetailView(_StaffView):
                 instance=request.path,
                 correlation_id=problems.request_id(request),
             )
+        _refuse_foreign_row(request, DiplomaModel.objects.all(), parsed)
         try:
             diploma = registry.get_diploma(parsed)
         except DiplomaError as exc:
@@ -381,6 +507,7 @@ class DiplomaPrintPackageSummaryView(_StaffView):
         competition_id = _parse_uuid(raw)
         if competition_id is None:
             return problems.validation_problem({"competitionId": ["Укажите фестиваль."]}, instance=request.path, request=request)
+        _refuse_foreign_competition(request, competition_id)
         return problems.envelope(request, print_package.print_package_summary(competition_id))
 
 
@@ -399,6 +526,10 @@ class DiplomaPrintPackageView(_StaffView):
         if not serializer.is_valid():
             return problems.validation_problem(serializer.errors, instance=request.path, request=request)
         data = serializer.validated_data
+        # A write, and an expensive one: it creates diplomas, renders every page and
+        # uploads a ZIP. Refused before the job is queued rather than inside the
+        # worker, where a failure has no request left to answer.
+        _refuse_foreign_competition(request, str(data["competitionId"]))
         actor_id, label = _actor(request)
         try:
             job = print_package.start_print_package(
@@ -438,6 +569,10 @@ class DocumentGenerationView(_StaffView):
         if not serializer.is_valid():
             return problems.validation_problem(serializer.errors, instance=request.path, request=request)
         data = serializer.validated_data
+        # `publish=True` by default puts the generated documents into participants'
+        # cabinets. On another organization's competition that is not a leak, it is a
+        # delivery — hence the guard before anything is rendered.
+        _refuse_foreign_competition(request, str(data["competitionId"]))
         actor_id, label = _actor(request)
         try:
             summary = documents.generate_documents(
@@ -485,7 +620,9 @@ class DiplomaGenerationArchiveView(_StaffView):
                 instance=request.path,
                 request=request,
             )
-        return problems.envelope(request, archive.list_runs(competition_id))
+        if competition_id is not None:
+            _refuse_foreign_competition(request, competition_id)
+        return problems.envelope(request, archive.list_runs(competition_id, scope=callers_scope(request)))
 
 
 class DiplomaPrintJobDetailView(_StaffView):
@@ -507,6 +644,7 @@ class DiplomaPrintJobDetailView(_StaffView):
                 instance=request.path,
                 correlation_id=problems.request_id(request),
             )
+        _refuse_foreign_row(request, PrintJobModel.objects.all(), parsed)
         try:
             job = print_package.get_print_job(parsed)
         except DiplomaError as exc:

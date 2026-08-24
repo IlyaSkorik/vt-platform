@@ -40,6 +40,13 @@ from apps.platform.presentation.api.v1.loadtest import MARKER, SANDBOX_YEAR
 
 pytestmark = pytest.mark.django_db
 
+#: One organization for everything this module builds. A template and the
+#: competition it is used on have to belong to the same organizer now — the scoped
+#: listings admit a row only when both sides match — so a fresh `uuid4()` per
+#: competition would put them on opposite sides of the boundary.
+_ORGANIZER = uuid.UUID("00000000-0000-4000-8000-0000000000a1")
+
+
 _PASSWORD = "V3ry$ecurePass!"
 _LOADTEST = "/api/v1/platform/loadtest/diplomas"
 
@@ -88,7 +95,7 @@ def template(_media_root: None) -> TemplateModel:
     page.drawString(50, 50, "background")
     page.save()
 
-    row = TemplateModel.objects.create(type="DIPLOMA", name="Нагрузочный шаблон")
+    row = TemplateModel.objects.create(organizer_id=_ORGANIZER, type="DIPLOMA", name="Нагрузочный шаблон")
     key = default_storage.save(f"diplomas/templates/{row.id}/bg.pdf", ContentFile(buffer.getvalue()))
     TemplateDocumentModel.objects.create(template=row, file_reference=f"/media/{key}", page_count=1)
     composition.replace_template_layout(
@@ -181,7 +188,7 @@ def test_cleanup_removes_the_run_and_leaves_real_data_alone(operator: APIClient,
     real = CompetitionModel.objects.create(
         title="Настоящий фестиваль",
         season="2026",
-        organizer_id=uuid.uuid4(),
+        organizer_id=_ORGANIZER,
         status="PUBLISHED",
     )
     operator.post(_LOADTEST, {"count": 4, "nominations": 2}, format="json")
@@ -220,7 +227,7 @@ def test_cleanup_can_be_scoped_to_one_run(operator: APIClient, template: Templat
 
 
 def test_refused_without_a_printable_template(operator: APIClient, _media_root: None) -> None:
-    TemplateModel.objects.create(type="DIPLOMA", name="Шаблон без PDF")
+    TemplateModel.objects.create(organizer_id=_ORGANIZER, type="DIPLOMA", name="Шаблон без PDF")
 
     response = operator.post(_LOADTEST, {"count": 2, "nominations": 1}, format="json")
 

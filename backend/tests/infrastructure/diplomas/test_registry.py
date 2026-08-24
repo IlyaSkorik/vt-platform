@@ -30,6 +30,13 @@ from apps.diplomas.infrastructure.repositories import (
 
 pytestmark = pytest.mark.django_db
 
+#: One organization for everything this module builds. A template and the
+#: competition it is used on have to belong to the same organizer now — the scoped
+#: listings admit a row only when both sides match — so a fresh `uuid4()` per
+#: competition would put them on opposite sides of the boundary.
+_ORGANIZER = uuid.UUID("00000000-0000-4000-8000-0000000000a1")
+
+
 _NOW = datetime(2026, 5, 20, 12, 0, tzinfo=UTC)
 
 
@@ -45,7 +52,7 @@ def _competition() -> CompetitionModel:
     return CompetitionModel.objects.create(
         title="Восходящие таланты",
         season="2026",
-        organizer_id=uuid.uuid4(),
+        organizer_id=_ORGANIZER,
         status="PUBLISHED",
         venue_name="Москва",
         competition_start=date(2026, 5, 15),
@@ -68,7 +75,7 @@ def test_create_diploma_snapshots_and_starts_draft_without_degree() -> None:
     competition = _competition()
     category = CategoryModel.objects.create(competition=competition, name="Вокал")
     submission = _submission(competition, category=category)
-    template = TemplateModel.objects.create(type="DIPLOMA", name="Шаблон")
+    template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type="DIPLOMA", name="Шаблон")
 
     diploma = _service().create_diploma(submission_id=submission.id, template_id=template.id, now=_NOW)
 
@@ -87,7 +94,7 @@ def test_create_diploma_snapshots_and_starts_draft_without_degree() -> None:
 
 def test_numbers_are_unique_and_sequential() -> None:
     competition = _competition()
-    template = TemplateModel.objects.create(type="DIPLOMA", name="Шаблон")
+    template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type="DIPLOMA", name="Шаблон")
     service = _service()
 
     first = service.create_diploma(submission_id=_submission(competition).id, template_id=template.id, now=_NOW)
@@ -101,7 +108,7 @@ def test_numbers_are_unique_and_sequential() -> None:
 
 def test_registry_lists_competition_diplomas_and_reads_one() -> None:
     competition = _competition()
-    template = TemplateModel.objects.create(type="DIPLOMA", name="Шаблон")
+    template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type="DIPLOMA", name="Шаблон")
     service = _service()
     created = service.create_diploma(submission_id=_submission(competition).id, template_id=template.id, now=_NOW)
 
@@ -124,7 +131,7 @@ def test_unknown_template_raises() -> None:
 
 def test_one_diploma_per_performance() -> None:
     competition = _competition()
-    template = TemplateModel.objects.create(type="DIPLOMA", name="Шаблон")
+    template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type="DIPLOMA", name="Шаблон")
     submission = _submission(competition)
     service = _service()
     service.create_diploma(submission_id=submission.id, template_id=template.id, now=_NOW)
@@ -135,7 +142,7 @@ def test_one_diploma_per_performance() -> None:
 
 
 def test_unknown_submission_raises() -> None:
-    template = TemplateModel.objects.create(type="DIPLOMA", name="Шаблон")
+    template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type="DIPLOMA", name="Шаблон")
 
     with pytest.raises(SubmissionNotFoundError):
         _service().create_diploma(submission_id=uuid.uuid4(), template_id=template.id, now=_NOW)

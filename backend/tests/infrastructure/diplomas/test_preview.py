@@ -18,6 +18,12 @@ from apps.diplomas.presentation.api.v1.diplomas import preview
 
 pytestmark = pytest.mark.django_db
 
+#: One organization for everything this module builds. A template and the
+#: competition it is used on have to belong to the same organizer now — the scoped
+#: listings admit a row only when both sides match — so a fresh `uuid4()` per
+#: competition would put them on opposite sides of the boundary.
+_ORGANIZER = uuid.UUID("00000000-0000-4000-8000-0000000000a1")
+
 
 def _submission(competition_id: uuid.UUID, display_name: str, **extra: object) -> SubmissionModel:
     return SubmissionModel.objects.create(
@@ -75,7 +81,7 @@ def test_resolves_competition_and_nomination_across_contexts() -> None:
     competition = CompetitionModel.objects.create(
         title="Восходящие таланты",
         season="2026",
-        organizer_id=uuid.uuid4(),
+        organizer_id=_ORGANIZER,
         status="PUBLISHED",
         venue_name="Москва",
         competition_start=date(2026, 5, 15),

@@ -41,6 +41,15 @@ from apps.diplomas.infrastructure.pdf.renderer import (
     render_diploma_pdf,
 )
 from apps.diplomas.presentation.api.v1.diplomas import composition, print_package
+from apps.diplomas.presentation.scope import Scope
+
+#: One organization for everything this module builds. A template and the
+#: competition it is used on have to belong to the same organizer now — the scoped
+#: listings admit a row only when both sides match — so a fresh `uuid4()` per
+#: competition would put them on opposite sides of the boundary.
+_ORGANIZER = uuid.UUID("00000000-0000-4000-8000-0000000000a1")
+_SCOPE = Scope.for_organization(_ORGANIZER)
+
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -279,12 +288,12 @@ class TestPrintPackageCycle:
         competition = CompetitionModel.objects.create(
             title="Восходящие таланты",
             season="2026",
-            organizer_id=uuid.uuid4(),
+            organizer_id=_ORGANIZER,
             status="PUBLISHED",
             competition_start=date(2026, 5, 15),
         )
         category = CategoryModel.objects.create(competition=competition, name="Вокал")
-        template = TemplateModel.objects.create(type="DIPLOMA", name="Вокал A4")
+        template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type="DIPLOMA", name="Вокал A4")
         key = default_storage.save(f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf()))
         TemplateDocumentModel.objects.create(template=template, file_reference=f"/media/{key}", page_count=1)
         composition.replace_template_layout(template_id=str(template.id), fields=[_name_field(), _qr_field()])
@@ -292,6 +301,7 @@ class TestPrintPackageCycle:
             competition_id=str(competition.id),
             category_id=str(category.id),
             template_id=str(template.id),
+            scope=_SCOPE,
         )
         SubmissionModel.objects.create(
             competition_id=competition.id,

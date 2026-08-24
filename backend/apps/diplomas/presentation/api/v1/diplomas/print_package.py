@@ -32,6 +32,7 @@ from apps.diplomas.infrastructure.repositories import (
     DjangoDiplomaRepository,
 )
 from apps.diplomas.presentation.api.v1.diplomas import composition
+from apps.diplomas.presentation.scope import Scope
 
 __all__ = [
     "build_batch_service",
@@ -63,7 +64,10 @@ def _assignments_by_category(competition_id: uuid.UUID, document_type: DocumentT
     wanted = document_type.value
     return {
         item["categoryId"]: item
-        for item in composition.list_assignments()
+        # Unscoped, and narrowed to `competition_id` on the next line instead. The
+        # caller's right to this competition was settled at the edge, and half the
+        # callers are Celery tasks with no request to scope by.
+        for item in composition.list_assignments(scope=Scope.already_authorized())
         if item["competitionId"] == str(competition_id) and item["documentType"] == wanted
     }
 

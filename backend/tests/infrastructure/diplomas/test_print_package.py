@@ -21,6 +21,7 @@ from apps.diplomas.domain.exceptions import PrintTemplateNotReadyError
 from apps.diplomas.domain.value_objects import DiplomaStatus
 from apps.diplomas.infrastructure.models import DiplomaModel, TemplateDocumentModel, TemplateModel
 from apps.diplomas.presentation.api.v1.diplomas import composition, print_package
+from apps.diplomas.presentation.scope import Scope
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -28,6 +29,14 @@ if TYPE_CHECKING:
     from pytest_django.fixtures import SettingsWrapper
 
 pytestmark = pytest.mark.django_db
+
+#: One organization for everything this module builds. A template and the
+#: competition it is used on have to belong to the same organizer now — the scoped
+#: listings admit a row only when both sides match — so a fresh `uuid4()` per
+#: competition would put them on opposite sides of the boundary.
+_ORGANIZER = uuid.UUID("00000000-0000-4000-8000-0000000000a1")
+_SCOPE = Scope.for_organization(_ORGANIZER)
+
 
 _NOW = datetime(2026, 5, 20, 12, 0, tzinfo=UTC)
 
@@ -46,7 +55,7 @@ def _backing_pdf() -> bytes:
 
 
 def _template_with_pdf(name: str, document_type: str = "DIPLOMA", *, degree_field: bool = False) -> TemplateModel:
-    template = TemplateModel.objects.create(type=document_type, name=name)
+    template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type=document_type, name=name)
     key = default_storage.save(f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf()))
     TemplateDocumentModel.objects.create(template=template, file_reference=f"/media/{key}", page_count=1)
     fields: list[dict[str, object]] = [
@@ -80,7 +89,7 @@ def _competition() -> CompetitionModel:
     return CompetitionModel.objects.create(
         title="Восходящие таланты",
         season="2026",
-        organizer_id=uuid.uuid4(),
+        organizer_id=_ORGANIZER,
         status="PUBLISHED",
         competition_start=date(2026, 5, 15),
     )
@@ -110,6 +119,7 @@ def _assign(competition: CompetitionModel, category: CategoryModel, template: Te
         competition_id=str(competition.id),
         category_id=str(category.id),
         template_id=str(template.id),
+        scope=_SCOPE,
     )
 
 
@@ -221,7 +231,7 @@ def test_summary_breaks_down_by_nomination() -> None:
     theatre = CategoryModel.objects.create(competition=competition, name="Театр")
     _assign(competition, vocals, _template_with_pdf("Вокал A4"))
     # theatre has a template assigned but no uploaded PDF → not ready.
-    _assign(competition, theatre, TemplateModel.objects.create(type="DIPLOMA", name="Театр (без PDF)"))
+    _assign(competition, theatre, TemplateModel.objects.create(organizer_id=_ORGANIZER, type="DIPLOMA", name="Театр (без PDF)"))
     # dance has submissions but no template assigned.
     _submission(competition, "Иванов Иван", vocals)
     _submission(competition, "Сидоров С", vocals)

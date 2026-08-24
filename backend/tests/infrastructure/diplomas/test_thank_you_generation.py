@@ -40,6 +40,7 @@ from apps.diplomas.infrastructure.models import (
     TemplateModel,
 )
 from apps.diplomas.presentation.api.v1.diplomas import composition, documents
+from apps.diplomas.presentation.scope import Scope
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -49,6 +50,14 @@ if TYPE_CHECKING:
     from apps.diplomas.application.issued_documents import IssuedDocumentResult
 
 pytestmark = pytest.mark.django_db
+
+#: One organization for everything this module builds. A template and the
+#: competition it is used on have to belong to the same organizer now — the scoped
+#: listings admit a row only when both sides match — so a fresh `uuid4()` per
+#: competition would put them on opposite sides of the boundary.
+_ORGANIZER = uuid.UUID("00000000-0000-4000-8000-0000000000a1")
+_SCOPE = Scope.for_organization(_ORGANIZER)
+
 
 _NOW = datetime(2026, 5, 20, 12, 0, tzinfo=UTC)
 
@@ -85,7 +94,7 @@ def _template(name: str, document_type: str, *, with_qr: bool = False) -> Templa
     pre-rule template could leave behind, so the render-time defence is exercised
     rather than the API validation that normally prevents it.
     """
-    template = TemplateModel.objects.create(type=document_type, name=name)
+    template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type=document_type, name=name)
     key = default_storage.save(f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf()))
     TemplateDocumentModel.objects.create(template=template, file_reference=f"/media/{key}", page_count=1)
     composition.replace_template_layout(
@@ -122,7 +131,7 @@ def _competition() -> CompetitionModel:
     return CompetitionModel.objects.create(
         title="Восходящие таланты",
         season="2026",
-        organizer_id=uuid.uuid4(),
+        organizer_id=_ORGANIZER,
         status="PUBLISHED",
         venue_name="Москва",
         competition_start=date(2026, 5, 15),
@@ -155,6 +164,7 @@ def _assign(competition: CompetitionModel, category: CategoryModel, template: Te
         competition_id=str(competition.id),
         category_id=str(category.id),
         template_id=str(template.id),
+        scope=_SCOPE,
     )
 
 
@@ -261,7 +271,7 @@ class TestLayoutRules:
     def test_a_thank_you_template_cannot_be_given_diploma_fields(self) -> None:
         from apps.diplomas.domain.exceptions import FieldTypeNotAllowedError
 
-        template = TemplateModel.objects.create(type="THANK_YOU", name="Благодарность")
+        template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type="THANK_YOU", name="Благодарность")
 
         with pytest.raises(FieldTypeNotAllowedError):
             composition.replace_template_layout(
@@ -280,7 +290,7 @@ class TestLayoutRules:
             )
 
     def test_a_thank_you_template_accepts_its_own_fields(self) -> None:
-        template = TemplateModel.objects.create(type="THANK_YOU", name="Благодарность")
+        template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type="THANK_YOU", name="Благодарность")
 
         layout = composition.replace_template_layout(
             template_id=str(template.id),
@@ -308,7 +318,7 @@ class TestLayoutRules:
         assert len(layout["fields"]) == 6
 
     def test_a_diploma_template_still_accepts_everything(self) -> None:
-        template = TemplateModel.objects.create(type="DIPLOMA", name="Диплом")
+        template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type="DIPLOMA", name="Диплом")
 
         layout = composition.replace_template_layout(
             template_id=str(template.id),
@@ -344,7 +354,7 @@ class TestAddressing:
         competition = _competition()
         vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
         _submission(competition, vocals, "Иванов Иван", teachers=teachers)
-        template = TemplateModel.objects.create(type="THANK_YOU", name="Благодарность")
+        template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type="THANK_YOU", name="Благодарность")
         key = default_storage.save(f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf()))
         TemplateDocumentModel.objects.create(template=template, file_reference=f"/media/{key}", page_count=1)
         composition.replace_template_layout(
@@ -468,7 +478,7 @@ class TestPerNominationTemplates:
         # The diploma assignment must not block the thank-you assignment.
         _assign(competition, vocals, thanks_template)
 
-        assignments = {item["documentType"]: item["templateId"] for item in composition.list_assignments()}
+        assignments = {item["documentType"]: item["templateId"] for item in composition.list_assignments(scope=_SCOPE)}
         assert assignments == {
             "DIPLOMA": str(diploma_template.id),
             "THANK_YOU": str(thanks_template.id),
@@ -674,7 +684,7 @@ class TestPreconditions:
         competition = _competition()
         vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
         _submission(competition, vocals, "Иванов Иван")
-        _assign(competition, vocals, TemplateModel.objects.create(type="THANK_YOU", name="Без PDF"))
+        _assign(competition, vocals, TemplateModel.objects.create(organizer_id=_ORGANIZER, type="THANK_YOU", name="Без PDF"))
 
         with pytest.raises(PrintTemplateNotReadyError):
             _generate(competition, vocals)

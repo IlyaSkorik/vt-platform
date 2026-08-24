@@ -36,6 +36,7 @@ from apps.diplomas.infrastructure.models import (
     TemplateModel,
 )
 from apps.diplomas.presentation.api.v1.diplomas import composition
+from apps.diplomas.presentation.scope import Scope
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -45,6 +46,14 @@ if TYPE_CHECKING:
     from apps.diplomas.application.awarding import AwardOutcome
 
 pytestmark = pytest.mark.django_db
+
+#: One organization for everything this module builds. A template and the
+#: competition it is used on have to belong to the same organizer now — the scoped
+#: listings admit a row only when both sides match — so a fresh `uuid4()` per
+#: competition would put them on opposite sides of the boundary.
+_ORGANIZER = uuid.UUID("00000000-0000-4000-8000-0000000000a1")
+_SCOPE = Scope.for_organization(_ORGANIZER)
+
 
 _NOW = datetime(2026, 5, 20, 12, 0, tzinfo=UTC)
 
@@ -73,7 +82,7 @@ def _backing_pdf() -> bytes:
 def _template(name: str, document_type: str, *, with_member: bool = False) -> TemplateModel:
     """A template of one kind, with a backing PDF, the performer's name, and — for an
     individual diploma — the one field that makes it individual."""
-    template = TemplateModel.objects.create(type=document_type, name=name)
+    template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type=document_type, name=name)
     key = default_storage.save(f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf()))
     TemplateDocumentModel.objects.create(template=template, file_reference=f"/media/{key}", page_count=1)
     fields = [
@@ -90,7 +99,7 @@ def _competition() -> CompetitionModel:
     return CompetitionModel.objects.create(
         title="Восходящие таланты",
         season="2026",
-        organizer_id=uuid.uuid4(),
+        organizer_id=_ORGANIZER,
         status="PUBLISHED",
         venue_name="Москва",
         competition_start=date(2026, 5, 15),
@@ -124,6 +133,7 @@ def _assign(competition: CompetitionModel, category: CategoryModel, template: Te
         competition_id=str(competition.id),
         category_id=str(category.id),
         template_id=str(template.id),
+        scope=_SCOPE,
     )
 
 
@@ -256,6 +266,7 @@ class TestOptingOut:
             competition_id=str(competition.id),
             category_ids=[str(vocals.id), str(dance.id)],
             template_id=str(diplomas.id),
+            scope=_SCOPE,
         )
         _assign(competition, vocals, _template("Диплом участнику", "INDIVIDUAL_DIPLOMA", with_member=True))
         dancers = _submission(competition, dance, "Ансамбль «Ритм»", members=_ROSTER)

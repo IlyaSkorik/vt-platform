@@ -32,6 +32,13 @@ from apps.diplomas.infrastructure.repositories import (
 
 pytestmark = pytest.mark.django_db
 
+#: One organization for everything this module builds. A template and the
+#: competition it is used on have to belong to the same organizer now — the scoped
+#: listings admit a row only when both sides match — so a fresh `uuid4()` per
+#: competition would put them on opposite sides of the boundary.
+_ORGANIZER = uuid.UUID("00000000-0000-4000-8000-0000000000a1")
+
+
 _NOW = datetime(2026, 5, 20, 12, 0, tzinfo=UTC)
 
 
@@ -47,7 +54,7 @@ def _competition() -> CompetitionModel:
     return CompetitionModel.objects.create(
         title="Восходящие таланты",
         season="2026",
-        organizer_id=uuid.uuid4(),
+        organizer_id=_ORGANIZER,
         status="PUBLISHED",
         venue_name="Москва",
         competition_start=date(2026, 5, 15),
@@ -70,7 +77,7 @@ def _diploma() -> Diploma:
     competition = _competition()
     category = CategoryModel.objects.create(competition=competition, name="Вокал")
     submission = _submission(competition, category=category)
-    template = TemplateModel.objects.create(type="DIPLOMA", name="Шаблон")
+    template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type="DIPLOMA", name="Шаблон")
     return _service().create_diploma(submission_id=submission.id, template_id=template.id, now=_NOW)
 
 

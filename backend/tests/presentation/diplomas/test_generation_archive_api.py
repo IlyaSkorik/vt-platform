@@ -26,9 +26,11 @@ from apps.competitions.infrastructure.models.competition import CompetitionModel
 from apps.competitions.infrastructure.models.taxonomy import CategoryModel
 from apps.diplomas.infrastructure.models import TemplateDocumentModel, TemplateModel
 from apps.diplomas.presentation.api.v1.diplomas import composition
+from apps.diplomas.presentation.scope import Scope
 from apps.identity.presentation.api.v1.auth import composition as identity_composition
 from apps.organization.application.dto.commands import ProvisionOwnerCommand
 from apps.organization.composition import build_provision_owner_handler
+from apps.organization.infrastructure.models import OrganizationModel
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -36,6 +38,23 @@ if TYPE_CHECKING:
     from pytest_django.fixtures import SettingsWrapper
 
 pytestmark = pytest.mark.django_db
+
+
+def _organizer() -> uuid.UUID:
+    """The organization the staff fixture below belongs to.
+
+    Not an invented constant, unlike the pure-composition suites: these tests drive
+    real HTTP, and ``ProvisionOwnerCommand`` makes the caller an owner of the
+    *seeded* organization. The archive is scoped to the caller's own organization,
+    so a competition filed under any other id would correctly come back empty and
+    the failure would look like a broken archive rather than a mismatched fixture.
+    """
+    return uuid.UUID(str(OrganizationModel.objects.values_list("id", flat=True).get(slug="vzlyot-talantov")))
+
+
+def _scope() -> Scope:
+    return Scope.for_organization(_organizer())
+
 
 _PASSWORD = "V3ry$ecurePass!"
 _ARCHIVE = "/api/v1/staff/diplomas/generation-archive"
@@ -87,7 +106,7 @@ def _backing_pdf() -> bytes:
 
 
 def _template(name: str, document_type: str) -> TemplateModel:
-    template = TemplateModel.objects.create(type=document_type, name=name)
+    template = TemplateModel.objects.create(organizer_id=_organizer(), type=document_type, name=name)
     key = default_storage.save(f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf()))
     TemplateDocumentModel.objects.create(template=template, file_reference=f"/media/{key}", page_count=1)
     composition.replace_template_layout(
@@ -112,7 +131,7 @@ def _competition(title: str = "Восходящие таланты") -> tuple[Co
     competition = CompetitionModel.objects.create(
         title=title,
         season="2026",
-        organizer_id=uuid.uuid4(),
+        organizer_id=_organizer(),
         status="PUBLISHED",
         venue_name="Москва",
         competition_start=date(2026, 5, 15),
@@ -134,6 +153,7 @@ def _assign(competition: CompetitionModel, category: CategoryModel, template: Te
         competition_id=str(competition.id),
         category_id=str(category.id),
         template_id=str(template.id),
+        scope=_scope(),
     )
 
 
