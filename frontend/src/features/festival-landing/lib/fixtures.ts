@@ -43,6 +43,25 @@ export function makeContacts(overrides: Partial<FestivalContacts> = {}): Festiva
       directions: null,
     },
     legalInformation: "ООО «Оргкомитет», УНП 100200300",
+    // No supporting entity by default: that is the ordinary festival, and a test
+    // that cares about the block says so by overriding it.
+    supporter: null,
+    ...overrides,
+  };
+}
+
+/** Test factory for the optional "with the support of" block. */
+export function makeSupporter(
+  overrides: Partial<NonNullable<FestivalContacts["supporter"]>> = {},
+): NonNullable<FestivalContacts["supporter"]> {
+  return {
+    name: "ГУ «Дворец культуры»",
+    phone: "+375 17 222-22-22",
+    email: "dk@example.by",
+    website: null,
+    address: "г. Минск, ул. Ленина, 5",
+    social: { vk: null, telegram: null, instagram: null },
+    legalInformation: "ГУ «Дворец культуры», УНП 100987654",
     ...overrides,
   };
 }

@@ -33,15 +33,19 @@ interface SocialLink {
 }
 
 function socialLinks(contacts: FestivalContacts): SocialLink[] {
+  return socialLinksOf(contacts.social);
+}
+
+function socialLinksOf(social: FestivalContacts["social"]): SocialLink[] {
   const links: SocialLink[] = [];
-  if (contacts.social.vk) {
-    links.push({ label: "ВКонтакте", href: contacts.social.vk });
+  if (social.vk) {
+    links.push({ label: "ВКонтакте", href: social.vk });
   }
-  if (contacts.social.telegram) {
-    links.push({ label: "Telegram", href: contacts.social.telegram });
+  if (social.telegram) {
+    links.push({ label: "Telegram", href: social.telegram });
   }
-  if (contacts.social.instagram) {
-    links.push({ label: "Instagram", href: contacts.social.instagram });
+  if (social.instagram) {
+    links.push({ label: "Instagram", href: social.instagram });
   }
   return links;
 }
@@ -61,6 +65,8 @@ export function LandingFooter({ contacts }: LandingFooterProps): React.JSX.Eleme
   const hasContacts = Boolean(contacts.phone || contacts.email || contacts.address);
   const hasReach = Boolean(contacts.website) || social.length > 0;
   const legalInformation = contacts.legalInformation?.trim();
+  const supporter = contacts.supporter;
+  const supporterLegalInformation = supporter?.legalInformation?.trim();
 
   return (
     <footer className="rounded-2xl border bg-muted/40 p-6 sm:p-8">
@@ -69,6 +75,11 @@ export function LandingFooter({ contacts }: LandingFooterProps): React.JSX.Eleme
           than the phone screen instead of wrapping/truncating. */}
       <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
         <div className="min-w-0 space-y-3">
+          {/* The caption appears only when a supporting entity does. Alone, the first
+              bold name on a festival's own page is unambiguously its organizer;
+              beside a second entity's name it stops being, and that is when saying
+              which is which starts earning the line. */}
+          {supporter ? <p className="text-muted-foreground text-xs">Организатор</p> : null}
           <p className="break-words text-base font-semibold text-foreground">
             {contacts.organizationName ?? "Организатор"}
           </p>
@@ -93,6 +104,8 @@ export function LandingFooter({ contacts }: LandingFooterProps): React.JSX.Eleme
             </div>
           ) : null}
         </div>
+
+        {supporter ? <SupporterColumn supporter={supporter} /> : null}
 
         {hasReach ? (
           <div className="min-w-0 space-y-3">
@@ -146,11 +159,78 @@ export function LandingFooter({ contacts }: LandingFooterProps): React.JSX.Eleme
         ) : null}
       </div>
 
-      {legalInformation ? (
-        <p className="mt-8 whitespace-pre-line border-t pt-6 text-muted-foreground text-xs leading-relaxed">
-          {legalInformation}
-        </p>
+      {legalInformation || supporterLegalInformation ? (
+        <div className="mt-8 space-y-2 border-t pt-6 text-muted-foreground text-xs leading-relaxed">
+          {legalInformation ? <p className="whitespace-pre-line">{legalInformation}</p> : null}
+          {/* Prefixed, because two sets of requisites in a row read as one entity's
+              otherwise — and which entity a УНП belongs to is the whole point. */}
+          {supporterLegalInformation ? (
+            <p className="whitespace-pre-line">При поддержке: {supporterLegalInformation}</p>
+          ) : null}
+        </div>
       ) : null}
     </footer>
+  );
+}
+
+interface SupporterColumnProps {
+  supporter: NonNullable<FestivalContacts["supporter"]>;
+}
+
+/**
+ * The "with the support of" column, beside the organizer's.
+ *
+ * A column of its own rather than a line under the organizer: it is a different
+ * legal person, and its phone number sitting in the organizer's list would say
+ * something untrue. Rendered only when the festival names one.
+ */
+function SupporterColumn({ supporter }: SupporterColumnProps): React.JSX.Element {
+  const social = socialLinksOf(supporter.social);
+  const hasChannels = Boolean(supporter.phone || supporter.email || supporter.address);
+
+  return (
+    <div className="min-w-0 space-y-3">
+      <p className="text-muted-foreground text-xs">При поддержке</p>
+      <p className="break-words text-base font-semibold text-foreground">{supporter.name}</p>
+      {hasChannels ? (
+        <div className="flex flex-col items-start gap-2 text-sm text-muted-foreground">
+          {supporter.address ? (
+            <p className="flex min-w-0 items-start gap-2">
+              <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              <span className="break-words">{supporter.address}</span>
+            </p>
+          ) : null}
+          {supporter.phone ? (
+            <ContactLink icon={Phone} href={`tel:${supporter.phone}`}>
+              {supporter.phone}
+            </ContactLink>
+          ) : null}
+          {supporter.email ? (
+            <ContactLink icon={Mail} href={`mailto:${supporter.email}`}>
+              {supporter.email}
+            </ContactLink>
+          ) : null}
+        </div>
+      ) : null}
+      {supporter.website || social.length > 0 ? (
+        <div className="flex flex-col items-start gap-2 text-sm text-muted-foreground">
+          {supporter.website ? (
+            <ContactLink icon={Globe} href={supporter.website} external>
+              Сайт
+            </ContactLink>
+          ) : null}
+          {social.map((link) => (
+            <ContactLink
+              key={`${link.label}-${link.href}`}
+              icon={ExternalLink}
+              href={link.href}
+              external
+            >
+              {link.label}
+            </ContactLink>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
