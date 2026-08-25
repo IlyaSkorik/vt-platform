@@ -1125,8 +1125,8 @@
     "semantic_hash": ""
   },
   "backend/apps/competitions/presentation/api/v1/views.py": {
-    "mtime": 1785860600.6430166,
-    "ast_hash": "fa17deb6953444c018dd4d6e90215573",
+    "mtime": 1787679468.969293,
+    "ast_hash": "f31cb9ce316bdd56e82d5264defc2ca5",
     "semantic_hash": ""
   },
   "backend/apps/competitions/presentation/permissions.py": {
@@ -3610,8 +3610,8 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "backend/tests/presentation/competitions/test_competitions_api.py": {
-    "mtime": 1787237444.9933174,
-    "ast_hash": "76cbb712885c1de576c0482f7a58df6f",
+    "mtime": 1787679428.5017757,
+    "ast_hash": "ffad4c64a1a27db9fc124ee33f8c2997",
     "semantic_hash": ""
   },
   "backend/tests/presentation/competitions/test_openapi.py": {
