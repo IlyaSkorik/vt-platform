@@ -13,6 +13,7 @@ import uuid
 from typing import Any
 
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -330,3 +331,43 @@ def test_turning_the_teacher_requirement_off_reaches_the_submission_policy(staff
     assert saved.data["data"]["settings"]["requireTeacher"] is False
     assert staff_client.get(detail).data["data"]["settings"]["requireTeacher"] is False
     assert _submission_policy(competition_id, group_id).requires_teacher is False
+
+
+# ---------------------------------------------------------------------------
+# Branding
+# ---------------------------------------------------------------------------
+
+
+def _png(marker: bytes) -> SimpleUploadedFile:
+    """A one-pixel PNG whose trailing bytes differ per call, so two uploads differ."""
+    body = (
+        b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+        b"\x00\x00\x00\nIDAT\x78\x9c\x63\x00\x01\x00\x00\x05\x00\x01\x0d\x0a\x2d\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+    return SimpleUploadedFile(f"poster-{marker.decode()}.png", body + marker, content_type="image/png")
+
+
+def test_replacing_the_poster_mints_a_new_reference(staff_client: APIClient) -> None:
+    """A second upload has to land on its own key, or «Заменить» changes nothing visible.
+
+    With a bucket configured the storage overwrites a repeated key in place and serves it
+    back ``immutable`` for a year, so a poster written to a fixed ``poster.png`` keeps the
+    reference in the database byte-identical and every browser keeps the first image
+    forever — the upload succeeds, the toast appears, and the afisha never changes. The
+    filesystem storage the suite runs on hides that by renaming a colliding file, which is
+    why this asserts on the shape of the reference and not merely on the two differing.
+    """
+    competition_id = _create_competition(staff_client).data["data"]["id"]
+    poster_endpoint = f"/api/v1/competitions/{competition_id}/branding/poster"
+
+    first = staff_client.post(poster_endpoint, {"file": _png(b"one")}, format="multipart")
+    assert first.status_code == 200, first.data
+    second = staff_client.post(poster_endpoint, {"file": _png(b"two")}, format="multipart")
+    assert second.status_code == 200, second.data
+
+    first_ref = first.data["data"]["branding"]["poster"]
+    second_ref = second.data["data"]["branding"]["poster"]
+    assert first_ref != second_ref
+    # Not the guessable fixed key: that is the exact form a bucket would overwrite.
+    assert not first_ref.endswith(f"competitions/{competition_id}/poster.png")
+    assert not second_ref.endswith(f"competitions/{competition_id}/poster.png")
