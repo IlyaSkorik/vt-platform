@@ -12,10 +12,11 @@ from apps.organization.domain.value_objects import (
     OrganizationSlug,
     OrganizationStatus,
     PerformanceFeeSchedule,
+    SupportingOrganization,
 )
 from apps.organization.infrastructure.models import OrganizationModel
 
-__all__ = ["OrganizationMapper", "fee_schedule_from_json"]
+__all__ = ["OrganizationMapper", "fee_schedule_from_json", "supporter_from_json"]
 
 
 def fee_schedule_from_json(rows: object) -> PerformanceFeeSchedule | None:
@@ -28,6 +29,42 @@ def fee_schedule_from_json(rows: object) -> PerformanceFeeSchedule | None:
     if not isinstance(rows, list) or not rows:
         return None
     return PerformanceFeeSchedule.of((row["min_participants"], row["max_participants"], row["amount"]) for row in rows if isinstance(row, dict))
+
+
+_SUPPORTER_FIELDS: tuple[str, ...] = (
+    "phone",
+    "email",
+    "website",
+    "address",
+    "vk",
+    "instagram",
+    "telegram",
+    "legal_information",
+)
+
+
+def supporter_from_json(document: object) -> SupportingOrganization | None:
+    """Rebuild the supporting entity from its JSON column, or ``None`` when there is none.
+
+    A column that is not a document with a name reads as "no supporting entity"
+    rather than raising: rehydration re-validates nothing by contract, and the
+    column is NULL for every organization that is its own executor. Unknown keys
+    are ignored, so a column written by a later shape does not break rehydration.
+    """
+    if not isinstance(document, dict):
+        return None
+    name = document.get("name")
+    if not isinstance(name, str) or not name.strip():
+        return None
+    fields = {key: value for key in _SUPPORTER_FIELDS if isinstance(value := document.get(key), str)}
+    return SupportingOrganization(name=name, **fields)
+
+
+def _supporter_to_json(supporter: SupportingOrganization | None) -> dict[str, object] | None:
+    """Flatten the supporting entity into its JSON column (``None`` when unset)."""
+    if supporter is None:
+        return None
+    return {"name": supporter.name, **{key: getattr(supporter, key) for key in _SUPPORTER_FIELDS}}
 
 
 def _schedule_to_json(schedule: PerformanceFeeSchedule | None) -> list[dict[str, object]]:
@@ -68,6 +105,7 @@ class OrganizationMapper:
                 telegram=model.telegram,
                 legal_information=model.legal_information,
             ),
+            supporter=supporter_from_json(model.supporter),
             billing_model=BillingModel(model.billing_model),
             commission_rate=CommissionRate(model.commission_percent),
             fee_schedule=fee_schedule_from_json(model.performance_fee_tiers),
@@ -98,6 +136,7 @@ class OrganizationMapper:
             "instagram": profile.instagram,
             "telegram": profile.telegram,
             "legal_information": profile.legal_information,
+            "supporter": _supporter_to_json(entity.supporter),
             "billing_model": entity.billing_model.value,
             "commission_percent": entity.commission_rate.percent,
             "performance_fee_tiers": _schedule_to_json(entity.fee_schedule),

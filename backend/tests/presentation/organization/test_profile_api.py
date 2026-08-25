@@ -144,3 +144,73 @@ def test_null_updated_by_is_never_trusted_from_body(staff_client: APIClient) -> 
     response = staff_client.patch(_PROFILE_URL, {"phone": "1", "updatedBy": str(uuid.uuid4())}, format="json")
     assert response.status_code == 200
     assert response.data["data"]["phone"] == "1"
+
+
+# ---------------------------------------------------------------------------
+# Supporting organization ("при поддержке")
+# ---------------------------------------------------------------------------
+
+
+def test_supporting_organization_round_trips(staff_client: APIClient) -> None:
+    """The second block persists as its own entity, beside the organizer's own details.
+
+    The organizer of record and the legal person doing the work are two different
+    entities, and both have to reach the public page — so this asserts the two
+    blocks do not bleed into each other: the organization keeps its own phone while
+    the supporter carries a different one under its own name.
+    """
+    response = staff_client.patch(
+        _PROFILE_URL,
+        {
+            "phone": "+375 29 111-11-11",
+            "legalInformation": "ООО «Мелодия», УНП 191234567",
+            "supporter": {
+                "name": "  ГУ «Дворец культуры»  ",
+                "phone": "+375 17 222-22-22",
+                "email": "dk@example.by",
+                "legalInformation": "ГУ «Дворец культуры», УНП 100987654",
+            },
+        },
+        format="json",
+    )
+    assert response.status_code == 200, response.data
+    supporter = response.data["data"]["supporter"]
+    assert supporter["name"] == "ГУ «Дворец культуры»"  # trimmed
+    assert supporter["phone"] == "+375 17 222-22-22"
+    assert supporter["legalInformation"] == "ГУ «Дворец культуры», УНП 100987654"
+    assert response.data["data"]["phone"] == "+375 29 111-11-11"
+
+    reread = staff_client.get(_PROFILE_URL).data["data"]
+    assert reread["supporter"]["email"] == "dk@example.by"
+    assert reread["legalInformation"] == "ООО «Мелодия», УНП 191234567"
+
+
+def test_profile_starts_with_no_supporting_organization(staff_client: APIClient) -> None:
+    # `null`, not an object of nulls: "runs its own festivals" is the ordinary case,
+    # and the public page decides whether to render the block on exactly this.
+    assert staff_client.get(_PROFILE_URL).data["data"]["supporter"] is None
+
+
+def test_blanking_the_supporter_name_removes_the_whole_block(staff_client: APIClient) -> None:
+    """Clearing the name is the only way back to "no supporting entity" — it has to work.
+
+    The domain requires a name, so a named block cannot be edited into an unnamed
+    one; if a blank name were rejected instead of collapsing the block, an organizer
+    who filled it in once could never undo it.
+    """
+    staff_client.patch(_PROFILE_URL, {"supporter": {"name": "ГУ «Дворец культуры»", "phone": "+375 17"}}, format="json")
+    cleared = staff_client.patch(_PROFILE_URL, {"supporter": {"name": "", "phone": "+375 17"}}, format="json")
+    assert cleared.status_code == 200, cleared.data
+    # The phone left behind the cleared name goes with it, rather than persisting as
+    # an unnamed remnant the public page has no way to render.
+    assert cleared.data["data"]["supporter"] is None
+    assert staff_client.get(_PROFILE_URL).data["data"]["supporter"] is None
+
+
+def test_overlong_supporter_field_is_rejected(staff_client: APIClient) -> None:
+    response = staff_client.patch(
+        _PROFILE_URL,
+        {"supporter": {"name": "ГУ «Дворец культуры»", "phone": "x" * 201}},
+        format="json",
+    )
+    assert response.status_code == 400

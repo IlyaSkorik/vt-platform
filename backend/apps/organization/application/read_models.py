@@ -29,7 +29,32 @@ __all__ = [
     "OrganizerCardView",
     "StaffMembershipReadService",
     "StaffMembershipReader",
+    "SupportingOrganizationCardView",
 ]
+
+
+@dataclass(frozen=True, slots=True)
+class SupportingOrganizationCardView:
+    """Published read model of the entity a festival runs *with the support of*.
+
+    The organizer of record and the legal person actually doing the work are often
+    two different entities, and naming the second one is a legal requirement rather
+    than a courtesy. Mirrors
+    :class:`~apps.organization.domain.value_objects.SupportingOrganization` — the
+    same channels as the organizer's own card, plus its own ``name``, since it is a
+    different legal person. Absent as a whole (``None`` on the card) when the
+    organization has named no supporting entity, which is the ordinary case.
+    """
+
+    name: str
+    phone: str | None = None
+    email: str | None = None
+    website: str | None = None
+    address: str | None = None
+    vk: str | None = None
+    instagram: str | None = None
+    telegram: str | None = None
+    legal_information: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,6 +84,8 @@ class OrganizerCardView:
     instagram: str | None = None
     telegram: str | None = None
     legal_information: str | None = None
+    #: The supporting entity beside this organizer, when it has named one.
+    supporter: SupportingOrganizationCardView | None = None
 
 
 @runtime_checkable

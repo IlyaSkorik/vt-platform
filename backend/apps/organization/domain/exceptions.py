@@ -93,6 +93,10 @@ class InvalidOrganizationProfileError(ValueObjectValidationError):
     """The provided value is not a valid organization profile (a field is too long)."""
 
 
+class InvalidSupportingOrganizationError(ValueObjectValidationError):
+    """The provided value is not a valid supporting organization (no name, or a field is too long)."""
+
+
 class InvalidStaffEmailError(ValueObjectValidationError):
     """The provided value is not a syntactically valid email address."""
 

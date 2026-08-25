@@ -54,6 +54,8 @@ from .exceptions import (
     InvalidStaffInvitationIdError,
     InvalidStaffMembershipIdError,
     InvalidStaffUserIdError,
+    InvalidSupportingOrganizationError,
+    ValueObjectValidationError,
 )
 
 __all__ = [
@@ -73,6 +75,7 @@ __all__ = [
     "StaffMembershipId",
     "StaffRole",
     "StaffUserId",
+    "SupportingOrganization",
 ]
 
 _UUID_V7_VERSION: Final = 7
@@ -617,19 +620,105 @@ class OrganizationProfile:
     @staticmethod
     def _clean(field_name: str, value: str | None, max_length: int) -> str | None:
         """Strip surrounding whitespace, collapse blanks to ``None``, and bound length."""
-        if value is None:
-            return None
-        stripped = value.strip()
-        if not stripped:
-            return None
-        if len(stripped) > max_length:
-            raise InvalidOrganizationProfileError(f"Organization profile field {field_name!r} must be at most {max_length} characters.")
-        return stripped
+        return _clean_contact_field(field_name, value, max_length, error=InvalidOrganizationProfileError, owner="Organization profile")
 
     @classmethod
     def empty(cls) -> OrganizationProfile:
         """The profile of an organization that has not filled in any contact details."""
         return cls()
+
+
+def _clean_contact_field(
+    field_name: str,
+    value: str | None,
+    max_length: int,
+    *,
+    error: type[ValueObjectValidationError],
+    owner: str,
+) -> str | None:
+    """Strip surrounding whitespace, collapse blanks to ``None``, and bound length.
+
+    Shared by the two contact bundles on the aggregate — the organization's own
+    :class:`OrganizationProfile` and the :class:`SupportingOrganization` beside it —
+    so "how a contact field is normalized" is decided once. Each passes its own
+    error type, because a too-long field is a different problem to report depending
+    on which of the two blocks the organizer was filling in.
+    """
+    if value is None:
+        return None
+    stripped = value.strip()
+    if not stripped:
+        return None
+    if len(stripped) > max_length:
+        raise error(f"{owner} field {field_name!r} must be at most {max_length} characters.")
+    return stripped
+
+
+@dataclass(frozen=True, slots=True)
+class SupportingOrganization:
+    """The legal entity a festival runs *with the support of*, beside the organizer.
+
+    Belarusian law wants the entity actually behind an event named on it, and in
+    practice those are two different legal persons: one is the organizer of record,
+    another does the work. This is the second one — the same "how to reach and
+    identify us" bundle as :class:`OrganizationProfile`, plus its own ``name``,
+    because it is a *different* legal person and its name is not the organization's.
+
+    Unlike the profile, this block exists or it does not: the organizer either names
+    a supporting entity or leaves the whole thing blank. That is why ``name`` is
+    required and the aggregate holds ``SupportingOrganization | None`` rather than an
+    always-present value with every field optional — "supported by nobody" and
+    "supported by someone we know nothing about" are not the same statement, and only
+    the first one is real. Use :meth:`of` to build it from form input, which returns
+    ``None`` for exactly that case.
+
+    No ``logo``: a logo is uploaded through its own endpoint against the organization,
+    and the supporting entity is named in text on the public page.
+    """
+
+    name: str
+    phone: str | None = None
+    email: str | None = None
+    website: str | None = None
+    address: str | None = None
+    vk: str | None = None
+    instagram: str | None = None
+    telegram: str | None = None
+    legal_information: str | None = None
+
+    def __post_init__(self) -> None:
+        name = (self.name or "").strip()
+        if not name:
+            raise InvalidSupportingOrganizationError("Supporting organization name must not be empty.")
+        if len(name) > _PROFILE_SHORT_MAX:
+            raise InvalidSupportingOrganizationError(f"Supporting organization name must be at most {_PROFILE_SHORT_MAX} characters.")
+        object.__setattr__(self, "name", name)
+        object.__setattr__(self, "phone", self._clean("phone", self.phone, _PROFILE_SHORT_MAX))
+        object.__setattr__(self, "email", self._clean("email", self.email, _PROFILE_SHORT_MAX))
+        object.__setattr__(self, "website", self._clean("website", self.website, _PROFILE_SHORT_MAX))
+        object.__setattr__(self, "address", self._clean("address", self.address, _PROFILE_ADDRESS_MAX))
+        object.__setattr__(self, "vk", self._clean("vk", self.vk, _PROFILE_SHORT_MAX))
+        object.__setattr__(self, "instagram", self._clean("instagram", self.instagram, _PROFILE_SHORT_MAX))
+        object.__setattr__(self, "telegram", self._clean("telegram", self.telegram, _PROFILE_SHORT_MAX))
+        object.__setattr__(self, "legal_information", self._clean("legal_information", self.legal_information, _PROFILE_LEGAL_MAX))
+
+    @staticmethod
+    def _clean(field_name: str, value: str | None, max_length: int) -> str | None:
+        """Strip surrounding whitespace, collapse blanks to ``None``, and bound length."""
+        return _clean_contact_field(field_name, value, max_length, error=InvalidSupportingOrganizationError, owner="Supporting organization")
+
+    @classmethod
+    def of(cls, *, name: str | None, **fields: str | None) -> SupportingOrganization | None:
+        """Build from form input, or ``None`` when no supporting entity was named.
+
+        The profile form always submits every field, so "the organizer cleared this
+        block" arrives as a blank name — and a blank name is the one thing that makes
+        the block not exist. Contact fields left behind a cleared name are dropped
+        with it rather than being kept as an unnamed remnant.
+        """
+        if name is None or not name.strip():
+            return None
+        return cls(name=name, **fields)
 
 
 # ---------------------------------------------------------------------------

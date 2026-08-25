@@ -52,6 +52,12 @@ class OrganizationModel(BasePersistenceModel):
     instagram = models.CharField(max_length=200, null=True, blank=True, default=None)
     telegram = models.CharField(max_length=200, null=True, blank=True, default=None)
     legal_information = models.TextField(max_length=5000, null=True, blank=True, default=None)
+    # The supporting legal entity, when the organizer of record is not the one doing
+    # the work — the domain SupportingOrganization, as a JSON document rather than a
+    # second set of nine nullable columns. It is one optional nested object, always
+    # read and written whole, and NULL says "no supporting entity" in a way nine
+    # all-null columns cannot: they cannot tell that apart from a named-but-empty one.
+    supporter = models.JSONField(null=True, blank=True, default=None)
     # The commercial term the organization is connected under. Set by the platform
     # operator, never by the organization's own staff. Exactly one of the two applies
     # — `billing_model` says which — but both are stored, so switching between them

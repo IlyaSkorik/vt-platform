@@ -13,7 +13,8 @@ import uuid
 from collections.abc import Iterable
 from typing import Any
 
-from apps.organization.application.read_models import OrganizerCardView
+from apps.organization.application.read_models import OrganizerCardView, SupportingOrganizationCardView
+from apps.organization.infrastructure.mappers.organization_mapper import supporter_from_json
 from apps.organization.infrastructure.models import OrganizationModel
 
 __all__ = ["DjangoOrganizationDirectory"]
@@ -39,6 +40,7 @@ class DjangoOrganizationDirectory:
         "instagram",
         "telegram",
         "legal_information",
+        "supporter",
     )
 
     def resolve(self, organizer_ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, OrganizerCardView]:
@@ -68,4 +70,28 @@ class DjangoOrganizationDirectory:
             instagram=row["instagram"],
             telegram=row["telegram"],
             legal_information=row["legal_information"],
+            supporter=_supporter_card(row["supporter"]),
         )
+
+
+def _supporter_card(document: object) -> SupportingOrganizationCardView | None:
+    """Project the supporter JSON column into its published card view.
+
+    Reuses the mapper's reader rather than re-parsing the column here: the write
+    side and this read side would otherwise disagree about what a malformed
+    document means, and that disagreement is invisible until one of them is wrong.
+    """
+    supporter = supporter_from_json(document)
+    if supporter is None:
+        return None
+    return SupportingOrganizationCardView(
+        name=supporter.name,
+        phone=supporter.phone,
+        email=supporter.email,
+        website=supporter.website,
+        address=supporter.address,
+        vk=supporter.vk,
+        instagram=supporter.instagram,
+        telegram=supporter.telegram,
+        legal_information=supporter.legal_information,
+    )

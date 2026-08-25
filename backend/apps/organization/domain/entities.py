@@ -75,6 +75,7 @@ from .value_objects import (
     StaffMembershipId,
     StaffRole,
     StaffUserId,
+    SupportingOrganization,
 )
 
 __all__ = ["Organization", "StaffInvitation", "StaffMembership"]
@@ -119,6 +120,11 @@ class Organization:
     _created_at: datetime
     _updated_at: datetime
     _profile: OrganizationProfile = field(default_factory=OrganizationProfile.empty)
+    # The entity the festivals run "with the support of", when the organizer of
+    # record is not the one doing the work. None is the ordinary case — most
+    # organizations are their own executor — and the whole block is absent rather
+    # than present-and-blank, so the public page can tell "nobody" from "someone".
+    _supporter: SupportingOrganization | None = None
     _billing_model: BillingModel = BillingModel.COMMISSION_PERCENT
     _commission_rate: CommissionRate = field(default_factory=CommissionRate.zero)
     # The price list behind PER_PERFORMANCE_FEE; None while the percentage term
@@ -222,6 +228,7 @@ class Organization:
         created_at: datetime,
         updated_at: datetime,
         profile: OrganizationProfile | None = None,
+        supporter: SupportingOrganization | None = None,
         billing_model: BillingModel | None = None,
         commission_rate: CommissionRate | None = None,
         fee_schedule: PerformanceFeeSchedule | None = None,
@@ -238,6 +245,7 @@ class Organization:
             _created_at=created_at,
             _updated_at=updated_at,
             _profile=profile if profile is not None else OrganizationProfile.empty(),
+            _supporter=supporter,
             _billing_model=billing_model if billing_model is not None else BillingModel.COMMISSION_PERCENT,
             _commission_rate=commission_rate if commission_rate is not None else CommissionRate.zero(),
             _fee_schedule=fee_schedule,
@@ -268,6 +276,11 @@ class Organization:
     @property
     def profile(self) -> OrganizationProfile:
         return self._profile
+
+    @property
+    def supporter(self) -> SupportingOrganization | None:
+        """The supporting legal entity, or ``None`` when the organization has none."""
+        return self._supporter
 
     @property
     def billing_model(self) -> BillingModel:
@@ -372,17 +385,23 @@ class Organization:
         profile: OrganizationProfile,
         *,
         name: OrganizationName | None = None,
+        supporter: SupportingOrganization | None = None,
         now: datetime,
     ) -> list[DomainEvent]:
-        """Apply the staff edit form: an optional new display name and the profile.
+        """Apply the staff edit form: an optional new display name, the profile, the supporter.
 
         A full replacement (the form submits the whole editable set), guarded
         against a suspended organization. ``name`` is optional so a profile-only
         edit need not pass it; when given and different it renames the organization
-        (the slug — the URL identity — is deliberately not editable here). Applying
-        both changes advances the version exactly **once**. When nothing actually
-        changes it is a no-op: state is untouched, the version does not advance, and
-        no event is emitted.
+        (the slug — the URL identity — is deliberately not editable here).
+        ``supporter`` is a full replacement of the supporting entity block, and
+        ``None`` therefore *clears* it — unlike ``name``, where ``None`` means
+        "leave alone". The asymmetry is the point: a blank supporter block is the
+        organizer saying there is no supporting entity, and that has to be
+        expressible, while a blank organization name is never a valid statement.
+        Applying every change advances the version exactly **once**. When nothing
+        actually changes it is a no-op: state is untouched, the version does not
+        advance, and no event is emitted.
         """
         if self._status is OrganizationStatus.SUSPENDED:
             raise OrganizationSuspendedError("A suspended organization cannot be edited.")
@@ -390,8 +409,9 @@ class Organization:
         if name is not None and name != self._name:
             self._name = name
             events.append(OrganizationRenamed(aggregate_id=self._id.value, name=name))
-        if profile != self._profile:
+        if profile != self._profile or supporter != self._supporter:
             self._profile = profile
+            self._supporter = supporter
             events.append(OrganizationProfileUpdated(aggregate_id=self._id.value))
         if not events:
             return []

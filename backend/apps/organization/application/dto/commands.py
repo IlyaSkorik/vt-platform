@@ -16,6 +16,7 @@ __all__ = [
     "ProvisionOwnerCommand",
     "RevokeStaffInvitationCommand",
     "RevokeStaffMembershipCommand",
+    "SupportingOrganizationInput",
     "UpdateOrganizationProfileCommand",
 ]
 
@@ -81,14 +82,39 @@ class RevokeStaffMembershipCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class SupportingOrganizationInput:
+    """The "with the support of" block as the profile form submits it.
+
+    Nested rather than nine ``supporter_*`` siblings on the command, because the
+    block is accepted or cleared as a whole: ``supporter=None`` on the command is
+    "there is no supporting entity", which is a different statement from every one
+    of its fields happening to be blank. ``name`` is nullable here even though the
+    domain requires it — the form submits a blank name to mean "cleared", and the
+    handler is what turns that into ``None``.
+    """
+
+    name: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    website: str | None = None
+    address: str | None = None
+    vk: str | None = None
+    instagram: str | None = None
+    telegram: str | None = None
+    legal_information: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class UpdateOrganizationProfileCommand:
     """Replace the organization's public contact & legal profile.
 
     A full-replacement edit: every field the profile form carries. An omitted /
     cleared contact field arrives as ``None`` and clears the stored value.
     ``name`` is the organization's display name — ``None`` means "leave unchanged"
-    (the slug is never editable here). ``updated_by`` is the raw UUID of the
-    authenticated staff member making the change.
+    (the slug is never editable here). ``supporter`` is the optional second block —
+    the entity the festivals run with the support of — and ``None`` *clears* it,
+    matching the aggregate. ``updated_by`` is the raw UUID of the authenticated
+    staff member making the change.
     """
 
     updated_by: str
@@ -102,3 +128,4 @@ class UpdateOrganizationProfileCommand:
     instagram: str | None = None
     telegram: str | None = None
     legal_information: str | None = None
+    supporter: SupportingOrganizationInput | None = None

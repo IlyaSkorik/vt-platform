@@ -16,6 +16,7 @@ from apps.organization.domain.value_objects import (
     OrganizationName,
     OrganizationProfile,
     StaffUserId,
+    SupportingOrganization,
 )
 
 __all__ = ["UpdateOrganizationProfileHandler"]
@@ -69,8 +70,33 @@ class UpdateOrganizationProfileHandler:
                 telegram=command.telegram,
                 legal_information=command.legal_information,
             )
-            domain_events = organization.update_profile(profile, name=name, now=self._clock.utcnow())
+            supporter = _supporter_of(command)
+            domain_events = organization.update_profile(profile, name=name, supporter=supporter, now=self._clock.utcnow())
 
         self._organizations.save(organization)
         self._events.publish(domain_events)
         return OrganizationProfileView.from_organization(organization)
+
+
+def _supporter_of(command: UpdateOrganizationProfileCommand) -> SupportingOrganization | None:
+    """Build the supporting entity the command carries, or ``None`` when it names none.
+
+    Two ways to arrive at "no supporting entity" and both mean the same thing: the
+    block is absent from the request altogether, or it is present with the name
+    cleared. Neither is an error — an organization that does its own work is the
+    ordinary case, and clearing the block is how the organizer says so.
+    """
+    if command.supporter is None:
+        return None
+    supporter = command.supporter
+    return SupportingOrganization.of(
+        name=supporter.name,
+        phone=supporter.phone,
+        email=supporter.email,
+        website=supporter.website,
+        address=supporter.address,
+        vk=supporter.vk,
+        instagram=supporter.instagram,
+        telegram=supporter.telegram,
+        legal_information=supporter.legal_information,
+    )

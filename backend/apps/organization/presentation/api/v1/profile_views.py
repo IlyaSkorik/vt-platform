@@ -11,10 +11,14 @@ from rest_framework.views import APIView
 
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.identity.presentation.api.v1.problems import request_id, validation_problem
-from apps.organization.application.dto.commands import UpdateOrganizationProfileCommand
+from apps.organization.application.dto.commands import (
+    SupportingOrganizationInput,
+    UpdateOrganizationProfileCommand,
+)
 from apps.organization.application.dto.queries import GetOrganizationProfileQuery
 from apps.organization.application.exceptions import ApplicationError
 from apps.organization.application.handlers import OrganizationProfileView as OrganizationProfileReadModel
+from apps.organization.application.handlers.get_organization_profile import SupportingOrganizationView
 from apps.organization.composition import (
     build_get_organization_profile_handler,
     build_update_organization_profile_handler,
@@ -24,6 +28,20 @@ from apps.organization.presentation.api.v1.staff.views import application_proble
 from apps.organization.presentation.permissions import IsOrganizationStaff
 
 _TAG = "Organization"
+
+
+class SupportingOrganizationSerializer(serializers.Serializer[dict[str, object]]):
+    """The "with the support of" block: the organizer's channels, for a second entity."""
+
+    name = serializers.CharField()
+    phone = serializers.CharField(allow_null=True)
+    email = serializers.CharField(allow_null=True)
+    website = serializers.CharField(allow_null=True)
+    address = serializers.CharField(allow_null=True)
+    vk = serializers.CharField(allow_null=True)
+    instagram = serializers.CharField(allow_null=True)
+    telegram = serializers.CharField(allow_null=True)
+    legalInformation = serializers.CharField(source="legal_information", allow_null=True)  # noqa: N815  # API camelCase wire key (API-000 §7)
 
 
 class OrganizationProfileSerializer(serializers.Serializer[dict[str, object]]):
@@ -39,6 +57,7 @@ class OrganizationProfileSerializer(serializers.Serializer[dict[str, object]]):
     instagram = serializers.CharField(allow_null=True)
     telegram = serializers.CharField(allow_null=True)
     legalInformation = serializers.CharField(source="legal_information", allow_null=True)  # noqa: N815  # API camelCase wire key (API-000 §7)
+    supporter = SupportingOrganizationSerializer(allow_null=True)
 
 
 OrganizationProfileResponseSerializer = inline_serializer(
@@ -53,6 +72,26 @@ OrganizationProfileResponseSerializer = inline_serializer(
 def _profile_field() -> serializers.CharField:
     """A single optional profile field: absent leaves it, blank/null clears it."""
     return serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
+
+class SupportingOrganizationUpdateSerializer(serializers.Serializer[dict[str, object]]):
+    """Request body for the "with the support of" block — every field optional.
+
+    ``name`` allows blank on purpose, unlike the organization's own name: a blank
+    name is how the form says "this organization has no supporting entity", and the
+    handler drops the whole block when it arrives. Rejecting it here would leave the
+    organizer no way to undo the block once filled in.
+    """
+
+    name = serializers.CharField(required=False, allow_blank=True, allow_null=True, max_length=200)
+    phone = _profile_field()
+    email = _profile_field()
+    website = _profile_field()
+    address = _profile_field()
+    vk = _profile_field()
+    instagram = _profile_field()
+    telegram = _profile_field()
+    legalInformation = _profile_field()  # noqa: N815  # API camelCase wire key (API-000 §7)
 
 
 class OrganizationProfileUpdateSerializer(serializers.Serializer[dict[str, object]]):
@@ -74,6 +113,7 @@ class OrganizationProfileUpdateSerializer(serializers.Serializer[dict[str, objec
     instagram = _profile_field()
     telegram = _profile_field()
     legalInformation = _profile_field()  # noqa: N815  # API camelCase wire key (API-000 §7)
+    supporter = SupportingOrganizationUpdateSerializer(required=False, allow_null=True)
 
 
 class OrganizationProfileView(APIView):
@@ -131,6 +171,7 @@ class OrganizationProfileView(APIView):
             instagram=data.get("instagram"),
             telegram=data.get("telegram"),
             legal_information=data.get("legalInformation"),
+            supporter=_supporter_input(data.get("supporter")),
         )
         try:
             profile = build_update_organization_profile_handler().handle(command)
@@ -155,6 +196,46 @@ def _envelope(profile: OrganizationProfileReadModel, request: Request) -> dict[s
             "instagram": profile.instagram,
             "telegram": profile.telegram,
             "legalInformation": profile.legal_information,
+            "supporter": _supporter_body(profile.supporter),
         },
         "meta": {"requestId": request_id(request)},
+    }
+
+
+def _supporter_input(block: object) -> SupportingOrganizationInput | None:
+    """Map the validated nested block onto its command DTO, or ``None`` when absent.
+
+    An absent block leaves no supporting entity, which is also what a present block
+    with a blank name means — the handler collapses the second case, so this only
+    has to distinguish "the client sent the block at all".
+    """
+    if not isinstance(block, dict):
+        return None
+    return SupportingOrganizationInput(
+        name=block.get("name"),
+        phone=block.get("phone"),
+        email=block.get("email"),
+        website=block.get("website"),
+        address=block.get("address"),
+        vk=block.get("vk"),
+        instagram=block.get("instagram"),
+        telegram=block.get("telegram"),
+        legal_information=block.get("legalInformation"),
+    )
+
+
+def _supporter_body(supporter: SupportingOrganizationView | None) -> dict[str, object] | None:
+    """Render the supporting entity for the wire, or ``null`` when there is none."""
+    if supporter is None:
+        return None
+    return {
+        "name": supporter.name,
+        "phone": supporter.phone,
+        "email": supporter.email,
+        "website": supporter.website,
+        "address": supporter.address,
+        "vk": supporter.vk,
+        "instagram": supporter.instagram,
+        "telegram": supporter.telegram,
+        "legalInformation": supporter.legal_information,
     }
