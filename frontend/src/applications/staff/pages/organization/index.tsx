@@ -193,6 +193,76 @@ function OrganizationProfileForm({ profile }: OrganizationProfileFormProps): Rea
         </Card>
       </PageSection>
 
+      {/* The second entity, optional. Its own section rather than extra fields in
+          the ones above: it is a different legal person, and mixing its phone in
+          with the organizer's would be exactly the confusion naming it prevents. */}
+      <PageSection
+        title="При поддержке"
+        description="Организация, при поддержке которой проходят фестивали, если по документам организатор — одно лицо, а проводит их другое. Блок необязательный: заполните название, и он появится на странице фестиваля."
+      >
+        <Card className="shadow-none">
+          <CardContent className="space-y-6 pt-6">
+            <Input
+              label="Название организации"
+              placeholder="Например, ГУ «Дворец культуры»"
+              error={errors.supporterName?.message}
+              {...register("supporterName")}
+            />
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <Input
+                label="Телефон"
+                error={errors.supporterPhone?.message}
+                {...register("supporterPhone")}
+              />
+              <Input
+                label="Email"
+                type="email"
+                error={errors.supporterEmail?.message}
+                {...register("supporterEmail")}
+              />
+              <Input
+                label="Веб-сайт"
+                placeholder="https://…"
+                error={errors.supporterWebsite?.message}
+                {...register("supporterWebsite")}
+              />
+              <Input
+                label="Адрес"
+                error={errors.supporterAddress?.message}
+                {...register("supporterAddress")}
+              />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <Input
+                label="ВКонтакте"
+                error={errors.supporterVk?.message}
+                {...register("supporterVk")}
+              />
+              <Input
+                label="Instagram"
+                error={errors.supporterInstagram?.message}
+                {...register("supporterInstagram")}
+              />
+              <Input
+                label="Telegram"
+                error={errors.supporterTelegram?.message}
+                {...register("supporterTelegram")}
+              />
+            </div>
+
+            <Textarea
+              label="Юридическая информация"
+              description="Реквизиты именно этой организации — они не совпадают с реквизитами организатора."
+              rows={5}
+              error={errors.supporterLegalInformation?.message}
+              {...register("supporterLegalInformation")}
+            />
+          </CardContent>
+        </Card>
+      </PageSection>
+
       <div className="flex justify-end">
         <Button
           type="submit"

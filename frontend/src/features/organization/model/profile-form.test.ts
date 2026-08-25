@@ -15,6 +15,7 @@ const baseProfile: OrganizationProfile = {
   instagram: null,
   telegram: null,
   legalInformation: "ООО «Взлёт»",
+  supporter: null,
 };
 
 describe("profileToFormValues", () => {
@@ -38,6 +39,7 @@ describe("formValuesToUpdate", () => {
       instagram: "",
       telegram: "",
       legalInformation: "",
+      ...emptySupporter(),
     });
     expect(update.name).toBe("Взлёт");
     expect(update.phone).toBe("+375 29");
@@ -72,6 +74,85 @@ describe("organizationProfileSchema", () => {
     const result = organizationProfileSchema.safeParse({ ...emptyForm(), phone: "x".repeat(201) });
     expect(result.success).toBe(false);
   });
+
+  it("accepts a form with no supporting entity at all", () => {
+    // The ordinary organization runs its own festivals; the whole block stays blank.
+    const result = organizationProfileSchema.safeParse(emptyForm());
+    expect(result.success).toBe(true);
+  });
+
+  it("refuses supporting-entity details with no name to hang them on", () => {
+    // The name is what makes the block exist, so the backend would drop the address
+    // along with it. Losing what someone just typed without saying so is the bug.
+    const result = organizationProfileSchema.safeParse({
+      ...emptyForm(),
+      supporterAddress: "г. Минск, ул. Ленина, 5",
+    });
+    expect(result.success).toBe(false);
+    const issue = result.error?.issues.find((item) => item.path[0] === "supporterName");
+    expect(issue?.message).toContain("не сохранятся");
+  });
+
+  it("validates the supporting entity's email like the organization's own", () => {
+    const result = organizationProfileSchema.safeParse({
+      ...emptyForm(),
+      supporterName: "ГУ «Дворец культуры»",
+      supporterEmail: "not-an-email",
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("the supporting entity round trip", () => {
+  it("nests the flat form fields into the block the API takes", () => {
+    const update = formValuesToUpdate({
+      ...emptyForm(),
+      supporterName: "  ГУ «Дворец культуры»  ",
+      supporterPhone: "+375 17 222-22-22",
+      supporterLegalInformation: "ГУ «Дворец культуры», УНП 100987654",
+    });
+    expect(update.supporter.name).toBe("ГУ «Дворец культуры»");
+    expect(update.supporter.phone).toBe("+375 17 222-22-22");
+    expect(update.supporter.legalInformation).toBe("ГУ «Дворец культуры», УНП 100987654");
+    // The organization's own legal information stays its own — the two blocks are
+    // different legal persons and must not bleed into each other.
+    expect(update.legalInformation).toBeNull();
+  });
+
+  it("sends a blank name rather than omitting the block, so clearing it works", () => {
+    const update = formValuesToUpdate(emptyForm());
+    expect(update.supporter.name).toBe("");
+  });
+
+  it("seeds the form from a stored block and back without drift", () => {
+    const values = profileToFormValues({
+      ...baseProfile,
+      supporter: {
+        name: "ГУ «Дворец культуры»",
+        phone: "+375 17",
+        email: null,
+        website: null,
+        address: null,
+        vk: null,
+        instagram: null,
+        telegram: null,
+        legalInformation: "УНП 100987654",
+      },
+    });
+    expect(values.supporterName).toBe("ГУ «Дворец культуры»");
+    expect(values.supporterEmail).toBe("");
+    expect(formValuesToUpdate(values).supporter).toEqual({
+      name: "ГУ «Дворец культуры»",
+      phone: "+375 17",
+      email: null,
+      website: null,
+      address: null,
+      vk: null,
+      instagram: null,
+      telegram: null,
+      legalInformation: "УНП 100987654",
+    });
+  });
 });
 
 function emptyForm() {
@@ -85,5 +166,20 @@ function emptyForm() {
     instagram: "",
     telegram: "",
     legalInformation: "",
+    ...emptySupporter(),
+  };
+}
+
+function emptySupporter() {
+  return {
+    supporterName: "",
+    supporterPhone: "",
+    supporterEmail: "",
+    supporterWebsite: "",
+    supporterAddress: "",
+    supporterVk: "",
+    supporterInstagram: "",
+    supporterTelegram: "",
+    supporterLegalInformation: "",
   };
 }
