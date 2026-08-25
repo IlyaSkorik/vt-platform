@@ -57,6 +57,18 @@ import { ContactsSkeleton } from "./contacts-skeleton";
 
 const AUTOSAVE_DELAY_MS = 600;
 
+/** The supporter override's fields other than its name — what the name gives meaning to. */
+const SUPPORTER_DETAIL_KEYS = [
+  "phone",
+  "email",
+  "website",
+  "address",
+  "vk",
+  "instagram",
+  "telegram",
+  "legalInformation",
+] as const;
+
 interface ContactsSectionProps {
   competition: CompetitionDetail;
   checklist: PublicationChecklist;
@@ -438,6 +450,13 @@ export function ContactsSection({
 
   const org = orgQuery.data;
   const sourceValue = config.useOrganizationContacts ? "organization" : "custom";
+  const supporterSourceValue = config.useOrganizationSupporter ? "organization" : "custom";
+  // Details with no name to hang them on are dropped on save, so say so while the
+  // organizer is still looking at the fields rather than after they disappear.
+  const supporterOverrideNeedsName =
+    !config.useOrganizationSupporter &&
+    !config.supporterOverride.name?.trim() &&
+    SUPPORTER_DETAIL_KEYS.some((key) => Boolean(config.supporterOverride[key]?.trim()));
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
@@ -540,6 +559,96 @@ export function ContactsSection({
                   }
                 />
               ))}
+            </div>
+          )}
+        </SectionCard>
+
+        {/* Its own card, and its own source switch: whether this festival publishes
+            its own phone number and who it is run with the support of are two
+            unrelated decisions, and one radio group for both would tie them. */}
+        <SectionCard
+          title="При поддержке"
+          description="Организация, при поддержке которой проходит фестиваль. Необязательно — если её нет, блок не появится на странице фестиваля."
+        >
+          <RadioGroup
+            value={supporterSourceValue}
+            disabled={isReadOnly}
+            onValueChange={(value) =>
+              updateConfigLocal({ useOrganizationSupporter: value !== "custom" })
+            }
+          >
+            <Radio
+              value="organization"
+              label="Как указано в организации"
+              description={org?.supporter?.name ?? "В профиле организации не указана"}
+            />
+            <Radio
+              value="custom"
+              label="Указать для этого фестиваля"
+              description="Другая организация — или ни одной, если оставить название пустым"
+            />
+          </RadioGroup>
+
+          {config.useOrganizationSupporter ? (
+            org?.supporter == null ? (
+              <Alert variant="info" title="Поддерживающая организация не указана">
+                Её можно указать один раз в профиле организации — тогда она появится на страницах
+                всех фестивалей.
+              </Alert>
+            ) : (
+              <div className="grid gap-3 rounded-lg border border-border bg-muted/30 p-4 sm:grid-cols-2">
+                <ReadOnlyField label="Название" value={org.supporter.name} />
+                <ReadOnlyField label="Телефон" value={org.supporter.phone} />
+                <ReadOnlyField label="Email" value={org.supporter.email} />
+                <ReadOnlyField label="Сайт" value={org.supporter.website} />
+                <ReadOnlyField label="Адрес" value={org.supporter.address} />
+                <ReadOnlyField label="VK" value={org.supporter.vk} />
+                <ReadOnlyField label="Instagram" value={org.supporter.instagram} />
+                <ReadOnlyField label="Telegram" value={org.supporter.telegram} />
+                <ReadOnlyField
+                  label="Юридическая информация"
+                  value={org.supporter.legalInformation}
+                />
+              </div>
+            )
+          ) : (
+            <div className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {(
+                  [
+                    ["name", "Название организации"],
+                    ["phone", "Телефон"],
+                    ["email", "Email"],
+                    ["website", "Сайт"],
+                    ["address", "Адрес"],
+                    ["vk", "VK"],
+                    ["instagram", "Instagram"],
+                    ["telegram", "Telegram"],
+                    ["legalInformation", "Юридическая информация"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <Input
+                    key={key}
+                    label={label}
+                    disabled={isReadOnly}
+                    value={config.supporterOverride[key] ?? ""}
+                    onChange={(event) =>
+                      updateConfigLocal({
+                        supporterOverride: {
+                          ...config.supporterOverride,
+                          [key]: event.target.value,
+                        },
+                      })
+                    }
+                  />
+                ))}
+              </div>
+              {supporterOverrideNeedsName ? (
+                <Alert variant="warning" title="Укажите название организации">
+                  Без названия остальные поля не сохранятся: название — это то, что делает блок
+                  существующим.
+                </Alert>
+              ) : null}
             </div>
           )}
         </SectionCard>

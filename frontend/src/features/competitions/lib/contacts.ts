@@ -2,6 +2,7 @@ import type {
   _ContactProfileOverride,
   _ContactsConfig,
   _EmergencyContacts,
+  _SupportingOrganizationOverride,
   _TeamContact,
   _VenueDetails,
   CompetitionDetail,
@@ -12,6 +13,8 @@ export function defaultContactsConfig(): _ContactsConfig {
   return {
     useOrganizationContacts: true,
     override: emptyOverride(),
+    useOrganizationSupporter: true,
+    supporterOverride: emptySupporterOverride(),
     teamContacts: [],
     emergency: emptyEmergency(),
     venueDetails: emptyVenueDetails(),
@@ -28,6 +31,20 @@ export function emptyOverride(): _ContactProfileOverride {
     vk: null,
     instagram: null,
     telegram: null,
+  };
+}
+
+export function emptySupporterOverride(): _SupportingOrganizationOverride {
+  return {
+    name: null,
+    phone: null,
+    email: null,
+    website: null,
+    address: null,
+    vk: null,
+    instagram: null,
+    telegram: null,
+    legalInformation: null,
   };
 }
 
@@ -61,6 +78,18 @@ export function contactsConfigToPayload(config: _ContactsConfig): UpdateContacts
       vk: blankToNull(config.override.vk),
       instagram: blankToNull(config.override.instagram),
       telegram: blankToNull(config.override.telegram),
+    },
+    useOrganizationSupporter: config.useOrganizationSupporter,
+    supporterOverride: {
+      name: blankToNull(config.supporterOverride.name),
+      phone: blankToNull(config.supporterOverride.phone),
+      email: blankToNull(config.supporterOverride.email),
+      website: blankToNull(config.supporterOverride.website),
+      address: blankToNull(config.supporterOverride.address),
+      vk: blankToNull(config.supporterOverride.vk),
+      instagram: blankToNull(config.supporterOverride.instagram),
+      telegram: blankToNull(config.supporterOverride.telegram),
+      legalInformation: blankToNull(config.supporterOverride.legalInformation),
     },
     teamContacts: sortTeamContacts(config.teamContacts).map((item, index) => ({
       ...item,

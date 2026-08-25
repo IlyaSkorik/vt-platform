@@ -1,6 +1,25 @@
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { type ApiError, apiClient, toApiError } from "@/shared/api";
 
+/**
+ * The entity the organization's festivals run *with the support of*.
+ *
+ * Mirrors the same block in the `organization` feature rather than importing it:
+ * the two features stay independent, and this one only ever reads the profile.
+ * `null` when the organization named no supporting entity.
+ */
+export interface OrganizationSupporter {
+  name: string;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  address: string | null;
+  vk: string | null;
+  instagram: string | null;
+  telegram: string | null;
+  legalInformation: string | null;
+}
+
 export interface OrganizationProfile {
   id: string;
   name: string;
@@ -14,6 +33,7 @@ export interface OrganizationProfile {
   instagram: string | null;
   telegram: string | null;
   legalInformation: string | null;
+  supporter: OrganizationSupporter | null;
 }
 
 export const organizationKeys = {

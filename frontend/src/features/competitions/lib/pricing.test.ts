@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { CompetitionDetail } from "@/shared/api/generated/model-competitions";
 import { admissionRuleKey } from "./admission-rules";
+import { defaultContactsConfig } from "./contacts";
 import {
   applyBulkOperation,
   buildPricingRows,
@@ -186,28 +187,7 @@ function competition(partial: Partial<CompetitionDetail> = {}): CompetitionDetai
     currentRegulationId: null,
     documents: [],
     additionalServices: [],
-    contactsConfig: {
-      useOrganizationContacts: true,
-      override: {
-        organizationName: null,
-        phone: null,
-        email: null,
-        website: null,
-        address: null,
-        vk: null,
-        instagram: null,
-        telegram: null,
-      },
-      teamContacts: [],
-      emergency: { phone: null, email: null, notes: null },
-      venueDetails: {
-        city: null,
-        country: null,
-        googleMapsUrl: null,
-        yandexMapsUrl: null,
-        directions: null,
-      },
-    },
+    contactsConfig: defaultContactsConfig(),
     landingConfig: {
       blocks: [
         {
