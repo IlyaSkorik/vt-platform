@@ -435,7 +435,10 @@ class CompetitionViewSet(viewsets.ViewSet):
             "image/webp": ".webp",
         }
         extension = extension_by_type[content_type]
-        relative_path = default_storage.save(f"competitions/{pk}/poster{extension}", uploaded)
+        # A fresh key every time, never a fixed ``poster.jpg``: a bucket overwrites a repeated
+        # key in place and serves it back ``immutable`` for a year, so replacing the poster left
+        # both the stored reference and every cached copy pointing at the old image.
+        relative_path = default_storage.save(f"competitions/{pk}/poster/{uuid.uuid4().hex}{extension}", uploaded)
         # Ask the storage for the URL rather than assembling one: that is the single line
         # that decides whether this lives under /media/ or in a bucket.
         poster_ref = default_storage.url(relative_path)
