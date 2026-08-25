@@ -6414,7 +6414,12 @@ paths:
   /api/v1/staff/diplomas/templates/{template_id}/layout:
     get:
       operationId: diplomas_get_template_layout
-      description: Read and atomically save a template's field layout (the whole document).
+      description: |-
+        Read and atomically save a template's field layout (the whole document).
+
+        Both verbs address one template, so the ownership guard runs in :meth:`initial`
+        for the whole class rather than being repeated in each — the PUT is the one that
+        would silently rewrite another organization's design.
       parameters:
       - in: path
         name: template_id
@@ -6432,7 +6437,12 @@ paths:
           description: ''
     put:
       operationId: diplomas_save_template_layout
-      description: Read and atomically save a template's field layout (the whole document).
+      description: |-
+        Read and atomically save a template's field layout (the whole document).
+
+        Both verbs address one template, so the ownership guard runs in :meth:`initial`
+        for the whole class rather than being repeated in each — the PUT is the one that
+        would silently rewrite another organization's design.
       parameters:
       - in: path
         name: template_id
@@ -9738,7 +9748,7 @@ components:
           - 'null'
         billingModel:
           allOf:
-          - $ref: '#/components/schemas/BillingModelEnum'
+          - $ref: '#/components/schemas/BillingModel7acEnum'
           default: PER_PARTICIPANT
         participationFormatIds:
           type: array
@@ -10462,7 +10472,15 @@ components:
             $ref: '#/components/schemas/ProtocolAwardEntry'
       required:
       - awards
-    BillingModelEnum:
+    BillingModel011Enum:
+      enum:
+      - COMMISSION_PERCENT
+      - PER_PERFORMANCE_FEE
+      type: string
+      description: |-
+        * `COMMISSION_PERCENT` - COMMISSION_PERCENT
+        * `PER_PERFORMANCE_FEE` - PER_PERFORMANCE_FEE
+    BillingModel7acEnum:
       enum:
       - PER_PARTICIPANT
       - PER_PERFORMANCE
@@ -10748,6 +10766,12 @@ components:
           format: decimal
           pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
           default: '0.00'
+        billingModel:
+          $ref: '#/components/schemas/BillingModel011Enum'
+        feeTiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeeTier'
       required:
       - name
       - ownerEmail
@@ -11416,6 +11440,33 @@ components:
       required:
       - data
       - meta
+    FeeTier:
+      type: object
+      description: |-
+        One band of a per-performance fee schedule: a headcount range and its price.
+
+        ``maxParticipants`` may be ``null`` — the open-ended top band ("6 and up"). The
+        band set as a whole (sorted, gap-free, starting at one, open-ended at the top)
+        is validated by the domain, which owns that invariant; this only checks that
+        each row is a sane range with a sane price.
+      properties:
+        minParticipants:
+          type: integer
+          maximum: 10000
+          minimum: 1
+        maxParticipants:
+          type:
+          - integer
+          - 'null'
+          maximum: 10000
+          minimum: 1
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - amount
+      - minParticipants
     FieldConfig:
       type: object
       description: |-
@@ -11998,6 +12049,10 @@ components:
           type:
           - string
           - 'null'
+        supporter:
+          oneOf:
+          - $ref: '#/components/schemas/SupportingOrganization'
+          - type: 'null'
       required:
       - address
       - email
@@ -12008,6 +12063,7 @@ components:
       - name
       - phone
       - slug
+      - supporter
       - telegram
       - vk
       - website
@@ -12466,6 +12522,10 @@ components:
           type:
           - string
           - 'null'
+        supporter:
+          oneOf:
+          - $ref: '#/components/schemas/SupportingOrganizationUpdate'
+          - type: 'null'
     PatchedOrganizationWrite:
       type: object
       properties:
@@ -12593,7 +12653,7 @@ components:
           - 'null'
         billingModel:
           allOf:
-          - $ref: '#/components/schemas/BillingModelEnum'
+          - $ref: '#/components/schemas/BillingModel7acEnum'
           default: PER_PARTICIPANT
         participationFormatIds:
           type: array
@@ -12751,6 +12811,12 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        billingModel:
+          $ref: '#/components/schemas/BillingModel011Enum'
+        feeTiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeeTier'
         status:
           $ref: '#/components/schemas/UpdateOrganizationRequestStatusEnum'
     PatchedUpdateParticipantGroup:
@@ -14103,7 +14169,7 @@ components:
     PublicFestivalContacts:
       type: object
       description: 'The public contacts module: organizer identity, channels, team,
-        venue.'
+        venue, supporter.'
       properties:
         organizationName:
           type:
@@ -14139,6 +14205,10 @@ components:
           type:
           - string
           - 'null'
+        supporter:
+          oneOf:
+          - $ref: '#/components/schemas/PublicFestivalSupporter'
+          - type: 'null'
       required:
       - address
       - email
@@ -14147,6 +14217,7 @@ components:
       - organizationName
       - phone
       - social
+      - supporter
       - team
       - venue
       - website
@@ -14577,6 +14648,43 @@ components:
       - instagram
       - telegram
       - vk
+    PublicFestivalSupporter:
+      type: object
+      description: 'The "with the support of" block: a second legal entity, with its
+        own requisites.'
+      properties:
+        name:
+          type: string
+        phone:
+          type:
+          - string
+          - 'null'
+        email:
+          type:
+          - string
+          - 'null'
+        website:
+          type:
+          - string
+          - 'null'
+        address:
+          type:
+          - string
+          - 'null'
+        social:
+          $ref: '#/components/schemas/PublicFestivalSocialLinks'
+        legalInformation:
+          type:
+          - string
+          - 'null'
+      required:
+      - address
+      - email
+      - legalInformation
+      - name
+      - phone
+      - social
+      - website
     PublicFestivalTeamMember:
       type: object
       description: A named contact person shown on the public page.
@@ -15757,6 +15865,102 @@ components:
       required:
       - data
       - meta
+    SupportingOrganization:
+      type: object
+      description: 'The "with the support of" block: the organizer''s channels, for
+        a second entity.'
+      properties:
+        name:
+          type: string
+        phone:
+          type:
+          - string
+          - 'null'
+        email:
+          type:
+          - string
+          - 'null'
+        website:
+          type:
+          - string
+          - 'null'
+        address:
+          type:
+          - string
+          - 'null'
+        vk:
+          type:
+          - string
+          - 'null'
+        instagram:
+          type:
+          - string
+          - 'null'
+        telegram:
+          type:
+          - string
+          - 'null'
+        legalInformation:
+          type:
+          - string
+          - 'null'
+      required:
+      - address
+      - email
+      - instagram
+      - legalInformation
+      - name
+      - phone
+      - telegram
+      - vk
+      - website
+    SupportingOrganizationUpdate:
+      type: object
+      description: |-
+        Request body for the "with the support of" block — every field optional.
+
+        ``name`` allows blank on purpose, unlike the organization's own name: a blank
+        name is how the form says "this organization has no supporting entity", and the
+        handler drops the whole block when it arrives. Rejecting it here would leave the
+        organizer no way to undo the block once filled in.
+      properties:
+        name:
+          type:
+          - string
+          - 'null'
+          maxLength: 200
+        phone:
+          type:
+          - string
+          - 'null'
+        email:
+          type:
+          - string
+          - 'null'
+        website:
+          type:
+          - string
+          - 'null'
+        address:
+          type:
+          - string
+          - 'null'
+        vk:
+          type:
+          - string
+          - 'null'
+        instagram:
+          type:
+          - string
+          - 'null'
+        telegram:
+          type:
+          - string
+          - 'null'
+        legalInformation:
+          type:
+          - string
+          - 'null'
     TeacherDirectoryResponse:
       type: object
       properties:
@@ -16151,6 +16355,11 @@ components:
           type: boolean
         override:
           $ref: '#/components/schemas/_ContactProfileOverrideInput'
+        useOrganizationSupporter:
+          type: boolean
+          default: true
+        supporterOverride:
+          $ref: '#/components/schemas/_SupportingOrganizationOverrideInput'
         teamContacts:
           type: array
           items:
@@ -16642,6 +16851,10 @@ components:
           type: boolean
         override:
           $ref: '#/components/schemas/_ContactProfileOverride'
+        useOrganizationSupporter:
+          type: boolean
+        supporterOverride:
+          $ref: '#/components/schemas/_SupportingOrganizationOverride'
         teamContacts:
           type: array
           items:
@@ -16653,8 +16866,10 @@ components:
       required:
       - emergency
       - override
+      - supporterOverride
       - teamContacts
       - useOrganizationContacts
+      - useOrganizationSupporter
       - venueDetails
     _Deadlines:
       type: object
@@ -16806,6 +17021,21 @@ components:
       - answer
       - id
       - question
+    _FeeTierResponse:
+      type: object
+      properties:
+        minParticipants:
+          type: integer
+        maxParticipants:
+          type:
+          - integer
+          - 'null'
+        amount:
+          type: string
+      required:
+      - amount
+      - maxParticipants
+      - minParticipants
     _Feed:
       type: object
       description: 'The feed itself: the entries plus the count the bell renders.'
@@ -17330,16 +17560,24 @@ components:
           type: string
         status:
           type: string
+        billingModel:
+          $ref: '#/components/schemas/BillingModel011Enum'
         commissionPercent:
           type: string
           format: decimal
           pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        feeTiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/_FeeTierResponse'
         createdAt:
           type: string
           format: date-time
       required:
+      - billingModel
       - commissionPercent
       - createdAt
+      - feeTiers
       - id
       - name
       - slug
@@ -17356,10 +17594,16 @@ components:
           type: string
         status:
           type: string
+        billingModel:
+          $ref: '#/components/schemas/BillingModel011Enum'
         commissionPercent:
           type: string
           format: decimal
           pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        feeTiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/_FeeTierResponse'
         competitions:
           type: integer
         applications:
@@ -17378,10 +17622,12 @@ components:
           type: string
       required:
       - applications
+      - billingModel
       - commissionPercent
       - competitions
       - expectedCommission
       - expectedFees
+      - feeTiers
       - name
       - organizationId
       - settledCommission
@@ -18015,6 +18261,99 @@ components:
       - fromStatus
       - occurredAt
       - toStatus
+    _SupportingOrganizationOverride:
+      type: object
+      description: The festival's own "with the support of" entity, as the editor
+        reads it back.
+      properties:
+        name:
+          type:
+          - string
+          - 'null'
+        phone:
+          type:
+          - string
+          - 'null'
+        email:
+          type:
+          - string
+          - 'null'
+        website:
+          type:
+          - string
+          - 'null'
+        address:
+          type:
+          - string
+          - 'null'
+        vk:
+          type:
+          - string
+          - 'null'
+        instagram:
+          type:
+          - string
+          - 'null'
+        telegram:
+          type:
+          - string
+          - 'null'
+        legalInformation:
+          type:
+          - string
+          - 'null'
+      required:
+      - address
+      - email
+      - instagram
+      - legalInformation
+      - name
+      - phone
+      - telegram
+      - vk
+      - website
+    _SupportingOrganizationOverrideInput:
+      type: object
+      description: This festival's own supporting entity. A blank name means it has
+        none.
+      properties:
+        name:
+          type:
+          - string
+          - 'null'
+          maxLength: 200
+        phone:
+          type:
+          - string
+          - 'null'
+        email:
+          type:
+          - string
+          - 'null'
+        website:
+          type:
+          - string
+          - 'null'
+        address:
+          type:
+          - string
+          - 'null'
+        vk:
+          type:
+          - string
+          - 'null'
+        instagram:
+          type:
+          - string
+          - 'null'
+        telegram:
+          type:
+          - string
+          - 'null'
+        legalInformation:
+          type:
+          - string
+          - 'null'
     _TeacherResource:
       type: object
       properties:
