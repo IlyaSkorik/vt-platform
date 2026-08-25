@@ -193,8 +193,20 @@ class PublicFestivalVenueSerializer(serializers.Serializer[object]):
     directions = serializers.CharField(allow_null=True)
 
 
+class PublicFestivalSupporterSerializer(serializers.Serializer[object]):
+    """The "with the support of" block: a second legal entity, with its own requisites."""
+
+    name = serializers.CharField()
+    phone = serializers.CharField(allow_null=True)
+    email = serializers.CharField(allow_null=True)
+    website = serializers.CharField(allow_null=True)
+    address = serializers.CharField(allow_null=True)
+    social = PublicFestivalSocialLinksSerializer()
+    legalInformation = serializers.CharField(source="legal_information", allow_null=True)
+
+
 class PublicFestivalContactsSerializer(serializers.Serializer[object]):
-    """The public contacts module: organizer identity, channels, team, venue."""
+    """The public contacts module: organizer identity, channels, team, venue, supporter."""
 
     organizationName = serializers.CharField(source="organization_name", allow_null=True)
     phone = serializers.CharField(allow_null=True)
@@ -206,6 +218,7 @@ class PublicFestivalContactsSerializer(serializers.Serializer[object]):
     emergency = PublicFestivalEmergencySerializer()
     venue = PublicFestivalVenueSerializer()
     legalInformation = serializers.CharField(source="legal_information", allow_null=True)
+    supporter = PublicFestivalSupporterSerializer(allow_null=True)
 
 
 class PublicFestivalRegulationSerializer(serializers.Serializer[object]):

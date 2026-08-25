@@ -55,9 +55,11 @@ __all__ = [
     "PublicFestivalPricingView",
     "PublicFestivalRegulationView",
     "PublicFestivalSocialLinksView",
+    "PublicFestivalSupporterView",
     "PublicFestivalTeamMemberView",
     "PublicFestivalVenueView",
     "PublicFestivalView",
+    "SupporterContactFacts",
     "aggregate_pricing",
     "classify_participation_mode",
     "is_public_document_visibility",
@@ -550,6 +552,27 @@ class PublicFestivalVenueView:
 
 
 @dataclass(frozen=True, slots=True)
+class SupporterContactFacts:
+    """The organization's "with the support of" entity, as flat facts.
+
+    Primitive-only, like :class:`OrganizerContactFacts` around it, so this module
+    never imports the Organization read model. ``None`` on the facts — rather than
+    an instance whose fields are all blank — is what says the organization named no
+    supporting entity.
+    """
+
+    name: str
+    phone: str | None = None
+    email: str | None = None
+    website: str | None = None
+    address: str | None = None
+    vk: str | None = None
+    instagram: str | None = None
+    telegram: str | None = None
+    legal_information: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class OrganizerContactFacts:
     """The organizer's own contact channels, resolved from the Organization profile.
 
@@ -571,6 +594,26 @@ class OrganizerContactFacts:
     instagram: str | None = None
     telegram: str | None = None
     legal_information: str | None = None
+    supporter: SupporterContactFacts | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class PublicFestivalSupporterView:
+    """The "with the support of" block of the public page, beside the organizer.
+
+    Named on the page because the organizer of record and the entity actually
+    running the festival are often two different legal persons, and the second one
+    has to be stated rather than implied. Carries its own ``legal_information``: it
+    is a different legal person, so the organizer's requisites are not its own.
+    """
+
+    name: str
+    phone: str | None
+    email: str | None
+    website: str | None
+    address: str | None
+    social: PublicFestivalSocialLinksView
+    legal_information: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -587,6 +630,8 @@ class PublicFestivalContactsView:
     emergency: PublicFestivalEmergencyView
     venue: PublicFestivalVenueView
     legal_information: str | None
+    #: The supporting entity, or ``None`` when this festival runs without one.
+    supporter: PublicFestivalSupporterView | None = None
 
 
 def project_contacts(
@@ -604,9 +649,11 @@ def project_contacts(
     of truth); otherwise the per-festival ``override`` supplies them and the
     display name still falls back to the organizer's when left blank. Legal
     information always comes from the organization (the override has no legal
-    field — legal identity is the organizing entity's, not per-festival). Team
-    members are sorted by the organizer's order. Venue merges the competition's
-    own venue columns with the contacts venue detail.
+    field — legal identity is the organizing entity's, not per-festival). The
+    "with the support of" block follows its own switch (``use_organization_supporter``)
+    and *does* carry legal information, because it names a different legal person —
+    see :func:`_project_supporter`. Team members are sorted by the organizer's order.
+    Venue merges the competition's own venue columns with the contacts venue detail.
     """
     override = config.override
     team = sorted(config.team_contacts, key=lambda member: (member.sort_order, member.name))
@@ -665,6 +712,59 @@ def project_contacts(
             directions=config.venue_details.directions,
         ),
         legal_information=organizer.legal_information,
+        supporter=_project_supporter(config, organizer=organizer),
+    )
+
+
+def _project_supporter(
+    config: ContactsConfiguration,
+    *,
+    organizer: OrganizerContactFacts,
+) -> PublicFestivalSupporterView | None:
+    """Resolve the "with the support of" block for one festival, or ``None``.
+
+    Same source switch as the contact channels above: the organization's answer
+    unless this festival overrides it. Both sources can legitimately resolve to
+    "nobody" — an organization that runs its own festivals names no supporter, and a
+    festival can override one away — so ``None`` here is an ordinary outcome, not a
+    missing-data case, and the public page renders no block at all for it.
+    """
+    if config.use_organization_supporter:
+        supporter = organizer.supporter
+        if supporter is None:
+            return None
+        return PublicFestivalSupporterView(
+            name=supporter.name,
+            phone=supporter.phone,
+            email=supporter.email,
+            website=supporter.website,
+            address=supporter.address,
+            social=PublicFestivalSocialLinksView(
+                vk=supporter.vk,
+                instagram=supporter.instagram,
+                telegram=supporter.telegram,
+            ),
+            legal_information=supporter.legal_information,
+        )
+    override = config.supporter_override
+    # The name is what makes the block exist, so an override that names nobody is the
+    # festival saying it has no supporting entity — not a reason to fall back to the
+    # organization's, which is what the switch was turned off to avoid.
+    if not override.names_an_entity:
+        return None
+    assert override.name is not None
+    return PublicFestivalSupporterView(
+        name=override.name,
+        phone=override.phone,
+        email=override.email,
+        website=override.website,
+        address=override.address,
+        social=PublicFestivalSocialLinksView(
+            vk=override.vk,
+            instagram=override.instagram,
+            telegram=override.telegram,
+        ),
+        legal_information=override.legal_information,
     )
 
 

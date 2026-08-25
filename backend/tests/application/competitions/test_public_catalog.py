@@ -506,6 +506,152 @@ class TestContactsProjection:
         assert contacts.venue.has_content is False
 
 
+class TestSupporterProjection:
+    """The "with the support of" block — the second legal entity on the public page.
+
+    The whole point of the block is that it names a *different* legal person from the
+    organizer, so these assert the two never merge: the supporter carries its own
+    requisites, and the switch that picks its source is independent of the one that
+    picks the contact channels.
+    """
+
+    @staticmethod
+    def _facts(supporter: object = None) -> object:
+        from apps.competitions.application.read_models import OrganizerContactFacts
+
+        return OrganizerContactFacts(
+            name="Дом талантов",
+            phone="+375170000000",
+            legal_information="ООО «Дом талантов», УНП 100200300",
+            supporter=supporter,  # type: ignore[arg-type]
+        )
+
+    @staticmethod
+    def _supporter_facts() -> object:
+        from apps.competitions.application.read_models import SupporterContactFacts
+
+        return SupporterContactFacts(
+            name="ГУ «Дворец культуры»",
+            phone="+375172222222",
+            vk="https://vk.com/dk",
+            legal_information="ГУ «Дворец культуры», УНП 100987654",
+        )
+
+    def test_organization_supporter_reaches_the_page_with_its_own_requisites(self) -> None:
+        from apps.competitions.application.read_models import project_contacts
+        from apps.competitions.domain.contacts_configuration import ContactsConfiguration
+
+        contacts = project_contacts(
+            ContactsConfiguration.default(),
+            organizer=self._facts(self._supporter_facts()),  # type: ignore[arg-type]
+            venue_name=None,
+            venue_address=None,
+        )
+
+        assert contacts.supporter is not None
+        assert contacts.supporter.name == "ГУ «Дворец культуры»"
+        assert contacts.supporter.phone == "+375172222222"
+        assert contacts.supporter.social.vk == "https://vk.com/dk"
+        # Its own requisites, not the organizer's — the two are different legal persons,
+        # and pairing one name with the other's УНП is the misstatement this prevents.
+        assert contacts.supporter.legal_information == "ГУ «Дворец культуры», УНП 100987654"
+        assert contacts.legal_information == "ООО «Дом талантов», УНП 100200300"
+
+    def test_no_supporter_is_no_block(self) -> None:
+        from apps.competitions.application.read_models import project_contacts
+        from apps.competitions.domain.contacts_configuration import ContactsConfiguration
+
+        contacts = project_contacts(
+            ContactsConfiguration.default(),
+            organizer=self._facts(),  # type: ignore[arg-type]
+            venue_name=None,
+            venue_address=None,
+        )
+
+        # None, not a block of blanks: an organization running its own festivals is the
+        # ordinary case, and the footer renders nothing at all for it.
+        assert contacts.supporter is None
+
+    def test_festival_override_replaces_the_organizations_supporter(self) -> None:
+        from apps.competitions.application.read_models import project_contacts
+        from apps.competitions.domain.contacts_configuration import (
+            ContactsConfiguration,
+            SupportingOrganizationOverride,
+        )
+
+        config = ContactsConfiguration(
+            use_organization_supporter=False,
+            supporter_override=SupportingOrganizationOverride(
+                name="Городской центр культуры",
+                email="gck@example.by",
+                legal_information="ГЦК, УНП 100111222",
+            ),
+        )
+
+        contacts = project_contacts(
+            config,
+            organizer=self._facts(self._supporter_facts()),  # type: ignore[arg-type]
+            venue_name=None,
+            venue_address=None,
+        )
+
+        assert contacts.supporter is not None
+        assert contacts.supporter.name == "Городской центр культуры"
+        assert contacts.supporter.email == "gck@example.by"
+        assert contacts.supporter.legal_information == "ГЦК, УНП 100111222"
+
+    def test_override_naming_nobody_opts_the_festival_out(self) -> None:
+        """A festival can have no supporter even when its organization has one.
+
+        The organization names an entity for everything it runs, and one festival in
+        the season may genuinely be run alone. Falling back to the organization's
+        supporter here would state a fact about that festival that is not true — and
+        it is the reason a blank override does not mean "unset, use the default".
+        """
+        from apps.competitions.application.read_models import project_contacts
+        from apps.competitions.domain.contacts_configuration import ContactsConfiguration
+
+        config = ContactsConfiguration(use_organization_supporter=False)
+
+        contacts = project_contacts(
+            config,
+            organizer=self._facts(self._supporter_facts()),  # type: ignore[arg-type]
+            venue_name=None,
+            venue_address=None,
+        )
+
+        assert contacts.supporter is None
+
+    def test_supporter_source_is_independent_of_the_contact_channel_source(self) -> None:
+        """Two switches, two questions. Overriding the channels must not touch the supporter.
+
+        A festival that publishes its own phone number has not thereby stopped being
+        run with the organization's supporting entity, and the projection has to keep
+        those decisions apart.
+        """
+        from apps.competitions.application.read_models import project_contacts
+        from apps.competitions.domain.contacts_configuration import (
+            ContactProfileOverride,
+            ContactsConfiguration,
+        )
+
+        config = ContactsConfiguration(
+            use_organization_contacts=False,
+            override=ContactProfileOverride(organization_name="Оргкомитет", phone="+375291111111"),
+        )
+
+        contacts = project_contacts(
+            config,
+            organizer=self._facts(self._supporter_facts()),  # type: ignore[arg-type]
+            venue_name=None,
+            venue_address=None,
+        )
+
+        assert contacts.phone == "+375291111111"
+        assert contacts.supporter is not None
+        assert contacts.supporter.name == "ГУ «Дворец культуры»"
+
+
 # ---------------------------------------------------------------------------
 # ORM-backed reader — get_festival (detail)
 # ---------------------------------------------------------------------------

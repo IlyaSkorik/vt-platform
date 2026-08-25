@@ -27,6 +27,7 @@ from apps.competitions.application.read_models.public_catalog import (
     PublicFestivalPricingView,
     PublicFestivalRegulationView,
     PublicFestivalView,
+    SupporterContactFacts,
     aggregate_pricing,
     classify_participation_mode,
     is_public_document_visibility,
@@ -386,11 +387,13 @@ class DjangoPublicCatalogReader:
 
         ``name`` reuses the already-resolved organizer view (carrying the
         ``_FALLBACK_ORGANIZER_NAME`` fallback); the channels come from the card
-        when the organization was resolved, and are all ``None`` otherwise.
+        when the organization was resolved, and are all ``None`` otherwise — as is
+        the supporting entity, which an unresolved organization cannot name.
         """
         card = organizers.get(organizer_id)
         if card is None:
             return OrganizerContactFacts(name=organizer.name)
+        supporter = card.supporter
         return OrganizerContactFacts(
             name=organizer.name,
             phone=card.phone,
@@ -401,4 +404,17 @@ class DjangoPublicCatalogReader:
             instagram=card.instagram,
             telegram=card.telegram,
             legal_information=card.legal_information,
+            supporter=None
+            if supporter is None
+            else SupporterContactFacts(
+                name=supporter.name,
+                phone=supporter.phone,
+                email=supporter.email,
+                website=supporter.website,
+                address=supporter.address,
+                vk=supporter.vk,
+                instagram=supporter.instagram,
+                telegram=supporter.telegram,
+                legal_information=supporter.legal_information,
+            ),
         )
