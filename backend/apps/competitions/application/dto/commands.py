@@ -9,7 +9,7 @@ so a ``None`` clears it.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime
 
 __all__ = [
@@ -166,6 +166,8 @@ class UpdateContactsConfigCommand:
     team_contacts: list[dict[str, object]]
     emergency: dict[str, object]
     venue_details: dict[str, object]
+    use_organization_supporter: bool = True
+    supporter_override: dict[str, object] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)

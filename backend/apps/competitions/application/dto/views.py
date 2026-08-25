@@ -64,6 +64,7 @@ __all__ = [
     "PublicationReportView",
     "RegulationView",
     "SettingsView",
+    "SupportingOrganizationOverrideView",
     "TeamContactView",
     "VenueDetailsView",
     "VenueView",
@@ -488,9 +489,26 @@ class VenueDetailsView:
 
 
 @dataclass(frozen=True, slots=True)
+class SupportingOrganizationOverrideView:
+    """The festival's own "with the support of" block, as the editor reads it back."""
+
+    name: str | None
+    phone: str | None
+    email: str | None
+    website: str | None
+    address: str | None
+    vk: str | None
+    instagram: str | None
+    telegram: str | None
+    legal_information: str | None
+
+
+@dataclass(frozen=True, slots=True)
 class ContactsConfigView:
     use_organization_contacts: bool
     override: ContactProfileOverrideView
+    use_organization_supporter: bool
+    supporter_override: SupportingOrganizationOverrideView
     team_contacts: tuple[TeamContactView, ...]
     emergency: EmergencyContactsView
     venue_details: VenueDetailsView
@@ -508,6 +526,18 @@ class ContactsConfigView:
                 vk=config.override.vk,
                 instagram=config.override.instagram,
                 telegram=config.override.telegram,
+            ),
+            use_organization_supporter=config.use_organization_supporter,
+            supporter_override=SupportingOrganizationOverrideView(
+                name=config.supporter_override.name,
+                phone=config.supporter_override.phone,
+                email=config.supporter_override.email,
+                website=config.supporter_override.website,
+                address=config.supporter_override.address,
+                vk=config.supporter_override.vk,
+                instagram=config.supporter_override.instagram,
+                telegram=config.supporter_override.telegram,
+                legal_information=config.supporter_override.legal_information,
             ),
             team_contacts=tuple(
                 TeamContactView(

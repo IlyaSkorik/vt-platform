@@ -11,6 +11,7 @@ from apps.competitions.domain.contacts_configuration import (
     ContactProfileOverride,
     ContactsConfiguration,
     EmergencyContacts,
+    SupportingOrganizationOverride,
     TeamContact,
     VenueDetails,
 )
@@ -32,6 +33,18 @@ def contacts_config_to_json(config: ContactsConfiguration) -> dict[str, object]:
             "vk": config.override.vk,
             "instagram": config.override.instagram,
             "telegram": config.override.telegram,
+        },
+        "use_organization_supporter": config.use_organization_supporter,
+        "supporter_override": {
+            "name": config.supporter_override.name,
+            "phone": config.supporter_override.phone,
+            "email": config.supporter_override.email,
+            "website": config.supporter_override.website,
+            "address": config.supporter_override.address,
+            "vk": config.supporter_override.vk,
+            "instagram": config.supporter_override.instagram,
+            "telegram": config.supporter_override.telegram,
+            "legal_information": config.supporter_override.legal_information,
         },
         "team_contacts": [
             {
@@ -72,6 +85,8 @@ def contacts_config_from_json(data: object) -> ContactsConfiguration:
     assert isinstance(emergency_raw, dict)
     venue_raw = data.get("venue_details") if isinstance(data.get("venue_details"), dict) else {}
     assert isinstance(venue_raw, dict)
+    supporter_raw = data.get("supporter_override") if isinstance(data.get("supporter_override"), dict) else {}
+    assert isinstance(supporter_raw, dict)
 
     team_raw = data.get("team_contacts", [])
     team_contacts: list[TeamContact] = []
@@ -94,6 +109,21 @@ def contacts_config_from_json(data: object) -> ContactsConfiguration:
             vk=_str_or_none(override_raw.get("vk")),
             instagram=_str_or_none(override_raw.get("instagram")),
             telegram=_str_or_none(override_raw.get("telegram")),
+        ),
+        # Absent from a column written before the supporter existed, and the default
+        # is what those festivals want: defer to the organization, which is also
+        # where their supporter is now configured.
+        use_organization_supporter=bool(data.get("use_organization_supporter", default.use_organization_supporter)),
+        supporter_override=SupportingOrganizationOverride(
+            name=_str_or_none(supporter_raw.get("name")),
+            phone=_str_or_none(supporter_raw.get("phone")),
+            email=_str_or_none(supporter_raw.get("email")),
+            website=_str_or_none(supporter_raw.get("website")),
+            address=_str_or_none(supporter_raw.get("address")),
+            vk=_str_or_none(supporter_raw.get("vk")),
+            instagram=_str_or_none(supporter_raw.get("instagram")),
+            telegram=_str_or_none(supporter_raw.get("telegram")),
+            legal_information=_str_or_none(supporter_raw.get("legal_information")),
         ),
         team_contacts=tuple(team_contacts),
         emergency=EmergencyContacts(

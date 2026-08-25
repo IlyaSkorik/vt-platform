@@ -173,6 +173,20 @@ class _ContactProfileOverrideInputSerializer(serializers.Serializer[dict[str, ob
     telegram = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
 
+class _SupportingOrganizationOverrideInputSerializer(serializers.Serializer[dict[str, object]]):
+    """This festival's own supporting entity. A blank name means it has none."""
+
+    name = serializers.CharField(required=False, allow_blank=True, allow_null=True, max_length=200)
+    phone = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    email = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    website = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    address = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    vk = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    instagram = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    telegram = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    legalInformation = serializers.CharField(source="legal_information", required=False, allow_blank=True, allow_null=True)
+
+
 class _TeamContactInputSerializer(serializers.Serializer[dict[str, object]]):
     id = serializers.UUIDField()
     name = serializers.CharField(max_length=200)
@@ -200,6 +214,10 @@ class _VenueDetailsInputSerializer(serializers.Serializer[dict[str, object]]):
 class UpdateContactsConfigSerializer(serializers.Serializer[dict[str, object]]):
     useOrganizationContacts = serializers.BooleanField(source="use_organization_contacts")
     override = _ContactProfileOverrideInputSerializer()
+    # Optional, unlike the contact override beside it: every client that predates the
+    # supporter keeps working, and omitting the pair means "whatever the organization says".
+    useOrganizationSupporter = serializers.BooleanField(source="use_organization_supporter", required=False, default=True)
+    supporterOverride = _SupportingOrganizationOverrideInputSerializer(source="supporter_override", required=False)
     teamContacts = _TeamContactInputSerializer(source="team_contacts", many=True)
     emergency = _EmergencyContactsInputSerializer()
     venueDetails = _VenueDetailsInputSerializer(source="venue_details")
@@ -638,6 +656,20 @@ class _ContactProfileOverrideSerializer(serializers.Serializer[dict[str, object]
     telegram = serializers.CharField(allow_null=True)
 
 
+class _SupportingOrganizationOverrideSerializer(serializers.Serializer[dict[str, object]]):
+    """The festival's own "with the support of" entity, as the editor reads it back."""
+
+    name = serializers.CharField(allow_null=True)
+    phone = serializers.CharField(allow_null=True)
+    email = serializers.CharField(allow_null=True)
+    website = serializers.CharField(allow_null=True)
+    address = serializers.CharField(allow_null=True)
+    vk = serializers.CharField(allow_null=True)
+    instagram = serializers.CharField(allow_null=True)
+    telegram = serializers.CharField(allow_null=True)
+    legalInformation = serializers.CharField(source="legal_information", allow_null=True)
+
+
 class _TeamContactSerializer(serializers.Serializer[dict[str, object]]):
     id = serializers.CharField()
     name = serializers.CharField()
@@ -665,6 +697,8 @@ class _VenueDetailsSerializer(serializers.Serializer[dict[str, object]]):
 class _ContactsConfigSerializer(serializers.Serializer[dict[str, object]]):
     useOrganizationContacts = serializers.BooleanField(source="use_organization_contacts")
     override = _ContactProfileOverrideSerializer()
+    useOrganizationSupporter = serializers.BooleanField(source="use_organization_supporter")
+    supporterOverride = _SupportingOrganizationOverrideSerializer(source="supporter_override")
     teamContacts = _TeamContactSerializer(source="team_contacts", many=True)
     emergency = _EmergencyContactsSerializer()
     venueDetails = _VenueDetailsSerializer(source="venue_details")

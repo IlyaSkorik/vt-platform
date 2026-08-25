@@ -13,6 +13,7 @@ from apps.competitions.domain.contacts_configuration import (
     ContactProfileOverride,
     ContactsConfiguration,
     EmergencyContacts,
+    SupportingOrganizationOverride,
     TeamContact,
     VenueDetails,
 )
@@ -44,6 +45,7 @@ def _contacts_config_from_command(command: UpdateContactsConfigCommand) -> Conta
     override = command.override if isinstance(command.override, dict) else {}
     emergency = command.emergency if isinstance(command.emergency, dict) else {}
     venue = command.venue_details if isinstance(command.venue_details, dict) else {}
+    supporter = command.supporter_override if isinstance(command.supporter_override, dict) else {}
 
     team: list[TeamContact] = []
     for raw in command.team_contacts:
@@ -71,6 +73,18 @@ def _contacts_config_from_command(command: UpdateContactsConfigCommand) -> Conta
             vk=_optional_str(override.get("vk")),
             instagram=_optional_str(override.get("instagram")),
             telegram=_optional_str(override.get("telegram")),
+        ),
+        use_organization_supporter=command.use_organization_supporter,
+        supporter_override=SupportingOrganizationOverride(
+            name=_optional_str(supporter.get("name")),
+            phone=_optional_str(supporter.get("phone")),
+            email=_optional_str(supporter.get("email")),
+            website=_optional_str(supporter.get("website")),
+            address=_optional_str(supporter.get("address")),
+            vk=_optional_str(supporter.get("vk")),
+            instagram=_optional_str(supporter.get("instagram")),
+            telegram=_optional_str(supporter.get("telegram")),
+            legal_information=_optional_str(supporter.get("legal_information")),
         ),
         team_contacts=tuple(team),
         emergency=EmergencyContacts(

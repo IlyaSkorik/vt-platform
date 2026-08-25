@@ -16,6 +16,7 @@ __all__ = [
     "ContactProfileOverride",
     "ContactsConfiguration",
     "EmergencyContacts",
+    "SupportingOrganizationOverride",
     "TeamContact",
     "VenueDetails",
 ]
@@ -54,6 +55,57 @@ class ContactProfileOverride:
     @classmethod
     def empty(cls) -> ContactProfileOverride:
         return cls()
+
+
+@dataclass(frozen=True, slots=True)
+class SupportingOrganizationOverride:
+    """This festival's own "with the support of" entity, replacing the organization's.
+
+    The organization names one supporting entity for everything it runs; a single
+    festival can be run with a different one, or with none. This is that per-festival
+    answer, taken instead of the organization's when
+    :attr:`ContactsConfiguration.use_organization_supporter` is off.
+
+    Unlike :class:`ContactProfileOverride`, this one carries ``legal_information``.
+    That override adjusts how the *organizing* entity is reached for one festival, and
+    its legal identity does not change with the festival — but this block names a
+    *different legal person*, so its requisites travel with it. Showing entity A's
+    name over entity B's requisites is exactly the misstatement naming the supporter
+    is meant to prevent.
+
+    A blank ``name`` means this festival has no supporting entity, the same way it
+    does on the organization: the name is what makes the block exist.
+    """
+
+    name: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    website: str | None = None
+    address: str | None = None
+    vk: str | None = None
+    instagram: str | None = None
+    telegram: str | None = None
+    legal_information: str | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "name", _optional_str(self.name))
+        object.__setattr__(self, "phone", _optional_str(self.phone))
+        object.__setattr__(self, "email", _optional_str(self.email))
+        object.__setattr__(self, "website", _optional_str(self.website))
+        object.__setattr__(self, "address", _optional_str(self.address))
+        object.__setattr__(self, "vk", _optional_str(self.vk))
+        object.__setattr__(self, "instagram", _optional_str(self.instagram))
+        object.__setattr__(self, "telegram", _optional_str(self.telegram))
+        object.__setattr__(self, "legal_information", _optional_str(self.legal_information))
+
+    @classmethod
+    def empty(cls) -> SupportingOrganizationOverride:
+        return cls()
+
+    @property
+    def names_an_entity(self) -> bool:
+        """Whether this override actually names a supporting entity."""
+        return self.name is not None
 
 
 @dataclass(frozen=True, slots=True)
@@ -131,6 +183,12 @@ class ContactsConfiguration:
 
     use_organization_contacts: bool = True
     override: ContactProfileOverride = field(default_factory=ContactProfileOverride.empty)
+    # The "with the support of" entity follows the same source switch as the contact
+    # channels above, and defaults the same way: take the organization's answer until
+    # this festival says otherwise. Off, the override below applies — including when it
+    # names nobody, which is how a festival opts out of a supporter the organization has.
+    use_organization_supporter: bool = True
+    supporter_override: SupportingOrganizationOverride = field(default_factory=SupportingOrganizationOverride.empty)
     team_contacts: tuple[TeamContact, ...] = ()
     emergency: EmergencyContacts = field(default_factory=EmergencyContacts.empty)
     venue_details: VenueDetails = field(default_factory=VenueDetails.empty)
@@ -138,6 +196,8 @@ class ContactsConfiguration:
     def __post_init__(self) -> None:
         if not isinstance(self.override, ContactProfileOverride):
             raise InvalidContactsConfigurationError("Override must be a ContactProfileOverride.")
+        if not isinstance(self.supporter_override, SupportingOrganizationOverride):
+            raise InvalidContactsConfigurationError("Supporter override must be a SupportingOrganizationOverride.")
         if not isinstance(self.emergency, EmergencyContacts):
             raise InvalidContactsConfigurationError("Emergency must be an EmergencyContacts.")
         if not isinstance(self.venue_details, VenueDetails):

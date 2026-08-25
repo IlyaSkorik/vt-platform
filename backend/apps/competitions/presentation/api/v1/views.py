@@ -486,6 +486,8 @@ class CompetitionViewSet(viewsets.ViewSet):
                 team_contacts=team_contacts,
                 emergency=kwargs.get("emergency", {}),
                 venue_details=kwargs.get("venue_details", {}),
+                use_organization_supporter=kwargs.get("use_organization_supporter", True),
+                supporter_override=kwargs.get("supporter_override", {}),
             ),
             request,
         )
