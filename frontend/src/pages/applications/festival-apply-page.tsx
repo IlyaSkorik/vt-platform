@@ -221,6 +221,10 @@ function WizardBody({
           application={application}
           registration={registration}
         />
+        {/* Что заявка стоит и на что даёт право скидку — до согласий: подписывают
+            уже собранную заявку, а «Итого» подводит черту под всем сразу. */}
+        <BenefitDocumentsCard application={application} />
+        <ReceiptCard application={application} />
         <ConsentsCard
           applicationId={applicationId}
           application={application}
@@ -342,70 +346,66 @@ function ReviewStep({
   const totalPrice = applicationTotalLabel(application.totalPrice);
 
   return (
-    <div className="flex flex-col gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Проверка и подача</CardTitle>
-          <CardDescription>Проверьте, что всё заполнено, и подайте заявку.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-2 text-sm">
+    <Card>
+      <CardHeader>
+        <CardTitle>Проверка и подача</CardTitle>
+        <CardDescription>Проверьте, что всё заполнено, и подайте заявку.</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-2 text-sm">
+        <div className="flex justify-between">
+          <span>Выступлений</span>
+          <span>{application.submissions.length}</span>
+        </div>
+        {/* Строка про услуги — только у фестиваля, который их предлагает: там, где
+            каталога нет, и карточки услуг на странице нет. */}
+        {registration.additionalServices.length > 0 ? (
           <div className="flex justify-between">
-            <span>Выступлений</span>
-            <span>{application.submissions.length}</span>
+            <span>Услуг выбрано</span>
+            <span>{application.services.length}</span>
           </div>
-          {/* Строка про услуги — только у фестиваля, который их предлагает: там, где
-              каталога нет, и карточки услуг на странице нет. */}
-          {registration.additionalServices.length > 0 ? (
-            <div className="flex justify-between">
-              <span>Услуг выбрано</span>
-              <span>{application.services.length}</span>
-            </div>
-          ) : null}
-          <div className="flex justify-between">
-            <span>Согласий записано</span>
-            <span>{application.consents.length}</span>
+        ) : null}
+        <div className="flex justify-between">
+          <span>Согласий записано</span>
+          <span>{application.consents.length}</span>
+        </div>
+        {/* Сумма — там, где она есть; иначе сказано, чем стоимость определяется.
+            «Итого —» заставляло искать, что не заполнено, хотя не заполнять было
+            нечего. Цена каждого платного выступления видна бэйджем в его заголовке. */}
+        <Divider />
+        {totalPrice ? (
+          <div className="flex justify-between font-semibold">
+            <span>Итого</span>
+            <span>{totalPrice}</span>
           </div>
-          {/* Сумма — там, где она есть; иначе сказано, чем стоимость определяется.
-              «Итого —» заставляло искать, что не заполнено, хотя не заполнять было
-              нечего. Цена каждого платного выступления видна бэйджем в его заголовке. */}
-          <Divider />
-          {totalPrice ? (
-            <div className="flex justify-between font-semibold">
-              <span>Итого</span>
-              <span>{totalPrice}</span>
-            </div>
-          ) : (
-            <p className="text-muted-foreground">{REGULATION_PRICE_NOTE}</p>
-          )}
-          {blockers.length > 0 ? (
-            <Alert variant="warning">
-              <ul className="list-disc pl-4">
-                {blockers.map((blocker) => (
-                  <li key={blocker}>{blocker}</li>
-                ))}
-              </ul>
-            </Alert>
-          ) : null}
-          {submit.isError ? <Alert variant="danger">{errorMessage(submit.error)}</Alert> : null}
-          <div className="flex justify-end">
-            <Button
-              disabled={!canSubmit}
-              loading={submit.isPending}
-              onClick={() =>
-                submit.mutate(undefined, {
-                  onSuccess: () => {
-                    void navigate(ROUTES.cabinetApplications);
-                  },
-                })
-              }
-            >
-              Подать заявку
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-      <BenefitDocumentsCard application={application} />
-      <ReceiptCard application={application} />
-    </div>
+        ) : (
+          <p className="text-muted-foreground">{REGULATION_PRICE_NOTE}</p>
+        )}
+        {blockers.length > 0 ? (
+          <Alert variant="warning">
+            <ul className="list-disc pl-4">
+              {blockers.map((blocker) => (
+                <li key={blocker}>{blocker}</li>
+              ))}
+            </ul>
+          </Alert>
+        ) : null}
+        {submit.isError ? <Alert variant="danger">{errorMessage(submit.error)}</Alert> : null}
+        <div className="flex justify-end">
+          <Button
+            disabled={!canSubmit}
+            loading={submit.isPending}
+            onClick={() =>
+              submit.mutate(undefined, {
+                onSuccess: () => {
+                  void navigate(ROUTES.cabinetApplications);
+                },
+              })
+            }
+          >
+            Подать заявку
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
