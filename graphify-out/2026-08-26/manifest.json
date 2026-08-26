@@ -4215,13 +4215,13 @@
     "semantic_hash": ""
   },
   "frontend/src/features/competitions/lib/contacts.test.ts": {
-    "mtime": 1785860600.984715,
-    "ast_hash": "c26234a0c6e3aa87f5088c9df3eac8e9",
+    "mtime": 1787768328.479994,
+    "ast_hash": "5f31e2ded67a4d762399df50025db714",
     "semantic_hash": ""
   },
   "frontend/src/features/competitions/lib/contacts.ts": {
-    "mtime": 1787683587.4823308,
-    "ast_hash": "07c753763f7c3669fc6d477e5dd0fea4",
+    "mtime": 1787768269.749606,
+    "ast_hash": "4ae630c16c0fc1ef726bd7dec249f57e",
     "semantic_hash": ""
   },
   "frontend/src/features/competitions/lib/documents.test.ts": {
@@ -4255,9 +4255,9 @@
     "semantic_hash": "1cbce91b4f2e1c4d57d084b729f778c7"
   },
   "frontend/src/features/competitions/lib/general-mapper.ts": {
-    "mtime": 1785860600.984715,
-    "ast_hash": "cba593711134e6e508cfa6f4a31862de",
-    "semantic_hash": "cba593711134e6e508cfa6f4a31862de"
+    "mtime": 1787768199.1270242,
+    "ast_hash": "7e9a91b41f5ac3c2d4a4b7abe9a99be5",
+    "semantic_hash": ""
   },
   "frontend/src/features/competitions/lib/landing.test.ts": {
     "mtime": 1785860600.984715,
@@ -4365,8 +4365,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/competitions/model/publication-checklist.ts": {
-    "mtime": 1786979978.970271,
-    "ast_hash": "e26180aab7303c4d1ac736fae1d5dcdb",
+    "mtime": 1787768199.1274557,
+    "ast_hash": "194cc8d9805c6f60ea3cc15c2b37cd49",
     "semantic_hash": ""
   },
   "frontend/src/features/competitions/model/schemas.ts": {
@@ -4700,8 +4700,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/teachers/index.tsx": {
-    "mtime": 1786014975.6058936,
-    "ast_hash": "39d25765da32e91989ee8e2d6d422545",
+    "mtime": 1787767534.4302068,
+    "ast_hash": "26e3476b0b3543088e11d5033d0eaeb8",
     "semantic_hash": ""
   },
   "frontend/src/pages/unauthorized/index.tsx": {
@@ -5725,8 +5725,8 @@
     "semantic_hash": "c090dda7628883dc7cf4c28d37bd5040"
   },
   "frontend/src/widgets/competition-contacts/ui/contacts-section.tsx": {
-    "mtime": 1787684026.569299,
-    "ast_hash": "352779e021fe789b1d9ef457b7f9942d",
+    "mtime": 1787768269.7500982,
+    "ast_hash": "0f3434081eb0fd3c214850ffb554b93d",
     "semantic_hash": ""
   },
   "frontend/src/widgets/competition-contacts/ui/contacts-skeleton.tsx": {
@@ -5765,13 +5765,13 @@
     "semantic_hash": "a35bba874e1c2e11006d0a689f387af5"
   },
   "frontend/src/widgets/competition-general/ui/general-live-preview.tsx": {
-    "mtime": 1785860601.0577707,
-    "ast_hash": "5dc7a69dd5456f7a084f02004ef4853a",
-    "semantic_hash": "5dc7a69dd5456f7a084f02004ef4853a"
+    "mtime": 1787768199.127263,
+    "ast_hash": "85d6976635445d6f57715f2f73145f8b",
+    "semantic_hash": ""
   },
   "frontend/src/widgets/competition-general/ui/general-section.tsx": {
-    "mtime": 1786136747.351776,
-    "ast_hash": "f145f9afcdd75f392cf151837085e48b",
+    "mtime": 1787768178.6585708,
+    "ast_hash": "ed1c82ee83131114e21a3ba5372b30f8",
     "semantic_hash": ""
   },
   "frontend/src/widgets/competition-general/ui/poster-upload-field.tsx": {
@@ -5865,8 +5865,8 @@
     "semantic_hash": "bd4bdeec3e04883100f7cc63c825a6e2"
   },
   "frontend/src/widgets/competition-public-information/ui/public-information-section.tsx": {
-    "mtime": 1785860601.0630615,
-    "ast_hash": "f9a7e3cce9a10ae423f36118cf62d4c1",
+    "mtime": 1787768294.526727,
+    "ast_hash": "685f688f442e4a446526b04490bfb3dd",
     "semantic_hash": ""
   },
   "frontend/src/widgets/competition-public-information/ui/public-information-skeleton.tsx": {
@@ -7995,8 +7995,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/teachers/teacher-profile.test.tsx": {
-    "mtime": 1786022392.8689148,
-    "ast_hash": "0901069cc60bb8b18da4d652d6ef3cab",
+    "mtime": 1787767561.6846464,
+    "ast_hash": "a16547de72e43d236f879e55ce011a06",
     "semantic_hash": ""
   },
   "backend/apps/diplomas/infrastructure/acl/actor_directory.py": {
@@ -10132,6 +10132,11 @@
   "frontend/src/widgets/festival-landing/ui/landing-footer.test.tsx": {
     "mtime": 1787684437.1801567,
     "ast_hash": "3f5613f811ee18ff58401e3aa9c4ea44",
+    "semantic_hash": ""
+  },
+  "frontend/src/widgets/competition-general/ui/venue-section.tsx": {
+    "mtime": 1787767730.4211137,
+    "ast_hash": "f9dc9ad71aa426b838afc6fb6bb0e0cf",
     "semantic_hash": ""
   }
 }

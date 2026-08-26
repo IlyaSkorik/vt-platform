@@ -1,16 +1,16 @@
 # Graph Report - vt-platform  (2026-08-26)
 
 ## Corpus Check
-- 1954 files · ~1,376,362 words
+- 1954 files · ~1,376,439 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 20710 nodes · 66757 edges · 953 communities (547 shown, 406 thin omitted)
+- 20710 nodes · 66757 edges · 952 communities (546 shown, 406 thin omitted)
 - Extraction: 73% EXTRACTED · 27% INFERRED · 0% AMBIGUOUS · INFERRED: 17955 edges (avg confidence: 0.5)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `64d13a1a`
+- Built from commit: `c22f68a3`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -34,7 +34,7 @@
 - StaffMembership
 - competitions/presentation/api/v1/serializers.py
 - FontInspection
-- application/read_models/registration.py
+- competitions/composition.py
 - Env
 - test_user_mapper.py
 - Политика в отношении обработки персональных данных
@@ -95,7 +95,7 @@
 - devDependencies
 - dependencies
 - CompetitionId
-- datetime
+- .active_guardian_count
 - APIClient
 - env.py
 - register-form.stories.tsx
@@ -130,7 +130,7 @@
 - results/composition.py
 - apps/diplomas/composition.py
 - contacts.ts
-- notification-center.tsx
+- upcoming-events.tsx
 - reserve_send_slot
 - features/notifications/index.ts
 - test_participants_api.py
@@ -168,7 +168,7 @@
 - admission-rules-section.tsx
 - competition-workspace/index.ts
 - dashboard/index.ts
-- upcoming-events.tsx
+- recent-competitions.tsx
 - ParticipantRepository
 - submissions/composition.py
 - GrantPlatformAdministratorCommand
@@ -352,7 +352,7 @@
 - unauthorized.stories.tsx
 - .allows_file_upload
 - jury-protocols/index.ts
-- competitions/composition.py
+- notification-center.tsx
 - 0003_consent_reference.py
 - registry/views.py
 - Пользовательское соглашение
@@ -714,9 +714,9 @@
 - results/domain/__init__.py
 - celery.py
 - protocol-editor.tsx
-- Audit Context
+- Business Documentation
 - .get_applicant
-- quick-actions.stories.tsx
+- @tailwindcss/vite
 - results/infrastructure/__init__.py
 - Institutions Context
 - results/infrastructure/migrations/__init__.py
@@ -781,7 +781,6 @@
 - TestEnums
 - LandingBlock
 - .participants_without_active_guardian
-- storybook
 - .has_staff_permission
 - registration-block.tsx
 - .contains
@@ -906,8 +905,8 @@
   lefthook.yml → frontend/lefthook.yml
 - `CONTRIBUTING · Collaboration Guide` --references--> `VT Platform Documentation Hub`  [EXTRACTED]
   CONTRIBUTING.md → docs/README.md
-- `Migration` --uses--> `ParticipationFormatId`  [INFERRED]
-  backend/apps/competitions/infrastructure/migrations/0006_participation_format_entity.py → backend/apps/applications/domain/value_objects.py
+- `Identity API (OpenAPI contract)` --cites--> `API-001 Identity contract`  [EXTRACTED]
+  frontend/openapi/schema.yaml → backend/README.md
 
 ## Import Cycles
 - None detected.
@@ -920,7 +919,7 @@
 - **Frontend Feature-Sliced Design layers** — frontend_src_widgets_readme_widgets_layer, frontend_src_features_readme_features_layer, frontend_src_entities_readme_entities_layer, frontend_readme_shared_layer [EXTRACTED 1.00]
 - **Festival Catalog public read flow** — frontend_docs_festival_catalog_festival_catalog, frontend_docs_festival_catalog_use_public_festivals, frontend_docs_festival_catalog_public_read_model, frontend_docs_festival_catalog_public_status [EXTRACTED 1.00]
 
-## Communities (953 total, 406 thin omitted)
+## Communities (952 total, 406 thin omitted)
 
 ### Community 0 - "date-picker.tsx"
 Cohesion: 0.09
@@ -932,7 +931,7 @@ Nodes (55): CompetitionModel, Meta, BasePersistenceModel, Database row for the c
 
 ### Community 2 - "organization/application/interfaces.py"
 Cohesion: 0.02
-Nodes (183): invitation_status(), InvitationOperationResultDto, InvitationView, MembershipOperationResultDto, datetime, Result & view DTOs for the Organization application layer. Immutable,…, Project a :class:`StaffInvitation` into a DTO (excludes the token hash).…, A flat read view of a staff member: the membership joined to its user card.… (+175 more)
+Nodes (182): invitation_status(), InvitationOperationResultDto, InvitationView, MembershipOperationResultDto, datetime, Result & view DTOs for the Organization application layer. Immutable,…, Project a :class:`StaffInvitation` into a DTO (excludes the token hash).…, A flat read view of a staff member: the membership joined to its user card.… (+174 more)
 
 ### Community 3 - "FakeUserRepository"
 Cohesion: 0.13
@@ -998,9 +997,9 @@ Nodes (87): AddAdditionalServiceSerializer, AddAdmissionRuleSerializer, AddAgeCa
 Cohesion: 0.10
 Nodes (22): FontInspection, FontLibraryService, The catalog, and the uploads that extend it., Drop one uploaded face from the library. The file itself is left in storage: a…, What reading a font file told us about it. ``family`` and ``variant`` come from…, FontFamilyExistsError, FontNotFoundError, Raised when an upload would replace a face the library already holds. Same… (+14 more)
 
-### Community 19 - "application/read_models/registration.py"
-Cohesion: 0.12
-Nodes (23): project_registration(), datetime, The Registration read model - a single projection for the Registration Wizard.…, Project a ``Competition`` aggregate into the single Registration view., RegistrationAdmissionRuleView, RegistrationAgeCategoryView, RegistrationCompetitionView, RegistrationConsentRequirementView (+15 more)
+### Community 19 - "competitions/composition.py"
+Cohesion: 0.06
+Nodes (41): project_registration(), datetime, The Registration read model - a single projection for the Registration Wizard.…, Project a ``Competition`` aggregate into the single Registration view., RegistrationAdmissionRuleView, RegistrationAgeCategoryView, RegistrationCompetitionView, RegistrationConsentRequirementView (+33 more)
 
 ### Community 20 - "Env"
 Cohesion: 0.06
@@ -1048,11 +1047,11 @@ Nodes (40): public_status_for(), PublicFestivalDocumentView, PublicFestivalForma
 
 ### Community 31 - "test_platform_console_api.py"
 Cohesion: 0.02
-Nodes (114): Published read model of the entity a festival runs *with the support of*. The…, SupportingOrganizationCardView, OrganizationConfig, AppConfig, Django AppConfig for the Organization bounded context., Register the ORM models and admin, which live in the infrastructure layer.…, App configuration for the Organization bounded context., UUID (+106 more)
+Nodes (115): Published read model of the entity a festival runs *with the support of*. The…, SupportingOrganizationCardView, OrganizationConfig, AppConfig, Django AppConfig for the Organization bounded context., Register the ORM models and admin, which live in the infrastructure layer.…, App configuration for the Organization bounded context., UUID (+107 more)
 
 ### Community 32 - "DisplayAlias"
-Cohesion: 0.04
-Nodes (58): DomainEvent, ParticipantId, Create a brand-new participant and the fact that it was created (EVT-PRT-001).…, The participant's immutable identity., The pseudonym shown to judging (JDG-006)., Change the judging alias, keeping it non-identifying (JDG-006)., AgeGroupUndefinedError, PolicyConfigurationError (+50 more)
+Cohesion: 0.03
+Nodes (88): ConsentReference, datetime, DomainEvent, ParticipantId, PersonName, TeacherId, UUID, Create a brand-new participant and the fact that it was created (EVT-PRT-001).… (+80 more)
 
 ### Community 33 - "DjangoParticipantRepository"
 Cohesion: 0.06
@@ -1144,7 +1143,7 @@ Nodes (24): auth_client(), _image(), _media_root(), Any, APIClient, fixture, Pat
 
 ### Community 55 - "OwnerId"
 Cohesion: 0.05
-Nodes (41): Result DTOs for the Teacher Directory application layer. Immutable, primitive-…, Domain entities for the Teacher Directory bounded context. One aggregate - the…, Reactivate an archived entry (ARCHIVED -> ACTIVE)., DomainEvent, datetime, Domain events emitted by the Teacher Directory bounded context. Past-tense…, The current instant as a timezone-aware **UTC** datetime (default factory)., Render a single field value as a JSON-safe primitive. (+33 more)
+Nodes (41): Result DTOs for the Teacher Directory application layer. Immutable, primitive-…, Domain entities for the Teacher Directory bounded context. One aggregate - the…, Archive the entry (ACTIVE -> ARCHIVED). Never physically deletes it., DomainEvent, datetime, Domain events emitted by the Teacher Directory bounded context. Past-tense…, The current instant as a timezone-aware **UTC** datetime (default factory)., Render a single field value as a JSON-safe primitive. (+33 more)
 
 ### Community 56 - "submissions/views.py"
 Cohesion: 0.14
@@ -1232,7 +1231,7 @@ Nodes (22): FontFace, One font file: a family, a variant, and where to read it f
 
 ### Community 77 - "devDependencies"
 Cohesion: 0.06
-Nodes (35): @biomejs/biome, devDependencies, @biomejs/biome, jsdom, lefthook, orval, @storybook/addon-a11y, @storybook/react-vite (+27 more)
+Nodes (35): @biomejs/biome, devDependencies, @biomejs/biome, jsdom, lefthook, orval, storybook, @storybook/addon-a11y (+27 more)
 
 ### Community 78 - "dependencies"
 Cohesion: 0.05
@@ -1242,9 +1241,9 @@ Nodes (39): class-variance-authority, clsx, dependencies, class-variance-authori
 Cohesion: 0.05
 Nodes (26): AgeCategoryId, CompetitionId, datetime, DisciplineId, ParticipantGroupId, ParticipationFormatId, ServiceId, Return all non-deleted submissions for ``competition_id``. (+18 more)
 
-### Community 80 - "datetime"
-Cohesion: 0.05
-Nodes (33): ConsentReference, datetime, PersonName, TeacherId, UUID, The participant's minimized real name (access-restricted, PRT-006)., The recorded active consent reference, or ``None`` (PRT-001)., When the participant was created. (+25 more)
+### Community 80 - ".active_guardian_count"
+Cohesion: 0.33
+Nodes (3): Whether the participant is active and may enter competitions., How many verified (active) guardian relationships exist (PRT-001)., Whether at least one verified guardian relationship exists (PRT-001).
 
 ### Community 81 - "APIClient"
 Cohesion: 0.18
@@ -1260,7 +1259,7 @@ Nodes (30): Default, Loading, meta, ServerError, Story, Default, Loading, meta (
 
 ### Community 84 - "competitions-api.ts"
 Cohesion: 0.04
-Nodes (133): BulkAdmissionRulesResult, BulkPricingResult, complete(), createAdditionalService(), createAdmissionRule(), createAgeCategory(), createAgeCategoryWithConflictRetry(), createCategory() (+125 more)
+Nodes (128): BulkAdmissionRulesResult, BulkPricingResult, complete(), createAdditionalService(), createAdmissionRule(), createAgeCategory(), createAgeCategoryWithConflictRetry(), createCategory() (+120 more)
 
 ### Community 85 - "teacher_handlers.py"
 Cohesion: 0.09
@@ -1382,9 +1381,9 @@ Nodes (182): DiplomaAwardService, datetime, UUID, Writing the jury's result onto
 Cohesion: 0.08
 Nodes (39): competition(), service(), blankToNull(), buildContactsSummary(), contactsConfigToPayload(), ContactsSummary, createTeamContactDraft(), defaultContactsConfig() (+31 more)
 
-### Community 115 - "notification-center.tsx"
-Cohesion: 0.11
-Nodes (23): APPLICATION_STATUS, formatRelativeTime(), ActivityEvent, ActivityKind, ApplicationSummary, CompetitionSummary, NotificationItem, NotificationKind (+15 more)
+### Community 115 - "upcoming-events.tsx"
+Cohesion: 0.12
+Nodes (22): deriveWidgetStatus(), APPLICATION_STATUS, formatRelativeTime(), ActivityEvent, ActivityKind, ApplicationSummary, UpcomingEvent, WidgetStatus (+14 more)
 
 ### Community 116 - "reserve_send_slot"
 Cohesion: 0.07
@@ -1407,8 +1406,8 @@ Cohesion: 0.17
 Nodes (19): Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter(), DialogHeader(), DialogOverlay, DialogPortal (+11 more)
 
 ### Community 121 - "mock-data.ts"
-Cohesion: 0.05
-Nodes (44): MOCK_ACTIVITY, MOCK_APPLICATIONS, MOCK_COMPETITIONS, MOCK_EVENTS, MOCK_NOTIFICATIONS, MOCK_STATS, NOW, makeClient() (+36 more)
+Cohesion: 0.06
+Nodes (36): MOCK_ACTIVITY, MOCK_APPLICATIONS, MOCK_COMPETITIONS, MOCK_EVENTS, MOCK_STATS, NOW, makeClient(), withCardWidth() (+28 more)
 
 ### Community 122 - "binding.ts"
 Cohesion: 0.15
@@ -1480,7 +1479,7 @@ Nodes (15): boxSize, Radio, RadioGroup, RadioSizeContext, Default, Disabled, Hor
 
 ### Community 139 - "model/format.ts"
 Cohesion: 0.11
-Nodes (25): COMPETITION_STATUS, dateFormatter, formatMoney(), formatNumber(), formatPercent(), integerFormatter, percentFormatter, relativeFormatter (+17 more)
+Nodes (27): COMPETITION_STATUS, dateFormatter, EVENT_KIND_LABELS, formatMoney(), formatNumber(), formatPercent(), integerFormatter, percentFormatter (+19 more)
 
 ### Community 140 - "upload-controls.tsx"
 Cohesion: 0.17
@@ -1531,12 +1530,12 @@ Cohesion: 0.16
 Nodes (13): AutosaveIndicator(), AutosaveIndicatorProps, CompetitionWorkspaceLayout(), CompetitionWorkspaceLayoutProps, PublicationChecklistPanel(), PublicationChecklistPanelProps, SectionPlaceholder(), SectionPlaceholderProps (+5 more)
 
 ### Community 152 - "dashboard/index.ts"
-Cohesion: 0.16
-Nodes (16): Dashboard(), Default, DEMO_USER, meta, Story, DEMO_CURRENT_USER, deriveWidgetStatus(), ActivityTimeline() (+8 more)
+Cohesion: 0.11
+Nodes (18): Dashboard(), Default, DEMO_USER, meta, Story, DEMO_CURRENT_USER, ActivityTimeline(), ActivityTimelineView() (+10 more)
 
-### Community 153 - "upcoming-events.tsx"
-Cohesion: 0.24
-Nodes (8): EVENT_KIND_LABELS, formatDate(), EventKind, UpcomingEvent, CompetitionRow(), EventRow(), KIND_ICON, UpcomingEventsViewProps
+### Community 153 - "recent-competitions.tsx"
+Cohesion: 0.31
+Nodes (7): formatDate(), CompetitionSummary, CompetitionRow(), RecentCompetitions(), RecentCompetitionsView(), RecentCompetitionsViewProps, EventRow()
 
 ### Community 154 - "ParticipantRepository"
 Cohesion: 0.09
@@ -1591,8 +1590,8 @@ Cohesion: 0.09
 Nodes (16): PasswordChanged, Render a single field value as a JSON-safe primitive. Keeps…, Render a JSON-safe payload of the whole event, business data included. The…, An authenticated user changed their own password (IDN-003). Deliberately…, _serialize(), aggregate_id(), DomainEvent, fixture (+8 more)
 
 ### Community 167 - "DATA-003 · Domain Event Catalog"
-Cohesion: 0.10
-Nodes (43): Analytics/Reporting Context, Applications Context, Competitions Context, Finance/Billing Context, Participants Context, Application (Aggregate Root), Billing Account (Aggregate Root), Competition (Aggregate Root) (+35 more)
+Cohesion: 0.11
+Nodes (39): Analytics/Reporting Context, Applications Context, Audit Context, Competitions Context, Participants Context, Application (Aggregate Root), Audit Log Entry (Aggregate Root), Competition (Aggregate Root) (+31 more)
 
 ### Community 168 - "components.json"
 Cohesion: 0.11
@@ -1803,8 +1802,8 @@ Cohesion: 0.13
 Nodes (9): ApplicationMapper, Any, Bidirectional, stateless translator between the ``Application`` aggregate and…, Reconstruct the ``Application`` aggregate from its row (no re-validation, no…, Build a brand-new, **unsaved** ``ApplicationModel`` from an aggregate., Project ``entity`` onto an existing ``model`` in place, returning it., Domain <-> persistence mappers for the Applications bounded context. Translate…, The receipts exactly as the aggregate persists them. Built through the real… (+1 more)
 
 ### Community 220 - "DATA-001 · Business Data Model"
-Cohesion: 0.14
-Nodes (18): DATA-001 · Business Data Model, AgeGroup (Value Object), ConsentGrant (Value Object), FileMetadata (Value Object), Money (Value Object), ScoreValue (Value Object), VerificationCode (Value Object), Weight (Value Object) (+10 more)
+Cohesion: 0.13
+Nodes (22): Finance/Billing Context, DATA-001 · Business Data Model, Billing Account (Aggregate Root), Invoice (Aggregate Root), Order (Aggregate Root), Payment (Aggregate Root), AgeGroup (Value Object), ConsentGrant (Value Object) (+14 more)
 
 ### Community 221 - "staff-layout.tsx"
 Cohesion: 0.20
@@ -1991,8 +1990,8 @@ Cohesion: 0.25
 Nodes (8): AI Documentation, Documents, Future Documents, Governance Principles, Prefix, Prompts Library, Purpose, Scope
 
 ### Community 268 - "Clean Architecture layering"
-Cohesion: 0.47
-Nodes (6): Application layer, Clean Architecture layering, Dependency inversion / inward dependency rule, Domain layer, Infrastructure layer, Presentation layer
+Cohesion: 0.28
+Nodes (9): Application layer, Clean Architecture layering, Dependency inversion / inward dependency rule, Domain layer, Infrastructure layer, Modular monolith, Presentation layer, Pydantic Settings configuration (+1 more)
 
 ### Community 269 - "Diagrams"
 Cohesion: 0.25
@@ -2035,8 +2034,8 @@ Cohesion: 0.52
 Nodes (4): CategoriesSection(), CategoriesSectionProps, pluralDisciplines(), CategoriesSkeleton()
 
 ### Community 279 - "Participants bounded context"
-Cohesion: 0.33
-Nodes (7): Data minimization, Guardian, Participant, Participants bounded context, Teacher, Bounded contexts, DATA-001 Business Data Model
+Cohesion: 0.29
+Nodes (8): Data minimization, Guardian, Participant, Participants bounded context, Teacher, API-001 Identity contract, Bounded contexts, DATA-001 Business Data Model
 
 ### Community 280 - "collective-members.test.tsx"
 Cohesion: 0.27
@@ -2051,8 +2050,8 @@ Cohesion: 0.10
 Nodes (31): build_public_catalog_read_service(), Assemble the public festival catalog read model (participant-facing). A read-…, build_organization_directory(), Assemble the published cross-context organizer directory read model., _festival_facts(), _inline(), _lastmod(), llms_txt() (+23 more)
 
 ### Community 283 - "Identity API (OpenAPI contract)"
-Cohesion: 0.20
-Nodes (12): API-000 REST API Standards, API-001 Identity contract, Modular monolith, Pydantic Settings configuration, VT Platform Backend, Auth endpoints (registration/sessions/token), Email verification endpoints, Identity API (OpenAPI contract) (+4 more)
+Cohesion: 0.32
+Nodes (8): API-000 REST API Standards, Auth endpoints (registration/sessions/token), Email verification endpoints, Identity API (OpenAPI contract), StaffMembership schema, /users/me composition endpoint, Ky HTTP client, Orval generated API SDK
 
 ### Community 284 - "DjangoPerformanceCatalog"
 Cohesion: 0.17
@@ -2246,9 +2245,9 @@ Nodes (4): UnauthorizedPage(), Default, meta, Story
 Cohesion: 0.09
 Nodes (47): Envelope, fetchProtocol(), fetchProtocolCandidates(), fetchProtocols(), protocolKeys, request(), useAddProtocolRow(), useAwardProtocolRows() (+39 more)
 
-### Community 337 - "competitions/composition.py"
-Cohesion: 0.07
-Nodes (23): CompetitionSummaryView, A flat list-item projection of a competition (no child collections)., ListCompetitionsHandler, build_command_handler(), build_list_competitions_handler(), Composition root for the Competitions bounded context. The one place framework-…, Assemble any Competition command handler with its concrete adapters., Assemble the competition-listing read use case. (+15 more)
+### Community 337 - "notification-center.tsx"
+Cohesion: 0.14
+Nodes (12): MOCK_NOTIFICATIONS, NotificationItem, NotificationKind, KIND_STYLE, NotificationCenterViewProps, AllRead, Empty, Errored (+4 more)
 
 ### Community 339 - "registry/views.py"
 Cohesion: 0.17
@@ -2383,8 +2382,8 @@ Cohesion: 0.04
 Nodes (60): ProgramsConfig, AppConfig, Django AppConfig for the Programs bounded context. Programs owns the **running…, App configuration for the Programs bounded context., Register the ORM models and admin, which live under ``infrastructure/``. Models…, ProgramAdmin, ProgramItemInline, ProgramShareAdmin (+52 more)
 
 ### Community 464 - "competition_problem"
-Cohesion: 0.12
-Nodes (16): GetCompetitionQuery, ListCompetitionsQuery, Query DTOs for the Competitions bounded context. Input shapes for read use…, Fetch a single competition's full detail by id., List competitions, optionally narrowed to one season and one organizer.…, build_get_competition_handler(), Assemble the single-competition read use case., competition_problem() (+8 more)
+Cohesion: 0.09
+Nodes (21): GetCompetitionQuery, ListCompetitionsQuery, Query DTOs for the Competitions bounded context. Input shapes for read use…, Fetch a single competition's full detail by id., List competitions, optionally narrowed to one season and one organizer.…, CompetitionSummaryView, A flat list-item projection of a competition (no child collections)., ListCompetitionsHandler (+13 more)
 
 ### Community 465 - "content_serializers.py"
 Cohesion: 0.18
@@ -2515,8 +2514,8 @@ Cohesion: 0.25
 Nodes (7): DiplomasConfig, AppConfig, Django AppConfig for the Diplomas bounded context. Diplomas is a standalone…, App configuration for the Diplomas bounded context., Register the ORM models and admin, which live under ``infrastructure/``. Models…, Tell the registry where to read uploaded faces from, and how to get their…, set_uploaded_face_source()
 
 ### Community 647 - "cacheOrganizerId"
-Cohesion: 0.80
-Nodes (4): cacheOrganizerId(), createSessionOrganizerId(), readCachedOrganizerId(), resolveOrganizerId()
+Cohesion: 0.25
+Nodes (9): fetchCompetitions(), useCompetitionsList(), CompetitionDetailEnvelope, CompetitionListEnvelope, unwrapCompetitionList(), cacheOrganizerId(), createSessionOrganizerId(), readCachedOrganizerId() (+1 more)
 
 ### Community 652 - "_configured"
 Cohesion: 0.07
@@ -2582,17 +2581,13 @@ Nodes (4): Command, Any, BaseCommand, Revoke platform-operator access from an ac
 Cohesion: 0.12
 Nodes (15): DATE_TIME_FORMATTER, formatPublishedAt(), JuryWorkspaceHeader(), JuryWorkspaceHeaderProps, JuryWorkspaceLayout(), JuryWorkspaceLayoutProps, JuryWorkspaceSidebar(), JuryWorkspaceSidebarProps (+7 more)
 
-### Community 705 - "Audit Context"
-Cohesion: 0.47
-Nodes (6): Audit Context, Audit Log Entry (Aggregate Root), ActionRecorded (Domain Event), DataErased (Domain Event), DataSubjectRequestReceived (Domain Event), LegalHoldPlaced (Domain Event)
+### Community 705 - "Business Documentation"
+Cohesion: 0.33
+Nodes (6): Business Documentation, Documents, Future Documents, Prefix, Purpose, Scope
 
 ### Community 706 - ".get_applicant"
 Cohesion: 0.40
 Nodes (3): UserId, Whether an Identity user with ``user_id`` exists., Return the applicant's display information, or ``None`` if unknown.
-
-### Community 707 - "quick-actions.stories.tsx"
-Cohesion: 0.27
-Nodes (6): ACTIONS, QuickAction, QuickActions(), Default, meta, Story
 
 ### Community 709 - "Institutions Context"
 Cohesion: 0.38
@@ -2782,7 +2777,7 @@ Nodes (3): Mail is delivered by its own worker, and that is a deployment contrac
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `DomainEvent` connect `UserId` to `organization/application/interfaces.py`, `TeacherRepository`, `identity/application/exceptions.py`, `.to_dict`, `FakeApplicationRepository`, `FakeUserRepository`, `ConsentVersion`, `Submission`, `identity/test_handlers.py`, `AgeCategory`, `test_user_mapper.py`, `FakeOrganizationRepository`, `ParticipantRepository`, `submissions/composition.py`, `_grant`, `Env`, `InvalidInputError`, `participants/test_handlers.py`, `test_password_reset_handlers.py`, `PasswordChanged`, `competitions/presentation/api/v1/views.py`, `DjangoUserRepository`, `User`, `infrastructure/auth/__init__.py`, `TestContentEditing`, `participants/fakes.py`, `IssuedInvitationToken`, `FakeEventPublisher`, `FakeUuidGenerator`, `teachers/domain/value_objects.py`, `organization/composition.py`, `CompetitionRepository`, `competitions/composition.py`, `v1/read_models.py`, `teacher_handlers.py`, `Clock`, `ApplicationError`, `.from_hash`, `auth/views.py`, `participants/test_dto.py`?**
+- **Why does `DomainEvent` connect `UserId` to `organization/application/interfaces.py`, `TeacherRepository`, `identity/application/exceptions.py`, `.to_dict`, `FakeApplicationRepository`, `FakeUserRepository`, `ConsentVersion`, `Submission`, `identity/test_handlers.py`, `AgeCategory`, `competitions/composition.py`, `test_user_mapper.py`, `FakeOrganizationRepository`, `ParticipantRepository`, `submissions/composition.py`, `_grant`, `Env`, `InvalidInputError`, `participants/test_handlers.py`, `test_password_reset_handlers.py`, `PasswordChanged`, `competitions/presentation/api/v1/views.py`, `DjangoUserRepository`, `User`, `infrastructure/auth/__init__.py`, `TestContentEditing`, `participants/fakes.py`, `IssuedInvitationToken`, `FakeEventPublisher`, `FakeUuidGenerator`, `teachers/domain/value_objects.py`, `organization/composition.py`, `CompetitionRepository`, `v1/read_models.py`, `teacher_handlers.py`, `Clock`, `ApplicationError`, `.from_hash`, `auth/views.py`, `participants/test_dto.py`?**
   _High betweenness centrality (0.068) - this node is a cross-community bridge._
 - **Why does `Clock` connect `Clock` to `organization/application/interfaces.py`, `InvalidInputError`, `participants/test_handlers.py`, `FakeUserRepository`, `ProgramService`, `test_password_reset_handlers.py`, `organization/composition.py`, `Submission`, `competitions/presentation/api/v1/views.py`, `ProtocolService`, `CompetitionId`, `TestContentEditing`, `GrantPlatformAdministratorCommand`, `platform/presentation/api/v1/views.py`, `UserId`, `FakeOrganizationRepository`, `auth/views.py`, `ApplicationError`?**
   _High betweenness centrality (0.047) - this node is a cross-community bridge._

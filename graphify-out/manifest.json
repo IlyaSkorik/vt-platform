@@ -4605,8 +4605,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/applications/festival-apply-page.tsx": {
-    "mtime": 1787258176.3491018,
-    "ast_hash": "8fdea0e3f6b697f192f8c1aeb20ea130",
+    "mtime": 1787769787.1285863,
+    "ast_hash": "9198181e0fee6fad52d91dad12d0fbe4",
     "semantic_hash": ""
   },
   "frontend/src/pages/applications/index.ts": {
@@ -9565,8 +9565,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/registration-wizard/ui/services-card.tsx": {
-    "mtime": 1787258176.3470125,
-    "ast_hash": "824e8524ad5c4b41bcf7aa794d8db216",
+    "mtime": 1787769687.601448,
+    "ast_hash": "a3d77575d02c71ed8c1ab5b8a816577f",
     "semantic_hash": ""
   },
   "frontend/src/features/staff-overview/api/hooks.ts": {
