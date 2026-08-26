@@ -67,12 +67,6 @@ export function GeneralLivePreview({
 
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
           <div>
-            <dt className="text-muted-foreground">Регистрация</dt>
-            <dd className="font-medium">
-              {periodLabel(values.registrationStart, values.registrationEnd)}
-            </dd>
-          </div>
-          <div>
             <dt className="text-muted-foreground">Фестиваль</dt>
             <dd className="font-medium">
               {periodLabel(values.competitionStart, values.competitionEnd)}

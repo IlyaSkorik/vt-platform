@@ -29,9 +29,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
   DatePicker,
   Dialog,
   DialogContent,
@@ -381,52 +378,12 @@ export function GeneralSection({
             </Card>
           </PageSection>
 
-          <PageSection title="Даты фестиваля" description="Периоды регистрации и проведения.">
+          {/* Only the festival's own dates: the registration window that matters is the
+              one set per genre in «Жанры», so there is no announcement period here to
+              contradict it. */}
+          <PageSection title="Даты фестиваля" description="Когда проходит фестиваль.">
             <Card className="shadow-none">
-              <CardHeader className="pb-0">
-                <CardTitle className="text-base">Период регистрации (анонс)</CardTitle>
-                <CardDescription>
-                  Даты для публичной афиши фестиваля. Фактический приём заявок задаётся по каждой
-                  жанра отдельно в разделе «Жанры» и определяется именно там.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4 pt-4 md:grid-cols-2">
-                <Controller
-                  control={control}
-                  name="registrationStart"
-                  render={({ field }) => (
-                    <DatePicker
-                      label="Начало регистрации (анонс)"
-                      value={field.value ?? ""}
-                      onChange={field.onChange}
-                      disabled={isReadOnly}
-                      {...(errors.registrationStart?.message != null
-                        ? { error: errors.registrationStart.message }
-                        : {})}
-                    />
-                  )}
-                />
-                <Controller
-                  control={control}
-                  name="registrationEnd"
-                  render={({ field }) => (
-                    <DatePicker
-                      label="Окончание регистрации (анонс)"
-                      value={field.value ?? ""}
-                      onChange={field.onChange}
-                      disabled={isReadOnly}
-                      {...(errors.registrationEnd?.message != null
-                        ? { error: errors.registrationEnd.message }
-                        : {})}
-                    />
-                  )}
-                />
-              </CardContent>
-              <CardHeader className="pb-0">
-                <CardTitle className="text-base">Проведение</CardTitle>
-                <CardDescription>Когда проходит фестиваль.</CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4 pt-4 md:grid-cols-2">
+              <CardContent className="grid gap-4 pt-6 md:grid-cols-2">
                 <Controller
                   control={control}
                   name="competitionStart"

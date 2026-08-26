@@ -24,6 +24,10 @@ export function competitionToGeneralValues(
     poster: competition.branding.poster ?? "",
     venueName: competition.venue?.name ?? "",
     venueAddress: competition.venue?.address ?? "",
+    // Carried, not edited: the General section stopped offering an announcement
+    // period (the registration window that counts is the per-genre one), and the
+    // update replaces the period wholesale — so the stored dates ride along
+    // instead of being wiped by the next save of anything else on the form.
     registrationStart: competition.registrationPeriod?.start ?? "",
     registrationEnd: competition.registrationPeriod?.end ?? "",
     competitionStart: competition.competitionPeriod?.start ?? "",

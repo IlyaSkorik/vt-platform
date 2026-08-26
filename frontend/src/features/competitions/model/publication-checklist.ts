@@ -50,13 +50,6 @@ export function buildPublicationChecklist(competition: CompetitionDetail): Publi
       blocking: false,
     },
     {
-      id: "registration-period",
-      label: "Даты регистрации",
-      done: hasPeriod(competition.registrationPeriod),
-      sectionId: "general",
-      blocking: false,
-    },
-    {
       id: "competition-period",
       label: "Даты фестиваля",
       done: hasPeriod(competition.competitionPeriod),
