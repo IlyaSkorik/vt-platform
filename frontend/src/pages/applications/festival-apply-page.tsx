@@ -353,10 +353,14 @@ function ReviewStep({
             <span>Выступлений</span>
             <span>{application.submissions.length}</span>
           </div>
-          <div className="flex justify-between">
-            <span>Услуг выбрано</span>
-            <span>{application.services.length}</span>
-          </div>
+          {/* Строка про услуги — только у фестиваля, который их предлагает: там, где
+              каталога нет, и карточки услуг на странице нет. */}
+          {registration.additionalServices.length > 0 ? (
+            <div className="flex justify-between">
+              <span>Услуг выбрано</span>
+              <span>{application.services.length}</span>
+            </div>
+          ) : null}
           <div className="flex justify-between">
             <span>Согласий записано</span>
             <span>{application.consents.length}</span>
