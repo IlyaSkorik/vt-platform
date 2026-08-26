@@ -21,7 +21,6 @@ import {
   sortTeamContacts,
   useOrganizationProfileQuery,
   useUpdateContactsConfigurationMutation,
-  useUpdateGeneralInformationMutation,
 } from "@/features/competitions";
 import { ApiError } from "@/shared/api";
 import type {
@@ -120,7 +119,6 @@ function ContactsSummaryPanel({
   const items = [
     { id: "org", label: "Профиль организации", done: summary.organizationProfile },
     { id: "people", label: "Контакты фестиваля", done: summary.competitionContacts },
-    { id: "venue", label: "Площадка", done: summary.venue },
     { id: "emergency", label: "Экстренная связь", done: summary.emergency },
   ] as const;
   const doneCount = items.filter((item) => item.done).length;
@@ -245,12 +243,9 @@ export function ContactsSection({
   const isReadOnly = competition.status === "COMPLETED";
   const orgQuery = useOrganizationProfileQuery();
   const updateConfig = useUpdateContactsConfigurationMutation();
-  const updateGeneral = useUpdateGeneralInformationMutation();
 
   const effectiveConfig = useMemo(() => resolveContactsConfig(competition), [competition]);
   const [config, setConfig] = useState<_ContactsConfig>(effectiveConfig);
-  const [venueName, setVenueName] = useState(competition.venue?.name ?? "");
-  const [venueAddress, setVenueAddress] = useState(competition.venue?.address ?? "");
 
   // Mirror the committed config so `updateConfigLocal` can compute the next value
   // (and schedule the save) outside the `setConfig` updater — the updater must be
@@ -264,13 +259,7 @@ export function ContactsSection({
     setConfig(effectiveConfig);
   }, [effectiveConfig]);
 
-  useEffect(() => {
-    setVenueName(competition.venue?.name ?? "");
-    setVenueAddress(competition.venue?.address ?? "");
-  }, [competition.venue?.name, competition.venue?.address]);
-
   const autosaveTimer = useRef<number | null>(null);
-  const venueTimer = useRef<number | null>(null);
   const saveGeneration = useRef(0);
 
   const persistConfig = useCallback(
@@ -323,54 +312,9 @@ export function ContactsSection({
     [isReadOnly, scheduleConfigSave],
   );
 
-  const persistVenue = useCallback(
-    async (name: string, address: string) => {
-      onAutosaveStateChange("saving");
-      try {
-        await updateGeneral.mutateAsync({
-          competitionId: competition.id,
-          payload: {
-            title: competition.title,
-            season: competition.season,
-            description: competition.description,
-            logo: competition.branding.logo,
-            banner: competition.branding.banner,
-            venueName: name.trim() || null,
-            venueAddress: address.trim() || null,
-            registrationStart: competition.registrationPeriod?.start ?? null,
-            registrationEnd: competition.registrationPeriod?.end ?? null,
-            competitionStart: competition.competitionPeriod?.start ?? null,
-            competitionEnd: competition.competitionPeriod?.end ?? null,
-          },
-        });
-        onAutosaveStateChange("saved");
-      } catch (error) {
-        onAutosaveStateChange("error");
-        const message =
-          error instanceof ApiError
-            ? (error.problem?.detail ?? "Не удалось сохранить площадку")
-            : "Не удалось сохранить площадку";
-        toast.error(message);
-      }
-    },
-    [competition, updateGeneral, onAutosaveStateChange],
-  );
-
-  const scheduleVenueSave = useCallback(
-    (name: string, address: string) => {
-      if (venueTimer.current != null) window.clearTimeout(venueTimer.current);
-      onAutosaveStateChange("dirty");
-      venueTimer.current = window.setTimeout(() => {
-        void persistVenue(name, address);
-      }, AUTOSAVE_DELAY_MS);
-    },
-    [persistVenue, onAutosaveStateChange],
-  );
-
   useEffect(
     () => () => {
       if (autosaveTimer.current != null) window.clearTimeout(autosaveTimer.current);
-      if (venueTimer.current != null) window.clearTimeout(venueTimer.current);
     },
     [],
   );
@@ -390,8 +334,8 @@ export function ContactsSection({
 
   const teamContacts = useMemo(() => sortTeamContacts(config.teamContacts), [config.teamContacts]);
   const summary = useMemo(
-    () => buildContactsSummary(competition, config, orgQuery.data?.name),
-    [competition, config, orgQuery.data?.name],
+    () => buildContactsSummary(config, orgQuery.data?.name),
+    [config, orgQuery.data?.name],
   );
 
   const openCreate = (): void => {
@@ -735,81 +679,6 @@ export function ContactsSection({
               Добавить контакт
             </Button>
           ) : null}
-        </SectionCard>
-
-        <SectionCard title="Площадка" description="Где проходит фестиваль и как добраться.">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Input
-              label="Название площадки"
-              disabled={isReadOnly}
-              value={venueName}
-              onChange={(event) => {
-                const next = event.target.value;
-                setVenueName(next);
-                scheduleVenueSave(next, venueAddress);
-              }}
-            />
-            <Input
-              label="Адрес"
-              disabled={isReadOnly}
-              value={venueAddress}
-              onChange={(event) => {
-                const next = event.target.value;
-                setVenueAddress(next);
-                scheduleVenueSave(venueName, next);
-              }}
-            />
-            <Input
-              label="Город"
-              disabled={isReadOnly}
-              value={config.venueDetails.city ?? ""}
-              onChange={(event) =>
-                updateConfigLocal({
-                  venueDetails: { ...config.venueDetails, city: event.target.value },
-                })
-              }
-            />
-            <Input
-              label="Страна"
-              disabled={isReadOnly}
-              value={config.venueDetails.country ?? ""}
-              onChange={(event) =>
-                updateConfigLocal({
-                  venueDetails: { ...config.venueDetails, country: event.target.value },
-                })
-              }
-            />
-            <Input
-              label="Google Maps"
-              disabled={isReadOnly}
-              value={config.venueDetails.googleMapsUrl ?? ""}
-              onChange={(event) =>
-                updateConfigLocal({
-                  venueDetails: { ...config.venueDetails, googleMapsUrl: event.target.value },
-                })
-              }
-            />
-            <Input
-              label="Яндекс Карты"
-              disabled={isReadOnly}
-              value={config.venueDetails.yandexMapsUrl ?? ""}
-              onChange={(event) =>
-                updateConfigLocal({
-                  venueDetails: { ...config.venueDetails, yandexMapsUrl: event.target.value },
-                })
-              }
-            />
-          </div>
-          <Textarea
-            label="Как добраться"
-            disabled={isReadOnly}
-            value={config.venueDetails.directions ?? ""}
-            onChange={(event) =>
-              updateConfigLocal({
-                venueDetails: { ...config.venueDetails, directions: event.target.value },
-              })
-            }
-          />
         </SectionCard>
 
         <SectionCard

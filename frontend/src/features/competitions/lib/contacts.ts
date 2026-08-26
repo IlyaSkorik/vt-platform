@@ -158,27 +158,17 @@ export function moveTeamContactBefore(
 export interface ContactsSummary {
   organizationProfile: boolean;
   competitionContacts: boolean;
-  venue: boolean;
   emergency: boolean;
 }
 
+/** What the «Контакты» section itself covers — the venue is edited under «Общее». */
 export function buildContactsSummary(
-  competition: CompetitionDetail,
   config: _ContactsConfig,
   organizationName: string | null | undefined,
 ): ContactsSummary {
-  const venueName = competition.venue?.name?.trim();
-  const hasVenueExtras =
-    Boolean(config.venueDetails.city?.trim()) ||
-    Boolean(config.venueDetails.country?.trim()) ||
-    Boolean(config.venueDetails.googleMapsUrl?.trim()) ||
-    Boolean(config.venueDetails.yandexMapsUrl?.trim()) ||
-    Boolean(config.venueDetails.directions?.trim());
-
   return {
     organizationProfile: Boolean(organizationName?.trim()) || config.useOrganizationContacts,
     competitionContacts: config.teamContacts.length > 0,
-    venue: Boolean(venueName) || hasVenueExtras,
     emergency:
       Boolean(config.emergency.phone?.trim()) ||
       Boolean(config.emergency.email?.trim()) ||

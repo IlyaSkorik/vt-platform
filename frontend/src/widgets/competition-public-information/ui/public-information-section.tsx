@@ -172,16 +172,16 @@ function BlockEditor({
       const details = contacts.venueDetails;
       return (
         <div className="space-y-4">
-          <Alert variant="info" title="Данные из раздела «Контакты»">
-            Площадка на лендинге берётся из контактов фестиваля. Редактируйте там.
+          <Alert variant="info" title="Данные из раздела «Общее»">
+            Площадка на лендинге берётся из общих настроек фестиваля. Редактируйте там.
             <div className="mt-2">
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
-                onClick={() => onNavigateSection("contacts")}
+                onClick={() => onNavigateSection("general")}
               >
-                Открыть контакты
+                Открыть общие настройки
               </Button>
             </div>
           </Alert>

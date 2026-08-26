@@ -44,6 +44,7 @@ import {
 import { PublicationChecklistPanel } from "@/widgets/competition-workspace/ui/publication-checklist-panel";
 import { GeneralLivePreview } from "./general-live-preview";
 import { PosterUploadField } from "./poster-upload-field";
+import { VenueSection } from "./venue-section";
 
 interface GeneralSectionProps {
   competition: CompetitionDetail;
@@ -418,27 +419,15 @@ export function GeneralSection({
             </Card>
           </PageSection>
 
-          <PageSection
-            title="Место проведения"
-            description="Площадка для участников и сотрудников."
-          >
-            <Card className="shadow-none">
-              <CardContent className="grid gap-4 pt-6 md:grid-cols-2">
-                <Input
-                  label="Название площадки"
-                  error={errors.venueName?.message}
-                  disabled={isReadOnly}
-                  {...register("venueName")}
-                />
-                <Input
-                  label="Адрес"
-                  error={errors.venueAddress?.message}
-                  disabled={isReadOnly}
-                  {...register("venueAddress")}
-                />
-              </CardContent>
-            </Card>
-          </PageSection>
+          <VenueSection
+            competition={competition}
+            isReadOnly={isReadOnly}
+            nameField={register("venueName")}
+            addressField={register("venueAddress")}
+            nameError={errors.venueName?.message}
+            addressError={errors.venueAddress?.message}
+            onAutosaveStateChange={onAutosaveStateChange}
+          />
 
           <PageSection title="Онлайн-присутствие" description="Ссылки на социальные сети.">
             <Card className="shadow-none">
