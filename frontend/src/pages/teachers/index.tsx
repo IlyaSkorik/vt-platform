@@ -52,15 +52,17 @@ const EMPTY_FORM: TeacherFormValues = {
  * The fields a teacher record cannot do without.
  *
  * The full name is what gets printed on a diploma or a thank-you letter, and the
- * role is what a diploma credits the teacher in — so all four are needed before the
- * record is usable. Email and phone are the organizer's way of reaching the person
- * and are left optional.
+ * role is what a diploma credits the teacher in. Email and phone are how the
+ * organizer reaches the person — a record that names a teacher nobody can contact
+ * is not usable either, so they are required alongside the printed fields.
  */
 const REQUIRED_FIELDS = [
   "lastName",
   "firstName",
   "middleName",
   "role",
+  "email",
+  "phone",
 ] as const satisfies readonly (keyof TeacherFormValues)[];
 
 function toRequest(
@@ -341,20 +343,22 @@ export function TeacherProfilePage(): React.JSX.Element {
             placeholder="Педагог, Концертмейстер…"
             {...errorFor("role")}
           />
-          {/* Contacts: the organizer's way of reaching the teacher, not part of what
-              gets printed, so neither is required. */}
+          {/* Contacts: not part of what gets printed, but the only way to reach the
+              teacher about the performance they are credited on. */}
           <Input
             label="Email"
             type="email"
+            required
             value={values.email}
             onChange={set("email")}
-            description="Необязательно"
+            {...errorFor("email")}
           />
           <Input
             label="Телефон"
+            required
             value={values.phone}
             onChange={set("phone")}
-            description="Необязательно"
+            {...errorFor("phone")}
           />
         </div>
         <div className="space-y-3">

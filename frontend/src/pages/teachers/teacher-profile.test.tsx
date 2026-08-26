@@ -31,26 +31,18 @@ function wrap(children: ReactNode): React.JSX.Element {
   );
 }
 
-/** The four fields a printed document needs, and the two contacts it does not. */
-const REQUIRED_LABELS = ["Фамилия", "Имя", "Отчество", "Роль"];
-const OPTIONAL_LABELS = ["Email", "Телефон"];
+/** The four fields a printed document needs, plus the two ways to reach the teacher. */
+const REQUIRED_LABELS = ["Фамилия", "Имя", "Отчество", "Роль", "Email", "Телефон"];
 
 afterEach(() => {
   vi.clearAllMocks();
 });
 
 describe("TeacherProfilePage", () => {
-  it("marks the name and the role as required", () => {
+  it("marks the name, the role and the contacts as required", () => {
     render(wrap(<TeacherProfilePage />));
     for (const label of REQUIRED_LABELS) {
       expect(screen.getByLabelText(label, { exact: false })).toBeRequired();
-    }
-  });
-
-  it("leaves the contacts optional", () => {
-    render(wrap(<TeacherProfilePage />));
-    for (const label of OPTIONAL_LABELS) {
-      expect(screen.getByLabelText(label, { exact: false })).not.toBeRequired();
     }
   });
 
@@ -61,8 +53,8 @@ describe("TeacherProfilePage", () => {
     await user.type(screen.getByLabelText("Фамилия", { exact: false }), "Петрова");
     await user.click(screen.getByRole("button", { name: "Сохранить" }));
 
-    // Three still empty → three messages, and nothing was sent.
-    expect(screen.getAllByText("Обязательное поле")).toHaveLength(3);
+    // Five still empty → five messages, and nothing was sent.
+    expect(screen.getAllByText("Обязательное поле")).toHaveLength(5);
     expect(mockedCreate).not.toHaveBeenCalled();
   });
 
@@ -71,7 +63,7 @@ describe("TeacherProfilePage", () => {
     expect(screen.queryByText("Обязательное поле")).not.toBeInTheDocument();
   });
 
-  it("saves once the name and the role are filled in, contacts empty", async () => {
+  it("saves once the name, the role and the contacts are filled in", async () => {
     mockedCreate.mockResolvedValue({
       status: 201,
       data: { data: { id: "01900000-0000-7000-8000-000000000001" } },
@@ -83,21 +75,22 @@ describe("TeacherProfilePage", () => {
     await user.type(screen.getByLabelText("Имя", { exact: false }), "Мария");
     await user.type(screen.getByLabelText("Отчество", { exact: false }), "Сергеевна");
     await user.type(screen.getByLabelText("Роль", { exact: false }), "Педагог");
+    await user.type(screen.getByLabelText("Email", { exact: false }), "maria@example.com");
+    await user.type(screen.getByLabelText("Телефон", { exact: false }), "+7 999 000-00-00");
     // The teacher's own consent — an adult's details entered by somebody else are held
     // on that adult's consent (LEGAL-001 §5.4), so the form will not save without it.
     await user.click(screen.getByRole("checkbox"));
     await user.click(screen.getByRole("button", { name: "Сохранить" }));
 
-    // Absent contacts travel as null, not as empty strings, and the consent reference
-    // travels with the teacher.
+    // The consent reference travels with the teacher.
     await waitFor(() =>
       expect(mockedCreate).toHaveBeenCalledWith({
         lastName: "Петрова",
         firstName: "Мария",
         middleName: "Сергеевна",
         role: "Педагог",
-        email: null,
-        phone: null,
+        email: "maria@example.com",
+        phone: "+7 999 000-00-00",
         consentId: "01900000-0000-7000-8000-00000000c0de",
         consentVersion: TEACHER_CONSENT.version,
       }),
@@ -109,7 +102,10 @@ describe("TeacherProfilePage", () => {
 
     await user.type(screen.getByLabelText("Фамилия", { exact: false }), "Петрова");
     await user.type(screen.getByLabelText("Имя", { exact: false }), "Мария");
+    await user.type(screen.getByLabelText("Отчество", { exact: false }), "Сергеевна");
     await user.type(screen.getByLabelText("Роль", { exact: false }), "Педагог");
+    await user.type(screen.getByLabelText("Email", { exact: false }), "maria@example.com");
+    await user.type(screen.getByLabelText("Телефон", { exact: false }), "+7 999 000-00-00");
     await user.click(screen.getByRole("button", { name: "Сохранить" }));
 
     // Nothing was sent: the platform, not the form's good intentions, is what refuses.
