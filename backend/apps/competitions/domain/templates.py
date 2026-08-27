@@ -277,7 +277,12 @@ class CompetitionTemplate:
         mixed_calculation_method: MixedAgeCalculationMethod | None = None,
     ) -> AgeCategory:
         self._require_participant_group(participant_group_id)
-        ensure_age_range_free(self._age_categories, age_range, participant_group_id=participant_group_id)
+        ensure_age_range_free(
+            self._age_categories,
+            age_range,
+            participant_group_id=participant_group_id,
+            age_category_type=age_category_type,
+        )
         if any(a.participant_group_id == participant_group_id and a.name == name for a in self._age_categories.values()):
             raise DuplicateAgeCategoryNameError(f"An age category named {name.value!r} already exists in this participant group.")
         age_category = AgeCategory.create(

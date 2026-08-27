@@ -304,12 +304,22 @@ def ensure_age_range_free(
     *,
     participant_group_id: ParticipantGroupId,
     exclude: AgeCategoryId | None = None,
+    age_category_type: AgeCategoryType = AgeCategoryType.STANDARD,
 ) -> None:
-    """Assert ``age_range`` does not overlap any existing age category within the same participant group."""
+    """Assert ``age_range`` does not overlap any existing *standard* age category within the same participant group.
+
+    Only standard bands must partition the group's ages cleanly. A mixed band
+    deliberately spans the ages its standard neighbours already cover — that is
+    what "mixed" means — so it neither has to avoid them nor blocks them.
+    """
+    if age_category_type is AgeCategoryType.MIXED:
+        return
     for aid, existing in age_categories.items():
         if aid == exclude:
             continue
         if existing.participant_group_id != participant_group_id:
+            continue
+        if existing.type is AgeCategoryType.MIXED:
             continue
         if existing.age_range.overlaps(age_range):
             raise OverlappingAgeRangeError(f"Age range {age_range} overlaps existing range {existing.age_range}.")
@@ -2068,7 +2078,12 @@ class Competition:
         """Add an age band to a participant group. Overlapping ranges are refused within the group."""
         self._ensure_configurable()
         self._require_participant_group(participant_group_id)
-        ensure_age_range_free(self._age_categories, age_range, participant_group_id=participant_group_id)
+        ensure_age_range_free(
+            self._age_categories,
+            age_range,
+            participant_group_id=participant_group_id,
+            age_category_type=age_category_type,
+        )
         if any(a.participant_group_id == participant_group_id and a.name == name for a in self._age_categories.values()):
             raise DuplicateAgeCategoryNameError(f"An age category named {name.value!r} already exists in this participant group.")
         if sort_order is None:
@@ -2105,8 +2120,15 @@ class Competition:
             aid != age_category_id and a.participant_group_id == group_id and a.name == name for aid, a in self._age_categories.items()
         ):
             raise DuplicateAgeCategoryNameError(f"An age category named {name.value!r} already exists in this participant group.")
-        if age_range is not None:
-            ensure_age_range_free(self._age_categories, age_range, participant_group_id=group_id, exclude=age_category_id)
+        effective_type = age_category_type if age_category_type is not None else age_category.type
+        if age_range is not None or effective_type is not age_category.type:
+            ensure_age_range_free(
+                self._age_categories,
+                age_range if age_range is not None else age_category.age_range,
+                participant_group_id=group_id,
+                exclude=age_category_id,
+                age_category_type=effective_type,
+            )
         age_category.update(
             name=name,
             age_range=age_range,

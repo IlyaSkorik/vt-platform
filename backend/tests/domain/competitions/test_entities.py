@@ -64,6 +64,7 @@ from apps.competitions.domain.value_objects import (
     AdmissionCombination,
     AgeCategoryId,
     AgeCategoryName,
+    AgeCategoryType,
     AgeRange,
     CategoryId,
     CategoryName,
@@ -83,6 +84,7 @@ from apps.competitions.domain.value_objects import (
     FileReference,
     InformationBlockId,
     InformationBlockTitle,
+    MixedAgeCalculationMethod,
     Money,
     OrganizerId,
     ParticipantCountRange,
@@ -273,6 +275,79 @@ class TestTaxonomyInvariants:
             age_category_id=AgeCategoryId.generate(), participant_group_id=grp.id, name=AgeCategoryName("9-11"), age_range=AgeRange(9, 11), now=NOW
         )
         assert len(c.age_categories) == 2
+
+    def test_mixed_age_category_may_overlap_standard_bands(self) -> None:
+        # A mixed band spans the ages its standard neighbours cover — that is the point of it.
+        c = _draft()
+        grp = c.add_participant_group(
+            participant_group_id=ParticipantGroupId.generate(),
+            name=ParticipantGroupName("Solo"),
+            count_range=ParticipantCountRange(1, 1),
+            now=NOW,
+        )
+        c.add_age_category(
+            age_category_id=AgeCategoryId.generate(), participant_group_id=grp.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW
+        )
+        c.add_age_category(
+            age_category_id=AgeCategoryId.generate(),
+            participant_group_id=grp.id,
+            name=AgeCategoryName("Смешанная 6-12"),
+            age_range=AgeRange(6, 12),
+            now=NOW,
+            age_category_type=AgeCategoryType.MIXED,
+            mixed_calculation_method=MixedAgeCalculationMethod.AVERAGE,
+        )
+        assert len(c.age_categories) == 2
+
+    def test_standard_age_category_may_overlap_existing_mixed_band(self) -> None:
+        c = _draft()
+        grp = c.add_participant_group(
+            participant_group_id=ParticipantGroupId.generate(),
+            name=ParticipantGroupName("Solo"),
+            count_range=ParticipantCountRange(1, 1),
+            now=NOW,
+        )
+        c.add_age_category(
+            age_category_id=AgeCategoryId.generate(),
+            participant_group_id=grp.id,
+            name=AgeCategoryName("Смешанная 6-12"),
+            age_range=AgeRange(6, 12),
+            now=NOW,
+            age_category_type=AgeCategoryType.MIXED,
+            mixed_calculation_method=MixedAgeCalculationMethod.AVERAGE,
+        )
+        c.add_age_category(
+            age_category_id=AgeCategoryId.generate(), participant_group_id=grp.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW
+        )
+        assert len(c.age_categories) == 2
+
+    def test_turning_mixed_band_into_standard_revalidates_overlap(self) -> None:
+        c = _draft()
+        grp = c.add_participant_group(
+            participant_group_id=ParticipantGroupId.generate(),
+            name=ParticipantGroupName("Solo"),
+            count_range=ParticipantCountRange(1, 1),
+            now=NOW,
+        )
+        c.add_age_category(
+            age_category_id=AgeCategoryId.generate(), participant_group_id=grp.id, name=AgeCategoryName("6-8"), age_range=AgeRange(6, 8), now=NOW
+        )
+        mixed = c.add_age_category(
+            age_category_id=AgeCategoryId.generate(),
+            participant_group_id=grp.id,
+            name=AgeCategoryName("Смешанная 6-12"),
+            age_range=AgeRange(6, 12),
+            now=NOW,
+            age_category_type=AgeCategoryType.MIXED,
+            mixed_calculation_method=MixedAgeCalculationMethod.AVERAGE,
+        )
+        with pytest.raises(OverlappingAgeRangeError):
+            c.update_age_category(
+                age_category_id=mixed.id,
+                now=NOW,
+                age_category_type=AgeCategoryType.STANDARD,
+                mixed_calculation_method=None,
+            )
 
     def test_age_range_may_repeat_across_participant_groups(self) -> None:
         # Age bands are scoped per group, so the same range is fine in a different group.
