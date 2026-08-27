@@ -530,8 +530,8 @@
     "semantic_hash": ""
   },
   "backend/apps/applications/presentation/api/v1/organizer/views.py": {
-    "mtime": 1786991378.0793185,
-    "ast_hash": "4290363ba14135d994c675576c67ac6a",
+    "mtime": 1787860661.933009,
+    "ast_hash": "8567ba23e3e7713e20048eba5a9421bd",
     "semantic_hash": ""
   },
   "backend/apps/applications/presentation/api/v1/problems.py": {
@@ -4555,8 +4555,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/registration-wizard/ui/participant-picker.tsx": {
-    "mtime": 1787842488.6401312,
-    "ast_hash": "d79509eeaada5b968500d076429269b0",
+    "mtime": 1787859817.739147,
+    "ast_hash": "7511c87842e615a0062994ee71e4598b",
     "semantic_hash": ""
   },
   "frontend/src/features/registration-wizard/ui/performance-builder.tsx": {
@@ -4655,8 +4655,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/participants/index.tsx": {
-    "mtime": 1786392814.0250673,
-    "ast_hash": "e8716e10b1f8983719fe9a5a2eb6bd7c",
+    "mtime": 1787860066.7998264,
+    "ast_hash": "fc11cf190fd306ec844263dc284fb0bc",
     "semantic_hash": ""
   },
   "frontend/src/pages/placeholder/index.tsx": {
@@ -6545,8 +6545,8 @@
     "semantic_hash": "d4ecc328966ff21da30ecd22f0b2a981"
   },
   "frontend/openapi/schema-full.yaml": {
-    "mtime": 1787839650.31246,
-    "ast_hash": "7ba730c503a252cce544a1b40d8527c8",
+    "mtime": 1787860892.4126155,
+    "ast_hash": "5a7bcc858a56efaf06083dfa99ff6beb",
     "semantic_hash": ""
   },
   "frontend/openapi/schema.yaml": {
@@ -9370,8 +9370,8 @@
     "semantic_hash": ""
   },
   "backend/apps/notifications/infrastructure/models/notification.py": {
-    "mtime": 1786201940.1046295,
-    "ast_hash": "fb9923cdeacc6e18ecf0cda2acb8a2c1",
+    "mtime": 1787860613.92553,
+    "ast_hash": "0e0ae1c575b67acf579be5e82e7dcad2",
     "semantic_hash": ""
   },
   "backend/apps/notifications/presentation/api/v1/serializers.py": {
@@ -9545,8 +9545,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/notifications/lib/presentation.ts": {
-    "mtime": 1786202803.944877,
-    "ast_hash": "f88c3bad817210c2159d6ee1858435cc",
+    "mtime": 1787860925.9041383,
+    "ast_hash": "225c95b16dbc2dba3c0902ece57b5fcd",
     "semantic_hash": ""
   },
   "frontend/src/features/notifications/ui/notification-bell.tsx": {
@@ -10147,6 +10147,16 @@
   "frontend/src/features/registration-wizard/ui/collective-headcount.tsx": {
     "mtime": 1787842584.6860828,
     "ast_hash": "a842e60db66f89fec04271e82b945305",
+    "semantic_hash": ""
+  },
+  "backend/apps/notifications/infrastructure/migrations/0002_application_approved_kind.py": {
+    "mtime": 1787860634.4950447,
+    "ast_hash": "a5e9a4544ff9da5ede3324a601c45ee2",
+    "semantic_hash": ""
+  },
+  "backend/tests/presentation/applications/test_organizer_review_notices.py": {
+    "mtime": 1787860840.5750196,
+    "ast_hash": "363631476288473cb72544f9137361d3",
     "semantic_hash": ""
   }
 }
