@@ -28,6 +28,11 @@ const PRESENTATION: Record<string, NotificationPresentation> = {
     icon: Clock,
     tone: "bg-warning/10 text-warning",
   },
+  APPLICATION_APPROVED: {
+    label: "Заявка одобрена",
+    icon: CheckCircle2,
+    tone: "bg-success/10 text-success",
+  },
   APPLICATION_CANCELLED: {
     label: "Заявка отменена",
     icon: XCircle,
