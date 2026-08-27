@@ -35,6 +35,7 @@ class NotificationKind(models.TextChoices):
     APPLICATION_SUBMITTED = "APPLICATION_SUBMITTED", "Application submitted"
     PAYMENT_EXPECTED = "PAYMENT_EXPECTED", "Payment expected"
     APPLICATION_CANCELLED = "APPLICATION_CANCELLED", "Application cancelled"
+    APPLICATION_APPROVED = "APPLICATION_APPROVED", "Application approved"
     CORRECTION_REQUESTED = "CORRECTION_REQUESTED", "Correction requested"
     FILES_REQUESTED = "FILES_REQUESTED", "Files requested"
     RESULTS_PUBLISHED = "RESULTS_PUBLISHED", "Results published"

@@ -520,7 +520,7 @@ class OrganizerProcessingActionView(_StaffView):
             if action == "start_review":
                 result = composition.build_start_review_handler().handle(StartReviewCommand(submission_id=submission_id, reviewer_id=user_id))
             elif action == "approve":
-                application_id, _, _ = _application_meta_for_submission(submission_id)
+                application_id, _, competition_id = _application_meta_for_submission(submission_id)
                 target_submission_ids = _submission_ids_for_application(application_id) or [submission_id]
                 processed_ids: list[str] = []
                 result = None
@@ -545,6 +545,69 @@ class OrganizerProcessingActionView(_StaffView):
                     processed_ids.append(target_id)
                 if not processed_ids or result is None:
                     return Response({"detail": "Нет выступлений, доступных для одобрения."}, status=409)
+                # An approval is the answer the applicant has been waiting for, and the
+                # one outcome they never see by refreshing — the order simply stops
+                # being "on review". It is told the same way a return for correction is:
+                # a letter, a feed entry, and a line in the order's journal.
+                primary_model = SubmissionModel.objects.get(id=processed_ids[0], deleted_at__isnull=True)
+                recipient = UserModel.objects.filter(id=primary_model.applicant_id, deleted_at__isnull=True).first()
+                if recipient is not None and recipient.email:
+                    competition_title = (
+                        CompetitionModel.objects.filter(id=competition_id).values_list("title", flat=True).first() if competition_id else None
+                    )
+                    application_number = (application_id or submission_id)[:8].upper()
+                    subject = f"Заявка #{application_number} одобрена организатором"
+                    cabinet_url, detail_url = _application_urls(application_id)
+                    approved_line = f"Одобрено выступлений: {len(processed_ids)}."
+                    body_text = (
+                        f"Здравствуйте, {recipient.first_name}!\n\n"
+                        f"Организатор одобрил вашу заявку #{application_number}"
+                        f"{f' ({competition_title})' if competition_title else ''}.\n"
+                        f"{approved_line}\n\n"
+                        "Заявка принята к участию — следите за расписанием и сообщениями организатора "
+                        "в личном кабинете.\n\n"
+                        f"Откройте заявку в личном кабинете: {detail_url}\n"
+                        f"Список заявок: {cabinet_url}\n\n"
+                        "С уважением,\nОргкомитет фестиваля"
+                    )
+                    queue_review_email(
+                        subject=subject,
+                        body=body_text,
+                        to=recipient.email,
+                        html_body=render_transactional_email_html(
+                            title=subject,
+                            intro=(
+                                f"Организатор одобрил заявку #{application_number}"
+                                f"{f' ({competition_title})' if competition_title else ''}. {approved_line}"
+                            ),
+                            details_label="Что дальше",
+                            details="Заявка принята к участию. Расписание и сообщения организатора — в личном кабинете.",
+                            button_label="Открыть заявку в ЛК",
+                            button_url=detail_url,
+                            status="success",
+                            status_label="Одобрена",
+                        ),
+                    )
+                    notification_feed.publish(
+                        recipient_id=recipient.id,
+                        kind=NotificationKind.APPLICATION_APPROVED,
+                        title=f"Заявка №{application_number} одобрена",
+                        body=f"Организатор одобрил заявку. {approved_line}",
+                        link=_cabinet_path(application_id),
+                    )
+                    for target_id in processed_ids:
+                        target_model = SubmissionModel.objects.get(id=target_id, deleted_at__isnull=True)
+                        messages = list(target_model.participant_messages or [])
+                        messages.append(
+                            {
+                                "text": f"Email участнику: заявка #{application_number} одобрена организатором ({recipient.email})",
+                                "created_by": user_id,
+                                "created_at": _now().isoformat(),
+                            }
+                        )
+                        target_model.participant_messages = messages
+                        target_model.updated_at = _now()
+                        target_model.save(update_fields=["participant_messages", "updated_at"])
             elif action == "return_for_correction":
                 if not comment:
                     return Response({"detail": "Укажите комментарий для участника перед возвратом на исправление."}, status=400)
