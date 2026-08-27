@@ -613,11 +613,18 @@ function validateAgeCategoryDraft({
     return "Категория с таким названием уже есть в этой группе участников";
   }
 
-  const hasOverlap = sameGroup.some((item) =>
-    rangesOverlap(values.minAge, values.maxAge, item.minAge, item.maxAge),
-  );
-  if (hasOverlap) {
-    return "Возрастной диапазон пересекается с существующей категорией в этой группе участников";
+  // Only standard bands have to partition the group cleanly. A mixed band spans
+  // the ages its standard neighbours already cover by design, so it is exempt
+  // from the overlap check in both directions.
+  if (values.type !== "MIXED") {
+    const hasOverlap = sameGroup.some(
+      (item) =>
+        item.type !== "MIXED" &&
+        rangesOverlap(values.minAge, values.maxAge, item.minAge, item.maxAge),
+    );
+    if (hasOverlap) {
+      return "Возрастной диапазон пересекается со стандартной категорией в этой группе участников";
+    }
   }
 
   return null;
