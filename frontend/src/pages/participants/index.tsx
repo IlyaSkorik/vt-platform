@@ -846,7 +846,7 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                         createMutation.mutate(form.getValues());
                       }}
                     >
-                      Создать участника
+                      Сохранить участника
                     </Button>
                   </div>
                 </CardFooter>
@@ -998,7 +998,7 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                 <CardContent className="space-y-3">
                   <div className="flex justify-end">
                     <Button variant="outline" onClick={() => setOrganizationDialogOpen(true)}>
-                      Справочник организаций
+                      Добавить организацию
                     </Button>
                   </div>
                   <OrganizationPicker

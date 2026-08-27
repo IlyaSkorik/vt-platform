@@ -106,7 +106,7 @@ export function ParticipantPicker({
               leftIcon={<UserPlus className="size-4" />}
               onClick={() => goCreate("solo")}
             >
-              Создать участника
+              Сохранить участника
             </Button>
             <Button
               variant="outline"
