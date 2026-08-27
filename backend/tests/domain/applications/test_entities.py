@@ -774,6 +774,52 @@ class TestCollectiveRoster:
             submission.set_participant_members(participant_id=ParticipantId.generate(), members=["Ivanova Maria"], now=NOW)
 
 
+class TestCollectiveHeadcount:
+    """Correcting how many people a collective entry stands for."""
+
+    def _collective(self, member_count: int = 3) -> tuple[Submission, ParticipantId]:
+        submission = _draft()
+        participant_id = ParticipantId.generate()
+        submission.add_participant(
+            participant_id=participant_id,
+            display_name='Ensemble "Constellation"',
+            member_count=member_count,
+            now=NOW,
+        )
+        return submission, participant_id
+
+    def test_the_headcount_can_be_corrected(self) -> None:
+        submission, participant_id = self._collective(member_count=1)
+
+        events = submission.set_participant_member_count(participant_id=participant_id, member_count=12, now=NOW)
+
+        assert submission.participants[0].member_count == 12
+        assert submission.participant_count == 12
+        assert [type(event).__name__ for event in events] == ["ParticipantMemberCountChanged"]
+
+    def test_correcting_the_headcount_keeps_the_participant_and_its_roster(self) -> None:
+        submission, participant_id = self._collective()
+        submission.set_participant_members(participant_id=participant_id, members=["Ivanova Maria"], now=NOW)
+
+        submission.set_participant_member_count(participant_id=participant_id, member_count=9, now=NOW)
+
+        # Fixing a number must not cost the applicant the names already typed here.
+        assert submission.participants[0].id == participant_id
+        assert submission.participants[0].members == ("Ivanova Maria",)
+
+    def test_a_headcount_below_one_is_rejected(self) -> None:
+        submission, participant_id = self._collective()
+
+        with pytest.raises(InvalidParticipantMemberCountError):
+            submission.set_participant_member_count(participant_id=participant_id, member_count=0, now=NOW)
+
+    def test_an_unknown_participant_has_no_headcount_to_correct(self) -> None:
+        submission, _ = self._collective()
+
+        with pytest.raises(ParticipantNotFoundError):
+            submission.set_participant_member_count(participant_id=ParticipantId.generate(), member_count=5, now=NOW)
+
+
 class TestDirectoryLinkedTeachers:
     """A credited teacher links to the Teacher Directory and keeps a name/role snapshot."""
 

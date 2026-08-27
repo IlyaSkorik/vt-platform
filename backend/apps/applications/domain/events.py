@@ -67,6 +67,7 @@ __all__ = [
     "DomainEvent",
     "EducationalOrganizationSelected",
     "ParticipantAdded",
+    "ParticipantMemberCountChanged",
     "ParticipantMembersChanged",
     "ParticipantRemoved",
     "PaymentReceiptRemoved",
@@ -186,6 +187,18 @@ class ParticipantMembersChanged(DomainEvent):
     Its own event rather than a re-used ``ParticipantAdded``: the roster is what asks
     for an individual document per person, so "who is named on this entry" is a fact
     worth reading back out of the stream on its own.
+    """
+
+    participant_id: ParticipantId
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ParticipantMemberCountChanged(DomainEvent):
+    """A collective entry's headcount was corrected.
+
+    Separate from ``ParticipantAdded`` because the number is what the count band and
+    the per-participant price are computed from — when either changes, the stream
+    should say why.
     """
 
     participant_id: ParticipantId

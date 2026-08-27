@@ -80,6 +80,7 @@ from .events import (
     DomainEvent,
     EducationalOrganizationSelected,
     ParticipantAdded,
+    ParticipantMemberCountChanged,
     ParticipantMembersChanged,
     ParticipantRemoved,
     PaymentReceiptRemoved,
@@ -386,6 +387,15 @@ class Participant:
         if len(roster) > _MAX_COLLECTIVE_MEMBERS:
             raise InvalidCollectiveMemberError(f"A collective may name at most {_MAX_COLLECTIVE_MEMBERS} members, got {len(roster)}.")
         return tuple(roster)
+
+    def with_member_count(self, member_count: int) -> None:
+        """Replace the headcount in place (aggregate-internal; the root calls this).
+
+        Same reasoning as :meth:`with_members`: how many people stand on stage is a
+        fact about this entry, not a different entry, so the id the client holds -
+        and with it the roster already typed against it - survives the correction.
+        """
+        self._member_count = self._validate_member_count(member_count)
 
     def with_members(self, members: Sequence[str]) -> None:
         """Replace the roster in place (aggregate-internal; the root calls this).
@@ -952,6 +962,23 @@ class Submission:
         participant.with_members(members)
         self._touch(now)
         return [ParticipantMembersChanged(aggregate_id=self._id.value, participant_id=participant_id)]
+
+    def set_participant_member_count(self, *, participant_id: ParticipantId, member_count: int, now: datetime) -> list[DomainEvent]:
+        """Correct how many people a collective entry stands for.
+
+        The headcount arrives with the entry, but it is the one thing about a
+        collective the applicant is likely to get wrong first time - it drives the
+        count-band check and per-participant pricing, both of which they only see
+        afterwards. Fixing it must not cost them the roster they already typed, so
+        this changes the entry rather than replacing it.
+        """
+        self._ensure_editable()
+        participant = self._participants.get(participant_id)
+        if participant is None:
+            raise ParticipantNotFoundError(f"No participant {participant_id} in this submission.")
+        participant.with_member_count(member_count)
+        self._touch(now)
+        return [ParticipantMemberCountChanged(aggregate_id=self._id.value, participant_id=participant_id)]
 
     def remove_participant(self, *, participant_id: ParticipantId, now: datetime) -> list[DomainEvent]:
         """Remove a participant.

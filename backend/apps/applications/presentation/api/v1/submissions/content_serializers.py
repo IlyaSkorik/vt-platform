@@ -12,6 +12,7 @@ from rest_framework import serializers
 __all__ = [
     "AddParticipantRequestSerializer",
     "CreditTeacherRequestSerializer",
+    "SetParticipantMemberCountRequestSerializer",
     "SetParticipantMembersRequestSerializer",
     "SetPerformanceRequestSerializer",
     "SubmissionProblemDetailSerializer",
@@ -58,6 +59,17 @@ class AddParticipantRequestSerializer(serializers.Serializer[dict[str, object]])
     birthDate = serializers.DateField(required=False, allow_null=True)
     gender = serializers.ChoiceField(choices=["MALE", "FEMALE", "OTHER"], required=False, allow_null=True)
     memberCount = serializers.IntegerField(required=False, allow_null=True, min_value=1)
+
+
+class SetParticipantMemberCountRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """Validate a set-collective-headcount request body.
+
+    How many people this entry stands for. One is the floor the domain allows, but a
+    collective of one is not what the field is for — the applicant states the real
+    number, and the participant-count band of the chosen group is what judges it.
+    """
+
+    memberCount = serializers.IntegerField(min_value=1)
 
 
 class SetParticipantMembersRequestSerializer(serializers.Serializer[dict[str, object]]):

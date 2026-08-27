@@ -1,4 +1,4 @@
-"""Participant use cases: add, update (replace), remove a participant, name a collective's members."""
+"""Participant use cases: add, update (replace), remove a participant, set a collective's headcount and name its members."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ from apps.applications.application.dto import SubmissionOperationResultDto
 from apps.applications.application.dto.commands import (
     AddParticipantCommand,
     RemoveParticipantCommand,
+    SetParticipantMemberCountCommand,
     SetParticipantMembersCommand,
     UpdateParticipantCommand,
 )
@@ -38,6 +39,7 @@ from ._support import ensure_owner, load_submission, parse_submission_id, parse_
 __all__ = [
     "AddParticipantHandler",
     "RemoveParticipantHandler",
+    "SetParticipantMemberCountHandler",
     "SetParticipantMembersHandler",
     "UpdateParticipantHandler",
 ]
@@ -233,6 +235,52 @@ class SetParticipantMembersHandler:
             )
         with translate_domain_errors():
             domain_events = submission.set_participant_members(participant_id=participant_id, members=command.members, now=now)
+        domain_events += try_resubmit_after_correction_edit(submission=submission, catalog=self._catalog, now=now)
+        self._submissions.save(submission)
+        self._events.publish(domain_events)
+        return SubmissionOperationResultDto.of(submission, tuple(domain_events))
+
+
+class SetParticipantMemberCountHandler:
+    """Use case: correct how many people a collective entry stands for.
+
+    Kept apart from "update participant" for the same reason as the roster: that one
+    replaces the participant with a fresh id, and the applicant would lose the names
+    they already typed against this entry just for fixing a number.
+    """
+
+    def __init__(
+        self,
+        *,
+        submissions: SubmissionRepository,
+        catalog: CompetitionCatalog,
+        clock: Clock,
+        events: EventPublisher,
+    ) -> None:
+        self._submissions = submissions
+        self._catalog = catalog
+        self._clock = clock
+        self._events = events
+
+    def handle(self, command: SetParticipantMemberCountCommand) -> SubmissionOperationResultDto:
+        now = self._clock.utcnow()
+        submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
+        ensure_owner(submission, parse_user_id(command.requested_by))
+        if not self._catalog.accepts_submissions(
+            competition_id=submission.competition_id,
+            nomination_id=submission.performance.nomination_id if submission.performance is not None else None,
+            now=now,
+        ):
+            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
+        with translate_domain_errors():
+            participant_id = ParticipantId.from_string(command.participant_id)
+        if not any(p.id == participant_id for p in submission.participants):
+            raise SubmissionChildNotFoundError(
+                f"No participant {participant_id.json()} in this submission.",
+                domain_code="ParticipantNotFoundError",
+            )
+        with translate_domain_errors():
+            domain_events = submission.set_participant_member_count(participant_id=participant_id, member_count=command.member_count, now=now)
         domain_events += try_resubmit_after_correction_edit(submission=submission, catalog=self._catalog, now=now)
         self._submissions.save(submission)
         self._events.publish(domain_events)

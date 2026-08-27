@@ -10,6 +10,7 @@ from django.urls import path
 from apps.applications.presentation.api.v1.submissions.content_views import (
     SubmissionDetailView,
     SubmissionParticipantDetailView,
+    SubmissionParticipantMemberCountView,
     SubmissionParticipantMembersView,
     SubmissionParticipantsView,
     SubmissionPerformanceView,
@@ -32,6 +33,11 @@ urlpatterns = [
         "submissions/<str:submission_id>/participants/<str:participant_id>",
         SubmissionParticipantDetailView.as_view(),
         name="participant-detail",
+    ),
+    path(
+        "submissions/<str:submission_id>/participants/<str:participant_id>/member-count",
+        SubmissionParticipantMemberCountView.as_view(),
+        name="participant-member-count",
     ),
     path(
         "submissions/<str:submission_id>/participants/<str:participant_id>/members",

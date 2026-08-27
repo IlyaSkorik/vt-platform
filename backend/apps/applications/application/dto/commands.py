@@ -31,6 +31,7 @@ __all__ = [
     "RemoveTeacherCommand",
     "ReturnSubmissionForCorrectionCommand",
     "ScheduleSubmissionCommand",
+    "SetParticipantMemberCountCommand",
     "SetParticipantMembersCommand",
     "SetPerformanceCommand",
     "StartReviewCommand",
@@ -158,6 +159,21 @@ class UpdateParticipantCommand:
     birth_date: str
     gender: str
     middle_name: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class SetParticipantMemberCountCommand:
+    """Correct a collective entry's headcount (owner, editable states only).
+
+    Its own command rather than a variant of "update participant": that one replaces
+    the entry with a fresh id and would take the roster with it. How many people are
+    on stage is a correction to the entry, not a different entry.
+    """
+
+    submission_id: str
+    requested_by: str
+    participant_id: str
+    member_count: int
 
 
 @dataclass(frozen=True, slots=True)

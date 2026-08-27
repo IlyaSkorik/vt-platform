@@ -24,6 +24,7 @@ from apps.applications.application.dto.commands import (
     CalculatePriceCommand,
     RemoveParticipantCommand,
     RemoveTeacherCommand,
+    SetParticipantMemberCountCommand,
     SetParticipantMembersCommand,
     SetPerformanceCommand,
 )
@@ -36,6 +37,7 @@ from apps.applications.presentation.api.v1.submissions import composition
 from apps.applications.presentation.api.v1.submissions.content_serializers import (
     AddParticipantRequestSerializer,
     CreditTeacherRequestSerializer,
+    SetParticipantMemberCountRequestSerializer,
     SetParticipantMembersRequestSerializer,
     SetPerformanceRequestSerializer,
     SubmissionProblemDetailSerializer,
@@ -239,6 +241,39 @@ class SubmissionParticipantsView(_AuthenticatedView):
         who = " ".join(filter(None, [command.last_name, command.first_name])).strip() or command.display_name or ""
         _note(submission_id, f"Добавлен участник: {who}" if who else "Добавлен участник", result)
         return _result(request, result, status=201)
+
+
+class SubmissionParticipantMemberCountView(_AuthenticatedView):
+    """PUT /api/v1/submissions/{id}/participants/{participantId}/member-count - correct a collective's headcount."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="submissions_set_participant_member_count",
+        summary="Correct how many people a collective entry stands for",
+        description=(
+            "Changes the entry rather than replacing it, so the roster of named members already typed "
+            "against it survives. The headcount drives the participant-count band check and per-participant pricing."
+        ),
+        request=SetParticipantMemberCountRequestSerializer,
+        responses={200: SubmissionResponseSerializer, 400: OpenApiResponse(SubmissionProblemDetailSerializer, description="Malformed.")},
+    )
+    def put(self, request: Request, submission_id: str, participant_id: str) -> Response:
+        serializer = SetParticipantMemberCountRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return problems.validation_problem(serializer.errors, instance=request.path, request=request)
+        member_count = int(serializer.validated_data["memberCount"])
+        command = SetParticipantMemberCountCommand(
+            submission_id=submission_id,
+            requested_by=_uid(request),
+            participant_id=participant_id,
+            member_count=member_count,
+        )
+        try:
+            result = composition.build_set_participant_member_count_handler().handle(command)
+        except ApplicationError as exc:
+            return problems.application_problem(exc, instance=request.path, request=request)
+        _note(submission_id, f"Указана численность коллектива: {member_count} чел.", result)
+        return _result(request, result, status=200)
 
 
 class SubmissionParticipantMembersView(_AuthenticatedView):

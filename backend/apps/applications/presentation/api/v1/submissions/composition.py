@@ -12,6 +12,7 @@ from apps.applications.application.commands.cancel import CancelSubmissionByRevi
 from apps.applications.application.commands.participants import (
     AddParticipantHandler,
     RemoveParticipantHandler,
+    SetParticipantMemberCountHandler,
     SetParticipantMembersHandler,
 )
 from apps.applications.application.commands.payment import (
@@ -58,6 +59,7 @@ __all__ = [
     "build_remove_teacher_handler",
     "build_return_for_correction_handler",
     "build_schedule_submission_handler",
+    "build_set_participant_member_count_handler",
     "build_set_participant_members_handler",
     "build_set_performance_handler",
     "build_start_review_handler",
@@ -98,6 +100,15 @@ def build_add_participant_handler() -> AddParticipantHandler:
 
 def build_set_participant_members_handler() -> SetParticipantMembersHandler:
     return SetParticipantMembersHandler(
+        submissions=_submissions(),
+        catalog=DjangoCompetitionCatalog(),
+        clock=SystemClock(),
+        events=NullEventPublisher(),
+    )
+
+
+def build_set_participant_member_count_handler() -> SetParticipantMemberCountHandler:
+    return SetParticipantMemberCountHandler(
         submissions=_submissions(),
         catalog=DjangoCompetitionCatalog(),
         clock=SystemClock(),

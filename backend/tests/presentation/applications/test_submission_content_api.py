@@ -226,6 +226,67 @@ def test_naming_members_keeps_the_participant_id(auth_client: APIClient) -> None
     assert str(saved.data["data"]["participants"][0]["id"]) == participant_id
 
 
+def test_collective_headcount_can_be_corrected(auth_client: APIClient) -> None:
+    """The headcount is stated after the collective is attached, and can be fixed later."""
+    submission_id, nomination_id = _submission(auth_client)
+    participant_id = _collective(auth_client, submission_id, nomination_id)
+
+    saved = auth_client.put(
+        f"/api/v1/submissions/{submission_id}/participants/{participant_id}/member-count",
+        {"memberCount": 12},
+        format="json",
+    )
+
+    assert saved.status_code == 200, saved.data
+    assert saved.data["data"]["participants"][0]["memberCount"] == 12
+    # The entry is corrected, not replaced: the id the client holds stays valid.
+    assert str(saved.data["data"]["participants"][0]["id"]) == participant_id
+
+
+def test_correcting_the_headcount_keeps_the_roster(auth_client: APIClient) -> None:
+    submission_id, nomination_id = _submission(auth_client)
+    participant_id = _collective(auth_client, submission_id, nomination_id)
+    auth_client.put(
+        f"/api/v1/submissions/{submission_id}/participants/{participant_id}/members",
+        {"members": ["Иванова Мария Петровна"]},
+        format="json",
+    )
+
+    saved = auth_client.put(
+        f"/api/v1/submissions/{submission_id}/participants/{participant_id}/member-count",
+        {"memberCount": 7},
+        format="json",
+    )
+
+    assert saved.data["data"]["participants"][0]["members"] == ["Иванова Мария Петровна"]
+
+
+def test_a_headcount_below_one_is_rejected(auth_client: APIClient) -> None:
+    submission_id, nomination_id = _submission(auth_client)
+    participant_id = _collective(auth_client, submission_id, nomination_id)
+
+    response = auth_client.put(
+        f"/api/v1/submissions/{submission_id}/participants/{participant_id}/member-count",
+        {"memberCount": 0},
+        format="json",
+    )
+
+    assert response.status_code == 400
+
+
+def test_correcting_the_headcount_of_an_unknown_participant_is_not_found(auth_client: APIClient) -> None:
+    submission_id, nomination_id = _submission(auth_client)
+    _collective(auth_client, submission_id, nomination_id)
+
+    response = auth_client.put(
+        f"/api/v1/submissions/{submission_id}/participants/{uuid7()}/member-count",
+        {"memberCount": 5},
+        format="json",
+    )
+
+    assert response.status_code == 404
+
+
 def test_naming_members_of_an_unknown_participant_is_not_found(auth_client: APIClient) -> None:
     submission_id, nomination_id = _submission(auth_client)
     _collective(auth_client, submission_id, nomination_id)
