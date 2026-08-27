@@ -39,6 +39,7 @@ import {
   type PerformanceSelection,
   recommendedAgeCategoryId,
 } from "../lib/admission";
+import { CollectiveHeadcount, headcountMissing } from "./collective-headcount";
 import { CollectiveMembers, isCollectiveEntry } from "./collective-members";
 import { ParticipantPicker } from "./participant-picker";
 import { TeacherPicker } from "./teacher-picker";
@@ -407,16 +408,25 @@ function ParticipantsSection({
       ? `${group.minCount}+`
       : `${group.minCount}–${group.maxCount}`
     : null;
+  // A collective that has not stated its headcount counts as one person, which would
+  // make the band warning shout about a number nobody has entered yet. Its own field
+  // is already asking for it, so hold the warning until there is something to judge.
+  const awaitingHeadcount = submission.participants.some(
+    (p) => isCollectiveEntry(p) && headcountMissing(p),
+  );
   const outOfBand =
     group != null &&
     count > 0 &&
+    !awaitingHeadcount &&
     (count < group.minCount || (group.maxCount != null && count > group.maxCount));
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const handledPick = useRef<string | null>(null);
 
-  const attach = (participant: Participant, memberCount?: number) => {
-    add.mutate(toAddParticipantRequest(participant, memberCount), {
+  // Attached without a headcount: a collective states it in its own field below,
+  // where the applicant is looking at the entry rather than scrolling a registry.
+  const attach = (participant: Participant) => {
+    add.mutate(toAddParticipantRequest(participant), {
       onSuccess: () => setPickerOpen(false),
       onError: () => toast.error("Не удалось добавить участника"),
     });
@@ -433,7 +443,7 @@ function ParticipantsSection({
     }
     handledPick.current = pickedId;
     void fetchParticipant(pickedId)
-      .then((participant) => add.mutateAsync(toAddParticipantRequest(participant, group?.minCount)))
+      .then((participant) => add.mutateAsync(toAddParticipantRequest(participant)))
       .catch(() => toast.error("Не удалось добавить созданного участника"))
       .finally(() => {
         setSearchParams(
@@ -445,7 +455,7 @@ function ParticipantsSection({
           { replace: true },
         );
       });
-  }, [searchParams, setSearchParams, submissionId, add, group?.minCount]);
+  }, [searchParams, setSearchParams, submissionId, add]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -498,10 +508,18 @@ function ParticipantsSection({
                 Удалить
               </Button>
             </div>
-            {/* Only a collective can have a roster: a solo participant is already
-                named on their own diploma. */}
+            {/* A collective states its headcount here, once it is chosen — and only a
+                collective can have a roster: a solo participant is already named on
+                their own diploma. */}
             {isCollectiveEntry(participant) ? (
-              <CollectiveMembers submissionId={submissionId} participant={participant} />
+              <>
+                <CollectiveHeadcount
+                  submissionId={submissionId}
+                  participant={participant}
+                  bandLabel={bandLabel}
+                />
+                <CollectiveMembers submissionId={submissionId} participant={participant} />
+              </>
             ) : null}
           </div>
         ))
@@ -514,7 +532,6 @@ function ParticipantsSection({
         submissionId={submissionId}
         returnTo={location.pathname}
         isAttaching={add.isPending}
-        {...(group?.minCount ? { collectiveDefaultCount: group.minCount } : {})}
       />
     </div>
   );

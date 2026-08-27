@@ -26,6 +26,7 @@ import {
   submissionsRemoveParticipant,
   submissionsRemoveTeacher,
   submissionsRetrieve,
+  submissionsSetParticipantMemberCount,
   submissionsSetParticipantMembers,
   submissionsSetPerformance,
 } from "@/shared/api/generated/submissions/submissions";
@@ -69,6 +70,25 @@ export function useSetPerformance(submissionId: string) {
 export function useAddParticipant(submissionId: string) {
   return useSubmissionMutation<AddParticipantRequest>(submissionId, (body) =>
     submissionsAddParticipant(submissionId, body),
+  );
+}
+
+/** Input for {@link useSetParticipantMemberCount}: whose entry, and how many people it stands for. */
+export type SetParticipantMemberCountInput = { participantId: string; memberCount: number };
+
+/**
+ * State how many people a collective brings on stage.
+ *
+ * Asked after the collective is attached rather than while picking it: the number is
+ * what the participant-count band and the per-participant price are computed from, and
+ * an applicant who is choosing *who* performs is not yet counting heads. It corrects
+ * the entry in place, so a roster already typed against it survives.
+ */
+export function useSetParticipantMemberCount(submissionId: string) {
+  return useSubmissionMutation<SetParticipantMemberCountInput>(
+    submissionId,
+    ({ participantId, memberCount }) =>
+      submissionsSetParticipantMemberCount(submissionId, participantId, { memberCount }),
   );
 }
 

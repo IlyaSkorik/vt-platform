@@ -40,16 +40,13 @@ export function ParticipantPicker({
   submissionId,
   returnTo,
   isAttaching,
-  collectiveDefaultCount,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelect: (participant: Participant, memberCount?: number) => void;
+  onSelect: (participant: Participant) => void;
   submissionId: string;
   returnTo: string;
   isAttaching?: boolean;
-  /** Seed value for the collective headcount input (usually the group's minimum). */
-  collectiveDefaultCount?: number;
 }): React.JSX.Element {
   const [search, setSearch] = useState("");
   const { data: participants, isLoading } = useParticipants(search);
@@ -96,8 +93,7 @@ export function ParticipantPicker({
                   key={participant.id}
                   participant={participant}
                   disabled={isAttaching ?? false}
-                  {...(collectiveDefaultCount ? { collectiveDefaultCount } : {})}
-                  onSelect={(memberCount) => onSelect(participant, memberCount)}
+                  onSelect={() => onSelect(participant)}
                 />
               ))
             )}
@@ -131,25 +127,17 @@ function ParticipantRow({
   participant,
   onSelect,
   disabled,
-  collectiveDefaultCount,
 }: {
   participant: Participant;
-  onSelect: (memberCount?: number) => void;
+  onSelect: () => void;
   disabled?: boolean;
-  collectiveDefaultCount?: number;
 }): React.JSX.Element {
   const collective = isCollective(participant);
   const name = participantDisplayName(participant);
   const meta = collective ? "Коллектив" : `${participant.age} лет`;
   const organization = participant.primaryOrganization?.name;
-  const [count, setCount] = useState(
-    collectiveDefaultCount && collectiveDefaultCount > 0 ? String(collectiveDefaultCount) : "",
-  );
-  const memberCount = Number(count) || 0;
-  const canSelectCollective = memberCount > 0;
-  // Stacks on a phone. The collective controls (a headcount field and «Выбрать») cannot
-  // shrink, and on one row inside the dialog they squeezed the name down to nothing — the
-  // picker showed an avatar and a cut-off badge, and nothing to pick by.
+  // Stacks on a phone: «Выбрать» cannot shrink, and on one row inside the dialog it
+  // squeezed the name down to nothing — an avatar and a cut-off badge, nothing to pick by.
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
       <div className="flex min-w-0 items-center gap-3">
@@ -166,33 +154,13 @@ function ParticipantRow({
           </p>
         </div>
       </div>
+      {/* A collective is picked the same way as a solo participant: how many people it
+          brings is asked once, in its own field on the entry, where the applicant can
+          see the band the festival requires. */}
       <div className="flex shrink-0 items-center justify-end gap-2">
-        {collective ? (
-          <>
-            {/* No «Коллектив» badge here: the line above already says it, and on a phone
-                the repetition was 85 px taken from the name. */}
-            <Input
-              type="number"
-              min={1}
-              className="w-20"
-              placeholder="Чел."
-              aria-label="Число человек в коллективе"
-              value={count}
-              onChange={(event) => setCount(event.target.value)}
-            />
-            <Button
-              size="xs"
-              disabled={disabled || !canSelectCollective}
-              onClick={() => onSelect(memberCount)}
-            >
-              Выбрать
-            </Button>
-          </>
-        ) : (
-          <Button size="xs" disabled={disabled} onClick={() => onSelect()}>
-            Выбрать
-          </Button>
-        )}
+        <Button size="xs" disabled={disabled} onClick={onSelect}>
+          Выбрать
+        </Button>
       </div>
     </div>
   );
