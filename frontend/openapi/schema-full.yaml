@@ -8990,6 +8990,51 @@ paths:
               schema:
                 $ref: '#/components/schemas/SubmissionProblemDetail'
           description: Not found.
+  /api/v1/submissions/{submission_id}/participants/{participant_id}/member-count:
+    put:
+      operationId: submissions_set_participant_member_count
+      description: Changes the entry rather than replacing it, so the roster of named
+        members already typed against it survives. The headcount drives the participant-count
+        band check and per-participant pricing.
+      summary: Correct how many people a collective entry stands for
+      parameters:
+      - in: path
+        name: participant_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: submission_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Submissions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetParticipantMemberCountRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SetParticipantMemberCountRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SetParticipantMemberCountRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionProblemDetail'
+          description: Malformed.
   /api/v1/submissions/{submission_id}/participants/{participant_id}/members:
     put:
       operationId: submissions_set_participant_members
@@ -15503,6 +15548,20 @@ components:
       required:
       - data
       - meta
+    SetParticipantMemberCountRequest:
+      type: object
+      description: |-
+        Validate a set-collective-headcount request body.
+
+        How many people this entry stands for. One is the floor the domain allows, but a
+        collective of one is not what the field is for — the applicant states the real
+        number, and the participant-count band of the chosen group is what judges it.
+      properties:
+        memberCount:
+          type: integer
+          minimum: 1
+      required:
+      - memberCount
     SetParticipantMembersRequest:
       type: object
       description: |-
