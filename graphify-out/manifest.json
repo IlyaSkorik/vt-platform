@@ -530,8 +530,8 @@
     "semantic_hash": ""
   },
   "backend/apps/applications/presentation/api/v1/organizer/views.py": {
-    "mtime": 1787860661.933009,
-    "ast_hash": "8567ba23e3e7713e20048eba5a9421bd",
+    "mtime": 1787902375.9899778,
+    "ast_hash": "145ca508030374409952e4236b451753",
     "semantic_hash": ""
   },
   "backend/apps/applications/presentation/api/v1/problems.py": {
@@ -3905,8 +3905,8 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/applications/index.tsx": {
-    "mtime": 1786991936.7432475,
-    "ast_hash": "d2a8f761887a0b4aeaeb614a7caf7af8",
+    "mtime": 1787902394.920258,
+    "ast_hash": "d89467ae8a16698043f83fe1d84c5552",
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/competition-workspace/index.tsx": {
@@ -10157,6 +10157,11 @@
   "backend/tests/presentation/applications/test_organizer_review_notices.py": {
     "mtime": 1787860840.5750196,
     "ast_hash": "363631476288473cb72544f9137361d3",
+    "semantic_hash": ""
+  },
+  "backend/tests/presentation/applications/test_organizer_receipt_links.py": {
+    "mtime": 1787902429.6753664,
+    "ast_hash": "ac40029c725eb9c79ff4348b6f74cffa",
     "semantic_hash": ""
   }
 }
