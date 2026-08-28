@@ -10,7 +10,15 @@ import {
   useSetRowProgress,
 } from "@/features/public-program";
 
+import { toast } from "@/shared/ui";
+
 import { PublicProgramPage } from "./index";
+
+// The mover reports an unknown number through the toaster, which is worth asserting.
+vi.mock("@/shared/ui", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/shared/ui")>();
+  return { ...actual, toast: { ...actual.toast, error: vi.fn(), success: vi.fn() } };
+});
 
 vi.mock("@/features/public-program", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/features/public-program")>()),
@@ -227,6 +235,88 @@ describe("PublicProgramPage — the host's edition", () => {
 
     expect(hostReorder).toHaveBeenCalledTimes(1);
     expect(hostReorder.mock.calls[0]?.[0]).toEqual(["item-2", "item-1"]);
+  });
+
+  /**
+   * The move the arrows cannot make: an act at the bottom of a long programme announced
+   * next. The host names where it goes instead of walking it up a row at a time, and the
+   * name is the printed number — which on a published programme is not the row's index.
+   */
+  function aNumberedHostProgram(): PublicProgram {
+    const base = aHostProgram();
+    return {
+      ...base,
+      columns: [{ key: "POSITION", label: "№", custom: false }, ...base.columns],
+      rows: [
+        {
+          kind: "PERFORMANCE",
+          cells: ["4", "10:00", "Катюша", "3:20", ""],
+          progress: "PENDING",
+          id: "item-1",
+        },
+        {
+          kind: "PERFORMANCE",
+          cells: ["9", "10:04", "Калинка", "3:20", ""],
+          progress: "PENDING",
+          id: "item-2",
+        },
+        {
+          kind: "PERFORMANCE",
+          cells: ["7", "10:08", "Барыня", "3:20", ""],
+          progress: "PENDING",
+          id: "item-3",
+        },
+      ],
+    };
+  }
+
+  it("throws a row from the end to the top of the running order in one move", async () => {
+    stub(aNumberedHostProgram());
+    renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: "Перенести: 7" }));
+    await userEvent.click(await screen.findByRole("button", { name: "В начало" }));
+
+    expect(hostReorder.mock.calls[0]?.[0]).toEqual(["item-3", "item-1", "item-2"]);
+  });
+
+  it("puts a row next to the printed number rather than the row that many down", async () => {
+    stub(aNumberedHostProgram());
+    renderPage();
+
+    // №7 is the last row; a row-index reading would have landed this after «Калинка».
+    await userEvent.click(screen.getByRole("button", { name: "Перенести: 4" }));
+    await userEvent.type(await screen.findByLabelText("Рядом с номером"), "7");
+    await userEvent.click(screen.getByRole("button", { name: "После" }));
+
+    expect(hostReorder.mock.calls[0]?.[0]).toEqual(["item-2", "item-3", "item-1"]);
+  });
+
+  it("counts rows when the organizer did not publish the «№» column", async () => {
+    // Nothing on screen numbers the acts, so the host counts down the page — and that is
+    // what the form then means by a number.
+    stub(aHostProgram());
+    renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: "Перенести: 10:04" }));
+    await userEvent.type(await screen.findByLabelText("Рядом с номером"), "1");
+    await userEvent.click(screen.getByRole("button", { name: "Перед" }));
+
+    expect(hostReorder.mock.calls[0]?.[0]).toEqual(["item-2", "item-1"]);
+  });
+
+  it("says so instead of rearranging when no such number is in the programme", async () => {
+    stub(aNumberedHostProgram());
+    renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: "Перенести: 4" }));
+    await userEvent.type(await screen.findByLabelText("Рядом с номером"), "5");
+    await userEvent.click(screen.getByRole("button", { name: "После" }));
+
+    expect(hostReorder).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalledWith("В программе нет №5");
+    // Still open: a typo made while the hall waits costs a keystroke, not the whole move.
+    expect(screen.getByLabelText("Рядом с номером")).toBeInTheDocument();
   });
 
   it("cannot move the first row up or the last row down", () => {

@@ -11,3 +11,9 @@ export {
   usePublicProgram,
   useSetRowProgress,
 } from "./api";
+export {
+  moveRowNextTo,
+  moveRowTo,
+  type Placement,
+  rowNumber,
+} from "./model";

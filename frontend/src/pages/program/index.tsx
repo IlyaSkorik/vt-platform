@@ -2,9 +2,12 @@ import { ArrowDown, ArrowUp, Check, Play, SkipForward } from "lucide-react";
 import { useParams } from "react-router";
 
 import {
+  moveRowNextTo,
+  moveRowTo,
   type PublicProgram,
   type PublicProgramProgress,
   type PublicProgramRow,
+  rowNumber,
   useHostReorder,
   usePublicProgram,
   useSetRowProgress,
@@ -13,6 +16,7 @@ import { APP_NAME } from "@/shared/config";
 import { formatClock, formatSpan } from "@/shared/lib";
 import { useSeo } from "@/shared/seo";
 import { Badge, Button, EmptyState, LoadingState, toast } from "@/shared/ui";
+import { type MovePlacement, MoveToNumber } from "@/widgets/move-to-number";
 
 /**
  * `/program/:slug` — a published programme, as handed to a sound engineer, a host, the
@@ -25,8 +29,9 @@ import { Badge, Button, EmptyState, LoadingState, toast } from "@/shared/ui";
  *
  * One page, two capabilities. Every screen shows what is on stage right now and greys out
  * what is behind us. On the *host's* edition — and only there — each row also carries
- * controls to announce the day and buttons to rearrange what is still to come, because
- * that link is the one the organizer handed the person running the show.
+ * controls to announce the day and buttons to rearrange what is still to come — a step at
+ * a time with the arrows, or straight to a named number when an act has to jump the queue
+ * outright — because that link is the one the organizer handed the person running the show.
  */
 export function PublicProgramPage(): React.JSX.Element {
   const { slug } = useParams();
@@ -227,7 +232,7 @@ function ProgramTableRow({
       })}
       {isHost ? (
         <td className="px-3 py-3">
-          <HostControls slug={slug} row={row} rows={rows} index={index} />
+          <HostControls slug={slug} row={row} rows={rows} index={index} columns={columns} />
         </td>
       ) : null}
     </tr>
@@ -239,11 +244,13 @@ function HostControls({
   row,
   rows,
   index,
+  columns,
 }: {
   slug: string;
   row: PublicProgramRow;
   rows: PublicProgramRow[];
   index: number;
+  columns: string[];
 }): React.JSX.Element {
   const setProgress = useSetRowProgress(slug);
   const reorder = useHostReorder(slug);
@@ -256,16 +263,28 @@ function HostControls({
       { onError: () => toast.error("Не удалось отметить номер") },
     );
 
-  const move = (to: number) => {
-    // The endpoint takes the complete new order, so send what is on screen.
-    const ids = rows.map((item) => item.id ?? "");
-    if (to < 0 || to >= ids.length || ids.some((id) => !id)) {
-      return;
+  // The endpoint takes the complete new order, so send what is on screen.
+  const send = (next: string[] | null) => {
+    if (next !== null) {
+      reorder.mutate(next, { onError: () => toast.error("Не удалось изменить порядок") });
     }
-    const next = [...ids];
-    const [moved] = next.splice(index, 1);
-    next.splice(to, 0, moved as string);
-    reorder.mutate(next, { onError: () => toast.error("Не удалось изменить порядок") });
+  };
+
+  const move = (to: number) => send(moveRowTo(rows, index, to));
+
+  /**
+   * Move next to the number the host just read out, answering whether it could be done —
+   * the form stays open on a number the programme does not carry, so a typo made while
+   * the hall waits costs a keystroke rather than the whole move.
+   */
+  const placeNextTo = (number: number, placement: MovePlacement): boolean => {
+    const next = moveRowNextTo(rows, columns, index, number, placement);
+    if (next === null) {
+      toast.error(`В программе нет №${number}`);
+      return false;
+    }
+    send(next);
+    return true;
   };
 
   return (
@@ -315,6 +334,16 @@ function HostControls({
       >
         <ArrowDown className="size-4" />
       </Button>
+      <MoveToNumber
+        label={label}
+        current={rowNumber(row, index, columns)}
+        atStart={index === 0}
+        atEnd={index === rows.length - 1}
+        disabled={busy}
+        onPlace={placeNextTo}
+        onMoveToStart={() => move(0)}
+        onMoveToEnd={() => move(rows.length - 1)}
+      />
     </div>
   );
 }
