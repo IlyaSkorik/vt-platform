@@ -563,6 +563,10 @@ class ProgramExportView(_StaffView):
     A ``GET`` because it is a download: the organizer picks columns, the browser saves a
     file. Columns arrive as a comma-separated list so the URL stays something that can be
     copied, bookmarked, or wired into a print button; omitting them exports every column.
+
+    The list is ordered, and the page follows it: a printed cut is laid out for one job by
+    the person printing it. A published edition is the other way round — canonical order,
+    so a column sits in the same place on every screen.
     """
 
     @extend_schema(
@@ -573,7 +577,7 @@ class ProgramExportView(_StaffView):
                 "columns",
                 str,
                 required=False,
-                description="Comma-separated column keys (built-in names or custom:<uuid>). Omit for all.",
+                description="Comma-separated column keys (built-in names or custom:<uuid>), printed left to right in the order given. Omit for all.",
             )
         ],
         responses={

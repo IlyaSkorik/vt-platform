@@ -600,6 +600,29 @@ class Program:
             raise ProgramColumnNotFoundError(f"Columns {', '.join(unknown)} are not part of this program.")
         return tuple(ref for ref in self.columns if ref in chosen)
 
+    def select_columns(self, refs: Sequence[ColumnRef | ProgramColumn]) -> tuple[ColumnRef, ...]:
+        """Take a selection in the order it was given, rejecting anything this programme has not got.
+
+        The counterpart of :meth:`normalize_columns`, and the difference is the point of
+        both. A published edition keeps the canonical order, so a column sits in the same
+        place on every screen whichever subset was chosen. A printed page is laid out for
+        one purpose by the person printing it — the number and the act first for the desk,
+        the organization first for the register — and that order is theirs to decide.
+
+        A column named twice collapses onto its first mention: a table cannot carry the
+        same column in two places, and refusing the whole export over it would be rude.
+        """
+        chosen: list[ColumnRef] = []
+        for ref in refs:
+            column = ref if isinstance(ref, ColumnRef) else ColumnRef.of(ref)
+            if column not in chosen:
+                chosen.append(column)
+        known = {column.id for column in self._custom_columns}
+        unknown = [ref.key for ref in chosen if ref.is_custom and ref.custom_id not in known]
+        if unknown:
+            raise ProgramColumnNotFoundError(f"Columns {', '.join(unknown)} are not part of this program.")
+        return tuple(chosen)
+
     # ------------------------------------------------------------------
     # Custom columns
     # ------------------------------------------------------------------

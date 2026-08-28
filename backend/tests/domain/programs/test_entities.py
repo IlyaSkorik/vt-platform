@@ -491,6 +491,42 @@ class TestPublishedColumns:
         assert COLUMN_LABELS[ProgramColumn.PARTICIPANT_GROUP] == "Состав участников"
 
 
+class TestPrintedColumns:
+    """A printed cut is laid out by the person printing it, not by the programme.
+
+    The counterpart of the class above, and the two rules live side by side on purpose: a
+    published edition keeps a column in the same place on every screen, while a page taken
+    to the sound desk or to the register is ordered for the job it is doing there.
+    """
+
+    def test_a_selection_is_taken_in_the_order_it_was_given(self) -> None:
+        program = _program()
+        chosen = program.select_columns([ProgramColumn.COMMENT, ProgramColumn.TITLE, ProgramColumn.TIME])
+        assert [ref.key for ref in chosen] == ["COMMENT", "TITLE", "TIME"]
+
+    def test_the_same_selection_is_still_canonical_for_a_published_edition(self) -> None:
+        program = _program()
+        published = program.normalize_columns([ProgramColumn.COMMENT, ProgramColumn.TITLE, ProgramColumn.TIME])
+        assert [ref.key for ref in published] == ["TIME", "TITLE", "COMMENT"]
+
+    def test_a_column_named_twice_collapses_onto_its_first_mention(self) -> None:
+        # A table cannot carry the same column in two places.
+        program = _program()
+        chosen = program.select_columns([ProgramColumn.TITLE, ProgramColumn.TIME, ProgramColumn.TITLE])
+        assert [ref.key for ref in chosen] == ["TITLE", "TIME"]
+
+    def test_a_custom_column_this_programme_has_not_got_is_refused(self) -> None:
+        program = _program()
+        with pytest.raises(ProgramColumnNotFoundError):
+            program.select_columns([ColumnRef.custom(uuid.uuid4())])
+
+    def test_a_custom_column_of_this_programme_keeps_its_chosen_place(self) -> None:
+        program = _program()
+        column = program.add_custom_column(column_id=uuid.uuid4(), title=ColumnTitle("Микрофон"), now=NOW)
+        chosen = program.select_columns([column.ref, ColumnRef.of(ProgramColumn.TITLE)])
+        assert [ref.key for ref in chosen] == [column.ref.key, "TITLE"]
+
+
 class TestCustomColumns:
     """The escape hatch: a column the organizer names and fills in themselves."""
 

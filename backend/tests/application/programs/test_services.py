@@ -350,15 +350,31 @@ class TestMusicArchive:
 class TestExport:
     """The organizer's own cut of the programme, for printing or sending on."""
 
-    def test_the_table_carries_the_chosen_columns_in_canonical_order(self) -> None:
+    def test_the_table_carries_the_chosen_columns_in_the_order_they_were_asked_for(self) -> None:
+        """A printed page is laid out for one purpose by whoever prints it.
+
+        Unlike a published edition, which keeps the canonical order so a column sits in the
+        same place on every screen: here the organizer decides what the eye reaches first,
+        and the cells follow their headers.
+        """
         act = _act("Катюша", 200, comment="Выход с точки 3")
         env = Env(act)
         program_id = env.program()
         env.service.fill_from_scope(program_id)
 
         table = env.service.program_table(program_id=program_id, columns=("COMMENT", "TITLE", "TIME"))
-        assert [column.key for column in table.columns] == ["TIME", "TITLE", "COMMENT"]
-        assert table.rows == (("10:00", "Катюша", "Выход с точки 3"),)
+        assert [column.key for column in table.columns] == ["COMMENT", "TITLE", "TIME"]
+        assert table.rows == (("Выход с точки 3", "Катюша", "10:00"),)
+
+    def test_a_column_named_twice_is_printed_once(self) -> None:
+        # A table cannot carry the same column in two places, and refusing the export over
+        # it would be rude — the selection still says plainly what was wanted.
+        env = Env(_act("Катюша", 200))
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+
+        table = env.service.program_table(program_id=program_id, columns=("TITLE", "TIME", "TITLE"))
+        assert [column.key for column in table.columns] == ["TITLE", "TIME"]
 
     def test_an_export_without_a_choice_carries_every_column(self) -> None:
         env = Env(_act("Катюша", 200))

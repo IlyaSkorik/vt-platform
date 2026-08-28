@@ -421,9 +421,13 @@ class ProgramService:
         the same cell renderer as a published link, so an exported table and a screen never
         disagree about what a cell says. An empty selection means every column the programme
         has - an export is for the organizer, who is allowed to see all of it.
+
+        The columns come out in the order they were asked for, unlike a published edition:
+        a printed page is laid out for one purpose by the person printing it, and which
+        column the eye reaches first is that person's decision, not the programme's.
         """
         program = self._load(program_id)
-        chosen = program.normalize_columns(parse_column_refs(columns)) if columns else program.columns
+        chosen = program.select_columns(parse_column_refs(columns)) if columns else program.columns
         rows = self._rows(program, program.items, chosen)
         nomination = self._catalog.nomination_title(program.nomination_id) if program.nomination_id else None
         competition = self._catalog.competition_title(program.competition_id)
