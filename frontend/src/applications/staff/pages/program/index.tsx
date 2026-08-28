@@ -24,7 +24,9 @@ import {
   downloadProgramPdf,
   ITEM_KIND_LABELS,
   itemCell,
+  itemNumber,
   moveItem,
+  moveItemNextTo,
   PROGRESS_LABELS,
   type Program,
   type ProgramColumn,
@@ -69,6 +71,7 @@ import {
   Select,
   toast,
 } from "@/shared/ui";
+import { type MovePlacement, MoveToNumber } from "@/widgets/move-to-number";
 
 /**
  * `/staff/program` — the programme constructor.
@@ -368,9 +371,28 @@ function RunningOrder({ program }: { program: Program }): React.JSX.Element {
   const remove = useRemoveItem(program.id);
   const items = program.items;
 
-  const move = (from: number, to: number) => {
-    const next = moveItem(items, from, to).map((item) => item.id);
-    reorder.mutate(next, { onError: () => toast.error("Не удалось изменить порядок") });
+  const send = (next: ProgramItem[]) => {
+    reorder.mutate(
+      next.map((item) => item.id),
+      { onError: () => toast.error("Не удалось изменить порядок") },
+    );
+  };
+
+  const move = (from: number, to: number) => send(moveItem(items, from, to));
+
+  /**
+   * Move a slot next to the one numbered `number`, answering whether it could be done —
+   * the form keeps itself open on a number nobody in the programme carries, so the
+   * organizer can correct a typo instead of retyping the whole move.
+   */
+  const moveNextTo = (from: number, number: number, placement: MovePlacement): boolean => {
+    const next = moveItemNextTo(items, from, number, placement);
+    if (next === null) {
+      toast.error(`В программе нет №${number}`);
+      return false;
+    }
+    send(next);
+    return true;
   };
 
   const busy = reorder.isPending || remove.isPending;
@@ -448,6 +470,8 @@ function RunningOrder({ program }: { program: Program }): React.JSX.Element {
                   busy={busy}
                   onUp={() => move(index, index - 1)}
                   onDown={() => move(index, index + 1)}
+                  onMoveTo={(to) => move(index, to)}
+                  onMoveNextTo={(number, placement) => moveNextTo(index, number, placement)}
                   onRemove={() =>
                     remove.mutate(item.id, {
                       onError: () => toast.error("Не удалось удалить пункт"),
@@ -472,6 +496,8 @@ function ProgramItemRow({
   busy,
   onUp,
   onDown,
+  onMoveTo,
+  onMoveNextTo,
   onRemove,
   programId,
 }: {
@@ -482,6 +508,8 @@ function ProgramItemRow({
   busy: boolean;
   onUp: () => void;
   onDown: () => void;
+  onMoveTo: (to: number) => void;
+  onMoveNextTo: (number: number, placement: MovePlacement) => boolean;
   onRemove: () => void;
   programId: string;
 }): React.JSX.Element {
@@ -568,6 +596,16 @@ function ProgramItemRow({
           >
             <ArrowDown className="size-4" />
           </Button>
+          <MoveToNumber
+            label={item.title}
+            current={itemNumber(item)}
+            atStart={index === 0}
+            atEnd={index === total - 1}
+            disabled={busy}
+            onPlace={onMoveNextTo}
+            onMoveToStart={() => onMoveTo(0)}
+            onMoveToEnd={() => onMoveTo(total - 1)}
+          />
           <Button
             variant="ghost"
             size="xs"

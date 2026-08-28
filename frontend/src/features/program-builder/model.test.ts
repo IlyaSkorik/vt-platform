@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { formatClock, formatDuration } from "@/shared/lib";
 
-import { itemCell, moveItem, type ProgramItem } from "./model";
+import { itemCell, itemNumber, moveItem, moveItemNextTo, type ProgramItem } from "./model";
 
 const FORMAT = { clock: formatClock, duration: formatDuration };
 
@@ -142,5 +142,76 @@ describe("moveItem", () => {
     const items = ["a", "b", "c"];
     moveItem(items, 0, 2);
     expect(items).toEqual(["a", "b", "c"]);
+  });
+});
+
+/**
+ * The move by number: what the organizer reaches for when an act at the bottom of the
+ * programme has to go to the top while the day is running. It reads the number printed
+ * in the programme, which after a freeze is not the row's index — pointing it at a row
+ * instead would move a different act than the one the host just named.
+ */
+describe("moveItemNextTo", () => {
+  /** A programme whose numbers no longer match the rows, as a published one's do not. */
+  function frozen(): ProgramItem[] {
+    return [
+      anItem({ id: "a", number: 2, schedule: { ...anItem().schedule, position: 1 } }),
+      anItem({ id: "b", number: 3, schedule: { ...anItem().schedule, position: 2 } }),
+      anItem({ id: "c", number: 5, schedule: { ...anItem().schedule, position: 3 } }),
+      anItem({ id: "d", number: 4, schedule: { ...anItem().schedule, position: 4 } }),
+    ];
+  }
+
+  const ids = (items: ProgramItem[] | null) => items?.map((item) => item.id);
+
+  it("puts a slot from the end in front of a number near the start", () => {
+    expect(ids(moveItemNextTo(frozen(), 3, 2, "before"))).toEqual(["d", "a", "b", "c"]);
+  });
+
+  it("puts a slot straight after the number it was pointed at", () => {
+    expect(ids(moveItemNextTo(frozen(), 3, 2, "after"))).toEqual(["a", "d", "b", "c"]);
+  });
+
+  it("counts from the list the moved slot has already left, moving downwards too", () => {
+    // «После №4» from the top: three rows down, not two — the row it vacated shifts the rest up.
+    expect(ids(moveItemNextTo(frozen(), 0, 4, "after"))).toEqual(["b", "c", "d", "a"]);
+    expect(ids(moveItemNextTo(frozen(), 0, 4, "before"))).toEqual(["b", "c", "a", "d"]);
+  });
+
+  it("reads the printed number rather than the row, so the right act moves", () => {
+    // №5 is the third row and №4 the fourth; a row-index reading would move the wrong one.
+    expect(ids(moveItemNextTo(frozen(), 0, 5, "after"))).toEqual(["b", "c", "a", "d"]);
+  });
+
+  it("says so when nothing in the programme carries that number", () => {
+    expect(moveItemNextTo(frozen(), 0, 9, "after")).toBeNull();
+  });
+
+  it("is a no-op when a slot is pointed at itself", () => {
+    expect(ids(moveItemNextTo(frozen(), 2, 5, "before"))).toEqual(["a", "b", "c", "d"]);
+  });
+
+  it("does not mutate the input", () => {
+    const items = frozen();
+    moveItemNextTo(items, 3, 2, "before");
+    expect(ids(items)).toEqual(["a", "b", "c", "d"]);
+  });
+});
+
+/**
+ * The number the control asks about is the one on screen: the printed one once frozen,
+ * the row's own while the programme is still being assembled.
+ */
+describe("itemNumber", () => {
+  it("prefers the participant's own number", () => {
+    expect(itemNumber(anItem({ number: 12 }))).toBe(12);
+  });
+
+  it("falls back to the row while the programme has no numbers yet", () => {
+    const unnumbered = anItem({
+      number: 0,
+      schedule: { ...anItem().schedule, position: 7 },
+    });
+    expect(itemNumber(unnumbered)).toBe(7);
   });
 });

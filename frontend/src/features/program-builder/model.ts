@@ -318,3 +318,46 @@ export function moveItem<T>(items: readonly T[], from: number, to: number): T[] 
   next.splice(to, 0, moved as T);
   return next;
 }
+
+/**
+ * The number a person reads in the «№» column.
+ *
+ * The printed one once numbers are frozen, the row's own while the programme is still
+ * being assembled — the same fallback {@link itemCell} renders, because a control that
+ * asks "after which number?" has to mean the number the organizer is looking at.
+ */
+export function itemNumber(item: ProgramItem): number {
+  return item.number || item.schedule.position;
+}
+
+/** Where a moved slot lands relative to the number it was pointed at. */
+export type Placement = "before" | "after";
+
+/**
+ * The new complete order after the slot at `from` is dropped next to the slot numbered
+ * `targetNumber`. `null` when nothing in the programme carries that number — the caller
+ * says so rather than silently moving the act somewhere else.
+ *
+ * The arrows walk a slot one row at a time, which is right for a correction and hopeless
+ * for the move this exists for: the act announced next is at the bottom of a forty-row
+ * programme and belongs at the top *now*. Numbering, not row indexes, because a frozen
+ * programme reads 2, 3, 5, 4 and the number is what everyone in the hall is holding.
+ */
+export function moveItemNextTo(
+  items: readonly ProgramItem[],
+  from: number,
+  targetNumber: number,
+  placement: Placement,
+): ProgramItem[] | null {
+  const target = items.findIndex((item) => itemNumber(item) === targetNumber);
+  if (target === -1) {
+    return null;
+  }
+  if (target === from) {
+    return [...items];
+  }
+  // `moveItem` inserts into the list the moved slot has already left, so an index past
+  // it shifts down by one. Working that out here keeps `moveItem` the single splice.
+  const shift = target > from ? -1 : 0;
+  return moveItem(items, from, target + shift + (placement === "after" ? 1 : 0));
+}

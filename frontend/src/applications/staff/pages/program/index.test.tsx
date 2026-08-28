@@ -413,6 +413,87 @@ describe("StaffProgramPage — the programme table", () => {
     expect(reorder.mock.calls[0]?.[0]).toEqual(["item-2", "item-1"]);
   });
 
+  /**
+   * The programme is rearranged live while the day runs, and the arrows walk a slot one
+   * row at a time. These cover the other move: naming where an act should land.
+   */
+  function aThreeActProgram(): Program {
+    return aProgram({
+      items: [
+        anItem({ id: "item-1", position: 1, title: "Катюша" }),
+        anItem({ id: "item-2", position: 2, title: "Калинка" }),
+        anItem({ id: "item-3", position: 3, title: "Барыня" }),
+      ],
+    });
+  }
+
+  it("throws an act from the end to the top of the programme in one move", async () => {
+    stub(aThreeActProgram());
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: "Перенести: Барыня" }));
+    await userEvent.click(await screen.findByRole("button", { name: "В начало" }));
+
+    expect(reorder.mock.calls[0]?.[0]).toEqual(["item-3", "item-1", "item-2"]);
+  });
+
+  it("puts an act straight after the number the host just announced", async () => {
+    stub(aThreeActProgram());
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: "Перенести: Барыня" }));
+    await userEvent.type(await screen.findByLabelText("Рядом с номером"), "1");
+    await userEvent.click(screen.getByRole("button", { name: "После" }));
+
+    expect(reorder.mock.calls[0]?.[0]).toEqual(["item-1", "item-3", "item-2"]);
+  });
+
+  it("puts an act in front of a number when asked for", async () => {
+    stub(aThreeActProgram());
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: "Перенести: Барыня" }));
+    await userEvent.type(await screen.findByLabelText("Рядом с номером"), "2");
+    await userEvent.click(screen.getByRole("button", { name: "Перед" }));
+
+    expect(reorder.mock.calls[0]?.[0]).toEqual(["item-1", "item-3", "item-2"]);
+  });
+
+  it("reads the printed number, not the row, on a published programme", async () => {
+    // Numbers stay with their participants after a publication, so row 3 is №7 here. A
+    // move onto "№7" must land next to that act rather than next to whatever is third.
+    stub(
+      aProgram({
+        items: [
+          anItem({ id: "item-1", position: 1, number: 4, title: "Катюша" }),
+          anItem({ id: "item-2", position: 2, number: 9, title: "Калинка" }),
+          anItem({ id: "item-3", position: 3, number: 7, title: "Барыня" }),
+        ],
+      }),
+    );
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: "Перенести: Катюша" }));
+    await userEvent.type(await screen.findByLabelText("Рядом с номером"), "7");
+    await userEvent.click(screen.getByRole("button", { name: "После" }));
+
+    expect(reorder.mock.calls[0]?.[0]).toEqual(["item-2", "item-3", "item-1"]);
+  });
+
+  it("says so instead of moving anything when the programme has no such number", async () => {
+    stub(aThreeActProgram());
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: "Перенести: Барыня" }));
+    await userEvent.type(await screen.findByLabelText("Рядом с номером"), "9");
+    await userEvent.click(screen.getByRole("button", { name: "После" }));
+
+    expect(reorder).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalledWith("В программе нет №9");
+    // Still open, so the typo can be corrected rather than the move redone.
+    expect(screen.getByLabelText("Рядом с номером")).toBeInTheDocument();
+  });
+
   it("cannot move the first item up or the last item down", async () => {
     stub();
     await renderPage();
