@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 from collections import Counter
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from io import StringIO
@@ -91,6 +92,19 @@ def _receipt_references(payment_receipts: Any) -> list[str]:
     asks about the whole list rather than a single document.
     """
     return [reference for entry in payment_receipts or [] if (reference := str((entry or {}).get("file_reference") or "").strip())]
+
+
+def _receipt_urls(references: Sequence[str]) -> list[str]:
+    """The same receipts as addresses a browser can open.
+
+    A stored reference is an opaque storage key, and the organizer console turns one
+    into a link. Prefixing ``/media/`` on the client used to be enough because the
+    filesystem happened to serve exactly that; with the files in a bucket that link
+    points at the API host, where nothing of the sort exists, and every "Скачать
+    квитанцию" answers 404. Asking the storage (``file_url``) is what the submission
+    attachments beside them already do.
+    """
+    return [url for reference in references if (url := file_url(reference))]
 
 
 def _application_meta_for_submission(submission_id: str) -> tuple[str | None, list[str], str | None]:
@@ -306,7 +320,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                 "queue": queue_key,
                 "paymentStatus": payment,
                 "hasReceipt": bool(receipt_refs),
-                "receiptFileReferences": receipt_refs,
+                "receiptFileReferences": _receipt_urls(receipt_refs),
                 "organization": organization_name or None,
                 "submissionDate": model.created_at,
                 "lastActivity": model.updated_at,
@@ -474,7 +488,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                     "price": representative.price.amount if representative.price else None,
                     "totalPriceAmount": total_amount_value,
                     "totalPriceCurrency": total_currency_value,
-                    "receiptFileReferences": list(application_meta_by_id.get(selected_application_id or "", {}).get("receipt_refs") or []),
+                    "receiptFileReferences": _receipt_urls(application_meta_by_id.get(selected_application_id or "", {}).get("receipt_refs") or []),
                     "timeline": timeline,
                     "audit": audit,
                     "internalNotes": [
