@@ -184,13 +184,15 @@ function paymentStatusLabel(status: string): string {
   return map[status] ?? status;
 }
 
+/**
+ * The API hands back a ready address for every stored file — an absolute bucket URL,
+ * or a `/media/…` path when the files still sit on the API host's disk. Only the
+ * second shape needs an origin, which is all `resolveMediaUrl` adds. Guessing the
+ * prefix here (the old shape of this function) is what made every receipt 404 once
+ * the uploads moved to a bucket.
+ */
 function receiptDownloadUrl(reference: string | null | undefined): string | null {
-  const value = reference?.trim();
-  if (!value) return null;
-  if (/^(https?:|blob:|data:)/i.test(value)) return value;
-  if (value.startsWith("/media/") || value.startsWith("media/")) return resolveMediaUrl(value);
-  const normalized = value.startsWith("/") ? `/media${value}` : `/media/${value}`;
-  return resolveMediaUrl(normalized);
+  return resolveMediaUrl(reference);
 }
 
 /**
