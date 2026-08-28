@@ -1,5 +1,7 @@
 import {
   ArrowDown,
+  ArrowLeft,
+  ArrowRight,
   ArrowUp,
   Clapperboard,
   Columns3,
@@ -844,6 +846,11 @@ function AddBreakControls({ programId }: { programId: string }): React.JSX.Eleme
  * which of the table's columns this particular audience needs. Defaults to the columns a
  * printed running order almost always wants, rather than to everything, since a thirteen-
  * column page is unreadable.
+ *
+ * Their order is the organizer's too, and only here: a published edition keeps the
+ * canonical order so a column sits in the same place on every screen, while a page is
+ * printed for one job — the number and the act first for the sound desk, the organization
+ * first for the register — and the eye reads left to right whatever the table thinks.
  */
 function ExportPanel({ program }: { program: Program }): React.JSX.Element {
   const [columns, setColumns] = useState<ColumnKey[]>(DEFAULT_EXPORT_COLUMNS);
@@ -851,7 +858,13 @@ function ExportPanel({ program }: { program: Program }): React.JSX.Element {
   const [musicBusy, setMusicBusy] = useState(false);
   const [mediaBusy, setMediaBusy] = useState(false);
 
+  // A column the organizer has since deleted would still be ticked here and would fail
+  // the export; dropping it keeps the strip below readable and the request valid.
+  const available = new Map(program.availableColumns.map((column) => [column.key, column.label]));
+  const chosen = columns.filter((key) => available.has(key));
+
   const toggle = (key: ColumnKey, checked: boolean) => {
+    // A newly ticked column goes last, which is where somebody adding one expects it.
     setColumns((current) =>
       checked
         ? [...current.filter((item) => item !== key), key]
@@ -859,10 +872,17 @@ function ExportPanel({ program }: { program: Program }): React.JSX.Element {
     );
   };
 
+  const shift = (key: ColumnKey, by: -1 | 1) => {
+    setColumns((current) => {
+      const from = current.indexOf(key);
+      return moveItem(current, from, from + by);
+    });
+  };
+
   const download = async () => {
     setBusy(true);
     try {
-      await downloadProgramPdf(program.id, columns, program.name);
+      await downloadProgramPdf(program.id, chosen, program.name);
     } catch {
       toast.error("Не удалось сформировать PDF");
     } finally {
@@ -919,7 +939,7 @@ function ExportPanel({ program }: { program: Program }): React.JSX.Element {
             variant="outline"
             size="sm"
             loading={busy}
-            disabled={columns.length === 0}
+            disabled={chosen.length === 0}
             onClick={() => void download()}
           >
             <FileDown className="size-4" /> Скачать PDF
@@ -940,6 +960,39 @@ function ExportPanel({ program }: { program: Program }): React.JSX.Element {
           />
         ))}
       </fieldset>
+      {chosen.length > 1 ? (
+        // Order, not selection: the strip reads left to right exactly as the printed page
+        // will, so what is being arranged is the page itself rather than a list of names.
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <span className="text-muted-foreground text-xs">Порядок слева направо:</span>
+          {chosen.map((key, index) => (
+            <span
+              key={key}
+              className="flex items-center gap-0.5 rounded-md border border-border py-0.5 pr-0.5 pl-2 text-xs"
+            >
+              {available.get(key)}
+              <Button
+                variant="ghost"
+                size="xs"
+                aria-label={`Левее: ${available.get(key)}`}
+                disabled={index === 0}
+                onClick={() => shift(key, -1)}
+              >
+                <ArrowLeft className="size-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="xs"
+                aria-label={`Правее: ${available.get(key)}`}
+                disabled={index === chosen.length - 1}
+                onClick={() => shift(key, 1)}
+              >
+                <ArrowRight className="size-3.5" />
+              </Button>
+            </span>
+          ))}
+        </div>
+      ) : null}
       <p className="text-muted-foreground text-xs">
         Таблица печатается на A4 в альбомной ориентации, заголовок повторяется на каждой странице.
       </p>

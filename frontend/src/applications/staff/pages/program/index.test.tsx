@@ -662,6 +662,77 @@ describe("StaffProgramPage — printing the programme", () => {
     expect(within(panel).getByRole("checkbox", { name: "Микрофон" })).toBeInTheDocument();
   });
 
+  /**
+   * Which columns *and in what order*: a page printed for the sound desk wants the number
+   * and the act first, the one taken to the register wants the organization there. Only
+   * the export is ordered this way — a published edition keeps the canonical order so a
+   * column sits in the same place on every screen.
+   */
+  it("prints the columns in the order the organizer arranged them", async () => {
+    stub();
+    await renderPage();
+
+    // «Организация» is last by default; two steps left put it in front of «Номер».
+    await userEvent.click(screen.getByRole("button", { name: "Левее: Организация" }));
+    await userEvent.click(screen.getByRole("button", { name: "Левее: Организация" }));
+    await userEvent.click(screen.getByRole("button", { name: /Скачать PDF/ }));
+
+    await waitFor(() => expect(downloadProgramPdf).toHaveBeenCalled());
+    expect(downloadProgramPdf.mock.calls[0]?.[1]).toEqual([
+      "POSITION",
+      "TIME",
+      "PARTICIPANT",
+      "ORGANIZATION",
+      "TITLE",
+      "DURATION",
+    ]);
+  });
+
+  it("moves a column the other way too, and no further than the edge", async () => {
+    stub();
+    await renderPage();
+
+    expect(screen.getByRole("button", { name: "Левее: №" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Правее: Организация" })).toBeDisabled();
+
+    await userEvent.click(screen.getByRole("button", { name: "Правее: №" }));
+    await userEvent.click(screen.getByRole("button", { name: /Скачать PDF/ }));
+
+    await waitFor(() => expect(downloadProgramPdf).toHaveBeenCalled());
+    expect(downloadProgramPdf.mock.calls[0]?.[1]).toEqual([
+      "TIME",
+      "POSITION",
+      "PARTICIPANT",
+      "TITLE",
+      "DURATION",
+      "ORGANIZATION",
+    ]);
+  });
+
+  it("puts a newly ticked column last, where whoever added it expects it", async () => {
+    stub();
+    await renderPage();
+
+    const panel = screen.getByRole("group", { name: "Колонки в PDF" });
+    await userEvent.click(within(panel).getByRole("checkbox", { name: "Комментарий" }));
+    await userEvent.click(screen.getByRole("button", { name: /Скачать PDF/ }));
+
+    await waitFor(() => expect(downloadProgramPdf).toHaveBeenCalled());
+    expect(downloadProgramPdf.mock.calls[0]?.[1]?.at(-1)).toBe("COMMENT");
+  });
+
+  it("offers no arrangement for a single column, which has only one place to be", async () => {
+    stub();
+    await renderPage();
+
+    const panel = screen.getByRole("group", { name: "Колонки в PDF" });
+    for (const label of ["№", "Время", "Участник", "Длительность", "Организация"]) {
+      await userEvent.click(within(panel).getByRole("checkbox", { name: label }));
+    }
+
+    expect(screen.queryByText("Порядок слева направо:")).not.toBeInTheDocument();
+  });
+
   it("cannot export nothing at all", async () => {
     stub();
     await renderPage();
