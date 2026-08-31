@@ -125,12 +125,58 @@ export type StartLoadTestInput = {
   force: boolean;
 };
 
+/** What the eraser can be pointed at. Mirrors `TARGETS` on the server. */
+export type PurgeKind =
+  | "festival"
+  | "application"
+  | "organization"
+  | "account"
+  | "participant"
+  | "teacher";
+
+/** One erasable thing, as the console names it in a list and in the dialog. */
+export type PurgeTarget = {
+  kind: PurgeKind;
+  id: string;
+  /** What the operator has to retype to confirm — a title, a name, an email. */
+  label: string;
+  /** The second line that tells two similarly named rows apart. */
+  hint: string;
+};
+
+/** One table's contribution to the plan: the machine name, and the human one. */
+export type PurgeRow = {
+  table: string;
+  label: string;
+  count: number;
+};
+
+/**
+ * Everything the deletion would take — or, coming back from a `DELETE`, took.
+ *
+ * The same shape both ways on purpose: the numbers the operator agreed to are the
+ * numbers reported back, and a report assembled after the fact could only read zero.
+ */
+export type PurgePlan = {
+  target: PurgeTarget;
+  rows: PurgeRow[];
+  total: number;
+  files: number;
+  warnings: string[];
+};
+
 export const platformKeys = {
   dashboard: (organizationId: string, competitionId: string) =>
     ["platform", "dashboard", organizationId, competitionId] as const,
   organizations: ["platform", "organizations"] as const,
   loadTest: ["platform", "loadtest", "diplomas"] as const,
+  purgeSearch: (kind: PurgeKind, query: string) =>
+    ["platform", "purge", "search", kind, query] as const,
+  purgePlan: (kind: PurgeKind, id: string) => ["platform", "purge", "plan", kind, id] as const,
 };
+
+/** How short a query may get before it stops being a search for one known thing. */
+export const PURGE_MIN_QUERY = 2;
 
 /**
  * The load-test bench: what has been run, and what a new run can print over.
@@ -257,4 +303,62 @@ export async function refusalMessage(error: unknown, fallback: string): Promise<
     title?: string;
   } | null;
   return body?.detail ?? body?.title ?? fallback;
+}
+
+/**
+ * Candidates for the eraser, by name, email or id.
+ *
+ * Idle until the query is long enough to mean something: a one-letter search over
+ * every account on the platform is a listing, and this screen must not offer one.
+ */
+export function usePurgeSearch(kind: PurgeKind, query: string) {
+  const trimmed = query.trim();
+  return useQuery({
+    queryKey: platformKeys.purgeSearch(kind, trimmed),
+    enabled: trimmed.length >= PURGE_MIN_QUERY,
+    queryFn: async (): Promise<PurgeTarget[]> => {
+      const search = new URLSearchParams({ target: kind, query: trimmed });
+      return unwrap<PurgeTarget[]>(
+        await apiClient.get(`platform/purge/search?${search.toString()}`),
+      );
+    },
+  });
+}
+
+/**
+ * What erasing this object would delete. A read — nothing happens until the
+ * mutation below runs, and the dialog shows this before it offers the button.
+ */
+export function usePurgePlan(kind: PurgeKind, id: string | null) {
+  return useQuery({
+    queryKey: platformKeys.purgePlan(kind, id ?? ""),
+    enabled: id !== null,
+    queryFn: async (): Promise<PurgePlan> =>
+      unwrap<PurgePlan>(await apiClient.get(`platform/purge/${kind}/${id}`)),
+  });
+}
+
+/**
+ * Erase the object. Irreversible — the rows go from the database and the files go
+ * from storage. `confirm` carries the object's own name back, which the server
+ * checks again on its side.
+ */
+export function usePurge() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      kind: PurgeKind;
+      id: string;
+      confirm: string;
+    }): Promise<PurgePlan> => {
+      const search = new URLSearchParams({ confirm: input.confirm });
+      return unwrap<PurgePlan>(
+        await apiClient.delete(`platform/purge/${input.kind}/${input.id}?${search.toString()}`),
+      );
+    },
+    onSuccess: () => {
+      // Everything the console shows is a projection over what just went.
+      void queryClient.invalidateQueries({ queryKey: ["platform"] });
+    },
+  });
 }

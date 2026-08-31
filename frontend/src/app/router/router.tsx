@@ -441,6 +441,13 @@ export const routes: RouteObject[] = [
                   "PlatformTestingPage",
                 ),
               },
+              {
+                path: ROUTES.platformErase.slice(1),
+                lazy: lazyPage(
+                  () => import("@/applications/platform/pages/erase"),
+                  "PlatformErasePage",
+                ),
+              },
             ],
           },
         ],

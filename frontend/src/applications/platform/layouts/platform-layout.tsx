@@ -1,4 +1,4 @@
-import { Building2, FlaskConical, LayoutDashboard } from "lucide-react";
+import { Building2, FlaskConical, LayoutDashboard, Trash2 } from "lucide-react";
 import { Link, NavLink, Outlet } from "react-router";
 
 import { SiteFooter } from "@/app/layouts/site-footer";
@@ -15,6 +15,8 @@ const NAVIGATION = [
   { title: "Сводка", path: ROUTES.platform, icon: LayoutDashboard, end: true },
   { title: "Организации", path: ROUTES.platformOrganizations, icon: Building2, end: false },
   { title: "Тестирование", path: ROUTES.platformTesting, icon: FlaskConical, end: false },
+  // Last, and on its own: the only screen here that destroys anything.
+  { title: "Удаление", path: ROUTES.platformErase, icon: Trash2, end: false },
 ] as const;
 
 /**

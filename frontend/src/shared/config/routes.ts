@@ -76,6 +76,8 @@ export const ROUTES = {
   platformOrganizations: "/platform/organizations",
   /** The operator's test bench — load-testing generation against the live stack. */
   platformTesting: "/platform/testing",
+  /** The eraser: removing a festival, an order or an account for good. */
+  platformErase: "/platform/erase",
   profile: "/profile",
 } as const;
 
