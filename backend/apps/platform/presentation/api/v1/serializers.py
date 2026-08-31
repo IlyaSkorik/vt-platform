@@ -19,6 +19,8 @@ __all__ = [
     "LoadTestRunResponseSerializer",
     "OrganizationListResponseSerializer",
     "OrganizationResponseSerializer",
+    "PurgePlanResponseSerializer",
+    "PurgeSearchResponseSerializer",
     "StartLoadTestRequestSerializer",
     "UpdateOrganizationRequestSerializer",
 ]
@@ -282,4 +284,51 @@ LoadTestCleanupResponseSerializer = inline_serializer(
         ),
         "meta": _meta,
     },
+)
+
+
+# ----------------------------------------------------------------------
+# The eraser
+# ----------------------------------------------------------------------
+
+
+class _PurgeTargetSerializer(serializers.Serializer[dict[str, object]]):
+    """One erasable thing, as the console names it in a list and in a dialog."""
+
+    kind = serializers.CharField()
+    id = serializers.UUIDField()
+    #: What the operator has to retype to confirm — a title, a name, an email.
+    #: The ignore is DRF's own shape: the metaclass pops declared fields off the
+    #: class, so this never actually shadows ``Field.label``.
+    label = serializers.CharField()  # type: ignore[assignment]
+    hint = serializers.CharField()
+
+
+class _PurgeRowSerializer(serializers.Serializer[dict[str, object]]):
+    """One table's contribution to the plan: the machine name, and the human one."""
+
+    table = serializers.CharField()
+    label = serializers.CharField()  # type: ignore[assignment]
+    count = serializers.IntegerField()
+
+
+_PurgePlanSerializer = inline_serializer(
+    name="PlatformPurgePlan",
+    fields={
+        "target": _PurgeTargetSerializer(),
+        "rows": _PurgeRowSerializer(many=True),
+        "total": serializers.IntegerField(),
+        "files": serializers.IntegerField(),
+        "warnings": serializers.ListField(child=serializers.CharField()),
+    },
+)
+
+PurgePlanResponseSerializer = inline_serializer(
+    name="PlatformPurgePlanResponse",
+    fields={"data": _PurgePlanSerializer, "meta": _meta},
+)
+
+PurgeSearchResponseSerializer = inline_serializer(
+    name="PlatformPurgeSearchResponse",
+    fields={"data": _PurgeTargetSerializer(many=True), "meta": _meta},
 )

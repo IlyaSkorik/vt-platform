@@ -43,7 +43,7 @@ from apps.organization.composition import (
 )
 from apps.organization.presentation.api.v1.staff.serializers import ProblemDetailSerializer
 from apps.organization.presentation.api.v1.staff.views import application_problem
-from apps.platform.presentation.api.v1 import loadtest
+from apps.platform.presentation.api.v1 import loadtest, purge
 from apps.platform.presentation.api.v1.read_models import build_dashboard
 from apps.platform.presentation.api.v1.serializers import (
     ConnectOrganizationRequestSerializer,
@@ -53,6 +53,8 @@ from apps.platform.presentation.api.v1.serializers import (
     LoadTestRunResponseSerializer,
     OrganizationListResponseSerializer,
     OrganizationResponseSerializer,
+    PurgePlanResponseSerializer,
+    PurgeSearchResponseSerializer,
     StartLoadTestRequestSerializer,
     UpdateOrganizationRequestSerializer,
 )
@@ -438,3 +440,130 @@ class PlatformLoadTestView(_PlatformView):
     def delete(self, request: Request) -> Response:
         competition_id = (request.query_params.get("competitionId") or "").strip() or None
         return _envelope(loadtest.cleanup(competition_id=competition_id), request)
+
+
+def _target_data(target: purge.Target) -> dict[str, Any]:
+    return {"kind": target.kind, "id": target.id, "label": target.label, "hint": target.hint}
+
+
+def _plan_data(plan: purge.Plan) -> dict[str, Any]:
+    return {
+        "target": _target_data(plan.target),
+        "rows": [{"table": row.table, "label": row.label, "count": row.count} for row in plan.rows],
+        "total": plan.total,
+        "files": plan.files,
+        "warnings": list(plan.warnings),
+    }
+
+
+def _purge_refusal(request: Request, error: purge.PurgeError) -> Response:
+    """Turn one of the eraser's refusals into the status it deserves."""
+    if isinstance(error, purge.UnknownTargetError):
+        return _problem(request, str(error), title="Неизвестный тип объекта", status=404)
+    if isinstance(error, purge.TargetNotFoundError):
+        return _problem(request, str(error), title="Объект не найден", status=404)
+    if isinstance(error, purge.SelfDeletionError):
+        return _problem(request, str(error), title="Удаление собственного аккаунта", status=409)
+    return _problem(request, str(error), title="Подтверждение не совпадает", status=400)
+
+
+class PlatformPurgeSearchView(_PlatformView):
+    """GET /api/v1/platform/purge/search — find the thing that is to be erased.
+
+    Deliberately a search and not a listing: the operator arrives here with a
+    specific festival or a specific person in a support request, and a browsable
+    table of everything on the platform would turn a targeted, irreversible tool
+    into something to click around in.
+    """
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="platform_purge_search",
+        summary="Find an object to erase",
+        description=(
+            "Candidates matching the query, by name, email or id. `target` is one of "
+            "`festival`, `application`, `organization`, `account`, `participant`, `teacher`."
+        ),
+        parameters=[
+            OpenApiParameter(name="target", type=str, required=True, description="Which kind of object to search."),
+            OpenApiParameter(name="query", type=str, required=True, description="A name, an email, or an id."),
+        ],
+        request=None,
+        responses={
+            200: PurgeSearchResponseSerializer,
+            403: OpenApiResponse(ProblemDetailSerializer, description="Not a platform administrator."),
+            404: OpenApiResponse(ProblemDetailSerializer, description="Unknown target kind."),
+        },
+    )
+    def get(self, request: Request) -> Response:
+        target = (request.query_params.get("target") or "").strip()
+        query = (request.query_params.get("query") or "").strip()
+        try:
+            candidates = purge.search(target, query)
+        except purge.PurgeError as exc:
+            return _purge_refusal(request, exc)
+        return _envelope([_target_data(candidate) for candidate in candidates], request)
+
+
+class PlatformPurgeTargetView(_PlatformView):
+    """GET/DELETE /api/v1/platform/purge/{target}/{objectId} — the eraser itself.
+
+    ``GET`` is the plan: every table and every file the deletion would take, which
+    the console shows before it offers the button. ``DELETE`` executes that same
+    plan, and only when ``confirm`` carries the object's own name back — an id
+    alone is not enough, because the whole point of the guard is that the caller
+    has to have read the thing first.
+
+    There is no undo. See :mod:`apps.platform.presentation.api.v1.purge`.
+    """
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="platform_purge_plan",
+        summary="What erasing this object would delete",
+        description=(
+            "Reads only. Returns every table the deletion reaches with its row count, how many "
+            "stored files would go with it, and the consequences worth reading twice."
+        ),
+        request=None,
+        responses={
+            200: PurgePlanResponseSerializer,
+            403: OpenApiResponse(ProblemDetailSerializer, description="Not a platform administrator."),
+            404: OpenApiResponse(ProblemDetailSerializer, description="Unknown target kind, or no such object."),
+        },
+    )
+    def get(self, request: Request, target: str, object_id: str) -> Response:
+        try:
+            plan = purge.plan(target, object_id)
+        except purge.PurgeError as exc:
+            return _purge_refusal(request, exc)
+        return _envelope(_plan_data(plan), request)
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="platform_purge_execute",
+        summary="Erase the object and everything it holds",
+        description=(
+            "Hard delete, not the soft delete the rest of the platform uses: the rows are removed "
+            "from the database and the files they reference are removed from storage. There is no undo. "
+            "`confirm` must repeat the object's own name exactly as the plan reports it."
+        ),
+        parameters=[
+            OpenApiParameter(name="confirm", type=str, required=True, description="The object's own name, retyped."),
+        ],
+        request=None,
+        responses={
+            200: PurgePlanResponseSerializer,
+            400: OpenApiResponse(ProblemDetailSerializer, description="Confirmation does not match the object's name."),
+            403: OpenApiResponse(ProblemDetailSerializer, description="Not a platform administrator."),
+            404: OpenApiResponse(ProblemDetailSerializer, description="Unknown target kind, or no such object."),
+            409: OpenApiResponse(ProblemDetailSerializer, description="Refused: that is the caller's own account."),
+        },
+    )
+    def delete(self, request: Request, target: str, object_id: str) -> Response:
+        confirm = request.query_params.get("confirm") or ""
+        try:
+            removed = purge.purge(target, object_id, confirm=confirm, actor_id=_actor_id(request))
+        except purge.PurgeError as exc:
+            return _purge_refusal(request, exc)
+        return _envelope(_plan_data(removed), request)
