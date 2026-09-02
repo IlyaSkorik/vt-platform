@@ -28,7 +28,7 @@ interface LandingHeroProps {
  * Status and season are pinned to the top-right corner instead of stacked above the
  * title: they are the two facts a returning visitor scans for, and in the flow they
  * pushed the authored content down the block. Every badge variant is opaque, so they
- * stay legible over a photograph where the gradient has not yet taken hold.
+ * stay legible over a photograph where the scrim has cleared entirely.
  */
 export function LandingHero({ festival, applyPath }: LandingHeroProps): React.JSX.Element {
   const hero = heroBlock(festival.landing.blocks);
@@ -48,9 +48,15 @@ export function LandingHero({ festival, applyPath }: LandingHeroProps): React.JS
           className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/25 via-muted to-secondary/25"
         />
       )}
+      {/* A scrim, not a curtain. It used to reach 85% of the background colour by
+          mid-block and 25% at the very top, which washed the cover out to the point
+          that a photograph was barely worth uploading. Now it is opaque only along
+          the bottom edge, where the title and the CTA actually sit, and clears
+          completely above them — enough contrast for the text, and the picture stays
+          a picture. */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 -z-10 bg-gradient-to-t from-background via-background/85 to-background/25"
+        className="absolute inset-0 -z-10 bg-gradient-to-t from-background/90 via-background/45 to-transparent"
       />
 
       <div className="absolute top-4 right-4 z-10 flex max-w-[calc(100%-2rem)] flex-wrap justify-end gap-2 sm:top-6 sm:right-6">
