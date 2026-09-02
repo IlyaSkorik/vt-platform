@@ -41,7 +41,11 @@ function LandingContent({
   nominations: RegistrationNominationView[];
 }): React.JSX.Element {
   return (
-    <div className="space-y-10">
+    /* `pb-10`: the contacts card is the page's last element, and on the public route
+       the site footer's own border starts immediately under it — two footers with no
+       air between them read as one. The padding belongs here rather than on the card:
+       it is the gap after the landing, not part of the footer's own styling. */
+    <div className="space-y-10 pb-10">
       <LandingHero festival={festival} applyPath={applyPath} />
       <RegistrationBlock nominations={nominations} />
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
