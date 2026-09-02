@@ -36,6 +36,7 @@ from apps.competitions.application.read_models.public_catalog import (
     public_status_for,
     resolve_city,
     resolve_landing_cover,
+    resolve_organizer_display_name,
     resolve_poster_image,
 )
 from apps.competitions.domain.landing_configuration import (
@@ -153,7 +154,7 @@ class DjangoPublicCatalogReader:
             season=competition.season,
             description=competition.description,
             status=public_status,
-            organizer=self._organizer_view(competition.organizer_id, organizers),
+            organizer=self._organizer_view(competition.organizer_id, organizers, competition.contacts_config),
             city=resolve_city(competition.contacts_config),
             venue_name=competition.venue_name,
             venue_address=competition.venue_address,
@@ -178,7 +179,7 @@ class DjangoPublicCatalogReader:
         organizers: dict[uuid.UUID, OrganizerCardView],
     ) -> PublicFestivalDetailView:
         formats = self._formats(competition)
-        organizer = self._organizer_view(competition.organizer_id, organizers)
+        organizer = self._organizer_view(competition.organizer_id, organizers, competition.contacts_config)
 
         has_open, has_upcoming = self._registration_flags(competition)
         public_status = public_status_for(
@@ -371,11 +372,20 @@ class DjangoPublicCatalogReader:
     def _organizer_view(
         organizer_id: uuid.UUID,
         organizers: dict[uuid.UUID, OrganizerCardView],
+        contacts_config: dict[str, object] | None = None,
     ) -> PublicFestivalOrganizerView:
+        """The organizer as every public surface names it.
+
+        ``name`` is the name the *festival* is presented under, not the
+        organization's profile name, whenever the two differ — see
+        :func:`resolve_organizer_display_name`. The logo stays the organization's:
+        the override has no logo field, so there is nothing else to show.
+        """
+        overridden = resolve_organizer_display_name(contacts_config)
         card = organizers.get(organizer_id)
         if card is None:
-            return PublicFestivalOrganizerView(id=str(organizer_id), name=_FALLBACK_ORGANIZER_NAME, logo=None)
-        return PublicFestivalOrganizerView(id=card.id, name=card.name, logo=card.logo)
+            return PublicFestivalOrganizerView(id=str(organizer_id), name=overridden or _FALLBACK_ORGANIZER_NAME, logo=None)
+        return PublicFestivalOrganizerView(id=card.id, name=overridden or card.name, logo=card.logo)
 
     @staticmethod
     def _organizer_contact_facts(

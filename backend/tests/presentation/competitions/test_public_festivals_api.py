@@ -90,6 +90,53 @@ class TestPublicFestivalDetailEndpoint:
         assert data["contacts"]["venue"]["city"] == "Минск"
         assert response["X-Request-ID"]
 
+    def test_the_organizer_is_named_as_the_festival_presents_itself(self) -> None:
+        """Every public surface, not only the footer.
+
+        A card in the catalog naming the organization while the page it links to
+        names the festival's own committee reads as two different events — and the
+        card is what a visitor sees first.
+        """
+        org = _organization()
+        competition = _competition(
+            organizer_id=org.id,
+            status="PUBLISHED",
+            title="Весенний вокал",
+            contacts_config={
+                "use_organization_contacts": False,
+                "override": {"organization_name": "Оргкомитет фестиваля"},
+            },
+        )
+        _open_nomination(competition)
+
+        detail = APIClient().get(f"/api/v1/public/festivals/{competition.id}").data["data"]
+        card = next(row for row in APIClient().get("/api/v1/public/festivals").data["data"] if row["id"] == str(competition.id))
+
+        assert org.name == "Дом талантов"
+        assert detail["organizer"]["name"] == "Оргкомитет фестиваля"
+        assert card["organizer"]["name"] == "Оргкомитет фестиваля"
+
+    def test_a_festival_deferring_to_its_organization_keeps_its_name(self) -> None:
+        """The override is only in charge when the festival took its contacts over."""
+        org = _organization()
+        competition = _competition(
+            organizer_id=org.id,
+            status="PUBLISHED",
+            title="Весенний вокал",
+            # A leftover name from a festival that switched back to the organization:
+            # stored, unused, and it must not resurface on the card.
+            contacts_config={
+                "use_organization_contacts": True,
+                "override": {"organization_name": "Оргкомитет фестиваля"},
+            },
+        )
+        _open_nomination(competition)
+
+        detail = APIClient().get(f"/api/v1/public/festivals/{competition.id}").data["data"]
+
+        assert detail["organizer"]["name"] == "Дом талантов"
+        assert detail["contacts"]["organizationName"] == "Дом талантов"
+
     def test_exposes_current_regulation(self) -> None:
         import datetime
 

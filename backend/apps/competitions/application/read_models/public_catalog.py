@@ -68,6 +68,7 @@ __all__ = [
     "public_status_for",
     "resolve_city",
     "resolve_landing_cover",
+    "resolve_organizer_display_name",
     "resolve_poster_image",
 ]
 
@@ -220,6 +221,34 @@ def resolve_city(contacts_config: dict[str, object] | None) -> str | None:
     city = venue_details.get("city")
     if isinstance(city, str) and city.strip():
         return city.strip()
+    return None
+
+
+def resolve_organizer_display_name(contacts_config: dict[str, object] | None) -> str | None:
+    """The name the *festival* is presented under, when it overrides its organization's.
+
+    The same rule :func:`project_contacts` applies for the landing footer, read
+    straight off the stored blob because a catalog card does not assemble the whole
+    contacts module: the override supplies the display name only when the festival
+    has taken its contacts over, and it has to be non-blank to mean anything.
+
+    Every public surface needs it, not just the footer. A card that names the
+    organization while the page it links to names the festival's own committee reads
+    as two different events — and the card is the one a visitor sees first.
+
+    Returns ``None`` when the festival defers to its organization, leaving the
+    caller's own resolution (and its fallback) in charge.
+    """
+    if not isinstance(contacts_config, dict):
+        return None
+    if contacts_config.get("use_organization_contacts", True):
+        return None
+    override = contacts_config.get("override")
+    if not isinstance(override, dict):
+        return None
+    name = override.get("organization_name")
+    if isinstance(name, str) and name.strip():
+        return name.strip()
     return None
 
 
