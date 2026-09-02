@@ -5,8 +5,10 @@ undone, so the properties worth pinning down are the ones that bound it rather
 than the happy path alone: only the operator reaches it, the plan it shows is the
 plan it executes, a mistyped confirmation changes nothing, and — the one that
 matters most — each target stops exactly where it is supposed to stop. A festival
-must not take its organization with it, an order must not take its festival, and
-an account must not take the festivals it once worked on.
+must not take its organization with it, an order must not take its festival, an
+account must not take the festivals it once worked on, a programme must not take
+the acts it was an arrangement of, and a template must not take the diplomas
+already issued from it.
 """
 
 from __future__ import annotations
@@ -22,7 +24,13 @@ from rest_framework.test import APIClient
 
 from apps.applications.infrastructure.models import ApplicationModel, ApplicationRevisionModel, SubmissionModel
 from apps.competitions.infrastructure.models import CategoryModel, CompetitionModel, DocumentModel
-from apps.diplomas.infrastructure.models import AssignmentModel, DiplomaModel, TemplateModel
+from apps.diplomas.infrastructure.models import (
+    AssignmentModel,
+    DiplomaModel,
+    TemplateDocumentModel,
+    TemplateFieldModel,
+    TemplateModel,
+)
 from apps.identity.infrastructure.models import UserModel
 from apps.identity.presentation.api.v1.auth import composition as identity_composition
 from apps.notifications.infrastructure.models import NotificationModel
@@ -35,7 +43,12 @@ from apps.organization.infrastructure.models import (
 from apps.participants.infrastructure.models import ParticipantRegistryModel
 from apps.platform.application.dto import GrantPlatformAdministratorCommand
 from apps.platform.composition import build_grant_platform_administrator_handler
-from apps.programs.infrastructure.models import ProgramItemModel, ProgramModel
+from apps.programs.infrastructure.models import (
+    ProgramColumnModel,
+    ProgramItemModel,
+    ProgramModel,
+    ProgramShareModel,
+)
 from apps.results.infrastructure.models import ProtocolModel, ProtocolRowModel
 from apps.teachers.infrastructure.models import TeacherModel
 
@@ -602,6 +615,194 @@ def test_a_teacher_card_goes_on_its_own(operator: APIClient) -> None:
 
 
 # ----------------------------------------------------------------------
+# Erasing one programme of a festival
+# ----------------------------------------------------------------------
+
+
+def _decorate(program: ProgramModel) -> tuple[ProgramColumnModel, ProgramShareModel]:
+    """A programme with the two things that hang off it besides its slots."""
+    column = ProgramColumnModel.objects.create(program=program, title="Педагог", position=0)
+    share = ProgramShareModel.objects.create(program=program, name="Для зала", slug=uuid.uuid4().hex[:12])
+    return column, share
+
+
+def test_the_plan_for_a_programme_stops_at_the_programme(operator: APIClient) -> None:
+    """The acts stay: a programme is one arrangement of them, not the acts themselves."""
+    festival = _build_festival()
+    _decorate(festival.program)
+
+    plan = _plan(operator, "program", festival.program.id)
+
+    assert plan["target"]["label"] == festival.program.name
+    assert _row(plan, "programs_program") == 1
+    assert _row(plan, "programs_program_item") == 1
+    assert _row(plan, "programs_program_column") == 1
+    assert _row(plan, "programs_program_share") == 1
+    assert _row(plan, "competitions_competition") == 0
+    assert _row(plan, "applications_submission") == 0
+    assert _row(plan, "applications_application") == 0
+    assert _row(plan, "diplomas_diploma") == 0
+    assert _row(plan, "results_protocol") == 0
+    assert plan["files"] == 0
+
+
+def test_erasing_a_programme_leaves_the_festival_and_its_acts(operator: APIClient, _media_root: None) -> None:
+    festival = _build_festival()
+    column, share = _decorate(festival.program)
+
+    response = _erase(operator, "program", festival.program.id, festival.program.name)
+
+    assert response.status_code == 200, response.data
+    assert not ProgramModel.objects.filter(id=festival.program.id).exists()
+    assert not ProgramItemModel.objects.filter(id=festival.item.id).exists()
+    assert not ProgramColumnModel.objects.filter(id=column.id).exists()
+    assert not ProgramShareModel.objects.filter(id=share.id).exists()
+    # Everything the programme was an arrangement *of* is still standing.
+    assert CompetitionModel.objects.filter(id=festival.competition.id).exists()
+    assert SubmissionModel.objects.filter(id=festival.submission.id).exists()
+    assert ApplicationModel.objects.filter(id=festival.application.id).exists()
+    assert DiplomaModel.objects.filter(id=festival.diploma.id).exists()
+    assert ProtocolModel.objects.filter(id=festival.protocol.id).exists()
+
+
+def test_erasing_one_programme_leaves_the_other_days(operator: APIClient, _media_root: None) -> None:
+    """Two programmes of the same festival are two separate targets."""
+    festival = _build_festival()
+    second = ProgramModel.objects.create(competition_id=festival.competition.id, name="День второй")
+
+    _erase(operator, "program", festival.program.id, festival.program.name)
+
+    assert ProgramModel.objects.filter(id=second.id).exists()
+
+
+def test_the_plan_for_a_programme_warns_about_its_public_links(operator: APIClient) -> None:
+    festival = _build_festival()
+    _decorate(festival.program)
+
+    plan = _plan(operator, "program", festival.program.id)
+
+    assert any("ссылки" in warning for warning in plan["warnings"])
+    assert any("нумерацию" in warning for warning in plan["warnings"])
+
+
+def test_a_mistyped_programme_name_deletes_nothing(operator: APIClient) -> None:
+    festival = _build_festival()
+
+    response = _erase(operator, "program", festival.program.id, "Не та программа")
+
+    assert response.status_code == 400, response.data
+    assert ProgramModel.objects.filter(id=festival.program.id).exists()
+    assert ProgramItemModel.objects.filter(id=festival.item.id).exists()
+
+
+# ----------------------------------------------------------------------
+# Erasing one diploma template
+# ----------------------------------------------------------------------
+
+
+def _dress(template: TemplateModel) -> tuple[TemplateFieldModel, TemplateDocumentModel, str]:
+    """A template with a laid-out field and an uploaded blank, and that blank's file."""
+    field = TemplateFieldModel.objects.create(
+        template=template,
+        page=1,
+        type="TEXT",
+        binding="participant.name",
+        x=10,
+        y=10,
+        width=100,
+        height=20,
+    )
+    blank = _stored("templates/blank.pdf")
+    document = TemplateDocumentModel.objects.create(template=template, file_reference=blank, page_count=1)
+    return field, document, blank
+
+
+def test_the_plan_for_a_template_stops_at_the_template(operator: APIClient, _media_root: None) -> None:
+    """The documents already issued from it are not in it — they carry their own copy."""
+    festival = _build_festival()
+    _dress(festival.template)
+
+    plan = _plan(operator, "template", festival.template.id)
+
+    assert plan["target"]["label"] == festival.template.name
+    assert _row(plan, "diplomas_template") == 1
+    assert _row(plan, "diplomas_template_field") == 1
+    assert _row(plan, "diplomas_template_document") == 1
+    assert _row(plan, "diplomas_assignment") == 1
+    assert _row(plan, "diplomas_diploma") == 0
+    assert _row(plan, "organization_organization") == 0
+    assert _row(plan, "competitions_competition") == 0
+    assert plan["files"] == 1
+
+
+def test_erasing_a_template_leaves_the_diplomas_already_issued_from_it(operator: APIClient, _media_root: None) -> None:
+    """A printed diploma and the link that verifies it must not depend on the layout."""
+    festival = _build_festival()
+    field, document, blank = _dress(festival.template)
+
+    response = _erase(operator, "template", festival.template.id, festival.template.name)
+
+    assert response.status_code == 200, response.data
+    assert not TemplateModel.objects.filter(id=festival.template.id).exists()
+    assert not TemplateFieldModel.objects.filter(id=field.id).exists()
+    assert not TemplateDocumentModel.objects.filter(id=document.id).exists()
+    assert not default_storage.exists(blank.removeprefix("/media/"))
+    assert DiplomaModel.objects.filter(id=festival.diploma.id).exists()
+    assert default_storage.exists(festival.diploma.print_pdf_path.removeprefix("/media/"))
+    assert OrganizationModel.objects.filter(id=festival.organization.id).exists()
+    assert CompetitionModel.objects.filter(id=festival.competition.id).exists()
+
+
+def test_erasing_a_template_releases_the_bindings_that_protect_it(operator: APIClient, _media_root: None) -> None:
+    """The assignment's FK is PROTECT, so a binding left standing would refuse the delete."""
+    festival = _build_festival()
+
+    response = _erase(operator, "template", festival.template.id, festival.template.name)
+
+    assert response.status_code == 200, response.data
+    assert not AssignmentModel.objects.filter(template_id=festival.template.id).exists()
+
+
+def test_erasing_a_template_leaves_the_rest_of_the_library(operator: APIClient, _media_root: None) -> None:
+    festival = _build_festival()
+    other = TemplateModel.objects.create(organizer_id=festival.organization.id, type="THANK_YOU", name="Благодарность")
+
+    _erase(operator, "template", festival.template.id, festival.template.name)
+
+    assert TemplateModel.objects.filter(id=other.id).exists()
+
+
+def test_the_plan_for_a_template_warns_about_what_stops_working(operator: APIClient) -> None:
+    festival = _build_festival()
+
+    plan = _plan(operator, "template", festival.template.id)
+
+    assert any("привязк" in warning.lower() for warning in plan["warnings"])
+    assert any("перевыпустить" in warning for warning in plan["warnings"])
+
+
+def test_a_mistyped_template_name_deletes_nothing(operator: APIClient) -> None:
+    festival = _build_festival()
+
+    response = _erase(operator, "template", festival.template.id, "Не тот шаблон")
+
+    assert response.status_code == 400, response.data
+    assert TemplateModel.objects.filter(id=festival.template.id).exists()
+    assert AssignmentModel.objects.filter(template_id=festival.template.id).exists()
+
+
+def test_the_two_narrow_targets_are_closed_to_everyone_but_the_operator(outsider: APIClient) -> None:
+    festival = _build_festival()
+
+    assert outsider.get(f"{_PURGE}/program/{festival.program.id}").status_code == 403
+    assert outsider.get(f"{_PURGE}/template/{festival.template.id}").status_code == 403
+    assert _erase(outsider, "program", festival.program.id, festival.program.name).status_code == 403
+    assert _erase(outsider, "template", festival.template.id, festival.template.name).status_code == 403
+    assert ProgramModel.objects.filter(id=festival.program.id).exists()
+    assert TemplateModel.objects.filter(id=festival.template.id).exists()
+
+
+# ----------------------------------------------------------------------
 # Finding the thing, and being told when it is not there
 # ----------------------------------------------------------------------
 
@@ -623,6 +824,30 @@ def test_search_finds_an_order_by_the_email_that_placed_it(operator: APIClient) 
     response = operator.get(f"{_PURGE}/search?target=application&query={festival.applicant.email}")
 
     assert [row["id"] for row in response.data["data"]] == [str(festival.application.id)]
+
+
+def test_search_finds_a_programme_by_its_own_name_and_by_its_festival(operator: APIClient) -> None:
+    """A programme is called "День первый", so the festival has to be a handle too."""
+    festival = _build_festival()
+
+    by_name = operator.get(f"{_PURGE}/search?target=program&query=День")
+    by_festival = operator.get(f"{_PURGE}/search?target=program&query=Взлёт")
+
+    assert [row["id"] for row in by_name.data["data"]] == [str(festival.program.id)]
+    assert [row["id"] for row in by_festival.data["data"]] == [str(festival.program.id)]
+    assert festival.competition.title in by_festival.data["data"][0]["hint"]
+
+
+def test_search_finds_a_template_by_its_own_name_and_by_its_organization(operator: APIClient) -> None:
+    """Half the libraries on the platform hold a template called «Диплом»."""
+    festival = _build_festival()
+
+    by_name = operator.get(f"{_PURGE}/search?target=template&query=Диплом")
+    by_organization = operator.get(f"{_PURGE}/search?target=template&query={festival.organization.name}")
+
+    assert str(festival.template.id) in [row["id"] for row in by_name.data["data"]]
+    assert [row["id"] for row in by_organization.data["data"]] == [str(festival.template.id)]
+    assert festival.organization.name in by_organization.data["data"][0]["hint"]
 
 
 def test_an_empty_query_finds_nothing_rather_than_everything(operator: APIClient) -> None:

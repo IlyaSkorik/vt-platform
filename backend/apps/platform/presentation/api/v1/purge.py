@@ -28,8 +28,12 @@ Three properties keep that safe to expose:
   would leave live rows pointing at bytes that no longer exist.
 
 The blast radius of each target is spelled out on :func:`_scope`. The short
-version: a festival takes everything held *inside* it and nothing above it — the
-organization, its staff and its diploma templates all survive.
+version: every target takes everything held *inside* it and nothing above it — a
+festival leaves the organization, its staff and its diploma templates standing, and
+the two narrow targets go further down still. A programme is one arrangement of the
+acts, so erasing it leaves the acts; a template is a design, so erasing it leaves the
+documents already issued from it. Both exist because the whole festival is far too
+blunt an answer to "программу собрали не так" or "шаблон сверстали заново".
 """
 
 from __future__ import annotations
@@ -41,6 +45,7 @@ from typing import Any
 
 from django.core.files.storage import default_storage
 from django.db import transaction
+from django.db.models import Count
 
 from apps.applications.infrastructure.models import ApplicationModel, ApplicationRevisionModel, SubmissionModel
 from apps.competitions.infrastructure.models import (
@@ -61,10 +66,12 @@ from apps.competitions.infrastructure.models import (
 from apps.diplomas.infrastructure.models import (
     AssignmentModel,
     DiplomaModel,
+    DocumentTypeChoices,
     GenerationRunModel,
     IssuedDocumentModel,
     PrintJobModel,
     TemplateDocumentModel,
+    TemplateFieldModel,
     TemplateModel,
 )
 from apps.diplomas.infrastructure.pdf.workspace import storage_key_of
@@ -84,7 +91,7 @@ from apps.participants.infrastructure.models import (
     ParticipantRegistryModel,
 )
 from apps.platform.infrastructure.models import PlatformAdministratorModel
-from apps.programs.infrastructure.models import ProgramItemModel, ProgramModel
+from apps.programs.infrastructure.models import ProgramColumnModel, ProgramItemModel, ProgramModel, ProgramShareModel
 from apps.results.infrastructure.models import ProtocolModel, ProtocolRowModel
 from apps.teachers.infrastructure.models import TeacherModel
 
@@ -106,8 +113,10 @@ __all__ = [
 #: the URL, so they are English and stable; the labels are what the operator reads.
 TARGETS: dict[str, str] = {
     "festival": "Фестиваль",
+    "program": "Программа фестиваля",
     "application": "Заявка",
     "organization": "Организация",
+    "template": "Шаблон диплома",
     "account": "Аккаунт",
     "participant": "Участник реестра",
     "teacher": "Педагог реестра",
@@ -188,6 +197,8 @@ class _Scope:
     competition_ids: list[uuid.UUID] = field(default_factory=list)
     application_ids: list[uuid.UUID] = field(default_factory=list)
     submission_ids: list[uuid.UUID] = field(default_factory=list)
+    program_ids: list[uuid.UUID] = field(default_factory=list)
+    template_ids: list[uuid.UUID] = field(default_factory=list)
     organization_ids: list[uuid.UUID] = field(default_factory=list)
     user_ids: list[uuid.UUID] = field(default_factory=list)
     registry_ids: list[uuid.UUID] = field(default_factory=list)
@@ -279,9 +290,43 @@ def _festival_scope(competition_id: uuid.UUID) -> _Scope:
     )
     scope.application_ids = _ids(ApplicationModel.objects.filter(competition_id=competition.id))
     scope.submission_ids = _ids(SubmissionModel.objects.filter(competition_id=competition.id))
+    scope.program_ids = _ids(ProgramModel.objects.filter(competition_id=competition.id))
     scope.warnings.append("Организация, её сотрудники и шаблоны дипломов остаются — удаляется только фестиваль.")
     if DiplomaModel.objects.filter(competition_id=competition.id).exists():
         scope.warnings.append("У фестиваля есть выданные дипломы: их номера и ссылки проверки перестанут открываться навсегда.")
+    return scope
+
+
+def _program_scope(program_id: uuid.UUID) -> _Scope:
+    """One programme of a festival: its running order, its columns, its public links.
+
+    The narrowest festival-shaped target there is, and deliberately so. A programme
+    is one *arrangement* of the acts, not the acts themselves — so the orders, the
+    performances, the diplomas and the protocols all stay, and what goes is the
+    schedule built over them. That is what "программу собрали не так, соберём
+    заново" asks for, and erasing the festival to get it would be absurd.
+    """
+    program = ProgramModel.objects.filter(id=program_id).first()
+    if program is None:
+        raise TargetNotFoundError("Программа не найдена.")
+    competition = CompetitionModel.objects.filter(id=program.competition_id).first()
+    items = ProgramItemModel.objects.filter(program_id=program.id).count()
+    scope = _Scope(
+        target=Target(
+            kind="program",
+            id=str(program.id),
+            label=program.name,
+            hint=f"{competition.title if competition is not None else '—'} · номеров: {items}",
+        ),
+        program_ids=[program.id],
+    )
+    scope.warnings.append("Фестиваль, его заявки, выступления и протоколы остаются — удаляется только эта программа.")
+    if ProgramItemModel.objects.filter(program_id=program.id, number__gt=0).exists():
+        # ``numbers_issued`` lives on the programme row and goes with it, so the
+        # numbers participants were already told are not recoverable by rebuilding.
+        scope.warnings.append("Выданные номера участников уйдут вместе с программой — собранная заново программа начнёт нумерацию с единицы.")
+    if (shares := ProgramShareModel.objects.filter(program_id=program.id).count()) > 0:
+        scope.warnings.append(f"Публичные ссылки на эту программу ({shares}) перестанут открываться навсегда.")
     return scope
 
 
@@ -340,9 +385,44 @@ def _organization_scope(organization_id: uuid.UUID) -> _Scope:
     scope.competition_ids = _ids(CompetitionModel.objects.filter(organizer_id=organization.id))
     scope.application_ids = _ids(ApplicationModel.objects.filter(competition_id__in=scope.competition_ids))
     scope.submission_ids = _ids(SubmissionModel.objects.filter(competition_id__in=scope.competition_ids))
+    scope.program_ids = _ids(ProgramModel.objects.filter(competition_id__in=scope.competition_ids))
+    scope.template_ids = _ids(TemplateModel.objects.filter(organizer_id=organization.id))
     scope.warnings.append("Аккаунты сотрудников остаются — снимаются только их роли в этой организации.")
     if scope.competition_ids:
         scope.warnings.append(f"Вместе с организацией удаляются все её фестивали ({len(scope.competition_ids)}) целиком.")
+    return scope
+
+
+def _template_scope(template_id: uuid.UUID) -> _Scope:
+    """One diploma template: its layout, its uploaded blanks, its bindings.
+
+    Diplomas already issued from it stay, and keep working. Each one carries its own
+    snapshot of the template and its own rendered PDF, so a printed diploma and the
+    link that verifies it do not depend on the layout still existing. What is lost
+    is the ability to produce any more from this design.
+    """
+    template = TemplateModel.objects.filter(id=template_id).first()
+    if template is None:
+        raise TargetNotFoundError("Шаблон не найден.")
+    organization_name = _organization_names([template.organizer_id]).get(template.organizer_id, "—")
+    scope = _Scope(
+        target=Target(
+            kind="template",
+            id=str(template.id),
+            label=template.name,
+            hint=f"{organization_name} · {_document_type_label(template.type)}",
+        ),
+        template_ids=[template.id],
+    )
+    scope.warnings.append("Организация, её фестивали и уже выданные документы остаются — удаляется только сам шаблон.")
+    if (assignments := AssignmentModel.objects.filter(template_id=template.id).count()) > 0:
+        scope.warnings.append(
+            f"Шаблон привязан к номинациям ({assignments}): привязки снимутся, и генерация в них остановится, пока не выбран другой шаблон."
+        )
+    if (issued := DiplomaModel.objects.filter(template_id=template.id).count()) > 0:
+        scope.warnings.append(
+            f"По этому шаблону уже выдано документов: {issued}. Они продолжат открываться, но перевыпустить их по этому макету будет нельзя."
+        )
     return scope
 
 
@@ -422,8 +502,10 @@ def _teacher_scope(teacher_id: uuid.UUID) -> _Scope:
 
 _SCOPES: dict[str, Callable[[uuid.UUID], _Scope]] = {
     "festival": _festival_scope,
+    "program": _program_scope,
     "application": _application_scope,
     "organization": _organization_scope,
+    "template": _template_scope,
     "account": _account_scope,
     "participant": _participant_scope,
     "teacher": _teacher_scope,
@@ -449,6 +531,8 @@ def _querysets(scope: _Scope) -> Iterator[tuple[str, str, Any]]:
     competitions = scope.competition_ids
     applications = scope.application_ids
     submissions = scope.submission_ids
+    programs = scope.program_ids
+    templates = scope.template_ids
     organizations = scope.organization_ids
     users = scope.user_ids
 
@@ -468,25 +552,33 @@ def _querysets(scope: _Scope) -> Iterator[tuple[str, str, Any]]:
 
     yield "diplomas_diploma", "Дипломы", _by_competition_or_submission(DiplomaModel, competitions, submissions)
     yield "diplomas_issued_document", "Выданные документы", _by_competition_or_submission(IssuedDocumentModel, competitions, submissions)
-    if competitions or organizations:
+    if competitions or templates:
         # Before the templates below, and by template as well as by festival: the
         # assignment's FK is PROTECT, so a template with any binding left standing
-        # refuses to go, and an organization's binding may sit on a festival that
-        # is not itself in this scope.
-        yield "diplomas_assignment", "Привязки шаблонов", _assignments(competitions, organizations)
+        # refuses to go, and a template's binding may sit on a festival that is not
+        # itself in this scope.
+        yield "diplomas_assignment", "Привязки шаблонов", _assignments(competitions, templates)
     if competitions:
         yield "diplomas_print_job", "Задачи печати", PrintJobModel.objects.filter(competition_id__in=competitions)
         yield "diplomas_generation_run", "Прогоны генерации", GenerationRunModel.objects.filter(competition_id__in=competitions)
-    if organizations:
-        yield "diplomas_template", "Шаблоны дипломов", TemplateModel.objects.filter(organizer_id__in=organizations)
+    if templates:
+        yield "diplomas_template_field", "Поля шаблонов", TemplateFieldModel.objects.filter(template_id__in=templates)
+        yield "diplomas_template_document", "Загруженные бланки", TemplateDocumentModel.objects.filter(template_id__in=templates)
+        yield "diplomas_template", "Шаблоны дипломов", TemplateModel.objects.filter(id__in=templates)
+
+    if programs:
+        yield "programs_program_column", "Колонки программ", ProgramColumnModel.objects.filter(program_id__in=programs)
+        yield "programs_program_share", "Публичные страницы программ", ProgramShareModel.objects.filter(program_id__in=programs)
+        yield "programs_program_item", "Номера в программах", ProgramItemModel.objects.filter(program_id__in=programs)
+        yield "programs_program", "Программы", ProgramModel.objects.filter(id__in=programs)
+    elif submissions:
+        # The festival stays, so its programmes keep standing — only the lines that
+        # named these performances come out of them.
+        yield "programs_program_item", "Номера в программах", ProgramItemModel.objects.filter(submission_id__in=submissions)
 
     if competitions:
-        yield "programs_program", "Программы", ProgramModel.objects.filter(competition_id__in=competitions)
         yield "results_protocol", "Протоколы", ProtocolModel.objects.filter(competition_id__in=competitions)
     elif submissions:
-        # The festival stays, so its programs and protocols keep standing — only the
-        # lines that named these performances come out of them.
-        yield "programs_program_item", "Номера в программах", ProgramItemModel.objects.filter(submission_id__in=submissions)
         yield "results_protocol_row", "Строки протоколов", ProtocolRowModel.objects.filter(submission_id__in=submissions)
 
     yield "applications_application_revision", "История изменений заявок", _revisions(competitions, applications)
@@ -556,13 +648,13 @@ def _by_competition_or_submission(model: Any, competitions: list[uuid.UUID], sub
     return queryset
 
 
-def _assignments(competitions: list[uuid.UUID], organizations: list[uuid.UUID]) -> Any:
-    """Template bindings reachable through a festival or through its organization."""
+def _assignments(competitions: list[uuid.UUID], templates: list[uuid.UUID]) -> Any:
+    """Template bindings reachable through a festival or through the template itself."""
     queryset = AssignmentModel.objects.none()
     if competitions:
         queryset = queryset | AssignmentModel.objects.filter(competition_id__in=competitions)
-    if organizations:
-        queryset = queryset | AssignmentModel.objects.filter(template__organizer_id__in=organizations)
+    if templates:
+        queryset = queryset | AssignmentModel.objects.filter(template_id__in=templates)
     return queryset
 
 
@@ -631,9 +723,8 @@ def _files(scope: _Scope) -> tuple[str, ...]:
         references += list(PrintJobModel.objects.filter(competition_id__in=competitions).values_list("zip_path", flat=True))
         references += list(GenerationRunModel.objects.filter(competition_id__in=competitions).values_list("zip_path", flat=True))
 
-    if scope.organization_ids:
-        template_ids = TemplateModel.objects.filter(organizer_id__in=scope.organization_ids).values_list("id", flat=True)
-        references += list(TemplateDocumentModel.objects.filter(template_id__in=template_ids).values_list("file_reference", flat=True))
+    if scope.template_ids:
+        references += list(TemplateDocumentModel.objects.filter(template_id__in=scope.template_ids).values_list("file_reference", flat=True))
 
     if scope.registry_ids or scope.user_ids:
         references += list(_owned(ParticipantRegistryModel, scope.registry_ids, scope.user_ids).values_list("avatar_url", flat=True))
@@ -666,6 +757,58 @@ def _festival_candidates(query: str) -> list[Target]:
     rows = list(matches.order_by("-created_at")[:SEARCH_LIMIT])
     names = _organization_names([row.organizer_id for row in rows])
     return [Target(kind="festival", id=str(row.id), label=row.title, hint=f"{names.get(row.organizer_id, '—')} · {row.season}") for row in rows]
+
+
+def _program_candidates(query: str) -> list[Target]:
+    """Programmes are found by their own name, by their festival's, or by id.
+
+    Both handles, because one of them is usually useless: a programme is called
+    "День первый", which names nothing on its own, and the operator arrives holding
+    the festival instead. Matching the festival's title lists its programmes and
+    lets the operator pick the day.
+    """
+    if (identifier := _maybe_uuid(query)) is not None:
+        matches = ProgramModel.objects.filter(id=identifier)
+    else:
+        competition_ids = list(CompetitionModel.objects.filter(title__icontains=query).values_list("id", flat=True)[:SEARCH_LIMIT])
+        matches = ProgramModel.objects.filter(name__icontains=query) | ProgramModel.objects.filter(competition_id__in=competition_ids)
+    rows = list(matches.order_by("name")[:SEARCH_LIMIT])
+    titles = dict(CompetitionModel.objects.filter(id__in=[row.competition_id for row in rows]).values_list("id", "title"))
+    counts = _item_counts([row.id for row in rows])
+    return [
+        Target(
+            kind="program",
+            id=str(row.id),
+            label=row.name,
+            hint=f"{titles.get(row.competition_id, '—')} · номеров: {counts.get(row.id, 0)}",
+        )
+        for row in rows
+    ]
+
+
+def _template_candidates(query: str) -> list[Target]:
+    """Templates are found by their own name, by their organization's, or by id.
+
+    Same reasoning as programmes: half the libraries on the platform hold a template
+    called "Диплом", so the organization has to be a handle too — and the hint has
+    to carry it, because the name alone cannot tell two of them apart.
+    """
+    if (identifier := _maybe_uuid(query)) is not None:
+        matches = TemplateModel.objects.filter(id=identifier)
+    else:
+        organization_ids = list(OrganizationModel.objects.filter(name__icontains=query).values_list("id", flat=True)[:SEARCH_LIMIT])
+        matches = TemplateModel.objects.filter(name__icontains=query) | TemplateModel.objects.filter(organizer_id__in=organization_ids)
+    rows = list(matches.order_by("name")[:SEARCH_LIMIT])
+    names = _organization_names([row.organizer_id for row in rows])
+    return [
+        Target(
+            kind="template",
+            id=str(row.id),
+            label=row.name,
+            hint=f"{names.get(row.organizer_id, '—')} · {_document_type_label(row.type)}",
+        )
+        for row in rows
+    ]
 
 
 def _application_candidates(query: str) -> list[Target]:
@@ -766,8 +909,10 @@ def _teacher_candidates(query: str) -> list[Target]:
 
 _SEARCH: dict[str, Callable[[str], list[Target]]] = {
     "festival": _festival_candidates,
+    "program": _program_candidates,
     "application": _application_candidates,
     "organization": _organization_candidates,
+    "template": _template_candidates,
     "account": _account_candidates,
     "participant": _participant_candidates,
     "teacher": _teacher_candidates,
@@ -785,6 +930,17 @@ def _ids(queryset: Any) -> list[uuid.UUID]:
 
 def _organization_names(organization_ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, str]:
     return dict(OrganizationModel.objects.filter(id__in=list(organization_ids)).values_list("id", "name"))
+
+
+def _item_counts(program_ids: list[uuid.UUID]) -> dict[uuid.UUID, int]:
+    """How many slots each programme holds — the scale of what a deletion would take."""
+    rows = ProgramItemModel.objects.filter(program_id__in=program_ids).values("program_id").annotate(total=Count("id"))
+    return {row["program_id"]: row["total"] for row in rows}
+
+
+def _document_type_label(value: str) -> str:
+    """The kind of document a template produces, as the operator reads it."""
+    return dict(DocumentTypeChoices.choices).get(value, value)
 
 
 def _sole_owner_of(user_id: uuid.UUID) -> list[str]:

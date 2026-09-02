@@ -128,8 +128,10 @@ export type StartLoadTestInput = {
 /** What the eraser can be pointed at. Mirrors `TARGETS` on the server. */
 export type PurgeKind =
   | "festival"
+  | "program"
   | "application"
   | "organization"
+  | "template"
   | "account"
   | "participant"
   | "teacher";

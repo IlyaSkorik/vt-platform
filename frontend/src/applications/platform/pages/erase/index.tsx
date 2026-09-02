@@ -36,7 +36,10 @@ import {
  *
  * Ordered by how often a support request actually names one, not by how much data
  * each takes with it: a cancelled festival and a "удалите мои данные" letter are
- * the two that arrive, and the rest are the long tail behind them.
+ * the two that arrive, and the rest are the long tail behind them. The two narrow
+ * targets sit under the thing they are part of, a programme under its festival and
+ * a template under its organization, because that is the mistake they exist to
+ * prevent: "программу собрали не так" must not end in the festival being erased.
  */
 const KINDS: { value: PurgeKind; label: string; hint: string; placeholder: string }[] = [
   {
@@ -44,6 +47,12 @@ const KINDS: { value: PurgeKind; label: string; hint: string; placeholder: strin
     label: "Фестиваль",
     hint: "Заявки, выступления, дипломы, программы и протоколы этого фестиваля. Организация, её сотрудники и шаблоны дипломов остаются.",
     placeholder: "Название фестиваля или его id",
+  },
+  {
+    value: "program",
+    label: "Программа фестиваля",
+    hint: "Одна программа фестиваля: её номера, колонки и публичные страницы. Фестиваль, заявки, выступления и протоколы остаются — уходит только сама программа.",
+    placeholder: "Название программы, название фестиваля или id",
   },
   {
     value: "account",
@@ -62,6 +71,12 @@ const KINDS: { value: PurgeKind; label: string; hint: string; placeholder: strin
     label: "Организация",
     hint: "Организация, все её фестивали целиком, роли сотрудников и шаблоны дипломов. Аккаунты сотрудников остаются.",
     placeholder: "Название, адрес или id",
+  },
+  {
+    value: "template",
+    label: "Шаблон диплома",
+    hint: "Один шаблон из библиотеки организации: макет, загруженные бланки и привязки к номинациям. Уже выданные дипломы остаются и продолжают открываться.",
+    placeholder: "Название шаблона, название организации или id",
   },
   {
     value: "participant",

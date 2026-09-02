@@ -12,6 +12,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { PurgePlan, PurgeTarget } from "@/applications/platform/api/platform-api";
 
+// Radix drives the kind picker, and jsdom implements neither of these.
+Element.prototype.hasPointerCapture = () => false;
+Element.prototype.scrollIntoView = () => {};
+
 const erase = vi.fn();
 const searchSpy = vi.fn();
 const planSpy = vi.fn();
@@ -102,6 +106,37 @@ describe("PlatformErasePage", () => {
     await user.type(screen.getByLabelText("Поиск"), "Взлёт");
 
     expect(searchSpy).toHaveBeenLastCalledWith("festival", "Взлёт");
+  });
+
+  it("offers the narrow targets and points the search at the one picked", async () => {
+    // The reason they exist: "программу собрали не так" and "шаблон сверстали
+    // заново" are asks that must not be answered by erasing the whole festival.
+    const user = userEvent.setup();
+    render(<PlatformErasePage />);
+
+    await user.click(screen.getByRole("combobox", { name: "Тип объекта" }));
+    await user.click(await screen.findByRole("option", { name: "Программа фестиваля" }));
+
+    expect(searchSpy).toHaveBeenLastCalledWith("program", "");
+    expect(screen.getByText(/уходит только сама программа/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("combobox", { name: "Тип объекта" }));
+    await user.click(await screen.findByRole("option", { name: "Шаблон диплома" }));
+
+    expect(searchSpy).toHaveBeenLastCalledWith("template", "");
+    expect(screen.getByText(/Уже выданные дипломы остаются/)).toBeInTheDocument();
+  });
+
+  it("clears the query when the kind changes, so old results cannot be clicked", async () => {
+    const user = userEvent.setup();
+    render(<PlatformErasePage />);
+    await user.type(screen.getByLabelText("Поиск"), "Взлёт");
+
+    await user.click(screen.getByRole("combobox", { name: "Тип объекта" }));
+    await user.click(await screen.findByRole("option", { name: "Шаблон диплома" }));
+
+    expect(screen.getByLabelText("Поиск")).toHaveValue("");
+    expect(searchSpy).toHaveBeenLastCalledWith("template", "");
   });
 
   it("lists a candidate with the second line that tells it apart", () => {

@@ -482,7 +482,8 @@ class PlatformPurgeSearchView(_PlatformView):
         summary="Find an object to erase",
         description=(
             "Candidates matching the query, by name, email or id. `target` is one of "
-            "`festival`, `application`, `organization`, `account`, `participant`, `teacher`."
+            "`festival`, `program`, `application`, `organization`, `template`, `account`, "
+            "`participant`, `teacher`."
         ),
         parameters=[
             OpenApiParameter(name="target", type=str, required=True, description="Which kind of object to search."),
