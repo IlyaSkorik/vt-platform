@@ -9045,8 +9045,8 @@
     "semantic_hash": ""
   },
   "backend/apps/platform/presentation/api/v1/views.py": {
-    "mtime": 1788196856.9689596,
-    "ast_hash": "35702ef4f39de6be3193d54e7b8fa663",
+    "mtime": 1788334419.6452684,
+    "ast_hash": "cdcb5af4e303d37a14c5cec317a46fc4",
     "semantic_hash": ""
   },
   "backend/apps/platform/presentation/permissions.py": {
@@ -9085,8 +9085,8 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/api/platform-api.ts": {
-    "mtime": 1788198241.9086754,
-    "ast_hash": "1ba582c86c3fb4069934b42e4bcfce62",
+    "mtime": 1788334434.2123537,
+    "ast_hash": "0b81fdd92e75ae99d3e5a9a24cbede52",
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/layouts/platform-layout.tsx": {
@@ -10185,23 +10185,23 @@
     "semantic_hash": ""
   },
   "backend/apps/platform/presentation/api/v1/purge.py": {
-    "mtime": 1788196939.8274407,
-    "ast_hash": "f541316f8866ccfb3c50bd653fee46d4",
+    "mtime": 1788334548.5582151,
+    "ast_hash": "5b21df0cfc5233874088349b8c16ed8b",
     "semantic_hash": ""
   },
   "backend/tests/presentation/platform/test_purge_api.py": {
-    "mtime": 1788197233.7593966,
-    "ast_hash": "41b0822d6fc4d91fba4e54f7b0e99bfa",
+    "mtime": 1788334505.1524768,
+    "ast_hash": "210ca027f452960b4aa2d373d268a369",
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/pages/erase/index.test.tsx": {
-    "mtime": 1788198319.6366642,
-    "ast_hash": "1da8597a4bc0087ff7d8a8cb19cde10f",
+    "mtime": 1788334689.3168535,
+    "ast_hash": "9e9c8e6451a40915c7e85893cea34a75",
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/pages/erase/index.tsx": {
-    "mtime": 1788198241.8806756,
-    "ast_hash": "f2b5cc196ab49f595f3c4b79132ac7e3",
+    "mtime": 1788334450.3256216,
+    "ast_hash": "11feb954421756ba1edcf0af8faaa391",
     "semantic_hash": ""
   }
 }
