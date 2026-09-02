@@ -6325,8 +6325,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/festival-landing/ui/festival-landing.test.tsx": {
-    "mtime": 1785860601.0878882,
-    "ast_hash": "6adfbe140788456a11722948944ab363",
+    "mtime": 1788340151.7336686,
+    "ast_hash": "668e3dd0c9305f32eb131ea549c1c566",
     "semantic_hash": ""
   },
   "frontend/src/widgets/festival-landing/ui/festival-landing.tsx": {
@@ -6340,13 +6340,13 @@
     "semantic_hash": "483c2b8c80b65c7cbfcc2c4af67df7f5"
   },
   "frontend/src/widgets/festival-landing/ui/landing-footer.tsx": {
-    "mtime": 1787684198.5297925,
-    "ast_hash": "066997afc025d73085ab319520e5b65e",
+    "mtime": 1788339991.0027678,
+    "ast_hash": "c9b2f549342b98bb163be77e4674fd0b",
     "semantic_hash": ""
   },
   "frontend/src/widgets/festival-landing/ui/landing-hero.tsx": {
-    "mtime": 1787310602.5756037,
-    "ast_hash": "46c5561d3e23a6c3c576f0f5437c592d",
+    "mtime": 1788339999.690339,
+    "ast_hash": "67473cd2afbc5cad87cad3e4ba0c886a",
     "semantic_hash": ""
   },
   "frontend/src/widgets/festival-landing/ui/landing-section.tsx": {
@@ -6370,8 +6370,8 @@
     "semantic_hash": "56ca471e3748719e9e57293aa7312b1c"
   },
   "frontend/src/widgets/festival-landing/ui/landing-summary.tsx": {
-    "mtime": 1787311356.2582872,
-    "ast_hash": "12ab47adc83b6c8e5926f52c69a5da58",
+    "mtime": 1788339991.002569,
+    "ast_hash": "b1376d0a81ab433e68cae67dc25b7912",
     "semantic_hash": ""
   },
   "frontend/tsconfig.app.json": {
@@ -9270,8 +9270,8 @@
     "semantic_hash": ""
   },
   "frontend/src/shared/seo/structured-data.ts": {
-    "mtime": 1785860601.0269165,
-    "ast_hash": "19911ae9ea1d78734bedc05eb186b20c",
+    "mtime": 1788340197.0958545,
+    "ast_hash": "3735e64f696820fa7b1dd1e7f4d42420",
     "semantic_hash": ""
   },
   "frontend/src/shared/seo/use-seo.ts": {
@@ -10212,6 +10212,11 @@
   "frontend/src/features/registration-wizard/ui/performance-builder.test.tsx": {
     "mtime": 1788338339.3573456,
     "ast_hash": "2f8ff18434570084ef488623ec60c0d7",
+    "semantic_hash": ""
+  },
+  "frontend/src/shared/seo/structured-data.test.ts": {
+    "mtime": 1788340279.6347783,
+    "ast_hash": "27d0da4aa73f7fa33856840df16357e4",
     "semantic_hash": ""
   }
 }
