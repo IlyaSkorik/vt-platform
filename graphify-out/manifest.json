@@ -6545,8 +6545,8 @@
     "semantic_hash": "d4ecc328966ff21da30ecd22f0b2a981"
   },
   "frontend/openapi/schema-full.yaml": {
-    "mtime": 1788336711.67892,
-    "ast_hash": "5cf7390f9f7df9a52ebd16e5281baa7d",
+    "mtime": 1788379873.3803868,
+    "ast_hash": "f317a0d2e28d2728e29bfae5c0b4e893",
     "semantic_hash": ""
   },
   "frontend/openapi/schema.yaml": {
@@ -9040,13 +9040,13 @@
     "semantic_hash": ""
   },
   "backend/apps/platform/presentation/api/v1/serializers.py": {
-    "mtime": 1788197069.0310597,
-    "ast_hash": "12af922adbf56b7d7d61ab27728e095d",
+    "mtime": 1788379653.3683395,
+    "ast_hash": "ac98075b4e32a4f35dcca186808265da",
     "semantic_hash": ""
   },
   "backend/apps/platform/presentation/api/v1/views.py": {
-    "mtime": 1788334419.6452684,
-    "ast_hash": "cdcb5af4e303d37a14c5cec317a46fc4",
+    "mtime": 1788379598.8780837,
+    "ast_hash": "158195453641b13342aeab577fc4121e",
     "semantic_hash": ""
   },
   "backend/apps/platform/presentation/permissions.py": {
@@ -9055,8 +9055,8 @@
     "semantic_hash": ""
   },
   "backend/apps/platform/presentation/urls.py": {
-    "mtime": 1788196877.819742,
-    "ast_hash": "cdb78ef5f5b7960e66317b2795eb235e",
+    "mtime": 1788379598.8783836,
+    "ast_hash": "ec5d55a0f8c7e4493a08b13289deb990",
     "semantic_hash": ""
   },
   "backend/tests/domain/platform/__init__.py": {
@@ -9080,13 +9080,13 @@
     "semantic_hash": ""
   },
   "backend/tests/presentation/platform/test_platform_console_api.py": {
-    "mtime": 1787341708.0296435,
-    "ast_hash": "cc4e77c3f42b667b820b43b97c0b0345",
+    "mtime": 1788379702.4375637,
+    "ast_hash": "cf931b1087595abd8488ed1850980ab4",
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/api/platform-api.ts": {
-    "mtime": 1788334434.2123537,
-    "ast_hash": "0b81fdd92e75ae99d3e5a9a24cbede52",
+    "mtime": 1788379744.0487378,
+    "ast_hash": "847c9b956e9cad237cda504e96e14c7c",
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/layouts/platform-layout.tsx": {
@@ -9095,8 +9095,8 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/pages/dashboard/index.tsx": {
-    "mtime": 1787341592.0540516,
-    "ast_hash": "db295042c9eef40f5677a379bb301e3a",
+    "mtime": 1788380022.5543807,
+    "ast_hash": "eb6d2227cc2674f4d7e788ec9a933b47",
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/pages/organizations/index.tsx": {
@@ -10242,6 +10242,16 @@
   "frontend/src/shared/ui/poster-image/types.ts": {
     "mtime": 1788377724.7228892,
     "ast_hash": "4b5242b849bbe9d604708f70f60a34c2",
+    "semantic_hash": ""
+  },
+  "backend/apps/platform/presentation/api/v1/audience.py": {
+    "mtime": 1788379570.1013205,
+    "ast_hash": "fb8a1f3c21452e2470692ad21d8b89c8",
+    "semantic_hash": ""
+  },
+  "frontend/src/applications/platform/pages/dashboard/index.test.tsx": {
+    "mtime": 1788379959.3313482,
+    "ast_hash": "8f34e4943811f3a1933ac203d8d44566",
     "semantic_hash": ""
   }
 }
