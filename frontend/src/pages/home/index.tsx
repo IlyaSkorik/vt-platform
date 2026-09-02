@@ -25,6 +25,7 @@ import {
   LoadingState,
   PageContainer,
   PageContent,
+  PosterImage,
 } from "@/shared/ui";
 
 function firstModeLabel(festival: Festival): string {
@@ -202,10 +203,9 @@ export function HomePage(): React.JSX.Element {
                     >
                       <div className="aspect-[16/9] overflow-hidden rounded-t-xl bg-muted">
                         {resolveMediaUrl(festival.coverImage) ? (
-                          <img
+                          <PosterImage
                             src={resolveMediaUrl(festival.coverImage) ?? ""}
                             alt={`Афиша мероприятия ${festival.title}`}
-                            className="size-full object-cover"
                             loading="lazy"
                           />
                         ) : (

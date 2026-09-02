@@ -1,6 +1,7 @@
 import { CalendarDays, Sparkles } from "lucide-react";
 import { formatPeriod, resolveMediaUrl } from "@/features/festival-catalog";
 import { type FestivalDetail, heroBlock, landingCta } from "@/features/festival-landing";
+import { cn } from "@/shared/lib";
 import { Badge } from "@/shared/ui";
 import { LandingCtaButton } from "./landing-cta";
 
@@ -25,10 +26,20 @@ interface LandingHeroProps {
  * readers and search engines, because a page with no ``h1`` is a different kind of
  * broken, but the visitor sees only what the organizer actually wrote.
  *
- * Status and season are pinned to the top-right corner instead of stacked above the
- * title: they are the two facts a returning visitor scans for, and in the flow they
- * pushed the authored content down the block. Every badge variant is opaque, so they
- * stay legible over a photograph where the scrim has cleared entirely.
+ * **Two layouts, because one frame cannot hold both.** Text over a photograph needs
+ * the photograph cropped to the text's frame, and on a phone that frame is nearly
+ * square — so a 1920×600 banner lost everything but a middle strip, which is where a
+ * banner keeps the least. From ``sm`` up the block still overlays: the frame is wide,
+ * the crop costs the cover little, and the layered hero is the design. Below ``sm``
+ * it stacks instead — the banner runs full width at its own proportions, whole, and
+ * the badges, title, dates and CTA follow underneath on the page's own background.
+ * Same markup, same DOM order, switched by breakpoint rather than by measuring.
+ *
+ * Status and season are pinned to the top-right corner on the wide layout instead of
+ * stacked above the title: they are the two facts a returning visitor scans for, and
+ * in the flow they pushed the authored content down the block. Every badge variant is
+ * opaque, so they stay legible over a photograph where the scrim has cleared
+ * entirely.
  */
 export function LandingHero({ festival, applyPath }: LandingHeroProps): React.JSX.Element {
   const hero = heroBlock(festival.landing.blocks);
@@ -41,7 +52,12 @@ export function LandingHero({ festival, applyPath }: LandingHeroProps): React.JS
   return (
     <section className="relative isolate overflow-hidden rounded-2xl border">
       {cover ? (
-        <img src={cover} alt="" className="absolute inset-0 -z-10 size-full object-cover" />
+        /* In the flow on a phone, in the backdrop from `sm` up — see the note above. */
+        <img
+          src={cover}
+          alt=""
+          className="block w-full sm:absolute sm:inset-0 sm:-z-10 sm:size-full sm:object-cover"
+        />
       ) : (
         <div
           aria-hidden="true"
@@ -53,24 +69,35 @@ export function LandingHero({ festival, applyPath }: LandingHeroProps): React.JS
           that a photograph was barely worth uploading. Now it is opaque only along
           the bottom edge, where the title and the CTA actually sit, and clears
           completely above them — enough contrast for the text, and the picture stays
-          a picture. */}
+          a picture.
+
+          Only on the overlaying layout: stacked, the text sits on the page's own
+          background and there is nothing to darken for it, so the scrim would be a
+          grey film over the bottom of the banner and nothing else. */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 -z-10 bg-gradient-to-t from-background/90 via-background/45 to-transparent"
+        className="absolute inset-0 -z-10 hidden bg-gradient-to-t from-background/90 via-background/45 to-transparent sm:block"
       />
 
-      <div className="absolute top-4 right-4 z-10 flex max-w-[calc(100%-2rem)] flex-wrap justify-end gap-2 sm:top-6 sm:right-6">
-        <Badge variant={cta.badgeVariant} size="md" dot>
-          {cta.statusLabel}
-        </Badge>
-        <Badge variant="outline" size="md" icon={<Sparkles className="size-3.5" />}>
-          Сезон {festival.season}
-        </Badge>
-      </div>
+      {/* `min-h` only without a cover: with one, the picture gives the block its
+          height, and a floor on top of that would open a gap under short copy. */}
+      <div
+        className={cn(
+          "flex flex-col gap-5 p-6 sm:min-h-[28rem] sm:justify-end sm:p-10 sm:pt-20",
+          !cover && "min-h-[18rem] justify-end",
+        )}
+      >
+        {/* One node, two placements: pinned out of flow over the cover from `sm` up,
+            a plain row above the title when the block is stacked. */}
+        <div className="flex flex-wrap gap-2 sm:absolute sm:top-6 sm:right-6 sm:z-10 sm:max-w-[calc(100%-3rem)] sm:justify-end">
+          <Badge variant={cta.badgeVariant} size="md" dot>
+            {cta.statusLabel}
+          </Badge>
+          <Badge variant="outline" size="md" icon={<Sparkles className="size-3.5" />}>
+            Сезон {festival.season}
+          </Badge>
+        </div>
 
-      {/* `pt-16`: the pinned badges are out of flow, so the content column reserves
-          their strip — otherwise a long title on a 320px screen grows up into them. */}
-      <div className="flex min-h-[22rem] flex-col justify-end gap-5 p-6 pt-16 sm:min-h-[28rem] sm:p-10 sm:pt-20">
         <div className="space-y-3">
           {title ? (
             /* `break-words`: a single long word ("фестиваль-конкурс" at 30px) is

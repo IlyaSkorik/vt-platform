@@ -117,6 +117,8 @@ export {
   PopoverContent,
   PopoverTrigger,
 } from "./popover";
+export type { PosterImageProps } from "./poster-image";
+export { PosterImage } from "./poster-image";
 export type { RadioGroupProps, RadioProps, RadioSize } from "./radio";
 export { Radio, RadioGroup } from "./radio";
 export type {

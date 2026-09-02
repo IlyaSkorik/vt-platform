@@ -10,7 +10,7 @@ import {
 } from "@/features/festival-catalog";
 import { ROUTES } from "@/shared/config";
 import { festivalPath } from "@/shared/lib";
-import { Badge, Card, CardContent } from "@/shared/ui";
+import { Badge, Card, CardContent, PosterImage } from "@/shared/ui";
 
 function cabinetPath(festival: Festival): string {
   return festivalPath(festival, ROUTES.cabinetCompetitions);
@@ -28,7 +28,7 @@ function FeaturedFestival({ festival }: { festival: Festival }): React.JSX.Eleme
       >
         <div className="relative aspect-[16/10] bg-muted">
           {cover ? (
-            <img src={cover} alt="" loading="lazy" className="size-full object-cover" />
+            <PosterImage src={cover} loading="lazy" />
           ) : (
             <div
               aria-hidden="true"

@@ -13,7 +13,7 @@ import {
 } from "@/features/festival-catalog";
 import { ROUTES } from "@/shared/config";
 import { festivalPath } from "@/shared/lib";
-import { Avatar, Badge, Button, Card, CardContent, CardFooter } from "@/shared/ui";
+import { Avatar, Badge, Button, Card, CardContent, CardFooter, PosterImage } from "@/shared/ui";
 
 interface FestivalCardProps {
   festival: Festival;
@@ -61,11 +61,12 @@ export function FestivalCard({
         className="relative block aspect-[16/10] overflow-hidden bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {cover ? (
-          <img
+          /* The card image is the festival's **poster** — a portrait sheet in a
+             landscape frame, so it is fitted rather than cropped. See PosterImage. */
+          <PosterImage
             src={cover}
-            alt=""
             loading="lazy"
-            className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+            imageClassName="transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
           <div
