@@ -20,18 +20,22 @@ from apps.applications.domain.value_objects import Currency, Money, TotalPriceSn
 from apps.applications.infrastructure.mappers.application_mapper import ApplicationMapper
 from apps.applications.infrastructure.models import ApplicationModel, SubmissionModel
 from apps.competitions.infrastructure.models import CompetitionModel
+from apps.identity.infrastructure.models import UserModel
 from apps.identity.presentation.api.v1.auth import composition as identity_composition
 from apps.organization.application.dto.commands import ProvisionOwnerCommand
 from apps.organization.composition import build_provision_owner_handler
 from apps.organization.infrastructure.models import OrganizationModel
+from apps.participants.infrastructure.models import ParticipantRegistryModel
 from apps.platform.application.dto import GrantPlatformAdministratorCommand
 from apps.platform.composition import build_grant_platform_administrator_handler
+from apps.teachers.infrastructure.models import TeacherModel
 
 pytestmark = pytest.mark.django_db
 
 _PASSWORD = "V3ry$ecurePass!"
 _ORGANIZATIONS = "/api/v1/platform/organizations"
 _DASHBOARD = "/api/v1/platform/dashboard"
+_AUDIENCE = "/api/v1/platform/audience"
 
 
 def _register(client: APIClient, email: str) -> str:
@@ -136,6 +140,7 @@ class TestAccess:
         # inside it, and the console that governs organizations is not theirs.
         assert organization_owner.get(_ORGANIZATIONS).status_code == 403
         assert organization_owner.get(_DASHBOARD).status_code == 403
+        assert organization_owner.get(_AUDIENCE).status_code == 403
 
     def test_the_operator_is_admitted(self, operator: APIClient) -> None:
         assert operator.get(_ORGANIZATIONS).status_code == 200
@@ -441,3 +446,79 @@ class TestDashboard:
 
         assert data["applications"] == 1
         assert Decimal(data["expectedFees"]) == Decimal("0")
+
+
+class TestAudience:
+    """The head counts: cabinets, registry participants, teachers.
+
+    Rows are created straight on the models the console counts, because that is what
+    a projection is being tested against — the registries themselves are covered by
+    their own contexts' suites.
+    """
+
+    def _participant(self, *, owner_id: uuid.UUID, archived: bool = False, deleted: bool = False) -> ParticipantRegistryModel:
+        return ParticipantRegistryModel.objects.create(
+            owner_id=owner_id,
+            first_name="Мария",
+            last_name="Ковалёва",
+            birth_date="2015-04-01",
+            gender="female",
+            archived=archived,
+            deleted_at=datetime(2026, 1, 1, tzinfo=UTC) if deleted else None,
+        )
+
+    def _teacher(self, *, owner_id: uuid.UUID, status: str = "ACTIVE", deleted: bool = False) -> TeacherModel:
+        return TeacherModel.objects.create(
+            owner_id=owner_id,
+            first_name="Ольга",
+            last_name="Петрова",
+            role="Педагог по вокалу",
+            status=status,
+            deleted_at=datetime(2026, 1, 1, tzinfo=UTC) if deleted else None,
+        )
+
+    def test_counts_cabinets_participants_and_teachers(self, operator: APIClient) -> None:
+        owner = uuid.UUID(_register(APIClient(), "parent@example.com"))
+        self._participant(owner_id=owner)
+        self._participant(owner_id=owner, archived=True)
+        self._teacher(owner_id=owner)
+        self._teacher(owner_id=owner, status="ARCHIVED")
+
+        data = operator.get(_AUDIENCE).data["data"]
+
+        # The operator's own account is a cabinet too — this is every registered one.
+        assert data["cabinets"]["total"] == 2
+        assert data["participants"] == {"total": 2, "archived": 1}
+        assert data["teachers"] == {"total": 2, "archived": 1}
+
+    def test_counts_a_confirmed_e_mail_separately(self, operator: APIClient) -> None:
+        confirmed = uuid.UUID(_register(APIClient(), "confirmed@example.com"))
+        UserModel.objects.filter(id=confirmed).update(email_verified_at=datetime(2026, 1, 1, tzinfo=UTC))
+
+        data = operator.get(_AUDIENCE).data["data"]
+
+        assert data["cabinets"]["total"] == 2
+        assert data["cabinets"]["emailVerified"] == 1
+
+    def test_an_erased_row_is_not_counted(self, operator: APIClient) -> None:
+        # Soft-deleted means gone as far as the platform's own figures go: counting
+        # erased accounts and participants would report an audience that left.
+        owner = uuid.UUID(_register(APIClient(), "erased@example.com"))
+        UserModel.objects.filter(id=owner).update(deleted_at=datetime(2026, 1, 1, tzinfo=UTC))
+        self._participant(owner_id=owner, deleted=True)
+        self._teacher(owner_id=owner, deleted=True)
+
+        data = operator.get(_AUDIENCE).data["data"]
+
+        assert data["cabinets"]["total"] == 1
+        assert data["participants"]["total"] == 0
+        assert data["teachers"]["total"] == 0
+
+    def test_ignores_the_dashboard_filters(self, operator: APIClient) -> None:
+        # A query string the endpoint does not take must not quietly narrow anything:
+        # these counts are platform-wide by definition.
+        self._participant(owner_id=uuid.uuid4())
+
+        filtered = operator.get(f"{_AUDIENCE}?organizationId={uuid.uuid4()}").data["data"]
+
+        assert filtered["participants"]["total"] == 1

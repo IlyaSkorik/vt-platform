@@ -5393,6 +5393,29 @@ paths:
           description: Stored; `data.url` is the reference to save.
         '400':
           description: Not an image, the wrong format, or too large.
+  /api/v1/platform/audience:
+    get:
+      operationId: platform_audience
+      description: 'Platform-wide head counts: registered personal cabinets (and how
+        many confirmed their e-mail), participants in the cabinets'' registries (and
+        how many are archived) and teachers. Deliberately unfiltered — a cabinet belongs
+        to a person, not to a festival.'
+      summary: Platform audience
+      tags:
+      - Platform
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformAudienceResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Not a platform administrator.
   /api/v1/platform/dashboard:
     get:
       operationId: platform_dashboard
@@ -13149,6 +13172,59 @@ components:
         * `BEFORE_REVIEW` - BEFORE_REVIEW
         * `BEFORE_APPROVAL` - BEFORE_APPROVAL
         * `BEFORE_COMPETITION` - BEFORE_COMPETITION
+    PlatformAudience:
+      type: object
+      properties:
+        cabinets:
+          $ref: '#/components/schemas/PlatformAudienceCabinets'
+        participants:
+          $ref: '#/components/schemas/PlatformAudienceParticipants'
+        teachers:
+          $ref: '#/components/schemas/PlatformAudienceTeachers'
+      required:
+      - cabinets
+      - participants
+      - teachers
+    PlatformAudienceCabinets:
+      type: object
+      properties:
+        total:
+          type: integer
+        emailVerified:
+          type: integer
+      required:
+      - emailVerified
+      - total
+    PlatformAudienceParticipants:
+      type: object
+      properties:
+        total:
+          type: integer
+        archived:
+          type: integer
+      required:
+      - archived
+      - total
+    PlatformAudienceResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/PlatformMeta'
+        data:
+          $ref: '#/components/schemas/PlatformAudience'
+      required:
+      - data
+      - meta
+    PlatformAudienceTeachers:
+      type: object
+      properties:
+        total:
+          type: integer
+        archived:
+          type: integer
+      required:
+      - archived
+      - total
     PlatformDashboard:
       type: object
       properties:

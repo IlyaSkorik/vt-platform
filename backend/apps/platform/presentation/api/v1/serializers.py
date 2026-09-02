@@ -188,6 +188,32 @@ DashboardResponseSerializer = inline_serializer(
 )
 
 
+def _head_count(name: str, subset: str) -> serializers.Serializer[dict[str, object]]:
+    """One audience figure: the total, plus the subset named beside it.
+
+    Built by a helper because the three groups differ only in what their subset is
+    called, and three near-identical inline serializers would drift the first time
+    one of them gained a field.
+    """
+    return inline_serializer(name=name, fields={"total": serializers.IntegerField(), subset: serializers.IntegerField()})
+
+
+AudienceResponseSerializer = inline_serializer(
+    name="PlatformAudienceResponse",
+    fields={
+        "data": inline_serializer(
+            name="PlatformAudience",
+            fields={
+                "cabinets": _head_count("PlatformAudienceCabinets", "emailVerified"),
+                "participants": _head_count("PlatformAudienceParticipants", "archived"),
+                "teachers": _head_count("PlatformAudienceTeachers", "archived"),
+            },
+        ),
+        "meta": _meta,
+    },
+)
+
+
 class StartLoadTestRequestSerializer(serializers.Serializer[dict[str, object]]):
     """Parameters of one diploma-generation load test.
 

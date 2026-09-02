@@ -76,6 +76,23 @@ export type PlatformDashboard = {
   competitions: CompetitionOption[];
 };
 
+/**
+ * The platform's head counts: cabinets, registry participants, teachers.
+ *
+ * Each figure carries the subset worth naming beside it rather than netted out —
+ * archived participants are still in the registry, and a cabinet with an
+ * unconfirmed address is still registered.
+ *
+ * Platform-wide, and not affected by the dashboard's organization/competition
+ * filters: a cabinet belongs to a person, not to a festival. That is why it is a
+ * separate read.
+ */
+export type PlatformAudience = {
+  cabinets: { total: number; emailVerified: number };
+  participants: { total: number; archived: number };
+  teachers: { total: number; archived: number };
+};
+
 export type ConnectOrganizationInput = {
   name: string;
   slug?: string;
@@ -170,6 +187,7 @@ export type PurgePlan = {
 export const platformKeys = {
   dashboard: (organizationId: string, competitionId: string) =>
     ["platform", "dashboard", organizationId, competitionId] as const,
+  audience: ["platform", "audience"] as const,
   organizations: ["platform", "organizations"] as const,
   loadTest: ["platform", "loadtest", "diplomas"] as const,
   purgeSearch: (kind: PurgeKind, query: string) =>
@@ -247,6 +265,15 @@ export function usePlatformDashboard(organizationId: string, competitionId: stri
         await apiClient.get(`platform/dashboard${query ? `?${query}` : ""}`),
       );
     },
+  });
+}
+
+/** How many cabinets, registry participants and teachers the platform holds. */
+export function usePlatformAudience() {
+  return useQuery({
+    queryKey: platformKeys.audience,
+    queryFn: async (): Promise<PlatformAudience> =>
+      unwrap<PlatformAudience>(await apiClient.get("platform/audience")),
   });
 }
 

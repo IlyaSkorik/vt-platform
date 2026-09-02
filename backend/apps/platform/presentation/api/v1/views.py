@@ -44,8 +44,10 @@ from apps.organization.composition import (
 from apps.organization.presentation.api.v1.staff.serializers import ProblemDetailSerializer
 from apps.organization.presentation.api.v1.staff.views import application_problem
 from apps.platform.presentation.api.v1 import loadtest, purge
+from apps.platform.presentation.api.v1.audience import build_audience
 from apps.platform.presentation.api.v1.read_models import build_dashboard
 from apps.platform.presentation.api.v1.serializers import (
+    AudienceResponseSerializer,
     ConnectOrganizationRequestSerializer,
     DashboardResponseSerializer,
     LoadTestCleanupResponseSerializer,
@@ -283,6 +285,34 @@ class PlatformOrganizationDetailView(_PlatformView):
         except ApplicationError as exc:
             return application_problem(exc, instance=request.path, request=request)
         return _envelope(_organization_data(view), request)
+
+
+class PlatformAudienceView(_PlatformView):
+    """GET /api/v1/platform/audience — how many cabinets, participants and teachers exist."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="platform_audience",
+        summary="Platform audience",
+        description=(
+            "Platform-wide head counts: registered personal cabinets (and how many confirmed their "
+            "e-mail), participants in the cabinets' registries (and how many are archived) and "
+            "teachers. Deliberately unfiltered — a cabinet belongs to a person, not to a festival."
+        ),
+        request=None,
+        responses={
+            200: AudienceResponseSerializer,
+            403: OpenApiResponse(ProblemDetailSerializer, description="Not a platform administrator."),
+        },
+    )
+    def get(self, request: Request) -> Response:
+        audience = build_audience()
+        data = {
+            "cabinets": {"total": audience.cabinets, "emailVerified": audience.verified_cabinets},
+            "participants": {"total": audience.participants, "archived": audience.archived_participants},
+            "teachers": {"total": audience.teachers, "archived": audience.archived_teachers},
+        }
+        return _envelope(data, request)
 
 
 class PlatformDashboardView(_PlatformView):

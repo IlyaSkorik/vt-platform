@@ -5,6 +5,7 @@ from __future__ import annotations
 from django.urls import path
 
 from apps.platform.presentation.api.v1.views import (
+    PlatformAudienceView,
     PlatformDashboardView,
     PlatformLoadTestView,
     PlatformOrganizationDetailView,
@@ -17,6 +18,9 @@ app_name = "platform"
 
 urlpatterns = [
     path("platform/dashboard", PlatformDashboardView.as_view(), name="dashboard"),
+    # Head counts of people rather than of work: read outside the dashboard so the
+    # filters on that screen visibly do not apply to them.
+    path("platform/audience", PlatformAudienceView.as_view(), name="audience"),
     path("platform/organizations", PlatformOrganizationsView.as_view(), name="organizations"),
     path("platform/organizations/<str:organization_id>", PlatformOrganizationDetailView.as_view(), name="organization-detail"),
     # The operator's own test bench: seed a synthetic festival, run generation on it

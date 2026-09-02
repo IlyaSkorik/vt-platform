@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 
 import {
   type OrganizationBreakdown,
+  type PlatformAudience,
+  usePlatformAudience,
   usePlatformDashboard,
 } from "@/applications/platform/api/platform-api";
 import { formatFeeTier } from "@/applications/platform/lib/billing";
@@ -36,6 +38,11 @@ function money(amount: string): string {
   return `${value.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} BYN`;
 }
 
+/** A head count as a person reads it: grouped thousands, no decimals. */
+function count(value: number): string {
+  return value.toLocaleString("ru-RU");
+}
+
 function StatTile({
   label,
   value,
@@ -53,6 +60,59 @@ function StatTile({
         {hint ? <span className="text-muted-foreground text-xs">{hint}</span> : null}
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * Who is on the platform, as opposed to how much work is on it.
+ *
+ * Sits above the filters because nothing below them applies to it: these are counts
+ * of people, and a person does not belong to one festival. Kept on its own query so
+ * a failure here leaves the funnel and the money on screen — an em dash says "not
+ * loaded" without pretending the platform has nobody.
+ */
+function AudienceSection({
+  audience,
+}: {
+  audience: PlatformAudience | undefined;
+}): React.JSX.Element {
+  const tiles: Array<{
+    label: string;
+    total: number | undefined;
+    subset: string;
+    of: number | undefined;
+  }> = [
+    {
+      label: "Личные кабинеты",
+      total: audience?.cabinets.total,
+      subset: "с подтверждённой почтой",
+      of: audience?.cabinets.emailVerified,
+    },
+    {
+      label: "Участники в реестре",
+      total: audience?.participants.total,
+      subset: "в архиве",
+      of: audience?.participants.archived,
+    },
+    {
+      label: "Педагоги",
+      total: audience?.teachers.total,
+      subset: "в архиве",
+      of: audience?.teachers.archived,
+    },
+  ];
+
+  return (
+    <section aria-label="Кто на платформе" className="grid gap-3 sm:grid-cols-3">
+      {tiles.map((tile) => (
+        <StatTile
+          key={tile.label}
+          label={tile.label}
+          value={tile.total == null ? "—" : count(tile.total)}
+          {...(tile.of == null ? {} : { hint: `${count(tile.of)} ${tile.subset}` })}
+        />
+      ))}
+    </section>
   );
 }
 
@@ -93,9 +153,9 @@ function OrganizationRow({ row }: { row: OrganizationBreakdown }): React.JSX.Ele
 }
 
 /**
- * The platform operator's summary: how much work sits in each state across every
- * connected organization, the participation fees behind it, and the platform's
- * share of those fees.
+ * The platform operator's summary: who is registered on the platform, how much work
+ * sits in each state across every connected organization, the participation fees
+ * behind it, and the platform's share of those fees.
  *
  * Two figures per money column on purpose. "Ожидается" is every order that is
  * not a draft or a cancellation — what the festival should collect; "получено"
@@ -106,6 +166,7 @@ export function PlatformDashboardPage(): React.JSX.Element {
   const [organizationId, setOrganizationId] = useState("");
   const [competitionId, setCompetitionId] = useState("");
   const dashboard = usePlatformDashboard(organizationId, competitionId);
+  const audience = usePlatformAudience();
 
   const organizationOptions = useMemo(
     () => [
@@ -148,9 +209,12 @@ export function PlatformDashboardPage(): React.JSX.Element {
       <header className="flex flex-col gap-1">
         <h1 className="font-semibold text-2xl">Сводка платформы</h1>
         <p className="text-muted-foreground text-sm">
-          Заявки по статусам во всех подключённых организациях, взносы за ними и доля платформы.
+          Кто зарегистрирован на платформе, заявки по статусам во всех подключённых организациях,
+          взносы за ними и доля платформы.
         </p>
       </header>
+
+      <AudienceSection audience={audience.data} />
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Select
