@@ -44,6 +44,7 @@ from apps.applications.application.exceptions import (
     DeadlinePassedError,
     EducationalOrganizationNotFoundError,
     FileTooLargeError,
+    MultiplePerformancesNotAllowedError,
     PaymentReceiptRequiredError,
     PermissionDeniedError,
     UnsupportedFileTypeError,
@@ -282,6 +283,47 @@ class TestComposition:
         result = env.add_submission().handle(AddSubmissionToApplicationCommand(requested_by=applicant, application_id=app_id))
         assert len(result.application.submissions) == 1
         assert len(env.submissions.saved) == 1
+
+    def test_a_festival_that_takes_one_performance_refuses_a_second(self) -> None:
+        """The rule belongs to the festival, so the order cannot enforce it itself."""
+        env = Env(catalog=FakeCompetitionCatalog(allows_multiple_performances=False))
+        app_id, applicant = _create_app(env)
+
+        _add_submission(env, app_id, applicant)
+
+        with pytest.raises(MultiplePerformancesNotAllowedError):
+            env.add_submission().handle(AddSubmissionToApplicationCommand(requested_by=applicant, application_id=app_id))
+
+    def test_the_first_performance_is_always_allowed(self) -> None:
+        """Refusing it would leave the applicant unable to enter anything at all."""
+        env = Env(catalog=FakeCompetitionCatalog(allows_multiple_performances=False))
+        app_id, applicant = _create_app(env)
+
+        result = env.add_submission().handle(AddSubmissionToApplicationCommand(requested_by=applicant, application_id=app_id))
+
+        assert len(result.application.submissions) == 1
+
+    def test_removing_the_one_performance_frees_the_slot_again(self) -> None:
+        """The wizard's own back-out has to keep working: remove, then enter another."""
+        env = Env(catalog=FakeCompetitionCatalog(allows_multiple_performances=False))
+        app_id, applicant = _create_app(env)
+        submission_id = _add_submission(env, app_id, applicant)
+        env.remove_submission().handle(
+            RemoveSubmissionFromApplicationCommand(requested_by=applicant, application_id=app_id, submission_id=submission_id)
+        )
+
+        result = env.add_submission().handle(AddSubmissionToApplicationCommand(requested_by=applicant, application_id=app_id))
+
+        assert len(result.application.submissions) == 1
+
+    def test_several_performances_are_the_default(self) -> None:
+        env = Env()
+        app_id, applicant = _create_app(env)
+        _add_submission(env, app_id, applicant)
+
+        result = env.add_submission().handle(AddSubmissionToApplicationCommand(requested_by=applicant, application_id=app_id))
+
+        assert len(result.application.submissions) == 2
 
     def test_non_owner_cannot_add(self) -> None:
         env = Env()

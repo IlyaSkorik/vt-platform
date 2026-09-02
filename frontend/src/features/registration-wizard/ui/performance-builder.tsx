@@ -13,6 +13,12 @@ import { PerformanceCard } from "./performance-card";
  * add / remove / duplicate. Each card's form is driven entirely by the Registration
  * projection; a performance the festival priced carries that price as a badge in its
  * header, and one it did not carries nothing.
+ *
+ * A festival that judges one act per entrant turns ``allowMultiplePerformances`` off,
+ * and then add and duplicate are *absent* rather than disabled — the same rule the
+ * Applications context enforces on the endpoint, so the button that is gone is
+ * exactly the request that would have been refused. It comes back when the order is
+ * empty: removing the one performance has to leave a way to enter another.
  */
 export function PerformanceBuilder({
   applicationId,
@@ -26,6 +32,7 @@ export function PerformanceBuilder({
   const addSubmission = useAddSubmission(applicationId);
   const removeSubmission = useRemoveSubmission(applicationId);
   const duplicate = useDuplicatePerformance(applicationId);
+  const canAdd = registration.allowMultiplePerformances || application.submissions.length === 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -41,21 +48,31 @@ export function PerformanceBuilder({
             removing={removeSubmission.isPending}
             duplicating={duplicate.isPending}
             onRemove={() => removeSubmission.mutate(ref.submissionId)}
-            onDuplicate={() => duplicate.mutate(ref.submissionId)}
+            onDuplicate={
+              registration.allowMultiplePerformances
+                ? () => duplicate.mutate(ref.submissionId)
+                : null
+            }
           />
         ))
       )}
-      <div className="flex justify-end">
-        <Button
-          variant="outline"
-          size="sm"
-          loading={addSubmission.isPending}
-          onClick={() => addSubmission.mutate()}
-        >
-          <Plus className="size-4" />
-          Добавить выступление
-        </Button>
-      </div>
+      {canAdd ? (
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            loading={addSubmission.isPending}
+            onClick={() => addSubmission.mutate()}
+          >
+            <Plus className="size-4" />
+            Добавить выступление
+          </Button>
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Фестиваль принимает одно выступление в заявке.
+        </p>
+      )}
     </div>
   );
 }

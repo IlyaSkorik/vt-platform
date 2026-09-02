@@ -123,6 +123,10 @@ class _FormatRequirementsInputSerializer(serializers.Serializer[dict[str, object
 
 class UpdateCompetitionSettingsSerializer(serializers.Serializer[dict[str, object]]):
     allowMultipleApplications = serializers.BooleanField(source="allow_multiple_applications")
+    # Defaulted rather than required: the field arrived after clients were already
+    # sending this payload, and a settings screen that has not been rebuilt yet must
+    # not silently narrow the festival by omitting it.
+    allowMultiplePerformances = serializers.BooleanField(source="allow_multiple_performances", required=False, default=True)
     allowApplicationEditing = serializers.BooleanField(source="allow_application_editing")
     allowWithdrawingApplications = serializers.BooleanField(source="allow_withdrawing_applications")
     requireTeacher = serializers.BooleanField(source="require_teacher")
@@ -624,6 +628,7 @@ class _FormatRequirementsSerializer(serializers.Serializer[dict[str, object]]):
 
 class _SettingsSerializer(serializers.Serializer[dict[str, object]]):
     allowMultipleApplications = serializers.BooleanField(source="allow_multiple_applications")
+    allowMultiplePerformances = serializers.BooleanField(source="allow_multiple_performances")
     allowApplicationEditing = serializers.BooleanField(source="allow_application_editing")
     allowWithdrawingApplications = serializers.BooleanField(source="allow_withdrawing_applications")
     requireTeacher = serializers.BooleanField(source="require_teacher")

@@ -570,6 +570,13 @@ export function SettingsSection({
 
         <SectionCard title="Подача заявки" description="Как участник создаёт и меняет заявку.">
           <SwitchRow
+            label="Несколько выступлений в одной заявке"
+            description="Выключите, если фестиваль принимает по одному выступлению: у участника пропадёт кнопка «Добавить выступление»."
+            checked={settings.allowMultiplePerformances}
+            disabled={isReadOnly}
+            onChange={(v) => update({ allowMultiplePerformances: v })}
+          />
+          <SwitchRow
             label="Педагог обязателен"
             description="Заявку нельзя подать, не указав педагога."
             checked={settings.requireTeacher}

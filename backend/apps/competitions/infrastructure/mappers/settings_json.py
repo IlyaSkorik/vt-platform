@@ -29,8 +29,9 @@ __all__ = ["settings_from_json", "settings_to_json"]
 def settings_to_json(settings: CompetitionSettings) -> dict[str, object]:
     """Serialize settings for the competitions.settings JSON column."""
     return {
-        "schema_version": 3,
+        "schema_version": 4,
         "allow_multiple_applications": settings.allow_multiple_applications,
+        "allow_multiple_performances": settings.allow_multiple_performances,
         "allow_application_editing": settings.allow_application_editing,
         "allow_withdrawing_applications": settings.allow_withdrawing_applications,
         "require_teacher": settings.require_teacher,
@@ -56,15 +57,16 @@ def settings_to_json(settings: CompetitionSettings) -> dict[str, object]:
 def settings_from_json(data: object) -> CompetitionSettings:
     """Rebuild settings from JSON, migrating legacy flat boolean bags.
 
-    Schemas 2 and 3 share a shape — 3 only *drops* keys (notification channels and
-    previous-application copying), and unknown keys are ignored — so one reader
-    serves both. Rows still holding schema-2 keys are read fine and rewritten as 3
-    on the next save.
+    Schemas 2, 3 and 4 share a shape and one reader serves all three: 3 only *drops*
+    keys (notification channels and previous-application copying), 4 only *adds* one
+    (``allow_multiple_performances``), and every key is read through a default, so a
+    row written under an older version loads without a migration. Rows still holding
+    an older shape are rewritten as 4 on the next save.
     """
     default = CompetitionSettings.default()
     if not isinstance(data, dict):
         return default
-    if data.get("schema_version") in {2, 3} or "payment_timing" in data or "format_requirements" in data:
+    if data.get("schema_version") in {2, 3, 4} or "payment_timing" in data or "format_requirements" in data:
         return _from_modern(data, default)
     return _from_legacy(data, default)
 
@@ -73,6 +75,10 @@ def _from_legacy(data: dict[str, object], default: CompetitionSettings) -> Compe
     """Map the pre-settings-module flat boolean bag onto the new shape."""
     return CompetitionSettings(
         allow_multiple_applications=bool(data.get("allow_multiple_applications", default.allow_multiple_applications)),
+        # No legacy bag has an opinion here, and every application entered under one
+        # was free to carry several performances. Keeping that is the only reading
+        # that does not retroactively narrow a festival nobody reconfigured.
+        allow_multiple_performances=True,
         allow_application_editing=bool(data.get("allow_application_editing", default.allow_application_editing)),
         allow_withdrawing_applications=bool(data.get("allow_participant_changes", default.allow_withdrawing_applications)),
         require_teacher=bool(data.get("require_teacher", default.require_teacher)),
@@ -126,6 +132,7 @@ def _from_modern(data: dict[str, object], default: CompetitionSettings) -> Compe
 
     return CompetitionSettings(
         allow_multiple_applications=bool(data.get("allow_multiple_applications", default.allow_multiple_applications)),
+        allow_multiple_performances=bool(data.get("allow_multiple_performances", default.allow_multiple_performances)),
         allow_application_editing=bool(data.get("allow_application_editing", default.allow_application_editing)),
         allow_withdrawing_applications=bool(data.get("allow_withdrawing_applications", default.allow_withdrawing_applications)),
         require_teacher=bool(data.get("require_teacher", default.require_teacher)),

@@ -107,6 +107,7 @@ def _extensions(raw: object) -> tuple[str, ...]:
 def _settings_from_command(command: UpdateSettingsCommand) -> CompetitionSettings:
     return CompetitionSettings(
         allow_multiple_applications=command.allow_multiple_applications,
+        allow_multiple_performances=command.allow_multiple_performances,
         allow_application_editing=command.allow_application_editing,
         allow_withdrawing_applications=command.allow_withdrawing_applications,
         require_teacher=command.require_teacher,

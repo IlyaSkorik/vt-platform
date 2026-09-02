@@ -47,7 +47,9 @@ export function PerformanceCard({
   index: number;
   registration: Registration;
   onRemove: () => void;
-  onDuplicate: () => void;
+  /** ``null`` when the festival takes one performance per application: duplicating
+   * would add a second, so the control is absent rather than present and refused. */
+  onDuplicate: (() => void) | null;
   removing: boolean;
   duplicating: boolean;
 }): React.JSX.Element {
@@ -113,16 +115,18 @@ export function PerformanceCard({
           <Badge variant={complete ? "success" : "neutral"}>
             {complete ? "Заполнено" : "Черновик"}
           </Badge>
-          <Button
-            variant="ghost"
-            size="xs"
-            iconOnly
-            aria-label="Дублировать"
-            loading={duplicating}
-            onClick={onDuplicate}
-          >
-            <Copy className="size-4" />
-          </Button>
+          {onDuplicate ? (
+            <Button
+              variant="ghost"
+              size="xs"
+              iconOnly
+              aria-label="Дублировать"
+              loading={duplicating}
+              onClick={onDuplicate}
+            >
+              <Copy className="size-4" />
+            </Button>
+          ) : null}
           <Button
             variant="ghost"
             size="xs"

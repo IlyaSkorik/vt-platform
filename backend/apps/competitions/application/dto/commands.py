@@ -123,6 +123,7 @@ class UpdateSettingsCommand:
 
     competition_id: str
     allow_multiple_applications: bool
+    allow_multiple_performances: bool
     allow_application_editing: bool
     allow_withdrawing_applications: bool
     require_teacher: bool

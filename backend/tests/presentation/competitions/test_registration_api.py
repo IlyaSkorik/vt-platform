@@ -83,6 +83,32 @@ def test_returns_single_projection_for_open_competition() -> None:
     assert codes["work_publication"] is False
 
 
+def test_the_projection_carries_the_multiple_performance_rule() -> None:
+    """The wizard hides «Добавить выступление» off this flag, so it has to be here.
+
+    Default on, because a festival narrows the rule rather than having to widen it —
+    and because the projection is the only place the participant's side can read it.
+    """
+    competition_id = _seed_competition()
+
+    response = APIClient().get(_url(competition_id))
+
+    assert response.data["data"]["allowMultiplePerformances"] is True
+
+
+def test_turning_the_rule_off_shows_up_in_the_projection() -> None:
+    from apps.competitions.infrastructure.models import CompetitionModel
+
+    competition_id = _seed_competition()
+    competition = CompetitionModel.objects.get(id=competition_id)
+    competition.settings = {**competition.settings, "schema_version": 4, "allow_multiple_performances": False}
+    competition.save(update_fields=["settings"])
+
+    response = APIClient().get(_url(competition_id))
+
+    assert response.data["data"]["allowMultiplePerformances"] is False
+
+
 def test_mixed_age_category_is_projected_with_its_calculation_method() -> None:
     # The wizard asks the applicant what ages a mixed group is, so it has to be able to
     # tell a mixed band from a standard one — and to say how the organizer will read

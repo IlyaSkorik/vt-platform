@@ -5633,6 +5633,143 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: Already in that state.
+  /api/v1/platform/purge/{target}/{object_id}:
+    get:
+      operationId: platform_purge_plan
+      description: Reads only. Returns every table the deletion reaches with its row
+        count, how many stored files would go with it, and the consequences worth
+        reading twice.
+      summary: What erasing this object would delete
+      parameters:
+      - in: path
+        name: object_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: target
+        schema:
+          type: string
+        required: true
+      tags:
+      - Platform
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformPurgePlanResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Not a platform administrator.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Unknown target kind, or no such object.
+    delete:
+      operationId: platform_purge_execute
+      description: 'Hard delete, not the soft delete the rest of the platform uses:
+        the rows are removed from the database and the files they reference are removed
+        from storage. There is no undo. `confirm` must repeat the object''s own name
+        exactly as the plan reports it.'
+      summary: Erase the object and everything it holds
+      parameters:
+      - in: query
+        name: confirm
+        schema:
+          type: string
+        description: The object's own name, retyped.
+        required: true
+      - in: path
+        name: object_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: target
+        schema:
+          type: string
+        required: true
+      tags:
+      - Platform
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformPurgePlanResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Confirmation does not match the object's name.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Not a platform administrator.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Unknown target kind, or no such object.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: 'Refused: that is the caller''s own account.'
+  /api/v1/platform/purge/search:
+    get:
+      operationId: platform_purge_search
+      description: Candidates matching the query, by name, email or id. `target` is
+        one of `festival`, `program`, `application`, `organization`, `template`, `account`,
+        `participant`, `teacher`.
+      summary: Find an object to erase
+      parameters:
+      - in: query
+        name: query
+        schema:
+          type: string
+        description: A name, an email, or an id.
+        required: true
+      - in: query
+        name: target
+        schema:
+          type: string
+        description: Which kind of object to search.
+        required: true
+      tags:
+      - Platform
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformPurgeSearchResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Not a platform administrator.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Unknown target kind.
   /api/v1/public/competitions/{competition_id}/registration:
     get:
       operationId: getRegistration
@@ -13164,6 +13301,51 @@ components:
       required:
       - data
       - meta
+    PlatformPurgePlan:
+      type: object
+      properties:
+        target:
+          $ref: '#/components/schemas/_PurgeTarget'
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/_PurgeRow'
+        total:
+          type: integer
+        files:
+          type: integer
+        warnings:
+          type: array
+          items:
+            type: string
+      required:
+      - files
+      - rows
+      - target
+      - total
+      - warnings
+    PlatformPurgePlanResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/PlatformMeta'
+        data:
+          $ref: '#/components/schemas/PlatformPurgePlan'
+      required:
+      - data
+      - meta
+    PlatformPurgeSearchResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/PlatformMeta'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/_PurgeTarget'
+      required:
+      - data
+      - meta
     PreviewApplication:
       type: object
       description: An application selectable for diploma preview.
@@ -15008,6 +15190,8 @@ components:
           $ref: '#/components/schemas/RegistrationCompetition'
         registrationOpen:
           type: boolean
+        allowMultiplePerformances:
+          type: boolean
         deadlines:
           $ref: '#/components/schemas/RegistrationDeadlines'
         nominations:
@@ -15050,6 +15234,7 @@ components:
       - additionalServices
       - admissionRules
       - ageCategories
+      - allowMultiplePerformances
       - competition
       - deadlines
       - disciplines
@@ -16348,6 +16533,9 @@ components:
       properties:
         allowMultipleApplications:
           type: boolean
+        allowMultiplePerformances:
+          type: boolean
+          default: true
         allowApplicationEditing:
           type: boolean
         allowWithdrawingApplications:
@@ -18079,6 +18267,40 @@ components:
       - publishedAt
       - revision
       - slug
+    _PurgeRow:
+      type: object
+      description: 'One table''s contribution to the plan: the machine name, and the
+        human one.'
+      properties:
+        table:
+          type: string
+        label:
+          type: string
+        count:
+          type: integer
+      required:
+      - count
+      - label
+      - table
+    _PurgeTarget:
+      type: object
+      description: One erasable thing, as the console names it in a list and in a
+        dialog.
+      properties:
+        kind:
+          type: string
+        id:
+          type: string
+          format: uuid
+        label:
+          type: string
+        hint:
+          type: string
+      required:
+      - hint
+      - id
+      - kind
+      - label
     _ReadReceipt:
       type: object
       description: What changed, so the client can reconcile without refetching the
@@ -18167,6 +18389,8 @@ components:
       properties:
         allowMultipleApplications:
           type: boolean
+        allowMultiplePerformances:
+          type: boolean
         allowApplicationEditing:
           type: boolean
         allowWithdrawingApplications:
@@ -18214,6 +18438,7 @@ components:
       - allowAdditionalDocumentsLater
       - allowApplicationEditing
       - allowMultipleApplications
+      - allowMultiplePerformances
       - allowReplacingDocuments
       - allowReturningForCorrection
       - allowWithdrawingApplications

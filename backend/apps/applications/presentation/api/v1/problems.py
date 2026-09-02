@@ -42,6 +42,7 @@ _PROBLEM_MAP: Final[dict[str, tuple[int, str, str]]] = {
     "file_too_large": (413, "payload-too-large", "File too large"),
     "unsupported_file_type": (415, "unsupported-media-type", "Unsupported file type"),
     "competition_closed": (409, "conflict", "Competition is not accepting applications"),
+    "multiple_performances_not_allowed": (409, "conflict", "Only one performance per application"),
     "additional_service_not_available": (409, "conflict", "Service not available for this format"),
     "deadline_passed": (409, "conflict", "Deadline has passed"),
     "payment_receipt_required": (409, "conflict", "Payment receipt is required"),

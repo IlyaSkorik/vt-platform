@@ -126,6 +126,12 @@ class DjangoCompetitionCatalog:
             return 0
         return int(competition.settings.additional_performance_discount_percent)
 
+    def allows_multiple_performances(self, *, competition_id: CompetitionId) -> bool:
+        competition = self._load(competition_id)
+        if competition is None:
+            return True
+        return bool(competition.settings.allow_multiple_performances)
+
     def accepts_upload(self, *, competition_id: CompetitionId, attachment_kind: str, now: datetime) -> bool:
         competition = self._load(competition_id)
         if competition is None:

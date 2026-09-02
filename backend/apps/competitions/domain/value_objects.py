@@ -1839,6 +1839,11 @@ class CompetitionSettings:
 
     # Applications
     allow_multiple_applications: bool = False
+    #: Whether one application may carry more than one performance. On by default,
+    #: which is what nearly every festival wants and what every application entered
+    #: before this flag existed assumed. A festival that judges one act per entrant
+    #: turns it off, and the wizard then offers no way to add a second.
+    allow_multiple_performances: bool = True
     allow_application_editing: bool = True
     allow_withdrawing_applications: bool = True
 

@@ -139,6 +139,7 @@ class FormatRequirementsView:
 @dataclass(frozen=True, slots=True)
 class SettingsView:
     allow_multiple_applications: bool
+    allow_multiple_performances: bool
     allow_application_editing: bool
     allow_withdrawing_applications: bool
     require_teacher: bool
@@ -163,6 +164,7 @@ class SettingsView:
     def of(cls, settings: CompetitionSettings) -> SettingsView:
         return cls(
             allow_multiple_applications=settings.allow_multiple_applications,
+            allow_multiple_performances=settings.allow_multiple_performances,
             allow_application_editing=settings.allow_application_editing,
             allow_withdrawing_applications=settings.allow_withdrawing_applications,
             require_teacher=settings.require_teacher,

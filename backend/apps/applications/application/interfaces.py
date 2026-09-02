@@ -184,6 +184,16 @@ class CompetitionCatalog(Protocol):
         """Organizer-configured discount percent applied to 2nd+ performances in one application."""
         ...
 
+    def allows_multiple_performances(self, *, competition_id: CompetitionId) -> bool:
+        """Whether one application of this competition may carry more than one performance.
+
+        A festival that judges one act per entrant turns this off. Unknown
+        competitions answer ``True``: the use case that cares has already refused an
+        unknown competition on its own terms, and a missing row must not silently
+        become the stricter rule.
+        """
+        ...
+
     def accepts_upload(self, *, competition_id: CompetitionId, attachment_kind: str, now: datetime) -> bool:
         """Whether uploads of ``attachment_kind`` are still allowed at ``now``.
 

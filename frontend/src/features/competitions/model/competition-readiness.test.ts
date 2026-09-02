@@ -18,6 +18,7 @@ function baseCompetition(overrides: Partial<CompetitionDetail> = {}): Competitio
     competitionPeriod: { start: "2026-05-10", end: "2026-05-12" },
     settings: {
       allowMultipleApplications: false,
+      allowMultiplePerformances: true,
       allowApplicationEditing: true,
       allowWithdrawingApplications: false,
       requireTeacher: false,

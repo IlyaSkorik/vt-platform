@@ -108,6 +108,18 @@ describe("SettingsSection", () => {
     expect(lastSaved().requireTeacher).toBe(false);
   });
 
+  it("saves the multiple-performance rule the wizard's add button obeys", async () => {
+    // The one switch on this screen that removes a control from the participant's
+    // side, so it has to reach the server on the same click as the rest.
+    const user = userEvent.setup();
+    renderSection();
+
+    await user.click(screen.getByRole("switch", { name: /Несколько выступлений в одной заявке/ }));
+
+    expect(mutateAsync).toHaveBeenCalledTimes(1);
+    expect(lastSaved().allowMultiplePerformances).toBe(false);
+  });
+
   it("saves the flipped switch once under StrictMode's double render", async () => {
     // Saving from inside a `setSettings` updater would send the change twice, and the
     // second arrives against a version the first has already moved on from.

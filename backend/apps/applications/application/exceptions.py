@@ -244,6 +244,18 @@ class DeadlinePassedError(ApplicationError):
     code: ClassVar[str] = "deadline_passed"
 
 
+class MultiplePerformancesNotAllowedError(ApplicationError):
+    """The festival takes one performance per application, and the order has one.
+
+    A refusal about the competition's configuration rather than the order's state,
+    which is why it lives here and not in the domain: the Application aggregate has
+    no opinion on how many performances a festival wants, and reading one off a
+    foreign context is exactly what the application layer is for.
+    """
+
+    code: ClassVar[str] = "multiple_performances_not_allowed"
+
+
 class ParentGuardianRequiredError(ApplicationError):
     """The competition requires a verified guardian that some participant lacks."""
 

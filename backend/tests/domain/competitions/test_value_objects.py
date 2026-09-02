@@ -196,6 +196,9 @@ class TestCompetitionSettings:
         s = CompetitionSettings.default()
         assert s.allow_application_editing is True
         assert s.allow_multiple_applications is False
+        # On by default: what nearly every festival wants, and what every application
+        # entered before the flag existed assumed.
+        assert s.allow_multiple_performances is True
         assert s.require_parent_guardian is False
         assert s.payment_timing is PaymentTiming.BEFORE_APPROVAL
         assert s.format_requirements == ()

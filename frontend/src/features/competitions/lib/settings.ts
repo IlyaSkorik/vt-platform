@@ -100,6 +100,7 @@ export function defaultFormatRequirements(participationFormatId: string): _Forma
 export function defaultCompetitionSettings(): _Settings {
   return {
     allowMultipleApplications: false,
+    allowMultiplePerformances: true,
     allowApplicationEditing: true,
     allowWithdrawingApplications: true,
     requireTeacher: true,
@@ -169,6 +170,7 @@ export function mergeSettingsWithFormats(
 export function settingsToUpdatePayload(settings: _Settings): UpdateCompetitionSettings {
   return {
     allowMultipleApplications: settings.allowMultipleApplications,
+    allowMultiplePerformances: settings.allowMultiplePerformances,
     allowApplicationEditing: settings.allowApplicationEditing,
     allowWithdrawingApplications: settings.allowWithdrawingApplications,
     requireTeacher: settings.requireTeacher,

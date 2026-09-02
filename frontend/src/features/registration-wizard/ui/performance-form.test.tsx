@@ -56,6 +56,7 @@ function aRegistration({ mixedAge = false }: { mixedAge?: boolean } = {}): Regis
       venueAddress: null,
     },
     registrationOpen: true,
+    allowMultiplePerformances: true,
     deadlines: {
       application: null,
       payment: null,

@@ -46,6 +46,7 @@ from apps.applications.application.exceptions import (
     DeadlinePassedError,
     EducationalOrganizationNotFoundError,
     FileTooLargeError,
+    MultiplePerformancesNotAllowedError,
     PaymentReceiptRequiredError,
     SubmissionInvariantViolationError,
     UnsupportedFileTypeError,
@@ -232,6 +233,12 @@ class AddSubmissionToApplicationHandler:
         ensure_owner(application, parse_user_id(command.requested_by))
         if not self._catalog.accepts_submissions(competition_id=application.competition_id, now=now):
             raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
+        # Checked here rather than on the aggregate: how many performances a festival
+        # wants is the Competition's rule, and the order has no way to know it. The
+        # count is the order's *current* refs, so removing a performance frees the
+        # slot again — the wizard's own back-out has to keep working.
+        if application.submission_count and not self._catalog.allows_multiple_performances(competition_id=application.competition_id):
+            raise MultiplePerformancesNotAllowedError("Фестиваль принимает по одному выступлению в заявке.")
 
         submission, submission_events = Submission.draft(
             submission_id=SubmissionId.from_uuid(self._uuids.new()),

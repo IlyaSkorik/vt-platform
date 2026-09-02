@@ -43,6 +43,7 @@ function competition(partial: Partial<CompetitionDetail> = {}): CompetitionDetai
     competitionPeriod: { start: "", end: "" },
     settings: {
       allowMultipleApplications: false,
+      allowMultiplePerformances: true,
       allowApplicationEditing: true,
       allowWithdrawingApplications: false,
       requireTeacher: false,

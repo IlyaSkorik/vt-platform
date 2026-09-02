@@ -333,6 +333,52 @@ def test_turning_the_teacher_requirement_off_reaches_the_submission_policy(staff
     assert _submission_policy(competition_id, group_id).requires_teacher is False
 
 
+def _allows_multiple_performances(competition_id: str) -> bool:
+    """The same question the add-performance use case asks, through the same port."""
+    from apps.applications.domain.value_objects import CompetitionId as AppCompetitionId
+    from apps.applications.infrastructure.acl import DjangoCompetitionCatalog
+
+    return DjangoCompetitionCatalog().allows_multiple_performances(
+        competition_id=AppCompetitionId.from_uuid(uuid.UUID(competition_id)),
+    )
+
+
+def test_turning_multiple_performances_off_reaches_the_applications_acl(staff_client: APIClient) -> None:
+    """«Несколько выступлений в одной заявке», off, is what the add button obeys.
+
+    The same four layers as the teacher requirement, and the same silent failure mode:
+    the organizer turns it off, the screen shows it off, and the wizard keeps offering
+    «Добавить выступление» because nothing downstream ever read the flag.
+    """
+    competition_id = _create_competition(staff_client).data["data"]["id"]
+    detail = f"/api/v1/competitions/{competition_id}"
+
+    stored = staff_client.get(detail).data["data"]["settings"]
+    # The platform's default: a festival narrows this, it does not have to widen it.
+    assert stored["allowMultiplePerformances"] is True
+    assert _allows_multiple_performances(competition_id) is True
+
+    saved = staff_client.put(f"{detail}/settings", {**stored, "allowMultiplePerformances": False}, format="json")
+
+    assert saved.status_code == 200, saved.data.get("errors") or saved.data
+    assert saved.data["data"]["settings"]["allowMultiplePerformances"] is False
+    assert staff_client.get(detail).data["data"]["settings"]["allowMultiplePerformances"] is False
+    assert _allows_multiple_performances(competition_id) is False
+
+
+def test_a_settings_payload_without_the_new_flag_does_not_narrow_the_festival(staff_client: APIClient) -> None:
+    """A client that predates the field must not silently forbid second performances."""
+    competition_id = _create_competition(staff_client).data["data"]["id"]
+    detail = f"/api/v1/competitions/{competition_id}"
+    stored = staff_client.get(detail).data["data"]["settings"]
+
+    payload = {key: value for key, value in stored.items() if key != "allowMultiplePerformances"}
+    saved = staff_client.put(f"{detail}/settings", payload, format="json")
+
+    assert saved.status_code == 200, saved.data.get("errors") or saved.data
+    assert saved.data["data"]["settings"]["allowMultiplePerformances"] is True
+
+
 # ---------------------------------------------------------------------------
 # Branding
 # ---------------------------------------------------------------------------
