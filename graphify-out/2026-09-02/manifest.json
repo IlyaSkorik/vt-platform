@@ -835,8 +835,8 @@
     "semantic_hash": ""
   },
   "backend/apps/competitions/application/read_models/public_catalog.py": {
-    "mtime": 1787682655.4494507,
-    "ast_hash": "173ba0b6d8c6fa5dbc8cc3da4e1acc22",
+    "mtime": 1788340652.9528103,
+    "ast_hash": "99862a1d841cc2f703a5a9b239df5f0b",
     "semantic_hash": ""
   },
   "backend/apps/competitions/application/read_models/registration.py": {
@@ -1050,8 +1050,8 @@
     "semantic_hash": ""
   },
   "backend/apps/competitions/infrastructure/read_models/public_catalog.py": {
-    "mtime": 1787682725.5854418,
-    "ast_hash": "35f835a399c4fe9241ec691c7c99fce9",
+    "mtime": 1788340674.4106812,
+    "ast_hash": "b675f0633ed54ab0420b16c991accc3e",
     "semantic_hash": ""
   },
   "backend/apps/competitions/infrastructure/read_models/registration.py": {
@@ -3620,8 +3620,8 @@
     "semantic_hash": ""
   },
   "backend/tests/presentation/competitions/test_public_festivals_api.py": {
-    "mtime": 1785860600.880257,
-    "ast_hash": "64ab373eee76349123ee1d73c3d3ffac",
+    "mtime": 1788340709.358432,
+    "ast_hash": "b4c37a082dcc24bcf3a3725a565f326a",
     "semantic_hash": ""
   },
   "backend/tests/presentation/competitions/test_registration_api.py": {
@@ -6345,8 +6345,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/festival-landing/ui/landing-hero.tsx": {
-    "mtime": 1788339999.690339,
-    "ast_hash": "67473cd2afbc5cad87cad3e4ba0c886a",
+    "mtime": 1788340886.4773095,
+    "ast_hash": "b8beff9f324006ccba32129415bbc012",
     "semantic_hash": ""
   },
   "frontend/src/widgets/festival-landing/ui/landing-section.tsx": {
