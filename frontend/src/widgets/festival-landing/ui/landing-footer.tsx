@@ -59,9 +59,15 @@ interface LandingFooterProps {
  *
  * Reuses Competition Contacts verbatim — the same configuration that powers the
  * catalog and the venue section. Columns render only when they carry content.
+ *
+ * The one place on the landing that names the organizing entity, and it names the
+ * one the *festival* is presented under: ``organizationName`` comes from the
+ * contacts projection, which resolves the per-festival override before falling back
+ * to the organization's profile. Nothing else on the page repeats it.
  */
 export function LandingFooter({ contacts }: LandingFooterProps): React.JSX.Element {
   const social = socialLinks(contacts);
+  const organizationName = contacts.organizationName?.trim();
   const hasContacts = Boolean(contacts.phone || contacts.email || contacts.address);
   const hasReach = Boolean(contacts.website) || social.length > 0;
   const legalInformation = contacts.legalInformation?.trim();
@@ -80,9 +86,13 @@ export function LandingFooter({ contacts }: LandingFooterProps): React.JSX.Eleme
               beside a second entity's name it stops being, and that is when saying
               which is which starts earning the line. */}
           {supporter ? <p className="text-muted-foreground text-xs">Организатор</p> : null}
-          <p className="break-words text-base font-semibold text-foreground">
-            {contacts.organizationName ?? "Организатор"}
-          </p>
+          {/* No placeholder when there is no name: the literal word "Организатор"
+              sat here in the name's slot and read as one. */}
+          {organizationName ? (
+            <p className="break-words text-base font-semibold text-foreground">
+              {organizationName}
+            </p>
+          ) : null}
           {hasContacts ? (
             <div className="flex flex-col items-start gap-2 text-sm text-muted-foreground">
               {contacts.address ? (

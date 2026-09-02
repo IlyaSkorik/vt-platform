@@ -1,4 +1,4 @@
-import { Banknote, Building2, CalendarDays, Users } from "lucide-react";
+import { Banknote, CalendarDays, Users } from "lucide-react";
 import { formatPeriod } from "@/features/festival-catalog";
 import { type FestivalDetail, formatFromPrice, landingCta } from "@/features/festival-landing";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/shared/ui";
@@ -31,6 +31,11 @@ interface LandingSummaryProps {
  * The competition summary shown in the sticky desktop sidebar (and, on smaller
  * screens, directly under the hero). A compact recap of the key facts plus the
  * status-driven CTA — a persistent conversion anchor as the visitor scrolls.
+ *
+ * No "Организатор" row: the organization is named once on this page, in the footer,
+ * and it read the *organization's* profile name here — so a festival that overrode
+ * its display name showed the overridden one in the footer and the default one in
+ * this card, two paragraphs apart.
  */
 export function LandingSummary({ festival, applyPath }: LandingSummaryProps): React.JSX.Element {
   const cta = landingCta(festival.status);
@@ -60,9 +65,6 @@ export function LandingSummary({ festival, applyPath }: LandingSummaryProps): Re
               {price}
             </SummaryRow>
           ) : null}
-          <SummaryRow icon={Building2} label="Организатор">
-            {festival.organizer.name}
-          </SummaryRow>
         </dl>
       </CardContent>
       <CardFooter className="border-t pt-4">

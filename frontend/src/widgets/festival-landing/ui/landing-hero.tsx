@@ -1,24 +1,8 @@
-import { CalendarDays, Clock3, Sparkles } from "lucide-react";
-import {
-  formatDate,
-  formatPeriod,
-  participationModeConfig,
-  resolveMediaUrl,
-} from "@/features/festival-catalog";
+import { CalendarDays, Sparkles } from "lucide-react";
+import { formatPeriod, resolveMediaUrl } from "@/features/festival-catalog";
 import { type FestivalDetail, heroBlock, landingCta } from "@/features/festival-landing";
-import { Avatar, Badge } from "@/shared/ui";
+import { Badge } from "@/shared/ui";
 import { LandingCtaButton } from "./landing-cta";
-
-function organizerInitials(name: string): string {
-  return (
-    name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase() ?? "")
-      .join("") || "?"
-  );
-}
 
 interface LandingHeroProps {
   festival: FestivalDetail;
@@ -28,22 +12,31 @@ interface LandingHeroProps {
 /**
  * The large hero header — the public face of the competition.
  *
- * Renders the organizer's curated HERO cover/title/subtitle when present, over a
- * gradient that fades into the app background so the overlaid facts stay legible
- * in both themes without hard-coded colors. Everything else (dates, deadline,
- * organization, participation formats, status, CTA) comes from the Competition,
- * the single source of truth.
+ * Deliberately almost empty. It carries what the organizer authored on the HERO
+ * block (cover, title, subtitle), the dates, and the CTA — and nothing else. The
+ * organization's name and the participation formats used to sit here and were
+ * removed: a festival's own page is not where its organizer is introduced (that is
+ * the footer's job, once), and the formats are a configuration detail that belongs
+ * in the summary rail rather than in the first thing a visitor reads.
+ *
+ * **Nothing is invented.** An unfilled title used to fall back to the competition's
+ * own title, which meant the hero always looked authored even when nobody had
+ * touched it. It now renders nothing visible — the heading survives for screen
+ * readers and search engines, because a page with no ``h1`` is a different kind of
+ * broken, but the visitor sees only what the organizer actually wrote.
+ *
+ * Status and season are pinned to the top-right corner instead of stacked above the
+ * title: they are the two facts a returning visitor scans for, and in the flow they
+ * pushed the authored content down the block. Every badge variant is opaque, so they
+ * stay legible over a photograph where the gradient has not yet taken hold.
  */
 export function LandingHero({ festival, applyPath }: LandingHeroProps): React.JSX.Element {
   const hero = heroBlock(festival.landing.blocks);
   const cover = resolveMediaUrl(hero?.coverImage ?? festival.coverImage);
-  const title = hero?.title?.trim() || festival.title;
+  const title = hero?.title?.trim() || null;
   const subtitle = hero?.subtitle?.trim() || null;
   const cta = landingCta(festival.status);
-
   const period = formatPeriod(festival.competitionStart, festival.competitionEnd);
-  const deadline = formatDate(festival.applicationDeadline ?? festival.registrationEnd);
-  const logo = resolveMediaUrl(festival.organizer.logo);
 
   return (
     <section className="relative isolate overflow-hidden rounded-2xl border">
@@ -60,22 +53,28 @@ export function LandingHero({ festival, applyPath }: LandingHeroProps): React.JS
         className="absolute inset-0 -z-10 bg-gradient-to-t from-background via-background/85 to-background/25"
       />
 
-      <div className="flex min-h-[22rem] flex-col justify-end gap-5 p-6 sm:min-h-[28rem] sm:p-10">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={cta.badgeVariant} size="md" dot>
-            {cta.statusLabel}
-          </Badge>
-          <Badge variant="outline" size="md" icon={<Sparkles className="size-3.5" />}>
-            Сезон {festival.season}
-          </Badge>
-        </div>
+      <div className="absolute top-4 right-4 z-10 flex max-w-[calc(100%-2rem)] flex-wrap justify-end gap-2 sm:top-6 sm:right-6">
+        <Badge variant={cta.badgeVariant} size="md" dot>
+          {cta.statusLabel}
+        </Badge>
+        <Badge variant="outline" size="md" icon={<Sparkles className="size-3.5" />}>
+          Сезон {festival.season}
+        </Badge>
+      </div>
 
+      {/* `pt-16`: the pinned badges are out of flow, so the content column reserves
+          their strip — otherwise a long title on a 320px screen grows up into them. */}
+      <div className="flex min-h-[22rem] flex-col justify-end gap-5 p-6 pt-16 sm:min-h-[28rem] sm:p-10 sm:pt-20">
         <div className="space-y-3">
-          {/* `break-words`: a single long word ("фестиваль-конкурс" at 30px) is
-              wider than a 320px screen and the section clips its overflow. */}
-          <h1 className="text-balance hyphens-auto break-words text-3xl font-bold tracking-tight sm:text-5xl">
-            {title}
-          </h1>
+          {title ? (
+            /* `break-words`: a single long word ("фестиваль-конкурс" at 30px) is
+               wider than a 320px screen and the section clips its overflow. */
+            <h1 className="text-balance hyphens-auto break-words font-bold text-3xl tracking-tight sm:text-5xl">
+              {title}
+            </h1>
+          ) : (
+            <h1 className="sr-only">{festival.title}</h1>
+          )}
           {subtitle ? (
             <p className="max-w-3xl text-pretty break-words text-base text-muted-foreground sm:text-lg">
               {subtitle}
@@ -83,53 +82,14 @@ export function LandingHero({ festival, applyPath }: LandingHeroProps): React.JS
           ) : null}
         </div>
 
-        <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-          {period ? (
+        {period ? (
+          <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
             <div className="flex items-center gap-2">
               <CalendarDays className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
               <dt className="sr-only">Даты проведения</dt>
               <dd className="font-medium">{period}</dd>
             </div>
-          ) : null}
-          {deadline ? (
-            <div className="flex items-center gap-2">
-              <Clock3 className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-              <dt className="sr-only">Приём заявок до</dt>
-              <dd>
-                Заявки до <span className="font-medium">{deadline}</span>
-              </dd>
-            </div>
-          ) : null}
-        </dl>
-
-        <div className="flex items-center gap-2.5">
-          <Avatar
-            size="sm"
-            {...(logo ? { src: logo } : {})}
-            alt={festival.organizer.name}
-            fallback={organizerInitials(festival.organizer.name)}
-          />
-          <span className="text-sm font-medium">{festival.organizer.name}</span>
-        </div>
-
-        {festival.formats.length > 0 ? (
-          <ul className="flex flex-wrap gap-1.5">
-            {festival.formats.map((format) => {
-              const config = format.mode ? participationModeConfig(format.mode) : null;
-              const Icon = config?.icon;
-              return (
-                <li key={format.name}>
-                  <Badge
-                    variant="secondary"
-                    size="sm"
-                    {...(Icon ? { icon: <Icon className="size-3" /> } : {})}
-                  >
-                    {format.name}
-                  </Badge>
-                </li>
-              );
-            })}
-          </ul>
+          </dl>
         ) : null}
 
         <div className="pt-1">

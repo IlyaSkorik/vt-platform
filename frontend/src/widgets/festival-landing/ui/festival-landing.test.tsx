@@ -96,6 +96,52 @@ describe("FestivalLanding", () => {
     );
   });
 
+  it("names the organizing entity once, in the footer, and by its festival name", () => {
+    // The fixture is the interesting case on purpose: the organization's profile says
+    // "Дом талантов" and the festival's contacts override it with "Оргкомитет
+    // фестиваля". The hero and the summary rail used to print the profile name, so
+    // one page showed both — the default up top and the override in the footer.
+    mockQuery({ data: makeFestivalDetail() });
+    renderLanding();
+
+    expect(screen.queryByText("Дом талантов")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Оргкомитет фестиваля")).toHaveLength(1);
+  });
+
+  it("writes no hero title when the organizer authored none", () => {
+    // The fallback to the competition's own title made an untouched hero look
+    // authored. The heading stays for screen readers; nothing is drawn.
+    mockQuery({
+      data: makeFestivalDetail({
+        landing: { blocks: [makeBlock({ id: "hero", type: "HERO", sortOrder: 0 })] },
+      }),
+    });
+    renderLanding();
+
+    const heading = screen.getByRole("heading", { level: 1 });
+    expect(heading).toHaveClass("sr-only");
+    expect(heading).toHaveTextContent("Весенний вокальный фестиваль");
+  });
+
+  it("keeps the dates, the CTA and the pinned status in the hero", () => {
+    mockQuery({ data: makeFestivalDetail() });
+    renderLanding();
+
+    const hero = screen.getByRole("heading", { level: 1 }).closest("section");
+    expect(hero).not.toBeNull();
+    const within_hero = within(hero as HTMLElement);
+    expect(within_hero.getByText(/Сезон 2025\/2026/)).toBeInTheDocument();
+    expect(within_hero.getByRole("link", { name: /подать заявку/i })).toBeInTheDocument();
+    // The dates stayed; the deadline did not — the registration block carries the
+    // per-nomination windows, which is the more precise answer to "до когда".
+    // By the row's own (screen-reader) label rather than the formatted string: the
+    // month name comes out of Intl and is not this test's subject.
+    expect(within_hero.getByText("Даты проведения")).toBeInTheDocument();
+    expect(within_hero.queryByText(/Заявки до/)).not.toBeInTheDocument();
+    // The formats moved out of the hero; the summary rail still lists them.
+    expect(within_hero.queryByText("Очно")).not.toBeInTheDocument();
+  });
+
   it("shows a non-actionable CTA for a completed competition", () => {
     mockQuery({ data: makeFestivalDetail({ status: "COMPLETED" }) });
     renderLanding();

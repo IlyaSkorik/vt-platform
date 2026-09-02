@@ -104,6 +104,19 @@ function offers(
   });
 }
 
+/**
+ * The name the festival is presented under, not the organization's profile name.
+ *
+ * The two differ whenever a festival overrides its contacts, and the override is
+ * what the page itself shows in the footer — search results naming the other one
+ * would disagree with the page they link to. Only the detail projection carries
+ * contacts; a catalog card has nothing to prefer, so it falls through.
+ */
+function organizerName(festival: PublicFestival | PublicFestivalDetail): string {
+  const overridden = "contacts" in festival ? festival.contacts.organizationName?.trim() : null;
+  return overridden || festival.organizer.name;
+}
+
 /** One competition as a schema.org `Event`. */
 export function festivalEventSchema(
   festival: PublicFestival | PublicFestivalDetail,
@@ -126,7 +139,7 @@ export function festivalEventSchema(
       location: place(festival),
       organizer: compact({
         "@type": "Organization",
-        name: festival.organizer.name,
+        name: organizerName(festival),
         logo: resolveMediaUrl(festival.organizer.logo),
       }),
       offers: offers(festival, { path }),
