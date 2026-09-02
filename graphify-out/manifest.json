@@ -6330,8 +6330,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/festival-landing/ui/festival-landing.tsx": {
-    "mtime": 1785860601.0878882,
-    "ast_hash": "11a1c9a2100872414f79f0c540e301e5",
+    "mtime": 1788379101.8423028,
+    "ast_hash": "526c572ee5110c1cb7682484c7236bb3",
     "semantic_hash": ""
   },
   "frontend/src/widgets/festival-landing/ui/landing-cta.tsx": {

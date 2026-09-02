@@ -4635,8 +4635,8 @@
     "semantic_hash": "f32a2bd2918e8b30b02d319376db84e6"
   },
   "frontend/src/pages/home/index.tsx": {
-    "mtime": 1786778860.2143376,
-    "ast_hash": "7e884218520a08d68fbdd6bd5f636550",
+    "mtime": 1788377785.399735,
+    "ast_hash": "c9ac96e1c694def52934219d83df4830",
     "semantic_hash": ""
   },
   "frontend/src/pages/legal/index.tsx": {
@@ -5210,8 +5210,8 @@
     "semantic_hash": "0c445af4640cd4ef4de6425e5b3f3aa0"
   },
   "frontend/src/shared/ui/index.ts": {
-    "mtime": 1786138531.6276097,
-    "ast_hash": "6ddb38fd2f54bf9ecdfc7df1279d4ff0",
+    "mtime": 1788377768.778108,
+    "ast_hash": "54abe00144a24e36389816e732b75254",
     "semantic_hash": ""
   },
   "frontend/src/shared/ui/input/index.ts": {
@@ -6240,8 +6240,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/festival-catalog/ui/festival-card.tsx": {
-    "mtime": 1785860601.0858433,
-    "ast_hash": "cfa6ea0fa53513f321056249be32a60f",
+    "mtime": 1788377856.9588618,
+    "ast_hash": "8ad080d104099f4c38a529a27d3e33c0",
     "semantic_hash": ""
   },
   "frontend/src/widgets/festival-catalog/ui/festival-catalog-states.tsx": {
@@ -6265,8 +6265,8 @@
     "semantic_hash": "db22f5208a5dccc77a642eb063edaab4"
   },
   "frontend/src/widgets/festival-catalog/ui/festival-featured-panel.tsx": {
-    "mtime": 1785860601.0858433,
-    "ast_hash": "04612743b6860779e780c22906ebecd8",
+    "mtime": 1788377785.3980453,
+    "ast_hash": "b1ee1e37c3399385bc208af6087a1a63",
     "semantic_hash": ""
   },
   "frontend/src/widgets/festival-catalog/ui/festival-filters-panel.tsx": {
@@ -6345,8 +6345,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/festival-landing/ui/landing-hero.tsx": {
-    "mtime": 1788340886.4773095,
-    "ast_hash": "b8beff9f324006ccba32129415bbc012",
+    "mtime": 1788377829.254846,
+    "ast_hash": "20ec85c8cb65e12f1d4607663a633f38",
     "semantic_hash": ""
   },
   "frontend/src/widgets/festival-landing/ui/landing-section.tsx": {
@@ -10217,6 +10217,31 @@
   "frontend/src/shared/seo/structured-data.test.ts": {
     "mtime": 1788340279.6347783,
     "ast_hash": "27d0da4aa73f7fa33856840df16357e4",
+    "semantic_hash": ""
+  },
+  "frontend/src/shared/ui/poster-image/index.ts": {
+    "mtime": 1788377724.746889,
+    "ast_hash": "d5ad7a4d68880b841d68d395a023c765",
+    "semantic_hash": ""
+  },
+  "frontend/src/shared/ui/poster-image/poster-image.stories.tsx": {
+    "mtime": 1788377750.5308726,
+    "ast_hash": "eb30249d11ccd54a971bca5e5efdba6a",
+    "semantic_hash": ""
+  },
+  "frontend/src/shared/ui/poster-image/poster-image.test.tsx": {
+    "mtime": 1788377750.5428727,
+    "ast_hash": "9aa2122432c4395177bcbd04debe0822",
+    "semantic_hash": ""
+  },
+  "frontend/src/shared/ui/poster-image/poster-image.tsx": {
+    "mtime": 1788377724.7388892,
+    "ast_hash": "076c40b794cf1100663e3bd41d61ce23",
+    "semantic_hash": ""
+  },
+  "frontend/src/shared/ui/poster-image/types.ts": {
+    "mtime": 1788377724.7228892,
+    "ast_hash": "4b5242b849bbe9d604708f70f60a34c2",
     "semantic_hash": ""
   }
 }
