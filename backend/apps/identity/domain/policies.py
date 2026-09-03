@@ -101,13 +101,13 @@ class PasswordViolation(StrEnum):
     on to the API edge for precise, localizable feedback.
     """
 
-    TOO_SHORT = "too_short"
-    TOO_LONG = "too_long"
-    FORBIDDEN = "forbidden"
-    MISSING_UPPERCASE = "missing_uppercase"
-    MISSING_LOWERCASE = "missing_lowercase"
-    MISSING_DIGIT = "missing_digit"
-    MISSING_SYMBOL = "missing_symbol"
+    TOO_SHORT = "пароль слишком короткий"
+    TOO_LONG = "пароль слишком длинный"
+    FORBIDDEN = "запрещенный"
+    MISSING_UPPERCASE = "отсутствует заглавная буква"
+    MISSING_LOWERCASE = "отсутствует строчная буква"
+    MISSING_DIGIT = "отсутствует цифра"
+    MISSING_SYMBOL = "отсутствует специальный символ"
 
 
 @dataclass(frozen=True, slots=True)

@@ -130,7 +130,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps): React.JSX.Elemen
       <PasswordInput
         label="Пароль"
         autoComplete="new-password"
-        description={`Минимум ${PASSWORD_MIN_LENGTH} символов, буквы разного регистра и цифра.`}
+        description={`Минимум ${PASSWORD_MIN_LENGTH} символов, специальный символ, буквы разного регистра и цифра.`}
         error={errors.password?.message}
         {...register("password")}
       />

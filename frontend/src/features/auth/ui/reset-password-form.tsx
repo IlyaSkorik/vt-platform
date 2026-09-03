@@ -68,7 +68,7 @@ export function ResetPasswordForm({ token, onSuccess }: ResetPasswordFormProps):
         label="Новый пароль"
         autoComplete="new-password"
         autoFocus
-        description={`Минимум ${PASSWORD_MIN_LENGTH} символов, буквы разного регистра и цифра.`}
+        description={`Минимум ${PASSWORD_MIN_LENGTH} символов, специальный символ, буквы разного регистра и цифра.`}
         error={errors.password?.message}
         {...register("password")}
       />
