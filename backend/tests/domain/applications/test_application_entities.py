@@ -17,6 +17,7 @@ from apps.applications.domain.events import (
     ApplicationPaid,
     ApplicationSubmitted,
     EducationalOrganizationSelected,
+    PayerRecorded,
     PaymentReceiptRemoved,
     PaymentReceiptUploaded,
     SubmissionAttachedToApplication,
@@ -31,6 +32,7 @@ from apps.applications.domain.exceptions import (
     MissingRequiredConsentError,
     NoSubmissionsError,
     NotAllSubmissionsApprovedError,
+    PayerRequiredError,
     PaymentReceiptNotAllowedError,
     PaymentReceiptNotFoundError,
     ServiceLineNotFoundError,
@@ -47,6 +49,7 @@ from apps.applications.domain.value_objects import (
     Money,
     OrganizationName,
     PaymentReceiptId,
+    PersonName,
     PriceSnapshot,
     ServiceId,
     ServiceLine,
@@ -199,6 +202,43 @@ class TestComposition:
         with pytest.raises(ServiceLineNotFoundError):
             application.remove_service(service_id=ServiceId.from_uuid(ApplicationId.generate().value), now=NOW)
 
+    def test_set_payer_names_the_contract_party(self) -> None:
+        application = _new_application()
+        name = PersonName(first_name="Анна", last_name="Иванова", middle_name="Сергеевна")
+
+        events = application.set_payer(name=name, now=NOW)
+
+        assert application.payer_name == name
+        assert [type(e) for e in events] == [PayerRecorded]
+        recorded = events[0]
+        assert isinstance(recorded, PayerRecorded)
+        assert recorded.payer_full_name == "Иванова Анна Сергеевна"
+
+    def test_set_payer_replaces_rather_than_accumulates(self) -> None:
+        """One order, one contract, one party: naming a second payer corrects the
+        first rather than leaving the organizer to choose between two."""
+        application = _new_application()
+        application.set_payer(name=PersonName(first_name="Анна", last_name="Иванва"), now=NOW)
+
+        application.set_payer(name=PersonName(first_name="Анна", last_name="Иванова"), now=NOW)
+
+        assert application.payer_name == PersonName(first_name="Анна", last_name="Иванова")
+
+    def test_payer_still_correctable_after_submit(self) -> None:
+        """A misspelt surname on a submitted order is fixed the same way a wrong
+        service line is — the order stays editable until it is billed."""
+        application = _submitted_application(amount="300.00")
+
+        application.set_payer(name=PersonName(first_name="Анна", last_name="Иванова"), now=NOW)
+
+        assert application.payer_name is not None
+
+    def test_payer_frozen_once_payment_is_awaited(self) -> None:
+        application = _awaiting_payment_application(amount="300.00")
+
+        with pytest.raises(ApplicationNotEditableError):
+            application.set_payer(name=PersonName(first_name="Анна", last_name="Иванова"), now=NOW)
+
     def test_record_consents(self) -> None:
         application = _new_application()
         application.record_consents(consents=[Consent(code="personal_data", version="v1", accepted_at=NOW)], now=NOW)
@@ -216,6 +256,32 @@ class TestSubmit:
         application.attach_submission(ref=_ref(status=SubmissionStatus.DRAFT), now=NOW)
         with pytest.raises(MissingRequiredConsentError):
             application.submit(required_consent_codes=frozenset({"personal_data"}), now=NOW)
+
+    def test_submit_enforces_the_payer_where_the_festival_signs_a_contract(self) -> None:
+        application = _new_application()
+        application.attach_submission(ref=_ref(status=SubmissionStatus.DRAFT), now=NOW)
+
+        with pytest.raises(PayerRequiredError):
+            application.submit(payer_required=True, now=NOW)
+
+    def test_submit_needs_no_payer_where_the_festival_asks_for_none(self) -> None:
+        """The default: a festival that issues no documents has no business blocking
+        an order over a name it will never use."""
+        application = _new_application()
+        application.attach_submission(ref=_ref(status=SubmissionStatus.DRAFT), now=NOW)
+
+        application.submit(now=NOW)
+
+        assert application.status is ApplicationStatus.SUBMITTED
+
+    def test_submit_passes_once_the_payer_is_named(self) -> None:
+        application = _new_application()
+        application.attach_submission(ref=_ref(status=SubmissionStatus.DRAFT), now=NOW)
+        application.set_payer(name=PersonName(first_name="Анна", last_name="Иванова"), now=NOW)
+
+        application.submit(payer_required=True, now=NOW)
+
+        assert application.status is ApplicationStatus.SUBMITTED
 
     def test_submit_transitions_and_freezes_total(self) -> None:
         application = _new_application()

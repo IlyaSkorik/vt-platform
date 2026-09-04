@@ -83,6 +83,7 @@ from .events import (
     ParticipantMemberCountChanged,
     ParticipantMembersChanged,
     ParticipantRemoved,
+    PayerRecorded,
     PaymentReceiptRemoved,
     PaymentReceiptUploaded,
     PerformanceDefined,
@@ -129,6 +130,7 @@ from .exceptions import (
     ParticipantCountMismatchError,
     ParticipantNotFoundError,
     ParticipantRequiredError,
+    PayerRequiredError,
     PaymentReceiptNotAllowedError,
     PaymentReceiptNotFoundError,
     PerformanceRequiredError,
@@ -1397,6 +1399,11 @@ class Application:
     _updated_at: datetime
     _educational_organization_id: EducationalOrganizationId | None = None
     _organization_name: OrganizationName | None = None
+    #: Who the festival's contract is signed with, and so who the payment for this
+    #: order comes from. A plain natural person: for a collective the leader, for an
+    #: adult entrant themselves, for a child their legal representative. Absent
+    #: unless the competition asks for it (``collect_payer_details``).
+    _payer_name: PersonName | None = None
     _submission_refs: dict[SubmissionId, SubmissionRef] = field(default_factory=dict)
     _service_lines: dict[ServiceId, ServiceLine] = field(default_factory=dict)
     _consents: tuple[Consent, ...] = ()
@@ -1459,6 +1466,7 @@ class Application:
         updated_at: datetime,
         educational_organization_id: EducationalOrganizationId | None = None,
         organization_name: OrganizationName | None = None,
+        payer_name: PersonName | None = None,
         submission_refs: Sequence[SubmissionRef] = (),
         service_lines: Sequence[ServiceLine] = (),
         consents: Sequence[Consent] = (),
@@ -1481,6 +1489,7 @@ class Application:
             _updated_at=updated_at,
             _educational_organization_id=educational_organization_id,
             _organization_name=organization_name,
+            _payer_name=payer_name,
             _submission_refs={ref.submission_id: ref for ref in submission_refs},
             _service_lines={line.service_id: line for line in service_lines},
             _consents=tuple(consents),
@@ -1521,6 +1530,11 @@ class Application:
     @property
     def organization_name(self) -> OrganizationName | None:
         return self._organization_name
+
+    @property
+    def payer_name(self) -> PersonName | None:
+        """The person the contract is signed with, if the festival collects one."""
+        return self._payer_name
 
     @property
     def submission_refs(self) -> tuple[SubmissionRef, ...]:
@@ -1625,6 +1639,20 @@ class Application:
         self._touch(now)
         return [EducationalOrganizationSelected(aggregate_id=self._id.value, educational_organization_id=educational_organization_id)]
 
+    def set_payer(self, *, name: PersonName, now: datetime) -> list[DomainEvent]:
+        """Name (or rename) the person the festival's contract is signed with.
+
+        Editable for exactly as long as the rest of the order's composition is
+        (``DRAFT``/``SUBMITTED``): a misspelt surname on a submitted order is corrected
+        the same way a wrong service line is, and once the order is billed the
+        documents are already drawn up. Calling it again replaces the name rather than
+        adding a second payer — one order, one contract, one party.
+        """
+        self._ensure_editable()
+        self._payer_name = name
+        self._touch(now)
+        return [PayerRecorded(aggregate_id=self._id.value, payer_full_name=name.full_name)]
+
     def attach_submission(self, *, ref: SubmissionRef, now: datetime) -> list[DomainEvent]:
         """Attach a submission reference to the order (add a performance to it)."""
         self._ensure_editable()
@@ -1704,20 +1732,29 @@ class Application:
         *,
         required_consent_codes: frozenset[str] = frozenset(),
         required_service_ids: frozenset[str] = frozenset(),
+        payer_required: bool = False,
         now: datetime,
     ) -> list[DomainEvent]:
         """Submit the order (DRAFT -> SUBMITTED), freezing its total price.
 
         Enforces the order invariants: at least one submission is attached, every
-        consent the competition requires has been recorded, and every additional
-        service the competition mandates has been selected. The total price is
-        recomputed once and then frozen - future Competition pricing changes can
-        never alter an order already placed. Submitting the individual Submissions
-        for review is an application-layer concern (orchestrated over their own
-        aggregate); this transition governs only the order.
+        consent the competition requires has been recorded, every additional service
+        the competition mandates has been selected, and - where the festival draws up
+        documents per order - a payer has been named. The total price is recomputed
+        once and then frozen - future Competition pricing changes can never alter an
+        order already placed. Submitting the individual Submissions for review is an
+        application-layer concern (orchestrated over their own aggregate); this
+        transition governs only the order.
+
+        ``payer_required`` is passed in rather than read here for the same reason the
+        consent codes are: whether this festival signs a contract per application is
+        the Competition's configuration, and this aggregate validates against a
+        projection of it instead of importing it.
         """
         if not self._submission_refs:
             raise NoSubmissionsError("An application must reference at least one submission before it can be submitted.")
+        if payer_required and self._payer_name is None:
+            raise PayerRequiredError("This competition draws up documents per application and requires the payer to be named before it is submitted.")
         recorded = {consent.code for consent in self._consents}
         missing_consents = required_consent_codes - recorded
         if missing_consents:

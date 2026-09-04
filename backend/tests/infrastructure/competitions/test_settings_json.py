@@ -16,7 +16,7 @@ from apps.competitions.infrastructure.mappers.settings_json import settings_from
 def test_the_flag_survives_a_round_trip() -> None:
     stored = settings_to_json(CompetitionSettings.default().with_changes(allow_multiple_performances=False))
 
-    assert stored["schema_version"] == 4
+    assert stored["schema_version"] == 5
     assert settings_from_json(stored).allow_multiple_performances is False
 
 
@@ -36,7 +36,29 @@ def test_a_pre_settings_module_bag_keeps_allowing_several() -> None:
     assert settings_from_json(legacy).allow_multiple_performances is True
 
 
-def test_a_schema_4_blob_is_not_mistaken_for_a_legacy_bag() -> None:
+def test_a_blob_written_before_the_payer_flag_existed_collects_no_payer() -> None:
+    """Schema 4 has no opinion here, and switching the block on for a festival nobody
+    reconfigured would block orders already being filled in."""
+    stored = settings_to_json(CompetitionSettings.default())
+    del stored["collect_payer_details"]
+    stored["schema_version"] = 4
+
+    assert settings_from_json(stored).collect_payer_details is False
+
+
+def test_a_pre_settings_module_bag_collects_no_payer() -> None:
+    legacy = {"allow_multiple_applications": True, "require_teacher": False}
+
+    assert settings_from_json(legacy).collect_payer_details is False
+
+
+def test_the_payer_flag_survives_a_round_trip() -> None:
+    stored = settings_to_json(CompetitionSettings.default().with_changes(collect_payer_details=True))
+
+    assert settings_from_json(stored).collect_payer_details is True
+
+
+def test_a_schema_5_blob_is_not_mistaken_for_a_legacy_bag() -> None:
     """The reader gates on the version, so a new number must be on the modern path —
     otherwise every flag would silently fall back to the legacy mapping."""
     stored = settings_to_json(CompetitionSettings.default().with_changes(require_teacher=False, allow_replacing_documents=False))

@@ -132,6 +132,12 @@ class DjangoCompetitionCatalog:
             return True
         return bool(competition.settings.allow_multiple_performances)
 
+    def collects_payer_details(self, *, competition_id: CompetitionId) -> bool:
+        competition = self._load(competition_id)
+        if competition is None:
+            return False
+        return bool(competition.settings.collect_payer_details)
+
     def accepts_upload(self, *, competition_id: CompetitionId, attachment_kind: str, now: datetime) -> bool:
         competition = self._load(competition_id)
         if competition is None:

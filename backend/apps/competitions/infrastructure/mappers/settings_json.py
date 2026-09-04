@@ -29,7 +29,7 @@ __all__ = ["settings_from_json", "settings_to_json"]
 def settings_to_json(settings: CompetitionSettings) -> dict[str, object]:
     """Serialize settings for the competitions.settings JSON column."""
     return {
-        "schema_version": 4,
+        "schema_version": 5,
         "allow_multiple_applications": settings.allow_multiple_applications,
         "allow_multiple_performances": settings.allow_multiple_performances,
         "allow_application_editing": settings.allow_application_editing,
@@ -37,6 +37,7 @@ def settings_to_json(settings: CompetitionSettings) -> dict[str, object]:
         "require_teacher": settings.require_teacher,
         "require_parent_guardian": settings.require_parent_guardian,
         "participant_comment_enabled": settings.participant_comment_enabled,
+        "collect_payer_details": settings.collect_payer_details,
         "require_document_upload": settings.require_document_upload,
         "allow_additional_documents_later": settings.allow_additional_documents_later,
         "allow_replacing_documents": settings.allow_replacing_documents,
@@ -57,16 +58,17 @@ def settings_to_json(settings: CompetitionSettings) -> dict[str, object]:
 def settings_from_json(data: object) -> CompetitionSettings:
     """Rebuild settings from JSON, migrating legacy flat boolean bags.
 
-    Schemas 2, 3 and 4 share a shape and one reader serves all three: 3 only *drops*
-    keys (notification channels and previous-application copying), 4 only *adds* one
-    (``allow_multiple_performances``), and every key is read through a default, so a
-    row written under an older version loads without a migration. Rows still holding
-    an older shape are rewritten as 4 on the next save.
+    Schemas 2 through 5 share a shape and one reader serves them all: 3 only *drops*
+    keys (notification channels and previous-application copying), 4 and 5 only *add*
+    one each (``allow_multiple_performances``, then ``collect_payer_details``), and
+    every key is read through a default, so a row written under an older version loads
+    without a migration. Rows still holding an older shape are rewritten as 5 on the
+    next save.
     """
     default = CompetitionSettings.default()
     if not isinstance(data, dict):
         return default
-    if data.get("schema_version") in {2, 3, 4} or "payment_timing" in data or "format_requirements" in data:
+    if data.get("schema_version") in {2, 3, 4, 5} or "payment_timing" in data or "format_requirements" in data:
         return _from_modern(data, default)
     return _from_legacy(data, default)
 
@@ -84,6 +86,9 @@ def _from_legacy(data: dict[str, object], default: CompetitionSettings) -> Compe
         require_teacher=bool(data.get("require_teacher", default.require_teacher)),
         require_parent_guardian=bool(data.get("require_parent_consent", default.require_parent_guardian)),
         participant_comment_enabled=bool(data.get("require_comment_for_application", default.participant_comment_enabled)),
+        # No legacy bag has an opinion here, and a festival configured before the
+        # platform could ask for the payer never collected one.
+        collect_payer_details=False,
         require_document_upload=bool(data.get("require_identity_document", default.require_document_upload)),
         allow_additional_documents_later=True,
         allow_replacing_documents=True,
@@ -138,6 +143,7 @@ def _from_modern(data: dict[str, object], default: CompetitionSettings) -> Compe
         require_teacher=bool(data.get("require_teacher", default.require_teacher)),
         require_parent_guardian=bool(data.get("require_parent_guardian", default.require_parent_guardian)),
         participant_comment_enabled=bool(data.get("participant_comment_enabled", default.participant_comment_enabled)),
+        collect_payer_details=bool(data.get("collect_payer_details", default.collect_payer_details)),
         require_document_upload=bool(data.get("require_document_upload", default.require_document_upload)),
         allow_additional_documents_later=bool(data.get("allow_additional_documents_later", default.allow_additional_documents_later)),
         allow_replacing_documents=bool(data.get("allow_replacing_documents", default.allow_replacing_documents)),

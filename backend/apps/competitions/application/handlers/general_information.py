@@ -113,6 +113,7 @@ def _settings_from_command(command: UpdateSettingsCommand) -> CompetitionSetting
         require_teacher=command.require_teacher,
         require_parent_guardian=command.require_parent_guardian,
         participant_comment_enabled=command.participant_comment_enabled,
+        collect_payer_details=command.collect_payer_details,
         require_document_upload=command.require_document_upload,
         allow_additional_documents_later=command.allow_additional_documents_later,
         allow_replacing_documents=command.allow_replacing_documents,

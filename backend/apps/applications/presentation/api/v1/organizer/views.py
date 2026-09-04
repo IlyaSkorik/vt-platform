@@ -94,6 +94,17 @@ def _receipt_references(payment_receipts: Any) -> list[str]:
     return [reference for entry in payment_receipts or [] if (reference := str((entry or {}).get("file_reference") or "").strip())]
 
 
+def _payer_full_name(row: Any) -> str | None:
+    """The order's payer rendered ``Last First Middle``, or ``None`` if unnamed.
+
+    Only festivals that ask for the contract party have anything in these columns, so
+    an absent name is the normal case rather than missing data.
+    """
+    parts = [str(row.get(key) or "").strip() for key in ("payer_last_name", "payer_first_name", "payer_middle_name")]
+    named = [part for part in parts if part]
+    return " ".join(named) or None
+
+
 def _receipt_urls(references: Sequence[str]) -> list[str]:
     """The same receipts as addresses a browser can open.
 
@@ -233,7 +244,14 @@ class OrganizerProcessingWorkspaceView(_StaffView):
         application_meta_by_id: dict[str, dict[str, Any]] = {}
         submission_ids_by_application: dict[str, list[str]] = {}
         application_rows = ApplicationModel.objects.filter(deleted_at__isnull=True).values(
-            "id", "organization_name", "submission_refs", "payment_receipts", "total_price"
+            "id",
+            "organization_name",
+            "payer_last_name",
+            "payer_first_name",
+            "payer_middle_name",
+            "submission_refs",
+            "payment_receipts",
+            "total_price",
         )
         for row in application_rows:
             application_id = str(row.get("id"))
@@ -242,6 +260,9 @@ class OrganizerProcessingWorkspaceView(_StaffView):
             total_price = row.get("total_price") or {}
             application_meta_by_id[application_id] = {
                 "receipt_refs": receipt_refs,
+                # Who the contract is made out to. Only festivals that collect it have
+                # anything here, so the card renders the block conditionally.
+                "payer_name": _payer_full_name(row),
                 # The snapshot's grand total lives under "total" (see ApplicationMapper);
                 # "amount" is the single-Money key, accepted so an older row still reads.
                 "total_amount": str(total_price.get("total") or total_price.get("amount") or "").strip() or None,
@@ -489,6 +510,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                     "totalPriceAmount": total_amount_value,
                     "totalPriceCurrency": total_currency_value,
                     "receiptFileReferences": _receipt_urls(application_meta_by_id.get(selected_application_id or "", {}).get("receipt_refs") or []),
+                    "payerName": application_meta_by_id.get(selected_application_id or "", {}).get("payer_name"),
                     "timeline": timeline,
                     "audit": audit,
                     "internalNotes": [

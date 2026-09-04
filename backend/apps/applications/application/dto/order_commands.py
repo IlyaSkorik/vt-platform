@@ -24,6 +24,7 @@ __all__ = [
     "RequestApplicationPaymentCommand",
     "SelectAdditionalServiceCommand",
     "SelectEducationalOrganizationCommand",
+    "SetApplicationPayerCommand",
     "SubmitApplicationCommand",
     "SyncApplicationCommand",
     "UploadApplicationReceiptCommand",
@@ -98,6 +99,17 @@ class SelectEducationalOrganizationCommand:
     requested_by: str
     application_id: str
     educational_organization_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class SetApplicationPayerCommand:
+    """Name the person the festival's contract for this order is signed with."""
+
+    requested_by: str
+    application_id: str
+    last_name: str
+    first_name: str
+    middle_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

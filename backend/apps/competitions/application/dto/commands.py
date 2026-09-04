@@ -129,6 +129,7 @@ class UpdateSettingsCommand:
     require_teacher: bool
     require_parent_guardian: bool
     participant_comment_enabled: bool
+    collect_payer_details: bool
     require_document_upload: bool
     allow_additional_documents_later: bool
     allow_replacing_documents: bool

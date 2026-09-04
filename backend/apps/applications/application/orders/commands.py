@@ -30,6 +30,7 @@ from apps.applications.application.dto.order_commands import (
     RequestApplicationPaymentCommand,
     SelectAdditionalServiceCommand,
     SelectEducationalOrganizationCommand,
+    SetApplicationPayerCommand,
     SubmitApplicationCommand,
     SyncApplicationCommand,
     UploadApplicationReceiptCommand,
@@ -80,6 +81,7 @@ from apps.applications.domain.value_objects import (
     FileReference,
     OrganizationName,
     PaymentReceiptId,
+    PersonName,
     PriceCalculationType,
     ServiceId,
     ServiceLine,
@@ -112,6 +114,7 @@ __all__ = [
     "RequestApplicationPaymentHandler",
     "SelectAdditionalServiceHandler",
     "SelectEducationalOrganizationHandler",
+    "SetApplicationPayerHandler",
     "SubmitApplicationHandler",
     "SyncApplicationHandler",
     "UploadApplicationReceiptHandler",
@@ -435,6 +438,41 @@ class SelectEducationalOrganizationHandler:
         return ApplicationOperationResultDto.of(application, tuple(order_events))
 
 
+class SetApplicationPayerHandler:
+    """Use case: name the person the festival's contract for this order is signed with.
+
+    Accepted only while registration is open, like every other edit to a draft: the
+    contract is drawn up from the order as it was submitted. Whether the festival asks
+    for a payer at all is not checked here - an applicant who fills the block in on a
+    festival that later switches it off has simply given the organizer a name nobody
+    needs, which is not worth an error.
+    """
+
+    def __init__(self, *, applications: ApplicationRepository, catalog: CompetitionCatalog, clock: Clock) -> None:
+        self._applications = applications
+        self._catalog = catalog
+        self._clock = clock
+
+    def handle(self, command: SetApplicationPayerCommand) -> ApplicationOperationResultDto:
+        now = self._clock.utcnow()
+        application = load_application(self._applications, parse_application_id(command.application_id))
+        ensure_owner(application, parse_user_id(command.requested_by))
+        if not self._catalog.accepts_submissions(competition_id=application.competition_id, now=now):
+            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
+        # `PersonName` belongs to the value-object tree the Submission translator
+        # covers, not the order's - so the two calls need their own context managers.
+        with translate_domain_errors():
+            name = PersonName(
+                first_name=command.first_name,
+                last_name=command.last_name,
+                middle_name=command.middle_name,
+            )
+        with translate_application_domain_errors():
+            order_events = application.set_payer(name=name, now=now)
+        self._applications.save(application)
+        return ApplicationOperationResultDto.of(application, tuple(order_events))
+
+
 class SubmitApplicationHandler:
     """Use case: submit the order - submit each attached submission, then place the order.
 
@@ -492,7 +530,12 @@ class SubmitApplicationHandler:
         if receipt.required and receipt.due_at_submit and not application.has_payment_receipt:
             raise PaymentReceiptRequiredError("This competition requires the payment receipt to be attached before the application is submitted.")
         with translate_application_domain_errors():
-            order_events = application.submit(required_consent_codes=required_consents, required_service_ids=required_services, now=now)
+            order_events = application.submit(
+                required_consent_codes=required_consents,
+                required_service_ids=required_services,
+                payer_required=self._catalog.collects_payer_details(competition_id=application.competition_id),
+                now=now,
+            )
         self._applications.save(application)
         self._notify_submitted(application, now=now)
         return ApplicationOperationResultDto.of(application, tuple(order_events))

@@ -57,6 +57,7 @@ function aRegistration({ mixedAge = false }: { mixedAge?: boolean } = {}): Regis
     },
     registrationOpen: true,
     allowMultiplePerformances: true,
+    collectPayerDetails: false,
     deadlines: {
       application: null,
       payment: null,

@@ -1854,6 +1854,14 @@ class CompetitionSettings:
     require_parent_guardian: bool = False
     participant_comment_enabled: bool = True
 
+    # Contract party (who the documents are made out to)
+    #: Whether the applicant names the person the contract is signed with — the payer
+    #: for the application. Off by default: a festival that issues no documents has no
+    #: business asking for a name it will never use, and every application entered
+    #: before this flag existed was filed without one. Turning it on makes the payer's
+    #: full name a condition of submitting.
+    collect_payer_details: bool = False
+
     # Documents (generic engine — no hardcoded document types)
     require_document_upload: bool = False
     allow_additional_documents_later: bool = True

@@ -145,6 +145,7 @@ class SettingsView:
     require_teacher: bool
     require_parent_guardian: bool
     participant_comment_enabled: bool
+    collect_payer_details: bool
     require_document_upload: bool
     allow_additional_documents_later: bool
     allow_replacing_documents: bool
@@ -170,6 +171,7 @@ class SettingsView:
             require_teacher=settings.require_teacher,
             require_parent_guardian=settings.require_parent_guardian,
             participant_comment_enabled=settings.participant_comment_enabled,
+            collect_payer_details=settings.collect_payer_details,
             require_document_upload=settings.require_document_upload,
             allow_additional_documents_later=settings.allow_additional_documents_later,
             allow_replacing_documents=settings.allow_replacing_documents,

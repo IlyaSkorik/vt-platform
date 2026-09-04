@@ -194,6 +194,15 @@ class CompetitionCatalog(Protocol):
         """
         ...
 
+    def collects_payer_details(self, *, competition_id: CompetitionId) -> bool:
+        """Whether this competition draws up documents per order and so needs a payer.
+
+        Unknown competitions answer ``False``: an order cannot be submitted against a
+        competition that is not there, and a missing row must not invent a requirement
+        the organizer never configured.
+        """
+        ...
+
     def accepts_upload(self, *, competition_id: CompetitionId, attachment_kind: str, now: datetime) -> bool:
         """Whether uploads of ``attachment_kind`` are still allowed at ``now``.
 

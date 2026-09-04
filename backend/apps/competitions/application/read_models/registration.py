@@ -167,6 +167,10 @@ class RegistrationView:
     #: refuses one anyway — this is the projection of that same rule, so the button
     #: is absent rather than present and rejected.
     allow_multiple_performances: bool
+    #: Whether the wizard asks who the contract is signed with. The Applications
+    #: context refuses to accept an order without that name when this is true, so the
+    #: card is shown exactly when the name is a condition of submitting.
+    collect_payer_details: bool
     deadlines: RegistrationDeadlinesView
     nominations: list[RegistrationNominationView] = field(default_factory=list)
     disciplines: list[RegistrationDisciplineView] = field(default_factory=list)
@@ -323,6 +327,7 @@ def project_registration(competition: Competition, *, now: datetime) -> Registra
         ),
         registration_open=competition.is_application_allowed(now),
         allow_multiple_performances=settings.allow_multiple_performances,
+        collect_payer_details=settings.collect_payer_details,
         deadlines=RegistrationDeadlinesView(
             application=competition.deadlines.application,
             payment=competition.deadlines.payment,

@@ -32,6 +32,7 @@ from apps.applications.application.orders import (
     RequestApplicationPaymentHandler,
     SelectAdditionalServiceHandler,
     SelectEducationalOrganizationHandler,
+    SetApplicationPayerHandler,
     SubmitApplicationHandler,
     UploadApplicationReceiptHandler,
 )
@@ -70,6 +71,7 @@ __all__ = [
     "build_request_payment_handler",
     "build_select_educational_organization_handler",
     "build_select_service_handler",
+    "build_set_application_payer_handler",
     "build_submit_application_handler",
     "build_upload_receipt_handler",
 ]
@@ -139,6 +141,10 @@ def build_select_educational_organization_handler() -> SelectEducationalOrganiza
         directory=DjangoEducationalOrganizationDirectory(),
         clock=SystemClock(),
     )
+
+
+def build_set_application_payer_handler() -> SetApplicationPayerHandler:
+    return SetApplicationPayerHandler(applications=_applications(), catalog=DjangoCompetitionCatalog(), clock=SystemClock())
 
 
 def build_submit_application_handler() -> SubmitApplicationHandler:

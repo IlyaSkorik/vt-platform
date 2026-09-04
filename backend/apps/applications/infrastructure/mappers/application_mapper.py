@@ -25,6 +25,7 @@ from apps.applications.domain.value_objects import (
     OrganizationName,
     PaymentReceipt,
     PaymentReceiptId,
+    PersonName,
     PriceSnapshot,
     ServiceId,
     ServiceLine,
@@ -56,6 +57,7 @@ class ApplicationMapper:
             updated_at=model.updated_at,
             educational_organization_id=org_id,
             organization_name=org_name,
+            payer_name=ApplicationMapper._payer_from_columns(model),
             submission_refs=[ApplicationMapper._ref_from_json(row) for row in model.submission_refs],
             service_lines=[ApplicationMapper._service_from_json(row) for row in model.service_lines],
             consents=[ApplicationMapper._consent_from_json(row) for row in model.consents],
@@ -81,8 +83,24 @@ class ApplicationMapper:
         return model
 
     @staticmethod
+    def _payer_from_columns(model: ApplicationModel) -> PersonName | None:
+        """The payer's name, or ``None`` when the festival never asked for one.
+
+        Both required parts have to be there: a row carrying a surname but no given
+        name is not a name the value object would accept, and rehydration deliberately
+        re-validates nothing - so it is read as absent rather than raised over.
+        """
+        last = (model.payer_last_name or "").strip()
+        first = (model.payer_first_name or "").strip()
+        if not last or not first:
+            return None
+        middle = (model.payer_middle_name or "").strip() or None
+        return PersonName(first_name=first, last_name=last, middle_name=middle)
+
+    @staticmethod
     def _to_columns(entity: Application) -> dict[str, Any]:
         org = entity.organization_name
+        payer = entity.payer_name
         return {
             "id": entity.id.value,
             "competition_id": entity.competition_id.value,
@@ -90,6 +108,9 @@ class ApplicationMapper:
             "status": entity.status.value,
             "educational_organization_id": entity.educational_organization_id.value if entity.educational_organization_id is not None else None,
             "organization_name": org.value if org is not None else None,
+            "payer_last_name": payer.last_name if payer is not None else None,
+            "payer_first_name": payer.first_name if payer is not None else None,
+            "payer_middle_name": payer.middle_name if payer is not None else None,
             "submission_refs": [ApplicationMapper._ref_to_json(ref) for ref in entity.submission_refs],
             "service_lines": [ApplicationMapper._service_to_json(line) for line in entity.service_lines],
             "consents": [ApplicationMapper._consent_to_json(consent) for consent in entity.consents],

@@ -180,6 +180,39 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApplicationResponse'
           description: ''
+  /api/v1/applications/{application_id}/payer:
+    put:
+      operationId: applications_set_payer
+      description: PUT /api/v1/applications/{id}/payer - name who the contract is
+        signed with.
+      summary: Set the application payer
+      parameters:
+      - in: path
+        name: application_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Applications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetPayerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SetPayerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SetPayerRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+          description: ''
   /api/v1/applications/{application_id}/payment:
     post:
       operationId: applications_mark_paid
@@ -10456,6 +10489,10 @@ components:
           type:
           - string
           - 'null'
+        payer:
+          oneOf:
+          - $ref: '#/components/schemas/_Payer'
+          - type: 'null'
         submissions:
           type: array
           items:
@@ -10498,6 +10535,7 @@ components:
       - id
       - organizationName
       - paidAt
+      - payer
       - paymentReceipts
       - services
       - status
@@ -15268,6 +15306,8 @@ components:
           type: boolean
         allowMultiplePerformances:
           type: boolean
+        collectPayerDetails:
+          type: boolean
         deadlines:
           $ref: '#/components/schemas/RegistrationDeadlines'
         nominations:
@@ -15311,6 +15351,7 @@ components:
       - admissionRules
       - ageCategories
       - allowMultiplePerformances
+      - collectPayerDetails
       - competition
       - deadlines
       - disciplines
@@ -15846,6 +15887,29 @@ components:
           maxItems: 200
       required:
       - members
+    SetPayerRequest:
+      type: object
+      description: |-
+        Validate the payer (contract party) named on the order.
+
+        A natural person only, in three parts. The patronymic is optional because not
+        everyone has one; the domain bounds each part, and these limits mirror it so an
+        over-long surname is a field error rather than a domain exception.
+      properties:
+        lastName:
+          type: string
+          maxLength: 120
+        firstName:
+          type: string
+          maxLength: 120
+        middleName:
+          type:
+          - string
+          - 'null'
+          maxLength: 120
+      required:
+      - firstName
+      - lastName
     SetPerformanceRequest:
       type: object
       description: |-
@@ -16622,6 +16686,9 @@ components:
           type: boolean
         participantCommentEnabled:
           type: boolean
+        collectPayerDetails:
+          type: boolean
+          default: false
         requireDocumentUpload:
           type: boolean
         allowAdditionalDocumentsLater:
@@ -18129,6 +18196,24 @@ components:
       required:
       - id
       - name
+    _Payer:
+      type: object
+      properties:
+        lastName:
+          type: string
+        firstName:
+          type: string
+        middleName:
+          type:
+          - string
+          - 'null'
+        fullName:
+          type: string
+      required:
+      - firstName
+      - fullName
+      - lastName
+      - middleName
     _PaymentReceipt:
       type: object
       properties:
@@ -18477,6 +18562,8 @@ components:
           type: boolean
         participantCommentEnabled:
           type: boolean
+        collectPayerDetails:
+          type: boolean
         requireDocumentUpload:
           type: boolean
         allowAdditionalDocumentsLater:
@@ -18519,6 +18606,7 @@ components:
       - allowReturningForCorrection
       - allowWithdrawingApplications
       - automaticApprovalAfterPayment
+      - collectPayerDetails
       - formatRequirements
       - manualApplicationApproval
       - participantCommentEnabled

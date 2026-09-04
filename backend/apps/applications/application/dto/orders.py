@@ -29,6 +29,7 @@ __all__ = [
     "ApplicationSummaryView",
     "ApplicationView",
     "ConsentView",
+    "PayerView",
     "PaymentReceiptView",
     "ServiceLineView",
     "SubmissionRefView",
@@ -147,6 +148,16 @@ class PaymentReceiptView:
 
 
 @dataclass(frozen=True, slots=True)
+class PayerView:
+    """The person the festival's contract for the order is signed with."""
+
+    last_name: str
+    first_name: str
+    middle_name: str | None
+    full_name: str
+
+
+@dataclass(frozen=True, slots=True)
 class ApplicationView:
     """A flat, immutable read view of the whole :class:`Application` aggregate."""
 
@@ -156,6 +167,7 @@ class ApplicationView:
     status: str
     educational_organization_id: str | None
     organization_name: str | None
+    payer: PayerView | None
     submissions: tuple[SubmissionRefView, ...]
     services: tuple[ServiceLineView, ...]
     consents: tuple[ConsentView, ...]
@@ -170,6 +182,7 @@ class ApplicationView:
     @classmethod
     def from_application(cls, application: Application) -> ApplicationView:
         org = application.organization_name
+        payer = application.payer_name
         total = application.total_price
         return cls(
             id=application.id.json(),
@@ -180,6 +193,16 @@ class ApplicationView:
                 application.educational_organization_id.json() if application.educational_organization_id is not None else None
             ),
             organization_name=org.value if org is not None else None,
+            payer=(
+                PayerView(
+                    last_name=payer.last_name,
+                    first_name=payer.first_name,
+                    middle_name=payer.middle_name,
+                    full_name=payer.full_name,
+                )
+                if payer is not None
+                else None
+            ),
             submissions=tuple(SubmissionRefView.from_ref(ref) for ref in application.submission_refs),
             services=tuple(ServiceLineView.from_line(line) for line in application.service_lines),
             consents=tuple(ConsentView.from_consent(consent) for consent in application.consents),

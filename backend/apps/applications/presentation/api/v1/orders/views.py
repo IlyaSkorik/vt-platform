@@ -35,6 +35,7 @@ from apps.applications.application.dto.order_commands import (
     RequestApplicationPaymentCommand,
     SelectAdditionalServiceCommand,
     SelectEducationalOrganizationCommand,
+    SetApplicationPayerCommand,
     SubmitApplicationCommand,
     UploadApplicationReceiptCommand,
 )
@@ -58,6 +59,7 @@ from apps.applications.presentation.api.v1.orders.serializers import (
     RecordConsentsRequestSerializer,
     SelectEducationalOrganizationRequestSerializer,
     SelectServiceRequestSerializer,
+    SetPayerRequestSerializer,
     UploadReceiptRequestSerializer,
 )
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
@@ -100,6 +102,16 @@ def _application_resource(dto: ApplicationView) -> dict[str, Any]:
         "correctionComment": latest_correction_comment,
         "educationalOrganizationId": dto.educational_organization_id,
         "organizationName": dto.organization_name,
+        "payer": (
+            {
+                "lastName": dto.payer.last_name,
+                "firstName": dto.payer.first_name,
+                "middleName": dto.payer.middle_name,
+                "fullName": dto.payer.full_name,
+            }
+            if dto.payer is not None
+            else None
+        ),
         "submissions": [
             {
                 "submissionId": ref.submission_id,
@@ -389,6 +401,37 @@ class ApplicationEducationalOrganizationView(_AuthenticatedView):
             return problems.application_problem(exc, instance=request.path, request=request)
         name = result.application.organization_name
         _note(application_id, f"Изменена образовательная организация: {name}" if name else "Изменена образовательная организация")
+        return _envelope(request, _application_resource(result.application), status=200)
+
+
+class ApplicationPayerView(_AuthenticatedView):
+    """PUT /api/v1/applications/{id}/payer - name who the contract is signed with."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="applications_set_payer",
+        summary="Set the application payer",
+        request=SetPayerRequestSerializer,
+        responses={200: ApplicationResponseSerializer},
+    )
+    def put(self, request: Request, application_id: str) -> Response:
+        serializer = SetPayerRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return problems.validation_problem(serializer.errors, instance=request.path, request=request)
+        middle = serializer.validated_data.get("middleName")
+        command = SetApplicationPayerCommand(
+            requested_by=_uid(request),
+            application_id=application_id,
+            last_name=str(serializer.validated_data["lastName"]),
+            first_name=str(serializer.validated_data["firstName"]),
+            middle_name=str(middle).strip() or None if middle else None,
+        )
+        try:
+            result = composition.build_set_application_payer_handler().handle(command)
+        except ApplicationError as exc:
+            return problems.application_problem(exc, instance=request.path, request=request)
+        payer = result.application.payer
+        _note(application_id, f"Указан заказчик: {payer.full_name}" if payer else "Изменён заказчик")
         return _envelope(request, _application_resource(result.application), status=200)
 
 

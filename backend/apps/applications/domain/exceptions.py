@@ -526,5 +526,9 @@ class MissingRequiredServiceError(ApplicationInvariantError):
     """An additional service the competition mandates has not been selected."""
 
 
+class PayerRequiredError(ApplicationInvariantError):
+    """The festival signs a contract per application and no payer has been named."""
+
+
 class NotAllSubmissionsApprovedError(ApplicationInvariantError):
     """The application is not ready for payment because not all its submissions are approved."""

@@ -122,6 +122,68 @@ def test_record_consents(auth_client: APIClient) -> None:
     assert [c["code"] for c in response.data["data"]["consents"]] == ["personal_data"]
 
 
+def test_set_payer(auth_client: APIClient) -> None:
+    competition_id = _seed_open_competition()
+    app_id = _create(auth_client, competition_id).data["data"]["id"]
+
+    response = auth_client.put(
+        f"/api/v1/applications/{app_id}/payer",
+        {"lastName": "Иванова", "firstName": "Анна", "middleName": "Сергеевна"},
+        format="json",
+    )
+
+    assert response.status_code == 200, response.data
+    assert response.data["data"]["payer"] == {
+        "lastName": "Иванова",
+        "firstName": "Анна",
+        "middleName": "Сергеевна",
+        "fullName": "Иванова Анна Сергеевна",
+    }
+
+
+def test_set_payer_survives_a_reload(auth_client: APIClient) -> None:
+    """Three columns, one value object: the name has to come back off the row the same
+    way it went in, patronymic and all."""
+    competition_id = _seed_open_competition()
+    app_id = _create(auth_client, competition_id).data["data"]["id"]
+    auth_client.put(f"/api/v1/applications/{app_id}/payer", {"lastName": "Иванова", "firstName": "Анна"}, format="json")
+
+    fetched = auth_client.get(f"/api/v1/applications/{app_id}")
+
+    assert fetched.data["data"]["payer"]["fullName"] == "Иванова Анна"
+    assert fetched.data["data"]["payer"]["middleName"] is None
+
+
+def test_a_payer_without_a_given_name_is_a_field_error(auth_client: APIClient) -> None:
+    competition_id = _seed_open_competition()
+    app_id = _create(auth_client, competition_id).data["data"]["id"]
+
+    response = auth_client.put(f"/api/v1/applications/{app_id}/payer", {"lastName": "Иванова"}, format="json")
+
+    assert response.status_code == 400, response.data
+    assert response["Content-Type"] == "application/problem+json"
+
+
+def test_a_blank_payer_surname_is_refused_rather_than_crashing(auth_client: APIClient) -> None:
+    """`PersonName` lives in the value-object error tree, not the order's, so a name it
+    refuses has to come back as a 4xx rather than an unhandled 500."""
+    competition_id = _seed_open_competition()
+    app_id = _create(auth_client, competition_id).data["data"]["id"]
+
+    response = auth_client.put(f"/api/v1/applications/{app_id}/payer", {"lastName": "   ", "firstName": "Анна"}, format="json")
+
+    assert 400 <= response.status_code < 500, response.data
+    assert response["Content-Type"] == "application/problem+json"
+
+
+def test_an_application_carries_no_payer_until_one_is_named(auth_client: APIClient) -> None:
+    competition_id = _seed_open_competition()
+
+    created = _create(auth_client, competition_id)
+
+    assert created.data["data"]["payer"] is None
+
+
 def test_select_unknown_service_is_404(auth_client: APIClient) -> None:
     competition_id = _seed_open_competition()
     app_id = _create(auth_client, competition_id).data["data"]["id"]

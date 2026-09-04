@@ -70,6 +70,7 @@ __all__ = [
     "ParticipantMemberCountChanged",
     "ParticipantMembersChanged",
     "ParticipantRemoved",
+    "PayerRecorded",
     "PaymentReceiptRemoved",
     "PaymentReceiptUploaded",
     "PerformanceDefined",
@@ -355,6 +356,18 @@ class EducationalOrganizationSelected(DomainEvent):
     """The applicant selected the educational organization for the application."""
 
     educational_organization_id: EducationalOrganizationId
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class PayerRecorded(DomainEvent):
+    """The applicant named the person the festival's contract is signed with.
+
+    Carries only the rendered full name: the payer is a plain natural person with no
+    identity of its own in this context, and a subscriber that reacts to the event
+    (a contract draft, an accounting export) needs the name, not a reference.
+    """
+
+    payer_full_name: str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

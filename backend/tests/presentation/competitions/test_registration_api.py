@@ -101,12 +101,35 @@ def test_turning_the_rule_off_shows_up_in_the_projection() -> None:
 
     competition_id = _seed_competition()
     competition = CompetitionModel.objects.get(id=competition_id)
-    competition.settings = {**competition.settings, "schema_version": 4, "allow_multiple_performances": False}
+    competition.settings = {**competition.settings, "schema_version": 5, "allow_multiple_performances": False}
     competition.save(update_fields=["settings"])
 
     response = APIClient().get(_url(competition_id))
 
     assert response.data["data"]["allowMultiplePerformances"] is False
+
+
+def test_the_payer_block_is_off_unless_the_festival_asks_for_it() -> None:
+    """The wizard renders the block off this flag, so a festival nobody configured must
+    not start demanding a name it will never use."""
+    competition_id = _seed_competition()
+
+    response = APIClient().get(_url(competition_id))
+
+    assert response.data["data"]["collectPayerDetails"] is False
+
+
+def test_turning_the_payer_block_on_shows_up_in_the_projection() -> None:
+    from apps.competitions.infrastructure.models import CompetitionModel
+
+    competition_id = _seed_competition()
+    competition = CompetitionModel.objects.get(id=competition_id)
+    competition.settings = {**competition.settings, "schema_version": 5, "collect_payer_details": True}
+    competition.save(update_fields=["settings"])
+
+    response = APIClient().get(_url(competition_id))
+
+    assert response.data["data"]["collectPayerDetails"] is True
 
 
 def test_mixed_age_category_is_projected_with_its_calculation_method() -> None:

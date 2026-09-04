@@ -73,6 +73,8 @@ type Detail = {
   totalPriceAmount?: string | null;
   totalPriceCurrency?: string | null;
   receiptFileReferences?: string[];
+  /** Кто указан стороной договора по заявке — только у фестивалей, которые это собирают. */
+  payerName?: string | null;
   participants: Array<{ id: string; name: string; memberCount: number }>;
   teachers: Array<{ id: string; name: string; role: string }>;
   attachments: Array<{ id: string; type: string; fileReference: string }>;
@@ -576,6 +578,16 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                         ? ` · ${workspace.data.detail.totalPriceAmount} ${workspace.data.detail.totalPriceCurrency ?? "BYN"}`
                         : ""}
                     </p>
+                    {/* Заказчик — строкой рядом с оплатой: по нему оформляют договор
+                        и счёт, и его же ищут, когда приходит перевод. */}
+                    {workspace.data.detail.payerName ? (
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Заказчик:{" "}
+                        <span className="font-medium text-foreground">
+                          {workspace.data.detail.payerName}
+                        </span>
+                      </p>
+                    ) : null}
                     <ReceiptDownloads
                       references={
                         workspace.data.detail.receiptFileReferences ??

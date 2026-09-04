@@ -377,6 +377,7 @@ class RegistrationSerializer(serializers.Serializer[object]):
     competition = RegistrationCompetitionSerializer()
     registrationOpen = serializers.BooleanField(source="registration_open")
     allowMultiplePerformances = serializers.BooleanField(source="allow_multiple_performances")
+    collectPayerDetails = serializers.BooleanField(source="collect_payer_details")
     deadlines = RegistrationDeadlinesSerializer()
     nominations = RegistrationNominationSerializer(many=True)
     disciplines = RegistrationDisciplineSerializer(many=True)

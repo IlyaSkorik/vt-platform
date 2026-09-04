@@ -21,6 +21,7 @@ import {
   applicationsRetrieve,
   applicationsSelectOrganization,
   applicationsSelectService,
+  applicationsSetPayer,
   applicationsSubmit,
   applicationsUploadReceipt,
 } from "@/shared/api/generated/applications/applications";
@@ -31,6 +32,7 @@ import type {
   RecordConsentsRequest,
   SelectEducationalOrganizationRequest,
   SelectServiceRequest,
+  SetPayerRequest,
   SubmissionResource,
 } from "@/shared/api/generated/model-applications";
 import type { Registration } from "@/shared/api/generated/model-public-catalog";
@@ -181,6 +183,18 @@ export function useSelectOrganization(applicationId: string) {
       body: SelectEducationalOrganizationRequest,
     ): Promise<ApplicationResource> => {
       const response = await applicationsSelectOrganization(applicationId, body);
+      return unwrap<ApplicationResource>(response);
+    },
+    onSuccess: () => invalidate(applicationId),
+  });
+}
+
+/** Name the person the festival's contract for this order is signed with. */
+export function useSetPayer(applicationId: string) {
+  const invalidate = useInvalidateApplication();
+  return useMutation({
+    mutationFn: async (body: SetPayerRequest): Promise<ApplicationResource> => {
+      const response = await applicationsSetPayer(applicationId, body);
       return unwrap<ApplicationResource>(response);
     },
     onSuccess: () => invalidate(applicationId),

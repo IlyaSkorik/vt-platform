@@ -590,6 +590,13 @@ export function SettingsSection({
             disabled={isReadOnly}
             onChange={(v) => update({ participantCommentEnabled: v })}
           />
+          <SwitchRow
+            label="Заказчик обязателен"
+            description="Заявитель указывает ФИО того, с кем заключается договор и от кого поступает оплата. Выключите, если документы по заявкам не оформляете, — блок не покажется и данные не собираются."
+            checked={settings.collectPayerDetails}
+            disabled={isReadOnly}
+            onChange={(v) => update({ collectPayerDetails: v })}
+          />
           {/* "Данные родителя / опекуна обязательны" is not rendered, and the gate behind
               it is gone: the guardian's *consent* is now required unconditionally when a
               child's record is created, which is the stronger guarantee and not an

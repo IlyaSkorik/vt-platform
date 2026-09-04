@@ -110,9 +110,11 @@ class FakeCompetitionCatalog:
         calculation_type: PriceCalculationType = PriceCalculationType.PER_PARTICIPANT,
         additional_performance_discount_percent: int = 0,
         allows_multiple_performances: bool = True,
+        collects_payer_details: bool = False,
     ) -> None:
         self.discount_percent = additional_performance_discount_percent
         self.multiple_performances = allows_multiple_performances
+        self.payer_details = collects_payer_details
         self.known = known
         self.open_for_submissions = open_for_submissions
         self.accepts_payment_flag = accepts_payment
@@ -145,6 +147,9 @@ class FakeCompetitionCatalog:
 
     def allows_multiple_performances(self, *, competition_id: CompetitionId) -> bool:
         return self.multiple_performances
+
+    def collects_payer_details(self, *, competition_id: CompetitionId) -> bool:
+        return self.payer_details
 
     def participation_policy(
         self,

@@ -132,6 +132,10 @@ class UpdateCompetitionSettingsSerializer(serializers.Serializer[dict[str, objec
     requireTeacher = serializers.BooleanField(source="require_teacher")
     requireParentGuardian = serializers.BooleanField(source="require_parent_guardian")
     participantCommentEnabled = serializers.BooleanField(source="participant_comment_enabled")
+    # Defaulted for the same reason as `allowMultiplePerformances`: the field arrived
+    # after clients were sending this payload, and a screen that has not been rebuilt
+    # must not switch the payer block on by omitting it.
+    collectPayerDetails = serializers.BooleanField(source="collect_payer_details", required=False, default=False)
     requireDocumentUpload = serializers.BooleanField(source="require_document_upload")
     allowAdditionalDocumentsLater = serializers.BooleanField(source="allow_additional_documents_later")
     allowReplacingDocuments = serializers.BooleanField(source="allow_replacing_documents")
@@ -634,6 +638,7 @@ class _SettingsSerializer(serializers.Serializer[dict[str, object]]):
     requireTeacher = serializers.BooleanField(source="require_teacher")
     requireParentGuardian = serializers.BooleanField(source="require_parent_guardian")
     participantCommentEnabled = serializers.BooleanField(source="participant_comment_enabled")
+    collectPayerDetails = serializers.BooleanField(source="collect_payer_details")
     requireDocumentUpload = serializers.BooleanField(source="require_document_upload")
     allowAdditionalDocumentsLater = serializers.BooleanField(source="allow_additional_documents_later")
     allowReplacingDocuments = serializers.BooleanField(source="allow_replacing_documents")

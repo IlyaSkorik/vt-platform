@@ -33,6 +33,7 @@ function competition(partial: Partial<CompetitionDetail> = {}): CompetitionDetai
       requireTeacher: false,
       requireParentGuardian: false,
       participantCommentEnabled: false,
+      collectPayerDetails: false,
       requireDocumentUpload: false,
       allowAdditionalDocumentsLater: true,
       allowReplacingDocuments: true,

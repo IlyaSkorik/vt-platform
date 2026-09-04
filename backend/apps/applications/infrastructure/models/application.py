@@ -4,7 +4,8 @@ Persistence model only. The order's cached submission references, service lines,
 consents, total price snapshot and status history are stored as JSON on the parent
 row (the aggregate is always loaded/saved whole); the queryable facts - competition,
 applicant, status - are ordinary indexed columns. The educational-organization
-reference is kept as an id column plus its frozen name snapshot.
+reference is kept as an id column plus its frozen name snapshot, and the payer's
+name as its three parts.
 """
 
 from __future__ import annotations
@@ -29,6 +30,13 @@ class ApplicationModel(BasePersistenceModel):
 
     educational_organization_id = models.UUIDField(null=True, blank=True, default=None)
     organization_name = models.CharField(max_length=300, null=True, blank=True, default=None)
+
+    # The payer / contract party, as three columns rather than one JSON blob: the
+    # organizer searches the processing queue by surname when a transfer arrives, and
+    # a name buried in a document is not something the database can filter on.
+    payer_last_name = models.CharField(max_length=120, null=True, blank=True, default=None)
+    payer_first_name = models.CharField(max_length=120, null=True, blank=True, default=None)
+    payer_middle_name = models.CharField(max_length=120, null=True, blank=True, default=None)
 
     submission_refs = models.JSONField(default=list, blank=True)
     service_lines = models.JSONField(default=list, blank=True)

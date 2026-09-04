@@ -20,7 +20,12 @@ import {
 } from "@/entities/application";
 import { BenefitDocumentsCard } from "@/features/application-benefit-documents";
 import { ReceiptCard } from "@/features/application-receipt";
-import { ConsentsCard, PerformanceBuilder, ServicesCard } from "@/features/registration-wizard";
+import {
+  ConsentsCard,
+  PayerCard,
+  PerformanceBuilder,
+  ServicesCard,
+} from "@/features/registration-wizard";
 import type { ApplicationResource } from "@/shared/api/generated/model-applications";
 import type { Registration } from "@/shared/api/generated/model-public-catalog";
 import { ROUTES } from "@/shared/config";
@@ -221,8 +226,13 @@ function WizardBody({
           application={application}
           registration={registration}
         />
-        {/* Что заявка стоит и на что даёт право скидку — до согласий: подписывают
-            уже собранную заявку, а «Итого» подводит черту под всем сразу. */}
+        {/* Кто платит, на что даёт право скидку и чем оплачено — до согласий:
+            подписывают уже собранную заявку, а «Итого» подводит черту под всем сразу. */}
+        <PayerCard
+          applicationId={applicationId}
+          application={application}
+          registration={registration}
+        />
         <BenefitDocumentsCard application={application} />
         <ReceiptCard application={application} />
         <ConsentsCard
@@ -334,6 +344,11 @@ function ReviewStep({
   const blockers: string[] = [];
   if (application.submissions.length === 0) {
     blockers.push("Добавьте хотя бы одно выступление");
+  }
+  // Тот же запрет, что и на бэкенде: фестиваль, который оформляет документы по заявке,
+  // не принимает её без стороны договора.
+  if (registration.collectPayerDetails && !application.payer) {
+    blockers.push("Укажите заказчика — с кем заключается договор");
   }
   for (const consent of missingConsents) {
     blockers.push(`Требуется согласие: ${consent}`);

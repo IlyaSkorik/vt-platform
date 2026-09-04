@@ -11,7 +11,12 @@ import {
 import { BenefitDocumentsCard } from "@/features/application-benefit-documents";
 import { PhonogramsCard } from "@/features/application-phonograms";
 import { ReceiptCard } from "@/features/application-receipt";
-import { ConsentsCard, PerformanceBuilder, ServicesCard } from "@/features/registration-wizard";
+import {
+  ConsentsCard,
+  PayerCard,
+  PerformanceBuilder,
+  ServicesCard,
+} from "@/features/registration-wizard";
 import { ROUTES } from "@/shared/config";
 import {
   Alert,
@@ -163,6 +168,12 @@ export function ApplicationEditPage(): React.JSX.Element {
         />
 
         <PhonogramsCard application={application} />
+
+        <PayerCard
+          applicationId={applicationId}
+          application={application}
+          registration={registration}
+        />
 
         <BenefitDocumentsCard application={application} />
 

@@ -24,6 +24,7 @@ function baseCompetition(overrides: Partial<CompetitionDetail> = {}): Competitio
       requireTeacher: false,
       requireParentGuardian: false,
       participantCommentEnabled: false,
+      collectPayerDetails: false,
       requireDocumentUpload: false,
       allowAdditionalDocumentsLater: true,
       allowReplacingDocuments: true,

@@ -19,6 +19,7 @@ __all__ = [
     "RecordConsentsRequestSerializer",
     "SelectEducationalOrganizationRequestSerializer",
     "SelectServiceRequestSerializer",
+    "SetPayerRequestSerializer",
 ]
 
 
@@ -62,6 +63,19 @@ class SelectEducationalOrganizationRequestSerializer(serializers.Serializer[dict
 # ---------------------------------------------------------------------------
 # Response serializers (OpenAPI schema only)
 # ---------------------------------------------------------------------------
+
+
+class SetPayerRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """Validate the payer (contract party) named on the order.
+
+    A natural person only, in three parts. The patronymic is optional because not
+    everyone has one; the domain bounds each part, and these limits mirror it so an
+    over-long surname is a field error rather than a domain exception.
+    """
+
+    lastName = serializers.CharField(max_length=120)
+    firstName = serializers.CharField(max_length=120)
+    middleName = serializers.CharField(max_length=120, required=False, allow_blank=True, allow_null=True)
 
 
 class ApplicationMetaSerializer(serializers.Serializer[dict[str, object]]):
@@ -110,6 +124,13 @@ class _PaymentReceiptSerializer(serializers.Serializer[dict[str, object]]):
     uploadedAt = serializers.DateTimeField()
 
 
+class _PayerSerializer(serializers.Serializer[dict[str, object]]):
+    lastName = serializers.CharField()
+    firstName = serializers.CharField()
+    middleName = serializers.CharField(allow_null=True)
+    fullName = serializers.CharField()
+
+
 class ApplicationResourceSerializer(serializers.Serializer[dict[str, object]]):
     """An application (order) resource."""
 
@@ -122,6 +143,7 @@ class ApplicationResourceSerializer(serializers.Serializer[dict[str, object]]):
     correctionComment = serializers.CharField(allow_null=True)
     educationalOrganizationId = serializers.UUIDField(allow_null=True)
     organizationName = serializers.CharField(allow_null=True)
+    payer = _PayerSerializer(allow_null=True)
     submissions = _SubmissionRefSerializer(many=True)
     services = _ServiceLineSerializer(many=True)
     consents = _ConsentViewSerializer(many=True)
