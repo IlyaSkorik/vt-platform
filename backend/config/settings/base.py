@@ -83,6 +83,12 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    # After SecurityMiddleware so a plain-HTTP request is still redirected to HTTPS
+    # rather than being asked for a password it would then send unencrypted; before
+    # everything else so an unauthenticated request costs a session lookup and a
+    # database connection it does not need. Removes itself when unconfigured, which
+    # is every deployment except the stand.
+    "config.middleware.SiteGateMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -293,6 +299,9 @@ SPECTACULAR_SETTINGS = {
 # --- OpenAPI docs access (API-000 §26, see config/api_docs.py) ------------
 API_DOCS_USER = settings.api_docs_user
 API_DOCS_PASSWORD = settings.api_docs_password
+
+SITE_GATE_USER = settings.site_gate_user
+SITE_GATE_PASSWORD = settings.site_gate_password
 
 # --- CORS (locked to known origins, API-000 §26) --------------------------
 CORS_ALLOWED_ORIGINS = settings.cors_allowed_origins

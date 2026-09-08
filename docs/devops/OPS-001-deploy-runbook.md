@@ -537,50 +537,51 @@ server {
 ```
 
 With Nginx Proxy Manager, the same thing is a proxy host forwarding to `mailpit:8025` with
-**Websockets Support** on and the stand's Access List attached — see §10.4.
+**Websockets Support** on — see §10.4.
+
+This one **does** need an Access List: Mailpit has no authentication of its own, and the
+application's gate (§10.3) does not cover it — a separate container behind a separate proxy host.
+Every letter the stand ever sent is readable there, so it cannot be left open.
 
 A verification link is then in front of the tester a second after it is triggered, instead of in
 somebody's spam folder — which is better for testing than real delivery would be.
 
-**3. Whatever terminates TLS closes the stand off.** Two things that do not exist in production:
+**3. The stand is closed to everyone who was not given it.** Two things that do not exist in
+production, and they live in two different places on purpose.
+
+*The password is in the application*, set through the stand's `.env`:
+
+```ini
+SITE_GATE_USER=stand
+SITE_GATE_PASSWORD=<openssl rand -hex 16>
+```
+
+Both empty everywhere else, and empty removes the middleware from the chain outright — production
+pays nothing for it. `config/middleware.py` holds the one interesting detail: `/healthz` and
+`/readyz` answer without credentials, because the container healthcheck and this workflow's own
+external check (§5's `PUBLIC_URL`) call them on every rollout, and both return a fixed literal
+with nothing behind them to protect. A gate that closed those would fail every deploy while
+protecting nothing.
+
+It is in the application rather than in the proxy's Access List for three reasons: that exemption
+is versioned and reviewed here instead of living in a text field in a web UI; it survives
+replacing the proxy; and it keeps the stand closed even to something that reaches the container
+directly.
+
+*The crawler hint is at the terminator*, because it is a response header and nothing else:
 
 ```nginx
 add_header X-Robots-Tag "noindex, nofollow, noarchive" always;
-
-auth_basic           "staging";
-auth_basic_user_file /etc/nginx/staging.htpasswd;   # htpasswd -c … одна пара на команду
 ```
 
-In Nginx Proxy Manager the same two live on the proxy host: **Access List** with one user for the
-basic auth, and **Advanced → Custom Nginx Configuration** for the `add_header` line.
+In Nginx Proxy Manager that is **Advanced → Custom Nginx Configuration** on the proxy host. Do
+**not** attach an Access List as well — the password is already handled above, and an Access List
+would also close `/healthz`, which is exactly the thing that must stay open.
 
-**One address has to stay outside the basic auth**, or the deploy's own external check (§5's
-`PUBLIC_URL`) is answered `401` on every rollout and staging can never go green:
-
-```nginx
-# Liveness probe. It returns the literal {"status": "ok"} and reads nothing — there is no
-# information behind it to protect — and both the deploy check and any uptime monitor have
-# to reach it without credentials. `location =` is an exact match and wins over the
-# generated `location /`, so the exemption applies to this address and nothing else. The
-# proxy headers are repeated because a location of one's own inherits none of them.
-location = /healthz {
-    auth_basic off;
-    proxy_pass http://vt-platform-prod-nginx-1:8080;
-    proxy_set_header Host              $host;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_set_header X-Real-IP         $remote_addr;
-}
-```
-
-Everything else — including `/readyz`, `/status` and the whole application — stays behind the
-password.
-
-Done at the terminator rather than in the application on purpose: the images are identical on both
-hosts, and that identity is the reason a staging test says anything about production. The moment a
-build behaves differently because it is "the staging build", the stand stops being evidence.
-
-Without this the stand is a public, indexable second copy of the site — duplicate content against
-the real domain, and a page carrying children's names that nobody meant to publish.
+Both are needed. The header stops a crawler that got the address from indexing it; the password
+stops everyone else from reading it. Without them the stand is a public, indexable second copy of
+the site — duplicate content against the real domain, and pages carrying children's names that
+nobody meant to publish.
 
 **4. It shares the machine, and must behave like a guest on it.**
 

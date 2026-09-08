@@ -148,6 +148,19 @@ class Settings(BaseSettings):
     api_docs_user: str = Field(default="", alias="API_DOCS_USER")
     api_docs_password: str = Field(default="", alias="API_DOCS_PASSWORD")
 
+    # --- Whole-site gate for a deployment that is not public (OPS-001 §10) ---
+    #
+    # Set on the staging stand, which is a complete copy of the site and must not be
+    # reachable by a crawler or by anyone who guesses the subdomain. Both empty in
+    # production, where the site *is* public — and empty removes the middleware from the
+    # chain entirely (config/middleware.py), so the normal case costs nothing.
+    #
+    # Note the default is the opposite of the docs gate above: there an unset variable
+    # must fail closed, because it would otherwise publish the whole contract. Here unset
+    # describes production, so it opens.
+    site_gate_user: str = Field(default="", alias="SITE_GATE_USER")
+    site_gate_password: str = Field(default="", alias="SITE_GATE_PASSWORD")
+
     # --- Networking / CORS (API-000 §26, ARCH-001 §10.4) ---
     cors_allowed_origins: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["http://localhost:5173"],
