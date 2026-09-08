@@ -150,17 +150,30 @@ jobs:
         env:
           PUBLIC_URL: ${{ vars.PUBLIC_URL }}
         run: |
-          if [ -z "${PUBLIC_URL:-}" ]; then
+          # Whitespace stripped before the emptiness test. A URL contains none, and an
+          # environment variable saved as a single space is not empty to `-z` — so the check
+          # did not skip, curl was handed " /healthz", and ten identical `000` lines said
+          # nothing about why. Cleared, that reads as "not configured", which is what someone
+          # who blanked the variable meant.
+          url=$(printf '%s' "${PUBLIC_URL:-}" | tr -d '[:space:]')
+          if [ -z "$url" ]; then
             echo "PUBLIC_URL is not set; skipping the external check"
             exit 0
           fi
           for attempt in $(seq 1 10); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' "$PUBLIC_URL/healthz" || true)
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$url/healthz" || true)
             [ "$code" = "200" ] && { echo "healthz answered 200"; exit 0; }
             echo "attempt $attempt: $code"
             sleep 6
           done
-          echo "::error::the deployment never answered 200 on /healthz"
+          echo "::error::$url/healthz never answered 200 — last was $code."
+          if [ "$code" = "000" ]; then
+            # Worth separating: the stack passed its own checks to get here, so a total
+            # failure to connect is about what stands in front of it — DNS, the certificate,
+            # the reverse proxy — and not about the application.
+            echo "::error::000 means curl could not connect at all: DNS, TLS or the proxy in"
+            echo "::error::front of this stack, rather than anything the containers are doing."
+          fi
           exit 1
 
       - name: Logs on failure
