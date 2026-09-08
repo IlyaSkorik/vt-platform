@@ -137,7 +137,7 @@ services:
   # and still leave a password reset from waiting behind a diploma print run.
   mail-worker:
     <<: *django
-    command: celery -A config worker -l info -Q mail --concurrency 4
+    command: celery -A config worker -l info -Q mail --concurrency ${MAIL_CONCURRENCY:-4}
     # A message costs ~2.8 s, almost all of it the SSL handshake (OPS-009), so 30 s is several
     # times what four in-flight messages need.
     stop_grace_period: 30s
@@ -224,7 +224,12 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in production}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./deploy/postgres/vt-platform.conf:/etc/postgresql/postgresql.conf:ro
+      # Which tuning profile, not whether to tune: `vt-platform.conf` assumes the box is ours
+      # alone (OPS-008 §3), and on a host shared with other applications its `shared_buffers` and
+      # `effective_cache_size` are both a claim on memory and a lie to the planner. Point
+      # `POSTGRES_CONF` at `vt-platform-small.conf` there. A path inside the checkout, so the
+      # profile in use is versioned rather than edited on the machine.
+      - ${POSTGRES_CONF:-./deploy/postgres/vt-platform.conf}:/etc/postgresql/postgresql.conf:ro
     # A shutdown checkpoint can take longer than Docker's 10 s default, and a SIGKILL mid-write
     # means recovery on the next start. Cheap insurance on the one service that holds the data.
     stop_grace_period: 60s

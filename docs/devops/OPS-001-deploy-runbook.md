@@ -536,11 +536,13 @@ server {
 }
 ```
 
-A verification link is then in front of the tester a second after she triggers it, instead of in
+With Nginx Proxy Manager, the same thing is a proxy host forwarding to `mailpit:8025` with
+**Websockets Support** on and the stand's Access List attached — see §10.4.
+
+A verification link is then in front of the tester a second after it is triggered, instead of in
 somebody's spam folder — which is better for testing than real delivery would be.
 
-**3. The host's TLS terminator closes it off.** Two lines in the staging server block, neither of
-which exists in production:
+**3. Whatever terminates TLS closes the stand off.** Two things that do not exist in production:
 
 ```nginx
 add_header X-Robots-Tag "noindex, nofollow, noarchive" always;
@@ -549,12 +551,64 @@ auth_basic           "staging";
 auth_basic_user_file /etc/nginx/staging.htpasswd;   # htpasswd -c … одна пара на команду
 ```
 
+In Nginx Proxy Manager the same two live on the proxy host: **Access List** with one user for the
+basic auth, and **Advanced → Custom Nginx Configuration** for the `add_header` line.
+
 Done at the terminator rather than in the application on purpose: the images are identical on both
 hosts, and that identity is the reason a staging test says anything about production. The moment a
 build behaves differently because it is "the staging build", the stand stops being evidence.
 
 Without this the stand is a public, indexable second copy of the site — duplicate content against
 the real domain, and a page carrying children's names that nobody meant to publish.
+
+**4. It shares the machine, and must behave like a guest on it.**
+
+The stand is very likely not alone: an existing reverse proxy holds `:80` and `:443`, and other
+applications hold memory and disk. Four places where the defaults assume a dedicated box.
+
+*Ports.* The stack publishes exactly one, on loopback: `127.0.0.1:${HTTP_PORT:-8080}`. Nothing
+else is exposed. If something already holds 8080, set `HTTP_PORT=8081` in the stand's `.env` —
+the container listens on 8080 regardless, so nothing else changes.
+
+*Reaching the stack from a containerised proxy.* Nginx Proxy Manager runs in a container, and
+`127.0.0.1` inside it is **its own** loopback, not the host's — a proxy host pointed at
+`127.0.0.1:8080` fails with a connection refused that looks like the stack being down. Put the
+proxy on the stack's network and address it by name:
+
+```bash
+docker network connect vt-platform-prod_default <npm-container>
+```
+
+Then, in the proxy host: forward to `vt-platform-prod-nginx-1`, port `8080`, scheme `http`, and
+turn **Websockets Support** on (Mailpit's inbox needs it; the application does not). Add that
+network to NPM's own compose file as well, or the connection is lost the next time NPM is
+recreated. Mailpit is then reachable the same way — forward to `mailpit`, port `8025` — with no
+host port involved at all.
+
+Whatever the proxy, it must pass `X-Forwarded-Proto`. Production settings trust it
+(`SECURE_PROXY_SSL_HEADER`) and redirect to HTTPS without it, so a proxy that drops it produces an
+infinite redirect rather than an error — §4. NPM sends it by default.
+
+*Memory.* `deploy/postgres/vt-platform.conf` is tuned for a machine this stack owns: 2 GB of
+`shared_buffers` and an `effective_cache_size` of 5 GB. On a shared box the first takes memory the
+co-tenants need and the second misinforms the planner about page cache it does not have. Four
+lines in the stand's `.env` turn the whole stack down to roughly a quarter of production:
+
+```ini
+POSTGRES_CONF=./deploy/postgres/vt-platform-small.conf   # ~1 GB instead of ~2.5 GB
+GUNICORN_WORKERS=2
+CELERY_CONCURRENCY=1
+MAIL_CONCURRENCY=1
+```
+
+The stand's database is a few hundred MB of test data, so it still sits in cache in its entirety
+and query plans stay representative — which is the property that makes testing on it mean
+anything.
+
+*Disk.* Two things grow, and both are already bounded: the pre-deploy dumps keep the five most
+recent, and the deploy keeps the five most recent tags of each image. That trim is scoped to this
+project's own repositories on purpose — a daemon-wide `docker image prune` on a shared host would
+be deciding what somebody else's application may keep.
 
 ---
 

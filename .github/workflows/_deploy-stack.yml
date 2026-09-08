@@ -172,6 +172,27 @@ jobs:
       # Telegram is where this team actually looks, so the outcome goes there rather than only
       # into a run nobody has open. Same shape as `deploy/backup/vt-backup.sh`: unset token means
       # no message, never a failed step — a broken notifier must not fail a good deploy.
+      - name: Reclaim disk
+        if: always()
+        run: |
+          # Scoped to this project's own repositories, deliberately.
+          #
+          # The obvious version — `docker image prune -f --filter until=168h` — is daemon-wide.
+          # Neither host is guaranteed to be ours alone (OPS-001 §10 puts the stand on a shared
+          # box behind an existing proxy), and deciding what another application may keep on disk
+          # is not a deploy workflow's call, even when it is "only" dangling layers.
+          #
+          # Five tags per image is enough to roll back through a bad week. `docker rmi` refuses to
+          # remove an image a container is using, so what is live survives regardless of ordering.
+          # Tags are unique per commit and never reused, so removing one releases its layers
+          # outright — nothing is left dangling for a later prune to collect.
+          for repo in "${BACKEND_IMAGE%:*}" "${FRONTEND_IMAGE%:*}"; do
+            docker image ls "$repo" --format '{{.Repository}}:{{.Tag}}' \
+              | tail -n +6 \
+              | xargs -r -n1 docker rmi >/dev/null 2>&1 || true
+          done
+          df -h /var/lib/docker 2>/dev/null | tail -1 || true
+
       - name: Report to Telegram
         if: always()
         env:
