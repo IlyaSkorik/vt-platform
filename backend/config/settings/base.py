@@ -290,6 +290,10 @@ SPECTACULAR_SETTINGS = {
     },
 }
 
+# --- OpenAPI docs access (API-000 §26, see config/api_docs.py) ------------
+API_DOCS_USER = settings.api_docs_user
+API_DOCS_PASSWORD = settings.api_docs_password
+
 # --- CORS (locked to known origins, API-000 §26) --------------------------
 CORS_ALLOWED_ORIGINS = settings.cors_allowed_origins
 CORS_ALLOW_CREDENTIALS = True

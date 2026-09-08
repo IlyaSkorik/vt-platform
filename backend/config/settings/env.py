@@ -134,6 +134,20 @@ class Settings(BaseSettings):
     time_zone: str = Field(default="UTC", alias="DJANGO_TIME_ZONE")
     language_code: str = Field(default="ru", alias="DJANGO_LANGUAGE_CODE")
 
+    # --- OpenAPI docs access (API-000 §26) ---
+    #
+    # The schema is a complete map of the API: every path, every parameter, every field
+    # name and enum value. That is exactly the reconnaissance an attacker would otherwise
+    # have to assemble by hand, so outside development the three doc routes sit behind
+    # HTTP Basic auth (config/api_docs.py).
+    #
+    # These are shared credentials for a read-only reference, not user accounts — one pair
+    # per deployment, kept in the secret store (OPS-008 §9). Leave them empty in a
+    # deployment and the routes are not served at all: unset must fail closed, or a
+    # forgotten variable silently publishes the whole contract.
+    api_docs_user: str = Field(default="", alias="API_DOCS_USER")
+    api_docs_password: str = Field(default="", alias="API_DOCS_PASSWORD")
+
     # --- Networking / CORS (API-000 §26, ARCH-001 §10.4) ---
     cors_allowed_origins: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["http://localhost:5173"],

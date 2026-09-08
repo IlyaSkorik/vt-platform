@@ -14,12 +14,8 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.http import HttpRequest, JsonResponse
 from django.urls import include, path, re_path
-from drf_spectacular.views import (
-    SpectacularAPIView,
-    SpectacularRedocView,
-    SpectacularSwaggerView,
-)
 
+from config.api_docs import redoc_view, schema_view, swagger_ui_view
 from config.seo import llms_txt, robots_txt, sitemap_xml
 from config.spa import spa_index
 from config.status import status_json, status_page
@@ -52,18 +48,12 @@ urlpatterns = [
     # and generated for the same reason: it names the competitions that exist right
     # now, and a stale answer about a deadline is worse than no answer.
     path("llms.txt", llms_txt, name="llms-txt"),
-    # OpenAPI 3.1 contract + docs (drf-spectacular, API-000 §25).
-    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
-    path(
-        "api/schema/swagger-ui/",
-        SpectacularSwaggerView.as_view(url_name="schema"),
-        name="swagger-ui",
-    ),
-    path(
-        "api/schema/redoc/",
-        SpectacularRedocView.as_view(url_name="schema"),
-        name="redoc",
-    ),
+    # OpenAPI 3.1 contract + docs (drf-spectacular, API-000 §25). Open in DEBUG;
+    # behind HTTP Basic auth everywhere else, and unmounted if a deployment never
+    # configured credentials — see config/api_docs.py for why it fails closed.
+    path("api/schema/", schema_view, name="schema"),
+    path("api/schema/swagger-ui/", swagger_ui_view, name="swagger-ui"),
+    path("api/schema/redoc/", redoc_view, name="redoc"),
     # Versioned bounded-context routers (ARCH-001 §14, API-000 §2).
     path("api/v1/", include("apps.identity.presentation.urls")),
     path("api/v1/", include("apps.organization.presentation.urls")),

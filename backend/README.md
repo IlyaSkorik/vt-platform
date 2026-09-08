@@ -259,6 +259,13 @@ docker compose up --build
 | `/api/schema/redoc/` | ReDoc |
 | `/admin/` | Django admin |
 
+The three schema addresses are open in `DEBUG` and behind HTTP Basic auth
+everywhere else — the contract names every path, parameter and enum in the API,
+including the staff-only ones. Credentials are one shared read-only pair per
+deployment (`API_DOCS_USER` / `API_DOCS_PASSWORD`); leave either empty in a
+deployment and all three answer **404** rather than opening up, so a forgotten
+variable cannot publish the contract unnoticed (`config/api_docs.py`).
+
 ---
 
 ## 5. Technology stack
