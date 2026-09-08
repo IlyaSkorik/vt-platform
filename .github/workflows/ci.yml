@@ -204,8 +204,12 @@ jobs:
         working-directory: frontend
         run: pnpm audit --audit-level high || true
 
+      # Pinned to a commit, not a tag. The previous reference here was `@0.28.0`, which stopped
+      # resolving: this action publishes its tags with a `v` prefix, so an unprefixed one is a
+      # version that does not exist — and the failure surfaces as "unable to resolve action", long
+      # after whoever wrote it had moved on. A commit cannot be re-pointed at other code either.
       - name: Trivy — filesystem and config
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
           scanners: vuln,secret,misconfig
