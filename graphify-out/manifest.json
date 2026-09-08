@@ -10275,8 +10275,8 @@
     "semantic_hash": ""
   },
   ".github/workflows/_deploy-stack.yml": {
-    "mtime": 1788885715.8577957,
-    "ast_hash": "3fb415351851ced2341dd8482b4787f5",
+    "mtime": 1788900078.7841842,
+    "ast_hash": "e539e24ebd740f85ea077e2485342e49",
     "semantic_hash": ""
   },
   ".github/workflows/release.yml": {
