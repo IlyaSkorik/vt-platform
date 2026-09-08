@@ -257,6 +257,20 @@ docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" \
   run --rm backend python manage.py createsuperuser
 ```
 
+> **Once the stack is running, reach for `docker exec` instead** for any later management
+> command — `createsuperuser` on a rebuilt host, a shell, a one-off script:
+>
+> ```bash
+> docker exec -it vt-platform-prod-backend-1 python manage.py createsuperuser
+> ```
+>
+> Two traps it walks past. The compose file lives in the *runner's workspace*, which is replaced
+> on every deploy and sits under `/home/deploy` at mode `0750` — so `cd` there as another user is
+> a permission error before anything else happens. And `--env-file` alone is not enough: compose
+> reads `env_file:` from `${ENV_FILE:-./backend/.env}`, which `--env-file` does not set, so
+> without `ENV_FILE` in the environment it looks for a file beside the compose file and fails.
+> The running container already has the whole environment; `exec` needs neither.
+
 Check it from outside the machine:
 
 ```bash
