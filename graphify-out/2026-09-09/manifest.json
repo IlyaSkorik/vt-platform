@@ -3125,9 +3125,9 @@
     "semantic_hash": "7e11bb8e1bf4f7c0fe1d7c5289a19348"
   },
   "backend/config/middleware.py": {
-    "mtime": 1785860600.8508363,
-    "ast_hash": "21a31d96232272ea1804d05264964dd9",
-    "semantic_hash": "21a31d96232272ea1804d05264964dd9"
+    "mtime": 1788901863.705344,
+    "ast_hash": "b578f086d288d17a3fd0cc2d969a0454",
+    "semantic_hash": ""
   },
   "backend/config/settings/__init__.py": {
     "mtime": 1785860600.8508363,
@@ -3135,8 +3135,8 @@
     "semantic_hash": "4616a41e93c24e9d5e6c5ded3754db37"
   },
   "backend/config/settings/base.py": {
-    "mtime": 1788868375.202273,
-    "ast_hash": "6cfe97efaf3f9e3a4a111c670dca7f5a",
+    "mtime": 1788901881.2913506,
+    "ast_hash": "f4fe7d62417f960bd70ce7177778f1c4",
     "semantic_hash": ""
   },
   "backend/config/settings/development.py": {
@@ -3145,8 +3145,8 @@
     "semantic_hash": ""
   },
   "backend/config/settings/env.py": {
-    "mtime": 1788868365.3280575,
-    "ast_hash": "2aea7c82bc69658a8165a7ce5cb1121e",
+    "mtime": 1788901881.288729,
+    "ast_hash": "63867366cf445c1b90858222387df8bf",
     "semantic_hash": ""
   },
   "backend/config/settings/production.py": {
@@ -9765,8 +9765,8 @@
     "semantic_hash": ""
   },
   "docs/devops/OPS-001-deploy-runbook.md": {
-    "mtime": 1788885802.515653,
-    "ast_hash": "bb0501eec6aa8f68c780668b766cc8cd",
+    "mtime": 1788901969.0327082,
+    "ast_hash": "702519d290ccef6f8c73206c94bfde0a",
     "semantic_hash": ""
   },
   "docs/legal/LEGAL-001-privacy-policy.md": {
@@ -10265,8 +10265,8 @@
     "semantic_hash": ""
   },
   "backend/config/api_docs.py": {
-    "mtime": 1788868470.7092102,
-    "ast_hash": "8c0d32eb6dd346c1ddba887765c8e08a",
+    "mtime": 1788901842.7167373,
+    "ast_hash": "2dab516b45df8e422db7dbeec3085b75",
     "semantic_hash": ""
   },
   "backend/tests/presentation/test_api_docs_auth.py": {
@@ -10287,6 +10287,16 @@
   ".github/workflows/staging.yml": {
     "mtime": 1788884332.0724514,
     "ast_hash": "98219a3d4b521cfd7efc89210758bd65",
+    "semantic_hash": ""
+  },
+  "backend/config/basic_auth.py": {
+    "mtime": 1788901835.7927387,
+    "ast_hash": "c7928017fd0af0eb46ede88a1d303b8a",
+    "semantic_hash": ""
+  },
+  "backend/tests/presentation/test_site_gate.py": {
+    "mtime": 1788901915.3807206,
+    "ast_hash": "f0fbf2034bcf5a7d501aeee69fd986a9",
     "semantic_hash": ""
   }
 }

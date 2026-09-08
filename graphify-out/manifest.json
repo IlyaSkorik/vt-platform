@@ -3125,8 +3125,8 @@
     "semantic_hash": "7e11bb8e1bf4f7c0fe1d7c5289a19348"
   },
   "backend/config/middleware.py": {
-    "mtime": 1788901863.705344,
-    "ast_hash": "b578f086d288d17a3fd0cc2d969a0454",
+    "mtime": 1788904251.864575,
+    "ast_hash": "a321fb7cc7f87b5854272b3c451aec75",
     "semantic_hash": ""
   },
   "backend/config/settings/__init__.py": {
@@ -9765,8 +9765,8 @@
     "semantic_hash": ""
   },
   "docs/devops/OPS-001-deploy-runbook.md": {
-    "mtime": 1788901969.0327082,
-    "ast_hash": "702519d290ccef6f8c73206c94bfde0a",
+    "mtime": 1788903744.115643,
+    "ast_hash": "0a49ff62d1fd095a56420962343c93d5",
     "semantic_hash": ""
   },
   "docs/legal/LEGAL-001-privacy-policy.md": {
@@ -10265,13 +10265,13 @@
     "semantic_hash": ""
   },
   "backend/config/api_docs.py": {
-    "mtime": 1788901842.7167373,
-    "ast_hash": "2dab516b45df8e422db7dbeec3085b75",
+    "mtime": 1788904232.2761664,
+    "ast_hash": "799e56ca1f0085dd7aefc449d28d8120",
     "semantic_hash": ""
   },
   "backend/tests/presentation/test_api_docs_auth.py": {
-    "mtime": 1788868551.6754792,
-    "ast_hash": "002ce61c32c2ecddfb23e70b90fb1e7f",
+    "mtime": 1788904305.0791197,
+    "ast_hash": "1c0725ce4008503f09a19a2104448997",
     "semantic_hash": ""
   },
   ".github/workflows/_deploy-stack.yml": {
@@ -10290,13 +10290,13 @@
     "semantic_hash": ""
   },
   "backend/config/basic_auth.py": {
-    "mtime": 1788901835.7927387,
-    "ast_hash": "c7928017fd0af0eb46ede88a1d303b8a",
+    "mtime": 1788904265.112117,
+    "ast_hash": "b69326a7434f4e94837ed2beb52902b0",
     "semantic_hash": ""
   },
   "backend/tests/presentation/test_site_gate.py": {
-    "mtime": 1788901915.3807206,
-    "ast_hash": "f0fbf2034bcf5a7d501aeee69fd986a9",
+    "mtime": 1788904366.574655,
+    "ast_hash": "bdbc1d49fb4f9f2370ee3ec1d47ceb99",
     "semantic_hash": ""
   }
 }
