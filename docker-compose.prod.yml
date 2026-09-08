@@ -182,7 +182,11 @@ services:
     image: nginxinc/nginx-unprivileged:1.27-alpine
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8080:8080"
+      # Loopback only: TLS terminates in front of this stack (see the header), and the host's
+      # terminator is what publishes it. `HTTP_PORT` exists because CI already passes it and
+      # because a second stack on one machine would otherwise collide here; the container always
+      # listens on 8080 regardless.
+      - "127.0.0.1:${HTTP_PORT:-8080}:8080"
     volumes:
       # Both written by `spa` above. The bundle volume is also mounted by the Django services,
       # which read index.html out of it to inject the <head>.

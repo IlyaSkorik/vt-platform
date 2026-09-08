@@ -1,0 +1,238 @@
+# Release to production — started by hand, never by a push.
+#
+# **Why this is manual.** "Tested" and "ship it now" are two different decisions made by two
+# different people. Настя's verdict lives in YouGile, per task, in her approval column — that is
+# the QA gate and it already exists. What GitHub decides is only *when the tested set goes live*,
+# and that is a judgement about the moment: a demo running, a feature that must not appear before
+# a date, half a task on the stand. A pipeline that ships every green commit takes that judgement
+# away, so it is a button instead.
+#
+# **Nothing is built here.** The images were built and pushed by `staging.yml`, tagged with the
+# commit SHA, and this workflow *refuses to run* if they are missing. That refusal is the point:
+# it means a SHA that never went through the stand cannot reach production, and that the artefact
+# promoted is byte-for-byte the one that was tested rather than a rebuild from the same source.
+#
+# Rolling back is the same button with an older SHA — the images are still in the registry, and
+# `docker image prune` on the host keeps a week of them (OPS-001 §8).
+#
+# What has to exist before the first run — OPS-001 §2:
+#
+#   1. A self-hosted runner on the production host, labelled `production`.
+#   2. Environment `production` (Settings → Environments) with:
+#        Variables  ENV_FILE_PATH  /srv/vt-platform/backend/.env
+#                   PUBLIC_URL     https://… — the post-deploy check calls /healthz on it
+#      Required reviewers are optional here and off by default: starting this workflow *is* the
+#      release decision, and asking the same person to then approve their own dispatch is
+#      ceremony, not a control. Add a reviewer when a second pair of eyes should sign the moment
+#      of the rollout — the workflow needs no change either way.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Commit SHA to release (defaults to the tip of main). Use an older one to roll back."
+        required: false
+
+# One release at a time, and never cancel one midway: a cancelled deploy can leave migrations
+# applied and the old image still serving.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  plan:
+    name: Resolve and check the candidate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      sha: ${{ steps.resolve.outputs.sha }}
+      backend_image: ${{ steps.resolve.outputs.backend_image }}
+      frontend_image: ${{ steps.resolve.outputs.frontend_image }}
+      notes: ${{ steps.notes.outputs.notes }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The whole history: the note below is a range against the `production` tag.
+          fetch-depth: 0
+
+      - id: resolve
+        run: |
+          SHA="${{ inputs.sha }}"
+          # HEAD, not `origin/main`: a manual dispatch checks out whichever branch was chosen in
+          # the form, and defaulting to a branch this run may not even have fetched is how a
+          # release quietly ships something other than what the person selected.
+          [ -n "$SHA" ] || SHA=$(git rev-parse HEAD)
+          # Fail here rather than four steps later with a confusing registry error.
+          git cat-file -e "$SHA^{commit}" 2>/dev/null || {
+            echo "::error::$SHA is not a commit in this repository"
+            exit 1
+          }
+          SHA=$(git rev-parse "$SHA")
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          REPO=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "backend_image=$REGISTRY/$OWNER/$REPO-backend:$SHA" >> "$GITHUB_OUTPUT"
+          echo "frontend_image=$REGISTRY/$OWNER/$REPO-frontend:$SHA" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: The images must already exist
+        run: |
+          # No `build-push` anywhere in this workflow, by design. If these are missing, this SHA
+          # never completed a staging rollout — which means nobody has tested it, and the fix is
+          # to push it to `main` and let `staging.yml` do its job, not to build it here.
+          missing=0
+          for img in "${{ steps.resolve.outputs.backend_image }}" \
+                     "${{ steps.resolve.outputs.frontend_image }}"; do
+            if docker buildx imagetools inspect "$img" >/dev/null 2>&1; then
+              echo "  found $img"
+            else
+              echo "::error::$img is not in the registry"
+              missing=1
+            fi
+          done
+          if [ "$missing" = "1" ]; then
+            echo "::error::This commit has no published images, so it never reached staging."
+            echo "::error::Release a SHA that the Staging workflow has already rolled out."
+            exit 1
+          fi
+
+      - id: notes
+        name: What this release contains
+        run: |
+          SHA="${{ steps.resolve.outputs.sha }}"
+          git fetch --force --tags origin >/dev/null 2>&1 || true
+
+          if git rev-parse -q --verify refs/tags/production >/dev/null && \
+             [ "$(git rev-parse refs/tags/production)" != "$SHA" ]; then
+            RANGE="refs/tags/production..$SHA"
+          else
+            # First release, or a re-deploy of what is already live (which is how a rollback of a
+            # bad host change looks): a short window rather than the whole history.
+            RANGE="$SHA~5..$SHA"
+          fi
+
+          # `|| true` throughout: the step is `bash -e`, and a release must not be blocked because
+          # its changelog could not be assembled.
+          commits=$(git log --no-merges --pretty='• %s' "$RANGE" 2>/dev/null | head -20 || true)
+          total=$(git log --no-merges --oneline "$RANGE" 2>/dev/null | wc -l || true)
+          if [ "${total:-0}" -gt 20 ]; then
+            commits="$commits
+          … и ещё $((total - 20))"
+          fi
+
+          tasks=$(git log --no-merges --pretty='%(trailers:key=Refs,valueonly)' "$RANGE" 2>/dev/null \
+                  | tr ',' '\n' | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' \
+                  | grep -v '^$' | sort -u | paste -sd' ' - || true)
+          if [ -n "$tasks" ]; then
+            commits="$commits
+
+          задачи: $tasks"
+          fi
+
+          {
+            echo "notes<<GH_EOF"
+            echo "$commits"
+            echo "GH_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          # Printed into the run summary as well, so the set being released is on screen *before*
+          # anyone approves it — that list is what gets checked against the YouGile column.
+          {
+            echo "## Релиз ${SHA:0:7}"
+            echo
+            echo "$commits"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  production:
+    name: Production
+    needs: [plan]
+    uses: ./.github/workflows/_deploy-stack.yml
+    with:
+      environment: production
+      runner_labels: '["self-hosted","production"]'
+      sha: ${{ needs.plan.outputs.sha }}
+      backend_image: ${{ needs.plan.outputs.backend_image }}
+      frontend_image: ${{ needs.plan.outputs.frontend_image }}
+      notes: ${{ needs.plan.outputs.notes }}
+    secrets: inherit
+
+  mark:
+    name: Move the production tag
+    needs: [plan, production]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # This tag is what "what is actually live" means in this repository. `git log
+      # production..staging` is then the answer to "what is tested but not shipped", and the next
+      # release diffs against it to build its note.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: |
+          git tag -f production "${{ needs.plan.outputs.sha }}"
+          git push -f origin refs/tags/production
+
+  report:
+    name: Report the verdict
+    needs: [plan, production]
+    # The deploy job reports its own success and its own failure from the host. This job exists
+    # for the outcome the host never sees: a release that was *rejected* at the approval gate, or
+    # cancelled, in which case that job never runs and would otherwise be silent everywhere except
+    # a browser tab nobody has open.
+    # The `plan` guard matters: when *it* fails there is no candidate at all, nothing ever
+    # reached the host, and reporting that as "rejected at approval" would be a lie.
+    if: always() && needs.plan.result == 'success' && needs.production.result != 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    steps:
+      - name: Tell Telegram
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RESULT: ${{ needs.production.result }}
+          SHA: ${{ needs.plan.outputs.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "${TG_TOKEN:-}" ] && [ -n "${TG_CHAT:-}" ] || { echo "Telegram not configured; skipping"; exit 0; }
+
+          # The reviewer's comment is not in any workflow context — it is only on the approvals
+          # endpoint. It is the one place a "нет, не катим, потому что…" is written down, so it is
+          # worth the extra call.
+          comment=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/approvals" \
+                      --jq '.[] | select(.state == "rejected") | .comment' 2>/dev/null | head -3 || true)
+
+          case "$RESULT" in
+            failure)   head="⛔️ релиз ${SHA:0:7} не поехал" ;;
+            cancelled) head="🚫 релиз ${SHA:0:7} отменён" ;;
+            skipped)   head="🚫 релиз ${SHA:0:7} отклонён на апруве" ;;
+            *)         head="⚠️ релиз ${SHA:0:7}: $RESULT" ;;
+          esac
+          text="$head"
+          if [ -n "$comment" ]; then
+            text="$text
+
+          причина: $comment"
+          fi
+          text="$text
+
+          прод остался на прежней версии
+          лог: $RUN_URL"
+
+          curl -fsS --max-time 15 \
+            --data-urlencode "chat_id=$TG_CHAT" \
+            --data-urlencode "text=$text" \
+            "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" >/dev/null 2>&1 || true

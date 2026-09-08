@@ -29,8 +29,11 @@ Documents in this domain use the `OPS-` prefix (e.g. `OPS-001-environments.md`).
 - `OPS-002` — Docker & container strategy. The images themselves are in place
   (`backend/Dockerfile`, `frontend/Dockerfile`, `docker-compose.prod.yml`); what is unwritten is
   the reasoning behind them as a document.
-- `OPS-003` — CI/CD pipeline. Implemented in `.github/workflows/ci.yml` and `deploy.yml`; the
-  deployment half is described in [OPS-001](OPS-001-deploy-runbook.md).
+- `OPS-003` — CI/CD pipeline. Implemented in `.github/workflows/`: `ci.yml` gates, `staging.yml`
+  publishes the SHA-tagged images and refreshes the stand on every green `main`, `release.yml`
+  promotes an already-tested SHA by hand, and both rollouts share `_deploy-stack.yml`. The
+  deployment half is described in [OPS-001](OPS-001-deploy-runbook.md), the day-to-day flow in
+  [CONTRIBUTING §6](../../CONTRIBUTING.md).
 - `OPS-004` — Observability (logging, metrics, tracing, alerting).
 - `OPS-005` — Backup & disaster-recovery runbooks.
 - `OPS-006` — Incident-response & on-call runbooks.

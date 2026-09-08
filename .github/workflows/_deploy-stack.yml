@@ -1,0 +1,211 @@
+# The rollout itself, shared by both environments (OPS-001 §2, ARCH-001 §18.4).
+#
+# This file exists so that staging and production are deployed by *the same code*. A staging
+# environment that is rolled out by a different script tests the application but not the deploy,
+# and the deploy is the half that breaks at 23:00. Everything that differs between the two is an
+# input or an environment variable; the steps below never branch on which one they are running.
+#
+# Per-environment configuration lives on the GitHub Environment, not here:
+#
+#   Variables  ENV_FILE_PATH  absolute path to that host's real .env
+#                             (default /srv/vt-platform/backend/.env)
+#              PUBLIC_URL     https://… — the post-deploy check calls /healthz on it, and it is
+#                             what the Telegram message links to
+#
+# Real secrets live only in the .env file on each host. They are never in the repository and
+# never pass through Actions: this workflow only decides which image tags to run.
+name: Deploy stack
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "GitHub Environment to deploy to — staging or production"
+        required: true
+        type: string
+      runner_labels:
+        description: 'JSON array of labels selecting the host runner, e.g. ["self-hosted","staging"]'
+        required: true
+        type: string
+      sha:
+        required: true
+        type: string
+      backend_image:
+        required: true
+        type: string
+      frontend_image:
+        required: true
+        type: string
+      notes:
+        description: "What is in this rollout; appended to the Telegram message"
+        required: false
+        type: string
+        default: ""
+
+jobs:
+  deploy:
+    name: Roll out to ${{ inputs.environment }}
+    # The label the runner on that host is registered with.
+    runs-on: ${{ fromJSON(inputs.runner_labels) }}
+    permissions:
+      contents: read
+      packages: read
+    # Approval, when the environment has required reviewers, gates exactly here.
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ vars.PUBLIC_URL }}
+    env:
+      # The compose project name is fixed inside the compose file, so containers and named volumes
+      # are found no matter which directory this runs from — which is what lets the deploy work out
+      # of the runner's own workspace instead of a separately maintained checkout.
+      ENV_FILE: ${{ vars.ENV_FILE_PATH || '/srv/vt-platform/backend/.env' }}
+      BACKEND_IMAGE: ${{ inputs.backend_image }}
+      FRONTEND_IMAGE: ${{ inputs.frontend_image }}
+      SHA: ${{ inputs.sha }}
+    steps:
+      # The workspace becomes the deployed commit, so the compose file and every mounted config
+      # match the images below by construction.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha }}
+
+      - name: Check the host is configured
+        run: |
+          if [ ! -f "$ENV_FILE" ]; then
+            echo "::error::$ENV_FILE not found on this host. It holds the real secrets and is"
+            echo "::error::deliberately outside the repository — see OPS-001 §3."
+            exit 1
+          fi
+          # Compose reads POSTGRES_PASSWORD from its own environment for the `:?` guard, and the
+          # backup step below needs the database name and user the host actually configured.
+          set -a; . "$ENV_FILE"; set +a
+          {
+            echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD"
+            echo "POSTGRES_USER=${POSTGRES_USER:-vt_platform}"
+            echo "POSTGRES_DB=${POSTGRES_DB:-vt_platform}"
+          } >> "$GITHUB_ENV"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Back the database up
+        run: |
+          # OPS-008 §9 wants a dump before every deploy. It is cheap, and it is the only thing
+          # that makes a failed migration recoverable rather than merely visible. Kept on staging
+          # too: a restore nobody has rehearsed is a hope, and staging is where to rehearse it.
+          mkdir -p /srv/vt-platform/backups
+          out="/srv/vt-platform/backups/pre-deploy-$SHA.dump"
+          if docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" \
+               exec -T postgres pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB" > "$out" 2>/dev/null; then
+            echo "dumped $(du -h "$out" | cut -f1) to $out"
+          else
+            rm -f "$out"
+            echo "no running database to dump — first deploy, continuing"
+          fi
+
+          # Keep the five most recent and delete the rest.
+          #
+          # Without this the deploy is a slow disk-space leak: a dump is 1–3 GB per season
+          # (OPS-008 §2) on a 50 GB disk, one per deploy, forever — and it would fill up months
+          # later, during a deploy, which is the worst moment for the disk to be full.
+          #
+          # Five is enough to roll back through a bad week. These are a *safety net for this
+          # rollout*, not the backup strategy: nightly dumps belong off the machine (OPS-008 §9).
+          ls -1t /srv/vt-platform/backups/pre-deploy-*.dump 2>/dev/null | tail -n +6 | while read -r old; do
+            echo "pruning $(basename "$old")"
+            rm -f "$old"
+          done
+
+      - name: Pull the new images
+        # `spa`, not `nginx`: nginx runs from a stock upstream image whose reference never changes,
+        # which is what keeps it from being recreated. The frontend build arrives in the `spa`
+        # publisher instead.
+        run: docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" pull backend spa
+
+      - name: Migrate (pre-deploy, expand phase)
+        run: |
+          # Explicit rather than left to the compose dependency, so the migration output lands in
+          # the deploy log under its own heading and a failure names itself. The rollout below
+          # starts the migrate service too — by then a no-op reporting "no migrations to apply".
+          docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" run --rm migrate
+
+      - name: Roll out
+        run: |
+          # `up` publishes the new bundle and config through the one-shot `spa` job, then recreates
+          # only what actually changed. Measured on this stack: a frontend-only change costs zero
+          # failed requests (nginx is never recreated), and an API change costs ~0.2 s of 502 that
+          # nginx retries on the client's behalf.
+          docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" \
+            up -d --wait --wait-timeout 300
+
+          # The config volume was just refreshed; a reload picks it up without dropping a
+          # connection. A no-op when nothing changed, so it is unconditional.
+          docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" \
+            exec -T nginx nginx -s reload
+
+      - name: Verify from outside
+        env:
+          PUBLIC_URL: ${{ vars.PUBLIC_URL }}
+        run: |
+          if [ -z "${PUBLIC_URL:-}" ]; then
+            echo "PUBLIC_URL is not set; skipping the external check"
+            exit 0
+          fi
+          for attempt in $(seq 1 10); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$PUBLIC_URL/healthz" || true)
+            [ "$code" = "200" ] && { echo "healthz answered 200"; exit 0; }
+            echo "attempt $attempt: $code"
+            sleep 6
+          done
+          echo "::error::the deployment never answered 200 on /healthz"
+          exit 1
+
+      - name: Logs on failure
+        if: failure()
+        run: |
+          docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" ps
+          docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" logs --tail 80
+
+      # Telegram is where this team actually looks, so the outcome goes there rather than only
+      # into a run nobody has open. Same shape as `deploy/backup/vt-backup.sh`: unset token means
+      # no message, never a failed step — a broken notifier must not fail a good deploy.
+      - name: Report to Telegram
+        if: always()
+        env:
+          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PUBLIC_URL: ${{ vars.PUBLIC_URL }}
+          ENVIRONMENT: ${{ inputs.environment }}
+          NOTES: ${{ inputs.notes }}
+          OUTCOME: ${{ job.status }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "${TG_TOKEN:-}" ] && [ -n "${TG_CHAT:-}" ] || { echo "Telegram not configured; skipping"; exit 0; }
+          case "$OUTCOME" in
+            success) head="✅ $ENVIRONMENT обновлён" ;;
+            *)       head="❌ $ENVIRONMENT — деплой упал" ;;
+          esac
+          text="$head
+          коммит: ${SHA:0:7}
+          ${PUBLIC_URL:-(url не задан)}"
+          # An `if`, not `[ … ] && …`: the run step is `bash -e`, and a bare `&&` list whose
+          # left side is false exits the script — here that would mean no message at all
+          # whenever there is nothing to list.
+          if [ -n "${NOTES:-}" ]; then
+            text="$text
+
+          что приехало:
+          $NOTES"
+          fi
+          text="$text
+
+          лог: $RUN_URL"
+          # --data-urlencode, not -d: the notes are arbitrary commit subjects and would otherwise
+          # break the request on the first `&` somebody puts in a message.
+          curl -fsS --max-time 15 \
+            --data-urlencode "chat_id=$TG_CHAT" \
+            --data-urlencode "text=$text" \
+            "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" >/dev/null 2>&1 || true

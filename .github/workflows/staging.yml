@@ -1,0 +1,202 @@
+# Staging — where Настя tests, refreshed automatically from `main`.
+#
+# **The trigger is `workflow_run`, not `push`, on purpose.** The previous deploy workflow ran on
+# `push: [main]`, which meant it started *in parallel with* CI rather than after it: a red test
+# suite did not stop images from being published or a rollout from beginning. Hanging this on CI's
+# completion, and checking the conclusion, is what makes "если CI не падает — тогда разворачиваем"
+# actually true rather than merely intended.
+#
+# Nothing here is gated: staging is not a decision, it is a place to look. The decision — whether
+# a tested set of tasks goes live — is `release.yml`, and it is manual.
+#
+# Images are built once, here, tagged with the commit SHA, and `release.yml` refuses to deploy a
+# SHA whose images do not already exist. That is what makes the artefact promoted to production
+# byte-for-byte the one that was tested, instead of a rebuild that merely came from the same
+# source.
+#
+# **Security note.** The deploy job runs on a self-hosted runner, which must never execute code
+# from a fork. `workflow_run` fires with the *base* repository's workflow definition and this one
+# additionally requires the triggering run to be a `push` to `main`, so a pull request cannot
+# reach the host.
+#
+# What has to exist before the first run — see OPS-001 §11 for the walkthrough:
+#
+#   1. A self-hosted runner on the staging host, labelled `staging`.
+#   2. Environment `staging` (Settings → Environments), **without** required reviewers, with:
+#        Variables  ENV_FILE_PATH  /srv/vt-platform/backend/.env
+#                   PUBLIC_URL     https://test.… — the post-deploy check calls /healthz on it
+#   3. Repository secrets TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID (optional; without them the
+#      rollout is silent but still works).
+name: Staging
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  # Re-deploying the stand by hand — after rebuilding the host, or to put an older SHA back on it
+  # while a regression is investigated.
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Commit SHA to deploy (defaults to the tip of main)"
+        required: false
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  publish:
+    name: Publish images
+    # Manual runs are trusted; automatic ones only follow a *green* CI on a push to `main`.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    # GitHub-hosted on purpose: building is CPU- and disk-hungry, and doing it on a deployment box
+    # would compete with the application it is about to replace.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      sha: ${{ steps.resolve.outputs.sha }}
+      backend_image: ${{ steps.resolve.outputs.backend_image }}
+      frontend_image: ${{ steps.resolve.outputs.frontend_image }}
+      notes: ${{ steps.notes.outputs.notes }}
+    steps:
+      - id: resolve
+        run: |
+          SHA="${{ inputs.sha || github.event.workflow_run.head_sha || github.sha }}"
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          REPO=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          # Tagged by SHA, not `latest`: what is running must be identifiable, a release must be
+          # able to name the artefact it promotes, and a rollback must be able to name the thing
+          # it is rolling back to.
+          echo "backend_image=$REGISTRY/$OWNER/$REPO-backend:$SHA" >> "$GITHUB_OUTPUT"
+          echo "frontend_image=$REGISTRY/$OWNER/$REPO-frontend:$SHA" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.resolve.outputs.sha }}
+          # The whole history, because the note below is a range against the `staging` tag.
+          fetch-depth: 0
+
+      # What arrived on the stand, in the words the tracker uses. Настя tests per task in YouGile,
+      # so a message listing SHAs would tell her nothing she can act on; a list of task references
+      # tells her exactly which cards to move into her column.
+      - id: notes
+        name: Collect what is in this rollout
+        run: |
+          SHA="${{ steps.resolve.outputs.sha }}"
+          # `actions/checkout` with fetch-depth: 0 already brings the tags; this only covers the
+          # case where it did not, and must not fail the step when the tag does not exist yet.
+          git fetch --force --tags origin >/dev/null 2>&1 || true
+
+          if git rev-parse -q --verify refs/tags/staging >/dev/null && \
+             [ "$(git rev-parse refs/tags/staging)" != "$SHA" ]; then
+            RANGE="refs/tags/staging..$SHA"
+          else
+            # First run, or the tag already points here (a re-deploy): a short window rather than
+            # the entire history of the project.
+            RANGE="$SHA~5..$SHA"
+          fi
+
+          # Every git call below is `|| true`: the step is `bash -e`, and a failed command
+          # substitution inside an assignment aborts the script. A rollout must not be reported as
+          # broken because its changelog could not be built.
+          commits=$(git log --no-merges --pretty='• %s' "$RANGE" 2>/dev/null | head -20 || true)
+          total=$(git log --no-merges --oneline "$RANGE" 2>/dev/null | wc -l || true)
+          if [ "${total:-0}" -gt 20 ]; then
+            commits="$commits
+          … и ещё $((total - 20))"
+          fi
+
+          # The `Refs:` footer CONTRIBUTING §3 defines, deduplicated — the YouGile cards this
+          # rollout touches.
+          tasks=$(git log --no-merges --pretty='%(trailers:key=Refs,valueonly)' "$RANGE" 2>/dev/null \
+                  | tr ',' '\n' | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' \
+                  | grep -v '^$' | sort -u | paste -sd' ' - || true)
+          if [ -n "$tasks" ]; then
+            commits="$commits
+
+          задачи: $tasks"
+          fi
+
+          {
+            echo "notes<<GH_EOF"
+            echo "$commits"
+            echo "GH_EOF"
+          } >> "$GITHUB_OUTPUT"
+          echo "$commits" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ steps.resolve.outputs.backend_image }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max
+
+      - name: Frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ steps.resolve.outputs.frontend_image }}
+          # The analytics counters are compiled into the bundle, so they are set here rather than
+          # on the running container. They are public identifiers — they appear in the page source
+          # of every site that uses them — so they are not secrets, and keeping them in the
+          # workflow is what makes a deploy carry them without anyone having to remember a
+          # variable. A build without them (any local `docker build`) simply ships no counter.
+          #
+          # The same image serves staging and production, so the stand reports into the same
+          # counters. That is the price of promoting an identical artefact; filter by host in the
+          # analytics rather than rebuilding for production.
+          build-args: |
+            VITE_YANDEX_METRICA_ID=111697674
+            VITE_GA_MEASUREMENT_ID=G-Y7PXD7CE9E
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max
+
+  staging:
+    name: Staging
+    needs: [publish]
+    uses: ./.github/workflows/_deploy-stack.yml
+    with:
+      environment: staging
+      runner_labels: '["self-hosted","staging"]'
+      sha: ${{ needs.publish.outputs.sha }}
+      backend_image: ${{ needs.publish.outputs.backend_image }}
+      frontend_image: ${{ needs.publish.outputs.frontend_image }}
+      notes: ${{ needs.publish.outputs.notes }}
+    secrets: inherit
+
+  mark:
+    name: Move the staging tag
+    needs: [publish, staging]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # `git log staging..main` then answers "what is on the stand but not released" for a human,
+      # and it is what the next run diffs against to build its note.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: |
+          git tag -f staging "${{ needs.publish.outputs.sha }}"
+          git push -f origin refs/tags/staging

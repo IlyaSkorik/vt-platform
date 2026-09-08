@@ -10,7 +10,14 @@ Thank you for contributing. This guide defines how we collaborate on the reposit
 
 We use **trunk-based development with short-lived branches**.
 
-- **`main`** is the single long-lived branch and is **always releasable**. It is protected: no direct pushes; all changes arrive via reviewed pull requests.
+- **`main`** is the single long-lived branch and is **always releasable**.
+  - While the repository has a **single author**, changes land on `main` directly. There is no
+    second person to review a pull request, and a PR one opens and merges oneself is paperwork
+    rather than a control. What actually keeps `main` releasable is §6: CI gates every push, and
+    nothing reaches production without passing the stand and a deliberate release.
+  - **The moment a second author commits, §4 applies** — `main` is protected, direct pushes are
+    off, and every change arrives via a reviewed pull request. Turn on branch protection with
+    that person's first commit, not later.
 - **Feature branches** are short-lived (ideally merged within ~2 days), branched from `main`, and deleted after merge.
 - **`release/*`** branches are used only when a versioned release needs hardening/stabilization before tagging.
 - **`hotfix/*`** branches address urgent production defects, branched from `main` (or the release tag) and merged back immediately.
@@ -65,6 +72,17 @@ We follow **[Conventional Commits](https://www.conventionalcommits.org/)**:
 - **scope:** the affected area, e.g. `judging`, `api`, `frontend`, `repo`.
 - **subject:** imperative mood, lowercase, no trailing period, ≤ ~72 chars ("add", not "added").
 - **breaking changes:** add a `!` after the type/scope (`feat(api)!: …`) **and** a `BREAKING CHANGE:` footer.
+- **task reference:** work that comes from a YouGile card carries a `Refs:` footer naming it.
+  This is not bookkeeping for its own sake — the deploy pipeline reads that trailer and puts the
+  list of cards into the Telegram message announcing the stand, so the tester learns which cards
+  to pull into the approval column without anyone writing it out by hand. A commit with no card
+  behind it (a typo fix, a dependency bump) simply has no footer.
+
+```
+fix(judging): prevent scoring before round opens
+
+Refs: VT-142
+```
 
 **Examples**
 ```
@@ -103,6 +121,65 @@ Draft PRs are welcome for early feedback. Convert to "Ready for review" only whe
 7. **Open a PR** — fill the description, link the issue, request review.
 8. **Address review** — respond to every comment; push follow-up commits (squashed on merge).
 9. **Merge** — once green and approved, squash-merge and delete the branch.
+
+---
+
+## 6. From a push to production
+
+Two hosts, three decisions, and only one of them is automatic.
+
+```
+push в main
+    │
+    ▼
+CI (ci.yml) ── красный ──▶ стоп, дальше ничего не происходит
+    │ зелёный
+    ▼
+образы собираются и тегаются SHA коммита  ─┐
+    │                                       │ один и тот же артефакт
+    ▼                                       │ едет и на стенд, и в прод
+STAGING обновляется автоматически          ─┘
+test.vzlettalantov.by
+    │
+    ▼  бот пишет в TG, что приехало (список карточек из Refs:)
+Настя тестирует по задачам и согласовывает их в YouGile
+    │
+    ▼  когда набор согласован — решение о моменте выкатки
+Actions → Release → Run workflow   ← вручную, всегда
+    │
+    ▼
+PRODUCTION
+```
+
+**Staging is not a decision.** It refreshes itself on every green `main` and has no approval gate.
+A gate there would only mean the stand is stale exactly when somebody is waiting to test on it.
+
+**The QA verdict lives in YouGile, not in GitHub.** It is per *task*, which is the granularity
+testing actually happens at; a button in Actions would be per *commit*, and would have to stand in
+for a set of cards that are rarely all finished at once. One verdict in one place.
+
+**The release is a separate decision, and it is about the moment.** "Tested" and "ship it now" are
+not the same judgement: a demo may be running, a feature may be embargoed until a date, half a
+card may be on the stand. So production never deploys on its own — somebody starts `Release`, and
+not starting it is how "not today" is expressed.
+
+**Production can only receive a SHA that has been on the stand.** `release.yml` builds nothing; it
+promotes images that `staging.yml` already published, and refuses outright if they are missing.
+That is what makes what ships byte-for-byte what was tested, rather than a rebuild that merely
+came from the same source.
+
+**Rolling back is the same button with an older SHA.** There is no separate emergency path to
+remember, which means the rollback path is the one that has already run hundreds of times.
+
+Two tags track where things are, and both are moved by the pipeline:
+
+```bash
+git log staging..main       # написано, но ещё не на стенде
+git log production..staging # на стенде, но ещё не выкачено
+```
+
+Host setup, the environments and their variables: [OPS-001](docs/devops/OPS-001-deploy-runbook.md)
+— §5 for the GitHub side, §10 for the staging machine.
 
 ---
 

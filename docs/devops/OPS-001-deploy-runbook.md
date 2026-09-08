@@ -63,8 +63,8 @@ tar xzf runner.tar.gz
 exit
 ```
 
-The `production` label is what `deploy.yml` selects on. Then install it as a service so it
-survives a reboot:
+The `production` label is what `release.yml` selects on. The staging host gets an identical
+runner labelled `staging` instead — §10. Then install it as a service so it survives a reboot:
 
 ```bash
 cd /home/deploy/actions-runner
@@ -74,9 +74,10 @@ sudo ./svc.sh status        # should say "active (running)"
 ```
 
 > **One rule about this runner.** A self-hosted runner must never execute code from a fork, or
-> anyone who opens a pull request runs commands on the production host. `deploy.yml` is triggered
-> only by pushes to `main` and manual dispatch, which is what keeps that true — do not add
-> `pull_request` to it. For the same reason, CI (`ci.yml`) runs on GitHub-hosted runners only.
+> anyone who opens a pull request runs commands on the production host. `release.yml` runs only on
+> manual dispatch, and `staging.yml` only after a green CI on a *push* to `main` — which is what
+> keeps that true. Do not add `pull_request` to either. For the same reason, CI (`ci.yml`) runs on
+> GitHub-hosted runners only.
 
 ---
 
@@ -185,22 +186,45 @@ enough for everyone to forget it exists.
 
 ---
 
-## 5. Configure the GitHub environment
+## 5. Configure the GitHub environments
 
-Repository → Settings → Environments → **New environment** → `production`.
+Repository → Settings → Environments. There are two, one per host, and the same variables mean
+the same thing in both — `_deploy-stack.yml` reads them and never branches on which environment it
+is running in.
 
-**Required reviewers:** add yourself. This is the thing that makes the production deploy gated
-(ARCH-001 §18.4) — without it the job runs unattended.
-
-Variables:
+**`production`**
 
 | Name | Value |
 |---|---|
 | `ENV_FILE_PATH` | `/srv/vt-platform/backend/.env` — the default, so it can be omitted |
 | `PUBLIC_URL` | `https://vzlettalantov.by` — the post-deploy check calls `/healthz` on it |
 
-No secrets. The runner authenticates to the registry with the token Actions gives it, and every
-real credential stays in the host's `.env` — nothing sensitive passes through the workflow.
+**Required reviewers: optional, and off by default.** A release is started by hand and starting it
+*is* the decision to ship; asking the same person to then approve their own dispatch is ceremony,
+not a control. Add a reviewer when the moment of a rollout should be signed by a second pair of
+eyes — nothing in the workflow changes either way.
+
+> Worth knowing before designing around it: listing several required reviewers does **not** mean
+> all of them must approve. GitHub proceeds on the first approval from anyone on the list. Two
+> genuine sign-offs need two environments in sequence, not two names on one.
+
+**`staging`**
+
+| Name | Value |
+|---|---|
+| `ENV_FILE_PATH` | `/srv/vt-platform/backend/.env` — on the staging host |
+| `PUBLIC_URL` | `https://test.vzlettalantov.by` |
+
+**No required reviewers here, ever.** Staging is not a decision, it is a place to look; a gate on
+it would only mean the stand is stale exactly when someone is waiting to test.
+
+Two optional repository secrets, shared by both: `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`.
+With them, every rollout and every refused release reports into the team chat. Without them the
+pipeline works identically and says nothing — an unset notifier never fails a deploy.
+
+No other secrets. The runner authenticates to the registry with the token Actions gives it, and
+every real credential stays on its own host in `.env` — nothing sensitive passes through the
+workflow.
 
 ---
 
@@ -246,17 +270,20 @@ That last one matters more than it looks: if it is a `200`, TLS is not actually 
 nothing is encrypted. If browsing the site instead loops forever, the terminator is not sending
 `X-Forwarded-Proto` — §4.
 
-From here on: **push to `main` → approve the deploy → done.**
+From here on production is never touched by a push. The loop is:
+
+> push to `main` → CI → staging refreshes itself → Настя tests the task in YouGile → when the set
+> is agreed, **Actions → Release → Run workflow** → done.
 
 ---
 
 ## 7. What a deploy costs
 
-Pushing to `main` takes nothing down. CI and the image build run on GitHub's runners, and the
-rollout job then waits for the approval in §5 — production serves the old version throughout, for
-as long as the approval takes.
+Pushing to `main` costs production nothing at all — it does not reach it. CI and the image build
+run on GitHub's runners and the result goes to staging; production keeps serving until somebody
+starts a release, however many days that is.
 
-Once approved, the host dumps the database, pulls the new images and runs migrations **while the
+Once started, the host dumps the database, pulls the new images and runs migrations **while the
 old code is still serving**. Only the last step touches the running services. Measured on this
 stack by polling the edge five times a second:
 
@@ -294,9 +321,11 @@ approving a release that adds a migration, look at what it does:
 Re-deploying an older commit is the rollback, and it is a first-class entry point rather than
 something to reconstruct while the site is down:
 
-> Actions → Deploy → **Run workflow** → `sha` = the last good commit → approve.
+> Actions → Release → **Run workflow** → `sha` = the last good commit.
 
-Its images are still in the registry, and the host prunes only images older than a week.
+Its images are still in the registry, and the host prunes only images older than a week. There is
+no separate rollback path to remember: a rollback is a release of an older SHA, run by the same
+button, through the same steps that have already worked hundreds of times.
 
 **A migration is the exception.** Rolling the code back does not roll the schema back, which is
 why §18.4 wants migrations to be expand-only: add columns, do not drop them in the same release
@@ -420,10 +449,76 @@ references are in the dump and the objects are untouched.
 
 ---
 
-## 10. What is deliberately not here yet
+## 10. The staging host
 
-- **No stage environment.** ARCH-001 §18.4 describes one that deploys automatically on merge.
-  `deploy.yml` has no `stage` job, because there is no host for it — add both together.
+A second machine, built by working through §2–§6 again with three things changed. It exists so
+that the person testing has somewhere to test that is not production, and so that the deploy
+itself is exercised before it runs against real data.
+
+Smaller than production: 2 vCPU / 4 GB / 30 GB is enough. Nothing on it is load-bearing, and if it
+burns down the fix is to rebuild it — no backups are shipped off it.
+
+**1. The runner is labelled `staging`, not `production`.** That single label is the whole
+difference in how the two hosts are addressed; `_deploy-stack.yml` is the same code on both.
+
+**2. Its `.env` differs in four places, and each one is a way to hurt real people if it is
+copied from production unchanged.**
+
+| | Why it must differ |
+|---|---|
+| `DJANGO_ALLOWED_HOSTS`, `FRONTEND_BASE_URL`, `DIPLOMA_VERIFICATION_BASE_URL` | its own domain, or every generated link points testers at production |
+| `EMAIL_HOST` | **a sink, never real SMTP** — see below |
+| `S3_BUCKET` | **empty is the right default here.** Media then stays on the stand's own volume: no credentials for production's bucket exist on the machine at all, so no test upload and no cleanup on the stand can reach real submissions. Set it only to exercise the bucket path itself — and then to a *separate* bucket with its own keys, or at minimum its own `S3_LOCATION` prefix (that variable exists for exactly this) |
+| `DJANGO_SECRET_KEY`, `POSTGRES_PASSWORD` | generated fresh. A shared key is a shared session cookie and a shared diploma path (OPS-007) |
+
+`DJANGO_DEBUG` stays `false`. A stand running with debug on is not testing the thing that ships:
+it has different error pages, different static handling, and the API docs open without the
+credentials §3 sets.
+
+**The mail sink is not optional.** The application sends verification links, password resets and
+bulk invitations, and a stand pointed at real SMTP will send them to whatever addresses are in its
+database — which, the first time somebody copies a dump down to reproduce a bug, are real
+parents. Run Mailpit next to the stack and point the stand at it:
+
+```bash
+docker run -d --restart unless-stopped --name mailpit \
+  -p 127.0.0.1:8025:8025 -p 127.0.0.1:1025:1025 axllent/mailpit
+```
+
+```ini
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=host.docker.internal   # or the host's docker0 address
+EMAIL_PORT=1025
+EMAIL_USE_TLS=false
+EMAIL_HOST_USER=
+EMAIL_HOST_PASSWORD=
+```
+
+Everything the stand sends is then readable in Mailpit's web UI — which is better for testing than
+real delivery anyway, because a verification link is in front of the tester in a second instead of
+in somebody's spam folder.
+
+**3. The host's TLS terminator closes it off.** Two lines in the staging server block, neither of
+which exists in production:
+
+```nginx
+add_header X-Robots-Tag "noindex, nofollow, noarchive" always;
+
+auth_basic           "staging";
+auth_basic_user_file /etc/nginx/staging.htpasswd;   # htpasswd -c … одна пара на команду
+```
+
+Done at the terminator rather than in the application on purpose: the images are identical on both
+hosts, and that identity is the reason a staging test says anything about production. The moment a
+build behaves differently because it is "the staging build", the stand stops being evidence.
+
+Without this the stand is a public, indexable second copy of the site — duplicate content against
+the real domain, and a page carrying children's names that nobody meant to publish.
+
+---
+
+## 11. What is deliberately not here yet
+
 - **E2E tests are not in the pipeline.** Playwright is configured in the repository but needs a
   running stack with seeded data; CI boots the stack and probes it instead.
 - **No redundancy.** One machine is one failure domain: a lost disk takes the database with it.
