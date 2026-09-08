@@ -39,12 +39,10 @@ scoped to ``/api/schema/``, and the fetch rides in on that.
 
 from __future__ import annotations
 
-import hashlib
 from collections.abc import Callable
 from functools import wraps
 
 from django.conf import settings
-from django.core import signing
 from django.http import Http404, HttpRequest, HttpResponse
 from drf_spectacular.views import (
     SpectacularAPIView,
@@ -52,8 +50,10 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from config.basic_auth import ChallengeCookie
 from config.basic_auth import matches as _matches
 from config.basic_auth import presented_credentials as _presented_credentials
+from config.basic_auth import unauthorized as _unauthorized
 
 __all__ = ["redoc_view", "schema_view", "swagger_ui_view"]
 
@@ -62,12 +62,17 @@ __all__ = ["redoc_view", "schema_view", "swagger_ui_view"]
 _REALM = "VT Platform API docs"
 
 #: Proof of a challenge already answered, so the viewer's own fetch of the schema
-#: does not prompt again. Scoped to the docs prefix and nothing else.
-_COOKIE_NAME = "api_docs_session"
-_COOKIE_PATH = "/api/schema/"
-#: A working session with the docs open, not a login. Expiry is enforced when the
-#: signature is read, so a stale cookie is rejected server-side either way.
-_COOKIE_MAX_AGE = 12 * 60 * 60
+#: does not prompt again. Scoped to the docs prefix and nothing else, and Strict
+#: because these addresses are opened deliberately rather than arrived at from a
+#: link somebody was sent.
+_COOKIE = ChallengeCookie(
+    name="api_docs_session",
+    path="/api/schema/",
+    # A working session with the docs open, not a login. Expiry is enforced when the
+    # signature is read, so a stale cookie is rejected server-side either way.
+    max_age=12 * 60 * 60,
+    salt_prefix="api-docs",
+)
 
 View = Callable[..., HttpResponse]
 
@@ -79,52 +84,6 @@ def _configured_credentials() -> tuple[str, str] | None:
     if not user or not password:
         return None
     return user, password
-
-
-def _cookie_salt(expected: tuple[str, str]) -> str:
-    """Salt the cookie signature with the credentials it stands for.
-
-    Rotating the password must log everyone out. Signing with ``SECRET_KEY``
-    alone would not do that — the old cookies stay valid until they expire, so a
-    credential leak could not be closed without a secret rotation. Folding a
-    digest of the current pair into the salt makes every outstanding cookie
-    unreadable the moment either half changes.
-    """
-    digest = hashlib.sha256(f"{expected[0]}:{expected[1]}".encode()).hexdigest()
-    return f"api-docs:{digest}"
-
-
-def _has_valid_cookie(request: HttpRequest, expected: tuple[str, str]) -> bool:
-    """Whether this request carries an unexpired cookie from an earlier challenge."""
-    raw = request.COOKIES.get(_COOKIE_NAME)
-    if not raw:
-        return False
-    try:
-        signing.loads(raw, salt=_cookie_salt(expected), max_age=_COOKIE_MAX_AGE)
-    except signing.BadSignature:
-        return False
-    return True
-
-
-def _issue_cookie(response: HttpResponse, expected: tuple[str, str]) -> HttpResponse:
-    """Attach the proof-of-challenge cookie to a response."""
-    response.set_cookie(
-        _COOKIE_NAME,
-        signing.dumps({"u": expected[0]}, salt=_cookie_salt(expected)),
-        max_age=_COOKIE_MAX_AGE,
-        path=_COOKIE_PATH,
-        httponly=True,
-        secure=not settings.DEBUG,
-        samesite="Strict",
-    )
-    return response
-
-
-def _unauthorized() -> HttpResponse:
-    """A 401 that makes the browser ask for a username and password."""
-    response = HttpResponse("Unauthorized", status=401, content_type="text/plain; charset=utf-8")
-    response["WWW-Authenticate"] = f'Basic realm="{_REALM}", charset="UTF-8"'
-    return response
 
 
 def basic_auth_required(view: View) -> View:
@@ -139,14 +98,14 @@ def basic_auth_required(view: View) -> View:
         if expected is None:
             raise Http404
 
-        if _has_valid_cookie(request, expected):
+        if _COOKIE.is_valid(request, expected):
             return view(request, *args, **kwargs)
 
         presented = _presented_credentials(request)
         if presented is None or not _matches(presented, expected):
-            return _unauthorized()
+            return _unauthorized(_REALM)
 
-        return _issue_cookie(view(request, *args, **kwargs), expected)
+        return _COOKIE.attach(view(request, *args, **kwargs), expected)
 
     return wrapped
 

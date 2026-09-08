@@ -14,6 +14,7 @@ absent.
 from __future__ import annotations
 
 import base64
+from dataclasses import replace
 from typing import TYPE_CHECKING
 
 import pytest
@@ -23,7 +24,7 @@ from django.test import Client
 if TYPE_CHECKING:
     from pytest_django.fixtures import SettingsWrapper
 
-from config.api_docs import _COOKIE_NAME, _cookie_salt
+from config.api_docs import _COOKIE
 
 USER = "docs"
 PASSWORD = "s3cret-docs-password"
@@ -149,7 +150,7 @@ def test_a_challenge_answered_once_covers_the_schema_fetch(client: Client) -> No
     """
     page = client.get("/api/schema/swagger-ui/", HTTP_AUTHORIZATION=_basic())
     assert page.status_code == 200
-    assert _COOKIE_NAME in page.cookies
+    assert _COOKIE.name in page.cookies
 
     # The client keeps the cookie; the fetch carries no Authorization header.
     fetched = client.get("/api/schema/")
@@ -159,7 +160,7 @@ def test_a_challenge_answered_once_covers_the_schema_fetch(client: Client) -> No
 
 @pytest.mark.usefixtures("configured")
 def test_the_cookie_is_scoped_to_the_docs_and_hidden_from_scripts(client: Client) -> None:
-    cookie = client.get("/api/schema/", HTTP_AUTHORIZATION=_basic()).cookies[_COOKIE_NAME]
+    cookie = client.get("/api/schema/", HTTP_AUTHORIZATION=_basic()).cookies[_COOKIE.name]
 
     assert cookie["path"] == "/api/schema/"
     assert cookie["httponly"]
@@ -182,7 +183,7 @@ def test_rotating_the_password_invalidates_outstanding_cookies(client: Client, s
 @pytest.mark.usefixtures("configured")
 def test_a_forged_cookie_is_not_a_credential(client: Client) -> None:
     """Unsigned or foreign-signed values must not pass for a challenge."""
-    client.cookies[_COOKIE_NAME] = signing.dumps({"u": USER}, salt="some-other-salt")
+    client.cookies[_COOKIE.name] = signing.dumps({"u": USER}, salt="some-other-salt")
 
     assert client.get("/api/schema/").status_code == 401
 
@@ -190,8 +191,9 @@ def test_a_forged_cookie_is_not_a_credential(client: Client) -> None:
 @pytest.mark.usefixtures("configured")
 def test_an_expired_cookie_is_not_a_credential(client: Client, monkeypatch: pytest.MonkeyPatch) -> None:
     """Age is enforced server-side, not just by the browser's own expiry."""
-    salt = _cookie_salt((USER, PASSWORD))
-    client.cookies[_COOKIE_NAME] = signing.dumps({"u": USER}, salt=salt)
-    monkeypatch.setattr("config.api_docs._COOKIE_MAX_AGE", -1)
+    salt = _COOKIE.salt((USER, PASSWORD))
+    client.cookies[_COOKIE.name] = signing.dumps({"u": USER}, salt=salt)
+    # The cookie's description is frozen, so age is pushed by swapping in a copy of it.
+    monkeypatch.setattr("config.api_docs._COOKIE", replace(_COOKIE, max_age=-1))
 
     assert client.get("/api/schema/").status_code == 401

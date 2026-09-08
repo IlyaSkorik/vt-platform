@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core.exceptions import MiddlewareNotUsed
 from django.http import HttpRequest, HttpResponse
 
-from config.basic_auth import matches, presented_credentials
+from config.basic_auth import ChallengeCookie, matches, presented_credentials, unauthorized
 
 
 class AllowMediaFramingMiddleware:
@@ -45,6 +45,27 @@ class AllowMediaFramingMiddleware:
 #: What the browser shows in its password prompt, and the key it caches the
 #: credentials under. Stable on purpose — changing it re-prompts everybody.
 _GATE_REALM = "VT Platform"
+
+#: Answering the challenge once is enough, and this is what makes that true.
+#:
+#: Without it the stand re-prompts on almost every page load, and the reason is the
+#: application working correctly: the SPA asks to refresh a session on every cold
+#: start, is refused with a 401 when there is none, and the browser reads that 401
+#: as "the credentials you just sent were rejected" — drops them and asks again.
+#:
+#: `SameSite=Lax`, unlike the docs cookie: the stand is reached by clicking a link
+#: somebody was sent in a chat, and `Strict` withholds the cookie on exactly that
+#: first navigation, putting the prompt back where it was removed.
+_GATE_COOKIE = ChallengeCookie(
+    name="site_gate",
+    path="/",
+    # Long, because a tester works against the stand for weeks and re-entering a
+    # shared password is pure friction. Rotating SITE_GATE_PASSWORD invalidates
+    # every outstanding cookie immediately, so this is not a door left open.
+    max_age=30 * 24 * 60 * 60,
+    salt_prefix="site-gate",
+    samesite="Lax",
+)
 
 
 class SiteGateMiddleware:
@@ -87,12 +108,15 @@ class SiteGateMiddleware:
     def __call__(self, request: HttpRequest) -> HttpResponse:
         if request.path in self.EXEMPT_PATHS:
             return self.get_response(request)
-        presented = presented_credentials(request)
-        if presented is not None and matches(presented, self._expected):
+
+        if _GATE_COOKIE.is_valid(request, self._expected):
             return self.get_response(request)
-        # 401 rather than 404: unlike the docs gate, this hides nothing whose
-        # existence is worth denying — the address is a stand somebody was given
-        # on purpose, and a browser needs the challenge to offer its prompt.
-        response = HttpResponse("Authorization required.", status=401, content_type="text/plain; charset=utf-8")
-        response["WWW-Authenticate"] = f'Basic realm="{_GATE_REALM}"'
-        return response
+
+        presented = presented_credentials(request)
+        if presented is None or not matches(presented, self._expected):
+            # 401 rather than 404: unlike the docs gate, this hides nothing whose
+            # existence is worth denying — the address is a stand somebody was given
+            # on purpose, and a browser needs the challenge to offer its prompt.
+            return unauthorized(_GATE_REALM)
+
+        return _GATE_COOKIE.attach(self.get_response(request), self._expected)
