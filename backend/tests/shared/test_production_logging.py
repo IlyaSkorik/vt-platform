@@ -14,10 +14,13 @@ import importlib
 import logging
 import logging.config
 import os
+import sys
 from collections.abc import Iterator
 from typing import Any
 
 import pytest
+
+from config.settings import base as base_settings
 
 
 @pytest.fixture(scope="module")
@@ -28,19 +31,40 @@ def production_logging() -> Iterator[dict[str, Any]]:
     on the testing settings, and the point here is what a *deployed* container gets.
     The module refuses to import without a real secret and an allowed host, so both
     are supplied for the duration — neither reaches anything but this import.
+
+    The two are supplied by different means, and the difference is the whole reason
+    this fixture is not three lines long:
+
+    * ``DJANGO_ALLOWED_HOSTS`` the module reads out of the environment itself, so an
+      environment variable is exactly right.
+    * ``SECRET_KEY`` it does not. It arrives through ``from .base import *``, and
+      ``base`` bound that name from the typed settings object when Django configured
+      the suite — long before any fixture runs. Setting the environment variable here
+      therefore changed nothing at all, and the import kept whatever value ``base``
+      already held. On a developer's machine that is the real key out of
+      ``backend/.env`` and the module imports happily; in CI there is no such file, the
+      value is the development default, and the module refuses to boot on it by design.
+      So the name is rebound on ``base`` where the import will actually look.
     """
-    previous = {key: os.environ.get(key) for key in ("DJANGO_SECRET_KEY", "DJANGO_ALLOWED_HOSTS")}
-    os.environ["DJANGO_SECRET_KEY"] = "production-logging-test-only-secret"
+    previous_hosts = os.environ.get("DJANGO_ALLOWED_HOSTS")
+    previous_secret = base_settings.SECRET_KEY
     os.environ["DJANGO_ALLOWED_HOSTS"] = "example.test"
+    base_settings.SECRET_KEY = "production-logging-test-only-secret"
+    # A previous import would have been evaluated against the real key and cached;
+    # the point here is what this fixture's values produce.
+    sys.modules.pop("config.settings.production", None)
     try:
         module = importlib.import_module("config.settings.production")
         yield dict(module.LOGGING)
     finally:
-        for key, value in previous.items():
-            if value is None:
-                os.environ.pop(key, None)
-            else:
-                os.environ[key] = value
+        # Left in `sys.modules`, the module would be a production settings object built
+        # from a throwaway secret, waiting for the next thing that imports it.
+        sys.modules.pop("config.settings.production", None)
+        base_settings.SECRET_KEY = previous_secret
+        if previous_hosts is None:
+            os.environ.pop("DJANGO_ALLOWED_HOSTS", None)
+        else:
+            os.environ["DJANGO_ALLOWED_HOSTS"] = previous_hosts
 
 
 def test_unhandled_errors_reach_stdout(production_logging: dict[str, Any]) -> None:
