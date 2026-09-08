@@ -554,6 +554,27 @@ auth_basic_user_file /etc/nginx/staging.htpasswd;   # htpasswd -c … одна �
 In Nginx Proxy Manager the same two live on the proxy host: **Access List** with one user for the
 basic auth, and **Advanced → Custom Nginx Configuration** for the `add_header` line.
 
+**One address has to stay outside the basic auth**, or the deploy's own external check (§5's
+`PUBLIC_URL`) is answered `401` on every rollout and staging can never go green:
+
+```nginx
+# Liveness probe. It returns the literal {"status": "ok"} and reads nothing — there is no
+# information behind it to protect — and both the deploy check and any uptime monitor have
+# to reach it without credentials. `location =` is an exact match and wins over the
+# generated `location /`, so the exemption applies to this address and nothing else. The
+# proxy headers are repeated because a location of one's own inherits none of them.
+location = /healthz {
+    auth_basic off;
+    proxy_pass http://vt-platform-prod-nginx-1:8080;
+    proxy_set_header Host              $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Real-IP         $remote_addr;
+}
+```
+
+Everything else — including `/readyz`, `/status` and the whole application — stays behind the
+password.
+
 Done at the terminator rather than in the application on purpose: the images are identical on both
 hosts, and that identity is the reason a staging test says anything about production. The moment a
 build behaves differently because it is "the staging build", the stand stops being evidence.
