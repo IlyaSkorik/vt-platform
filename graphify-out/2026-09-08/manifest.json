@@ -6400,9 +6400,9 @@
     "semantic_hash": ""
   },
   "CONTRIBUTING.md": {
-    "mtime": 1785860600.5889592,
-    "ast_hash": "06a4bc109a04e04013c0ff7eb4a8ee03",
-    "semantic_hash": "06a4bc109a04e04013c0ff7eb4a8ee03"
+    "mtime": 1788884621.1440897,
+    "ast_hash": "5dea41c21a5c27b03cff67536c11ebe5",
+    "semantic_hash": ""
   },
   "backend/.pre-commit-config.yaml": {
     "mtime": 1785860600.589831,
@@ -6500,8 +6500,8 @@
     "semantic_hash": "14be49838479455d37edd06d1aea92e9"
   },
   "docs/devops/README.md": {
-    "mtime": 1787588545.4126477,
-    "ast_hash": "70c9779b00f8173182b835482e54607b",
+    "mtime": 1788884549.8051643,
+    "ast_hash": "855585a93a1db0e823cf7559bd40e299",
     "semantic_hash": ""
   },
   "docs/diagrams/DIA-001-entity-relationship-model.md": {
@@ -9759,19 +9759,14 @@
     "ast_hash": "f2b5745f205ebd7c6232bad1ec34dfa3",
     "semantic_hash": ""
   },
-  ".github/workflows/deploy.yml": {
-    "mtime": 1786999234.5254972,
-    "ast_hash": "2d07728f955d607041a7bc6c6c9b7cfc",
-    "semantic_hash": ""
-  },
   "docker-compose.prod.yml": {
-    "mtime": 1786998642.5767076,
-    "ast_hash": "a24fc7f9d68378969c9ad88961b00426",
+    "mtime": 1788884427.9519167,
+    "ast_hash": "51b8ca40559c3f6c39f928e7df2e168c",
     "semantic_hash": ""
   },
   "docs/devops/OPS-001-deploy-runbook.md": {
-    "mtime": 1786738010.1089115,
-    "ast_hash": "56cb0a3d47518cb476e5763744ea704e",
+    "mtime": 1788884538.0913956,
+    "ast_hash": "c22bef692aa63015ff44aac2df179aba",
     "semantic_hash": ""
   },
   "docs/legal/LEGAL-001-privacy-policy.md": {
@@ -10277,6 +10272,21 @@
   "backend/tests/presentation/test_api_docs_auth.py": {
     "mtime": 1788868551.6754792,
     "ast_hash": "002ce61c32c2ecddfb23e70b90fb1e7f",
+    "semantic_hash": ""
+  },
+  ".github/workflows/_deploy-stack.yml": {
+    "mtime": 1788884253.047552,
+    "ast_hash": "ea2c96ede9444875d96a65e6112c957c",
+    "semantic_hash": ""
+  },
+  ".github/workflows/release.yml": {
+    "mtime": 1788884621.1453278,
+    "ast_hash": "4d3a2854563cf24a412a48b9bfc28461",
+    "semantic_hash": ""
+  },
+  ".github/workflows/staging.yml": {
+    "mtime": 1788884332.0724514,
+    "ast_hash": "98219a3d4b521cfd7efc89210758bd65",
     "semantic_hash": ""
   }
 }

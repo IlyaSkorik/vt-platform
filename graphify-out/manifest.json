@@ -3380,8 +3380,8 @@
     "semantic_hash": ""
   },
   "backend/tests/domain/applications/test_entities.py": {
-    "mtime": 1787839576.7599275,
-    "ast_hash": "46fc209310c0fd53a40ba311b49b99d0",
+    "mtime": 1788894676.2613418,
+    "ast_hash": "431fb39fed871fc7a649eaa4e5d2e7ae",
     "semantic_hash": ""
   },
   "backend/tests/domain/applications/test_value_objects.py": {
@@ -3405,8 +3405,8 @@
     "semantic_hash": ""
   },
   "backend/tests/domain/competitions/test_value_objects.py": {
-    "mtime": 1788337817.7755377,
-    "ast_hash": "798becb976f2e275970b51586bb98399",
+    "mtime": 1788894676.2609062,
+    "ast_hash": "44497b055be789cf0bd90376d6da0c69",
     "semantic_hash": ""
   },
   "backend/tests/domain/identity/__init__.py": {
@@ -7825,8 +7825,8 @@
     "semantic_hash": ""
   },
   "backend/tests/presentation/diplomas/test_participant_documents_api.py": {
-    "mtime": 1787066753.248185,
-    "ast_hash": "7c126afd08841ddc4c27cfe3b8302bb1",
+    "mtime": 1788894688.5232623,
+    "ast_hash": "385826a78df2a77a0141912fbc9eb839",
     "semantic_hash": ""
   },
   "frontend/e2e/diploma-verification.screenshots.spec.ts": {
@@ -9455,8 +9455,8 @@
     "semantic_hash": ""
   },
   "backend/tests/presentation/platform/test_loadtest_api.py": {
-    "mtime": 1787590204.9115183,
-    "ast_hash": "7235e6392e3d2652bdcc809292643a90",
+    "mtime": 1788894676.2625625,
+    "ast_hash": "a64b8b5d55c2be64a608e514cb706bd6",
     "semantic_hash": ""
   },
   "backend/tests/shared/test_production_logging.py": {
@@ -9755,18 +9755,18 @@
     "semantic_hash": ""
   },
   ".github/workflows/ci.yml": {
-    "mtime": 1785860600.5862527,
-    "ast_hash": "f2b5745f205ebd7c6232bad1ec34dfa3",
+    "mtime": 1788894400.690998,
+    "ast_hash": "2aeb48882b867385ec8de72f0c4b6d9b",
     "semantic_hash": ""
   },
   "docker-compose.prod.yml": {
-    "mtime": 1788884427.9519167,
-    "ast_hash": "51b8ca40559c3f6c39f928e7df2e168c",
+    "mtime": 1788885736.9507773,
+    "ast_hash": "3cf9ce34eafd969a482c462415a38b0b",
     "semantic_hash": ""
   },
   "docs/devops/OPS-001-deploy-runbook.md": {
-    "mtime": 1788884538.0913956,
-    "ast_hash": "c22bef692aa63015ff44aac2df179aba",
+    "mtime": 1788885802.515653,
+    "ast_hash": "bb0501eec6aa8f68c780668b766cc8cd",
     "semantic_hash": ""
   },
   "docs/legal/LEGAL-001-privacy-policy.md": {
@@ -10150,8 +10150,8 @@
     "semantic_hash": ""
   },
   "backend/tests/presentation/applications/test_organizer_review_notices.py": {
-    "mtime": 1787860840.5750196,
-    "ast_hash": "363631476288473cb72544f9137361d3",
+    "mtime": 1788894676.2623477,
+    "ast_hash": "d9e09af70b4c9a906e94aa3013874dce",
     "semantic_hash": ""
   },
   "backend/tests/presentation/applications/test_organizer_receipt_links.py": {
@@ -10185,8 +10185,8 @@
     "semantic_hash": ""
   },
   "backend/tests/presentation/platform/test_purge_api.py": {
-    "mtime": 1788334505.1524768,
-    "ast_hash": "210ca027f452960b4aa2d373d268a369",
+    "mtime": 1788894676.2617154,
+    "ast_hash": "424eca2f5a4a74ce3b8a0431dc5cebc1",
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/pages/erase/index.test.tsx": {
@@ -10275,8 +10275,8 @@
     "semantic_hash": ""
   },
   ".github/workflows/_deploy-stack.yml": {
-    "mtime": 1788884253.047552,
-    "ast_hash": "ea2c96ede9444875d96a65e6112c957c",
+    "mtime": 1788885715.8577957,
+    "ast_hash": "3fb415351851ced2341dd8482b4787f5",
     "semantic_hash": ""
   },
   ".github/workflows/release.yml": {
