@@ -99,7 +99,27 @@ services:
     # by gunicorn itself, so waiting longer only makes deploys slower without saving work.
     stop_grace_period: 45s
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz').read()"]
+      # The probe announces a host this deployment already allows, rather than ALLOWED_HOSTS
+      # being widened to admit the loopback.
+      #
+      # It connects to 127.0.0.1 inside the container, so by default it announces
+      # `Host: 127.0.0.1:8000` — which is in nobody's `DJANGO_ALLOWED_HOSTS`, because OPS-001
+      # §3 sets that to the deployment's domain. Django answers 400, the container is unhealthy
+      # forever while the application is perfectly fine, and `up --wait` fails with "dependency
+      # failed to start" naming *nginx* — three steps from the cause.
+      #
+      # CI hides this: its throwaway environment sets `localhost,127.0.0.1`, so the probe passes
+      # there and fails on every real host. `DJANGO_ALLOWED_HOSTS` is already in this container's
+      # environment, and its first entry is by definition a host this deployment accepts.
+      test:
+        - CMD
+        - python
+        - -c
+        - |
+          import os, urllib.request
+          host = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost").split(",")[0].strip()
+          probe = urllib.request.Request("http://127.0.0.1:8000/healthz", headers={"Host": host})
+          urllib.request.urlopen(probe).read()
       interval: 30s
       timeout: 5s
       start_period: 20s
