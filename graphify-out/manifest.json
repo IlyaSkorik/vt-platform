@@ -9755,8 +9755,8 @@
     "semantic_hash": ""
   },
   ".github/workflows/ci.yml": {
-    "mtime": 1788895638.4970076,
-    "ast_hash": "49549375bff5103e46a86067a41ee68c",
+    "mtime": 1788897247.9773433,
+    "ast_hash": "ccfa944a1421181c09e17e87845ee9f8",
     "semantic_hash": ""
   },
   "docker-compose.prod.yml": {
@@ -10287,6 +10287,11 @@
   ".github/workflows/staging.yml": {
     "mtime": 1788884332.0724514,
     "ast_hash": "98219a3d4b521cfd7efc89210758bd65",
+    "semantic_hash": ""
+  },
+  "small.html": {
+    "mtime": 1788897194.8698373,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
     "semantic_hash": ""
   }
 }
