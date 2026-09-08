@@ -9760,8 +9760,8 @@
     "semantic_hash": ""
   },
   "docker-compose.prod.yml": {
-    "mtime": 1788885736.9507773,
-    "ast_hash": "3cf9ce34eafd969a482c462415a38b0b",
+    "mtime": 1788898885.3828948,
+    "ast_hash": "e32049ba6b3fa5c5e2f946ecdc44f98f",
     "semantic_hash": ""
   },
   "docs/devops/OPS-001-deploy-runbook.md": {
@@ -10287,11 +10287,6 @@
   ".github/workflows/staging.yml": {
     "mtime": 1788884332.0724514,
     "ast_hash": "98219a3d4b521cfd7efc89210758bd65",
-    "semantic_hash": ""
-  },
-  "small.html": {
-    "mtime": 1788897194.8698373,
-    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
     "semantic_hash": ""
   }
 }
