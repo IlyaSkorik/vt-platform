@@ -9460,8 +9460,8 @@
     "semantic_hash": ""
   },
   "backend/tests/shared/test_production_logging.py": {
-    "mtime": 1786126718.34945,
-    "ast_hash": "5f254d8575c2280919cad6da7f10ab73",
+    "mtime": 1788895592.6115036,
+    "ast_hash": "d969cfc4fdb8c8e7272be8536702da59",
     "semantic_hash": ""
   },
   "frontend/deploy/nginx/docker-entrypoint.sh": {
@@ -9755,8 +9755,8 @@
     "semantic_hash": ""
   },
   ".github/workflows/ci.yml": {
-    "mtime": 1788894400.690998,
-    "ast_hash": "2aeb48882b867385ec8de72f0c4b6d9b",
+    "mtime": 1788895638.4970076,
+    "ast_hash": "49549375bff5103e46a86067a41ee68c",
     "semantic_hash": ""
   },
   "docker-compose.prod.yml": {
