@@ -295,14 +295,35 @@ jobs:
           echo "  plain HTTP -> $plain (want 301)"
           [ "$plain" = "301" ]
 
+          # Captured into a variable, never piped into `grep -q`.
+          #
+          # `grep -q` exits at the first match and closes the pipe; curl then fails to write
+          # the rest and exits 23, which `pipefail` reports as a failed step — for an
+          # assertion that *passed*. It depends on how the body is chunked, so it fails
+          # intermittently on one document and not the other, and the log shows a bare exit
+          # code with no failing line. A green check that lies is worse than no check.
+          #
+          # `contains` also prints what it saw, so a genuine regression names itself instead
+          # of costing another CI round to diagnose.
+          contains() {
+            local what="$1" body="$2" label="$3"
+            if grep -qE "$what" <<<"$body"; then
+              printf '  %s\n' "$label"
+              return 0
+            fi
+            echo "::error::$label — not found. First 400 bytes of the document:"
+            head -c 400 <<<"$body"
+            return 1
+          }
+
           # The head must be server-rendered: the crawlers that build link previews never run
           # the app's JavaScript, so if this regresses every shared festival link goes bare.
-          curl -s -H "$H" http://127.0.0.1:8080/ | grep -q 'property="og:title"'
-          echo "  og:title present in the served document"
+          home=$(curl -sS -H "$H" http://127.0.0.1:8080/)
+          contains 'property="og:title"' "$home" "og:title present in the served document"
 
           # Django's own static must resolve through the baked manifest.
-          curl -s -H "$H" http://127.0.0.1:8080/admin/login/ | grep -qE '/static/admin/css/[a-z]+\.[0-9a-f]+\.css'
-          echo "  hashed admin CSS referenced"
+          admin=$(curl -sS -H "$H" http://127.0.0.1:8080/admin/login/)
+          contains '/static/admin/css/[a-z]+\.[0-9a-f]+\.css' "$admin" "hashed admin CSS referenced"
 
       - name: Logs on failure
         if: failure()
