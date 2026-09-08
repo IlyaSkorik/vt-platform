@@ -39,30 +39,46 @@ if (!("ResizeObserver" in globalThis)) {
 }
 
 /**
- * Let a `Request` be built with a jsdom abort signal.
+ * Bridge two gaps between the jsdom and Node halves of the fetch API. Both make a
+ * request fail before it is ever issued, so every affected suite reads as if the
+ * network were down whatever `fetch` was stubbed to return — and neither has
+ * anything to do with what those suites are testing.
  *
- * The two halves of the fetch API come from different implementations here:
- * `Request` from Node (jsdom does not implement it) and `AbortSignal` from jsdom.
- * Node refuses a signal it did not create — `new Request(url, { signal })` throws
- * `Expected signal to be an instance of AbortSignal` — and since ky always attaches
- * a timeout signal, every suite that talks through the API client failed as if the
- * network were down, whatever `fetch` was stubbed to return.
+ * **A relative URL has nothing to resolve against.** In production
+ * `VITE_API_BASE_URL` is empty, meaning "same origin", so the client issues
+ * `/api/v1/…` and the browser resolves it against the document. Here `Request`
+ * comes from Node, which has no document and refuses a URL it cannot parse:
+ * `Failed to parse URL from /api/v1/users/me`. Resolving against `document.baseURI`
+ * is what the browser being stood in for would do, and it leaves an absolute input
+ * untouched.
  *
- * Nothing under test aborts a request, so retrying without the signal yields the
- * same Request for our purposes. The retry is guarded by the throw rather than by
- * sniffing the signal, so the shim disappears on its own once the runtimes agree.
+ * This one is worth stating plainly, because it was hidden for a long time: a
+ * developer with `VITE_API_BASE_URL` set to an absolute URL in their own
+ * `frontend/.env` never saw it, while CI — which has no such file and therefore runs
+ * the *shipping* configuration — failed on twenty tests. The suite now exercises the
+ * production shape on both.
+ *
+ * **A signal from the other realm is refused.** `AbortSignal` comes from jsdom and
+ * Node rejects one it did not create — `Expected signal to be an instance of
+ * AbortSignal` — and ky always attaches a timeout signal. Nothing under test aborts
+ * a request, so retrying without it yields the same Request for our purposes. The
+ * retry is guarded by the throw rather than by sniffing the signal, so this half
+ * disappears on its own once the runtimes agree.
  */
 const NativeRequest = globalThis.Request;
 
 function RequestWithoutRefusedSignal(input: RequestInfo | URL, init?: RequestInit): Request {
+  // `new URL(input, base)` ignores the base when `input` is already absolute, so this
+  // is unconditional rather than a guess about which form the caller used.
+  const resolved = typeof input === "string" ? new URL(input, document.baseURI).href : input;
   try {
-    return new NativeRequest(input, init);
+    return new NativeRequest(resolved, init);
   } catch (error) {
     if (!(error instanceof TypeError) || init?.signal === undefined) {
       throw error;
     }
     const { signal: _refused, ...rest } = init;
-    return new NativeRequest(input, rest);
+    return new NativeRequest(resolved, rest);
   }
 }
 
