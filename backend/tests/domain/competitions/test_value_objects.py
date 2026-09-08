@@ -452,7 +452,7 @@ class TestMediaRequirements:
 
     def test_the_size_limit_must_be_a_whole_number_of_megabytes(self) -> None:
         with pytest.raises(InvalidCompetitionSettingsError):
-            MediaRequirements(max_total_size_mb=True)  # type: ignore[arg-type]
+            MediaRequirements(max_total_size_mb=True)
 
     def test_a_video_may_be_collected_without_being_required(self) -> None:
         # The case that did not exist before: an in-person festival wants the file for the

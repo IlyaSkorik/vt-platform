@@ -698,7 +698,7 @@ class TestCollectiveRoster:
             participant_id=participant_id,
             display_name='Ensemble "Constellation"',
             member_count=3,
-            **({"members": members} if members is not None else {}),
+            members=() if members is None else members,
             now=NOW,
         )
         return submission, participant_id

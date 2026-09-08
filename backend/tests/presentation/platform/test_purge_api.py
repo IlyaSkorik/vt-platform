@@ -16,6 +16,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass
 from datetime import date
+from typing import Any
 
 import pytest
 from django.core.files.base import ContentFile
@@ -229,7 +230,7 @@ def _build_festival(*, title: str = "Взлёт талантов", email: str = 
     )
 
 
-def _plan(client: APIClient, kind: str, object_id: object) -> dict:
+def _plan(client: APIClient, kind: str, object_id: object) -> dict[str, Any]:
     response = client.get(f"{_PURGE}/{kind}/{object_id}")
     assert response.status_code == 200, response.data
     return dict(response.data["data"])
@@ -239,7 +240,7 @@ def _erase(client: APIClient, kind: str, object_id: object, confirm: str):  # ty
     return client.delete(f"{_PURGE}/{kind}/{object_id}?confirm={confirm}")
 
 
-def _row(plan: dict, table: str) -> int:
+def _row(plan: dict[str, Any], table: str) -> int:
     """How many rows the plan reports for one table — zero when it names none."""
     return next((row["count"] for row in plan["rows"] if row["table"] == table), 0)
 

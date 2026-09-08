@@ -15,7 +15,7 @@ import io
 import uuid
 import zipfile
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
 
 import pytest
@@ -214,6 +214,11 @@ def _individual(submission: SubmissionModel, *, recipient: str, number: str) -> 
     )
 
 
+def _archive(response: Any) -> zipfile.ZipFile:
+    """The streamed ZIP, read into memory — the same helper the applications suite uses."""
+    return zipfile.ZipFile(io.BytesIO(b"".join(response.streaming_content)))
+
+
 class TestIndividualDiplomaArchive:
     """Twelve members mean twelve diplomas, and one download."""
 
@@ -233,7 +238,7 @@ class TestIndividualDiplomaArchive:
         assert response["Content-Type"] == "application/zip"
         # The festival's real name, RFC 5987-encoded for the browser.
         assert quote("Дипломы участников — Восходящие таланты.zip") in response["Content-Disposition"]
-        with zipfile.ZipFile(io.BytesIO(b"".join(response.streaming_content))) as archive:
+        with _archive(response) as archive:
             names = archive.namelist()
         # Named after the person the sheet is handed to, numbered in listing order —
         # alphabetical here, because one publication issues them in the same instant.
@@ -248,7 +253,7 @@ class TestIndividualDiplomaArchive:
 
         response = client.get(f"/api/v1/me/documents/archive?submissionId={wanted.id}")
 
-        with zipfile.ZipFile(io.BytesIO(b"".join(response.streaming_content))) as archive:
+        with _archive(response) as archive:
             names = archive.namelist()
         # Two festivals' worth of diplomas in one folder is not a bundle anybody wants.
         assert names == ["01 — Иванова Мария — VT-2026-000004.pdf"]
@@ -261,7 +266,7 @@ class TestIndividualDiplomaArchive:
 
         response = client.get(f"/api/v1/me/documents/archive?submissionId={submission.id}")
 
-        with zipfile.ZipFile(io.BytesIO(b"".join(response.streaming_content))) as archive:
+        with _archive(response) as archive:
             names = archive.namelist()
         # The ensemble's own sheet is one download of its own, right above the bundle.
         assert names == ["01 — Иванова Мария — VT-2026-000006.pdf"]

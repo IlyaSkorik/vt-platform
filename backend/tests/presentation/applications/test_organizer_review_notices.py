@@ -9,6 +9,7 @@ approve action leaves behind.
 from __future__ import annotations
 
 import uuid
+from typing import Any
 
 import pytest
 from django.core import mail
@@ -54,7 +55,7 @@ def applicant_id(staff_client: APIClient) -> uuid.UUID:
     """A real Identity user, because the notice is addressed to their stored email."""
     client = APIClient()
     access = _register(client, _APPLICANT_EMAIL, "Мария")
-    return uuid.UUID(str(AccessToken(access)["user_id"]))
+    return uuid.UUID(str(AccessToken(access)["user_id"]))  # type: ignore[arg-type]
 
 
 def _festival() -> uuid.UUID:
@@ -88,7 +89,7 @@ def _order(*, competition_id: uuid.UUID, applicant_id: uuid.UUID, performances: 
     return application, submissions
 
 
-def _approve(client: APIClient, submission_id: uuid.UUID) -> object:
+def _approve(client: APIClient, submission_id: uuid.UUID) -> Any:
     return client.post(f"/api/v1/staff/applications/{submission_id}/actions/approve", {}, format="json")
 
 

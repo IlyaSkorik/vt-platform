@@ -149,7 +149,9 @@ def test_seeded_entries_fill_every_field_a_diploma_can_print(operator: APIClient
     """
     response = operator.post(_LOADTEST, {"count": 2, "nominations": 1}, format="json")
 
-    snapshot = DiplomaModel.objects.filter(competition_id=response.data["data"]["competitionId"]).first().snapshot
+    diploma = DiplomaModel.objects.filter(competition_id=response.data["data"]["competitionId"]).first()
+    assert diploma is not None
+    snapshot = diploma.snapshot
     assert snapshot["participant"]["display_name"]
     assert snapshot["participant"]["age"] is not None
     assert snapshot["teachers"] and snapshot["teachers"][0]["name"]
