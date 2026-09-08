@@ -480,23 +480,64 @@ bulk invitations, and a stand pointed at real SMTP will send them to whatever ad
 database — which, the first time somebody copies a dump down to reproduce a bug, are real
 parents. Run Mailpit next to the stack and point the stand at it:
 
+Attach it to the stack's own network so the containers reach it by name. `host.docker.internal`
+does not resolve on Linux, and a sink published on `127.0.0.1` is unreachable from inside a
+container — both are silent failures that look like "mail is broken" rather than "mail is
+misconfigured". Run it *after* the first `docker compose up`, which is what creates the network:
+
 ```bash
 docker run -d --restart unless-stopped --name mailpit \
-  -p 127.0.0.1:8025:8025 -p 127.0.0.1:1025:1025 axllent/mailpit
+  --network vt-platform-prod_default \
+  -p 127.0.0.1:8025:8025 \
+  axllent/mailpit
 ```
+
+Only the web UI is published, and only on loopback; SMTP is reached over the docker network and
+never needs a host port. (The compose project name is fixed at `vt-platform-prod` on both hosts —
+§2 — so the network is called that on the stand too. The deploy never runs `docker compose down`,
+so it stays put.)
 
 ```ini
 EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-EMAIL_HOST=host.docker.internal   # or the host's docker0 address
+EMAIL_HOST=mailpit
 EMAIL_PORT=1025
 EMAIL_USE_TLS=false
+EMAIL_USE_SSL=false
 EMAIL_HOST_USER=
 EMAIL_HOST_PASSWORD=
 ```
 
-Everything the stand sends is then readable in Mailpit's web UI — which is better for testing than
-real delivery anyway, because a verification link is in front of the tester in a second instead of
-in somebody's spam folder.
+**The application still sends for real.** Same backend, same SMTP conversation, same rendered
+letter, same `EMAIL_RATE_LIMIT_PER_MINUTE` throttle — Mailpit is simply the last hop and delivers
+onward to nobody. That is deliberate: a `console` backend would change the code path being tested,
+and a tester cannot read a container log.
+
+What a sink therefore does *not* prove, and what stays production-only: the provider's quotas
+(OPS-009), SPF/DKIM alignment, whether a `From` is accepted, and where a real inbox files the
+message. Those are checked once against the real provider after a release, not on the stand.
+
+**Give the tester the web UI**, or the sink is only useful to whoever has SSH. A subdomain on the
+staging terminator, behind the same basic auth as the stand itself:
+
+```nginx
+server {
+    server_name mail.test.vzlettalantov.by;
+    auth_basic           "staging";
+    auth_basic_user_file /etc/nginx/staging.htpasswd;
+    location / {
+        proxy_pass http://127.0.0.1:8025;
+        proxy_set_header Host $host;
+        proxy_http_version 1.1;
+        # Mailpit's inbox updates over a websocket; without these the list never refreshes and
+        # the letter that just arrived appears not to have been sent.
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+```
+
+A verification link is then in front of the tester a second after she triggers it, instead of in
+somebody's spam folder — which is better for testing than real delivery would be.
 
 **3. The host's TLS terminator closes it off.** Two lines in the staging server block, neither of
 which exists in production:
