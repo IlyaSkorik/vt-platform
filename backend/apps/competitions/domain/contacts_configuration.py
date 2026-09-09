@@ -127,9 +127,9 @@ class TeamContact:
             raise InvalidContactsConfigurationError("Team contact id must be a valid UUID.") from exc
         name = (self.name or "").strip()
         if not name:
-            raise InvalidContactsConfigurationError("Team contact name must not be empty.")
+            raise InvalidContactsConfigurationError("Укажите имя контактного лица.")
         if self.sort_order < 0:
-            raise InvalidContactsConfigurationError("Team contact sort order must be non-negative.")
+            raise InvalidContactsConfigurationError("Порядок контакта не может быть отрицательным.")
         object.__setattr__(self, "name", name)
         object.__setattr__(self, "position", _optional_str(self.position))
         object.__setattr__(self, "phone", _optional_str(self.phone))

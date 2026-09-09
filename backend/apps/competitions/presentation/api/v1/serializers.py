@@ -307,7 +307,7 @@ class RenameCategorySerializer(serializers.Serializer[dict[str, object]]):
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if not any(k in attrs for k in ("name", "description", "sort_order")):
-            raise serializers.ValidationError("At least one of name, description, or sortOrder must be provided.")
+            raise serializers.ValidationError("Измените хотя бы одно поле: название, описание или порядок.")
         return attrs
 
 
@@ -328,7 +328,7 @@ class RenameDisciplineSerializer(serializers.Serializer[dict[str, object]]):
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if not any(k in attrs for k in ("name", "sort_order")):
-            raise serializers.ValidationError("At least one of name or sortOrder must be provided.")
+            raise serializers.ValidationError("Измените хотя бы одно поле: название или порядок.")
         return attrs
 
 
@@ -349,13 +349,13 @@ class AddAgeCategorySerializer(serializers.Serializer[dict[str, object]]):
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if attrs["min_age"] > attrs["max_age"]:
-            raise serializers.ValidationError("minAge must not exceed maxAge.")
+            raise serializers.ValidationError("Минимальный возраст не может быть больше максимального.")
         ac_type = attrs.get("age_category_type", "STANDARD")
         method = attrs.get("mixed_calculation_method")
         if ac_type == "MIXED" and method is None:
-            raise serializers.ValidationError("mixedCalculationMethod is required when type is MIXED.")
+            raise serializers.ValidationError("Для смешанной категории укажите, по какому возрасту её судить.")
         if ac_type == "STANDARD" and method is not None:
-            raise serializers.ValidationError("mixedCalculationMethod must be null when type is STANDARD.")
+            raise serializers.ValidationError("Способ расчёта возраста задаётся только для смешанной категории.")
         return attrs
 
 
@@ -374,19 +374,19 @@ class UpdateAgeCategorySerializer(serializers.Serializer[dict[str, object]]):
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if not any(k in attrs for k in ("name", "min_age", "max_age", "sort_order", "age_category_type", "mixed_calculation_method")):
-            raise serializers.ValidationError("At least one of name, minAge, maxAge, sortOrder, type, or mixedCalculationMethod must be provided.")
+            raise serializers.ValidationError("Измените хотя бы одно поле возрастной категории.")
         has_min = attrs.get("min_age") is not None
         has_max = attrs.get("max_age") is not None
         if has_min != has_max:
-            raise serializers.ValidationError("Both minAge and maxAge must be provided together.")
+            raise serializers.ValidationError("Укажите оба возраста: и минимальный, и максимальный.")
         if has_min and has_max and attrs["min_age"] > attrs["max_age"]:
-            raise serializers.ValidationError("minAge must not exceed maxAge.")
+            raise serializers.ValidationError("Минимальный возраст не может быть больше максимального.")
         ac_type = attrs.get("age_category_type")
         method = attrs.get("mixed_calculation_method")
         if ac_type == "MIXED" and method is None:
-            raise serializers.ValidationError("mixedCalculationMethod is required when type is MIXED.")
+            raise serializers.ValidationError("Для смешанной категории укажите, по какому возрасту её судить.")
         if ac_type == "STANDARD" and method is not None:
-            raise serializers.ValidationError("mixedCalculationMethod must be null when type is STANDARD.")
+            raise serializers.ValidationError("Способ расчёта возраста задаётся только для смешанной категории.")
         return attrs
 
 
@@ -400,7 +400,7 @@ class AddParticipantGroupSerializer(serializers.Serializer[dict[str, object]]):
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         max_count = attrs.get("max_count")
         if max_count is not None and attrs["min_count"] > max_count:
-            raise serializers.ValidationError("minCount must not exceed maxCount.")
+            raise serializers.ValidationError("Минимальное число участников не может быть больше максимального.")
         return attrs
 
 
@@ -413,15 +413,15 @@ class UpdateParticipantGroupSerializer(serializers.Serializer[dict[str, object]]
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if not any(k in attrs for k in ("name", "min_count", "max_count", "description", "sort_order")):
-            raise serializers.ValidationError("At least one of name, minCount, maxCount, description, or sortOrder must be provided.")
+            raise serializers.ValidationError("Измените хотя бы одно поле состава участников.")
         if "min_count" in attrs and attrs["min_count"] is None:
-            raise serializers.ValidationError("minCount cannot be null.")
+            raise serializers.ValidationError("Укажите минимальное число участников.")
         if "min_count" in attrs:
             max_count = attrs.get("max_count")
             if max_count is not None and attrs["min_count"] > max_count:
-                raise serializers.ValidationError("minCount must not exceed maxCount.")
+                raise serializers.ValidationError("Минимальное число участников не может быть больше максимального.")
         elif "max_count" in attrs:
-            raise serializers.ValidationError("maxCount requires minCount.")
+            raise serializers.ValidationError("Максимальное число участников указывается вместе с минимальным.")
         return attrs
 
 
@@ -440,7 +440,7 @@ class UpdateParticipationFormatSerializer(serializers.Serializer[dict[str, objec
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if not any(k in attrs for k in ("name", "description", "enabled", "sort_order")):
-            raise serializers.ValidationError("At least one of name, description, enabled, or sortOrder must be provided.")
+            raise serializers.ValidationError("Измените хотя бы одно поле формы участия.")
         return attrs
 
 

@@ -35,9 +35,7 @@ class GetCompetitionHandler:
         )
 
         if competition is None:
-            raise CompetitionNotFoundError(
-                f"No competition {query.competition_id}.",
-            )
+            raise CompetitionNotFoundError("Фестиваль не найден.")
 
         return CompetitionDetailView.of(
             competition,

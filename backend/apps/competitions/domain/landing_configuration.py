@@ -89,9 +89,9 @@ class JuryCard:
         _require_uuid(self.id, label="Jury card")
         name = (self.name or "").strip()
         if not name:
-            raise InvalidLandingConfigurationError("Jury card name must not be empty.")
+            raise InvalidLandingConfigurationError("Укажите имя члена жюри.")
         if self.sort_order < 0:
-            raise InvalidLandingConfigurationError("Jury card sort order must be non-negative.")
+            raise InvalidLandingConfigurationError("Порядок карточки жюри не может быть отрицательным.")
         object.__setattr__(self, "name", name)
         object.__setattr__(self, "photo", _optional_str(self.photo))
         object.__setattr__(self, "position", _optional_str(self.position))
@@ -112,9 +112,9 @@ class PartnerCard:
         _require_uuid(self.id, label="Partner card")
         name = (self.name or "").strip()
         if not name:
-            raise InvalidLandingConfigurationError("Partner card name must not be empty.")
+            raise InvalidLandingConfigurationError("Укажите название партнёра.")
         if self.sort_order < 0:
-            raise InvalidLandingConfigurationError("Partner card sort order must be non-negative.")
+            raise InvalidLandingConfigurationError("Порядок карточки партнёра не может быть отрицательным.")
         object.__setattr__(self, "name", name)
         object.__setattr__(self, "logo", _optional_str(self.logo))
         object.__setattr__(self, "website", _optional_str(self.website))
@@ -133,9 +133,9 @@ class GalleryImage:
         _require_uuid(self.id, label="Gallery image")
         url = (self.url or "").strip()
         if not url:
-            raise InvalidLandingConfigurationError("Gallery image url must not be empty.")
+            raise InvalidLandingConfigurationError("Укажите ссылку на изображение галереи.")
         if self.sort_order < 0:
-            raise InvalidLandingConfigurationError("Gallery image sort order must be non-negative.")
+            raise InvalidLandingConfigurationError("Порядок изображения галереи не может быть отрицательным.")
         object.__setattr__(self, "url", url)
         object.__setattr__(self, "caption", _optional_str(self.caption))
 
@@ -154,11 +154,11 @@ class FaqItem:
         question = (self.question or "").strip()
         answer = (self.answer or "").strip()
         if not question:
-            raise InvalidLandingConfigurationError("FAQ question must not be empty.")
+            raise InvalidLandingConfigurationError("Укажите вопрос.")
         if not answer:
-            raise InvalidLandingConfigurationError("FAQ answer must not be empty.")
+            raise InvalidLandingConfigurationError("Укажите ответ на вопрос.")
         if self.sort_order < 0:
-            raise InvalidLandingConfigurationError("FAQ item sort order must be non-negative.")
+            raise InvalidLandingConfigurationError("Порядок вопроса не может быть отрицательным.")
         object.__setattr__(self, "question", question)
         object.__setattr__(self, "answer", answer)
 
@@ -189,7 +189,7 @@ class LandingBlock:
             except ValueError as exc:
                 raise InvalidLandingConfigurationError(f"Unknown landing block type: {self.type!r}.") from exc
         if self.sort_order < 0:
-            raise InvalidLandingConfigurationError("Landing block sort order must be non-negative.")
+            raise InvalidLandingConfigurationError("Порядок блока лендинга не может быть отрицательным.")
 
         object.__setattr__(self, "title", _optional_str(self.title))
         object.__setattr__(self, "subtitle", _optional_str(self.subtitle))
@@ -260,7 +260,7 @@ class LandingBlock:
         elif block_type is LandingBlockType.CONTENT:
             title = self.title
             if not title:
-                raise InvalidLandingConfigurationError("CONTENT block requires a non-empty title.")
+                raise InvalidLandingConfigurationError("У текстового блока должен быть заголовок.")
             if self.cards or self.partners or self.images or self.faq_items:
                 raise InvalidLandingConfigurationError("CONTENT block must not carry cards, partners, images, or FAQ items.")
             if self.subtitle is not None or self.cover_image is not None:
@@ -320,9 +320,9 @@ class LandingConfiguration:
             type_counts[block.type] = type_counts.get(block.type, 0) + 1
 
         if type_counts.get(LandingBlockType.HERO, 0) != 1:
-            raise InvalidLandingConfigurationError("Landing configuration requires exactly one HERO block.")
+            raise InvalidLandingConfigurationError("На лендинге должен быть ровно один блок-обложка.")
         if type_counts.get(LandingBlockType.VENUE, 0) != 1:
-            raise InvalidLandingConfigurationError("Landing configuration requires exactly one VENUE block.")
+            raise InvalidLandingConfigurationError("На лендинге должен быть ровно один блок с площадкой.")
         for system_type in (
             LandingBlockType.JURY,
             LandingBlockType.PARTNERS,

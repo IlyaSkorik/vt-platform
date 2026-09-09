@@ -60,7 +60,7 @@ class CompetitionCommandHandler:
         """Load the competition or raise :class:`CompetitionNotFoundError`."""
         competition = self._repository.get(CompetitionId.from_string(competition_id))
         if competition is None:
-            raise CompetitionNotFoundError(f"No competition {competition_id}.")
+            raise CompetitionNotFoundError("Фестиваль не найден.")
         return competition
 
     def _persist(

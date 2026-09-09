@@ -282,7 +282,7 @@ class CompetitionViewSet(viewsets.ViewSet):
             # proper problem document); only ownership is decided here.
             return
         if not may_reach_competition(request, organizer_id):
-            raise PermissionDenied("This competition belongs to another organization.")
+            raise PermissionDenied("Этот фестиваль принадлежит другой организации.")
 
     def _callers_organizer_id(self, request: Request) -> uuid.UUID | None:
         return callers_organization_id(request)
@@ -364,7 +364,7 @@ class CompetitionViewSet(viewsets.ViewSet):
         # several organizations connected would file a festival under anyone.
         organizer_id = self._callers_organizer_id(request)
         if organizer_id is None:
-            raise PermissionDenied("Only staff of an organization may create a competition for it.")
+            raise PermissionDenied("Создавать фестивали может только сотрудник организации.")
         kwargs["organizer_id"] = str(organizer_id)
         return self._run(CreateCompetitionHandler, CreateCompetitionCommand(**kwargs), request, success=status.HTTP_201_CREATED)
 

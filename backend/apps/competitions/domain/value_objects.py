@@ -710,9 +710,9 @@ class CompetitionTitle:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if not stripped:
-            raise InvalidCompetitionTitleError("Competition title must not be empty.")
+            raise InvalidCompetitionTitleError("Укажите название фестиваля.")
         if len(stripped) > _TITLE_MAX:
-            raise InvalidCompetitionTitleError(f"Competition title must be at most {_TITLE_MAX} characters.")
+            raise InvalidCompetitionTitleError(f"Название фестиваля — не длиннее {_TITLE_MAX} символов.")
         object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:
@@ -728,7 +728,7 @@ class CompetitionDescription:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if len(stripped) > _DESCRIPTION_MAX:
-            raise InvalidCompetitionDescriptionError(f"Competition description must be at most {_DESCRIPTION_MAX} characters.")
+            raise InvalidCompetitionDescriptionError(f"Описание фестиваля — не длиннее {_DESCRIPTION_MAX} символов.")
         object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:
@@ -744,9 +744,9 @@ class Season:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if not stripped:
-            raise InvalidSeasonError("Season must not be empty.")
+            raise InvalidSeasonError("Укажите сезон.")
         if len(stripped) > _SEASON_MAX:
-            raise InvalidSeasonError(f"Season must be at most {_SEASON_MAX} characters.")
+            raise InvalidSeasonError(f"Сезон — не длиннее {_SEASON_MAX} символов.")
         object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:
@@ -763,16 +763,16 @@ class Venue:
     def __post_init__(self) -> None:
         name = self.name.strip()
         if not name:
-            raise InvalidVenueError("Venue name must not be empty.")
+            raise InvalidVenueError("Укажите название площадки.")
         if len(name) > _VENUE_NAME_MAX:
-            raise InvalidVenueError(f"Venue name must be at most {_VENUE_NAME_MAX} characters.")
+            raise InvalidVenueError(f"Название площадки — не длиннее {_VENUE_NAME_MAX} символов.")
         object.__setattr__(self, "name", name)
         if self.address is not None:
             address = self.address.strip()
             if not address:
                 object.__setattr__(self, "address", None)
             elif len(address) > _VENUE_ADDRESS_MAX:
-                raise InvalidVenueError(f"Venue address must be at most {_VENUE_ADDRESS_MAX} characters.")
+                raise InvalidVenueError(f"Адрес площадки — не длиннее {_VENUE_ADDRESS_MAX} символов.")
             else:
                 object.__setattr__(self, "address", address)
 
@@ -820,7 +820,7 @@ class DateRange:
         if not isinstance(self.start, date) or not isinstance(self.end, date):
             raise InvalidDateRangeError("DateRange bounds must be datetime.date instances.")
         if self.end < self.start:
-            raise InvalidDateRangeError(f"DateRange end {self.end} must not precede start {self.start}.")
+            raise InvalidDateRangeError("Дата окончания не может быть раньше даты начала.")
 
     def contains(self, moment: date) -> bool:
         """Whether ``moment`` falls within the inclusive range."""
@@ -859,11 +859,11 @@ class AgeRange:
         if not isinstance(self.min_age, int) or not isinstance(self.max_age, int):
             raise InvalidAgeRangeError("Age bounds must be integers.")
         if not (_AGE_MIN <= self.min_age <= _AGE_MAX):
-            raise InvalidAgeRangeError(f"Minimum age must be between {_AGE_MIN} and {_AGE_MAX}, got {self.min_age}.")
+            raise InvalidAgeRangeError(f"Минимальный возраст — от {_AGE_MIN} до {_AGE_MAX} лет.")
         if not (_AGE_MIN <= self.max_age <= _AGE_MAX):
-            raise InvalidAgeRangeError(f"Maximum age must be between {_AGE_MIN} and {_AGE_MAX}, got {self.max_age}.")
+            raise InvalidAgeRangeError(f"Максимальный возраст — от {_AGE_MIN} до {_AGE_MAX} лет.")
         if self.max_age < self.min_age:
-            raise InvalidAgeRangeError(f"Maximum age {self.max_age} must not be less than minimum age {self.min_age}.")
+            raise InvalidAgeRangeError("Максимальный возраст не может быть меньше минимального.")
 
     def contains(self, age: int) -> bool:
         """Whether ``age`` falls within the inclusive band."""
@@ -891,12 +891,12 @@ class ParticipantCountRange:
         if not isinstance(self.min_count, int):
             raise InvalidParticipantCountRangeError("Minimum participant count must be an integer.")
         if self.min_count < 1:
-            raise InvalidParticipantCountRangeError(f"Minimum participant count must be at least 1, got {self.min_count}.")
+            raise InvalidParticipantCountRangeError("Минимальное число участников — не меньше 1.")
         if self.max_count is not None:
             if not isinstance(self.max_count, int):
                 raise InvalidParticipantCountRangeError("Maximum participant count must be an integer or None.")
             if self.max_count < self.min_count:
-                raise InvalidParticipantCountRangeError(f"Maximum participant count {self.max_count} must not be less than minimum {self.min_count}.")
+                raise InvalidParticipantCountRangeError("Максимальное число участников не может быть меньше минимального.")
 
     @property
     def is_open_ended(self) -> bool:
@@ -922,9 +922,9 @@ class ParticipantCountRange:
 def _validate_name(value: str, *, error: type[Exception], label: str, maximum: int) -> str:
     stripped = value.strip()
     if not stripped:
-        raise error(f"{label} must not be empty.")
+        raise error(f"Заполните поле «{label}».")
     if len(stripped) > maximum:
-        raise error(f"{label} must be at most {maximum} characters.")
+        raise error(f"«{label}» — не длиннее {maximum} символов.")
     return stripped
 
 
@@ -935,7 +935,7 @@ class CategoryName:
     value: str
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "value", _validate_name(self.value, error=InvalidCategoryNameError, label="Category name", maximum=_NAME_MAX))
+        object.__setattr__(self, "value", _validate_name(self.value, error=InvalidCategoryNameError, label="Название жанра", maximum=_NAME_MAX))
 
     def __str__(self) -> str:
         return self.value
@@ -950,7 +950,7 @@ class CategoryDescription:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if len(stripped) > _CATEGORY_DESCRIPTION_MAX:
-            raise InvalidCategoryDescriptionError(f"Category description must be at most {_CATEGORY_DESCRIPTION_MAX} characters.")
+            raise InvalidCategoryDescriptionError(f"Описание жанра — не длиннее {_CATEGORY_DESCRIPTION_MAX} символов.")
         object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:
@@ -964,7 +964,9 @@ class AgeCategoryName:
     value: str
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "value", _validate_name(self.value, error=InvalidAgeCategoryNameError, label="Age category name", maximum=_NAME_MAX))
+        object.__setattr__(
+            self, "value", _validate_name(self.value, error=InvalidAgeCategoryNameError, label="Название возрастной категории", maximum=_NAME_MAX)
+        )
 
     def __str__(self) -> str:
         return self.value
@@ -977,7 +979,7 @@ class DisciplineName:
     value: str
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "value", _validate_name(self.value, error=InvalidDisciplineNameError, label="Discipline name", maximum=_NAME_MAX))
+        object.__setattr__(self, "value", _validate_name(self.value, error=InvalidDisciplineNameError, label="Название номинации", maximum=_NAME_MAX))
 
     def __str__(self) -> str:
         return self.value
@@ -991,7 +993,7 @@ class ParticipantGroupName:
 
     def __post_init__(self) -> None:
         object.__setattr__(
-            self, "value", _validate_name(self.value, error=InvalidParticipantGroupNameError, label="Participant group name", maximum=_NAME_MAX)
+            self, "value", _validate_name(self.value, error=InvalidParticipantGroupNameError, label="Название состава участников", maximum=_NAME_MAX)
         )
 
     def __str__(self) -> str:
@@ -1007,7 +1009,7 @@ class ParticipantGroupDescription:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if len(stripped) > _CATEGORY_DESCRIPTION_MAX:
-            raise InvalidParticipantGroupDescriptionError(f"Participant group description must be at most {_CATEGORY_DESCRIPTION_MAX} characters.")
+            raise InvalidParticipantGroupDescriptionError(f"Описание состава участников — не длиннее {_CATEGORY_DESCRIPTION_MAX} символов.")
         object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:
@@ -1024,7 +1026,7 @@ class ParticipationFormatName:
         object.__setattr__(
             self,
             "value",
-            _validate_name(self.value, error=InvalidParticipationFormatNameError, label="Participation format name", maximum=_NAME_MAX),
+            _validate_name(self.value, error=InvalidParticipationFormatNameError, label="Название формы участия", maximum=_NAME_MAX),
         )
 
     def __str__(self) -> str:
@@ -1040,9 +1042,7 @@ class ParticipationFormatDescription:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if len(stripped) > _CATEGORY_DESCRIPTION_MAX:
-            raise InvalidParticipationFormatDescriptionError(
-                f"Participation format description must be at most {_CATEGORY_DESCRIPTION_MAX} characters."
-            )
+            raise InvalidParticipationFormatDescriptionError(f"Описание формы участия — не длиннее {_CATEGORY_DESCRIPTION_MAX} символов.")
         object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:
@@ -1057,7 +1057,7 @@ class RegulationTitle:
 
     def __post_init__(self) -> None:
         object.__setattr__(
-            self, "value", _validate_name(self.value, error=InvalidRegulationTitleError, label="Regulation title", maximum=_REGULATION_TITLE_MAX)
+            self, "value", _validate_name(self.value, error=InvalidRegulationTitleError, label="Название положения", maximum=_REGULATION_TITLE_MAX)
         )
 
     def __str__(self) -> str:
@@ -1071,7 +1071,7 @@ class RegulationVersion:
     value: str
 
     def __post_init__(self) -> None:
-        validated = _validate_name(self.value, error=InvalidRegulationVersionError, label="Regulation version", maximum=_REGULATION_VERSION_MAX)
+        validated = _validate_name(self.value, error=InvalidRegulationVersionError, label="Версия положения", maximum=_REGULATION_VERSION_MAX)
         object.__setattr__(self, "value", validated)
 
     def __str__(self) -> str:
@@ -1086,7 +1086,7 @@ class DocumentTitle:
 
     def __post_init__(self) -> None:
         object.__setattr__(
-            self, "value", _validate_name(self.value, error=InvalidDocumentTitleError, label="Document title", maximum=_DOCUMENT_TITLE_MAX)
+            self, "value", _validate_name(self.value, error=InvalidDocumentTitleError, label="Название документа", maximum=_DOCUMENT_TITLE_MAX)
         )
 
     def __str__(self) -> str:
@@ -1102,7 +1102,7 @@ class DocumentDescription:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if len(stripped) > _DOCUMENT_DESCRIPTION_MAX:
-            raise InvalidDocumentDescriptionError(f"Document description must be at most {_DOCUMENT_DESCRIPTION_MAX} characters.")
+            raise InvalidDocumentDescriptionError(f"Описание документа — не длиннее {_DOCUMENT_DESCRIPTION_MAX} символов.")
         object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:
@@ -1116,7 +1116,7 @@ class TemplateName:
     value: str
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "value", _validate_name(self.value, error=InvalidTemplateNameError, label="Template name", maximum=_TITLE_MAX))
+        object.__setattr__(self, "value", _validate_name(self.value, error=InvalidTemplateNameError, label="Название шаблона", maximum=_TITLE_MAX))
 
     def __str__(self) -> str:
         return self.value
@@ -1129,7 +1129,7 @@ class ServiceName:
     value: str
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "value", _validate_name(self.value, error=InvalidServiceNameError, label="Service name", maximum=_NAME_MAX))
+        object.__setattr__(self, "value", _validate_name(self.value, error=InvalidServiceNameError, label="Название услуги", maximum=_NAME_MAX))
 
     def __str__(self) -> str:
         return self.value
@@ -1144,7 +1144,7 @@ class ServiceDescription:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if len(stripped) > _DOCUMENT_DESCRIPTION_MAX:
-            raise InvalidServiceDescriptionError(f"Service description must be at most {_DOCUMENT_DESCRIPTION_MAX} characters.")
+            raise InvalidServiceDescriptionError(f"Описание услуги — не длиннее {_DOCUMENT_DESCRIPTION_MAX} символов.")
         object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:
@@ -1290,11 +1290,11 @@ class Money:
         if not self.amount.is_finite():
             raise InvalidMoneyError("Money amount must be a finite number.")
         if self.amount < 0:
-            raise InvalidMoneyError(f"Money amount must not be negative, got {self.amount}.")
+            raise InvalidMoneyError("Сумма не может быть отрицательной.")
         try:
             quantized = self.amount.quantize(_MONEY_QUANTUM, rounding=ROUND_HALF_UP)
         except InvalidOperation as exc:  # e.g. more precision than the quantum allows unexpectedly
-            raise InvalidMoneyError(f"Money amount {self.amount} cannot be represented with 2 decimal places.") from exc
+            raise InvalidMoneyError("Сумма указывается с точностью до копеек.") from exc
         object.__setattr__(self, "amount", quantized)
 
     @classmethod
@@ -1305,7 +1305,7 @@ class Money:
         try:
             decimal_amount = Decimal(amount)
         except (InvalidOperation, ValueError, TypeError) as exc:
-            raise InvalidMoneyError(f"{amount!r} is not a valid monetary amount.") from exc
+            raise InvalidMoneyError("Проверьте сумму: это не денежное значение.") from exc
         return cls(amount=decimal_amount, currency=currency)
 
     def __str__(self) -> str:
@@ -1380,7 +1380,7 @@ class PricingRule:
     def total_for(self, participant_count: int) -> Money:
         """Compute the application total for ``participant_count`` participants."""
         if participant_count < 1:
-            raise InvalidMoneyError("Participant count must be at least 1 to compute a total.")
+            raise InvalidMoneyError("Для расчёта стоимости нужен хотя бы один участник.")
         if self.calculation_type is PricingCalculationType.PER_PERFORMANCE:
             return self.price_per_participant
         return Money.of(
@@ -1485,7 +1485,7 @@ class RichText:
 
     def __post_init__(self) -> None:
         if len(self.value) > _RICH_TEXT_MAX:
-            raise InvalidRichTextError(f"Rich text must be at most {_RICH_TEXT_MAX} characters.")
+            raise InvalidRichTextError(f"Текст — не длиннее {_RICH_TEXT_MAX} символов.")
 
     @property
     def is_empty(self) -> bool:
@@ -1537,9 +1537,9 @@ class ContactValue:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if not stripped:
-            raise InvalidContactValueError("Contact value must not be empty.")
+            raise InvalidContactValueError("Заполните контакт.")
         if len(stripped) > _CONTACT_VALUE_MAX:
-            raise InvalidContactValueError(f"Contact value must be at most {_CONTACT_VALUE_MAX} characters.")
+            raise InvalidContactValueError(f"Контакт — не длиннее {_CONTACT_VALUE_MAX} символов.")
         object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:
@@ -1554,7 +1554,7 @@ class InformationBlockTitle:
 
     def __post_init__(self) -> None:
         validated = _validate_name(
-            self.value, error=InvalidInformationBlockTitleError, label="Information block title", maximum=_INFORMATION_BLOCK_TITLE_MAX
+            self.value, error=InvalidInformationBlockTitleError, label="Заголовок информационного блока", maximum=_INFORMATION_BLOCK_TITLE_MAX
         )
         object.__setattr__(self, "value", validated)
 
@@ -1602,7 +1602,7 @@ class RegistrationDeadlines:
 
     def __post_init__(self) -> None:
         if self.application is not None and self.correction is not None and self.correction < self.application:
-            raise InvalidRegistrationDeadlinesError("The correction deadline must not precede the application deadline.")
+            raise InvalidRegistrationDeadlinesError("Срок исправлений не может быть раньше срока подачи заявок.")
 
     def _deadline(self, kind: DeadlineKind) -> datetime | None:
         return {
@@ -1643,9 +1643,7 @@ class RegistrationWindow:
 
     def __post_init__(self) -> None:
         if self.opens_at is not None and self.closes_at is not None and self.closes_at < self.opens_at:
-            raise InvalidRegistrationWindowError(
-                f"The registration close instant {self.closes_at} must not precede the open instant {self.opens_at}."
-            )
+            raise InvalidRegistrationWindowError("Дата закрытия приёма заявок не может быть раньше даты открытия.")
 
     @property
     def is_configured(self) -> bool:
@@ -1720,10 +1718,10 @@ class MusicRequirements:
         if not isinstance(self.max_upload_size_mb, int) or isinstance(self.max_upload_size_mb, bool):
             raise InvalidCompetitionSettingsError("Music max upload size must be an integer.")
         if self.max_upload_size_mb < 1 or self.max_upload_size_mb > _MAX_UPLOAD_SIZE_MB_LIMIT:
-            raise InvalidCompetitionSettingsError(f"Music max upload size must be between 1 and {_MAX_UPLOAD_SIZE_MB_LIMIT} MB.")
+            raise InvalidCompetitionSettingsError(f"Размер фонограммы — от 1 до {_MAX_UPLOAD_SIZE_MB_LIMIT} МБ.")
         normalized = tuple(ext.strip().lower().lstrip(".") for ext in self.allowed_formats if ext.strip())
         if self.require_upload and not normalized:
-            raise InvalidCompetitionSettingsError("At least one audio format is required when music upload is required.")
+            raise InvalidCompetitionSettingsError("Выберите хотя бы один формат аудио, раз фонограмма обязательна.")
         object.__setattr__(self, "allowed_formats", normalized or _DEFAULT_AUDIO_FORMATS)
 
     @classmethod
@@ -1769,21 +1767,21 @@ class MediaRequirements:
 
     def __post_init__(self) -> None:
         if not isinstance(self.mode, MediaSubmissionMode):
-            raise InvalidCompetitionSettingsError("Media submission mode is invalid.")
+            raise InvalidCompetitionSettingsError("Выберите, как принимать видео: файлом, ссылкой или обоими способами.")
         providers = tuple(dict.fromkeys(self.allowed_providers))
         if self.mode in {MediaSubmissionMode.URL_ONLY, MediaSubmissionMode.URL_OR_FILE} and not providers:
-            raise InvalidCompetitionSettingsError("At least one video provider is required for URL submissions.")
+            raise InvalidCompetitionSettingsError("Укажите хотя бы один видеосервис, раз видео принимается ссылкой.")
         object.__setattr__(self, "allowed_providers", providers)
 
         if self.require_upload and self.mode is MediaSubmissionMode.NOT_REQUIRED:
-            raise InvalidCompetitionSettingsError("Media cannot be required while none is collected.")
+            raise InvalidCompetitionSettingsError("Нельзя требовать видео, если оно не собирается.")
         if not isinstance(self.max_total_size_mb, int) or isinstance(self.max_total_size_mb, bool):
             raise InvalidCompetitionSettingsError("Media max total size must be an integer.")
         if self.max_total_size_mb < 1 or self.max_total_size_mb > _MAX_UPLOAD_SIZE_MB_LIMIT:
-            raise InvalidCompetitionSettingsError(f"Media max total size must be between 1 and {_MAX_UPLOAD_SIZE_MB_LIMIT} MB.")
+            raise InvalidCompetitionSettingsError(f"Общий размер видеофайлов — от 1 до {_MAX_UPLOAD_SIZE_MB_LIMIT} МБ.")
         normalized = tuple(ext.strip().lower().lstrip(".") for ext in self.allowed_formats if ext.strip())
         if self.allows_file_upload and not normalized:
-            raise InvalidCompetitionSettingsError("At least one media format is required when files may be uploaded.")
+            raise InvalidCompetitionSettingsError("Выберите хотя бы один формат видеофайла.")
         object.__setattr__(self, "allowed_formats", normalized or _DEFAULT_MEDIA_FORMATS)
 
     @property
@@ -1888,22 +1886,22 @@ class CompetitionSettings:
 
     def __post_init__(self) -> None:
         if not isinstance(self.payment_timing, PaymentTiming):
-            raise InvalidCompetitionSettingsError("Payment timing is invalid.")
+            raise InvalidCompetitionSettingsError("Выберите, когда участник оплачивает участие.")
         methods = tuple(dict.fromkeys(self.payment_methods))
         if self.payment_required and not methods:
-            raise InvalidCompetitionSettingsError("At least one payment method is required when payment is required.")
+            raise InvalidCompetitionSettingsError("Укажите хотя бы один способ оплаты, раз оплата обязательна.")
         object.__setattr__(self, "payment_methods", methods)
         if self.additional_performance_discount_percent < 0 or self.additional_performance_discount_percent > 100:
-            raise InvalidCompetitionSettingsError("Additional performance discount must be between 0 and 100 percent.")
+            raise InvalidCompetitionSettingsError("Скидка за дополнительное выступление — от 0 до 100 процентов.")
 
         seen: set[ParticipationFormatId] = set()
         for item in self.format_requirements:
             if item.participation_format_id in seen:
-                raise InvalidCompetitionSettingsError("Duplicate participation format requirements.")
+                raise InvalidCompetitionSettingsError("Для одной формы участия заданы две группы требований.")
             seen.add(item.participation_format_id)
 
         if self.automatic_approval_after_payment and not self.payment_required:
-            raise InvalidCompetitionSettingsError("Automatic approval after payment requires payment to be required.")
+            raise InvalidCompetitionSettingsError("Автоматическое одобрение после оплаты работает, только если оплата обязательна.")
 
     @classmethod
     def default(cls) -> CompetitionSettings:

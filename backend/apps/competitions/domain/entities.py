@@ -277,25 +277,25 @@ def ensure_admission_combination_valid(
 ) -> None:
     """Assert every element ``combination`` references exists and is mutually consistent."""
     if combination.category_id not in categories:
-        raise CategoryNotFoundError(f"No category {combination.category_id} in this configuration.")
+        raise CategoryNotFoundError("Такого жанра в настройках фестиваля нет.")
     discipline = disciplines.get(combination.discipline_id)
     if discipline is None:
-        raise DisciplineNotFoundError(f"No discipline {combination.discipline_id} in this configuration.")
+        raise DisciplineNotFoundError("Такой номинации в настройках фестиваля нет.")
     if discipline.category_id != combination.category_id:
-        raise DisciplineCategoryMismatchError("The discipline does not belong to the stated category.")
+        raise DisciplineCategoryMismatchError("Эта номинация относится к другому жанру.")
     group = participant_groups.get(combination.participant_group_id)
     if group is None:
-        raise ParticipantGroupNotFoundError(f"No participant group {combination.participant_group_id} in this configuration.")
+        raise ParticipantGroupNotFoundError("Такого состава участников в настройках фестиваля нет.")
     age_category = age_categories.get(combination.age_category_id)
     if age_category is None:
-        raise AgeCategoryNotFoundError(f"No age category {combination.age_category_id} in this configuration.")
+        raise AgeCategoryNotFoundError("Такой возрастной категории в настройках фестиваля нет.")
     if age_category.participant_group_id != combination.participant_group_id:
-        raise AgeCategoryGroupMismatchError("The age category does not belong to the stated participant group.")
+        raise AgeCategoryGroupMismatchError("Эта возрастная категория относится к другому составу участников.")
     participation_format = formats.get(combination.participation_format_id)
     if participation_format is None:
-        raise ParticipationFormatNotFoundError(f"No participation format {combination.participation_format_id} in this configuration.")
+        raise ParticipationFormatNotFoundError("Такой формы участия в настройках фестиваля нет.")
     if not participation_format.enabled:
-        raise ParticipationFormatNotEnabledError(f"Participation format {combination.participation_format_id} is not enabled.")
+        raise ParticipationFormatNotEnabledError("Эта форма участия выключена.")
 
 
 def ensure_age_range_free(
@@ -322,7 +322,7 @@ def ensure_age_range_free(
         if existing.type is AgeCategoryType.MIXED:
             continue
         if existing.age_range.overlaps(age_range):
-            raise OverlappingAgeRangeError(f"Age range {age_range} overlaps existing range {existing.age_range}.")
+            raise OverlappingAgeRangeError(f"Этот возрастной диапазон пересекается с уже созданным {existing.age_range}.")
 
 
 # ===========================================================================
@@ -936,7 +936,7 @@ def _validate_sort_order(value: int) -> int:
     if not isinstance(value, int) or isinstance(value, bool):
         raise InvalidSortOrderError("Sort order must be an integer.")
     if value < 0:
-        raise InvalidSortOrderError(f"Sort order must be non-negative, got {value}.")
+        raise InvalidSortOrderError("Порядок сортировки не может быть отрицательным.")
     return value
 
 
@@ -946,9 +946,9 @@ def _validate_type_method_consistency(
 ) -> None:
     """MIXED requires a method; STANDARD requires method is None."""
     if age_category_type is AgeCategoryType.MIXED and mixed_calculation_method is None:
-        raise ValueError("mixed_calculation_method is required when type is MIXED.")
+        raise ValueError("Для смешанной категории укажите, по какому возрасту её судить.")
     if age_category_type is AgeCategoryType.STANDARD and mixed_calculation_method is not None:
-        raise ValueError("mixed_calculation_method must be null when type is STANDARD.")
+        raise ValueError("Способ расчёта возраста задаётся только для смешанной категории.")
 
 
 @dataclass(slots=True, eq=False, repr=False)
@@ -1120,7 +1120,7 @@ class AdditionalService:
     ) -> AdditionalService:
         formats = frozenset(available_format_ids)
         if not formats:
-            raise EmptyAdditionalServiceFormatsError("An additional service must be available for at least one participation format.")
+            raise EmptyAdditionalServiceFormatsError("Выберите хотя бы одну форму участия, для которой доступна услуга.")
         return cls(
             _id=service_id,
             _name=name,
@@ -1201,7 +1201,7 @@ class AdditionalService:
     def total_for(self, participant_count: int) -> Money:
         """Line total for ``participant_count`` under this service's billing model."""
         if participant_count < 1:
-            raise InvalidMoneyError("Participant count must be at least 1 to compute a total.")
+            raise InvalidMoneyError("Для расчёта стоимости нужен хотя бы один участник.")
         if self._billing_model is ServiceBillingModel.PER_PERFORMANCE:
             return self._price
         return Money(amount=self._price.amount * participant_count, currency=self._price.currency)
@@ -1219,7 +1219,7 @@ class AdditionalService:
     ) -> None:
         formats = frozenset(available_format_ids)
         if not formats:
-            raise EmptyAdditionalServiceFormatsError("An additional service must be available for at least one participation format.")
+            raise EmptyAdditionalServiceFormatsError("Выберите хотя бы одну форму участия, для которой доступна услуга.")
         self._name = name
         self._price = price
         self._description = description
@@ -1978,7 +1978,7 @@ class Competition:
         """Add a category. Names are unique within the competition."""
         self._ensure_configurable()
         if any(c.name == name for c in self._categories.values()):
-            raise DuplicateCategoryError(f"A category named {name.value!r} already exists.")
+            raise DuplicateCategoryError(f"Жанр «{name.value}» уже есть.")
         if sort_order is None:
             sort_order = self._next_category_sort_order()
         category = Category.create(category_id=category_id, name=name, description=description, sort_order=sort_order)
@@ -1998,7 +1998,7 @@ class Competition:
         self._ensure_configurable()
         category = self._require_category(category_id)
         if name is not None and any(cid != category_id and c.name == name for cid, c in self._categories.items()):
-            raise DuplicateCategoryError(f"A category named {name.value!r} already exists.")
+            raise DuplicateCategoryError(f"Жанр «{name.value}» уже есть.")
         category.update(name=name, description=description, sort_order=sort_order)
         self._touch(now)
 
@@ -2007,11 +2007,11 @@ class Competition:
         self._ensure_configurable()
         self._require_category(category_id)
         if any(d.category_id == category_id for d in self._disciplines.values()):
-            raise CategoryInUseError("The category still has disciplines.")
+            raise CategoryInUseError("В этом жанре ещё есть номинации — сначала удалите их.")
         if any(c.category_id == category_id for c in self._admission_rules):
-            raise CategoryInUseError("The category is referenced by admission rules.")
+            raise CategoryInUseError("Жанр используется в правилах допуска — сначала уберите его оттуда.")
         if any(c.category_id == category_id for c in self._pricing_rules):
-            raise CategoryInUseError("The category is referenced by pricing rules.")
+            raise CategoryInUseError("Жанр используется в правилах стоимости — сначала уберите его оттуда.")
         del self._categories[category_id]
         self._touch(now)
 
@@ -2028,7 +2028,7 @@ class Competition:
         self._ensure_configurable()
         self._require_category(category_id)
         if any(d.category_id == category_id and d.name == name for d in self._disciplines.values()):
-            raise DuplicateDisciplineError(f"A discipline named {name.value!r} already exists in this category.")
+            raise DuplicateDisciplineError(f"Номинация «{name.value}» в этом жанре уже есть.")
         if sort_order is None:
             sort_order = self._next_discipline_sort_order(category_id)
         discipline = Discipline.create(discipline_id=discipline_id, category_id=category_id, name=name, sort_order=sort_order)
@@ -2049,7 +2049,7 @@ class Competition:
         if name is not None and any(
             did != discipline_id and d.category_id == discipline.category_id and d.name == name for did, d in self._disciplines.items()
         ):
-            raise DuplicateDisciplineError(f"A discipline named {name.value!r} already exists in this category.")
+            raise DuplicateDisciplineError(f"Номинация «{name.value}» в этом жанре уже есть.")
         discipline.update(name=name, sort_order=sort_order)
         self._touch(now)
 
@@ -2057,9 +2057,9 @@ class Competition:
         self._ensure_configurable()
         self._require_discipline(discipline_id)
         if any(c.discipline_id == discipline_id for c in self._admission_rules):
-            raise DisciplineInUseError("The discipline is referenced by admission rules.")
+            raise DisciplineInUseError("Номинация используется в правилах допуска — сначала уберите её оттуда.")
         if any(c.discipline_id == discipline_id for c in self._pricing_rules):
-            raise DisciplineInUseError("The discipline is referenced by pricing rules.")
+            raise DisciplineInUseError("Номинация используется в правилах стоимости — сначала уберите её оттуда.")
         del self._disciplines[discipline_id]
         self._touch(now)
 
@@ -2085,7 +2085,7 @@ class Competition:
             age_category_type=age_category_type,
         )
         if any(a.participant_group_id == participant_group_id and a.name == name for a in self._age_categories.values()):
-            raise DuplicateAgeCategoryNameError(f"An age category named {name.value!r} already exists in this participant group.")
+            raise DuplicateAgeCategoryNameError(f"Возрастная категория «{name.value}» в этом составе уже есть.")
         if sort_order is None:
             sort_order = self._next_age_category_sort_order(participant_group_id)
         age_category = AgeCategory.create(
@@ -2119,7 +2119,7 @@ class Competition:
         if name is not None and any(
             aid != age_category_id and a.participant_group_id == group_id and a.name == name for aid, a in self._age_categories.items()
         ):
-            raise DuplicateAgeCategoryNameError(f"An age category named {name.value!r} already exists in this participant group.")
+            raise DuplicateAgeCategoryNameError(f"Возрастная категория «{name.value}» в этом составе уже есть.")
         effective_type = age_category_type if age_category_type is not None else age_category.type
         if age_range is not None or effective_type is not age_category.type:
             ensure_age_range_free(
@@ -2142,9 +2142,9 @@ class Competition:
         self._ensure_configurable()
         self._require_age_category(age_category_id)
         if any(c.age_category_id == age_category_id for c in self._admission_rules):
-            raise AgeCategoryInUseError("The age category is referenced by admission rules.")
+            raise AgeCategoryInUseError("Возрастная категория используется в правилах допуска — сначала уберите её оттуда.")
         if any(c.age_category_id == age_category_id for c in self._pricing_rules):
-            raise AgeCategoryInUseError("The age category is referenced by pricing rules.")
+            raise AgeCategoryInUseError("Возрастная категория используется в правилах стоимости — сначала уберите её оттуда.")
         del self._age_categories[age_category_id]
         self._touch(now)
 
@@ -2166,7 +2166,7 @@ class Competition:
         """
         self._ensure_configurable()
         if any(g.name == name for g in self._participant_groups.values()):
-            raise DuplicateParticipantGroupError(f"A participant group named {name.value!r} already exists.")
+            raise DuplicateParticipantGroupError(f"Состав участников «{name.value}» уже есть.")
         if sort_order is None:
             sort_order = self._next_participant_group_sort_order()
         group = ParticipantGroup.create(
@@ -2194,7 +2194,7 @@ class Competition:
         self._ensure_configurable()
         group = self._require_participant_group(participant_group_id)
         if name is not None and any(gid != participant_group_id and g.name == name for gid, g in self._participant_groups.items()):
-            raise DuplicateParticipantGroupError(f"A participant group named {name.value!r} already exists.")
+            raise DuplicateParticipantGroupError(f"Состав участников «{name.value}» уже есть.")
         group.update(
             name=name,
             count_range=count_range,
@@ -2207,11 +2207,11 @@ class Competition:
         self._ensure_configurable()
         self._require_participant_group(participant_group_id)
         if any(a.participant_group_id == participant_group_id for a in self._age_categories.values()):
-            raise ParticipantGroupInUseError("The participant group still has age categories.")
+            raise ParticipantGroupInUseError("В этом составе ещё есть возрастные категории — сначала удалите их.")
         if any(c.participant_group_id == participant_group_id for c in self._admission_rules):
-            raise ParticipantGroupInUseError("The participant group is referenced by admission rules.")
+            raise ParticipantGroupInUseError("Состав участников используется в правилах допуска — сначала уберите его оттуда.")
         if any(c.participant_group_id == participant_group_id for c in self._pricing_rules):
-            raise ParticipantGroupInUseError("The participant group is referenced by pricing rules.")
+            raise ParticipantGroupInUseError("Состав участников используется в правилах стоимости — сначала уберите его оттуда.")
         del self._participant_groups[participant_group_id]
         self._touch(now)
 
@@ -2232,7 +2232,7 @@ class Competition:
         """Add a participation format. Names are unique within the competition."""
         self._ensure_configurable()
         if any(f.name == name for f in self._formats.values()):
-            raise DuplicateParticipationFormatError(f"A participation format named {name.value!r} already exists.")
+            raise DuplicateParticipationFormatError(f"Форма участия «{name.value}» уже есть.")
         if sort_order is None:
             sort_order = self._next_format_sort_order()
         self._formats[format_id] = ParticipationFormat.create(
@@ -2265,7 +2265,7 @@ class Competition:
         self._ensure_configurable()
         participation_format = self._require_participation_format(format_id)
         if name is not None and any(fid != format_id and f.name == name for fid, f in self._formats.items()):
-            raise DuplicateParticipationFormatError(f"A participation format named {name.value!r} already exists.")
+            raise DuplicateParticipationFormatError(f"Форма участия «{name.value}» уже есть.")
         was_enabled = participation_format.enabled
         participation_format.update(
             name=name,
@@ -2287,11 +2287,11 @@ class Competition:
         self._ensure_configurable()
         self._require_participation_format(format_id)
         if any(c.participation_format_id == format_id for c in self._admission_rules):
-            raise ParticipationFormatInUseError("The format is referenced by admission rules.")
+            raise ParticipationFormatInUseError("Форма участия используется в правилах допуска — сначала уберите её оттуда.")
         if any(c.participation_format_id == format_id for c in self._pricing_rules):
-            raise ParticipationFormatInUseError("The format is referenced by pricing rules.")
+            raise ParticipationFormatInUseError("Форма участия используется в правилах стоимости — сначала уберите её оттуда.")
         if any(format_id in s.available_format_ids for s in self._additional_services.values()):
-            raise ParticipationFormatInUseError("The format is referenced by additional services.")
+            raise ParticipationFormatInUseError("Форма участия используется в дополнительных услугах — сначала уберите её оттуда.")
         del self._formats[format_id]
         self._settings = self._settings.without_format(format_id)
         self._touch(now)
@@ -2305,7 +2305,7 @@ class Competition:
         self._ensure_configurable()
         self._validate_combination(combination)
         if combination in self._admission_rules:
-            raise DuplicateAdmissionRuleError("An admission rule for this combination already exists.")
+            raise DuplicateAdmissionRuleError("Правило допуска для этого сочетания уже создано.")
         self._admission_rules[combination] = AdmissionRule(combination=combination)
         self._touch(now)
         return [
@@ -2323,9 +2323,9 @@ class Competition:
         """Remove an admission rule. Refused while a pricing rule prices the same combination."""
         self._ensure_configurable()
         if combination not in self._admission_rules:
-            raise AdmissionRuleNotFoundError("No admission rule exists for this combination.")
+            raise AdmissionRuleNotFoundError("Для этого сочетания нет правила допуска.")
         if combination in self._pricing_rules:
-            raise AdmissionRuleInUseError("A pricing rule prices this combination; remove the price first.")
+            raise AdmissionRuleInUseError("Для этого сочетания задана стоимость — сначала удалите цену.")
         del self._admission_rules[combination]
         self._touch(now)
         return [
@@ -2351,9 +2351,9 @@ class Competition:
         self._ensure_configurable()
         self._validate_combination(combination)
         if combination not in self._admission_rules:
-            raise AdmissionRuleNotFoundError("Cannot price a combination that is not admissible.")
+            raise AdmissionRuleNotFoundError("Нельзя назначить цену сочетанию, которое не допущено.")
         if combination in self._pricing_rules:
-            raise DuplicatePricingRuleError("A pricing rule for this combination already exists.")
+            raise DuplicatePricingRuleError("Стоимость для этого сочетания уже задана.")
         self._pricing_rules[combination] = PricingRule(
             combination=combination,
             price_per_participant=price_per_participant,
@@ -2379,7 +2379,7 @@ class Competition:
         self._ensure_configurable()
         existing = self._pricing_rules.get(combination)
         if existing is None:
-            raise PricingRuleNotFoundError("No pricing rule exists for this combination.")
+            raise PricingRuleNotFoundError("Для этого сочетания стоимость не задана.")
         next_type = calculation_type if calculation_type is not None else existing.calculation_type
         self._pricing_rules[combination] = PricingRule(
             combination=combination,
@@ -2392,7 +2392,7 @@ class Competition:
     def remove_pricing_rule(self, *, combination: AdmissionCombination, now: datetime) -> list[DomainEvent]:
         self._ensure_configurable()
         if combination not in self._pricing_rules:
-            raise PricingRuleNotFoundError("No pricing rule exists for this combination.")
+            raise PricingRuleNotFoundError("Для этого сочетания стоимость не задана.")
         del self._pricing_rules[combination]
         self._touch(now)
         return [
@@ -2442,7 +2442,7 @@ class Competition:
         """Promote an existing regulation version to be the current one."""
         self._ensure_not_completed()
         if regulation_id not in self._regulations:
-            raise RegulationNotFoundError(f"No regulation {regulation_id} in this competition.")
+            raise RegulationNotFoundError("Такого положения у фестиваля нет.")
         if self._current_regulation_id == regulation_id:
             return
         self._current_regulation_id = regulation_id
@@ -2456,7 +2456,7 @@ class Competition:
         """
         self._ensure_not_completed()
         if regulation_id not in self._regulations:
-            raise RegulationNotFoundError(f"No regulation {regulation_id} in this competition.")
+            raise RegulationNotFoundError("Такого положения у фестиваля нет.")
         del self._regulations[regulation_id]
         if self._current_regulation_id == regulation_id:
             self._current_regulation_id = self._latest_regulation_id()
@@ -2703,7 +2703,7 @@ class Competition:
         """
         self._ensure_not_completed()
         if any(c.type is contact_type and c.value == value for c in self._contacts.values()):
-            raise DuplicateContactError(f"A {contact_type.value} contact with this value already exists.")
+            raise DuplicateContactError("Такой контакт уже добавлен.")
         make_primary = is_primary or not self._contacts
         contact = Contact.create(contact_id=contact_id, contact_type=contact_type, value=value, is_primary=make_primary)
         if make_primary:
@@ -2765,7 +2765,7 @@ class Competition:
         """Add a public-information block. Titles are unique within the competition."""
         self._ensure_not_completed()
         if any(b.title == title for b in self._information_blocks.values()):
-            raise DuplicateInformationBlockError(f"An information block titled {title.value!r} already exists.")
+            raise DuplicateInformationBlockError(f"Информационный блок «{title.value}» уже есть.")
         block = InformationBlock.create(block_id=block_id, title=title, content=content, published=published, sort_order=sort_order)
         self._information_blocks[block_id] = block
         self._touch(now)
@@ -2783,7 +2783,7 @@ class Competition:
         self._ensure_not_completed()
         block = self._require_information_block(block_id)
         if any(bid != block_id and b.title == title for bid, b in self._information_blocks.items()):
-            raise DuplicateInformationBlockError(f"An information block titled {title.value!r} already exists.")
+            raise DuplicateInformationBlockError(f"Информационный блок «{title.value}» уже есть.")
         block.edit(title=title, content=content, sort_order=sort_order)
         self._touch(now)
 
@@ -2958,37 +2958,35 @@ class Competition:
 
     def _ensure_not_completed(self) -> None:
         if self._status is CompetitionStatus.COMPLETED:
-            raise CompetitionAlreadyCompletedError("A completed competition is read-only.")
+            raise CompetitionAlreadyCompletedError("Фестиваль завершён — изменить его нельзя.")
 
     def _ensure_configurable(self) -> None:
         """Admissibility configuration may change only while DRAFT or CONFIGURED."""
         if self._status not in _CONFIGURABLE_STATUSES:
-            raise ConfigurationLockedError(
-                f"Competition configuration can only be changed while DRAFT or CONFIGURED, not while {self._status.value}."
-            )
+            raise ConfigurationLockedError("Фестиваль уже опубликован — настройки закрыты для изменений.")
 
     def _require_service(self, service_id: ServiceId) -> AdditionalService:
         service = self._additional_services.get(service_id)
         if service is None:
-            raise ServiceNotFoundError(f"No additional service {service_id} in this competition.")
+            raise ServiceNotFoundError("Такой дополнительной услуги у фестиваля нет.")
         return service
 
     def _require_contact(self, contact_id: ContactId) -> Contact:
         contact = self._contacts.get(contact_id)
         if contact is None:
-            raise ContactNotFoundError(f"No contact {contact_id} in this competition.")
+            raise ContactNotFoundError("Такого контакта у фестиваля нет.")
         return contact
 
     def _require_information_block(self, block_id: InformationBlockId) -> InformationBlock:
         block = self._information_blocks.get(block_id)
         if block is None:
-            raise InformationBlockNotFoundError(f"No information block {block_id} in this competition.")
+            raise InformationBlockNotFoundError("Такого информационного блока у фестиваля нет.")
         return block
 
     def _transition_to(self, target: CompetitionStatus, *, now: datetime) -> None:
         """Move to ``target`` if the transition is legal from the current status."""
         if target not in _LEGAL_TRANSITIONS[self._status]:
-            raise IllegalStatusTransitionError(f"Cannot transition from {self._status.value} to {target.value}.")
+            raise IllegalStatusTransitionError("Этот переход статуса фестиваля недоступен — обновите страницу.")
         self._status = target
         self._touch(now)
 
@@ -3013,37 +3011,37 @@ class Competition:
     def _require_category(self, category_id: CategoryId) -> Category:
         category = self._categories.get(category_id)
         if category is None:
-            raise CategoryNotFoundError(f"No category {category_id} in this competition.")
+            raise CategoryNotFoundError("Такого жанра у фестиваля нет.")
         return category
 
     def _require_discipline(self, discipline_id: DisciplineId) -> Discipline:
         discipline = self._disciplines.get(discipline_id)
         if discipline is None:
-            raise DisciplineNotFoundError(f"No discipline {discipline_id} in this competition.")
+            raise DisciplineNotFoundError("Такой номинации у фестиваля нет.")
         return discipline
 
     def _require_age_category(self, age_category_id: AgeCategoryId) -> AgeCategory:
         age_category = self._age_categories.get(age_category_id)
         if age_category is None:
-            raise AgeCategoryNotFoundError(f"No age category {age_category_id} in this competition.")
+            raise AgeCategoryNotFoundError("Такой возрастной категории у фестиваля нет.")
         return age_category
 
     def _require_participant_group(self, participant_group_id: ParticipantGroupId) -> ParticipantGroup:
         group = self._participant_groups.get(participant_group_id)
         if group is None:
-            raise ParticipantGroupNotFoundError(f"No participant group {participant_group_id} in this competition.")
+            raise ParticipantGroupNotFoundError("Такого состава участников у фестиваля нет.")
         return group
 
     def _require_participation_format(self, format_id: ParticipationFormatId) -> ParticipationFormat:
         participation_format = self._formats.get(format_id)
         if participation_format is None:
-            raise ParticipationFormatNotFoundError(f"No participation format {format_id} in this competition.")
+            raise ParticipationFormatNotFoundError("Такой формы участия у фестиваля нет.")
         return participation_format
 
     def _require_document(self, document_id: DocumentId) -> CompetitionDocument:
         document = self._documents.get(document_id)
         if document is None:
-            raise DocumentNotFoundError(f"No document {document_id} in this competition.")
+            raise DocumentNotFoundError("Такого документа у фестиваля нет.")
         return document
 
     def _validate_combination(self, combination: AdmissionCombination) -> None:
