@@ -6,7 +6,8 @@ import { formatPersonName } from "@/shared/lib";
 import { Alert, Button, Input, PasswordInput } from "@/shared/ui";
 import { useRegister } from "../api";
 import { applyProblemToForm } from "../lib/problem-to-form";
-import { PASSWORD_MIN_LENGTH, type RegisterValues, registerSchema } from "../model/schemas";
+import { type RegisterValues, registerSchema } from "../model/schemas";
+import { PasswordRequirements, passwordFieldError } from "./password-requirements";
 
 /** The catalogue entry for a code, or a loud failure — a missing consent must not ship. */
 function accountConsent(code: string): ConsentDefinition {
@@ -38,6 +39,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps): React.JSX.Elemen
   const registerAccount = useRegister();
   const [formError, setFormError] = useState<string | null>(null);
   const alertId = useId();
+  const requirementsId = useId();
 
   const {
     register,
@@ -62,6 +64,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps): React.JSX.Elemen
 
   const acceptTerms = watch("acceptTerms");
   const acceptMarketing = watch("acceptMarketing");
+  const password = watch("password");
 
   /**
    * Registers a name field, tidying its capitalisation once the user leaves it.
@@ -127,13 +130,23 @@ export function RegisterForm({ onSuccess }: RegisterFormProps): React.JSX.Elemen
         {...register("email")}
       />
 
-      <PasswordInput
-        label="Пароль"
-        autoComplete="new-password"
-        description={`Минимум ${PASSWORD_MIN_LENGTH} символов, специальный символ, буквы разного регистра и цифра.`}
-        error={errors.password?.message}
-        {...register("password")}
-      />
+      {/* The policy is shown as a checklist that ticks itself off, not as a sentence to
+          audit your own typing against — the field and the list are one control, hence
+          the shared spacing and the `aria-describedby` tying them together. */}
+      <div className="space-y-2">
+        <PasswordInput
+          label="Пароль"
+          autoComplete="new-password"
+          aria-describedby={requirementsId}
+          error={passwordFieldError(errors.password)}
+          {...register("password")}
+        />
+        <PasswordRequirements
+          id={requirementsId}
+          value={password}
+          invalid={errors.password != null}
+        />
+      </div>
 
       <PasswordInput
         label="Подтверждение пароля"

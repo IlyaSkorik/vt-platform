@@ -33,6 +33,7 @@ Policies implemented here:
 
 from __future__ import annotations
 
+import string
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import StrEnum
@@ -92,6 +93,18 @@ def _ensure_positive_timedelta(value: timedelta, name: str) -> None:
 # PasswordPolicy
 # ---------------------------------------------------------------------------
 
+#: The alphabet a password may be drawn from under
+#: :attr:`PasswordPolicy.ascii_only`: printable ASCII, space (``0x20``) through
+#: ``~`` (``0x7E``). Control characters are outside it, as is every letter that
+#: is not Latin.
+_PRINTABLE_ASCII: frozenset[str] = frozenset(map(chr, range(0x20, 0x7F)))
+
+#: Printable ASCII that is neither a Latin letter nor a digit — what
+#: :attr:`PasswordPolicy.require_symbol` asks for under ``ascii_only``. Spelled
+#: out rather than derived from "not alphanumeric", which a Cyrillic letter would
+#: also satisfy while failing the alphabet rule.
+_ASCII_SYMBOLS: frozenset[str] = _PRINTABLE_ASCII - frozenset(string.ascii_letters + string.digits)
+
 
 class PasswordViolation(StrEnum):
     """A single, machine-readable reason a password failed :class:`PasswordPolicy`.
@@ -108,6 +121,7 @@ class PasswordViolation(StrEnum):
     MISSING_LOWERCASE = "отсутствует строчная буква"
     MISSING_DIGIT = "отсутствует цифра"
     MISSING_SYMBOL = "отсутствует специальный символ"
+    INVALID_ALPHABET = "недопустимые символы — разрешены только латинские буквы, цифры и специальные символы"
 
 
 @dataclass(frozen=True, slots=True)
@@ -156,9 +170,9 @@ class PasswordReuseChecker(Protocol):
 class PasswordPolicy:
     """Rules a plaintext password must satisfy before it is accepted (IDN-003).
 
-    Owns length bounds, a forbidden-value denylist, and complexity requirements
-    (character classes), returning a :class:`PasswordValidationResult` that lists
-    *every* violation. Two adjacent concerns are represented but deliberately not
+    Owns length bounds, a forbidden-value denylist, the permitted alphabet, and
+    complexity requirements (character classes), returning a
+    :class:`PasswordValidationResult` that lists *every* violation. Two adjacent concerns are represented but deliberately not
     executed here: **reuse** is delegated to the injected
     :class:`PasswordReuseChecker` port (this policy contributes only
     :attr:`history_depth`), and **expiration** is pure configuration
@@ -166,7 +180,7 @@ class PasswordPolicy:
     still never requires the domain to see a hash.
 
     Defaults follow current guidance (a 12+ character passphrase, all four
-    character classes); every knob is overridable by injection.
+    character classes, printable ASCII); every knob is overridable by injection.
     """
 
     min_length: int = 12
@@ -175,6 +189,13 @@ class PasswordPolicy:
     require_lowercase: bool = True
     require_digit: bool = True
     require_symbol: bool = True
+    #: Restrict passwords to printable ASCII (:data:`_PRINTABLE_ASCII`). A
+    #: Cyrillic password is one its owner cannot type on a keyboard laid out for
+    #: another language, and one whose bytes depend on the Unicode normalisation
+    #: form the client happened to send — two ways to be locked out of an account
+    #: that was set correctly. When set, the character classes mean their ASCII
+    #: selves too: ``Ж`` is not an uppercase letter and not a symbol here.
+    ascii_only: bool = True
     forbidden_passwords: frozenset[str] = field(default_factory=frozenset)
     #: How many previous passwords a :class:`PasswordReuseChecker` should reject
     #: against. Configuration for the reuse rule; not enforced in the domain.
@@ -196,6 +217,30 @@ class PasswordPolicy:
             _ensure_positive_timedelta(self.max_age, "max_age")
         object.__setattr__(self, "_forbidden_folded", frozenset(p.casefold() for p in self.forbidden_passwords))
 
+    def _has_uppercase(self, password: str) -> bool:
+        """Whether the password holds an uppercase letter *of its alphabet*."""
+        if self.ascii_only:
+            return any(c in string.ascii_uppercase for c in password)
+        return any(c.isupper() for c in password)
+
+    def _has_lowercase(self, password: str) -> bool:
+        """Whether the password holds a lowercase letter of its alphabet."""
+        if self.ascii_only:
+            return any(c in string.ascii_lowercase for c in password)
+        return any(c.islower() for c in password)
+
+    def _has_digit(self, password: str) -> bool:
+        """Whether the password holds a digit of its alphabet."""
+        if self.ascii_only:
+            return any(c in string.digits for c in password)
+        return any(c.isdigit() for c in password)
+
+    def _has_symbol(self, password: str) -> bool:
+        """Whether the password holds a symbol of its alphabet."""
+        if self.ascii_only:
+            return any(c in _ASCII_SYMBOLS for c in password)
+        return any(not c.isalnum() for c in password)
+
     def validate(self, password: str) -> PasswordValidationResult:
         """Check ``password`` against every rule and report all violations at once."""
         violations: list[PasswordViolation] = []
@@ -206,13 +251,17 @@ class PasswordPolicy:
             violations.append(PasswordViolation.TOO_LONG)
         if password.casefold() in self._forbidden_folded:
             violations.append(PasswordViolation.FORBIDDEN)
-        if self.require_uppercase and not any(c.isupper() for c in password):
+        # Before the character classes: a Cyrillic password fails all four of them,
+        # and reporting four absences hides the one thing actually wrong with it.
+        if self.ascii_only and not set(password) <= _PRINTABLE_ASCII:
+            violations.append(PasswordViolation.INVALID_ALPHABET)
+        if self.require_uppercase and not self._has_uppercase(password):
             violations.append(PasswordViolation.MISSING_UPPERCASE)
-        if self.require_lowercase and not any(c.islower() for c in password):
+        if self.require_lowercase and not self._has_lowercase(password):
             violations.append(PasswordViolation.MISSING_LOWERCASE)
-        if self.require_digit and not any(c.isdigit() for c in password):
+        if self.require_digit and not self._has_digit(password):
             violations.append(PasswordViolation.MISSING_DIGIT)
-        if self.require_symbol and not any(not c.isalnum() for c in password):
+        if self.require_symbol and not self._has_symbol(password):
             violations.append(PasswordViolation.MISSING_SYMBOL)
         return PasswordValidationResult(tuple(violations))
 

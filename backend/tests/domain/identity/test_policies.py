@@ -107,6 +107,38 @@ class TestPasswordPolicyValidation:
         assert PasswordViolation.MISSING_SYMBOL in result.violations
         assert PasswordViolation.MISSING_LOWERCASE not in result.violations
 
+    def test_cyrillic_is_outside_the_alphabet(self) -> None:
+        # Its digit and its "!" are ASCII and do count; its letters do not — under
+        # ascii_only, "П" is not an uppercase letter and "ароль" is not a lowercase one.
+        result = PasswordPolicy().validate("ОченьДлинныйПароль1!")
+        assert PasswordViolation.INVALID_ALPHABET in result.violations
+        assert PasswordViolation.MISSING_UPPERCASE in result.violations
+        assert PasswordViolation.MISSING_LOWERCASE in result.violations
+        assert PasswordViolation.MISSING_DIGIT not in result.violations
+        assert PasswordViolation.MISSING_SYMBOL not in result.violations
+
+    def test_ascii_digits_are_the_only_digits(self) -> None:
+        # An Arabic-Indic digit reads as a digit to str.isdigit but is not typeable
+        # on the keyboards this platform's users have.
+        result = PasswordPolicy(min_length=1).validate("Ab!\u0661")
+        assert PasswordViolation.INVALID_ALPHABET in result.violations
+        assert PasswordViolation.MISSING_DIGIT in result.violations
+
+    def test_control_characters_are_outside_the_alphabet(self) -> None:
+        result = PasswordPolicy(min_length=1).validate("Ab1!\n")
+        assert PasswordViolation.INVALID_ALPHABET in result.violations
+
+    def test_space_is_inside_the_alphabet(self) -> None:
+        # A passphrase is a legitimate password and its spaces are its symbols.
+        assert PasswordPolicy().validate("A correct horse 1").is_valid
+
+    def test_alphabet_can_be_disabled(self) -> None:
+        # Turning the knob off restores the Unicode-aware character classes, so a
+        # deployment that wants passphrases in its own script gets them whole.
+        policy = PasswordPolicy(ascii_only=False)
+        result = policy.validate("ОченьДлинныйПароль1!")
+        assert result.is_valid, result.violations
+
     def test_missing_lowercase(self) -> None:
         result = PasswordPolicy(min_length=1).validate("ABCDEFGH")
         assert PasswordViolation.MISSING_LOWERCASE in result.violations

@@ -31,8 +31,8 @@ async function fillValidForm(user: ReturnType<typeof userEvent.setup>): Promise<
   await user.type(screen.getByLabelText("Имя"), "Ирина");
   await user.type(screen.getByLabelText("Фамилия"), "Смирнова");
   await user.type(screen.getByLabelText("Email"), "irina@example.com");
-  await user.type(screen.getByLabelText("Пароль"), "SuperSecret123");
-  await user.type(screen.getByLabelText("Подтверждение пароля"), "SuperSecret123");
+  await user.type(screen.getByLabelText("Пароль"), "SuperSecret123!");
+  await user.type(screen.getByLabelText("Подтверждение пароля"), "SuperSecret123!");
   await tickRequiredConsents(user);
 }
 
@@ -63,8 +63,8 @@ describe("RegisterForm", () => {
     await user.type(screen.getByLabelText("Имя"), "Ирина");
     await user.type(screen.getByLabelText("Фамилия"), "Смирнова");
     await user.type(screen.getByLabelText("Email"), "irina@example.com");
-    await user.type(screen.getByLabelText("Пароль"), "SuperSecret123");
-    await user.type(screen.getByLabelText("Подтверждение пароля"), "SuperSecret123");
+    await user.type(screen.getByLabelText("Пароль"), "SuperSecret123!");
+    await user.type(screen.getByLabelText("Подтверждение пароля"), "SuperSecret123!");
     await user.click(screen.getByRole("button", { name: "Зарегистрироваться" }));
 
     expect(
@@ -113,7 +113,7 @@ describe("RegisterForm", () => {
     await user.type(screen.getByLabelText("Имя"), "Ирина");
     await user.type(screen.getByLabelText("Фамилия"), "Смирнова");
     await user.type(screen.getByLabelText("Email"), "irina@example.com");
-    await user.type(screen.getByLabelText("Пароль"), "SuperSecret123");
+    await user.type(screen.getByLabelText("Пароль"), "SuperSecret123!");
     await user.type(screen.getByLabelText("Подтверждение пароля"), "Mismatch12345");
     await tickRequiredConsents(user);
     await user.click(screen.getByRole("button", { name: "Зарегистрироваться" }));

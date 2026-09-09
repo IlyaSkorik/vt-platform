@@ -4,11 +4,8 @@ import { useForm } from "react-hook-form";
 import { Alert, Button, PasswordInput } from "@/shared/ui";
 import { useResetPassword } from "../api";
 import { applyProblemToForm } from "../lib/problem-to-form";
-import {
-  PASSWORD_MIN_LENGTH,
-  type ResetPasswordValues,
-  resetPasswordSchema,
-} from "../model/schemas";
+import { type ResetPasswordValues, resetPasswordSchema } from "../model/schemas";
+import { PasswordRequirements, passwordFieldError } from "./password-requirements";
 
 interface ResetPasswordFormProps {
   /** The reset token from the emailed link (`?token=`). */
@@ -28,16 +25,20 @@ export function ResetPasswordForm({ token, onSuccess }: ResetPasswordFormProps):
   const resetPassword = useResetPassword();
   const [formError, setFormError] = useState<string | null>(null);
   const alertId = useId();
+  const requirementsId = useId();
 
   const {
     register,
     handleSubmit,
     setError,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<ResetPasswordValues>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: { token, password: "", confirmPassword: "" },
   });
+
+  const password = watch("password");
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
@@ -64,14 +65,21 @@ export function ResetPasswordForm({ token, onSuccess }: ResetPasswordFormProps):
 
       <input type="hidden" {...register("token")} />
 
-      <PasswordInput
-        label="Новый пароль"
-        autoComplete="new-password"
-        autoFocus
-        description={`Минимум ${PASSWORD_MIN_LENGTH} символов, специальный символ, буквы разного регистра и цифра.`}
-        error={errors.password?.message}
-        {...register("password")}
-      />
+      <div className="space-y-2">
+        <PasswordInput
+          label="Новый пароль"
+          autoComplete="new-password"
+          autoFocus
+          aria-describedby={requirementsId}
+          error={passwordFieldError(errors.password)}
+          {...register("password")}
+        />
+        <PasswordRequirements
+          id={requirementsId}
+          value={password}
+          invalid={errors.password != null}
+        />
+      </div>
 
       <PasswordInput
         label="Подтверждение пароля"

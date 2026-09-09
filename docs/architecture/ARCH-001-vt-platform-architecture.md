@@ -424,6 +424,7 @@ For live judging dashboards and result reveals, WebSocket/SSE endpoints (Django 
 ### 11.2 Credential Handling
 - Passwords hashed with Argon2 (Django password hashers configured accordingly).
 - Password policy, lockout/backoff after repeated failures (Redis-backed), and breach-list checks.
+- Password policy: at least 12 characters, all four character classes, drawn from **printable ASCII only** — a password in another script cannot be typed on a keyboard laid out for a different language, and its bytes depend on the Unicode normalisation form the client sent. Owned by `PasswordPolicy` in the Identity domain and mirrored by the client, which shows it as a live checklist rather than a sentence.
 - **Email verification** required before sensitive actions.
 
 ### 11.3 Multi-Factor & Elevated Roles

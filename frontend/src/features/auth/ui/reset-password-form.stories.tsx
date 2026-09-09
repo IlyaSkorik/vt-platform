@@ -32,8 +32,8 @@ export const Loading: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.type(canvas.getByLabelText("Новый пароль"), "SuperSecret123");
-    await userEvent.type(canvas.getByLabelText("Подтверждение пароля"), "SuperSecret123");
+    await userEvent.type(canvas.getByLabelText("Новый пароль"), "SuperSecret123!");
+    await userEvent.type(canvas.getByLabelText("Подтверждение пароля"), "SuperSecret123!");
     await userEvent.click(canvas.getByRole("button", { name: "Сохранить пароль" }));
   },
 };
@@ -45,8 +45,8 @@ export const ServerError: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.type(canvas.getByLabelText("Новый пароль"), "SuperSecret123");
-    await userEvent.type(canvas.getByLabelText("Подтверждение пароля"), "SuperSecret123");
+    await userEvent.type(canvas.getByLabelText("Новый пароль"), "SuperSecret123!");
+    await userEvent.type(canvas.getByLabelText("Подтверждение пароля"), "SuperSecret123!");
     await userEvent.click(canvas.getByRole("button", { name: "Сохранить пароль" }));
   },
 };

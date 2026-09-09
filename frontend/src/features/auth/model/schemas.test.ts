@@ -2,12 +2,15 @@ import { describe, expect, it } from "vitest";
 import {
   forgotPasswordSchema,
   loginSchema,
+  PASSWORD_ALPHABET_MESSAGE,
+  PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
+  PASSWORD_RULES,
   registerSchema,
   resetPasswordSchema,
 } from "./schemas";
 
-const STRONG_PASSWORD = "SuperSecret123";
+const STRONG_PASSWORD = "SuperSecret123!";
 
 describe("loginSchema", () => {
   it("accepts a valid credential set", () => {
@@ -66,6 +69,55 @@ describe("registerSchema", () => {
       confirmPassword: "alllowercaseletters",
     });
     expect(result.success).toBe(false);
+  });
+
+  it("requires a special symbol, as the server's policy always has", () => {
+    // The sentence under the field promised one long before the schema asked for it, so
+    // the only way to find out was a 422. The checklist now states it and this enforces it.
+    const result = registerSchema.safeParse({
+      ...base,
+      password: "SuperSecret123",
+      confirmPassword: "SuperSecret123",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("refuses a Cyrillic password and says so, instead of listing four absent classes", () => {
+    const cyrillic = "ОченьДлинныйПароль1!";
+    const result = registerSchema.safeParse({
+      ...base,
+      password: cyrillic,
+      confirmPassword: cyrillic,
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const first = result.error.issues.find((issue) => issue.path.includes("password"));
+      expect(first?.message).toBe(PASSWORD_ALPHABET_MESSAGE);
+    }
+  });
+
+  it("rejects a password past the server's upper bound", () => {
+    const tooLong = `A1!${"a".repeat(PASSWORD_MAX_LENGTH)}`;
+    const result = registerSchema.safeParse({
+      ...base,
+      password: tooLong,
+      confirmPassword: tooLong,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("reports every unmet rule at once, the way the server does", () => {
+    // The checklist shows all of them; a schema that stopped at the first would leave
+    // it half-lit and the rest of the work unmentioned.
+    const result = registerSchema.safeParse({ ...base, password: "aa", confirmPassword: "aa" });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const messages = result.error.issues
+        .filter((issue) => issue.path.includes("password"))
+        .map((issue) => issue.message);
+      // Short, no uppercase, no digit, no symbol — lowercase is the only rule it meets.
+      expect(messages).toHaveLength(PASSWORD_RULES.length - 1);
+    }
   });
 
   it("requires the confirmation to match", () => {

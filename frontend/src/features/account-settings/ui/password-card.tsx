@@ -3,7 +3,7 @@ import { KeyRound } from "lucide-react";
 import { useId, useState } from "react";
 import { useForm } from "react-hook-form";
 
-import { applyProblemToForm, PASSWORD_MIN_LENGTH } from "@/features/auth";
+import { applyProblemToForm, PasswordRequirements, passwordFieldError } from "@/features/auth";
 import {
   Alert,
   Button,
@@ -31,17 +31,21 @@ export function PasswordCard(): React.JSX.Element {
   const changePassword = useChangePassword();
   const [formError, setFormError] = useState<string | null>(null);
   const alertId = useId();
+  const requirementsId = useId();
 
   const {
     register,
     handleSubmit,
     reset,
     setError,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<ChangePasswordValues>({
     resolver: zodResolver(changePasswordSchema),
     defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
   });
+
+  const newPassword = watch("newPassword");
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
@@ -88,13 +92,20 @@ export function PasswordCard(): React.JSX.Element {
             error={errors.currentPassword?.message}
             {...register("currentPassword")}
           />
-          <PasswordInput
-            label="Новый пароль"
-            autoComplete="new-password"
-            description={`Минимум ${PASSWORD_MIN_LENGTH} символов, специальный символ, буквы разного регистра и цифра.`}
-            error={errors.newPassword?.message}
-            {...register("newPassword")}
-          />
+          <div className="space-y-2">
+            <PasswordInput
+              label="Новый пароль"
+              autoComplete="new-password"
+              aria-describedby={requirementsId}
+              error={passwordFieldError(errors.newPassword)}
+              {...register("newPassword")}
+            />
+            <PasswordRequirements
+              id={requirementsId}
+              value={newPassword}
+              invalid={errors.newPassword != null}
+            />
+          </div>
           <PasswordInput
             label="Повторите новый пароль"
             autoComplete="new-password"

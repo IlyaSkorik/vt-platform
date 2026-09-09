@@ -25,8 +25,8 @@ async function fillValidForm(canvasElement: HTMLElement): Promise<void> {
   await userEvent.type(canvas.getByLabelText("Имя"), "Ирина");
   await userEvent.type(canvas.getByLabelText("Фамилия"), "Смирнова");
   await userEvent.type(canvas.getByLabelText("Email"), "irina@example.com");
-  await userEvent.type(canvas.getByLabelText("Пароль"), "SuperSecret123");
-  await userEvent.type(canvas.getByLabelText("Подтверждение пароля"), "SuperSecret123");
+  await userEvent.type(canvas.getByLabelText("Пароль"), "SuperSecret123!");
+  await userEvent.type(canvas.getByLabelText("Подтверждение пароля"), "SuperSecret123!");
   await userEvent.click(canvas.getByRole("checkbox"));
 }
 

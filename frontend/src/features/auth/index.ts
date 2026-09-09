@@ -27,7 +27,10 @@ export {
   forgotPasswordSchema,
   type LoginValues,
   loginSchema,
+  PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
+  PASSWORD_RULES,
+  type PasswordRule,
   passwordSchema,
   type RegisterValues,
   type ResetPasswordValues,
@@ -36,5 +39,9 @@ export {
 } from "./model/schemas";
 export { ForgotPasswordForm } from "./ui/forgot-password-form";
 export { LoginForm } from "./ui/login-form";
+// The live policy checklist and the field message that pairs with it: any screen
+// that *sets* a password owes the person the same list, and account-settings has
+// one of its own.
+export { PasswordRequirements, passwordFieldError } from "./ui/password-requirements";
 export { RegisterForm } from "./ui/register-form";
 export { ResetPasswordForm } from "./ui/reset-password-form";
