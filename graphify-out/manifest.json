@@ -840,8 +840,8 @@
     "semantic_hash": ""
   },
   "backend/apps/competitions/application/read_models/registration.py": {
-    "mtime": 1788516886.819708,
-    "ast_hash": "3ba89d05a100467d6597060135ed474d",
+    "mtime": 1788978597.784044,
+    "ast_hash": "94e81bfc4c15a7e50cdf66c98d5f8033",
     "semantic_hash": ""
   },
   "backend/apps/competitions/apps.py": {
@@ -1110,8 +1110,8 @@
     "semantic_hash": "f69f71d457c119e89bbfa71aa902d570"
   },
   "backend/apps/competitions/presentation/api/v1/public_serializers.py": {
-    "mtime": 1788516900.6269326,
-    "ast_hash": "9b4f1900b4dafa2c9d322e3b138c1d9f",
+    "mtime": 1788978597.8247788,
+    "ast_hash": "1c04986bcf64df959a0161918fa95aaa",
     "semantic_hash": ""
   },
   "backend/apps/competitions/presentation/api/v1/public_views.py": {
@@ -3625,8 +3625,8 @@
     "semantic_hash": ""
   },
   "backend/tests/presentation/competitions/test_registration_api.py": {
-    "mtime": 1788518429.0234847,
-    "ast_hash": "d09b97ccbd5118fb979806407f935ef2",
+    "mtime": 1788978738.3144493,
+    "ast_hash": "17fc9fcc4a434cc13735a9c176149a58",
     "semantic_hash": ""
   },
   "backend/tests/presentation/conftest.py": {
@@ -4570,8 +4570,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/registration-wizard/ui/performance-form.tsx": {
-    "mtime": 1787842453.0212379,
-    "ast_hash": "5e8ed5633ec5dbc4463d20f8289af2c3",
+    "mtime": 1788978708.4039128,
+    "ast_hash": "bc4e5d9e53a90433ec8a5aa499567adf",
     "semantic_hash": ""
   },
   "frontend/src/features/registration-wizard/ui/teacher-picker.tsx": {
@@ -5910,8 +5910,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/competition-settings/ui/settings-section.tsx": {
-    "mtime": 1788525289.4456365,
-    "ast_hash": "bd33b4c60f7a72a782ae26f82ee64360",
+    "mtime": 1788978891.989086,
+    "ast_hash": "c249da859c28983e60d36eed87b23944",
     "semantic_hash": ""
   },
   "frontend/src/widgets/competition-settings/ui/settings-skeleton.tsx": {
@@ -6545,8 +6545,8 @@
     "semantic_hash": "d4ecc328966ff21da30ecd22f0b2a981"
   },
   "frontend/openapi/schema-full.yaml": {
-    "mtime": 1788517468.3114223,
-    "ast_hash": "c2d99a42906552b3840445dbbb64c6bd",
+    "mtime": 1788978631.1595223,
+    "ast_hash": "fc615be03b80ffca57b45cc29098e364",
     "semantic_hash": ""
   },
   "frontend/openapi/schema.yaml": {
@@ -8030,8 +8030,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/registration-wizard/ui/performance-form.test.tsx": {
-    "mtime": 1788517789.9075642,
-    "ast_hash": "fc86e0cf5a932ecb4a236093c2b2a4a9",
+    "mtime": 1788978969.6633408,
+    "ast_hash": "ce6d1218a191066bc89ce71168ca95c1",
     "semantic_hash": ""
   },
   "backend/apps/programs/__init__.py": {
@@ -9935,8 +9935,8 @@
     "semantic_hash": ""
   },
   "frontend/e2e/festival-apply.screenshots.spec.ts": {
-    "mtime": 1787257928.2513041,
-    "ast_hash": "dc2ee6b47131b67a3ebbc7a72100f3f6",
+    "mtime": 1788978878.363852,
+    "ast_hash": "1ed212057b23d17b267a8696caa3657c",
     "semantic_hash": ""
   },
   "frontend/docs/screenshots/festival-apply/desktop-1440.png": {
