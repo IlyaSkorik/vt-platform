@@ -160,9 +160,9 @@ class Participant:
         caller persists the aggregate and dispatches the events atomically.
         """
         if date_of_birth.is_after(now.date()):
-            raise InvalidDateOfBirthError("Date of birth must not be in the future.")
+            raise InvalidDateOfBirthError("Дата рождения не может быть в будущем.")
         if pseudonymization_policy.reveals_identity(display_alias, name=name):
-            raise AliasRevealsIdentityError("Display alias must not embed the participant's real name (JDG-006).")
+            raise AliasRevealsIdentityError("Сценический псевдоним не должен содержать настоящее имя участника.")
         participant = cls(
             _token=_CREATION_TOKEN,
             _id=participant_id,
@@ -376,7 +376,7 @@ class Participant:
         self._ensure_not_erased()
         existing = self._find_link(guardian_id)
         if existing is not None and not existing.is_revoked():
-            raise GuardianAlreadyLinkedError(f"Guardian {guardian_id} is already linked to this participant.")
+            raise GuardianAlreadyLinkedError("Этот представитель уже привязан к участнику.")
         new_link = GuardianLink(guardian_id=guardian_id, relationship_type=relationship_type)
         self._guardian_links = (*self._without_link(guardian_id), new_link)
         self._touch(now)
@@ -392,9 +392,9 @@ class Participant:
         self._ensure_not_erased()
         link = self._find_link(guardian_id)
         if link is None:
-            raise GuardianLinkNotFoundError(f"Guardian {guardian_id} is not linked.")
+            raise GuardianLinkNotFoundError("Этот представитель не привязан к участнику.")
         if not link.is_proposed():
-            raise GuardianLinkNotPendingError(f"Guardian link {guardian_id} is not proposed (status {link.status.value}).")
+            raise GuardianLinkNotPendingError("Эта связь с представителем уже подтверждена или отклонена.")
         self._guardian_links = (*self._without_link(guardian_id), link.verified(now=now))
         events: list[DomainEvent] = [
             GuardianLinked(
@@ -412,7 +412,7 @@ class Participant:
         self._ensure_not_erased()
         link = self._find_link(guardian_id)
         if link is None:
-            raise GuardianLinkNotFoundError(f"Guardian {guardian_id} is not linked.")
+            raise GuardianLinkNotFoundError("Этот представитель не привязан к участнику.")
         self._guardian_links = (*self._without_link(guardian_id), link.revoked())
         self._touch(now)
         return []
@@ -459,7 +459,7 @@ class Participant:
         """
         self._ensure_not_erased()
         if self._consent is None:
-            raise ConsentNotRecordedError("There is no active consent to withdraw.")
+            raise ConsentNotRecordedError("Активного согласия нет — отзывать нечего.")
         self._consent = None
         self._touch(now)
         return []
@@ -485,7 +485,7 @@ class Participant:
         """Change the judging alias, keeping it non-identifying (JDG-006)."""
         self._ensure_not_erased()
         if pseudonymization_policy.reveals_identity(new_alias, name=self._name):
-            raise AliasRevealsIdentityError("Display alias must not embed the participant's real name (JDG-006).")
+            raise AliasRevealsIdentityError("Сценический псевдоним не должен содержать настоящее имя участника.")
         self._display_alias = new_alias
         self._touch(now)
         return []
@@ -502,7 +502,7 @@ class Participant:
         """
         self._ensure_not_erased()
         if self._status is not ParticipantStatus.CREATED:
-            raise InvalidParticipantTransitionError(f"Cannot verify a participant in state {self._status.value}; expected 'created'.")
+            raise InvalidParticipantTransitionError("Подтвердить можно только только что созданного участника.")
         self._status = ParticipantStatus.VERIFIED
         self._verified_at = now
         events: list[DomainEvent] = [ParticipantVerified(aggregate_id=self._id, occurred_at=now)]
@@ -519,7 +519,7 @@ class Participant:
         """
         self._ensure_not_erased()
         if self._status is not ParticipantStatus.VERIFIED:
-            raise InvalidParticipantTransitionError(f"Cannot activate a participant in state {self._status.value}; expected 'verified'.")
+            raise InvalidParticipantTransitionError("Активировать можно только подтверждённого участника.")
         self._guard_activation(policy)
         self._status = ParticipantStatus.ACTIVE
         self._activated_at = now
@@ -535,7 +535,7 @@ class Participant:
         """
         self._ensure_not_erased()
         if self._status is not ParticipantStatus.ACTIVE:
-            raise InvalidParticipantTransitionError(f"Cannot archive a participant in state {self._status.value}; expected 'active'.")
+            raise InvalidParticipantTransitionError("В архив можно отправить только активного участника.")
         self._status = ParticipantStatus.ARCHIVED
         self._archived_at = now
         events: list[DomainEvent] = [ParticipantArchived(aggregate_id=self._id, occurred_at=now)]
@@ -550,7 +550,7 @@ class Participant:
         """
         self._ensure_not_erased()
         if self._status is not ParticipantStatus.ARCHIVED:
-            raise ParticipantNotArchivedError(f"Cannot reactivate a participant in state {self._status.value}; expected 'archived'.")
+            raise ParticipantNotArchivedError("Вернуть из архива можно только архивного участника.")
         self._guard_activation(policy)
         self._status = ParticipantStatus.ACTIVE
         self._activated_at = now
@@ -568,7 +568,7 @@ class Participant:
         """
         self._ensure_not_erased()
         if self._status not in (ParticipantStatus.ACTIVE, ParticipantStatus.ARCHIVED):
-            raise InvalidParticipantTransitionError(f"Cannot erase a participant in state {self._status.value}; expected 'active' or 'archived'.")
+            raise InvalidParticipantTransitionError("Удалить данные можно только у активного или архивного участника.")
         self._status = ParticipantStatus.ERASED
         self._erased_at = now
         events: list[DomainEvent] = [ParticipantErasureRequested(aggregate_id=self._id, request_reference=request_reference, occurred_at=now)]
@@ -603,7 +603,7 @@ class Participant:
         )
         if not assessment.allowed:
             reason = assessment.reason.value if assessment.reason is not None else "unknown"
-            raise ActivationRequirementsError(f"Participant cannot be activated: {reason} (PRT-001).", reason=reason)
+            raise ActivationRequirementsError(f"Участника нельзя активировать: {reason}.", reason=reason)
 
     def _find_link(self, guardian_id: GuardianId) -> GuardianLink | None:
         """Return the guardian link for ``guardian_id``, or ``None``."""
@@ -616,7 +616,7 @@ class Participant:
     def _ensure_not_erased(self) -> None:
         """Guard: forbid mutating an erased participant (terminal state)."""
         if self._status is ParticipantStatus.ERASED:
-            raise ParticipantErasedError(f"Participant {self._id} is erased; operation not permitted.")
+            raise ParticipantErasedError("Данные участника удалены — действие недоступно.")
 
     def _touch(self, now: datetime) -> None:
         """Stamp the mutation time and advance the optimistic-concurrency version."""

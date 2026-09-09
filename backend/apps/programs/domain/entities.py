@@ -205,7 +205,7 @@ class ProgramItem:
     def retitle(self, title: ItemTitle) -> None:
         """Rename a standalone block."""
         if self._kind.binds_performance:
-            raise InvalidProgramDataError("A performance slot takes its name from its act and cannot be retitled.")
+            raise InvalidProgramDataError("Название строки выступления берётся из номера и не меняется вручную.")
         self._title = title
 
     def __eq__(self, other: object) -> bool:
@@ -550,14 +550,14 @@ class Program:
         for candidate in self._items:
             if candidate.id == item_id:
                 return candidate
-        raise ProgramItemNotFoundError(f"Item {item_id} is not part of this program.")
+        raise ProgramItemNotFoundError("Этой строки нет в программе — обновите страницу.")
 
     def share(self, share_id: uuid.UUID) -> ProgramShare:
         """Return one public edition, or raise :class:`ProgramShareNotFoundError`."""
         for candidate in self._shares:
             if candidate.id == share_id:
                 return candidate
-        raise ProgramShareNotFoundError(f"Public program {share_id} does not belong to this program.")
+        raise ProgramShareNotFoundError("Эта публичная ссылка относится к другой программе.")
 
     @property
     def custom_columns(self) -> tuple[CustomColumn, ...]:
@@ -582,7 +582,7 @@ class Program:
         for candidate in self._custom_columns:
             if candidate.id == column_id:
                 return candidate
-        raise ProgramColumnNotFoundError(f"Column {column_id} is not part of this program.")
+        raise ProgramColumnNotFoundError("Этой колонки нет в программе — обновите страницу.")
 
     def normalize_columns(self, refs: Sequence[ColumnRef | ProgramColumn]) -> tuple[ColumnRef, ...]:
         """Order a selection canonically and reject anything this programme has not got.
@@ -597,7 +597,7 @@ class Program:
         chosen = {ref if isinstance(ref, ColumnRef) else ColumnRef.of(ref) for ref in refs}
         unknown = [ref.key for ref in chosen if ref.is_custom and ref.custom_id not in {column.id for column in self._custom_columns}]
         if unknown:
-            raise ProgramColumnNotFoundError(f"Columns {', '.join(unknown)} are not part of this program.")
+            raise ProgramColumnNotFoundError("Некоторых колонок нет в программе — обновите страницу.")
         return tuple(ref for ref in self.columns if ref in chosen)
 
     def select_columns(self, refs: Sequence[ColumnRef | ProgramColumn]) -> tuple[ColumnRef, ...]:
@@ -620,7 +620,7 @@ class Program:
         known = {column.id for column in self._custom_columns}
         unknown = [ref.key for ref in chosen if ref.is_custom and ref.custom_id not in known]
         if unknown:
-            raise ProgramColumnNotFoundError(f"Columns {', '.join(unknown)} are not part of this program.")
+            raise ProgramColumnNotFoundError("Некоторых колонок нет в программе — обновите страницу.")
         return tuple(chosen)
 
     # ------------------------------------------------------------------
@@ -735,7 +735,7 @@ class Program:
         next free number and nobody else's changes.
         """
         if submission_id in self.performance_submission_ids:
-            raise PerformanceAlreadyInProgramError(f"Act {submission_id} already has a slot in this program.")
+            raise PerformanceAlreadyInProgramError("Это выступление уже стоит в программе.")
         item = ProgramItem.performance(item_id=item_id, submission_id=submission_id, duration=duration)
         self._insert(item, position)
         self._number_new_item(item)
@@ -802,7 +802,7 @@ class Program:
         """
         wanted = list(ordered_item_ids)
         if len(wanted) != len(set(wanted)) or set(wanted) != {item.id for item in self._items}:
-            raise ReorderMismatchError("A reorder must list every item of the program exactly once.")
+            raise ReorderMismatchError("Порядок задан неверно: список должен содержать все строки ровно по одному разу.")
         by_id = {item.id: item for item in self._items}
         self._items = [by_id[item_id] for item_id in wanted]
         if not self.numbers_frozen:
@@ -870,7 +870,7 @@ class Program:
         known = {item.id for item in self._items}
         unknown = [str(item_id) for item_id in selection if item_id not in known]
         if unknown:
-            raise ItemNotInProgramError(f"Items {', '.join(unknown)} are not part of this program.")
+            raise ItemNotInProgramError("Некоторых строк нет в программе — обновите страницу.")
         share = ProgramShare(
             _id=share_id,
             _name=name,

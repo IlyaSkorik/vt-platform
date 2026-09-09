@@ -214,7 +214,7 @@ class ConnectOrganizationHandler:
             connected_by = StaffUserId.from_string(command.connected_by)
 
         if self._organizations.find_by_slug(slug.value) is not None:
-            raise OrganizationConflictError(f"An organization with the address {slug.value!r} is already connected.")
+            raise OrganizationConflictError(f"Организация с адресом «{slug.value}» уже подключена.")
 
         organization, connected_events = Organization.connect(
             organization_id=OrganizationId.from_uuid(self._uuids.new()),
@@ -274,7 +274,7 @@ class SetCommissionRateHandler:
 
         organization = self._organizations.get(organization_id)
         if organization is None:
-            raise OrganizationNotFoundError(f"No organization {command.organization_id}.")
+            raise OrganizationNotFoundError("Организация не найдена.")
 
         events = organization.change_commission_rate(rate, now=self._clock.utcnow())
         if events:
@@ -308,11 +308,11 @@ class SetPerformanceFeeScheduleHandler:
             schedule = _schedule_of(command.tiers)
 
         if schedule is None:
-            raise InvalidInputError("A per-performance fee schedule needs at least one band.")
+            raise InvalidInputError("Добавьте хотя бы один диапазон стоимости за выступление.")
 
         organization = self._organizations.get(organization_id)
         if organization is None:
-            raise OrganizationNotFoundError(f"No organization {command.organization_id}.")
+            raise OrganizationNotFoundError("Организация не найдена.")
 
         events = organization.change_fee_schedule(schedule, now=self._clock.utcnow())
         if events:
@@ -346,7 +346,7 @@ class ChangeOrganizationStatusHandler:
 
         organization = self._organizations.get(organization_id)
         if organization is None:
-            raise OrganizationNotFoundError(f"No organization {command.organization_id}.")
+            raise OrganizationNotFoundError("Организация не найдена.")
 
         now = self._clock.utcnow()
         with translate_domain_errors():

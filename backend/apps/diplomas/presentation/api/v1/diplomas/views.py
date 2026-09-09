@@ -106,7 +106,7 @@ def _refuse_foreign_template(request: Request, template_id: str) -> None:
     if organizer_id is None:
         return
     if not callers_scope(request).admits(organizer_id):
-        raise PermissionDenied("This template belongs to another organization.")
+        raise PermissionDenied("Этот шаблон принадлежит другой организации.")
 
 
 def _refuse_foreign_competition(request: Request, competition_id: uuid.UUID | str) -> None:
@@ -118,7 +118,7 @@ def _refuse_foreign_competition(request: Request, competition_id: uuid.UUID | st
     through, an unknown id would simply widen the read.
     """
     if not callers_scope(request).admits(competition_organizer_id(competition_id)):
-        raise PermissionDenied("This competition belongs to another organization.")
+        raise PermissionDenied("Этот фестиваль принадлежит другой организации.")
 
 
 def _refuse_foreign_row(request: Request, rows: QuerySet[Any], row_id: uuid.UUID) -> None:

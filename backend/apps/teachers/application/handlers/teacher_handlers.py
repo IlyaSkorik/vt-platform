@@ -86,7 +86,7 @@ def _load_owned(teachers: TeacherRepository, *, teacher_id: TeacherId, owner: Ow
     """
     teacher = teachers.get(teacher_id)
     if teacher is None or not teacher.is_owned_by(owner):
-        raise TeacherNotFoundError(f"No teacher {teacher_id.json()} in this directory.")
+        raise TeacherNotFoundError("Педагог не найден в вашем справочнике.")
     return teacher
 
 

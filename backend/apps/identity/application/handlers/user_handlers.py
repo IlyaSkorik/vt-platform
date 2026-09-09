@@ -133,7 +133,7 @@ def _load_user(users: UserRepository, raw_user_id: str) -> User:
         user_id = UserId.from_string(raw_user_id)
     user = users.get(user_id)
     if user is None:
-        raise UserNotFoundError(f"No user found with id {raw_user_id!r}.")
+        raise UserNotFoundError("Пользователь не найден.")
     return user
 
 
@@ -144,7 +144,7 @@ def _parse_consent_type(raw: str | None) -> ConsentType:
     try:
         return ConsentType(raw)
     except ValueError as exc:
-        raise InvalidInputError(f"Unknown consent type {raw!r}.") from exc
+        raise InvalidInputError("Неизвестный тип согласия.") from exc
 
 
 class RegisterUserHandler:
@@ -184,9 +184,9 @@ class RegisterUserHandler:
             self._password_policy.enforce(command.password)
 
         if self._users.exists_by_email(email):
-            raise EmailAlreadyInUseError(f"Email {email.masked()} is already registered.")
+            raise EmailAlreadyInUseError("Эта почта уже занята.")
         if phone is not None and self._users.exists_by_phone(phone):
-            raise PhoneAlreadyInUseError("The phone number is already registered.")
+            raise PhoneAlreadyInUseError("Этот телефон уже занят.")
 
         password_hash = self._password_hasher.hash(command.password)
         user_id = UserId.from_uuid(self._uuids.new())
@@ -327,7 +327,7 @@ class ConfirmEmailVerificationHandler:
         decoded = self._tokens.verify(command.token)
         user = self._users.get(decoded.user_id)
         if user is None:
-            raise UserNotFoundError(f"No user found with id {decoded.user_id}.")
+            raise UserNotFoundError("Пользователь не найден.")
         with translate_domain_errors():
             events = user.verify_email(policy=self._policy, sent_at=decoded.issued_at, now=now)
         self._users.save(user)
@@ -480,7 +480,7 @@ class ResetPasswordHandler:
         if user is None:
             # A valid signature for a vanished account: treat as an unusable token
             # rather than a 404, so the reset edge never confirms account existence.
-            raise InvalidVerificationTokenError("The password reset token is invalid.")
+            raise InvalidVerificationTokenError("Ссылка для смены пароля недействительна или уже использована.")
         with translate_domain_errors():
             self._password_policy.enforce(command.new_password)
         password_hash = self._password_hasher.hash(command.new_password)
@@ -512,12 +512,12 @@ class ChangeEmailHandler:
         now = self._clock.utcnow()
         user = _load_user(self._users, command.user_id)
         if not self._password_hasher.verify(command.current_password, user.password_hash):
-            raise InvalidCredentialsError("The current password is incorrect.")
+            raise InvalidCredentialsError("Текущий пароль указан неверно.")
         with translate_domain_errors():
             new_email = Email(command.new_email)
         owner = self._users.get_by_email(new_email)
         if owner is not None and owner.id != user.id:
-            raise EmailAlreadyInUseError(f"Email {new_email.masked()} is already registered.")
+            raise EmailAlreadyInUseError("Эта почта уже занята.")
         with translate_domain_errors():
             events = user.change_email(new_email, now=now)
         self._users.save(user)
@@ -538,7 +538,7 @@ class ChangePhoneHandler:
             new_phone = PhoneNumber(command.new_phone)
         owner = self._users.get_by_phone(new_phone)
         if owner is not None and owner.id != user.id:
-            raise PhoneAlreadyInUseError("The phone number is already registered.")
+            raise PhoneAlreadyInUseError("Этот телефон уже занят.")
         with translate_domain_errors():
             events = user.change_phone(new_phone, now=now)
         self._users.save(user)
@@ -596,7 +596,7 @@ class ChangePasswordHandler:
         now = self._clock.utcnow()
         user = _load_user(self._users, command.user_id)
         if not self._password_hasher.verify(command.current_password, user.password_hash):
-            raise InvalidCredentialsError("The current password is incorrect.")
+            raise InvalidCredentialsError("Текущий пароль указан неверно.")
         with translate_domain_errors():
             self._password_policy.enforce(command.new_password)
         password_hash = self._password_hasher.hash(command.new_password)

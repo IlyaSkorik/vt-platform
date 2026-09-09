@@ -281,12 +281,12 @@ def start_print_package(
     """
     targets = resolve_targets(competition_id, category_ids)
     if not targets:
-        raise PrintTemplateNotReadyError("No nomination with an assigned template to generate.")
+        raise PrintTemplateNotReadyError("Нет ни одной номинации с назначенным шаблоном.")
     for target in targets:
         if not TemplateModel.objects.filter(id=target.template_id, deleted_at__isnull=True).exists():
-            raise PrintTemplateNotReadyError("A selected template was not found.")
+            raise PrintTemplateNotReadyError("Выбранный шаблон не найден.")
         if not TemplateDocumentModel.objects.filter(template__id=target.template_id, deleted_at__isnull=True).exists():
-            raise PrintTemplateNotReadyError("A selected template has no PDF to print over.")
+            raise PrintTemplateNotReadyError("У выбранного шаблона нет PDF-подложки для печати.")
 
     job = PrintJobModel.objects.create(
         competition_id=competition_id,
@@ -306,5 +306,5 @@ def get_print_job(job_id: uuid.UUID) -> dict[str, Any]:
     """One job's status/result. Raises :class:`PrintJobNotFoundError` if unknown."""
     job = PrintJobModel.objects.filter(id=job_id).first()
     if job is None:
-        raise PrintJobNotFoundError("Print job was not found.")
+        raise PrintJobNotFoundError("Задание на печать не найдено.")
     return _job_json(job)

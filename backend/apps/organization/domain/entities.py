@@ -329,7 +329,7 @@ class Organization:
     def suspend(self, *, now: datetime) -> list[DomainEvent]:
         """Suspend the organization (administrative break-glass)."""
         if self._status is OrganizationStatus.SUSPENDED:
-            raise OrganizationSuspendedError("The organization is already suspended.")
+            raise OrganizationSuspendedError("Организация уже приостановлена.")
         self._status = OrganizationStatus.SUSPENDED
         self._touch(now)
         return [OrganizationSuspended(aggregate_id=self._id.value)]
@@ -337,7 +337,7 @@ class Organization:
     def reactivate(self, *, now: datetime) -> list[DomainEvent]:
         """Reactivate a suspended organization."""
         if self._status is not OrganizationStatus.SUSPENDED:
-            raise OrganizationNotSuspendedError("The organization is not suspended.")
+            raise OrganizationNotSuspendedError("Организация не приостановлена.")
         self._status = OrganizationStatus.ACTIVE
         self._touch(now)
         return [OrganizationReactivated(aggregate_id=self._id.value)]
@@ -404,7 +404,7 @@ class Organization:
         advance, and no event is emitted.
         """
         if self._status is OrganizationStatus.SUSPENDED:
-            raise OrganizationSuspendedError("A suspended organization cannot be edited.")
+            raise OrganizationSuspendedError("Организация приостановлена — изменить её данные нельзя.")
         events: list[DomainEvent] = []
         if name is not None and name != self._name:
             self._name = name
@@ -667,9 +667,9 @@ class StaffMembership:
     def activate(self, *, accepted_by: StaffUserId, now: datetime) -> list[DomainEvent]:
         """Transition a PENDING membership to ACTIVE (invitation accepted)."""
         if self._status is MembershipStatus.ACTIVE:
-            raise MembershipAlreadyActiveError("The membership is already active.")
+            raise MembershipAlreadyActiveError("Сотрудник уже активен.")
         if self._status is not MembershipStatus.PENDING:
-            raise MembershipNotPendingError("Only a pending membership can be activated.")
+            raise MembershipNotPendingError("Активировать можно только приглашение, ожидающее подтверждения.")
         self._status = MembershipStatus.ACTIVE
         self._accepted_at = now
         self._touch(now, by=accepted_by)
@@ -685,9 +685,9 @@ class StaffMembership:
     def change_role(self, new_role: StaffRole, *, changed_by: StaffUserId, now: datetime) -> list[DomainEvent]:
         """Change the role of an ACTIVE membership."""
         if self._status is MembershipStatus.REVOKED:
-            raise MembershipAlreadyRevokedError("A revoked membership's role cannot be changed.")
+            raise MembershipAlreadyRevokedError("Доступ сотрудника отозван — роль изменить нельзя.")
         if self._status is not MembershipStatus.ACTIVE:
-            raise MembershipNotPendingError("Only an active membership's role can be changed.")
+            raise MembershipNotPendingError("Роль можно менять только действующему сотруднику.")
         old_role = self._role
         if new_role is old_role:
             return []
@@ -707,7 +707,7 @@ class StaffMembership:
     def revoke(self, *, revoked_by: StaffUserId, now: datetime) -> list[DomainEvent]:
         """Revoke the membership, removing staff access."""
         if self._status is MembershipStatus.REVOKED:
-            raise MembershipAlreadyRevokedError("The membership is already revoked.")
+            raise MembershipAlreadyRevokedError("Доступ сотрудника уже отозван.")
         self._status = MembershipStatus.REVOKED
         self._revoked_at = now
         self._revoked_by = revoked_by
@@ -937,11 +937,11 @@ class StaffInvitation:
         the domain guards the invitation's own state and validity window here.
         """
         if self._revoked_at is not None:
-            raise InvitationRevokedError("The invitation was revoked and cannot be accepted.")
+            raise InvitationRevokedError("Приглашение отозвано.")
         if self._accepted_at is not None:
-            raise InvitationAlreadyAcceptedError("The invitation has already been accepted.")
+            raise InvitationAlreadyAcceptedError("Приглашение уже принято.")
         if self.is_expired(policy=policy, now=now):
-            raise InvitationExpiredError("The invitation has expired and cannot be accepted.")
+            raise InvitationExpiredError("Срок действия приглашения истёк.")
         self._accepted_at = now
         self._touch(now)
         return [
@@ -956,9 +956,9 @@ class StaffInvitation:
     def revoke(self, *, revoked_by: StaffUserId, now: datetime) -> list[DomainEvent]:
         """Revoke a still-pending invitation before it is accepted."""
         if self._accepted_at is not None:
-            raise InvitationAlreadyAcceptedError("An accepted invitation cannot be revoked.")
+            raise InvitationAlreadyAcceptedError("Принятое приглашение отозвать нельзя.")
         if self._revoked_at is not None:
-            raise InvitationRevokedError("The invitation is already revoked.")
+            raise InvitationRevokedError("Приглашение уже отозвано.")
         self._revoked_at = now
         self._touch(now)
         return [

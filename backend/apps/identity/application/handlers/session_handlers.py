@@ -58,10 +58,10 @@ class RefreshTokenHandler:
         try:
             user_id = UserId.from_string(subject)
         except ValueObjectValidationError as exc:
-            raise InvalidTokenError("The refresh token carries an invalid subject.") from exc
+            raise InvalidTokenError("Сессия недействительна — войдите заново.") from exc
         user = self._users.get(user_id)
         if user is not None and user.credentials_invalidated_at is not None and issued_at < user.credentials_invalidated_at:
-            raise InvalidTokenError("The session was revoked by a credential change.")
+            raise InvalidTokenError("Сессия завершена: пароль или почта были изменены. Войдите заново.")
         return self._tokens.rotate(refresh_token=refresh_token)
 
 

@@ -33,7 +33,7 @@ def actor_membership(
     """The actor's active staff membership, or refuse the action."""
     membership = memberships.find_active_for_user(actor)
     if membership is None:
-        raise PermissionDeniedError("Only active staff of an organization may perform this action.")
+        raise PermissionDeniedError("Это действие доступно только действующим сотрудникам организации.")
     return membership
 
 
@@ -47,5 +47,5 @@ def organization_of_actor(
     membership = actor_membership(actor, memberships=memberships)
     organization = organizations.get(membership.organization_id)
     if organization is None:
-        raise OrganizationNotFoundError(f"The organization {membership.organization_id.json()} no longer exists.")
+        raise OrganizationNotFoundError("Организация больше не существует.")
     return organization, membership

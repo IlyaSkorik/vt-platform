@@ -59,10 +59,10 @@ class ChangeStaffRoleHandler:
 
         membership = self._memberships.get(membership_id)
         if membership is None or membership.deleted_at is not None or membership.organization_id != organization.id:
-            raise StaffMembershipNotFoundError("The staff membership was not found.")
+            raise StaffMembershipNotFoundError("Сотрудник не найден.")
 
         if new_role is not StaffRole.OWNER and is_sole_active_owner(self._memberships.list_by_organization(organization.id), membership):
-            raise LastOwnerError("The last active owner cannot be demoted.")
+            raise LastOwnerError("Нельзя понизить роль последнего владельца организации.")
 
         with translate_domain_errors():
             events = membership.change_role(new_role, changed_by=changed_by, now=now)

@@ -198,7 +198,7 @@ def parse_award(raw: object) -> AwardKind | None:
     try:
         return AwardKind(text.upper())
     except ValueError as exc:
-        raise InvalidProtocolDataError(f"{raw!r} is not a known award.") from exc
+        raise InvalidProtocolDataError("Неизвестная награда.") from exc
 
 
 def parse_columns(values: Iterable[object] | None) -> tuple[ProtocolColumn, ...]:
@@ -216,7 +216,7 @@ def parse_columns(values: Iterable[object] | None) -> tuple[ProtocolColumn, ...]
         try:
             chosen.add(ProtocolColumn(str(raw).upper()))
         except ValueError as exc:
-            raise InvalidProtocolDataError(f"{raw!r} is not a known protocol column.") from exc
+            raise InvalidProtocolDataError("Неизвестная колонка протокола.") from exc
     return tuple(column for column in ProtocolColumn if column in chosen)
 
 
@@ -309,9 +309,9 @@ class ProtocolName:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if not stripped:
-            raise InvalidProtocolDataError("Protocol name must not be empty.")
+            raise InvalidProtocolDataError("Укажите название протокола.")
         if len(stripped) > _NAME_MAX:
-            raise InvalidProtocolDataError(f"Protocol name must be at most {_NAME_MAX} characters.")
+            raise InvalidProtocolDataError(f"Название протокола — не длиннее {_NAME_MAX} символов.")
         object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:
@@ -333,9 +333,9 @@ class PublicSlug:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if not (_SLUG_MIN_LENGTH <= len(stripped) <= _SLUG_MAX_LENGTH):
-            raise InvalidProtocolDataError(f"Slug must be {_SLUG_MIN_LENGTH}-{_SLUG_MAX_LENGTH} characters, got {len(stripped)}.")
+            raise InvalidProtocolDataError(f"Адрес ссылки — от {_SLUG_MIN_LENGTH} до {_SLUG_MAX_LENGTH} символов.")
         if any(char not in _SLUG_ALPHABET for char in stripped):
-            raise InvalidProtocolDataError("Slug must contain only unambiguous URL-safe characters.")
+            raise InvalidProtocolDataError("В адресе ссылки допустимы только однозначные латинские символы и цифры.")
         object.__setattr__(self, "value", stripped)
 
     @classmethod

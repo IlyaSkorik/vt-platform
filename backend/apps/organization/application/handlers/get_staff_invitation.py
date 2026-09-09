@@ -40,19 +40,19 @@ class GetStaffInvitationHandler:
         invitation = self._invitations.get_by_token_hash(token_hash)
 
         if invitation is None:
-            raise StaffInvitationNotFoundError("The invitation was not found.")
+            raise StaffInvitationNotFoundError("Приглашение не найдено.")
 
         if invitation.accepted_at is not None:
-            raise InvitationConflictError("The invitation has already been accepted.")
+            raise InvitationConflictError("Приглашение уже принято.")
 
         if invitation.is_expired(policy=InvitationExpiryPolicy(), now=self._clock.utcnow()):
             # I will need to find a better exception for this to map to 410.
             # For now, I will use InvalidInvitationTokenError.
-            raise InvalidInvitationTokenError("The invitation has expired.")
+            raise InvalidInvitationTokenError("Срок действия приглашения истёк.")
 
         organization = self._organizations.get(invitation.organization_id)
         if organization is None:
-            raise OrganizationNotFoundError("The organization was not found.")
+            raise OrganizationNotFoundError("Организация не найдена.")
 
         return StaffInvitationDetailsDto(
             organization_name=organization.name.value,

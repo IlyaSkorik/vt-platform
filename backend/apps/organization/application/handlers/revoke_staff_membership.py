@@ -57,10 +57,10 @@ class RevokeStaffMembershipHandler:
 
         membership = self._memberships.get(membership_id)
         if membership is None or membership.deleted_at is not None or membership.organization_id != organization.id:
-            raise StaffMembershipNotFoundError("The staff membership was not found.")
+            raise StaffMembershipNotFoundError("Сотрудник не найден.")
 
         if is_sole_active_owner(self._memberships.list_by_organization(organization.id), membership):
-            raise LastOwnerError("The last active owner cannot be revoked.")
+            raise LastOwnerError("Нельзя отозвать доступ у последнего владельца организации.")
 
         with translate_domain_errors():
             events = membership.revoke(revoked_by=revoked_by, now=now)

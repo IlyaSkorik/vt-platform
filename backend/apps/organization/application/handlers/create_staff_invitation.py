@@ -77,10 +77,10 @@ class InviteStaffHandler:
             memberships=self._memberships,
         )
         if not inviter_membership.has_role(StaffRole.OWNER, StaffRole.DIRECTOR):
-            raise PermissionDeniedError("Only active owners or directors may issue staff invitations.")
+            raise PermissionDeniedError("Приглашать сотрудников могут только владелец и директор.")
 
         if self._invitations.find_pending_by_email(email=email, organization_id=organization.id) is not None:
-            raise InvitationConflictError("An open invitation already exists for this email.")
+            raise InvitationConflictError("На эту почту уже отправлено приглашение.")
 
         issued_token = self._hasher.generate()
         invitation_id = StaffInvitationId.from_uuid(self._uuids.new())

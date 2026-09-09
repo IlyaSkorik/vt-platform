@@ -149,7 +149,7 @@ class ColumnRef:
 
     def __post_init__(self) -> None:
         if (self.builtin is None) == (self.custom_id is None):
-            raise InvalidProgramDataError("A column reference is either a built-in column or a custom one, never both or neither.")
+            raise InvalidProgramDataError("Колонка задана неверно: выберите либо встроенную, либо свою.")
 
     @classmethod
     def of(cls, column: ProgramColumn) -> ColumnRef:
@@ -169,11 +169,11 @@ class ColumnRef:
             try:
                 return cls.custom(uuid.UUID(text[len(CUSTOM_COLUMN_PREFIX) :]))
             except ValueError as exc:
-                raise InvalidProgramDataError(f"{raw!r} is not a valid custom column reference.") from exc
+                raise InvalidProgramDataError("Неверная ссылка на свою колонку.") from exc
         try:
             return cls.of(ProgramColumn(text.upper()))
         except ValueError as exc:
-            raise InvalidProgramDataError(f"{raw!r} is not a known programme column.") from exc
+            raise InvalidProgramDataError("Неизвестная колонка программы.") from exc
 
     @property
     def is_custom(self) -> bool:
@@ -200,9 +200,9 @@ class ColumnTitle:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if not stripped:
-            raise InvalidProgramDataError("Column title must not be empty.")
+            raise InvalidProgramDataError("Укажите название колонки.")
         if len(stripped) > _COLUMN_TITLE_MAX:
-            raise InvalidProgramDataError(f"Column title must be at most {_COLUMN_TITLE_MAX} characters.")
+            raise InvalidProgramDataError(f"Название колонки — не длиннее {_COLUMN_TITLE_MAX} символов.")
         object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:
@@ -218,7 +218,7 @@ class CellValue:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if len(stripped) > CELL_VALUE_MAX:
-            raise InvalidProgramDataError(f"A cell value must be at most {CELL_VALUE_MAX} characters.")
+            raise InvalidProgramDataError(f"Значение в ячейке — не длиннее {CELL_VALUE_MAX} символов.")
         object.__setattr__(self, "value", stripped)
 
     @property
@@ -281,7 +281,7 @@ def parse_columns(values: Iterable[object] | None) -> tuple[ProgramColumn, ...]:
         try:
             chosen.add(ProgramColumn(str(raw).upper()))
         except ValueError as exc:
-            raise InvalidProgramDataError(f"{raw!r} is not a known programme column.") from exc
+            raise InvalidProgramDataError("Неизвестная колонка программы.") from exc
     return tuple(column for column in ProgramColumn if column in chosen)
 
 
@@ -331,9 +331,9 @@ class ProgramName:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if not stripped:
-            raise InvalidProgramDataError("Program name must not be empty.")
+            raise InvalidProgramDataError("Укажите название программы.")
         if len(stripped) > _NAME_MAX:
-            raise InvalidProgramDataError(f"Program name must be at most {_NAME_MAX} characters.")
+            raise InvalidProgramDataError(f"Название программы — не длиннее {_NAME_MAX} символов.")
         object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:
@@ -349,9 +349,9 @@ class ShareName:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if not stripped:
-            raise InvalidProgramDataError("Public program name must not be empty.")
+            raise InvalidProgramDataError("Укажите название публичной программы.")
         if len(stripped) > _NAME_MAX:
-            raise InvalidProgramDataError(f"Public program name must be at most {_NAME_MAX} characters.")
+            raise InvalidProgramDataError(f"Название публичной программы — не длиннее {_NAME_MAX} символов.")
         object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:
@@ -367,9 +367,9 @@ class ItemTitle:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if not stripped:
-            raise InvalidProgramDataError("Program item title must not be empty.")
+            raise InvalidProgramDataError("Укажите название строки программы.")
         if len(stripped) > _TITLE_MAX:
-            raise InvalidProgramDataError(f"Program item title must be at most {_TITLE_MAX} characters.")
+            raise InvalidProgramDataError(f"Название строки — не длиннее {_TITLE_MAX} символов.")
         object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:
@@ -391,9 +391,9 @@ class ItemDuration:
         if not isinstance(self.seconds, int) or isinstance(self.seconds, bool):
             raise InvalidProgramDataError(f"Duration seconds must be an int, got {type(self.seconds)!r}.")
         if self.seconds <= 0:
-            raise InvalidProgramDataError(f"Duration must be positive, got {self.seconds} seconds.")
+            raise InvalidProgramDataError("Длительность должна быть больше нуля.")
         if self.seconds > DURATION_MAX_SECONDS:
-            raise InvalidProgramDataError(f"Duration must be at most {DURATION_MAX_SECONDS} seconds.")
+            raise InvalidProgramDataError(f"Длительность — не больше {DURATION_MAX_SECONDS // 60} минут.")
 
     @classmethod
     def of(cls, *, minutes: int = 0, seconds: int = 0) -> ItemDuration:
@@ -420,9 +420,9 @@ class TimeBuffer:
         if not isinstance(self.seconds, int) or isinstance(self.seconds, bool):
             raise InvalidProgramDataError(f"Buffer seconds must be an int, got {type(self.seconds)!r}.")
         if self.seconds < 0:
-            raise InvalidProgramDataError(f"Buffer must not be negative, got {self.seconds} seconds.")
+            raise InvalidProgramDataError("Перерыв не может быть отрицательным.")
         if self.seconds > BUFFER_MAX_SECONDS:
-            raise InvalidProgramDataError(f"Buffer must be at most {BUFFER_MAX_SECONDS} seconds.")
+            raise InvalidProgramDataError(f"Перерыв — не больше {BUFFER_MAX_SECONDS // 60} минут.")
 
     @classmethod
     def none(cls) -> TimeBuffer:
@@ -448,9 +448,9 @@ class PublicSlug:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if not (_SLUG_MIN_LENGTH <= len(stripped) <= _SLUG_MAX_LENGTH):
-            raise InvalidProgramDataError(f"Slug must be {_SLUG_MIN_LENGTH}-{_SLUG_MAX_LENGTH} characters, got {len(stripped)}.")
+            raise InvalidProgramDataError(f"Адрес ссылки — от {_SLUG_MIN_LENGTH} до {_SLUG_MAX_LENGTH} символов.")
         if any(char not in _SLUG_ALPHABET for char in stripped):
-            raise InvalidProgramDataError("Slug must contain only unambiguous URL-safe characters.")
+            raise InvalidProgramDataError("В адресе ссылки допустимы только однозначные латинские символы и цифры.")
         object.__setattr__(self, "value", stripped)
 
     @classmethod

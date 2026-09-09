@@ -158,7 +158,7 @@ def get_template_layout(template_id: str) -> dict[str, Any]:
     Raises :class:`TemplateNotFoundError` for an unknown template.
     """
     if not TemplateModel.objects.filter(id=template_id, deleted_at__isnull=True).exists():
-        raise TemplateNotFoundError("Template was not found.")
+        raise TemplateNotFoundError("Шаблон не найден.")
     rows = TemplateFieldModel.objects.filter(template__id=template_id, deleted_at__isnull=True).order_by("page", "sort_order", "created_at")
     return {"fields": [_field_json(row) for row in rows], "revision": _template_revision(template_id)}
 
@@ -174,7 +174,7 @@ def replace_template_layout(*, template_id: str, fields: list[dict[str, Any]]) -
     with transaction.atomic():
         template = TemplateModel.objects.select_for_update().filter(id=template_id, deleted_at__isnull=True).first()
         if template is None:
-            raise TemplateNotFoundError("Template was not found.")
+            raise TemplateNotFoundError("Шаблон не найден.")
 
         # A layout may only carry what its kind of document can print. The editor
         # hides the rest, so this catches a stale client or a hand-made request —
@@ -223,7 +223,7 @@ def set_template_document(*, template_id: str, file_reference: str, original_fil
     an unknown template.
     """
     if not TemplateModel.objects.filter(id=template_id, deleted_at__isnull=True).exists():
-        raise TemplateNotFoundError("Template was not found.")
+        raise TemplateNotFoundError("Шаблон не найден.")
     now = timezone.now()
     TemplateDocumentModel.objects.filter(template__id=template_id, deleted_at__isnull=True).update(deleted_at=now, updated_at=now)
     row = TemplateDocumentModel.objects.create(
@@ -320,7 +320,7 @@ def create_assignments(*, competition_id: str, category_ids: list[str], template
     """
     template = scope.apply(TemplateModel.objects.filter(id=template_id, deleted_at__isnull=True)).only("type").first()
     if template is None:
-        raise TemplateNotFoundError("Template was not found.")
+        raise TemplateNotFoundError("Шаблон не найден.")
     document_type = template.type
     wanted = list(dict.fromkeys(category_ids))
 
@@ -334,7 +334,7 @@ def create_assignments(*, competition_id: str, category_ids: list[str], template
             ).values_list("category_id", flat=True)
         )
         if taken:
-            raise AssignmentConflictError("This nomination already has a template of that type assigned.")
+            raise AssignmentConflictError("Для этой номинации уже назначен шаблон такого типа.")
         try:
             rows = AssignmentModel.objects.bulk_create(
                 [
@@ -348,7 +348,7 @@ def create_assignments(*, competition_id: str, category_ids: list[str], template
                 ]
             )
         except IntegrityError as exc:  # pragma: no cover - unique race
-            raise AssignmentConflictError("This nomination already has a template of that type assigned.") from exc
+            raise AssignmentConflictError("Для этой номинации уже назначен шаблон такого типа.") from exc
     return list_assignments_by_ids([str(row.id) for row in rows], scope=scope)
 
 
@@ -365,7 +365,7 @@ def list_assignments_by_ids(assignment_ids: list[str], *, scope: Scope) -> list[
     try:
         return [by_id[assignment_id] for assignment_id in assignment_ids]
     except KeyError as exc:
-        raise AssignmentNotFoundError("Assignment was not found.") from exc
+        raise AssignmentNotFoundError("Назначение шаблона не найдено.") from exc
 
 
 def list_assignments_by_id(assignment_id: str, *, scope: Scope) -> dict[str, Any]:
@@ -389,7 +389,7 @@ def delete_assignment(assignment_id: str, *, scope: Scope) -> None:
         field="template__organizer_id",
     ).first()
     if row is None:
-        raise AssignmentNotFoundError("Assignment was not found.")
+        raise AssignmentNotFoundError("Назначение шаблона не найдено.")
     now = timezone.now()
     row.deleted_at = now
     row.updated_at = now

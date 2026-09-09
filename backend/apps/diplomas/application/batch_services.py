@@ -116,7 +116,7 @@ class DiplomaBatchGenerationService:
                 continue
             assets = self._workspace.load_template(target.template_id)
             if assets is None:
-                raise PrintTemplateNotReadyError("A selected template has no PDF to print over.")
+                raise PrintTemplateNotReadyError("У выбранного шаблона нет PDF-подложки для печати.")
             assets_by_template[target.template_id] = assets
 
         created = 0

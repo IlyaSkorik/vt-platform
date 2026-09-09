@@ -107,7 +107,7 @@ def _load_participant(participants: ParticipantRepository, raw_id: str) -> Parti
         participant_id = ParticipantId.from_string(raw_id)
     participant = participants.get(participant_id)
     if participant is None:
-        raise ParticipantNotFoundError(f"No participant found with id {raw_id!r}.")
+        raise ParticipantNotFoundError("Участник не найден.")
     return participant
 
 
@@ -116,7 +116,7 @@ def _parse_actor_type(raw: str) -> ActorType:
     try:
         return ActorType(raw)
     except ValueError as exc:
-        raise InvalidInputError(f"Unknown actor type {raw!r}.") from exc
+        raise InvalidInputError("Неизвестный тип пользователя.") from exc
 
 
 def _parse_relationship_type(raw: str) -> GuardianRelationshipType:
@@ -124,7 +124,7 @@ def _parse_relationship_type(raw: str) -> GuardianRelationshipType:
     try:
         return GuardianRelationshipType(raw)
     except ValueError as exc:
-        raise InvalidInputError(f"Unknown relationship type {raw!r}.") from exc
+        raise InvalidInputError("Неизвестная степень родства.") from exc
 
 
 def _parse_reference(raw: str) -> uuid.UUID:
@@ -132,7 +132,7 @@ def _parse_reference(raw: str) -> uuid.UUID:
     try:
         return uuid.UUID(raw)
     except (ValueError, AttributeError, TypeError) as exc:
-        raise InvalidInputError(f"{raw!r} is not a valid reference.") from exc
+        raise InvalidInputError("Неверная ссылка на запись.") from exc
 
 
 def _result(participant: Participant, events: Sequence[DomainEvent]) -> OperationResultDto:
@@ -176,7 +176,7 @@ class CreateParticipantHandler:
             created_by = ActorReference.of(command.created_by_id, actor_type)
 
         if self._participants.exists_by_display_alias(display_alias):
-            raise DisplayAliasAlreadyInUseError(f"Display alias {display_alias.value!r} is already in use.")
+            raise DisplayAliasAlreadyInUseError("Такой псевдоним уже занят.")
 
         participant_id = ParticipantId.from_uuid(self._uuids.new())
         with translate_domain_errors():
@@ -355,7 +355,7 @@ class ReassignDisplayAliasHandler:
             display_alias = DisplayAlias(command.display_alias)
         owner = self._participants.get_by_display_alias(display_alias)
         if owner is not None and owner.id != participant.id:
-            raise DisplayAliasAlreadyInUseError(f"Display alias {display_alias.value!r} is already in use.")
+            raise DisplayAliasAlreadyInUseError("Такой псевдоним уже занят.")
         with translate_domain_errors():
             events = participant.reassign_display_alias(display_alias, pseudonymization_policy=self._pseudonymization_policy, now=now)
         self._participants.save(participant)

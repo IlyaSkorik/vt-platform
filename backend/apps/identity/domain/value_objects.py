@@ -159,28 +159,28 @@ _EMAIL_MASK_VISIBLE: Final = 3
 def _normalize_email(value: str) -> str:
     raw = value.strip()
     if not raw:
-        raise InvalidEmailError("Email must not be empty.")
+        raise InvalidEmailError("Укажите адрес почты.")
     if raw.count("@") != 1:
-        raise InvalidEmailError(f"Email must contain exactly one '@': {value!r}.")
+        raise InvalidEmailError("Адрес почты должен содержать один символ «@».")
     local, domain = raw.split("@")
     if not 1 <= len(local) <= _EMAIL_MAX_LOCAL:
-        raise InvalidEmailError(f"Email local part must be 1-{_EMAIL_MAX_LOCAL} characters.")
+        raise InvalidEmailError(f"Часть адреса до «@» — от 1 до {_EMAIL_MAX_LOCAL} символов.")
     if not _EMAIL_LOCAL_RE.match(local):
-        raise InvalidEmailError(f"Email local part is invalid: {value!r}.")
+        raise InvalidEmailError("Проверьте адрес почты: часть до «@» указана неверно.")
     if not 1 <= len(domain) <= _EMAIL_MAX_DOMAIN:
-        raise InvalidEmailError(f"Email domain must be 1-{_EMAIL_MAX_DOMAIN} characters.")
+        raise InvalidEmailError(f"Домен почты — от 1 до {_EMAIL_MAX_DOMAIN} символов.")
     labels = domain.split(".")
     if len(labels) < 2:
-        raise InvalidEmailError(f"Email domain must have at least two labels: {value!r}.")
+        raise InvalidEmailError("Проверьте домен почты: нужен вид «example.com».")
     for label in labels:
         if not 1 <= len(label) <= _EMAIL_MAX_LABEL:
-            raise InvalidEmailError(f"Email domain label length is invalid: {value!r}.")
+            raise InvalidEmailError("Проверьте домен почты: неверная длина части домена.")
         if label.startswith("-") or label.endswith("-"):
-            raise InvalidEmailError(f"Email domain label must not start/end with '-': {value!r}.")
+            raise InvalidEmailError("Проверьте домен почты: часть домена не может начинаться или заканчиваться дефисом.")
         if not _EMAIL_LABEL_RE.match(label):
-            raise InvalidEmailError(f"Email domain label has invalid characters: {value!r}.")
+            raise InvalidEmailError("Проверьте домен почты: недопустимые символы.")
     if not _EMAIL_TLD_RE.match(labels[-1]):
-        raise InvalidEmailError(f"Email top-level domain is invalid: {value!r}.")
+        raise InvalidEmailError("Проверьте домен почты: неверная доменная зона.")
     # Normalize to lowercase for a single canonical form (DATA-001 §8: one
     # verified email per active account). Unicode-aware ``str.lower``.
     return f"{local.lower()}@{domain.lower()}"
@@ -295,20 +295,18 @@ def _match_formatter(e164: str, *, original: str) -> _PhoneFormatter:
             formatter = SUPPORTED_PHONE_FORMATTERS[code]
             national = e164[len(code) :]
             if len(national) != formatter.national_length:
-                raise InvalidPhoneNumberError(
-                    f"A {code} number must have {formatter.national_length} national digits, got {len(national)}: {original!r}."
-                )
+                raise InvalidPhoneNumberError(f"Номер с кодом {code} состоит из {formatter.national_length} цифр после кода страны.")
             return formatter
     supported = ", ".join(sorted(SUPPORTED_PHONE_FORMATTERS))
-    raise InvalidPhoneNumberError(f"Unsupported country calling code in {original!r}; supported codes are: {supported}.")
+    raise InvalidPhoneNumberError(f"Такой код страны не поддерживается. Доступны: {supported}.")
 
 
 def _normalize_phone(value: str) -> str:
     cleaned = _PHONE_SEPARATORS_RE.sub("", value.strip())
     if not cleaned:
-        raise InvalidPhoneNumberError("Phone number must not be empty.")
+        raise InvalidPhoneNumberError("Укажите номер телефона.")
     if not _E164_RE.match(cleaned):
-        raise InvalidPhoneNumberError(f"Phone number must be in E.164 format (e.g. '+375291234567'), got {value!r}.")
+        raise InvalidPhoneNumberError("Телефон указывается в международном формате, например +375291234567.")
     _match_formatter(cleaned, original=value)  # validate country + length
     return cleaned
 
@@ -372,11 +370,11 @@ def _clean_name_part(value: str) -> str:
 def _validate_name_part(value: str, *, field: str) -> str:
     cleaned = _clean_name_part(value)
     if not cleaned:
-        raise InvalidFullNameError(f"{field} must not be empty.")
+        raise InvalidFullNameError(f"Заполните поле «{field}».")
     if len(cleaned) > _NAME_MAX_LEN:
-        raise InvalidFullNameError(f"{field} must be at most {_NAME_MAX_LEN} characters.")
+        raise InvalidFullNameError(f"«{field}» — не длиннее {_NAME_MAX_LEN} символов.")
     if not _NAME_PART_RE.match(cleaned):
-        raise InvalidFullNameError(f"{field} contains invalid characters (letters, spaces, hyphens and apostrophes only): {value!r}.")
+        raise InvalidFullNameError(f"«{field}»: допустимы только буквы, пробелы, дефисы и апострофы.")
     return cleaned
 
 
@@ -605,7 +603,7 @@ def _normalize_locale(value: str) -> str:
     raw = value.strip().replace("_", "-")
     parts = raw.split("-")
     if len(parts) != 2 or not parts[0] or not parts[1]:
-        raise UnsupportedLocaleError(f"Locale must be a 'language-REGION' tag (e.g. 'ru-RU'), got {value!r}.")
+        raise UnsupportedLocaleError("Язык указывается в виде «ru-RU».")
     return f"{parts[0].lower()}-{parts[1].upper()}"
 
 
@@ -631,7 +629,7 @@ class Locale:
         normalized = _normalize_locale(self.value)
         if normalized not in self.SUPPORTED:
             supported = ", ".join(sorted(self.SUPPORTED))
-            raise UnsupportedLocaleError(f"Unsupported locale {self.value!r}; supported locales are: {supported}.")
+            raise UnsupportedLocaleError(f"Такой язык интерфейса не поддерживается. Доступны: {supported}.")
         object.__setattr__(self, "value", normalized)
 
     @classmethod
@@ -700,11 +698,11 @@ class Timezone:
     def __post_init__(self) -> None:
         raw = self.value.strip()
         if not raw:
-            raise InvalidTimezoneError("Timezone must not be empty.")
+            raise InvalidTimezoneError("Укажите часовой пояс.")
         try:
             ZoneInfo(raw)
         except (ZoneInfoNotFoundError, ValueError) as exc:
-            raise InvalidTimezoneError(f"{self.value!r} is not a valid IANA timezone.") from exc
+            raise InvalidTimezoneError("Такого часового пояса не существует.") from exc
         object.__setattr__(self, "value", raw)
 
     @classmethod

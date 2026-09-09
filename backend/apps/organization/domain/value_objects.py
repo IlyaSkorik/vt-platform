@@ -288,9 +288,9 @@ class OrganizationName:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if not stripped:
-            raise InvalidOrganizationNameError("Organization name must not be empty.")
+            raise InvalidOrganizationNameError("Укажите название организации.")
         if len(stripped) > _NAME_MAX:
-            raise InvalidOrganizationNameError(f"Organization name must be at most {_NAME_MAX} characters.")
+            raise InvalidOrganizationNameError(f"Название организации — не длиннее {_NAME_MAX} символов.")
         # Normalize to the stripped form so equality ignores surrounding whitespace.
         object.__setattr__(self, "value", stripped)
 
@@ -306,11 +306,11 @@ class OrganizationSlug:
 
     def __post_init__(self) -> None:
         if not self.value:
-            raise InvalidOrganizationSlugError("Organization slug must not be empty.")
+            raise InvalidOrganizationSlugError("Укажите адрес организации.")
         if len(self.value) > _SLUG_MAX:
-            raise InvalidOrganizationSlugError(f"Organization slug must be at most {_SLUG_MAX} characters.")
+            raise InvalidOrganizationSlugError(f"Адрес организации — не длиннее {_SLUG_MAX} символов.")
         if not _SLUG_RE.match(self.value):
-            raise InvalidOrganizationSlugError(f"Organization slug must be lowercase kebab-case: {self.value!r}.")
+            raise InvalidOrganizationSlugError("Адрес организации: только строчные латинские буквы, цифры и дефисы.")
 
     def __str__(self) -> str:
         return self.value
@@ -348,9 +348,9 @@ class CommissionRate:
         try:
             value = Decimal(self.percent).quantize(_COMMISSION_SCALE, rounding=ROUND_HALF_UP)
         except (InvalidOperation, TypeError, ValueError) as exc:
-            raise InvalidCommissionRateError(f"{self.percent!r} is not a valid commission rate.") from exc
+            raise InvalidCommissionRateError("Проверьте размер комиссии.") from exc
         if value < Decimal("0") or value > Decimal("100"):
-            raise InvalidCommissionRateError(f"Commission rate must be between 0 and 100 percent, got {value}.")
+            raise InvalidCommissionRateError("Комиссия — от 0 до 100 процентов.")
         object.__setattr__(self, "percent", value)
 
     @classmethod
@@ -438,19 +438,17 @@ class PerformanceFeeTier:
         if self.max_participants is not None:
             object.__setattr__(self, "max_participants", self._count("max_participants", self.max_participants))
             if self.max_participants < self.min_participants:
-                raise InvalidPerformanceFeeTierError(
-                    f"Fee band upper bound {self.max_participants} is below its lower bound {self.min_participants}."
-                )
+                raise InvalidPerformanceFeeTierError("Верхняя граница диапазона участников меньше нижней.")
         if isinstance(self.amount, float):
             raise InvalidPerformanceFeeTierError("Fee amount must not be built from a float; use Decimal or str.")
         try:
             amount = Decimal(self.amount).quantize(_FEE_SCALE, rounding=ROUND_HALF_UP)
         except (InvalidOperation, TypeError, ValueError) as exc:
-            raise InvalidPerformanceFeeTierError(f"{self.amount!r} is not a valid fee amount.") from exc
+            raise InvalidPerformanceFeeTierError("Проверьте сумму: это не денежное значение.") from exc
         if amount < Decimal("0"):
-            raise InvalidPerformanceFeeTierError(f"Fee amount must not be negative, got {amount}.")
+            raise InvalidPerformanceFeeTierError("Стоимость не может быть отрицательной.")
         if amount > _FEE_MAX:
-            raise InvalidPerformanceFeeTierError(f"Fee amount must be at most {_FEE_MAX}, got {amount}.")
+            raise InvalidPerformanceFeeTierError(f"Стоимость — не больше {_FEE_MAX}.")
         object.__setattr__(self, "amount", amount)
 
     @staticmethod
@@ -459,7 +457,7 @@ class PerformanceFeeTier:
         if isinstance(value, bool) or not isinstance(value, int):
             raise InvalidPerformanceFeeTierError(f"{field} must be an integer, got {value!r}.")
         if value < 1:
-            raise InvalidPerformanceFeeTierError(f"{field} must be at least 1, got {value}.")
+            raise InvalidPerformanceFeeTierError(f"«{field}» — не меньше 1.")
         return value
 
     @classmethod
@@ -516,27 +514,27 @@ class PerformanceFeeSchedule:
             raise InvalidPerformanceFeeScheduleError("A fee schedule is built from an iterable of bands.")
         tiers = tuple(self.tiers)
         if not tiers:
-            raise InvalidPerformanceFeeScheduleError("A fee schedule must hold at least one band.")
+            raise InvalidPerformanceFeeScheduleError("Добавьте хотя бы один диапазон стоимости.")
         if len(tiers) > _MAX_FEE_TIERS:
-            raise InvalidPerformanceFeeScheduleError(f"A fee schedule must hold at most {_MAX_FEE_TIERS} bands.")
+            raise InvalidPerformanceFeeScheduleError(f"Диапазонов стоимости — не больше {_MAX_FEE_TIERS}.")
         if any(not isinstance(tier, PerformanceFeeTier) for tier in tiers):
             raise InvalidPerformanceFeeScheduleError("Every band of a fee schedule must be a PerformanceFeeTier.")
         tiers = tuple(sorted(tiers, key=lambda tier: tier.min_participants))
         if tiers[0].min_participants != 1:
-            raise InvalidPerformanceFeeScheduleError(f"A fee schedule must start at 1 participant, starts at {tiers[0].min_participants}.")
+            raise InvalidPerformanceFeeScheduleError("Первый диапазон стоимости должен начинаться с одного участника.")
         for previous, current in pairwise(tiers):
             if previous.is_open_ended:
-                raise InvalidPerformanceFeeScheduleError(f"The open-ended band {previous.range_label()} must be the last one.")
+                raise InvalidPerformanceFeeScheduleError(f"Диапазон без верхней границы ({previous.range_label()}) должен быть последним.")
             expected = previous.max_participants + 1  # type: ignore[operator]  # closed by the guard above
             if current.min_participants != expected:
-                problem = "an overlap" if current.min_participants < expected else "a gap"
+                problem = "пересекаются" if current.min_participants < expected else "оставляют разрыв"
                 raise InvalidPerformanceFeeScheduleError(
-                    f"Bands {previous.range_label()} and {current.range_label()} leave {problem}; "
-                    f"the next band must start at {expected} participants."
+                    f"Диапазоны {previous.range_label()} и {current.range_label()} {problem}: "
+                    f"следующий должен начинаться с {expected} участников."
                 )
         if not tiers[-1].is_open_ended:
             raise InvalidPerformanceFeeScheduleError(
-                f"The last band must be open-ended so every headcount is priced; {tiers[-1].range_label()} is not."
+                "Последний диапазон должен быть без верхней границы, чтобы цена нашлась для любого числа участников."
             )
         object.__setattr__(self, "tiers", tiers)
 
@@ -650,7 +648,7 @@ def _clean_contact_field(
     if not stripped:
         return None
     if len(stripped) > max_length:
-        raise error(f"{owner} field {field_name!r} must be at most {max_length} characters.")
+        raise error(f"Поле «{field_name}» — не длиннее {max_length} символов.")
     return stripped
 
 
@@ -689,9 +687,9 @@ class SupportingOrganization:
     def __post_init__(self) -> None:
         name = (self.name or "").strip()
         if not name:
-            raise InvalidSupportingOrganizationError("Supporting organization name must not be empty.")
+            raise InvalidSupportingOrganizationError("Укажите название организации-партнёра.")
         if len(name) > _PROFILE_SHORT_MAX:
-            raise InvalidSupportingOrganizationError(f"Supporting organization name must be at most {_PROFILE_SHORT_MAX} characters.")
+            raise InvalidSupportingOrganizationError(f"Название организации-партнёра — не длиннее {_PROFILE_SHORT_MAX} символов.")
         object.__setattr__(self, "name", name)
         object.__setattr__(self, "phone", self._clean("phone", self.phone, _PROFILE_SHORT_MAX))
         object.__setattr__(self, "email", self._clean("email", self.email, _PROFILE_SHORT_MAX))
@@ -781,28 +779,28 @@ _EMAIL_MAX_LABEL: Final = 63
 def _normalize_email(value: str) -> str:
     raw = value.strip()
     if not raw:
-        raise InvalidStaffEmailError("Email must not be empty.")
+        raise InvalidStaffEmailError("Укажите адрес почты.")
     if raw.count("@") != 1:
-        raise InvalidStaffEmailError(f"Email must contain exactly one '@': {value!r}.")
+        raise InvalidStaffEmailError("Адрес почты должен содержать один символ «@».")
     local, domain = raw.split("@")
     if not 1 <= len(local) <= _EMAIL_MAX_LOCAL:
-        raise InvalidStaffEmailError(f"Email local part must be 1-{_EMAIL_MAX_LOCAL} characters.")
+        raise InvalidStaffEmailError(f"Часть адреса до «@» — от 1 до {_EMAIL_MAX_LOCAL} символов.")
     if not _EMAIL_LOCAL_RE.match(local):
-        raise InvalidStaffEmailError(f"Email local part is invalid: {value!r}.")
+        raise InvalidStaffEmailError("Проверьте адрес почты: часть до «@» указана неверно.")
     if not 1 <= len(domain) <= _EMAIL_MAX_DOMAIN:
-        raise InvalidStaffEmailError(f"Email domain must be 1-{_EMAIL_MAX_DOMAIN} characters.")
+        raise InvalidStaffEmailError(f"Домен почты — от 1 до {_EMAIL_MAX_DOMAIN} символов.")
     labels = domain.split(".")
     if len(labels) < 2:
-        raise InvalidStaffEmailError(f"Email domain must have at least two labels: {value!r}.")
+        raise InvalidStaffEmailError("Проверьте домен почты: нужен вид «example.com».")
     for label in labels:
         if not 1 <= len(label) <= _EMAIL_MAX_LABEL:
-            raise InvalidStaffEmailError(f"Email domain label length is invalid: {value!r}.")
+            raise InvalidStaffEmailError("Проверьте домен почты: неверная длина части домена.")
         if label.startswith("-") or label.endswith("-"):
-            raise InvalidStaffEmailError(f"Email domain label must not start/end with '-': {value!r}.")
+            raise InvalidStaffEmailError("Проверьте домен почты: часть домена не может начинаться или заканчиваться дефисом.")
         if not _EMAIL_LABEL_RE.match(label):
-            raise InvalidStaffEmailError(f"Email domain label has invalid characters: {value!r}.")
+            raise InvalidStaffEmailError("Проверьте домен почты: недопустимые символы.")
     if not _EMAIL_TLD_RE.match(labels[-1]):
-        raise InvalidStaffEmailError(f"Email top-level domain is invalid: {value!r}.")
+        raise InvalidStaffEmailError("Проверьте домен почты: неверная доменная зона.")
     return f"{local.lower()}@{domain.lower()}"
 
 

@@ -58,7 +58,7 @@ class RevokeStaffInvitationHandler:
 
         invitation = self._invitations.get(invitation_id)
         if invitation is None or invitation.deleted_at is not None or invitation.organization_id != organization.id:
-            raise StaffInvitationNotFoundError("The invitation was not found.")
+            raise StaffInvitationNotFoundError("Приглашение не найдено.")
 
         with translate_domain_errors():
             events = invitation.revoke(revoked_by=revoked_by, now=now)

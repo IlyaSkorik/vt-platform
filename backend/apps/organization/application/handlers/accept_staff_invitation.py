@@ -64,7 +64,7 @@ class AcceptStaffInvitationHandler:
         token_hash = self._hasher.hash(command.raw_token)
         invitation = self._invitations.get_by_token_hash(token_hash)
         if invitation is None:
-            raise InvalidInvitationTokenError("The invitation token is invalid or has expired.")
+            raise InvalidInvitationTokenError("Ссылка приглашения недействительна или устарела.")
 
         # The seat is in the organization that issued the invitation. Reading the
         # default organization here instead put everyone who ever accepted one into
@@ -72,10 +72,10 @@ class AcceptStaffInvitationHandler:
         # the invitation preview showed them.
         organization = self._organizations.get(invitation.organization_id)
         if organization is None:
-            raise OrganizationNotFoundError("The organization that issued this invitation no longer exists.")
+            raise OrganizationNotFoundError("Организация, приславшая приглашение, больше не существует.")
 
         if invitation.email != email:
-            raise PermissionDeniedError("This invitation is not for the authenticated user.")
+            raise PermissionDeniedError("Это приглашение выписано на другую почту.")
 
         # A person is staff of one organization at a time — that is the assumption the
         # whole scoping layer rests on (`find_active_for_user` answers "which one" with
@@ -84,7 +84,7 @@ class AcceptStaffInvitationHandler:
         existing = self._memberships.find_active_for_user(accepted_by)
         if existing is not None:
             if existing.organization_id == organization.id:
-                raise UserAlreadyStaffError("This user already has an active staff membership.")
+                raise UserAlreadyStaffError("Этот пользователь уже состоит в организации.")
             raise UserAlreadyStaffError(
                 "Этот аккаунт уже состоит в другой организации. Выйдите из неё (владелец может отозвать доступ) "
                 "или примите приглашение другим аккаунтом."

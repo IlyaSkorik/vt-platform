@@ -166,13 +166,13 @@ class PersonName:
         first = self.first_name.strip()
         last = self.last_name.strip()
         if not first:
-            raise InvalidPersonNameError("First name must not be empty.")
+            raise InvalidPersonNameError("Укажите имя педагога.")
         if not last:
-            raise InvalidPersonNameError("Last name must not be empty.")
+            raise InvalidPersonNameError("Укажите фамилию педагога.")
         if len(first) > _FIRST_NAME_MAX:
-            raise InvalidPersonNameError(f"First name must be at most {_FIRST_NAME_MAX} characters.")
+            raise InvalidPersonNameError(f"Имя — не длиннее {_FIRST_NAME_MAX} символов.")
         if len(last) > _LAST_NAME_MAX:
-            raise InvalidPersonNameError(f"Last name must be at most {_LAST_NAME_MAX} characters.")
+            raise InvalidPersonNameError(f"Фамилия — не длиннее {_LAST_NAME_MAX} символов.")
         object.__setattr__(self, "first_name", first)
         object.__setattr__(self, "last_name", last)
         if self.middle_name is not None:
@@ -180,7 +180,7 @@ class PersonName:
             if not middle:
                 object.__setattr__(self, "middle_name", None)
             elif len(middle) > _MIDDLE_NAME_MAX:
-                raise InvalidPersonNameError(f"Middle name must be at most {_MIDDLE_NAME_MAX} characters.")
+                raise InvalidPersonNameError(f"Отчество — не длиннее {_MIDDLE_NAME_MAX} символов.")
             else:
                 object.__setattr__(self, "middle_name", middle)
 
@@ -205,9 +205,9 @@ class TeacherRole:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if not stripped:
-            raise InvalidTeacherRoleError("Teacher role must not be empty.")
+            raise InvalidTeacherRoleError("Укажите роль педагога.")
         if len(stripped) > _TEACHER_ROLE_MAX:
-            raise InvalidTeacherRoleError(f"Teacher role must be at most {_TEACHER_ROLE_MAX} characters.")
+            raise InvalidTeacherRoleError(f"Роль педагога — не длиннее {_TEACHER_ROLE_MAX} символов.")
         object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:
@@ -223,11 +223,11 @@ class EmailAddress:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if not stripped:
-            raise InvalidEmailAddressError("Email must not be empty.")
+            raise InvalidEmailAddressError("Укажите адрес почты.")
         if len(stripped) > _EMAIL_MAX:
-            raise InvalidEmailAddressError(f"Email must be at most {_EMAIL_MAX} characters.")
+            raise InvalidEmailAddressError(f"Адрес почты — не длиннее {_EMAIL_MAX} символов.")
         if not _EMAIL_RE.match(stripped):
-            raise InvalidEmailAddressError(f"{stripped!r} is not a valid email address.")
+            raise InvalidEmailAddressError("Проверьте адрес почты.")
         object.__setattr__(self, "value", stripped.lower())
 
     def __str__(self) -> str:
@@ -243,11 +243,11 @@ class PhoneNumber:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if not stripped:
-            raise InvalidPhoneNumberError("Phone number must not be empty.")
+            raise InvalidPhoneNumberError("Укажите номер телефона.")
         if len(stripped) > _PHONE_MAX:
-            raise InvalidPhoneNumberError(f"Phone number must be at most {_PHONE_MAX} characters.")
+            raise InvalidPhoneNumberError(f"Телефон — не длиннее {_PHONE_MAX} символов.")
         if not _PHONE_RE.match(stripped):
-            raise InvalidPhoneNumberError(f"{stripped!r} is not a valid phone number.")
+            raise InvalidPhoneNumberError("Проверьте номер телефона.")
         object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:

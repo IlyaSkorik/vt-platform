@@ -153,14 +153,14 @@ class PlatformAdministrator:
     def revoke(self, *, now: datetime) -> None:
         """Withdraw the grant, leaving the record of it behind."""
         if self._revoked_at is not None:
-            raise AdministratorAlreadyRevokedError("The platform administrator grant is already revoked.")
+            raise AdministratorAlreadyRevokedError("Права администратора уже отозваны.")
         self._revoked_at = now
         self._touch(now)
 
     def regrant(self, *, now: datetime) -> None:
         """Restore a revoked grant, rather than issuing a second one for the same account."""
         if self._revoked_at is None:
-            raise AdministratorAlreadyActiveError("The platform administrator grant is already active.")
+            raise AdministratorAlreadyActiveError("Права администратора уже выданы.")
         self._revoked_at = None
         self._granted_at = now
         self._touch(now)

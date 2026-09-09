@@ -50,12 +50,12 @@ class DiplomaService:
         :class:`SubmissionNotFoundError` / :class:`DuplicateDiplomaError`.
         """
         if not self._snapshots.template_exists(template_id):
-            raise TemplateNotFoundError("Template was not found.")
+            raise TemplateNotFoundError("Шаблон не найден.")
         if self._repository.exists_for_submission(submission_id):
-            raise DuplicateDiplomaError("This performance already has a diploma.")
+            raise DuplicateDiplomaError("По этому выступлению диплом уже выпущен.")
         built = self._snapshots.build(submission_id)
         if built is None:
-            raise SubmissionNotFoundError("Submission was not found.")
+            raise SubmissionNotFoundError("Выступление не найдено.")
 
         diploma = Diploma.create(
             diploma_id=self._repository.new_id(),
@@ -74,7 +74,7 @@ class DiplomaService:
         """Load one diploma. Raises :class:`DiplomaNotFoundError` if unknown."""
         diploma = self._repository.get(diploma_id)
         if diploma is None:
-            raise DiplomaNotFoundError("Diploma was not found.")
+            raise DiplomaNotFoundError("Диплом не найден.")
         return diploma
 
     def list_for_competition(self, competition_id: uuid.UUID) -> list[Diploma]:

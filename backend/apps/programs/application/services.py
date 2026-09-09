@@ -405,7 +405,7 @@ class ProgramService:
         for raw_key, raw_value in command.values:
             ref = ColumnRef.parse(raw_key)
             if not ref.is_custom or ref.custom_id is None:
-                raise InvalidProgramDataError(f"{raw_key!r} is not a column that can be filled in by hand.")
+                raise InvalidProgramDataError("Эту колонку нельзя заполнить вручную.")
             program.fill_cell(item_id=item_id, column_id=ref.custom_id, value=CellValue(str(raw_value)), now=now)
         self._programs.save(program)
         return self._detail(program)
@@ -443,7 +443,7 @@ class ProgramService:
     def export_pdf(self, *, program_id: str, columns: Sequence[str] = ()) -> bytes:
         """Render the programme table as a PDF document."""
         if self._tables is None:
-            raise ExportUnavailableError("No table renderer is configured for this context.")
+            raise ExportUnavailableError("Экспорт таблицы сейчас недоступен.")
         return self._tables.render(self.program_table(program_id=program_id, columns=columns))
 
     def music_archive(self, *, program_id: str) -> ProgramArchiveView:
@@ -524,7 +524,7 @@ class ProgramService:
         try:
             progress = ProgramItemProgress(str(command.progress).upper())
         except ValueError as exc:
-            raise InvalidProgramDataError(f"{command.progress!r} is not a known progress state.") from exc
+            raise InvalidProgramDataError("Неизвестный статус хода программы.") from exc
         program.set_item_progress(_uuid(command.item_id, what="itemId"), progress, now=now)
         self._programs.save(program)
         return self._public_view(program, share)
@@ -668,14 +668,14 @@ class ProgramService:
         """
         found = self._programs.get_by_slug(slug)
         if found is None:
-            raise RunningOrderNotControllableError("No programme answers to this link.")
+            raise RunningOrderNotControllableError("По этой ссылке программа не найдена.")
         program, share_id = found
         try:
             share = program.share(share_id)
         except ProgramShareNotFoundError as exc:
-            raise RunningOrderNotControllableError("No programme answers to this link.") from exc
+            raise RunningOrderNotControllableError("По этой ссылке программа не найдена.") from exc
         if not share.controls_running_order:
-            raise RunningOrderNotControllableError("This link may not change the running order.")
+            raise RunningOrderNotControllableError("По этой ссылке нельзя управлять ходом программы.")
         return program, share
 
     # ------------------------------------------------------------------
@@ -685,16 +685,16 @@ class ProgramService:
     def _load(self, program_id: str) -> Program:
         program = self._programs.get(_uuid(program_id, what="programId"))
         if program is None:
-            raise ProgramNotFoundError(f"Program {program_id} does not exist.")
+            raise ProgramNotFoundError("Программа не найдена.")
         return program
 
     def _kind(self, raw: str) -> ProgramItemKind:
         try:
             kind = ProgramItemKind(str(raw).upper())
         except ValueError as exc:
-            raise InvalidProgramDataError(f"{raw!r} is not a known program item kind.") from exc
+            raise InvalidProgramDataError("Неизвестный тип строки программы.") from exc
         if kind.binds_performance:
-            raise InvalidProgramDataError("Add a performance slot through the performance endpoint, not as a block.")
+            raise InvalidProgramDataError("Выступление добавляется отдельным действием, а не как блок программы.")
         return kind
 
     def _require_available(self, program: Program, submission_id: uuid.UUID) -> CatalogPerformance:
@@ -705,14 +705,14 @@ class ProgramService:
         ):
             if performance.submission_id == submission_id:
                 return performance
-        raise PerformanceNotAvailableError(f"Act {submission_id} is not a competing act of this program's scope.")
+        raise PerformanceNotAvailableError("Это выступление не участвует в той части фестиваля, для которой составлена программа.")
 
     def _mint_slug(self) -> PublicSlug:
         for _ in range(_SLUG_ATTEMPTS):
             candidate = self._slugs.new_slug()
             if not self._programs.slug_taken(candidate):
                 return PublicSlug(candidate)
-        raise SlugUnavailableError("Could not mint a free public slug; please retry.")
+        raise SlugUnavailableError("Не удалось создать публичную ссылку. Попробуйте ещё раз.")
 
     def _resolve_performances(self, items: Sequence[ProgramItem]) -> dict[uuid.UUID, CatalogPerformance]:
         ids = [item.submission_id for item in items if item.submission_id is not None]

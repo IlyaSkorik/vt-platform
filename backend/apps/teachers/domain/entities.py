@@ -232,7 +232,7 @@ class Teacher:
     ) -> list[DomainEvent]:
         """Replace the teacher's display/contact details (only while ACTIVE)."""
         if self._status is not TeacherStatus.ACTIVE:
-            raise TeacherNotEditableError("An archived teacher cannot be edited; reactivate it first.")
+            raise TeacherNotEditableError("Педагог в архиве — сначала верните его из архива.")
         self._name = name
         self._role = role
         self._email = email
@@ -243,7 +243,7 @@ class Teacher:
     def archive(self, *, now: datetime) -> list[DomainEvent]:
         """Archive the entry (ACTIVE -> ARCHIVED). Never physically deletes it."""
         if self._status is not TeacherStatus.ACTIVE:
-            raise IllegalTeacherStatusTransitionError(f"Only an active teacher can be archived, not one that is {self._status.value}.")
+            raise IllegalTeacherStatusTransitionError("В архив можно отправить только активного педагога.")
         self._status = TeacherStatus.ARCHIVED
         self._archived_at = now
         self._touch(now)
@@ -252,7 +252,7 @@ class Teacher:
     def reactivate(self, *, now: datetime) -> list[DomainEvent]:
         """Reactivate an archived entry (ARCHIVED -> ACTIVE)."""
         if self._status is not TeacherStatus.ARCHIVED:
-            raise IllegalTeacherStatusTransitionError(f"Only an archived teacher can be reactivated, not one that is {self._status.value}.")
+            raise IllegalTeacherStatusTransitionError("Вернуть из архива можно только архивного педагога.")
         self._status = TeacherStatus.ACTIVE
         self._archived_at = None
         self._touch(now)

@@ -372,7 +372,7 @@ class Protocol:
         for candidate in self._rows:
             if candidate.id == row_id:
                 return candidate
-        raise ProtocolRowNotFoundError(f"Row {row_id} is not part of this protocol.")
+        raise ProtocolRowNotFoundError("Этой строки нет в протоколе — обновите страницу.")
 
     def row_for_submission(self, submission_id: uuid.UUID) -> ProtocolRow | None:
         """The row for one act, or ``None`` if it has none."""
@@ -427,7 +427,7 @@ class Protocol:
         which is what a protocol assembled by hand wants.
         """
         if submission_id in self.submission_ids:
-            raise PerformanceAlreadyInProtocolError(f"Act {submission_id} already has a line in this protocol.")
+            raise PerformanceAlreadyInProtocolError("Это выступление уже есть в протоколе.")
         row = ProtocolRow(
             _id=row_id,
             _submission_id=submission_id,
@@ -458,7 +458,7 @@ class Protocol:
         """
         wanted = list(ordered_row_ids)
         if len(wanted) != len(set(wanted)) or set(wanted) != {row.id for row in self._rows}:
-            raise ReorderMismatchError("A reorder must list every row of the protocol exactly once.")
+            raise ReorderMismatchError("Порядок задан неверно: список должен содержать все строки ровно по одному разу.")
         by_id = {row.id: row for row in self._rows}
         self._rows = [by_id[row_id] for row_id in wanted]
         self._touch(now)
@@ -532,7 +532,7 @@ class Protocol:
         blanks are fine - an act that did not appear is a blank line.
         """
         if not self.decided_rows:
-            raise AwardsIncompleteError("A protocol with no results at all cannot be published.")
+            raise AwardsIncompleteError("Публиковать нечего: в протоколе не проставлено ни одного результата.")
         if self._slug is None:
             self._slug = slug
         self._published_snapshot = PublishedSnapshot(

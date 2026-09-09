@@ -142,7 +142,7 @@ class ProtocolService:
         competition_id = _uuid(command.competition_id, what="competitionId")
         nomination_id = _uuid(command.nomination_id, what="nominationId")
         if self._protocols.get_for_nomination(competition_id=competition_id, nomination_id=nomination_id) is not None:
-            raise ProtocolAlreadyExistsError("This nomination already has a protocol.")
+            raise ProtocolAlreadyExistsError("У этой номинации уже есть протокол.")
         name = command.name or self._default_name(nomination_id)
         protocol = Protocol.create(
             protocol_id=uuid.uuid4(),
@@ -489,7 +489,7 @@ class ProtocolService:
     def _load(self, protocol_id: str) -> Protocol:
         protocol = self._protocols.get(_uuid(protocol_id, what="protocolId"))
         if protocol is None:
-            raise ProtocolNotFoundError(f"Protocol {protocol_id} does not exist.")
+            raise ProtocolNotFoundError("Протокол не найден.")
         return protocol
 
     def _default_name(self, nomination_id: uuid.UUID) -> str:
@@ -558,14 +558,14 @@ class ProtocolService:
         ):
             if performance.submission_id == submission_id:
                 return performance
-        raise PerformanceNotAvailableError(f"Act {submission_id} did not compete in this protocol's nomination.")
+        raise PerformanceNotAvailableError("Это выступление не участвовало в номинации протокола.")
 
     def _mint_slug(self) -> PublicSlug:
         for _ in range(_SLUG_ATTEMPTS):
             candidate = self._slugs.new_slug()
             if not self._protocols.slug_taken(candidate):
                 return PublicSlug(candidate)
-        raise SlugUnavailableError("Could not mint a free public slug; please retry.")
+        raise SlugUnavailableError("Не удалось создать публичную ссылку. Попробуйте ещё раз.")
 
     def _resolve_performances(self, rows: Sequence[ProtocolRow]) -> dict[uuid.UUID, CatalogPerformance]:
         ids = [row.submission_id for row in rows]

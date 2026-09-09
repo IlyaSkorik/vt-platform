@@ -387,7 +387,7 @@ class User:
         """
         self._ensure_active()
         if new_email == self._email:
-            raise EmailNotChangedError("The new email is identical to the current one.")
+            raise EmailNotChangedError("Эта почта уже указана в вашем профиле.")
         events: list[DomainEvent] = [EmailChanged(aggregate_id=self._id, email=new_email, occurred_at=now)]
         self._email = new_email
         self._email_verified_at = None
@@ -398,9 +398,9 @@ class User:
         """Mark the current email verified, honouring the verification-link timeout."""
         self._ensure_active()
         if self.is_email_verified():
-            raise EmailAlreadyVerifiedError("The email address is already verified.")
+            raise EmailAlreadyVerifiedError("Почта уже подтверждена.")
         if policy.is_verification_expired(sent_at, now):
-            raise VerificationExpiredError("The email verification link has expired.")
+            raise VerificationExpiredError("Срок действия ссылки подтверждения истёк — запросите новую.")
         events: list[DomainEvent] = [EmailVerified(aggregate_id=self._id, email=self._email, occurred_at=now)]
         self._email_verified_at = now
         self._touch(now)
@@ -416,13 +416,13 @@ class User:
         """
         self._ensure_active()
         if self.is_email_verified():
-            raise EmailAlreadyVerifiedError("The email address is already verified.")
+            raise EmailAlreadyVerifiedError("Почта уже подтверждена.")
 
     def change_phone(self, new_phone: PhoneNumber, *, now: datetime) -> list[DomainEvent]:
         """Set or replace the phone number, resetting its verified status."""
         self._ensure_active()
         if self._phone is not None and new_phone == self._phone:
-            raise PhoneNotChangedError("The new phone number is identical to the current one.")
+            raise PhoneNotChangedError("Этот телефон уже указан в вашем профиле.")
         events: list[DomainEvent] = [PhoneChanged(aggregate_id=self._id, phone=new_phone, occurred_at=now)]
         self._phone = new_phone
         self._phone_verified_at = None
@@ -433,11 +433,11 @@ class User:
         """Mark the current phone verified, honouring the code lifetime."""
         self._ensure_active()
         if self._phone is None:
-            raise PhoneNotSetError("Cannot verify a phone number: none is set.")
+            raise PhoneNotSetError("Сначала укажите номер телефона.")
         if self.is_phone_verified():
-            raise PhoneAlreadyVerifiedError("The phone number is already verified.")
+            raise PhoneAlreadyVerifiedError("Телефон уже подтверждён.")
         if policy.is_code_expired(issued_at, now):
-            raise VerificationExpiredError("The phone verification code has expired.")
+            raise VerificationExpiredError("Срок действия кода истёк — запросите новый.")
         events: list[DomainEvent] = [PhoneVerified(aggregate_id=self._id, phone=self._phone, occurred_at=now)]
         self._phone_verified_at = now
         self._touch(now)
@@ -483,7 +483,7 @@ class User:
         """
         self._ensure_active()
         if policy.is_reset_expired(issued_at, now):
-            raise VerificationExpiredError("The password reset link has expired.")
+            raise VerificationExpiredError("Срок действия ссылки для смены пароля истёк — запросите новую.")
         events: list[DomainEvent] = [PasswordResetCompleted(aggregate_id=self._id, email=self._email, occurred_at=now)]
         self._password_hash = new_password_hash
         self._credentials_invalidated_at = now
@@ -509,7 +509,7 @@ class User:
         """
         self._ensure_active()
         if not policy.is_current(consent_version):
-            raise StaleConsentError(f"Cannot grant consent version {consent_version} older than the current version.")
+            raise StaleConsentError("Это согласие устарело: доступна более новая версия.")
         events: list[DomainEvent] = [
             ConsentGranted(
                 aggregate_id=self._id,
@@ -526,7 +526,7 @@ class User:
         """Revoke the currently-active consent."""
         self._ensure_active()
         if self._consent_version is None:
-            raise ConsentNotGrantedError("There is no active consent to withdraw.")
+            raise ConsentNotGrantedError("Активного согласия нет — отзывать нечего.")
         withdrawn = self._consent_version
         events: list[DomainEvent] = [
             ConsentWithdrawn(
@@ -562,7 +562,7 @@ class User:
         """Release an active lock."""
         self._ensure_active()
         if not self.is_locked(now):
-            raise UserNotLockedError("The account is not currently locked.")
+            raise UserNotLockedError("Аккаунт не заблокирован.")
         events: list[DomainEvent] = [UserUnlocked(aggregate_id=self._id, reason=reason, occurred_at=now)]
         self._locked_until = None
         self._touch(now)
@@ -583,7 +583,7 @@ class User:
     def restore(self, *, now: datetime) -> list[DomainEvent]:
         """Reactivate a soft-deleted account."""
         if self._deleted_at is None:
-            raise UserNotDeletedError("The account is not deleted; nothing to restore.")
+            raise UserNotDeletedError("Аккаунт не удалён — восстанавливать нечего.")
         events: list[DomainEvent] = [UserRestored(aggregate_id=self._id, occurred_at=now)]
         self._deleted_at = None
         self._touch(now)
@@ -644,7 +644,7 @@ class User:
     def _ensure_active(self) -> None:
         """Guard: forbid mutating a soft-deleted account (restore is the exception)."""
         if self._deleted_at is not None:
-            raise UserDeletedError(f"User {self._id} is deleted; operation not permitted.")
+            raise UserDeletedError("Аккаунт удалён — действие недоступно.")
 
     def _touch(self, now: datetime) -> None:
         """Stamp the mutation time and advance the optimistic-concurrency version."""

@@ -80,7 +80,7 @@ class RevokePlatformAdministratorHandler:
         user_id = PlatformUserId.from_string(command.user_id)
         administrator = self._administrators.find_by_user(user_id)
         if administrator is None:
-            raise PlatformAdministratorNotFoundError(f"No platform administrator grant for user {command.user_id}.")
+            raise PlatformAdministratorNotFoundError("У этого пользователя нет прав администратора платформы.")
         if administrator.is_active():
             administrator.revoke(now=now)
             self._administrators.save(administrator)

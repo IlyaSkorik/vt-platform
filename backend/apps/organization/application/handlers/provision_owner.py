@@ -61,7 +61,7 @@ class ProvisionOwnerHandler:
             user_id = StaffUserId.from_string(command.user_id)
 
         if self._memberships.exists_active(user_id=user_id, organization_id=organization.id):
-            raise UserAlreadyStaffError("This user already has an active staff membership.")
+            raise UserAlreadyStaffError("Этот пользователь уже состоит в организации.")
 
         membership_id = StaffMembershipId.from_uuid(self._uuids.new())
         membership, domain_events = StaffMembership.activate_for_owner(

@@ -281,11 +281,11 @@ def _clean_name_part(value: str) -> str:
 def _validate_name_part(value: str, *, field: str) -> str:
     cleaned = _clean_name_part(value)
     if not cleaned:
-        raise InvalidPersonNameError(f"{field} must not be empty.")
+        raise InvalidPersonNameError(f"Заполните поле «{field}».")
     if len(cleaned) > _NAME_MAX_LEN:
-        raise InvalidPersonNameError(f"{field} must be at most {_NAME_MAX_LEN} characters.")
+        raise InvalidPersonNameError(f"«{field}» — не длиннее {_NAME_MAX_LEN} символов.")
     if not _NAME_PART_RE.match(cleaned):
-        raise InvalidPersonNameError(f"{field} contains invalid characters (letters, spaces, hyphens and apostrophes only): {value!r}.")
+        raise InvalidPersonNameError(f"«{field}»: допустимы только буквы, пробелы, дефисы и апострофы.")
     return cleaned
 
 
@@ -364,7 +364,7 @@ class DateOfBirth:
         if not isinstance(self.value, date) or isinstance(self.value, datetime):
             raise InvalidDateOfBirthError("DateOfBirth must wrap a datetime.date (not a datetime).")
         if not _MIN_BIRTH_YEAR <= self.value.year <= _MAX_BIRTH_YEAR:
-            raise InvalidDateOfBirthError(f"DateOfBirth year must be between {_MIN_BIRTH_YEAR} and {_MAX_BIRTH_YEAR}, got {self.value.year}.")
+            raise InvalidDateOfBirthError(f"Год рождения — между {_MIN_BIRTH_YEAR} и {_MAX_BIRTH_YEAR}.")
 
     @classmethod
     def from_iso(cls, value: str) -> DateOfBirth:
@@ -372,7 +372,7 @@ class DateOfBirth:
         try:
             parsed = date.fromisoformat(value)
         except (ValueError, TypeError) as exc:
-            raise InvalidDateOfBirthError(f"{value!r} is not a valid ISO-8601 date.") from exc
+            raise InvalidDateOfBirthError("Проверьте дату рождения: неверный формат.") from exc
         return cls(parsed)
 
     def age_in_years(self, reference: date) -> int:
@@ -383,7 +383,7 @@ class DateOfBirth:
         surfaced as :class:`InvalidDateOfBirthError`.
         """
         if reference < self.value:
-            raise InvalidDateOfBirthError("Reference date precedes the date of birth; cannot derive a non-negative age.")
+            raise InvalidDateOfBirthError("Дата рождения позже расчётной даты — проверьте её.")
         had_birthday = (reference.month, reference.day) >= (self.value.month, self.value.day)
         return reference.year - self.value.year - (0 if had_birthday else 1)
 
@@ -476,9 +476,9 @@ class DisplayAlias:
     def __post_init__(self) -> None:
         cleaned = " ".join(self.value.split())
         if not _ALIAS_MIN_LEN <= len(cleaned) <= _ALIAS_MAX_LEN:
-            raise InvalidDisplayAliasError(f"DisplayAlias must be {_ALIAS_MIN_LEN}-{_ALIAS_MAX_LEN} characters.")
+            raise InvalidDisplayAliasError(f"Псевдоним — от {_ALIAS_MIN_LEN} до {_ALIAS_MAX_LEN} символов.")
         if not _ALIAS_RE.match(cleaned):
-            raise InvalidDisplayAliasError(f"DisplayAlias may contain letters, digits, spaces, hyphens and underscores only: {self.value!r}.")
+            raise InvalidDisplayAliasError("В псевдониме допустимы буквы, цифры, пробелы, дефисы и подчёркивания.")
         object.__setattr__(self, "value", cleaned)
 
     @classmethod
