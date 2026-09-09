@@ -893,9 +893,9 @@ class PerformanceTitle:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if not stripped:
-            raise InvalidPerformanceTitleError("Performance title must not be empty.")
+            raise InvalidPerformanceTitleError("Укажите название номера.")
         if len(stripped) > _PERFORMANCE_TITLE_MAX:
-            raise InvalidPerformanceTitleError(f"Performance title must be at most {_PERFORMANCE_TITLE_MAX} characters.")
+            raise InvalidPerformanceTitleError(f"Название номера — не длиннее {_PERFORMANCE_TITLE_MAX} символов.")
         object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:
@@ -917,9 +917,9 @@ class Duration:
         if not isinstance(self.seconds, int) or isinstance(self.seconds, bool):
             raise InvalidDurationError(f"Duration seconds must be an int, got {type(self.seconds)!r}.")
         if self.seconds <= 0:
-            raise InvalidDurationError(f"Duration must be positive, got {self.seconds} seconds.")
+            raise InvalidDurationError("Укажите длительность номера — она должна быть больше нуля.")
         if self.seconds > _DURATION_MAX_SECONDS:
-            raise InvalidDurationError(f"Duration must be at most {_DURATION_MAX_SECONDS} seconds.")
+            raise InvalidDurationError(f"Длительность номера — не больше {_DURATION_MAX_SECONDS // 60} минут.")
 
     @classmethod
     def of_seconds(cls, seconds: int) -> Duration:
@@ -958,13 +958,13 @@ class PersonName:
         first = self.first_name.strip()
         last = self.last_name.strip()
         if not first:
-            raise InvalidPersonNameError("First name must not be empty.")
+            raise InvalidPersonNameError("Укажите имя.")
         if not last:
-            raise InvalidPersonNameError("Last name must not be empty.")
+            raise InvalidPersonNameError("Укажите фамилию.")
         if len(first) > _FIRST_NAME_MAX:
-            raise InvalidPersonNameError(f"First name must be at most {_FIRST_NAME_MAX} characters.")
+            raise InvalidPersonNameError(f"Имя — не длиннее {_FIRST_NAME_MAX} символов.")
         if len(last) > _LAST_NAME_MAX:
-            raise InvalidPersonNameError(f"Last name must be at most {_LAST_NAME_MAX} characters.")
+            raise InvalidPersonNameError(f"Фамилия — не длиннее {_LAST_NAME_MAX} символов.")
         object.__setattr__(self, "first_name", first)
         object.__setattr__(self, "last_name", last)
         if self.middle_name is not None:
@@ -972,7 +972,7 @@ class PersonName:
             if not middle:
                 object.__setattr__(self, "middle_name", None)
             elif len(middle) > _MIDDLE_NAME_MAX:
-                raise InvalidPersonNameError(f"Middle name must be at most {_MIDDLE_NAME_MAX} characters.")
+                raise InvalidPersonNameError(f"Отчество — не длиннее {_MIDDLE_NAME_MAX} символов.")
             else:
                 object.__setattr__(self, "middle_name", middle)
 
@@ -1003,7 +1003,7 @@ class BirthDate:
         if not isinstance(self.value, date) or isinstance(self.value, datetime):
             raise InvalidBirthDateError("BirthDate must be a datetime.date (not a datetime).")
         if self.value.year < _EARLIEST_BIRTH_YEAR:
-            raise InvalidBirthDateError(f"BirthDate year must be {_EARLIEST_BIRTH_YEAR} or later, got {self.value.year}.")
+            raise InvalidBirthDateError(f"Проверьте дату рождения: год не может быть раньше {_EARLIEST_BIRTH_YEAR}.")
 
     def age_at(self, reference: date) -> int:
         """The age in whole years at ``reference`` (birthday-aware)."""
@@ -1031,9 +1031,9 @@ class TeacherRole:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if not stripped:
-            raise InvalidTeacherRoleError("Teacher role must not be empty.")
+            raise InvalidTeacherRoleError("Укажите роль педагога.")
         if len(stripped) > _TEACHER_ROLE_MAX:
-            raise InvalidTeacherRoleError(f"Teacher role must be at most {_TEACHER_ROLE_MAX} characters.")
+            raise InvalidTeacherRoleError(f"Роль педагога — не длиннее {_TEACHER_ROLE_MAX} символов.")
         object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:
@@ -1072,9 +1072,9 @@ class ReviewComment:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if not stripped:
-            raise InvalidReviewCommentError("Review comment must not be empty.")
+            raise InvalidReviewCommentError("Напишите комментарий для участника.")
         if len(stripped) > _REVIEW_COMMENT_MAX:
-            raise InvalidReviewCommentError(f"Review comment must be at most {_REVIEW_COMMENT_MAX} characters.")
+            raise InvalidReviewCommentError(f"Комментарий — не длиннее {_REVIEW_COMMENT_MAX} символов.")
         object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:
@@ -1128,11 +1128,11 @@ class Performance:
     def __post_init__(self) -> None:
         stripped = self.comment.strip()
         if len(stripped) > _PERFORMANCE_COMMENT_MAX:
-            raise InvalidPerformanceCommentError(f"Performance comment must be at most {_PERFORMANCE_COMMENT_MAX} characters.")
+            raise InvalidPerformanceCommentError(f"Комментарий к выступлению — не длиннее {_PERFORMANCE_COMMENT_MAX} символов.")
         object.__setattr__(self, "comment", stripped)
         ages = self.age_composition.strip()
         if len(ages) > _AGE_COMPOSITION_MAX:
-            raise InvalidAgeCompositionError(f"The age composition must be at most {_AGE_COMPOSITION_MAX} characters.")
+            raise InvalidAgeCompositionError(f"Возрастной состав — не длиннее {_AGE_COMPOSITION_MAX} символов.")
         object.__setattr__(self, "age_composition", ages)
 
     def __str__(self) -> str:
@@ -1540,9 +1540,9 @@ class OrganizationName:
     def __post_init__(self) -> None:
         stripped = self.value.strip()
         if not stripped:
-            raise InvalidOrganizationNameError("Organization name must not be empty.")
+            raise InvalidOrganizationNameError("Укажите название учебного заведения.")
         if len(stripped) > _ORGANIZATION_NAME_MAX:
-            raise InvalidOrganizationNameError(f"Organization name must be at most {_ORGANIZATION_NAME_MAX} characters.")
+            raise InvalidOrganizationNameError(f"Название учебного заведения — не длиннее {_ORGANIZATION_NAME_MAX} символов.")
         object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:

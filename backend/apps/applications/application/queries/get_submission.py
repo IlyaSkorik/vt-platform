@@ -29,7 +29,7 @@ def _ensure_can_view(submission: Submission, requested_by: str, organization: Or
         return
     if organization.can_review_submissions(reviewer_id=parse_reviewer_id(requested_by)):
         return
-    raise PermissionDeniedError("You are not permitted to view this submission.")
+    raise PermissionDeniedError("Это выступление принадлежит другому заявителю.")
 
 
 class GetSubmissionHandler:

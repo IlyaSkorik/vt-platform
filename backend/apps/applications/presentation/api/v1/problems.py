@@ -8,6 +8,7 @@ Maps the application layer's error vocabulary (each
 
 from __future__ import annotations
 
+import re
 import uuid
 from typing import Any, Final
 
@@ -20,6 +21,7 @@ __all__ = [
     "application_problem",
     "problem_response",
     "request_id",
+    "user_facing_detail",
     "validation_problem",
 ]
 
@@ -57,6 +59,59 @@ _PROBLEM_MAP: Final[dict[str, tuple[int, str, str]]] = {
 }
 
 _FALLBACK: Final[tuple[int, str, str]] = (400, "bad-request", "Bad request")
+
+#: What the participant reads when the raw error message is not addressed to them.
+#:
+#: ``title`` stays English and stable per ``type`` (API-000 §8.4 — clients key off
+#: ``type``/``code``, never off text), while ``detail`` is the one field an applicant
+#: actually sees, so it is always Russian. The domain and application layers speak
+#: English among themselves; a message written for a developer is replaced here rather
+#: than shown to somebody filling in an application.
+_RU_DETAIL: Final[dict[str, str]] = {
+    "application_not_found": "Заявка не найдена — возможно, она была удалена.",
+    "submission_not_found": "Выступление не найдено — возможно, оно было удалено.",
+    "competition_not_found": "Фестиваль не найден.",
+    "applicant_not_found": "Профиль заявителя не найден. Войдите в систему заново.",
+    "educational_organization_not_found": "Учебное заведение не найдено.",
+    "additional_service_not_found": "Дополнительная услуга не найдена.",
+    "application_reference_not_found": "Этой строки в заявке уже нет — обновите страницу.",
+    "submission_child_not_found": "Данные выступления не найдены — обновите страницу.",
+    "permission_denied": "Нет доступа к этой заявке.",
+    "invalid_input": "Проверьте заполненные поля: данные не подходят.",
+    "file_too_large": "Файл слишком большой — загрузите файл меньшего размера.",
+    "unsupported_file_type": "Такой тип файла не принимается.",
+    "competition_closed": "Приём заявок на этот фестиваль закрыт.",
+    "multiple_performances_not_allowed": "Фестиваль принимает одно выступление в заявке.",
+    "additional_service_not_available": "Эта услуга недоступна для выбранной формы участия.",
+    "deadline_passed": "Срок для этого действия истёк.",
+    "payment_receipt_required": "Нужна квитанция об оплате — прикрепите её к заявке.",
+    "parent_guardian_required": "У участника должен быть подтверждённый законный представитель.",
+    "application_state_conflict": "Действие недоступно на текущем этапе заявки — обновите страницу.",
+    "submission_state_conflict": "Действие недоступно на текущем этапе выступления — обновите страницу.",
+    "application_conflict": "Такая строка в заявке уже есть.",
+    "duplicate_child": "Эти данные в выступлении уже указаны.",
+    "application_invariant_violation": "Заявку нельзя сохранить в таком виде — проверьте её состав.",
+    "submission_invariant_violation": "Выступление нельзя сохранить в таком виде — проверьте заполненные данные.",
+    "competition_combination_not_found": "Такое сочетание жанра, номинации, возраста и формы участия фестиваль не принимает.",
+}
+
+#: The last resort, when even the code is one this edge does not know.
+_RU_FALLBACK: Final[str] = "Не удалось выполнить действие. Попробуйте ещё раз."
+
+_CYRILLIC: Final = re.compile("[А-Яа-яЁё]")
+
+
+def user_facing_detail(message: str, *, code: str) -> str:
+    """The ``detail`` to show, guaranteed Russian.
+
+    A message already written in Russian is somebody's deliberate wording for the
+    applicant and passes through untouched, specifics and all. Anything else is
+    internal prose (a domain invariant, a repository fault) and is replaced by the
+    sentence this error code deserves.
+    """
+    if message and _CYRILLIC.search(message):
+        return message
+    return _RU_DETAIL.get(code, _RU_FALLBACK)
 
 
 def request_id(request: Any) -> str:
@@ -98,7 +153,7 @@ def application_problem(exc: ApplicationError, *, instance: str, request: Any) -
         status=status,
         type_suffix=type_suffix,
         title=title,
-        detail=str(exc) or title,
+        detail=user_facing_detail(str(exc), code=exc.code),
         instance=instance,
         correlation_id=request_id(request),
     )
@@ -115,7 +170,7 @@ def validation_problem(serializer_errors: dict[str, Any], *, instance: str, requ
         status=400,
         type_suffix="validation-error",
         title="Validation failed",
-        detail="One or more fields are invalid.",
+        detail="Проверьте заполненные поля.",
         instance=instance,
         correlation_id=request_id(request),
         errors=errors,

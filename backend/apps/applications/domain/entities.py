@@ -238,6 +238,16 @@ _REVIEWABLE_STATUSES: Final = frozenset({SubmissionStatus.SUBMITTED, SubmissionS
 #: and the organizer accepted *that*.
 _LATE_ATTACHMENT_TYPES: Final = frozenset({AttachmentType.MUSIC})
 
+#: How each kind of file is named to the applicant. The enum's own values are wire
+#: codes; a person is told «фонограмма», not ``MUSIC``.
+_ATTACHMENT_LABELS_RU: Final[dict[AttachmentType, str]] = {
+    AttachmentType.MUSIC: "фонограмма",
+    AttachmentType.VIDEO: "видео",
+    AttachmentType.IMAGE: "фотография",
+    AttachmentType.DOCUMENT: "документ",
+    AttachmentType.BENEFIT: "документ на льготу",
+}
+
 #: Statuses in which a late attachment kind may still be added or removed: the entry is
 #: live. ``COMPLETED`` and ``CANCELLED`` are out — the performance took place, or there
 #: will not be one, and in both cases there is nothing left to cue.
@@ -941,7 +951,7 @@ class Submission:
             members=members,
         )
         if any(p.identity_key == candidate.identity_key for p in self._participants.values()):
-            raise DuplicateParticipantError(f"Participant {candidate.display_name!r} is already in this submission.")
+            raise DuplicateParticipantError(f"Участник «{candidate.display_name}» уже добавлен в выступление.")
         self._participants[participant_id] = candidate
         self._touch(now)
         return [ParticipantAdded(aggregate_id=self._id.value, participant_id=participant_id)]
@@ -1249,34 +1259,32 @@ class Submission:
     def _assert_submittable(self, policy: SubmissionParticipationPolicy) -> None:
         """Assert every invariant required before the submission may be submitted."""
         if self._performance is None:
-            raise PerformanceRequiredError("A submission must have a performance before it can be submitted.")
+            raise PerformanceRequiredError("Заполните выступление: жанр, название и длительность номера.")
         if not self._participants:
-            raise ParticipantRequiredError("A submission must have at least one participant before it can be submitted.")
+            raise ParticipantRequiredError("Добавьте хотя бы одного участника.")
         if policy.is_priced and self._price_snapshot is None:
-            raise PriceSnapshotRequiredError("A submission must have an immutable price snapshot before it can be submitted.")
+            raise PriceSnapshotRequiredError("Не рассчитана стоимость участия — обновите страницу и попробуйте ещё раз.")
         if not policy.is_admissible:
-            raise CombinationNotAdmissibleError("The performance's configuration combination is not admissible in this competition.")
+            raise CombinationNotAdmissibleError("Такое сочетание жанра, номинации, возраста и формы участия фестиваль не принимает.")
         if not policy.allows_participant_count(self.participant_count):
             raise ParticipantCountMismatchError(
-                f"Participant count {self.participant_count} does not match the configured group range {policy.participant_count_range}."
+                f"Число участников ({self.participant_count}) не подходит под выбранный состав: нужно {policy.participant_count_range}."
             )
         if policy.requires_age_composition and not self._performance.age_composition:
-            raise AgeCompositionRequiredError("This age category is a mixed one: state what ages the performers are.")
+            raise AgeCompositionRequiredError("Категория смешанная: укажите, участники какого возраста выходят на сцену.")
         if policy.requires_teacher and not self._teachers:
-            raise TeacherRequiredError("This competition requires a teacher to be credited before the submission can be submitted.")
+            raise TeacherRequiredError("Этот фестиваль требует указать педагога.")
         if not policy.allows_participant_comment and self._performance.comment:
-            raise ParticipantCommentNotAcceptedError("This competition does not accept a participant comment on the performance.")
+            raise ParticipantCommentNotAcceptedError("Этот фестиваль не принимает комментарий к выступлению — очистите поле комментария.")
         present_types = {attachment.type for attachment in self._attachments.values()}
         missing = policy.required_attachment_types() - present_types
         if missing:
-            kinds = ", ".join(sorted(kind.value for kind in missing))
-            raise RequiredAttachmentMissingError(f"This competition requires the following uploads before submission: {kinds}.")
+            kinds = ", ".join(sorted(_ATTACHMENT_LABELS_RU[kind] for kind in missing))
+            raise RequiredAttachmentMissingError(f"Перед подачей нужно приложить: {kinds}.")
 
     def _ensure_editable(self) -> None:
         if self._status not in _EDITABLE_STATUSES:
-            raise SubmissionNotEditableError(
-                f"Submission content can only be changed while DRAFT, SUBMITTED or REQUIRES_CORRECTION, not while {self._status.value}."
-            )
+            raise SubmissionNotEditableError("Выступление уже рассмотрено организатором — изменить его нельзя.")
 
     def _ensure_attachable(self, attachment_type: AttachmentType | None) -> None:
         """Whether a file of this kind may be attached or detached right now.
@@ -1291,9 +1299,7 @@ class Submission:
             self._ensure_editable()
             return
         if self._status not in _LIVE_STATUSES:
-            raise SubmissionNotEditableError(
-                f"A {attachment_type.value} file can only be attached while the submission is live, not while {self._status.value}."
-            )
+            raise SubmissionNotEditableError(f"Файл «{_ATTACHMENT_LABELS_RU[attachment_type]}» можно приложить, только пока заявка в работе.")
 
     def _transition_to(self, target: SubmissionStatus, *, now: datetime) -> None:
         """Move to ``target`` if the transition is legal from the current status."""
@@ -1752,17 +1758,17 @@ class Application:
         projection of it instead of importing it.
         """
         if not self._submission_refs:
-            raise NoSubmissionsError("An application must reference at least one submission before it can be submitted.")
+            raise NoSubmissionsError("В заявке нет ни одного выступления.")
         if payer_required and self._payer_name is None:
-            raise PayerRequiredError("This competition draws up documents per application and requires the payer to be named before it is submitted.")
+            raise PayerRequiredError("Укажите заказчика: фестиваль оформляет документы по заявке.")
         recorded = {consent.code for consent in self._consents}
         missing_consents = required_consent_codes - recorded
         if missing_consents:
-            raise MissingRequiredConsentError(f"The following required consents were not recorded: {', '.join(sorted(missing_consents))}.")
+            raise MissingRequiredConsentError("Подтвердите обязательные согласия — без них заявку подать нельзя.")
         selected_services = {line.service_id.json() for line in self._service_lines.values()}
         missing_services = required_service_ids - selected_services
         if missing_services:
-            raise MissingRequiredServiceError(f"The following required services were not selected: {', '.join(sorted(missing_services))}.")
+            raise MissingRequiredServiceError("Выберите обязательные дополнительные услуги фестиваля.")
         total = self._recalculate_total(now)
         self._transition_to(ApplicationStatus.SUBMITTED, now=now)
         self._submitted_at = now
@@ -1777,7 +1783,7 @@ class Application:
         review.
         """
         if not self.is_ready_for_payment():
-            raise NotAllSubmissionsApprovedError("The application is not ready for payment: not all submissions are approved.")
+            raise NotAllSubmissionsApprovedError("Оплата станет доступна, когда организатор одобрит все выступления заявки.")
         self._transition_to(ApplicationStatus.WAITING_PAYMENT, now=now)
         return [ApplicationAwaitingPayment(aggregate_id=self._id.value)]
 

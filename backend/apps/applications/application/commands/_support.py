@@ -65,20 +65,20 @@ def load_submission(repository: SubmissionRepository, submission_id: SubmissionI
     """Load the submission or raise :class:`SubmissionNotFoundError`."""
     submission = repository.get(submission_id)
     if submission is None:
-        raise SubmissionNotFoundError(f"No submission {submission_id.json()}.")
+        raise SubmissionNotFoundError("Выступление не найдено — возможно, оно было удалено.")
     return submission
 
 
 def ensure_owner(submission: Submission, actor: UserId) -> None:
     """Assert ``actor`` owns ``submission`` (the applicant), else deny."""
     if submission.applicant_id != actor:
-        raise PermissionDeniedError("Only the applicant who owns this submission may perform this action.")
+        raise PermissionDeniedError("Это выступление принадлежит другому заявителю.")
 
 
 def ensure_reviewer(organization: OrganizationReadModel, reviewer_id: ReviewerId) -> None:
     """Assert ``reviewer_id`` is authorized to act as an organizer, else deny."""
     if not organization.can_review_submissions(reviewer_id=reviewer_id):
-        raise PermissionDeniedError("This user is not authorized to review submissions.")
+        raise PermissionDeniedError("Нет прав на рассмотрение заявок.")
 
 
 def try_resubmit_after_correction_edit(*, submission: Submission, catalog: CompetitionCatalog, now: datetime) -> list[DomainEvent]:

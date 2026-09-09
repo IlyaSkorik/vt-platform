@@ -43,7 +43,7 @@ def _parse_attachment_type(raw: str) -> AttachmentType:
     try:
         return AttachmentType(raw)
     except ValueError as exc:
-        raise InvalidInputError(f"{raw!r} is not a valid attachment type.") from exc
+        raise InvalidInputError("Неизвестный тип файла.") from exc
 
 
 class AttachFileHandler:
@@ -70,7 +70,7 @@ class AttachFileHandler:
         try:
             attachment_type = AttachmentType(command.attachment_type)
         except ValueError as exc:
-            raise InvalidInputError(f"{command.attachment_type!r} is not a valid attachment type.") from exc
+            raise InvalidInputError("Неизвестный тип файла.") from exc
         attachment_id = AttachmentId.from_uuid(self._uuids.new())
         with translate_domain_errors():
             file_reference = FileReference(command.file_reference)
@@ -147,7 +147,7 @@ class UploadAttachmentHandler:
         attachment_type = _parse_attachment_type(command.attachment_type)
 
         if not self._catalog.accepts_upload(competition_id=submission.competition_id, attachment_kind=attachment_type.value, now=now):
-            raise DeadlinePassedError(f"The upload deadline for {attachment_type.value} in this competition has passed.")
+            raise DeadlinePassedError("Срок загрузки файлов этого типа истёк.")
 
         performance = submission.performance
         participation_format_id = performance.participation_format_id.json() if performance is not None else None
@@ -163,12 +163,12 @@ class UploadAttachmentHandler:
         already = submission.attached_bytes(constraints.shared_budget_kinds) if constraints.shared_budget_kinds else 0
         if already + incoming > constraints.max_bytes:
             raise FileTooLargeError(
-                f"The file is {incoming} bytes and {already} bytes are already attached; "
-                f"the maximum for {attachment_type.value} is {constraints.max_bytes} bytes in total."
+                f"Файлы этого типа занимают не больше {constraints.max_bytes // (1024 * 1024)} МБ суммарно — "
+                f"сейчас загружено {already // (1024 * 1024)} МБ и добавляется ещё {incoming // (1024 * 1024)} МБ."
             )
         extension = PurePosixPath(command.filename).suffix.lstrip(".").lower()
         if not constraints.allows_extension(extension):
-            raise UnsupportedFileTypeError(f"Files of type {extension or '(none)'!r} are not allowed for {attachment_type.value}.")
+            raise UnsupportedFileTypeError(f"Файлы «{extension or 'без расширения'}» для этого типа загрузки не принимаются.")
 
         reference = self._storage.save(content=command.content, filename=command.filename, content_type=command.content_type)
         attachment_id = AttachmentId.from_uuid(self._uuids.new())

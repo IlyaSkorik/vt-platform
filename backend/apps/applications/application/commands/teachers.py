@@ -118,7 +118,7 @@ class UpdateTeacherHandler:
         target = next((t for t in submission.teachers if t.id == target_id), None)
         if target is None:
             raise SubmissionChildNotFoundError(
-                f"No teacher {target_id.json()} in this submission.",
+                "Этого педагога нет в выступлении — обновите страницу.",
                 domain_code="TeacherNotFoundError",
             )
 

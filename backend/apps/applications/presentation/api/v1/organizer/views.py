@@ -761,7 +761,7 @@ class OrganizerProcessingActionView(_StaffView):
             elif action == "request_missing_files":
                 missing_types = request.data.get("types") or []
                 if not isinstance(missing_types, list):
-                    return Response({"detail": "types must be list"}, status=400)
+                    return Response({"detail": "Список типов документов передан неверно."}, status=400)
                 if not comment:
                     return Response({"detail": "Добавьте комментарий для участника к запросу недостающих файлов."}, status=400)
                 if not missing_types:
@@ -929,7 +929,7 @@ class OrganizerProcessingActionView(_StaffView):
                 rid = problems.request_id(request)
                 return Response({"data": body, "meta": {"requestId": rid}}, headers={"X-Request-ID": rid})
             else:
-                return Response({"detail": "Unknown action."}, status=400)
+                return Response({"detail": "Неизвестное действие."}, status=400)
         except ApplicationError as exc:
             return problems.application_problem(exc, instance=request.path, request=request)
 
@@ -951,7 +951,7 @@ class OrganizerProcessingBulkView(_StaffView):
         ids = request.data.get("ids") or []
         comment = str(request.data.get("comment", "")).strip()
         if not isinstance(ids, list) or not ids:
-            return Response({"detail": "ids required"}, status=400)
+            return Response({"detail": "Не выбрано ни одной заявки."}, status=400)
         processed: list[str] = []
         failed: list[dict[str, str]] = []
         for submission_id in [str(item) for item in ids]:

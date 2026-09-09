@@ -257,7 +257,7 @@ class OrganizerParticipantRegistryDetailView(_StaffView):
                 status=404,
                 type_suffix="not-found",
                 title="Resource not found",
-                detail="Participant was not found in your organization's registry.",
+                detail="Участник не найден в реестре вашей организации.",
                 instance=request.path,
                 correlation_id=problems.request_id(request),
             )

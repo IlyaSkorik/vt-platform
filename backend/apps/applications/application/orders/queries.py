@@ -100,7 +100,7 @@ class GetApplicationHandler:
             participation_format_id=performance.participation_format_id,
         )
         if policy is None:
-            raise CompetitionCombinationNotFoundError("The competition has no configuration for this combination.")
+            raise CompetitionCombinationNotFoundError("Такое сочетание жанра, номинации, возраста и формы участия фестиваль не принимает.")
         try:
             submission.submit(policy=policy, now=now)
         except SubmissionInvariantViolationError:
@@ -157,7 +157,7 @@ class ListApplicationsHandler:
             participation_format_id=performance.participation_format_id,
         )
         if policy is None:
-            raise CompetitionCombinationNotFoundError("The competition has no configuration for this combination.")
+            raise CompetitionCombinationNotFoundError("Такое сочетание жанра, номинации, возраста и формы участия фестиваль не принимает.")
         try:
             submission.submit(policy=policy, now=now)
         except SubmissionInvariantViolationError:

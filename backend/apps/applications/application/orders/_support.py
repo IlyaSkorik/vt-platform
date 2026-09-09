@@ -60,14 +60,14 @@ def load_application(applications: ApplicationRepository, application_id: Applic
     """Load the application or raise :class:`ApplicationNotFoundError`."""
     application = applications.get(application_id)
     if application is None:
-        raise ApplicationNotFoundError(f"No application {application_id.json()}.")
+        raise ApplicationNotFoundError("Заявка не найдена — возможно, она была удалена.")
     return application
 
 
 def ensure_owner(application: Application, actor: UserId) -> None:
     """Assert ``actor`` owns ``application`` (the applicant), else deny."""
     if application.applicant_id != actor:
-        raise PermissionDeniedError("Only the applicant who owns this application may perform this action.")
+        raise PermissionDeniedError("Эта заявка принадлежит другому заявителю.")
 
 
 def ref_from_submission(submission: Submission) -> SubmissionRef:

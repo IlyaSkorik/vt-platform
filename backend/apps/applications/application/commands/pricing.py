@@ -62,7 +62,7 @@ class CalculatePriceHandler:
         performance = submission.performance
         if performance is None:
             raise SubmissionStateConflictError(
-                "A performance must be set before the price can be calculated.",
+                "Стоимость считается после того, как выступление заполнено.",
                 domain_code="performance_not_set",
             )
 

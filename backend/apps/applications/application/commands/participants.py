@@ -54,7 +54,7 @@ def _parse_birth_date(raw: str) -> BirthDate:
     try:
         parsed = date.fromisoformat(raw)
     except (ValueError, TypeError) as exc:
-        raise InvalidInputError(f"{raw!r} is not a valid ISO-8601 date.") from exc
+        raise InvalidInputError("Проверьте дату рождения: неверный формат.") from exc
     with translate_domain_errors():
         return BirthDate(parsed)
 
@@ -63,7 +63,7 @@ def _parse_gender(raw: str) -> Gender:
     try:
         return Gender(raw)
     except ValueError as exc:
-        raise InvalidInputError(f"{raw!r} is not a valid gender.") from exc
+        raise InvalidInputError("Укажите пол участника.") from exc
 
 
 def _parse_registry_id(raw: str) -> RegistryParticipantId:
@@ -171,7 +171,7 @@ class UpdateParticipantHandler:
             target_id = ParticipantId.from_string(command.participant_id)
         if not any(p.id == target_id for p in submission.participants):
             raise SubmissionChildNotFoundError(
-                f"No participant {target_id.json()} in this submission.",
+                "Этого участника нет в выступлении — обновите страницу.",
                 domain_code="ParticipantNotFoundError",
             )
 
@@ -230,7 +230,7 @@ class SetParticipantMembersHandler:
             participant_id = ParticipantId.from_string(command.participant_id)
         if not any(p.id == participant_id for p in submission.participants):
             raise SubmissionChildNotFoundError(
-                f"No participant {participant_id.json()} in this submission.",
+                "Этого участника нет в выступлении — обновите страницу.",
                 domain_code="ParticipantNotFoundError",
             )
         with translate_domain_errors():
@@ -276,7 +276,7 @@ class SetParticipantMemberCountHandler:
             participant_id = ParticipantId.from_string(command.participant_id)
         if not any(p.id == participant_id for p in submission.participants):
             raise SubmissionChildNotFoundError(
-                f"No participant {participant_id.json()} in this submission.",
+                "Этого участника нет в выступлении — обновите страницу.",
                 domain_code="ParticipantNotFoundError",
             )
         with translate_domain_errors():

@@ -130,7 +130,7 @@ class UpdatePerformanceHandler:
         ensure_owner(submission, parse_user_id(command.requested_by))
         if submission.performance is None:
             raise SubmissionStateConflictError(
-                "There is no performance to update; set one first.",
+                "Выступление ещё не заполнено — сначала укажите жанр, название и длительность.",
                 domain_code="performance_not_set",
             )
 

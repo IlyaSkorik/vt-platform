@@ -62,11 +62,11 @@ class CreateSubmissionHandler:
             applicant_id = UserId.from_string(command.applicant_id)
 
         if not self._identity.exists(user_id=applicant_id):
-            raise ApplicantNotFoundError("The applicant does not exist.")
+            raise ApplicantNotFoundError("Профиль заявителя не найден. Войдите в систему заново.")
         if not self._catalog.exists(competition_id):
-            raise CompetitionNotFoundError(f"No competition {competition_id.json()}.")
+            raise CompetitionNotFoundError("Фестиваль не найден.")
         if not self._catalog.accepts_submissions(competition_id=competition_id, now=now):
-            raise CompetitionClosedError("This competition is not currently accepting submissions.")
+            raise CompetitionClosedError("Приём заявок на этот фестиваль закрыт.")
 
         submission_id = SubmissionId.from_uuid(self._uuids.new())
         submission, domain_events = Submission.draft(
@@ -101,7 +101,7 @@ class DeleteDraftSubmissionHandler:
         ensure_owner(submission, requested_by)
         if not submission.is_draft():
             raise SubmissionStateConflictError(
-                f"Only a draft submission can be deleted; this one is {submission.status.value}.",
+                "Удалить можно только черновик — это выступление уже подано.",
                 domain_code="draft_deletion_only",
             )
         self._submissions.delete(submission_id)

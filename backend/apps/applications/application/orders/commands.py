@@ -194,11 +194,11 @@ class CreateApplicationHandler:
             competition_id = CompetitionId.from_string(command.competition_id)
 
         if not self._identity.exists(user_id=applicant_id):
-            raise ApplicantNotFoundError("The applicant does not exist.")
+            raise ApplicantNotFoundError("Профиль заявителя не найден. Войдите в систему заново.")
         if not self._catalog.exists(competition_id):
-            raise CompetitionNotFoundError(f"No competition {competition_id.json()}.")
+            raise CompetitionNotFoundError("Фестиваль не найден.")
         if not self._catalog.accepts_submissions(competition_id=competition_id, now=now):
-            raise CompetitionClosedError("This competition is not currently accepting submissions.")
+            raise CompetitionClosedError("Приём заявок на этот фестиваль закрыт.")
 
         application, events = Application.create(
             application_id=ApplicationId.from_uuid(self._uuids.new()),
@@ -334,14 +334,12 @@ class SelectAdditionalServiceHandler:
 
         quote = self._services.get_additional_service(competition_id=application.competition_id, service_id=service_id)
         if quote is None:
-            raise AdditionalServiceNotFoundError(f"No additional service {service_id.json()} in this competition.")
+            raise AdditionalServiceNotFoundError("Такой дополнительной услуги у фестиваля нет.")
 
         order_submissions = load_order_submissions(application, self._submissions)
         applicable = _applicable_submissions(order_submissions, quote.available_format_ids)
         if quote.available_format_ids and not applicable:
-            raise AdditionalServiceNotAvailableError(
-                f"Service {service_id.json()} is not available for any participation format in this application."
-            )
+            raise AdditionalServiceNotAvailableError("Эта услуга недоступна ни для одной формы участия в заявке.")
         quantity = _billed_quantity(quote.billing_model, applicable or order_submissions)
 
         with translate_application_domain_errors():
@@ -426,7 +424,7 @@ class SelectEducationalOrganizationHandler:
 
         info = self._directory.get(organization_id=organization_id)
         if info is None:
-            raise EducationalOrganizationNotFoundError(f"No educational organization {organization_id.json()}.")
+            raise EducationalOrganizationNotFoundError("Учебное заведение не найдено.")
 
         with translate_application_domain_errors():
             order_events = application.select_educational_organization(
@@ -528,7 +526,7 @@ class SubmitApplicationHandler:
         required_services = self._services.required_service_ids(competition_id=application.competition_id, participation_format_ids=format_ids)
         receipt = self._services.receipt_requirement(competition_id=application.competition_id, participation_format_ids=format_ids)
         if receipt.required and receipt.due_at_submit and not application.has_payment_receipt:
-            raise PaymentReceiptRequiredError("This competition requires the payment receipt to be attached before the application is submitted.")
+            raise PaymentReceiptRequiredError("Фестиваль принимает заявку только с приложенной квитанцией об оплате.")
         with translate_application_domain_errors():
             order_events = application.submit(
                 required_consent_codes=required_consents,
@@ -573,7 +571,7 @@ class SubmitApplicationHandler:
         performance = submission.performance
         if performance is None:
             raise SubmissionInvariantViolationError(
-                "A submission has no performance and cannot be submitted.",
+                "В одном из выступлений не заполнен номер — заполните его перед подачей.",
                 domain_code="PerformanceRequiredError",
             )
         policy = self._catalog.participation_policy(
@@ -585,7 +583,7 @@ class SubmitApplicationHandler:
             participation_format_id=performance.participation_format_id,
         )
         if policy is None:
-            raise CompetitionCombinationNotFoundError("The competition has no configuration for this combination.")
+            raise CompetitionCombinationNotFoundError("Такое сочетание жанра, номинации, возраста и формы участия фестиваль не принимает.")
         with translate_domain_errors():
             submission_events = submission.submit(policy=policy, now=now)
         self._submissions.save(submission)
@@ -655,7 +653,7 @@ class MarkApplicationPaidHandler:
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
         if not self._catalog.accepts_payment(competition_id=application.competition_id, now=now):
-            raise DeadlinePassedError("The payment deadline for this competition has passed.")
+            raise DeadlinePassedError("Срок оплаты по этому фестивалю истёк.")
         self._ensure_receipt_present(application)
         with translate_application_domain_errors():
             order_events = application.mark_paid(now=now)
@@ -693,7 +691,7 @@ class MarkApplicationPaidHandler:
             participation_format_ids=format_ids,
         )
         if receipt.required:
-            raise PaymentReceiptRequiredError("This competition requires a payment receipt before the application can be marked paid.")
+            raise PaymentReceiptRequiredError("Отметить оплату можно только с приложенной квитанцией.")
 
 
 class CompleteApplicationHandler:
@@ -915,15 +913,15 @@ class UploadApplicationReceiptHandler:
         ensure_owner(application, parse_user_id(command.requested_by))
 
         if len(command.content) > _RECEIPT_MAX_BYTES:
-            raise FileTooLargeError(f"The receipt is {len(command.content)} bytes; the maximum is {_RECEIPT_MAX_BYTES} bytes.")
+            raise FileTooLargeError(f"Квитанция больше {_RECEIPT_MAX_BYTES // (1024 * 1024)} МБ — загрузите файл меньшего размера.")
         extension = PurePosixPath(command.filename).suffix.lstrip(".").lower()
         if extension not in _RECEIPT_ALLOWED_EXTENSIONS:
-            raise UnsupportedFileTypeError(f"Files of type {extension or '(none)'!r} are not allowed for a payment receipt.")
+            raise UnsupportedFileTypeError(f"Квитанцию в формате «{extension or 'без расширения'}» загрузить нельзя.")
         # Reject a wrong-state upload before storing so no orphan file is written; the
         # aggregate re-checks the same invariant when the receipt is actually attached.
         if not application.accepts_payment_receipt():
             raise ApplicationStateConflictError(
-                f"A payment receipt cannot be attached once the application is settled ({application.status.value}).",
+                "Заявка уже закрыта — приложить квитанцию к ней нельзя.",
                 domain_code="PaymentReceiptNotAllowedError",
             )
 

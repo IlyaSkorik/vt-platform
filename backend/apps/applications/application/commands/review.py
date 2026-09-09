@@ -90,7 +90,7 @@ class SubmitSubmissionHandler:
             nomination_id=submission.performance.nomination_id if submission.performance is not None else None,
             now=now,
         ):
-            raise CompetitionClosedError("This competition is not currently accepting submissions.")
+            raise CompetitionClosedError("Приём заявок на этот фестиваль закрыт.")
 
         performance = submission.performance
         if performance is None:
@@ -105,7 +105,7 @@ class SubmitSubmissionHandler:
                 participation_format_id=performance.participation_format_id,
             )
             if resolved is None:
-                raise CompetitionCombinationNotFoundError("The competition has no configuration for this combination.")
+                raise CompetitionCombinationNotFoundError("Такое сочетание жанра, номинации, возраста и формы участия фестиваль не принимает.")
             policy = resolved
 
         with translate_domain_errors():
