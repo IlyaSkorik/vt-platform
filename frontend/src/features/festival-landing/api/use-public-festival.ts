@@ -13,7 +13,7 @@ function unwrapFestival(body: unknown): FestivalDetail {
       return nested;
     }
   }
-  throw new Error("Unexpected public festival response shape.");
+  throw new Error("Не удалось загрузить страницу фестиваля. Попробуйте ещё раз.");
 }
 
 async function fetchPublicFestival(

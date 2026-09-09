@@ -127,7 +127,7 @@ function normalizeSectionId(sectionId: string | null | undefined): string | null
 export function findCompetitionSection(sectionId: string | null | undefined): CompetitionSection {
   const fallback = COMPETITION_SECTIONS[0];
   if (fallback == null) {
-    throw new Error("Competition sections are not configured.");
+    throw new Error("Разделы фестиваля не настроены.");
   }
   const normalized = normalizeSectionId(sectionId);
   return COMPETITION_SECTIONS.find((section) => section.id === normalized) ?? fallback;

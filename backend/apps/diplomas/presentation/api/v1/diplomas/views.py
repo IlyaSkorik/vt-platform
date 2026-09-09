@@ -286,7 +286,7 @@ class DiplomaPreviewBindingsView(_StaffView):
                 status=404,
                 type_suffix="not-found",
                 title="Resource not found",
-                detail="Application was not found.",
+                detail="Заявка не найдена.",
                 instance=request.path,
                 correlation_id=problems.request_id(request),
             )
@@ -481,7 +481,7 @@ class DiplomaRegistryDetailView(_StaffView):
                 status=404,
                 type_suffix="not-found",
                 title="Resource not found",
-                detail="Diploma was not found.",
+                detail="Документ не найден.",
                 instance=request.path,
                 correlation_id=problems.request_id(request),
             )
@@ -640,7 +640,7 @@ class DiplomaPrintJobDetailView(_StaffView):
                 status=404,
                 type_suffix="not-found",
                 title="Resource not found",
-                detail="Print job was not found.",
+                detail="Задание на печать не найдено.",
                 instance=request.path,
                 correlation_id=problems.request_id(request),
             )

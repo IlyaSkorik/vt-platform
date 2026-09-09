@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/shared/lib/zod";
 
 /**
  * Typed, validated access to build-time environment variables.

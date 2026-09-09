@@ -107,7 +107,7 @@ class UpdateOrganizationRequestSerializer(serializers.Serializer[dict[str, objec
 
     def validate(self, attrs: dict[str, object]) -> dict[str, object]:
         if not attrs:
-            raise serializers.ValidationError("Provide commissionPercent, billingModel, feeTiers, status, or a combination.")
+            raise serializers.ValidationError("Измените хотя бы одно поле: комиссию, модель оплаты, тарифы или статус.")
         attrs = _validate_terms(attrs)
         if attrs.get("billingModel") == "COMMISSION_PERCENT" and "commissionPercent" not in attrs:
             raise serializers.ValidationError({"commissionPercent": "Укажите ставку комиссии."})

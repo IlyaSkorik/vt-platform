@@ -138,7 +138,7 @@ class MyIndividualDiplomasArchiveView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
                 type_suffix="not-found",
                 title="Resource not found",
-                detail="Individual diplomas for this entry were not found.",
+                detail="Индивидуальные дипломы по этой заявке не найдены.",
                 instance=request.path,
                 correlation_id=problems.request_id(request),
             )

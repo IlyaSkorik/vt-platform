@@ -48,7 +48,7 @@ export const DEFAULT_JURY_SECTION: JurySectionId = "protocols";
 export function findJurySection(sectionId: string | null | undefined): JurySection {
   const fallback = JURY_SECTIONS[0];
   if (fallback == null) {
-    throw new Error("Jury sections are not configured.");
+    throw new Error("Разделы жюри не настроены.");
   }
   return JURY_SECTIONS.find((section) => section.id === sectionId) ?? fallback;
 }

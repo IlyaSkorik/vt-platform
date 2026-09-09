@@ -20,7 +20,7 @@ export function useLogin(): UseMutationResult<void, ApiError, LoginValues> {
     mutationFn: async ({ email, password }) => {
       const response = await createSession({ email, password });
       if (response.status !== 201) {
-        throw new Error("Unexpected response while establishing the session.");
+        throw new Error("Не удалось войти. Попробуйте ещё раз.");
       }
       tokenStore.set(response.data.data.accessToken);
     },

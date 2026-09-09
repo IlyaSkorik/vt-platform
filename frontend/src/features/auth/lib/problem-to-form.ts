@@ -1,5 +1,5 @@
 import type { FieldValues, Path, UseFormSetError } from "react-hook-form";
-import { ApiError } from "@/shared/api";
+import { ApiError, humanMessage } from "@/shared/api";
 
 /**
  * Bridge RFC 9457 Problem Details (API-000 §8) into form state.
@@ -70,5 +70,5 @@ export function formLevelMessage(error: unknown): string {
   if (error.status === 429) {
     return "Слишком много попыток. Пожалуйста, повторите позже.";
   }
-  return error.problem?.detail ?? error.problem?.title ?? error.message;
+  return humanMessage(error.problem?.detail ?? error.problem?.title, error.status);
 }

@@ -34,7 +34,7 @@ function unwrapItem<T>(body: unknown): T {
       return nested as T;
     }
   }
-  throw new Error("Unexpected diploma response.");
+  throw new Error("Не удалось загрузить документы. Попробуйте ещё раз.");
 }
 
 export const unwrapTemplateList = (body: unknown): TemplateResponse[] =>

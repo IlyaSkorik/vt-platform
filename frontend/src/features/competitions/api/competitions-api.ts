@@ -168,7 +168,7 @@ async function uploadRegulationPdf(competitionId: string, file: File): Promise<s
       .json<{ data?: { fileReference?: string } }>();
     const fileReference = response.data?.fileReference?.trim();
     if (!fileReference) {
-      throw new Error("Unexpected regulation upload response.");
+      throw new Error("Не удалось загрузить положение. Попробуйте ещё раз.");
     }
     return fileReference;
   } catch (error) {
@@ -185,7 +185,7 @@ async function uploadLandingImage(competitionId: string, file: File): Promise<st
       .json<{ data?: { fileReference?: string } }>();
     const fileReference = response.data?.fileReference?.trim();
     if (!fileReference) {
-      throw new Error("Unexpected landing image upload response.");
+      throw new Error("Не удалось загрузить изображение. Попробуйте ещё раз.");
     }
     return fileReference;
   } catch (error) {
@@ -202,7 +202,7 @@ async function uploadDocumentFile(competitionId: string, file: File): Promise<st
       .json<{ data?: { fileReference?: string } }>();
     const fileReference = response.data?.fileReference?.trim();
     if (!fileReference) {
-      throw new Error("Unexpected document upload response.");
+      throw new Error("Не удалось загрузить документ. Попробуйте ещё раз.");
     }
     return fileReference;
   } catch (error) {

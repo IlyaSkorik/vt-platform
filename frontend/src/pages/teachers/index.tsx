@@ -216,7 +216,7 @@ export function TeacherProfilePage(): React.JSX.Element {
         consentVersion: TEACHER_CONSENT.version,
       });
       if (response.status !== 201) {
-        throw new Error("Failed to create teacher");
+        throw new Error("Не удалось создать педагога. Попробуйте ещё раз.");
       }
       return response.data.data.id;
     },

@@ -299,6 +299,16 @@ Fields:
 - Every non-2xx response MUST be a Problem Details document.
 - `type` URIs MUST be stable and documented; clients key off `type`/`code`, never off `detail` text.
 - Problem responses MUST include `requestId` for support/audit correlation.
+- `detail` MUST be Russian — it is the one field a participant or an organizer reads
+  (`Accept-Language: ru-RU`, §7). `title` stays English and stable per `type`.
+- The domain and application layers keep writing English among themselves. A message
+  a person can act on ("Название номера — не длиннее 300 символов") is written in
+  Russian at the point it is raised; an internal invariant stays English, and each
+  context's `problems.py` replaces it with the Russian sentence its error code
+  deserves rather than showing it. The same guard covers DRF's own refusals
+  (`config.api_errors.exception_handler`) and the client
+  (`shared/api/error.ts` — `humanMessage`), so no English reaches a screen even when
+  the failure came from a proxy or a framework error page.
 
 ---
 

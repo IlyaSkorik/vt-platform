@@ -215,10 +215,10 @@ def _save_memberships(
             status=400,
             type_suffix="validation-error",
             title="Validation failed",
-            detail="At least one educational organization is required.",
+            detail="Укажите хотя бы одно учебное заведение.",
             instance=request.path,
             correlation_id=problems.request_id(request),
-            errors=[{"pointer": "/organizations", "code": "required", "detail": "Provide organizations."}],
+            errors=[{"pointer": "/organizations", "code": "required", "detail": "Укажите учебные заведения."}],
         )
     primary_count = sum(1 for item in organizations if bool(item.get("isPrimary")))
     if primary_count != 1:
@@ -226,10 +226,10 @@ def _save_memberships(
             status=400,
             type_suffix="validation-error",
             title="Validation failed",
-            detail="Exactly one organization must be marked as primary.",
+            detail="Отметьте одно основное учебное заведение.",
             instance=request.path,
             correlation_id=problems.request_id(request),
-            errors=[{"pointer": "/organizations", "code": "primary_invalid", "detail": "Select one primary."}],
+            errors=[{"pointer": "/organizations", "code": "primary_invalid", "detail": "Выберите одно основное."}],
         )
     organization_ids = [str(item["organizationId"]) for item in organizations]
     organizations_by_id = {
@@ -245,14 +245,14 @@ def _save_memberships(
             status=400,
             type_suffix="validation-error",
             title="Validation failed",
-            detail="One or more organizations do not exist in your directory.",
+            detail="Некоторых учебных заведений нет в вашем справочнике.",
             instance=request.path,
             correlation_id=problems.request_id(request),
             errors=[
                 {
                     "pointer": "/organizations",
                     "code": "unknown_organization",
-                    "detail": "Use organizations from your personal directory only.",
+                    "detail": "Выбирайте учебные заведения только из своего справочника.",
                 }
             ],
         )
@@ -497,7 +497,7 @@ class ParticipantRegistryDetailView(_AuthView):
                 status=404,
                 type_suffix="not-found",
                 title="Resource not found",
-                detail="Participant was not found.",
+                detail="Участник не найден.",
                 instance=request.path,
                 correlation_id=problems.request_id(request),
             )
@@ -514,7 +514,7 @@ class ParticipantRegistryDetailView(_AuthView):
                 status=404,
                 type_suffix="not-found",
                 title="Resource not found",
-                detail="Participant was not found.",
+                detail="Участник не найден.",
                 instance=request.path,
                 correlation_id=problems.request_id(request),
             )
@@ -562,7 +562,7 @@ class ParticipantRegistryDetailView(_AuthView):
                 status=404,
                 type_suffix="not-found",
                 title="Resource not found",
-                detail="Participant was not found.",
+                detail="Участник не найден.",
                 instance=request.path,
                 correlation_id=problems.request_id(request),
             )
@@ -583,7 +583,7 @@ class ParticipantArchiveView(_AuthView):
                 status=404,
                 type_suffix="not-found",
                 title="Resource not found",
-                detail="Participant was not found.",
+                detail="Участник не найден.",
                 instance=request.path,
                 correlation_id=problems.request_id(request),
             )
@@ -650,7 +650,7 @@ class EducationalOrganizationCollectionView(_AuthView):
                 status=409,
                 type_suffix="conflict",
                 title="Organization already exists",
-                detail="An organization with this name already exists in your directory.",
+                detail="Учебное заведение с таким названием уже есть в справочнике.",
                 instance=request.path,
                 correlation_id=problems.request_id(request),
             )
@@ -682,7 +682,7 @@ class EducationalOrganizationDetailView(_AuthView):
                 status=404,
                 type_suffix="not-found",
                 title="Resource not found",
-                detail="Organization was not found.",
+                detail="Учебное заведение не найдено.",
                 instance=request.path,
                 correlation_id=problems.request_id(request),
             )
@@ -701,7 +701,7 @@ class EducationalOrganizationDetailView(_AuthView):
                 status=409,
                 type_suffix="conflict",
                 title="Organization already exists",
-                detail="An organization with this name already exists in your directory.",
+                detail="Учебное заведение с таким названием уже есть в справочнике.",
                 instance=request.path,
                 correlation_id=problems.request_id(request),
             )
@@ -728,7 +728,7 @@ class EducationalOrganizationArchiveView(_AuthView):
                 status=404,
                 type_suffix="not-found",
                 title="Resource not found",
-                detail="Organization was not found.",
+                detail="Учебное заведение не найдено.",
                 instance=request.path,
                 correlation_id=problems.request_id(request),
             )

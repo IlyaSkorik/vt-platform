@@ -1,7 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MailPlus, Send, Trash2 } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
-import { z } from "zod";
 import { useAuth } from "@/app/providers";
 import { applyProblemToForm } from "@/features/auth";
 import {
@@ -13,6 +12,7 @@ import {
   useRevokeStaffInvitation,
   useStaffInvitations,
 } from "@/features/staff-invitations";
+import { z } from "@/shared/lib/zod";
 import {
   Alert,
   Badge,

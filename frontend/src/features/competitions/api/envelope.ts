@@ -34,5 +34,5 @@ export function unwrapCompetitionDetail(body: unknown): CompetitionDetail {
       return nested;
     }
   }
-  throw new Error("Unexpected competition detail response.");
+  throw new Error("Не удалось загрузить фестиваль. Попробуйте ещё раз.");
 }

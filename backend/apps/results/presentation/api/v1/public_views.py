@@ -84,7 +84,7 @@ class PublicProtocolDetailView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
                 type_suffix="not-found",
                 title="Resource not found",
-                detail="No published protocol answers to this link.",
+                detail="По этой ссылке опубликованного протокола нет.",
                 instance=request.get_full_path(),
                 correlation_id=request_id(request),
             )

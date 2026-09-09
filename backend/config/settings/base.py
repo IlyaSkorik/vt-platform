@@ -250,6 +250,9 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.CursorPagination",
     "PAGE_SIZE": 20,
     "DEFAULT_THROTTLE_RATES": {"anon": "60/min", "user": "1000/min"},
+    # Whatever DRF itself refuses (throttling, a wrong method, a malformed body) is
+    # answered in Russian too, not only what a context's problems.py renders.
+    "EXCEPTION_HANDLER": "config.api_errors.exception_handler",
 }
 
 # --- JWT (ARCH-001 §11, API-000 §17) --------------------------------------

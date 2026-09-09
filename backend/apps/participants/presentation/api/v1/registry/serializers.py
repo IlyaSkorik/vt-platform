@@ -33,7 +33,7 @@ class ParticipantRegistryWriteSerializer(serializers.Serializer[dict[str, object
         has_id = attrs.get("consentId") is not None
         has_version = attrs.get("consentVersion") not in (None, "")
         if has_id != has_version:
-            raise serializers.ValidationError({"consentVersion": "consentId and consentVersion must be provided together."})
+            raise serializers.ValidationError({"consentVersion": "Согласие передаётся вместе с его версией."})
         return attrs
 
 

@@ -13,7 +13,7 @@ function unwrapDocuments(body: unknown): MyDocument[] {
       return nested;
     }
   }
-  throw new Error("Unexpected my-documents response shape.");
+  throw new Error("Не удалось загрузить ваши документы. Попробуйте ещё раз.");
 }
 
 async function fetchMyDocuments(signal?: AbortSignal): Promise<MyDocument[]> {

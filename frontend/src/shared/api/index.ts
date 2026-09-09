@@ -9,6 +9,7 @@ export { DEFAULT_LOCALE, HEADER } from "./config";
 export { filenameFromDisposition, saveAuthenticatedDownload } from "./download";
 export {
   ApiError,
+  humanMessage,
   type ProblemDetails,
   type ProblemFieldError,
 } from "./error";

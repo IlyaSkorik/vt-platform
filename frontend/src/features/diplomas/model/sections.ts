@@ -47,7 +47,7 @@ export const DEFAULT_DIPLOMA_SECTION: DiplomaSectionId = "templates";
 export function findDiplomaSection(sectionId: string | null | undefined): DiplomaSection {
   const fallback = DIPLOMA_SECTIONS[0];
   if (fallback == null) {
-    throw new Error("Diploma sections are not configured.");
+    throw new Error("Разделы документов не настроены.");
   }
   return DIPLOMA_SECTIONS.find((section) => section.id === sectionId) ?? fallback;
 }

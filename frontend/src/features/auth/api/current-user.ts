@@ -19,5 +19,5 @@ export async function fetchCurrentUser(signal?: AbortSignal): Promise<CurrentUse
   if (response.status === 200) {
     return response.data.data;
   }
-  throw new Error("Unexpected response for the current-user request.");
+  throw new Error("Не удалось загрузить профиль. Попробуйте ещё раз.");
 }

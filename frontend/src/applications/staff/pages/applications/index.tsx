@@ -3,7 +3,7 @@ import { ChevronDown, ChevronUp, FileArchive } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { resolveMediaUrl } from "@/features/competitions/lib/media-url";
-import { apiClient } from "@/shared/api";
+import { apiClient, humanMessage } from "@/shared/api";
 import {
   Badge,
   Button,
@@ -132,11 +132,7 @@ async function runAction(
         error?: string;
       } | null;
       throw new Error(
-        body?.detail ??
-          body?.message ??
-          body?.error ??
-          body?.title ??
-          `Не удалось выполнить действие (HTTP ${response.status}).`,
+        humanMessage(body?.detail ?? body?.message ?? body?.error ?? body?.title, response.status),
       );
     }
     throw error;

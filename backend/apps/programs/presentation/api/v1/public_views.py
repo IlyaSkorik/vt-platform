@@ -154,7 +154,7 @@ class PublicProgramDetailView(APIView):
             status=status.HTTP_404_NOT_FOUND,
             type_suffix="not-found",
             title="Resource not found",
-            detail="No published program answers to this link.",
+            detail="По этой ссылке опубликованной программы нет.",
             instance=request.get_full_path(),
             correlation_id=correlation_id,
         )
@@ -177,7 +177,7 @@ class _HostView(APIView):
             status=status.HTTP_404_NOT_FOUND,
             type_suffix="not-found",
             title="Resource not found",
-            detail="No programme answers to this link.",
+            detail="По этой ссылке программа не найдена.",
             instance=request.get_full_path(),
             correlation_id=correlation_id,
         )
@@ -204,7 +204,7 @@ class PublicProgramRowProgressView(_HostView):
                 status=status.HTTP_400_BAD_REQUEST,
                 type_suffix="validation-error",
                 title="Validation failed",
-                detail="Send a known progress state.",
+                detail="Неизвестный статус хода программы.",
                 instance=request.get_full_path(),
                 correlation_id=correlation_id,
             )
@@ -244,7 +244,7 @@ class PublicProgramOrderView(_HostView):
                 status=status.HTTP_400_BAD_REQUEST,
                 type_suffix="validation-error",
                 title="Validation failed",
-                detail="Send the complete new order.",
+                detail="Передайте полный новый порядок выступлений.",
                 instance=request.get_full_path(),
                 correlation_id=correlation_id,
             )

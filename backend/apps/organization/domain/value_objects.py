@@ -529,8 +529,7 @@ class PerformanceFeeSchedule:
             if current.min_participants != expected:
                 problem = "пересекаются" if current.min_participants < expected else "оставляют разрыв"
                 raise InvalidPerformanceFeeScheduleError(
-                    f"Диапазоны {previous.range_label()} и {current.range_label()} {problem}: "
-                    f"следующий должен начинаться с {expected} участников."
+                    f"Диапазоны {previous.range_label()} и {current.range_label()} {problem}: следующий должен начинаться с {expected} участников."
                 )
         if not tiers[-1].is_open_ended:
             raise InvalidPerformanceFeeScheduleError(

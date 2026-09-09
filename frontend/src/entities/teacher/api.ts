@@ -26,7 +26,7 @@ export async function fetchTeachers(includeArchived = false): Promise<TeacherRes
 export async function fetchTeacher(teacherId: string): Promise<TeacherResource> {
   const response = await teachersRetrieve(teacherId);
   if (response.status !== 200) {
-    throw new Error("Failed to load teacher");
+    throw new Error("Не удалось загрузить педагога. Попробуйте ещё раз.");
   }
   return response.data.data;
 }

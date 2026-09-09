@@ -55,7 +55,7 @@ describe("applyProblemToForm", () => {
         type: "conflict",
         title: "Email already in use",
         status: 409,
-        detail: "An active account already exists for this email.",
+        detail: "Эта почта уже занята.",
         errors: [],
       },
     });
@@ -63,7 +63,27 @@ describe("applyProblemToForm", () => {
     const message = applyProblemToForm<TestValues>(error, { setError, knownFields: KNOWN_FIELDS });
 
     expect(setError).not.toHaveBeenCalled();
-    expect(message).toBe("An active account already exists for this email.");
+    expect(message).toBe("Эта почта уже занята.");
+  });
+
+  it("does not show the reader a message written for a developer", () => {
+    // `title` is English and stable per problem type, and a `detail` may still be
+    // internal prose from an edge outside the API's contract. Neither is shown.
+    const setError = vi.fn();
+    const error = makeApiError({
+      status: 409,
+      problem: {
+        type: "conflict",
+        title: "Conflict",
+        status: 409,
+        detail: "An active account already exists for this email.",
+        errors: [],
+      },
+    });
+
+    const message = applyProblemToForm<TestValues>(error, { setError, knownFields: KNOWN_FIELDS });
+
+    expect(message).toBe("Данные изменились — обновите страницу и повторите.");
   });
 
   it("returns a generic message for a non-ApiError", () => {

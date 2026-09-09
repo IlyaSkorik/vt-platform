@@ -321,6 +321,9 @@ export function useUpdateOrganization() {
   });
 }
 
+/** Cyrillic anywhere in a message is the sign it was written for a person to read. */
+const CYRILLIC = /[\u0400-\u04FF]/;
+
 /** The problem detail a refused platform call carries, in the operator's language. */
 export async function refusalMessage(error: unknown, fallback: string): Promise<string> {
   const response = (error as { response?: Response })?.response;
@@ -331,7 +334,10 @@ export async function refusalMessage(error: unknown, fallback: string): Promise<
     detail?: string;
     title?: string;
   } | null;
-  return body?.detail ?? body?.title ?? fallback;
+  // `title` is English and stable per problem type; only a Russian `detail` is
+  // wording meant for the operator, so anything else falls back to the caller's.
+  const said = body?.detail ?? body?.title;
+  return said && CYRILLIC.test(said) ? said : fallback;
 }
 
 /**

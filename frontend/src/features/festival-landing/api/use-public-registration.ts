@@ -15,7 +15,7 @@ function unwrapRegistration(body: unknown): Registration {
       return nested;
     }
   }
-  throw new Error("Unexpected public registration response shape.");
+  throw new Error("Не удалось загрузить условия участия. Попробуйте ещё раз.");
 }
 
 async function fetchPublicRegistration(

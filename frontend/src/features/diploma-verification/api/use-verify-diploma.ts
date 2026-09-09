@@ -13,7 +13,7 @@ function unwrapDiploma(body: unknown): VerifiedDiploma {
       return nested;
     }
   }
-  throw new Error("Unexpected diploma verification response shape.");
+  throw new Error("Не удалось проверить документ. Попробуйте ещё раз.");
 }
 
 async function fetchVerifiedDiploma(

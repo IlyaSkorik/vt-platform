@@ -61,7 +61,7 @@ class PublicDiplomaVerificationView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
                 type_suffix="not-found",
                 title="Resource not found",
-                detail="No diploma matches this verification token.",
+                detail="По этому коду документ не найден.",
                 instance=request.get_full_path(),
                 correlation_id=correlation_id,
             )

@@ -14,7 +14,7 @@ export function useVerifyEmail(): UseMutationResult<User, ApiError, string> {
     mutationFn: async (token) => {
       const response = await confirmEmailVerification({ token });
       if (response.status !== 200) {
-        throw new Error("Unexpected response while confirming the email.");
+        throw new Error("Не удалось подтвердить почту. Попробуйте ещё раз.");
       }
       return response.data.data;
     },

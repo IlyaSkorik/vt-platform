@@ -34,7 +34,7 @@ export function useRegister(): UseMutationResult<User, ApiError, RegisterValues>
         { headers: { "Idempotency-Key": crypto.randomUUID() } },
       );
       if (response.status !== 201) {
-        throw new Error("Unexpected response while registering the account.");
+        throw new Error("Не удалось создать аккаунт. Попробуйте ещё раз.");
       }
       return response.data.data;
     },

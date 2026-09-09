@@ -1,6 +1,5 @@
-import { z } from "zod";
-
 import { emailSchema, passwordSchema } from "@/features/auth";
+import { z } from "@/shared/lib/zod";
 
 /**
  * Client-side validation for the account's own settings.

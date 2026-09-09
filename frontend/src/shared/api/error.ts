@@ -89,6 +89,60 @@ export class ApiError extends Error {
 
 const STATUS_ZERO = 0;
 
+/** Cyrillic anywhere in a message is the sign it was written for a person to read. */
+const CYRILLIC = /[\u0400-\u04FF]/;
+
+/**
+ * What to show when the server's own wording cannot be shown.
+ *
+ * The API guarantees a Russian `detail` on every problem document, so this is for
+ * what falls outside that contract: a proxy's plain `502`, a Django error page, a
+ * dropped connection. `statusText` and a thrown `Error.message` are English by
+ * construction (they come from the platform, not from us), so they are never shown —
+ * the status alone tells the reader as much as they can act on.
+ */
+function fallbackMessage(status: number): string {
+  if (status === 0) {
+    return "Нет связи с сервером. Проверьте интернет и попробуйте ещё раз.";
+  }
+  if (status === 401) {
+    return "Сессия истекла — войдите заново.";
+  }
+  if (status === 403) {
+    return "Нет доступа к этому действию.";
+  }
+  if (status === 404) {
+    return "Не найдено — возможно, запись была удалена.";
+  }
+  if (status === 409) {
+    return "Данные изменились — обновите страницу и повторите.";
+  }
+  if (status === 413) {
+    return "Файл слишком большой.";
+  }
+  if (status === 429) {
+    return "Слишком много запросов. Подождите немного и повторите.";
+  }
+  if (status === 422) {
+    return "Действие сейчас недоступно: не выполнены условия.";
+  }
+  if (status >= 500) {
+    return "Сервер не ответил. Мы уже знаем о проблеме — попробуйте ещё раз позже.";
+  }
+  return "Не удалось выполнить действие. Попробуйте ещё раз.";
+}
+
+/**
+ * A server message is shown only if it is addressed to a person — that is, in Russian.
+ *
+ * Exported because the same judgement is needed wherever a response body is read
+ * outside the Ky pipeline (the platform console, the staff bulk actions): whatever
+ * the server said, the reader gets Russian.
+ */
+export function humanMessage(candidate: string | undefined, status: number): string {
+  return candidate && CYRILLIC.test(candidate) ? candidate : fallbackMessage(status);
+}
+
 /**
  * Convert any thrown Ky error into a typed {@link ApiError}. Used by the
  * client's `beforeError` hook and the Orval mutator so no raw `HTTPError`
@@ -111,7 +165,7 @@ export async function toApiError(error: unknown): Promise<ApiError> {
     // would fail. Fall back to a best-effort parse for non-Ky call sites.
     const problem =
       (requestId ? takeProblem(requestId) : undefined) ?? (await parseProblemDetails(response));
-    const message = problem?.detail ?? problem?.title ?? response.statusText ?? "Request failed";
+    const message = humanMessage(problem?.detail ?? problem?.title, response.status);
     return new ApiError(message, {
       status: response.status,
       code: problem?.code,
@@ -122,11 +176,13 @@ export async function toApiError(error: unknown): Promise<ApiError> {
   }
 
   if (error instanceof TimeoutError) {
-    return new ApiError("The request timed out.", { status: STATUS_ZERO, cause: error });
+    return new ApiError("Сервер долго не отвечает. Попробуйте ещё раз.", {
+      status: STATUS_ZERO,
+      cause: error,
+    });
   }
 
-  const message = error instanceof Error ? error.message : "A network error occurred.";
-  return new ApiError(message, { status: STATUS_ZERO, cause: error });
+  return new ApiError(fallbackMessage(STATUS_ZERO), { status: STATUS_ZERO, cause: error });
 }
 
 async function parseProblemDetails(response: Response): Promise<ProblemDetails | undefined> {
