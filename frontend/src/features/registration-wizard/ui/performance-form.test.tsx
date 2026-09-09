@@ -45,7 +45,13 @@ const AGE_FIELD_LABEL = /Возрастной состав участников/
 
 const savePerformance = vi.fn();
 
-function aRegistration({ mixedAge = false }: { mixedAge?: boolean } = {}): Registration {
+function aRegistration({
+  mixedAge = false,
+  commentEnabled = true,
+}: {
+  mixedAge?: boolean;
+  commentEnabled?: boolean;
+} = {}): Registration {
   return {
     competition: {
       id: "01900000-0000-7000-8000-0000000000ff",
@@ -58,6 +64,7 @@ function aRegistration({ mixedAge = false }: { mixedAge?: boolean } = {}): Regis
     registrationOpen: true,
     allowMultiplePerformances: true,
     collectPayerDetails: false,
+    participantCommentEnabled: commentEnabled,
     deadlines: {
       application: null,
       payment: null,
@@ -164,12 +171,18 @@ function stubHooks(submission: SubmissionResource): void {
   );
 }
 
-function renderForm({ mixedAge = false }: { mixedAge?: boolean } = {}): void {
+function renderForm({
+  mixedAge = false,
+  commentEnabled = true,
+}: {
+  mixedAge?: boolean;
+  commentEnabled?: boolean;
+} = {}): void {
   render(
     <MemoryRouter>
       <PerformanceForm
         submissionId="01900000-0000-7000-8000-00000000000a"
-        registration={aRegistration({ mixedAge })}
+        registration={aRegistration({ mixedAge, commentEnabled })}
       />
     </MemoryRouter>,
   );
@@ -195,6 +208,32 @@ describe("PerformanceForm — the applicant's note for the organizers", () => {
     // Optional: no required marker on the label.
     expect(field).not.toBeRequired();
     expect(screen.getByText(/Здесь можно указать особенности выступления/)).toBeInTheDocument();
+  });
+
+  it("is not offered at all where the festival does not accept a note", () => {
+    stubHooks(aSubmission(""));
+    renderForm({ commentEnabled: false });
+
+    expect(screen.queryByLabelText(FIELD_LABEL)).not.toBeInTheDocument();
+  });
+
+  it("clears a note written before the organizer switched the field off", async () => {
+    // The field is gone, so the applicant cannot delete the note themselves — and the
+    // backend refuses to accept a submission that still carries one. The form drops it.
+    stubHooks(aSubmission(COMMENT));
+    renderForm({ commentEnabled: false });
+
+    await waitFor(() => expect(savePerformance).toHaveBeenCalled(), { timeout: 3000 });
+    const [body] = savePerformance.mock.calls.at(-1) as [{ comment: string }];
+    expect(body.comment).toBe("");
+  });
+
+  it("saves nothing on mount where the field is off and no note was ever written", async () => {
+    stubHooks(aSubmission(""));
+    renderForm({ commentEnabled: false });
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    expect(savePerformance).not.toHaveBeenCalled();
   });
 
   it("prefills the stored note", () => {

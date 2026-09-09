@@ -58,6 +58,7 @@ const registration = {
       venueAddress: "пр. Независимости, 1",
     },
     registrationOpen: true,
+    participantCommentEnabled: true,
     deadlines: {
       application: "2026-07-15T21:00:00Z",
       payment: null,

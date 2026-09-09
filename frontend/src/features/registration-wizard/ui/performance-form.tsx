@@ -190,23 +190,37 @@ function PerformanceFormInner({
   const admissible = isFullyAdmissible(rules, selection);
   const canSave = admissible && title.trim().length > 0 && durationSeconds > 0;
 
+  // The note is offered only where the festival asks for one. Where it does not, the
+  // field is absent *and* nothing is sent: the Applications context refuses to accept
+  // a submission that still carries a comment, so a note written before the organizer
+  // switched the field off would otherwise block a submission nobody can now fix.
+  const commentEnabled = registration.participantCommentEnabled;
+  const outgoingComment = commentEnabled ? comment.trim() : "";
+
   // Autosave: persist the performance whenever a complete, admissible combination
   // differs from what is stored. Seed the ref with the mounted (persisted) state so
   // an unchanged form never re-saves, and debounce so typing does not save per key.
-  const saveSignature = canSave
-    ? [
-        title.trim(),
-        durationSeconds,
-        selection.nominationId,
-        selection.disciplineId,
-        selection.ageCategoryId,
-        selection.participantGroupId,
-        selection.participationFormatId,
-        comment.trim(),
-        ageComposition.trim(),
-      ].join("|")
-    : null;
-  const savedSignature = useRef<string | null>(saveSignature);
+  const signatureOf = (note: string): string | null =>
+    canSave
+      ? [
+          title.trim(),
+          durationSeconds,
+          selection.nominationId,
+          selection.disciplineId,
+          selection.ageCategoryId,
+          selection.participantGroupId,
+          selection.participationFormatId,
+          note,
+          ageComposition.trim(),
+        ].join("|")
+      : null;
+  const saveSignature = signatureOf(outgoingComment);
+  // Seeded from the *stored* note rather than the outgoing one: with the field
+  // switched off the two differ, and that difference is what makes the first autosave
+  // clear a note left over from when the field was still on.
+  const savedSignature = useRef<string | null>(
+    signatureOf(submission.performance?.comment?.trim() ?? ""),
+  );
   const { mutate: savePerformance } = setPerformance;
   useEffect(() => {
     if (!saveSignature || savedSignature.current === saveSignature) {
@@ -222,7 +236,7 @@ function PerformanceFormInner({
           ageCategoryId: selection.ageCategoryId as string,
           participantGroupId: selection.participantGroupId as string,
           participationFormatId: selection.participationFormatId as string,
-          comment: comment.trim(),
+          comment: outgoingComment,
           // Sent whatever the category is: a value left over from a mixed band the
           // applicant has since switched away from is harmless, and dropping it would
           // lose what they wrote if they switch back.
@@ -239,7 +253,15 @@ function PerformanceFormInner({
       );
     }, 700);
     return () => clearTimeout(handle);
-  }, [saveSignature, savePerformance, title, durationSeconds, selection, comment, ageComposition]);
+  }, [
+    saveSignature,
+    savePerformance,
+    title,
+    durationSeconds,
+    selection,
+    outgoingComment,
+    ageComposition,
+  ]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -338,15 +360,19 @@ function PerformanceFormInner({
         />
       ) : null}
 
-      <Textarea
-        label="Дополнительная информация для организаторов"
-        description="Здесь можно указать особенности выступления: выход на сцену, реквизит, оборудование, особенности фонограммы и любую другую информацию, которая поможет организаторам."
-        value={comment}
-        // The backend bounds the note, so stop at the same length rather than let a
-        // request fail: the field is a convenience, never a blocker on saving.
-        maxLength={COMMENT_MAX_LENGTH}
-        onChange={(event) => setComment(event.target.value)}
-      />
+      {/* Shown only where the organizer accepts a note, and optional wherever it is
+          shown: having something to say about the number is the exception. */}
+      {commentEnabled ? (
+        <Textarea
+          label="Дополнительная информация для организаторов"
+          description="Здесь можно указать особенности выступления: выход на сцену, реквизит, оборудование, особенности фонограммы и любую другую информацию, которая поможет организаторам."
+          value={comment}
+          // The backend bounds the note, so stop at the same length rather than let a
+          // request fail: the field is a convenience, never a blocker on saving.
+          maxLength={COMMENT_MAX_LENGTH}
+          onChange={(event) => setComment(event.target.value)}
+        />
+      ) : null}
 
       {!admissible && Object.keys(selection).length > 0 ? (
         <Alert variant="info">

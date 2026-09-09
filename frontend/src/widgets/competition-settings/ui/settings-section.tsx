@@ -585,7 +585,7 @@ export function SettingsSection({
           />
           <SwitchRow
             label="Комментарий участника"
-            description="Свободное примечание к выступлению для организаторов."
+            description="Свободное примечание к выступлению для организаторов: заявитель заполняет его по желанию. Выключите, если такие пояснения вам не нужны, — поле не покажется в заявке."
             checked={settings.participantCommentEnabled}
             disabled={isReadOnly}
             onChange={(v) => update({ participantCommentEnabled: v })}

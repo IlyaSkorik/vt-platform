@@ -15308,6 +15308,8 @@ components:
           type: boolean
         collectPayerDetails:
           type: boolean
+        participantCommentEnabled:
+          type: boolean
         deadlines:
           $ref: '#/components/schemas/RegistrationDeadlines'
         nominations:
@@ -15356,6 +15358,7 @@ components:
       - deadlines
       - disciplines
       - nominations
+      - participantCommentEnabled
       - participantGroups
       - participationFormats
       - registrationOpen

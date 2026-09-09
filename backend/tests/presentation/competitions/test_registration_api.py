@@ -132,6 +132,34 @@ def test_turning_the_payer_block_on_shows_up_in_the_projection() -> None:
     assert response.data["data"]["collectPayerDetails"] is True
 
 
+def test_the_participant_note_is_offered_by_default() -> None:
+    """The wizard renders the free-form note off this flag.
+
+    Default on: a festival that never configured anything still lets an applicant say
+    the number needs a microphone, and saying nothing stays the norm either way.
+    """
+    competition_id = _seed_competition()
+
+    response = APIClient().get(_url(competition_id))
+
+    assert response.data["data"]["participantCommentEnabled"] is True
+
+
+def test_switching_the_participant_note_off_shows_up_in_the_projection() -> None:
+    """Off means the field is not rendered at all — the Applications context refuses a
+    submission that carries a note, so the wizard must know not to offer one."""
+    from apps.competitions.infrastructure.models import CompetitionModel
+
+    competition_id = _seed_competition()
+    competition = CompetitionModel.objects.get(id=competition_id)
+    competition.settings = {**competition.settings, "schema_version": 5, "participant_comment_enabled": False}
+    competition.save(update_fields=["settings"])
+
+    response = APIClient().get(_url(competition_id))
+
+    assert response.data["data"]["participantCommentEnabled"] is False
+
+
 def test_mixed_age_category_is_projected_with_its_calculation_method() -> None:
     # The wizard asks the applicant what ages a mixed group is, so it has to be able to
     # tell a mixed band from a standard one — and to say how the organizer will read

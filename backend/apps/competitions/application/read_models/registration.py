@@ -171,6 +171,11 @@ class RegistrationView:
     #: context refuses to accept an order without that name when this is true, so the
     #: card is shown exactly when the name is a condition of submitting.
     collect_payer_details: bool
+    #: Whether the wizard offers the free-form note to the organizer. The Applications
+    #: context refuses a submission that carries a comment when this is false, so the
+    #: field is absent rather than shown and rejected. When true the note stays
+    #: optional — it is an opportunity to say something, never a question to answer.
+    participant_comment_enabled: bool
     deadlines: RegistrationDeadlinesView
     nominations: list[RegistrationNominationView] = field(default_factory=list)
     disciplines: list[RegistrationDisciplineView] = field(default_factory=list)
@@ -328,6 +333,7 @@ def project_registration(competition: Competition, *, now: datetime) -> Registra
         registration_open=competition.is_application_allowed(now),
         allow_multiple_performances=settings.allow_multiple_performances,
         collect_payer_details=settings.collect_payer_details,
+        participant_comment_enabled=settings.participant_comment_enabled,
         deadlines=RegistrationDeadlinesView(
             application=competition.deadlines.application,
             payment=competition.deadlines.payment,
