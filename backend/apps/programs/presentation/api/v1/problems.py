@@ -8,6 +8,7 @@ problem body from ad-hoc strings.
 
 from __future__ import annotations
 
+import re
 import uuid
 from typing import Any, Final
 
@@ -21,6 +22,7 @@ __all__ = [
     "problem_response",
     "program_problem",
     "request_id",
+    "user_facing_detail",
     "validation_problem",
 ]
 
@@ -46,6 +48,43 @@ _PROBLEM_MAP: Final[dict[str, tuple[int, str, str]]] = {
 }
 
 _FALLBACK: Final[tuple[int, str, str]] = (400, "bad-request", "Bad request")
+
+#: What a person reads when the raw message is not addressed to them.
+#:
+#: ``title`` stays English and stable per ``type`` (API-000 §8.4 — clients key off
+#: ``type``/``code``, never off text); ``detail`` is the field the UI actually shows,
+#: so it is always Russian. Internal prose written for a developer is replaced here
+#: rather than put in front of a user.
+_RU_DETAIL: Final[dict[str, str]] = {
+    "program_not_found": "Программа не найдена.",
+    "program_item_not_found": "Строки программы больше нет — обновите страницу.",
+    "program_share_not_found": "Публичная ссылка не найдена.",
+    "program_column_not_found": "Колонка не найдена — обновите страницу.",
+    "running_order_not_controllable": "Этой программой нельзя управлять со сцены.",
+    "invalid_program_data": "Проверьте заполненные поля: данные не подходят.",
+    "item_not_in_program": "Эти выступления не входят в программу — обновите страницу.",
+    "performance_already_in_program": "Это выступление уже стоит в программе.",
+    "performance_not_available": "Это выступление нельзя поставить в программу.",
+    "reorder_mismatch": "Порядок задан неверно: список должен содержать все строки ровно по одному разу.",
+    "slug_unavailable": "Не удалось создать публичную ссылку. Попробуйте ещё раз.",
+}
+
+#: The last resort, when even the code is one this edge does not know.
+_RU_FALLBACK: Final[str] = "Не удалось изменить программу. Попробуйте ещё раз."
+
+_CYRILLIC: Final = re.compile("[А-Яа-яЁё]")
+
+
+def user_facing_detail(message: str, *, code: str) -> str:
+    """The ``detail`` to show, guaranteed Russian.
+
+    A message already written in Russian is deliberate wording for the user and passes
+    through untouched, specifics and all; anything else is replaced by the sentence
+    this error code deserves.
+    """
+    if message and _CYRILLIC.search(message):
+        return message
+    return _RU_DETAIL.get(code, _RU_FALLBACK)
 
 
 def request_id(request: Any) -> str:
@@ -96,7 +135,7 @@ def program_problem(exc: ProgramError, *, instance: str, request: Any) -> Respon
         status=status,
         type_suffix=type_suffix,
         title=title,
-        detail=str(exc) or title,
+        detail=user_facing_detail(str(exc), code=exc.code),
         instance=instance,
         correlation_id=request_id(request),
     )
@@ -113,7 +152,7 @@ def validation_problem(serializer_errors: dict[str, Any], *, instance: str, requ
         status=400,
         type_suffix="validation-error",
         title="Validation failed",
-        detail="One or more fields are invalid.",
+        detail="Проверьте заполненные поля.",
         instance=instance,
         correlation_id=request_id(request),
         errors=errors,

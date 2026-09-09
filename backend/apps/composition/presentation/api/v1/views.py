@@ -82,7 +82,7 @@ class CurrentUserView(APIView):
         try:
             user = identity_composition.build_current_user_handler().handle(user_id)
         except UserNotFoundError:
-            return unauthorized_problem(instance=request.path, request=request, detail="User not found.")
+            return unauthorized_problem(instance=request.path, request=request, detail="Профиль пользователя не найден. Войдите в систему заново.")
         except ApplicationError as exc:
             return application_problem(exc, instance=request.path, request=request)
 

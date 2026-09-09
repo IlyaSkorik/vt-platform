@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import uuid
 from typing import Any
 
@@ -74,13 +75,45 @@ _PROBLEM_MAP = {
 }
 
 
+#: What a staff member reads when the raw message is not addressed to them. ``title``
+#: stays English and stable per ``type`` (API-000 §8.4); ``detail`` is what the UI
+#: shows, so internal English prose is replaced by the sentence the code deserves.
+_RU_DETAIL = {
+    "organization_not_found": "Организация не найдена.",
+    "staff_invitation_not_found": "Приглашение не найдено.",
+    "staff_membership_not_found": "Сотрудник не найден в организации.",
+    "invalid_input": "Проверьте заполненные поля: данные не подходят.",
+    "invalid_invitation_token": "Срок действия приглашения истёк.",
+    "user_already_staff": "Этот человек уже состоит в организации.",
+    "permission_denied": "Нет прав на это действие.",
+    "invitation_conflict": "С этим приглашением уже что-то произошло — обновите страницу.",
+    "organization_conflict": "Данные организации изменились — обновите страницу.",
+    "organization_state_conflict": "Действие недоступно на текущем этапе — обновите страницу.",
+    "invitation_state_conflict": "Приглашение уже принято или отозвано.",
+    "membership_state_conflict": "Статус сотрудника уже изменился — обновите страницу.",
+    "last_owner": "Нельзя убрать последнего владельца организации.",
+}
+
+_RU_FALLBACK = "Не удалось выполнить действие. Попробуйте ещё раз."
+
+_CYRILLIC = re.compile("[А-Яа-яЁё]")
+
+
+def _user_facing_detail(exc: ApplicationError) -> str:
+    """The ``detail`` to show, guaranteed Russian."""
+    message = str(exc)
+    if message and _CYRILLIC.search(message):
+        return message
+    return _RU_DETAIL.get(exc.code, _RU_FALLBACK)
+
+
 def application_problem(exc: ApplicationError, *, instance: str, request: Request) -> Response:
     status, type_suffix, title, code = _PROBLEM_MAP.get(exc.code, (400, "bad-request", "Bad request", None))
     return problem_response(
         status=status,
         type_suffix=type_suffix,
         title=title,
-        detail=str(exc) or title,
+        detail=_user_facing_detail(exc),
         instance=instance,
         correlation_id=request_id(request),
         code=code,

@@ -16,6 +16,7 @@ from the exception message and is never keyed off by clients.
 
 from __future__ import annotations
 
+import re
 import uuid
 from typing import Any, Final
 
@@ -33,6 +34,7 @@ __all__ = [
     "problem_response",
     "request_id",
     "unauthorized_problem",
+    "user_facing_detail",
     "validation_problem",
 ]
 
@@ -69,6 +71,49 @@ _PROBLEM_MAP: Final[dict[str, tuple[int, str, str, str | None]]] = {
 
 #: Rendering for any application error whose ``code`` is not explicitly mapped.
 _FALLBACK: Final[tuple[int, str, str, str | None]] = (400, "bad-request", "Bad request", None)
+
+#: What a person reads when the raw message is not addressed to them.
+#:
+#: ``title`` stays English and stable per ``type`` (API-000 §8.4 — clients key off
+#: ``type``/``code``, never off text); ``detail`` is the field the UI actually shows,
+#: so it is always Russian. Internal prose written for a developer is replaced here
+#: rather than put in front of a user.
+_RU_DETAIL: Final[dict[str, str]] = {
+    "invalid_credentials": "Неверная почта или пароль.",
+    "invalid_token": "Ссылка недействительна или устарела.",
+    "account_inactive": "Доступ к аккаунту приостановлен. Напишите в поддержку.",
+    "email_not_verified": "Подтвердите почту — мы отправили письмо со ссылкой.",
+    "email_already_in_use": "Эта почта уже занята.",
+    "phone_already_in_use": "Этот телефон уже занят.",
+    "weak_password": "Пароль не соответствует требованиям.",
+    "invalid_input": "Проверьте заполненные поля: данные не подходят.",
+    "invalid_verification_token": "Ссылка подтверждения недействительна или уже использована.",
+    "user_not_found": "Пользователь не найден.",
+    "user_state_conflict": "Действие сейчас недоступно — обновите страницу.",
+    "policy_violation": "Действие запрещено правилами платформы.",
+    "staff_invitation_not_found": "Приглашение не найдено.",
+    "invitation_conflict": "С этим приглашением уже что-то произошло — обновите страницу.",
+    "invalid_invitation_token": "Срок действия приглашения истёк.",
+    "permission_denied": "Нет доступа к этому разделу.",
+}
+
+#: The last resort, when even the code is one this edge does not know.
+_RU_FALLBACK: Final[str] = "Не удалось выполнить действие. Попробуйте ещё раз."
+
+_CYRILLIC: Final = re.compile("[А-Яа-яЁё]")
+
+
+def user_facing_detail(message: str, *, code: str) -> str:
+    """The ``detail`` to show, guaranteed Russian.
+
+    A message already written in Russian is deliberate wording for the user and passes
+    through untouched, specifics and all; anything else is replaced by the sentence
+    this error code deserves.
+    """
+    if message and _CYRILLIC.search(message):
+        return message
+    return _RU_DETAIL.get(code, _RU_FALLBACK)
+
 
 #: Domain-error names (carried on ``UserStateConflictError.domain_code``) that the
 #: generic ``409 conflict`` under-describes and must render as a distinct problem.
@@ -142,7 +187,7 @@ def application_problem(exc: ApplicationError, *, instance: str, request: Any) -
         status=status,
         type_suffix=type_suffix,
         title=title,
-        detail=str(exc) or title,
+        detail=user_facing_detail(str(exc), code=exc.code),
         instance=instance,
         correlation_id=request_id(request),
         code=code,
@@ -165,7 +210,7 @@ def validation_problem(serializer_errors: dict[str, Any], *, instance: str, requ
         status=400,
         type_suffix="validation-error",
         title="Validation failed",
-        detail="One or more fields are invalid.",
+        detail="Проверьте заполненные поля.",
         instance=instance,
         correlation_id=request_id(request),
         errors=errors,

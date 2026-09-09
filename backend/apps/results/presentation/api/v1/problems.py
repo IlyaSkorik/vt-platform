@@ -8,6 +8,7 @@ from ad-hoc strings.
 
 from __future__ import annotations
 
+import re
 import uuid
 from typing import Any, Final
 
@@ -21,6 +22,7 @@ __all__ = [
     "problem_response",
     "protocol_problem",
     "request_id",
+    "user_facing_detail",
     "validation_problem",
 ]
 
@@ -43,6 +45,42 @@ _PROBLEM_MAP: Final[dict[str, tuple[int, str, str]]] = {
 }
 
 _FALLBACK: Final[tuple[int, str, str]] = (400, "bad-request", "Bad request")
+
+#: What a person reads when the raw message is not addressed to them.
+#:
+#: ``title`` stays English and stable per ``type`` (API-000 §8.4 — clients key off
+#: ``type``/``code``, never off text); ``detail`` is the field the UI actually shows,
+#: so it is always Russian. Internal prose written for a developer is replaced here
+#: rather than put in front of a user.
+_RU_DETAIL: Final[dict[str, str]] = {
+    "protocol_not_found": "Протокол не найден.",
+    "protocol_row_not_found": "Строки протокола больше нет — обновите страницу.",
+    "invalid_protocol_data": "Проверьте заполненные поля: данные не подходят.",
+    "protocol_already_exists": "У этой номинации уже есть протокол.",
+    "performance_already_in_protocol": "Это выступление уже есть в протоколе.",
+    "performance_not_available": "Это выступление не участвовало в этой номинации.",
+    "reorder_mismatch": "Порядок задан неверно: список должен содержать все строки ровно по одному разу.",
+    "awards_incomplete": "Публиковать нечего: результаты не проставлены.",
+    "protocol_not_published": "Результаты ещё не опубликованы.",
+    "slug_unavailable": "Не удалось создать публичную ссылку. Попробуйте ещё раз.",
+}
+
+#: The last resort, when even the code is one this edge does not know.
+_RU_FALLBACK: Final[str] = "Не удалось изменить протокол. Попробуйте ещё раз."
+
+_CYRILLIC: Final = re.compile("[А-Яа-яЁё]")
+
+
+def user_facing_detail(message: str, *, code: str) -> str:
+    """The ``detail`` to show, guaranteed Russian.
+
+    A message already written in Russian is deliberate wording for the user and passes
+    through untouched, specifics and all; anything else is replaced by the sentence
+    this error code deserves.
+    """
+    if message and _CYRILLIC.search(message):
+        return message
+    return _RU_DETAIL.get(code, _RU_FALLBACK)
 
 
 def request_id(request: Any) -> str:
@@ -93,7 +131,7 @@ def protocol_problem(exc: ProtocolError, *, instance: str, request: Any) -> Resp
         status=status,
         type_suffix=type_suffix,
         title=title,
-        detail=str(exc) or title,
+        detail=user_facing_detail(str(exc), code=exc.code),
         instance=instance,
         correlation_id=request_id(request),
     )
@@ -110,7 +148,7 @@ def validation_problem(serializer_errors: dict[str, Any], *, instance: str, requ
         status=400,
         type_suffix="validation-error",
         title="Validation failed",
-        detail="One or more fields are invalid.",
+        detail="Проверьте заполненные поля.",
         instance=instance,
         correlation_id=request_id(request),
         errors=errors,

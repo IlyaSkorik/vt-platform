@@ -416,7 +416,7 @@ class TokenRefreshView(APIView):
             return validation_problem(serializer.errors, instance=instance, request=request)
         refresh_token = _extract_refresh_token(request, dict(serializer.validated_data))
         if refresh_token is None:
-            return unauthorized_problem(instance=instance, request=request, detail="A refresh token is required.")
+            return unauthorized_problem(instance=instance, request=request, detail="Сессия истекла — войдите заново.")
         command = RefreshTokenCommand(refresh_token=refresh_token)
         try:
             tokens = composition.build_refresh_token_handler().handle(command)

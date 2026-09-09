@@ -14,7 +14,7 @@ from __future__ import annotations
 import re
 import uuid
 from decimal import Decimal
-from typing import Any
+from typing import Any, Final
 
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework.permissions import IsAuthenticated
@@ -117,13 +117,19 @@ def _envelope(data: Any, request: Request, *, status: int = 200) -> Response:
     return Response({"data": data, "meta": {"requestId": correlation_id}}, status=status, headers={"X-Request-ID": correlation_id})
 
 
+#: Console refusals carry a domain message that may be internal English prose; the
+#: title beside it is already the Russian sentence an administrator should read, so
+#: it stands in whenever the message is not addressed to a person.
+_CYRILLIC: Final = re.compile("[А-Яа-яЁё]")
+
+
 def _problem(request: Request, detail: str, *, title: str, status: int = 400) -> Response:
     """A plain RFC 9457 refusal for a request this edge itself turns down."""
     return problem_response(
         status=status,
         type_suffix="bad-request",
         title=title,
-        detail=detail,
+        detail=detail if detail and _CYRILLIC.search(detail) else title,
         instance=request.path,
         correlation_id=request_id(request),
     )

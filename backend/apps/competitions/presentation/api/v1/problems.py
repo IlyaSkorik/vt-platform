@@ -14,6 +14,7 @@ The generic RFC 9457 plumbing (``problem_response``, ``request_id``,
 
 from __future__ import annotations
 
+import re
 from typing import Final
 
 from rest_framework.request import Request
@@ -37,7 +38,7 @@ from apps.identity.presentation.api.v1.problems import (
     validation_problem,
 )
 
-__all__ = ["competition_problem", "problem_response", "request_id", "validation_problem"]
+__all__ = ["competition_problem", "problem_response", "request_id", "user_facing_detail", "validation_problem"]
 
 #: Application-error ``code`` → ``(status, type-suffix, title)``.
 _APPLICATION_PROBLEM_MAP: Final[dict[str, tuple[int, str, str]]] = {
@@ -46,6 +47,49 @@ _APPLICATION_PROBLEM_MAP: Final[dict[str, tuple[int, str, str]]] = {
 }
 
 _APPLICATION_FALLBACK: Final[tuple[int, str, str]] = (400, "bad-request", "Bad request")
+
+#: What the organizer reads when the raw message is not addressed to them.
+#:
+#: ``title`` stays English and stable per ``type`` (API-000 §8.4); ``detail`` is what
+#: is actually shown in the settings UI, so it is always Russian. A domain invariant
+#: written for a developer is replaced by the sentence its category deserves.
+_RU_APPLICATION_DETAIL: Final[dict[str, str]] = {
+    "competition_not_found": "Фестиваль не найден.",
+    "application_error": "Не удалось выполнить действие. Попробуйте ещё раз.",
+}
+
+_RU_FALLBACK: Final[str] = "Не удалось сохранить настройки фестиваля. Попробуйте ещё раз."
+
+_CYRILLIC: Final = re.compile("[А-Яа-яЁё]")
+
+
+def _ru_domain_detail(exc: CompetitionDomainError) -> str:
+    """The Russian sentence a domain error's category deserves."""
+    if isinstance(exc, PublicationRequirementsNotMetError):
+        return "Фестиваль нельзя опубликовать: настройки заполнены не полностью."
+    if isinstance(exc, CompetitionStateError):
+        return "Действие недоступно на текущем этапе фестиваля — обновите страницу."
+    if isinstance(exc, ConfigurationReferenceError):
+        return "Этой записи в настройках уже нет — обновите страницу."
+    if isinstance(exc, ConfigurationConflictError | ConfigurationInUseError):
+        return "Такая запись уже есть или используется в других настройках."
+    if isinstance(exc, ValueObjectValidationError):
+        return "Проверьте заполненные поля: данные не подходят."
+    return _RU_FALLBACK
+
+
+def user_facing_detail(exc: ApplicationError | CompetitionDomainError) -> str:
+    """The ``detail`` to show, guaranteed Russian.
+
+    A message already written in Russian is deliberate wording for the organizer and
+    passes through untouched; anything else is internal prose and is replaced.
+    """
+    message = str(exc)
+    if message and _CYRILLIC.search(message):
+        return message
+    if isinstance(exc, ApplicationError):
+        return _RU_APPLICATION_DETAIL.get(exc.code, _RU_FALLBACK)
+    return _ru_domain_detail(exc)
 
 
 def _domain_rendering(exc: CompetitionDomainError) -> tuple[int, str, str]:
@@ -84,7 +128,7 @@ def competition_problem(
         status=status,
         type_suffix=type_suffix,
         title=title,
-        detail=str(exc) or title,
+        detail=user_facing_detail(exc),
         instance=instance,
         correlation_id=request_id(request),
     )
