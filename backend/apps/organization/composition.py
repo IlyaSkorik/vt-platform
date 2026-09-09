@@ -14,6 +14,7 @@ per call; there is no shared mutable state.
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Final
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -241,6 +242,28 @@ _RU_MONTHS = (
 )
 
 
+#: How each role is named to the person being invited.
+#:
+#: The enum's own values are authorization codes; an invitation letter has to say
+#: «Менеджер фестивалей», not ``COMPETITION_MANAGER``. The wording matches the panel's
+#: own labels (``features/staff-invitations`` → ``ROLE_LABELS``), so an invitee reads
+#: the same word in the letter and then in the interface.
+_RU_ROLES: Final[dict[StaffRole, str]] = {
+    StaffRole.OWNER: "Владелец",
+    StaffRole.DIRECTOR: "Директор",
+    StaffRole.FINANCE: "Финансы",
+    StaffRole.COMPETITION_MANAGER: "Менеджер фестивалей",
+    StaffRole.CONTENT_MANAGER: "Контент-менеджер",
+    StaffRole.MODERATOR: "Модератор",
+    StaffRole.SUPPORT: "Поддержка",
+}
+
+
+def _role_name(role: StaffRole) -> str:
+    """The role's Russian name, falling back to the code for a role added later."""
+    return _RU_ROLES.get(role, role.value)
+
+
 def _format_minsk(moment: datetime) -> str:
     """Render an instant as a human-readable Minsk-local date/time (Europe/Minsk)."""
     local = moment.astimezone(_MINSK_TZ)
@@ -263,13 +286,13 @@ class DjangoStaffInvitationEmailGateway:
         subject = "Приглашение в команду Взлёт талантов"
         expires_text = _format_minsk(expires_at)
         body = (
-            f"Вас пригласили в команду {organization_name.value} c ролью {role.value}.\n\n"
+            f"Вас пригласили в команду {organization_name.value} с ролью «{_role_name(role)}».\n\n"
             f"Ссылка для принятия приглашения: {token}\n\n"
             f"Ссылка действительна до {expires_text}."
         )
         html_body = render_transactional_email_html(
             title=subject,
-            intro=f"Вас пригласили в команду {organization_name.value} с ролью {role.value}.",
+            intro=f"Вас пригласили в команду {organization_name.value} с ролью «{_role_name(role)}».",
             details_label="Срок действия ссылки",
             details=f"До {expires_text}",
             button_label="Принять приглашение",
