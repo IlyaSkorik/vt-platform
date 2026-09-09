@@ -2160,8 +2160,8 @@
     "semantic_hash": "487b25684440af01c453a755d3aa4f25"
   },
   "backend/apps/organization/composition.py": {
-    "mtime": 1787341592.0514464,
-    "ast_hash": "a56413108e22a3f62c0699802e7350df",
+    "mtime": 1788983091.4281797,
+    "ast_hash": "cbf2a59f54b746d237962df85ae0dfec",
     "semantic_hash": ""
   },
   "backend/apps/organization/domain/__init__.py": {
@@ -9100,8 +9100,8 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/pages/organizations/index.tsx": {
-    "mtime": 1787341592.0540516,
-    "ast_hash": "6f37ebdeb44fbe84e482a386f73c9213",
+    "mtime": 1788983113.5486622,
+    "ast_hash": "df24b663c149533d11a61fa2caaf712b",
     "semantic_hash": ""
   },
   "frontend/src/features/application-phonograms/index.ts": {
@@ -10332,6 +10332,11 @@
   "frontend/src/shared/lib/zod.ts": {
     "mtime": 1788981332.0548518,
     "ast_hash": "2e8df29ac0eab9a49a66602ede0fe71f",
+    "semantic_hash": ""
+  },
+  "backend/tests/infrastructure/organization/test_invitation_email.py": {
+    "mtime": 1788983141.4104812,
+    "ast_hash": "e8e10f5788d496c8f6043c425ae62d8e",
     "semantic_hash": ""
   }
 }
