@@ -9880,13 +9880,13 @@
     "semantic_hash": ""
   },
   "frontend/src/app/analytics/trackers.test.ts": {
-    "mtime": 1786999354.0078917,
-    "ast_hash": "165b95c170bacc1ad0491038d7fb9bde",
+    "mtime": 1789051760.3256116,
+    "ast_hash": "7d21b3179e9ab85efdc1318db33bda0e",
     "semantic_hash": ""
   },
   "frontend/src/app/analytics/trackers.ts": {
-    "mtime": 1786999204.181874,
-    "ast_hash": "cc068b8b1c018af8710d5b14b270f3ae",
+    "mtime": 1789051846.5892808,
+    "ast_hash": "f2b772496c0d0b4421e5b8aa85e7ff33",
     "semantic_hash": ""
   },
   "backend/apps/diplomas/infrastructure/migrations/0019_individual_diplomas.py": {

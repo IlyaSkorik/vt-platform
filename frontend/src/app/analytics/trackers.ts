@@ -86,9 +86,20 @@ function startMetrica(counter: number): void {
   });
 }
 
-function gtag(...args: unknown[]): void {
+/**
+ * One gtag command, pushed the way gtag.js insists on receiving it.
+ *
+ * The published snippet is `function gtag(){dataLayer.push(arguments)}`, and the
+ * `arguments` there is not incidental. The tag walks `dataLayer` and treats an
+ * entry as a command only when it is an Arguments object; a plain array is taken
+ * for a data push and its command is never run. Pushing `[...args]` therefore
+ * loads gtag.js, queues everything, and sends nothing — so the real `arguments`
+ * object is what goes on the queue, rest parameters serving only to type it.
+ */
+function gtag(..._args: unknown[]): void {
   window.dataLayer = window.dataLayer ?? [];
-  window.dataLayer.push(args);
+  // biome-ignore lint/complexity/noArguments: gtag.js runs Arguments objects and ignores arrays
+  window.dataLayer.push(arguments);
 }
 
 function startGoogleAnalytics(measurementId: string): void {

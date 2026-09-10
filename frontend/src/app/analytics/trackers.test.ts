@@ -22,6 +22,20 @@ function loadedScripts(): string[] {
   return [...document.querySelectorAll("script")].map((script) => script.src);
 }
 
+/**
+ * The gtag commands sitting on `dataLayer`, as command name and arguments.
+ *
+ * Every entry is asserted to be an Arguments object first, because that is the
+ * one thing gtag.js requires and the one thing a plain array silently fails: a
+ * command pushed as an array is read as data and never executed.
+ */
+function gtagCommands(): unknown[][] {
+  return (window.dataLayer ?? []).map((entry) => {
+    expect(Object.prototype.toString.call(entry)).toBe("[object Arguments]");
+    return [...(entry as IArguments)];
+  });
+}
+
 beforeEach(() => {
   resetAnalyticsForTests();
   document.head.innerHTML = "";
@@ -55,10 +69,18 @@ describe("the counters", () => {
 
     const init = window.ym?.a?.find((call) => call[1] === "init");
     expect(init?.[2]).toMatchObject({ defer: true });
-    const config = window.dataLayer?.find(
-      (entry) => Array.isArray(entry) && entry[0] === "config",
-    ) as unknown[] | undefined;
+    const config = gtagCommands().find((command) => command[0] === "config");
+    expect(config?.[1]).toBe("G-TESTID123");
     expect(config?.[2]).toMatchObject({ send_page_view: false });
+  });
+
+  it("queues Google's commands as Arguments objects, the only form gtag.js runs", () => {
+    startAnalytics();
+    trackPageView("/festivals");
+
+    // `gtagCommands` fails the entry that is not an Arguments object; an array
+    // reaching `dataLayer` is how the tag loads and reports nothing at all.
+    expect(gtagCommands().map((command) => command[0])).toEqual(["js", "config", "event"]);
   });
 
   it("loads each tag once however often it is started", () => {
@@ -75,9 +97,7 @@ describe("the counters", () => {
 
     const hit = window.ym?.a?.find((call) => call[1] === "hit");
     expect(hit?.[2]).toBe(`${window.location.origin}/festivals?page=2`);
-    const pageView = window.dataLayer?.find(
-      (entry) => Array.isArray(entry) && entry[1] === "page_view",
-    ) as unknown[] | undefined;
+    const pageView = gtagCommands().find((command) => command[1] === "page_view");
     expect(pageView?.[2]).toMatchObject({
       page_path: "/festivals?page=2",
       page_title: "Фестивали",
