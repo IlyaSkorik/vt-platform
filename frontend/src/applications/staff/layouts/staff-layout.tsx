@@ -10,7 +10,7 @@ import {
   type StaffNavItem,
 } from "@/applications/staff/navigation";
 import { WorkspaceSwitcher } from "@/applications/workspace-switcher";
-import { ROUTES } from "@/shared/config";
+import { APP_NAME, ROUTES } from "@/shared/config";
 import { cn } from "@/shared/lib";
 import {
   BrandMark,
@@ -84,36 +84,26 @@ function StaffBreadcrumbs(): React.JSX.Element {
     competitionId != null && competitionId !== "new" && item.path === ROUTES.staffCompetitions;
 
   return (
+    // No "Панель управления" root: the sidebar already names the workspace two
+    // columns to the left, and repeating it here bought nothing but a second copy
+    // of the same words. The trail starts at the page you are actually on.
     <nav aria-label="Хлебные крошки панели управления" className="min-w-0">
       <ol className="flex items-center gap-1.5 text-sm">
-        <li>
-          <Link
-            to={ROUTES.staff}
-            className="text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            Панель управления
-          </Link>
-        </li>
         {item.path !== ROUTES.staff && (
-          <>
-            <li aria-hidden="true" className="text-muted-foreground">
-              /
-            </li>
-            <li className="min-w-0">
-              {isCompetitionWorkspace ? (
-                <Link
-                  to={ROUTES.staffCompetitions}
-                  className="block truncate text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  {item.title}
-                </Link>
-              ) : (
-                <span aria-current="page" className="block truncate font-medium text-foreground">
-                  {item.title}
-                </span>
-              )}
-            </li>
-          </>
+          <li className="min-w-0">
+            {isCompetitionWorkspace ? (
+              <Link
+                to={ROUTES.staffCompetitions}
+                className="block truncate text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {item.title}
+              </Link>
+            ) : (
+              <span aria-current="page" className="block truncate font-medium text-foreground">
+                {item.title}
+              </span>
+            )}
+          </li>
         )}
         {isCompetitionWorkspace ? (
           <>
@@ -173,9 +163,9 @@ function StaffSidebar({
           <BrandMark className="size-8 rounded-md" />
           {!collapsed && (
             <span className="flex min-w-0 flex-col">
-              <span className="truncate">Панель управления</span>
+              <span className="truncate">{APP_NAME}</span>
               <span className="truncate font-normal text-muted-foreground text-xs">
-                Staff Workspace
+                Панель управления
               </span>
             </span>
           )}
@@ -281,7 +271,7 @@ export function StaffLayout(): React.JSX.Element {
       <Drawer open={mobileOpen} onOpenChange={setMobileOpen}>
         <DrawerContent side="left" className="w-80 max-w-[86vw] gap-0 p-0">
           <div className="flex h-16 items-center border-border border-b px-4">
-            <DrawerTitle className="text-base">Панель управления</DrawerTitle>
+            <DrawerTitle className="text-base">{APP_NAME}</DrawerTitle>
             <DrawerDescription className="sr-only">Навигация панели управления</DrawerDescription>
           </div>
           <div className="p-2">

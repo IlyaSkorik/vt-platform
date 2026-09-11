@@ -226,13 +226,16 @@ export function HomePage(): React.JSX.Element {
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3">
-                        <p className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                          <CalendarDays className="size-3.5" aria-hidden="true" />
+                        {/* `flex`, not `inline-flex`: two inline-level boxes shared a line and
+                            ignored the stack's vertical rhythm, running the dates straight into
+                            the city. Each fact gets its own row. */}
+                        <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <CalendarDays className="size-3.5 shrink-0" aria-hidden="true" />
                           {formatPeriod(festival.competitionStart, festival.competitionEnd) ??
                             "Даты уточняются"}
                         </p>
-                        <p className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                          <MapPin className="size-3.5" aria-hidden="true" />
+                        <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <MapPin className="size-3.5 shrink-0" aria-hidden="true" />
                           {[festival.city, firstModeLabel(festival)].filter(Boolean).join(" · ")}
                         </p>
                         <p className="line-clamp-2 text-sm text-muted-foreground">

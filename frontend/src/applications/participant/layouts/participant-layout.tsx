@@ -81,27 +81,17 @@ function ParticipantBreadcrumbs(): React.JSX.Element {
   const item = findParticipantItem(pathname);
 
   return (
+    // No "Личный кабинет" root: the sidebar already names the workspace two
+    // columns to the left, and repeating it here bought nothing but a second copy
+    // of the same words. The trail starts at the page you are actually on.
     <nav aria-label="Хлебные крошки личного кабинета" className="min-w-0">
       <ol className="flex items-center gap-1.5 text-sm">
-        <li>
-          <Link
-            to={ROUTES.cabinet}
-            className="text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            Личный кабинет
-          </Link>
-        </li>
         {item.path !== ROUTES.cabinet && (
-          <>
-            <li aria-hidden="true" className="text-muted-foreground">
-              /
-            </li>
-            <li className="min-w-0">
-              <span aria-current="page" className="block truncate font-medium text-foreground">
-                {item.title}
-              </span>
-            </li>
-          </>
+          <li className="min-w-0">
+            <span aria-current="page" className="block truncate font-medium text-foreground">
+              {item.title}
+            </span>
+          </li>
         )}
       </ol>
     </nav>
