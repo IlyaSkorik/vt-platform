@@ -68,6 +68,10 @@ LOCAL_APPS = [
     "apps.programs",
     "apps.judging",
     "apps.results",
+    # The audience's own verdict. The one context that works without a festival
+    # on the platform: a ballot belongs to an organization, and its competition
+    # is optional (see apps/voting/apps.py).
+    "apps.voting",
     "apps.finance",
     "apps.notifications",
     "apps.analytics",
@@ -150,6 +154,7 @@ MIGRATION_MODULES = {
     "programs": "apps.programs.infrastructure.migrations",
     "results": "apps.results.infrastructure.migrations",
     "notifications": "apps.notifications.infrastructure.migrations",
+    "voting": "apps.voting.infrastructure.migrations",
 }
 
 # --- Password validation --------------------------------------------------

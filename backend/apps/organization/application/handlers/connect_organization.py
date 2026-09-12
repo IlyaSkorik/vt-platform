@@ -213,7 +213,6 @@ class ConnectOrganizationHandler:
         self._hasher = hasher
         self._events = events
 
-
     def _grant_modules(self, organization_id: OrganizationId, requested: tuple[str, ...] | None, *, now: datetime) -> list[DomainEvent]:
         """Write the organization's opening switchboard and return the events it produced.
 
