@@ -11,6 +11,7 @@ from django.contrib import admin
 
 from apps.organization.infrastructure.models import (
     OrganizationModel,
+    OrganizationModuleModel,
     StaffInvitationModel,
     StaffMembershipModel,
 )
@@ -30,6 +31,7 @@ class _ReadOnlyTimestampsAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
 admin.site.register(
     [
         OrganizationModel,
+        OrganizationModuleModel,
         StaffMembershipModel,
         StaffInvitationModel,
     ],

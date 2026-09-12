@@ -171,6 +171,8 @@ from apps.competitions.presentation.scope import (
     may_reach_competition,
 )
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
+from apps.organization.domain.value_objects import OrganizationModule
+from apps.organization.presentation.permissions import IsModuleEnabled
 
 from .serializers import (
     AddAdditionalServiceSerializer,
@@ -264,7 +266,7 @@ class CompetitionViewSet(viewsets.ViewSet):
     """
 
     authentication_classes = (CredentialAwareJWTAuthentication,)
-    permission_classes: tuple[type[BasePermission], ...] = (IsAuthenticated, IsOrganizationStaff)
+    permission_classes: tuple[type[BasePermission], ...] = (IsAuthenticated, IsOrganizationStaff, IsModuleEnabled.of(OrganizationModule.COMPETITIONS))
 
     # ------------------------------------------------------------------
     # Organization scoping

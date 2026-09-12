@@ -52,6 +52,7 @@ CurrentUserResourceSerializer = inline_serializer(
         "user": UserResourceSerializer(),
         "staffMembership": StaffMembershipSerializer(allow_null=True),
         "platformAdmin": serializers.BooleanField(),
+        "enabledModules": serializers.ListField(child=serializers.CharField()),
     },
 )
 

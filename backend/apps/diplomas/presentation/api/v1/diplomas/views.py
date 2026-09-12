@@ -71,7 +71,8 @@ from apps.diplomas.presentation.api.v1.diplomas.serializers import (
 )
 from apps.diplomas.presentation.scope import callers_scope, competition_organizer_id
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
-from apps.organization.presentation.permissions import IsOrganizationStaff
+from apps.organization.domain.value_objects import OrganizationModule
+from apps.organization.presentation.permissions import IsModuleEnabled, IsOrganizationStaff
 from apps.platform.presentation.permissions import IsPlatformAdministrator
 
 _TAG = "Diplomas"
@@ -83,7 +84,7 @@ class _StaffView(APIView):
     # Staff of an organization, **or** the platform operator. The operator is staff
     # of nobody, so `IsOrganizationStaff` alone would refuse them — and then the
     # unrestricted branch of every scope below would be unreachable code.
-    permission_classes = (IsAuthenticated, IsOrganizationStaff | IsPlatformAdministrator)
+    permission_classes = (IsAuthenticated, IsOrganizationStaff | IsPlatformAdministrator, IsModuleEnabled.of(OrganizationModule.DIPLOMAS))
 
 
 # ----------------------------------------------------------------------------

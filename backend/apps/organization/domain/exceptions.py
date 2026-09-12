@@ -105,6 +105,14 @@ class InvalidInvitationTokenHashError(ValueObjectValidationError):
     """The provided value is not a valid invitation token hash (SHA-256 hex digest)."""
 
 
+class InvalidOrganizationModuleError(ValueObjectValidationError):
+    """The value is not one of the platform's switchable modules."""
+
+
+class InvalidModuleEntitlementIdError(ValueObjectValidationError):
+    """The value is not a valid module-entitlement identity."""
+
+
 class PolicyConfigurationError(OrganizationDomainError, ValueError):
     """Raised when a business policy is constructed with invalid configuration.
 

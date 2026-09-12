@@ -1,6 +1,6 @@
 """Domain entities (aggregate roots) for the Organization bounded context.
 
-Three aggregate roots, each its own consistency boundary and its own persistence
+Four aggregate roots, each its own consistency boundary and its own persistence
 table. They reference one another and the Identity user **by id only** (a
 value object wrapping a UUID) — never by object reference or foreign key —
 keeping each aggregate independently loadable and the contexts decoupled.
@@ -8,6 +8,7 @@ keeping each aggregate independently loadable and the contexts decoupled.
 * :class:`Organization`    — the singleton operating organization ("Взлёт талантов").
 * :class:`StaffMembership` — the authorization fact: a user's role over the org.
 * :class:`StaffInvitation` — a pending, email-based grant awaiting acceptance.
+* :class:`ModuleEntitlement` — whether the organization holds one sellable module.
 
 **Pure domain code** (ARCH-001 §4.1, §7.2): standard library only — no Django,
 no ORM, no clock, no IO. Time is always supplied by the caller (``now``).
@@ -35,6 +36,8 @@ from .events import (
     OrganizationCommissionRateChanged,
     OrganizationConnected,
     OrganizationFeeScheduleChanged,
+    OrganizationModuleDisabled,
+    OrganizationModuleEnabled,
     OrganizationProfileUpdated,
     OrganizationReactivated,
     OrganizationRenamed,
@@ -64,7 +67,9 @@ from .value_objects import (
     CommissionRate,
     InvitationTokenHash,
     MembershipStatus,
+    ModuleEntitlementId,
     OrganizationId,
+    OrganizationModule,
     OrganizationName,
     OrganizationProfile,
     OrganizationSlug,
@@ -78,7 +83,7 @@ from .value_objects import (
     SupportingOrganization,
 )
 
-__all__ = ["Organization", "StaffInvitation", "StaffMembership"]
+__all__ = ["ModuleEntitlement", "Organization", "StaffInvitation", "StaffMembership"]
 
 #: Opaque capability token proving construction went through a factory. Held only
 #: by this module, so factories can pass it and nobody else can.
@@ -986,3 +991,243 @@ class StaffInvitation:
 
     def __repr__(self) -> str:
         return f"StaffInvitation(id={self._id!r}, email={self._email.value!r}, role={self._role}, pending={self.is_pending()})"
+
+
+@dataclass(slots=True, eq=False, repr=False)
+class ModuleEntitlement:
+    """Whether one organization holds one sellable module of the platform.
+
+    One row per organization per :class:`~apps.organization.domain.value_objects.
+    OrganizationModule`, rather than a set of flags on the organization itself.
+    The reason is that an entitlement is a *commercial* fact and needs a history:
+    when the module was switched on, and by which operator. A flag bag on the
+    organization row answers "is it on now" and nothing else, and is overwritten
+    wholesale by the next edit of the billing terms, which happen to live on the
+    same row.
+
+    Absence of a row means the module is not held. That matters: the entitlement
+    table is only ever consulted through the read service, which treats "no row"
+    and "row with ``enabled=False``" identically, so an organization connected
+    before a module existed is simply without it rather than in an unknown state.
+
+    Toggling is idempotent — re-enabling an enabled module returns no events and
+    leaves the original ``enabled_at`` alone, because the date the organization
+    started paying for something must not be moved by a stray click.
+    """
+
+    _token: InitVar[object]
+    _id: ModuleEntitlementId
+    _organization_id: OrganizationId
+    _module: OrganizationModule
+    _enabled: bool
+    _created_at: datetime
+    _updated_at: datetime
+    _enabled_at: datetime | None = None
+    _enabled_by: StaffUserId | None = None
+    _disabled_at: datetime | None = None
+    _disabled_by: StaffUserId | None = None
+    _deleted_at: datetime | None = None
+    _version: int = 1
+
+    def __post_init__(self, _token: object) -> None:
+        if _token is not _CREATION_TOKEN:
+            raise DirectConstructionError("ModuleEntitlement must be created via grant() or rehydrate().")
+
+    # ------------------------------------------------------------------
+    # Factories
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def grant(
+        cls,
+        *,
+        entitlement_id: ModuleEntitlementId,
+        organization_id: OrganizationId,
+        module: OrganizationModule,
+        granted_by: StaffUserId | None,
+        now: datetime,
+    ) -> tuple[ModuleEntitlement, list[DomainEvent]]:
+        """Create an already-enabled entitlement, returning its enabling event."""
+        entitlement = cls(
+            _token=_CREATION_TOKEN,
+            _id=entitlement_id,
+            _organization_id=organization_id,
+            _module=module,
+            _enabled=True,
+            _created_at=now,
+            _updated_at=now,
+            _enabled_at=now,
+            _enabled_by=granted_by,
+        )
+        return entitlement, [
+            OrganizationModuleEnabled(
+                aggregate_id=organization_id.value,
+                module=module,
+                changed_by=granted_by,
+            )
+        ]
+
+    @classmethod
+    def withheld(
+        cls,
+        *,
+        entitlement_id: ModuleEntitlementId,
+        organization_id: OrganizationId,
+        module: OrganizationModule,
+        now: datetime,
+    ) -> ModuleEntitlement:
+        """Create a disabled entitlement without an event (the explicit "not sold" row).
+
+        Used when the operator connects an organization on a preset that names which
+        modules it does *not* get: writing the row makes the decision visible in the
+        console instead of leaving it to be inferred from a missing row.
+        """
+        return cls(
+            _token=_CREATION_TOKEN,
+            _id=entitlement_id,
+            _organization_id=organization_id,
+            _module=module,
+            _enabled=False,
+            _created_at=now,
+            _updated_at=now,
+        )
+
+    @classmethod
+    def rehydrate(
+        cls,
+        *,
+        entitlement_id: ModuleEntitlementId,
+        organization_id: OrganizationId,
+        module: OrganizationModule,
+        enabled: bool,
+        created_at: datetime,
+        updated_at: datetime,
+        enabled_at: datetime | None = None,
+        enabled_by: StaffUserId | None = None,
+        disabled_at: datetime | None = None,
+        disabled_by: StaffUserId | None = None,
+        deleted_at: datetime | None = None,
+        version: int = 1,
+    ) -> ModuleEntitlement:
+        """Reconstruct from persistence: no validation, no events."""
+        return cls(
+            _token=_CREATION_TOKEN,
+            _id=entitlement_id,
+            _organization_id=organization_id,
+            _module=module,
+            _enabled=enabled,
+            _created_at=created_at,
+            _updated_at=updated_at,
+            _enabled_at=enabled_at,
+            _enabled_by=enabled_by,
+            _disabled_at=disabled_at,
+            _disabled_by=disabled_by,
+            _deleted_at=deleted_at,
+            _version=version,
+        )
+
+    # ------------------------------------------------------------------
+    # Behaviour
+    # ------------------------------------------------------------------
+
+    def enable(self, *, changed_by: StaffUserId | None, now: datetime) -> list[DomainEvent]:
+        """Switch the module on. Idempotent: already-on returns no events."""
+        if self._enabled:
+            return []
+        self._enabled = True
+        self._enabled_at = now
+        self._enabled_by = changed_by
+        self._disabled_at = None
+        self._disabled_by = None
+        self._touch(now)
+        return [
+            OrganizationModuleEnabled(
+                aggregate_id=self._organization_id.value,
+                module=self._module,
+                changed_by=changed_by,
+            )
+        ]
+
+    def disable(self, *, changed_by: StaffUserId | None, now: datetime) -> list[DomainEvent]:
+        """Switch the module off. Idempotent: already-off returns no events."""
+        if not self._enabled:
+            return []
+        self._enabled = False
+        self._disabled_at = now
+        self._disabled_by = changed_by
+        self._touch(now)
+        return [
+            OrganizationModuleDisabled(
+                aggregate_id=self._organization_id.value,
+                module=self._module,
+                changed_by=changed_by,
+            )
+        ]
+
+    def _touch(self, now: datetime) -> None:
+        self._updated_at = now
+        self._version += 1
+
+    # ------------------------------------------------------------------
+    # Read-only state
+    # ------------------------------------------------------------------
+
+    @property
+    def id(self) -> ModuleEntitlementId:
+        return self._id
+
+    @property
+    def organization_id(self) -> OrganizationId:
+        return self._organization_id
+
+    @property
+    def module(self) -> OrganizationModule:
+        return self._module
+
+    @property
+    def enabled(self) -> bool:
+        return self._enabled
+
+    @property
+    def created_at(self) -> datetime:
+        return self._created_at
+
+    @property
+    def updated_at(self) -> datetime:
+        return self._updated_at
+
+    @property
+    def enabled_at(self) -> datetime | None:
+        return self._enabled_at
+
+    @property
+    def enabled_by(self) -> StaffUserId | None:
+        return self._enabled_by
+
+    @property
+    def disabled_at(self) -> datetime | None:
+        return self._disabled_at
+
+    @property
+    def disabled_by(self) -> StaffUserId | None:
+        return self._disabled_by
+
+    @property
+    def deleted_at(self) -> datetime | None:
+        return self._deleted_at
+
+    @property
+    def version(self) -> int:
+        return self._version
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, ModuleEntitlement):
+            return NotImplemented
+        return self._id == other._id
+
+    def __hash__(self) -> int:
+        return hash(self._id)
+
+    def __repr__(self) -> str:
+        state = "enabled" if self._enabled else "disabled"
+        return f"ModuleEntitlement({self._module.value!r}, {state})"

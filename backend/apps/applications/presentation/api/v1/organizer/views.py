@@ -46,7 +46,8 @@ from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.identity.infrastructure.models.user import UserModel
 from apps.notifications.infrastructure import feed as notification_feed
 from apps.notifications.infrastructure.models import NotificationKind
-from apps.organization.presentation.permissions import IsOrganizationStaff
+from apps.organization.domain.value_objects import OrganizationModule
+from apps.organization.presentation.permissions import IsModuleEnabled, IsOrganizationStaff
 from apps.organization.presentation.scope import callers_organization_id, is_platform_operator
 from config.archive import ArchiveMember, zip_response
 
@@ -197,7 +198,7 @@ def _capabilities(status: str) -> list[dict[str, str]]:
 
 class _StaffView(APIView):
     authentication_classes = (CredentialAwareJWTAuthentication,)
-    permission_classes = (IsAuthenticated, IsOrganizationStaff)
+    permission_classes = (IsAuthenticated, IsOrganizationStaff, IsModuleEnabled.of(OrganizationModule.APPLICATIONS))
 
 
 class OrganizerProcessingWorkspaceView(_StaffView):

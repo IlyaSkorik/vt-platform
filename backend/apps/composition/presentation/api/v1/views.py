@@ -11,6 +11,8 @@ neither context should own (ARCH-001 §14):
   vast majority of users who are not staff.
 * **Platform** supplies whether the account operates the platform itself — the
   flag the client routes the operator's console on.
+* **Organization** also supplies which modules the account's organization holds,
+  so the panel can render the parts of the platform it was sold and no others.
 
 The view depends only on each context's *application/presentation* seams — never
 on the other's domain — so composing here introduces no coupling between them.
@@ -40,7 +42,10 @@ from apps.identity.presentation.api.v1.problems import (
 )
 from apps.identity.presentation.api.v1.resources import user_resource
 from apps.organization.application.dto import StaffMembershipView
-from apps.organization.composition import build_staff_membership_read_service
+from apps.organization.composition import (
+    build_enabled_modules_read_service,
+    build_staff_membership_read_service,
+)
 from apps.platform.composition import build_platform_access_read_service
 
 _TAG = "Identity"
@@ -53,6 +58,24 @@ def _staff_membership_resource(view: StaffMembershipView | None) -> dict[str, An
     # The organization is part of the answer now: with several connected to the
     # platform, "staff" is a fact about a person *and* which organization.
     return {"role": view.role, "status": view.status, "organizationId": view.organization_id}
+
+
+def _enabled_modules(membership: StaffMembershipView | None) -> list[str]:
+    """Which modules the caller's organization holds, sorted for a stable payload.
+
+    Empty for anyone who is not staff: modules describe what an *organization* was
+    sold, and a participant's cabinet is not gated by them. The client must treat
+    this as presentation only — the enforcing gate is
+    :class:`~apps.organization.presentation.permissions.IsModuleEnabled` on the
+    endpoints themselves.
+    """
+    if membership is None:
+        return []
+    try:
+        organization_id = uuid.UUID(membership.organization_id)
+    except (ValueError, TypeError):  # pragma: no cover - defensive
+        return []
+    return sorted(build_enabled_modules_read_service().for_organization(organization_id))
 
 
 class CurrentUserView(APIView):
@@ -90,12 +113,14 @@ class CurrentUserView(APIView):
         # never reach here (the JWT auth already validated it), so parsing is safe.
         membership = build_staff_membership_read_service().active_for_user(uuid.UUID(user_id))
         platform_admin = build_platform_access_read_service().is_platform_administrator(uuid.UUID(user_id))
+        enabled_modules = _enabled_modules(membership)
 
         correlation_id = request_id(request)
         body = {
             "user": user_resource(user),
             "staffMembership": _staff_membership_resource(membership),
             "platformAdmin": platform_admin,
+            "enabledModules": enabled_modules,
         }
         return Response(
             {"data": body, "meta": {"requestId": correlation_id}},

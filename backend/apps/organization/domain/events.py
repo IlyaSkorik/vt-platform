@@ -31,6 +31,7 @@ from .value_objects import (
     CommissionRate,
     InvitationTokenHash,
     OrganizationId,
+    OrganizationModule,
     OrganizationName,
     OrganizationSlug,
     PerformanceFeeSchedule,
@@ -47,6 +48,8 @@ __all__ = [
     "OrganizationCommissionRateChanged",
     "OrganizationConnected",
     "OrganizationFeeScheduleChanged",
+    "OrganizationModuleDisabled",
+    "OrganizationModuleEnabled",
     "OrganizationProfileUpdated",
     "OrganizationReactivated",
     "OrganizationRenamed",
@@ -168,6 +171,27 @@ class OrganizationFeeScheduleChanged(DomainEvent):
     """
 
     fee_schedule: PerformanceFeeSchedule
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class OrganizationModuleEnabled(DomainEvent):
+    """The platform operator granted this organization one of the sellable modules.
+
+    A commercial fact as much as an authorization one: "connected the audience vote
+    on this date" is what an invoice is later argued from, which is why the module
+    and the operator who turned it on both travel with the event.
+    """
+
+    module: OrganizationModule
+    changed_by: StaffUserId | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class OrganizationModuleDisabled(DomainEvent):
+    """The platform operator withdrew one of the organization's modules."""
+
+    module: OrganizationModule
+    changed_by: StaffUserId | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

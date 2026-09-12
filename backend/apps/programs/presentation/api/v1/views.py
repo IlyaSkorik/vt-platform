@@ -25,7 +25,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
-from apps.organization.presentation.permissions import IsOrganizationStaff
+from apps.organization.domain.value_objects import OrganizationModule
+from apps.organization.presentation.permissions import IsModuleEnabled, IsOrganizationStaff
 from apps.programs.application import dto
 from apps.programs.application.commands import (
     AddBlockCommand,
@@ -211,7 +212,7 @@ class _StaffView(APIView):
     """Authenticated organization staff only."""
 
     authentication_classes = (CredentialAwareJWTAuthentication,)
-    permission_classes = (IsAuthenticated, IsOrganizationStaff)
+    permission_classes = (IsAuthenticated, IsOrganizationStaff, IsModuleEnabled.of(OrganizationModule.PROGRAMS))
 
     def _problem(self, exc: ProgramError, request: Request) -> Response:
         return problems.program_problem(exc, instance=request.get_full_path(), request=request)

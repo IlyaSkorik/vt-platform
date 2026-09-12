@@ -9,11 +9,13 @@ copied verbatim — the aggregate owns those instants.
 
 from __future__ import annotations
 
+from .module_entitlement_mapper import ModuleEntitlementMapper
 from .organization_mapper import OrganizationMapper
 from .staff_invitation_mapper import StaffInvitationMapper
 from .staff_membership_mapper import StaffMembershipMapper
 
 __all__ = [
+    "ModuleEntitlementMapper",
     "OrganizationMapper",
     "StaffInvitationMapper",
     "StaffMembershipMapper",

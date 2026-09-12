@@ -31,6 +31,7 @@ from apps.organization.application.handlers import (
     GetOrganizationProfileHandler,
     GetStaffInvitationHandler,
     InviteStaffHandler,
+    ListOrganizationModulesHandler,
     ListOrganizationsHandler,
     ListStaffInvitationsHandler,
     ListStaffMembersHandler,
@@ -39,19 +40,22 @@ from apps.organization.application.handlers import (
     RevokeStaffMembershipHandler,
     SendInvitationEmailHandler,
     SetCommissionRateHandler,
+    SetOrganizationModulesHandler,
     SetPerformanceFeeScheduleHandler,
     UpdateOrganizationProfileHandler,
 )
 from apps.organization.application.interfaces import EmailGateway, InvitationTokenService
-from apps.organization.application.read_models import StaffMembershipReader
+from apps.organization.application.read_models import EnabledModulesReader, StaffMembershipReader
 from apps.organization.domain.events import StaffInvitationIssued
 from apps.organization.domain.value_objects import OrganizationName, StaffEmail, StaffRole
+from apps.organization.infrastructure.cache import DjangoModuleCache
 from apps.organization.infrastructure.messaging import (
     EventDispatcher,
     Sha256InvitationTokenHasher,
 )
 from apps.organization.infrastructure.read_models import DjangoOrganizationDirectory
 from apps.organization.infrastructure.repositories import (
+    DjangoModuleEntitlementRepository,
     DjangoOrganizationRepository,
     DjangoStaffInvitationRepository,
     DjangoStaffMembershipRepository,
@@ -63,9 +67,11 @@ __all__ = [
     "build_change_organization_status_handler",
     "build_change_staff_role_handler",
     "build_connect_organization_handler",
+    "build_enabled_modules_read_service",
     "build_get_organization_profile_handler",
     "build_get_staff_invitation_handler",
     "build_invite_staff_handler",
+    "build_list_organization_modules_handler",
     "build_list_organizations_handler",
     "build_list_staff_invitations_handler",
     "build_list_staff_members_handler",
@@ -74,6 +80,7 @@ __all__ = [
     "build_revoke_staff_invitation_handler",
     "build_revoke_staff_membership_handler",
     "build_set_commission_rate_handler",
+    "build_set_organization_modules_handler",
     "build_set_performance_fee_schedule_handler",
     "build_staff_membership_read_service",
     "build_update_organization_profile_handler",
@@ -109,6 +116,7 @@ def build_connect_organization_handler() -> ConnectOrganizationHandler:
     return ConnectOrganizationHandler(
         organizations=DjangoOrganizationRepository(),
         invitations=DjangoStaffInvitationRepository(),
+        entitlements=DjangoModuleEntitlementRepository(),
         clock=SystemClock(),
         uuids=Uuid7Generator(),
         hasher=Sha256InvitationTokenHasher(),
@@ -361,3 +369,36 @@ def build_staff_membership_read_service() -> StaffMembershipReader:
 def build_organization_directory() -> DjangoOrganizationDirectory:
     """Assemble the published cross-context organizer directory read model."""
     return DjangoOrganizationDirectory()
+
+
+def build_enabled_modules_read_service() -> EnabledModulesReader:
+    """Assemble the published cross-context module-entitlement read model.
+
+    Cached: this is consulted on essentially every staff request. The cache is
+    invalidated by the use case that writes an entitlement, so the TTL inside the
+    reader is a backstop and not the mechanism.
+    """
+    return EnabledModulesReader(
+        entitlements=DjangoModuleEntitlementRepository(),
+        cache=DjangoModuleCache(),
+    )
+
+
+def build_list_organization_modules_handler() -> ListOrganizationModulesHandler:
+    """Assemble the platform's read of one organization's module switchboard."""
+    return ListOrganizationModulesHandler(
+        organizations=DjangoOrganizationRepository(),
+        entitlements=DjangoModuleEntitlementRepository(),
+    )
+
+
+def build_set_organization_modules_handler() -> SetOrganizationModulesHandler:
+    """Assemble the platform's module-switchboard use case with its adapters."""
+    return SetOrganizationModulesHandler(
+        organizations=DjangoOrganizationRepository(),
+        entitlements=DjangoModuleEntitlementRepository(),
+        clock=SystemClock(),
+        uuids=Uuid7Generator(),
+        events=_build_event_dispatcher(),
+        cache=DjangoModuleCache(),
+    )

@@ -19,6 +19,8 @@ Value objects implemented here:
 * :class:`PerformanceFeeSchedule` — the ordered, gap-free set of those bands.
 * :class:`StaffRole`           — the seven staff roles.
 * :class:`MembershipStatus`    — PENDING / ACTIVE / REVOKED lifecycle enum.
+* :class:`OrganizationModule`  — one switchable part of the platform.
+* :class:`ModuleEntitlementId` — UUID v7 identity of one module entitlement.
 * :class:`StaffEmail`          — normalized, validated invitee email address.
 * :class:`InvitationTokenHash` — SHA-256 hex digest of an invitation secret.
 
@@ -44,7 +46,9 @@ from .exceptions import (
     InvalidBillingModelError,
     InvalidCommissionRateError,
     InvalidInvitationTokenHashError,
+    InvalidModuleEntitlementIdError,
     InvalidOrganizationIdError,
+    InvalidOrganizationModuleError,
     InvalidOrganizationNameError,
     InvalidOrganizationProfileError,
     InvalidOrganizationSlugError,
@@ -63,7 +67,9 @@ __all__ = [
     "CommissionRate",
     "InvitationTokenHash",
     "MembershipStatus",
+    "ModuleEntitlementId",
     "OrganizationId",
+    "OrganizationModule",
     "OrganizationName",
     "OrganizationProfile",
     "OrganizationSlug",
@@ -184,6 +190,48 @@ class StaffMembershipId:
 
     def __repr__(self) -> str:
         return f"StaffMembershipId({str(self.value)!r})"
+
+
+@dataclass(frozen=True, slots=True, repr=False)
+class ModuleEntitlementId:
+    """The globally unique identity of one module entitlement (UUID v7)."""
+
+    value: uuid.UUID
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.value, uuid.UUID):
+            raise InvalidModuleEntitlementIdError(f"ModuleEntitlementId must wrap a uuid.UUID, got {type(self.value)!r}.")
+        if self.value.version != _UUID_V7_VERSION:
+            raise InvalidModuleEntitlementIdError(f"ModuleEntitlementId must be a UUID v7, got version {self.value.version}.")
+
+    @classmethod
+    def generate(cls) -> ModuleEntitlementId:
+        """Create a brand-new identity backed by a fresh UUID v7."""
+        return cls(_generate_uuid7())
+
+    @classmethod
+    def from_uuid(cls, value: uuid.UUID) -> ModuleEntitlementId:
+        """Build a ``ModuleEntitlementId`` from an existing :class:`uuid.UUID`."""
+        return cls(value)
+
+    @classmethod
+    def from_string(cls, value: str) -> ModuleEntitlementId:
+        """Parse a canonical UUID string, or raise :class:`InvalidModuleEntitlementIdError`."""
+        try:
+            parsed = uuid.UUID(value)
+        except (ValueError, AttributeError, TypeError) as exc:
+            raise InvalidModuleEntitlementIdError(f"{value!r} is not a valid UUID string.") from exc
+        return cls(parsed)
+
+    def json(self) -> str:
+        """The canonical string form for JSON payloads and API responses."""
+        return str(self.value)
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+    def __repr__(self) -> str:
+        return f"ModuleEntitlementId({str(self.value)!r})"
 
 
 @dataclass(frozen=True, slots=True, repr=False)
@@ -750,6 +798,43 @@ class StaffRole(StrEnum):
     CONTENT_MANAGER = "CONTENT_MANAGER"
     MODERATOR = "MODERATOR"
     SUPPORT = "SUPPORT"
+
+
+class OrganizationModule(StrEnum):
+    """One switchable part of the platform an organization may or may not hold.
+
+    The platform is sold in parts. An organizer who came only for the audience vote
+    gets the audience vote, and the festival machinery around it — applications,
+    juries, diplomas, money — is not merely hidden from them but closed: see
+    :class:`~apps.organization.presentation.permissions.IsModuleEnabled`.
+
+    Only the *switchable* parts are listed. An organization's own profile, its staff
+    and its settings are not modules and never appear here: an organization without
+    them is not an organization, and offering a toggle for something that can never
+    be off is how a registry starts lying about what it controls.
+
+    Adding a member is how a new part of the platform becomes sellable; nothing else
+    has to change, because entitlements are rows keyed by this value rather than
+    columns. A member is never renamed once shipped — the string is what is stored.
+    """
+
+    COMPETITIONS = "COMPETITIONS"
+    APPLICATIONS = "APPLICATIONS"
+    PARTICIPANTS = "PARTICIPANTS"
+    JURY = "JURY"
+    PROGRAMS = "PROGRAMS"
+    DIPLOMAS = "DIPLOMAS"
+    VOTING = "VOTING"
+    FINANCE = "FINANCE"
+    ANALYTICS = "ANALYTICS"
+
+    @classmethod
+    def parse(cls, value: str) -> OrganizationModule:
+        """Parse a wire value, or raise :class:`InvalidOrganizationModuleError`."""
+        try:
+            return cls(value)
+        except ValueError as exc:
+            raise InvalidOrganizationModuleError(f"{value!r} is not a known platform module.") from exc
 
 
 class MembershipStatus(StrEnum):

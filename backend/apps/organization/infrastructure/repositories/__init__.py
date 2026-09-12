@@ -9,11 +9,13 @@ every Django exception into a :mod:`.exceptions` type so no framework error leak
 
 from __future__ import annotations
 
+from .django_module_entitlement_repository import DjangoModuleEntitlementRepository
 from .django_organization_repository import DjangoOrganizationRepository
 from .django_staff_invitation_repository import DjangoStaffInvitationRepository
 from .django_staff_membership_repository import DjangoStaffMembershipRepository
 
 __all__ = [
+    "DjangoModuleEntitlementRepository",
     "DjangoOrganizationRepository",
     "DjangoStaffInvitationRepository",
     "DjangoStaffMembershipRepository",

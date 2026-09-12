@@ -23,16 +23,20 @@ from apps.organization.application.exceptions import (
 from apps.organization.application.interfaces import (
     Clock,
     EventPublisher,
+    ModuleEntitlementRepository,
     OrganizationRepository,
     StaffInvitationRepository,
     TokenHasher,
     UuidGenerator,
 )
-from apps.organization.domain.entities import Organization, StaffInvitation
+from apps.organization.domain.entities import ModuleEntitlement, Organization, StaffInvitation
+from apps.organization.domain.events import DomainEvent
 from apps.organization.domain.policies import InvitationExpiryPolicy
 from apps.organization.domain.value_objects import (
     CommissionRate,
+    ModuleEntitlementId,
     OrganizationId,
+    OrganizationModule,
     OrganizationName,
     OrganizationSlug,
     OrganizationStatus,
@@ -90,6 +94,11 @@ class ConnectOrganizationCommand:
     #: Supplying bands connects the organization on the per-performance fee model;
     #: leaving them empty connects it on the percentage one.
     fee_tiers: tuple[FeeTierRow, ...] = ()
+    #: Which parts of the platform the organization is being sold. ``None`` means
+    #: all of them — the full-access preset, and what connecting meant before the
+    #: platform was sold in parts. An empty tuple is a different instruction and is
+    #: honoured literally: an organization with no modules at all.
+    modules: tuple[str, ...] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -190,6 +199,7 @@ class ConnectOrganizationHandler:
         *,
         organizations: OrganizationRepository,
         invitations: StaffInvitationRepository,
+        entitlements: ModuleEntitlementRepository,
         clock: Clock,
         uuids: UuidGenerator,
         hasher: TokenHasher,
@@ -197,10 +207,43 @@ class ConnectOrganizationHandler:
     ) -> None:
         self._organizations = organizations
         self._invitations = invitations
+        self._entitlements = entitlements
         self._clock = clock
         self._uuids = uuids
         self._hasher = hasher
         self._events = events
+
+
+    def _grant_modules(self, organization_id: OrganizationId, requested: tuple[str, ...] | None, *, now: datetime) -> list[DomainEvent]:
+        """Write the organization's opening switchboard and return the events it produced.
+
+        Every module gets a row, held or not, so the operator's console opens on a set
+        of decisions rather than a blank. ``None`` means the full-access preset, which
+        is what "connected to the platform" meant before the platform was sold in parts.
+        """
+        with translate_domain_errors():
+            wanted = frozenset(OrganizationModule) if requested is None else frozenset(OrganizationModule.parse(name) for name in requested)
+
+        produced: list[DomainEvent] = []
+        for module in OrganizationModule:
+            if module in wanted:
+                entitlement, events = ModuleEntitlement.grant(
+                    entitlement_id=ModuleEntitlementId.from_uuid(self._uuids.new()),
+                    organization_id=organization_id,
+                    module=module,
+                    granted_by=None,
+                    now=now,
+                )
+                produced.extend(events)
+            else:
+                entitlement = ModuleEntitlement.withheld(
+                    entitlement_id=ModuleEntitlementId.from_uuid(self._uuids.new()),
+                    organization_id=organization_id,
+                    module=module,
+                    now=now,
+                )
+            self._entitlements.save(entitlement)
+        return produced
 
     def handle(self, command: ConnectOrganizationCommand) -> ConnectedOrganizationDto:
         now = self._clock.utcnow()
@@ -226,6 +269,8 @@ class ConnectOrganizationHandler:
         )
         self._organizations.save(organization)
 
+        module_events = self._grant_modules(organization.id, command.modules, now=now)
+
         issued_token = self._hasher.generate()
         invitation, invitation_events = StaffInvitation.issue(
             invitation_id=StaffInvitationId.from_uuid(self._uuids.new()),
@@ -242,7 +287,7 @@ class ConnectOrganizationHandler:
 
         # Published together: the invitation event is what sends the email, and it
         # must not go out before the organization it points at is stored.
-        self._events.publish([*connected_events, *invitation_events])
+        self._events.publish([*connected_events, *module_events, *invitation_events])
         return ConnectedOrganizationDto(
             organization=OrganizationSummaryView.from_organization(organization),
             owner_invitation=InvitationView.from_invitation(invitation),

@@ -1,13 +1,17 @@
-"""The published cross-context read model of Organization staff status.
+"""The published cross-context read models of the Organization context.
 
-:class:`StaffMembershipReadService` is the **only** seam other bounded contexts
-(and the ``/users/me`` composition edge) use to learn whether a user is staff.
-Consumers depend on this port and receive a flat :class:`StaffMembershipView` —
-they never import an Organization aggregate, repository, or value object, so no
+Three seams other bounded contexts (and the ``/users/me`` composition edge) read
+this context through: whether a user is staff
+(:class:`StaffMembershipReadService`), who an organizer publicly is
+(:class:`OrganizationDirectory`), and which modules an organization holds
+(:class:`EnabledModulesReadService`).
+
+Consumers depend on these ports and receive flat, primitive-only views — they
+never import an Organization aggregate, repository, or value object, so no
 business logic leaks across the boundary (ARCH-001 §14).
 
-The port lives in the application layer (framework-free); its concrete
-implementation is assembled at the composition root over the repositories.
+The ports live in the application layer (framework-free); their concrete
+implementations are assembled at the composition root over the repositories.
 """
 
 from __future__ import annotations
@@ -19,12 +23,16 @@ from typing import Protocol, runtime_checkable
 
 from apps.organization.application.dto import StaffMembershipView
 from apps.organization.application.interfaces import (
+    ModuleEntitlementRepository,
     OrganizationRepository,
     StaffMembershipRepository,
 )
-from apps.organization.domain.value_objects import StaffUserId
+from apps.organization.domain.value_objects import OrganizationId, StaffUserId
 
 __all__ = [
+    "EnabledModulesReadService",
+    "EnabledModulesReader",
+    "ModuleCache",
     "OrganizationDirectory",
     "OrganizerCardView",
     "StaffMembershipReadService",
@@ -112,6 +120,82 @@ class OrganizationDirectory(Protocol):
         organization stays the single source of truth for the public page.
         """
         ...
+
+
+@runtime_checkable
+class EnabledModulesReadService(Protocol):
+    """Port: answer "which modules does this organization hold?" for other contexts.
+
+    The **only** seam through which a module gate is decided. Consumers receive a
+    set of plain module names and never import an entitlement, a repository or the
+    Organization aggregate — so the question "may this organization do X" has one
+    answer everywhere and cannot drift between the permission class, the navigation
+    and ``/users/me``.
+    """
+
+    def for_organization(self, organization_id: uuid.UUID) -> frozenset[str]:
+        """Return the module names the organization currently holds."""
+        ...
+
+    def is_enabled(self, *, organization_id: uuid.UUID, module: str) -> bool:
+        """Whether the organization holds ``module`` right now."""
+        ...
+
+
+@runtime_checkable
+class ModuleCache(Protocol):
+    """Port: the memo in front of the entitlement table.
+
+    Framework-free so the reader can be unit-tested without a cache backend, and so
+    the concrete Redis/locmem adapter stays in infrastructure where it belongs.
+    """
+
+    def get(self, organization_id: uuid.UUID) -> frozenset[str] | None:
+        """Return the memoized module set, or ``None`` on a miss."""
+        ...
+
+    def set(self, organization_id: uuid.UUID, modules: frozenset[str], ttl_seconds: int) -> None:
+        """Memoize the module set for ``ttl_seconds``."""
+        ...
+
+    def invalidate(self, organization_id: uuid.UUID) -> None:
+        """Forget the memoized set (called when an entitlement is written)."""
+        ...
+
+
+class EnabledModulesReader:
+    """Concrete :class:`EnabledModulesReadService` over the entitlement repository.
+
+    Cached, because this is consulted on essentially every staff request and the
+    answer changes only when a platform operator moves a switch. The cache is keyed
+    per organization and invalidated by the use case that writes an entitlement, so
+    a revoked module stops working at once rather than at the end of a TTL — the TTL
+    is only the backstop for a process that never saw the invalidation.
+
+    An unknown module name resolves to "not held" rather than raising: a gate is a
+    place to be refused, not a place to crash, and a typo in a permission class must
+    close the door rather than open it.
+    """
+
+    #: Backstop only — the writer invalidates explicitly.
+    CACHE_TTL_SECONDS = 300
+
+    def __init__(self, *, entitlements: ModuleEntitlementRepository, cache: ModuleCache | None = None) -> None:
+        self._entitlements = entitlements
+        self._cache = cache
+
+    def for_organization(self, organization_id: uuid.UUID) -> frozenset[str]:
+        if self._cache is not None:
+            cached = self._cache.get(organization_id)
+            if cached is not None:
+                return cached
+        modules = frozenset(module.value for module in self._entitlements.enabled_modules(OrganizationId.from_uuid(organization_id)))
+        if self._cache is not None:
+            self._cache.set(organization_id, modules, self.CACHE_TTL_SECONDS)
+        return modules
+
+    def is_enabled(self, *, organization_id: uuid.UUID, module: str) -> bool:
+        return module in self.for_organization(organization_id)
 
 
 @runtime_checkable

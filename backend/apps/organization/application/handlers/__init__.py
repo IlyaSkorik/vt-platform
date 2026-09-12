@@ -23,6 +23,13 @@ from .provision_owner import ProvisionOwnerHandler
 from .revoke_staff_invitation import RevokeStaffInvitationHandler
 from .revoke_staff_membership import RevokeStaffMembershipHandler
 from .send_invitation_email import SendInvitationEmailHandler
+from .set_organization_modules import (
+    ListOrganizationModulesHandler,
+    ModuleView,
+    OrganizationModulesView,
+    SetOrganizationModulesCommand,
+    SetOrganizationModulesHandler,
+)
 from .update_organization_profile import UpdateOrganizationProfileHandler
 
 __all__ = [
@@ -37,9 +44,12 @@ __all__ = [
     "GetOrganizationProfileHandler",
     "GetStaffInvitationHandler",
     "InviteStaffHandler",
+    "ListOrganizationModulesHandler",
     "ListOrganizationsHandler",
     "ListStaffInvitationsHandler",
     "ListStaffMembersHandler",
+    "ModuleView",
+    "OrganizationModulesView",
     "OrganizationProfileView",
     "OrganizationSummaryView",
     "ProvisionOwnerHandler",
@@ -48,6 +58,8 @@ __all__ = [
     "SendInvitationEmailHandler",
     "SetCommissionRateCommand",
     "SetCommissionRateHandler",
+    "SetOrganizationModulesCommand",
+    "SetOrganizationModulesHandler",
     "SetPerformanceFeeScheduleCommand",
     "SetPerformanceFeeScheduleHandler",
     "UpdateOrganizationProfileHandler",

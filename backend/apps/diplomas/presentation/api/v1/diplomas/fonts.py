@@ -39,7 +39,8 @@ from apps.diplomas.infrastructure.fonts import MAX_FONT_BYTES
 from apps.diplomas.infrastructure.pdf.fonts import bundled_font_path, invalidate_uploaded_fonts
 from apps.diplomas.presentation.api.v1 import problems
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
-from apps.organization.presentation.permissions import IsOrganizationStaff
+from apps.organization.domain.value_objects import OrganizationModule
+from apps.organization.presentation.permissions import IsModuleEnabled, IsOrganizationStaff
 
 _TAG = "Diplomas"
 _PUBLIC_TAG = "Public Diploma Fonts"
@@ -126,7 +127,7 @@ class _StaffView(APIView):
     """Authenticated organization staff only."""
 
     authentication_classes = (CredentialAwareJWTAuthentication,)
-    permission_classes = (IsAuthenticated, IsOrganizationStaff)
+    permission_classes = (IsAuthenticated, IsOrganizationStaff, IsModuleEnabled.of(OrganizationModule.DIPLOMAS))
 
 
 class DiplomaFontsView(_StaffView):

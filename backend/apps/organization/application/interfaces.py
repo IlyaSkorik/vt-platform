@@ -20,11 +20,17 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol, runtime_checkable
 
-from apps.organization.domain.entities import Organization, StaffInvitation, StaffMembership
+from apps.organization.domain.entities import (
+    ModuleEntitlement,
+    Organization,
+    StaffInvitation,
+    StaffMembership,
+)
 from apps.organization.domain.events import DomainEvent
 from apps.organization.domain.value_objects import (
     InvitationTokenHash,
     OrganizationId,
+    OrganizationModule,
     OrganizationName,
     StaffEmail,
     StaffInvitationId,
@@ -39,6 +45,7 @@ __all__ = [
     "EventPublisher",
     "InvitationTokenService",
     "IssuedInvitationToken",
+    "ModuleEntitlementRepository",
     "OrganizationRepository",
     "StaffInvitationRepository",
     "StaffMembershipRepository",
@@ -74,6 +81,33 @@ class OrganizationRepository(Protocol):
 
     def save(self, organization: Organization) -> None:
         """Persist ``organization`` (insert or update), honouring its version."""
+        ...
+
+
+@runtime_checkable
+class ModuleEntitlementRepository(Protocol):
+    """Port: which modules an organization holds, and the decisions behind them.
+
+    ``find`` returns ``None`` for a module nobody has decided about yet — which the
+    use case reads as "not held", the same as a row saying so explicitly. Callers
+    never infer entitlement from the absence of the *repository*; only from what it
+    answers.
+    """
+
+    def find(self, *, organization_id: OrganizationId, module: OrganizationModule) -> ModuleEntitlement | None:
+        """Return the organization's entitlement to ``module``, or ``None``."""
+        ...
+
+    def list_by_organization(self, organization_id: OrganizationId) -> Sequence[ModuleEntitlement]:
+        """Return every decided entitlement of the organization."""
+        ...
+
+    def enabled_modules(self, organization_id: OrganizationId) -> frozenset[OrganizationModule]:
+        """Return only the modules the organization currently holds (the hot path)."""
+        ...
+
+    def save(self, entitlement: ModuleEntitlement) -> None:
+        """Persist the entitlement (insert or update), honouring its version."""
         ...
 
 

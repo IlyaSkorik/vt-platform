@@ -10,6 +10,7 @@ representation the mapper/repository reads from and writes to.
 from __future__ import annotations
 
 from .base import BasePersistenceModel, uuid7
+from .module_entitlement import ModuleChoices, OrganizationModuleModel
 from .organization import OrganizationModel, OrganizationStatusChoices
 from .staff_invitation import StaffInvitationModel
 from .staff_membership import (
@@ -21,7 +22,9 @@ from .staff_membership import (
 __all__ = [
     "BasePersistenceModel",
     "MembershipStatusChoices",
+    "ModuleChoices",
     "OrganizationModel",
+    "OrganizationModuleModel",
     "OrganizationStatusChoices",
     "StaffInvitationModel",
     "StaffMembershipModel",

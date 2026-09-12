@@ -36,14 +36,15 @@ from apps.applications.presentation.api.v1.organizer.composition import (
     organization_competitions,
 )
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
-from apps.organization.presentation.permissions import IsOrganizationStaff
+from apps.organization.domain.value_objects import OrganizationModule
+from apps.organization.presentation.permissions import IsModuleEnabled, IsOrganizationStaff
 
 _TAG = "Organizer Participants"
 
 
 class _StaffView(APIView):
     authentication_classes = (CredentialAwareJWTAuthentication,)
-    permission_classes = (IsAuthenticated, IsOrganizationStaff)
+    permission_classes = (IsAuthenticated, IsOrganizationStaff, IsModuleEnabled.of(OrganizationModule.PARTICIPANTS))
 
 
 def _int_param(raw: str | None) -> int | None:
