@@ -93,6 +93,95 @@ export type PlatformAudience = {
   teachers: { total: number; archived: number };
 };
 
+/**
+ * One switchable part of the platform.
+ *
+ * Mirrors `OrganizationModule` on the server. The list is short and changes with a
+ * release, so it is spelled out rather than fetched: the console has to label each
+ * one in Russian anyway, and a module the interface cannot name is one it cannot
+ * usefully offer.
+ */
+export type PlatformModule =
+  | "COMPETITIONS"
+  | "APPLICATIONS"
+  | "PARTICIPANTS"
+  | "JURY"
+  | "PROGRAMS"
+  | "DIPLOMAS"
+  | "VOTING"
+  | "FINANCE"
+  | "ANALYTICS";
+
+/** Every module, in the order the console shows them. */
+export const PLATFORM_MODULES: PlatformModule[] = [
+  "COMPETITIONS",
+  "APPLICATIONS",
+  "PARTICIPANTS",
+  "JURY",
+  "PROGRAMS",
+  "DIPLOMAS",
+  "VOTING",
+  "FINANCE",
+  "ANALYTICS",
+];
+
+/** What each module is called on the switchboard and in the organizer's own menu. */
+export const MODULE_LABELS: Record<PlatformModule, string> = {
+  COMPETITIONS: "Фестивали",
+  APPLICATIONS: "Заявки",
+  PARTICIPANTS: "Участники",
+  JURY: "Жюри",
+  PROGRAMS: "Программа",
+  DIPLOMAS: "Дипломы",
+  VOTING: "Зрительское голосование",
+  FINANCE: "Финансы",
+  ANALYTICS: "Аналитика",
+};
+
+/**
+ * The ready-made sets an organization gets connected on.
+ *
+ * Presets live here and not on the server on purpose: "only the audience vote" is
+ * a sales decision that will be re-cut more often than the code ships, and the API
+ * stays a plain list of modules that means exactly what it says.
+ */
+export type ModulePreset = { id: string; label: string; modules: PlatformModule[] };
+
+/** What an organization gets when nobody narrowed it — and the server's own default. */
+export const FULL_ACCESS_PRESET: ModulePreset = {
+  id: "full",
+  label: "Полный доступ",
+  modules: [...PLATFORM_MODULES],
+};
+
+export const MODULE_PRESETS: ModulePreset[] = [
+  FULL_ACCESS_PRESET,
+  { id: "voting", label: "Только голосование", modules: ["VOTING"] },
+  {
+    id: "festival",
+    label: "Фестиваль без финансов",
+    modules: ["COMPETITIONS", "APPLICATIONS", "PARTICIPANTS", "JURY", "PROGRAMS", "DIPLOMAS"],
+  },
+];
+
+/** The preset with this id, falling back to full access for an unknown one. */
+export function modulePreset(id: string): ModulePreset {
+  return MODULE_PRESETS.find((preset) => preset.id === id) ?? FULL_ACCESS_PRESET;
+}
+
+/** One module as the switchboard shows it: its state, and when it last changed. */
+export type OrganizationModuleRow = {
+  module: PlatformModule;
+  enabled: boolean;
+  enabledAt: string | null;
+  disabledAt: string | null;
+};
+
+export type OrganizationModules = {
+  organizationId: string;
+  modules: OrganizationModuleRow[];
+};
+
 export type ConnectOrganizationInput = {
   name: string;
   slug?: string;
@@ -100,6 +189,8 @@ export type ConnectOrganizationInput = {
   billingModel: BillingModel;
   commissionPercent?: string;
   feeTiers?: PerformanceFeeTier[];
+  /** Omitted means full access — the server's own default, not repeated here. */
+  modules?: PlatformModule[];
 };
 
 /** One generation job inside a load-test run. */
@@ -189,6 +280,8 @@ export const platformKeys = {
     ["platform", "dashboard", organizationId, competitionId] as const,
   audience: ["platform", "audience"] as const,
   organizations: ["platform", "organizations"] as const,
+  organizationModules: (organizationId: string) =>
+    ["platform", "organizations", organizationId, "modules"] as const,
   loadTest: ["platform", "loadtest", "diplomas"] as const,
   purgeSearch: (kind: PurgeKind, query: string) =>
     ["platform", "purge", "search", kind, query] as const,
@@ -317,6 +410,48 @@ export function useUpdateOrganization() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: platformKeys.organizations });
       void queryClient.invalidateQueries({ queryKey: ["platform", "dashboard"] });
+    },
+  });
+}
+
+/** Which parts of the platform one organization holds, and since when. */
+export function useOrganizationModules(organizationId: string | null) {
+  return useQuery({
+    queryKey: platformKeys.organizationModules(organizationId ?? ""),
+    enabled: organizationId !== null,
+    queryFn: async (): Promise<OrganizationModules> =>
+      unwrap<OrganizationModules>(
+        await apiClient.get(`platform/organizations/${organizationId}/modules`),
+      ),
+  });
+}
+
+/**
+ * Set an organization's modules to exactly this set.
+ *
+ * A PUT of the whole switchboard, matching the endpoint: everything listed is on
+ * afterwards and everything else is off. Sending the set unchanged is a no-op on
+ * the server and keeps the date each module was first connected.
+ */
+export function useSetOrganizationModules() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      id: string;
+      modules: PlatformModule[];
+    }): Promise<OrganizationModules> =>
+      unwrap<OrganizationModules>(
+        await apiClient.put(`platform/organizations/${input.id}/modules`, {
+          json: { modules: input.modules },
+        }),
+      ),
+    onSuccess: (_data, input) => {
+      void queryClient.invalidateQueries({
+        queryKey: platformKeys.organizationModules(input.id),
+      });
+      // The organizer's own `/users/me` now answers differently; anything this
+      // console caches about the organization is a projection over the same fact.
+      void queryClient.invalidateQueries({ queryKey: platformKeys.organizations });
     },
   });
 }

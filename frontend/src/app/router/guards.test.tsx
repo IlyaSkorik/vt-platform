@@ -3,12 +3,14 @@ import { MemoryRouter, Route, Routes } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import type { AuthStatus } from "@/app/providers";
 import { ROUTES } from "@/shared/config";
-import { GuestRoute, ProtectedRoute, StaffRoute } from "./guards";
+import { GuestRoute, ModuleRoute, ProtectedRoute, StaffRoute } from "./guards";
 
 const authState = {
   status: "unauthenticated" as AuthStatus,
   sessionExpired: false,
   staffMembership: null as null | { role: string; status: string },
+  isPlatformAdmin: false,
+  enabledModules: [] as string[],
 };
 
 vi.mock("@/app/providers", () => ({
@@ -16,6 +18,9 @@ vi.mock("@/app/providers", () => ({
     status: authState.status,
     sessionExpired: authState.sessionExpired,
     staffMembership: authState.staffMembership,
+    isPlatformAdmin: authState.isPlatformAdmin,
+    enabledModules: authState.enabledModules,
+    hasModule: (module: string) => authState.enabledModules.includes(module),
   }),
 }));
 
@@ -119,5 +124,60 @@ describe("StaffRoute", () => {
     authState.staffMembership = { role: "DIRECTOR", status: "ACTIVE" };
     renderStaff(ROUTES.staff);
     expect(screen.getByText("Staff workspace")).toBeInTheDocument();
+  });
+});
+
+function renderModule(path: string) {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <Routes>
+        <Route element={<ModuleRoute module="VOTING" />}>
+          <Route path="staff/voting" element={<p>Голосования</p>} />
+        </Route>
+        <Route path={ROUTES.staff.slice(1)} element={<p>Панель управления</p>} />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+
+describe("ModuleRoute", () => {
+  it("renders the section when the organization holds the module", () => {
+    authState.status = "authenticated";
+    authState.isPlatformAdmin = false;
+    authState.enabledModules = ["VOTING"];
+
+    renderModule("/staff/voting");
+
+    expect(screen.getByText("Голосования")).toBeInTheDocument();
+  });
+
+  it("sends a staffer whose organization was not sold it back to the dashboard", () => {
+    authState.status = "authenticated";
+    authState.isPlatformAdmin = false;
+    authState.enabledModules = ["PROGRAMS"];
+
+    renderModule("/staff/voting");
+
+    expect(screen.getByText("Панель управления")).toBeInTheDocument();
+  });
+
+  it("lets the platform operator through — they are staff of no organization", () => {
+    authState.status = "authenticated";
+    authState.isPlatformAdmin = true;
+    authState.enabledModules = [];
+
+    renderModule("/staff/voting");
+
+    expect(screen.getByText("Голосования")).toBeInTheDocument();
+  });
+
+  it("renders nothing while the session is still loading", () => {
+    authState.status = "loading";
+    authState.isPlatformAdmin = false;
+    authState.enabledModules = [];
+
+    const { container } = renderModule("/staff/voting");
+
+    expect(container).toBeEmptyDOMElement();
   });
 });

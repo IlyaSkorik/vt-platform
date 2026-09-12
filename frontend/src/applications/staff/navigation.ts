@@ -14,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 
+import type { AuthModule } from "@/app/providers";
 import { ROUTES, type RoutePath } from "@/shared/config";
 
 export type StaffNavItem = {
@@ -21,6 +22,14 @@ export type StaffNavItem = {
   path: RoutePath;
   icon: React.ComponentType<{ className?: string }>;
   description: string;
+  /**
+   * The module this section belongs to, when it belongs to one.
+   *
+   * Items without it are the parts an organization always has — its dashboard,
+   * its own profile, its people, its settings. An organization without those is
+   * not an organization, so they are never offered as something to switch off.
+   */
+  module?: AuthModule;
 };
 
 /**
@@ -58,36 +67,42 @@ export const STAFF_NAVIGATION: StaffNavItem[] = [
   {
     title: "Фестивали",
     path: ROUTES.staffCompetitions,
+    module: "COMPETITIONS",
     icon: Medal,
     description: "Управление фестивалями и сезонами.",
   },
   {
     title: "Заявки",
     path: ROUTES.staffApplications,
+    module: "APPLICATIONS",
     icon: ClipboardList,
     description: "Очередь заявок на проверку.",
   },
   {
     title: "Участники",
     path: ROUTES.staffParticipants,
+    module: "PARTICIPANTS",
     icon: Users,
     description: "Реестр участников организации.",
   },
   {
     title: "Жюри",
     path: ROUTES.staffJudges,
+    module: "JURY",
     icon: Gavel,
     description: "Состав жюри и назначения.",
   },
   {
     title: "Программа",
     path: ROUTES.staffProgram,
+    module: "PROGRAMS",
     icon: CalendarDays,
     description: "Конструктор программы фестиваля и публичные ссылки.",
   },
   {
     title: "Дипломы",
     path: ROUTES.staffDiplomas,
+    module: "DIPLOMAS",
     icon: Award,
     description: "Библиотека шаблонов, назначение и выдача дипломов.",
   },
@@ -112,12 +127,14 @@ export const STAFF_NAVIGATION: StaffNavItem[] = [
   {
     title: "Финансы",
     path: ROUTES.staffFinance,
+    module: "FINANCE",
     icon: Landmark,
     description: "Платежи и финансовые операции.",
   },
   {
     title: "Аналитика",
     path: ROUTES.staffAnalytics,
+    module: "ANALYTICS",
     icon: BarChart3,
     description: "Метрики без выдуманных графиков.",
   },
@@ -128,3 +145,25 @@ export const STAFF_NAVIGATION: StaffNavItem[] = [
     description: "Параметры рабочего пространства.",
   },
 ];
+
+/**
+ * The sections this organization actually has.
+ *
+ * Presentation only — what a person is *allowed* to do is decided by the API, and
+ * every gated endpoint refuses on its own. Hiding a section they cannot use is a
+ * courtesy on top of that, not the enforcement.
+ *
+ * The platform operator sees everything: they are staff of no organization, so
+ * there is no entitlement of theirs to consult.
+ */
+export function visibleStaffNavigation(
+  enabledModules: readonly AuthModule[],
+  { isPlatformAdmin = false }: { isPlatformAdmin?: boolean } = {},
+): StaffNavItem[] {
+  if (isPlatformAdmin) {
+    return STAFF_NAVIGATION;
+  }
+  return STAFF_NAVIGATION.filter(
+    (item) => item.module === undefined || enabledModules.includes(item.module),
+  );
+}

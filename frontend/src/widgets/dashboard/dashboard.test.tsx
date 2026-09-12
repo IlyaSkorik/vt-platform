@@ -19,6 +19,7 @@ const DEMO_CURRENT_USER: CurrentUser = {
   },
   staffMembership: null,
   platformAdmin: false,
+  enabledModules: [],
 };
 
 /**

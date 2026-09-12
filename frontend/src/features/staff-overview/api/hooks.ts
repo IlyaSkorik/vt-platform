@@ -57,10 +57,14 @@ async function fetchOverview(signal?: AbortSignal): Promise<StaffOverview> {
 }
 
 /** The organizer's desk in one request. */
-export function useStaffOverview() {
+export function useStaffOverview({ enabled = true }: { enabled?: boolean } = {}) {
   return useQuery<StaffOverview>({
     queryKey: staffOverviewKeys.all,
     queryFn: ({ signal }) => fetchOverview(signal),
+    // Off for an organization that was not sold the applications module: the
+    // endpoint would answer 403, and a summary that reports its own refusal is
+    // worse than one that simply does not mention a section nobody has.
+    enabled,
     // Slower than the workspace screen's ten seconds: nobody works from the summary,
     // they pass through it, and it is mounted on the first screen after every login.
     staleTime: 60_000,

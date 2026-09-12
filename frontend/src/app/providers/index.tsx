@@ -46,6 +46,12 @@ export function AppProviders({ children }: { children: ReactNode }): React.JSX.E
   );
 }
 
-export { AuthProvider, type AuthStatus, type AuthUser, useAuth } from "./auth-provider";
+export {
+  type AuthModule,
+  AuthProvider,
+  type AuthStatus,
+  type AuthUser,
+  useAuth,
+} from "./auth-provider";
 export { ErrorBoundary } from "./error-boundary";
 export { type ResolvedTheme, type Theme, ThemeProvider, useTheme } from "./theme-provider";

@@ -9,6 +9,7 @@ from apps.platform.presentation.api.v1.views import (
     PlatformDashboardView,
     PlatformLoadTestView,
     PlatformOrganizationDetailView,
+    PlatformOrganizationModulesView,
     PlatformOrganizationsView,
     PlatformPurgeSearchView,
     PlatformPurgeTargetView,
@@ -23,6 +24,9 @@ urlpatterns = [
     path("platform/audience", PlatformAudienceView.as_view(), name="audience"),
     path("platform/organizations", PlatformOrganizationsView.as_view(), name="organizations"),
     path("platform/organizations/<str:organization_id>", PlatformOrganizationDetailView.as_view(), name="organization-detail"),
+    # Which parts of the platform this organization was sold. Its own route rather
+    # than a field on the terms PATCH: a different screen, a different decision.
+    path("platform/organizations/<str:organization_id>/modules", PlatformOrganizationModulesView.as_view(), name="organization-modules"),
     # The operator's own test bench: seed a synthetic festival, run generation on it
     # for real, and remove every trace afterwards.
     path("platform/loadtest/diplomas", PlatformLoadTestView.as_view(), name="loadtest-diplomas"),

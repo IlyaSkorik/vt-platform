@@ -21,11 +21,31 @@ const organizations = {
   isError: false,
 };
 
+const FULL_ACCESS_PRESET = {
+  id: "full",
+  label: "Полный доступ",
+  modules: ["COMPETITIONS", "VOTING"],
+};
+const MODULE_PRESETS = [
+  FULL_ACCESS_PRESET,
+  { id: "voting", label: "Только голосование", modules: ["VOTING"] },
+];
+
 vi.mock("@/applications/platform/api/platform-api", () => ({
   usePlatformOrganizations: () => organizations,
   useConnectOrganization: () => ({ mutate: connect, isPending: false }),
   useUpdateOrganization: () => ({ mutate: update, isPending: false }),
   refusalMessage: async (_error: unknown, fallback: string) => fallback,
+  FULL_ACCESS_PRESET,
+  MODULE_PRESETS,
+  modulePreset: (id: string) =>
+    MODULE_PRESETS.find((preset) => preset.id === id) ?? FULL_ACCESS_PRESET,
+}));
+
+// The switchboard is its own component with its own queries; this suite is about
+// the page around it, so it is stubbed out rather than wired to a fake API.
+vi.mock("@/applications/platform/ui/module-switchboard", () => ({
+  ModuleSwitchboard: () => null,
 }));
 
 const { PlatformOrganizationsPage } = await import("./index");

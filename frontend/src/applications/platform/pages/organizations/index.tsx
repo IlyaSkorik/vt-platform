@@ -2,6 +2,9 @@ import { useState } from "react";
 
 import {
   type BillingModel,
+  FULL_ACCESS_PRESET,
+  MODULE_PRESETS,
+  modulePreset,
   type PlatformOrganization,
   refusalMessage,
   useConnectOrganization,
@@ -17,6 +20,7 @@ import {
   validateFeeTiers,
 } from "@/applications/platform/lib/billing";
 import { FeeTierEditor } from "@/applications/platform/ui/fee-tier-editor";
+import { ModuleSwitchboard } from "@/applications/platform/ui/module-switchboard";
 import {
   Badge,
   Button,
@@ -41,6 +45,10 @@ function ConnectForm(): React.JSX.Element {
   const [billingModel, setBillingModel] = useState<BillingModel>("COMMISSION_PERCENT");
   const [tierDrafts, setTierDrafts] = useState(emptyFeeTierDrafts);
   const [tiersTouched, setTiersTouched] = useState(false);
+  // Which parts of the platform this organization is being sold. The full-access
+  // preset is the default because that is what connecting meant before the
+  // platform was sold in parts; narrowing it is a deliberate act.
+  const [preset, setPreset] = useState(FULL_ACCESS_PRESET.id);
   const perPerformance = billingModel === "PER_PERFORMANCE_FEE";
 
   const submit = (event: React.FormEvent): void => {
@@ -62,6 +70,7 @@ function ConnectForm(): React.JSX.Element {
           ? { feeTiers: tiers ?? [] }
           : { commissionPercent: commissionPercent.trim() || "0" }),
         ...(slug.trim() ? { slug: slug.trim() } : {}),
+        modules: [...modulePreset(preset).modules],
       },
       {
         onSuccess: (organization) => {
@@ -73,6 +82,7 @@ function ConnectForm(): React.JSX.Element {
           setBillingModel("COMMISSION_PERCENT");
           setTierDrafts(emptyFeeTierDrafts());
           setTiersTouched(false);
+          setPreset(FULL_ACCESS_PRESET.id);
         },
         onError: async (error) => {
           toast.error(await refusalMessage(error, "Не удалось подключить организацию"));
@@ -120,6 +130,14 @@ function ConnectForm(): React.JSX.Element {
             value={slug}
             onChange={(event) => setSlug(event.target.value)}
             placeholder="zvezdnyy-dozhd"
+          />
+          <Select
+            label="Что подключаем"
+            className="sm:col-span-2"
+            options={MODULE_PRESETS.map((row) => ({ value: row.id, label: row.label }))}
+            value={preset}
+            onValueChange={setPreset}
+            description="Набор модулей можно поправить по одному сразу после подключения"
           />
           {perPerformance ? (
             <div className="flex flex-col gap-2 sm:col-span-2">
@@ -259,6 +277,8 @@ function OrganizationCard({
         {perPerformance ? (
           <FeeTierEditor drafts={tierDrafts} showErrors={tiersTouched} onChange={setTierDrafts} />
         ) : null}
+
+        <ModuleSwitchboard organizationId={organization.id} />
 
         <div className="flex flex-wrap gap-3">
           <Button

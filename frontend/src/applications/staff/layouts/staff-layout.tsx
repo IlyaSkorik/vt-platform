@@ -4,10 +4,12 @@ import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { SiteFooter } from "@/app/layouts/site-footer";
 import { ThemeToggle } from "@/app/layouts/theme-toggle";
 import { UserMenu } from "@/app/layouts/user-menu";
+import { useAuth } from "@/app/providers";
 import {
   isStaffWorkspaceRoute,
   STAFF_NAVIGATION,
   type StaffNavItem,
+  visibleStaffNavigation,
 } from "@/applications/staff/navigation";
 import { WorkspaceSwitcher } from "@/applications/workspace-switcher";
 import { APP_NAME, ROUTES } from "@/shared/config";
@@ -46,9 +48,12 @@ function StaffNav({
   collapsed: boolean;
   onNavigate?: () => void;
 }): React.JSX.Element {
+  const { enabledModules, isPlatformAdmin } = useAuth();
+  const items = visibleStaffNavigation(enabledModules, { isPlatformAdmin });
+
   return (
     <nav aria-label="Навигация панели управления" className="flex flex-col gap-1">
-      {STAFF_NAVIGATION.map((item) => {
+      {items.map((item) => {
         const Icon = item.icon;
         return (
           <NavLink

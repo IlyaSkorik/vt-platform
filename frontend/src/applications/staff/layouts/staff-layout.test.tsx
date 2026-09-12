@@ -11,6 +11,26 @@ vi.mock("@/app/layouts/user-menu", () => ({ UserMenu: () => null }));
 vi.mock("@/app/layouts/site-footer", () => ({ SiteFooter: () => null }));
 vi.mock("@/applications/workspace-switcher", () => ({ WorkspaceSwitcher: () => null }));
 
+// The sidebar shows the sections this organization holds, so it reads the session.
+// These tests are about folding and unfolding it, not about entitlements, so the
+// stub holds everything and the navigation renders in full.
+vi.mock("@/app/providers", () => ({
+  useAuth: () => ({
+    enabledModules: [
+      "COMPETITIONS",
+      "APPLICATIONS",
+      "PARTICIPANTS",
+      "JURY",
+      "PROGRAMS",
+      "DIPLOMAS",
+      "VOTING",
+      "FINANCE",
+      "ANALYTICS",
+    ],
+    isPlatformAdmin: false,
+  }),
+}));
+
 const SIDEBAR = "Боковая навигация панели управления";
 const WORKSPACE = "/staff/competitions/01900000-0000-7000-8000-000000000001";
 

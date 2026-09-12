@@ -473,9 +473,26 @@ components:
           description: >-
             Which organization the membership is in. The platform hosts several,
             so staff status is a fact about a person and an organization both.
+    OrganizationModule:
+      type: string
+      description: >-
+        One switchable part of the platform. The platform is sold in parts: an
+        organization holds the modules it was connected with, and the rest is
+        closed to it — not merely hidden. Operators move these in the platform
+        console.
+      enum:
+        - COMPETITIONS
+        - APPLICATIONS
+        - PARTICIPANTS
+        - JURY
+        - PROGRAMS
+        - DIPLOMAS
+        - VOTING
+        - FINANCE
+        - ANALYTICS
     CurrentUser:
       type: object
-      required: [user, staffMembership, platformAdmin]
+      required: [user, staffMembership, platformAdmin, enabledModules]
       properties:
         user:
           $ref: "#/components/schemas/User"
@@ -489,6 +506,16 @@ components:
             Whether the account operates the platform itself — connecting
             organizations and reading across all of them. Granted only by a
             management command, and never by anything inside an organization.
+        enabledModules:
+          type: array
+          description: >-
+            Which modules the account's organization holds. Empty for anyone who
+            is not staff — modules describe what an organization was sold, and a
+            participant's cabinet is not gated by them. Presentation only: the
+            enforcing gate is on the endpoints themselves, so a client that
+            ignores this list still gets a 403.
+          items:
+            $ref: "#/components/schemas/OrganizationModule"
     Session:
       type: object
       required: [type, accessToken, tokenType, expiresIn]

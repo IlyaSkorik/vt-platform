@@ -32,13 +32,16 @@ from apps.organization.application.handlers import (
     ConnectOrganizationCommand,
     FeeTierRow,
     SetCommissionRateCommand,
+    SetOrganizationModulesCommand,
     SetPerformanceFeeScheduleCommand,
 )
 from apps.organization.composition import (
     build_change_organization_status_handler,
     build_connect_organization_handler,
+    build_list_organization_modules_handler,
     build_list_organizations_handler,
     build_set_commission_rate_handler,
+    build_set_organization_modules_handler,
     build_set_performance_fee_schedule_handler,
 )
 from apps.organization.presentation.api.v1.staff.serializers import ProblemDetailSerializer
@@ -54,9 +57,11 @@ from apps.platform.presentation.api.v1.serializers import (
     LoadTestOverviewResponseSerializer,
     LoadTestRunResponseSerializer,
     OrganizationListResponseSerializer,
+    OrganizationModulesResponseSerializer,
     OrganizationResponseSerializer,
     PurgePlanResponseSerializer,
     PurgeSearchResponseSerializer,
+    SetOrganizationModulesRequestSerializer,
     StartLoadTestRequestSerializer,
     UpdateOrganizationRequestSerializer,
 )
@@ -235,6 +240,9 @@ class PlatformOrganizationsView(_PlatformView):
             commission_percent=Decimal(str(payload.get("commissionPercent", Decimal("0")))),
             connected_by=str(request.user.id),
             fee_tiers=_fee_tier_rows(payload.get("feeTiers") or ()),
+            # Absent means the full-access preset; an explicit list (even an empty
+            # one) is the operator saying exactly what was sold.
+            modules=None if "modules" not in payload else tuple(payload["modules"]),
         )
         try:
             result = build_connect_organization_handler().handle(command)
@@ -291,6 +299,84 @@ class PlatformOrganizationDetailView(_PlatformView):
         except ApplicationError as exc:
             return application_problem(exc, instance=request.path, request=request)
         return _envelope(_organization_data(view), request)
+
+
+def _modules_data(view: Any) -> dict[str, Any]:
+    return {
+        "organizationId": view.organization_id,
+        "modules": [
+            {
+                "module": row.module,
+                "enabled": row.enabled,
+                "enabledAt": row.enabled_at,
+                "disabledAt": row.disabled_at,
+            }
+            for row in view.modules
+        ],
+    }
+
+
+class PlatformOrganizationModulesView(_PlatformView):
+    """GET/PUT /api/v1/platform/organizations/{id}/modules — what the organization was sold.
+
+    Separate from the terms endpoint next door on purpose. Which modules an
+    organization holds is not one of its commercial *terms* — it is the shape of the
+    product, it is edited on its own screen, and a PATCH that merged the two would
+    make "set the modules" and "change the commission" share a failure mode.
+
+    PUT rather than PATCH: the body is the whole switchboard, and anything absent is
+    off. See :class:`SetOrganizationModulesRequestSerializer`.
+    """
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="platform_list_organization_modules",
+        summary="Read an organization's modules",
+        description="Every module the platform knows, with whether this organization holds it and since when.",
+        request=None,
+        responses={
+            200: OrganizationModulesResponseSerializer,
+            403: OpenApiResponse(ProblemDetailSerializer, description="Not a platform administrator."),
+            404: OpenApiResponse(ProblemDetailSerializer, description="No such organization."),
+        },
+    )
+    def get(self, request: Request, organization_id: str) -> Response:
+        try:
+            view = build_list_organization_modules_handler().handle(organization_id)
+        except ApplicationError as exc:
+            return application_problem(exc, instance=request.path, request=request)
+        return _envelope(_modules_data(view), request)
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="platform_set_organization_modules",
+        summary="Set an organization's modules",
+        description=(
+            "Replace the organization's module set: everything listed is switched on, everything else off. "
+            "Idempotent — re-sending an unchanged set keeps the date each module was first connected."
+        ),
+        request=SetOrganizationModulesRequestSerializer,
+        responses={
+            200: OrganizationModulesResponseSerializer,
+            400: OpenApiResponse(ProblemDetailSerializer, description="Malformed request."),
+            403: OpenApiResponse(ProblemDetailSerializer, description="Not a platform administrator."),
+            404: OpenApiResponse(ProblemDetailSerializer, description="No such organization."),
+        },
+    )
+    def put(self, request: Request, organization_id: str) -> Response:
+        serializer = SetOrganizationModulesRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        command = SetOrganizationModulesCommand(
+            organization_id=organization_id,
+            modules=tuple(serializer.validated_data["modules"]),
+            changed_by=str(request.user.id),
+        )
+        try:
+            view = build_set_organization_modules_handler().handle(command)
+        except ApplicationError as exc:
+            return application_problem(exc, instance=request.path, request=request)
+        return _envelope(_modules_data(view), request)
 
 
 class PlatformAudienceView(_PlatformView):

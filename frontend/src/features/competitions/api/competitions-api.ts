@@ -641,10 +641,17 @@ function setCompetitionCache(
   upsertListItem(queryClient, detail);
 }
 
-export function useCompetitionsList(): UseQueryResult<CompetitionSummary[], ApiError> {
+export function useCompetitionsList({
+  enabled = true,
+}: {
+  enabled?: boolean;
+} = {}): UseQueryResult<CompetitionSummary[], ApiError> {
   return useQuery<CompetitionSummary[], ApiError>({
     queryKey: competitionKeys.list(),
     queryFn: ({ signal }) => fetchCompetitions(signal),
+    // Off when the organization does not hold the festivals module — see
+    // `useStaffOverview` for why asking anyway is worse than not asking.
+    enabled,
   });
 }
 

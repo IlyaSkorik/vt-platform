@@ -12,6 +12,8 @@ import {
 import { useMemo } from "react";
 import { createSearchParams, Link } from "react-router";
 
+import { type AuthModule, useAuth } from "@/app/providers";
+
 import {
   competitionStatusLabel,
   competitionStatusVariant,
@@ -83,6 +85,30 @@ const WORKED_QUEUES: ReadonlyArray<{
     icon: CalendarDays,
     tone: "bg-primary/10 text-primary",
   },
+];
+
+/**
+ * The shortcuts on the front screen, each tied to the module it leads into.
+ *
+ * An action without a module is one every organization has. The rest disappear
+ * with their section rather than leading to a page that would refuse them.
+ */
+const QUICK_ACTIONS: ReadonlyArray<{
+  title: string;
+  to: string;
+  icon: React.ComponentType<{ className?: string }>;
+  module?: AuthModule;
+}> = [
+  {
+    title: "Новый фестиваль",
+    to: ROUTES.staffCompetitionsNew,
+    icon: Plus,
+    module: "COMPETITIONS",
+  },
+  { title: "Пригласить сотрудника", to: ROUTES.staffInvitations, icon: MailPlus },
+  { title: "Программа", to: ROUTES.staffProgram, icon: CalendarDays, module: "PROGRAMS" },
+  { title: "Дипломы", to: ROUTES.staffDiplomas, icon: Award, module: "DIPLOMAS" },
+  { title: "Финансы", to: ROUTES.staffFinance, icon: FileText, module: "FINANCE" },
 ];
 
 function formatDate(iso: string | null | undefined): string {
@@ -163,8 +189,15 @@ function QueueTile({
  * is built on, so a number on this page and the queue it opens can never disagree.
  */
 export function StaffDashboardPage(): React.JSX.Element {
-  const overview = useStaffOverview();
-  const competitions = useCompetitionsList();
+  // The summary only summarizes what the organization actually has. A section it
+  // was not sold is not shown as empty or as failing — it is absent, and the read
+  // behind it is never made, because the endpoint would refuse it anyway.
+  const { hasModule } = useAuth();
+  const showApplications = hasModule("APPLICATIONS");
+  const showCompetitions = hasModule("COMPETITIONS");
+
+  const overview = useStaffOverview({ enabled: showApplications });
+  const competitions = useCompetitionsList({ enabled: showCompetitions });
   const invitations = useStaffInvitations();
 
   const counts = useMemo(() => {
@@ -198,12 +231,14 @@ export function StaffDashboardPage(): React.JSX.Element {
     <PageContainer size="wide">
       <PageHeader
         actions={
-          <Button asChild size="sm">
-            <Link to={ROUTES.staffCompetitionsNew}>
-              <Plus className="size-4" />
-              Новый фестиваль
-            </Link>
-          </Button>
+          showCompetitions ? (
+            <Button asChild size="sm">
+              <Link to={ROUTES.staffCompetitionsNew}>
+                <Plus className="size-4" />
+                Новый фестиваль
+              </Link>
+            </Button>
+          ) : null
         }
       >
         <PageTitle>Панель управления</PageTitle>
@@ -212,128 +247,134 @@ export function StaffDashboardPage(): React.JSX.Element {
         </PageDescription>
       </PageHeader>
       <PageContent className="flex flex-col gap-6">
-        {overview.isError ? (
+        {showApplications && overview.isError ? (
           <Alert variant="danger">
             Не удалось загрузить очередь заявок. Обновите страницу или откройте раздел «Заявки».
           </Alert>
         ) : null}
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {WORKED_QUEUES.map((queue) => (
-            <QueueTile
-              key={queue.key}
-              title={queue.title}
-              hint={queue.hint}
-              count={counts(queue.key)}
-              icon={queue.icon}
-              tone={queue.tone}
-              to={queueLink(queue.key)}
-              loading={overview.isLoading}
-            />
-          ))}
-        </div>
+        {showApplications ? (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {WORKED_QUEUES.map((queue) => (
+              <QueueTile
+                key={queue.key}
+                title={queue.title}
+                hint={queue.hint}
+                count={counts(queue.key)}
+                icon={queue.icon}
+                tone={queue.tone}
+                to={queueLink(queue.key)}
+                loading={overview.isLoading}
+              />
+            ))}
+          </div>
+        ) : null}
 
         <div className="grid gap-4 lg:grid-cols-2">
-          <Card className="shadow-none">
-            <CardHeader className="flex flex-row items-start justify-between gap-3">
-              <div>
-                <CardTitle>Последние заявки</CardTitle>
-                <CardDescription>Самые свежие поступления по всем фестивалям.</CardDescription>
-              </div>
-              <Button asChild variant="ghost" size="sm">
-                <Link to={ROUTES.staffApplications}>Все заявки</Link>
-              </Button>
-            </CardHeader>
-            <CardContent className="py-0">
-              {overview.isLoading ? (
-                <div className="flex flex-col gap-3 py-3">
-                  <Skeleton className="h-12" />
-                  <Skeleton className="h-12" />
+          {showApplications ? (
+            <Card className="shadow-none">
+              <CardHeader className="flex flex-row items-start justify-between gap-3">
+                <div>
+                  <CardTitle>Последние заявки</CardTitle>
+                  <CardDescription>Самые свежие поступления по всем фестивалям.</CardDescription>
                 </div>
-              ) : recent.length === 0 ? (
-                <EmptyState
-                  icon={<Inbox aria-hidden="true" />}
-                  title="Заявок пока нет"
-                  description="Как только участники начнут подавать заявки, они появятся здесь."
-                />
-              ) : (
-                <ul className="flex flex-col divide-y divide-border">
-                  {recent.map((item) => (
-                    <li key={item.id}>
-                      <Link
-                        to={applicationLink(item)}
-                        className="flex flex-wrap items-center justify-between gap-2 rounded-md px-1 py-3 outline-none hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring"
-                      >
-                        <span className="min-w-0">
-                          <span className="block text-sm font-medium">
-                            №{item.applicationNumber} · {item.competition}
+                <Button asChild variant="ghost" size="sm">
+                  <Link to={ROUTES.staffApplications}>Все заявки</Link>
+                </Button>
+              </CardHeader>
+              <CardContent className="py-0">
+                {overview.isLoading ? (
+                  <div className="flex flex-col gap-3 py-3">
+                    <Skeleton className="h-12" />
+                    <Skeleton className="h-12" />
+                  </div>
+                ) : recent.length === 0 ? (
+                  <EmptyState
+                    icon={<Inbox aria-hidden="true" />}
+                    title="Заявок пока нет"
+                    description="Как только участники начнут подавать заявки, они появятся здесь."
+                  />
+                ) : (
+                  <ul className="flex flex-col divide-y divide-border">
+                    {recent.map((item) => (
+                      <li key={item.id}>
+                        <Link
+                          to={applicationLink(item)}
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-md px-1 py-3 outline-none hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          <span className="min-w-0">
+                            <span className="block text-sm font-medium">
+                              №{item.applicationNumber} · {item.competition}
+                            </span>
+                            <span className="mt-1 block text-xs text-muted-foreground">
+                              {item.organization || "Без организации"} · выступлений:{" "}
+                              {item.performancesCount} · {formatDate(item.submissionDate)}
+                            </span>
                           </span>
-                          <span className="mt-1 block text-xs text-muted-foreground">
-                            {item.organization || "Без организации"} · выступлений:{" "}
-                            {item.performancesCount} · {formatDate(item.submissionDate)}
-                          </span>
-                        </span>
-                        {item.badges?.hasCorrections ? (
-                          <Badge variant="warning">На исправлении</Badge>
-                        ) : item.badges?.hasMissingFiles ? (
-                          <Badge variant="warning">Нет файлов</Badge>
-                        ) : (
-                          <Badge variant="neutral">{item.status}</Badge>
-                        )}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
+                          {item.badges?.hasCorrections ? (
+                            <Badge variant="warning">На исправлении</Badge>
+                          ) : item.badges?.hasMissingFiles ? (
+                            <Badge variant="warning">Нет файлов</Badge>
+                          ) : (
+                            <Badge variant="neutral">{item.status}</Badge>
+                          )}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          ) : null}
 
-          <Card className="shadow-none">
-            <CardHeader className="flex flex-row items-start justify-between gap-3">
-              <div>
-                <CardTitle>Фестивали</CardTitle>
-                <CardDescription>Последние созданные и их состояние.</CardDescription>
-              </div>
-              <Button asChild variant="ghost" size="sm">
-                <Link to={ROUTES.staffCompetitions}>Все фестивали</Link>
-              </Button>
-            </CardHeader>
-            <CardContent className="py-0">
-              {competitions.isLoading ? (
-                <div className="flex flex-col gap-3 py-3">
-                  <Skeleton className="h-12" />
-                  <Skeleton className="h-12" />
+          {showCompetitions ? (
+            <Card className="shadow-none">
+              <CardHeader className="flex flex-row items-start justify-between gap-3">
+                <div>
+                  <CardTitle>Фестивали</CardTitle>
+                  <CardDescription>Последние созданные и их состояние.</CardDescription>
                 </div>
-              ) : activeCompetitions.length === 0 ? (
-                <EmptyState
-                  icon={<Medal aria-hidden="true" />}
-                  title="Фестивалей пока нет"
-                  description="Создайте первый фестиваль, чтобы принимать заявки."
-                />
-              ) : (
-                <ul className="flex flex-col divide-y divide-border">
-                  {activeCompetitions.map((competition) => (
-                    <li key={competition.id}>
-                      <Link
-                        to={`${ROUTES.staffCompetitions}/${competition.id}`}
-                        className="flex flex-wrap items-center justify-between gap-2 rounded-md px-1 py-3 outline-none hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring"
-                      >
-                        <span className="min-w-0">
-                          <span className="block text-sm font-medium">{competition.title}</span>
-                          <span className="mt-1 block text-xs text-muted-foreground">
-                            {competition.season}
+                <Button asChild variant="ghost" size="sm">
+                  <Link to={ROUTES.staffCompetitions}>Все фестивали</Link>
+                </Button>
+              </CardHeader>
+              <CardContent className="py-0">
+                {competitions.isLoading ? (
+                  <div className="flex flex-col gap-3 py-3">
+                    <Skeleton className="h-12" />
+                    <Skeleton className="h-12" />
+                  </div>
+                ) : activeCompetitions.length === 0 ? (
+                  <EmptyState
+                    icon={<Medal aria-hidden="true" />}
+                    title="Фестивалей пока нет"
+                    description="Создайте первый фестиваль, чтобы принимать заявки."
+                  />
+                ) : (
+                  <ul className="flex flex-col divide-y divide-border">
+                    {activeCompetitions.map((competition) => (
+                      <li key={competition.id}>
+                        <Link
+                          to={`${ROUTES.staffCompetitions}/${competition.id}`}
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-md px-1 py-3 outline-none hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          <span className="min-w-0">
+                            <span className="block text-sm font-medium">{competition.title}</span>
+                            <span className="mt-1 block text-xs text-muted-foreground">
+                              {competition.season}
+                            </span>
                           </span>
-                        </span>
-                        <Badge variant={competitionStatusVariant(competition.status)}>
-                          {competitionStatusLabel(competition.status)}
-                        </Badge>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
+                          <Badge variant={competitionStatusVariant(competition.status)}>
+                            {competitionStatusLabel(competition.status)}
+                          </Badge>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
@@ -386,36 +427,19 @@ export function StaffDashboardPage(): React.JSX.Element {
               <CardDescription>Частые операции — без лишней навигации.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
-              <Button asChild variant="outline" size="sm">
-                <Link to={ROUTES.staffCompetitionsNew}>
-                  <Plus className="size-4" />
-                  Новый фестиваль
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to={ROUTES.staffInvitations}>
-                  <MailPlus className="size-4" />
-                  Пригласить сотрудника
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to={ROUTES.staffProgram}>
-                  <CalendarDays className="size-4" />
-                  Программа
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to={ROUTES.staffDiplomas}>
-                  <Award className="size-4" />
-                  Дипломы
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to={ROUTES.staffFinance}>
-                  <FileText className="size-4" />
-                  Финансы
-                </Link>
-              </Button>
+              {QUICK_ACTIONS.filter(
+                (action) => action.module === undefined || hasModule(action.module),
+              ).map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Button key={action.to} asChild variant="outline" size="sm">
+                    <Link to={action.to}>
+                      <Icon className="size-4" />
+                      {action.title}
+                    </Link>
+                  </Button>
+                );
+              })}
             </CardContent>
           </Card>
         </div>

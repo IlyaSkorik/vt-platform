@@ -5689,6 +5689,90 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: Already in that state.
+  /api/v1/platform/organizations/{organization_id}/modules:
+    get:
+      operationId: platform_list_organization_modules
+      description: Every module the platform knows, with whether this organization
+        holds it and since when.
+      summary: Read an organization's modules
+      parameters:
+      - in: path
+        name: organization_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Platform
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationModulesResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Not a platform administrator.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: No such organization.
+    put:
+      operationId: platform_set_organization_modules
+      description: 'Replace the organization''s module set: everything listed is switched
+        on, everything else off. Idempotent — re-sending an unchanged set keeps the
+        date each module was first connected.'
+      summary: Set an organization's modules
+      parameters:
+      - in: path
+        name: organization_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Platform
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetOrganizationModulesRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SetOrganizationModulesRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SetOrganizationModulesRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationModulesResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Malformed request.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Not a platform administrator.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: No such organization.
   /api/v1/platform/purge/{target}/{object_id}:
     get:
       operationId: platform_purge_plan
@@ -11019,6 +11103,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FeeTier'
+        modules:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModulesEnum'
       required:
       - name
       - ownerEmail
@@ -11314,7 +11402,12 @@ components:
           - type: 'null'
         platformAdmin:
           type: boolean
+        enabledModules:
+          type: array
+          items:
+            type: string
       required:
+      - enabledModules
       - platformAdmin
       - staffMembership
       - user
@@ -12191,6 +12284,50 @@ components:
         * `URL_ONLY` - URL_ONLY
         * `FILE_ONLY` - FILE_ONLY
         * `URL_OR_FILE` - URL_OR_FILE
+    ModuleEnum:
+      enum:
+      - COMPETITIONS
+      - APPLICATIONS
+      - PARTICIPANTS
+      - JURY
+      - PROGRAMS
+      - DIPLOMAS
+      - VOTING
+      - FINANCE
+      - ANALYTICS
+      type: string
+      description: |-
+        * `COMPETITIONS` - COMPETITIONS
+        * `APPLICATIONS` - APPLICATIONS
+        * `PARTICIPANTS` - PARTICIPANTS
+        * `JURY` - JURY
+        * `PROGRAMS` - PROGRAMS
+        * `DIPLOMAS` - DIPLOMAS
+        * `VOTING` - VOTING
+        * `FINANCE` - FINANCE
+        * `ANALYTICS` - ANALYTICS
+    ModulesEnum:
+      enum:
+      - COMPETITIONS
+      - APPLICATIONS
+      - PARTICIPANTS
+      - JURY
+      - PROGRAMS
+      - DIPLOMAS
+      - VOTING
+      - FINANCE
+      - ANALYTICS
+      type: string
+      description: |-
+        * `COMPETITIONS` - COMPETITIONS
+        * `APPLICATIONS` - APPLICATIONS
+        * `PARTICIPANTS` - PARTICIPANTS
+        * `JURY` - JURY
+        * `PROGRAMS` - PROGRAMS
+        * `DIPLOMAS` - DIPLOMAS
+        * `VOTING` - VOTING
+        * `FINANCE` - FINANCE
+        * `ANALYTICS` - ANALYTICS
     Notification:
       type: object
       description: One entry in the feed, already in the words the recipient reads.
@@ -12253,6 +12390,36 @@ components:
         * `RESULTS_PUBLISHED` - RESULTS_PUBLISHED
     NullEnum:
       type: 'null'
+    OrganizationModules:
+      type: object
+      properties:
+        organizationId:
+          type: string
+          format: uuid
+        modules:
+          type: array
+          items:
+            $ref: '#/components/schemas/_Module'
+      required:
+      - modules
+      - organizationId
+    OrganizationModulesMeta:
+      type: object
+      properties:
+        requestId:
+          type: string
+      required:
+      - requestId
+    OrganizationModulesResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/OrganizationModules'
+        meta:
+          $ref: '#/components/schemas/OrganizationModulesMeta'
+      required:
+      - data
+      - meta
     OrganizationProfile:
       type: object
       properties:
@@ -15859,6 +16026,24 @@ components:
       required:
       - data
       - meta
+    SetOrganizationModulesRequest:
+      type: object
+      description: |-
+        Set which parts of the platform an organization holds.
+
+        The whole switchboard, not one switch: whatever is listed is on afterwards and
+        everything else is off. That makes a save idempotent and makes "take everything
+        away" expressible, which a per-module toggle cannot do in one step.
+
+        An empty list is therefore meaningful and allowed — an organization that holds
+        nothing but its own profile and staff.
+      properties:
+        modules:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModulesEnum'
+      required:
+      - modules
     SetParticipantMemberCountRequest:
       type: object
       description: |-
@@ -17885,6 +18070,28 @@ components:
           type: string
       required:
       - requestId
+    _Module:
+      type: object
+      properties:
+        module:
+          $ref: '#/components/schemas/ModuleEnum'
+        enabled:
+          type: boolean
+        enabledAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        disabledAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - disabledAt
+      - enabled
+      - enabledAt
+      - module
     _MusicRequirements:
       type: object
       properties:

@@ -9,7 +9,7 @@ import { PlatformLayout } from "@/applications/platform/layouts/platform-layout"
 import { StaffLayout } from "@/applications/staff/layouts/staff-layout";
 import { STAFF_NAVIGATION, type StaffNavItem } from "@/applications/staff/navigation";
 import { ROUTES } from "@/shared/config";
-import { GuestRoute, PlatformRoute, ProtectedRoute, StaffRoute } from "./guards";
+import { GuestRoute, ModuleRoute, PlatformRoute, ProtectedRoute, StaffRoute } from "./guards";
 import { RouteError } from "./route-error";
 import { RouteHydrateFallback } from "./route-hydrate-fallback";
 
@@ -304,77 +304,107 @@ export const routes: RouteObject[] = [
                 ),
               },
               {
-                path: ROUTES.staffCompetitions.slice(1),
-                element: <Outlet />,
+                element: <ModuleRoute module="COMPETITIONS" />,
                 children: [
                   {
-                    index: true,
-                    lazy: lazyPage(
-                      () => import("@/applications/staff/pages/competitions"),
-                      "StaffCompetitionsPage",
-                    ),
+                    path: ROUTES.staffCompetitions.slice(1),
+                    element: <Outlet />,
+                    children: [
+                      {
+                        index: true,
+                        lazy: lazyPage(
+                          () => import("@/applications/staff/pages/competitions"),
+                          "StaffCompetitionsPage",
+                        ),
+                      },
+                      {
+                        path: "new",
+                        lazy: lazyPage(
+                          () => import("@/applications/staff/pages/competitions/new"),
+                          "StaffCreateCompetitionPage",
+                        ),
+                      },
+                      {
+                        path: ":competitionId",
+                        lazy: lazyPage(
+                          () => import("@/applications/staff/pages/competition-workspace"),
+                          "StaffCompetitionWorkspacePage",
+                        ),
+                      },
+                    ],
                   },
+                ],
+              },
+              {
+                element: <ModuleRoute module="APPLICATIONS" />,
+                children: [
                   {
-                    path: "new",
+                    path: ROUTES.staffApplications.slice(1),
                     lazy: lazyPage(
-                      () => import("@/applications/staff/pages/competitions/new"),
-                      "StaffCreateCompetitionPage",
-                    ),
-                  },
-                  {
-                    path: ":competitionId",
-                    lazy: lazyPage(
-                      () => import("@/applications/staff/pages/competition-workspace"),
-                      "StaffCompetitionWorkspacePage",
+                      () => import("@/applications/staff/pages/applications"),
+                      "StaffApplicationsProcessingPage",
                     ),
                   },
                 ],
               },
               {
-                path: ROUTES.staffApplications.slice(1),
-                lazy: lazyPage(
-                  () => import("@/applications/staff/pages/applications"),
-                  "StaffApplicationsProcessingPage",
-                ),
-              },
-              {
-                path: ROUTES.staffParticipants.slice(1),
-                lazy: lazyPage(
-                  () => import("@/applications/staff/pages/participants"),
-                  "StaffParticipantsPage",
-                ),
-              },
-              {
-                path: ROUTES.staffJudges.slice(1),
-                lazy: lazyPage(
-                  () => import("@/applications/staff/pages/judges"),
-                  "StaffJudgesPage",
-                ),
-              },
-              {
-                path: ROUTES.staffProgram.slice(1),
-                lazy: lazyPage(
-                  () => import("@/applications/staff/pages/program"),
-                  "StaffProgramPage",
-                ),
-              },
-              {
-                path: ROUTES.staffDiplomas.slice(1),
-                element: <Outlet />,
+                element: <ModuleRoute module="PARTICIPANTS" />,
                 children: [
                   {
-                    index: true,
+                    path: ROUTES.staffParticipants.slice(1),
                     lazy: lazyPage(
-                      () => import("@/applications/staff/pages/diplomas"),
-                      "StaffDiplomasPage",
+                      () => import("@/applications/staff/pages/participants"),
+                      "StaffParticipantsPage",
                     ),
                   },
+                ],
+              },
+              {
+                element: <ModuleRoute module="JURY" />,
+                children: [
                   {
-                    path: "templates/:templateId/constructor",
+                    path: ROUTES.staffJudges.slice(1),
                     lazy: lazyPage(
-                      () => import("@/applications/staff/pages/diplomas/constructor"),
-                      "StaffDiplomaTemplateConstructorPage",
+                      () => import("@/applications/staff/pages/judges"),
+                      "StaffJudgesPage",
                     ),
+                  },
+                ],
+              },
+              {
+                element: <ModuleRoute module="PROGRAMS" />,
+                children: [
+                  {
+                    path: ROUTES.staffProgram.slice(1),
+                    lazy: lazyPage(
+                      () => import("@/applications/staff/pages/program"),
+                      "StaffProgramPage",
+                    ),
+                  },
+                ],
+              },
+              {
+                element: <ModuleRoute module="DIPLOMAS" />,
+                children: [
+                  {
+                    path: ROUTES.staffDiplomas.slice(1),
+                    element: <Outlet />,
+                    children: [
+                      {
+                        index: true,
+                        lazy: lazyPage(
+                          () => import("@/applications/staff/pages/diplomas"),
+                          "StaffDiplomasPage",
+                        ),
+                      },
+                      {
+                        path: "templates/:templateId/constructor",
+                        lazy: lazyPage(
+                          () => import("@/applications/staff/pages/diplomas/constructor"),
+                          "StaffDiplomaTemplateConstructorPage",
+                        ),
+                      },
+                    ],
                   },
                 ],
               },
@@ -397,12 +427,22 @@ export const routes: RouteObject[] = [
                 ),
               },
               {
-                path: ROUTES.staffFinance.slice(1),
-                lazy: workspacePlaceholder(staffItem(ROUTES.staffFinance), "staff"),
+                element: <ModuleRoute module="FINANCE" />,
+                children: [
+                  {
+                    path: ROUTES.staffFinance.slice(1),
+                    lazy: workspacePlaceholder(staffItem(ROUTES.staffFinance), "staff"),
+                  },
+                ],
               },
               {
-                path: ROUTES.staffAnalytics.slice(1),
-                lazy: workspacePlaceholder(staffItem(ROUTES.staffAnalytics), "staff"),
+                element: <ModuleRoute module="ANALYTICS" />,
+                children: [
+                  {
+                    path: ROUTES.staffAnalytics.slice(1),
+                    lazy: workspacePlaceholder(staffItem(ROUTES.staffAnalytics), "staff"),
+                  },
+                ],
               },
               {
                 path: ROUTES.staffSettings.slice(1),

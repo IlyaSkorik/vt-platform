@@ -3,13 +3,21 @@ import { createContext, use, useCallback, useEffect, useMemo, useState } from "r
 import { authKeys, fetchCurrentUser } from "@/features/auth";
 import { onSessionEvent, refreshAccessToken, tokenStore } from "@/shared/api";
 import { deleteCurrentSession } from "@/shared/api/generated/identity/identity";
-import type { CurrentUser, StaffMembership, User } from "@/shared/api/generated/model";
+import type {
+  CurrentUser,
+  OrganizationModule,
+  StaffMembership,
+  User,
+} from "@/shared/api/generated/model";
 
 /** The authenticated account, sourced from `GET /users/me` (composition edge). */
 export type AuthUser = User;
 
 /** The account's staff membership over the organization, or `null` for ordinary users. */
 export type AuthStaffMembership = StaffMembership;
+
+/** One switchable part of the platform the account's organization may hold. */
+export type AuthModule = OrganizationModule;
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -30,6 +38,17 @@ interface AuthContextValue {
    * — an organization's OWNER is the top of that organization and nothing more.
    */
   isPlatformAdmin: boolean;
+  /**
+   * Which parts of the platform the account's organization was sold. Empty for
+   * anyone who is not staff.
+   *
+   * Presentation only — it decides what the menu offers and which routes render,
+   * never whether an action is allowed. The server gates the endpoints, so a
+   * hand-typed URL is refused there regardless of what this list says.
+   */
+  enabledModules: AuthModule[];
+  /** Convenience: whether the organization holds a given module. */
+  hasModule: (module: AuthModule) => boolean;
   isAuthenticated: boolean;
   /**
    * True when a previously live session dropped (expired token + failed
@@ -138,6 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   const user = currentUser?.user ?? null;
   const staffMembership = currentUser?.staffMembership ?? null;
   const isPlatformAdmin = currentUser?.platformAdmin ?? false;
+  const enabledModules = useMemo(() => currentUser?.enabledModules ?? [], [currentUser]);
 
   const status: AuthStatus = useMemo(() => {
     if (bootstrapping || (enabled && query.isLoading)) {
@@ -153,12 +173,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
       staffMembership,
       isStaff: staffMembership?.status === "ACTIVE",
       isPlatformAdmin,
+      enabledModules,
+      hasModule: (module: AuthModule) => enabledModules.includes(module),
       isAuthenticated: status === "authenticated",
       sessionExpired,
       refresh,
       signOut,
     }),
-    [status, user, staffMembership, isPlatformAdmin, sessionExpired, refresh, signOut],
+    [
+      status,
+      user,
+      staffMembership,
+      isPlatformAdmin,
+      enabledModules,
+      sessionExpired,
+      refresh,
+      signOut,
+    ],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;

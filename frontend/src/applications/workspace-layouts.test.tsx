@@ -9,6 +9,19 @@ import { StaffLayout } from "@/applications/staff/layouts/staff-layout";
 const authState = {
   staffMembership: null as null | { role: string; status: string },
   isPlatformAdmin: false,
+  // The staff sidebar only offers the sections the organization was sold, so the
+  // shell needs a module set to render one at all.
+  enabledModules: [
+    "COMPETITIONS",
+    "APPLICATIONS",
+    "PARTICIPANTS",
+    "JURY",
+    "PROGRAMS",
+    "DIPLOMAS",
+    "VOTING",
+    "FINANCE",
+    "ANALYTICS",
+  ] as string[],
 };
 
 vi.mock("@/app/providers", () => ({
@@ -22,6 +35,8 @@ vi.mock("@/app/providers", () => ({
     staffMembership: authState.staffMembership,
     isStaff: authState.staffMembership?.status === "ACTIVE",
     isPlatformAdmin: authState.isPlatformAdmin,
+    enabledModules: authState.enabledModules,
+    hasModule: (module: string) => authState.enabledModules.includes(module),
     isAuthenticated: true,
     sessionExpired: false,
     refresh: vi.fn(),

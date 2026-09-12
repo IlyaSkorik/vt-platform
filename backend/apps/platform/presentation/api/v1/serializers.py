@@ -7,10 +7,12 @@ from decimal import Decimal
 from drf_spectacular.utils import inline_serializer
 from rest_framework import serializers
 
+from apps.organization.domain.value_objects import OrganizationModule
 from apps.platform.presentation.api.v1.loadtest import MAX_COUNT
 
 __all__ = [
     "BILLING_MODELS",
+    "MODULES",
     "ConnectOrganizationRequestSerializer",
     "DashboardResponseSerializer",
     "FeeTierSerializer",
@@ -18,9 +20,11 @@ __all__ = [
     "LoadTestOverviewResponseSerializer",
     "LoadTestRunResponseSerializer",
     "OrganizationListResponseSerializer",
+    "OrganizationModulesResponseSerializer",
     "OrganizationResponseSerializer",
     "PurgePlanResponseSerializer",
     "PurgeSearchResponseSerializer",
+    "SetOrganizationModulesRequestSerializer",
     "StartLoadTestRequestSerializer",
     "UpdateOrganizationRequestSerializer",
 ]
@@ -30,6 +34,12 @@ __all__ = [
 #: domain ``BillingModel``; kept here as plain strings so the presentation edge does
 #: not import the domain enum just to spell a choice list).
 BILLING_MODELS = ("COMMISSION_PERCENT", "PER_PERFORMANCE_FEE")
+
+#: Every switchable module, read off the domain enum so the console's choice list
+#: cannot drift from what the gate actually enforces. Unlike ``BILLING_MODELS``
+#: above, this one *is* imported: a stale copy here would advertise a module the
+#: platform cannot grant, or hide one it can.
+MODULES = tuple(module.value for module in OrganizationModule)
 
 
 class FeeTierSerializer(serializers.Serializer[dict[str, object]]):
@@ -84,6 +94,11 @@ class ConnectOrganizationRequestSerializer(serializers.Serializer[dict[str, obje
     # absence on the percentage one.
     billingModel = serializers.ChoiceField(choices=list(BILLING_MODELS), required=False)
     feeTiers = FeeTierSerializer(many=True, required=False)
+    # Which parts of the platform this organization is being sold. Omitted means
+    # all of them; the console's presets are buttons that fill this list, so the
+    # meaning of a preset stays in the interface and never becomes a hidden rule
+    # here. An explicit empty list is honoured literally.
+    modules = serializers.ListField(child=serializers.ChoiceField(choices=list(MODULES)), required=False, allow_empty=True)
 
     def validate(self, attrs: dict[str, object]) -> dict[str, object]:
         attrs = _validate_terms(attrs)
@@ -357,4 +372,51 @@ PurgePlanResponseSerializer = inline_serializer(
 PurgeSearchResponseSerializer = inline_serializer(
     name="PlatformPurgeSearchResponse",
     fields={"data": _PurgeTargetSerializer(many=True), "meta": _meta},
+)
+
+
+class SetOrganizationModulesRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """Set which parts of the platform an organization holds.
+
+    The whole switchboard, not one switch: whatever is listed is on afterwards and
+    everything else is off. That makes a save idempotent and makes "take everything
+    away" expressible, which a per-module toggle cannot do in one step.
+
+    An empty list is therefore meaningful and allowed — an organization that holds
+    nothing but its own profile and staff.
+    """
+
+    modules = serializers.ListField(
+        child=serializers.ChoiceField(choices=list(MODULES)),
+        allow_empty=True,
+    )
+
+    def validate_modules(self, value: list[str]) -> list[str]:
+        """Collapse duplicates; a set is what the use case means by this list."""
+        return sorted(set(value))
+
+
+class _ModuleSerializer(serializers.Serializer[dict[str, object]]):
+    module = serializers.ChoiceField(choices=list(MODULES))
+    enabled = serializers.BooleanField()
+    # When it was last switched on / off. Null until it has been.
+    enabledAt = serializers.DateTimeField(allow_null=True)
+    disabledAt = serializers.DateTimeField(allow_null=True)
+
+
+OrganizationModulesResponseSerializer = inline_serializer(
+    name="OrganizationModulesResponse",
+    fields={
+        "data": inline_serializer(
+            name="OrganizationModules",
+            fields={
+                "organizationId": serializers.UUIDField(),
+                "modules": _ModuleSerializer(many=True),
+            },
+        ),
+        "meta": inline_serializer(
+            name="OrganizationModulesMeta",
+            fields={"requestId": serializers.CharField()},
+        ),
+    },
 )
