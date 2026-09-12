@@ -33,6 +33,7 @@ __all__ = [
     "EditNomineeRequestSerializer",
     "ImportPreviewSerializer",
     "NomineeSerializer",
+    "ProgramOptionSerializer",
     "PublicBallotSerializer",
     "PublicNomineeSerializer",
     "ReorderNomineesRequestSerializer",
@@ -79,7 +80,6 @@ class UpdateBallotRequestSerializer(_BallotRulesMixin):
 
 class _NomineeFieldsMixin(serializers.Serializer[dict[str, object]]):
     subtitle = serializers.CharField(max_length=NOMINEE_FIELD_MAX, required=False, allow_blank=True)
-    city = serializers.CharField(max_length=NOMINEE_FIELD_MAX, required=False, allow_blank=True)
     photo = serializers.CharField(max_length=1024, required=False, allow_blank=True, allow_null=True)
     number = serializers.IntegerField(min_value=0, max_value=100_000, required=False, allow_null=True)
 
@@ -100,6 +100,14 @@ class ReorderNomineesRequestSerializer(serializers.Serializer[dict[str, object]]
     """Rearrange the list — every nominee named exactly once."""
 
     order = serializers.ListField(child=serializers.UUIDField(), allow_empty=False)
+
+
+class ProgramOptionSerializer(serializers.Serializer[dict[str, object]]):
+    """One running order a ballot could be filled from, and how much is in it."""
+
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+    nominees = serializers.IntegerField()
 
 
 class SeedFromProgramRequestSerializer(serializers.Serializer[dict[str, object]]):
@@ -130,7 +138,6 @@ class NomineeSerializer(serializers.Serializer[dict[str, object]]):
     position = serializers.IntegerField()
     title = serializers.CharField()
     subtitle = serializers.CharField(allow_blank=True)
-    city = serializers.CharField(allow_blank=True)
     photo = serializers.CharField(allow_null=True)
     number = serializers.IntegerField(allow_null=True)
     withdrawn = serializers.BooleanField()
@@ -189,7 +196,6 @@ class PublicNomineeSerializer(serializers.Serializer[dict[str, object]]):
     position = serializers.IntegerField()
     title = serializers.CharField()
     subtitle = serializers.CharField(allow_blank=True)
-    city = serializers.CharField(allow_blank=True)
     photo = serializers.CharField(allow_null=True)
     number = serializers.IntegerField(allow_null=True)
     votes = serializers.IntegerField(allow_null=True)

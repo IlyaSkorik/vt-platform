@@ -47,7 +47,7 @@ class TestTheTemplate:
         response = staff_client.get(f"{_BALLOTS}/{ballot['id']}/nominees/template.xlsx")
         sheet = load_workbook(io.BytesIO(b"".join(response.streaming_content))).worksheets[0]
 
-        assert [cell.value for cell in sheet[1]] == ["Номер", "Участник", "Произведение", "Город"]
+        assert [cell.value for cell in sheet[1]] == ["Номер", "Участник", "Произведение"]
 
     def test_the_template_round_trips_back_through_the_import(self, staff_client: APIClient, ballot: dict) -> None:
         """The file we hand out has to be one we accept."""
@@ -64,9 +64,9 @@ class TestTheTemplate:
 class TestImporting:
     def test_a_filled_in_list_becomes_nominees(self, staff_client: APIClient, ballot: dict) -> None:
         payload = workbook_of(
-            ["Номер", "Участник", "Произведение", "Город"],
-            [1, "Ансамбль «Заря»", "«Калинка»", "Минск"],
-            [2, "Дуэт «Весна»", "«Вальс»", "Брест"],
+            ["Номер", "Участник", "Произведение"],
+            [1, "Ансамбль «Заря»", "«Калинка»"],
+            [2, "Дуэт «Весна»", "«Вальс»"],
         )
 
         response = upload(staff_client, ballot["id"], payload)
@@ -74,18 +74,18 @@ class TestImporting:
         assert response.status_code == 200, response.data
         added = response.data["data"]["added"]
         assert [row["title"] for row in added] == ["Ансамбль «Заря»", "Дуэт «Весна»"]
-        assert added[0]["city"] == "Минск"
+        assert added[0]["subtitle"] == "«Калинка»"
         assert added[0]["number"] == 1
 
     def test_the_columns_may_arrive_in_any_order_and_under_a_synonym(self, staff_client: APIClient, ballot: dict) -> None:
         """A list exported from another system does not match our column order."""
-        payload = workbook_of(["Город", "ФИО", "№"], ["Гомель", "Иванова Мария", 4])
+        payload = workbook_of(["Репертуар", "ФИО", "№"], ["«Вальс»", "Иванова Мария", 4])
 
         response = upload(staff_client, ballot["id"], payload)
 
         added = response.data["data"]["added"]
         assert added[0]["title"] == "Иванова Мария"
-        assert added[0]["city"] == "Гомель"
+        assert added[0]["subtitle"] == "«Вальс»"
         assert added[0]["number"] == 4
 
     def test_a_merged_title_above_the_table_does_not_hide_the_header(self, staff_client: APIClient, ballot: dict) -> None:
@@ -138,7 +138,7 @@ class TestThePreview:
 
         response = upload(staff_client, ballot["id"], payload, dry_run=True)
 
-        assert "Город" in response.data["data"]["missingColumns"]
+        assert "Произведение" in response.data["data"]["missingColumns"]
 
 
 class TestRefusingAFile:
@@ -186,8 +186,8 @@ class TestExportingTheResults:
 
         assert [cell.value for cell in sheet[1]][:3] == ["Место", "Номер", "Участник"]
         assert sheet.cell(row=2, column=3).value == winner["title"]
-        assert sheet.cell(row=2, column=6).value == 2
-        assert sheet.cell(row=3, column=6).value == 1
+        assert sheet.cell(row=2, column=5).value == 2
+        assert sheet.cell(row=3, column=5).value == 1
 
     def test_the_qr_for_the_poster_is_a_png(self, staff_client: APIClient, ballot: dict) -> None:
         response = staff_client.get(f"{_BALLOTS}/{ballot['id']}/qr.png")

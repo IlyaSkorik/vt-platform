@@ -3,10 +3,16 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { Ballot, BallotSummary, ImportPreview } from "@/features/voting-builder";
+import type {
+  Ballot,
+  BallotSummary,
+  ImportPreview,
+  ProgramOption,
+} from "@/features/voting-builder";
 import {
   useAddNominee,
   useBallot,
+  useBallotPrograms,
   useBallots,
   useCloseBallot,
   useCreateBallot,
@@ -14,6 +20,7 @@ import {
   useImportNominees,
   useOpenBallot,
   useRemoveNominee,
+  useSeedFromProgram,
   useUpdateBallot,
 } from "@/features/voting-builder";
 
@@ -31,6 +38,19 @@ vi.mock("@/features/voting-builder", async (importOriginal) => ({
   useRemoveNominee: vi.fn(),
   useDeleteBallot: vi.fn(),
   useImportNominees: vi.fn(),
+  useBallotPrograms: vi.fn(),
+  useSeedFromProgram: vi.fn(),
+}));
+
+// The page reads the session to know whether this organization even has festivals,
+// and the festival list to offer them. Both are somebody else's feature; this suite
+// is about the ballot screen.
+vi.mock("@/app/providers", () => ({
+  useAuth: () => ({ hasModule: (module: string) => modules.includes(module) }),
+}));
+
+vi.mock("@/features/competitions", () => ({
+  useCompetitionsList: () => ({ data: festivals, isLoading: false }),
 }));
 
 vi.mock("@/shared/ui", async (importOriginal) => {
@@ -46,7 +66,11 @@ Element.prototype.scrollIntoView = () => {};
 const create = vi.fn();
 const open = vi.fn();
 const importNominees = vi.fn();
+const seed = vi.fn();
 let preview: ImportPreview | null = null;
+let programs: ProgramOption[] = [];
+let modules: string[] = ["VOTING"];
+let festivals: { id: string; title: string; season: string }[] = [];
 
 function summary(overrides: Partial<BallotSummary> = {}): BallotSummary {
   return {
@@ -80,7 +104,6 @@ function detail(overrides: Partial<Ballot> = {}): Ballot {
         position: 1,
         title: "Ансамбль «Ритм»",
         subtitle: "«Калинка»",
-        city: "",
         photo: null,
         number: 1,
         withdrawn: false,
@@ -93,7 +116,6 @@ function detail(overrides: Partial<Ballot> = {}): Ballot {
         position: 2,
         title: "Хор «Родник»",
         subtitle: "",
-        city: "",
         photo: null,
         number: 2,
         withdrawn: false,
@@ -125,7 +147,11 @@ beforeEach(() => {
   create.mockReset();
   open.mockReset();
   importNominees.mockReset();
+  seed.mockReset();
   preview = null;
+  programs = [];
+  modules = ["VOTING"];
+  festivals = [];
 
   const idle = { mutate: vi.fn(), isPending: false };
   vi.mocked(useCreateBallot).mockReturnValue({ mutate: create, isPending: false } as never);
@@ -135,6 +161,10 @@ beforeEach(() => {
   vi.mocked(useAddNominee).mockReturnValue(idle as never);
   vi.mocked(useRemoveNominee).mockReturnValue(idle as never);
   vi.mocked(useDeleteBallot).mockReturnValue(idle as never);
+  vi.mocked(useBallotPrograms).mockImplementation(
+    () => ({ data: programs, isLoading: false }) as never,
+  );
+  vi.mocked(useSeedFromProgram).mockReturnValue({ mutate: seed, isPending: false } as never);
   vi.mocked(useImportNominees).mockReturnValue({
     mutate: importNominees.mockImplementation((_input, options) => {
       if (preview) options?.onSuccess?.(preview);
@@ -240,5 +270,46 @@ describe("importing a list", () => {
     await userEvent.upload(screen.getByTestId("import-input"), new File(["x"], "nominees.xlsx"));
 
     expect(screen.getByText(/Колонки не найдены и пропущены: Город/)).toBeInTheDocument();
+  });
+});
+
+describe("a ballot held inside a festival", () => {
+  it("offers the organization's festivals when it has any", () => {
+    modules = ["VOTING", "COMPETITIONS"];
+    festivals = [{ id: "c-1", title: "Весенний фестиваль", season: "2025/2026" }];
+    show(detail());
+
+    expect(screen.getByLabelText(/Фестиваль/)).toBeInTheDocument();
+  });
+
+  it("does not offer a festival to an organization that has none", () => {
+    modules = ["VOTING"];
+    show(detail());
+
+    expect(screen.queryByLabelText(/Фестиваль/)).not.toBeInTheDocument();
+  });
+
+  it("offers the festival's running orders, with what is in each", () => {
+    programs = [{ id: "p-1", name: "Вокал, 1 отделение", nominees: 12 }];
+    show(detail({ standalone: false, competitionId: "c-1" }));
+
+    expect(screen.getByText("Заполнить из программы фестиваля")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Подтянуть участников/ })).toBeInTheDocument();
+  });
+
+  it("pulls the acts across", async () => {
+    programs = [{ id: "p-1", name: "Вокал, 1 отделение", nominees: 12 }];
+    show(detail({ standalone: false, competitionId: "c-1" }));
+
+    await userEvent.click(screen.getByRole("button", { name: /Подтянуть участников/ }));
+
+    expect(seed).toHaveBeenCalledWith("p-1", expect.anything());
+  });
+
+  it("says nothing about programmes on a standalone ballot", () => {
+    programs = [];
+    show(detail());
+
+    expect(screen.queryByText("Заполнить из программы фестиваля")).not.toBeInTheDocument();
   });
 });

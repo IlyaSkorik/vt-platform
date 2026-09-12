@@ -9,7 +9,6 @@ function nominee(overrides: Partial<PublicNominee> = {}): PublicNominee {
     position: 1,
     title: "Ансамбль «Ритм»",
     subtitle: "",
-    city: "",
     photo: null,
     number: null,
     votes: null,

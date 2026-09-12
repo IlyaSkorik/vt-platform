@@ -140,7 +140,6 @@ class CatalogNominee:
 
     title: str
     subtitle: str = ""
-    city: str = ""
     number: int | None = None
     submission_id: uuid.UUID | None = None
     program_item_id: uuid.UUID | None = None

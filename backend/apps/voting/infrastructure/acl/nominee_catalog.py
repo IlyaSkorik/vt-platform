@@ -95,10 +95,6 @@ class DjangoNomineeCatalog:
                 CatalogNominee(
                     title=title,
                     subtitle=self._act(submission),
-                    # The city is not on a submission; the organizer fills it in if
-                    # they want it on the card. Seeding a blank is honest — inventing
-                    # one from a related record would be a guess on a public page.
-                    city="",
                     number=item.number or None,
                     submission_id=item.submission_id,
                     program_item_id=item.id,

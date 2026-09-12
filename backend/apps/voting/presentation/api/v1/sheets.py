@@ -33,11 +33,10 @@ NOMINEE_COLUMNS: Final = (
     Column(key="number", names=("Номер", "№", "Номер выступления")),
     Column(key="title", names=("Участник", "ФИО", "Коллектив", "Исполнитель"), required=True),
     Column(key="subtitle", names=("Произведение", "Номер программы", "Название номера", "Репертуар")),
-    Column(key="city", names=("Город", "Населённый пункт", "Населенный пункт")),
 )
 
 #: One row of the template, so the format is shown rather than described.
-_EXAMPLE_ROW: Final = ("1", "Ансамбль «Ритм»", "«Калинка»", "Минск")
+_EXAMPLE_ROW: Final = ("1", "Ансамбль «Ритм»", "«Калинка»")
 
 
 def template_workbook() -> IO[bytes]:
@@ -61,7 +60,6 @@ def read_nominees(source: IO[bytes]) -> tuple[tuple[NomineeRow, ...], SheetRows]
         NomineeRow(
             title=row.get("title", ""),
             subtitle=row.get("subtitle", ""),
-            city=row.get("city", ""),
             number=_as_number(row.get("number", "")),
         )
         for row in sheet.rows
@@ -84,7 +82,6 @@ def results_workbook(ballot: BallotDetailView) -> IO[bytes]:
             nominee.number,
             nominee.title,
             nominee.subtitle,
-            nominee.city,
             nominee.votes,
             "снят" if nominee.withdrawn else "",
         )
@@ -96,7 +93,6 @@ def results_workbook(ballot: BallotDetailView) -> IO[bytes]:
             SheetColumn(heading="Номер", width=10),
             SheetColumn(heading="Участник"),
             SheetColumn(heading="Произведение"),
-            SheetColumn(heading="Город"),
             SheetColumn(heading="Голосов", width=12),
             SheetColumn(heading="Примечание", width=14),
         ],

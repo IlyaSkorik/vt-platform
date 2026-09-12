@@ -37,6 +37,7 @@ from apps.voting.application.dto import (
     BallotSummaryView,
     ImportPreviewView,
     NomineeView,
+    ProgramOptionView,
     PublicBallotView,
     PublicNomineeView,
     VoteReceiptView,
@@ -208,7 +209,6 @@ class BallotService:
         nominee.edit(
             title=NomineeText(command.title) if command.title is not None else None,
             subtitle=NomineeText(command.subtitle) if command.subtitle is not None else None,
-            city=NomineeText(command.city) if command.city is not None else None,
             photo=command.photo,
             number=command.number,
         )
@@ -259,6 +259,26 @@ class BallotService:
             dry_run=command.dry_run,
         )
 
+    def programs_for(self, ballot_id: uuid.UUID) -> list[ProgramOptionView]:
+        """The running orders this ballot could be filled from.
+
+        Empty for a standalone ballot, and that is the honest answer rather than an
+        error: "there is no festival to take a programme from" is a fact about this
+        ballot, not a mistake by whoever asked. The interface offers the file import
+        instead.
+        """
+        ballot = self._load(ballot_id)
+        if ballot.competition_id is None or self._catalog is None:
+            return []
+        return [
+            ProgramOptionView(
+                id=str(program_id),
+                name=name,
+                nominees=len(self._catalog.for_program(program_id, organization_id=ballot.organization_id)),
+            )
+            for program_id, name in self._catalog.programs_of(ballot.competition_id, organization_id=ballot.organization_id)
+        ]
+
     def seed_from_program(self, command: SeedFromProgramCommand) -> BallotDetailView:
         """Fill the list from a programme of the festival this ballot belongs to.
 
@@ -285,7 +305,6 @@ class BallotService:
                 nominee_id=self._uuids.new(),
                 title=NomineeText(act.title),
                 subtitle=NomineeText(act.subtitle),
-                city=NomineeText(act.city),
                 number=act.number,
                 submission_id=act.submission_id,
                 program_item_id=act.program_item_id,
@@ -395,7 +414,6 @@ class BallotService:
             nominee_id=self._uuids.new(),
             title=NomineeText(row.title),
             subtitle=NomineeText(row.subtitle),
-            city=NomineeText(row.city),
             photo=row.photo,
             number=row.number,
             submission_id=_optional_uuid(row.submission_id, what="заявка"),
@@ -448,7 +466,6 @@ class BallotService:
                     position=nominee.position,
                     title=nominee.title.value,
                     subtitle=nominee.subtitle.value,
-                    city=nominee.city.value,
                     photo=nominee.photo,
                     number=nominee.number,
                     votes=nominee.votes if reveal else None,
@@ -479,7 +496,6 @@ def _nominee(nominee: BallotNominee) -> NomineeView:
         position=nominee.position,
         title=nominee.title.value,
         subtitle=nominee.subtitle.value,
-        city=nominee.city.value,
         photo=nominee.photo,
         number=nominee.number,
         withdrawn=nominee.withdrawn,

@@ -29,7 +29,6 @@ export interface PublicNominee {
   position: number;
   title: string;
   subtitle: string;
-  city: string;
   photo: string | null;
   number: number | null;
   /**

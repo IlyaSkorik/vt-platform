@@ -11,7 +11,7 @@ ballot belongs to an *organization*, and its link to a competition is optional
 (``competition_id`` may be null).
 
 What makes that work without becoming two features is that a nominee carries its
-own display data — name, act, city, photo — rather than a reference to somebody
+own display data — name, act, photo — rather than a reference to somebody
 else's. When the festival does live here, the list is seeded from the programme
 in one step; when it does not, the same list is typed in or imported from Excel.
 Everything downstream — the voting page, the count, the results — reads the

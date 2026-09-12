@@ -84,14 +84,12 @@ class TestStandingOnItsOwn:
             nominee_id=uuid.uuid4(),
             title=NomineeText("Ансамбль «Ритм»"),
             subtitle=NomineeText("«Калинка»"),
-            city=NomineeText("Минск"),
             number=7,
             now=NOW,
         )
 
         assert nominee.title.value == "Ансамбль «Ритм»"
         assert nominee.subtitle.value == "«Калинка»"
-        assert nominee.city.value == "Минск"
         assert nominee.submission_id is None
 
 

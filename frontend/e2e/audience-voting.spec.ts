@@ -18,7 +18,6 @@ type Nominee = {
   position: number;
   title: string;
   subtitle: string;
-  city: string;
   photo: null;
   number: number;
   votes: number | null;
@@ -32,7 +31,6 @@ function nominee(id: string, position: number, title: string, chosen = false): N
     number: position,
     title,
     subtitle: "«Калинка»",
-    city: "Минск",
     photo: null,
     votes: null,
     chosen,

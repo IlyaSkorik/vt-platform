@@ -20,6 +20,7 @@ __all__ = [
     "BallotSummaryView",
     "ImportPreviewView",
     "NomineeView",
+    "ProgramOptionView",
     "PublicBallotView",
     "PublicNomineeView",
     "VoteReceiptView",
@@ -34,7 +35,6 @@ class NomineeView:
     position: int
     title: str
     subtitle: str
-    city: str
     photo: str | None
     number: int | None
     withdrawn: bool
@@ -99,7 +99,6 @@ class PublicNomineeView:
     position: int
     title: str
     subtitle: str
-    city: str
     photo: str | None
     number: int | None
     votes: int | None = None
@@ -158,3 +157,17 @@ class ImportPreviewView:
     #: "we ignored these" rather than dropping them in silence.
     missing_columns: tuple[str, ...] = field(default_factory=tuple)
     dry_run: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class ProgramOptionView:
+    """One running order a ballot could be filled from.
+
+    Only ever offered for a ballot that named a festival. ``nominees`` is how many
+    acts it would contribute, so the organizer picks between "День 1" and "День 2"
+    by what is in them rather than by name alone.
+    """
+
+    id: str
+    name: str
+    nominees: int

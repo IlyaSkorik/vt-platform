@@ -35,7 +35,7 @@ class TestBallotTitle:
 
 
 class TestNomineeText:
-    def test_blank_is_allowed_because_a_city_is_optional(self) -> None:
+    def test_blank_is_allowed_because_what_they_performed_is_optional(self) -> None:
         assert NomineeText("").empty is True
 
     def test_an_overlong_line_is_refused(self) -> None:

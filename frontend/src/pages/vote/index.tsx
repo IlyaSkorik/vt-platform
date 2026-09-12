@@ -141,11 +141,6 @@ export function PublicVotePage(): React.JSX.Element {
                         {nominee.subtitle}
                       </span>
                     ) : null}
-                    {nominee.city ? (
-                      <span className="mt-0.5 block truncate text-muted-foreground text-xs">
-                        {nominee.city}
-                      </span>
-                    ) : null}
                   </span>
 
                   {nominee.chosen ? (

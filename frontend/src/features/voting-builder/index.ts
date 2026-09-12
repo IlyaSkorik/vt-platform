@@ -9,10 +9,12 @@ export {
   type ImportPreview,
   type Nominee,
   type NomineeInput,
+  type ProgramOption,
   type RevealPolicy,
   type UpdateBallotInput,
   useAddNominee,
   useBallot,
+  useBallotPrograms,
   useBallots,
   useCloseBallot,
   useCreateBallot,
@@ -22,6 +24,7 @@ export {
   useOpenBallot,
   useRemoveNominee,
   useReorderNominees,
+  useSeedFromProgram,
   useUpdateBallot,
 } from "./api";
 export {

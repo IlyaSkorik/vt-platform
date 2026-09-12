@@ -48,14 +48,13 @@ class TestTheNomineeList:
     def test_a_nominee_carries_its_own_card(self, staff_client: APIClient, ballot: dict) -> None:
         response = staff_client.post(
             f"{_BALLOTS}/{ballot['id']}/nominees",
-            {"title": "Дуэт «Весна»", "subtitle": "«Калинка»", "city": "Минск", "number": 3},
+            {"title": "Дуэт «Весна»", "subtitle": "«Калинка»", "number": 3},
             format="json",
         )
 
         added = response.data["data"]["nominees"][-1]
         assert added["title"] == "Дуэт «Весна»"
         assert added["subtitle"] == "«Калинка»"
-        assert added["city"] == "Минск"
         assert added["submissionId"] is None
 
     def test_the_list_can_be_rearranged(self, staff_client: APIClient, ballot: dict) -> None:

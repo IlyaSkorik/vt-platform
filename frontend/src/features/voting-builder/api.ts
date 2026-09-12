@@ -30,7 +30,6 @@ export interface Nominee {
   position: number;
   title: string;
   subtitle: string;
-  city: string;
   photo: string | null;
   number: number | null;
   /** Off the ballot but still in the results, with the votes they had. */
@@ -66,6 +65,13 @@ export interface Ballot extends Omit<BallotSummary, "nominees"> {
   updatedAt: string | null;
 }
 
+/** One running order a ballot could be filled from, and how much is in it. */
+export interface ProgramOption {
+  id: string;
+  name: string;
+  nominees: number;
+}
+
 export interface ImportError {
   /** The row number as Excel shows it — the one the organizer will look for. */
   row: number;
@@ -96,7 +102,6 @@ export type UpdateBallotInput = Partial<CreateBallotInput>;
 export interface NomineeInput {
   title: string;
   subtitle?: string;
-  city?: string;
   number?: number | null;
 }
 
@@ -104,6 +109,7 @@ export const ballotKeys = {
   all: ["ballots"] as const,
   list: (competitionId: string | null) => ["ballots", "list", competitionId ?? "all"] as const,
   detail: (ballotId: string) => ["ballots", "detail", ballotId] as const,
+  programs: (ballotId: string) => ["ballots", "programs", ballotId] as const,
 };
 
 async function unwrap<T>(promise: Promise<{ data: T }>): Promise<T> {
@@ -252,6 +258,42 @@ export function useDeleteBallot(): UseMutationResult<void, ApiError, string> {
       void queryClient.invalidateQueries({ queryKey: ballotKeys.all });
     },
   });
+}
+
+/**
+ * The running orders this ballot can be filled from.
+ *
+ * Empty for a standalone ballot — not an error, just a fact about it, and the
+ * editor answers it by offering the file import instead.
+ */
+export function useBallotPrograms(
+  ballotId: string,
+  { enabled = true }: { enabled?: boolean } = {},
+): UseQueryResult<ProgramOption[], ApiError> {
+  return useQuery<ProgramOption[], ApiError>({
+    enabled,
+    queryKey: ballotKeys.programs(ballotId),
+    queryFn: ({ signal }) =>
+      unwrap(
+        apiClient(`staff/ballots/${ballotId}/programs`, { ...(signal ? { signal } : {}) }).json<{
+          data: ProgramOption[];
+        }>(),
+      ),
+  });
+}
+
+/**
+ * Copy a programme's acts onto the ballot as its own nominees.
+ *
+ * Idempotent in the way that matters on the day: seeding again after the running
+ * order changed adds what is new rather than doubling what is there.
+ */
+export function useSeedFromProgram(ballotId: string): UseMutationResult<Ballot, ApiError, string> {
+  return useBallotMutation((programId) =>
+    apiClient(`staff/ballots/${ballotId}/seed`, { method: "post", json: { programId } }).json<{
+      data: Ballot;
+    }>(),
+  );
 }
 
 /**

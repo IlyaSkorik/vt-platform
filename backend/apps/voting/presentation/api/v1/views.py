@@ -56,6 +56,7 @@ from apps.voting.presentation.api.v1.serializers import (
     CreateBallotRequestSerializer,
     EditNomineeRequestSerializer,
     ImportPreviewSerializer,
+    ProgramOptionSerializer,
     ReorderNomineesRequestSerializer,
     SeedFromProgramRequestSerializer,
     UpdateBallotRequestSerializer,
@@ -74,6 +75,7 @@ __all__ = [
     "BallotNomineeOrderView",
     "BallotNomineeTemplateView",
     "BallotOpenView",
+    "BallotProgramsView",
     "BallotQrView",
     "BallotResultsView",
     "BallotSeedView",
@@ -343,7 +345,6 @@ class BallotNomineeDetailView(_StaffView):
                     nominee_id=nominee_id,
                     title=str(payload["title"]) if "title" in payload else None,
                     subtitle=str(payload["subtitle"]) if "subtitle" in payload else None,
-                    city=str(payload["city"]) if "city" in payload else None,
                     photo=payload.get("photo"),
                     number=payload.get("number"),
                 )
@@ -395,6 +396,29 @@ class BallotNomineeOrderView(_StaffView):
         except BallotError as exc:
             return self._problem(exc, request)
         return envelope(resources.ballot_detail(detail), request)
+
+
+class BallotProgramsView(_StaffView):
+    """``GET`` the running orders this ballot can be filled from.
+
+    Empty for a standalone ballot rather than a 404: "there is no festival to take
+    a programme from" is a fact about the ballot, and the interface answers it by
+    offering the file import instead of an error.
+    """
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="voting_list_seedable_programs",
+        summary="List the programmes a ballot can be seeded from",
+        request=None,
+        responses={200: ProgramOptionSerializer(many=True), **_PROBLEM_RESPONSES},
+    )
+    def get(self, request: Request, ballot_id: str) -> Response:
+        try:
+            options = build_ballot_service().programs_for(self._owned(request, ballot_id))
+        except BallotError as exc:
+            return self._problem(exc, request)
+        return envelope([resources.program_option(option) for option in options], request)
 
 
 class BallotSeedView(_StaffView):
@@ -552,7 +576,6 @@ def _nominee_row(payload: dict[str, Any]) -> NomineeRow:
     return NomineeRow(
         title=str(payload.get("title", "")),
         subtitle=str(payload.get("subtitle") or ""),
-        city=str(payload.get("city") or ""),
         photo=payload.get("photo") or None,
         number=payload.get("number"),
     )

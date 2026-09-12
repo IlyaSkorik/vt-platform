@@ -2,7 +2,7 @@
 
 A ballot is **not** a view over a programme or over the accepted submissions. It
 holds its own ordered :class:`BallotNominee` children, and each of those carries
-its own display data: the name, the act, the city, the photograph. The link back
+its own display data: the name, the act, the photograph. The link back
 to a submission or a programme row is an optional id and nothing hangs off it.
 
 That is the design decision the whole feature rests on. A festival that has not
@@ -68,10 +68,15 @@ class BallotNominee:
     """One entry the audience may vote for, carrying its own card.
 
     ``title`` is who is being voted for ("Ансамбль «Ритм»"); ``subtitle`` is what
-    they did ("«Калинка», хореограф И. Петрова"); ``city`` and ``photo`` fill out
-    the card. ``number`` is the number the act was announced under, when there is
-    one — an audience looks for the number the host just read out, not for a name
-    they may not have caught.
+    they did ("«Калинка», хореограф И. Петрова"); ``photo`` fills out the card.
+    ``number`` is the number the act was announced under, when there is one — an
+    audience looks for the number the host just read out, not for a name they may
+    not have caught.
+
+    There is deliberately no city. A card read at arm's length in a dark hall has
+    room for who and what; a third line earns its place only by helping somebody
+    choose, and at an event where the whole audience came from the same town a
+    city does not.
 
     ``votes`` is a running count kept here rather than recomputed: a hall refreshing
     a scoreboard must not each time aggregate a table that the hall is also writing
@@ -82,7 +87,6 @@ class BallotNominee:
     _id: uuid.UUID
     _title: NomineeText
     _subtitle: NomineeText = field(default_factory=lambda: NomineeText(""))
-    _city: NomineeText = field(default_factory=lambda: NomineeText(""))
     _photo: str | None = None
     _number: int | None = None
     _position: int = 0
@@ -104,7 +108,6 @@ class BallotNominee:
         *,
         title: NomineeText | None = None,
         subtitle: NomineeText | None = None,
-        city: NomineeText | None = None,
         photo: str | None = None,
         number: int | None = None,
     ) -> None:
@@ -115,8 +118,6 @@ class BallotNominee:
             self._title = title
         if subtitle is not None:
             self._subtitle = subtitle
-        if city is not None:
-            self._city = city
         if photo is not None:
             self._photo = photo or None
         if number is not None:
@@ -158,10 +159,6 @@ class BallotNominee:
     @property
     def subtitle(self) -> NomineeText:
         return self._subtitle
-
-    @property
-    def city(self) -> NomineeText:
-        return self._city
 
     @property
     def photo(self) -> str | None:
@@ -339,7 +336,6 @@ class Ballot:
         title: NomineeText,
         now: datetime,
         subtitle: NomineeText | None = None,
-        city: NomineeText | None = None,
         photo: str | None = None,
         number: int | None = None,
         submission_id: uuid.UUID | None = None,
@@ -357,7 +353,6 @@ class Ballot:
             _id=nominee_id,
             _title=title,
             _subtitle=subtitle or NomineeText(""),
-            _city=city or NomineeText(""),
             _photo=photo or None,
             _number=number,
             _submission_id=submission_id,

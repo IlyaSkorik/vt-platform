@@ -1,7 +1,8 @@
-import { Download, Plus, QrCode, Trash2, Upload, Vote } from "lucide-react";
+import { Copy, Download, ListPlus, Plus, QrCode, Trash2, Upload, Vote } from "lucide-react";
 import { useRef, useState } from "react";
 import { Link } from "react-router";
-
+import { useAuth } from "@/app/providers";
+import { useCompetitionsList } from "@/features/competitions";
 import {
   ANTI_FRAUD_NOTE,
   type Ballot,
@@ -16,6 +17,7 @@ import {
   statusVariant,
   useAddNominee,
   useBallot,
+  useBallotPrograms,
   useBallots,
   useCloseBallot,
   useCreateBallot,
@@ -23,6 +25,7 @@ import {
   useImportNominees,
   useOpenBallot,
   useRemoveNominee,
+  useSeedFromProgram,
   useUpdateBallot,
   votable,
 } from "@/features/voting-builder";
@@ -48,6 +51,23 @@ import {
   toast,
 } from "@/shared/ui";
 
+/**
+ * Put the voting link on the clipboard.
+ *
+ * This address goes onto a poster, into a chat and onto a slide, and retyping a
+ * ten-character slug by eye is exactly how a hall ends up at a 404. Refusal is
+ * possible (an insecure origin, a denied permission), and showing the URL is a
+ * worse experience than copying it and a better one than silence.
+ */
+async function copyLink(link: string): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(link);
+    toast.success("Ссылка скопирована");
+  } catch {
+    toast.error(`Не удалось скопировать. Ссылка: ${link}`);
+  }
+}
+
 /** Fetch a staff file through the API client, so the auth header travels with it. */
 async function download(path: string, filename: string): Promise<void> {
   const blob = await apiClient(path).blob();
@@ -59,17 +79,38 @@ async function download(path: string, filename: string): Promise<void> {
   URL.revokeObjectURL(url);
 }
 
+/** What the festival picker shows when a ballot belongs to nothing in particular. */
+const STANDALONE = "standalone";
+
 function NewBallotForm({ onCreated }: { onCreated: (id: string) => void }): React.JSX.Element {
   const create = useCreateBallot();
+  // A voting-only organization was never sold the festivals module, and asking for
+  // its festivals would answer 403. Then there is nothing to attach a ballot to,
+  // which is the ordinary case here rather than a degraded one.
+  const { hasModule } = useAuth();
+  const festivals = useCompetitionsList({ enabled: hasModule("COMPETITIONS") });
   const [title, setTitle] = useState("");
+  const [competitionId, setCompetitionId] = useState(STANDALONE);
+
+  const options = [
+    { value: STANDALONE, label: "Без фестиваля" },
+    ...(festivals.data ?? []).map((festival) => ({
+      value: festival.id,
+      label: `${festival.title} · ${festival.season}`,
+    })),
+  ];
 
   const submit = (event: React.FormEvent): void => {
     event.preventDefault();
     create.mutate(
-      { title: title.trim() },
+      {
+        title: title.trim(),
+        ...(competitionId === STANDALONE ? {} : { competitionId }),
+      },
       {
         onSuccess: (ballot) => {
           setTitle("");
+          setCompetitionId(STANDALONE);
           onCreated(ballot.id);
           toast.success("Голосование создано");
         },
@@ -88,19 +129,33 @@ function NewBallotForm({ onCreated }: { onCreated: (id: string) => void }): Reac
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form className="flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={submit}>
+        <form className="flex flex-col gap-3" onSubmit={submit}>
           <Input
             label="Название"
             required
-            className="flex-1"
+            // Full width rather than sharing a row with the button: these names run
+            // to "Приз зрительских симпатий фестиваля «Весна-2026»", and a field
+            // showing a third of that is a field people fight with.
+            className="w-full"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Приз зрительских симпатий"
           />
-          <Button type="submit" loading={create.isPending}>
-            <Plus className="size-4" />
-            Создать
-          </Button>
+          {options.length > 1 ? (
+            <Select
+              label="Фестиваль"
+              options={options}
+              value={competitionId}
+              onValueChange={setCompetitionId}
+              description="Привязанное к фестивалю голосование можно заполнить из готовой программы"
+            />
+          ) : null}
+          <div>
+            <Button type="submit" loading={create.isPending}>
+              <Plus className="size-4" />
+              Создать
+            </Button>
+          </div>
         </form>
       </CardContent>
     </Card>
@@ -225,6 +280,71 @@ function ImportBlock({ ballotId }: { ballotId: string }): React.JSX.Element {
   );
 }
 
+/**
+ * Filling the list from a running order — the festival half of this feature.
+ *
+ * Only rendered for a ballot that named a festival. A standalone one is typed in
+ * or imported from a spreadsheet, and offering it a disabled programme picker
+ * would advertise a capability it does not have.
+ *
+ * Each option carries its act count, so the choice between «День 1» and «День 2»
+ * is made on what is in them rather than on a name.
+ */
+function SeedFromProgramBlock({ ballotId }: { ballotId: string }): React.JSX.Element | null {
+  const programs = useBallotPrograms(ballotId);
+  const seed = useSeedFromProgram(ballotId);
+  const [programId, setProgramId] = useState<string | null>(null);
+
+  const options = programs.data ?? [];
+  const chosen = programId ?? options[0]?.id ?? null;
+
+  if (programs.isLoading) {
+    return <LoadingState label="Загружаем программы" size="sm" />;
+  }
+
+  if (options.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="flex flex-col gap-2 rounded-md border border-border p-3">
+      <p className="font-medium text-sm">Заполнить из программы фестиваля</p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+        <Select
+          label="Программа"
+          className="flex-1"
+          options={options.map((program) => ({
+            value: program.id,
+            label: `${program.name} · номеров: ${program.nominees}`,
+          }))}
+          value={chosen ?? ""}
+          onValueChange={setProgramId}
+        />
+        <Button
+          variant="outline"
+          loading={seed.isPending}
+          disabled={!chosen}
+          onClick={() => {
+            if (!chosen) return;
+            seed.mutate(chosen, {
+              onSuccess: (ballot) =>
+                toast.success(`Участников в голосовании: ${votable(ballot).length}`),
+              onError: (error) => toast.error(error.message || "Не удалось заполнить список"),
+            });
+          }}
+        >
+          <ListPlus className="size-4" />
+          Подтянуть участников
+        </Button>
+      </div>
+      <p className="text-muted-foreground text-xs">
+        Номера копируются в голосование как его собственные участники: программу потом можно менять
+        или удалить, список останется.
+      </p>
+    </div>
+  );
+}
+
 function NomineeList({ ballot }: { ballot: Ballot }): React.JSX.Element {
   const add = useAddNominee(ballot.id);
   const remove = useRemoveNominee(ballot.id);
@@ -334,8 +454,18 @@ function BallotEditor({ ballotId }: { ballotId: string }): React.JSX.Element {
           <CardTitle>{ballot.title}</CardTitle>
           <Badge variant={statusVariant(ballot.status)}>{STATUS_LABELS[ballot.status]}</Badge>
         </div>
-        <CardDescription>
-          Ссылка для зала: <span className="break-all font-medium">{link}</span>
+        <CardDescription className="flex flex-wrap items-center gap-2">
+          <span>Ссылка для зала:</span>
+          <span className="break-all font-medium">{link}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label="Скопировать ссылку"
+            onClick={() => void copyLink(link)}
+          >
+            <Copy className="size-4" />
+            Скопировать
+          </Button>
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
@@ -426,6 +556,7 @@ function BallotEditor({ ballotId }: { ballotId: string }): React.JSX.Element {
           <p className="font-medium text-sm">
             Участники ({votable(ballot).length}) · проголосовало: {ballot.voters}
           </p>
+          <SeedFromProgramBlock ballotId={ballot.id} />
           <ImportBlock ballotId={ballot.id} />
           <NomineeList ballot={ballot} />
         </div>
@@ -504,7 +635,10 @@ export function StaffVotingPage(): React.JSX.Element {
         {current ? (
           <div>
             <Button
-              variant="ghost"
+              // Red, because it is not undoable: the ballot stops resolving for the
+              // hall, and a button that looks like every other one is one people
+              // press on the way past.
+              variant="danger"
               loading={remove.isPending}
               onClick={() =>
                 remove.mutate(current, {

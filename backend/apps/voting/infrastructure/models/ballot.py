@@ -119,7 +119,6 @@ class BallotNomineeModel(BasePersistenceModel):
     number = models.PositiveIntegerField(null=True, blank=True, default=None)
     title = models.CharField(max_length=200)
     subtitle = models.CharField(max_length=200, blank=True, default="")
-    city = models.CharField(max_length=200, blank=True, default="")
     photo = models.CharField(max_length=1024, null=True, blank=True, default=None)
     # Off the ballot but still in the results, with the votes they had. Deleting the
     # row instead would quietly change a total people have already seen.

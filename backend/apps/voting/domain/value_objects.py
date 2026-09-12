@@ -109,7 +109,8 @@ class NomineeText:
     """One line of a nominee's card: who they are, what they do, where from.
 
     Blank is allowed here and refused only where it matters (a nominee must have a
-    title; a city is optional), so the same type serves every line of the card.
+    title; what they performed is optional), so the same type serves every line of
+    the card.
     """
 
     value: str

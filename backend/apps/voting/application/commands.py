@@ -65,7 +65,6 @@ class NomineeRow:
 
     title: str
     subtitle: str = ""
-    city: str = ""
     photo: str | None = None
     number: int | None = None
     submission_id: str | None = None
@@ -88,7 +87,6 @@ class EditNomineeCommand:
     nominee_id: str
     title: str | None = None
     subtitle: str | None = None
-    city: str | None = None
     photo: str | None = None
     number: int | None = None
 

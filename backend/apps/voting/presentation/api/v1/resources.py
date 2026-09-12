@@ -13,6 +13,7 @@ from apps.voting.application.dto import (
     BallotSummaryView,
     ImportPreviewView,
     NomineeView,
+    ProgramOptionView,
     PublicBallotView,
     VoteReceiptView,
 )
@@ -22,6 +23,7 @@ __all__ = [
     "ballot_summary",
     "import_preview",
     "nominee",
+    "program_option",
     "public_ballot",
     "vote_receipt",
 ]
@@ -33,7 +35,6 @@ def nominee(view: NomineeView) -> dict[str, Any]:
         "position": view.position,
         "title": view.title,
         "subtitle": view.subtitle,
-        "city": view.city,
         "photo": view.photo,
         "number": view.number,
         "withdrawn": view.withdrawn,
@@ -97,7 +98,6 @@ def public_ballot(view: PublicBallotView) -> dict[str, Any]:
                 "position": row.position,
                 "title": row.title,
                 "subtitle": row.subtitle,
-                "city": row.city,
                 "photo": row.photo,
                 "number": row.number,
                 "votes": row.votes,
@@ -125,3 +125,7 @@ def import_preview(view: ImportPreviewView) -> dict[str, Any]:
         "missingColumns": list(view.missing_columns),
         "dryRun": view.dry_run,
     }
+
+
+def program_option(view: ProgramOptionView) -> dict[str, Any]:
+    return {"id": view.id, "name": view.name, "nominees": view.nominees}
