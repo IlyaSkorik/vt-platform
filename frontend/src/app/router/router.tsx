@@ -103,6 +103,18 @@ export const routes: RouteObject[] = [
             lazy: lazyPage(() => import("@/pages/protocol"), "PublicProtocolPage"),
           },
           {
+            // The audience vote, reached by scanning a code on a poster. No account:
+            // the slug is the only credential, because nobody registers to clap.
+            path: ROUTES.publicBallot.slice(1),
+            lazy: lazyPage(() => import("@/pages/vote"), "PublicVotePage"),
+          },
+          {
+            // The same ballot as a scoreboard for the projector beside the stage —
+            // a screen nobody taps, read from the back of the hall.
+            path: ROUTES.publicBallotBoard.slice(1),
+            lazy: lazyPage(() => import("@/pages/vote-board"), "PublicVoteBoardPage"),
+          },
+          {
             // The contract itself, public and unauthenticated: it has to be readable
             // before registering, because registering is accepting it (LEGAL-003 §3.3).
             path: ROUTES.termsOfService.slice(1),
