@@ -34,6 +34,10 @@ dependencies = [
     # Uploads and generated documents live in an S3 bucket in every deployed
     # environment; the filesystem backend stays the default for local work and tests.
     "django-storages[s3]>=1.14",
+    # Organizers live in Excel: a nominee list, a participant registry and a results
+    # export all arrive and leave as .xlsx. CSV was considered and rejected — it
+    # loses the encoding argument with Russian Excel every time.
+    "openpyxl>=3.1",
 ]
 
 [dependency-groups]
@@ -47,6 +51,7 @@ dev = [
     "pytest-cov>=6.0",
     "factory-boy>=3.3",
     "pre-commit>=4.1",
+    "types-openpyxl>=3.1.5.20260827",
 ]
 
 [tool.uv]
