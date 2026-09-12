@@ -86,11 +86,14 @@ export function ModuleSwitchboard({
       </div>
 
       <div className="flex flex-wrap gap-2">
+        {/* Outlined, not ghost. A ghost button is text until you hover it, and on a
+            touch screen there is no hovering — these read as a sentence somebody
+            forgot to format rather than as the three shortcuts they are. */}
         {MODULE_PRESETS.map((preset) => (
           <Button
             key={preset.id}
             size="sm"
-            variant="ghost"
+            variant="outline"
             onClick={() => setDraft([...preset.modules])}
           >
             {preset.label}

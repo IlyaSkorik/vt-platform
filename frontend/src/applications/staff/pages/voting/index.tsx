@@ -265,7 +265,7 @@ function ImportBlock({ ballotId }: { ballotId: string }): React.JSX.Element {
             </Button>
             <Button
               size="sm"
-              variant="ghost"
+              variant="outline"
               onClick={() => {
                 setPreview(null);
                 setFile(null);
@@ -458,7 +458,9 @@ function BallotEditor({ ballotId }: { ballotId: string }): React.JSX.Element {
           <span>Ссылка для зала:</span>
           <span className="break-all font-medium">{link}</span>
           <Button
-            variant="ghost"
+            // Outlined for the same reason as the presets: a ghost button is text
+            // until hovered, and this one sits directly beside the link it copies.
+            variant="outline"
             size="sm"
             aria-label="Скопировать ссылку"
             onClick={() => void copyLink(link)}
