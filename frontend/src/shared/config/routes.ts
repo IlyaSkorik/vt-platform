@@ -36,6 +36,10 @@ export const ROUTES = {
   verifyDiploma: "/verify/:verificationToken",
   /** Public programme screen — one unguessable slug per published edition. */
   publicProgram: "/program/:slug",
+  // The audience vote: the page people reach from a QR on a poster, and the
+  // board beside the stage that shows the count.
+  publicBallot: "/vote/:slug",
+  publicBallotBoard: "/vote/:slug/board",
   /**
    * Public results page — one slug per published protocol.
    *
@@ -63,6 +67,7 @@ export const ROUTES = {
   staffJudges: "/staff/judges",
   staffProgram: "/staff/program",
   staffDiplomas: "/staff/diplomas",
+  staffVoting: "/staff/voting",
   staffDiplomaTemplateConstructor: "/staff/diplomas/templates/:templateId/constructor",
   staffFinance: "/staff/finance",
   staffAnalytics: "/staff/analytics",

@@ -12,6 +12,7 @@ import {
   Settings,
   UserCog,
   Users,
+  Vote,
 } from "lucide-react";
 
 import type { AuthModule } from "@/app/providers";
@@ -105,6 +106,13 @@ export const STAFF_NAVIGATION: StaffNavItem[] = [
     module: "DIPLOMAS",
     icon: Award,
     description: "Библиотека шаблонов, назначение и выдача дипломов.",
+  },
+  {
+    title: "Голосование",
+    path: ROUTES.staffVoting,
+    module: "VOTING",
+    icon: Vote,
+    description: "Зрительское голосование — с фестивалем или без него.",
   },
   {
     title: "Организация",

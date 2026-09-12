@@ -384,6 +384,18 @@ export const routes: RouteObject[] = [
                 ],
               },
               {
+                element: <ModuleRoute module="VOTING" />,
+                children: [
+                  {
+                    path: ROUTES.staffVoting.slice(1),
+                    lazy: lazyPage(
+                      () => import("@/applications/staff/pages/voting"),
+                      "StaffVotingPage",
+                    ),
+                  },
+                ],
+              },
+              {
                 element: <ModuleRoute module="DIPLOMAS" />,
                 children: [
                   {
