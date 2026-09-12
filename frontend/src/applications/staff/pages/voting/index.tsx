@@ -130,13 +130,13 @@ function NewBallotForm({ onCreated }: { onCreated: (id: string) => void }): Reac
       </CardHeader>
       <CardContent>
         <form className="flex flex-col gap-3" onSubmit={submit}>
+          {/* A row of its own rather than sharing one with the button: these names
+              run to "Приз зрительских симпатий фестиваля «Весна-2026»", and a field
+              showing a third of that is a field people fight with. The column layout
+              stretches it, so it needs no width class. */}
           <Input
             label="Название"
             required
-            // Full width rather than sharing a row with the button: these names run
-            // to "Приз зрительских симпатий фестиваля «Весна-2026»", and a field
-            // showing a third of that is a field people fight with.
-            className="w-full"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Приз зрительских симпатий"
@@ -312,7 +312,7 @@ function SeedFromProgramBlock({ ballotId }: { ballotId: string }): React.JSX.Ele
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <Select
           label="Программа"
-          className="flex-1"
+          containerClassName="flex-1"
           options={options.map((program) => ({
             value: program.id,
             label: `${program.name} · номеров: ${program.nominees}`,
@@ -371,14 +371,14 @@ function NomineeList({ ballot }: { ballot: Ballot }): React.JSX.Element {
         <Input
           label="Участник"
           required
-          className="flex-1"
+          containerClassName="flex-1"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           placeholder="Ансамбль «Ритм»"
         />
         <Input
           label="Произведение"
-          className="flex-1"
+          containerClassName="flex-1"
           value={subtitle}
           onChange={(event) => setSubtitle(event.target.value)}
           placeholder="«Калинка»"
@@ -530,7 +530,7 @@ function BallotEditor({ ballotId }: { ballotId: string }): React.JSX.Element {
             type="number"
             min={1}
             max={10}
-            className="sm:max-w-48"
+            containerClassName="sm:max-w-48"
             defaultValue={ballot.votesPerVoter}
             onBlur={(event) => {
               const value = Number(event.target.value);
@@ -541,7 +541,7 @@ function BallotEditor({ ballotId }: { ballotId: string }): React.JSX.Element {
           />
           <Select
             label="Показ результатов"
-            className="sm:max-w-64"
+            containerClassName="sm:max-w-64"
             options={REVEAL_OPTIONS}
             value={ballot.reveal}
             onValueChange={(value) => update.mutate({ reveal: value as RevealPolicy })}
