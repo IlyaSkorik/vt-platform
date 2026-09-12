@@ -254,7 +254,15 @@ REST_FRAMEWORK = {
     # Cursor pagination is the platform default (API-000 §9).
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.CursorPagination",
     "PAGE_SIZE": 20,
-    "DEFAULT_THROTTLE_RATES": {"anon": "60/min", "user": "1000/min"},
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "60/min",
+        "user": "1000/min",
+        # Casting a vote gets its own, far smaller bucket. A person in a hall
+        # sends one request; whatever sends sixty a minute is not a person.
+        # Deliberately not a fraud control — it is a brake, and the real rule is
+        # the unique index on the votes table.
+        "ballot_vote": "12/min",
+    },
     # Whatever DRF itself refuses (throttling, a wrong method, a malformed body) is
     # answered in Russian too, not only what a context's problems.py renders.
     "EXCEPTION_HANDLER": "config.api_errors.exception_handler",

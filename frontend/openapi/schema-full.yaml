@@ -5910,6 +5910,97 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: Unknown target kind.
+  /api/v1/public/ballots/{slug}:
+    get:
+      operationId: public_get_ballot
+      description: Unauthenticated. Sets an httpOnly cookie identifying the reader
+        as a voter, so their choices can be shown back to them and counted once. A
+        draft or retired ballot answers 404.
+      summary: Read a ballot by its public link
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - Public Voting
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicBallot'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: No such ballot.
+  /api/v1/public/ballots/{slug}/votes:
+    post:
+      operationId: public_cast_vote
+      description: 'All or nothing: every check runs before any vote is written, so
+        a submission never leaves somebody with two of their three votes spent and
+        an error on screen. Answers with the whole page state, so the client renders
+        the outcome without a second request.'
+      summary: Cast a vote
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - Public Voting
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CastVoteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CastVoteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CastVoteRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoteReceipt'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: No such ballot.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Already voted, or out of votes.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Voting is not open.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Too many votes from this network.
   /api/v1/public/competitions/{competition_id}/registration:
     get:
       operationId: getRegistration
@@ -6261,6 +6352,791 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/staff/ballots:
+    get:
+      operationId: voting_list_ballots
+      description: '``GET`` the organization''s ballots; ``POST`` a new one.'
+      summary: List the organization's ballots
+      parameters:
+      - in: query
+        name: competitionId
+        schema:
+          type: string
+        description: Narrow to one festival's ballots. Omitted, standalone ballots
+          are listed too.
+      tags:
+      - Audience Voting
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BallotSummary'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Malformed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Module not connected, or not staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Unprocessable.
+    post:
+      operationId: voting_create_ballot
+      description: '`competitionId` is optional: a ballot may run without a festival
+        on the platform.'
+      summary: Create a ballot
+      tags:
+      - Audience Voting
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBallotRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateBallotRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateBallotRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Malformed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Module not connected, or not staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/ballots/{ballot_id}:
+    get:
+      operationId: voting_get_ballot
+      description: '``GET``, ``PATCH`` and ``DELETE`` one ballot.'
+      summary: Read one ballot
+      parameters:
+      - in: path
+        name: ballot_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Audience Voting
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Malformed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Module not connected, or not staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Unprocessable.
+    patch:
+      operationId: voting_update_ballot
+      description: '``GET``, ``PATCH`` and ``DELETE`` one ballot.'
+      summary: Change a ballot's wording or rules
+      parameters:
+      - in: path
+        name: ballot_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Audience Voting
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateBallotRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateBallotRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateBallotRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Malformed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Module not connected, or not staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Unprocessable.
+    delete:
+      operationId: voting_delete_ballot
+      description: The votes already cast stay where they are; the public link stops
+        resolving.
+      summary: Retire a ballot
+      parameters:
+      - in: path
+        name: ballot_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Audience Voting
+      responses:
+        '204':
+          description: Retired.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Malformed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Module not connected, or not staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/ballots/{ballot_id}/close:
+    post:
+      operationId: voting_close_ballot
+      description: 'One-way: a ballot that could be reopened is a result that can
+        be revised.'
+      summary: Close a ballot
+      parameters:
+      - in: path
+        name: ballot_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Audience Voting
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Malformed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Module not connected, or not staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/ballots/{ballot_id}/nominees:
+    post:
+      operationId: voting_add_nominee
+      description: '``POST`` one more nominee onto the ballot.'
+      summary: Add a nominee
+      parameters:
+      - in: path
+        name: ballot_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Audience Voting
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddNomineeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddNomineeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddNomineeRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Malformed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Module not connected, or not staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/ballots/{ballot_id}/nominees/{nominee_id}:
+    patch:
+      operationId: voting_edit_nominee
+      description: '``PATCH`` a nominee''s card; ``DELETE`` them from the ballot.'
+      summary: Correct a nominee's card
+      parameters:
+      - in: path
+        name: ballot_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: nominee_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Audience Voting
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEditNomineeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEditNomineeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEditNomineeRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Malformed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Module not connected, or not staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Unprocessable.
+    delete:
+      operationId: voting_remove_nominee
+      description: Erased outright while nobody has voted for them; withdrawn once
+        somebody has.
+      summary: Take a nominee off the ballot
+      parameters:
+      - in: path
+        name: ballot_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: nominee_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Audience Voting
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Malformed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Module not connected, or not staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/ballots/{ballot_id}/nominees/import:
+    post:
+      operationId: voting_import_nominees
+      description: 'Send `dryRun=true` first: the response says exactly what would
+        be added and which rows are wrong, with the row numbers Excel shows. Importing
+        without previewing is how 150 rows of somebody else''s formatting end up being
+        removed by hand.'
+      summary: Import nominees from a spreadsheet
+      parameters:
+      - in: path
+        name: ballot_id
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: dryRun
+        schema:
+          type: boolean
+      tags:
+      - Audience Voting
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportPreview'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Malformed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Module not connected, or not staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/ballots/{ballot_id}/nominees/order:
+    post:
+      operationId: voting_reorder_nominees
+      description: '``POST`` a new running order for the nominee list.'
+      summary: Rearrange the nominee list
+      parameters:
+      - in: path
+        name: ballot_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Audience Voting
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderNomineesRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReorderNomineesRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReorderNomineesRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Malformed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Module not connected, or not staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/ballots/{ballot_id}/nominees/template.xlsx:
+    get:
+      operationId: voting_nominee_template
+      description: |-
+        ``GET`` the .xlsx an organizer fills in and sends back.
+
+        Handing out the file is what makes the import usable: without it the organizer
+        sends the table they already have, in their own shape, and the two of you spend
+        an afternoon on column names.
+      summary: Download the nominee-list template
+      parameters:
+      - in: path
+        name: ballot_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Audience Voting
+      responses:
+        '200':
+          description: An .xlsx with the headings and an example row.
+  /api/v1/staff/ballots/{ballot_id}/open:
+    post:
+      operationId: voting_open_ballot
+      description: '``POST`` — start accepting votes.'
+      summary: Open a ballot
+      parameters:
+      - in: path
+        name: ballot_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Audience Voting
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Malformed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Module not connected, or not staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/ballots/{ballot_id}/qr.png:
+    get:
+      operationId: voting_ballot_qr
+      description: '``GET`` the QR code that goes on the poster.'
+      summary: Download the ballot's QR code
+      parameters:
+      - in: path
+        name: ballot_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Audience Voting
+      responses:
+        '200':
+          description: A PNG of the public voting link.
+  /api/v1/staff/ballots/{ballot_id}/results.xlsx:
+    get:
+      operationId: voting_export_results
+      description: '``GET`` the finished vote as an .xlsx, ranked.'
+      summary: Download the results
+      parameters:
+      - in: path
+        name: ballot_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Audience Voting
+      responses:
+        '200':
+          description: An .xlsx ranked by votes.
+  /api/v1/staff/ballots/{ballot_id}/seed:
+    post:
+      operationId: voting_seed_from_program
+      description: Copies the programme's performances onto the ballot as its own
+        nominees. Only for a ballot attached to a festival; a standalone one is filled
+        in by hand or from a file.
+      summary: Seed the nominee list from a programme
+      parameters:
+      - in: path
+        name: ballot_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Audience Voting
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeedFromProgramRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SeedFromProgramRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SeedFromProgramRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Malformed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Module not connected, or not staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProblemDetail'
+          description: Unprocessable.
   /api/v1/staff/diplomas/assignments:
     get:
       operationId: diplomas_assignments_list
@@ -10292,6 +11168,32 @@ components:
       required:
       - content
       - title
+    AddNomineeRequest:
+      type: object
+      description: Put one more nominee on the ballot.
+      properties:
+        subtitle:
+          type: string
+          maxLength: 200
+        city:
+          type: string
+          maxLength: 200
+        photo:
+          type:
+          - string
+          - 'null'
+          maxLength: 1024
+        number:
+          type:
+          - integer
+          - 'null'
+          maximum: 100000
+          minimum: 0
+        title:
+          type: string
+          maxLength: 200
+      required:
+      - title
     AddParticipantGroup:
       type: object
       properties:
@@ -10803,6 +11705,152 @@ components:
             $ref: '#/components/schemas/ProtocolAwardEntry'
       required:
       - awards
+    BallotDetail:
+      type: object
+      description: The whole ballot as the organizer edits it.
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        slug:
+          type: string
+        status:
+          $ref: '#/components/schemas/StatusEe1Enum'
+        competitionId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        standalone:
+          type: boolean
+        opensAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        closesAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        votesPerVoter:
+          type: integer
+        cooldownHours:
+          type: integer
+        reveal:
+          $ref: '#/components/schemas/RevealEnum'
+        nominees:
+          type: array
+          items:
+            $ref: '#/components/schemas/Nominee'
+        totalVotes:
+          type: integer
+        voters:
+          type: integer
+        createdAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        updatedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - closesAt
+      - competitionId
+      - cooldownHours
+      - createdAt
+      - description
+      - id
+      - nominees
+      - opensAt
+      - reveal
+      - slug
+      - standalone
+      - status
+      - title
+      - totalVotes
+      - updatedAt
+      - voters
+      - votesPerVoter
+    BallotProblemDetail:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        requestId:
+          type: string
+      required:
+      - detail
+      - instance
+      - requestId
+      - status
+      - title
+      - type
+    BallotSummary:
+      type: object
+      description: One row of the organizer's ballot list.
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        slug:
+          type: string
+        status:
+          $ref: '#/components/schemas/StatusEe1Enum'
+        competitionId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        standalone:
+          type: boolean
+        nominees:
+          type: integer
+        totalVotes:
+          type: integer
+        opensAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        closesAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - closesAt
+      - competitionId
+      - createdAt
+      - id
+      - nominees
+      - opensAt
+      - slug
+      - standalone
+      - status
+      - title
+      - totalVotes
     BillingModel011Enum:
       enum:
       - COMMISSION_PERCENT
@@ -10827,6 +11875,23 @@ components:
       description: |-
         * `PER_PARTICIPANT` - PER_PARTICIPANT
         * `PER_PERFORMANCE` - PER_PERFORMANCE
+    CastVoteRequest:
+      type: object
+      description: |-
+        One person's votes.
+
+        A list rather than a single id, so a ballot allowing several picks accepts or
+        refuses the whole submission at once instead of leaving somebody with two of
+        their three votes spent and an error on screen.
+      properties:
+        nomineeIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          maxItems: 10
+      required:
+      - nomineeIds
     ColumnRequest:
       type: object
       description: Validate the title of a custom column ("Микрофон", "Реквизит").
@@ -11189,6 +12254,48 @@ components:
       - categoryIds
       - competitionId
       - templateId
+    CreateBallotRequest:
+      type: object
+      description: |-
+        Start a ballot.
+
+        ``competitionId`` is optional, and that is the feature rather than a loose end:
+        a festival that has not moved onto the platform gets the same ballot as one
+        that has.
+      properties:
+        votesPerVoter:
+          type: integer
+          maximum: 10
+          minimum: 1
+        cooldownHours:
+          type: integer
+          maximum: 336
+          minimum: 0
+        reveal:
+          $ref: '#/components/schemas/RevealEnum'
+        title:
+          type: string
+          maxLength: 200
+        competitionId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        description:
+          type: string
+          maxLength: 4000
+        opensAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        closesAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - title
     CreateCompetition:
       type: object
       properties:
@@ -12048,6 +13155,29 @@ components:
       - guardianId
       - relationshipType
       - status
+    ImportPreview:
+      type: object
+      properties:
+        added:
+          type: array
+          items:
+            $ref: '#/components/schemas/Nominee'
+        errors:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        missingColumns:
+          type: array
+          items:
+            type: string
+        dryRun:
+          type: boolean
+      required:
+      - added
+      - dryRun
+      - errors
+      - missingColumns
     InvitationListResponse:
       type: object
       properties:
@@ -12328,6 +13458,53 @@ components:
         * `VOTING` - VOTING
         * `FINANCE` - FINANCE
         * `ANALYTICS` - ANALYTICS
+    Nominee:
+      type: object
+      description: One nominee as the organizer sees them.
+      properties:
+        id:
+          type: string
+          format: uuid
+        position:
+          type: integer
+        title:
+          type: string
+        subtitle:
+          type: string
+        city:
+          type: string
+        photo:
+          type:
+          - string
+          - 'null'
+        number:
+          type:
+          - integer
+          - 'null'
+        withdrawn:
+          type: boolean
+        votes:
+          type: integer
+        submissionId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        programItemId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+      required:
+      - city
+      - id
+      - number
+      - photo
+      - position
+      - subtitle
+      - title
+      - votes
+      - withdrawn
     Notification:
       type: object
       description: One entry in the feed, already in the words the recipient reads.
@@ -12889,6 +14066,30 @@ components:
           type: integer
           maximum: 86400
           minimum: 1
+    PatchedEditNomineeRequest:
+      type: object
+      description: Correct a nominee's card. Absent fields are left alone.
+      properties:
+        subtitle:
+          type: string
+          maxLength: 200
+        city:
+          type: string
+          maxLength: 200
+        photo:
+          type:
+          - string
+          - 'null'
+          maxLength: 1024
+        number:
+          type:
+          - integer
+          - 'null'
+          maximum: 100000
+          minimum: 0
+        title:
+          type: string
+          maxLength: 200
     PatchedOrganizationProfileUpdate:
       type: object
       description: |-
@@ -13115,6 +14316,37 @@ components:
           oneOf:
           - $ref: '#/components/schemas/MixedCalculationMethodEnum'
           - $ref: '#/components/schemas/NullEnum'
+    PatchedUpdateBallotRequest:
+      type: object
+      description: Change a ballot's wording or its rules. Absent fields are left
+        alone.
+      properties:
+        votesPerVoter:
+          type: integer
+          maximum: 10
+          minimum: 1
+        cooldownHours:
+          type: integer
+          maximum: 336
+          minimum: 0
+        reveal:
+          $ref: '#/components/schemas/RevealEnum'
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 4000
+        opensAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        closesAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
     PatchedUpdateCompetitionBranding:
       type: object
       properties:
@@ -14562,6 +15794,56 @@ components:
       - slug
       - status
       - updatedAt
+    PublicBallot:
+      type: object
+      description: The voting page.
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        slug:
+          type: string
+        status:
+          $ref: '#/components/schemas/StatusEe1Enum'
+        open:
+          type: boolean
+        votesPerVoter:
+          type: integer
+        votesLeft:
+          type: integer
+        revealTotals:
+          type: boolean
+        nominees:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicNominee'
+        totalVotes:
+          type:
+          - integer
+          - 'null'
+        closesAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        closedReason:
+          type:
+          - string
+          - 'null'
+      required:
+      - closedReason
+      - closesAt
+      - description
+      - nominees
+      - open
+      - revealTotals
+      - slug
+      - status
+      - title
+      - totalVotes
+      - votesLeft
+      - votesPerVoter
     PublicCatalogMeta:
       type: object
       description: Response envelope metadata (API-000 §5).
@@ -15270,6 +16552,50 @@ components:
       - googleMapsUrl
       - name
       - yandexMapsUrl
+    PublicNominee:
+      type: object
+      description: |-
+        One nominee as the audience sees them.
+
+        ``votes`` is null — absent, not zero — whenever the reveal policy says the
+        count is not for the public yet, so a page cannot render a nought for something
+        it merely is not allowed to know.
+      properties:
+        id:
+          type: string
+          format: uuid
+        position:
+          type: integer
+        title:
+          type: string
+        subtitle:
+          type: string
+        city:
+          type: string
+        photo:
+          type:
+          - string
+          - 'null'
+        number:
+          type:
+          - integer
+          - 'null'
+        votes:
+          type:
+          - integer
+          - 'null'
+        chosen:
+          type: boolean
+      required:
+      - chosen
+      - city
+      - id
+      - number
+      - photo
+      - position
+      - subtitle
+      - title
+      - votes
     PublicProgram:
       type: object
       description: What a public link resolves to.
@@ -15904,6 +17230,17 @@ components:
             format: uuid
       required:
       - itemIds
+    ReorderNomineesRequest:
+      type: object
+      description: Rearrange the list — every nominee named exactly once.
+      properties:
+        order:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+      - order
     ReorderRowsRequest:
       type: object
       description: 'Validate a reorder body: the complete new order, top to bottom.'
@@ -15915,6 +17252,16 @@ components:
             format: uuid
       required:
       - rowIds
+    RevealEnum:
+      enum:
+      - ALWAYS
+      - AFTER_CLOSE
+      - NEVER
+      type: string
+      description: |-
+        * `ALWAYS` - ALWAYS
+        * `AFTER_CLOSE` - AFTER_CLOSE
+        * `NEVER` - NEVER
     RoleEnum:
       enum:
       - OWNER
@@ -15956,6 +17303,16 @@ components:
           - string
           - 'null'
           format: date-time
+    SeedFromProgramRequest:
+      type: object
+      description: Fill the list from a running order of the festival this ballot
+        belongs to.
+      properties:
+        programId:
+          type: string
+          format: uuid
+      required:
+      - programId
     SelectEducationalOrganizationRequest:
       type: object
       description: Validate a select-educational-organization request body.
@@ -16293,6 +17650,16 @@ components:
         force:
           type: boolean
           default: false
+    StatusEe1Enum:
+      enum:
+      - DRAFT
+      - OPEN
+      - CLOSED
+      type: string
+      description: |-
+        * `DRAFT` - DRAFT
+        * `OPEN` - OPEN
+        * `CLOSED` - CLOSED
     SubmissionAttachmentProblemDetail:
       type: object
       properties:
@@ -17075,6 +18442,20 @@ components:
       - displayName
       - emailVerified
       - id
+    VoteReceipt:
+      type: object
+      description: What comes back the moment somebody votes.
+      properties:
+        ballot:
+          $ref: '#/components/schemas/PublicBallot'
+        accepted:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+      - accepted
+      - ballot
     _AdditionalService:
       type: object
       properties:

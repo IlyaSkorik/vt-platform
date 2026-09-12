@@ -92,17 +92,23 @@ class DjangoBallotRepository:
         aggregate turns a removal into a withdrawal once votes exist.
         """
         columns = BallotMapper.root_columns(ballot)
-        previous_version = ballot.version - 1
+        # Guarded on the version the aggregate was *read* at, not on ``version - 1``:
+        # one use case may mutate a ballot many times before saving it (an import adds
+        # fifty nominees and bumps the version fifty times), and a guard assuming one
+        # bump per save refuses every batch operation there is.
+        expected = ballot.persisted_version
         try:
             with transaction.atomic():
-                updated = BallotModel.objects.filter(pk=ballot.id, version=previous_version).update(
-                    **{name: value for name, value in columns.items() if name != "id"}
-                )
-                if not updated:
-                    if BallotModel.objects.filter(pk=ballot.id).exists():
-                        raise ConcurrencyConflictError(f"Ballot {ballot.id} was modified concurrently; expected version {previous_version}.")
+                if expected is None:
                     BallotModel.objects.create(**columns)
+                else:
+                    updated = BallotModel.objects.filter(pk=ballot.id, version=expected).update(
+                        **{name: value for name, value in columns.items() if name != "id"}
+                    )
+                    if not updated:
+                        raise ConcurrencyConflictError(f"Ballot {ballot.id} was modified concurrently; expected version {expected}.")
                 self._save_nominees(ballot)
+                ballot.mark_persisted()
         except IntegrityError as exc:
             raise IntegrityViolationError(f"Failed to persist ballot {ballot.id}.") from exc
         except DatabaseError as exc:  # pragma: no cover - defensive

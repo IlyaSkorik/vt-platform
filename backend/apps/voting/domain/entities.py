@@ -231,6 +231,12 @@ class Ballot:
     _closed_at: datetime | None = None
     _deleted_at: datetime | None = None
     _version: int = 1
+    #: The version this aggregate was last read at, or ``None`` for one that has
+    #: never been stored. The repository guards its UPDATE on this rather than on
+    #: ``version - 1``: a single use case may mutate the ballot several times (an
+    #: import adds fifty nominees, each bumping the version), and a guard that
+    #: assumes exactly one bump per save refuses every batch operation there is.
+    _persisted_version: int | None = None
 
     def __post_init__(self, _token: object) -> None:
         if _token is not _CREATION_TOKEN:
@@ -319,6 +325,7 @@ class Ballot:
             _closed_at=closed_at,
             _deleted_at=deleted_at,
             _version=version,
+            _persisted_version=version,
         )
 
     # ------------------------------------------------------------------
@@ -596,6 +603,15 @@ class Ballot:
     @property
     def version(self) -> int:
         return self._version
+
+    @property
+    def persisted_version(self) -> int | None:
+        """The version this ballot was read at, or ``None`` if it has never been stored."""
+        return self._persisted_version
+
+    def mark_persisted(self) -> None:
+        """Called by the repository once the aggregate is safely written."""
+        self._persisted_version = self._version
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Ballot):
