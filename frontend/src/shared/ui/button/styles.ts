@@ -17,8 +17,13 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         primary: "bg-primary text-primary-foreground shadow-elevation-1 hover:bg-primary/90",
+        // Bordered, not merely filled. The fill is one step off the surface it sits
+        // on (0.17 against a 0.135 card in the dark theme), and the only other thing
+        // marking it as a control is a drop shadow — which a dark surface does not
+        // show at all. On light the shadow carried it; on dark the button simply
+        // disappeared. The border is the affordance that works in both.
         secondary:
-          "bg-secondary text-secondary-foreground shadow-elevation-1 hover:bg-secondary/80",
+          "border border-border bg-secondary text-secondary-foreground shadow-elevation-1 hover:bg-secondary/80",
         outline:
           "border border-input bg-background text-foreground shadow-elevation-1 hover:bg-accent hover:text-accent-foreground",
         ghost: "text-foreground hover:bg-accent hover:text-accent-foreground",

@@ -26,6 +26,21 @@ describe("Button", () => {
     expect(screen.getByRole("button", { name: "Кнопка" })).toBeInTheDocument();
   });
 
+  /**
+   * Every filled variant must be marked as a control by something other than its
+   * drop shadow, because a dark surface does not show one. The secondary variant
+   * learned this the hard way: its fill sits one step off the card it lives on, and
+   * with only a shadow to distinguish it the button was invisible in the dark theme.
+   */
+  it.each([
+    "secondary",
+    "outline",
+  ] as const)("marks the %s variant with a border, not with a shadow alone", (variant) => {
+    render(<Button variant={variant}>Кнопка</Button>);
+
+    expect(screen.getByRole("button", { name: "Кнопка" }).className).toMatch(/\bborder\b/);
+  });
+
   it("invokes onClick when pressed", async () => {
     const onClick = vi.fn();
     const user = userEvent.setup();
