@@ -5,6 +5,15 @@ import { cva } from "class-variance-authority";
  * utilities (which are wired to `var(--…)` tokens), never raw palette values —
  * so a theme switch restyles every button without touching this file.
  *
+ * **Which variant.** The one rule worth knowing, because it has been got wrong
+ * twice: `ghost` is text until it is hovered, and a touch screen never hovers.
+ * So it belongs only where the surrounding context already says "control" —
+ * an icon in a toolbar or a dense list row, a link in a navigation bar, a
+ * "see all" beside a card heading. Anything a person has to *find* in order to
+ * act — delete, reset, copy, download, add, cancel — is `outline` at least.
+ * If in doubt, ask whether the control is still discoverable with the mouse
+ * across the room; `ghost` is not.
+ *
  * Motion: the transition covers shadow and transform as well as colour, and a press
  * shrinks the button very slightly. This is the one place worth spending motion on —
  * it is the control the reader actually touches, and the acknowledgement is what makes

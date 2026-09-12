@@ -242,7 +242,7 @@ function RunCard({ run }: { run: LoadTestRun }): React.JSX.Element {
             </Button>
           ))}
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             className="ml-auto text-danger"
             loading={cleanup.isPending}

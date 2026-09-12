@@ -156,7 +156,7 @@ function MembersTable({ data, loading, canManage }: MembersTableProps): React.JS
               row.original.status === "ACTIVE" ? (
                 <div className="flex justify-end">
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     leftIcon={<UserMinus aria-hidden="true" />}
                     onClick={() => void handleRevoke(row.original)}

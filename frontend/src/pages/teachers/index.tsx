@@ -137,7 +137,7 @@ export function TeachersPage(): React.JSX.Element {
                     </p>
                   </div>
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     leftIcon={<UserPen className="size-4" />}
                     onClick={() => navigate(`${ROUTES.cabinetTeachers}/${teacher.id}`)}
@@ -301,7 +301,7 @@ export function TeacherProfilePage(): React.JSX.Element {
         <PageTitle>{isCreateMode ? "Новый педагог" : "Педагог"}</PageTitle>
         <PageActions>
           <Button
-            variant="ghost"
+            variant="outline"
             leftIcon={<ArrowLeft className="size-4" />}
             onClick={() => navigate(-1)}
           >

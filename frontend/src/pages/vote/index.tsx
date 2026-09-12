@@ -14,7 +14,7 @@ import {
 } from "@/features/public-voting";
 import { cn } from "@/shared/lib";
 import { useSeo } from "@/shared/seo";
-import { Badge, Button, EmptyState, LoadingState, toast } from "@/shared/ui";
+import { Badge, EmptyState, LoadingState, toast } from "@/shared/ui";
 
 /**
  * `/vote/:slug` — the audience vote, as reached from a QR code on a poster.
@@ -168,10 +168,11 @@ export function PublicVotePage(): React.JSX.Element {
           </p>
         ) : null}
 
+        {/* A sentence, not a disabled button. It says what happened; there is
+            nothing here to press, and dressing a status line as a control invites
+            people to keep tapping it. */}
         {!canVote(ballot) && !closed && hasVoted(ballot) ? (
-          <Button variant="ghost" disabled>
-            Вы уже проголосовали
-          </Button>
+          <p className="text-center text-muted-foreground text-sm">Вы уже проголосовали</p>
         ) : null}
       </div>
     </div>

@@ -166,11 +166,11 @@ export function ProtocolEditor({ protocol }: ProtocolEditorProps): React.JSX.Ele
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={handleSync} loading={sync.isPending}>
+          <Button variant="outline" size="sm" onClick={handleSync} loading={sync.isPending}>
             <RefreshCw className="size-4" aria-hidden="true" />
             Обновить состав
           </Button>
-          <Button variant="ghost" size="sm" onClick={handleRenumber} loading={renumber.isPending}>
+          <Button variant="outline" size="sm" onClick={handleRenumber} loading={renumber.isPending}>
             Перенумеровать
           </Button>
           <PublishProtocolDialog protocol={protocol} />
@@ -188,7 +188,7 @@ export function ProtocolEditor({ protocol }: ProtocolEditorProps): React.JSX.Ele
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
           <Link2 className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
           <code className="min-w-0 flex-1 truncate">{publicUrl}</code>
-          <Button variant="ghost" size="sm" onClick={handleCopyLink}>
+          <Button variant="outline" size="sm" onClick={handleCopyLink}>
             Скопировать
           </Button>
           <Button variant="ghost" size="sm" asChild>
@@ -199,7 +199,7 @@ export function ProtocolEditor({ protocol }: ProtocolEditorProps): React.JSX.Ele
           </Button>
           {protocol.status === "PUBLISHED" ? (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={handleUnpublish}
               loading={unpublish.isPending}

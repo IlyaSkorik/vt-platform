@@ -522,7 +522,7 @@ function ParticipantsSection({
                 {participant.memberCount > 1 ? ` · ${participant.memberCount} чел.` : ""}
               </span>
               <Button
-                variant="ghost"
+                variant="outline"
                 size="xs"
                 loading={remove.isPending}
                 onClick={() =>
@@ -630,7 +630,7 @@ function TeachersSection({
               {teacher.lastName} {teacher.firstName} · {teacher.role}
             </span>
             <Button
-              variant="ghost"
+              variant="outline"
               size="xs"
               loading={remove.isPending}
               onClick={() => remove.mutate(teacher.id)}

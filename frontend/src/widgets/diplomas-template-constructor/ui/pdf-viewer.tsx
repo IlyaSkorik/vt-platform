@@ -65,7 +65,7 @@ export function PdfViewer({ url }: PdfViewerProps): React.JSX.Element {
         <Button variant="ghost" size="sm" iconOnly onClick={zoomIn} aria-label="Увеличить">
           <Plus className="size-4" aria-hidden="true" />
         </Button>
-        <Button variant="ghost" size="sm" onClick={fitWidth}>
+        <Button variant="outline" size="sm" onClick={fitWidth}>
           <Maximize2 className="size-4" aria-hidden="true" />
           По ширине
         </Button>

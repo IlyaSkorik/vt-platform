@@ -230,7 +230,7 @@ function UploadRow({
             </span>
           </Badge>
           <Button
-            variant="ghost"
+            variant="outline"
             size="xs"
             loading={remove.isPending}
             onClick={() => remove.mutate(attachment.id)}

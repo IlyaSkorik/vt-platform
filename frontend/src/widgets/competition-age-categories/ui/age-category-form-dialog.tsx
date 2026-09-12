@@ -178,7 +178,7 @@ export function AgeCategoryFormDialog({
               Если максимальный возраст 99 или больше, диапазон отображается как «N+».
             </p>
 
-            <Button type="button" size="sm" variant="ghost" onClick={handleSuggestName}>
+            <Button type="button" size="sm" variant="outline" onClick={handleSuggestName}>
               Подставить название из диапазона
             </Button>
 

@@ -159,7 +159,7 @@ export function FestivalFiltersPanel({
         <div className="flex items-end justify-end lg:col-span-2">
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             onClick={onReset}
             disabled={!hasActiveFilters(filters)}
             leftIcon={<RotateCcw className="size-4" aria-hidden="true" />}

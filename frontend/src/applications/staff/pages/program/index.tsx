@@ -779,7 +779,7 @@ function RenumberButton({ programId }: { programId: string }): React.JSX.Element
   const renumber = useRenumberItems(programId);
   return (
     <Button
-      variant="ghost"
+      variant="outline"
       size="sm"
       loading={renumber.isPending}
       // Destructive in the sense that matters here: it invalidates numbers already told

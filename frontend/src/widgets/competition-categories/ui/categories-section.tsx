@@ -718,7 +718,7 @@ export function CategoriesSection({
                                       <Button
                                         type="button"
                                         size="sm"
-                                        variant="ghost"
+                                        variant="outline"
                                         onClick={() => {
                                           setAddingDisciplineCategoryId(null);
                                           setNewDisciplineName("");
@@ -731,7 +731,7 @@ export function CategoriesSection({
                                     <Button
                                       type="button"
                                       size="sm"
-                                      variant="ghost"
+                                      variant="outline"
                                       onClick={() => {
                                         setAddingDisciplineCategoryId(node.category.id);
                                         setNewDisciplineName("");

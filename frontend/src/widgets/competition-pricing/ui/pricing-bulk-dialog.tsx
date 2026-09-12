@@ -197,7 +197,7 @@ export function PricingBulkToolbar({
       <Button
         type="button"
         size="sm"
-        variant="ghost"
+        variant="outline"
         disabled={disabled}
         onClick={onSelectAllVisible}
       >
@@ -206,7 +206,7 @@ export function PricingBulkToolbar({
       <Button
         type="button"
         size="sm"
-        variant="ghost"
+        variant="outline"
         disabled={disabled}
         onClick={onClearSelection}
       >

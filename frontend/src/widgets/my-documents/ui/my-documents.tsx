@@ -185,7 +185,7 @@ function DocumentBundleRow({
               >
                 <span className="wrap-anywhere text-foreground/80 text-sm">{who}</span>
                 {href ? (
-                  <Button asChild variant="ghost" size="xs">
+                  <Button asChild variant="outline" size="xs">
                     <a
                       href={href}
                       target="_blank"

@@ -110,7 +110,7 @@ export function ReceiptCard({
                 </div>
                 {canUpload ? (
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     loading={remove.isPending}
                     onClick={() => onRemove(receipt.id)}

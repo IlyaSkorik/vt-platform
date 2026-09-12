@@ -187,7 +187,7 @@ export function PublishProtocolDialog({ protocol }: PublishProtocolDialogProps):
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="ghost">Отмена</Button>
+            <Button variant="outline">Отмена</Button>
           </DialogClose>
           <Button onClick={handlePublish} loading={publish.isPending}>
             {republishing ? "Опубликовать ревизию" : "Опубликовать"}

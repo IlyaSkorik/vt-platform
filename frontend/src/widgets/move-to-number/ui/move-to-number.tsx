@@ -118,7 +118,7 @@ export function MoveToNumber({
             <Button
               type="button"
               size="sm"
-              variant="ghost"
+              variant="outline"
               className="flex-1"
               disabled={atStart || disabled}
               onClick={() => jump(onMoveToStart)}
@@ -128,7 +128,7 @@ export function MoveToNumber({
             <Button
               type="button"
               size="sm"
-              variant="ghost"
+              variant="outline"
               className="flex-1"
               disabled={atEnd || disabled}
               onClick={() => jump(onMoveToEnd)}

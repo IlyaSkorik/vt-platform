@@ -240,7 +240,7 @@ export function StaffParticipantsPage(): React.JSX.Element {
                 </button>
               ))}
               {filtersActive ? (
-                <Button variant="ghost" size="sm" onClick={() => setFilters(EMPTY_FILTERS)}>
+                <Button variant="outline" size="sm" onClick={() => setFilters(EMPTY_FILTERS)}>
                   Сбросить
                 </Button>
               ) : null}
@@ -653,7 +653,7 @@ function ParticipationRow({
         </div>
         <Button
           size="sm"
-          variant="ghost"
+          variant="outline"
           className="shrink-0"
           onClick={() => navigate(applicationHref(application))}
           rightIcon={<ExternalLink className="size-3.5" aria-hidden="true" />}

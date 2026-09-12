@@ -129,7 +129,7 @@ export function BenefitDocumentsCard({
                 </div>
                 {canEdit ? (
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     loading={remove.isPending}
                     onClick={() => onRemove(document.id)}

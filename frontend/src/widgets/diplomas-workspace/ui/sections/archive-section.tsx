@@ -121,7 +121,7 @@ function DownloadCell({ run }: { run: GenerationRunResponse }): React.JSX.Elemen
   }
   return (
     <div className="flex justify-end">
-      <Button asChild variant="ghost" size="sm">
+      <Button asChild variant="outline" size="sm">
         <a href={href} download aria-label={`Скачать архив от ${formatDateTime(run.createdAt)}`}>
           <Download className="size-4" aria-hidden="true" />
           ZIP

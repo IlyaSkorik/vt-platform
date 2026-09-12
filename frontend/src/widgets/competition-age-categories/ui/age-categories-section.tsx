@@ -353,7 +353,7 @@ export function AgeCategoriesSection({
                               <Button
                                 type="button"
                                 size="sm"
-                                variant="ghost"
+                                variant="outline"
                                 onClick={() => openCreate(node.group.id, node.group.name)}
                               >
                                 <Plus className="size-3.5" aria-hidden="true" />

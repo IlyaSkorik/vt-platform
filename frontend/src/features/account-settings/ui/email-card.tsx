@@ -164,7 +164,7 @@ export function EmailCard({ email, verified, onChanged }: EmailCardProps): React
               <Button type="submit" loading={isSubmitting} disabled={isSubmitting}>
                 Сохранить адрес
               </Button>
-              <Button type="button" variant="ghost" onClick={stopEditing}>
+              <Button type="button" variant="outline" onClick={stopEditing}>
                 Отмена
               </Button>
             </div>

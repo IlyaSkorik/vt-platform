@@ -235,7 +235,7 @@ function InvitationsTable({ data, loading, canManage }: InvitationsTableProps): 
               row.original.status === "pending" ? (
                 <div className="flex justify-end">
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     leftIcon={<Trash2 aria-hidden="true" />}
                     onClick={() => void handleRevoke(row.original)}
