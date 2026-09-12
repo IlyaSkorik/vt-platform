@@ -3850,8 +3850,8 @@
     "semantic_hash": "6ed8c18b5c86df4e096858606ec153c0"
   },
   "frontend/src/app/router/router.tsx": {
-    "mtime": 1789223007.109797,
-    "ast_hash": "0635e3020c8923ef4f50f443a1e9039b",
+    "mtime": 1789236436.799519,
+    "ast_hash": "af56200949014072e8226db3ae879cfe",
     "semantic_hash": ""
   },
   "frontend/src/applications/participant/layouts/participant-layout.tsx": {
@@ -6545,8 +6545,8 @@
     "semantic_hash": "d4ecc328966ff21da30ecd22f0b2a981"
   },
   "frontend/openapi/schema-full.yaml": {
-    "mtime": 1789222436.9243782,
-    "ast_hash": "797b7f0aed4a748e49606f1062d4c8fa",
+    "mtime": 1789238465.4748347,
+    "ast_hash": "e186679580ebc989e0b083eb73b47269",
     "semantic_hash": ""
   },
   "frontend/openapi/schema.yaml": {
@@ -10385,28 +10385,28 @@
     "semantic_hash": ""
   },
   "backend/apps/voting/application/commands.py": {
-    "mtime": 1789221317.1299763,
-    "ast_hash": "e13f92d91f9acc2027f367b4e3e84c5d",
+    "mtime": 1789237342.416432,
+    "ast_hash": "c8b85b12115936d743a9cf4ffb21e2db",
     "semantic_hash": ""
   },
   "backend/apps/voting/application/dto.py": {
-    "mtime": 1789221340.631031,
-    "ast_hash": "6585b25eff8864a070acc2c5458a38f5",
+    "mtime": 1789237570.4584403,
+    "ast_hash": "25057bfeddaf4015beab4b2204c1b781",
     "semantic_hash": ""
   },
   "backend/apps/voting/application/interfaces.py": {
-    "mtime": 1789221317.1182952,
-    "ast_hash": "5c7ee018edad8b87bdb09cb10589b2c4",
+    "mtime": 1789237342.4167733,
+    "ast_hash": "0f4c0b2587147a1b7c68383f9b290016",
     "semantic_hash": ""
   },
   "backend/apps/voting/application/services.py": {
-    "mtime": 1789221865.1541364,
-    "ast_hash": "0a220391ef277e283a5382d8ea4b3f22",
+    "mtime": 1789237570.520929,
+    "ast_hash": "e067d2c3c68438dbca90cc7a0d72f035",
     "semantic_hash": ""
   },
   "backend/apps/voting/apps.py": {
-    "mtime": 1789220691.8504796,
-    "ast_hash": "2c7cae3bbebff0217ef10fe37de47334",
+    "mtime": 1789237369.3025806,
+    "ast_hash": "d070cf3abac20f4afad530731312aa3f",
     "semantic_hash": ""
   },
   "backend/apps/voting/composition.py": {
@@ -10420,8 +10420,8 @@
     "semantic_hash": ""
   },
   "backend/apps/voting/domain/entities.py": {
-    "mtime": 1789222201.107698,
-    "ast_hash": "426005ac9f80a51d8e66dfb86f922d1f",
+    "mtime": 1789237359.1993897,
+    "ast_hash": "237265cde8ecacafb2d444375133612b",
     "semantic_hash": ""
   },
   "backend/apps/voting/domain/exceptions.py": {
@@ -10430,8 +10430,8 @@
     "semantic_hash": ""
   },
   "backend/apps/voting/domain/value_objects.py": {
-    "mtime": 1789220782.6304529,
-    "ast_hash": "65b13413eb556b710e2790561673ff04",
+    "mtime": 1789237342.4173062,
+    "ast_hash": "8c3e4e589b3a37b1b8f8c9fbed856ac9",
     "semantic_hash": ""
   },
   "backend/apps/voting/domain/vote.py": {
@@ -10450,8 +10450,8 @@
     "semantic_hash": ""
   },
   "backend/apps/voting/infrastructure/acl/nominee_catalog.py": {
-    "mtime": 1789221527.410234,
-    "ast_hash": "adcc3a288230316de9634d3fee87d949",
+    "mtime": 1789237359.2002861,
+    "ast_hash": "c34b6070270c7aa7ef423e07685d099d",
     "semantic_hash": ""
   },
   "backend/apps/voting/infrastructure/admin.py": {
@@ -10465,8 +10465,8 @@
     "semantic_hash": ""
   },
   "backend/apps/voting/infrastructure/mappers/ballot_mapper.py": {
-    "mtime": 1789221010.2263873,
-    "ast_hash": "c59e2182d594587964f6fd0bef55c16f",
+    "mtime": 1789237359.2000542,
+    "ast_hash": "5fd4c7897336089bf0d2bbb32443f536",
     "semantic_hash": ""
   },
   "backend/apps/voting/infrastructure/migrations/0001_initial.py": {
@@ -10485,8 +10485,8 @@
     "semantic_hash": ""
   },
   "backend/apps/voting/infrastructure/models/ballot.py": {
-    "mtime": 1789220923.7344112,
-    "ast_hash": "bbc2bb6c1b45493f934f05f7d4088eed",
+    "mtime": 1789237359.1998284,
+    "ast_hash": "995a7cdd3e3a81d806791e335f6b0686",
     "semantic_hash": ""
   },
   "backend/apps/voting/infrastructure/models/base.py": {
@@ -10555,28 +10555,28 @@
     "semantic_hash": ""
   },
   "backend/apps/voting/presentation/api/v1/resources.py": {
-    "mtime": 1789221620.3582072,
-    "ast_hash": "528d64c5969eeea6e3cc1a939bd57368",
+    "mtime": 1789237588.6207101,
+    "ast_hash": "3cf0b2057d9cac9f8aae544e97ecf9bc",
     "semantic_hash": ""
   },
   "backend/apps/voting/presentation/api/v1/serializers.py": {
-    "mtime": 1789221790.895368,
-    "ast_hash": "243b177f99a7c8e565c6cfb731225f95",
+    "mtime": 1789237588.6209035,
+    "ast_hash": "937744653b1de532eb3b71a8fe52fa4f",
     "semantic_hash": ""
   },
   "backend/apps/voting/presentation/api/v1/sheets.py": {
-    "mtime": 1789221653.6181998,
-    "ast_hash": "b073ed1b1c0924ec404256da8d9100dd",
+    "mtime": 1789237359.201629,
+    "ast_hash": "e376e2afd738096fd41c57b669b6d3db",
     "semantic_hash": ""
   },
   "backend/apps/voting/presentation/api/v1/urls.py": {
-    "mtime": 1789221924.1859577,
-    "ast_hash": "4c8150f4ebae0aab99578e3e3d6c19d7",
+    "mtime": 1789237588.6232774,
+    "ast_hash": "5923fd8c126ed70dfedfc90d092d21a0",
     "semantic_hash": ""
   },
   "backend/apps/voting/presentation/api/v1/views.py": {
-    "mtime": 1789221760.654166,
-    "ast_hash": "316a1d43348bac2d4a89a0edc96df527",
+    "mtime": 1789237588.6211658,
+    "ast_hash": "cbce6ccbc2bb64026211a04053810ae3",
     "semantic_hash": ""
   },
   "backend/apps/voting/presentation/public_urls.py": {
@@ -10640,13 +10640,13 @@
     "semantic_hash": ""
   },
   "backend/tests/domain/voting/test_ballot.py": {
-    "mtime": 1789221129.3347585,
-    "ast_hash": "34344cc674893fe79be45127e149ab91",
+    "mtime": 1789237412.9413075,
+    "ast_hash": "208bdf784880d1f0a6d2567bcd9be125",
     "semantic_hash": ""
   },
   "backend/tests/domain/voting/test_value_objects.py": {
-    "mtime": 1789221152.550151,
-    "ast_hash": "7c14e74a2d79c61f8e2393efb4969aef",
+    "mtime": 1789237412.9416196,
+    "ast_hash": "535b1a8a17614144e09b300ae554abb6",
     "semantic_hash": ""
   },
   "backend/tests/presentation/organization/test_module_gate_api.py": {
@@ -10670,13 +10670,13 @@
     "semantic_hash": ""
   },
   "backend/tests/presentation/voting/test_ballots_api.py": {
-    "mtime": 1789222040.0980856,
-    "ast_hash": "1a510d39b776fc0c6c8a27e4211333ad",
+    "mtime": 1789237412.9418132,
+    "ast_hash": "b722cedfd8f16b886587b2409c685341",
     "semantic_hash": ""
   },
   "backend/tests/presentation/voting/test_nominee_import_api.py": {
-    "mtime": 1789222294.3380082,
-    "ast_hash": "0344cf8edce47b29d7e66e26698ee9d1",
+    "mtime": 1789237454.8124561,
+    "ast_hash": "bfe08ae7e94b9779a6ee44fe2ecc67c3",
     "semantic_hash": ""
   },
   "backend/tests/presentation/voting/test_public_voting_api.py": {
@@ -10700,8 +10700,8 @@
     "semantic_hash": ""
   },
   "frontend/e2e/audience-voting.spec.ts": {
-    "mtime": 1789231894.301748,
-    "ast_hash": "a902f1351f9f06667984a4924078a9d6",
+    "mtime": 1789237486.4564168,
+    "ast_hash": "47898a1bb3931f388acd9422b81f2046",
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/ui/module-switchboard.test.tsx": {
@@ -10715,18 +10715,18 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/voting/index.test.tsx": {
-    "mtime": 1789231946.5310562,
-    "ast_hash": "37efa3d40f552444bdd71ffd09c3940c",
+    "mtime": 1789237881.960838,
+    "ast_hash": "5899f2f5ca507a42f0a71e0493bc5021",
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/voting/index.tsx": {
-    "mtime": 1789231686.9187546,
-    "ast_hash": "9b026c9c73c384e7190c21540471e5af",
+    "mtime": 1789237924.1044824,
+    "ast_hash": "1fcbfb9e41f261dd0656193b717fb184",
     "semantic_hash": ""
   },
   "frontend/src/features/public-voting/api.ts": {
-    "mtime": 1789231548.573854,
-    "ast_hash": "0f1968c9591e0aeffd588bfa7f65d3dd",
+    "mtime": 1789237478.2776442,
+    "ast_hash": "6b86e1cc91116bb54bc211ceb5f1272f",
     "semantic_hash": ""
   },
   "frontend/src/features/public-voting/index.ts": {
@@ -10735,8 +10735,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/public-voting/model.test.ts": {
-    "mtime": 1789231548.573854,
-    "ast_hash": "20988d820e4e1396c80548b41ad7da02",
+    "mtime": 1789237486.4557073,
+    "ast_hash": "d50d8141816d6fd364c83d7311f8773e",
     "semantic_hash": ""
   },
   "frontend/src/features/public-voting/model.ts": {
@@ -10745,13 +10745,13 @@
     "semantic_hash": ""
   },
   "frontend/src/features/voting-builder/api.ts": {
-    "mtime": 1789231548.609854,
-    "ast_hash": "c2780e8af886834e4be34f080a120754",
+    "mtime": 1789237774.8968694,
+    "ast_hash": "1c6562d2b646bf6349d08c7f89424b44",
     "semantic_hash": ""
   },
   "frontend/src/features/voting-builder/index.ts": {
-    "mtime": 1789231548.597854,
-    "ast_hash": "4cc3f2185fcd6f2a405fba78d557201f",
+    "mtime": 1789237662.8596046,
+    "ast_hash": "fb224ede5d28bfb4b759d4a5bda1396e",
     "semantic_hash": ""
   },
   "frontend/src/features/voting-builder/model.ts": {
@@ -10760,8 +10760,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/vote-board/index.test.tsx": {
-    "mtime": 1789231804.9417799,
-    "ast_hash": "90d1fc720ae08eba7804e50b2c85fb2f",
+    "mtime": 1789237486.455974,
+    "ast_hash": "fe27e44220d3c453d040e848778382b5",
     "semantic_hash": ""
   },
   "frontend/src/pages/vote-board/index.tsx": {
@@ -10770,13 +10770,28 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/vote/index.test.tsx": {
-    "mtime": 1789231804.9417799,
-    "ast_hash": "64a3cf674037b0460eb4a3462753eb86",
+    "mtime": 1789237486.4561849,
+    "ast_hash": "7445f7cc29e20a86d1306160f367152f",
     "semantic_hash": ""
   },
   "frontend/src/pages/vote/index.tsx": {
-    "mtime": 1789231548.649043,
-    "ast_hash": "6613c4a62926e1e68a16a61a8fe79db7",
+    "mtime": 1789237478.2779975,
+    "ast_hash": "8a67d805b7495b82bd20c90941dcc9bd",
+    "semantic_hash": ""
+  },
+  "backend/apps/voting/infrastructure/migrations/0002_drop_nominee_city.py": {
+    "mtime": 1789237388.552889,
+    "ast_hash": "d7de984f76ca51b8f7c5e61b6fa854cb",
+    "semantic_hash": ""
+  },
+  "backend/tests/presentation/voting/test_ballot_from_program_api.py": {
+    "mtime": 1789237662.828902,
+    "ast_hash": "37957b97e87a398716e85a69411068fa",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/router/router.test.ts": {
+    "mtime": 1789236517.3985748,
+    "ast_hash": "decf54deadab8ede6ed1ff96a5375f21",
     "semantic_hash": ""
   }
 }
