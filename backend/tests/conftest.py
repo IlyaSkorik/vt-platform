@@ -14,12 +14,14 @@ whatever they need inside their own test and still start from a clean slate.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+
 import pytest
 from django.core.cache import cache
 
 
 @pytest.fixture(autouse=True)
-def _clear_cache():
+def _clear_cache() -> Iterator[None]:
     """Empty the process-wide cache before and after each test."""
     cache.clear()
     yield

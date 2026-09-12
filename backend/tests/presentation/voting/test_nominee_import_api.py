@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+from typing import Any
 
 import pytest
 from openpyxl import Workbook, load_workbook
@@ -11,6 +12,11 @@ from rest_framework.test import APIClient
 pytestmark = pytest.mark.django_db
 
 _BALLOTS = "/api/v1/staff/ballots"
+
+
+def _downloaded(response: Any) -> io.BytesIO:
+    """The bytes of a streamed download, as a rewound file."""
+    return io.BytesIO(b"".join(response.streaming_content))
 
 
 def workbook_of(*rows: list[object]) -> io.BytesIO:
@@ -26,7 +32,7 @@ def workbook_of(*rows: list[object]) -> io.BytesIO:
     return payload
 
 
-def upload(client: APIClient, ballot_id: str, payload: io.BytesIO, *, dry_run: bool = False):
+def upload(client: APIClient, ballot_id: str, payload: io.BytesIO, *, dry_run: bool = False) -> Any:
     query = "?dryRun=true" if dry_run else ""
     return client.post(
         f"{_BALLOTS}/{ballot_id}/nominees/import{query}",
@@ -36,23 +42,23 @@ def upload(client: APIClient, ballot_id: str, payload: io.BytesIO, *, dry_run: b
 
 
 class TestTheTemplate:
-    def test_the_organizer_is_handed_a_file_to_fill_in(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_the_organizer_is_handed_a_file_to_fill_in(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         """Without an example file the organizer sends their own shape and we lose a day."""
         response = staff_client.get(f"{_BALLOTS}/{ballot['id']}/nominees/template.xlsx")
 
         assert response.status_code == 200
         assert response["Content-Type"].startswith("application/vnd.openxmlformats")
 
-    def test_the_template_names_the_columns_the_import_reads(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_the_template_names_the_columns_the_import_reads(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         response = staff_client.get(f"{_BALLOTS}/{ballot['id']}/nominees/template.xlsx")
-        sheet = load_workbook(io.BytesIO(b"".join(response.streaming_content))).worksheets[0]
+        sheet = load_workbook(_downloaded(response)).worksheets[0]
 
         assert [cell.value for cell in sheet[1]] == ["Номер", "Участник", "Произведение"]
 
-    def test_the_template_round_trips_back_through_the_import(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_the_template_round_trips_back_through_the_import(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         """The file we hand out has to be one we accept."""
         template = staff_client.get(f"{_BALLOTS}/{ballot['id']}/nominees/template.xlsx")
-        payload = io.BytesIO(b"".join(template.streaming_content))
+        payload = _downloaded(template)
         payload.name = "template.xlsx"
 
         response = upload(staff_client, ballot["id"], payload)
@@ -62,7 +68,7 @@ class TestTheTemplate:
 
 
 class TestImporting:
-    def test_a_filled_in_list_becomes_nominees(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_a_filled_in_list_becomes_nominees(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         payload = workbook_of(
             ["Номер", "Участник", "Произведение"],
             [1, "Ансамбль «Заря»", "«Калинка»"],
@@ -77,7 +83,7 @@ class TestImporting:
         assert added[0]["subtitle"] == "«Калинка»"
         assert added[0]["number"] == 1
 
-    def test_the_columns_may_arrive_in_any_order_and_under_a_synonym(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_the_columns_may_arrive_in_any_order_and_under_a_synonym(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         """A list exported from another system does not match our column order."""
         payload = workbook_of(["Репертуар", "ФИО", "№"], ["«Вальс»", "Иванова Мария", 4])
 
@@ -88,7 +94,7 @@ class TestImporting:
         assert added[0]["subtitle"] == "«Вальс»"
         assert added[0]["number"] == 4
 
-    def test_a_merged_title_above_the_table_does_not_hide_the_header(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_a_merged_title_above_the_table_does_not_hide_the_header(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         payload = workbook_of(
             ["Список номеров фестиваля «Весна»"],
             [],
@@ -100,7 +106,7 @@ class TestImporting:
 
         assert [row["title"] for row in response.data["data"]["added"]] == ["Трио"]
 
-    def test_an_imported_list_lands_after_what_is_already_there(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_an_imported_list_lands_after_what_is_already_there(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         payload = workbook_of(["Участник"], ["Новенький"])
 
         upload(staff_client, ballot["id"], payload)
@@ -111,7 +117,7 @@ class TestImporting:
 
 
 class TestThePreview:
-    def test_a_dry_run_changes_nothing(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_a_dry_run_changes_nothing(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         """Importing 150 rows of somebody else's formatting is undone by hand."""
         payload = workbook_of(["Участник"], ["Пробный"])
 
@@ -122,7 +128,7 @@ class TestThePreview:
         detail = staff_client.get(f"{_BALLOTS}/{ballot['id']}").data["data"]
         assert len(detail["nominees"]) == 2
 
-    def test_a_bad_row_is_reported_with_the_number_excel_shows(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_a_bad_row_is_reported_with_the_number_excel_shows(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         payload = workbook_of(["Номер", "Участник"], [1, "Хор"], [2, ""], [3, "Соло"])
 
         response = upload(staff_client, ballot["id"], payload, dry_run=True)
@@ -133,7 +139,7 @@ class TestThePreview:
         # The good rows still come through: one bad line is not a bad file.
         assert len(response.data["data"]["added"]) == 2
 
-    def test_a_column_the_file_lacks_is_named_rather_than_dropped_in_silence(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_a_column_the_file_lacks_is_named_rather_than_dropped_in_silence(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         payload = workbook_of(["Участник"], ["Соло"])
 
         response = upload(staff_client, ballot["id"], payload, dry_run=True)
@@ -142,7 +148,7 @@ class TestThePreview:
 
 
 class TestRefusingAFile:
-    def test_something_that_is_not_a_workbook_is_refused_by_its_content(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_something_that_is_not_a_workbook_is_refused_by_its_content(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         payload = io.BytesIO("Это не excel".encode())
         payload.name = "nominees.xlsx"
 
@@ -151,7 +157,7 @@ class TestRefusingAFile:
         assert response.status_code == 400
         assert "не файл Excel" in response.data["detail"]
 
-    def test_a_file_without_a_recognizable_header_is_refused(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_a_file_without_a_recognizable_header_is_refused(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         payload = workbook_of(["овощи", "фрукты"], ["морковь", "яблоко"])
 
         response = upload(staff_client, ballot["id"], payload)
@@ -159,14 +165,14 @@ class TestRefusingAFile:
         assert response.status_code == 400
         assert "заголовк" in response.data["detail"]
 
-    def test_sending_no_file_at_all_says_so(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_sending_no_file_at_all_says_so(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         response = staff_client.post(f"{_BALLOTS}/{ballot['id']}/nominees/import", {}, format="multipart")
 
         assert response.status_code == 400
 
 
 class TestExportingTheResults:
-    def test_the_results_come_out_ranked(self, staff_client: APIClient, open_ballot: dict) -> None:
+    def test_the_results_come_out_ranked(self, staff_client: APIClient, open_ballot: dict[str, Any]) -> None:
         """A results file is opened to find out who won."""
         loser, winner = open_ballot["nominees"]
         for _ in range(2):
@@ -182,14 +188,14 @@ class TestExportingTheResults:
         )
 
         response = staff_client.get(f"{_BALLOTS}/{open_ballot['id']}/results.xlsx")
-        sheet = load_workbook(io.BytesIO(b"".join(response.streaming_content))).worksheets[0]
+        sheet = load_workbook(_downloaded(response)).worksheets[0]
 
         assert [cell.value for cell in sheet[1]][:3] == ["Место", "Номер", "Участник"]
         assert sheet.cell(row=2, column=3).value == winner["title"]
         assert sheet.cell(row=2, column=5).value == 2
         assert sheet.cell(row=3, column=5).value == 1
 
-    def test_the_qr_for_the_poster_is_a_png(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_the_qr_for_the_poster_is_a_png(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         response = staff_client.get(f"{_BALLOTS}/{ballot['id']}/qr.png")
 
         assert response.status_code == 200

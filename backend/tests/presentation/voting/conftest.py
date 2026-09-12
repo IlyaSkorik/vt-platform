@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
@@ -46,7 +48,7 @@ def staff_client() -> APIClient:
 
 
 @pytest.fixture
-def ballot(staff_client: APIClient) -> dict:
+def ballot(staff_client: APIClient) -> dict[str, Any]:
     """A standalone ballot with two nominees, still in draft."""
     created = staff_client.post("/api/v1/staff/ballots", {"title": "Приз зрительских симпатий"}, format="json")
     assert created.status_code == 201, created.data
@@ -57,12 +59,14 @@ def ballot(staff_client: APIClient) -> dict:
             {"title": name, "number": index},
             format="json",
         )
-    return staff_client.get(f"/api/v1/staff/ballots/{ballot_id}").data["data"]
+    created_ballot: dict[str, Any] = staff_client.get(f"/api/v1/staff/ballots/{ballot_id}").data["data"]
+    return created_ballot
 
 
 @pytest.fixture
-def open_ballot(staff_client: APIClient, ballot: dict) -> dict:
+def open_ballot(staff_client: APIClient, ballot: dict[str, Any]) -> dict[str, Any]:
     """The same ballot, accepting votes."""
     opened = staff_client.post(f"/api/v1/staff/ballots/{ballot['id']}/open", format="json")
     assert opened.status_code == 200, opened.data
-    return opened.data["data"]
+    running: dict[str, Any] = opened.data["data"]
+    return running

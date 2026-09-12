@@ -12,6 +12,7 @@ programme afterwards.
 from __future__ import annotations
 
 import uuid
+from typing import Any
 
 import pytest
 from rest_framework.test import APIClient
@@ -67,7 +68,7 @@ def _act(competition_id: str, nomination_id: str, *, title: str, performer: str)
 
 
 @pytest.fixture
-def program(staff_client: APIClient, festival: tuple[str, str]) -> dict:
+def program(staff_client: APIClient, festival: tuple[str, str]) -> dict[str, Any]:
     """A running order of that festival holding two acts."""
     competition_id, nomination_id = festival
     created = staff_client.post(
@@ -87,11 +88,12 @@ def program(staff_client: APIClient, festival: tuple[str, str]) -> dict:
         )
         assert added.status_code in (200, 201), added.data
 
-    return staff_client.get(f"{_PROGRAMS}/{program_id}").data["data"]
+    seeded: dict[str, Any] = staff_client.get(f"{_PROGRAMS}/{program_id}").data["data"]
+    return seeded
 
 
 @pytest.fixture
-def festival_ballot(staff_client: APIClient, festival: tuple[str, str]) -> dict:
+def festival_ballot(staff_client: APIClient, festival: tuple[str, str]) -> dict[str, Any]:
     """A ballot that names the festival — the case this file is about."""
     created = staff_client.post(
         _BALLOTS,
@@ -99,25 +101,30 @@ def festival_ballot(staff_client: APIClient, festival: tuple[str, str]) -> dict:
         format="json",
     )
     assert created.status_code == 201, created.data
-    return created.data["data"]
+    ballot: dict[str, Any] = created.data["data"]
+    return ballot
 
 
 class TestChoosingAProgramme:
-    def test_a_festival_ballot_is_offered_the_festivals_running_orders(self, staff_client: APIClient, festival_ballot: dict, program: dict) -> None:
+    def test_a_festival_ballot_is_offered_the_festivals_running_orders(
+        self, staff_client: APIClient, festival_ballot: dict[str, Any], program: dict[str, Any]
+    ) -> None:
         response = staff_client.get(f"{_BALLOTS}/{festival_ballot['id']}/programs")
 
         assert response.status_code == 200
         options = response.data["data"]
         assert program["id"] in {option["id"] for option in options}
 
-    def test_each_option_says_how_many_acts_it_would_bring(self, staff_client: APIClient, festival_ballot: dict, program: dict) -> None:
+    def test_each_option_says_how_many_acts_it_would_bring(
+        self, staff_client: APIClient, festival_ballot: dict[str, Any], program: dict[str, Any]
+    ) -> None:
         """The organizer picks between «День 1» and «День 2» by what is in them."""
         options = staff_client.get(f"{_BALLOTS}/{festival_ballot['id']}/programs").data["data"]
 
         chosen = next(option for option in options if option["id"] == program["id"])
         assert chosen["nominees"] == 2
 
-    def test_a_standalone_ballot_is_offered_nothing_rather_than_an_error(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_a_standalone_ballot_is_offered_nothing_rather_than_an_error(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         """ "There is no festival to take a programme from" is a fact, not a mistake."""
         response = staff_client.get(f"{_BALLOTS}/{ballot['id']}/programs")
 
@@ -126,7 +133,9 @@ class TestChoosingAProgramme:
 
 
 class TestSeeding:
-    def test_the_acts_land_on_the_ballot_as_its_own_nominees(self, staff_client: APIClient, festival_ballot: dict, program: dict) -> None:
+    def test_the_acts_land_on_the_ballot_as_its_own_nominees(
+        self, staff_client: APIClient, festival_ballot: dict[str, Any], program: dict[str, Any]
+    ) -> None:
         response = staff_client.post(
             f"{_BALLOTS}/{festival_ballot['id']}/seed",
             {"programId": program["id"]},
@@ -138,12 +147,16 @@ class TestSeeding:
         assert [row["title"] for row in nominees] == ["Ансамбль «Ритм»", "Иванова Мария"]
         assert [row["subtitle"] for row in nominees] == ["«Калинка»", "«Вальс»"]
 
-    def test_a_nominee_remembers_which_act_it_came_from(self, staff_client: APIClient, festival_ballot: dict, program: dict) -> None:
+    def test_a_nominee_remembers_which_act_it_came_from(
+        self, staff_client: APIClient, festival_ballot: dict[str, Any], program: dict[str, Any]
+    ) -> None:
         response = staff_client.post(f"{_BALLOTS}/{festival_ballot['id']}/seed", {"programId": program["id"]}, format="json")
 
         assert all(row["programItemId"] for row in response.data["data"]["nominees"])
 
-    def test_seeding_twice_tops_the_list_up_rather_than_doubling_it(self, staff_client: APIClient, festival_ballot: dict, program: dict) -> None:
+    def test_seeding_twice_tops_the_list_up_rather_than_doubling_it(
+        self, staff_client: APIClient, festival_ballot: dict[str, Any], program: dict[str, Any]
+    ) -> None:
         """A running order changes on the day; seeding again should add what is new."""
         staff_client.post(f"{_BALLOTS}/{festival_ballot['id']}/seed", {"programId": program["id"]}, format="json")
 
@@ -151,7 +164,9 @@ class TestSeeding:
 
         assert len(response.data["data"]["nominees"]) == 2
 
-    def test_the_copy_outlives_the_programme_it_came_from(self, staff_client: APIClient, festival_ballot: dict, program: dict) -> None:
+    def test_the_copy_outlives_the_programme_it_came_from(
+        self, staff_client: APIClient, festival_ballot: dict[str, Any], program: dict[str, Any]
+    ) -> None:
         """The record of what the audience was asked must not change afterwards."""
         staff_client.post(f"{_BALLOTS}/{festival_ballot['id']}/seed", {"programId": program["id"]}, format="json")
 
@@ -160,13 +175,13 @@ class TestSeeding:
         detail = staff_client.get(f"{_BALLOTS}/{festival_ballot['id']}").data["data"]
         assert [row["title"] for row in detail["nominees"]] == ["Ансамбль «Ритм»", "Иванова Мария"]
 
-    def test_a_standalone_ballot_says_to_use_the_file_instead(self, staff_client: APIClient, ballot: dict, program: dict) -> None:
+    def test_a_standalone_ballot_says_to_use_the_file_instead(self, staff_client: APIClient, ballot: dict[str, Any], program: dict[str, Any]) -> None:
         response = staff_client.post(f"{_BALLOTS}/{ballot['id']}/seed", {"programId": program["id"]}, format="json")
 
         assert response.status_code == 400
         assert "вручную или из файла" in response.data["detail"]
 
-    def test_another_organizations_programme_cannot_be_harvested(self, staff_client: APIClient, festival_ballot: dict) -> None:
+    def test_another_organizations_programme_cannot_be_harvested(self, staff_client: APIClient, festival_ballot: dict[str, Any]) -> None:
         """Scoped through the competition's own organizer, not through a guessed id."""
         response = staff_client.post(
             f"{_BALLOTS}/{festival_ballot['id']}/seed",

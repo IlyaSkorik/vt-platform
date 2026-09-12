@@ -3,16 +3,18 @@
 from __future__ import annotations
 
 import io
+from collections.abc import Iterator
 
 import pytest
 from openpyxl import load_workbook
+from openpyxl.worksheet.worksheet import Worksheet
 
-from shared.spreadsheet import SheetColumn, write_workbook
+from shared.spreadsheet import Cell, SheetColumn, write_workbook
 
 COLUMNS = (SheetColumn(heading="Участник"), SheetColumn(heading="Голосов"))
 
 
-def sheet_of(*rows: list[object]):
+def sheet_of(*rows: list[Cell]) -> Worksheet:
     payload = write_workbook(columns=COLUMNS, rows=rows, sheet_title="Итоги")
     book = load_workbook(io.BytesIO(payload.read()))
     return book.worksheets[0]
@@ -64,7 +66,7 @@ class TestFormulasDoNotLeaveTheBuilding:
 
 class TestLargeExports:
     def test_it_writes_from_a_generator_without_holding_the_whole_list(self) -> None:
-        rows = ([f"Участник {index}", index] for index in range(1000))
+        rows: Iterator[list[Cell]] = ([f"Участник {index}", index] for index in range(1000))
 
         payload = write_workbook(columns=COLUMNS, rows=rows)
         sheet = load_workbook(io.BytesIO(payload.read())).worksheets[0]

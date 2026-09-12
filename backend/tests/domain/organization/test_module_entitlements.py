@@ -92,7 +92,7 @@ class TestGrant:
 
     def test_direct_construction_is_refused(self) -> None:
         with pytest.raises(DirectConstructionError):
-            ModuleEntitlement(  # type: ignore[call-arg]
+            ModuleEntitlement(
                 _token=object(),
                 _id=ModuleEntitlementId.generate(),
                 _organization_id=_organization_id(),

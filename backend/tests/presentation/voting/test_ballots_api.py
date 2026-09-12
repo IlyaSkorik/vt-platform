@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 from rest_framework.test import APIClient
 
@@ -34,7 +36,7 @@ class TestABallotWithoutAFestival:
 
         assert first.data["data"]["slug"] != second.data["data"]["slug"]
 
-    def test_the_list_shows_standalone_ballots_too(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_the_list_shows_standalone_ballots_too(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         response = staff_client.get(_BALLOTS)
 
         assert response.status_code == 200
@@ -42,10 +44,10 @@ class TestABallotWithoutAFestival:
 
 
 class TestTheNomineeList:
-    def test_nominees_are_numbered_as_they_are_added(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_nominees_are_numbered_as_they_are_added(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         assert [row["position"] for row in ballot["nominees"]] == [1, 2]
 
-    def test_a_nominee_carries_its_own_card(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_a_nominee_carries_its_own_card(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         response = staff_client.post(
             f"{_BALLOTS}/{ballot['id']}/nominees",
             {"title": "Дуэт «Весна»", "subtitle": "«Калинка»", "number": 3},
@@ -57,14 +59,14 @@ class TestTheNomineeList:
         assert added["subtitle"] == "«Калинка»"
         assert added["submissionId"] is None
 
-    def test_the_list_can_be_rearranged(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_the_list_can_be_rearranged(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         order = [row["id"] for row in reversed(ballot["nominees"])]
 
         response = staff_client.post(f"{_BALLOTS}/{ballot['id']}/nominees/order", {"order": order}, format="json")
 
         assert [row["id"] for row in response.data["data"]["nominees"]] == order
 
-    def test_a_reorder_that_loses_somebody_is_refused(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_a_reorder_that_loses_somebody_is_refused(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         response = staff_client.post(
             f"{_BALLOTS}/{ballot['id']}/nominees/order",
             {"order": [ballot["nominees"][0]["id"]]},
@@ -73,7 +75,7 @@ class TestTheNomineeList:
 
         assert response.status_code == 400
 
-    def test_a_card_can_be_corrected(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_a_card_can_be_corrected(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         nominee_id = ballot["nominees"][0]["id"]
 
         response = staff_client.patch(
@@ -84,7 +86,7 @@ class TestTheNomineeList:
 
         assert response.data["data"]["nominees"][0]["title"] == "Ансамбль «Ритм-2»"
 
-    def test_a_nominee_nobody_voted_for_is_simply_removed(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_a_nominee_nobody_voted_for_is_simply_removed(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         nominee_id = ballot["nominees"][0]["id"]
 
         response = staff_client.delete(f"{_BALLOTS}/{ballot['id']}/nominees/{nominee_id}")
@@ -93,7 +95,7 @@ class TestTheNomineeList:
 
 
 class TestOpeningAndClosing:
-    def test_a_ballot_with_two_nominees_opens(self, staff_client: APIClient, ballot: dict) -> None:
+    def test_a_ballot_with_two_nominees_opens(self, staff_client: APIClient, ballot: dict[str, Any]) -> None:
         response = staff_client.post(f"{_BALLOTS}/{ballot['id']}/open", format="json")
 
         assert response.status_code == 200
@@ -108,7 +110,7 @@ class TestOpeningAndClosing:
 
         assert response.status_code == 422
 
-    def test_closing_is_one_way(self, staff_client: APIClient, open_ballot: dict) -> None:
+    def test_closing_is_one_way(self, staff_client: APIClient, open_ballot: dict[str, Any]) -> None:
         staff_client.post(f"{_BALLOTS}/{open_ballot['id']}/close", format="json")
 
         response = staff_client.post(f"{_BALLOTS}/{open_ballot['id']}/open", format="json")

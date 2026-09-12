@@ -94,7 +94,7 @@ class TestVoteLimit:
 
     def test_a_boolean_is_not_a_number_of_votes(self) -> None:
         with pytest.raises(InvalidBallotDataError):
-            VoteLimit(True)  # type: ignore[arg-type]
+            VoteLimit(True)
 
 
 class TestCooldown:
