@@ -34,7 +34,14 @@ type Item = {
   applicationId?: string | null;
   applicationNumber: string;
   competition: string;
+  /** Кто выступает: ФИО солиста или название коллектива — не идентификатор. */
   applicant: string;
+  /** Когда заявку подали, ISO-строкой; у старых записей может не быть. */
+  submissionDate?: string | null;
+  /** Жанр номера — название, а не идентификатор: по нему же идёт фильтр. */
+  nomination?: string | null;
+  /** Хронометраж номера в секундах; складывается в итог по жанру. */
+  durationSeconds?: number;
   performancesCount: number;
   participantsCount: number;
   status: string;
@@ -86,6 +93,8 @@ type Detail = {
 type Workspace = {
   queues: Queue[];
   competitions?: Array<{ id: string; title: string; status: string }>;
+  /** Жанры, которые реально встречаются в выбранном фестивале. */
+  nominations?: string[];
   applications: Item[];
   selected: string | null;
   detail: Detail | null;
@@ -157,6 +166,14 @@ function primaryAction(capabilities: Capability[]): Capability | null {
  */
 const CANCEL_NEEDS_CONFIRMATION = new Set(["ACCEPTED", "SCHEDULED"]);
 
+/**
+ * Значение пункта «снять фильтр».
+ *
+ * Пустая строка здесь не годится: Radix считает её отсутствием выбора и на таком
+ * пункте падает. Та же подмена уже сделана в фильтрах прайсинга и правил допуска.
+ */
+const FILTER_ALL = "__all__";
+
 function statusLabel(status: string): string {
   const map: Record<string, string> = {
     DRAFT: "Черновик",
@@ -189,20 +206,23 @@ function paymentStatusLabel(status: string): string {
  * prefix here (the old shape of this function) is what made every receipt 404 once
  * the uploads moved to a bucket.
  */
-function receiptDownloadUrl(reference: string | null | undefined): string | null {
+function fileHref(reference: string | null | undefined): string | null {
   return resolveMediaUrl(reference);
 }
 
 /**
- * Download links for every receipt the order paid with.
+ * Links to every receipt the order paid with.
  *
  * A fee is regularly settled by more than one transfer, so a single link would
  * hide the rest of the payment from whoever is reconciling it. The slips are
  * numbered only when there is more than one — numbering a lone receipt reads as
  * a second one gone missing.
+ *
+ * The label says «Открыть», not «Скачать»: the link opens the slip in a new tab
+ * and saving it is a separate decision the browser leaves to the organizer.
  */
-function ReceiptDownloads({ references }: { references: string[] }): React.JSX.Element | null {
-  const urls = references.map(receiptDownloadUrl).filter((url): url is string => url !== null);
+function ReceiptLinks({ references }: { references: string[] }): React.JSX.Element | null {
+  const urls = references.map(fileHref).filter((url): url is string => url !== null);
   if (urls.length === 0) {
     return null;
   }
@@ -211,7 +231,7 @@ function ReceiptDownloads({ references }: { references: string[] }): React.JSX.E
       {urls.map((url, index) => (
         <Button asChild key={url} size="sm" variant="outline">
           <a href={url} target="_blank" rel="noreferrer">
-            {urls.length === 1 ? "Скачать квитанцию" : `Скачать квитанцию ${index + 1}`}
+            {urls.length === 1 ? "Открыть квитанцию" : `Открыть квитанцию ${index + 1}`}
           </a>
         </Button>
       ))}
@@ -229,6 +249,42 @@ function attachmentTypeLabel(type: string): string {
     OTHER: "Файл",
   };
   return map[type] ?? type;
+}
+
+/**
+ * Когда заявку подали — датой и временем, без секунд.
+ *
+ * Время здесь не украшение: две заявки одного коллектива различают именно по нему,
+ * и порядок подачи решает, чью очередь разбирают первой.
+ */
+function submittedAtLabel(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleString("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+/**
+ * Хронометраж как «3 мин 30 с», а для итога по жанру — «2 ч 05 мин 30 с».
+ *
+ * Одна и та же запись и для номера, и для суммы: организатор сравнивает их между
+ * собой, верстая блок в расписании, и разные форматы рядом пришлось бы пересчитывать
+ * в уме. Часы появляются, только когда есть; секунды остаются всегда — из номеров
+ * по 2:30 час набирается ровно на них.
+ */
+function durationLabel(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const parts =
+    hours > 0 ? [`${hours} ч`, `${String(minutes).padStart(2, "0")} мин`] : [`${minutes} мин`];
+  return [...parts, `${String(seconds).padStart(2, "0")} с`].join(" ");
 }
 
 function nextId(items: Item[], currentId: string | null): string | null {
@@ -309,6 +365,7 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
   const [comment, setComment] = useState("");
   const [selectedMissingTypes, setSelectedMissingTypes] = useState<string[]>([]);
   const [competitionId, setCompetitionId] = useState(() => searchParams.get("competitionId") ?? "");
+  const [nomination, setNomination] = useState(() => searchParams.get("nomination") ?? "");
   const [openPerformances, setOpenPerformances] = useState<Record<string, boolean>>({});
   const [actionError, setActionError] = useState<string | null>(null);
   // Set once the organizer has clicked «Отменить» on an entry already in the running
@@ -317,10 +374,11 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
   const queryClient = useQueryClient();
 
   const workspace = useQuery({
-    queryKey: ["staff", "applications", "workspace", queue, q, selected, competitionId],
+    queryKey: ["staff", "applications", "workspace", queue, q, selected, competitionId, nomination],
     queryFn: () =>
       fetchWorkspace(queue, q, selected, {
         competitionId,
+        nomination,
       }),
     placeholderData: (previousData) => previousData,
     refetchInterval: 10_000,
@@ -344,14 +402,31 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
       }
       const better =
         statusPriority(item.status) < statusPriority(existing.status) ? item : existing;
+      // Заявку подали один раз, а номеров в ней несколько: датой заказа считаем
+      // самый ранний номер, иначе карточка «омолаживалась» бы при каждой правке.
+      const earliest = [existing.submissionDate, item.submissionDate]
+        .filter((value): value is string => Boolean(value))
+        .sort()[0];
       map.set(key, {
         ...better,
+        submissionDate: earliest ?? null,
         performancesCount: existing.performancesCount + item.performancesCount,
         participantsCount: existing.participantsCount + item.participantsCount,
       });
     }
     return Array.from(map.values());
   }, [inbox]);
+
+  // Считаем выступления, а не заявки: заявка может держать номера в разных жанрах,
+  // и при фильтре по одному из них она целиком в счёт не идёт. Единица жанра —
+  // номер, и хронометраж складывается из тех же строк.
+  const filteredTotals = useMemo(
+    () => ({
+      performances: inbox.length,
+      durationSeconds: inbox.reduce((total, item) => total + (item.durationSeconds ?? 0), 0),
+    }),
+    [inbox],
+  );
 
   const action = useMutation({
     mutationFn: ({ submissionId, actionKey }: { submissionId: string; actionKey: string }) =>
@@ -386,6 +461,14 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
     }
     setSelected(groupedInbox[0]?.id ?? null);
   }, [groupedInbox, selected]);
+
+  // Список жанров зависит от выбранного фестиваля: унесённый с прошлого фестиваля
+  // фильтр не находит ничего и выглядит как пустая очередь.
+  useEffect(() => {
+    const available = workspace.data?.nominations;
+    if (!available || !nomination) return;
+    if (!available.includes(nomination)) setNomination("");
+  }, [workspace.data?.nominations, nomination]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: сбрасываем раскрытые выступления при смене выбранной заявки
   useEffect(() => {
@@ -488,7 +571,7 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
           </Card>
           <Card>
             <CardContent className="flex flex-col gap-2 pt-4">
-              <div className="grid gap-2 md:grid-cols-2">
+              <div className="grid gap-2 md:grid-cols-3">
                 <Input
                   value={q}
                   onChange={(event) => setQ(event.target.value)}
@@ -503,7 +586,29 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                     label: item.title,
                   }))}
                 />
+                <Select
+                  placeholder="Фильтр по жанру"
+                  value={nomination || FILTER_ALL}
+                  onValueChange={(value) => setNomination(value === FILTER_ALL ? "" : value)}
+                  options={[
+                    { value: FILTER_ALL, label: "Все жанры" },
+                    ...(workspace.data.nominations ?? []).map((item) => ({
+                      value: item,
+                      label: item,
+                    })),
+                  ]}
+                />
               </div>
+              {/* Ради этой строки жанр и фильтруют: по ней верстают блок в
+                  расписании, где считают номера и минуты, а не заявки. */}
+              <p className="text-sm text-muted-foreground">
+                {nomination ? `Жанр «${nomination}»` : "Отобрано"}: выступлений —{" "}
+                <span className="font-medium text-foreground">{filteredTotals.performances}</span> ·
+                общее время —{" "}
+                <span className="font-medium text-foreground">
+                  {durationLabel(filteredTotals.durationSeconds)}
+                </span>
+              </p>
               <DocumentsArchiveButton competitionId={competitionId} />
             </CardContent>
           </Card>
@@ -519,24 +624,36 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
               </CardDescription>
             </CardHeader>
             <CardContent className="max-h-[65vh] space-y-2 overflow-auto [scrollbar-color:var(--border-default)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:w-2">
-              {groupedInbox.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setSelected(item.id)}
-                  className="w-full cursor-pointer rounded-md border p-3 text-left transition hover:border-primary/50"
-                >
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium">#{item.applicationNumber}</p>
-                    <Badge>{statusLabel(item.status)}</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{item.competition}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {item.applicant} · Номеров: {item.performancesCount} · Участников:{" "}
-                    {item.participantsCount}
-                  </p>
-                </button>
-              ))}
+              {groupedInbox.map((item) => {
+                const isSelected = item.id === selected;
+                const submittedAt = submittedAtLabel(item.submissionDate);
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    aria-current={isSelected}
+                    onClick={() => setSelected(item.id)}
+                    // Очередь и рабочая карточка стоят рядом, и без подсветки
+                    // непонятно, какую именно заявку сейчас разбирают.
+                    className={`w-full cursor-pointer rounded-md border p-3 text-left transition ${
+                      isSelected ? "border-primary bg-primary/10" : "hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-medium">#{item.applicationNumber}</p>
+                      <Badge>{statusLabel(item.status)}</Badge>
+                    </div>
+                    <p className="text-sm font-medium">{item.applicant}</p>
+                    <p className="text-sm text-muted-foreground">{item.competition}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Номеров: {item.performancesCount} · Участников: {item.participantsCount}
+                    </p>
+                    {submittedAt ? (
+                      <p className="text-xs text-muted-foreground">Подана: {submittedAt}</p>
+                    ) : null}
+                  </button>
+                );
+              })}
             </CardContent>
           </Card>
 
@@ -584,7 +701,7 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                         </span>
                       </p>
                     ) : null}
-                    <ReceiptDownloads
+                    <ReceiptLinks
                       references={
                         workspace.data.detail.receiptFileReferences ??
                         selectedItem.receiptFileReferences ??
@@ -752,7 +869,8 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                                       ) : null}
                                       <p className="text-xs text-muted-foreground">
                                         Формат: {performance.participationFormatName ?? "—"} ·
-                                        Длительность: {performance.durationSeconds ?? 0} сек
+                                        Длительность:{" "}
+                                        {durationLabel(performance.durationSeconds ?? 0)}
                                       </p>
                                       {performance.comment?.trim() ? (
                                         <div className="mt-1 space-y-1">
@@ -819,11 +937,11 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                                               variant="outline"
                                             >
                                               <a
-                                                href={receiptDownloadUrl(file.fileReference) ?? "#"}
+                                                href={fileHref(file.fileReference) ?? "#"}
                                                 target="_blank"
                                                 rel="noreferrer"
                                               >
-                                                Скачать: {attachmentTypeLabel(file.type)}
+                                                Открыть: {attachmentTypeLabel(file.type)}
                                               </a>
                                             </Button>
                                           ))}
@@ -853,7 +971,7 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                           selectedItem.receiptFileReferences ??
                           []
                         ).length > 0 ? (
-                          <ReceiptDownloads
+                          <ReceiptLinks
                             references={
                               workspace.data.detail.receiptFileReferences ??
                               selectedItem.receiptFileReferences ??
@@ -881,11 +999,11 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                               </p>
                               <Button asChild size="sm" variant="outline">
                                 <a
-                                  href={receiptDownloadUrl(attachment.fileReference) ?? "#"}
+                                  href={fileHref(attachment.fileReference) ?? "#"}
                                   target="_blank"
                                   rel="noreferrer"
                                 >
-                                  Скачать
+                                  Открыть
                                 </a>
                               </Button>
                             </div>

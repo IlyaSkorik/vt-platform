@@ -1,7 +1,7 @@
 """The organizer console's receipt links.
 
 A receipt's stored ``file_reference`` is an opaque storage key, and the console turns
-one into a "Скачать квитанцию" link. It used to be handed over raw, with the client
+one into an "Открыть квитанцию" link. It used to be handed over raw, with the client
 prefixing ``/media/`` — which worked only for as long as the files sat on the API
 host's own disk. These pin the reference to whatever the storage says its URL is, so
 a receipt keeps opening after the uploads move to a bucket.

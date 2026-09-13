@@ -106,13 +106,54 @@ def _payer_full_name(row: Any) -> str | None:
     return " ".join(named) or None
 
 
+def _participant_label(entry: Any) -> str:
+    """One performer as the organizer knows them — a soloist's name or the group's.
+
+    A collective stores only ``display_name``; a soloist stores the name parts and,
+    often, a ``display_name`` repeating them. Reading the parts first keeps the
+    order ``Last First Middle`` even when the stored caption was typed the other
+    way round.
+    """
+    person = " ".join(part for key in ("last_name", "first_name", "middle_name") if (part := str(entry.get(key) or "").strip()))
+    return person or str(entry.get("display_name") or "").strip()
+
+
+def _applicant_label(participants: Sequence[Any], *fallbacks: str | None) -> str:
+    """Who the entry is for, in one line for the queue card.
+
+    The queue used to print ``applicant_id`` — a raw UUID that tells the organizer
+    nothing and cannot be matched against a transfer or a phone call. The performers
+    are what they recognise, so the card names the first one and counts the rest;
+    only an entry with no performers at all falls back to the studio or the payer.
+    """
+    names = [label for entry in participants or [] if (label := _participant_label(entry))]
+    if names:
+        return names[0] if len(names) == 1 else f"{names[0]} и ещё {len(names) - 1}"
+    for fallback in fallbacks:
+        if fallback and fallback.strip():
+            return fallback.strip()
+    return "—"
+
+
+def _duration_seconds(value: Any) -> int:
+    """Хронометраж номера в секундах; всё, что не число, считается нулём.
+
+    Длительности складывают в итог по жанру, и одна заявка с испорченным значением
+    не должна обнулять или взорвать весь подсчёт.
+    """
+    try:
+        return max(0, int(value))
+    except (TypeError, ValueError):
+        return 0
+
+
 def _receipt_urls(references: Sequence[str]) -> list[str]:
     """The same receipts as addresses a browser can open.
 
     A stored reference is an opaque storage key, and the organizer console turns one
     into a link. Prefixing ``/media/`` on the client used to be enough because the
     filesystem happened to serve exactly that; with the files in a bucket that link
-    points at the API host, where nothing of the sort exists, and every "Скачать
+    points at the API host, where nothing of the sort exists, and every "Открыть
     квитанцию" answers 404. Asking the storage (``file_url``) is what the submission
     attachments beside them already do.
     """
@@ -211,6 +252,9 @@ class OrganizerProcessingWorkspaceView(_StaffView):
         status_filter = (request.query_params.get("status") or "").strip().upper()
         payment_filter = (request.query_params.get("payment") or "").strip().upper()
         teacher_filter = (request.query_params.get("teacher") or "").strip().lower()
+        # Жанр фильтруется по названию, а не по id: у каждого фестиваля своя строка
+        # справочника, и организатор, выбирая «Вокал», имеет в виду вокал везде.
+        nomination_filter = (request.query_params.get("nomination") or "").strip().lower()
         organization_filter = (request.query_params.get("organization") or "").strip().lower()
         from_date = (request.query_params.get("from") or "").strip()
         to_date = (request.query_params.get("to") or "").strip()
@@ -298,12 +342,20 @@ class OrganizerProcessingWorkspaceView(_StaffView):
             has_missing_files = any(not bool(entry.get("resolved_at")) for entry in missing_requests)
             queue_key = _QUEUE_BY_STATUS.get(model.status, "ARCHIVE")
             title = str(performance.get("title") or "")
-            applicant = str(model.applicant_id)
+            nomination_id = str(performance.get("nomination_id") or "")
+            nomination = nomination_name.get(nomination_id, "")
+            duration_seconds = _duration_seconds(performance.get("duration_seconds"))
+            applicant_id = str(model.applicant_id)
             organization_name = organization_by_submission.get(str(model.id), "")
             teachers_text = " ".join(
                 " ".join(filter(None, [str(item.get("last_name") or ""), str(item.get("first_name") or "")])).strip() for item in teachers
             )
             application_id = application_by_submission.get(str(model.id), "")
+            applicant = _applicant_label(
+                participants,
+                organization_name,
+                application_meta_by_id.get(application_id or "", {}).get("payer_name"),
+            )
             # The order number is what the organizer sees on the card and what every
             # letter about the order quotes, so it has to be what they can paste back
             # into the search box.
@@ -315,6 +367,8 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                     application_number,
                     title,
                     applicant,
+                    applicant_id,
+                    nomination,
                     competition_name.get(str(model.competition_id), ""),
                     organization_name,
                     teachers_text,
@@ -336,6 +390,8 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                 "competitionId": str(model.competition_id),
                 "competition": competition_name.get(str(model.competition_id), "—"),
                 "applicant": applicant,
+                "nomination": nomination or None,
+                "durationSeconds": duration_seconds,
                 "performancesCount": 1,
                 "participantsCount": sum(int(item.get("member_count", 1)) for item in participants),
                 "status": model.status,
@@ -366,6 +422,8 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                 continue
             if teacher_filter and teacher_filter not in teachers_text.lower():
                 continue
+            if nomination_filter and nomination.lower() != nomination_filter:
+                continue
             if organization_filter and organization_filter not in organization_name.lower():
                 continue
             if from_date and model.created_at.date().isoformat() < from_date:
@@ -379,6 +437,9 @@ class OrganizerProcessingWorkspaceView(_StaffView):
             rows.append(card)
 
         queue_source = [item for item in all_rows if item.get("competitionId") == competition_filter] if competition_filter else all_rows
+        # Список жанров собран из самих заявок, а не из справочника: пункт, по которому
+        # ничего не найдётся, в фильтре только мешает. Фестивальный фильтр сужает и его.
+        nomination_options = sorted({name for item in queue_source if (name := str(item.get("nomination") or ""))})
         queue_counts = Counter(item["queue"] for item in queue_source)
         selected = next((item for item in rows if item["id"] == selected_id), rows[0] if rows else None)
         detail: dict[str, Any] | None = None
@@ -541,6 +602,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                 "completed": 0,
             },
             "competitions": [{"id": str(row["id"]), "title": row["title"], "status": row["status"]} for row in competitions],
+            "nominations": nomination_options,
             "applications": rows,
             "selected": selected["id"] if selected else None,
             "detail": detail,
