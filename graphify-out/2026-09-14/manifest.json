@@ -4655,8 +4655,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/participants/index.tsx": {
-    "mtime": 1787860066.7998264,
-    "ast_hash": "fc11cf190fd306ec844263dc284fb0bc",
+    "mtime": 1789382327.0323215,
+    "ast_hash": "2ec6d973bb4c57f99409a67ed082a79e",
     "semantic_hash": ""
   },
   "frontend/src/pages/placeholder/index.tsx": {
@@ -4950,19 +4950,19 @@
     "semantic_hash": "991db0705ca40cbd51abaf00d7fb7e10"
   },
   "frontend/src/shared/ui/badge/badge.stories.tsx": {
-    "mtime": 1785860601.031723,
-    "ast_hash": "1023b1d72c821563497249264ff594d4",
-    "semantic_hash": "1023b1d72c821563497249264ff594d4"
+    "mtime": 1789382893.9954703,
+    "ast_hash": "36945a4aa155b571b65b2cd5e25a611c",
+    "semantic_hash": ""
   },
   "frontend/src/shared/ui/badge/badge.test.tsx": {
-    "mtime": 1785860601.0323734,
-    "ast_hash": "412b75c5348e4059ab0153f7aa354d3b",
-    "semantic_hash": "412b75c5348e4059ab0153f7aa354d3b"
+    "mtime": 1789382381.5654657,
+    "ast_hash": "d266c58b3e603185acf0b079e65a7a5f",
+    "semantic_hash": ""
   },
   "frontend/src/shared/ui/badge/badge.tsx": {
-    "mtime": 1785860601.0323734,
-    "ast_hash": "52ae97b60444cc2eb376376d67702532",
-    "semantic_hash": "52ae97b60444cc2eb376376d67702532"
+    "mtime": 1789382308.335654,
+    "ast_hash": "7ea030415fe21920865c3130dac47666",
+    "semantic_hash": ""
   },
   "frontend/src/shared/ui/badge/index.ts": {
     "mtime": 1785860601.0323734,
@@ -4970,9 +4970,9 @@
     "semantic_hash": "d29fb83141b271ee499708626258a1e2"
   },
   "frontend/src/shared/ui/badge/styles.ts": {
-    "mtime": 1785860601.0323734,
-    "ast_hash": "70549ee41bf071bc2c352fd3b14b0519",
-    "semantic_hash": "70549ee41bf071bc2c352fd3b14b0519"
+    "mtime": 1789382297.4200037,
+    "ast_hash": "880c62213cc7cc1d648b35da26f82dd9",
+    "semantic_hash": ""
   },
   "frontend/src/shared/ui/badge/types.ts": {
     "mtime": 1785860601.0323734,
@@ -6865,8 +6865,8 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/participants/index.tsx": {
-    "mtime": 1789240106.663137,
-    "ast_hash": "27293a2c5400e9e935d06b24dcc2ae72",
+    "mtime": 1789382371.3745475,
+    "ast_hash": "78f9751ad786abbc593ff15d37600413",
     "semantic_hash": ""
   },
   "frontend/src/features/staff-participants/api.test.ts": {
