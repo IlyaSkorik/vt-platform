@@ -4,9 +4,13 @@ import { cva } from "class-variance-authority";
  * Badge visual contract. Colours resolve through semantic status tokens
  * (subtle `*-surface` background + readable status text), never raw palette
  * values — so a theme switch restyles every badge without touching this file.
+ *
+ * The pill never grows past its container: `max-w-full` caps it and the label
+ * inside `Badge` truncates, so a long organisation name can no longer push the
+ * badge outside the card that holds it.
  */
 export const badgeVariants = cva(
-  "inline-flex items-center gap-1 whitespace-nowrap rounded-full border font-medium select-none [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "inline-flex max-w-full items-center gap-1 overflow-hidden whitespace-nowrap rounded-full border font-medium select-none [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {

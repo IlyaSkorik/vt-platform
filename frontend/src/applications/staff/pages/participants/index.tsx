@@ -320,7 +320,7 @@ export function StaffParticipantsPage(): React.JSX.Element {
           </Card>
 
           {/* Desktop detail */}
-          <Card className="hidden xl:block">
+          <Card className="hidden min-w-0 xl:block">
             <ParticipantDetail
               detail={detail}
               loading={detailQuery.isLoading}
@@ -459,8 +459,10 @@ function ParticipantDetail({
           <Avatar size="lg" fallback={initialsFromName(detail.fullName)} />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-semibold text-lg">{detail.fullName}</h2>
-              <Badge variant="secondary">{typeLabel(detail.participantType)}</Badge>
+              <h2 className="min-w-0 truncate font-semibold text-lg">{detail.fullName}</h2>
+              <Badge className="shrink-0" variant="secondary">
+                {typeLabel(detail.participantType)}
+              </Badge>
             </div>
             <p className="text-muted-foreground text-sm">
               {detail.participantType === "collective"
@@ -487,7 +489,7 @@ function ParticipantDetail({
 
         {/* Always-visible essentials */}
         <div className="grid gap-3 md:grid-cols-2">
-          <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm">
+          <dl className="grid min-w-0 grid-cols-2 gap-x-3 gap-y-1.5 text-sm">
             {detail.participantType === "collective" ? (
               <>
                 <Fact label="Название" value={detail.displayName} />
@@ -505,7 +507,7 @@ function ParticipantDetail({
               </>
             )}
           </dl>
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <MiniSection icon={<Building2 className="size-3.5" />} title="Организации">
               {detail.organizations.length === 0 ? (
                 <span className="text-muted-foreground text-sm">Не указаны</span>
@@ -516,6 +518,7 @@ function ParticipantDetail({
                     variant={
                       detail.primaryOrganization?.name === org.name ? "primary" : "secondary"
                     }
+                    title={org.name}
                   >
                     {org.name}
                   </Badge>
@@ -527,7 +530,7 @@ function ParticipantDetail({
                 <span className="text-muted-foreground text-sm">Не указаны</span>
               ) : (
                 detail.teachers.map((item) => (
-                  <Badge key={`${item.name}-${item.role}`} variant="outline">
+                  <Badge key={`${item.name}-${item.role}`} variant="outline" title={item.name}>
                     {item.name}
                   </Badge>
                 ))
@@ -640,8 +643,8 @@ function ParticipationRow({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-medium">{application.competition}</span>
-            <Badge variant={statusTone(application.status)}>
+            <span className="min-w-0 truncate font-medium">{application.competition}</span>
+            <Badge className="shrink-0" variant={statusTone(application.status)}>
               {statusLabel(application.status)}
             </Badge>
           </div>
@@ -662,9 +665,9 @@ function ParticipationRow({
         </Button>
       </div>
       {tags.length > 0 ? (
-        <div className="mt-1 flex flex-wrap gap-1">
+        <div className="mt-1 flex min-w-0 flex-wrap gap-1">
           {tags.map((tag) => (
-            <Badge key={`${application.submissionId}-${tag}`} variant="secondary">
+            <Badge key={`${application.submissionId}-${tag}`} variant="secondary" title={tag}>
               {tag}
             </Badge>
           ))}
@@ -711,7 +714,7 @@ function MiniSection({
         {icon}
         {title}
       </div>
-      <div className="flex flex-wrap gap-1.5">{children}</div>
+      <div className="flex min-w-0 flex-wrap gap-1.5">{children}</div>
     </div>
   );
 }

@@ -102,3 +102,28 @@ export const WithIcon: Story = {
   ),
   args: { children: undefined },
 };
+
+/**
+ * A badge is capped by whatever holds it: a long organisation name truncates
+ * instead of spilling out of the card. Hover shows the full value via `title`.
+ */
+export const LongLabel: Story = {
+  render: (args) => (
+    <div className="w-72 rounded-lg border border-border p-4">
+      <div className="flex flex-wrap gap-2">
+        <Badge
+          {...args}
+          variant="primary"
+          title="Муниципальное бюджетное учреждение дополнительного образования «Детская школа искусств № 5»"
+        >
+          ✓ Муниципальное бюджетное учреждение дополнительного образования «Детская школа искусств №
+          5»
+        </Badge>
+        <Badge {...args} variant="secondary">
+          Танцевальная студия
+        </Badge>
+      </div>
+    </div>
+  ),
+  args: { children: undefined },
+};

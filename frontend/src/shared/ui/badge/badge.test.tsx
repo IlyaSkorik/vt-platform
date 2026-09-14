@@ -45,6 +45,20 @@ describe("Badge", () => {
 
   it("merges a custom className", () => {
     render(<Badge className="custom-badge">Класс</Badge>);
-    expect(screen.getByText("Класс")).toHaveClass("custom-badge");
+    expect(screen.getByText("Класс").closest("[data-slot='badge']")).toHaveClass("custom-badge");
+  });
+
+  it("keeps a long label inside the badge instead of letting it overflow", () => {
+    render(
+      <Badge>
+        Муниципальное бюджетное учреждение дополнительного образования «Детская школа искусств»
+      </Badge>,
+    );
+    const label = screen.getByText(/Муниципальное бюджетное/);
+    // The label truncates…
+    expect(label).toHaveClass("truncate");
+    expect(label).toHaveClass("min-w-0");
+    // …and the pill itself never grows past whatever contains it.
+    expect(label.closest("[data-slot='badge']")).toHaveClass("max-w-full");
   });
 });

@@ -350,16 +350,18 @@ export function ParticipantsPage(): React.JSX.Element {
         ) : participants.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
             {participants.map((participant) => (
-              <Card key={participant.id} className="group">
+              <Card key={participant.id} className="group min-w-0">
                 <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                     <Avatar
                       size="lg"
                       {...(participant.avatarUrl ? { src: participant.avatarUrl } : {})}
                       fallback={initialsFromName(participant.fullName)}
                     />
-                    <div>
-                      <CardTitle className="text-base">{participant.fullName}</CardTitle>
+                    <div className="min-w-0">
+                      <CardTitle className="truncate text-base" title={participant.fullName}>
+                        {participant.fullName}
+                      </CardTitle>
                       {participant.participantType === "collective" ? (
                         <CardDescription>Коллектив</CardDescription>
                       ) : (
@@ -369,12 +371,15 @@ export function ParticipantsPage(): React.JSX.Element {
                       )}
                     </div>
                   </div>
-                  <Badge variant={participant.archived ? "outline" : "primary"}>
+                  <Badge
+                    className="shrink-0"
+                    variant={participant.archived ? "outline" : "primary"}
+                  >
                     {participant.participantType === "collective" ? "Коллектив" : "Соло"}
                   </Badge>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm">
-                  <p>
+                  <p className="break-words">
                     <span className="text-muted-foreground">Основная организация:</span>{" "}
                     {participant.primaryOrganization?.name ?? "Не выбрана"}
                   </p>
@@ -390,11 +395,12 @@ export function ParticipantsPage(): React.JSX.Element {
                     <span className="text-muted-foreground">Обновлен:</span>{" "}
                     {toRelativeTime(participant.updatedAt)}
                   </p>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex min-w-0 flex-wrap gap-2">
                     {participant.organizations.map((organization) => (
                       <Badge
                         key={organization.id}
                         variant={organization.isPrimary ? "primary" : "secondary"}
+                        title={organization.name}
                       >
                         {organization.isPrimary ? "✓ " : ""}
                         {organization.name}
