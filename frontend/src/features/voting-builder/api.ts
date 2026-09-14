@@ -18,7 +18,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
-import { type ApiError, apiClient, toApiError } from "@/shared/api";
+import { type ApiError, apiClient, toApiError, uploadTimeoutMs } from "@/shared/api";
 
 export type BallotStatus = "DRAFT" | "OPEN" | "CLOSED";
 
@@ -315,6 +315,7 @@ export function useImportNominees(
         apiClient(`staff/ballots/${ballotId}/nominees/import${query}`, {
           method: "post",
           body,
+          timeout: uploadTimeoutMs(body),
         }).json<{
           data: ImportPreview;
         }>(),

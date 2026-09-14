@@ -17,7 +17,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
-import { type ApiError, apiClient, toApiError } from "@/shared/api";
+import { type ApiError, apiClient, toApiError, uploadTimeoutMs } from "@/shared/api";
 
 import type { FontCatalog } from "../model/fonts";
 import { diplomaKeys } from "./keys";
@@ -72,9 +72,11 @@ export function useUploadFont(): UseMutationResult<FontCatalog, ApiError, File> 
       body.append("file", file);
       try {
         // No explicit Content-Type: the boundary is part of it, so the browser must set it.
-        const response = await apiClient("staff/diplomas/fonts", { method: "post", body }).json<
-          Envelope<FontCatalog>
-        >();
+        const response = await apiClient("staff/diplomas/fonts", {
+          method: "post",
+          body,
+          timeout: uploadTimeoutMs(body),
+        }).json<Envelope<FontCatalog>>();
         return response.data;
       } catch (error) {
         throw await toApiError(error);

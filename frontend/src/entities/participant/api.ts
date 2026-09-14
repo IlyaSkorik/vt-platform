@@ -6,7 +6,7 @@
  */
 
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
-import { type ApiError, apiClient, toApiError } from "@/shared/api";
+import { type ApiError, apiClient, toApiError, uploadTimeoutMs } from "@/shared/api";
 
 import type { Organization, Participant } from "./model";
 
@@ -84,7 +84,10 @@ export async function uploadParticipantAvatar(file: File): Promise<string> {
   const body = new FormData();
   body.append("file", file);
   try {
-    const response = await apiClient.post("participants/registry/avatar", { body });
+    const response = await apiClient.post("participants/registry/avatar", {
+      body,
+      timeout: uploadTimeoutMs(body),
+    });
     const payload = (await response.json()) as Envelope<{ url: string }>;
     return payload.data.url;
   } catch (error) {

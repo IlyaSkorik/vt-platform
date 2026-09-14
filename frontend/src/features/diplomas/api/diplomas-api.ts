@@ -5,7 +5,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { type ApiError, apiClient, toApiError } from "@/shared/api";
+import { type ApiError, apiClient, toApiError, uploadTimeoutMs } from "@/shared/api";
 import {
   diplomasAssignmentsList,
   diplomasCreateAssignment,
@@ -202,7 +202,10 @@ async function uploadTemplateDocument(templateId: string, file: File): Promise<v
   const body = new FormData();
   body.append("file", file);
   try {
-    await apiClient.post(`staff/diplomas/templates/${templateId}/document`, { body });
+    await apiClient.post(`staff/diplomas/templates/${templateId}/document`, {
+      body,
+      timeout: uploadTimeoutMs(body),
+    });
   } catch (error) {
     throw await toApiError(error);
   }

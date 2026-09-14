@@ -22,8 +22,17 @@ proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
 # redirect loop rather than a detail.
 proxy_set_header X-Forwarded-Proto $forwarded_proto;
 
-# A large programme's PDF export renders synchronously (OPS-008 §8).
-proxy_read_timeout 120s;
+# A large programme's PDF export renders synchronously (OPS-008 §8), and an attachment upload
+# is worse: nginx buffers the whole body first, so the clock only starts once 124 MB of video
+# are already on disk here — and Django still has to parse the multipart and push the bytes to
+# the bucket before it can answer. At 120 s that answer was cut off after the applicant had
+# already spent the entire upload, which reads as "видео не грузится" with nothing in the
+# backend log to show for it. Matches `client_body_timeout` in default.conf.
+proxy_read_timeout 300s;
+
+# The other half of the same request: nginx forwarding the buffered body upstream. Left at the
+# default 60 s a slow bucket-side write can stall the write long enough to drop it.
+proxy_send_timeout 300s;
 
 # While the backend is being replaced there is a window with nothing listening. Fail fast and
 # retry rather than hang: a client waiting out the default 60 s connect timeout experiences a

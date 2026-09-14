@@ -5,7 +5,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { ApiError, apiClient, toApiError } from "@/shared/api";
+import { ApiError, apiClient, toApiError, uploadTimeoutMs } from "@/shared/api";
 import {
   addAdditionalService,
   addAdmissionRule,
@@ -151,7 +151,10 @@ async function uploadPoster(competitionId: string, file: File): Promise<Competit
   body.append("file", file);
   try {
     const response = await apiClient
-      .post(`competitions/${competitionId}/branding/poster`, { body })
+      .post(`competitions/${competitionId}/branding/poster`, {
+        body,
+        timeout: uploadTimeoutMs(body),
+      })
       .json<unknown>();
     return unwrapCompetitionDetail(response);
   } catch (error) {
@@ -164,7 +167,10 @@ async function uploadRegulationPdf(competitionId: string, file: File): Promise<s
   body.append("file", file);
   try {
     const response = await apiClient
-      .post(`competitions/${competitionId}/uploads/regulation`, { body })
+      .post(`competitions/${competitionId}/uploads/regulation`, {
+        body,
+        timeout: uploadTimeoutMs(body),
+      })
       .json<{ data?: { fileReference?: string } }>();
     const fileReference = response.data?.fileReference?.trim();
     if (!fileReference) {
@@ -181,7 +187,10 @@ async function uploadLandingImage(competitionId: string, file: File): Promise<st
   body.append("file", file);
   try {
     const response = await apiClient
-      .post(`competitions/${competitionId}/uploads/landing-image`, { body })
+      .post(`competitions/${competitionId}/uploads/landing-image`, {
+        body,
+        timeout: uploadTimeoutMs(body),
+      })
       .json<{ data?: { fileReference?: string } }>();
     const fileReference = response.data?.fileReference?.trim();
     if (!fileReference) {
@@ -198,7 +207,10 @@ async function uploadDocumentFile(competitionId: string, file: File): Promise<st
   body.append("file", file);
   try {
     const response = await apiClient
-      .post(`competitions/${competitionId}/uploads/document`, { body })
+      .post(`competitions/${competitionId}/uploads/document`, {
+        body,
+        timeout: uploadTimeoutMs(body),
+      })
       .json<{ data?: { fileReference?: string } }>();
     const fileReference = response.data?.fileReference?.trim();
     if (!fileReference) {
