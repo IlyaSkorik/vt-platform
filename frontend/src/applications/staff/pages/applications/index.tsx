@@ -71,7 +71,7 @@ type Detail = {
     participantsCount?: number | null;
     teachersCount?: number | null;
     participants?: Array<{ id: string; name: string; memberCount: number }>;
-    teachers?: Array<{ id: string; name: string; role: string }>;
+    teachers?: Array<{ id: string; name: string; role: string; phone?: string | null }>;
     priceAmount?: string | null;
     priceCurrency?: string | null;
     attachments?: Array<{ id: string; type: string; fileReference: string }>;
@@ -83,7 +83,7 @@ type Detail = {
   /** Кто указан стороной договора по заявке — только у фестивалей, которые это собирают. */
   payerName?: string | null;
   participants: Array<{ id: string; name: string; memberCount: number }>;
-  teachers: Array<{ id: string; name: string; role: string }>;
+  teachers: Array<{ id: string; name: string; role: string; phone?: string | null }>;
   attachments: Array<{ id: string; type: string; fileReference: string }>;
   timeline: Array<{ kind: string; label: string; at: string }>;
   audit: Array<{ at: string; by: string; reason: string }>;
@@ -257,6 +257,18 @@ function attachmentFileName(reference: string): string {
     // Ссылка с одиночным «%» — не повод остаться без строки вовсе.
     return name;
   }
+}
+
+/**
+ * Телефон педагога как ссылка для звонка.
+ *
+ * Организатор разбирает очередь с телефона не реже, чем с ноутбука, и звонок по
+ * номеру из заявки — это ровно то, ради чего номер там и стоит. В `tel:` уходит
+ * только то, что умеет набираться: пробелы и скобки из справочника набор ломают,
+ * а на экране остаётся запись в том виде, в каком её вводили.
+ */
+function telHref(phone: string): string {
+  return `tel:${phone.replace(/[^+\d]/g, "")}`;
 }
 
 function attachmentTypeLabel(type: string): string {
@@ -936,6 +948,17 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                                               className="text-xs text-muted-foreground"
                                             >
                                               {teacher.name} · {teacher.role}
+                                              {teacher.phone ? (
+                                                <>
+                                                  {" · "}
+                                                  <a
+                                                    href={telHref(teacher.phone)}
+                                                    className="text-primary hover:underline"
+                                                  >
+                                                    {teacher.phone}
+                                                  </a>
+                                                </>
+                                              ) : null}
                                             </p>
                                           ))
                                         )}

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import csv
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from io import StringIO
@@ -15,6 +15,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.applications.application.dto import TeacherView
 from apps.applications.application.dto.commands import (
     AcceptSubmissionCommand,
     ApproveSubmissionCommand,
@@ -49,6 +50,7 @@ from apps.notifications.infrastructure.models import NotificationKind
 from apps.organization.domain.value_objects import OrganizationModule
 from apps.organization.presentation.permissions import IsModuleEnabled, IsOrganizationStaff
 from apps.organization.presentation.scope import callers_organization_id, is_platform_operator
+from apps.teachers.infrastructure.models import TeacherModel
 from config.archive import ArchiveMember, zip_response
 
 _QUEUE_BY_STATUS = {
@@ -67,6 +69,35 @@ _QUEUE_BY_STATUS = {
 
 def _now() -> datetime:
     return datetime.now(UTC)
+
+
+def _directory_phones(teachers: Sequence[TeacherView]) -> dict[str, str]:
+    """Телефоны педагогов заявки — одним запросом в справочник кабинета.
+
+    На заявке от педагога лежат только имя, роль и ссылка на карточку в справочнике;
+    телефон живёт там. Организатору он нужен ровно тогда, когда с номером что-то не
+    так и звонить надо не участнику, а тому, кто его готовил, — поэтому читается
+    вместе с карточкой, а не отдельным запросом по клику.
+
+    Педагог, вписанный руками (без ссылки на справочник), сюда не попадает: звонить
+    некуда, и это честнее пустой строки.
+    """
+    directory_ids = {teacher.directory_teacher_id for teacher in teachers if teacher.directory_teacher_id}
+    if not directory_ids:
+        return {}
+    rows = TeacherModel.objects.filter(pk__in=directory_ids, deleted_at__isnull=True).values_list("id", "phone")
+    return {str(directory_id): cleaned for directory_id, phone in rows if (cleaned := (phone or "").strip())}
+
+
+def _teacher_card(teacher: TeacherView, phones: Mapping[str, str]) -> dict[str, Any]:
+    """Педагог так, как его читает организатор: имя, роль и телефон, если он есть."""
+    directory_id = teacher.directory_teacher_id
+    return {
+        "id": teacher.id,
+        "name": f"{teacher.last_name} {teacher.first_name}",
+        "role": teacher.role,
+        "phone": phones.get(directory_id) if directory_id else None,
+    }
 
 
 def _visible_competitions(request: Request) -> Any:
@@ -464,7 +495,9 @@ class OrganizerProcessingWorkspaceView(_StaffView):
             else:
                 representative = related_dtos[0]
                 participants = [{"id": p.id, "name": p.display_name, "memberCount": p.member_count} for dto in related_dtos for p in dto.participants]
-                teachers = [{"id": t.id, "name": f"{t.last_name} {t.first_name}", "role": t.role} for dto in related_dtos for t in dto.teachers]
+                teacher_views = [t for dto in related_dtos for t in dto.teachers]
+                teacher_phones = _directory_phones(teacher_views)
+                teachers = [_teacher_card(t, teacher_phones) for t in teacher_views]
                 attachments = [
                     {"id": a.id, "type": a.type, "fileReference": file_url(a.file_reference)} for dto in related_dtos for a in dto.attachments
                 ]
@@ -558,7 +591,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                             "participantsCount": len(dto.participants),
                             "teachersCount": len(dto.teachers),
                             "participants": [{"id": p.id, "name": p.display_name, "memberCount": p.member_count} for p in dto.participants],
-                            "teachers": [{"id": t.id, "name": f"{t.last_name} {t.first_name}", "role": t.role} for t in dto.teachers],
+                            "teachers": [_teacher_card(t, teacher_phones) for t in dto.teachers],
                             "priceAmount": dto.price.amount if dto.price else None,
                             "priceCurrency": dto.price.currency if dto.price else None,
                             "attachments": [{"id": a.id, "type": a.type, "fileReference": file_url(a.file_reference)} for a in dto.attachments],
