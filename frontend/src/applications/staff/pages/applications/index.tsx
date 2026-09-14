@@ -239,6 +239,26 @@ function ReceiptLinks({ references }: { references: string[] }): React.JSX.Eleme
   );
 }
 
+/**
+ * Имя файла из ссылки на вложение.
+ *
+ * `fileReference` приходит уже адресом: у бакета это абсолютный URL, а русское имя
+ * в нём процентно-закодировано — несколько сотен символов без единого пробела.
+ * Напечатанный целиком, он распирал рабочую карточку (колонка грида `1fr` не
+ * сжимается ниже своего содержимого), и разбирать заявку становилось нечем.
+ * Организатору нужно имя — по нему он узнаёт файл; адрес есть у кнопки «Открыть».
+ */
+function attachmentFileName(reference: string): string {
+  const path = reference.split(/[?#]/)[0] ?? reference;
+  const name = path.split("/").filter(Boolean).pop() ?? reference;
+  try {
+    return decodeURIComponent(name);
+  } catch {
+    // Ссылка с одиночным «%» — не повод остаться без строки вовсе.
+    return name;
+  }
+}
+
 function attachmentTypeLabel(type: string): string {
   const map: Record<string, string> = {
     MUSIC: "Музыка",
@@ -657,7 +677,10 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
             </CardContent>
           </Card>
 
-          <Card>
+          {/* `min-w-0`: колонка `1fr` иначе растёт под самое длинное неразрывное
+              слово внутри — одного имени файла хватало, чтобы карточка уехала за
+              экран вместе со всеми кнопками действий. */}
+          <Card className="min-w-0">
             <CardHeader>
               <CardTitle>Рабочая карточка</CardTitle>
               <CardDescription>
@@ -994,10 +1017,14 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                               key={attachment.id}
                               className="flex items-center justify-between gap-2 py-1"
                             >
-                              <p className="text-xs text-muted-foreground">
-                                {attachmentTypeLabel(attachment.type)} · {attachment.fileReference}
+                              <p
+                                className="min-w-0 flex-1 truncate text-xs text-muted-foreground"
+                                title={attachmentFileName(attachment.fileReference)}
+                              >
+                                {attachmentTypeLabel(attachment.type)} ·{" "}
+                                {attachmentFileName(attachment.fileReference)}
                               </p>
-                              <Button asChild size="sm" variant="outline">
+                              <Button asChild size="sm" variant="outline" className="shrink-0">
                                 <a
                                   href={fileHref(attachment.fileReference) ?? "#"}
                                   target="_blank"
