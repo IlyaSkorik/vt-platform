@@ -3905,8 +3905,8 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/applications/index.tsx": {
-    "mtime": 1789287399.8529575,
-    "ast_hash": "3e1182d56504a17df4096cb4dab40a41",
+    "mtime": 1789401249.2199814,
+    "ast_hash": "57c596e4848dcdfc28771fd14804abfa",
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/competition-workspace/index.tsx": {
@@ -3975,8 +3975,8 @@
     "semantic_hash": "da664388e1780d60696b876ddf507bc1"
   },
   "frontend/src/entities/participant/api.ts": {
-    "mtime": 1786134903.9601579,
-    "ast_hash": "fb7738cf0db85068d0a4faae5c02edda",
+    "mtime": 1789401347.0677564,
+    "ast_hash": "9fb04571c7e4160ef5bda0d8ebf511cc",
     "semantic_hash": ""
   },
   "frontend/src/entities/participant/index.ts": {
@@ -4155,8 +4155,8 @@
     "semantic_hash": "86a725f8fd13f49d137093fbe9f4361f"
   },
   "frontend/src/features/competitions/api/competitions-api.ts": {
-    "mtime": 1789220214.7066188,
-    "ast_hash": "bc85af3c5e1712d2601fe22fcac391a5",
+    "mtime": 1789401347.1277564,
+    "ast_hash": "384f33a265efd30948f60dc07369a313",
     "semantic_hash": ""
   },
   "frontend/src/features/competitions/api/envelope.ts": {
@@ -4735,9 +4735,9 @@
     "semantic_hash": "6d1f09a4cd7e30f3c95c1cb3df736f94"
   },
   "frontend/src/shared/api/config.ts": {
-    "mtime": 1785860601.0214312,
-    "ast_hash": "eea5faba34de6d264012e6e0b9b27be7",
-    "semantic_hash": "eea5faba34de6d264012e6e0b9b27be7"
+    "mtime": 1789401192.1798058,
+    "ast_hash": "aa9c86910f621a1d7256ea71c95d3073",
+    "semantic_hash": ""
   },
   "frontend/src/shared/api/error.ts": {
     "mtime": 1788981885.4401596,
@@ -4775,14 +4775,14 @@
     "semantic_hash": "33841961796f8daa964267760724518f"
   },
   "frontend/src/shared/api/index.ts": {
-    "mtime": 1788981117.8512204,
-    "ast_hash": "679436e58a8728dd41b555ec28d1f435",
+    "mtime": 1789401232.422484,
+    "ast_hash": "1743653b15780c982ea004ad3f53744b",
     "semantic_hash": ""
   },
   "frontend/src/shared/api/orval-mutator.ts": {
-    "mtime": 1785860601.0225651,
-    "ast_hash": "5d665e137308a85769360706e42b1ac4",
-    "semantic_hash": "5d665e137308a85769360706e42b1ac4"
+    "mtime": 1789401202.0824664,
+    "ast_hash": "8fae07e4022ee3697a7f13f055df4bb8",
+    "semantic_hash": ""
   },
   "frontend/src/shared/api/problem-cache.ts": {
     "mtime": 1785860601.0225651,
@@ -7095,8 +7095,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/diplomas/api/diplomas-api.ts": {
-    "mtime": 1785860600.9900444,
-    "ast_hash": "5e6007bcf1f8188e74a93ff6478d8ccf",
+    "mtime": 1789401347.0957563,
+    "ast_hash": "4c95ad91efa898346d966e8d894a66e3",
     "semantic_hash": ""
   },
   "frontend/src/features/diplomas/api/envelope.ts": {
@@ -8770,8 +8770,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/diplomas/api/fonts-api.ts": {
-    "mtime": 1785860600.9902267,
-    "ast_hash": "ff00748d50cb073efc6a8c601f6ba679",
+    "mtime": 1789401347.0597565,
+    "ast_hash": "f90feb0007fdf278947cda1bbaa94d58",
     "semantic_hash": ""
   },
   "frontend/src/features/diplomas/lib/use-font-faces.ts": {
@@ -9470,8 +9470,8 @@
     "semantic_hash": ""
   },
   "frontend/deploy/nginx/proxy.conf.inc": {
-    "mtime": 1785860600.9019926,
-    "ast_hash": "d8d0f28c81de1dc7219ad79dfcc8f176",
+    "mtime": 1789401388.320534,
+    "ast_hash": "c9262772439b3601026a93b822c29914",
     "semantic_hash": ""
   },
   "frontend/src/app/router/route-hydrate-fallback.test.tsx": {
@@ -10745,8 +10745,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/voting-builder/api.ts": {
-    "mtime": 1789237774.8968694,
-    "ast_hash": "1c6562d2b646bf6349d08c7f89424b44",
+    "mtime": 1789401232.4238381,
+    "ast_hash": "744db34e3363eeba9dc4dac98d3e9a95",
     "semantic_hash": ""
   },
   "frontend/src/features/voting-builder/index.ts": {
@@ -10802,6 +10802,11 @@
   "backend/tests/presentation/applications/test_organizer_duration_totals.py": {
     "mtime": 1789286682.2010105,
     "ast_hash": "bda38d91f371ae2a1153df10dd13f936",
+    "semantic_hash": ""
+  },
+  "frontend/src/shared/api/upload-timeout.test.ts": {
+    "mtime": 1789401300.1592827,
+    "ast_hash": "d21983ca6f203e4e85afb9e58767fa81",
     "semantic_hash": ""
   }
 }

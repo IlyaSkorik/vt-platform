@@ -530,8 +530,8 @@
     "semantic_hash": ""
   },
   "backend/apps/applications/presentation/api/v1/organizer/views.py": {
-    "mtime": 1789286445.2673671,
-    "ast_hash": "46df0825720d6176e5da4bdae754b0d4",
+    "mtime": 1789406132.2979527,
+    "ast_hash": "550a456b67c59a218c7167c405c9631e",
     "semantic_hash": ""
   },
   "backend/apps/applications/presentation/api/v1/problems.py": {
@@ -3905,8 +3905,8 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/applications/index.tsx": {
-    "mtime": 1789401249.2199814,
-    "ast_hash": "57c596e4848dcdfc28771fd14804abfa",
+    "mtime": 1789406152.613649,
+    "ast_hash": "52259f18d3933b0965ff79d91fd04329",
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/competition-workspace/index.tsx": {
@@ -10807,6 +10807,11 @@
   "frontend/src/shared/api/upload-timeout.test.ts": {
     "mtime": 1789401300.1592827,
     "ast_hash": "d21983ca6f203e4e85afb9e58767fa81",
+    "semantic_hash": ""
+  },
+  "backend/tests/presentation/applications/test_organizer_teacher_phone.py": {
+    "mtime": 1789406236.132387,
+    "ast_hash": "1c380e1c66d59125d2f843bee495472c",
     "semantic_hash": ""
   }
 }
