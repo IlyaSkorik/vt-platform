@@ -33,6 +33,22 @@ export default defineConfig({
   },
   test: {
     globals: true,
+    /**
+     * Twenty seconds, not the default five.
+     *
+     * The heaviest suites here drive a whole page through `userEvent` — typing into
+     * a tariff grid, moving rows in the programme constructor — and take three to
+     * four seconds each when the machine is idle. Run in parallel with a hundred
+     * and fifty other files they cross five seconds and fail on the clock rather
+     * than on an assertion, which is how CI ended up red on a different test each
+     * run while every one of them passed in isolation.
+     *
+     * This weakens nothing: a test that genuinely hangs still fails, just later.
+     * The number to watch is the per-test duration in the reporter — if one starts
+     * approaching this, it is too big a test, and raising the ceiling again would
+     * be the wrong answer.
+     */
+    testTimeout: 20_000,
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
     css: false,

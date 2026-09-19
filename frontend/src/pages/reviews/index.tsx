@@ -167,7 +167,7 @@ export function PublicReviewPage(): React.JSX.Element {
 
             <Input
               label="Как вас зовут"
-              hint="Можно не указывать — отзыв примем и без подписи."
+              description="Можно не указывать — отзыв примем и без подписи."
               value={authorName}
               maxLength={120}
               onChange={(event) => setAuthorName(event.target.value)}

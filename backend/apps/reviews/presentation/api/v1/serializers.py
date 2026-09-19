@@ -31,15 +31,23 @@ __all__ = [
 ]
 
 
-class ReviewProblemDetailSerializer(serializers.Serializer[dict[str, object]]):
-    """RFC 9457 problem document (API-000 §8)."""
-
-    type = serializers.CharField()
-    title = serializers.CharField()
-    status = serializers.IntegerField()
-    detail = serializers.CharField()
-    instance = serializers.CharField()
-    requestId = serializers.CharField()
+#: RFC 9457 problem document (API-000 §8).
+#:
+#: Assembled inline rather than declared as a ``Serializer`` subclass, exactly as
+#: Voting does it: a problem document has a field called ``instance``, and that name
+#: already belongs to ``BaseSerializer`` — declaring it as a class attribute is a
+#: type error before it is anything else.
+ReviewProblemDetailSerializer = inline_serializer(
+    name="ReviewProblemDetail",
+    fields={
+        "type": serializers.URLField(),
+        "title": serializers.CharField(),
+        "status": serializers.IntegerField(),
+        "detail": serializers.CharField(),
+        "instance": serializers.CharField(),
+        "requestId": serializers.CharField(),
+    },
+)
 
 
 class UpdateReviewPageRequestSerializer(serializers.Serializer[dict[str, object]]):

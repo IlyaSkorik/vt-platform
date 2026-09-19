@@ -176,7 +176,7 @@ function PageSettings({ slug }: { slug: string }): React.JSX.Element {
         />
         <Textarea
           label="Текст под заголовком"
-          hint="Не обязателен — страница понятна и без него."
+          description="Не обязателен — страница понятна и без него."
           rows={3}
           maxLength={1000}
           value={intro}
