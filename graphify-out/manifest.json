@@ -530,8 +530,8 @@
     "semantic_hash": ""
   },
   "backend/apps/applications/presentation/api/v1/organizer/views.py": {
-    "mtime": 1789840198.7881293,
-    "ast_hash": "fd2411d877c3a5ab6dde866395a58e11",
+    "mtime": 1789851073.6009917,
+    "ast_hash": "34727f9126bf7be52185a785db99f68d",
     "semantic_hash": ""
   },
   "backend/apps/applications/presentation/api/v1/problems.py": {
@@ -3905,8 +3905,8 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/applications/index.tsx": {
-    "mtime": 1789840207.6467173,
-    "ast_hash": "0e964c56e14bbbdd9b6ca41476abe6b2",
+    "mtime": 1789851129.2484598,
+    "ast_hash": "1bd74805da2e601b165a06cc8fca0799",
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/competition-workspace/index.tsx": {
@@ -6390,9 +6390,9 @@
     "semantic_hash": "4f198959ac3eb5c8b8d6fde0f199df5e"
   },
   "frontend/vite.config.ts": {
-    "mtime": 1785860601.092099,
-    "ast_hash": "2aaa701df77e108468ac5832507f5193",
-    "semantic_hash": "2aaa701df77e108468ac5832507f5193"
+    "mtime": 1789852429.4163554,
+    "ast_hash": "423ec9a1c2b97db846b76849f64a1f1e",
+    "semantic_hash": ""
   },
   "frontend/vitest.setup.ts": {
     "mtime": 1788895992.102698,
@@ -10815,8 +10815,8 @@
     "semantic_hash": ""
   },
   "backend/tests/presentation/applications/test_organizer_educational_organization.py": {
-    "mtime": 1789840217.5662699,
-    "ast_hash": "3d667e17fb796a29f6ca6fd858b1404d",
+    "mtime": 1789851648.0377474,
+    "ast_hash": "f81251f003600b4caaa336b9368a71b4",
     "semantic_hash": ""
   },
   "backend/apps/organization/infrastructure/migrations/0009_reviews_module.py": {
@@ -11005,8 +11005,8 @@
     "semantic_hash": ""
   },
   "backend/apps/reviews/presentation/api/v1/serializers.py": {
-    "mtime": 1789844858.320384,
-    "ast_hash": "d2013c78ec683972a9fbe0444ea12b84",
+    "mtime": 1789851629.3958843,
+    "ast_hash": "8356a0fcfeaeae17bc73f557d5932638",
     "semantic_hash": ""
   },
   "backend/apps/reviews/presentation/api/v1/urls.py": {
@@ -11060,8 +11060,8 @@
     "semantic_hash": ""
   },
   "backend/tests/presentation/reviews/test_public_reviews_api.py": {
-    "mtime": 1789844858.3271668,
-    "ast_hash": "300c080561553166fad5424d07fbb372",
+    "mtime": 1789851629.4493353,
+    "ast_hash": "9218f50d55d1833ec9d0e2d7bc9d1baa",
     "semantic_hash": ""
   },
   "backend/tests/presentation/reviews/test_review_page_api.py": {
@@ -11075,8 +11075,8 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/reviews/index.tsx": {
-    "mtime": 1789844858.3313236,
-    "ast_hash": "12bf087dfcc20a5352ef89a6e39169af",
+    "mtime": 1789851900.0870142,
+    "ast_hash": "111f08187542bdfd5969f240ac11c228",
     "semantic_hash": ""
   },
   "frontend/src/features/public-reviews/api.ts": {
@@ -11125,8 +11125,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/reviews/index.tsx": {
-    "mtime": 1789844858.345648,
-    "ast_hash": "94b2c7d1f408757eb5dd3af2cea1dec5",
+    "mtime": 1789851900.0819755,
+    "ast_hash": "338dc0a6d6dd108740cb64ef12902040",
     "semantic_hash": ""
   }
 }
