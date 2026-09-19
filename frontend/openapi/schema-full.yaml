@@ -5910,6 +5910,62 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: Unknown target kind.
+  /api/v1/platform/reviews:
+    get:
+      operationId: platform_reviews_list
+      description: '``GET`` every review on the platform, newest first.'
+      summary: List every review on the platform
+      tags:
+      - Platform Reviews
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Review'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: Not a platform operator.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: Not found.
+  /api/v1/platform/reviews/{review_id}:
+    delete:
+      operationId: platform_reviews_delete
+      description: '``DELETE`` any review, whoever it belongs to.'
+      summary: Remove any review
+      parameters:
+      - in: path
+        name: review_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Platform Reviews
+      responses:
+        '204':
+          description: Removed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: Not a platform operator.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: Not found.
   /api/v1/public/ballots/{slug}:
     get:
       operationId: public_get_ballot
@@ -6280,6 +6336,129 @@ paths:
           description: ''
         '404':
           description: No response body
+  /api/v1/public/reviews/{slug}:
+    get:
+      operationId: public_review_page
+      description: '``GET`` the page behind a scanned code.'
+      summary: The review page behind a public link
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - Public Reviews
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicPage'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: No page behind this link.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: Closed, or sent without consent.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: Too many submissions.
+  /api/v1/public/reviews/{slug}/entries:
+    post:
+      operationId: public_review_submit
+      description: Multipart. `text`, `consentVersion` and `consentAccepted=true`
+        are required; `authorName` and `competitionId` are optional, and up to five
+        `photos` files may be attached.
+      summary: Leave a review
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - Public Reviews
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                consentType:
+                  type: string
+                consentVersion:
+                  type: string
+                consentAccepted:
+                  type: boolean
+                authorName:
+                  type: string
+                competitionId:
+                  type: string
+                  format: uuid
+                photos:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+              required:
+              - text
+              - consentType
+              - consentVersion
+              - consentAccepted
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: No page behind this link.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: Closed, or sent without consent.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: Too many submissions.
   /api/v1/staff/applications/{submission_id}/actions/{action}:
     post:
       operationId: staff_applications_actions_create
@@ -10020,6 +10199,160 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProtocolProblemDetail'
           description: Unprocessable.
+  /api/v1/staff/reviews:
+    get:
+      operationId: reviews_list
+      description: '``GET`` everything left on this organization''s page, newest first.'
+      summary: List the reviews left on the organization's page
+      tags:
+      - Reviews
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Review'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: Malformed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: Module not connected, or not staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: Not found.
+  /api/v1/staff/reviews/{review_id}:
+    delete:
+      operationId: reviews_delete
+      description: Another organization's review answers 404, not 403.
+      summary: Remove a review
+      parameters:
+      - in: path
+        name: review_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Reviews
+      responses:
+        '204':
+          description: Removed.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: Malformed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: Module not connected, or not staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: Not found.
+  /api/v1/staff/reviews/page:
+    get:
+      operationId: reviews_get_page
+      description: '``GET`` the organization''s review page; ``PATCH`` its wording
+        and switch.'
+      summary: The organization's review page (created on first read)
+      tags:
+      - Reviews
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewPage'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: Malformed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: Module not connected, or not staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: Not found.
+    patch:
+      operationId: reviews_update_page
+      description: '``GET`` the organization''s review page; ``PATCH`` its wording
+        and switch.'
+      summary: Reword the page, or start and stop collecting
+      tags:
+      - Reviews
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateReviewPageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateReviewPageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateReviewPageRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewPage'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: Malformed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: Module not connected, or not staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProblemDetail'
+          description: Not found.
+  /api/v1/staff/reviews/page/qr.png:
+    get:
+      operationId: reviews_page_qr
+      description: '``GET`` the QR code that goes on the banner.'
+      summary: Download the page's QR code
+      tags:
+      - Reviews
+      responses:
+        '200':
+          description: A PNG of the public review link.
   /api/v1/submissions/{submission_id}:
     get:
       operationId: submissions_retrieve
@@ -13477,6 +13810,7 @@ components:
       - PROGRAMS
       - DIPLOMAS
       - VOTING
+      - REVIEWS
       - FINANCE
       - ANALYTICS
       type: string
@@ -13488,6 +13822,7 @@ components:
         * `PROGRAMS` - PROGRAMS
         * `DIPLOMAS` - DIPLOMAS
         * `VOTING` - VOTING
+        * `REVIEWS` - REVIEWS
         * `FINANCE` - FINANCE
         * `ANALYTICS` - ANALYTICS
     ModulesEnum:
@@ -13499,6 +13834,7 @@ components:
       - PROGRAMS
       - DIPLOMAS
       - VOTING
+      - REVIEWS
       - FINANCE
       - ANALYTICS
       type: string
@@ -13510,6 +13846,7 @@ components:
         * `PROGRAMS` - PROGRAMS
         * `DIPLOMAS` - DIPLOMAS
         * `VOTING` - VOTING
+        * `REVIEWS` - REVIEWS
         * `FINANCE` - FINANCE
         * `ANALYTICS` - ANALYTICS
     Nominee:
@@ -14600,6 +14937,23 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ColumnsEnum'
+    PatchedUpdateReviewPageRequest:
+      type: object
+      description: |-
+        Rewording the page, or switching collection on and off.
+
+        Every field is optional and an omitted one means "leave as it was": the
+        wording form and the open/close switch are two controls on one screen, and
+        neither should have to resend the other's value to avoid clobbering it.
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        intro:
+          type: string
+          maxLength: 1000
+        accepting:
+          type: boolean
     PatchedUpdateShareRequest:
       type: object
       description: Validate a rename/re-column body for a published edition (its slug
@@ -16657,6 +17011,31 @@ components:
       - subtitle
       - title
       - votes
+    PublicPage:
+      type: object
+      description: The page as a stranger with a phone sees it.
+      properties:
+        slug:
+          type: string
+        title:
+          type: string
+        intro:
+          type: string
+        organizationName:
+          type: string
+        accepting:
+          type: boolean
+        festivals:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewFestivalOption'
+      required:
+      - accepting
+      - festivals
+      - intro
+      - organizationName
+      - slug
+      - title
     PublicProgram:
       type: object
       description: What a public link resolves to.
@@ -17323,6 +17702,123 @@ components:
         * `ALWAYS` - ALWAYS
         * `AFTER_CLOSE` - AFTER_CLOSE
         * `NEVER` - NEVER
+    Review:
+      type: object
+      description: One note as the organizer (or the platform operator) reads it.
+      properties:
+        id:
+          type: string
+        authorName:
+          type:
+          - string
+          - 'null'
+        text:
+          type: string
+        photos:
+          type: array
+          items:
+            type: string
+        competitionId:
+          type:
+          - string
+          - 'null'
+        competitionTitle:
+          type:
+          - string
+          - 'null'
+        submittedAt:
+          type: string
+          format: date-time
+        consentType:
+          type: string
+        consentVersion:
+          type: string
+        consentAcceptedAt:
+          type: string
+          format: date-time
+        organizationId:
+          type: string
+        organizationName:
+          type:
+          - string
+          - 'null'
+      required:
+      - authorName
+      - competitionId
+      - competitionTitle
+      - consentAcceptedAt
+      - consentType
+      - consentVersion
+      - id
+      - organizationId
+      - organizationName
+      - photos
+      - submittedAt
+      - text
+    ReviewFestivalOption:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+      required:
+      - id
+      - title
+    ReviewPage:
+      type: object
+      description: The page as its owner administers it.
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        title:
+          type: string
+        intro:
+          type: string
+        accepting:
+          type: boolean
+        reviewCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - accepting
+      - createdAt
+      - id
+      - intro
+      - reviewCount
+      - slug
+      - title
+      - updatedAt
+    ReviewProblemDetail:
+      type: object
+      description: RFC 9457 problem document (API-000 §8).
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        requestId:
+          type: string
+      required:
+      - detail
+      - instance
+      - requestId
+      - status
+      - title
+      - type
     RoleEnum:
       enum:
       - OWNER

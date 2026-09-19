@@ -70,6 +70,19 @@ describe("the route tree", () => {
     expect(REACHABLE).toContain(ROUTES.staffVoting);
   });
 
+  it("matches the public review form", () => {
+    // The address printed on a banner: unreachable here means a dead QR in a foyer.
+    expect(REACHABLE).toContain(ROUTES.publicReview);
+  });
+
+  it("matches the organizer's reviews section", () => {
+    expect(REACHABLE).toContain(ROUTES.staffReviews);
+  });
+
+  it("matches the operator's reviews console", () => {
+    expect(REACHABLE).toContain(ROUTES.platformReviews);
+  });
+
   it("reaches every address ROUTES advertises", () => {
     const unreachable = Object.values(ROUTES).filter(
       (path) => !REACHABLE.has(path) && !NOT_YET_ROUTED.has(path),

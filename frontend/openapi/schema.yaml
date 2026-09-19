@@ -488,6 +488,7 @@ components:
         - PROGRAMS
         - DIPLOMAS
         - VOTING
+        - REVIEWS
         - FINANCE
         - ANALYTICS
     CurrentUser:

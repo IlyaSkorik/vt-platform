@@ -9,6 +9,7 @@ import {
   Landmark,
   MailPlus,
   Medal,
+  MessageSquareQuote,
   Settings,
   UserCog,
   Users,
@@ -113,6 +114,13 @@ export const STAFF_NAVIGATION: StaffNavItem[] = [
     module: "VOTING",
     icon: Vote,
     description: "Зрительское голосование — с фестивалем или без него.",
+  },
+  {
+    title: "Отзывы",
+    path: ROUTES.staffReviews,
+    module: "REVIEWS",
+    icon: MessageSquareQuote,
+    description: "Код на баннере и отзывы, которые по нему оставили.",
   },
   {
     title: "Организация",

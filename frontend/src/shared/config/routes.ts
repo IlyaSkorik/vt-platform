@@ -41,6 +41,11 @@ export const ROUTES = {
   publicBallot: "/vote/:slug",
   publicBallotBoard: "/vote/:slug/board",
   /**
+   * The review form, reached from a code on a banner. One slug per organizer and
+   * permanent — the banner is printed on cloth and stands at next season's events.
+   */
+  publicReview: "/reviews/:slug",
+  /**
    * Public results page — one slug per published protocol.
    *
    * Unlike a programme link this one is meant to be found: the competition's landing page
@@ -68,6 +73,7 @@ export const ROUTES = {
   staffProgram: "/staff/program",
   staffDiplomas: "/staff/diplomas",
   staffVoting: "/staff/voting",
+  staffReviews: "/staff/reviews",
   staffDiplomaTemplateConstructor: "/staff/diplomas/templates/:templateId/constructor",
   staffFinance: "/staff/finance",
   staffAnalytics: "/staff/analytics",
@@ -81,6 +87,8 @@ export const ROUTES = {
   platformOrganizations: "/platform/organizations",
   /** The operator's test bench — load-testing generation against the live stack. */
   platformTesting: "/platform/testing",
+  /** Every review left on the platform — where a complaint about one is settled. */
+  platformReviews: "/platform/reviews",
   /** The eraser: removing a festival, an order or an account for good. */
   platformErase: "/platform/erase",
   profile: "/profile",

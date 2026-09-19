@@ -115,6 +115,13 @@ export const routes: RouteObject[] = [
             lazy: lazyPage(() => import("@/pages/vote-board"), "PublicVoteBoardPage"),
           },
           {
+            // The review form, reached by scanning a code on a banner. No account:
+            // the slug is the only credential, because nobody registers to say
+            // thank you on their way out of a hall.
+            path: ROUTES.publicReview.slice(1),
+            lazy: lazyPage(() => import("@/pages/reviews"), "PublicReviewPage"),
+          },
+          {
             // The contract itself, public and unauthenticated: it has to be readable
             // before registering, because registering is accepting it (LEGAL-003 §3.3).
             path: ROUTES.termsOfService.slice(1),
@@ -408,6 +415,18 @@ export const routes: RouteObject[] = [
                 ],
               },
               {
+                element: <ModuleRoute module="REVIEWS" />,
+                children: [
+                  {
+                    path: ROUTES.staffReviews.slice(1),
+                    lazy: lazyPage(
+                      () => import("@/applications/staff/pages/reviews"),
+                      "StaffReviewsPage",
+                    ),
+                  },
+                ],
+              },
+              {
                 element: <ModuleRoute module="DIPLOMAS" />,
                 children: [
                   {
@@ -503,6 +522,13 @@ export const routes: RouteObject[] = [
                 lazy: lazyPage(
                   () => import("@/applications/platform/pages/testing"),
                   "PlatformTestingPage",
+                ),
+              },
+              {
+                path: ROUTES.platformReviews.slice(1),
+                lazy: lazyPage(
+                  () => import("@/applications/platform/pages/reviews"),
+                  "PlatformReviewsPage",
                 ),
               },
               {
