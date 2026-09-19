@@ -6,7 +6,7 @@ Published legal documents and the internal notes about them. The documents thems
 
 | ID | Title | Published at | Rendered by | Revision in force |
 |----|-------|--------------|-------------|-------------------|
-| LEGAL-001 | [Политика в отношении обработки персональных данных](LEGAL-001-privacy-policy.md) | `/privacy-policy` | `frontend/src/pages/legal/privacy-policy.tsx` | 1.1, since 11 Aug 2026 |
+| LEGAL-001 | [Политика в отношении обработки персональных данных](LEGAL-001-privacy-policy.md) | `/privacy-policy` | `frontend/src/pages/legal/privacy-policy.tsx` | 1.2, since 19 Sep 2026 |
 | LEGAL-002 | [Политика использования файлов cookie](LEGAL-002-cookies-policy.md) | `/cookies` | `frontend/src/pages/legal/cookies-policy.tsx` | 1.0, since 6 Aug 2026 |
 | LEGAL-003 | [Пользовательское соглашение](LEGAL-003-terms-of-service.md) | `/terms` | `frontend/src/pages/legal/terms-of-service.tsx` | 1.0, since 11 Aug 2026 |
 
@@ -39,6 +39,10 @@ A new revision of either document means a new version here, never an edit in pla
 **Registration writes one row, not two.** The box accepts the agreement and states nothing about having read the policies, because LEGAL-003 §1.5 already makes both of them part of it — accepting the agreement accepts the set, which LEGAL-001 §13.7 says in the published text. There is deliberately no `privacy_policy` acknowledgement row: a second statement would need a version kept in step with the policy's own revisions, and recording an acknowledgement the wording never asked for would be recording something the person did not say. Which policy revision applied to a given acceptance is answered by the acceptance date plus the retained revision history (§16.2), not by a second row.
 
 ## The pseudonym that was promised and never applied
+
+**Reviews are consented to, and are not published.** The reviews block (`apps.reviews`) collects something no other part of the platform does: words, a photograph and sometimes a name, from a visitor with no account who will never come back. Revision 1.2 of LEGAL-001 adds it as purpose 13 in §4.1, a category of subjects in §5.1, and a retention row in §11.1; §5.5 states in the published text that nothing collected that way appears in a public section, which is why there is one consent here and not two (compare `APPLICATION_CONSENTS.distribution`, which exists precisely because protocols *are* public).
+
+The consent's code is **`review_personal_data`**, deliberately not `data_processing`. That code belongs to the consent registration collected before revision 1.1 and is kept only as evidence of rows already granted (see above); reusing it would make two unrelated permissions indistinguishable in any later question about what a person agreed to. The record does not live in `identity_user_consent` either — there is no account to hang it on — but on the review row itself, as `(consent_code, consent_version, consent_accepted_at)`, and `Review.leave()` will not construct a review without it. If reviews ever gain a public showcase, that is a new consent with its own code and version, not a reworded version of this one.
 
 Revision 1.0 of LEGAL-001 §6.6 said a creative work reaches a jury member «с указанием псевдонима Участника, без фамилии, имени и иных сведений, позволяющих установить личность», and three consent texts repeated it. Nothing of the kind happens: `apps.judging` has domain and application layers but **no API at all**, so no work has ever been handed to a jury under a pseudonym or under a name. Revision 1.1 replaces §6.6 with the scope actually intended for evaluation, adds the jury to §6.5 and §9.1 (§6.6 was the reason they were absent), and records the correction in §16.6.
 

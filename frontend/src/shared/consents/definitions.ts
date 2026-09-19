@@ -247,6 +247,38 @@ export const TEACHER_CONSENT: ConsentDefinition = {
 };
 
 /**
+ * The consent a visitor gives when leaving a review.
+ *
+ * The only consent on this platform asked of somebody who has no account and will
+ * never come back — a person standing at a banner with a phone. So it is written to
+ * be read there: what is collected, who sees it, and the fact that nothing of it is
+ * published anywhere.
+ *
+ * That last part is the reason this is one box rather than two. Reviews are read in
+ * the organizer's workspace and in the operator's console and are shown on no public
+ * page, so there is no distribution to consent to separately (compare
+ * `APPLICATION_CONSENTS.distribution`, which exists precisely because protocols and
+ * programmes *are* public). If reviews ever gain a public showcase, that is a new
+ * consent with its own version — not a reworded version of this one.
+ *
+ * The name is optional and the text may contain none, but a review can still carry a
+ * face in a photograph, which is why the wording covers the photographs explicitly.
+ */
+export const REVIEW_CONSENT: ConsentDefinition = {
+  // Its own code, not the `data_processing` one registration used before revision 1.1
+  // of the policy: that code names a different thing, rows granted under it still exist
+  // as evidence, and reusing it would make two unrelated permissions indistinguishable
+  // in any later question about what somebody agreed to (docs/legal/README.md).
+  code: "review_personal_data",
+  version: V1,
+  required: true,
+  kind: "consent",
+  summary:
+    "Согласие на обработку моих персональных данных, указанных в отзыве, для его передачи организатору мероприятия.",
+  text: "Я даю согласие на обработку Оператором персональных данных, которые я сообщаю в отзыве: имени (при указании), содержания отзыва и приложенных мной фотографий, включая изображения людей на них, — в целях передачи отзыва организатору мероприятия и рассмотрения им обращения (разделы 5 и 9 Политики в отношении обработки персональных данных). Отзыв не размещается в общедоступных разделах Платформы: его видят организатор мероприятия и Оператор. Согласие может быть отозвано в любое время обращением на адрес support@vzlettalantov.by; отзыв согласия влечёт прекращение обработки и удаление отзыва в порядке, установленном разделами 11 и 13 Политики. Я подтверждаю, что вправе передать изображения людей, присутствующих на приложенных мной фотографиях.",
+};
+
+/**
  * Application-level consents, keyed by the code the registration projection sends.
  *
  * The festival decides which of them it asks for; the wording is not the festival's to

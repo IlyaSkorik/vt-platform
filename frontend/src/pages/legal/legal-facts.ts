@@ -57,16 +57,21 @@ export type LegalRevision = {
 };
 
 /**
- * Approved by the operator and in force since 11 August 2026.
+ * Approved by the operator and in force since 19 September 2026.
  *
  * Revision 1.1 moved the legal basis for the account's own data from the subject's
  * consent to the performance of the Пользовательское соглашение (§4.4, §13.7). Nothing
  * else about the processing changed — see §16.5, which says so in the published text.
+ *
+ * Revision 1.2 adds the reviews a visitor leaves through an organizer's link: a new
+ * purpose (§4.1 row 13), a new category of subjects (§5.1), a statement that nothing
+ * collected that way is published (§5.5) and a retention period (§11.1). It touches no
+ * other category of subject — §16.7 says so in the published text.
  */
 export const PRIVACY_POLICY_REVISION: LegalRevision = {
-  version: "1.1",
-  consentVersion: "privacy-policy-1.1",
-  effectiveDate: "2026-08-11",
+  version: "1.2",
+  consentVersion: "privacy-policy-1.2",
+  effectiveDate: "2026-09-19",
 };
 
 /**
