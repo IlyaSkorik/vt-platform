@@ -825,6 +825,7 @@ class OrganizationModule(StrEnum):
     PROGRAMS = "PROGRAMS"
     DIPLOMAS = "DIPLOMAS"
     VOTING = "VOTING"
+    REVIEWS = "REVIEWS"
     FINANCE = "FINANCE"
     ANALYTICS = "ANALYTICS"
 

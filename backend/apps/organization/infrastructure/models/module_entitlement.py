@@ -39,6 +39,7 @@ class ModuleChoices(models.TextChoices):
     PROGRAMS = OrganizationModule.PROGRAMS.value, "Программа"
     DIPLOMAS = OrganizationModule.DIPLOMAS.value, "Дипломы"
     VOTING = OrganizationModule.VOTING.value, "Зрительское голосование"
+    REVIEWS = OrganizationModule.REVIEWS.value, "Отзывы"
     FINANCE = OrganizationModule.FINANCE.value, "Финансы"
     ANALYTICS = OrganizationModule.ANALYTICS.value, "Аналитика"
 

@@ -72,6 +72,9 @@ LOCAL_APPS = [
     # on the platform: a ballot belongs to an organization, and its competition
     # is optional (see apps/voting/apps.py).
     "apps.voting",
+    # What the audience said afterwards: one page per organization, reached from a
+    # code on a banner (see apps/reviews/apps.py). Nothing it collects is published.
+    "apps.reviews",
     "apps.finance",
     "apps.notifications",
     "apps.analytics",
@@ -155,6 +158,7 @@ MIGRATION_MODULES = {
     "results": "apps.results.infrastructure.migrations",
     "notifications": "apps.notifications.infrastructure.migrations",
     "voting": "apps.voting.infrastructure.migrations",
+    "reviews": "apps.reviews.infrastructure.migrations",
 }
 
 # --- Password validation --------------------------------------------------
@@ -262,6 +266,10 @@ REST_FRAMEWORK = {
         # Deliberately not a fraud control — it is a brake, and the real rule is
         # the unique index on the votes table.
         "ballot_vote": "12/min",
+        # Leaving a review gets its own bucket too, and a smaller one: writing a
+        # note takes a minute, and the request carries photographs. Whatever sends
+        # six a minute is not somebody standing at a banner.
+        "review_submit": "6/min",
     },
     # Whatever DRF itself refuses (throttling, a wrong method, a malformed body) is
     # answered in Russian too, not only what a context's problems.py renders.

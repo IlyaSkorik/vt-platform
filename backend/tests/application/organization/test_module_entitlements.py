@@ -37,10 +37,37 @@ def _enabled() -> frozenset[OrganizationModule]:
     return DjangoModuleEntitlementRepository().enabled_modules(OrganizationId.from_string(_organization_id()))
 
 
+#: The modules the grandfathering migration named, spelled out as it spells them.
+#:
+#: Not ``frozenset(OrganizationModule)``: the migration is frozen to the modules that
+#: existed when it ran, and deliberately so — a module added later must not be handed
+#: retroactively to organizations the migration already passed over (see its docstring,
+#: 0008_grant_every_module_to_existing_organizations).
+_GRANDFATHERED = frozenset(
+    {
+        OrganizationModule.COMPETITIONS,
+        OrganizationModule.APPLICATIONS,
+        OrganizationModule.PARTICIPANTS,
+        OrganizationModule.JURY,
+        OrganizationModule.PROGRAMS,
+        OrganizationModule.DIPLOMAS,
+        OrganizationModule.VOTING,
+        OrganizationModule.FINANCE,
+        OrganizationModule.ANALYTICS,
+    }
+)
+
+
 class TestTheSwitchboard:
-    def test_the_migration_grandfathered_every_module(self) -> None:
+    def test_the_migration_grandfathered_the_modules_that_existed_then(self) -> None:
         """Existing organizations must not lose the panel they had yesterday."""
-        assert _enabled() == frozenset(OrganizationModule)
+        assert _enabled() == _GRANDFATHERED
+
+    def test_a_module_added_later_is_not_granted_retroactively(self) -> None:
+        """Новый модуль — это то, что оператор включает, а не то, что все уже держат."""
+        added_later = frozenset(OrganizationModule) - _GRANDFATHERED
+
+        assert added_later and not (added_later & _enabled())
 
     def test_setting_a_subset_turns_everything_else_off(self) -> None:
         _set(("VOTING",))

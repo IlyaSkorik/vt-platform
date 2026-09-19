@@ -75,6 +75,10 @@ urlpatterns = [
     path("api/v1/", include("apps.results.presentation.urls")),
     # The audience vote: ballots an organizer assembles, with or without a festival.
     path("api/v1/", include("apps.voting.presentation.urls")),
+    # What the audience said afterwards: the organizer's own review page and its notes.
+    path("api/v1/", include("apps.reviews.presentation.urls")),
+    # The same notes across every organization, for the platform operator alone.
+    path("api/v1/", include("apps.reviews.presentation.platform_urls")),
     # Public, unauthenticated participant catalog (dedicated read model).
     path("api/v1/", include("apps.competitions.presentation.public_urls")),
     # Public, unauthenticated diploma verification (the printed QR's target).
@@ -85,6 +89,8 @@ urlpatterns = [
     path("api/v1/", include("apps.results.presentation.public_urls")),
     # Public, unauthenticated audience voting (one slug per ballot).
     path("api/v1/", include("apps.voting.presentation.public_urls")),
+    # Public, unauthenticated review page (one slug per organization, printed on a banner).
+    path("api/v1/", include("apps.reviews.presentation.public_urls")),
     # The participant's own issued documents ("Мои документы").
     path("api/v1/", include("apps.diplomas.presentation.me_urls")),
     # The participant's own notification feed ("Уведомления").
