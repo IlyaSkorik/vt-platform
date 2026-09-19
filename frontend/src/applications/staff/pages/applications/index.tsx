@@ -80,6 +80,8 @@ type Detail = {
   totalPriceAmount?: string | null;
   totalPriceCurrency?: string | null;
   receiptFileReferences?: string[];
+  /** Учреждение, от которого пришла заявка; у частной подачи его нет. */
+  educationalOrganization?: string | null;
   /** Кто указан стороной договора по заявке — только у фестивалей, которые это собирают. */
   payerName?: string | null;
   participants: Array<{ id: string; name: string; memberCount: number }>;
@@ -711,6 +713,16 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                         ? `Выступлений в заявке: ${workspace.data.detail.performances?.length ?? 0}`
                         : (workspace.data.detail.performance ?? "Без названия номера")}
                     </p>
+                    {/* Учреждение — сразу под названием: очередь разбирают школами,
+                        и по нему же сверяют оплату и собирают программу. */}
+                    {workspace.data.detail.educationalOrganization ? (
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Учреждение:{" "}
+                        <span className="font-medium text-foreground">
+                          {workspace.data.detail.educationalOrganization}
+                        </span>
+                      </p>
+                    ) : null}
                     <p className="mt-1 text-sm text-muted-foreground">
                       Статус:{" "}
                       <span className="font-medium text-foreground">

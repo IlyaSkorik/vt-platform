@@ -137,6 +137,21 @@ def _payer_full_name(row: Any) -> str | None:
     return " ".join(named) or None
 
 
+def _educational_organization_name(row: Any) -> str | None:
+    """Учреждение, от которого пришла заявка, — снимок имени на момент выбора.
+
+    Организатор разбирает очередь по учреждениям: одна школа присылает десяток
+    номеров, и звонить, сверять оплату и собирать программу удобнее по ней, а не по
+    каждому участнику отдельно. Читается снимок с самой заявки, а не справочник
+    кабинета: учреждение там могли с тех пор переименовать или удалить, а в заявке
+    оно должно остаться таким, каким его выбирали.
+
+    Заявку можно подать и не от учреждения — тогда поля просто нет, и строка на
+    карточке не рисуется.
+    """
+    return str(row.get("organization_name") or "").strip() or None
+
+
 def _participant_label(entry: Any) -> str:
     """One performer as the organizer knows them — a soloist's name or the group's.
 
@@ -339,6 +354,8 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                 # Who the contract is made out to. Only festivals that collect it have
                 # anything here, so the card renders the block conditionally.
                 "payer_name": _payer_full_name(row),
+                # Учреждение, от которого пришла заявка; у частной подачи его нет.
+                "organization_name": _educational_organization_name(row),
                 # The snapshot's grand total lives under "total" (see ApplicationMapper);
                 # "amount" is the single-Money key, accepted so an older row still reads.
                 "total_amount": str(total_price.get("total") or total_price.get("amount") or "").strip() or None,
@@ -605,6 +622,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                     "totalPriceAmount": total_amount_value,
                     "totalPriceCurrency": total_currency_value,
                     "receiptFileReferences": _receipt_urls(application_meta_by_id.get(selected_application_id or "", {}).get("receipt_refs") or []),
+                    "educationalOrganization": application_meta_by_id.get(selected_application_id or "", {}).get("organization_name"),
                     "payerName": application_meta_by_id.get(selected_application_id or "", {}).get("payer_name"),
                     "timeline": timeline,
                     "audit": audit,
