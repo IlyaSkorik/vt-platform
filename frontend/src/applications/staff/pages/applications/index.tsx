@@ -80,8 +80,13 @@ type Detail = {
   totalPriceAmount?: string | null;
   totalPriceCurrency?: string | null;
   receiptFileReferences?: string[];
-  /** Учреждение, от которого пришла заявка; у частной подачи его нет. */
-  educationalOrganization?: string | null;
+  /**
+   * Учреждения выступающих, основное первым.
+   *
+   * Список, а не строка: совместный номер двух школ — обычная заявка, и назвать
+   * в ней одну школу значит не назвать другую.
+   */
+  educationalOrganizations?: string[];
   /** Кто указан стороной договора по заявке — только у фестивалей, которые это собирают. */
   payerName?: string | null;
   participants: Array<{ id: string; name: string; memberCount: number }>;
@@ -715,11 +720,13 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                     </p>
                     {/* Учреждение — сразу под названием: очередь разбирают школами,
                         и по нему же сверяют оплату и собирают программу. */}
-                    {workspace.data.detail.educationalOrganization ? (
+                    {(workspace.data.detail.educationalOrganizations ?? []).length > 0 ? (
                       <p className="mt-1 text-sm text-muted-foreground">
-                        Учреждение:{" "}
+                        {(workspace.data.detail.educationalOrganizations ?? []).length > 1
+                          ? "Учреждения: "
+                          : "Учреждение: "}
                         <span className="font-medium text-foreground">
-                          {workspace.data.detail.educationalOrganization}
+                          {(workspace.data.detail.educationalOrganizations ?? []).join(", ")}
                         </span>
                       </p>
                     ) : null}

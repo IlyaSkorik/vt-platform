@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import contextlib
 import csv
+import uuid
 from collections import Counter
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
@@ -15,7 +17,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.applications.application.dto import TeacherView
+from apps.applications.application.dto import ParticipantView, TeacherView
 from apps.applications.application.dto.commands import (
     AcceptSubmissionCommand,
     ApproveSubmissionCommand,
@@ -50,6 +52,7 @@ from apps.notifications.infrastructure.models import NotificationKind
 from apps.organization.domain.value_objects import OrganizationModule
 from apps.organization.presentation.permissions import IsModuleEnabled, IsOrganizationStaff
 from apps.organization.presentation.scope import callers_organization_id, is_platform_operator
+from apps.participants.infrastructure.models import ParticipantOrganizationMembershipModel
 from apps.teachers.infrastructure.models import TeacherModel
 from config.archive import ArchiveMember, zip_response
 
@@ -137,19 +140,52 @@ def _payer_full_name(row: Any) -> str | None:
     return " ".join(named) or None
 
 
-def _educational_organization_name(row: Any) -> str | None:
-    """Учреждение, от которого пришла заявка, — снимок имени на момент выбора.
+def _educational_organizations(participants: Sequence[ParticipantView]) -> list[str]:
+    """Учреждения выступающих — одним запросом в реестр участников.
 
     Организатор разбирает очередь по учреждениям: одна школа присылает десяток
     номеров, и звонить, сверять оплату и собирать программу удобнее по ней, а не по
-    каждому участнику отдельно. Читается снимок с самой заявки, а не справочник
-    кабинета: учреждение там могли с тех пор переименовать или удалить, а в заявке
-    оно должно остаться таким, каким его выбирали.
+    каждому участнику отдельно.
 
-    Заявку можно подать и не от учреждения — тогда поля просто нет, и строка на
-    карточке не рисуется.
+    Читается реестр, а не снимок на самой заявке. Снимок там есть
+    (``ApplicationModel.organization_name``), но его никто не пишет: ручка выбора
+    учреждения на заявке существует, а мастер подачи её не вызывает — то же самое
+    уже выяснил реестр участников организатора и по той же причине ходит сюда
+    (``infrastructure/read_models.py``, ``_attach_organizations``). Поле, которое
+    всегда пусто, на карточке выглядит как «учреждения нет», а не как «его никто не
+    спросил».
+
+    Основное учреждение идёт первым: участник может состоять в двух, и на карточке
+    первым должно стоять то, которое он сам назвал основным. Групповая заявка
+    собирает учреждения всех выступающих — их бывает несколько, и это не ошибка.
+
+    Участник, вписанный руками (без ссылки на реестр кабинета), сюда не попадает:
+    учреждение у него негде взять, и пустое место честнее выдуманного.
     """
-    return str(row.get("organization_name") or "").strip() or None
+    registry_ids: set[uuid.UUID] = set()
+    for participant in participants:
+        if not participant.registry_participant_id:
+            continue
+        with contextlib.suppress(ValueError, TypeError):
+            registry_ids.add(uuid.UUID(participant.registry_participant_id))
+    if not registry_ids:
+        return []
+    rows = (
+        ParticipantOrganizationMembershipModel.objects.filter(
+            participant_id__in=registry_ids,
+            deleted_at__isnull=True,
+            organization__deleted_at__isnull=True,
+        )
+        .order_by("-is_primary", "organization__name")
+        .values_list("organization__name", flat=True)
+    )
+    # dict, not set: два участника из одной школы не должны печатать её дважды, а
+    # порядок "основное первым" обязан пережить дедупликацию.
+    seen: dict[str, None] = {}
+    for name in rows:
+        if cleaned := str(name or "").strip():
+            seen.setdefault(cleaned, None)
+    return list(seen)
 
 
 def _participant_label(entry: Any) -> str:
@@ -354,8 +390,6 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                 # Who the contract is made out to. Only festivals that collect it have
                 # anything here, so the card renders the block conditionally.
                 "payer_name": _payer_full_name(row),
-                # Учреждение, от которого пришла заявка; у частной подачи его нет.
-                "organization_name": _educational_organization_name(row),
                 # The snapshot's grand total lives under "total" (see ApplicationMapper);
                 # "amount" is the single-Money key, accepted so an older row still reads.
                 "total_amount": str(total_price.get("total") or total_price.get("amount") or "").strip() or None,
@@ -622,7 +656,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                     "totalPriceAmount": total_amount_value,
                     "totalPriceCurrency": total_currency_value,
                     "receiptFileReferences": _receipt_urls(application_meta_by_id.get(selected_application_id or "", {}).get("receipt_refs") or []),
-                    "educationalOrganization": application_meta_by_id.get(selected_application_id or "", {}).get("organization_name"),
+                    "educationalOrganizations": _educational_organizations([p for dto in related_dtos for p in dto.participants]),
                     "payerName": application_meta_by_id.get(selected_application_id or "", {}).get("payer_name"),
                     "timeline": timeline,
                     "audit": audit,
