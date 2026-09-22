@@ -75,6 +75,9 @@ LOCAL_APPS = [
     # What the audience said afterwards: one page per organization, reached from a
     # code on a banner (see apps/reviews/apps.py). Nothing it collects is published.
     "apps.reviews",
+    # The platform's own books: what it spent, and on what. The income side is
+    # derived from the organizations' terms and typed in by nobody; this is the
+    # half that has to be entered by hand (see apps/finance/apps.py).
     "apps.finance",
     "apps.notifications",
     "apps.analytics",
@@ -159,6 +162,7 @@ MIGRATION_MODULES = {
     "notifications": "apps.notifications.infrastructure.migrations",
     "voting": "apps.voting.infrastructure.migrations",
     "reviews": "apps.reviews.infrastructure.migrations",
+    "finance": "apps.finance.infrastructure.migrations",
 }
 
 # --- Password validation --------------------------------------------------

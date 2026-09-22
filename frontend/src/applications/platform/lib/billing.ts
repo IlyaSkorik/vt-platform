@@ -114,6 +114,29 @@ export function parseFeeAmount(value: string): string | null {
   return Number.parseFloat(normalized).toFixed(2);
 }
 
+/**
+ * A money figure as a person reads it: grouped thousands, two decimals, the
+ * currency the platform trades in.
+ *
+ * Takes the decimal string the API sends and gives back text. The number it makes
+ * on the way is for *display* only and never travels back — every amount the
+ * console sends is the string the operator typed or the one the server gave it.
+ *
+ * Negative figures pass through as negative: an expense book that could not show
+ * a loss would be answering the wrong question.
+ */
+export function formatMoney(amount: string): string {
+  const value = Number(amount);
+  if (!Number.isFinite(value)) {
+    return amount;
+  }
+  const formatted = value.toLocaleString("ru-RU", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return `${formatted} ${FEE_CURRENCY}`;
+}
+
 /** `1` → `1 участник`, `2–5` → `2–5 участника`, `6+` → `от 6 участников`. */
 export function formatTierRange(minParticipants: number, maxParticipants: number | null): string {
   if (maxParticipants === null) {

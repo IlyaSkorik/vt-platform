@@ -518,6 +518,13 @@ export const routes: RouteObject[] = [
                 ),
               },
               {
+                path: ROUTES.platformFinance.slice(1),
+                lazy: lazyPage(
+                  () => import("@/applications/platform/pages/finance"),
+                  "PlatformFinancePage",
+                ),
+              },
+              {
                 path: ROUTES.platformTesting.slice(1),
                 lazy: lazyPage(
                   () => import("@/applications/platform/pages/testing"),

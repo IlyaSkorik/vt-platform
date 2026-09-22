@@ -79,6 +79,9 @@ urlpatterns = [
     path("api/v1/", include("apps.reviews.presentation.urls")),
     # The same notes across every organization, for the platform operator alone.
     path("api/v1/", include("apps.reviews.presentation.platform_urls")),
+    # The platform's own expense book — the other half of the operator's books,
+    # and the only one anybody types in. Platform-only, like the console above it.
+    path("api/v1/", include("apps.finance.presentation.platform_urls")),
     # Public, unauthenticated participant catalog (dedicated read model).
     path("api/v1/", include("apps.competitions.presentation.public_urls")),
     # Public, unauthenticated diploma verification (the printed QR's target).

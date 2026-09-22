@@ -17,6 +17,18 @@ that performance has. The second one is why this projection also reads submissio
 a per-performance fee cannot be read off an order total, only off the headcount of
 each performance in it.
 
+The other side of the books is read here too. Commission is income; what the
+platform *spent* is recorded by hand in the Finance context, and the difference is
+the only figure that answers "are we ahead or behind?". It is reported twice,
+because the two questions behind it are different ones: against the commission
+that has actually been paid, and against the commission expected once every
+outstanding order settles.
+
+Expenses are recorded against an organization or against nobody, never against a
+festival. A dashboard narrowed to one competition therefore has no honest expense
+figure to show, and says so through ``expenses_apply`` rather than subtracting an
+organization-wide cost from one festival's commission.
+
 Money is summed as :class:`~decimal.Decimal` and never as a float: these are
 figures the operator invoices against.
 """
@@ -29,6 +41,7 @@ from decimal import Decimal, InvalidOperation
 
 from apps.applications.infrastructure.models import ApplicationModel, SubmissionModel
 from apps.competitions.infrastructure.models import CompetitionModel
+from apps.finance.infrastructure.models import PlatformExpenseModel
 from apps.organization.domain.value_objects import BillingModel, CommissionRate, PerformanceFeeSchedule, PerformanceFeeTier
 from apps.organization.infrastructure.mappers.organization_mapper import fee_schedule_from_json
 from apps.organization.infrastructure.models import OrganizationModel
@@ -107,6 +120,32 @@ def _performance_fee(refs: object, schedule: PerformanceFeeSchedule, counts: dic
     return fee
 
 
+def _expense_totals(organization_filter: str | None) -> tuple[dict[uuid.UUID, Decimal], Decimal]:
+    """What the platform spent, summed per organization plus its own overheads.
+
+    Costs carried for a client come back keyed by that client; costs the platform
+    carried itself come back as the second value, because they belong to the
+    platform total and to nobody's line. Narrowing to one organization drops them:
+    a server bill is not part of whether that client is profitable.
+
+    Summed in the database rather than row by row — this is a projection, and the
+    ledger is the one table here that grows with the operator's bookkeeping rather
+    than with the festivals.
+    """
+    rows = PlatformExpenseModel.objects.filter(deleted_at__isnull=True)
+    if organization_filter:
+        rows = rows.filter(organization_id=organization_filter)
+    per_organization: dict[uuid.UUID, Decimal] = {}
+    unattributed = Decimal("0.00")
+    for organization_id, amount in rows.values_list("organization_id", "amount"):
+        value = Decimal(str(amount))
+        if organization_id is None:
+            unattributed += value
+            continue
+        per_organization[organization_id] = per_organization.get(organization_id, Decimal("0.00")) + value
+    return per_organization, unattributed
+
+
 @dataclass(slots=True)
 class _Totals:
     """The running figures for one bucket (an organization, or the whole platform)."""
@@ -148,6 +187,15 @@ class OrganizationBreakdown:
     settled_fees: Decimal
     expected_commission: Decimal
     settled_commission: Decimal
+    #: Costs recorded against this organization. Zero is the ordinary state — most
+    #: organizations cost the platform nothing beyond the overheads nobody attributes.
+    expenses: Decimal
+    #: Commission actually paid, less those costs. Negative means this organization
+    #: has cost the platform more than it has yet brought in.
+    profit: Decimal
+    #: The same subtraction against commission still expected — what the line comes
+    #: to once every outstanding order settles.
+    potential_profit: Decimal
 
 
 @dataclass(frozen=True, slots=True)
@@ -170,6 +218,18 @@ class DashboardView:
     settled_fees: Decimal
     expected_commission: Decimal
     settled_commission: Decimal
+    #: Every recorded cost in scope, attributed and not.
+    expenses: Decimal
+    #: The part of it carried for no particular client — hosting, an accountant, an
+    #: advertisement for the platform. Named separately because it is the figure
+    #: that explains why the organizations' lines do not add up to the total.
+    unattributed_expenses: Decimal
+    profit: Decimal
+    potential_profit: Decimal
+    #: False when a competition filter is on. Expenses are recorded per organization
+    #: and never per festival, so the figures above are zeroed rather than guessed at,
+    #: and the console hides the profit block instead of showing a number it invented.
+    expenses_apply: bool
     organizations: list[OrganizationBreakdown]
     competitions: list[CompetitionOption]
 
@@ -247,6 +307,13 @@ def build_dashboard(*, organization_id: str | None = None, competition_id: str |
         bucket.add(str(row["status"]), amount, fee)
         platform.add(str(row["status"]), amount, fee)
 
+    # The expense side. Skipped entirely when a competition filter is on: costs are
+    # recorded against an organization or against nobody, so there is no honest way
+    # to narrow them to one festival, and a profit figure computed from the wrong
+    # denominator is worse than no profit figure.
+    expenses_apply = not competition_id
+    expenses_of, unattributed_expenses = _expense_totals(organization_id) if expenses_apply else ({}, Decimal("0.00"))
+
     breakdowns: list[OrganizationBreakdown] = []
     expected_commission_total = Decimal("0")
     settled_commission_total = Decimal("0")
@@ -266,6 +333,7 @@ def build_dashboard(*, organization_id: str | None = None, competition_id: str |
             settled_commission = rate.apply_to(totals.settled_fees)
         expected_commission_total += expected_commission
         settled_commission_total += settled_commission
+        expenses = expenses_of.get(org.id, Decimal("0.00"))
         breakdowns.append(
             OrganizationBreakdown(
                 organization_id=str(org.id),
@@ -283,6 +351,9 @@ def build_dashboard(*, organization_id: str | None = None, competition_id: str |
                 settled_fees=totals.settled_fees,
                 expected_commission=expected_commission,
                 settled_commission=settled_commission,
+                expenses=expenses,
+                profit=settled_commission - expenses,
+                potential_profit=expected_commission - expenses,
             )
         )
 
@@ -320,6 +391,11 @@ def build_dashboard(*, organization_id: str | None = None, competition_id: str |
                     settled_fees=orphan.settled_fees,
                     expected_commission=Decimal("0.00"),
                     settled_commission=Decimal("0.00"),
+                    # Nothing can be spent against an organizer the platform does not
+                    # have on its books: the console only ever offers connected ones.
+                    expenses=Decimal("0.00"),
+                    profit=Decimal("0.00"),
+                    potential_profit=Decimal("0.00"),
                 )
             )
 
@@ -335,6 +411,11 @@ def build_dashboard(*, organization_id: str | None = None, competition_id: str |
     ]
     competitions.sort(key=lambda option: option.title.lower())
 
+    # The platform total is every cost in scope, attributed or not — which is why it
+    # is summed here rather than added up from the organizations' lines, where the
+    # overheads belonging to nobody would have nowhere to appear.
+    expenses_total = sum(expenses_of.values(), Decimal("0.00")) + unattributed_expenses
+
     return DashboardView(
         status_counts=platform.status_counts,
         applications=platform.applications,
@@ -342,6 +423,11 @@ def build_dashboard(*, organization_id: str | None = None, competition_id: str |
         settled_fees=platform.settled_fees,
         expected_commission=expected_commission_total,
         settled_commission=settled_commission_total,
+        expenses=expenses_total,
+        unattributed_expenses=unattributed_expenses,
+        profit=settled_commission_total - expenses_total,
+        potential_profit=expected_commission_total - expenses_total,
+        expenses_apply=expenses_apply,
         organizations=breakdowns,
         competitions=competitions,
     )

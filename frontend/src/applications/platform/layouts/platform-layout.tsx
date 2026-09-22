@@ -1,4 +1,11 @@
-import { Building2, FlaskConical, LayoutDashboard, MessageSquareQuote, Trash2 } from "lucide-react";
+import {
+  Building2,
+  FlaskConical,
+  LayoutDashboard,
+  MessageSquareQuote,
+  Trash2,
+  Wallet,
+} from "lucide-react";
 import { Link, NavLink, Outlet } from "react-router";
 
 import { SiteFooter } from "@/app/layouts/site-footer";
@@ -14,6 +21,7 @@ const SKIP_TARGET_ID = "platform-main";
 const NAVIGATION = [
   { title: "Сводка", path: ROUTES.platform, icon: LayoutDashboard, end: true },
   { title: "Организации", path: ROUTES.platformOrganizations, icon: Building2, end: false },
+  { title: "Расходы", path: ROUTES.platformFinance, icon: Wallet, end: false },
   { title: "Тестирование", path: ROUTES.platformTesting, icon: FlaskConical, end: false },
   { title: "Отзывы", path: ROUTES.platformReviews, icon: MessageSquareQuote, end: false },
   // Last, and on its own: the only screen here that destroys anything.

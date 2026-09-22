@@ -56,6 +56,12 @@ export type OrganizationBreakdown = {
   settledFees: string;
   expectedCommission: string;
   settledCommission: string;
+  /** Costs recorded against this organization. Usually "0.00". */
+  expenses: string;
+  /** Commission actually paid, less those costs. Negative is an ordinary answer. */
+  profit: string;
+  /** The same subtraction against commission still expected. */
+  potentialProfit: string;
 };
 
 export type CompetitionOption = {
@@ -72,8 +78,116 @@ export type PlatformDashboard = {
   settledFees: string;
   expectedCommission: string;
   settledCommission: string;
+  /** Every recorded cost in scope, attributed to a client or not. */
+  expenses: string;
+  /** The part of it carried for no particular client — hosting, an accountant. */
+  unattributedExpenses: string;
+  /** Commission in hand, less the costs. The screen's whole point. */
+  profit: string;
+  /** The same, against the commission still expected. */
+  potentialProfit: string;
+  /**
+   * False under a competition filter. Expenses are recorded per organization and
+   * never per festival, so the figures above are zeroed rather than guessed at and
+   * the console hides the profit block instead of showing a number it invented.
+   */
+  expensesApply: boolean;
   organizations: OrganizationBreakdown[];
   competitions: CompetitionOption[];
+};
+
+/**
+ * What kind of cost a row in the expense book is.
+ *
+ * Mirrors `ExpenseCategory` on the server. Spelled out rather than fetched, like
+ * the module list above: the console has to label each one in Russian anyway, and
+ * an article the interface cannot name is one it cannot usefully offer.
+ */
+export type ExpenseCategory =
+  | "INFRASTRUCTURE"
+  | "MARKETING"
+  | "PAYROLL"
+  | "CONTRACTORS"
+  | "EQUIPMENT"
+  | "EVENT"
+  | "BANK"
+  | "TAX"
+  | "OTHER";
+
+/** Every article, in the order the form offers them. */
+export const EXPENSE_CATEGORIES: ExpenseCategory[] = [
+  "INFRASTRUCTURE",
+  "MARKETING",
+  "PAYROLL",
+  "CONTRACTORS",
+  "EQUIPMENT",
+  "EVENT",
+  "BANK",
+  "TAX",
+  "OTHER",
+];
+
+/** What each article is called on the form and in the breakdown. */
+export const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
+  INFRASTRUCTURE: "Хостинг и инфраструктура",
+  MARKETING: "Реклама и продвижение",
+  PAYROLL: "Оплата труда",
+  CONTRACTORS: "Услуги подрядчиков",
+  EQUIPMENT: "Оборудование",
+  EVENT: "Проведение мероприятий",
+  BANK: "Банковские комиссии",
+  TAX: "Налоги и сборы",
+  OTHER: "Прочее",
+};
+
+/** One recorded cost, as the ledger reads it back. */
+export type PlatformExpense = {
+  id: string;
+  amount: string;
+  category: ExpenseCategory;
+  /** What the money went on — the line the total is read back through. */
+  purpose: string;
+  /** The day the money went, not the day it was typed in (`YYYY-MM-DD`). */
+  spentAt: string;
+  note: string;
+  /** `null` is a cost the platform carried itself, not a missing attribution. */
+  organizationId: string | null;
+  organizationName: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ExpenseCategoryTotal = {
+  category: ExpenseCategory;
+  amount: string;
+  count: number;
+};
+
+/** The expenses matching the operator's filters, with the totals of *those* rows. */
+export type ExpenseLedger = {
+  expenses: PlatformExpense[];
+  total: string;
+  byCategory: ExpenseCategoryTotal[];
+  /** The list was cut short — a truncated total is a wrong total, so it says so. */
+  truncated: boolean;
+};
+
+/** The filters on the ledger screen. Every one of them optional. */
+export type ExpenseFilters = {
+  organizationId?: string;
+  category?: string;
+  from?: string;
+  to?: string;
+};
+
+export type RecordExpenseInput = {
+  amount: string;
+  category: ExpenseCategory;
+  purpose: string;
+  spentAt: string;
+  /** Omitted means the platform carried this cost itself. */
+  organizationId?: string;
+  note?: string;
 };
 
 /**
@@ -283,6 +397,15 @@ export const platformKeys = {
   organizationModules: (organizationId: string) =>
     ["platform", "organizations", organizationId, "modules"] as const,
   loadTest: ["platform", "loadtest", "diplomas"] as const,
+  expenses: (filters: ExpenseFilters) =>
+    [
+      "platform",
+      "expenses",
+      filters.organizationId ?? "",
+      filters.category ?? "",
+      filters.from ?? "",
+      filters.to ?? "",
+    ] as const,
   purgeSearch: (kind: PurgeKind, query: string) =>
     ["platform", "purge", "search", kind, query] as const,
   purgePlan: (kind: PurgeKind, id: string) => ["platform", "purge", "plan", kind, id] as const,
@@ -358,6 +481,90 @@ export function usePlatformDashboard(organizationId: string, competitionId: stri
         await apiClient.get(`platform/dashboard${query ? `?${query}` : ""}`),
       );
     },
+  });
+}
+
+/**
+ * The platform's expense book, narrowed by whichever filters are set.
+ *
+ * The totals come back with the rows and are of *those* rows: they move with the
+ * filters, which is what makes "how much did marketing cost this spring" a question
+ * the screen answers without a second request.
+ */
+export function usePlatformExpenses(filters: ExpenseFilters) {
+  return useQuery({
+    queryKey: platformKeys.expenses(filters),
+    queryFn: async (): Promise<ExpenseLedger> => {
+      const search = new URLSearchParams();
+      if (filters.organizationId) search.set("organizationId", filters.organizationId);
+      if (filters.category) search.set("category", filters.category);
+      if (filters.from) search.set("from", filters.from);
+      if (filters.to) search.set("to", filters.to);
+      const query = search.toString();
+      return unwrap<ExpenseLedger>(
+        await apiClient.get(`platform/expenses${query ? `?${query}` : ""}`),
+      );
+    },
+  });
+}
+
+/**
+ * Every write to the ledger invalidates the dashboard too.
+ *
+ * The profit on that screen is this table subtracted from the commission, so a cost
+ * entered here and a summary that still shows yesterday's difference would be the
+ * console disagreeing with itself.
+ */
+function useLedgerInvalidation() {
+  const queryClient = useQueryClient();
+  return () => {
+    void queryClient.invalidateQueries({ queryKey: ["platform", "expenses"] });
+    void queryClient.invalidateQueries({ queryKey: ["platform", "dashboard"] });
+  };
+}
+
+/** Enter one cost into the platform's books. */
+export function useRecordExpense() {
+  const invalidate = useLedgerInvalidation();
+  return useMutation({
+    mutationFn: async (input: RecordExpenseInput): Promise<PlatformExpense> =>
+      unwrap<PlatformExpense>(await apiClient.post("platform/expenses", { json: input })),
+    onSuccess: invalidate,
+  });
+}
+
+/**
+ * Correct a recorded cost.
+ *
+ * `organizationId: null` sent explicitly moves it off the client and onto the
+ * platform; leaving the key out entirely leaves the attribution as it was. The
+ * server tells the two apart the same way.
+ */
+export function useAmendExpense() {
+  const invalidate = useLedgerInvalidation();
+  return useMutation({
+    mutationFn: async (
+      input: { id: string } & Partial<Omit<RecordExpenseInput, "organizationId">> & {
+          organizationId?: string | null;
+        },
+    ): Promise<PlatformExpense> => {
+      const { id, ...payload } = input;
+      return unwrap<PlatformExpense>(
+        await apiClient.patch(`platform/expenses/${id}`, { json: payload }),
+      );
+    },
+    onSuccess: invalidate,
+  });
+}
+
+/** Strike a cost from the books. The row stays; the totals stop counting it. */
+export function useRemoveExpense() {
+  const invalidate = useLedgerInvalidation();
+  return useMutation({
+    mutationFn: async (id: string): Promise<void> => {
+      await apiClient.delete(`platform/expenses/${id}`);
+    },
+    onSuccess: invalidate,
   });
 }
 

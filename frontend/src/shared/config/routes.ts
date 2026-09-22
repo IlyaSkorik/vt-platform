@@ -87,6 +87,8 @@ export const ROUTES = {
   platformOrganizations: "/platform/organizations",
   /** The operator's test bench — load-testing generation against the live stack. */
   platformTesting: "/platform/testing",
+  /** The platform's own books: what it spent, and the difference against income. */
+  platformFinance: "/platform/finance",
   /** Every review left on the platform — where a complaint about one is settled. */
   platformReviews: "/platform/reviews",
   /** The eraser: removing a festival, an order or an account for good. */

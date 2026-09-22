@@ -6,7 +6,7 @@ import {
   usePlatformAudience,
   usePlatformDashboard,
 } from "@/applications/platform/api/platform-api";
-import { formatFeeTier } from "@/applications/platform/lib/billing";
+import { formatFeeTier, formatMoney } from "@/applications/platform/lib/billing";
 import {
   Badge,
   Card,
@@ -29,15 +29,6 @@ const STATUS_LABELS: Array<[string, string]> = [
   ["CANCELLED", "Отменены"],
 ];
 
-/** Money as a person reads it: grouped thousands, two decimals, no currency lie. */
-function money(amount: string): string {
-  const value = Number(amount);
-  if (!Number.isFinite(value)) {
-    return amount;
-  }
-  return `${value.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} BYN`;
-}
-
 /** A head count as a person reads it: grouped thousands, no decimals. */
 function count(value: number): string {
   return value.toLocaleString("ru-RU");
@@ -47,20 +38,38 @@ function StatTile({
   label,
   value,
   hint,
+  tone,
 }: {
   label: string;
   value: string;
   hint?: string;
+  /** Colours the figure. Used only where a minus sign is the news, not decoration. */
+  tone?: "positive" | "negative";
 }): React.JSX.Element {
   return (
     <Card>
       <CardContent className="flex flex-col gap-1 py-4">
         <span className="text-muted-foreground text-xs uppercase tracking-wide">{label}</span>
-        <span className="font-semibold text-2xl">{value}</span>
+        <span
+          className={
+            tone === "negative"
+              ? "font-semibold text-2xl text-destructive"
+              : tone === "positive"
+                ? "font-semibold text-2xl text-success"
+                : "font-semibold text-2xl"
+          }
+        >
+          {value}
+        </span>
         {hint ? <span className="text-muted-foreground text-xs">{hint}</span> : null}
       </CardContent>
     </Card>
   );
+}
+
+/** Below zero is the one figure on this screen that has to be unmissable. */
+function profitTone(amount: string): "positive" | "negative" {
+  return Number(amount) < 0 ? "negative" : "positive";
 }
 
 /**
@@ -116,7 +125,14 @@ function AudienceSection({
   );
 }
 
-function OrganizationRow({ row }: { row: OrganizationBreakdown }): React.JSX.Element {
+function OrganizationRow({
+  row,
+  withProfit,
+}: {
+  row: OrganizationBreakdown;
+  /** False under a competition filter, where the expense columns mean nothing. */
+  withProfit: boolean;
+}): React.JSX.Element {
   return (
     <tr className="border-border border-b last:border-0">
       <td className="py-3 pr-4">
@@ -144,10 +160,24 @@ function OrganizationRow({ row }: { row: OrganizationBreakdown }): React.JSX.Ele
           <span className="tabular-nums">{row.commissionPercent}%</span>
         )}
       </td>
-      <td className="py-3 pr-4 tabular-nums">{money(row.expectedFees)}</td>
-      <td className="py-3 pr-4 tabular-nums">{money(row.settledFees)}</td>
-      <td className="py-3 pr-4 font-medium tabular-nums">{money(row.expectedCommission)}</td>
-      <td className="py-3 tabular-nums">{money(row.settledCommission)}</td>
+      <td className="py-3 pr-4 tabular-nums">{formatMoney(row.expectedFees)}</td>
+      <td className="py-3 pr-4 tabular-nums">{formatMoney(row.settledFees)}</td>
+      <td className="py-3 pr-4 font-medium tabular-nums">{formatMoney(row.expectedCommission)}</td>
+      <td className="py-3 pr-4 tabular-nums">{formatMoney(row.settledCommission)}</td>
+      {withProfit ? (
+        <>
+          <td className="py-3 pr-4 tabular-nums">{formatMoney(row.expenses)}</td>
+          <td
+            className={
+              Number(row.profit) < 0
+                ? "py-3 font-medium text-destructive tabular-nums"
+                : "py-3 font-medium tabular-nums"
+            }
+          >
+            {formatMoney(row.profit)}
+          </td>
+        </>
+      ) : null}
     </tr>
   );
 }
@@ -210,7 +240,7 @@ export function PlatformDashboardPage(): React.JSX.Element {
         <h1 className="font-semibold text-2xl">Сводка платформы</h1>
         <p className="text-muted-foreground text-sm">
           Кто зарегистрирован на платформе, заявки по статусам во всех подключённых организациях,
-          взносы за ними и доля платформы.
+          взносы за ними, доля платформы — и, против неё, записанные расходы и разница между ними.
         </p>
       </header>
 
@@ -243,25 +273,55 @@ export function PlatformDashboardPage(): React.JSX.Element {
       <section aria-label="Деньги" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatTile
           label="Взносы ожидаются"
-          value={money(data.expectedFees)}
+          value={formatMoney(data.expectedFees)}
           hint="Все заявки, кроме черновиков и отменённых"
         />
         <StatTile
           label="Взносы получены"
-          value={money(data.settledFees)}
+          value={formatMoney(data.settledFees)}
           hint="Оплаченные заявки"
         />
         <StatTile
           label="Комиссия ожидается"
-          value={money(data.expectedCommission)}
+          value={formatMoney(data.expectedCommission)}
           hint="Доля платформы от ожидаемых взносов"
         />
         <StatTile
           label="Комиссия получена"
-          value={money(data.settledCommission)}
+          value={formatMoney(data.settledCommission)}
           hint="Доля платформы от полученных взносов"
         />
       </section>
+
+      {/* The bottom line. Hidden under a competition filter rather than shown as a
+          zero: expenses are recorded per organization and never per festival, so
+          there is nothing honest to subtract from one festival's commission. */}
+      {data.expensesApply ? (
+        <section aria-label="Прибыль" className="grid gap-3 sm:grid-cols-3">
+          <StatTile
+            label="Расходы"
+            value={formatMoney(data.expenses)}
+            hint={`${formatMoney(data.unattributedExpenses)} — общие, без организации`}
+          />
+          <StatTile
+            label="Разница"
+            value={formatMoney(data.profit)}
+            hint="Полученная комиссия минус расходы"
+            tone={profitTone(data.profit)}
+          />
+          <StatTile
+            label="Разница потенциальная"
+            value={formatMoney(data.potentialProfit)}
+            hint="Если все ожидаемые заявки будут оплачены"
+            tone={profitTone(data.potentialProfit)}
+          />
+        </section>
+      ) : (
+        <p className="text-muted-foreground text-sm">
+          Расходы записываются по организациям, а не по фестивалям, поэтому при выбранном фестивале
+          прибыль не считается. Снимите фильтр по фестивалю, чтобы увидеть разницу.
+        </p>
+      )}
 
       <Card>
         <CardHeader>
@@ -269,7 +329,8 @@ export function PlatformDashboardPage(): React.JSX.Element {
           <CardDescription>
             Комиссия считается по условиям организации — процентом от взносов или ценой за каждый
             номер: {STATUS_LABELS.length} статусов сворачиваются в две суммы, ожидаемую и
-            полученную.
+            полученную. Разница — это полученная комиссия минус расходы, записанные на эту
+            организацию; общие расходы платформы в строки не входят и учтены только в итоге выше.
           </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
@@ -282,12 +343,22 @@ export function PlatformDashboardPage(): React.JSX.Element {
                 <th className="py-2 pr-4 font-medium">Взносы ожид.</th>
                 <th className="py-2 pr-4 font-medium">Взносы получ.</th>
                 <th className="py-2 pr-4 font-medium">Комиссия ожид.</th>
-                <th className="py-2 font-medium">Комиссия получ.</th>
+                <th className="py-2 pr-4 font-medium">Комиссия получ.</th>
+                {data.expensesApply ? (
+                  <>
+                    <th className="py-2 pr-4 font-medium">Расходы</th>
+                    <th className="py-2 font-medium">Разница</th>
+                  </>
+                ) : null}
               </tr>
             </thead>
             <tbody>
               {data.organizations.map((row) => (
-                <OrganizationRow key={row.organizationId ?? "unassigned"} row={row} />
+                <OrganizationRow
+                  key={row.organizationId ?? "unassigned"}
+                  row={row}
+                  withProfit={data.expensesApply}
+                />
               ))}
             </tbody>
           </table>

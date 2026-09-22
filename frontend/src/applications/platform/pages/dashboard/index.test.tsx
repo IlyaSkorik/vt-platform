@@ -18,6 +18,11 @@ const DASHBOARD: PlatformDashboard = {
   settledFees: "300.00",
   expectedCommission: "50.00",
   settledCommission: "30.00",
+  expenses: "40.00",
+  unattributedExpenses: "40.00",
+  profit: "-10.00",
+  potentialProfit: "10.00",
+  expensesApply: true,
   organizations: [],
   competitions: [],
 };

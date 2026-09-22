@@ -416,8 +416,10 @@ class PlatformDashboardView(_PlatformView):
         summary="Platform dashboard",
         description=(
             "Application counts per status across all connected organizations, with the participation "
-            "fees behind them and the platform's commission on those fees. Filterable by organization "
-            "and by competition."
+            "fees behind them and the platform's commission on those fees — and, against that income, "
+            "the costs recorded in the platform's own expense book and the difference between the two. "
+            "Filterable by organization and by competition; under a competition filter `expensesApply` "
+            "is false, because expenses are recorded per organization and never per festival."
         ),
         parameters=[
             OpenApiParameter(name="organizationId", type=str, required=False, description="Narrow to one organization."),
@@ -441,6 +443,11 @@ class PlatformDashboardView(_PlatformView):
             "settledFees": str(dashboard.settled_fees),
             "expectedCommission": str(dashboard.expected_commission),
             "settledCommission": str(dashboard.settled_commission),
+            "expenses": str(dashboard.expenses),
+            "unattributedExpenses": str(dashboard.unattributed_expenses),
+            "profit": str(dashboard.profit),
+            "potentialProfit": str(dashboard.potential_profit),
+            "expensesApply": dashboard.expenses_apply,
             "organizations": [
                 {
                     "organizationId": row.organization_id,
@@ -456,6 +463,9 @@ class PlatformDashboardView(_PlatformView):
                     "settledFees": str(row.settled_fees),
                     "expectedCommission": str(row.expected_commission),
                     "settledCommission": str(row.settled_commission),
+                    "expenses": str(row.expenses),
+                    "profit": str(row.profit),
+                    "potentialProfit": str(row.potential_profit),
                 }
                 for row in dashboard.organizations
             ],

@@ -161,6 +161,9 @@ class _OrganizationBreakdownSerializer(serializers.Serializer[dict[str, object]]
     settledFees = serializers.CharField()
     expectedCommission = serializers.CharField()
     settledCommission = serializers.CharField()
+    expenses = serializers.CharField()
+    profit = serializers.CharField()
+    potentialProfit = serializers.CharField()
 
 
 class _CompetitionOptionSerializer(serializers.Serializer[dict[str, object]]):
@@ -194,6 +197,15 @@ DashboardResponseSerializer = inline_serializer(
                 "settledFees": serializers.CharField(),
                 "expectedCommission": serializers.CharField(),
                 "settledCommission": serializers.CharField(),
+                # The expense side of the same books, and the two differences the
+                # operator reads it for. Negative figures are ordinary here.
+                "expenses": serializers.CharField(),
+                "unattributedExpenses": serializers.CharField(),
+                "profit": serializers.CharField(),
+                "potentialProfit": serializers.CharField(),
+                # False under a competition filter, where expenses — recorded per
+                # organization, never per festival — cannot honestly be narrowed.
+                "expensesApply": serializers.BooleanField(),
                 "organizations": _OrganizationBreakdownSerializer(many=True),
                 "competitions": _CompetitionOptionSerializer(many=True),
             },

@@ -1,5 +1,11 @@
 """Domain <-> persistence mappers for the Finance bounded context.
 
-Translate between framework-free domain objects and Django ORM models, keeping
-the domain ignorant of persistence (ARCH-001 §4.1, §7.2). Structure only at bootstrap.
+The anti-corruption layer between the framework-free aggregates and their Django
+rows (ARCH-001 §7.2, §14): the only place both are known at once.
 """
+
+from __future__ import annotations
+
+from .expense_mapper import ExpenseMapper
+
+__all__ = ["ExpenseMapper"]

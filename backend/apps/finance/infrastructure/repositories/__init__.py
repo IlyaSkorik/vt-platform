@@ -1,6 +1,13 @@
-"""Repository implementations for the Finance bounded context.
+"""ORM adapters implementing the Finance application ports."""
 
-ORM-backed adapters implementing the ports in application/interfaces.py and
-domain/interfaces.py (ARCH-001 §7.2) — the only gateway between aggregates and
-persistence. A package so repositories can be split per aggregate. Structure only.
-"""
+from __future__ import annotations
+
+from .django_expense_repository import DjangoPlatformExpenseRepository
+from .exceptions import ConcurrencyConflictError, IntegrityViolationError, PersistenceError
+
+__all__ = [
+    "ConcurrencyConflictError",
+    "DjangoPlatformExpenseRepository",
+    "IntegrityViolationError",
+    "PersistenceError",
+]
