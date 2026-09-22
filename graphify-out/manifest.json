@@ -1220,14 +1220,14 @@
     "semantic_hash": "1e970f0a708690c2efd312b2a7cf379c"
   },
   "backend/apps/finance/application/dto/commands.py": {
-    "mtime": 1785860600.7319891,
-    "ast_hash": "94544c0a29da6a9d08a1d41c146fece5",
-    "semantic_hash": "94544c0a29da6a9d08a1d41c146fece5"
+    "mtime": 1790077593.9449725,
+    "ast_hash": "7310f8c062086561e1bd8ea522bf50dc",
+    "semantic_hash": ""
   },
   "backend/apps/finance/application/dto/queries.py": {
-    "mtime": 1785860600.7319891,
-    "ast_hash": "a60be5fe15549cb716d6495334e99b7d",
-    "semantic_hash": "a60be5fe15549cb716d6495334e99b7d"
+    "mtime": 1790077633.467985,
+    "ast_hash": "997518caec08556b7404adf218c222e8",
+    "semantic_hash": ""
   },
   "backend/apps/finance/application/handlers/__init__.py": {
     "mtime": 1785860600.7319891,
@@ -1235,9 +1235,9 @@
     "semantic_hash": "7ba1fd2cfd9809dd52c058ca7b7b3141"
   },
   "backend/apps/finance/application/interfaces.py": {
-    "mtime": 1785860600.7319891,
-    "ast_hash": "e4f9309e6c1def08f41449d288d3afef",
-    "semantic_hash": "e4f9309e6c1def08f41449d288d3afef"
+    "mtime": 1790077593.9403086,
+    "ast_hash": "5afa04de2e52c127497097d8c8b33bb5",
+    "semantic_hash": ""
   },
   "backend/apps/finance/application/queries/__init__.py": {
     "mtime": 1785860600.7319891,
@@ -1245,9 +1245,9 @@
     "semantic_hash": "0a749d6064dd84a9b2358f465b04a1c6"
   },
   "backend/apps/finance/apps.py": {
-    "mtime": 1785860600.7319891,
-    "ast_hash": "ff9c164b1240c8b3ae65ce91bf9b1407",
-    "semantic_hash": "ff9c164b1240c8b3ae65ce91bf9b1407"
+    "mtime": 1790077758.9122922,
+    "ast_hash": "ca81eadbb79215e2af7b45c0997b68c9",
+    "semantic_hash": ""
   },
   "backend/apps/finance/domain/__init__.py": {
     "mtime": 1785860600.7319891,
@@ -1255,9 +1255,9 @@
     "semantic_hash": "0503c1891578a1711f37570fb1ad9dbd"
   },
   "backend/apps/finance/domain/entities.py": {
-    "mtime": 1785860600.7337563,
-    "ast_hash": "93592e96683d7170d8a34c071726407c",
-    "semantic_hash": "93592e96683d7170d8a34c071726407c"
+    "mtime": 1790077559.3128085,
+    "ast_hash": "a363afe7114632287eaa1c4f12611759",
+    "semantic_hash": ""
   },
   "backend/apps/finance/domain/events.py": {
     "mtime": 1785860600.7337563,
@@ -1265,9 +1265,9 @@
     "semantic_hash": "541f2c98327ee162775cc1c092a03e97"
   },
   "backend/apps/finance/domain/exceptions.py": {
-    "mtime": 1785860600.7337563,
-    "ast_hash": "e856aa61b30ed13ae654f51e181720c8",
-    "semantic_hash": "e856aa61b30ed13ae654f51e181720c8"
+    "mtime": 1790077559.30832,
+    "ast_hash": "292ba06b7afe502aab8a2237f8ac9007",
+    "semantic_hash": ""
   },
   "backend/apps/finance/domain/interfaces.py": {
     "mtime": 1785860600.7337563,
@@ -1285,9 +1285,9 @@
     "semantic_hash": "cc6aa1ee4acdb02bc7853b066e0ed566"
   },
   "backend/apps/finance/domain/value_objects.py": {
-    "mtime": 1785860600.7337563,
-    "ast_hash": "ef6b6b61c3c9f5f8901f88a2e2fb7cfb",
-    "semantic_hash": "ef6b6b61c3c9f5f8901f88a2e2fb7cfb"
+    "mtime": 1790077647.4748683,
+    "ast_hash": "4dcccffe0707a9d81fcd4a351a29145f",
+    "semantic_hash": ""
   },
   "backend/apps/finance/infrastructure/__init__.py": {
     "mtime": 1785860600.7337563,
@@ -1295,29 +1295,29 @@
     "semantic_hash": "96f51a8c507a657850134c86c76006ef"
   },
   "backend/apps/finance/infrastructure/admin.py": {
-    "mtime": 1785860600.7345479,
-    "ast_hash": "5dc73e5b1607e294b4d03f6f24c06f0f",
-    "semantic_hash": "5dc73e5b1607e294b4d03f6f24c06f0f"
+    "mtime": 1790077744.1042585,
+    "ast_hash": "5f7dfd295260882d4e6385fb8ddcce41",
+    "semantic_hash": ""
   },
   "backend/apps/finance/infrastructure/mappers/__init__.py": {
-    "mtime": 1785860600.7345479,
-    "ast_hash": "02a5fe6dace64a7efaf2a2950923db9a",
-    "semantic_hash": "02a5fe6dace64a7efaf2a2950923db9a"
+    "mtime": 1790077690.8329954,
+    "ast_hash": "14430d584f89dacb03aab99e1fd32339",
+    "semantic_hash": ""
   },
   "backend/apps/finance/infrastructure/migrations/__init__.py": {
-    "mtime": 1785860600.7345479,
-    "ast_hash": "964b5324eababaf0253e260ee95a5777",
-    "semantic_hash": "964b5324eababaf0253e260ee95a5777"
+    "mtime": 1790077778.1638746,
+    "ast_hash": "48071998bb70216082a3a4a4dbec1bbc",
+    "semantic_hash": ""
   },
   "backend/apps/finance/infrastructure/models/__init__.py": {
-    "mtime": 1785860600.7345479,
-    "ast_hash": "7ec7c60c34ce0cfd90950e527aa70343",
-    "semantic_hash": "7ec7c60c34ce0cfd90950e527aa70343"
+    "mtime": 1790077677.9558482,
+    "ast_hash": "1792b206d20fea40aab005c91e9fe7c6",
+    "semantic_hash": ""
   },
   "backend/apps/finance/infrastructure/repositories/__init__.py": {
-    "mtime": 1785860600.7345479,
-    "ast_hash": "4b5d71ec79eba14c81a1aa4adea49c18",
-    "semantic_hash": "4b5d71ec79eba14c81a1aa4adea49c18"
+    "mtime": 1790077715.847548,
+    "ast_hash": "df88711cd44df432cbcd612791839ee5",
+    "semantic_hash": ""
   },
   "backend/apps/finance/presentation/__init__.py": {
     "mtime": 1785860600.7345479,
@@ -3135,8 +3135,8 @@
     "semantic_hash": "4616a41e93c24e9d5e6c5ded3754db37"
   },
   "backend/config/settings/base.py": {
-    "mtime": 1789844858.02225,
-    "ast_hash": "c9cc1182bc7ba0a82483fdd20bfa1126",
+    "mtime": 1790077765.6778555,
+    "ast_hash": "9018fbd14d7a12fb34aafd1f707ef2f5",
     "semantic_hash": ""
   },
   "backend/config/settings/development.py": {
@@ -3160,8 +3160,8 @@
     "semantic_hash": ""
   },
   "backend/config/urls.py": {
-    "mtime": 1789844858.0232701,
-    "ast_hash": "7abb279b9c29c7e3b0e3a86155707366",
+    "mtime": 1790077891.096618,
+    "ast_hash": "349347e847263c84a6e27bea570b3c5a",
     "semantic_hash": ""
   },
   "backend/config/wsgi.py": {
@@ -3850,8 +3850,8 @@
     "semantic_hash": "6ed8c18b5c86df4e096858606ec153c0"
   },
   "frontend/src/app/router/router.tsx": {
-    "mtime": 1789844858.0333915,
-    "ast_hash": "394e275669d4ec5d0596516d0c2dcbe3",
+    "mtime": 1790078450.0166354,
+    "ast_hash": "817154b9ca01762ce8cfaccef2575de9",
     "semantic_hash": ""
   },
   "frontend/src/applications/participant/layouts/participant-layout.tsx": {
@@ -4835,8 +4835,8 @@
     "semantic_hash": "ea79794f331f1f9b6b94a2067dfbc21a"
   },
   "frontend/src/shared/config/routes.ts": {
-    "mtime": 1789844858.0385902,
-    "ast_hash": "7438ee72862074c78e15976cc66263a9",
+    "mtime": 1790078441.9722884,
+    "ast_hash": "ba354d988701f2811e53d2e1dbe53805",
     "semantic_hash": ""
   },
   "frontend/src/shared/constants/index.ts": {
@@ -9035,18 +9035,18 @@
     "semantic_hash": ""
   },
   "backend/apps/platform/presentation/api/v1/read_models.py": {
-    "mtime": 1787341592.052747,
-    "ast_hash": "0c58c88b9d45ac6e3d6ac0c1a14e96b8",
+    "mtime": 1790077968.4738903,
+    "ast_hash": "b6a346fe26ca54a406f6cd0b6c4c8c0b",
     "semantic_hash": ""
   },
   "backend/apps/platform/presentation/api/v1/serializers.py": {
-    "mtime": 1789219211.7549107,
-    "ast_hash": "a39e5c08de7e5122b2c210c24b820595",
+    "mtime": 1790077984.7838986,
+    "ast_hash": "130ba69e2cdf4d775cd63d7602f1c0f9",
     "semantic_hash": ""
   },
   "backend/apps/platform/presentation/api/v1/views.py": {
-    "mtime": 1789219239.102904,
-    "ast_hash": "a0470bfbb0a867697c5965a34dbf86cb",
+    "mtime": 1790077984.7842364,
+    "ast_hash": "3fe107cfdf72fc9d89b16901b907da24",
     "semantic_hash": ""
   },
   "backend/apps/platform/presentation/permissions.py": {
@@ -9085,18 +9085,18 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/api/platform-api.ts": {
-    "mtime": 1789219449.890843,
-    "ast_hash": "c613157c26b353efca1a3f4868f63291",
+    "mtime": 1790078273.0708447,
+    "ast_hash": "8ea16a637b69f62d185c227c3395d0b1",
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/layouts/platform-layout.tsx": {
-    "mtime": 1789844858.0346973,
-    "ast_hash": "5ee8f584006ab3f935bea817cf2050da",
+    "mtime": 1790078441.9725094,
+    "ast_hash": "d4ff0c52dbc246cb608c102a39d7e95f",
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/pages/dashboard/index.tsx": {
-    "mtime": 1788380022.5543807,
-    "ast_hash": "eb6d2227cc2674f4d7e788ec9a933b47",
+    "mtime": 1790078520.3320034,
+    "ast_hash": "fb39bcf75577ae22a231730cd14920dd",
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/pages/organizations/index.tsx": {
@@ -9970,8 +9970,8 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/lib/billing.ts": {
-    "mtime": 1787341592.070065,
-    "ast_hash": "711b1f6f76984052e578ed872f023b96",
+    "mtime": 1790078305.8081028,
+    "ast_hash": "7f2d2726c8bfac8339ef05f66dab694d",
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/pages/organizations/index.test.tsx": {
@@ -10245,8 +10245,8 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/pages/dashboard/index.test.tsx": {
-    "mtime": 1788379959.3313482,
-    "ast_hash": "8f34e4943811f3a1933ac203d8d44566",
+    "mtime": 1790078490.8800573,
+    "ast_hash": "280f5a8daf36dcdb683f1a44d0ff1717",
     "semantic_hash": ""
   },
   "backend/apps/applications/infrastructure/migrations/0007_application_payer_name.py": {
@@ -11127,6 +11127,111 @@
   "frontend/src/pages/reviews/index.tsx": {
     "mtime": 1789851900.0819755,
     "ast_hash": "338dc0a6d6dd108740cb64ef12902040",
+    "semantic_hash": ""
+  },
+  "backend/apps/finance/application/services.py": {
+    "mtime": 1790077647.475077,
+    "ast_hash": "1abc37ffa952e191f590b09e5ba781bc",
+    "semantic_hash": ""
+  },
+  "backend/apps/finance/composition.py": {
+    "mtime": 1790077744.1032224,
+    "ast_hash": "d6cf2f94278745aebb83f6c1f66bec21",
+    "semantic_hash": ""
+  },
+  "backend/apps/finance/infrastructure/acl/__init__.py": {
+    "mtime": 1790077744.0922585,
+    "ast_hash": "5693868e199c7f606cca9c6143a84bc2",
+    "semantic_hash": ""
+  },
+  "backend/apps/finance/infrastructure/acl/organization_directory.py": {
+    "mtime": 1790077744.091791,
+    "ast_hash": "7356aebe1a39a6d2a3a70ffbb6f50672",
+    "semantic_hash": ""
+  },
+  "backend/apps/finance/infrastructure/mappers/expense_mapper.py": {
+    "mtime": 1790077690.828276,
+    "ast_hash": "98caf1b0106783af21f0b72666fd04c7",
+    "semantic_hash": ""
+  },
+  "backend/apps/finance/infrastructure/migrations/0001_initial.py": {
+    "mtime": 1790077767.7840455,
+    "ast_hash": "0d1b948d6fb2f8ea0547ab0c95384be6",
+    "semantic_hash": ""
+  },
+  "backend/apps/finance/infrastructure/models/base.py": {
+    "mtime": 1790077677.9460328,
+    "ast_hash": "3f050b406abc22f06cf95292cf475ae0",
+    "semantic_hash": ""
+  },
+  "backend/apps/finance/infrastructure/models/expense.py": {
+    "mtime": 1790077677.9523027,
+    "ast_hash": "16165f661c420360d4b45a156b357de8",
+    "semantic_hash": ""
+  },
+  "backend/apps/finance/infrastructure/repositories/django_expense_repository.py": {
+    "mtime": 1790077715.8446898,
+    "ast_hash": "c9703ce6c44a3c5cd46ad086791c5f18",
+    "semantic_hash": ""
+  },
+  "backend/apps/finance/infrastructure/repositories/exceptions.py": {
+    "mtime": 1790077690.8349261,
+    "ast_hash": "0d55fcbff8263a895923327a8cc5c0d2",
+    "semantic_hash": ""
+  },
+  "backend/apps/finance/infrastructure/system.py": {
+    "mtime": 1790077744.1002798,
+    "ast_hash": "bfeff2f8dc9e936593262ad9c48a3818",
+    "semantic_hash": ""
+  },
+  "backend/apps/finance/presentation/api/v1/platform_views.py": {
+    "mtime": 1790078166.9169219,
+    "ast_hash": "35e5af44644b5b8ab398bb58adb99dd9",
+    "semantic_hash": ""
+  },
+  "backend/apps/finance/presentation/api/v1/problems.py": {
+    "mtime": 1790077802.4322405,
+    "ast_hash": "89b282bdf980228f379457064a078d62",
+    "semantic_hash": ""
+  },
+  "backend/apps/finance/presentation/api/v1/resources.py": {
+    "mtime": 1790077832.252231,
+    "ast_hash": "87829de9802a84313fbaa21a88b0ad54",
+    "semantic_hash": ""
+  },
+  "backend/apps/finance/presentation/api/v1/serializers.py": {
+    "mtime": 1790077832.2402308,
+    "ast_hash": "0fc7be0fe08aae3382bb55e51c43109c",
+    "semantic_hash": ""
+  },
+  "backend/apps/finance/presentation/platform_urls.py": {
+    "mtime": 1790077871.2002187,
+    "ast_hash": "d5f2d6a1a5910d88898aa16373a2638d",
+    "semantic_hash": ""
+  },
+  "backend/tests/domain/finance/__init__.py": {
+    "mtime": 1790078212.0601048,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "backend/tests/domain/finance/test_platform_expense.py": {
+    "mtime": 1790078891.1163723,
+    "ast_hash": "7fd2be0ed4f02cc5d1ced968effda820",
+    "semantic_hash": ""
+  },
+  "backend/tests/presentation/platform/test_finance_expenses_api.py": {
+    "mtime": 1790078881.7114763,
+    "ast_hash": "37c174fc354ae35885c8f0e94b0d1f3f",
+    "semantic_hash": ""
+  },
+  "frontend/src/applications/platform/pages/finance/index.test.tsx": {
+    "mtime": 1790078666.4679577,
+    "ast_hash": "59eca7bc91c073c500f54371ee838ae3",
+    "semantic_hash": ""
+  },
+  "frontend/src/applications/platform/pages/finance/index.tsx": {
+    "mtime": 1790078520.3400033,
+    "ast_hash": "06000f59e6c4098389bd73c47824fb39",
     "semantic_hash": ""
   }
 }
