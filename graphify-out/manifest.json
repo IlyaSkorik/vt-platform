@@ -5855,18 +5855,18 @@
     "semantic_hash": "48ec17dff05a33d51310415df2ae03b1"
   },
   "frontend/src/widgets/competition-public-information/ui/landing-image-upload-field.tsx": {
-    "mtime": 1785860601.0628688,
-    "ast_hash": "ce686e34df3e89eb239ab4079cdf819a",
-    "semantic_hash": "ce686e34df3e89eb239ab4079cdf819a"
+    "mtime": 1790155348.4559221,
+    "ast_hash": "edb6165d208f76902f3692101b0661ef",
+    "semantic_hash": ""
   },
   "frontend/src/widgets/competition-public-information/ui/landing-preview.tsx": {
-    "mtime": 1785860601.0630615,
-    "ast_hash": "bd4bdeec3e04883100f7cc63c825a6e2",
-    "semantic_hash": "bd4bdeec3e04883100f7cc63c825a6e2"
+    "mtime": 1790155452.347133,
+    "ast_hash": "e9ec6ce6a7aba4b58e531f2873aa47cf",
+    "semantic_hash": ""
   },
   "frontend/src/widgets/competition-public-information/ui/public-information-section.tsx": {
-    "mtime": 1787768294.526727,
-    "ast_hash": "685f688f442e4a446526b04490bfb3dd",
+    "mtime": 1790155973.4029212,
+    "ast_hash": "fb7f3043057d2927c7602ce70dd701ae",
     "semantic_hash": ""
   },
   "frontend/src/widgets/competition-public-information/ui/public-information-skeleton.tsx": {
@@ -11230,8 +11230,13 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/platform/pages/finance/index.tsx": {
-    "mtime": 1790078520.3400033,
-    "ast_hash": "06000f59e6c4098389bd73c47824fb39",
+    "mtime": 1790079214.7666337,
+    "ast_hash": "6f1ac850af4049ef424b57fcdc335780",
+    "semantic_hash": ""
+  },
+  "frontend/src/widgets/competition-public-information/ui/public-information-section.test.tsx": {
+    "mtime": 1790156038.0286715,
+    "ast_hash": "5435ba4810ff28455304afcdeebdfddc",
     "semantic_hash": ""
   }
 }
