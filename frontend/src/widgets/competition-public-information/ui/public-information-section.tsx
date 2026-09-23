@@ -54,6 +54,15 @@ import { PublicInformationSkeleton } from "./public-information-skeleton";
 
 const AUTOSAVE_DELAY_MS = 600;
 
+/** A block edit: the new value, or an updater applied to the freshest one. */
+type BlockChange = _LandingBlock | ((prev: _LandingBlock) => _LandingBlock);
+
+/**
+ * Applies a block edit. `immediate` skips the typing debounce: it belongs to the
+ * one-shot acts (upload, delete, add, toggle), which have nothing to coalesce.
+ */
+type BlockChangeHandler = (next: BlockChange, options?: { immediate?: boolean }) => void;
+
 interface PublicInformationSectionProps {
   competition: CompetitionDetail;
   checklist: PublicationChecklist;
@@ -127,7 +136,7 @@ function BlockEditor({
   competition: CompetitionDetail;
   isReadOnly: boolean;
   uploading: boolean;
-  onChange: (next: _LandingBlock) => void;
+  onChange: BlockChangeHandler;
   onNavigateSection: (sectionId: CompetitionSectionId) => void;
   onUploadImage: (file: File) => Promise<string>;
 }): React.JSX.Element {
@@ -163,9 +172,11 @@ function BlockEditor({
             hint="Так обложка кадрируется в шапке страницы фестиваля (на телефоне она показывается целиком)."
             onUpload={async (file) => {
               const fileReference = await onUploadImage(file);
-              onChange({ ...block, coverImage: fileReference });
+              onChange((prev) => ({ ...prev, coverImage: fileReference }), {
+                immediate: true,
+              });
             }}
-            onClear={() => onChange({ ...block, coverImage: null })}
+            onClear={() => onChange({ ...block, coverImage: null }, { immediate: true })}
           />
         </div>
       );
@@ -217,10 +228,10 @@ function BlockEditor({
                         variant="ghost"
                         icon={<Trash2 className="size-4" />}
                         onClick={() =>
-                          onChange({
-                            ...block,
-                            cards: cards.filter((item) => item.id !== card.id),
-                          })
+                          onChange(
+                            { ...block, cards: cards.filter((item) => item.id !== card.id) },
+                            { immediate: true },
+                          )
                         }
                       />
                     ) : null}
@@ -235,20 +246,26 @@ function BlockEditor({
                     hint="Кадрируется 4:3 — ровно как в карточке жюри на странице фестиваля."
                     onUpload={async (file) => {
                       const fileReference = await onUploadImage(file);
-                      onChange({
-                        ...block,
-                        cards: cards.map((item) =>
-                          item.id === card.id ? { ...item, photo: fileReference } : item,
-                        ),
-                      });
+                      onChange(
+                        (prev) => ({
+                          ...prev,
+                          cards: (prev.cards ?? []).map((item) =>
+                            item.id === card.id ? { ...item, photo: fileReference } : item,
+                          ),
+                        }),
+                        { immediate: true },
+                      );
                     }}
                     onClear={() =>
-                      onChange({
-                        ...block,
-                        cards: cards.map((item) =>
-                          item.id === card.id ? { ...item, photo: null } : item,
-                        ),
-                      })
+                      onChange(
+                        {
+                          ...block,
+                          cards: cards.map((item) =>
+                            item.id === card.id ? { ...item, photo: null } : item,
+                          ),
+                        },
+                        { immediate: true },
+                      )
                     }
                   />
                   <div className="grid gap-2 sm:grid-cols-2">
@@ -301,10 +318,10 @@ function BlockEditor({
               type="button"
               variant="outline"
               onClick={() =>
-                onChange({
-                  ...block,
-                  cards: [...cards, createJuryCard(cards.length)],
-                })
+                onChange(
+                  { ...block, cards: [...cards, createJuryCard(cards.length)] },
+                  { immediate: true },
+                )
               }
             >
               <Plus className="size-4" aria-hidden="true" />
@@ -331,10 +348,13 @@ function BlockEditor({
                         variant="ghost"
                         icon={<Trash2 className="size-4" />}
                         onClick={() =>
-                          onChange({
-                            ...block,
-                            partners: partners.filter((item) => item.id !== partner.id),
-                          })
+                          onChange(
+                            {
+                              ...block,
+                              partners: partners.filter((item) => item.id !== partner.id),
+                            },
+                            { immediate: true },
+                          )
                         }
                       />
                     ) : null}
@@ -350,20 +370,26 @@ function BlockEditor({
                     hint="Логотип показывается целиком, без обрезки — как в плитке партнёров."
                     onUpload={async (file) => {
                       const fileReference = await onUploadImage(file);
-                      onChange({
-                        ...block,
-                        partners: partners.map((item) =>
-                          item.id === partner.id ? { ...item, logo: fileReference } : item,
-                        ),
-                      });
+                      onChange(
+                        (prev) => ({
+                          ...prev,
+                          partners: (prev.partners ?? []).map((item) =>
+                            item.id === partner.id ? { ...item, logo: fileReference } : item,
+                          ),
+                        }),
+                        { immediate: true },
+                      );
                     }}
                     onClear={() =>
-                      onChange({
-                        ...block,
-                        partners: partners.map((item) =>
-                          item.id === partner.id ? { ...item, logo: null } : item,
-                        ),
-                      })
+                      onChange(
+                        {
+                          ...block,
+                          partners: partners.map((item) =>
+                            item.id === partner.id ? { ...item, logo: null } : item,
+                          ),
+                        },
+                        { immediate: true },
+                      )
                     }
                   />
                   <div className="grid gap-2 sm:grid-cols-2">
@@ -405,10 +431,10 @@ function BlockEditor({
               type="button"
               variant="outline"
               onClick={() =>
-                onChange({
-                  ...block,
-                  partners: [...partners, createPartnerCard(partners.length)],
-                })
+                onChange(
+                  { ...block, partners: [...partners, createPartnerCard(partners.length)] },
+                  { immediate: true },
+                )
               }
             >
               <Plus className="size-4" aria-hidden="true" />
@@ -435,10 +461,10 @@ function BlockEditor({
                         variant="ghost"
                         icon={<Trash2 className="size-4" />}
                         onClick={() =>
-                          onChange({
-                            ...block,
-                            images: images.filter((item) => item.id !== image.id),
-                          })
+                          onChange(
+                            { ...block, images: images.filter((item) => item.id !== image.id) },
+                            { immediate: true },
+                          )
                         }
                       />
                     ) : null}
@@ -453,18 +479,21 @@ function BlockEditor({
                     hint="Кадрируется 4:3 — ровно как в галерее на странице фестиваля."
                     onUpload={async (file) => {
                       const fileReference = await onUploadImage(file);
-                      onChange({
-                        ...block,
-                        images: images.map((item) =>
-                          item.id === image.id ? { ...item, url: fileReference } : item,
-                        ),
-                      });
+                      onChange(
+                        (prev) => ({
+                          ...prev,
+                          images: (prev.images ?? []).map((item) =>
+                            item.id === image.id ? { ...item, url: fileReference } : item,
+                          ),
+                        }),
+                        { immediate: true },
+                      );
                     }}
                     onClear={() =>
-                      onChange({
-                        ...block,
-                        images: images.filter((item) => item.id !== image.id),
-                      })
+                      onChange(
+                        { ...block, images: images.filter((item) => item.id !== image.id) },
+                        { immediate: true },
+                      )
                     }
                   />
                   <Input
@@ -508,10 +537,16 @@ function BlockEditor({
                   void (async () => {
                     try {
                       const fileReference = await onUploadImage(file);
-                      onChange({
-                        ...block,
-                        images: [...images, createGalleryImage(images.length, fileReference)],
-                      });
+                      onChange(
+                        (prev) => {
+                          const current = prev.images ?? [];
+                          return {
+                            ...prev,
+                            images: [...current, createGalleryImage(current.length, fileReference)],
+                          };
+                        },
+                        { immediate: true },
+                      );
                     } catch {
                       toast.error("Не удалось загрузить изображение");
                     }
@@ -540,10 +575,10 @@ function BlockEditor({
                         variant="ghost"
                         icon={<Trash2 className="size-4" />}
                         onClick={() =>
-                          onChange({
-                            ...block,
-                            faqItems: faqItems.filter((faq) => faq.id !== item.id),
-                          })
+                          onChange(
+                            { ...block, faqItems: faqItems.filter((faq) => faq.id !== item.id) },
+                            { immediate: true },
+                          )
                         }
                       />
                     ) : null}
@@ -583,10 +618,10 @@ function BlockEditor({
               type="button"
               variant="outline"
               onClick={() =>
-                onChange({
-                  ...block,
-                  faqItems: [...faqItems, createFaqItem(faqItems.length)],
-                })
+                onChange(
+                  { ...block, faqItems: [...faqItems, createFaqItem(faqItems.length)] },
+                  { immediate: true },
+                )
               }
             >
               <Plus className="size-4" aria-hidden="true" />
@@ -694,21 +729,56 @@ export function PublicInformationSection({
 
   const effectiveConfig = useMemo(() => resolveLandingConfig(competition), [competition]);
   const [config, setConfig] = useState<_LandingConfig>(effectiveConfig);
-  const isDirtyRef = useRef(false);
+
+  /**
+   * The landing as edited, readable outside a render.
+   *
+   * An edit is applied against this rather than inside a `setConfig` updater: the
+   * updater runs twice under StrictMode, and a save that goes out at once would go
+   * out twice with it.
+   */
+  const configRef = useRef(config);
+  /**
+   * Whether this editor has been touched.
+   *
+   * Every save echoes a fresh `CompetitionDetail` into the query cache — and so does
+   * any edit made in another section — and adopting that echo overwrote what was on
+   * screen. Typing across the window in which a request was in flight lost the
+   * characters entered meanwhile, and a field cleared to blank came back filled with
+   * the placeholder `sanitizeLandingBlock` substitutes to satisfy domain validation
+   * («Без имени», «Раздел»…). So the server config seeds the editor, and once the
+   * organizer has edited anything it never overwrites them again.
+   */
+  const hasLocalEditsRef = useRef(false);
 
   useEffect(() => {
-    if (isDirtyRef.current) return;
+    if (hasLocalEditsRef.current) return;
+    configRef.current = effectiveConfig;
     setConfig(effectiveConfig);
   }, [effectiveConfig]);
 
   const autosaveTimer = useRef<number | null>(null);
   const saveGeneration = useRef(0);
+  /**
+   * The change the server has not been told about yet — kept so a save still waiting
+   * out its debounce is *flushed* when the section unmounts instead of dropped with
+   * the timer. Dropping it is how a caption an organizer typed reappears unchanged:
+   * switching section within the debounce sent nothing at all.
+   */
+  const pendingSave = useRef<_LandingConfig | null>(null);
+  /**
+   * Saves run one after another: the endpoint replaces the whole configuration, so
+   * two in flight at once let the older snapshot land last and win.
+   */
+  const saveQueue = useRef<Promise<void>>(Promise.resolve());
+
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<_LandingBlock | null>(null);
 
   const persistConfig = useCallback(
     async (next: _LandingConfig) => {
+      if (pendingSave.current === next) pendingSave.current = null;
       saveGeneration.current += 1;
       const gen = saveGeneration.current;
       onAutosaveStateChange("saving");
@@ -717,10 +787,7 @@ export function PublicInformationSection({
           competitionId: competition.id,
           payload: landingConfigToPayload(next),
         });
-        if (gen === saveGeneration.current) {
-          isDirtyRef.current = false;
-          onAutosaveStateChange("saved");
-        }
+        if (gen === saveGeneration.current) onAutosaveStateChange("saved");
       } catch (error) {
         if (gen === saveGeneration.current) {
           onAutosaveStateChange("error");
@@ -735,28 +802,56 @@ export function PublicInformationSection({
     [competition.id, updateLanding, onAutosaveStateChange],
   );
 
-  const scheduleConfigSave = useCallback(
-    (next: _LandingConfig) => {
-      if (autosaveTimer.current != null) window.clearTimeout(autosaveTimer.current);
+  const persistRef = useRef(persistConfig);
+  useEffect(() => {
+    persistRef.current = persistConfig;
+  }, [persistConfig]);
+
+  const enqueueSave = useCallback((next: _LandingConfig) => {
+    saveQueue.current = saveQueue.current.then(() => persistRef.current(next));
+  }, []);
+
+  /**
+   * Send `next`, either now or once the typing stops.
+   *
+   * Toggling a block, reordering, deleting and everything that follows an upload is
+   * one deliberate act with nothing to coalesce, so it goes out at once. The debounce
+   * is for the fields that arrive a keystroke at a time.
+   */
+  const commitConfig = useCallback(
+    (next: _LandingConfig, { immediate }: { immediate: boolean }) => {
+      if (autosaveTimer.current != null) {
+        window.clearTimeout(autosaveTimer.current);
+        autosaveTimer.current = null;
+      }
+      pendingSave.current = next;
+      if (immediate) {
+        enqueueSave(next);
+        return;
+      }
       onAutosaveStateChange("dirty");
       autosaveTimer.current = window.setTimeout(() => {
-        void persistConfig(next);
+        autosaveTimer.current = null;
+        enqueueSave(next);
       }, AUTOSAVE_DELAY_MS);
     },
-    [persistConfig, onAutosaveStateChange],
+    [enqueueSave, onAutosaveStateChange],
   );
 
   const updateConfigLocal = useCallback(
-    (patch: Partial<_LandingConfig> | ((prev: _LandingConfig) => _LandingConfig)) => {
+    (
+      patch: Partial<_LandingConfig> | ((prev: _LandingConfig) => _LandingConfig),
+      { immediate = false }: { immediate?: boolean } = {},
+    ) => {
       if (isReadOnly) return;
-      isDirtyRef.current = true;
-      setConfig((prev) => {
-        const next = typeof patch === "function" ? patch(prev) : { ...prev, ...patch };
-        scheduleConfigSave(next);
-        return next;
-      });
+      const prev = configRef.current;
+      const next = typeof patch === "function" ? patch(prev) : { ...prev, ...patch };
+      configRef.current = next;
+      hasLocalEditsRef.current = true;
+      setConfig(next);
+      commitConfig(next, { immediate });
     },
-    [isReadOnly, scheduleConfigSave],
+    [isReadOnly, commitConfig],
   );
 
   const handleUploadImage = useCallback(
@@ -768,7 +863,15 @@ export function PublicInformationSection({
 
   useEffect(
     () => () => {
-      if (autosaveTimer.current != null) window.clearTimeout(autosaveTimer.current);
+      if (autosaveTimer.current != null) {
+        window.clearTimeout(autosaveTimer.current);
+        autosaveTimer.current = null;
+      }
+      const unsaved = pendingSave.current;
+      if (unsaved != null) {
+        pendingSave.current = null;
+        saveQueue.current = saveQueue.current.then(() => persistRef.current(unsaved));
+      }
     },
     [],
   );
@@ -784,19 +887,35 @@ export function PublicInformationSection({
     });
   };
 
-  const updateBlock = (blockId: string, nextBlock: _LandingBlock): void => {
-    updateConfigLocal((prev) => ({
-      ...prev,
-      blocks: prev.blocks.map((block) => (block.id === blockId ? nextBlock : block)),
-    }));
+  const updateBlock = (
+    blockId: string,
+    next: BlockChange,
+    options?: { immediate?: boolean },
+  ): void => {
+    updateConfigLocal(
+      (prev) => ({
+        ...prev,
+        blocks: prev.blocks.map((block) => {
+          if (block.id !== blockId) return block;
+          // The updater form matters after an upload: the handler awaits the file
+          // request, and by the time it resolves the block it closed over can be
+          // several edits old — writing it back verbatim would undo them.
+          return typeof next === "function" ? next(block) : next;
+        }),
+      }),
+      options,
+    );
   };
 
   const addContentBlock = (): void => {
     const draft = createContentBlock(blocks.length);
-    updateConfigLocal((prev) => ({
-      ...prev,
-      blocks: [...prev.blocks, draft],
-    }));
+    updateConfigLocal(
+      (prev) => ({
+        ...prev,
+        blocks: [...prev.blocks, draft],
+      }),
+      { immediate: true },
+    );
     setExpandedIds((prev) => new Set(prev).add(draft.id));
   };
 
@@ -851,10 +970,13 @@ export function PublicInformationSection({
                   onDragOver={(event) => event.preventDefault()}
                   onDrop={() => {
                     if (!draggedId) return;
-                    updateConfigLocal((prev) => ({
-                      ...prev,
-                      blocks: moveLandingBlockBefore(prev.blocks, draggedId, block.id),
-                    }));
+                    updateConfigLocal(
+                      (prev) => ({
+                        ...prev,
+                        blocks: moveLandingBlockBefore(prev.blocks, draggedId, block.id),
+                      }),
+                      { immediate: true },
+                    );
                     setDraggedId(null);
                   }}
                   className={cn(
@@ -894,7 +1016,7 @@ export function PublicInformationSection({
                       disabled={isReadOnly}
                       checked={block.enabled}
                       onCheckedChange={(checked) =>
-                        updateBlock(block.id, { ...block, enabled: checked })
+                        updateBlock(block.id, { ...block, enabled: checked }, { immediate: true })
                       }
                       containerClassName="shrink-0"
                     />
@@ -915,7 +1037,7 @@ export function PublicInformationSection({
                         competition={competition}
                         isReadOnly={isReadOnly}
                         uploading={uploadLandingImage.isPending}
-                        onChange={(next) => updateBlock(block.id, next)}
+                        onChange={(next, options) => updateBlock(block.id, next, options)}
                         onNavigateSection={onNavigateSection}
                         onUploadImage={handleUploadImage}
                       />
@@ -950,10 +1072,13 @@ export function PublicInformationSection({
               variant="danger"
               onClick={() => {
                 if (!deleteTarget) return;
-                updateConfigLocal((prev) => ({
-                  ...prev,
-                  blocks: prev.blocks.filter((item) => item.id !== deleteTarget.id),
-                }));
+                updateConfigLocal(
+                  (prev) => ({
+                    ...prev,
+                    blocks: prev.blocks.filter((item) => item.id !== deleteTarget.id),
+                  }),
+                  { immediate: true },
+                );
                 setDeleteTarget(null);
               }}
             >
