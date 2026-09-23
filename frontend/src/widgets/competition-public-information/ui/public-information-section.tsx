@@ -158,7 +158,9 @@ function BlockEditor({
             value={block.coverImage}
             disabled={isReadOnly}
             uploading={uploading}
-            aspectClassName="aspect-[16/9] max-h-56"
+            aspectClassName="aspect-[16/9]"
+            widthClassName="max-w-xl"
+            hint="Так обложка кадрируется в шапке страницы фестиваля (на телефоне она показывается целиком)."
             onUpload={async (file) => {
               const fileReference = await onUploadImage(file);
               onChange({ ...block, coverImage: fileReference });
@@ -228,6 +230,9 @@ function BlockEditor({
                     value={card.photo}
                     disabled={isReadOnly}
                     uploading={uploading}
+                    aspectClassName="aspect-[4/3]"
+                    widthClassName="max-w-xs"
+                    hint="Кадрируется 4:3 — ровно как в карточке жюри на странице фестиваля."
                     onUpload={async (file) => {
                       const fileReference = await onUploadImage(file);
                       onChange({
@@ -339,7 +344,10 @@ function BlockEditor({
                     value={partner.logo}
                     disabled={isReadOnly}
                     uploading={uploading}
-                    aspectClassName="aspect-[3/2] max-h-40"
+                    aspectClassName="aspect-[3/2]"
+                    widthClassName="max-w-xs"
+                    fit="contain"
+                    hint="Логотип показывается целиком, без обрезки — как в плитке партнёров."
                     onUpload={async (file) => {
                       const fileReference = await onUploadImage(file);
                       onChange({
@@ -440,7 +448,9 @@ function BlockEditor({
                     value={image.url}
                     disabled={isReadOnly}
                     uploading={uploading}
-                    aspectClassName="aspect-[4/3] max-h-48"
+                    aspectClassName="aspect-[4/3]"
+                    widthClassName="max-w-sm"
+                    hint="Кадрируется 4:3 — ровно как в галерее на странице фестиваля."
                     onUpload={async (file) => {
                       const fileReference = await onUploadImage(file);
                       onChange({

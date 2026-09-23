@@ -11,7 +11,16 @@ interface LandingImageUploadFieldProps {
   value: string | null | undefined;
   disabled?: boolean;
   uploading?: boolean;
+  /** Ratio of the frame — the same one the public landing crops this image to. */
   aspectClassName?: string;
+  /** Caps the frame's width; the height follows from the ratio, never the other
+   * way round. A `max-h-*` cap would silently widen the frame past its ratio and
+   * show a crop the festival page never renders. */
+  widthClassName?: string;
+  /** `cover` crops to the frame (photos), `contain` fits the whole image inside
+   * it (logos) — matching how the public page renders each kind. */
+  fit?: "cover" | "contain";
+  hint?: string;
   onUpload: (file: File) => Promise<void>;
   onClear: () => void;
 }
@@ -21,7 +30,10 @@ export function LandingImageUploadField({
   value,
   disabled = false,
   uploading = false,
-  aspectClassName = "aspect-square max-h-48",
+  aspectClassName = "aspect-[4/3]",
+  widthClassName = "max-w-sm",
+  fit = "cover",
+  hint,
   onUpload,
   onClear,
 }: LandingImageUploadFieldProps): React.JSX.Element {
@@ -58,7 +70,8 @@ export function LandingImageUploadField({
       <fieldset
         aria-labelledby={`${inputId}-label`}
         className={cn(
-          "relative m-0 overflow-hidden rounded-md border border-dashed bg-muted/20 p-0 transition-colors",
+          "relative m-0 block overflow-hidden rounded-md border border-dashed bg-muted/20 p-0 transition-colors",
+          widthClassName,
           isDragging && "border-ring bg-accent/40",
           localError && "border-danger",
           disabled && "opacity-60",
@@ -80,7 +93,11 @@ export function LandingImageUploadField({
       >
         {previewUrl ? (
           <div className={cn("relative w-full bg-muted/30", aspectClassName)}>
-            <img src={previewUrl} alt="" className="size-full object-cover" />
+            <img
+              src={previewUrl}
+              alt=""
+              className={cn("size-full", fit === "contain" ? "object-contain" : "object-cover")}
+            />
             {!disabled ? (
               <div className="absolute top-2 right-2 flex gap-2">
                 <Button
@@ -137,6 +154,7 @@ export function LandingImageUploadField({
         }}
       />
       {localError ? <p className="text-danger text-sm">{localError}</p> : null}
+      {hint && !localError ? <p className="text-muted-foreground text-xs">{hint}</p> : null}
     </div>
   );
 }

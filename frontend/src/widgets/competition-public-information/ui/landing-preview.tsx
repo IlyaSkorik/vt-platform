@@ -134,10 +134,10 @@ function PreviewJury({ block }: { block: _LandingBlock }): React.JSX.Element {
                   <img
                     src={photoUrl}
                     alt=""
-                    className="size-8 shrink-0 rounded-full object-cover"
+                    className="aspect-[4/3] w-14 shrink-0 rounded object-cover"
                   />
                 ) : (
-                  <div className="size-8 shrink-0 rounded-full bg-muted" />
+                  <div className="aspect-[4/3] w-14 shrink-0 rounded bg-muted" />
                 )}
                 <div className="min-w-0">
                   <p className="font-medium text-sm">{card.name || "Без имени"}</p>
@@ -196,7 +196,7 @@ function PreviewGallery({ block }: { block: _LandingBlock }): React.JSX.Element 
             return (
               <li
                 key={image.id}
-                className="flex h-16 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground text-xs"
+                className="flex aspect-[4/3] items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground text-xs"
               >
                 {url ? (
                   <img src={url} alt={image.caption ?? ""} className="size-full object-cover" />
