@@ -158,6 +158,7 @@ MIGRATION_MODULES = {
     "applications": "apps.applications.infrastructure.migrations",
     "diplomas": "apps.diplomas.infrastructure.migrations",
     "programs": "apps.programs.infrastructure.migrations",
+    "judging": "apps.judging.infrastructure.migrations",
     "results": "apps.results.infrastructure.migrations",
     "notifications": "apps.notifications.infrastructure.migrations",
     "voting": "apps.voting.infrastructure.migrations",

@@ -210,7 +210,7 @@ class Command(BaseCommand):
             snapshots=snapshots,  # type: ignore[arg-type]  # duck-typed timing proxy
             workspace=workspace,  # type: ignore[arg-type]
             numbers=DiplomaNumberService(sequence=DjangoDiplomaNumberSequence()),
-            place_degrees=awardable_degrees(),
+            place_degrees=awardable_degrees(competition_id),
         )
         targets = [NominationTarget(category_id=uuid.UUID(cid), template_id=self._template_of(competition_id, cid)) for cid in category_ids]
 

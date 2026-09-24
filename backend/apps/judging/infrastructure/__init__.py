@@ -1,1 +1,1 @@
-"""Infrastructure layer (adapters) for Judging."""
+"""Infrastructure layer for the Judging bounded context."""

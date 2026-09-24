@@ -32,7 +32,12 @@ def generate_print_package(job_id: str) -> None:
 
     try:
         targets = resolve_targets(job.competition_id, job.category_ids or [])
-        result = build_batch_service().generate_print_package(competition_id=job.competition_id, targets=targets, now=timezone.now(), force=job.force)
+        result = build_batch_service(job.competition_id).generate_print_package(
+            competition_id=job.competition_id,
+            targets=targets,
+            now=timezone.now(),
+            force=job.force,
+        )
     except Exception as exc:
         job.status = PrintJobStatusChoices.FAILED
         job.error = str(exc)[:2000]

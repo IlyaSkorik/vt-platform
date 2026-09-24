@@ -13,6 +13,7 @@ from apps.results.infrastructure.acl import (
     DiplomasAwardRegister,
     DjangoPerformanceCatalog,
     DjangoRunningOrderSource,
+    JudgingAwardVocabulary,
 )
 from apps.results.infrastructure.messaging import DjangoResultsNotifier
 from apps.results.infrastructure.repositories import DjangoProtocolRepository
@@ -29,6 +30,7 @@ def build_protocol_service() -> ProtocolService:
         running_order=DjangoRunningOrderSource(),
         clock=SystemClock(),
         slugs=RandomSlugFactory(),
+        vocabulary=JudgingAwardVocabulary(),
         awards=DiplomasAwardRegister(),
         notifier=DjangoResultsNotifier(),
     )

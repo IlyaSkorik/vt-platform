@@ -43,13 +43,14 @@ __all__ = [
 ]
 
 
-def build_batch_service() -> DiplomaBatchGenerationService:
+def build_batch_service(competition_id: uuid.UUID | None = None) -> DiplomaBatchGenerationService:
+    """Assemble the batch service, with the festival's own award scale when known."""
     return DiplomaBatchGenerationService(
         repository=DjangoDiplomaRepository(),
         snapshots=DjangoDiplomaSnapshotSource(),
         workspace=DjangoPrintPackageWorkspace(),
         numbers=DiplomaNumberService(sequence=DjangoDiplomaNumberSequence()),
-        place_degrees=awardable_degrees(),
+        place_degrees=awardable_degrees(competition_id),
     )
 
 
