@@ -115,6 +115,13 @@ export const routes: RouteObject[] = [
             lazy: lazyPage(() => import("@/pages/vote-board"), "PublicVoteBoardPage"),
           },
           {
+            // The jury's board, on the projector beside the same stage. Unauthenticated
+            // for the same reason the vote board is — a projector has no account — and
+            // what it may show is filtered on the server, not here.
+            path: ROUTES.publicJudgingBoard.slice(1),
+            lazy: lazyPage(() => import("@/pages/judging-board"), "JudgingBoardPage"),
+          },
+          {
             // The review form, reached by scanning a code on a banner. No account:
             // the slug is the only credential, because nobody registers to say
             // thank you on their way out of a hall.
@@ -143,6 +150,12 @@ export const routes: RouteObject[] = [
           {
             path: ROUTES.staffInvitation.slice(1),
             lazy: lazyPage(() => import("@/pages/staff-invitation"), "StaffInvitationPage"),
+          },
+          {
+            // The one-time link a jury invitation carries. Minimal chrome: whoever
+            // opens it may not have an account yet.
+            path: ROUTES.juryInvitation.slice(1),
+            lazy: lazyPage(() => import("@/pages/jury-invitation"), "JuryInvitationPage"),
           },
         ],
       },
@@ -192,6 +205,22 @@ export const routes: RouteObject[] = [
       {
         element: <ProtectedRoute />,
         children: [
+          {
+            // A judge's own screen. Authenticated but deliberately outside both
+            // workspaces: a jury member is a guest of the organization, not an
+            // employee, and the staff shell would hand them everything else with it.
+            element: <MinimalLayout />,
+            children: [
+              {
+                path: ROUTES.jury.slice(1),
+                lazy: lazyPage(() => import("@/pages/jury"), "JuryScoringPage"),
+              },
+              {
+                path: ROUTES.juryScoring.slice(1),
+                lazy: lazyPage(() => import("@/pages/jury"), "JuryScoringPage"),
+              },
+            ],
+          },
           {
             element: <ParticipantLayout />,
             children: [

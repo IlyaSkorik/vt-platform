@@ -52,6 +52,24 @@ export const ROUTES = {
    * links it under "Результаты", and so does the letter sent to every participant.
    */
   publicProtocol: "/protocol/:slug",
+  /**
+   * The hall's judging board — one unguessable slug per festival, minted when the
+   * organizer switches the board on. Like the vote board it is a screen nobody taps,
+   * read from the back of a room; unlike it, what it may show is configurable, and the
+   * filtering happens on the server.
+   */
+  publicJudgingBoard: "/board/:slug",
+  /**
+   * A judge's own screen: the acts they are seated for, and the sheet for each.
+   *
+   * Under `/jury` rather than `/staff` on purpose — a jury member is a guest of the
+   * organization, not an employee of it, and the staff area would hand them the
+   * applications, the money and the participants along with the marks.
+   */
+  jury: "/jury",
+  juryScoring: "/jury/:competitionId",
+  /** The one-time link an invitation e-mail carries. */
+  juryInvitation: "/jury/invite/:token",
   /** The contract accepted at registration — the basis the account's data rests on. */
   termsOfService: "/terms",
   privacyPolicy: "/privacy-policy",
