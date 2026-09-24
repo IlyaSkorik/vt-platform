@@ -1,1 +1,1 @@
-"""Presentation layer (REST edge) for Judging."""
+"""Presentation layer for the Judging bounded context."""

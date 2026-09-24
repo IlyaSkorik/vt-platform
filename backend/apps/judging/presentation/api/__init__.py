@@ -1,1 +1,1 @@
-"""Versioned REST API surface for Judging (API-000 §2)."""
+"""Versioned REST API for the Judging bounded context."""

@@ -71,6 +71,9 @@ urlpatterns = [
     path("api/v1/", include("apps.diplomas.presentation.urls")),
     # The organizer's programme constructor (running order + its public editions).
     path("api/v1/", include("apps.programs.presentation.urls")),
+    # Online judging: the festival's criteria and award scale, its panel, and the
+    # marks themselves. Split inside into the organizer's routes and the jury's own.
+    path("api/v1/", include("apps.judging.presentation.urls")),
     # The jury's protocols: results per nomination, and their publication.
     path("api/v1/", include("apps.results.presentation.urls")),
     # The audience vote: ballots an organizer assembles, with or without a festival.
@@ -88,6 +91,8 @@ urlpatterns = [
     path("api/v1/", include("apps.diplomas.presentation.public_urls")),
     # Public, unauthenticated programme screens (one slug per published edition).
     path("api/v1/", include("apps.programs.presentation.public_urls")),
+    # Public, unauthenticated hall board: live marks on the screen beside the stage.
+    path("api/v1/", include("apps.judging.presentation.public_urls")),
     # Public, unauthenticated results: a published protocol, and a competition's index of them.
     path("api/v1/", include("apps.results.presentation.public_urls")),
     # Public, unauthenticated audience voting (one slug per ballot).
