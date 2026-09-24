@@ -4814,6 +4814,152 @@ paths:
               schema:
                 $ref: '#/components/schemas/CompetitionProblemDetail'
           description: Competition or element not found.
+  /api/v1/jury/invitations/{token}/accept:
+    post:
+      operationId: juryInvitationAccept
+      description: |-
+        ``POST /api/v1/jury/invitations/<token>/accept`` — attach the caller's account.
+
+        Authenticated on purpose: the link's job is to identify the *seat*, and the signed-in
+        account is what identifies the *person*. A judge who follows the link while logged
+        out registers or signs in first, and lands back here.
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - Jury
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JuryMemberEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
+  /api/v1/jury/scorecards:
+    put:
+      operationId: juryScorecardSubmit
+      description: |-
+        ``PUT /api/v1/jury/scorecards`` — send a sheet, or correct the one already sent.
+
+        ``PUT`` rather than ``POST`` because that is what it is: the sheet is replaced
+        wholesale and sending the same body twice leaves the same marks, which is exactly
+        what a tablet retrying after a dropped connection needs.
+      tags:
+      - Jury
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitScorecardRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SubmitScorecardRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubmitScorecardRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JuryTaskEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
+  /api/v1/jury/tasks:
+    get:
+      operationId: juryTasks
+      description: '``GET /api/v1/jury/tasks`` — the acts this judge is seated for.'
+      parameters:
+      - in: query
+        name: competitionId
+        schema:
+          type: string
+        description: The competition being judged.
+        required: true
+      tags:
+      - Jury
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JuryTaskListEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
   /api/v1/me/documents:
     get:
       operationId: listMyDocuments
@@ -5454,7 +5600,10 @@ paths:
       operationId: platform_dashboard
       description: Application counts per status across all connected organizations,
         with the participation fees behind them and the platform's commission on those
-        fees. Filterable by organization and by competition.
+        fees — and, against that income, the costs recorded in the platform's own
+        expense book and the difference between the two. Filterable by organization
+        and by competition; under a competition filter `expensesApply` is false, because
+        expenses are recorded per organization and never per festival.
       summary: Platform dashboard
       parameters:
       - in: query
@@ -5482,6 +5631,203 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: Not a platform administrator.
+  /api/v1/platform/expenses:
+    get:
+      operationId: platform_expenses_list
+      description: 'Recorded costs, newest first, with their total and a breakdown
+        by article. Every filter is optional and narrows both the list and the totals
+        beside it: `organizationId` to costs carried for one client, `category` to
+        one article, `from`/`to` to a period, read against the day the money went
+        rather than the day it was typed in.'
+      summary: The platform's expense book
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+          enum:
+          - BANK
+          - CONTRACTORS
+          - EQUIPMENT
+          - EVENT
+          - INFRASTRUCTURE
+          - MARKETING
+          - OTHER
+          - PAYROLL
+          - TAX
+        description: Only this article.
+      - in: query
+        name: from
+        schema:
+          type: string
+        description: Earliest spending date, inclusive (YYYY-MM-DD).
+      - in: query
+        name: organizationId
+        schema:
+          type: string
+        description: Only costs carried for this organization.
+      - in: query
+        name: to
+        schema:
+          type: string
+        description: Latest spending date, inclusive (YYYY-MM-DD).
+      tags:
+      - Platform Finance
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformExpenseLedgerResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: Malformed request.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: Not a platform operator.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: No such expense.
+    post:
+      operationId: platform_expenses_record
+      description: Enter one cost. `purpose` is what the money went on and is required
+        — it is the line the total is read back through. `organizationId` attributes
+        the cost to one client, so it counts against that client's commission; omit
+        it for the platform's own overheads.
+      summary: Record an expense
+      tags:
+      - Platform Finance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordExpenseRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecordExpenseRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecordExpenseRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformExpenseResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: Malformed request.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: Not a platform operator.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: No such expense.
+  /api/v1/platform/expenses/{expense_id}:
+    patch:
+      operationId: platform_expenses_amend
+      description: 'Every field is optional and an omitted one is left alone. Sending
+        `organizationId: null` explicitly moves the cost off the client and onto the
+        platform — omitting the key entirely leaves the attribution as it was.'
+      summary: Correct a recorded expense
+      parameters:
+      - in: path
+        name: expense_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Platform Finance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAmendExpenseRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAmendExpenseRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAmendExpenseRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformExpenseResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: Malformed request.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: Not a platform operator.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: No such expense.
+    delete:
+      operationId: platform_expenses_delete
+      description: '``PATCH``/``DELETE`` one recorded expense.'
+      summary: Strike an expense from the books
+      parameters:
+      - in: path
+        name: expense_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Platform Finance
+      responses:
+        '204':
+          description: Removed.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: Malformed request.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: Not a platform operator.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: No such expense.
   /api/v1/platform/loadtest/diplomas:
     get:
       operationId: platform_loadtest_overview
@@ -6212,6 +6558,34 @@ paths:
               schema:
                 $ref: '#/components/schemas/PublicFestivalDetailEnvelope'
           description: ''
+  /api/v1/public/judging/board/{slug}:
+    get:
+      operationId: publicJudgingBoard
+      description: '``GET /api/v1/public/judging/board/<slug>`` — the screen beside
+        the stage.'
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - Public Judging Board
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoardEnvelope'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: No such board, or it is switched off.
   /api/v1/public/programs/{slug}:
     get:
       operationId: publicProgramRetrieve
@@ -8049,6 +8423,863 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: Invitation not found.
+  /api/v1/staff/judging/award-scale:
+    put:
+      operationId: judgingAwardScaleReplace
+      description: '``PUT /api/v1/staff/judging/award-scale`` — replace the festival''s
+        award scale.'
+      tags:
+      - Judging
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AwardScaleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AwardScaleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AwardScaleRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingSetupEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/judging/board:
+    put:
+      operationId: judgingBoardUpdate
+      description: '``PUT /api/v1/staff/judging/board`` — what the hall''s screen
+        shows, and when.'
+      tags:
+      - Judging
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BoardRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BoardRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BoardRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingSetupEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/judging/criteria:
+    put:
+      operationId: judgingCriteriaReplace
+      description: '``PUT /api/v1/staff/judging/criteria`` — replace one sheet of
+        criteria.'
+      tags:
+      - Judging
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CriteriaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CriteriaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CriteriaRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingSetupEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/judging/jury:
+    get:
+      operationId: juryList
+      description: '``GET /api/v1/staff/judging/jury`` — the panel; ``POST`` — seat
+        somebody.'
+      parameters:
+      - in: query
+        name: competitionId
+        schema:
+          type: string
+        description: The competition being judged.
+        required: true
+      tags:
+      - Judging
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JuryListEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
+    post:
+      operationId: juryInvite
+      description: '``GET /api/v1/staff/judging/jury`` — the panel; ``POST`` — seat
+        somebody.'
+      tags:
+      - Judging
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteJuryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InviteJuryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InviteJuryRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JuryMemberEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/judging/jury/{member_id}:
+    patch:
+      operationId: juryUpdate
+      description: '``PATCH`` — correct a seat; ``DELETE`` — take it off the panel.'
+      parameters:
+      - in: path
+        name: member_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Judging
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateJuryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateJuryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateJuryRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JuryMemberEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
+    delete:
+      operationId: juryRemove
+      description: '``PATCH`` — correct a seat; ``DELETE`` — take it off the panel.'
+      parameters:
+      - in: path
+        name: member_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Judging
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/judging/jury/{member_id}/assignments:
+    put:
+      operationId: juryAssign
+      description: '``PUT`` — replace the genres one member judges.'
+      parameters:
+      - in: path
+        name: member_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Judging
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignJuryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssignJuryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssignJuryRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JuryMemberEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/judging/jury/{member_id}/reinvite:
+    post:
+      operationId: juryReinvite
+      description: '``POST`` — issue a fresh link, invalidating the one already sent.'
+      parameters:
+      - in: path
+        name: member_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Judging
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JuryMemberEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/judging/jury/{member_id}/revoke:
+    post:
+      operationId: juryRevoke
+      description: '``POST`` — withdraw the seat, leaving every mark it gave in place.'
+      parameters:
+      - in: path
+        name: member_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Judging
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JuryMemberEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/judging/scoring:
+    get:
+      operationId: scoringStates
+      description: '``GET /api/v1/staff/judging/scoring`` — every act''s state, for
+        the host''s screen.'
+      parameters:
+      - in: query
+        name: competitionId
+        schema:
+          type: string
+        description: The competition being judged.
+        required: true
+      tags:
+      - Judging
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScoringStateListEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/judging/scoring-rules:
+    put:
+      operationId: judgingScoringRulesUpdate
+      description: '``PUT /api/v1/staff/judging/scoring-rules`` — how sheets become
+        one number.'
+      tags:
+      - Judging
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScoringRulesRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ScoringRulesRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ScoringRulesRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingSetupEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/judging/scoring/close:
+    post:
+      operationId: scoringClose
+      description: '``POST /api/v1/staff/judging/scoring/close`` — the host closes
+        an act.'
+      tags:
+      - Judging
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScoringStateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ScoringStateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ScoringStateRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScoringStateEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/judging/scoring/open:
+    post:
+      operationId: scoringOpen
+      description: '``POST /api/v1/staff/judging/scoring/open`` — the host puts an
+        act on stage.'
+      tags:
+      - Judging
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScoringStateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ScoringStateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ScoringStateRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScoringStateEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/judging/setup:
+    get:
+      operationId: judgingSetupRead
+      description: '``GET /api/v1/staff/judging/setup`` — the whole configuration
+        screen.'
+      parameters:
+      - in: query
+        name: competitionId
+        schema:
+          type: string
+        description: The competition being judged.
+        required: true
+      tags:
+      - Judging
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingSetupEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/judging/tally:
+    get:
+      operationId: judgingTally
+      description: '``GET /api/v1/staff/judging/tally`` — every act reckoned, grouped
+        and awarded.'
+      parameters:
+      - in: query
+        name: competitionId
+        schema:
+          type: string
+        description: The competition being judged.
+        required: true
+      tags:
+      - Judging
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TallyEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/judging/tally-scope:
+    put:
+      operationId: judgingTallyScopeUpdate
+      description: '``PUT /api/v1/staff/judging/tally-scope`` — the axes results are
+        announced by.'
+      tags:
+      - Judging
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TallyScopeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TallyScopeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TallyScopeRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingSetupEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/judging/tally/apply:
+    post:
+      operationId: judgingTallyApply
+      description: |-
+        ``POST /api/v1/staff/judging/tally/apply`` — write the results into the protocols.
+
+        Answers with how many rows changed rather than with the protocols themselves: the
+        protocols tab is a different screen with its own cache, and returning a dozen
+        documents to a button that lives elsewhere would be a payload nobody renders.
+      parameters:
+      - in: query
+        name: competitionId
+        schema:
+          type: string
+        description: The competition being judged.
+        required: true
+      tags:
+      - Judging
+      responses:
+        '200':
+          description: How many protocol rows were changed.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
   /api/v1/staff/members:
     get:
       operationId: listStaffMembers
@@ -11752,9 +12983,10 @@ components:
           type: integer
           minimum: 1
         award:
-          oneOf:
-          - $ref: '#/components/schemas/AwardKindEnum'
-          - $ref: '#/components/schemas/NullEnum'
+          type:
+          - string
+          - 'null'
+          maxLength: 64
       required:
       - submissionId
     AddTeacherRequest:
@@ -11797,6 +13029,14 @@ components:
       - firstName
       - lastName
       - role
+    AggregationEnum:
+      enum:
+      - AVERAGE
+      - SUM
+      type: string
+      description: |-
+        * `AVERAGE` - AVERAGE
+        * `SUM` - SUM
     AllowedProvidersEnum:
       enum:
       - YOUTUBE
@@ -11996,6 +13236,16 @@ components:
       - status
       - title
       - type
+    AssignJuryRequest:
+      type: object
+      properties:
+        categoryIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+      - categoryIds
     AssignmentResponse:
       type: object
       description: A template assignment (competition + nomination + kind -> template).
@@ -12055,28 +13305,6 @@ components:
         * `IMAGE` - IMAGE
         * `DOCUMENT` - DOCUMENT
         * `BENEFIT` - BENEFIT
-    AwardKindEnum:
-      enum:
-      - GRAND_PRIX
-      - GRAND_PRIX_NOMINEE
-      - LAUREATE_I
-      - LAUREATE_II
-      - LAUREATE_III
-      - DIPLOMANT_I
-      - DIPLOMANT_II
-      - DIPLOMANT_III
-      - PARTICIPANT
-      type: string
-      description: |-
-        * `GRAND_PRIX` - GRAND_PRIX
-        * `GRAND_PRIX_NOMINEE` - GRAND_PRIX_NOMINEE
-        * `LAUREATE_I` - LAUREATE_I
-        * `LAUREATE_II` - LAUREATE_II
-        * `LAUREATE_III` - LAUREATE_III
-        * `DIPLOMANT_I` - DIPLOMANT_I
-        * `DIPLOMANT_II` - DIPLOMANT_II
-        * `DIPLOMANT_III` - DIPLOMANT_III
-        * `PARTICIPANT` - PARTICIPANT
     AwardRowsRequest:
       type: object
       description: |-
@@ -12092,6 +13320,19 @@ components:
             $ref: '#/components/schemas/ProtocolAwardEntry'
       required:
       - awards
+    AwardScaleRequest:
+      type: object
+      properties:
+        competitionId:
+          type: string
+          format: uuid
+        tiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/_AwardTierInput'
+      required:
+      - competitionId
+      - tiers
     BallotDetail:
       type: object
       description: The whole ballot as the organizer edits it.
@@ -12129,7 +13370,7 @@ components:
         cooldownHours:
           type: integer
         reveal:
-          $ref: '#/components/schemas/RevealEnum'
+          $ref: '#/components/schemas/Reveal95fEnum'
         nominees:
           type: array
           items:
@@ -12254,6 +13495,47 @@ components:
       description: |-
         * `PER_PARTICIPANT` - PER_PARTICIPANT
         * `PER_PERFORMANCE` - PER_PERFORMANCE
+    BoardEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/_Board'
+        meta:
+          $ref: '#/components/schemas/_Meta'
+      required:
+      - data
+      - meta
+    BoardRequest:
+      type: object
+      properties:
+        competitionId:
+          type: string
+          format: uuid
+        enabled:
+          type: boolean
+        visibility:
+          $ref: '#/components/schemas/VisibilityEnum'
+        reveal:
+          $ref: '#/components/schemas/BoardRequestRevealEnum'
+        showAward:
+          type: boolean
+          default: true
+        showRunningOrder:
+          type: boolean
+          default: true
+      required:
+      - competitionId
+      - enabled
+      - reveal
+      - visibility
+    BoardRequestRevealEnum:
+      enum:
+      - IMMEDIATE
+      - AFTER_CLOSE
+      type: string
+      description: |-
+        * `IMMEDIATE` - IMMEDIATE
+        * `AFTER_CLOSE` - AFTER_CLOSE
     CalculationTypeEnum:
       enum:
       - PER_PARTICIPANT
@@ -12279,6 +13561,28 @@ components:
           maxItems: 10
       required:
       - nomineeIds
+    CategoryEnum:
+      enum:
+      - INFRASTRUCTURE
+      - MARKETING
+      - PAYROLL
+      - CONTRACTORS
+      - EQUIPMENT
+      - EVENT
+      - BANK
+      - TAX
+      - OTHER
+      type: string
+      description: |-
+        * `INFRASTRUCTURE` - INFRASTRUCTURE
+        * `MARKETING` - MARKETING
+        * `PAYROLL` - PAYROLL
+        * `CONTRACTORS` - CONTRACTORS
+        * `EQUIPMENT` - EQUIPMENT
+        * `EVENT` - EVENT
+        * `BANK` - BANK
+        * `TAX` - TAX
+        * `OTHER` - OTHER
     ColumnRequest:
       type: object
       description: Validate the title of a custom column ("Микрофон", "Реквизит").
@@ -12659,7 +13963,7 @@ components:
           maximum: 336
           minimum: 0
         reveal:
-          $ref: '#/components/schemas/RevealEnum'
+          $ref: '#/components/schemas/Reveal95fEnum'
         title:
           type: string
           maxLength: 200
@@ -12885,6 +14189,26 @@ components:
       - firstName
       - lastName
       - role
+    CriteriaRequest:
+      type: object
+      properties:
+        competitionId:
+          type: string
+          format: uuid
+        scope:
+          $ref: '#/components/schemas/ScopeEnum'
+        targetId:
+          type: string
+          format: uuid
+        criteria:
+          type: array
+          items:
+            $ref: '#/components/schemas/_CriterionInput'
+      required:
+      - competitionId
+      - criteria
+      - scope
+      - targetId
     CurrentUser:
       type: object
       properties:
@@ -12922,6 +14246,18 @@ components:
       required:
       - data
       - meta
+    DimensionsEnum:
+      enum:
+      - CATEGORY
+      - DISCIPLINE
+      - AGE_CATEGORY
+      - PARTICIPATION_FORMAT
+      type: string
+      description: |-
+        * `CATEGORY` - CATEGORY
+        * `DISCIPLINE` - DISCIPLINE
+        * `AGE_CATEGORY` - AGE_CATEGORY
+        * `PARTICIPATION_FORMAT` - PARTICIPATION_FORMAT
     DiplomaFontCatalog:
       type: object
       properties:
@@ -13382,6 +14718,36 @@ components:
             maxLength: 500
       required:
       - values
+    FinanceMeta:
+      type: object
+      properties:
+        requestId:
+          type: string
+      required:
+      - requestId
+    FinanceProblemDetail:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        requestId:
+          type: string
+      required:
+      - detail
+      - instance
+      - requestId
+      - status
+      - title
+      - type
     FontStyleEnum:
       enum:
       - normal
@@ -13634,6 +15000,36 @@ components:
       required:
       - data
       - meta
+    InviteJuryRequest:
+      type: object
+      properties:
+        competitionId:
+          type: string
+          format: uuid
+        fullName:
+          type: string
+          maxLength: 200
+        email:
+          type: string
+          format: email
+          maxLength: 320
+        title:
+          type:
+          - string
+          - 'null'
+          maxLength: 200
+        isChair:
+          type: boolean
+          default: false
+        categoryIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+      - competitionId
+      - email
+      - fullName
     InviteStaffRequest:
       type: object
       description: Validate a staff-invitation creation request.
@@ -13646,6 +15042,91 @@ components:
       required:
       - email
       - role
+    JudgingModeEnum:
+      enum:
+      - PROTOCOLS
+      - ONLINE
+      type: string
+      description: |-
+        * `PROTOCOLS` - PROTOCOLS
+        * `ONLINE` - ONLINE
+    JudgingProblemDetail:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        requestId:
+          type: string
+      required:
+      - detail
+      - instance
+      - requestId
+      - status
+      - title
+      - type
+    JudgingSetupEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/_JudgingSetup'
+        meta:
+          $ref: '#/components/schemas/_Meta'
+      required:
+      - data
+      - meta
+    JuryListEnvelope:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/_JuryMember'
+        meta:
+          $ref: '#/components/schemas/_Meta'
+      required:
+      - data
+      - meta
+    JuryMemberEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/_JuryMember'
+        meta:
+          $ref: '#/components/schemas/_Meta'
+      required:
+      - data
+      - meta
+    JuryTaskEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/_JuryTask'
+        meta:
+          $ref: '#/components/schemas/_Meta'
+      required:
+      - data
+      - meta
+    JuryTaskListEnvelope:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/_JuryTask'
+        meta:
+          $ref: '#/components/schemas/_Meta'
+      required:
+      - data
+      - meta
     LayoutFieldRequest:
       type: object
       description: One field in a layout save. Coordinates are normalised (0..1).
@@ -14400,6 +15881,34 @@ components:
           format: email
       required:
       - email
+    PatchedAmendExpenseRequest:
+      type: object
+      description: |-
+        A correction. Every field optional; an omitted one is left as it was.
+
+        ``organizationId`` present and ``null`` is the one payload that means something
+        rather than nothing: move this cost off the client and onto the platform. The
+        view tells the two apart by whether the key was sent at all.
+      properties:
+        amount:
+          type: string
+          maxLength: 32
+        category:
+          $ref: '#/components/schemas/CategoryEnum'
+        purpose:
+          type: string
+          maxLength: 200
+        spentAt:
+          type: string
+          format: date
+        organizationId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        note:
+          type: string
+          maxLength: 2000
     PatchedChangePrice:
       type: object
       properties:
@@ -14715,7 +16224,7 @@ components:
           maximum: 336
           minimum: 0
         reveal:
-          $ref: '#/components/schemas/RevealEnum'
+          $ref: '#/components/schemas/Reveal95fEnum'
         title:
           type: string
           maxLength: 200
@@ -14835,6 +16344,24 @@ components:
           type: integer
           minimum: 0
           default: 0
+    PatchedUpdateJuryRequest:
+      type: object
+      properties:
+        fullName:
+          type: string
+          maxLength: 200
+        email:
+          type: string
+          format: email
+          maxLength: 320
+        title:
+          type:
+          - string
+          - 'null'
+          maxLength: 200
+        isChair:
+          type: boolean
+          default: false
     PatchedUpdateOrganizationRequest:
       type: object
       description: Change an organization's commercial terms or suspend/reactivate
@@ -15081,6 +16608,16 @@ components:
           type: string
         settledCommission:
           type: string
+        expenses:
+          type: string
+        unattributedExpenses:
+          type: string
+        profit:
+          type: string
+        potentialProfit:
+          type: string
+        expensesApply:
+          type: boolean
         organizations:
           type: array
           items:
@@ -15094,10 +16631,15 @@ components:
       - competitions
       - expectedCommission
       - expectedFees
+      - expenses
+      - expensesApply
       - organizations
+      - potentialProfit
+      - profit
       - settledCommission
       - settledFees
       - statusCounts
+      - unattributedExpenses
     PlatformDashboardResponse:
       type: object
       properties:
@@ -15105,6 +16647,46 @@ components:
           $ref: '#/components/schemas/PlatformMeta'
         data:
           $ref: '#/components/schemas/PlatformDashboard'
+      required:
+      - data
+      - meta
+    PlatformExpenseLedger:
+      type: object
+      properties:
+        expenses:
+          type: array
+          items:
+            $ref: '#/components/schemas/_Expense'
+        total:
+          type: string
+        byCategory:
+          type: array
+          items:
+            $ref: '#/components/schemas/_CategoryTotal'
+        truncated:
+          type: boolean
+      required:
+      - byCategory
+      - expenses
+      - total
+      - truncated
+    PlatformExpenseLedgerResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/FinanceMeta'
+        data:
+          $ref: '#/components/schemas/PlatformExpenseLedger'
+      required:
+      - data
+      - meta
+    PlatformExpenseResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/FinanceMeta'
+        data:
+          $ref: '#/components/schemas/_Expense'
       required:
       - data
       - meta
@@ -15860,9 +17442,10 @@ components:
           type: string
           format: uuid
         award:
-          oneOf:
-          - $ref: '#/components/schemas/AwardKindEnum'
-          - $ref: '#/components/schemas/NullEnum'
+          type:
+          - string
+          - 'null'
+          maxLength: 64
       required:
       - award
       - rowId
@@ -15870,7 +17453,8 @@ components:
       type: object
       properties:
         value:
-          $ref: '#/components/schemas/AwardKindEnum'
+          type: string
+          maxLength: 64
         label:
           type: string
         seniority:
@@ -16078,9 +17662,10 @@ components:
         title:
           type: string
         award:
-          oneOf:
-          - $ref: '#/components/schemas/AwardKindEnum'
-          - $ref: '#/components/schemas/NullEnum'
+          type:
+          - string
+          - 'null'
+          maxLength: 64
         awardLabel:
           type:
           - string
@@ -17229,6 +18814,42 @@ components:
             $ref: '#/components/schemas/_ConsentItem'
       required:
       - consents
+    RecordExpenseRequest:
+      type: object
+      description: |-
+        One cost being entered into the platform's books.
+
+        ``amount`` is a string and not a number on purpose: it is money, and a JSON
+        number would be parsed as a float somewhere between the form and the column.
+        The domain parses it, which is also where "1 200,50" becomes a decimal.
+
+        ``organizationId`` omitted means the platform carried this cost itself. That is
+        the ordinary case for infrastructure and is not a missing field.
+      properties:
+        amount:
+          type: string
+          maxLength: 32
+        category:
+          $ref: '#/components/schemas/CategoryEnum'
+        purpose:
+          type: string
+          maxLength: 200
+        spentAt:
+          type: string
+          format: date
+        organizationId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        note:
+          type: string
+          maxLength: 2000
+      required:
+      - amount
+      - category
+      - purpose
+      - spentAt
     Registration:
       type: object
       description: The single Registration projection consumed by the wizard.
@@ -17692,7 +19313,7 @@ components:
             format: uuid
       required:
       - rowIds
-    RevealEnum:
+    Reveal95fEnum:
       enum:
       - ALWAYS
       - AFTER_CLOSE
@@ -17798,10 +19419,10 @@ components:
       - updatedAt
     ReviewProblemDetail:
       type: object
-      description: RFC 9457 problem document (API-000 §8).
       properties:
         type:
           type: string
+          format: uri
         title:
           type: string
         status:
@@ -17860,6 +19481,69 @@ components:
           - string
           - 'null'
           format: date-time
+    ScopeEnum:
+      enum:
+      - CATEGORY
+      - DISCIPLINE
+      type: string
+      description: |-
+        * `CATEGORY` - CATEGORY
+        * `DISCIPLINE` - DISCIPLINE
+    ScoringRulesRequest:
+      type: object
+      properties:
+        competitionId:
+          type: string
+          format: uuid
+        aggregation:
+          $ref: '#/components/schemas/AggregationEnum'
+        dropHighest:
+          type: boolean
+          default: false
+        dropLowest:
+          type: boolean
+          default: false
+      required:
+      - aggregation
+      - competitionId
+    ScoringStateEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/_ScoringState'
+        meta:
+          $ref: '#/components/schemas/_Meta'
+      required:
+      - data
+      - meta
+    ScoringStateListEnvelope:
+      type: object
+      description: Every act's state at once — the host's screen reads the whole programme.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/_ScoringState'
+        meta:
+          $ref: '#/components/schemas/_Meta'
+      required:
+      - data
+      - meta
+    ScoringStateRequest:
+      type: object
+      properties:
+        competitionId:
+          type: string
+          format: uuid
+        submissionId:
+          type: string
+          format: uuid
+        closePrevious:
+          type: boolean
+          default: true
+      required:
+      - competitionId
+      - submissionId
     SeedFromProgramRequest:
       type: object
       description: Fill the list from a running order of the festival this ballot
@@ -18367,6 +20051,32 @@ components:
       required:
       - data
       - meta
+    SubmitScorecardRequest:
+      type: object
+      description: 'One judge''s sheet: a mark per criterion id, plus a note to the
+        organizer.'
+      properties:
+        competitionId:
+          type: string
+          format: uuid
+        submissionId:
+          type: string
+          format: uuid
+        scores:
+          type: object
+          additionalProperties:
+            type: string
+            format: decimal
+            pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        comment:
+          type:
+          - string
+          - 'null'
+          maxLength: 2000
+      required:
+      - competitionId
+      - scores
+      - submissionId
     SupportingOrganization:
       type: object
       description: 'The "with the support of" block: the organizer''s channels, for
@@ -18463,6 +20173,29 @@ components:
           type:
           - string
           - 'null'
+    TallyEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/_TallySheet'
+        meta:
+          $ref: '#/components/schemas/_Meta'
+      required:
+      - data
+      - meta
+    TallyScopeRequest:
+      type: object
+      properties:
+        competitionId:
+          type: string
+          format: uuid
+        dimensions:
+          type: array
+          items:
+            $ref: '#/components/schemas/DimensionsEnum'
+      required:
+      - competitionId
+      - dimensions
     TeacherDirectoryResponse:
       type: object
       properties:
@@ -18831,6 +20564,10 @@ components:
           type: boolean
         allowReturningForCorrection:
           type: boolean
+        judgingMode:
+          allOf:
+          - $ref: '#/components/schemas/JudgingModeEnum'
+          default: PROTOCOLS
         formatRequirements:
           type: array
           items:
@@ -18999,6 +20736,14 @@ components:
       - displayName
       - emailVerified
       - id
+    VisibilityEnum:
+      enum:
+      - PER_JUDGE
+      - TOTAL_ONLY
+      type: string
+      description: |-
+        * `PER_JUDGE` - PER_JUDGE
+        * `TOTAL_ONLY` - TOTAL_ONLY
     VoteReceipt:
       type: object
       description: What comes back the moment somebody votes.
@@ -19155,6 +20900,147 @@ components:
           - 'null'
       required:
       - degree
+    _AwardTier:
+      type: object
+      properties:
+        code:
+          type: string
+        label:
+          type: string
+        minScore:
+          type:
+          - string
+          - 'null'
+        maxScore:
+          type:
+          - string
+          - 'null'
+        sortOrder:
+          type: integer
+      required:
+      - code
+      - label
+      - maxScore
+      - minScore
+      - sortOrder
+    _AwardTierInput:
+      type: object
+      description: One step of the scale. A blank band is legal — see ``AwardTier``.
+      properties:
+        code:
+          type: string
+          maxLength: 64
+        label:
+          type: string
+          maxLength: 120
+        minScore:
+          type:
+          - string
+          - 'null'
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        maxScore:
+          type:
+          - string
+          - 'null'
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        sortOrder:
+          type: integer
+          minimum: 0
+          default: 0
+      required:
+      - label
+    _Board:
+      type: object
+      properties:
+        competitionTitle:
+          type: string
+        visibility:
+          type: string
+        reveal:
+          type: string
+        showAward:
+          type: boolean
+        current:
+          oneOf:
+          - $ref: '#/components/schemas/_BoardEntry'
+          - type: 'null'
+        recent:
+          type: array
+          items:
+            $ref: '#/components/schemas/_BoardEntry'
+      required:
+      - competitionTitle
+      - current
+      - recent
+      - reveal
+      - showAward
+      - visibility
+    _BoardEntry:
+      type: object
+      properties:
+        number:
+          type: integer
+        title:
+          type: string
+        organization:
+          type:
+          - string
+          - 'null'
+        categoryName:
+          type:
+          - string
+          - 'null'
+        ageCategoryName:
+          type:
+          - string
+          - 'null'
+        status:
+          type: string
+        score:
+          type:
+          - string
+          - 'null'
+        maxScore:
+          type: string
+        awardLabel:
+          type:
+          - string
+          - 'null'
+        submittedCount:
+          type: integer
+        expectedJudges:
+          type: integer
+        judges:
+          type: array
+          items:
+            $ref: '#/components/schemas/_BoardJudge'
+      required:
+      - ageCategoryName
+      - awardLabel
+      - categoryName
+      - expectedJudges
+      - judges
+      - maxScore
+      - number
+      - organization
+      - score
+      - status
+      - submittedCount
+      - title
+    _BoardJudge:
+      type: object
+      properties:
+        name:
+          type: string
+        total:
+          type:
+          - string
+          - 'null'
+      required:
+      - name
+      - total
     _Branding:
       type: object
       properties:
@@ -19207,6 +21093,19 @@ components:
       - registrationOpensAt
       - registrationStopped
       - sortOrder
+    _CategoryTotal:
+      type: object
+      properties:
+        category:
+          $ref: '#/components/schemas/CategoryEnum'
+        amount:
+          type: string
+        count:
+          type: integer
+      required:
+      - amount
+      - category
+      - count
     _CompetitionOption:
       type: object
       properties:
@@ -19393,6 +21292,90 @@ components:
       - useOrganizationContacts
       - useOrganizationSupporter
       - venueDetails
+    _CriteriaSet:
+      type: object
+      properties:
+        scope:
+          type: string
+        targetId:
+          type: string
+        targetName:
+          type:
+          - string
+          - 'null'
+        criteria:
+          type: array
+          items:
+            $ref: '#/components/schemas/_Criterion'
+        maxTotal:
+          type: string
+      required:
+      - criteria
+      - maxTotal
+      - scope
+      - targetId
+      - targetName
+    _Criterion:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        maxScore:
+          type: string
+        weight:
+          type: string
+        sortOrder:
+          type: integer
+        description:
+          type:
+          - string
+          - 'null'
+      required:
+      - description
+      - id
+      - maxScore
+      - name
+      - sortOrder
+      - weight
+    _CriterionInput:
+      type: object
+      description: |-
+        One line of a criteria sheet.
+
+        ``id`` is optional and *load-bearing when present*: sending a criterion back with
+        the id it came with is what keeps marks already given against it attached to it.
+      properties:
+        id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        name:
+          type: string
+          maxLength: 200
+        maxScore:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        weight:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        sortOrder:
+          type: integer
+          minimum: 0
+          default: 0
+        description:
+          type:
+          - string
+          - 'null'
+          maxLength: 500
+      required:
+      - maxScore
+      - name
+      - weight
     _Deadlines:
       type: object
       properties:
@@ -19507,6 +21490,49 @@ components:
           type:
           - string
           - 'null'
+    _Expense:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        amount:
+          type: string
+        category:
+          $ref: '#/components/schemas/CategoryEnum'
+        purpose:
+          type: string
+        spentAt:
+          type: string
+          format: date
+        note:
+          type: string
+        organizationId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        organizationName:
+          type:
+          - string
+          - 'null'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - amount
+      - category
+      - createdAt
+      - id
+      - note
+      - organizationId
+      - organizationName
+      - purpose
+      - spentAt
+      - updatedAt
     _FaqItem:
       type: object
       properties:
@@ -19664,6 +21690,92 @@ components:
       - published
       - sortOrder
       - title
+    _JudgeScore:
+      type: object
+      properties:
+        criterionId:
+          type: string
+        score:
+          type: string
+      required:
+      - criterionId
+      - score
+    _JudgingSetup:
+      type: object
+      properties:
+        competitionId:
+          type: string
+        onlineJudging:
+          type: boolean
+        awardScale:
+          type: array
+          items:
+            $ref: '#/components/schemas/_AwardTier'
+        criteriaSets:
+          type: array
+          items:
+            $ref: '#/components/schemas/_CriteriaSet'
+        nominations:
+          type: array
+          items:
+            $ref: '#/components/schemas/_Nomination'
+        aggregation:
+          type: string
+        dropHighest:
+          type: boolean
+        dropLowest:
+          type: boolean
+        tallyDimensions:
+          type: array
+          items:
+            type: string
+        boardEnabled:
+          type: boolean
+        boardVisibility:
+          type: string
+        boardReveal:
+          type: string
+        boardShowAward:
+          type: boolean
+        boardShowRunningOrder:
+          type: boolean
+        boardSlug:
+          type:
+          - string
+          - 'null'
+        boardPath:
+          type:
+          - string
+          - 'null'
+        juryCount:
+          type: integer
+        scaleIsBanded:
+          type: boolean
+        updatedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - aggregation
+      - awardScale
+      - boardEnabled
+      - boardPath
+      - boardReveal
+      - boardShowAward
+      - boardShowRunningOrder
+      - boardSlug
+      - boardVisibility
+      - competitionId
+      - criteriaSets
+      - dropHighest
+      - dropLowest
+      - juryCount
+      - nominations
+      - onlineJudging
+      - scaleIsBanded
+      - tallyDimensions
+      - updatedAt
     _JuryCard:
       type: object
       properties:
@@ -19720,6 +21832,139 @@ components:
       required:
       - id
       - name
+    _JuryMember:
+      type: object
+      properties:
+        id:
+          type: string
+        fullName:
+          type: string
+        email:
+          type: string
+        title:
+          type:
+          - string
+          - 'null'
+        status:
+          type: string
+        isChair:
+          type: boolean
+        categoryIds:
+          type: array
+          items:
+            type: string
+        categoryNames:
+          type: array
+          items:
+            type: string
+        sortOrder:
+          type: integer
+        hasAccount:
+          type: boolean
+        invitedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        acceptedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        invitationPath:
+          type:
+          - string
+          - 'null'
+      required:
+      - acceptedAt
+      - categoryIds
+      - categoryNames
+      - email
+      - fullName
+      - hasAccount
+      - id
+      - invitationPath
+      - invitedAt
+      - isChair
+      - sortOrder
+      - status
+      - title
+    _JuryTask:
+      type: object
+      properties:
+        submissionId:
+          type: string
+        number:
+          type: integer
+        title:
+          type: string
+        categoryId:
+          type: string
+        categoryName:
+          type:
+          - string
+          - 'null'
+        disciplineName:
+          type:
+          - string
+          - 'null'
+        ageCategoryName:
+          type:
+          - string
+          - 'null'
+        participationFormatName:
+          type:
+          - string
+          - 'null'
+        organization:
+          type:
+          - string
+          - 'null'
+        status:
+          type: string
+        criteria:
+          type: array
+          items:
+            $ref: '#/components/schemas/_Criterion'
+        myScores:
+          type: array
+          items:
+            $ref: '#/components/schemas/_JudgeScore'
+        myComment:
+          type:
+          - string
+          - 'null'
+        myTotal:
+          type:
+          - string
+          - 'null'
+        submittedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        canScore:
+          type: boolean
+        maxTotal:
+          type: string
+      required:
+      - ageCategoryName
+      - canScore
+      - categoryId
+      - categoryName
+      - criteria
+      - disciplineName
+      - maxTotal
+      - myComment
+      - myScores
+      - myTotal
+      - number
+      - organization
+      - participationFormatName
+      - status
+      - submissionId
+      - submittedAt
+      - title
     _LandingBlock:
       type: object
       properties:
@@ -20068,6 +22313,23 @@ components:
       - allowedFormats
       - maxUploadSizeMb
       - requireUpload
+    _Nomination:
+      type: object
+      properties:
+        categoryId:
+          type: string
+        name:
+          type: string
+        disciplines:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: string
+      required:
+      - categoryId
+      - disciplines
+      - name
     _NominationSnapshot:
       type: object
       properties:
@@ -20164,6 +22426,12 @@ components:
           type: string
         settledCommission:
           type: string
+        expenses:
+          type: string
+        profit:
+          type: string
+        potentialProfit:
+          type: string
       required:
       - applications
       - billingModel
@@ -20171,9 +22439,12 @@ components:
       - competitions
       - expectedCommission
       - expectedFees
+      - expenses
       - feeTiers
       - name
       - organizationId
+      - potentialProfit
+      - profit
       - settledCommission
       - settledFees
       - status
@@ -20447,6 +22718,56 @@ components:
           - 'null'
       required:
       - title
+    _PerformanceTally:
+      type: object
+      properties:
+        submissionId:
+          type: string
+        number:
+          type: integer
+        title:
+          type: string
+        organization:
+          type:
+          - string
+          - 'null'
+        score:
+          type:
+          - string
+          - 'null'
+        maxScore:
+          type: string
+        awardCode:
+          type:
+          - string
+          - 'null'
+        awardLabel:
+          type:
+          - string
+          - 'null'
+        submittedCount:
+          type: integer
+        expectedJudges:
+          type: integer
+        status:
+          type: string
+        scorecards:
+          type: array
+          items:
+            $ref: '#/components/schemas/_Scorecard'
+      required:
+      - awardCode
+      - awardLabel
+      - expectedJudges
+      - maxScore
+      - number
+      - organization
+      - score
+      - scorecards
+      - status
+      - submissionId
+      - submittedCount
+      - title
     _Period:
       type: object
       properties:
@@ -20541,9 +22862,10 @@ components:
           items:
             type: string
         award:
-          oneOf:
-          - $ref: '#/components/schemas/AwardKindEnum'
-          - $ref: '#/components/schemas/NullEnum'
+          type:
+          - string
+          - 'null'
+          maxLength: 64
       required:
       - award
       - cells
@@ -20670,6 +22992,60 @@ components:
       - position
       - slotSeconds
       - startsAt
+    _Scorecard:
+      type: object
+      properties:
+        juryMemberId:
+          type: string
+        juryMemberName:
+          type: string
+        scores:
+          type: array
+          items:
+            $ref: '#/components/schemas/_JudgeScore'
+        total:
+          type: string
+        comment:
+          type:
+          - string
+          - 'null'
+        submittedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        submitted:
+          type: boolean
+      required:
+      - comment
+      - juryMemberId
+      - juryMemberName
+      - scores
+      - submitted
+      - submittedAt
+      - total
+    _ScoringState:
+      type: object
+      properties:
+        submissionId:
+          type: string
+        status:
+          type: string
+        openedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        closedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - closedAt
+      - openedAt
+      - status
+      - submissionId
     _ServiceLine:
       type: object
       properties:
@@ -20740,6 +23116,8 @@ components:
           type: boolean
         allowReturningForCorrection:
           type: boolean
+        judgingMode:
+          type: string
         formatRequirements:
           type: array
           items:
@@ -20756,6 +23134,7 @@ components:
       - automaticApprovalAfterPayment
       - collectPayerDetails
       - formatRequirements
+      - judgingMode
       - manualApplicationApproval
       - participantCommentEnabled
       - paymentMethods
@@ -20956,6 +23335,47 @@ components:
           type:
           - string
           - 'null'
+    _TallyGroup:
+      type: object
+      properties:
+        key:
+          type: string
+        heading:
+          type: string
+        categoryId:
+          type:
+          - string
+          - 'null'
+        tallies:
+          type: array
+          items:
+            $ref: '#/components/schemas/_PerformanceTally'
+      required:
+      - categoryId
+      - heading
+      - key
+      - tallies
+    _TallySheet:
+      type: object
+      properties:
+        competitionId:
+          type: string
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/_TallyGroup'
+        aggregation:
+          type: string
+        scaleIsBanded:
+          type: boolean
+        unawardedCount:
+          type: integer
+      required:
+      - aggregation
+      - competitionId
+      - groups
+      - scaleIsBanded
+      - unawardedCount
     _TeacherResource:
       type: object
       properties:
