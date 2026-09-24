@@ -34,11 +34,14 @@ class ProtocolStatusChoices(models.TextChoices):
 
 
 class AwardChoices(models.TextChoices):
-    """The award vocabulary (mirrors the domain ``AwardKind``).
+    """The award vocabulary a festival **starts** with (mirrors ``AwardKind``).
 
-    Derived from the enum rather than retyped, so a new award is a value in one place.
-    The database still constrains the column to these names, which is what keeps a
-    hand-written UPDATE from inventing a tenth kind of diploma.
+    Derived from the enum rather than retyped, so a default is a value in one place.
+    No longer a database constraint, though: a festival writes its own award scale in
+    the Judging context, and a column that only accepted these nine would refuse the
+    "1 место" an organizer just configured. What the column still is is a short,
+    machine-shaped code - validated by ``parse_award`` - rather than free text, so a
+    diploma is never printed from a degree somebody typed into a results table.
     """
 
     GRAND_PRIX = AwardKind.GRAND_PRIX.value, "Гран-при"
@@ -139,7 +142,9 @@ class ProtocolRowModel(BasePersistenceModel):
     number = models.PositiveIntegerField(default=0)
     # Id-only reference into the Applications context.
     submission_id = models.UUIDField()
-    award = models.CharField(max_length=24, choices=AwardChoices.choices, null=True, blank=True, default=None)
+    # Wide enough for any code the Judging context mints (it bounds them at 64), and
+    # still only a code: what it is called comes from the festival's scale.
+    award = models.CharField(max_length=64, null=True, blank=True, default=None)
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "results_protocol_row"
@@ -156,10 +161,6 @@ class ProtocolRowModel(BasePersistenceModel):
         ]
         constraints = [
             *BasePersistenceModel.Meta.constraints,
-            models.CheckConstraint(
-                condition=models.Q(award__isnull=True) | models.Q(award__in=AwardChoices.values),
-                name="results_row_award_valid",
-            ),
             # One act, one result. A second row for the same submission would let two
             # awards be entered for it and only one of them reach the diploma.
             models.UniqueConstraint(

@@ -4,8 +4,11 @@ Field names are the API's camelCase wire keys (API-000 §7). Request serializers
 shape only - every business rule belongs to the domain, so a serializer here never decides
 whether an act may be awarded or whether a protocol may be published.
 
-The award choices are enumerated from :class:`~apps.results.domain.value_objects.AwardKind`
-rather than retyped, so the contract, the database constraint and the domain cannot drift.
+Awards are carried as **codes**, not as a fixed enumeration: a festival writes its own
+award scale (see the Judging context), so the set of valid codes is per-competition and
+cannot be pinned in a contract shared by all of them. The shape is still validated - a
+code, not a free-text degree - and the domain's ``parse_award`` is what enforces it.
+:data:`AWARD_VALUES` remains as documentation of the defaults every festival starts with.
 """
 
 from __future__ import annotations
@@ -32,8 +35,13 @@ __all__ = [
     "UpdateProtocolRequestSerializer",
 ]
 
-#: The award vocabulary, enumerated from the domain.
+#: The award vocabulary a festival **starts** with, enumerated from the domain. Not a
+#: constraint on the wire - see the module docstring - but what a client should expect to
+#: see for a festival whose organizer never edited the scale.
 AWARD_VALUES = [kind.value for kind in AwardKind]
+
+#: How long an award code may be. Matches the domain's own bound.
+_AWARD_CODE_MAX = 64
 
 #: The columns a protocol table can carry, and therefore what a published page may be cut
 #: to.
@@ -75,7 +83,7 @@ class AddRowRequestSerializer(serializers.Serializer[dict[str, object]]):
 
     submissionId = serializers.UUIDField()
     position = serializers.IntegerField(required=False, min_value=1)
-    award = serializers.ChoiceField(choices=AWARD_VALUES, required=False, allow_null=True)
+    award = serializers.CharField(max_length=_AWARD_CODE_MAX, required=False, allow_null=True, allow_blank=True)
 
 
 class ReorderRowsRequestSerializer(serializers.Serializer[dict[str, object]]):
@@ -97,7 +105,7 @@ class AwardRowsRequestSerializer(serializers.Serializer[dict[str, object]]):
             name="ProtocolAwardEntry",
             fields={
                 "rowId": serializers.UUIDField(),
-                "award": serializers.ChoiceField(choices=AWARD_VALUES, allow_null=True),
+                "award": serializers.CharField(max_length=_AWARD_CODE_MAX, allow_null=True, allow_blank=True),
             },
         ),
         allow_empty=False,
@@ -145,7 +153,7 @@ def _award_option_schema() -> serializers.BaseSerializer[dict[str, object]]:
     return inline_serializer(
         name="ProtocolAwardOption",
         fields={
-            "value": serializers.ChoiceField(choices=AWARD_VALUES),
+            "value": serializers.CharField(max_length=_AWARD_CODE_MAX),
             "label": serializers.CharField(),
             "seniority": serializers.IntegerField(),
         },
@@ -160,7 +168,7 @@ class ProtocolRowResourceSerializer(serializers.Serializer[dict[str, object]]):
     number = serializers.IntegerField()
     submissionId = serializers.UUIDField()
     title = serializers.CharField()
-    award = serializers.ChoiceField(choices=AWARD_VALUES, allow_null=True)
+    award = serializers.CharField(max_length=_AWARD_CODE_MAX, allow_null=True)
     awardLabel = serializers.CharField(allow_null=True)
     leadParticipant = serializers.CharField(allow_null=True)
     participants = serializers.ListField(child=serializers.CharField())

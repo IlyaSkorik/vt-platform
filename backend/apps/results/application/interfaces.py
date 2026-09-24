@@ -17,6 +17,9 @@ platform that writes into another context:
   depend on how a diploma is stored, numbered or rendered.
 * :class:`ResultsNotifier` **writes** to the outside world - one letter per applicant
   once the results are out.
+* :class:`AwardVocabulary` **reads** Judging - what this festival's awards are called.
+  A port rather than a constant because the scale is the organizer's: "Лауреат I
+  степени" and "1 место" are the same protocol under two festivals.
 """
 
 from __future__ import annotations
@@ -31,6 +34,8 @@ from apps.results.domain.entities import Protocol
 
 __all__ = [
     "AwardRegister",
+    "AwardTierView",
+    "AwardVocabulary",
     "AwardedDiploma",
     "CatalogPerformance",
     "Clock",
@@ -41,6 +46,20 @@ __all__ = [
     "RunningOrderSource",
     "SlugFactory",
 ]
+
+
+@dataclass(frozen=True, slots=True)
+class AwardTierView:
+    """One step of a festival's award scale, as this context needs to read it.
+
+    Three values: the code a row stores, the name it is printed under, and where it
+    sits among the others. The bands behind it belong to Judging - a protocol never
+    computes an award, it only renders one.
+    """
+
+    code: str
+    label: str
+    seniority: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -216,6 +235,12 @@ class AwardRegister(TypingProtocol):
         the gap in the response.
         """
         ...
+
+
+class AwardVocabulary(TypingProtocol):
+    """Reads the Judging context: what this festival can award, and in what order."""
+
+    def tiers(self, competition_id: uuid.UUID) -> tuple[AwardTierView, ...]: ...
 
 
 class ResultsNotifier(TypingProtocol):

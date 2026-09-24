@@ -319,7 +319,6 @@ SPECTACULAR_SETTINGS = {
         # row, `value` on a dropdown option, `award` on a public row — so it collides
         # with itself as well as with unrelated `value` fields elsewhere. Same reason as
         # above: an unpinned name gets a hash suffix that moves as the schema grows.
-        "AwardKindEnum": "apps.results.presentation.api.v1.serializers.AWARD_VALUES",
         "ProtocolStatusEnum": "apps.results.presentation.api.v1.serializers.PROTOCOL_STATUS_VALUES",
     },
 }

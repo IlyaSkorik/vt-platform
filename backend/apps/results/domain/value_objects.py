@@ -2,13 +2,22 @@
 
 Immutable, identity-less concepts (DATA-001 §8), framework-free.
 
-The one that matters is :class:`AwardKind`. A result in this platform is **not** a
-place and not a score: the jury says "Лауреат II степени" and that is the whole of
-it. There is no first, second and third within a degree, no points behind it, and
-nothing to tie-break - which is why the Diplomas context stores a diploma's result as
-a single ``award.degree`` string and knows nothing about ranking. This enum is the
-closed vocabulary that string is drawn from, so the protocol, the diploma and the
-public page can never disagree about what an award is called.
+The one that matters is the **award**, and what it is deserves stating precisely. A
+result in this platform is not a place and not a score: the jury says "Лауреат II
+степени" and that is the whole of it. There is no first, second and third within a
+degree and nothing to tie-break - which is why the Diplomas context stores a diploma's
+result as a single ``award.degree`` string and knows nothing about ranking.
+
+A row therefore stores an award **code**: a short, stable token like ``LAUREATE_II``.
+What that code is *called* is the festival's own business, because festivals genuinely
+disagree - one hands out "Лауреат I степени", the next "1 место", the next both a
+"Гран-при" and a "Лауреат". The vocabulary each festival draws from is configured in
+the Judging context and resolved through
+:class:`~apps.results.application.interfaces.AwardVocabulary`; :class:`AwardKind` below
+is the **default** every festival starts with, and the fallback for a code whose tier
+has since been deleted from a scale. A published protocol must keep naming its awards
+the way it named them when it was published, so a code with no tier behind it is
+rendered from that fallback rather than left blank.
 
 Identifiers are plain :class:`uuid.UUID` values rather than one wrapper class per
 reference, the way the Programs context does it: this context holds ids only - its
@@ -18,6 +27,7 @@ contexts - and none of them carry behaviour worth a type of their own.
 
 from __future__ import annotations
 
+import re
 import secrets
 import uuid
 from collections.abc import Iterable, Mapping
@@ -32,6 +42,7 @@ __all__ = [
     "AWARD_ORDER",
     "COLUMN_LABELS",
     "DEFAULT_PUBLIC_COLUMNS",
+    "AwardCode",
     "AwardKind",
     "ProtocolColumn",
     "ProtocolName",
@@ -39,11 +50,20 @@ __all__ = [
     "PublicSlug",
     "PublishedResult",
     "PublishedSnapshot",
+    "default_award_label",
     "parse_award",
     "parse_columns",
 ]
 
+#: An award code as a protocol stores it. A plain string on purpose: the vocabulary is
+#: the festival's, so there is no enum this context could check it against.
+AwardCode = str
+
 _NAME_MAX: Final = 200
+
+#: The shape of an award code - what :func:`parse_award` accepts. Matches the codes the
+#: Judging context mints, so the two never drift into accepting different things.
+_AWARD_CODE_RE: Final = re.compile(r"^[A-Z][A-Z0-9_]{0,63}$")
 
 _SLUG_ALPHABET: Final = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"
 _SLUG_LENGTH: Final = 10
@@ -52,12 +72,14 @@ _SLUG_MAX_LENGTH: Final = 64
 
 
 class AwardKind(StrEnum):
-    """What the jury awarded one act.
+    """The award vocabulary a festival starts with.
 
-    A closed vocabulary, deliberately: an award has to mean the same thing on the
-    protocol, on the diploma and in the participant's cabinet, and a free-text result
-    would be three different strings within one season. Adding a kind is a value here
-    plus its label below - no migration, because the column stores the name.
+    Not a closed set any more, and not what a row is typed as: a row stores a code
+    string, and a festival's own scale decides which codes exist and what they read as.
+    What this enum is for is twofold - it seeds every new festival's scale, so nobody
+    has to type nine степени before running a protocol, and it names the codes protocols
+    were storing before scales were configurable, so those rows keep rendering exactly
+    as they did.
 
     Order of declaration is the **order of seniority**, from Гран-при down to the
     participation diploma. That is what :data:`AWARD_ORDER` reads, and it is the only
@@ -183,22 +205,35 @@ DEFAULT_PUBLIC_COLUMNS: Final[tuple[ProtocolColumn, ...]] = (
 )
 
 
-def parse_award(raw: object) -> AwardKind | None:
-    """Read an award from the wire. ``None`` or blank means "not decided yet".
+def parse_award(raw: object) -> AwardCode | None:
+    """Read an award code from the wire. ``None`` or blank means "not decided yet".
 
     Clearing a result is a legitimate edit - a row entered by mistake, an act
     withdrawn between the performance and the protocol - so an empty value is a value
     here and not a validation failure.
+
+    Only the *shape* is checked here, not membership: whether a code exists is a
+    question about the festival's scale, which is another context's, and a protocol
+    that refused a code the organizer had just added would be checking it in the wrong
+    place. What this guards against is a free-text degree arriving as an award and
+    becoming the string a diploma is printed from.
     """
     if raw is None:
         return None
-    text = str(raw).strip()
+    text = str(raw).strip().upper()
     if not text:
         return None
+    if not _AWARD_CODE_RE.match(text):
+        raise InvalidProtocolDataError("Неизвестная награда.")
+    return text
+
+
+def default_award_label(code: str) -> str | None:
+    """The built-in name for ``code``, or ``None`` if it is not one of the defaults."""
     try:
-        return AwardKind(text.upper())
-    except ValueError as exc:
-        raise InvalidProtocolDataError("Неизвестная награда.") from exc
+        return AWARD_LABELS[AwardKind(str(code).strip().upper())]
+    except (ValueError, KeyError):
+        return None
 
 
 def parse_columns(values: Iterable[object] | None) -> tuple[ProtocolColumn, ...]:
@@ -237,14 +272,14 @@ class PublishedResult:
 
     submission_id: uuid.UUID
     number: int
-    award: AwardKind | None = None
+    award: AwardCode | None = None
 
     def to_dict(self) -> dict[str, object]:
         """The JSON shape the snapshot column stores this line as."""
         return {
             "submission_id": str(self.submission_id),
             "number": self.number,
-            "award": self.award.value if self.award is not None else None,
+            "award": self.award,
         }
 
     @classmethod
@@ -254,7 +289,9 @@ class PublishedResult:
         return cls(
             submission_id=uuid.UUID(str(data["submission_id"])),
             number=int(str(data.get("number") or 0)),
-            award=AwardKind(str(award)) if award else None,
+            # Read without validating: a snapshot outlives the scale it was published
+            # under, and a published page must not go missing because a tier was renamed.
+            award=str(award).strip().upper() or None if award else None,
         )
 
 

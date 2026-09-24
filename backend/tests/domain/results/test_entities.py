@@ -293,9 +293,24 @@ class TestValueObjects:
     def test_a_blank_award_parses_as_undecided(self, blank: object) -> None:
         assert parse_award(blank) is None
 
-    def test_an_unknown_award_is_refused(self) -> None:
+    def test_a_code_outside_the_defaults_is_accepted(self) -> None:
+        """A festival writes its own scale, so the vocabulary is not this context's.
+
+        ``LAUREATE_IV`` is not one of the platform's nine, and a festival that added a
+        fourth degree is entitled to store it.
+        """
+        assert parse_award("LAUREATE_IV") == "LAUREATE_IV"
+        assert parse_award("first_place") == "FIRST_PLACE"
+
+    @pytest.mark.parametrize("bad", ["Лауреат I степени", "1 место", "9 out of 10", "-1"])
+    def test_a_free_text_degree_is_refused(self, bad: str) -> None:
+        """What a row stores is a code. A degree typed in by hand is not one.
+
+        The guard that matters: a diploma is printed from whatever a protocol row holds,
+        and free text arriving here is how a diploma ends up saying "9 out of 10".
+        """
         with pytest.raises(InvalidProtocolDataError):
-            parse_award("LAUREATE_IV")
+            parse_award(bad)
 
     def test_columns_parse_in_canonical_order_without_duplicates(self) -> None:
         assert parse_columns(["AWARD", "position", "AWARD"]) == (ProtocolColumn.POSITION, ProtocolColumn.AWARD)

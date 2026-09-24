@@ -46,7 +46,7 @@ from .exceptions import (
 )
 from .value_objects import (
     DEFAULT_PUBLIC_COLUMNS,
-    AwardKind,
+    AwardCode,
     ProtocolColumn,
     ProtocolName,
     ProtocolStatus,
@@ -83,7 +83,7 @@ class ProtocolRow:
     _id: uuid.UUID
     _submission_id: uuid.UUID
     _number: int = 0
-    _award: AwardKind | None = None
+    _award: AwardCode | None = None
 
     @property
     def id(self) -> uuid.UUID:
@@ -99,7 +99,7 @@ class ProtocolRow:
         return self._number
 
     @property
-    def award(self) -> AwardKind | None:
+    def award(self) -> AwardCode | None:
         """What the jury awarded, or ``None`` while it has not decided."""
         return self._award
 
@@ -107,7 +107,7 @@ class ProtocolRow:
     def is_decided(self) -> bool:
         return self._award is not None
 
-    def award_to(self, award: AwardKind | None) -> None:
+    def award_to(self, award: AwardCode | None) -> None:
         """Set (or clear) the result. Only the aggregate may call this."""
         self._award = award
 
@@ -122,8 +122,7 @@ class ProtocolRow:
         return hash(self._id)
 
     def __repr__(self) -> str:
-        award = self._award.value if self._award is not None else None
-        return f"ProtocolRow(id={self._id!r}, number={self._number}, award={award!r})"
+        return f"ProtocolRow(id={self._id!r}, number={self._number}, award={self._award!r})"
 
 
 @dataclass(slots=True, eq=False, repr=False)
@@ -417,7 +416,7 @@ class Protocol:
         submission_id: uuid.UUID,
         now: datetime,
         number: int | None = None,
-        award: AwardKind | None = None,
+        award: AwardCode | None = None,
         position: int | None = None,
     ) -> ProtocolRow:
         """Give one act a line in the protocol (appended, or inserted at ``position``).
@@ -477,7 +476,7 @@ class Protocol:
     # Results
     # ------------------------------------------------------------------
 
-    def award_row(self, row_id: uuid.UUID, award: AwardKind | None, *, now: datetime) -> ProtocolRow:
+    def award_row(self, row_id: uuid.UUID, award: AwardCode | None, *, now: datetime) -> ProtocolRow:
         """Set (or clear) one act's result.
 
         Legal at **any** status and any number of times. Entering results is a live
@@ -491,7 +490,7 @@ class Protocol:
         self._touch(now)
         return row
 
-    def award_rows(self, awards: Iterable[tuple[uuid.UUID, AwardKind | None]], *, now: datetime) -> None:
+    def award_rows(self, awards: Iterable[tuple[uuid.UUID, AwardCode | None]], *, now: datetime) -> None:
         """Set several results at once - one save for a jury working down the list.
 
         Applied as a unit: an unknown row id rejects the whole batch rather than

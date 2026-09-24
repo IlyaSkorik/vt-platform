@@ -28,8 +28,9 @@ from __future__ import annotations
 
 import uuid
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import datetime
+from typing import Final
 
 from apps.results.application.commands import (
     AddRowCommand,
@@ -54,6 +55,8 @@ from apps.results.application.dto import (
 from apps.results.application.interfaces import (
     AwardedDiploma,
     AwardRegister,
+    AwardTierView,
+    AwardVocabulary,
     CatalogPerformance,
     Clock,
     PerformanceCatalog,
@@ -71,13 +74,14 @@ from apps.results.domain.exceptions import (
     SlugUnavailableError,
 )
 from apps.results.domain.value_objects import (
-    AWARD_LABELS,
     COLUMN_LABELS,
+    AwardCode,
     AwardKind,
     ProtocolColumn,
     ProtocolName,
     PublicSlug,
     PublishedResult,
+    default_award_label,
     parse_award,
     parse_columns,
 )
@@ -88,6 +92,13 @@ __all__ = ["PUBLIC_PROTOCOL_PATH", "ProtocolService"]
 #: the organizer can copy the link, and the landing page can link it, without either
 #: re-deriving the URL shape.
 PUBLIC_PROTOCOL_PATH = "/protocol/{slug}"
+
+#: The vocabulary a festival is rendered with when no scale has been configured - the
+#: platform's built-in degrees, in their declared order of seniority. Built once from
+#: the enum so the default and the fallback can never say different things.
+_DEFAULT_TIERS: Final[tuple[AwardTierView, ...]] = tuple(
+    AwardTierView(code=kind.value, label=kind.label, seniority=kind.seniority) for kind in sorted(AwardKind, key=lambda kind: kind.seniority)
+)
 
 #: How many times to re-roll a slug before giving up. A collision needs two of ~57
 #: random bits to coincide, so a single retry is already generous; the loop exists so the
@@ -113,6 +124,7 @@ class ProtocolService:
         running_order: RunningOrderSource,
         clock: Clock,
         slugs: SlugFactory,
+        vocabulary: AwardVocabulary | None = None,
         awards: AwardRegister | None = None,
         notifier: ResultsNotifier | None = None,
     ) -> None:
@@ -121,6 +133,10 @@ class ProtocolService:
         self._running_order = running_order
         self._clock = clock
         self._slugs = slugs
+        # Optional so a test that fills in a table need not configure a festival's award
+        # scale. Absent, the platform's built-in vocabulary is used, which is exactly
+        # what a festival that never opened the scale screen is running on anyway.
+        self._vocabulary = vocabulary
         # Both optional: every use case except publication works without them, and a test
         # that only fills in a table should not have to supply a diploma register.
         self._awards = awards
@@ -271,6 +287,42 @@ class ProtocolService:
         self._protocols.save(protocol)
         return self._detail(protocol)
 
+    def apply_awards_by_submission(
+        self,
+        *,
+        competition_id: uuid.UUID,
+        nomination_id: uuid.UUID,
+        awards: Sequence[tuple[uuid.UUID, str | None]],
+    ) -> int:
+        """Write results onto a nomination's protocol, keyed by act rather than by row.
+
+        The entry point the Judging context computes into. Keyed by submission because
+        that is the only identifier the two contexts share: Judging knows which act
+        scored what and nothing at all about protocol rows.
+
+        Acts with no row in the protocol are **skipped**, not added. What a protocol
+        contains is the organizer's decision - they seeded it from a programme, removed
+        the act that never appeared, added the one that was entered late - and a tally
+        push that quietly grew the table would be overruling them. Returns how many rows
+        actually changed, so a caller can tell "applied to 40 acts" from "applied to
+        none, you have not opened a protocol yet".
+        """
+        protocol = self._protocols.get_for_nomination(competition_id=competition_id, nomination_id=nomination_id)
+        if protocol is None:
+            return 0
+        by_submission = {row.submission_id: row for row in protocol.rows}
+        pending: list[tuple[uuid.UUID, str | None]] = []
+        for submission_id, award in awards:
+            row = by_submission.get(submission_id)
+            if row is None or row.award == award:
+                continue
+            pending.append((row.id, parse_award(award)))
+        if not pending:
+            return 0
+        protocol.award_rows(pending, now=self._clock.utcnow())
+        self._protocols.save(protocol)
+        return len(pending)
+
     def clear_awards(self, protocol_id: str) -> ProtocolDetailView:
         """Clear every result in the protocol (a rehearsal run, or the wrong day's list)."""
         now = self._clock.utcnow()
@@ -333,7 +385,12 @@ class ProtocolService:
         """Hand the decided rows to the diploma register, if one is wired up."""
         if self._awards is None:
             return ()
-        pairs = [(row.submission_id, AWARD_LABELS[row.award]) for row in protocol.decided_rows if row.award is not None]
+        labels = self._award_labels(protocol.competition_id)
+        pairs = [
+            (row.submission_id, label)
+            for row, label in ((row, self._label_for(row.award, labels)) for row in protocol.decided_rows)
+            if row.award is not None and label
+        ]
         if not pairs:
             return ()
         return self._awards.record_awards(
@@ -358,6 +415,7 @@ class ProtocolService:
         performances = self._resolve_performances(protocol.rows)
         competition = self._catalog.competition_title(protocol.competition_id)
         nomination = self._catalog.nomination_title(protocol.nomination_id)
+        labels = self._award_labels(protocol.competition_id)
         url = PUBLIC_PROTOCOL_PATH.format(slug=protocol.slug)
 
         grouped: dict[uuid.UUID, list[tuple[str, str]]] = defaultdict(list)
@@ -372,7 +430,7 @@ class ProtocolService:
             if performance.applicant_id is None or not performance.applicant_email:
                 skipped += 1
                 continue
-            grouped[performance.applicant_id].append((performance.title, AWARD_LABELS[row.award]))
+            grouped[performance.applicant_id].append((performance.title, self._label_for(row.award, labels) or ""))
             recipients.setdefault(performance.applicant_id, performance)
 
         sent = 0
@@ -420,6 +478,7 @@ class ProtocolService:
             # as an unresolvable link beats rendering the live draft by accident.
             return None
         columns = snapshot.columns
+        labels = self._award_labels(protocol.competition_id)
         performances = self._catalog.performances_by_id([result.submission_id for result in snapshot.results])
         return PublicProtocolView(
             name=snapshot.name,
@@ -431,8 +490,8 @@ class ProtocolService:
             columns=self._column_views(columns),
             rows=tuple(
                 PublicProtocolRowView(
-                    cells=self._published_cells(result, performances.get(result.submission_id), columns),
-                    award=result.award.value if result.award is not None else None,
+                    cells=self._published_cells(result, performances.get(result.submission_id), columns, labels),
+                    award=result.award,
                 )
                 for result in snapshot.results
             ),
@@ -475,11 +534,12 @@ class ProtocolService:
         performances = self._resolve_performances(protocol.rows)
         competition = self._catalog.competition_title(protocol.competition_id)
         nomination = self._catalog.nomination_title(protocol.nomination_id)
+        labels = self._award_labels(protocol.competition_id)
         return ProtocolTableView(
             title=str(protocol.name),
             subtitle=" · ".join(part for part in (competition, nomination) if part) or None,
             columns=self._column_views(chosen),
-            rows=tuple(self._cells(row, performances.get(row.submission_id), chosen) for row in protocol.rows),
+            rows=tuple(self._cells(row, performances.get(row.submission_id), chosen, labels) for row in protocol.rows),
         )
 
     # ------------------------------------------------------------------
@@ -575,28 +635,50 @@ class ProtocolService:
     def _column_views(columns: Sequence[ProtocolColumn]) -> tuple[ColumnView, ...]:
         return tuple(ColumnView(key=column.value, label=COLUMN_LABELS[column]) for column in columns)
 
+    def _award_options(self, competition_id: uuid.UUID) -> tuple[AwardOptionView, ...]:
+        """What this festival can award, most senior first - the editor's dropdown."""
+        return tuple(AwardOptionView(value=tier.code, label=tier.label, seniority=tier.seniority) for tier in self._tiers(competition_id))
+
+    def _tiers(self, competition_id: uuid.UUID) -> tuple[AwardTierView, ...]:
+        if self._vocabulary is None:
+            return _DEFAULT_TIERS
+        tiers = self._vocabulary.tiers(competition_id)
+        return tiers or _DEFAULT_TIERS
+
+    def _award_labels(self, competition_id: uuid.UUID) -> dict[str, str]:
+        """Code → label for this festival, ready to render a whole table from."""
+        return {tier.code: tier.label for tier in self._tiers(competition_id)}
+
     @staticmethod
-    def _award_options() -> tuple[AwardOptionView, ...]:
-        """The award vocabulary, in order of seniority."""
-        return tuple(
-            AwardOptionView(value=kind.value, label=kind.label, seniority=kind.seniority)
-            for kind in sorted(AwardKind, key=lambda kind: kind.seniority)
-        )
+    def _label_for(code: AwardCode | None, labels: Mapping[str, str]) -> str | None:
+        """What ``code`` is called, falling back to the platform's built-in name.
+
+        The fallback is what keeps a published protocol honest: a tier deleted from the
+        scale after the ceremony would otherwise turn every row that won it blank, and a
+        results page that forgets what it awarded is worse than one naming an award the
+        organizer no longer offers.
+        """
+        if code is None:
+            return None
+        return labels.get(code) or default_award_label(code) or code
 
     def _cells(
         self,
         row: ProtocolRow,
         performance: CatalogPerformance | None,
         columns: Sequence[ProtocolColumn],
+        labels: Mapping[str, str],
     ) -> tuple[str, ...]:
         """Render one live row as plain text, one cell per requested column."""
-        return tuple(self._cell(column, number=row.number, award=row.award, performance=performance) for column in columns)
+        award = self._label_for(row.award, labels)
+        return tuple(self._cell(column, number=row.number, award=award, performance=performance) for column in columns)
 
     def _published_cells(
         self,
         result: PublishedResult,
         performance: CatalogPerformance | None,
         columns: Sequence[ProtocolColumn],
+        labels: Mapping[str, str],
     ) -> tuple[str, ...]:
         """Render one published line the same way, from the frozen verdict.
 
@@ -604,14 +686,15 @@ class ProtocolService:
         public page must never disagree about what a cell says, and two renderers is how they
         would come to.
         """
-        return tuple(self._cell(column, number=result.number, award=result.award, performance=performance) for column in columns)
+        award = self._label_for(result.award, labels)
+        return tuple(self._cell(column, number=result.number, award=award, performance=performance) for column in columns)
 
     @staticmethod
     def _cell(
         column: ProtocolColumn,
         *,
         number: int,
-        award: AwardKind | None,
+        award: str | None,
         performance: CatalogPerformance | None,
     ) -> str:
         """Render one cell of the table as plain text.
@@ -632,7 +715,7 @@ class ProtocolService:
                 # so beats a blank line the organizer cannot account for.
                 return "Выступление удалено"
             case ProtocolColumn.AWARD:
-                return award.label if award is not None else ""
+                return award or ""
             case ProtocolColumn.NOMINATION:
                 return (performance.nomination or "") if performance is not None else ""
             case ProtocolColumn.DISCIPLINE:
@@ -670,6 +753,7 @@ class ProtocolService:
 
     def _detail(self, protocol: Protocol) -> ProtocolDetailView:
         performances = self._resolve_performances(protocol.rows)
+        labels = self._award_labels(protocol.competition_id)
         return ProtocolDetailView(
             id=str(protocol.id),
             competition_id=str(protocol.competition_id),
@@ -678,10 +762,10 @@ class ProtocolService:
             competition_title=self._catalog.competition_title(protocol.competition_id),
             name=str(protocol.name),
             status=protocol.status.value,
-            rows=tuple(self._row_view(row, performances.get(row.submission_id)) for row in protocol.rows),
+            rows=tuple(self._row_view(row, performances.get(row.submission_id), labels) for row in protocol.rows),
             available_columns=self._column_views(tuple(ProtocolColumn)),
             public_columns=self._column_views(protocol.public_columns),
-            award_options=self._award_options(),
+            award_options=self._award_options(protocol.competition_id),
             revision=protocol.revision,
             slug=str(protocol.slug) if protocol.slug is not None else None,
             path=PUBLIC_PROTOCOL_PATH.format(slug=protocol.slug) if protocol.slug is not None else None,
@@ -693,15 +777,15 @@ class ProtocolService:
             version=protocol.version,
         )
 
-    @staticmethod
-    def _row_view(row: ProtocolRow, performance: CatalogPerformance | None) -> ProtocolRowView:
+    @classmethod
+    def _row_view(cls, row: ProtocolRow, performance: CatalogPerformance | None, labels: Mapping[str, str]) -> ProtocolRowView:
         return ProtocolRowView(
             id=str(row.id),
             number=row.number,
             submission_id=str(row.submission_id),
             title=performance.title if performance is not None else "Выступление удалено",
-            award=row.award.value if row.award is not None else None,
-            award_label=row.award.label if row.award is not None else None,
+            award=row.award,
+            award_label=cls._label_for(row.award, labels),
             lead_participant=performance.lead_participant if performance is not None else None,
             participants=performance.participants if performance is not None else (),
             teachers=performance.teachers if performance is not None else (),

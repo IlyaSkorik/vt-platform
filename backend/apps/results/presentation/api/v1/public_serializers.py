@@ -12,11 +12,9 @@ from __future__ import annotations
 from drf_spectacular.utils import inline_serializer
 from rest_framework import serializers
 
-from apps.results.domain.value_objects import AwardKind
-
 __all__ = ["PublicProtocolEnvelopeSerializer", "PublishedProtocolListEnvelopeSerializer"]
 
-_AWARD_VALUES = [kind.value for kind in AwardKind]
+_AWARD_CODE_MAX = 64
 
 
 class _PublicProtocolRowSerializer(serializers.Serializer[dict[str, object]]):
@@ -28,7 +26,7 @@ class _PublicProtocolRowSerializer(serializers.Serializer[dict[str, object]]):
     """
 
     cells = serializers.ListField(child=serializers.CharField(allow_blank=True))
-    award = serializers.ChoiceField(choices=_AWARD_VALUES, allow_null=True)
+    award = serializers.CharField(max_length=_AWARD_CODE_MAX, allow_null=True)
 
 
 class _PublicProtocolSerializer(serializers.Serializer[dict[str, object]]):

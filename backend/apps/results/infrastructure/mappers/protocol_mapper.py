@@ -18,7 +18,6 @@ from typing import Any
 
 from apps.results.domain.entities import Protocol, ProtocolRow
 from apps.results.domain.value_objects import (
-    AwardKind,
     ProtocolName,
     ProtocolStatus,
     PublicSlug,
@@ -90,7 +89,7 @@ class ProtocolMapper:
             "position": position,
             "number": row.number,
             "submission_id": row.submission_id,
-            "award": row.award.value if row.award is not None else None,
+            "award": row.award,
         }
 
     @staticmethod
@@ -101,5 +100,8 @@ class ProtocolMapper:
             # Rows written before numbers existed fall back to their ordinal, which is
             # what their number would have been anyway.
             _number=int(row.number) or int(row.position),
-            _award=AwardKind(row.award) if row.award else None,
+            # Read as stored, without checking it against any scale: a row may hold a
+            # code whose tier the organizer has since deleted, and the protocol still has
+            # to open so they can see which line to fix.
+            _award=str(row.award).strip().upper() or None if row.award else None,
         )
