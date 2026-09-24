@@ -1,1 +1,1 @@
-"""Domain layer (framework-free business core) for Judging."""
+"""Domain layer for the Judging bounded context."""
