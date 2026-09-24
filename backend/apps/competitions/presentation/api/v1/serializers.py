@@ -159,6 +159,10 @@ class UpdateCompetitionSettingsSerializer(serializers.Serializer[dict[str, objec
     manualApplicationApproval = serializers.BooleanField(source="manual_application_approval")
     automaticApprovalAfterPayment = serializers.BooleanField(source="automatic_approval_after_payment")
     allowReturningForCorrection = serializers.BooleanField(source="allow_returning_for_correction")
+    # Defaulted for the same reason as `allowMultiplePerformances`: an editor built
+    # before online judging existed must not switch a festival's judging mode by
+    # omitting the field.
+    judgingMode = serializers.ChoiceField(source="judging_mode", choices=["PROTOCOLS", "ONLINE"], required=False, default="PROTOCOLS")
     formatRequirements = _FormatRequirementsInputSerializer(source="format_requirements", many=True)
 
 
@@ -652,6 +656,7 @@ class _SettingsSerializer(serializers.Serializer[dict[str, object]]):
     manualApplicationApproval = serializers.BooleanField(source="manual_application_approval")
     automaticApprovalAfterPayment = serializers.BooleanField(source="automatic_approval_after_payment")
     allowReturningForCorrection = serializers.BooleanField(source="allow_returning_for_correction")
+    judgingMode = serializers.CharField(source="judging_mode")
     formatRequirements = _FormatRequirementsSerializer(source="format_requirements", many=True)
 
 

@@ -11,6 +11,7 @@ from apps.competitions.domain.value_objects import (
     _DEFAULT_AUDIO_FORMATS,
     _DEFAULT_MEDIA_FORMATS,
     CompetitionSettings,
+    JudgingMode,
     MediaRequirements,
     MediaSubmissionMode,
     MusicRequirements,
@@ -29,7 +30,7 @@ __all__ = ["settings_from_json", "settings_to_json"]
 def settings_to_json(settings: CompetitionSettings) -> dict[str, object]:
     """Serialize settings for the competitions.settings JSON column."""
     return {
-        "schema_version": 5,
+        "schema_version": 6,
         "allow_multiple_applications": settings.allow_multiple_applications,
         "allow_multiple_performances": settings.allow_multiple_performances,
         "allow_application_editing": settings.allow_application_editing,
@@ -51,6 +52,7 @@ def settings_to_json(settings: CompetitionSettings) -> dict[str, object]:
         "manual_application_approval": settings.manual_application_approval,
         "automatic_approval_after_payment": settings.automatic_approval_after_payment,
         "allow_returning_for_correction": settings.allow_returning_for_correction,
+        "judging_mode": settings.judging_mode.value,
         "format_requirements": [_format_requirements_to_json(item) for item in settings.format_requirements],
     }
 
@@ -58,17 +60,17 @@ def settings_to_json(settings: CompetitionSettings) -> dict[str, object]:
 def settings_from_json(data: object) -> CompetitionSettings:
     """Rebuild settings from JSON, migrating legacy flat boolean bags.
 
-    Schemas 2 through 5 share a shape and one reader serves them all: 3 only *drops*
-    keys (notification channels and previous-application copying), 4 and 5 only *add*
-    one each (``allow_multiple_performances``, then ``collect_payer_details``), and
-    every key is read through a default, so a row written under an older version loads
-    without a migration. Rows still holding an older shape are rewritten as 5 on the
-    next save.
+    Schemas 2 through 6 share a shape and one reader serves them all: 3 only *drops*
+    keys (notification channels and previous-application copying), 4, 5 and 6 only
+    *add* one each (``allow_multiple_performances``, then ``collect_payer_details``,
+    then ``judging_mode``), and every key is read through a default, so a row written
+    under an older version loads without a migration. Rows still holding an older
+    shape are rewritten as 6 on the next save.
     """
     default = CompetitionSettings.default()
     if not isinstance(data, dict):
         return default
-    if data.get("schema_version") in {2, 3, 4, 5} or "payment_timing" in data or "format_requirements" in data:
+    if data.get("schema_version") in {2, 3, 4, 5, 6} or "payment_timing" in data or "format_requirements" in data:
         return _from_modern(data, default)
     return _from_legacy(data, default)
 
@@ -130,6 +132,11 @@ def _from_modern(data: dict[str, object], default: CompetitionSettings) -> Compe
                 if parsed is not None:
                     format_requirements.append(parsed)
 
+    try:
+        judging_mode = JudgingMode(str(data.get("judging_mode", default.judging_mode.value)))
+    except ValueError:
+        judging_mode = default.judging_mode
+
     discount_percent = as_int(
         data.get("additional_performance_discount_percent"),
         default=default.additional_performance_discount_percent,
@@ -157,6 +164,7 @@ def _from_modern(data: dict[str, object], default: CompetitionSettings) -> Compe
         manual_application_approval=bool(data.get("manual_application_approval", default.manual_application_approval)),
         automatic_approval_after_payment=bool(data.get("automatic_approval_after_payment", default.automatic_approval_after_payment)),
         allow_returning_for_correction=bool(data.get("allow_returning_for_correction", default.allow_returning_for_correction)),
+        judging_mode=judging_mode,
         format_requirements=tuple(format_requirements),
     )
 

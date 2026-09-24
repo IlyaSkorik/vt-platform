@@ -126,6 +126,7 @@ __all__ = [
     "FileReference",
     "InformationBlockId",
     "InformationBlockTitle",
+    "JudgingMode",
     "MediaRequirements",
     "MediaSubmissionMode",
     "MixedAgeCalculationMethod",
@@ -1671,6 +1672,28 @@ _DEFAULT_MEDIA_FORMATS: Final[tuple[str, ...]] = ("mp4", "mov", "m4v", "webm", "
 _MAX_UPLOAD_SIZE_MB_LIMIT: Final = 512
 
 
+class JudgingMode(StrEnum):
+    """How this festival's results are arrived at.
+
+    ``PROTOCOLS`` is the platform as it has always worked: the jury sits with paper
+    or a spreadsheet, and somebody types the awards into a protocol afterwards. The
+    platform holds the result and knows nothing about how it was reached.
+
+    ``ONLINE`` means the scoring itself happens here — criteria, jury members, their
+    marks per performance, and an award derived from the total by the festival's own
+    scale. Everything the Judging context configures is meaningless under
+    ``PROTOCOLS``, which is why the editor hides that whole section rather than
+    showing settings nothing reads.
+
+    Switching modes is not destructive in either direction: a festival that turns
+    online judging off keeps its criteria and its jury, and its protocols keep the
+    awards they already carry. What changes is who fills them in.
+    """
+
+    PROTOCOLS = "PROTOCOLS"
+    ONLINE = "ONLINE"
+
+
 class PaymentTiming(StrEnum):
     """When payment is due relative to the application lifecycle."""
 
@@ -1881,12 +1904,20 @@ class CompetitionSettings:
     automatic_approval_after_payment: bool = False
     allow_returning_for_correction: bool = True
 
+    # Judging
+    #: Whether the jury scores on the platform or the organizer types results in.
+    #: Defaults to the protocol workflow, which is what every festival configured
+    #: before online judging existed was doing.
+    judging_mode: JudgingMode = JudgingMode.PROTOCOLS
+
     # Per participation format
     format_requirements: tuple[ParticipationFormatRequirements, ...] = ()
 
     def __post_init__(self) -> None:
         if not isinstance(self.payment_timing, PaymentTiming):
             raise InvalidCompetitionSettingsError("Выберите, когда участник оплачивает участие.")
+        if not isinstance(self.judging_mode, JudgingMode):
+            raise InvalidCompetitionSettingsError("Выберите, как фестиваль подводит итоги.")
         methods = tuple(dict.fromkeys(self.payment_methods))
         if self.payment_required and not methods:
             raise InvalidCompetitionSettingsError("Укажите хотя бы один способ оплаты, раз оплата обязательна.")

@@ -17,6 +17,7 @@ from apps.competitions.domain.value_objects import (
     CompetitionTitle,
     DateRange,
     FileReference,
+    JudgingMode,
     MediaRequirements,
     MediaSubmissionMode,
     MusicRequirements,
@@ -127,6 +128,7 @@ def _settings_from_command(command: UpdateSettingsCommand) -> CompetitionSetting
         manual_application_approval=command.manual_application_approval,
         automatic_approval_after_payment=command.automatic_approval_after_payment,
         allow_returning_for_correction=command.allow_returning_for_correction,
+        judging_mode=JudgingMode(command.judging_mode),
         format_requirements=_format_requirements(command.format_requirements),
     )
 

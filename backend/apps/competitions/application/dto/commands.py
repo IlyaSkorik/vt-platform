@@ -143,7 +143,11 @@ class UpdateSettingsCommand:
     manual_application_approval: bool
     automatic_approval_after_payment: bool
     allow_returning_for_correction: bool
-    format_requirements: list[dict[str, object]]
+    #: Defaulted because it arrived after clients were already sending this payload:
+    #: a settings screen that has not been rebuilt must not flip a festival into
+    #: online judging, nor out of it, by staying silent.
+    judging_mode: str = "PROTOCOLS"
+    format_requirements: list[dict[str, object]] = field(default_factory=list)
 
 
 @dataclass(frozen=True, slots=True)

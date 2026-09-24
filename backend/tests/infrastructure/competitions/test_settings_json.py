@@ -9,14 +9,14 @@ settings module existed at all.
 
 from __future__ import annotations
 
-from apps.competitions.domain.value_objects import CompetitionSettings
+from apps.competitions.domain.value_objects import CompetitionSettings, JudgingMode
 from apps.competitions.infrastructure.mappers.settings_json import settings_from_json, settings_to_json
 
 
 def test_the_flag_survives_a_round_trip() -> None:
     stored = settings_to_json(CompetitionSettings.default().with_changes(allow_multiple_performances=False))
 
-    assert stored["schema_version"] == 5
+    assert stored["schema_version"] == 6
     assert settings_from_json(stored).allow_multiple_performances is False
 
 
@@ -67,3 +67,28 @@ def test_a_schema_5_blob_is_not_mistaken_for_a_legacy_bag() -> None:
 
     assert loaded.require_teacher is False
     assert loaded.allow_replacing_documents is False
+
+
+def test_a_blob_written_before_online_judging_existed_runs_on_protocols() -> None:
+    """Schema 5 has no opinion here, and every festival configured before online
+    judging existed was running its jury off paper and a protocol."""
+    stored = settings_to_json(CompetitionSettings.default())
+    del stored["judging_mode"]
+    stored["schema_version"] = 5
+
+    assert settings_from_json(stored).judging_mode is JudgingMode.PROTOCOLS
+
+
+def test_the_judging_mode_survives_a_round_trip() -> None:
+    stored = settings_to_json(CompetitionSettings.default().with_changes(judging_mode=JudgingMode.ONLINE))
+
+    assert stored["judging_mode"] == "ONLINE"
+    assert settings_from_json(stored).judging_mode is JudgingMode.ONLINE
+
+
+def test_an_unreadable_judging_mode_falls_back_to_protocols() -> None:
+    """A hand-edited column must not leave a festival in a mode that does not exist."""
+    stored = settings_to_json(CompetitionSettings.default())
+    stored["judging_mode"] = "SOMETHING_ELSE"
+
+    assert settings_from_json(stored).judging_mode is JudgingMode.PROTOCOLS

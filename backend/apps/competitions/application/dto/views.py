@@ -159,6 +159,7 @@ class SettingsView:
     manual_application_approval: bool
     automatic_approval_after_payment: bool
     allow_returning_for_correction: bool
+    judging_mode: str
     format_requirements: tuple[FormatRequirementsView, ...]
 
     @classmethod
@@ -185,6 +186,7 @@ class SettingsView:
             manual_application_approval=settings.manual_application_approval,
             automatic_approval_after_payment=settings.automatic_approval_after_payment,
             allow_returning_for_correction=settings.allow_returning_for_correction,
+            judging_mode=settings.judging_mode.value,
             format_requirements=tuple(
                 FormatRequirementsView(
                     participation_format_id=item.participation_format_id.json(),
