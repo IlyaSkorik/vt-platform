@@ -3,10 +3,33 @@ import type {
   _FormatRequirementsInput,
   _ParticipationFormat,
   _Settings,
+  JudgingModeEnum,
   PaymentMethodsEnum,
   PaymentTimingEnum,
   UpdateCompetitionSettings,
 } from "@/shared/api/generated/model-competitions";
+
+export type SettingsJudgingMode = JudgingModeEnum;
+
+/**
+ * How the festival arrives at its results.
+ *
+ * `PROTOCOLS` is the platform as it has always worked: the jury sits with paper and
+ * somebody types the awards into a protocol afterwards. `ONLINE` moves the scoring
+ * itself onto the platform — criteria per genre, a panel, marks per performance, and
+ * an award derived from the total by the festival's own scale.
+ *
+ * Switching is not destructive either way: criteria, panel and protocols all survive
+ * a festival changing its mind.
+ */
+export const JUDGING_MODE_OPTIONS: { value: SettingsJudgingMode; label: string }[] = [
+  { value: "PROTOCOLS", label: "Протоколы (жюри судит вне платформы)" },
+  { value: "ONLINE", label: "Онлайн-судейство на платформе" },
+];
+
+export function isOnlineJudging(settings: _Settings | null | undefined): boolean {
+  return settings?.judgingMode === "ONLINE";
+}
 
 export type SettingsPaymentTiming = PaymentTimingEnum;
 export type SettingsPaymentMethod = PaymentMethodsEnum;
@@ -120,6 +143,7 @@ export function defaultCompetitionSettings(): _Settings {
     manualApplicationApproval: true,
     automaticApprovalAfterPayment: false,
     allowReturningForCorrection: true,
+    judgingMode: "PROTOCOLS",
     formatRequirements: [],
   };
 }
@@ -196,6 +220,7 @@ export function settingsToUpdatePayload(settings: _Settings): UpdateCompetitionS
     manualApplicationApproval: settings.manualApplicationApproval,
     automaticApprovalAfterPayment: settings.automaticApprovalAfterPayment,
     allowReturningForCorrection: settings.allowReturningForCorrection,
+    judgingMode: (settings.judgingMode ?? "PROTOCOLS") as JudgingModeEnum,
     formatRequirements: settings.formatRequirements as _FormatRequirementsInput[],
   };
 }

@@ -38,6 +38,7 @@ function baseCompetition(overrides: Partial<CompetitionDetail> = {}): Competitio
       manualApplicationApproval: false,
       automaticApprovalAfterPayment: false,
       allowReturningForCorrection: false,
+      judgingMode: "PROTOCOLS",
       formatRequirements: [],
     },
     deadlines: {

@@ -23,6 +23,7 @@ import { CategoriesSection } from "@/widgets/competition-categories";
 import { ContactsSection } from "@/widgets/competition-contacts";
 import { DocumentsSection } from "@/widgets/competition-documents";
 import { GeneralSection } from "@/widgets/competition-general";
+import { JudgingSection } from "@/widgets/competition-judging";
 import { ParticipantGroupsSection } from "@/widgets/competition-participant-groups";
 import { ParticipationFormatsSection } from "@/widgets/competition-participation-formats";
 import { PricingSection } from "@/widgets/competition-pricing";
@@ -261,6 +262,13 @@ export function StaffCompetitionWorkspacePage(): React.JSX.Element {
             checklist={checklist}
             isLoading={detailQuery.isFetching && !detailQuery.isFetched}
             onAutosaveStateChange={setAutosaveState}
+            onNavigateSection={handleSectionChange}
+          />
+        ) : section.id === "judging" ? (
+          <JudgingSection
+            competition={competition}
+            checklist={checklist}
+            isLoading={detailQuery.isFetching && !detailQuery.isFetched}
             onNavigateSection={handleSectionChange}
           />
         ) : section.id === "contacts" ? (

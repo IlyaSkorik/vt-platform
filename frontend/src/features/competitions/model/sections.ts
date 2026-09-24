@@ -5,6 +5,7 @@ import {
   ClipboardCheck,
   FileText,
   FolderTree,
+  Gavel,
   Globe,
   type LucideIcon,
   Phone,
@@ -29,6 +30,7 @@ export type CompetitionSectionId =
   | "pricing"
   | "additional-services"
   | "settings"
+  | "judging"
   | "contacts"
   | "public-information";
 
@@ -42,11 +44,12 @@ export interface CompetitionSection {
 /**
  * The sidebar's groups, in order.
  *
- * A flat list of fourteen sections gave no clue which ones belong together, so they
+ * A flat list of fifteen sections gave no clue which ones belong together, so they
  * are grouped by the question the organizer is answering: what the festival *is*,
- * what it is *divided into*, what an applicant *does*, and what it *costs*. Each
- * section appears in exactly one group, and the group order is the rough order a
- * festival gets set up in — describe it, structure it, open it, price it.
+ * what it is *divided into*, what an applicant *does*, how it is *decided*, and what
+ * it *costs*. Each section appears in exactly one group, and the group order is the
+ * rough order a festival gets set up in — describe it, structure it, open it, judge
+ * it, price it.
  */
 export interface CompetitionSectionGroup {
   title: string;
@@ -73,6 +76,10 @@ export const COMPETITION_SECTION_GROUPS: readonly CompetitionSectionGroup[] = [
     sectionIds: ["registration", "settings", "documents"],
   },
   {
+    title: "Итоги",
+    sectionIds: ["judging"],
+  },
+  {
     title: "Деньги",
     sectionIds: ["pricing", "additional-services"],
   },
@@ -96,6 +103,11 @@ export const COMPETITION_SECTIONS: readonly CompetitionSection[] = [
   { id: "registration", title: "Регистрация", icon: CalendarClock, implemented: true },
   { id: "settings", title: "Правила участия", icon: Settings, implemented: true },
   { id: "documents", title: "Документы", icon: FileText, implemented: true },
+  // Always listed, whichever judging mode the festival is on: the award scale is the
+  // vocabulary protocols are written in, and an organizer who hands out places rather
+  // than степени needs it whether or not their jury scores here. What the online mode
+  // adds is the rest of the section — criteria, tally rules, the hall's board.
+  { id: "judging", title: "Судейство", icon: Gavel, implemented: true },
   { id: "pricing", title: "Цены", icon: CircleDollarSign, implemented: true },
   {
     id: "additional-services",

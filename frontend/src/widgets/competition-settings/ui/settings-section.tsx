@@ -6,10 +6,12 @@ import {
   buildCompetitionReadiness,
   type CompetitionSectionId,
   defaultCompetitionSettings,
+  JUDGING_MODE_OPTIONS,
   MEDIA_FORMAT_OPTIONS,
   MEDIA_MODE_OPTIONS,
   mergeSettingsWithFormats,
   type PublicationChecklist,
+  type SettingsJudgingMode,
   settingsToUpdatePayload,
   useUpdateCompetitionSettingsMutation,
 } from "@/features/competitions";
@@ -32,6 +34,8 @@ import {
   Checkbox,
   EmptyState,
   Input,
+  Radio,
+  RadioGroup,
   Select,
   Switch,
   toast,
@@ -651,6 +655,45 @@ export function SettingsSection({
               onChange={(v) => update({ requireDocumentUpload: v })}
             />
           </div>
+        </SectionCard>
+
+        <SectionCard
+          title="Судейство"
+          description="Как фестиваль подводит итоги. От этого зависит, появится ли раздел «Судейство» с критериями, жюри и табло."
+        >
+          <RadioGroup
+            className="space-y-2"
+            value={settings.judgingMode ?? "PROTOCOLS"}
+            disabled={isReadOnly}
+            onValueChange={(next) => update({ judgingMode: next as SettingsJudgingMode })}
+          >
+            {JUDGING_MODE_OPTIONS.map((option) => (
+              <div
+                key={option.value}
+                className="rounded-lg border border-border p-3 transition-colors hover:bg-muted/40"
+              >
+                <Radio
+                  value={option.value}
+                  label={option.label}
+                  description={
+                    option.value === "PROTOCOLS"
+                      ? "Жюри работает как раньше — на бумаге или в таблице, а результаты вы вносите в протокол сами."
+                      : "Жюри выставляет оценки на платформе: критерии по жанрам, баллы за каждый номер, награда по шкале и табло в зале."
+                  }
+                />
+              </div>
+            ))}
+          </RadioGroup>
+          {settings.judgingMode === "ONLINE" ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onNavigateSection("judging")}
+            >
+              Настроить судейство
+            </Button>
+          ) : null}
         </SectionCard>
 
         <SectionCard title="Согласия" description="Что участник подтверждает при подаче заявки.">

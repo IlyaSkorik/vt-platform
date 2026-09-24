@@ -63,6 +63,7 @@ function competition(partial: Partial<CompetitionDetail> = {}): CompetitionDetai
       manualApplicationApproval: false,
       automaticApprovalAfterPayment: false,
       allowReturningForCorrection: false,
+      judgingMode: "PROTOCOLS",
       formatRequirements: [],
     },
     deadlines: {
