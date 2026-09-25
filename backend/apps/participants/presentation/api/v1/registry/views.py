@@ -210,52 +210,54 @@ def _save_memberships(
     participant: ParticipantRegistryModel,
     organizations: list[dict[str, Any]],
 ) -> Response | None:
-    if not organizations:
-        return problems.problem_response(
-            status=400,
-            type_suffix="validation-error",
-            title="Validation failed",
-            detail="Укажите хотя бы одно учебное заведение.",
-            instance=request.path,
-            correlation_id=problems.request_id(request),
-            errors=[{"pointer": "/organizations", "code": "required", "detail": "Укажите учебные заведения."}],
-        )
-    primary_count = sum(1 for item in organizations if bool(item.get("isPrimary")))
-    if primary_count != 1:
-        return problems.problem_response(
-            status=400,
-            type_suffix="validation-error",
-            title="Validation failed",
-            detail="Отметьте одно основное учебное заведение.",
-            instance=request.path,
-            correlation_id=problems.request_id(request),
-            errors=[{"pointer": "/organizations", "code": "primary_invalid", "detail": "Выберите одно основное."}],
-        )
-    organization_ids = [str(item["organizationId"]) for item in organizations]
-    organizations_by_id = {
-        str(item.id): item
-        for item in EducationalOrganizationModel.objects.filter(
-            owner_id=owner_id,
-            deleted_at__isnull=True,
-            id__in=organization_ids,
-        )
-    }
-    if len(organizations_by_id) != len(set(organization_ids)):
-        return problems.problem_response(
-            status=400,
-            type_suffix="validation-error",
-            title="Validation failed",
-            detail="Некоторых учебных заведений нет в вашем справочнике.",
-            instance=request.path,
-            correlation_id=problems.request_id(request),
-            errors=[
-                {
-                    "pointer": "/organizations",
-                    "code": "unknown_organization",
-                    "detail": "Выбирайте учебные заведения только из своего справочника.",
-                }
-            ],
-        )
+    """Replace whose schools a participant is on the books of.
+
+    None is an answer. A soloist who studies with a private teacher, a family
+    ensemble, an adult who left school years ago — all of them exist, and requiring a
+    school of everybody turned them into invented entries in the applicant's own
+    directory. The field is what the organizer reads on the diploma, not a fact the
+    platform is owed, so an empty list clears the memberships instead of being refused.
+    """
+    organizations_by_id: dict[str, EducationalOrganizationModel] = {}
+    if organizations:
+        primary_count = sum(1 for item in organizations if bool(item.get("isPrimary")))
+        if primary_count != 1:
+            return problems.problem_response(
+                status=400,
+                type_suffix="validation-error",
+                title="Validation failed",
+                detail="Отметьте одно основное учебное заведение.",
+                instance=request.path,
+                correlation_id=problems.request_id(request),
+                errors=[
+                    {"pointer": "/organizations", "code": "primary_invalid", "detail": "Выберите одно основное."}
+                ],
+            )
+        organization_ids = [str(item["organizationId"]) for item in organizations]
+        organizations_by_id = {
+            str(item.id): item
+            for item in EducationalOrganizationModel.objects.filter(
+                owner_id=owner_id,
+                deleted_at__isnull=True,
+                id__in=organization_ids,
+            )
+        }
+        if len(organizations_by_id) != len(set(organization_ids)):
+            return problems.problem_response(
+                status=400,
+                type_suffix="validation-error",
+                title="Validation failed",
+                detail="Некоторых учебных заведений нет в вашем справочнике.",
+                instance=request.path,
+                correlation_id=problems.request_id(request),
+                errors=[
+                    {
+                        "pointer": "/organizations",
+                        "code": "unknown_organization",
+                        "detail": "Выбирайте учебные заведения только из своего справочника.",
+                    }
+                ],
+            )
     participant.organization_memberships.all().delete()
     ParticipantOrganizationMembershipModel.objects.bulk_create(
         [

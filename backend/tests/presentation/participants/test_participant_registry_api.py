@@ -55,7 +55,7 @@ def _record_consent(client: APIClient, consent_type: str = "minor_data_processin
 
 
 def _organization(client: APIClient) -> str:
-    """A registry participant must belong to an organization; make one and return its id."""
+    """Put one school in the caller's own directory and return its id."""
     response = client.post(
         ORGANIZATIONS_URL,
         {"name": "ДШИ №1", "type": "art_school", "city": "Минск"},
@@ -293,3 +293,77 @@ class TestTheBasisFollowsTheParticipantsAge:
         )
 
         assert response.status_code == 201, response.data
+
+
+class TestTheSchoolIsOptional:
+    """A participant belongs to whoever they belong to — possibly nobody.
+
+    Requiring a school of everybody made the field a gate rather than a fact: a
+    soloist taught privately, an adult long out of school and a family ensemble all
+    had to invent an entry in their own directory to get past it.
+    """
+
+    def test_creates_a_participant_who_belongs_to_no_school(self, auth_client: APIClient) -> None:
+        consent_id = _record_consent(auth_client)
+
+        response = auth_client.post(
+            REGISTRY_URL,
+            _child(consentId=consent_id, consentVersion="1.0", organizations=[]),
+            format="json",
+        )
+
+        assert response.status_code == 201, response.data
+        assert response.data["data"]["organizations"] == []
+        assert response.data["data"]["primaryOrganization"] is None
+
+    def test_a_school_can_be_taken_off_an_existing_participant(self, auth_client: APIClient) -> None:
+        consent_id = _record_consent(auth_client)
+        organization_id = _organization(auth_client)
+        created = auth_client.post(
+            REGISTRY_URL,
+            _child(
+                consentId=consent_id,
+                consentVersion="1.0",
+                organizations=[{"organizationId": organization_id, "isPrimary": True}],
+            ),
+            format="json",
+        )
+        assert created.status_code == 201, created.data
+        participant_id = created.data["data"]["id"]
+
+        response = auth_client.patch(
+            f"{REGISTRY_URL}/{participant_id}",
+            _child(organizations=[]),
+            format="json",
+        )
+
+        assert response.status_code == 200, response.data
+        assert response.data["data"]["organizations"] == []
+
+    def test_still_refuses_two_main_schools(self, auth_client: APIClient) -> None:
+        # Optional is not unchecked: naming schools at all still means saying which one
+        # the diploma carries.
+        consent_id = _record_consent(auth_client)
+        first = _organization(auth_client)
+        created = auth_client.post(
+            ORGANIZATIONS_URL,
+            {"name": "ДШИ №2", "type": "music_school", "city": "Минск"},
+            format="json",
+        )
+        assert created.status_code in (200, 201), created.data
+        second = str(created.data["data"]["id"])
+
+        response = auth_client.post(
+            REGISTRY_URL,
+            _child(
+                consentId=consent_id,
+                consentVersion="1.0",
+                organizations=[
+                    {"organizationId": first, "isPrimary": True},
+                    {"organizationId": second, "isPrimary": True},
+                ],
+            ),
+            format="json",
+        )
+
+        assert response.status_code == 400, response.data

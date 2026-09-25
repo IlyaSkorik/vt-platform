@@ -522,6 +522,11 @@ export function ParticipantsProfilePage(): React.JSX.Element {
   // by itself, instead of carrying a tick from a text that is no longer on screen.
   const [acceptedConsentCode, setAcceptedConsentCode] = useState<string | null>(null);
   const [consentMissing, setConsentMissing] = useState(false);
+  // Creating a participant reads as a form with tabs, and the tab that finishes it is
+  // not the one it opens on: people filled in the name, found no button under it and
+  // stopped there. So creation is walked through — «Далее» carries them to the step
+  // that holds the consent and the button that actually creates the participant.
+  const [createStep, setCreateStep] = useState("general");
 
   // When the Registration Wizard sends the user here to create a participant, it
   // passes where to return and which submission to attach the result to.
@@ -709,6 +714,21 @@ export function ParticipantsProfilePage(): React.JSX.Element {
   const activeConsent = participantConsent(values);
   const consentGiven = acceptedConsentCode === activeConsent.code;
 
+  /** What the first step is answering: who this is. A collective is named, a person is named and dated. */
+  const identityFields = (): Array<"collectiveName" | "firstName" | "lastName" | "birthDate"> =>
+    form.getValues("participantType") === "collective"
+      ? ["collectiveName"]
+      : ["firstName", "lastName", "birthDate"];
+
+  const goToFinalStep = async (): Promise<void> => {
+    // Checked here rather than at the end: a missing name is a mistake on the step the
+    // applicant is looking at, and finding it out two tabs later is how a form loses people.
+    if (!(await form.trigger(identityFields()))) {
+      return;
+    }
+    setCreateStep("organizations");
+  };
+
   return (
     <PageContainer size="wide">
       <PageHeader>
@@ -724,17 +744,19 @@ export function ParticipantsProfilePage(): React.JSX.Element {
         </PageTitle>
         <PageDescription>
           {isCreateMode
-            ? "Заполните форму создания."
+            ? "Сначала — кто участвует, затем — организация (по желанию) и согласие на обработку данных."
             : "Изменения сохраняются автоматически. Профиль принадлежит вашему личному реестру."}
         </PageDescription>
       </PageHeader>
 
       <PageContent>
         {isCreateMode ? (
-          <Tabs defaultValue="general" className="space-y-4">
+          <Tabs value={createStep} onValueChange={setCreateStep} className="space-y-4">
             <TabsList className="w-full justify-start overflow-x-auto">
-              <TabsTrigger value="general">Общее</TabsTrigger>
-              <TabsTrigger value="organizations">Образовательные организации</TabsTrigger>
+              <TabsTrigger value="general">Кто участвует</TabsTrigger>
+              {/* Named after what finishes creation rather than after the picker it
+                  opens with: this is the step people could not find. */}
+              <TabsTrigger value="organizations">Организация и согласие</TabsTrigger>
               <TabsTrigger value="history">История</TabsTrigger>
               <TabsTrigger value="notes">Заметки</TabsTrigger>
             </TabsList>
@@ -824,12 +846,19 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                     </>
                   )}
                 </CardContent>
+                <CardFooter className="justify-end">
+                  <Button onClick={() => void goToFinalStep()}>Далее</Button>
+                </CardFooter>
               </Card>
             </TabsContent>
             <TabsContent value="organizations">
               <Card>
                 <CardHeader>
                   <CardTitle>Организации участника</CardTitle>
+                  <CardDescription>
+                    По желанию: школа или студия, которую участник представляет — её название
+                    попадёт в диплом. Если такой нет, переходите к согласию ниже.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex justify-end">
@@ -865,10 +894,20 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                       }
                     }}
                   />
-                  <div className="flex justify-end">
+                  <div className="flex justify-between gap-2">
+                    <Button variant="outline" onClick={() => setCreateStep("general")}>
+                      Назад
+                    </Button>
                     <Button
                       loading={createMutation.isPending}
-                      onClick={() => {
+                      onClick={async () => {
+                        // The name is checked here too: this button can be reached by
+                        // clicking the tab itself, and the backend's refusal would name
+                        // a field two tabs away from where it is shown.
+                        if (!(await form.trigger(identityFields()))) {
+                          setCreateStep("general");
+                          return;
+                        }
                         if (!consentGiven) {
                           setConsentMissing(true);
                           return;
@@ -876,7 +915,7 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                         createMutation.mutate(form.getValues());
                       }}
                     >
-                      Сохранить участника
+                      Создать участника
                     </Button>
                   </div>
                 </CardFooter>
@@ -1022,7 +1061,8 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                 <CardHeader>
                   <CardTitle>Организации участника</CardTitle>
                   <CardDescription>
-                    Выберите одну или несколько организаций. Основная меняется одним кликом.
+                    По желанию: одна или несколько организаций, которые участник представляет.
+                    Основная меняется одним кликом — её название попадёт в диплом.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
