@@ -132,6 +132,23 @@ jobs:
           # starts the migrate service too — by then a no-op reporting "no migrations to apply".
           docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" run --rm migrate
 
+      - name: Build the support bot, where it is enabled
+        run: |
+          # The bot's image is built on the host instead of pulled — it is not part of the
+          # build-and-push pipeline (bot/README.md §6). That matters here because `up -d` builds an
+          # image only when it is *missing*: on a host that already has one, a change under bot/
+          # would start the old code and report success. Building it explicitly makes the rollout
+          # below see a new image id and recreate the container.
+          #
+          # `config --services` answers with the bot only where `COMPOSE_PROFILES=bot` is set in
+          # that host's .env, so this is a no-op everywhere else.
+          if docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" config --services \
+               | grep -qx support-bot; then
+            docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" build support-bot
+          else
+            echo "support bot not enabled on this host; nothing to build"
+          fi
+
       - name: Roll out
         run: |
           # `up` publishes the new bundle and config through the one-shot `spa` job, then recreates

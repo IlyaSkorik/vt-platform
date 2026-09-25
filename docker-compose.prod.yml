@@ -170,6 +170,34 @@ services:
     # Beat holds no work of its own — it only enqueues.
     stop_grace_period: 15s
 
+  # --- Telegram support bot (opt-in) ----------------------------------------
+  #
+  # Behind a compose profile, so a host that has no support bot configured is not asked for a
+  # token it does not have: it starts only where `COMPOSE_PROFILES=bot` is set in that host's
+  # .env, which the regular `up -d` then picks up with everything else (bot/README.md §3).
+  #
+  # Not part of the `x-django` anchor: it shares the database, and nothing else. Its own image,
+  # its own dependency tree, no Django settings, and no `migrate` to wait for — its two tables
+  # live in a `support` schema it creates itself on start-up.
+  support-bot:
+    image: ${BOT_IMAGE:-vt-support-bot:local}
+    build:
+      context: ./bot
+      dockerfile: Dockerfile
+    profiles: ["bot"]
+    restart: unless-stopped
+    env_file:
+      - ${ENV_FILE:-./backend/.env}
+    environment:
+      # The same override every Django service gets: `.env` names the host as localhost for work
+      # outside compose, and inside it the database answers to its service name.
+      POSTGRES_HOST: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # It holds no work in progress — a polling loop and autocommitted writes.
+    stop_grace_period: 15s
+
   # --- Edge: publish the SPA, then serve it ---------------------------------
   #
   # A one-shot job, not a server. It copies the built bundle and the nginx configuration out of the
