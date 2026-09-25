@@ -2620,8 +2620,8 @@
     "semantic_hash": ""
   },
   "backend/apps/participants/presentation/api/v1/registry/views.py": {
-    "mtime": 1790328647.8192935,
-    "ast_hash": "5a95dc95ef3db48455c93fae8b12bbdd",
+    "mtime": 1790334601.7198286,
+    "ast_hash": "c17b30fcfe002272a1715c5b88a7af0f",
     "semantic_hash": ""
   },
   "backend/apps/participants/presentation/urls.py": {
@@ -9715,13 +9715,13 @@
     "semantic_hash": ""
   },
   ".github/workflows/ci.yml": {
-    "mtime": 1788897247.9773433,
-    "ast_hash": "ccfa944a1421181c09e17e87845ee9f8",
+    "mtime": 1790347741.6988337,
+    "ast_hash": "ddcfe3df9239edc2a255ebbcad035e77",
     "semantic_hash": ""
   },
   "docker-compose.prod.yml": {
-    "mtime": 1788898885.3828948,
-    "ast_hash": "e32049ba6b3fa5c5e2f946ecdc44f98f",
+    "mtime": 1790347698.6155057,
+    "ast_hash": "51fea80245630dd6f8ee966bd9b1f289",
     "semantic_hash": ""
   },
   "docs/devops/OPS-001-deploy-runbook.md": {
@@ -11507,6 +11507,101 @@
   "frontend/src/pages/participants/index.test.tsx": {
     "mtime": 1790333176.714956,
     "ast_hash": "882d971143f31872d4bec4067e534e1e",
+    "semantic_hash": ""
+  },
+  "bot/pyproject.toml": {
+    "mtime": 1790347470.2270439,
+    "ast_hash": "0097a75e0ca57d41080bd059b1820361",
+    "semantic_hash": ""
+  },
+  "bot/support_bot/__init__.py": {
+    "mtime": 1790345330.1386628,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "bot/support_bot/__main__.py": {
+    "mtime": 1790347931.421517,
+    "ast_hash": "8e551a5375a2373139358d906deb1b96",
+    "semantic_hash": ""
+  },
+  "bot/support_bot/config.py": {
+    "mtime": 1790347470.2385395,
+    "ast_hash": "82a450d74b5662fa4def7cbd34ee61f4",
+    "semantic_hash": ""
+  },
+  "bot/support_bot/handlers/__init__.py": {
+    "mtime": 1790345330.1426628,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "bot/support_bot/handlers/forum.py": {
+    "mtime": 1790346958.9614704,
+    "ast_hash": "5bdcd24c36fcabdde3417be987856ee9",
+    "semantic_hash": ""
+  },
+  "bot/support_bot/handlers/private.py": {
+    "mtime": 1790346829.8071303,
+    "ast_hash": "89ca3ec45c36f8ed7ce0f202a1723cc0",
+    "semantic_hash": ""
+  },
+  "bot/support_bot/handlers/setup.py": {
+    "mtime": 1790345360.2262492,
+    "ast_hash": "e7ac817832ad6d05b2d5c08767c0ef38",
+    "semantic_hash": ""
+  },
+  "bot/support_bot/keyboards.py": {
+    "mtime": 1790345262.559065,
+    "ast_hash": "48f1508643087397d2cb7c5d261169f5",
+    "semantic_hash": ""
+  },
+  "bot/support_bot/phones.py": {
+    "mtime": 1790346076.0546088,
+    "ast_hash": "4f9d23a62a8b39afde4d6f870638205a",
+    "semantic_hash": ""
+  },
+  "bot/support_bot/storage.py": {
+    "mtime": 1790347547.46991,
+    "ast_hash": "97661da67558cd1259d05fa87cddd35c",
+    "semantic_hash": ""
+  },
+  "bot/support_bot/texts.py": {
+    "mtime": 1790347572.2065325,
+    "ast_hash": "1e4939de2edc7d797ccff96ad7262035",
+    "semantic_hash": ""
+  },
+  "bot/support_bot/topics.py": {
+    "mtime": 1790346076.10316,
+    "ast_hash": "835526c5920536e24ee0cd735b06a210",
+    "semantic_hash": ""
+  },
+  "bot/tests/test_introduction.py": {
+    "mtime": 1790346894.0225718,
+    "ast_hash": "5ca0531fb2e9c732b5253bf98e31388b",
+    "semantic_hash": ""
+  },
+  "bot/tests/test_phones.py": {
+    "mtime": 1790346109.9186068,
+    "ast_hash": "bb31e826c6515b6adf039fe6fabe711f",
+    "semantic_hash": ""
+  },
+  "bot/tests/test_storage.py": {
+    "mtime": 1790347661.3905234,
+    "ast_hash": "fd435f64db55d6b8a6333d3f1ec7079b",
+    "semantic_hash": ""
+  },
+  "bot/tests/test_topics.py": {
+    "mtime": 1790346329.4877217,
+    "ast_hash": "48be01ab42721475f3839647bbadf2ce",
+    "semantic_hash": ""
+  },
+  "bot/README.md": {
+    "mtime": 1790347779.3625233,
+    "ast_hash": "66f462407a6f6b1a18b7f2d30625d957",
+    "semantic_hash": ""
+  },
+  "bot/tests/conftest.py": {
+    "mtime": 1790348264.4384944,
+    "ast_hash": "e24da36bb387e9b6ad8a847b6f6c4624",
     "semantic_hash": ""
   }
 }
