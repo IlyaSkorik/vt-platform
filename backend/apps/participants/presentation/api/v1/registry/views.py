@@ -229,9 +229,7 @@ def _save_memberships(
                 detail="Отметьте одно основное учебное заведение.",
                 instance=request.path,
                 correlation_id=problems.request_id(request),
-                errors=[
-                    {"pointer": "/organizations", "code": "primary_invalid", "detail": "Выберите одно основное."}
-                ],
+                errors=[{"pointer": "/organizations", "code": "primary_invalid", "detail": "Выберите одно основное."}],
             )
         organization_ids = [str(item["organizationId"]) for item in organizations]
         organizations_by_id = {
