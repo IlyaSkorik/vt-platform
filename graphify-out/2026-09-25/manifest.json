@@ -2620,8 +2620,8 @@
     "semantic_hash": ""
   },
   "backend/apps/participants/presentation/api/v1/registry/views.py": {
-    "mtime": 1788982156.4164495,
-    "ast_hash": "9000e49a198b11058de03b210c8dc661",
+    "mtime": 1790328647.8192935,
+    "ast_hash": "5a95dc95ef3db48455c93fae8b12bbdd",
     "semantic_hash": ""
   },
   "backend/apps/participants/presentation/urls.py": {
@@ -4515,8 +4515,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/registration-wizard/ui/participant-picker.tsx": {
-    "mtime": 1787859817.739147,
-    "ast_hash": "7511c87842e615a0062994ee71e4598b",
+    "mtime": 1790328731.0333695,
+    "ast_hash": "d79509eeaada5b968500d076429269b0",
     "semantic_hash": ""
   },
   "frontend/src/features/registration-wizard/ui/performance-builder.tsx": {
@@ -4615,8 +4615,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/participants/index.tsx": {
-    "mtime": 1790326746.1621487,
-    "ast_hash": "7276a6740c2d1a22090c98ca7633daf0",
+    "mtime": 1790329130.6272342,
+    "ast_hash": "34379a736b29e768b97436fb3c320924",
     "semantic_hash": ""
   },
   "frontend/src/pages/placeholder/index.tsx": {
@@ -9410,8 +9410,8 @@
     "semantic_hash": ""
   },
   "backend/tests/presentation/participants/test_participant_registry_api.py": {
-    "mtime": 1786393411.2828624,
-    "ast_hash": "adfa1e9a46c272fc3f1b934c7d0c787f",
+    "mtime": 1790328699.5313303,
+    "ast_hash": "b36fd45475fc775a9377326e37c4fad2",
     "semantic_hash": ""
   },
   "backend/tests/presentation/platform/test_loadtest_api.py": {
@@ -11502,6 +11502,11 @@
   "frontend/src/shared/hooks/use-server-draft.ts": {
     "mtime": 1790326573.3094735,
     "ast_hash": "fd7d96ad3b324fe9a812b0c468d4ffb7",
+    "semantic_hash": ""
+  },
+  "frontend/src/pages/participants/index.test.tsx": {
+    "mtime": 1790328871.0053606,
+    "ast_hash": "6f6a6346720dca74295498284aa49465",
     "semantic_hash": ""
   }
 }

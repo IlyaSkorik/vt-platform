@@ -4615,8 +4615,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/participants/index.tsx": {
-    "mtime": 1790329130.6272342,
-    "ast_hash": "34379a736b29e768b97436fb3c320924",
+    "mtime": 1790333037.5561225,
+    "ast_hash": "4bd0ac0218e04a576aef33c03d875947",
     "semantic_hash": ""
   },
   "frontend/src/pages/placeholder/index.tsx": {
@@ -11505,8 +11505,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/participants/index.test.tsx": {
-    "mtime": 1790328871.0053606,
-    "ast_hash": "6f6a6346720dca74295498284aa49465",
+    "mtime": 1790333176.714956,
+    "ast_hash": "882d971143f31872d4bec4067e534e1e",
     "semantic_hash": ""
   }
 }
