@@ -19,7 +19,7 @@ import { type ApiError, apiClient, toApiError } from "@/shared/api";
 import { recordOwnConsent } from "@/shared/api/generated/identity/identity";
 import { ROUTES } from "@/shared/config";
 import { ConsentCheckbox, participantConsent } from "@/shared/consents";
-import { useAutosave } from "@/shared/hooks";
+import { useAutosave, useMediaQuery } from "@/shared/hooks";
 import { formatPersonName } from "@/shared/lib";
 import {
   Avatar,
@@ -84,6 +84,19 @@ interface OrganizationFormValues {
 
 /** Long enough that typing a name is one save, short enough to feel automatic. */
 const AUTOSAVE_DELAY_MS = 800;
+
+/** An untouched organization form — what «добавить» starts from and what a save returns to. */
+const BLANK_ORGANIZATION: OrganizationFormValues = {
+  name: "",
+  type: "school",
+  country: "",
+  city: "",
+  address: "",
+  website: "",
+};
+
+/** The width at which the directory shows its list and its form side by side. */
+const DIRECTORY_SIDE_BY_SIDE = "(min-width: 1024px)";
 
 const genderOptions = [
   { value: "female", label: "Женский" },
@@ -863,13 +876,14 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                 <CardContent className="space-y-3">
                   <div className="flex justify-end">
                     <Button variant="outline" onClick={() => setOrganizationDialogOpen(true)}>
-                      Справочник организаций
+                      <Plus aria-hidden="true" /> Добавить организацию
                     </Button>
                   </div>
                   <OrganizationPicker
                     organizations={organizationsQuery.data ?? []}
                     selectedOrganizations={selectedOrganizations}
                     onChange={(next) => form.setValue("organizations", next, { shouldDirty: true })}
+                    onAdd={() => setOrganizationDialogOpen(true)}
                   />
                 </CardContent>
                 <CardFooter className="flex-col items-stretch gap-3">
@@ -1068,13 +1082,14 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                 <CardContent className="space-y-3">
                   <div className="flex justify-end">
                     <Button variant="outline" onClick={() => setOrganizationDialogOpen(true)}>
-                      Добавить организацию
+                      <Plus aria-hidden="true" /> Добавить организацию
                     </Button>
                   </div>
                   <OrganizationPicker
                     organizations={organizationsQuery.data ?? []}
                     selectedOrganizations={selectedOrganizations}
                     onChange={(next) => form.setValue("organizations", next, { shouldDirty: true })}
+                    onAdd={() => setOrganizationDialogOpen(true)}
                   />
                 </CardContent>
               </Card>
@@ -1111,6 +1126,21 @@ export function ParticipantsProfilePage(): React.JSX.Element {
       <OrganizationDirectoryDialog
         open={organizationDialogOpen}
         onOpenChange={setOrganizationDialogOpen}
+        intent="create"
+        onCreated={(organizationId) => {
+          // Added from the participant's own form: tick it here and step out of the
+          // way. Leaving the directory open with the fields cleared read as «ничего не
+          // произошло», and the organization still had to be found and ticked by hand.
+          form.setValue(
+            "organizations",
+            [
+              ...selectedOrganizations,
+              { organizationId, isPrimary: selectedOrganizations.length === 0 },
+            ],
+            { shouldDirty: true },
+          );
+          setOrganizationDialogOpen(false);
+        }}
       />
     </PageContainer>
   );
@@ -1120,10 +1150,13 @@ function OrganizationPicker({
   organizations,
   selectedOrganizations,
   onChange,
+  onAdd,
 }: {
   organizations: Organization[];
   selectedOrganizations: Array<{ organizationId: string; isPrimary: boolean }>;
   onChange: (next: Array<{ organizationId: string; isPrimary: boolean }>) => void;
+  /** Open the personal directory to put an organization in it. */
+  onAdd: () => void;
 }): React.JSX.Element {
   const [search, setSearch] = useState("");
   const filtered = organizations.filter((organization) => {
@@ -1137,6 +1170,23 @@ function OrganizationPicker({
     );
   });
 
+  // An empty directory is how every account starts, and a search box over blank space
+  // is not an answer to «что тут делать»: say there is nothing yet, say it is optional,
+  // and put the way to add one right here.
+  if (organizations.length === 0) {
+    return (
+      <EmptyState
+        title="В справочнике пока нет организаций"
+        description="Организацию указывать необязательно. Если участник кого-то представляет, добавьте её один раз — дальше она будет подставляться сама."
+        action={
+          <Button onClick={onAdd}>
+            <Plus aria-hidden="true" /> Добавить организацию
+          </Button>
+        }
+      />
+    );
+  }
+
   return (
     <div className="space-y-3">
       <Input
@@ -1145,6 +1195,17 @@ function OrganizationPicker({
         placeholder="Поиск организации"
         leadingIcon={<Search aria-hidden="true" />}
       />
+      {filtered.length === 0 ? (
+        <EmptyState
+          title="Ничего не найдено"
+          description="Измените запрос — или добавьте эту организацию в справочник."
+          action={
+            <Button variant="outline" onClick={onAdd}>
+              <Plus aria-hidden="true" /> Добавить организацию
+            </Button>
+          }
+        />
+      ) : null}
       <div className="grid gap-2 md:grid-cols-2">
         {filtered.map((organization) => {
           const selected = selectedOrganizations.find(
@@ -1216,24 +1277,73 @@ function OrganizationPicker({
 function OrganizationDirectoryDialog({
   open,
   onOpenChange,
+  intent = "browse",
+  onCreated,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Why it was opened: to look through the directory, or to put something into it. */
+  intent?: "browse" | "create";
+  /** The new organization's id, for the picker that sent the applicant here to select it. */
+  onCreated?: (organizationId: string) => void;
 }): React.JSX.Element {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "city">("name");
   const [editingOrganization, setEditingOrganization] = useState<Organization | null>(null);
-  const form = useForm<OrganizationFormValues>({
-    defaultValues: {
-      name: "",
-      type: "school",
-      country: "",
-      city: "",
-      address: "",
-      website: "",
-    },
-  });
+  /**
+   * Whether the list and the form fit side by side.
+   *
+   * On a phone they never did: the form sat under the whole directory, so somebody who
+   * opened this to add their school saw a list and a search box, never scrolled far
+   * enough to reach the fields, and «Редактировать» looked like a button that does
+   * nothing. On a narrow screen it is one or the other, and the buttons carry you over.
+   */
+  const sideBySide = useMediaQuery(DIRECTORY_SIDE_BY_SIDE);
+  const [step, setStep] = useState<"list" | "form">("list");
+  const showList = sideBySide || step === "list";
+  const showForm = sideBySide || step === "form";
+
+  const form = useForm<OrganizationFormValues>({ defaultValues: BLANK_ORGANIZATION });
+  const { reset } = form;
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    // Opened to add something — start on the form rather than on a list of what is
+    // already there. Reopening also starts clean: half an edit abandoned last time is
+    // not what the next «Добавить» is about.
+    setStep(intent === "create" ? "form" : "list");
+    setEditingOrganization(null);
+    setSearch("");
+    reset(BLANK_ORGANIZATION);
+  }, [open, intent, reset]);
+
+  const startCreating = (): void => {
+    setEditingOrganization(null);
+    reset(BLANK_ORGANIZATION);
+    setStep("form");
+  };
+
+  const startEditing = (organization: Organization): void => {
+    setEditingOrganization(organization);
+    reset({
+      name: organization.name,
+      type: organization.type,
+      country: organization.country ?? "",
+      city: organization.city ?? "",
+      address: organization.address ?? "",
+      website: organization.website ?? "",
+    });
+    setStep("form");
+  };
+
+  const backToList = (): void => {
+    setEditingOrganization(null);
+    reset(BLANK_ORGANIZATION);
+    setStep("list");
+  };
 
   const organizationsQuery = useQuery<Organization[], ApiError>({
     queryKey: ["participant-registry", "organizations", "all"],
@@ -1242,27 +1352,27 @@ function OrganizationDirectoryDialog({
   });
 
   const createOrUpdate = useMutation({
-    mutationFn: async (values: OrganizationFormValues) => {
+    mutationFn: async (values: OrganizationFormValues): Promise<string | null> => {
       if (editingOrganization == null) {
-        await apiClient.post("participants/organizations", { json: values });
-      } else {
-        await apiClient.patch(`participants/organizations/${editingOrganization.id}`, {
-          json: values,
-        });
+        const response = await apiClient.post("participants/organizations", { json: values });
+        const payload = (await response.json()) as { data: { id: string } };
+        return payload.data.id;
       }
-    },
-    onSuccess: () => {
-      setEditingOrganization(null);
-      form.reset({
-        name: "",
-        type: "school",
-        country: "",
-        city: "",
-        address: "",
-        website: "",
+      await apiClient.patch(`participants/organizations/${editingOrganization.id}`, {
+        json: values,
       });
+      return null;
+    },
+    onSuccess: (createdId) => {
+      backToList();
       queryClient.invalidateQueries({ queryKey: ["participant-registry"] });
-      toast.success("Справочник обновлен");
+      toast.success(createdId == null ? "Организация сохранена" : "Организация добавлена");
+      // Whoever sent the applicant here to add one gets it back selected, and the
+      // directory closes behind them: the answer belongs on the participant's form,
+      // not in a dialog they now have to work out how to leave.
+      if (createdId != null && onCreated != null) {
+        onCreated(createdId);
+      }
     },
     onError: async (error) => toast.error((await toApiError(error)).message),
   });
@@ -1290,168 +1400,173 @@ function OrganizationDirectoryDialog({
       sortBy === "name" ? a.name.localeCompare(b.name) : (a.city ?? "").localeCompare(b.city ?? ""),
     );
 
+  const addButton = (
+    <Button className="w-full" onClick={startCreating}>
+      <Plus aria-hidden="true" /> Добавить организацию
+    </Button>
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>Личный справочник организаций</DialogTitle>
           <DialogDescription>
-            Переиспользуйте организации во всех участниках. Поддерживаются создание, редактирование,
-            архив и восстановление.
+            Ваш собственный список: добавленная один раз организация подставляется всем участникам.
+            Здесь её можно изменить или убрать в архив.
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-          <div className="space-y-3">
-            <div className="grid gap-2 sm:grid-cols-2">
-              <Input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Поиск в справочнике"
-                leadingIcon={<Search aria-hidden="true" />}
-              />
-              <Select
-                value={sortBy}
-                onValueChange={(value) => setSortBy(value as "name" | "city")}
-                options={[
-                  { value: "name", label: "Сортировка: по названию" },
-                  { value: "city", label: "Сортировка: по городу" },
-                ]}
-              />
-            </div>
-
-            {organizationsQuery.isLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-16" />
-                <Skeleton className="h-16" />
-                <Skeleton className="h-16" />
-              </div>
-            ) : organizationsQuery.isError ? (
-              <EmptyState
-                title="Не удалось загрузить справочник"
-                description={organizationsQuery.error.message}
-                action={
-                  <Button variant="outline" onClick={() => organizationsQuery.refetch()}>
-                    Повторить
-                  </Button>
-                }
-              />
-            ) : rows.length === 0 ? (
-              <EmptyState
-                title={search.trim().length > 0 ? "Ничего не найдено" : "Справочник пуст"}
-                description={
-                  search.trim().length > 0
-                    ? "Измените поисковый запрос."
-                    : "Добавьте первую образовательную организацию."
-                }
-              />
-            ) : (
-              <div className="space-y-2">
-                {rows.map((organization) => {
-                  const typeLabel =
-                    organizationTypeOptions.find((item) => item.value === organization.type)
-                      ?.label ?? "—";
-                  return (
-                    <Card key={organization.id}>
-                      <CardContent className="flex flex-wrap items-center justify-between gap-2 p-3">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium">{organization.name}</p>
-                            {organization.archived ? <Badge variant="outline">Архив</Badge> : null}
-                          </div>
-                          <p className="text-muted-foreground text-xs">
-                            {typeLabel}
-                            {organization.city ? ` · ${organization.city}` : ""}
-                          </p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setEditingOrganization(organization);
-                              form.reset({
-                                name: organization.name,
-                                type: organization.type,
-                                country: organization.country ?? "",
-                                city: organization.city ?? "",
-                                address: organization.address ?? "",
-                                website: organization.website ?? "",
-                              });
-                            }}
-                          >
-                            Редактировать
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => archiveOrRestore.mutate(organization.id)}
-                          >
-                            {organization.archived ? "Восстановить" : "В архив"}
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {editingOrganization == null ? "Новая организация" : "Редактирование"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form
-                className="space-y-3"
-                onSubmit={form.handleSubmit((values) => createOrUpdate.mutate(values))}
-              >
+          {showList ? (
+            <div className="space-y-3">
+              {/* First on a phone, where the form is a step away rather than beside the
+                  list: the reason people open this is to put something in it. */}
+              {sideBySide ? null : addButton}
+              <div className="grid gap-2 sm:grid-cols-2">
                 <Input
-                  label="Название"
-                  required
-                  error={form.formState.errors.name?.message}
-                  {...form.register("name", { required: "Введите название организации" })}
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Поиск в справочнике"
+                  leadingIcon={<Search aria-hidden="true" />}
                 />
                 <Select
-                  label="Тип"
-                  value={form.watch("type")}
-                  onValueChange={(value) => form.setValue("type", value as OrganizationType)}
-                  options={organizationTypeOptions}
+                  value={sortBy}
+                  onValueChange={(value) => setSortBy(value as "name" | "city")}
+                  options={[
+                    { value: "name", label: "Сортировка: по названию" },
+                    { value: "city", label: "Сортировка: по городу" },
+                  ]}
                 />
-                <Input label="Страна" {...form.register("country")} />
-                <Input label="Город" {...form.register("city")} />
-                <Input label="Адрес" {...form.register("address")} />
-                <Input label="Сайт" {...form.register("website")} />
-                <div className="flex gap-2">
-                  <Button type="submit" className="flex-1">
-                    {editingOrganization == null ? "Создать" : "Сохранить"}
-                  </Button>
-                  {editingOrganization != null ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setEditingOrganization(null);
-                        form.reset({
-                          name: "",
-                          type: "school",
-                          country: "",
-                          city: "",
-                          address: "",
-                          website: "",
-                        });
-                      }}
-                    >
-                      Отмена
-                    </Button>
-                  ) : null}
+              </div>
+
+              {organizationsQuery.isLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-16" />
+                  <Skeleton className="h-16" />
+                  <Skeleton className="h-16" />
                 </div>
-              </form>
-            </CardContent>
-          </Card>
+              ) : organizationsQuery.isError ? (
+                <EmptyState
+                  title="Не удалось загрузить справочник"
+                  description={organizationsQuery.error.message}
+                  action={
+                    <Button variant="outline" onClick={() => organizationsQuery.refetch()}>
+                      Повторить
+                    </Button>
+                  }
+                />
+              ) : rows.length === 0 ? (
+                <EmptyState
+                  title={search.trim().length > 0 ? "Ничего не найдено" : "Справочник пуст"}
+                  description={
+                    search.trim().length > 0
+                      ? "Измените поисковый запрос."
+                      : "Добавьте первую образовательную организацию — дальше она будет подставляться сама."
+                  }
+                  {...(search.trim().length === 0 && !sideBySide
+                    ? { action: <Button onClick={startCreating}>Добавить организацию</Button> }
+                    : {})}
+                />
+              ) : (
+                <div className="space-y-2">
+                  {rows.map((organization) => {
+                    const typeLabel =
+                      organizationTypeOptions.find((item) => item.value === organization.type)
+                        ?.label ?? "—";
+                    return (
+                      <Card key={organization.id}>
+                        <CardContent className="flex flex-wrap items-center justify-between gap-2 p-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{organization.name}</p>
+                              {organization.archived ? (
+                                <Badge variant="outline">Архив</Badge>
+                              ) : null}
+                            </div>
+                            <p className="text-muted-foreground text-xs">
+                              {typeLabel}
+                              {organization.city ? ` · ${organization.city}` : ""}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => startEditing(organization)}
+                            >
+                              Редактировать
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => archiveOrRestore.mutate(organization.id)}
+                            >
+                              {organization.archived ? "Восстановить" : "В архив"}
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ) : null}
+
+          {showForm ? (
+            <Card>
+              <CardHeader className="gap-2">
+                {/* The way back, where the list is not on screen to click. */}
+                {sideBySide ? null : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="self-start px-0"
+                    onClick={backToList}
+                  >
+                    <ArrowLeft aria-hidden="true" /> К списку
+                  </Button>
+                )}
+                <CardTitle>
+                  {editingOrganization == null ? "Новая организация" : "Редактирование"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form
+                  className="space-y-3"
+                  onSubmit={form.handleSubmit((values) => createOrUpdate.mutate(values))}
+                >
+                  <Input
+                    label="Название"
+                    required
+                    error={form.formState.errors.name?.message}
+                    {...form.register("name", { required: "Введите название организации" })}
+                  />
+                  <Select
+                    label="Тип"
+                    value={form.watch("type")}
+                    onValueChange={(value) => form.setValue("type", value as OrganizationType)}
+                    options={organizationTypeOptions}
+                  />
+                  <Input label="Страна" {...form.register("country")} />
+                  <Input label="Город" {...form.register("city")} />
+                  <Input label="Адрес" {...form.register("address")} />
+                  <Input label="Сайт" {...form.register("website")} />
+                  <div className="flex gap-2">
+                    <Button type="submit" className="flex-1" loading={createOrUpdate.isPending}>
+                      {editingOrganization == null ? "Создать" : "Сохранить"}
+                    </Button>
+                    {editingOrganization != null ? (
+                      <Button type="button" variant="outline" onClick={backToList}>
+                        Отмена
+                      </Button>
+                    ) : null}
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>
