@@ -19,6 +19,7 @@ import { type ApiError, apiClient, toApiError } from "@/shared/api";
 import { recordOwnConsent } from "@/shared/api/generated/identity/identity";
 import { ROUTES } from "@/shared/config";
 import { ConsentCheckbox, participantConsent } from "@/shared/consents";
+import { useAutosave } from "@/shared/hooks";
 import { formatPersonName } from "@/shared/lib";
 import {
   Avatar,
@@ -80,6 +81,9 @@ interface OrganizationFormValues {
   address: string;
   website: string;
 }
+
+/** Long enough that typing a name is one save, short enough to feel automatic. */
+const AUTOSAVE_DELAY_MS = 800;
 
 const genderOptions = [
   { value: "female", label: "Женский" },
@@ -511,7 +515,6 @@ export function ParticipantsProfilePage(): React.JSX.Element {
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const [organizationDialogOpen, setOrganizationDialogOpen] = useState(false);
-  const autosaveTimer = useRef<number | null>(null);
   const isCreateMode = participantId === "new" || participantId == null;
   // Which consent was ticked, rather than whether one was. The wording depends on the
   // participant's age, so editing the birth date across the eighteenth birthday changes
@@ -574,11 +577,32 @@ export function ParticipantsProfilePage(): React.JSX.Element {
       },
     });
 
+  /**
+   * Whose profile the form currently holds, and whether it holds unsaved typing.
+   *
+   * Autosaving invalidates the registry, which refetches this very participant and
+   * hands back a new object — and resetting the form to it threw away everything
+   * entered while the request was on the wire. So the record seeds the form and is
+   * adopted again only into a form with nothing unsaved in it; switching to another
+   * participant always reloads, dirty or not, since that is a different person.
+   */
+  const syncedParticipantId = useRef<string | null>(null);
+  const isDirtyRef = useRef(false);
+  isDirtyRef.current = form.formState.isDirty;
+  // Written further down, once `updateMutation` exists; read only from the effect
+  // below, which runs after the whole render.
+  const isSavingRef = useRef(false);
+
   useEffect(() => {
     const participant = participantQuery.data;
     if (participant == null) {
       return;
     }
+    const isSamePerson = syncedParticipantId.current === participant.id;
+    if (isSamePerson && (isDirtyRef.current || isSavingRef.current)) {
+      return;
+    }
+    syncedParticipantId.current = participant.id;
     form.reset({
       participantType: participant.participantType,
       collectiveName: participant.collectiveName ?? "",
@@ -594,7 +618,7 @@ export function ParticipantsProfilePage(): React.JSX.Element {
         isPrimary: organization.isPrimary,
       })),
     });
-  }, [participantQuery.data, form.reset]);
+  }, [participantQuery.data, form]);
 
   const createMutation = useMutation({
     mutationFn: async (values: ParticipantFormValues): Promise<string> => {
@@ -659,23 +683,23 @@ export function ParticipantsProfilePage(): React.JSX.Element {
     },
   });
 
+  isSavingRef.current = updateMutation.isPending;
+
+  // Debounced so typing is one save, and flushed when the page is left: the timer used
+  // to be cleared on the way out, so the last thing typed before going back to the list
+  // was never sent and the profile reopened without it.
+  const { mutate: saveParticipant } = updateMutation;
+  const { schedule: scheduleAutosave } = useAutosave<ParticipantFormValues>(
+    (payload) => saveParticipant(payload),
+    AUTOSAVE_DELAY_MS,
+  );
   const values = form.watch();
   useEffect(() => {
     if (isCreateMode || !form.formState.isDirty || participantId == null) {
       return;
     }
-    if (autosaveTimer.current != null) {
-      window.clearTimeout(autosaveTimer.current);
-    }
-    autosaveTimer.current = window.setTimeout(() => {
-      updateMutation.mutate(values);
-    }, 800);
-    return () => {
-      if (autosaveTimer.current != null) {
-        window.clearTimeout(autosaveTimer.current);
-      }
-    };
-  }, [form.formState.isDirty, isCreateMode, participantId, updateMutation.mutate, values]);
+    scheduleAutosave(values);
+  }, [form.formState.isDirty, isCreateMode, participantId, scheduleAutosave, values]);
 
   const participant = participantQuery.data;
   const selectedOrganizations = form.watch("organizations");

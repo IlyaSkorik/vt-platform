@@ -9,10 +9,14 @@ import {
   PRICING_CALCULATION_TYPE_OPTIONS,
   parseAmount,
 } from "@/features/competitions";
+import { useAutosave } from "@/shared/hooks";
 import { cn } from "@/shared/lib";
 import { Badge, Input, Select } from "@/shared/ui";
 
 const CHAIN_KEYS = ["nomination", "discipline", "age", "group", "format"] as const;
+
+/** A price is typed a digit at a time; long enough that one amount is one save. */
+const SAVE_DELAY_MS = 650;
 
 interface PricingCardProps {
   row: PricingRow;
@@ -44,19 +48,26 @@ export function PricingCard({
   const lastSaved = useRef(
     `${row.price?.amount ?? ""}|${normalizeCalculationType(row.price?.calculationType)}`,
   );
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // What is in the boxes, readable from the effect below without re-running it.
+  const typedRef = useRef(`${draft}|${calculationType}`);
+  typedRef.current = `${draft}|${calculationType}`;
 
+  // A saved price echoes the whole competition back, and adopting that echo replaced
+  // a price the organizer was still typing with the one already stored. So a stored
+  // price is taken up only by a card that shows exactly what was last saved.
   useEffect(() => {
+    const stored = `${row.price?.amount ?? ""}|${normalizeCalculationType(row.price?.calculationType)}`;
+    if (stored === lastSaved.current) {
+      return;
+    }
+    const wasUntouched = typedRef.current === lastSaved.current;
+    lastSaved.current = stored;
+    if (!wasUntouched) {
+      return;
+    }
     setDraft(row.price?.amount ?? "");
     setCalculationType(normalizeCalculationType(row.price?.calculationType));
-    lastSaved.current = `${row.price?.amount ?? ""}|${normalizeCalculationType(row.price?.calculationType)}`;
   }, [row.price?.amount, row.price?.calculationType]);
-
-  useEffect(() => {
-    return () => {
-      if (timer.current) clearTimeout(timer.current);
-    };
-  }, []);
 
   const chain = [
     row.labels.categoryName,
@@ -102,12 +113,15 @@ export function PricingCard({
     setCalculationType(nextType);
   };
 
+  // Debounced, and sent rather than dropped when the card goes away: a price typed
+  // just before scrolling the list or leaving the section was lost with the timer.
+  const { schedule, cancel } = useAutosave<string>((value) => {
+    void commit(value);
+  }, SAVE_DELAY_MS);
+
   const scheduleSave = (value: string): void => {
     setDraft(value);
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      void commit(value);
-    }, 650);
+    schedule(value);
   };
 
   return (
@@ -158,6 +172,7 @@ export function PricingCard({
             const next = normalizeCalculationType(value);
             setCalculationType(next);
             if (draft.trim().length > 0) {
+              cancel();
               void commit(draft, next);
             }
           }}
@@ -175,11 +190,16 @@ export function PricingCard({
               : "Итоговая стоимость = цена × число участников")
           }
           onChange={(event) => scheduleSave(event.target.value)}
-          onBlur={() => void commit(draft)}
+          onBlur={() => {
+            // Committed here and now, so the debounce must not send the same amount
+            // a second time once the field is already saved.
+            cancel();
+            void commit(draft);
+          }}
           onKeyDown={(event) => {
             if (event.key === "Enter") {
               event.preventDefault();
-              if (timer.current) clearTimeout(timer.current);
+              cancel();
               void commit(draft);
             }
           }}

@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 
 import type { SubmissionResource } from "@/shared/api/generated/model-applications";
+import { useAutosave, useServerDraft } from "@/shared/hooks";
 import { Input, toast } from "@/shared/ui";
 
 import { useSetParticipantMemberCount } from "../api/hooks";
@@ -42,39 +43,34 @@ export function CollectiveHeadcount({
   bandLabel?: string | null;
 }): React.JSX.Element {
   const stated = headcountMissing(participant) ? null : participant.memberCount;
-  const [text, setText] = useState(stated == null ? "" : String(stated));
   const save = useSetParticipantMemberCount(submissionId);
 
-  // The server's number is the truth: re-sync when the submission is refetched
-  // (another tab, or a save landing) so the field never shows a stale draft.
-  const savedRef = useRef(stated);
-  useEffect(() => {
-    if (savedRef.current === stated) {
-      return;
-    }
-    savedRef.current = stated;
-    setText(stated == null ? "" : String(stated));
-  }, [stated]);
+  // Seeded from the entry and re-seeded when the stored number changes, but never
+  // over a number being typed: every save on this submission echoes the whole thing
+  // back, and adopting that echo mid-typing replaced what was in the field.
+  const [text, setText] = useServerDraft(stated == null ? "" : String(stated), Object.is);
 
   const parsed = Number(text);
   const valid = Number.isInteger(parsed) && parsed >= 1 && parsed <= MAX_HEADCOUNT;
   const dirty = text.trim().length > 0 && valid && parsed !== stated;
 
   // Debounced, like every other field in the wizard: typing "12" passes through "1",
-  // and saving that would quietly put a wrong number on the entry.
+  // and saving that would quietly put a wrong number on the entry. Still pending when
+  // the card is collapsed or the page left, it is sent rather than dropped.
   const { mutate } = save;
+  const { schedule, cancel } = useAutosave<number>((memberCount) =>
+    mutate(
+      { participantId: participant.id, memberCount },
+      { onError: () => toast.error("Не удалось сохранить численность коллектива") },
+    ),
+  );
   useEffect(() => {
     if (!dirty) {
+      cancel();
       return;
     }
-    const handle = setTimeout(() => {
-      mutate(
-        { participantId: participant.id, memberCount: parsed },
-        { onError: () => toast.error("Не удалось сохранить численность коллектива") },
-      );
-    }, 700);
-    return () => clearTimeout(handle);
-  }, [dirty, parsed, participant.id, mutate]);
+    schedule(parsed);
+  }, [dirty, parsed, schedule, cancel]);
 
   const invalid = text.trim().length > 0 && !valid;
   const band = bandLabel ? ` Состав по правилам фестиваля — ${bandLabel} чел.` : "";

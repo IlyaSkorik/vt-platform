@@ -176,6 +176,38 @@ describe("SettingsSection", () => {
     expect(saved.requireRegulationsAcceptance).toBe(true);
   });
 
+  it("keeps a flipped switch when the competition is refetched", async () => {
+    // Saving anything on the festival echoes a fresh `CompetitionDetail` into the
+    // cache — from this section or any other. Adopting it put every rule back the way
+    // the server still remembered it, so a change made a moment earlier undid itself
+    // on screen.
+    const user = userEvent.setup();
+    const detail = competition();
+    const { rerender } = render(
+      <SettingsSection
+        competition={detail}
+        checklist={buildPublicationChecklist(detail)}
+        onAutosaveStateChange={() => {}}
+        onNavigateSection={() => {}}
+      />,
+    );
+
+    await user.click(screen.getByRole("switch", { name: /Педагог обязателен/ }));
+    expect(screen.getByRole("switch", { name: /Педагог обязателен/ })).not.toBeChecked();
+
+    const echo = competition();
+    rerender(
+      <SettingsSection
+        competition={echo}
+        checklist={buildPublicationChecklist(echo)}
+        onAutosaveStateChange={() => {}}
+        onNavigateSection={() => {}}
+      />,
+    );
+
+    expect(screen.getByRole("switch", { name: /Педагог обязателен/ })).not.toBeChecked();
+  });
+
   it("leaves an archived festival's rules alone", async () => {
     const user = userEvent.setup();
     const archived = { ...competition(), status: "COMPLETED" };

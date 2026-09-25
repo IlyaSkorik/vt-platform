@@ -255,15 +255,36 @@ export function ContactsSection({
     configRef.current = config;
   }, [config]);
 
+  /**
+   * Whether this section has been touched.
+   *
+   * Every save echoes a fresh ``CompetitionDetail`` into the query cache — and so does
+   * a save made in any other section — and adopting that echo overwrote what was on
+   * screen: a phone number typed while the previous request was in flight lost the
+   * digits entered meanwhile. So the stored contacts seed the section, and once the
+   * organizer has edited anything they are never overwritten again.
+   */
+  const hasLocalEditsRef = useRef(false);
+
   useEffect(() => {
+    if (hasLocalEditsRef.current) return;
+    configRef.current = effectiveConfig;
     setConfig(effectiveConfig);
   }, [effectiveConfig]);
 
   const autosaveTimer = useRef<number | null>(null);
   const saveGeneration = useRef(0);
+  /**
+   * The change the server has not been told about yet — kept so a save still waiting
+   * out its debounce is *flushed* when the section unmounts instead of dropped with
+   * the timer. Dropping it is how an edited contact reverts on its own: switching
+   * section within the debounce sent nothing at all.
+   */
+  const pendingSave = useRef<_ContactsConfig | null>(null);
 
   const persistConfig = useCallback(
     async (next: _ContactsConfig) => {
+      if (pendingSave.current === next) pendingSave.current = null;
       saveGeneration.current += 1;
       const gen = saveGeneration.current;
       onAutosaveStateChange("saving");
@@ -290,8 +311,10 @@ export function ContactsSection({
   const scheduleConfigSave = useCallback(
     (next: _ContactsConfig) => {
       if (autosaveTimer.current != null) window.clearTimeout(autosaveTimer.current);
+      pendingSave.current = next;
       onAutosaveStateChange("dirty");
       autosaveTimer.current = window.setTimeout(() => {
+        autosaveTimer.current = null;
         void persistConfig(next);
       }, AUTOSAVE_DELAY_MS);
     },
@@ -301,6 +324,7 @@ export function ContactsSection({
   const updateConfigLocal = useCallback(
     (patch: Partial<_ContactsConfig> | ((prev: _ContactsConfig) => _ContactsConfig)) => {
       if (isReadOnly) return;
+      hasLocalEditsRef.current = true;
       const prev = configRef.current;
       const next = typeof patch === "function" ? patch(prev) : { ...prev, ...patch };
       // Keep the ref current so back-to-back calls in the same tick see the
@@ -312,9 +336,17 @@ export function ContactsSection({
     [isReadOnly, scheduleConfigSave],
   );
 
+  const persistRef = useRef(persistConfig);
+  persistRef.current = persistConfig;
+
   useEffect(
     () => () => {
       if (autosaveTimer.current != null) window.clearTimeout(autosaveTimer.current);
+      const unsaved = pendingSave.current;
+      if (unsaved != null) {
+        pendingSave.current = null;
+        void persistRef.current(unsaved);
+      }
     },
     [],
   );

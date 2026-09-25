@@ -105,3 +105,45 @@ describe("CollectiveHeadcount", () => {
     expect(save).not.toHaveBeenCalled();
   });
 });
+
+describe("CollectiveHeadcount — the echo of a refetch", () => {
+  it("keeps the number being typed when the submission is refetched", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const { rerender } = renderFor(aCollective());
+
+    await user.type(screen.getByLabelText(/Сколько человек выступает/), "12");
+    await vi.advanceTimersByTimeAsync(800);
+    // The save has landed and the submission comes back with it — while the applicant
+    // is already correcting the number to 120.
+    await user.type(screen.getByLabelText(/Сколько человек выступает/), "0");
+    rerender(
+      <CollectiveHeadcount
+        submissionId={SUBMISSION}
+        participant={aCollective({ memberCount: 12 })}
+      />,
+    );
+
+    expect(screen.getByLabelText(/Сколько человек выступает/)).toHaveValue(120);
+    vi.useRealTimers();
+  });
+
+  it("sends a number still waiting out its debounce when the card is collapsed", async () => {
+    // Collapsing a performance card unmounts this field; the write used to be cleared
+    // with the timer and the headcount reopened blank.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const { unmount } = renderFor(aCollective());
+
+    await user.type(screen.getByLabelText(/Сколько человек выступает/), "12");
+    expect(save).not.toHaveBeenCalled();
+
+    unmount();
+
+    expect(save).toHaveBeenCalledWith(
+      { participantId: PARTICIPANT, memberCount: 12 },
+      expect.anything(),
+    );
+    vi.useRealTimers();
+  });
+});

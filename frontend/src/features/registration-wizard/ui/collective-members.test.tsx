@@ -119,3 +119,39 @@ describe("CollectiveMembers", () => {
     expect(screen.getByRole("button", { name: "Сохранить состав" })).toBeDisabled();
   });
 });
+
+describe("CollectiveMembers — the echo of a refetch", () => {
+  it("keeps the roster being typed when the submission is refetched", async () => {
+    // A refetch hands back a fresh array on every save made anywhere on this
+    // submission. Adopting it replaced the names mid-typing with the stored ones.
+    const user = userEvent.setup();
+    const { rerender } = renderFor(aCollective({ members: ["Иванова Мария"] }));
+
+    await user.type(screen.getByLabelText(/ФИО участников коллектива/), "{Enter}Петров Пётр");
+    rerender(
+      <CollectiveMembers
+        submissionId={SUBMISSION}
+        participant={aCollective({ members: ["Иванова Мария"] })}
+      />,
+    );
+
+    expect(screen.getByLabelText(/ФИО участников коллектива/)).toHaveValue(
+      "Иванова Мария\nПетров Пётр",
+    );
+  });
+
+  it("shows a roster saved elsewhere while this field sits untouched", () => {
+    const { rerender } = renderFor(aCollective({ members: ["Иванова Мария"] }));
+
+    rerender(
+      <CollectiveMembers
+        submissionId={SUBMISSION}
+        participant={aCollective({ members: ["Иванова Мария", "Петров Пётр"] })}
+      />,
+    );
+
+    expect(screen.getByLabelText(/ФИО участников коллектива/)).toHaveValue(
+      "Иванова Мария\nПетров Пётр",
+    );
+  });
+});

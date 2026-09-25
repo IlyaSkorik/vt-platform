@@ -410,8 +410,19 @@ export function SettingsSection({
    * would go out twice with it.
    */
   const settingsRef = useRef(settings);
+  /**
+   * Whether this section has been touched.
+   *
+   * Every save echoes a fresh ``CompetitionDetail`` into the query cache — and so does
+   * a save made in any other section — and adopting that echo overwrote what was on
+   * screen: a ceiling typed a digit at a time lost the digits entered while the
+   * request was in flight. So the stored rules seed the section, and once the
+   * organizer has changed anything they are never overwritten again.
+   */
+  const hasLocalEditsRef = useRef(false);
 
   useEffect(() => {
+    if (hasLocalEditsRef.current) return;
     settingsRef.current = effectiveSettings;
     setSettings(effectiveSettings);
   }, [effectiveSettings]);
@@ -502,6 +513,7 @@ export function SettingsSection({
 
   const apply = useCallback(
     (next: _Settings, options: { immediate: boolean }) => {
+      hasLocalEditsRef.current = true;
       settingsRef.current = next;
       setSettings(next);
       commit(next, options);

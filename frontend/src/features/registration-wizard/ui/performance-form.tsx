@@ -7,8 +7,12 @@ import {
   toAddParticipantRequest,
 } from "@/entities/participant";
 import { type DirectoryTeacher, fetchTeacher, toCreditTeacherRequest } from "@/entities/teacher";
-import type { SubmissionResource } from "@/shared/api/generated/model-applications";
+import type {
+  SetPerformanceRequest,
+  SubmissionResource,
+} from "@/shared/api/generated/model-applications";
 import type { Registration } from "@/shared/api/generated/model-public-catalog";
+import { useAutosave } from "@/shared/hooks";
 import {
   Alert,
   Button,
@@ -222,46 +226,42 @@ function PerformanceFormInner({
     signatureOf(submission.performance?.comment?.trim() ?? ""),
   );
   const { mutate: savePerformance } = setPerformance;
+  // Flushed rather than dropped when the form goes away: collapsing this card, opening
+  // another one or leaving the page used to clear the timer with the last seconds of
+  // typing still in it, and the title came back the way the server remembered it.
+  const { schedule } = useAutosave<{ payload: SetPerformanceRequest; signature: string }>(
+    ({ payload, signature }) =>
+      savePerformance(payload, {
+        onSuccess: () => {
+          savedSignature.current = signature;
+        },
+        onError: () => {
+          toast.error("Не удалось сохранить выступление");
+        },
+      }),
+  );
   useEffect(() => {
     if (!saveSignature || savedSignature.current === saveSignature) {
       return;
     }
-    const handle = setTimeout(() => {
-      savePerformance(
-        {
-          title: title.trim(),
-          durationSeconds,
-          nominationId: selection.nominationId as string,
-          disciplineId: selection.disciplineId as string,
-          ageCategoryId: selection.ageCategoryId as string,
-          participantGroupId: selection.participantGroupId as string,
-          participationFormatId: selection.participationFormatId as string,
-          comment: outgoingComment,
-          // Sent whatever the category is: a value left over from a mixed band the
-          // applicant has since switched away from is harmless, and dropping it would
-          // lose what they wrote if they switch back.
-          ageComposition: ageComposition.trim(),
-        },
-        {
-          onSuccess: () => {
-            savedSignature.current = saveSignature;
-          },
-          onError: () => {
-            toast.error("Не удалось сохранить выступление");
-          },
-        },
-      );
-    }, 700);
-    return () => clearTimeout(handle);
-  }, [
-    saveSignature,
-    savePerformance,
-    title,
-    durationSeconds,
-    selection,
-    outgoingComment,
-    ageComposition,
-  ]);
+    schedule({
+      signature: saveSignature,
+      payload: {
+        title: title.trim(),
+        durationSeconds,
+        nominationId: selection.nominationId as string,
+        disciplineId: selection.disciplineId as string,
+        ageCategoryId: selection.ageCategoryId as string,
+        participantGroupId: selection.participantGroupId as string,
+        participationFormatId: selection.participationFormatId as string,
+        comment: outgoingComment,
+        // Sent whatever the category is: a value left over from a mixed band the
+        // applicant has since switched away from is harmless, and dropping it would
+        // lose what they wrote if they switch back.
+        ageComposition: ageComposition.trim(),
+      },
+    });
+  }, [saveSignature, schedule, title, durationSeconds, selection, outgoingComment, ageComposition]);
 
   return (
     <div className="flex flex-col gap-4">

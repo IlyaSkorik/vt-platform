@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 
 import { useRecordConsents } from "@/entities/application";
-import type { ApplicationResource } from "@/shared/api/generated/model-applications";
+import type {
+  ApplicationResource,
+  RecordConsentsRequest,
+} from "@/shared/api/generated/model-applications";
 import type { Registration } from "@/shared/api/generated/model-public-catalog";
 import { applicationConsent, ConsentCheckbox } from "@/shared/consents";
+import { useAutosave } from "@/shared/hooks";
 import { Alert, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui";
 
 /**
@@ -59,6 +63,11 @@ export function ConsentsCard({
   // journalled as an edit and reported to the organizer as a change nobody made.
   const autosavedSignature = useRef<string>(signatureOf(required, accepted));
 
+  // A tick waiting out its debounce is sent when the card goes away rather than
+  // dropped with the timer: an applicant who ticks the last consent and immediately
+  // submits, or leaves, had that tick recorded nowhere.
+  const { mutate: record } = recordConsents;
+  const { schedule } = useAutosave<RecordConsentsRequest>((body) => record(body), 250);
   useEffect(() => {
     if (required.length === 0 || recordConsents.isPending) {
       return;
@@ -68,20 +77,17 @@ export function ConsentsCard({
       return;
     }
     autosavedSignature.current = signature;
-    const handle = setTimeout(() => {
-      recordConsents.mutate({
-        consents: required
-          .filter((consent) => accepted[consent.code] === true)
-          .map((consent) => ({
-            code: consent.code,
-            // The version of the text that was actually displayed, from the same
-            // catalogue that supplied the wording (LEGAL-001 §13.3).
-            version: applicationConsent(consent.code)?.version ?? FALLBACK_CONSENT_VERSION,
-          })),
-      });
-    }, 250);
-    return () => clearTimeout(handle);
-  }, [accepted, recordConsents, required]);
+    schedule({
+      consents: required
+        .filter((consent) => accepted[consent.code] === true)
+        .map((consent) => ({
+          code: consent.code,
+          // The version of the text that was actually displayed, from the same
+          // catalogue that supplied the wording (LEGAL-001 §13.3).
+          version: applicationConsent(consent.code)?.version ?? FALLBACK_CONSENT_VERSION,
+        })),
+    });
+  }, [accepted, recordConsents.isPending, required, schedule]);
 
   return (
     <Card>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   defaultCompetitionSettings,
   mergeSettingsWithFormats,
@@ -7,6 +7,7 @@ import {
 } from "@/features/competitions";
 import { ApiError } from "@/shared/api";
 import type { CompetitionDetail } from "@/shared/api/generated/model-competitions";
+import { useServerDraft } from "@/shared/hooks";
 import {
   Card,
   CardContent,
@@ -38,15 +39,14 @@ export function PerformanceDiscountCard({
 }: PerformanceDiscountCardProps): React.JSX.Element {
   const updateSettings = useUpdateCompetitionSettingsMutation();
   const stored = competition.settings?.additionalPerformanceDiscountPercent ?? 0;
-  const [percent, setPercent] = useState(stored);
+  // Seeded from the stored discount and re-seeded when it really changes, but never
+  // over a number being typed: every save echoes the whole competition back, and
+  // adopting that echo replaced what the organizer was entering.
+  const [percent, setPercent] = useServerDraft(stored, Object.is);
   const timer = useRef<number | null>(null);
   // The typed value the server has not been told about yet, so leaving the section
   // mid-debounce sends it rather than discarding it with the timer.
   const pending = useRef<number | null>(null);
-
-  useEffect(() => {
-    setPercent(stored);
-  }, [stored]);
 
   const persist = useCallback(
     async (next: number) => {
@@ -73,7 +73,7 @@ export function PerformanceDiscountCard({
         toast.error(message);
       }
     },
-    [competition, updateSettings, stored],
+    [competition, updateSettings, stored, setPercent],
   );
 
   const persistRef = useRef(persist);

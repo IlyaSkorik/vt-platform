@@ -1,8 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 
 import { useSetPayer } from "@/entities/application";
-import type { ApplicationResource } from "@/shared/api/generated/model-applications";
+import type {
+  ApplicationResource,
+  SetPayerRequest,
+} from "@/shared/api/generated/model-applications";
 import type { Registration } from "@/shared/api/generated/model-public-catalog";
+import { useAutosave, useServerDraft } from "@/shared/hooks";
 import {
   Card,
   CardContent,
@@ -69,19 +73,14 @@ export function PayerCard({
   registration: Registration;
 }): React.JSX.Element | null {
   const saved = draftOf(application.payer);
-  const [draft, setDraft] = useState<Draft>(saved);
   const { mutate, isPending } = useSetPayer(applicationId);
-
-  // The server's name is the truth: re-sync when the application is refetched (another
-  // tab, or a save landing) so the fields never show a stale draft.
-  const savedRef = useRef(saved);
-  useEffect(() => {
-    if (same(savedRef.current, saved)) {
-      return;
-    }
-    savedRef.current = saved;
-    setDraft(saved);
-  }, [saved]);
+  // Seeded from the order and re-seeded when the order's own payer changes, but never
+  // over a name being typed: saving one field echoes the whole application back, and
+  // adopting that echo used to wipe the field the applicant had moved on to.
+  const [draft, setDraft] = useServerDraft(saved, same);
+  const autosave = useAutosave<SetPayerRequest>((body) =>
+    mutate(body, { onError: () => toast.error("Не удалось сохранить заказчика") }),
+  );
 
   const typed = trim(draft);
   // Both required parts, or nothing to send: the domain refuses a nameless payer, and
@@ -89,22 +88,20 @@ export function PayerCard({
   const complete = typed.lastName !== "" && typed.firstName !== "";
   const dirty = complete && !same(typed, saved);
 
+  const { schedule, cancel } = autosave;
   useEffect(() => {
     if (!dirty) {
+      // Typed and typed back: there is nothing left to tell the server, and a write
+      // still waiting would put the abandoned version on the order.
+      cancel();
       return;
     }
-    const handle = setTimeout(() => {
-      mutate(
-        {
-          lastName: typed.lastName,
-          firstName: typed.firstName,
-          middleName: typed.middleName || null,
-        },
-        { onError: () => toast.error("Не удалось сохранить заказчика") },
-      );
-    }, 700);
-    return () => clearTimeout(handle);
-  }, [dirty, typed.lastName, typed.firstName, typed.middleName, mutate]);
+    schedule({
+      lastName: typed.lastName,
+      firstName: typed.firstName,
+      middleName: typed.middleName || null,
+    });
+  }, [dirty, typed.lastName, typed.firstName, typed.middleName, schedule, cancel]);
 
   if (!registration.collectPayerDetails) {
     return null;

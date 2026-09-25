@@ -130,3 +130,105 @@ describe("PayerCard", () => {
     vi.useRealTimers();
   });
 });
+
+describe("PayerCard — the echo of its own save", () => {
+  it("keeps what is being typed when the saved order comes back", async () => {
+    // Saving the name invalidates the order, and the refetched order arrives while the
+    // applicant is already typing the patronymic. Adopting it wiped that field —
+    // the complaint that these boxes erase themselves.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const { rerender } = render(
+      <PayerCard
+        applicationId={APPLICATION}
+        application={anApplication(null)}
+        registration={aRegistration(true)}
+      />,
+    );
+
+    await user.type(screen.getByLabelText(/Фамилия/), "Иванова");
+    await user.type(screen.getByLabelText(/Имя/), "Анна");
+    await vi.advanceTimersByTimeAsync(800);
+    await user.type(screen.getByLabelText(/Отчество/), "Сергеевна");
+
+    rerender(
+      <PayerCard
+        applicationId={APPLICATION}
+        application={anApplication({
+          lastName: "Иванова",
+          firstName: "Анна",
+          middleName: null,
+          fullName: "Иванова Анна",
+        })}
+        registration={aRegistration(true)}
+      />,
+    );
+
+    expect(screen.getByLabelText(/Отчество/)).toHaveValue("Сергеевна");
+    await vi.advanceTimersByTimeAsync(800);
+    await waitFor(() =>
+      expect(save).toHaveBeenLastCalledWith(
+        { lastName: "Иванова", firstName: "Анна", middleName: "Сергеевна" },
+        expect.anything(),
+      ),
+    );
+    vi.useRealTimers();
+  });
+
+  it("adopts a name changed elsewhere while this card sits untouched", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const { rerender } = render(
+      <PayerCard
+        applicationId={APPLICATION}
+        application={anApplication(null)}
+        registration={aRegistration(true)}
+      />,
+    );
+
+    rerender(
+      <PayerCard
+        applicationId={APPLICATION}
+        application={anApplication({
+          lastName: "Петрова",
+          firstName: "Ольга",
+          middleName: "Ивановна",
+          fullName: "Петрова Ольга Ивановна",
+        })}
+        registration={aRegistration(true)}
+      />,
+    );
+
+    expect(screen.getByLabelText(/Фамилия/)).toHaveValue("Петрова");
+    expect(screen.getByLabelText(/Отчество/)).toHaveValue("Ивановна");
+    await vi.advanceTimersByTimeAsync(1500);
+    // Nothing of its own to save: the value shown is the value stored.
+    expect(save).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("sends a name still waiting out its debounce when the card goes away", async () => {
+    // Leaving the page within the debounce dropped the write with the timer, and the
+    // name was never stored at all.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const { unmount } = render(
+      <PayerCard
+        applicationId={APPLICATION}
+        application={anApplication(null)}
+        registration={aRegistration(true)}
+      />,
+    );
+
+    await user.type(screen.getByLabelText(/Фамилия/), "Иванова");
+    await user.type(screen.getByLabelText(/Имя/), "Анна");
+    expect(save).not.toHaveBeenCalled();
+
+    unmount();
+
+    expect(save).toHaveBeenCalledWith(
+      { lastName: "Иванова", firstName: "Анна", middleName: null },
+      expect.anything(),
+    );
+    vi.useRealTimers();
+  });
+});

@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Building2, Check, Network } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { applyProblemToForm } from "@/features/auth";
 import {
@@ -88,8 +88,16 @@ function OrganizationProfileForm({ profile }: OrganizationProfileFormProps): Rea
     mode: "onBlur",
   });
 
-  // Re-seed the form whenever a fresh profile arrives (e.g. after a background refetch).
+  // Re-seed the form whenever a fresh profile arrives (e.g. after a background refetch)
+  // — but never over unsaved editing. Saving invalidates the profile, and the refetch
+  // that follows used to replace whatever had been typed since the request went out.
+  // A save of its own ends with its own `reset`, so the form goes clean there instead.
+  const isEditingRef = useRef(false);
+  isEditingRef.current = isDirty || isSubmitting;
   useEffect(() => {
+    if (isEditingRef.current) {
+      return;
+    }
     reset(profileToFormValues(profile));
   }, [profile, reset]);
 

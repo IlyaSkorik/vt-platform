@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import type { SubmissionResource } from "@/shared/api/generated/model-applications";
+import { useServerDraft } from "@/shared/hooks";
 import { Alert, Button, Switch, Textarea, toast } from "@/shared/ui";
 
 import { useSetParticipantMembers } from "../api/hooks";
@@ -55,15 +56,17 @@ export function CollectiveMembers({
 }): React.JSX.Element {
   const saved = participant.members ?? [];
   const [wanted, setWanted] = useState(saved.length > 0);
-  const [text, setText] = useState(saved.join("\n"));
   const save = useSetParticipantMembers(submissionId);
 
-  // Re-sync when the submission is refetched (another tab, or a save landing): the
-  // server's roster is the truth, and the field must not keep showing a stale draft.
+  // Seeded from the stored roster and re-seeded when that roster changes, but never
+  // over a list being typed. A refetch hands back a new array on every save made
+  // anywhere on this submission, and adopting it used to replace the names being
+  // entered — mid-paste, mid-line — with whatever the server still held.
+  const [text, setText] = useServerDraft(saved.join("\n"), Object.is);
   useEffect(() => {
-    const roster = participant.members ?? [];
-    setText(roster.join("\n"));
-    setWanted((on) => on || roster.length > 0);
+    // Names arriving from elsewhere reveal the field; the applicant's own switch is
+    // never forced back on, so turning it off stays off.
+    setWanted((on) => on || (participant.members ?? []).length > 0);
   }, [participant.members]);
 
   const roster = parseRoster(text);
