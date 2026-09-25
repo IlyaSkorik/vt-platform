@@ -1,0 +1,27 @@
+# --- Environment & secrets ---
+.env
+.env.*
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+
+# --- Virtual environments ---
+.venv/
+venv/
+
+# --- The conversation database when run outside a container ---
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+
+# --- Testing & tooling caches ---
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- OS / editor ---
+.DS_Store
+.idea/
+.vscode/
+*.swp

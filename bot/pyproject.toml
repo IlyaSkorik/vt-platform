@@ -1,0 +1,37 @@
+[project]
+name = "vt-support-bot"
+version = "0.1.0"
+description = "VT Platform («Взлёт талантов») — Telegram-бот технической поддержки."
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "Proprietary" }
+
+# Deliberately tiny. The bot is a separate service from the backend precisely so it does not
+# drag Django, Celery and the platform's database into a process whose only job is to move
+# messages between two chats — and so a crash here cannot take the platform down with it.
+dependencies = [
+    "aiogram>=3.15,<4",
+    # The same driver the backend uses, so there is one Postgres client in the repository rather
+    # than two with different failure modes. The pool is what keeps a long-lived polling process
+    # alive across the database restart every deploy performs.
+    "psycopg[binary,pool]>=3.2",
+    "pydantic-settings>=2.8",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.9",
+    "mypy>=1.15",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.25",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+# `package = false` above means nothing is installed into the venv; the tests import the
+# source tree straight from the working directory.
+pythonpath = ["."]
+asyncio_mode = "auto"
+testpaths = ["tests"]
