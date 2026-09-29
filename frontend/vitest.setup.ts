@@ -9,8 +9,8 @@ import { afterEach, vi } from "vitest";
  * - Unmounts the React tree after each test to keep suites isolated.
  * - Stubs `matchMedia`, which jsdom does not implement but the theme provider
  *   relies on for system colour-scheme detection.
- * - Stubs `ResizeObserver`, which jsdom does not implement but Radix-based
- *   controls (Checkbox, Select) use internally.
+ * - Stubs `ResizeObserver`, pointer capture and `scrollIntoView`, which jsdom does
+ *   not implement but Radix-based controls (Checkbox, Select) use internally.
  * - Bridges the fetch API across the jsdom/Node seam (see `Request` below).
  */
 afterEach(() => {
@@ -28,6 +28,24 @@ if (!window.matchMedia) {
     removeListener: vi.fn(),
     dispatchEvent: vi.fn(),
   })) as unknown as typeof window.matchMedia;
+}
+
+/**
+ * Pointer capture and `scrollIntoView`, which jsdom does not implement.
+ *
+ * Radix's Select calls both while opening its list — the first from a pointer-down
+ * handler, so the omission surfaces as an unhandled `target.hasPointerCapture is not
+ * a function` rather than as a failing assertion, and it takes the whole suite with
+ * it. Stubbed globally because every dropdown in the app is this one control.
+ */
+if (!Element.prototype.hasPointerCapture) {
+  Element.prototype.hasPointerCapture = () => false;
+  Element.prototype.setPointerCapture = () => {};
+  Element.prototype.releasePointerCapture = () => {};
+}
+
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {};
 }
 
 if (!("ResizeObserver" in globalThis)) {
