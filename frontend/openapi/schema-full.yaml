@@ -6852,6 +6852,22 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/staff/applications/{submission_id}/content:
+    put:
+      operationId: staff_applications_content_update
+      description: '``PUT staff/applications/{submission_id}/content`` — correct one
+        entry in place.'
+      parameters:
+      - in: path
+        name: submission_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - staff
+      responses:
+        '200':
+          description: No response body
   /api/v1/staff/applications/bulk:
     post:
       operationId: staff_applications_bulk_create
@@ -15423,6 +15439,7 @@ components:
       - APPLICATION_CANCELLED
       - APPLICATION_APPROVED
       - CORRECTION_REQUESTED
+      - APPLICATION_CORRECTED
       - FILES_REQUESTED
       - RESULTS_PUBLISHED
       type: string
@@ -15432,6 +15449,7 @@ components:
         * `APPLICATION_CANCELLED` - APPLICATION_CANCELLED
         * `APPLICATION_APPROVED` - APPLICATION_APPROVED
         * `CORRECTION_REQUESTED` - CORRECTION_REQUESTED
+        * `APPLICATION_CORRECTED` - APPLICATION_CORRECTED
         * `FILES_REQUESTED` - FILES_REQUESTED
         * `RESULTS_PUBLISHED` - RESULTS_PUBLISHED
     NullEnum:
