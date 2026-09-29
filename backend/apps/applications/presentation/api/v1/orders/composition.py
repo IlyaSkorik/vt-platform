@@ -213,7 +213,12 @@ def build_cancel_application_handler() -> CancelApplicationHandler:
 
 def build_upload_receipt_handler() -> UploadApplicationReceiptHandler:
     return UploadApplicationReceiptHandler(
-        applications=_applications(), storage=DjangoFileStorage(), clock=SystemClock(), events=NullEventPublisher()
+        applications=_applications(),
+        submissions=_submissions(),
+        catalog=DjangoCompetitionCatalog(),
+        storage=DjangoFileStorage(),
+        clock=SystemClock(),
+        events=NullEventPublisher(),
     )
 
 

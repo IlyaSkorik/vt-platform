@@ -12,14 +12,16 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 
+from apps.applications.application.commands._support import try_resubmit_after_correction_edit
 from apps.applications.application.exceptions import (
     ApplicationNotFoundError,
     PermissionDeniedError,
     translate_application_domain_errors,
     translate_domain_errors,
 )
-from apps.applications.application.interfaces import ApplicationRepository, SubmissionRepository
+from apps.applications.application.interfaces import ApplicationRepository, CompetitionCatalog, SubmissionRepository
 from apps.applications.domain.entities import Application, Submission
+from apps.applications.domain.events import DomainEvent
 from apps.applications.domain.value_objects import (
     ApplicationId,
     AttachmentType,
@@ -36,6 +38,7 @@ __all__ = [
     "parse_user_id",
     "ref_from_submission",
     "refresh_submission_refs",
+    "resubmit_returned_submissions",
 ]
 
 
@@ -142,6 +145,44 @@ def load_order_submissions(application: Application, submissions: SubmissionRepo
 def order_participation_format_ids(order_submissions: list[Submission]) -> frozenset[str]:
     """The set of participation-format ids used across the order's performances."""
     return frozenset(submission.performance.participation_format_id.json() for submission in order_submissions if submission.performance is not None)
+
+
+def resubmit_returned_submissions(
+    application: Application,
+    submissions: SubmissionRepository,
+    catalog: CompetitionCatalog,
+    *,
+    now: datetime,
+) -> list[DomainEvent]:
+    """Put every returned entry of this order back in the queue, and say which moved.
+
+    The order-level counterpart of the auto-resubmit an applicant's *content* edit
+    already performs. It exists because an order can be returned for something that
+    does not live on any submission — a receipt for the wrong festival, the wrong
+    amount, someone else's transfer — and fixing that left the entries sitting in
+    ``REQUIRES_CORRECTION`` with nobody able to move them: the applicant has no
+    "submit again" of their own (placing an order only submits its drafts), and the
+    organizer is offered no action in that status. The order stayed on the correction
+    queue for good.
+
+    An entry that cannot pass its own submission invariants stays where it is, exactly
+    as it does after a content edit: coming back into the queue means "this is ready to
+    be looked at again", and the domain is the one that decides whether it is.
+
+    Saving is the caller's business — it owns the order's own write and must not end up
+    doing two.
+    """
+    events: list[DomainEvent] = []
+    for ref in application.submission_refs:
+        submission = submissions.get(ref.submission_id)
+        if submission is None:
+            continue
+        submission_events = try_resubmit_after_correction_edit(submission=submission, catalog=catalog, now=now)
+        if not submission_events:
+            continue
+        submissions.save(submission)
+        events += submission_events
+    return events
 
 
 def refresh_submission_refs(

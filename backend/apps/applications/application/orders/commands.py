@@ -98,6 +98,7 @@ from ._support import (
     parse_user_id,
     ref_from_submission,
     refresh_submission_refs,
+    resubmit_returned_submissions,
 )
 
 __all__ = [
@@ -899,10 +900,28 @@ class UploadApplicationReceiptHandler:
     (not a submission). The file is validated against the fixed receipt constraints,
     stored, and added to the order's receipts; the domain enforces that receipts may
     only be attached before the order settles, and caps how many one order holds.
+
+    Attaching one also takes the order's returned entries back into the queue. A wrong
+    receipt is one of the commonest reasons an order comes back, and it is the one
+    reason that lives on the order rather than on any entry: fixing it used to change
+    nothing the organizer could see, and the entries stayed on the correction queue
+    with no way out from either side. See
+    :func:`~apps.applications.application.orders._support.resubmit_returned_submissions`.
     """
 
-    def __init__(self, *, applications: ApplicationRepository, storage: FileStorage, clock: Clock, events: EventPublisher) -> None:
+    def __init__(
+        self,
+        *,
+        applications: ApplicationRepository,
+        submissions: SubmissionRepository,
+        catalog: CompetitionCatalog,
+        storage: FileStorage,
+        clock: Clock,
+        events: EventPublisher,
+    ) -> None:
         self._applications = applications
+        self._submissions = submissions
+        self._catalog = catalog
         self._storage = storage
         self._clock = clock
         self._events = events
@@ -929,9 +948,22 @@ class UploadApplicationReceiptHandler:
         with translate_application_domain_errors():
             file_reference = FileReference(reference)
             order_events = application.upload_payment_receipt(file=file_reference, now=now)
+        resubmitted = resubmit_returned_submissions(application, self._submissions, self._catalog, now=now)
+        if resubmitted:
+            # The order caches each entry's status, and the cabinet's "на доработке"
+            # badge reads that cache rather than the entries themselves — without this
+            # the badge would outlive the correction it describes.
+            refresh_submission_refs(
+                application,
+                self._submissions,
+                now=now,
+                additional_performance_discount_percent=self._catalog.additional_performance_discount_percent(
+                    competition_id=application.competition_id
+                ),
+            )
         self._applications.save(application)
-        self._events.publish(order_events)
-        return ApplicationOperationResultDto.of(application, tuple(order_events))
+        self._events.publish(order_events + resubmitted)
+        return ApplicationOperationResultDto.of(application, tuple(order_events + resubmitted))
 
 
 class RemoveApplicationReceiptHandler:

@@ -187,7 +187,14 @@ class Env:
         return CancelApplicationHandler(applications=self.applications, submissions=self.submissions, clock=self.clock, events=self.events)
 
     def upload_receipt(self) -> UploadApplicationReceiptHandler:
-        return UploadApplicationReceiptHandler(applications=self.applications, storage=self.storage, clock=self.clock, events=self.events)
+        return UploadApplicationReceiptHandler(
+            applications=self.applications,
+            submissions=self.submissions,
+            catalog=self.catalog,
+            storage=self.storage,
+            clock=self.clock,
+            events=self.events,
+        )
 
     def remove_receipt(self) -> RemoveApplicationReceiptHandler:
         return RemoveApplicationReceiptHandler(applications=self.applications, clock=self.clock, events=self.events)
