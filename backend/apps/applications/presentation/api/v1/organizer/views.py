@@ -70,6 +70,27 @@ _QUEUE_BY_STATUS = {
 }
 
 
+#: Статусы, в которых организатор ещё может исправить содержимое заявки за участника.
+#:
+#: Зеркало доменного правила (``Submission.is_correctable_by_organizer``). Домен
+#: остаётся единственным, кто решает; карточка знает то же самое заранее, чтобы не
+#: показывать кнопку, которая ответит отказом. Завершённых и отменённых здесь нет:
+#: выступление состоялось или его не будет, и то и другое правка не меняет.
+_CORRECTABLE_STATUSES = frozenset(
+    {
+        "DRAFT",
+        "SUBMITTED",
+        "UNDER_REVIEW",
+        "REQUIRES_CORRECTION",
+        "APPROVED",
+        "WAITING_PAYMENT",
+        "PAID",
+        "ACCEPTED",
+        "SCHEDULED",
+    }
+)
+
+
 def _now() -> datetime:
     return datetime.now(UTC)
 
@@ -93,13 +114,85 @@ def _directory_phones(teachers: Sequence[TeacherView]) -> dict[str, str]:
 
 
 def _teacher_card(teacher: TeacherView, phones: Mapping[str, str]) -> dict[str, Any]:
-    """Педагог так, как его читает организатор: имя, роль и телефон, если он есть."""
+    """Педагог так, как его читает организатор: имя, роль и телефон, если он есть.
+
+    Составные части имени едут рядом с готовой строкой: карточку читают, а форму
+    исправления заполняют — и собрать «Фамилию» обратно из склеенной строки нельзя,
+    там отчество и двойные фамилии.
+    """
     directory_id = teacher.directory_teacher_id
     return {
         "id": teacher.id,
         "name": f"{teacher.last_name} {teacher.first_name}",
+        "firstName": teacher.first_name,
+        "lastName": teacher.last_name,
+        "middleName": teacher.middle_name,
         "role": teacher.role,
         "phone": phones.get(directory_id) if directory_id else None,
+    }
+
+
+def _participant_card(participant: ParticipantView) -> dict[str, Any]:
+    """Выступающий так, как его читает организатор — и так, как его правит.
+
+    Те же данные, что в заявке: солист хранит части имени, коллектив — только
+    название и численность. Форма исправления берёт их отсюда, поэтому дата
+    рождения и пол едут строками ровно в том виде, в каком уйдут обратно.
+    """
+    return {
+        "id": participant.id,
+        "name": participant.display_name,
+        "displayName": participant.display_name,
+        "firstName": participant.first_name,
+        "lastName": participant.last_name,
+        "middleName": participant.middle_name,
+        "birthDate": participant.birth_date.isoformat() if participant.birth_date is not None else None,
+        "gender": participant.gender,
+        "memberCount": participant.member_count,
+        "members": list(participant.members),
+    }
+
+
+def _taxonomy_options(competition_id: str) -> dict[str, list[dict[str, Any]]]:
+    """Что фестиваль вообще принимает — списки для формы исправления.
+
+    Читается для одного фестиваля, а не для всей очереди: это справочник открытой
+    карточки, и тянуть его для сотни заявок, из которых редактируют одну, незачем.
+    Номинации привязаны к жанру, а возрастные категории — к составу, поэтому связь
+    едет вместе с ними: иначе форма предложит возраст от чужого состава.
+    """
+    competition_key = uuid.UUID(competition_id)
+    return {
+        "nominations": [
+            {"id": str(row["id"]), "name": str(row["name"])}
+            for row in CategoryModel.objects.filter(deleted_at__isnull=True, competition_id=competition_key)
+            .values("id", "name")
+            .order_by("sort_order", "name")
+        ],
+        "disciplines": [
+            {"id": str(row["id"]), "name": str(row["name"]), "nominationId": str(row["category_id"])}
+            for row in DisciplineModel.objects.filter(deleted_at__isnull=True, competition_id=competition_key)
+            .values("id", "name", "category_id")
+            .order_by("sort_order", "name")
+        ],
+        "participantGroups": [
+            {"id": str(row["id"]), "name": str(row["name"])}
+            for row in ParticipantGroupModel.objects.filter(deleted_at__isnull=True, competition_id=competition_key)
+            .values("id", "name")
+            .order_by("sort_order", "name")
+        ],
+        "ageCategories": [
+            {"id": str(row["id"]), "name": str(row["name"]), "participantGroupId": str(row["participant_group_id"])}
+            for row in AgeCategoryModel.objects.filter(deleted_at__isnull=True, competition_id=competition_key)
+            .values("id", "name", "participant_group_id")
+            .order_by("sort_order", "name")
+        ],
+        "participationFormats": [
+            {"id": str(row["id"]), "name": str(row["name"])}
+            for row in ParticipationFormatModel.objects.filter(deleted_at__isnull=True, competition_id=competition_key, enabled=True)
+            .values("id", "name")
+            .order_by("sort_order", "name")
+        ],
     }
 
 
@@ -545,7 +638,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                 detail = None
             else:
                 representative = related_dtos[0]
-                participants = [{"id": p.id, "name": p.display_name, "memberCount": p.member_count} for dto in related_dtos for p in dto.participants]
+                participants = [_participant_card(p) for dto in related_dtos for p in dto.participants]
                 teacher_views = [t for dto in related_dtos for t in dto.teachers]
                 teacher_phones = _directory_phones(teacher_views)
                 teachers = [_teacher_card(t, teacher_phones) for t in teacher_views]
@@ -595,6 +688,16 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                     for submission_id in related_submission_ids
                     for entry in (submission_model_by_id[submission_id].missing_files_requests or [])
                 )
+                timeline.extend(
+                    {
+                        "kind": "organizer_edit",
+                        "label": f"[{submission_id[:8].upper()}] Организатор исправил заявку: {'; '.join(entry.get('changes', []))}"
+                        + (f" · {entry['comment']}" if entry.get("comment") else ""),
+                        "at": entry.get("created_at"),
+                    }
+                    for submission_id in related_submission_ids
+                    for entry in (submission_model_by_id[submission_id].organizer_edits or [])
+                )
                 timeline.sort(key=lambda entry: str(entry.get("at") or ""), reverse=True)
                 audit = [
                     {
@@ -634,6 +737,18 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                             if dto.performance
                             else None,
                             "durationSeconds": dto.performance.duration_seconds if dto.performance else None,
+                            # Идентификаторы рядом с названиями: карточка печатает
+                            # названия, форма исправления отправляет обратно ровно те
+                            # значения, которые выбрала, — по ним же домен и сверяет.
+                            "nominationId": dto.performance.nomination_id if dto.performance else None,
+                            "disciplineId": dto.performance.discipline_id if dto.performance else None,
+                            "ageCategoryId": dto.performance.age_category_id if dto.performance else None,
+                            "participantGroupId": dto.performance.participant_group_id if dto.performance else None,
+                            "participationFormatId": dto.performance.participation_format_id if dto.performance else None,
+                            # Правку разрешает статус самого выступления, а не заявки:
+                            # в одной заявке номера живут своей жизнью и один может
+                            # быть отменён, пока остальные идут на фестиваль.
+                            "canEditContent": dto.status in _CORRECTABLE_STATUSES,
                             # The applicant's optional note for the organizers; blank when unset.
                             "comment": (dto.performance.comment or None) if dto.performance else None,
                             # What ages the performers are, in the applicant's words. Only a
@@ -641,7 +756,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                             "ageComposition": (dto.performance.age_composition or None) if dto.performance else None,
                             "participantsCount": len(dto.participants),
                             "teachersCount": len(dto.teachers),
-                            "participants": [{"id": p.id, "name": p.display_name, "memberCount": p.member_count} for p in dto.participants],
+                            "participants": [_participant_card(p) for p in dto.participants],
                             "teachers": [_teacher_card(t, teacher_phones) for t in dto.teachers],
                             "priceAmount": dto.price.amount if dto.price else None,
                             "priceCurrency": dto.price.currency if dto.price else None,
@@ -658,8 +773,12 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                     "receiptFileReferences": _receipt_urls(application_meta_by_id.get(selected_application_id or "", {}).get("receipt_refs") or []),
                     "educationalOrganizations": _educational_organizations([p for dto in related_dtos for p in dto.participants]),
                     "payerName": application_meta_by_id.get(selected_application_id or "", {}).get("payer_name"),
+                    "taxonomy": _taxonomy_options(representative.competition_id),
                     "timeline": timeline,
                     "audit": audit,
+                    "organizerEdits": [
+                        entry for submission_id in related_submission_ids for entry in (submission_model_by_id[submission_id].organizer_edits or [])
+                    ],
                     "internalNotes": [
                         note for submission_id in related_submission_ids for note in (submission_model_by_id[submission_id].organizer_notes or [])
                     ],

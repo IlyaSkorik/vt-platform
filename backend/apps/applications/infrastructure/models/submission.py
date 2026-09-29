@@ -39,6 +39,12 @@ class SubmissionModel(BasePersistenceModel):
     missing_files_requests = models.JSONField(default=list, blank=True)
     organizer_notes = models.JSONField(default=list, blank=True)
     participant_messages = models.JSONField(default=list, blank=True)
+    # Corrections the organizer made to the entry on the applicant's behalf: what
+    # moved, who moved it and when. Kept apart from ``organizer_notes`` (an internal
+    # memo) and from ``participant_messages`` (something said to the applicant) —
+    # this is the record of the entry itself being rewritten, and both the card's
+    # history and the applicant's own view of the order read it.
+    organizer_edits = models.JSONField(default=list, blank=True)
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "applications_submission"

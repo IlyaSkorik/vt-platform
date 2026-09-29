@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from apps.applications.application.commands.attachments import RemoveAttachmentHandler, UploadAttachmentHandler
 from apps.applications.application.commands.cancel import CancelSubmissionByReviewerHandler
+from apps.applications.application.commands.organizer_edit import EditSubmissionContentByOrganizerHandler
 from apps.applications.application.commands.participants import (
     AddParticipantHandler,
     RemoveParticipantHandler,
@@ -50,6 +51,7 @@ __all__ = [
     "build_calculate_price_handler",
     "build_cancel_submission_by_reviewer_handler",
     "build_complete_submission_handler",
+    "build_edit_submission_content_by_organizer_handler",
     "build_get_submission_handler",
     "build_list_competition_submissions_handler",
     "build_mark_paid_handler",
@@ -162,6 +164,16 @@ def build_upload_attachment_handler() -> UploadAttachmentHandler:
 
 def build_remove_attachment_handler() -> RemoveAttachmentHandler:
     return RemoveAttachmentHandler(submissions=DjangoSubmissionRepository(), clock=SystemClock(), events=NullEventPublisher())
+
+
+def build_edit_submission_content_by_organizer_handler() -> EditSubmissionContentByOrganizerHandler:
+    return EditSubmissionContentByOrganizerHandler(
+        submissions=_submissions(),
+        organization=DjangoOrganizationReadModel(),
+        clock=SystemClock(),
+        uuids=Uuid7Generator(),
+        events=NullEventPublisher(),
+    )
 
 
 def build_start_review_handler() -> StartReviewHandler:

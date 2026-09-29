@@ -37,6 +37,10 @@ class NotificationKind(models.TextChoices):
     APPLICATION_CANCELLED = "APPLICATION_CANCELLED", "Application cancelled"
     APPLICATION_APPROVED = "APPLICATION_APPROVED", "Application approved"
     CORRECTION_REQUESTED = "CORRECTION_REQUESTED", "Correction requested"
+    #: The organizer corrected the entry themselves instead of sending it back. Its
+    #: own kind rather than CORRECTION_REQUESTED: nothing is being asked of the
+    #: reader — they are being told what was changed on their behalf.
+    APPLICATION_CORRECTED = "APPLICATION_CORRECTED", "Application corrected by organizer"
     FILES_REQUESTED = "FILES_REQUESTED", "Files requested"
     RESULTS_PUBLISHED = "RESULTS_PUBLISHED", "Results published"
 
