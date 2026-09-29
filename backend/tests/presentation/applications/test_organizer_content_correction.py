@@ -196,9 +196,7 @@ def _fixed_participant(**overrides: Any) -> dict[str, Any]:
 
 
 class TestCorrectingAnEntryPastTheFreeze:
-    def test_a_surname_is_fixed_on_an_entry_already_in_the_programme(
-        self, staff_client: APIClient, applicant_id: uuid.UUID
-    ) -> None:
+    def test_a_surname_is_fixed_on_an_entry_already_in_the_programme(self, staff_client: APIClient, applicant_id: uuid.UUID) -> None:
         """Ровно тот случай, ради которого ручка и сделана: номер уже на фестивале,
         а на дипломе будет напечатана фамилия с ошибкой."""
         festival = _Festival()
@@ -235,9 +233,7 @@ class TestCorrectingAnEntryPastTheFreeze:
         submission.refresh_from_db()
         assert submission.price_snapshot["amount"] == "1500.00"
 
-    def test_the_performance_is_corrected_together_with_its_categories(
-        self, staff_client: APIClient, applicant_id: uuid.UUID
-    ) -> None:
+    def test_the_performance_is_corrected_together_with_its_categories(self, staff_client: APIClient, applicant_id: uuid.UUID) -> None:
         festival = _Festival()
         _, submission = _entry(festival, applicant_id)
 
@@ -288,7 +284,11 @@ class TestTheCorrectionIsNeverSilent:
         application, submission = _entry(festival, applicant_id)
         mail.outbox.clear()
 
-        _correct(staff_client, submission.id, {"participants": [_fixed_participant()]}, )
+        _correct(
+            staff_client,
+            submission.id,
+            {"participants": [_fixed_participant()]},
+        )
 
         assert len(mail.outbox) == 1
         letter = mail.outbox[0]
