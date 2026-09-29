@@ -27,10 +27,12 @@ from apps.applications.domain.value_objects import Performance, PriceSnapshot
 
 __all__ = [
     "AttachmentView",
+    "OrganizerEditResultDto",
     "ParticipantView",
     "PerformanceView",
     "PriceView",
     "ReviewView",
+    "SubmissionContentChange",
     "SubmissionHistoryDto",
     "SubmissionOperationResultDto",
     "SubmissionSummaryView",
@@ -302,3 +304,47 @@ class SubmissionOperationResultDto:
     def of(cls, submission: Submission, events: tuple[DomainEvent, ...]) -> SubmissionOperationResultDto:
         """Build a result DTO from the mutated aggregate and its new events."""
         return cls(submission=SubmissionView.from_submission(submission), events=events)
+
+
+@dataclass(frozen=True, slots=True)
+class SubmissionContentChange:
+    """One thing an organizer's correction changed, stated as fact rather than prose.
+
+    ``field`` names *what* moved, ``before``/``after`` carry the values — ids for the
+    taxonomy fields, plain text for everything else. Rendering it into a sentence
+    ("Возраст: 7-9 лет → 10-12 лет") needs the competition's own names for those ids,
+    which live at the API edge, not here: the application layer would have to reach
+    into the Competition context to spell one line of a letter.
+    """
+
+    field: str
+    before: str | None
+    after: str | None
+    #: Whom the change is about, when the field alone does not say — the performer
+    #: whose birth date moved, the mentor whose role did. ``None`` for the
+    #: performance's own fields, which are about the entry itself.
+    subject: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class OrganizerEditResultDto:
+    """The outcome of an organizer's correction: the entry as it now reads, and what moved.
+
+    ``changes`` is empty when the submitted state matched what was already stored —
+    an editor saved with nothing touched. Callers use that to stay silent rather than
+    to tell the applicant their entry was corrected in no way at all.
+    """
+
+    submission: SubmissionView
+    changes: tuple[SubmissionContentChange, ...]
+    events: tuple[DomainEvent, ...]
+
+    @classmethod
+    def of(
+        cls,
+        submission: Submission,
+        changes: tuple[SubmissionContentChange, ...],
+        events: tuple[DomainEvent, ...],
+    ) -> OrganizerEditResultDto:
+        """Build a result DTO from the corrected aggregate, its changes and its events."""
+        return cls(submission=SubmissionView.from_submission(submission), changes=changes, events=events)

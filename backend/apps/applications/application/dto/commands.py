@@ -24,8 +24,12 @@ __all__ = [
     "CompleteSubmissionCommand",
     "CreateSubmissionCommand",
     "DeleteDraftSubmissionCommand",
+    "EditSubmissionContentByOrganizerCommand",
     "MarkPaidCommand",
     "MarkWaitingPaymentCommand",
+    "OrganizerParticipantInput",
+    "OrganizerPerformanceInput",
+    "OrganizerTeacherInput",
     "RemoveAttachmentCommand",
     "RemoveParticipantCommand",
     "RemoveTeacherCommand",
@@ -401,3 +405,75 @@ class UploadAttachmentCommand:
     content_type: str
     content: bytes
     caption: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Organizer content correction
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class OrganizerPerformanceInput:
+    """The performance as the organizer wants it to read after the correction."""
+
+    title: str
+    duration_seconds: int
+    nomination_id: str
+    discipline_id: str
+    age_category_id: str
+    participant_group_id: str
+    participation_format_id: str
+    comment: str = ""
+    age_composition: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class OrganizerParticipantInput:
+    """One performer as the organizer wants it to read after the correction.
+
+    ``id`` names an entry already on the submission; absent, the entry is a new one
+    the organizer is adding. A solo carries the name parts, a collective only
+    ``display_name`` plus its headcount and (optionally) the people in it.
+    """
+
+    id: str | None = None
+    display_name: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    middle_name: str | None = None
+    birth_date: str | None = None
+    gender: str | None = None
+    member_count: int = 1
+    members: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class OrganizerTeacherInput:
+    """One credited mentor as the organizer wants it to read after the correction."""
+
+    first_name: str
+    last_name: str
+    role: str
+    id: str | None = None
+    middle_name: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class EditSubmissionContentByOrganizerCommand:
+    """Correct a submitted performance's content on the applicant's behalf (organizer).
+
+    Every collection is the **whole** desired state, not a patch: what the organizer
+    is looking at is the entry as it will read afterwards, and asking them to express
+    "remove this one, add that one" would be asking them to describe their own screen.
+    ``None`` means "this section was not touched" — an editor that only opened the
+    performance tab must not silently empty the teachers.
+
+    Deliberately absent: the price snapshot. It is what the applicant was quoted and
+    paid against, and a correction to the entry is not a re-quote — see the handler.
+    """
+
+    submission_id: str
+    reviewer_id: str
+    performance: OrganizerPerformanceInput | None = None
+    participants: tuple[OrganizerParticipantInput, ...] | None = None
+    teachers: tuple[OrganizerTeacherInput, ...] | None = None
