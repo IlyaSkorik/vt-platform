@@ -181,7 +181,7 @@ def _correct(client: APIClient, submission_id: uuid.UUID, payload: dict[str, Any
 
 
 def _fixed_participant(**overrides: Any) -> dict[str, Any]:
-    entry = {
+    entry: dict[str, Any] = {
         "id": "0192f000-0000-7000-8000-0000000000aa",
         "firstName": "Анна",
         "lastName": "Иванова",
@@ -231,7 +231,9 @@ class TestCorrectingAnEntryPastTheFreeze:
         )
 
         submission.refresh_from_db()
-        assert submission.price_snapshot["amount"] == "1500.00"
+        price = submission.price_snapshot
+        assert price is not None
+        assert price["amount"] == "1500.00"
 
     def test_the_performance_is_corrected_together_with_its_categories(self, staff_client: APIClient, applicant_id: uuid.UUID) -> None:
         festival = _Festival()
@@ -245,8 +247,10 @@ class TestCorrectingAnEntryPastTheFreeze:
 
         assert response.status_code == 200, response.data
         submission.refresh_from_db()
-        assert submission.performance["title"] == "Лебединое озеро (фрагмент)"
-        assert submission.performance["duration_seconds"] == 180
+        performance = submission.performance
+        assert performance is not None
+        assert performance["title"] == "Лебединое озеро (фрагмент)"
+        assert performance["duration_seconds"] == 180
 
     def test_a_teacher_can_be_credited_afterwards(self, staff_client: APIClient, applicant_id: uuid.UUID) -> None:
         festival = _Festival()
