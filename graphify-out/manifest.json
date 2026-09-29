@@ -2380,9 +2380,9 @@
     "semantic_hash": "120f7db2baf17548e32a18f92112fd53"
   },
   "backend/apps/participants/application/dto/results.py": {
-    "mtime": 1785860600.7951133,
-    "ast_hash": "79bb909e009b0ba62facd5b8bb404e04",
-    "semantic_hash": "79bb909e009b0ba62facd5b8bb404e04"
+    "mtime": 1790683910.1015508,
+    "ast_hash": "b9739cb4b7698b11fc00bd06e8ca9fce",
+    "semantic_hash": ""
   },
   "backend/apps/participants/application/exceptions.py": {
     "mtime": 1785860600.7951133,
@@ -3290,9 +3290,9 @@
     "semantic_hash": "b46e51e031432ce3683dfd776e7e8e99"
   },
   "backend/tests/application/participants/test_dto.py": {
-    "mtime": 1785860600.861913,
-    "ast_hash": "e56300e8d37a8ca0e3e132748ab5ef05",
-    "semantic_hash": "e56300e8d37a8ca0e3e132748ab5ef05"
+    "mtime": 1790683910.1020412,
+    "ast_hash": "96078f5687a554056bd62cf77e675b32",
+    "semantic_hash": ""
   },
   "backend/tests/application/participants/test_exceptions.py": {
     "mtime": 1785860600.861913,
@@ -3615,8 +3615,8 @@
     "semantic_hash": "8c5c303f6428407774fa77e350c43227"
   },
   "backend/tests/presentation/participants/test_participants_api.py": {
-    "mtime": 1786015904.056942,
-    "ast_hash": "83ac454b358a3cfd8f36dba131fa6f0e",
+    "mtime": 1790683942.955829,
+    "ast_hash": "fc7ba3f89a9e233d1110defe9caca952",
     "semantic_hash": ""
   },
   "backend/tests/presentation/teachers/__init__.py": {
@@ -4615,8 +4615,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/participants/index.tsx": {
-    "mtime": 1790333037.5561225,
-    "ast_hash": "4bd0ac0218e04a576aef33c03d875947",
+    "mtime": 1790683979.759892,
+    "ast_hash": "d008e8e031d49eecee9c5412994de421",
     "semantic_hash": ""
   },
   "frontend/src/pages/placeholder/index.tsx": {
@@ -6505,7 +6505,7 @@
     "semantic_hash": "d4ecc328966ff21da30ecd22f0b2a981"
   },
   "frontend/openapi/schema-full.yaml": {
-    "mtime": 1790682675.850801,
+    "mtime": 1790684430.0826306,
     "ast_hash": "1cfd5553815de62528103ab2313ad840",
     "semantic_hash": ""
   },
@@ -11505,8 +11505,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/participants/index.test.tsx": {
-    "mtime": 1790333176.714956,
-    "ast_hash": "882d971143f31872d4bec4067e534e1e",
+    "mtime": 1790684045.478619,
+    "ast_hash": "4d765b9598eba05cd93d9491dbc40f0f",
     "semantic_hash": ""
   },
   "bot/pyproject.toml": {
@@ -11635,8 +11635,8 @@
     "semantic_hash": ""
   },
   "backend/tests/presentation/applications/test_organizer_content_correction.py": {
-    "mtime": 1790681960.9980884,
-    "ast_hash": "7611115dd1560484364a0aa976f175fe",
+    "mtime": 1790684107.0459857,
+    "ast_hash": "59965d0c257ab6c940cf226762552d6b",
     "semantic_hash": ""
   },
   "frontend/src/features/submission-correction/api/hooks.ts": {
