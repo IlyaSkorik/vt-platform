@@ -65,6 +65,10 @@ class ParticipantDto:
     first_name: str
     last_name: str
     middle_name: str | None
+    #: The name in the order this platform's readers expect — ``Фамилия Имя
+    #: Отчество``. The parts travel beside it because a form has to fill three
+    #: boxes, and splitting a joined string back apart guesses wrong on double
+    #: surnames.
     full_name: str
     date_of_birth: str
     created_by_id: str
@@ -95,7 +99,11 @@ class ParticipantDto:
             first_name=participant.name.first_name,
             last_name=participant.name.last_name,
             middle_name=participant.name.middle_name,
-            full_name=participant.name.full,
+            # ``formal``, not ``full``: this is a Russian-language platform, and
+            # ``Имя Отчество Фамилия`` reads as somebody else's convention next to
+            # the registry, the organizer's card and every document the festival
+            # prints — all of which already say ``Фамилия Имя Отчество``.
+            full_name=participant.name.formal,
             date_of_birth=participant.date_of_birth.isoformat(),
             created_by_id=str(participant.created_by.actor_id),
             created_by_type=participant.created_by.actor_type.value,

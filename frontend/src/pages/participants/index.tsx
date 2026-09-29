@@ -806,17 +806,22 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                     </div>
                   ) : (
                     <>
-                      <Input
-                        label="Имя"
-                        required
-                        error={form.formState.errors.firstName?.message}
-                        {...registerName("firstName", { required: "Укажите имя" })}
-                      />
+                      {/* Фамилия первой — как в реестре, в карточке организатора, в
+                          форме педагога и на каждом печатаемом документе. Раньше
+                          здесь было наоборот, и человек, заводивший участника и
+                          следом педагога, видел в одной и той же клетке экрана то
+                          «Имя», то «Фамилия» — и вписывал фамилию в имя. */}
                       <Input
                         label="Фамилия"
                         required
                         error={form.formState.errors.lastName?.message}
                         {...registerName("lastName", { required: "Укажите фамилию" })}
+                      />
+                      <Input
+                        label="Имя"
+                        required
+                        error={form.formState.errors.firstName?.message}
+                        {...registerName("firstName", { required: "Укажите имя" })}
                       />
                       <Input label="Отчество" {...registerName("middleName")} />
                       {/* `Controller`, not `setValue`: the picker is not an input the
@@ -1010,17 +1015,18 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                     </div>
                   ) : (
                     <>
-                      <Input
-                        label="Имя"
-                        required
-                        error={form.formState.errors.firstName?.message}
-                        {...registerName("firstName", { required: "Укажите имя" })}
-                      />
+                      {/* Тот же порядок, что в форме создания выше. */}
                       <Input
                         label="Фамилия"
                         required
                         error={form.formState.errors.lastName?.message}
                         {...registerName("lastName", { required: "Укажите фамилию" })}
+                      />
+                      <Input
+                        label="Имя"
+                        required
+                        error={form.formState.errors.firstName?.message}
+                        {...registerName("firstName", { required: "Укажите имя" })}
                       />
                       <Input label="Отчество" {...registerName("middleName")} />
                     </>

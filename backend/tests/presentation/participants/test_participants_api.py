@@ -82,7 +82,8 @@ def test_create_returns_resource_envelope(auth_client: APIClient) -> None:
     data = response.data["data"]
     assert data["type"] == "participant"
     assert data["displayAlias"] == "Falcon-99"
-    assert data["displayName"] == "Ivan Sergeevich Petrov"
+    # Фамилия Имя Отчество — один порядок с реестром и карточкой организатора.
+    assert data["displayName"] == "Petrov Ivan Sergeevich"
     assert data["status"] == "created"
     assert response["Location"].startswith("/api/v1/participants/")
     assert response.data["meta"]["requestId"]

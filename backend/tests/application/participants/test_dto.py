@@ -49,7 +49,8 @@ def test_participant_dto_minimal_projection() -> None:
     participant = _new()
     dto = ParticipantDto.from_participant(participant)
     assert dto.id == participant.id.json()
-    assert dto.full_name == "Ivan Sergeevich Petrov"
+    # Фамилия Имя Отчество — то же, что показывают реестр и карточка организатора.
+    assert dto.full_name == "Petrov Ivan Sergeevich"
     assert dto.middle_name == "Sergeevich"
     assert dto.date_of_birth == "2015-03-04"
     assert dto.created_by_type == "guardian"

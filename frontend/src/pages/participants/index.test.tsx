@@ -64,6 +64,21 @@ describe("ParticipantsProfilePage — creating a participant", () => {
     expect(await screen.findByRole("button", { name: "Создать участника" })).toBeInTheDocument();
   });
 
+  it("asks for the surname first, like every other form in the cabinet", async () => {
+    // Порядок был обратный только здесь. Человек заводил участника, следом педагога —
+    // и в одной и той же клетке экрана видел то «Имя», то «Фамилию», после чего
+    // вписывал фамилию в имя. Проверяется порядок в разметке, а не наличие полей:
+    // именно он и разъезжался.
+    renderCreate("solo");
+
+    // Звёздочка обязательного поля живёт внутри той же метки, поэтому снимается.
+    const labels = screen
+      .getAllByText(/^(Фамилия|Имя|Отчество)\*?$/)
+      .map((node) => node.textContent?.replace("*", ""));
+
+    expect(labels).toEqual(["Фамилия", "Имя", "Отчество"]);
+  });
+
   it("asks for a consent, not for a school", async () => {
     // A soloist taught privately and an adult long out of school belong to nobody, and
     // requiring an organization made them invent one. The consent is the only gate.
