@@ -899,13 +899,26 @@ class Submission:
         """Whether content may currently be changed (DRAFT, SUBMITTED or REQUIRES_CORRECTION)."""
         return self._status in _EDITABLE_STATUSES
 
+    def is_correctable_by_organizer(self) -> bool:
+        """Whether the organizer may still correct the content — the whole live lifecycle.
+
+        Wider than :meth:`is_editable` for the reason spelled out in
+        :meth:`_ensure_editable`: the organizer owns what the entry says, and most
+        mistakes are noticed after the applicant's own window has closed.
+        """
+        return self._status in _LIVE_STATUSES
+
     # ------------------------------------------------------------------
     # Performance
     # ------------------------------------------------------------------
 
-    def set_performance(self, *, performance: Performance, now: datetime) -> list[DomainEvent]:
-        """Set or replace the submission's single performance (editable states only)."""
-        self._ensure_editable()
+    def set_performance(self, *, performance: Performance, now: datetime, by_organizer: bool = False) -> list[DomainEvent]:
+        """Set or replace the submission's single performance (editable states only).
+
+        ``by_organizer`` widens the window to the whole live lifecycle — see
+        :meth:`_ensure_editable`.
+        """
+        self._ensure_editable(by_organizer=by_organizer)
         self._performance = performance
         self._touch(now)
         return [PerformanceDefined(aggregate_id=self._id.value)]
@@ -926,6 +939,7 @@ class Submission:
         member_count: int = 1,
         members: Sequence[str] = (),
         now: datetime,
+        by_organizer: bool = False,
     ) -> list[DomainEvent]:
         """Add a participant (a Participant Registry snapshot: solo or collective).
 
@@ -936,8 +950,11 @@ class Submission:
         :meth:`set_participant_members`). Rejects a future birth date and a duplicate
         (the same registry participant, or - for manual entries - the same display name
         and birth date, already on this submission).
+
+        ``by_organizer`` widens the window to the whole live lifecycle — see
+        :meth:`_ensure_editable`.
         """
-        self._ensure_editable()
+        self._ensure_editable(by_organizer=by_organizer)
         if birth_date is not None and birth_date.value > now.date():
             raise InvalidBirthDateError(f"Birth date {birth_date} must not be in the future.")
         candidate = Participant.create(
@@ -956,7 +973,9 @@ class Submission:
         self._touch(now)
         return [ParticipantAdded(aggregate_id=self._id.value, participant_id=participant_id)]
 
-    def set_participant_members(self, *, participant_id: ParticipantId, members: Sequence[str], now: datetime) -> list[DomainEvent]:
+    def set_participant_members(
+        self, *, participant_id: ParticipantId, members: Sequence[str], now: datetime, by_organizer: bool = False
+    ) -> list[DomainEvent]:
         """Name the people in a collective - the applicant's request for individual documents.
 
         Optional by design: an applicant who wants only the collective's own diploma
@@ -965,9 +984,10 @@ class Submission:
         the whole roster rather than appending to it.
 
         Editable states only, like every other content change: past ``ACCEPTED`` the
-        entry is what the organizer accepted, and the names on it are part of that.
+        entry is what the organizer accepted, and the names on it are part of that —
+        which is also why ``by_organizer`` lifts the freeze: it is their own record.
         """
-        self._ensure_editable()
+        self._ensure_editable(by_organizer=by_organizer)
         participant = self._participants.get(participant_id)
         if participant is None:
             raise ParticipantNotFoundError(f"No participant {participant_id} in this submission.")
@@ -975,7 +995,9 @@ class Submission:
         self._touch(now)
         return [ParticipantMembersChanged(aggregate_id=self._id.value, participant_id=participant_id)]
 
-    def set_participant_member_count(self, *, participant_id: ParticipantId, member_count: int, now: datetime) -> list[DomainEvent]:
+    def set_participant_member_count(
+        self, *, participant_id: ParticipantId, member_count: int, now: datetime, by_organizer: bool = False
+    ) -> list[DomainEvent]:
         """Correct how many people a collective entry stands for.
 
         The headcount arrives with the entry, but it is the one thing about a
@@ -984,7 +1006,7 @@ class Submission:
         afterwards. Fixing it must not cost them the roster they already typed, so
         this changes the entry rather than replacing it.
         """
-        self._ensure_editable()
+        self._ensure_editable(by_organizer=by_organizer)
         participant = self._participants.get(participant_id)
         if participant is None:
             raise ParticipantNotFoundError(f"No participant {participant_id} in this submission.")
@@ -992,7 +1014,7 @@ class Submission:
         self._touch(now)
         return [ParticipantMemberCountChanged(aggregate_id=self._id.value, participant_id=participant_id)]
 
-    def remove_participant(self, *, participant_id: ParticipantId, now: datetime) -> list[DomainEvent]:
+    def remove_participant(self, *, participant_id: ParticipantId, now: datetime, by_organizer: bool = False) -> list[DomainEvent]:
         """Remove a participant.
 
         A DRAFT (or REQUIRES_CORRECTION) submission may be left temporarily without
@@ -1000,7 +1022,7 @@ class Submission:
         participant" invariant is enforced when the submission is submitted, not while
         it is being edited.
         """
-        self._ensure_editable()
+        self._ensure_editable(by_organizer=by_organizer)
         if participant_id not in self._participants:
             raise ParticipantNotFoundError(f"No participant {participant_id} in this submission.")
         del self._participants[participant_id]
@@ -1019,6 +1041,7 @@ class Submission:
         role: TeacherRole,
         directory_teacher_id: DirectoryTeacherId | None = None,
         now: datetime,
+        by_organizer: bool = False,
     ) -> list[DomainEvent]:
         """Credit a teacher in a configurable role.
 
@@ -1026,15 +1049,15 @@ class Submission:
         Directory; ``name``/``role`` are the immutable snapshot preserved on the
         submission so later directory edits never rewrite it.
         """
-        self._ensure_editable()
+        self._ensure_editable(by_organizer=by_organizer)
         teacher = Teacher.create(teacher_id=teacher_id, name=name, role=role, directory_teacher_id=directory_teacher_id)
         self._teachers[teacher_id] = teacher
         self._touch(now)
         return [TeacherAdded(aggregate_id=self._id.value, teacher_id=teacher_id, role=role)]
 
-    def remove_teacher(self, *, teacher_id: TeacherId, now: datetime) -> list[DomainEvent]:
+    def remove_teacher(self, *, teacher_id: TeacherId, now: datetime, by_organizer: bool = False) -> list[DomainEvent]:
         """Remove a teacher."""
-        self._ensure_editable()
+        self._ensure_editable(by_organizer=by_organizer)
         if teacher_id not in self._teachers:
             raise TeacherNotFoundError(f"No teacher {teacher_id} in this submission.")
         del self._teachers[teacher_id]
@@ -1282,7 +1305,26 @@ class Submission:
             kinds = ", ".join(sorted(_ATTACHMENT_LABELS_RU[kind] for kind in missing))
             raise RequiredAttachmentMissingError(f"Перед подачей нужно приложить: {kinds}.")
 
-    def _ensure_editable(self) -> None:
+    def _ensure_editable(self, *, by_organizer: bool = False) -> None:
+        """Whether the content may be changed right now, by this kind of caller.
+
+        The applicant's reach is :data:`_EDITABLE_STATUSES` — past that the entry is
+        what the organizer reviewed, and letting the applicant rewrite it afterwards
+        would make the review meaningless.
+
+        The organizer's reach is the whole live lifecycle. They are the one who
+        decides what the entry says, and by the time a mistake is noticed the entry is
+        usually already past the freeze: approval takes it straight into the running
+        order, so "вернуть участнику на исправление" is the only remaining repair and
+        it costs a round trip for a misspelt surname that will be printed on a diploma.
+        Correcting it in place is the same decision, made directly. ``COMPLETED`` and
+        ``CANCELLED`` stay closed to everyone: the performance happened, or there will
+        not be one, and neither is a fact a correction can change.
+        """
+        if by_organizer:
+            if self._status not in _LIVE_STATUSES:
+                raise SubmissionNotEditableError("Заявка завершена или отменена — изменить её нельзя.")
+            return
         if self._status not in _EDITABLE_STATUSES:
             raise SubmissionNotEditableError("Выступление уже рассмотрено организатором — изменить его нельзя.")
 
