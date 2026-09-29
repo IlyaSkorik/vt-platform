@@ -1,8 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, ChevronUp, FileArchive } from "lucide-react";
+import { ChevronDown, ChevronUp, FileArchive, Pencil } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { resolveMediaUrl } from "@/features/competitions/lib/media-url";
+import {
+  type CorrectablePerformer,
+  type CorrectableTeacher,
+  SubmissionCorrectionDialog,
+  type SubmissionTaxonomy,
+} from "@/features/submission-correction";
 import { apiClient, humanMessage } from "@/shared/api";
 import {
   Badge,
@@ -28,6 +34,14 @@ import {
 } from "@/shared/ui";
 
 type Capability = { key: string; label: string };
+/**
+ * Выступающий на карточке.
+ *
+ * Готовая подпись `name` — для чтения, части имени — для формы исправления: собрать
+ * «Фамилию» обратно из склеенной строки нельзя, там и отчества, и двойные фамилии.
+ */
+type Performer = CorrectablePerformer & { name: string };
+type Mentor = CorrectableTeacher & { name: string; phone?: string | null };
 type Queue = { key: string; label: string; count: number };
 type Item = {
   id: string;
@@ -70,8 +84,16 @@ type Detail = {
     ageComposition?: string | null;
     participantsCount?: number | null;
     teachersCount?: number | null;
-    participants?: Array<{ id: string; name: string; memberCount: number }>;
-    teachers?: Array<{ id: string; name: string; role: string; phone?: string | null }>;
+    /** Идентификаторы справочника — ими же форма исправления и отвечает. */
+    nominationId?: string | null;
+    disciplineId?: string | null;
+    ageCategoryId?: string | null;
+    participantGroupId?: string | null;
+    participationFormatId?: string | null;
+    /** Разрешает ли статус правку за участника — решает сервер. */
+    canEditContent?: boolean;
+    participants?: Performer[];
+    teachers?: Mentor[];
     priceAmount?: string | null;
     priceCurrency?: string | null;
     attachments?: Array<{ id: string; type: string; fileReference: string }>;
@@ -89,11 +111,15 @@ type Detail = {
   educationalOrganizations?: string[];
   /** Кто указан стороной договора по заявке — только у фестивалей, которые это собирают. */
   payerName?: string | null;
-  participants: Array<{ id: string; name: string; memberCount: number }>;
-  teachers: Array<{ id: string; name: string; role: string; phone?: string | null }>;
+  participants: Performer[];
+  teachers: Mentor[];
   attachments: Array<{ id: string; type: string; fileReference: string }>;
+  /** Справочник открытого фестиваля — из него выбирает форма исправления. */
+  taxonomy?: SubmissionTaxonomy;
   timeline: Array<{ kind: string; label: string; at: string }>;
   audit: Array<{ at: string; by: string; reason: string }>;
+  /** Правки организатора за участника: что изменено, кем и когда. */
+  organizerEdits?: Array<{ changes: string[]; comment?: string; created_at: string }>;
   internalNotes?: Array<{ text: string; created_at: string }>;
   participantMessages?: Array<{ text: string; created_at: string }>;
 };
@@ -410,6 +436,10 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
   // Set once the organizer has clicked «Отменить» on an entry already in the running
   // order, so the second click is the deliberate one. See `needsCancelConfirmation`.
   const [cancelArmed, setCancelArmed] = useState(false);
+  // Номер, открытый на исправление за участника, и результат последнего сохранения:
+  // правка молча меняет карточку, и без подтверждения непонятно, сработала ли она.
+  const [correcting, setCorrecting] = useState<string | null>(null);
+  const [correctionNote, setCorrectionNote] = useState<string[] | null>(null);
   const queryClient = useQueryClient();
 
   const workspace = useQuery({
@@ -429,6 +459,13 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
     [workspace.data, selected],
   );
   const selectedPrimaryAction = primaryAction(selectedItem?.capabilities ?? []);
+  const correctedPerformance = useMemo(
+    () =>
+      (workspace.data?.detail?.performances ?? []).find(
+        (performance) => performance.submissionId === correcting,
+      ) ?? null,
+    [workspace.data, correcting],
+  );
   const inbox = workspace.data?.applications ?? [];
   const groupedInbox = useMemo(() => {
     const map = new Map<string, Item>();
@@ -1012,6 +1049,25 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                                           ))}
                                         </div>
                                       )}
+                                      {/* Кнопка стоит внутри раскрытого номера, а не
+                                          в общем ряду действий: правка адресная —
+                                          исправляют конкретное выступление, глядя
+                                          на его данные, а не заявку целиком. */}
+                                      {performance.canEditContent &&
+                                      workspace.data.detail?.taxonomy ? (
+                                        <div className="mt-3 flex justify-end">
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => {
+                                              setCorrectionNote(null);
+                                              setCorrecting(performance.submissionId);
+                                            }}
+                                          >
+                                            <Pencil className="size-4" /> Исправить за участника
+                                          </Button>
+                                        </div>
+                                      ) : null}
                                     </div>
                                   </CardContent>
                                 ) : null}
@@ -1019,6 +1075,13 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                             ))}
                           </div>
                         )}
+                        {correctionNote ? (
+                          <p className="mt-2 text-xs text-success">
+                            {correctionNote.length === 0
+                              ? "Изменений не было — заявка осталась прежней."
+                              : `Исправлено: ${correctionNote.join("; ")}. Участнику отправлено письмо.`}
+                          </p>
+                        ) : null}
                       </div>
                       <div className="rounded-md border p-2 text-sm">
                         <p className="font-medium">Оплата</p>
@@ -1144,6 +1207,19 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
             </CardContent>
           </Card>
         </div>
+        {/* Диалог живёт вне карточки: очередь перечитывается каждые десять секунд,
+            и форма, вложенная в перерисовываемую ветку, теряла бы набранное. */}
+        {correctedPerformance && workspace.data?.detail?.taxonomy ? (
+          <SubmissionCorrectionDialog
+            open
+            onOpenChange={(next) => {
+              if (!next) setCorrecting(null);
+            }}
+            performance={correctedPerformance}
+            taxonomy={workspace.data.detail.taxonomy}
+            onSaved={(changes) => setCorrectionNote(changes)}
+          />
+        ) : null}
       </PageContent>
     </PageContainer>
   );

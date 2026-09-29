@@ -1,4 +1,13 @@
-import { AlertTriangle, Bell, CheckCircle2, Clock, FileUp, Trophy, XCircle } from "lucide-react";
+import {
+  AlertTriangle,
+  Bell,
+  CheckCircle2,
+  Clock,
+  FileUp,
+  PencilLine,
+  Trophy,
+  XCircle,
+} from "lucide-react";
 
 import type { NotificationKindEnum } from "@/shared/api/generated/model-notifications";
 
@@ -42,6 +51,13 @@ const PRESENTATION: Record<string, NotificationPresentation> = {
     label: "Нужно исправить",
     icon: AlertTriangle,
     tone: "bg-warning/10 text-warning",
+  },
+  // Не «нужно исправить»: исправлять уже нечего — организатор поправил сам, и от
+  // читателя ничего не требуется, кроме как знать, что именно в его заявке изменили.
+  APPLICATION_CORRECTED: {
+    label: "Заявку исправили",
+    icon: PencilLine,
+    tone: "bg-primary/10 text-primary",
   },
   FILES_REQUESTED: {
     label: "Нужны файлы",
