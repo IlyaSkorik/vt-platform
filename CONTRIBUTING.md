@@ -19,6 +19,16 @@ We use **trunk-based development with short-lived branches**.
     off, and every change arrives via a reviewed pull request. Turn on branch protection with
     that person's first commit, not later.
 - **Feature branches** are short-lived (ideally merged within ~2 days), branched from `main`, and deleted after merge.
+- **`redesign`** is the one deliberate exception to that rule: the front-end redesign is drawn in
+  Figma screen by screen and cannot land in pieces, because a half-restyled личный кабинет is
+  worse than either version of it. The branch therefore lives for weeks and merges once, when the
+  ЛК is whole.
+  - **Merge `main` into it every day or two.** A branch that diverges for a month stops being a
+    branch and becomes a fork; the cost of a long branch is paid either in small daily merges or
+    in one unmanageable one at the end.
+  - **Keep it to the front end.** It shares the stand's database with `main` (§6), and migrations
+    do not roll back when the stand changes hands. A model change on this branch breaks the stand
+    for hotfix testing — at which point the branch needs a stand of its own, not a workaround.
 - **`release/*`** branches are used only when a versioned release needs hardening/stabilization before tagging.
 - **`hotfix/*`** branches address urgent production defects, branched from `main` (or the release tag) and merged back immediately.
 
@@ -48,6 +58,7 @@ Keep branches small and focused. Rebase onto the latest `main` before opening or
 | `ci/` | CI/CD pipeline changes |
 | `release/` | Release stabilization branch |
 | `hotfix/` | Urgent production fix |
+| `redesign` | The long-lived front-end redesign branch (§1) — no prefix, there is only ever one |
 
 Optionally prefix with an issue key: `feat/VT-142-participant-registration`.
 
@@ -170,6 +181,35 @@ came from the same source.
 
 **Rolling back is the same button with an older SHA.** There is no separate emergency path to
 remember, which means the rollback path is the one that has already run hundreds of times.
+
+### One stand, two branches
+
+There is a single stand and the redesign occupies it for weeks, so the stand changes hands. What
+makes that safe is that **building images and occupying the stand are separate steps**: every green
+push on either branch produces images tagged with its SHA, whoever owns the stand. `Release`
+promotes images, so a production fix is always releasable — even mid-redesign, when the stand is
+showing something else entirely.
+
+Ownership is one repository variable, `STAGING_TRACK`, and it defaults to `main` when unset — so
+until somebody changes it, nothing about the pipeline behaves differently from before.
+
+**Передать стенд редизайну:** Settings → Secrets and variables → Actions → Variables →
+`STAGING_TRACK` = `redesign`. Вернуть — то же поле, значение `main`. (С установленным `gh`:
+`gh variable set STAGING_TRACK -b redesign`.)
+
+The owning branch rolls out automatically on every green push. The other branch builds images, says
+so in Telegram, and leaves the stand alone.
+
+**Пожар на проде, пока стенд за редизайном.** Стенд трогать не нужно:
+
+1. Фикс коммитом в `main`, `git push`.
+2. Дождаться зелёного CI — в Telegram придёт «образы собраны, стенд за веткой redesign».
+3. Actions → **Release** → Run workflow → `sha` из этого сообщения.
+
+Хочешь сперва проверить фикс на стенде — Actions → **Staging** → Run workflow, выбрать ветку `main`
+в дропдауне; после релиза запустить то же самое с веткой `redesign`, чтобы вернуть картинку Насте.
+Dispatch показывает ветку на стенде разово и **не** меняет владельца: следующий зелёный пуш в
+ветку-владельца заберёт стенд назад сам.
 
 Two tags track where things are, and both are moved by the pipeline:
 

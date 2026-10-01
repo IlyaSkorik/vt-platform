@@ -9,6 +9,24 @@
 # Nothing here is gated: staging is not a decision, it is a place to look. The decision — whether
 # a tested set of tasks goes live — is `release.yml`, and it is manual.
 #
+# **Building images and occupying the stand are two different things, and this file keeps them
+# apart.** `publish` runs for every green branch it is triggered on; `staging` rolls out only the
+# branch that currently *owns* the stand. There is one stand and the redesign lives on it for
+# weeks, so without that split a production fire would be unfixable: the hotfix's images would
+# never be built, and `release.yml` refuses a SHA whose images are missing. With it, a push to
+# `main` always produces a releasable artefact even while Настя is looking at the redesign.
+#
+# Ownership is the repository variable `STAGING_TRACK` (default `main` when unset), set under
+# Settings → Secrets and variables → Actions → Variables, or:
+#
+#     gh variable set STAGING_TRACK -b redesign   # стенд отдан редизайну
+#     gh variable set STAGING_TRACK -b main       # стенд вернулся на main
+#
+# It is a variable rather than a line in this file because the stand changes hands often and a
+# commit to `main` is a poor way to say "подвинься на час". Either branch can also be put on the
+# stand for one rollout by dispatching this workflow against it, which does not change ownership —
+# the next green push to the owning branch takes the stand back.
+#
 # Images are built once, here, tagged with the commit SHA, and `release.yml` refuses to deploy a
 # SHA whose images do not already exist. That is what makes the artefact promoted to production
 # byte-for-byte the one that was tested, instead of a rebuild that merely came from the same
@@ -33,7 +51,7 @@ on:
   workflow_run:
     workflows: [CI]
     types: [completed]
-    branches: [main]
+    branches: [main, redesign]
   # Re-deploying the stand by hand — after rebuilding the host, or to put an older SHA back on it
   # while a regression is investigated.
   workflow_dispatch:
@@ -52,7 +70,11 @@ env:
 jobs:
   publish:
     name: Publish images
-    # Manual runs are trusted; automatic ones only follow a *green* CI on a push to `main`.
+    # Deliberately *not* conditioned on which branch this is. Every green push to any branch in
+    # the trigger above gets images, because that is what keeps a production hotfix possible while
+    # the stand belongs to someone else. The branch check lives on the `staging` job below.
+    #
+    # Manual runs are trusted; automatic ones only follow a *green* CI on a push.
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
@@ -93,11 +115,23 @@ jobs:
         name: Collect what is in this rollout
         run: |
           SHA="${{ steps.resolve.outputs.sha }}"
+          BRANCH="${{ github.event.workflow_run.head_branch || github.ref_name }}"
           # `actions/checkout` with fetch-depth: 0 already brings the tags; this only covers the
           # case where it did not, and must not fail the step when the tag does not exist yet.
           git fetch --force --tags origin >/dev/null 2>&1 || true
+          # And main by name. `actions/checkout` was given a SHA, and what it fetches for a SHA
+          # does not reliably include a remote-tracking ref for main — without this the branch
+          # range below silently falls through to the tag case and reports main's commits as
+          # though they were part of the redesign.
+          git fetch --force origin main:refs/remotes/origin/main >/dev/null 2>&1 || true
 
-          if git rev-parse -q --verify refs/tags/staging >/dev/null && \
+          if [ "$BRANCH" != "main" ] && git rev-parse -q --verify origin/main >/dev/null; then
+            # A side branch. The `staging` tag sits on main's line, so a range against it would
+            # list main's commits mixed in with this branch's and read as though they had arrived
+            # on the stand too. What is actually useful is how this branch differs from main —
+            # that is exactly what is about to be shown on the stand and nowhere else.
+            RANGE="origin/main..$SHA"
+          elif git rev-parse -q --verify refs/tags/staging >/dev/null && \
              [ "$(git rev-parse refs/tags/staging)" != "$SHA" ]; then
             RANGE="refs/tags/staging..$SHA"
           else
@@ -125,6 +159,15 @@ jobs:
             commits="$commits
 
           задачи: $tasks"
+          fi
+
+          # With one stand serving two branches, "что приехало" is incomplete without "откуда".
+          # A rollout note that lists only commit subjects looks identical whether the stand is
+          # showing the redesign or a hotfix on main, which is precisely the confusion to avoid.
+          if [ "$BRANCH" != "main" ]; then
+            commits="ветка: $BRANCH
+
+          $commits"
           fi
 
           {
@@ -175,6 +218,17 @@ jobs:
   staging:
     name: Staging
     needs: [publish]
+    # Who owns the stand. An automatic rollout happens only for the branch named by
+    # `STAGING_TRACK` (default `main`); a push to the other branch stops after `publish`, having
+    # produced images and disturbed nothing. A dispatch always deploys — asking for a rollout by
+    # hand *is* the statement that this is what should be on the stand right now.
+    #
+    # `vars.STAGING_TRACK || 'main'` rather than a bare comparison: an unset or deleted variable
+    # must mean "стенд за main", not "стенд ничей", or clearing it by accident would silently stop
+    # every staging deploy and the first symptom would be a stale stand nobody can explain.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.head_branch == (vars.STAGING_TRACK || 'main')
     uses: ./.github/workflows/_deploy-stack.yml
     with:
       environment: staging
@@ -185,9 +239,47 @@ jobs:
       notes: ${{ needs.publish.outputs.notes }}
     secrets: inherit
 
+  parked:
+    name: Report images built without a rollout
+    needs: [publish, staging]
+    # The branch that pushed does not own the stand. Images exist, nothing was deployed — and that
+    # is the whole point of the split, but it is also invisible: the run goes green with a skipped
+    # job and a fire on `main` would otherwise look like "деплой прошёл" to anyone glancing at it.
+    # This is the one case where saying nothing is worse than a notification.
+    if: always() && needs.publish.result == 'success' && needs.staging.result == 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tell Telegram
+        env:
+          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          TRACK: ${{ vars.STAGING_TRACK || 'main' }}
+          SHA: ${{ needs.publish.outputs.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          # Same contract as every other notifier here: unset token means silence, never a failed
+          # step. A broken notifier must not redden a run whose actual work succeeded.
+          [ -n "${TG_TOKEN:-}" ] && [ -n "${TG_CHAT:-}" ] || { echo "Telegram not configured; skipping"; exit 0; }
+          text="📦 образы ${SHA:0:7} ($BRANCH) собраны
+          стенд сейчас за веткой $TRACK, поэтому на него ничего не поехало
+
+          выкатить в прод: Actions → Release → sha=${SHA:0:7}
+          показать на стенде: Actions → Staging → ветка $BRANCH
+          лог: $RUN_URL"
+          curl -fsS --max-time 15 \
+            --data-urlencode "chat_id=$TG_CHAT" \
+            --data-urlencode "text=$text" \
+            "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" >/dev/null 2>&1 || true
+
   mark:
     name: Move the staging tag
     needs: [publish, staging]
+    # Only for main. The tag answers "что написано, но ещё не на стенде" (`git log staging..main`)
+    # and feeds the next rollout's note; moved onto a redesign commit it would answer neither, and
+    # `release.yml` — which diffs its own candidate against `production` — would start describing
+    # releases in terms of a commit that was never on main.
+    if: (github.event.workflow_run.head_branch || github.ref_name) == 'main'
     runs-on: ubuntu-latest
     permissions:
       contents: write

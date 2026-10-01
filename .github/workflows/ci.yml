@@ -14,8 +14,12 @@ name: CI
 
 on:
   pull_request:
+  # `redesign` is here so that a long-lived design branch gets the same gate as `main` without
+  # needing a pull request open for weeks. Without it a push to that branch runs no CI at all,
+  # `staging.yml` (which hangs off CI's completion) never fires, and no images are ever built for
+  # it — so the stand could not show the redesign even on a manual dispatch.
   push:
-    branches: [main]
+    branches: [main, redesign]
 
 # A new push supersedes the previous run on the same ref; nothing here needs to finish for an
 # outdated commit.
