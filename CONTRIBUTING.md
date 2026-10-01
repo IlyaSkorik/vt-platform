@@ -23,9 +23,14 @@ We use **trunk-based development with short-lived branches**.
   Figma screen by screen and cannot land in pieces, because a half-restyled личный кабинет is
   worse than either version of it. The branch therefore lives for weeks and merges once, when the
   ЛК is whole.
-  - **Merge `main` into it every day or two.** A branch that diverges for a month stops being a
-    branch and becomes a fork; the cost of a long branch is paid either in small daily merges or
-    in one unmanageable one at the end.
+  - **Merge `main` into it every day or two** — `git switch redesign && git merge main`. Traffic
+    goes one way for the whole of the work; the single merge back into `main` happens once, at the
+    end. A branch that diverges for a month stops being a branch and becomes a fork; the cost of a
+    long branch is paid either in small daily merges or in one unmanageable one at the end.
+  - **Merge, not rebase — the one place this document asks for the opposite of the rule below.**
+    Rebasing a month-long branch means re-resolving the same conflicts on every update and
+    rewriting history that is already pushed. Linear history is worth less than not solving the
+    same conflict nine times.
   - **Keep it to the front end.** It shares the stand's database with `main` (§6), and migrations
     do not roll back when the stand changes hands. A model change on this branch breaks the stand
     for hotfix testing — at which point the branch needs a stand of its own, not a workaround.
