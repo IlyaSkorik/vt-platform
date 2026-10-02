@@ -32,6 +32,8 @@ from apps.programs.application.commands import (
     AddBlockCommand,
     AddColumnCommand,
     AddPerformanceCommand,
+    ArrangementPayload,
+    ArrangeProgramCommand,
     CreateProgramCommand,
     CreateShareCommand,
     EditItemCommand,
@@ -48,6 +50,7 @@ from apps.programs.presentation.api.v1 import problems
 from apps.programs.presentation.api.v1.serializers import (
     AddBlockRequestSerializer,
     AddPerformanceRequestSerializer,
+    ArrangeProgramRequestSerializer,
     ColumnRequestSerializer,
     CreateProgramRequestSerializer,
     CreateShareRequestSerializer,
@@ -67,6 +70,7 @@ from config.archive import ArchiveMember, zip_response
 _TAG = "Competition Program"
 
 __all__ = [
+    "ProgramArrangeView",
     "ProgramCandidatesView",
     "ProgramCollectionView",
     "ProgramColumnCollectionView",
@@ -168,10 +172,50 @@ def _program_json(view: dto.ProgramDetailView) -> dict[str, Any]:
         "numbersFrozenAt": view.numbers_frozen_at,
         "totalSeconds": view.total_seconds,
         "endsAt": view.ends_at,
+        "arrangement": _arrangement_json(view.arrangement),
         "createdAt": view.created_at,
         "updatedAt": view.updated_at,
         "version": view.version,
     }
+
+
+def _arrangement_json(view: dto.ArrangementView | None) -> dict[str, Any] | None:
+    """Render the saved generation rules, or ``None`` for a hand-built programme."""
+    if view is None:
+        return None
+    return {
+        "grouping": list(view.grouping),
+        "orderWithinGroup": view.order_within_group,
+        "breakRule": view.break_rule,
+        "breakAfterSeconds": view.break_after_seconds,
+        "breakAfterItems": view.break_after_items,
+        "breakTitle": view.break_title,
+        "breakDurationSeconds": view.break_duration_seconds,
+        "repeatGap": view.repeat_gap,
+        "openingTitle": view.opening_title,
+        "openingDurationSeconds": view.opening_duration_seconds,
+        "awardTitle": view.award_title,
+        "awardDurationSeconds": view.award_duration_seconds,
+    }
+
+
+def _arrangement_payload(data: dict[str, Any]) -> ArrangementPayload:
+    """Read a validated generation body onto the use case's input shape."""
+    grouping = data.get("grouping")
+    return ArrangementPayload(
+        grouping=tuple(str(axis) for axis in grouping) if grouping is not None else None,
+        order_within_group=data.get("orderWithinGroup"),
+        break_rule=data.get("breakRule"),
+        break_after_seconds=data.get("breakAfterSeconds"),
+        break_after_items=data.get("breakAfterItems"),
+        break_title=data.get("breakTitle"),
+        break_duration_seconds=data.get("breakDurationSeconds"),
+        repeat_gap=data.get("repeatGap"),
+        opening_title=data.get("openingTitle"),
+        opening_duration_seconds=data.get("openingDurationSeconds"),
+        award_title=data.get("awardTitle"),
+        award_duration_seconds=data.get("awardDurationSeconds"),
+    )
 
 
 def _summary_json(view: dto.ProgramSummaryView) -> dict[str, Any]:
@@ -394,6 +438,30 @@ class ProgramItemsFillView(_StaffView):
     def post(self, request: Request, program_id: str) -> Response:
         try:
             program = build_program_service().fill_from_scope(program_id)
+        except ProgramError as exc:
+            return self._problem(exc, request)
+        return problems.envelope(request, _program_json(program))
+
+
+class ProgramArrangeView(_StaffView):
+    """``POST`` to build the whole running order from rules."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="programsArrangeItems",
+        request=ArrangeProgramRequestSerializer,
+        responses={200: ProgramDetailSerializer, **_PROBLEM_RESPONSES},
+    )
+    def post(self, request: Request, program_id: str) -> Response:
+        serializer = ArrangeProgramRequestSerializer(data=request.data or {})
+        if not serializer.is_valid():
+            return problems.validation_problem(serializer.errors, instance=request.get_full_path(), request=request)
+        data = serializer.validated_data
+        # An empty body is the "пересобрать" button: no form was shown, so the programme's
+        # own saved rules are the request. Anything sent is read as the complete form.
+        payload = _arrangement_payload(data) if data else None
+        try:
+            program = build_program_service().arrange_program(ArrangeProgramCommand(program_id=program_id, settings=payload))
         except ProgramError as exc:
             return self._problem(exc, request)
         return problems.envelope(request, _program_json(program))

@@ -11,9 +11,14 @@ from drf_spectacular.utils import inline_serializer
 from rest_framework import serializers
 
 from apps.programs.domain.value_objects import (
+    BREAK_AFTER_ITEMS_MAX,
     BUFFER_MAX_SECONDS,
     CELL_VALUE_MAX,
     DURATION_MAX_SECONDS,
+    REPEAT_GAP_MAX,
+    BreakRule,
+    GroupingAxis,
+    PerformanceOrder,
     ProgramColumn,
     ProgramItemKind,
     ProgramItemProgress,
@@ -23,6 +28,8 @@ __all__ = [
     "COLUMN_KEYS",
     "AddBlockRequestSerializer",
     "AddPerformanceRequestSerializer",
+    "ArrangeProgramRequestSerializer",
+    "ArrangementResourceSerializer",
     "ColumnRequestSerializer",
     "CreateProgramRequestSerializer",
     "CreateShareRequestSerializer",
@@ -42,6 +49,12 @@ __all__ = [
 #: The kinds a client may create through the block endpoint - every kind except the
 #: performance, which is created by referencing an act instead of a title.
 BLOCK_KINDS = [kind.value for kind in ProgramItemKind if not kind.binds_performance]
+
+#: The vocabulary of the generator, enumerated from the domain so a settings form can
+#: never offer a rule the algorithm does not have.
+GROUPING_AXES = [axis.value for axis in GroupingAxis]
+PERFORMANCE_ORDERS = [order.value for order in PerformanceOrder]
+BREAK_RULES = [rule.value for rule in BreakRule]
 
 #: The columns a programme table can carry, and therefore what a public edition may be
 #: cut to. Enumerated from the domain so the contract cannot drift from it.
@@ -85,6 +98,37 @@ class AddBlockRequestSerializer(serializers.Serializer[dict[str, object]]):
     durationSeconds = serializers.IntegerField(min_value=1, max_value=DURATION_MAX_SECONDS)
     kind = serializers.ChoiceField(choices=BLOCK_KINDS, required=False, default=ProgramItemKind.BREAK.value)
     position = serializers.IntegerField(required=False, min_value=1)
+
+
+class ArrangeProgramRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """Validate the rules a programme is to be generated from.
+
+    Every field is optional, and an **entirely empty body means "the rules this
+    programme was last built from"** - which is what makes "пересобрать" a button
+    without a form. A body that is present is read as complete: a field left out takes
+    the default, not the saved value, so the dialog on screen is what gets generated.
+
+    Shape only, as ever. Which combinations hold together - a break rule with nothing to
+    insert, an interval of zero - is the domain's judgement, and
+    :class:`~apps.programs.domain.value_objects.ArrangementSettings` makes it.
+    """
+
+    #: The axes to group along, in the order they are applied. An empty list means
+    #: "do not group": one sequence, ordered and spaced like any other.
+    grouping = serializers.ListField(child=serializers.ChoiceField(choices=GROUPING_AXES), required=False, allow_empty=True)
+    orderWithinGroup = serializers.ChoiceField(choices=PERFORMANCE_ORDERS, required=False)
+    breakRule = serializers.ChoiceField(choices=BREAK_RULES, required=False)
+    breakAfterSeconds = serializers.IntegerField(required=False, min_value=0, max_value=DURATION_MAX_SECONDS)
+    breakAfterItems = serializers.IntegerField(required=False, min_value=0, max_value=BREAK_AFTER_ITEMS_MAX)
+    breakTitle = serializers.CharField(required=False, max_length=200)
+    breakDurationSeconds = serializers.IntegerField(required=False, min_value=1, max_value=DURATION_MAX_SECONDS)
+    #: How many slots must separate two acts of the same participant; 0 turns it off.
+    repeatGap = serializers.IntegerField(required=False, min_value=0, max_value=REPEAT_GAP_MAX)
+    #: Naming or timing a service block is how it is switched on.
+    openingTitle = serializers.CharField(required=False, max_length=200)
+    openingDurationSeconds = serializers.IntegerField(required=False, min_value=1, max_value=DURATION_MAX_SECONDS)
+    awardTitle = serializers.CharField(required=False, max_length=200)
+    awardDurationSeconds = serializers.IntegerField(required=False, min_value=1, max_value=DURATION_MAX_SECONDS)
 
 
 class EditItemRequestSerializer(serializers.Serializer[dict[str, object]]):
@@ -214,6 +258,23 @@ class ProgramShareResourceSerializer(serializers.Serializer[dict[str, object]]):
     createdAt = serializers.DateTimeField(allow_null=True)
 
 
+class ArrangementResourceSerializer(serializers.Serializer[dict[str, object]]):
+    """The generation rules a programme carries, as the settings dialog reads them back."""
+
+    grouping = serializers.ListField(child=serializers.ChoiceField(choices=GROUPING_AXES))
+    orderWithinGroup = serializers.ChoiceField(choices=PERFORMANCE_ORDERS)
+    breakRule = serializers.ChoiceField(choices=BREAK_RULES)
+    breakAfterSeconds = serializers.IntegerField()
+    breakAfterItems = serializers.IntegerField()
+    breakTitle = serializers.CharField(allow_null=True)
+    breakDurationSeconds = serializers.IntegerField(allow_null=True)
+    repeatGap = serializers.IntegerField()
+    openingTitle = serializers.CharField(allow_null=True)
+    openingDurationSeconds = serializers.IntegerField(allow_null=True)
+    awardTitle = serializers.CharField(allow_null=True)
+    awardDurationSeconds = serializers.IntegerField(allow_null=True)
+
+
 class ProgramDetailSerializer(serializers.Serializer[dict[str, object]]):
     """One program in full: settings, timetable and public links."""
 
@@ -231,6 +292,8 @@ class ProgramDetailSerializer(serializers.Serializer[dict[str, object]]):
     numbersFrozenAt = serializers.DateTimeField(allow_null=True)
     totalSeconds = serializers.IntegerField()
     endsAt = serializers.DateTimeField(allow_null=True)
+    #: Null for a programme that was only ever built by hand.
+    arrangement = ArrangementResourceSerializer(allow_null=True)
     createdAt = serializers.DateTimeField()
     updatedAt = serializers.DateTimeField()
     version = serializers.IntegerField()
