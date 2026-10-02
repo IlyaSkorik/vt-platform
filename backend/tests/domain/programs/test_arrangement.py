@@ -225,6 +225,25 @@ class TestSpacingRepeats:
         )
         assert _titles(items, acts) == ["вокал 1", "вокал 2", "танец"]
 
+    def test_an_unhonourable_gap_is_still_made_as_wide_as_the_group_allows(self) -> None:
+        # A trio with two numbers in a group of four: the gap asked for is wider than
+        # the group, so it cannot be honoured at all. The programme is still built —
+        # and the two numbers end up as far apart as four slots permit, rather than
+        # the generator shrugging and taking whatever came first.
+        pair = ("Иванова Мария", "Петров Пётр", "Сидоров Иван")
+        acts = [
+            _act("А", people=pair),
+            _act("Б", people=("Кузнецова Анна",)),
+            _act("В", people=pair),
+            _act("Г", people=("Орлов Артём",)),
+        ]
+        items = arrange(
+            candidates=acts,
+            settings=ArrangementSettings(grouping=(), order_within_group=PerformanceOrder.TITLE, repeat_gap=5),
+            buffer=NO_BUFFER,
+        )
+        assert _titles(items, acts) == ["А", "Б", "Г", "В"]
+
     def test_an_impossible_gap_still_produces_a_programme(self) -> None:
         # A soloist with three of the four numbers cannot be spaced out. Refusing to
         # generate anything would be worse than a tight change.

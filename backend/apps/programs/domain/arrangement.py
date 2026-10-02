@@ -261,16 +261,26 @@ def _next_act(pool: Sequence[ArrangementCandidate], *, last_seen: dict[str, int]
     """Index of the act that should go on stage next, out of what this group has left.
 
     The first act whose participants have all had ``gap`` slots since their last one.
-    When nobody qualifies - a soloist with three numbers in a group of three - the
-    chosen order wins: the constraint is a preference about comfort, and refusing to
-    generate a programme over it would be worse than a tight change.
+
+    When nobody qualifies - a trio with two numbers in a group of four, where the gap
+    asked for is simply wider than the group - the programme is still built: the
+    constraint is a preference about comfort, and refusing to generate a day over it
+    would be worse than a tight change. But "still built" is not "built carelessly":
+    the act that goes on is the one whose people have been off stage longest, so an
+    interval that cannot be honoured is at least made as wide as this group allows.
+    Ties keep the chosen order, which is what keeps a rebuild reproducible.
     """
     if gap <= 0:
         return 0
+    best_index, best_wait = 0, -1
     for index, act in enumerate(pool):
-        if all(position - last_seen[person] > gap for person in act.people if person in last_seen):
+        # How recently anyone in this act was last on stage; absent means never.
+        latest = max((last_seen[person] for person in act.people if person in last_seen), default=None)
+        if latest is None or position - latest > gap:
             return index
-    return 0
+        if position - latest > best_wait:
+            best_index, best_wait = index, position - latest
+    return best_index
 
 
 # ----------------------------------------------------------------------
