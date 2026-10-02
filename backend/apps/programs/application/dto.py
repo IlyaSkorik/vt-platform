@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 __all__ = [
+    "ArrangementView",
     "ColumnView",
     "ProgramDetailView",
     "ProgramItemView",
@@ -128,6 +129,29 @@ class ProgramSummaryView:
 
 
 @dataclass(frozen=True, slots=True)
+class ArrangementView:
+    """The rules a programme was last generated from, on their way back to the form.
+
+    Flat and already stringified: the settings screen reopens on exactly what produced
+    the running order on screen, so "пересобрать" and "пересобрать, но с перерывом"
+    start from the same place.
+    """
+
+    grouping: tuple[str, ...]
+    order_within_group: str
+    break_rule: str
+    break_after_seconds: int
+    break_after_items: int
+    break_title: str | None
+    break_duration_seconds: int | None
+    repeat_gap: int
+    opening_title: str | None
+    opening_duration_seconds: int | None
+    award_title: str | None
+    award_duration_seconds: int | None
+
+
+@dataclass(frozen=True, slots=True)
 class ProgramDetailView:
     """One program in full: its settings, its computed timetable, its public links."""
 
@@ -149,6 +173,9 @@ class ProgramDetailView:
     numbers_frozen_at: datetime | None
     total_seconds: int
     ends_at: datetime | None
+    #: The generation rules this programme carries, or ``None`` if it was only ever
+    #: built by hand. What the generator dialog prefills from.
+    arrangement: ArrangementView | None
     created_at: datetime
     updated_at: datetime
     version: int

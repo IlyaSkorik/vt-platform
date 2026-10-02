@@ -15,6 +15,8 @@ __all__ = [
     "AddBlockCommand",
     "AddColumnCommand",
     "AddPerformanceCommand",
+    "ArrangeProgramCommand",
+    "ArrangementPayload",
     "CreateProgramCommand",
     "CreateShareCommand",
     "EditItemCommand",
@@ -26,6 +28,49 @@ __all__ = [
     "UpdateProgramCommand",
     "UpdateShareCommand",
 ]
+
+
+@dataclass(frozen=True, slots=True)
+class ArrangementPayload:
+    """The rules an organizer filled a generation form in with.
+
+    Primitives throughout, exactly as the settings screen sends them; the service turns
+    them into the domain's :class:`~apps.programs.domain.value_objects.ArrangementSettings`
+    and lets the value objects do the rejecting.
+
+    Every field is optional and falls back to the domain default, so a form that offers
+    three knobs today and five tomorrow needs no change here. A *break* is the one place
+    two fields travel together: a rule that fires needs something to insert, and the
+    domain refuses a rule without its block.
+    """
+
+    grouping: tuple[str, ...] | None = None
+    order_within_group: str | None = None
+    break_rule: str | None = None
+    break_after_seconds: int | None = None
+    break_after_items: int | None = None
+    break_title: str | None = None
+    break_duration_seconds: int | None = None
+    repeat_gap: int | None = None
+    opening_title: str | None = None
+    opening_duration_seconds: int | None = None
+    award_title: str | None = None
+    award_duration_seconds: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ArrangeProgramCommand:
+    """Generate the whole running order of one programme from a set of rules.
+
+    ``settings`` of ``None`` means "the rules this programme was last generated from",
+    falling back to the defaults for one that never was - which is what makes
+    "пересобрать" a button with no form behind it. A payload that *is* present is read
+    as complete: an omitted field takes the domain default rather than whatever was
+    saved, so what the organizer sees on the form is what they get.
+    """
+
+    program_id: str
+    settings: ArrangementPayload | None = None
 
 
 @dataclass(frozen=True, slots=True)

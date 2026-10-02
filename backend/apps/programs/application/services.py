@@ -17,6 +17,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import Callable, Sequence
 from datetime import datetime, timedelta
+from enum import StrEnum
 from pathlib import PurePosixPath
 from typing import Final
 
@@ -24,6 +25,8 @@ from apps.programs.application.commands import (
     AddBlockCommand,
     AddColumnCommand,
     AddPerformanceCommand,
+    ArrangementPayload,
+    ArrangeProgramCommand,
     CreateProgramCommand,
     CreateShareCommand,
     EditItemCommand,
@@ -37,6 +40,7 @@ from apps.programs.application.commands import (
 )
 from apps.programs.application.dto import (
     ArchiveFileView,
+    ArrangementView,
     ColumnView,
     ProgramArchiveView,
     ProgramDetailView,
@@ -56,6 +60,7 @@ from apps.programs.application.interfaces import (
     SlugFactory,
     TableRenderer,
 )
+from apps.programs.domain.arrangement import ArrangedItem, ArrangementCandidate, arrange
 from apps.programs.domain.entities import Program, ProgramItem, ProgramShare
 from apps.programs.domain.exceptions import (
     ExportUnavailableError,
@@ -69,11 +74,23 @@ from apps.programs.domain.exceptions import (
 from apps.programs.domain.schedule import ScheduledItem, build_schedule, total_duration_seconds
 from apps.programs.domain.value_objects import (
     COLUMN_LABELS,
+    DEFAULT_AWARD_SECONDS,
+    DEFAULT_AWARD_TITLE,
+    DEFAULT_BREAK_SECONDS,
+    DEFAULT_BREAK_TITLE,
+    DEFAULT_GROUPING,
+    DEFAULT_OPENING_SECONDS,
+    DEFAULT_OPENING_TITLE,
+    ArrangementBlock,
+    ArrangementSettings,
+    BreakRule,
     CellValue,
     ColumnRef,
     ColumnTitle,
+    GroupingAxis,
     ItemDuration,
     ItemTitle,
+    PerformanceOrder,
     ProgramColumn,
     ProgramItemKind,
     ProgramItemProgress,
@@ -149,6 +166,127 @@ def _stored_name(reference: str, *, fallback: str) -> str:
     """
     name = _safe(PurePosixPath(reference).name)
     return name if PurePosixPath(name).suffix else f"{fallback}{_extension(reference)}"
+
+
+def _enum[E: StrEnum](enum: type[E], raw: str | None, *, default: E, what: str) -> E:
+    """Read one wire value onto its domain enum, or fall back to the default.
+
+    An unknown value is a rejected request rather than a silent default: a client that
+    sends ``"BY_AGE"`` where the contract says ``"AGE_ASC"`` has a bug, and quietly
+    generating a differently-ordered festival would hide it.
+    """
+    if raw is None:
+        return default
+    try:
+        return enum(raw)
+    except ValueError as exc:
+        raise InvalidProgramDataError(f"Unknown {what}: {raw!r}.") from exc
+
+
+def _block(title: str | None, seconds: int | None, *, default_title: str, default_seconds: int) -> ArrangementBlock | None:
+    """One optional service block, present as soon as the organizer said anything about it.
+
+    Naming it or timing it is the way to switch it on, so the common case ("да, открытие,
+    как обычно") is one tick on a form rather than a title and a duration typed out.
+    """
+    if title is None and seconds is None:
+        return None
+    return ArrangementBlock.of(title or default_title, seconds=seconds if seconds is not None else default_seconds)
+
+
+def _arrangement_settings(payload: ArrangementPayload | None, *, saved: ArrangementSettings | None) -> ArrangementSettings:
+    """The rules one generation run uses.
+
+    No payload means "the rules this programme was last built from", and the defaults
+    for one that has never been generated - which is the whole of what "пересобрать"
+    has to mean. A payload that *is* present is read as complete, so every field it
+    leaves out takes the domain default rather than a saved value the organizer can no
+    longer see on the form.
+    """
+    if payload is None:
+        return saved if saved is not None else ArrangementSettings()
+    rule = _enum(BreakRule, payload.break_rule, default=BreakRule.NONE, what="break rule")
+    return ArrangementSettings(
+        grouping=(
+            tuple(_enum(GroupingAxis, axis, default=GroupingAxis.NOMINATION, what="grouping axis") for axis in payload.grouping)
+            if payload.grouping is not None
+            else DEFAULT_GROUPING
+        ),
+        order_within_group=_enum(PerformanceOrder, payload.order_within_group, default=PerformanceOrder.AGE_ASC, what="performance order"),
+        break_rule=rule,
+        break_after_seconds=payload.break_after_seconds or 0,
+        break_after_items=payload.break_after_items or 0,
+        break_block=(
+            _block(
+                payload.break_title,
+                payload.break_duration_seconds,
+                default_title=DEFAULT_BREAK_TITLE,
+                default_seconds=DEFAULT_BREAK_SECONDS,
+            )
+            # A rule that fires needs something to insert, so choosing one is itself the
+            # request for a break - the title and the length are the optional part.
+            or (ArrangementBlock.of(DEFAULT_BREAK_TITLE, seconds=DEFAULT_BREAK_SECONDS) if rule is not BreakRule.NONE else None)
+        ),
+        repeat_gap=payload.repeat_gap or 0,
+        opens_with=_block(
+            payload.opening_title,
+            payload.opening_duration_seconds,
+            default_title=DEFAULT_OPENING_TITLE,
+            default_seconds=DEFAULT_OPENING_SECONDS,
+        ),
+        closes_with=_block(
+            payload.award_title,
+            payload.award_duration_seconds,
+            default_title=DEFAULT_AWARD_TITLE,
+            default_seconds=DEFAULT_AWARD_SECONDS,
+        ),
+    )
+
+
+def _arrangement_view(settings: ArrangementSettings | None) -> ArrangementView | None:
+    """Render saved rules back onto the flat shape the settings form reads."""
+    if settings is None:
+        return None
+    return ArrangementView(
+        grouping=tuple(axis.value for axis in settings.grouping),
+        order_within_group=settings.order_within_group.value,
+        break_rule=settings.break_rule.value,
+        break_after_seconds=settings.break_after_seconds,
+        break_after_items=settings.break_after_items,
+        break_title=str(settings.break_block.title) if settings.break_block else None,
+        break_duration_seconds=settings.break_block.duration.seconds if settings.break_block else None,
+        repeat_gap=settings.repeat_gap,
+        opening_title=str(settings.opens_with.title) if settings.opens_with else None,
+        opening_duration_seconds=settings.opens_with.duration.seconds if settings.opens_with else None,
+        award_title=str(settings.closes_with.title) if settings.closes_with else None,
+        award_duration_seconds=settings.closes_with.duration.seconds if settings.closes_with else None,
+    )
+
+
+def _candidate(performance: CatalogPerformance) -> ArrangementCandidate:
+    """Hand one catalog act to the generator in the vocabulary the rules are written in."""
+    return ArrangementCandidate(
+        submission_id=performance.submission_id,
+        duration_seconds=performance.duration_seconds,
+        title=performance.title,
+        nomination=performance.nomination,
+        discipline=performance.discipline,
+        age_category=performance.age_category,
+        age_order=performance.age_order,
+        participant_group=performance.participant_group,
+        participation_format=performance.participation_format,
+        organization=performance.organization,
+        participants=performance.participants,
+    )
+
+
+def _arranged_to_item(entry: ArrangedItem) -> ProgramItem:
+    """Turn one planned slot into the aggregate's own item, with a fresh identity."""
+    if entry.submission_id is not None:
+        return ProgramItem.performance(item_id=uuid.uuid4(), submission_id=entry.submission_id, duration=entry.duration)
+    if entry.title is None:
+        raise InvalidProgramDataError("A generated block must carry a title.")
+    return ProgramItem.block(item_id=uuid.uuid4(), kind=entry.kind, title=entry.title, duration=entry.duration)
 
 
 class ProgramService:
@@ -280,6 +418,33 @@ class ProgramService:
                 duration=ItemDuration(performance.duration_seconds),
                 now=now,
             )
+        self._programs.save(program)
+        return self._detail(program)
+
+    def arrange_program(self, command: ArrangeProgramCommand) -> ProgramDetailView:
+        """Build the whole running order from rules, replacing whatever stood there.
+
+        The alternative to "Добавить все, потом тащить мышью сто строк": the organizer
+        states how the day should read - grouped by nomination and age, младшие вперёд,
+        перерыв каждые полтора часа, один участник не два номера подряд - and the
+        programme arrives in that shape, still entirely editable afterwards.
+
+        The scope is the programme's own, so this never pulls in an act from a different
+        nomination, and the rules are kept on the aggregate so the next rebuild needs no
+        form at all.
+        """
+        now = self._clock.utcnow()
+        program = self._load(command.program_id)
+        settings = _arrangement_settings(command.settings, saved=program.arrangement)
+        candidates = tuple(
+            _candidate(performance)
+            for performance in self._catalog.competing_performances(
+                competition_id=program.competition_id,
+                nomination_id=program.nomination_id,
+            )
+        )
+        plan = arrange(candidates=candidates, settings=settings, buffer=program.buffer)
+        program.rebuild([_arranged_to_item(entry) for entry in plan], settings=settings, now=now)
         self._programs.save(program)
         return self._detail(program)
 
@@ -827,6 +992,7 @@ class ProgramService:
             numbers_frozen_at=program.numbers_frozen_at,
             total_seconds=total,
             ends_at=program.starts_at + timedelta(seconds=total) if program.starts_at is not None else None,
+            arrangement=_arrangement_view(program.arrangement),
             created_at=program.created_at,
             updated_at=program.updated_at,
             version=program.version,

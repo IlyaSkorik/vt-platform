@@ -49,6 +49,10 @@ class CatalogPerformance:
     nomination: str | None = None
     discipline: str | None = None
     age_category: str | None = None
+    #: Where the act's age band sits among the competition's others. Carried beside the
+    #: band's name because "7-9 лет" and "10-12 лет" do not sort as ages when sorted as
+    #: text, and a generated programme is read youngest-first.
+    age_order: int | None = None
     participant_group: str | None = None
     participation_format: str | None = None
     participants: tuple[str, ...] = ()

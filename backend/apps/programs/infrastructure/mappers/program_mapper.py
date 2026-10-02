@@ -12,11 +12,17 @@ import uuid
 from typing import Any
 
 from apps.programs.domain.entities import CustomColumn, Program, ProgramItem, ProgramShare
+from apps.programs.domain.exceptions import InvalidProgramDataError
 from apps.programs.domain.value_objects import (
+    ArrangementBlock,
+    ArrangementSettings,
+    BreakRule,
     CellValue,
     ColumnTitle,
+    GroupingAxis,
     ItemDuration,
     ItemTitle,
+    PerformanceOrder,
     ProgramItemKind,
     ProgramItemProgress,
     ProgramName,
@@ -63,6 +69,7 @@ class ProgramMapper:
             numbers_frozen_at=model.numbers_frozen_at,
             deleted_at=model.deleted_at,
             version=model.version,
+            arrangement=ProgramMapper._arrangement_to_entity(model.arrangement),
         )
 
     @staticmethod
@@ -76,6 +83,7 @@ class ProgramMapper:
             "buffer_seconds": program.buffer.seconds,
             "numbers_issued": program.numbers_issued,
             "numbers_frozen_at": program.numbers_frozen_at,
+            "arrangement": ProgramMapper._arrangement_fields(program.arrangement),
             "created_at": program.created_at,
             "updated_at": program.updated_at,
             "deleted_at": program.deleted_at,
@@ -115,6 +123,61 @@ class ProgramMapper:
             "item_ids": [str(item_id) for item_id in share.item_ids],
             "controls_running_order": share.controls_running_order,
         }
+
+    @staticmethod
+    def _arrangement_fields(settings: ArrangementSettings | None) -> dict[str, Any]:
+        """The generation rules as one JSON object (``{}`` for a hand-built programme)."""
+        if settings is None:
+            return {}
+        return {
+            "grouping": [axis.value for axis in settings.grouping],
+            "order_within_group": settings.order_within_group.value,
+            "break_rule": settings.break_rule.value,
+            "break_after_seconds": settings.break_after_seconds,
+            "break_after_items": settings.break_after_items,
+            "break": ProgramMapper._block_fields(settings.break_block),
+            "repeat_gap": settings.repeat_gap,
+            "opening": ProgramMapper._block_fields(settings.opens_with),
+            "award": ProgramMapper._block_fields(settings.closes_with),
+        }
+
+    @staticmethod
+    def _block_fields(block: ArrangementBlock | None) -> dict[str, Any] | None:
+        if block is None:
+            return None
+        return {"title": str(block.title), "duration_seconds": block.duration.seconds}
+
+    @staticmethod
+    def _arrangement_to_entity(raw: Any) -> ArrangementSettings | None:
+        """Read the stored rules back, or ``None`` when they no longer make sense.
+
+        Deliberately forgiving, unlike every other field here: these settings are a
+        convenience that prefills a form, not programme data. A grouping axis retired in
+        a later release, or a rule whose companion field was dropped, must cost the
+        organizer a refilled dialog - never a programme that fails to load.
+        """
+        if not isinstance(raw, dict) or not raw:
+            return None
+        try:
+            return ArrangementSettings(
+                grouping=tuple(GroupingAxis(axis) for axis in raw.get("grouping") or ()),
+                order_within_group=PerformanceOrder(str(raw.get("order_within_group"))),
+                break_rule=BreakRule(str(raw.get("break_rule"))),
+                break_after_seconds=int(raw.get("break_after_seconds") or 0),
+                break_after_items=int(raw.get("break_after_items") or 0),
+                break_block=ProgramMapper._block_to_entity(raw.get("break")),
+                repeat_gap=int(raw.get("repeat_gap") or 0),
+                opens_with=ProgramMapper._block_to_entity(raw.get("opening")),
+                closes_with=ProgramMapper._block_to_entity(raw.get("award")),
+            )
+        except (InvalidProgramDataError, TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _block_to_entity(raw: Any) -> ArrangementBlock | None:
+        if not isinstance(raw, dict):
+            return None
+        return ArrangementBlock.of(str(raw.get("title") or ""), seconds=int(raw.get("duration_seconds") or 0))
 
     @staticmethod
     def _item_to_entity(row: ProgramItemModel) -> ProgramItem:

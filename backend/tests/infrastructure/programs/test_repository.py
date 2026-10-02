@@ -12,11 +12,16 @@ from datetime import UTC, datetime
 
 import pytest
 
-from apps.programs.domain.entities import Program
+from apps.programs.domain.entities import Program, ProgramItem
 from apps.programs.domain.value_objects import (
     DEFAULT_PUBLIC_COLUMNS,
+    ArrangementBlock,
+    ArrangementSettings,
+    BreakRule,
+    GroupingAxis,
     ItemDuration,
     ItemTitle,
+    PerformanceOrder,
     ProgramColumn,
     ProgramItemKind,
     ProgramItemProgress,
@@ -25,7 +30,7 @@ from apps.programs.domain.value_objects import (
     ShareName,
     TimeBuffer,
 )
-from apps.programs.infrastructure.models import ProgramItemModel, ProgramShareModel
+from apps.programs.infrastructure.models import ProgramItemModel, ProgramModel, ProgramShareModel
 from apps.programs.infrastructure.repositories import DjangoProgramRepository
 
 pytestmark = pytest.mark.django_db
@@ -351,3 +356,57 @@ class TestPublicLinks:
         loaded = repository.get(program.id)
         assert loaded is not None
         assert [ref.key for ref in loaded.shares[0].columns] == [column.value for column in DEFAULT_PUBLIC_COLUMNS]
+
+
+class TestGenerationRules:
+    """The rules a programme was generated from survive a round trip (VT-86)."""
+
+    def test_the_rules_are_stored_with_the_programme(self) -> None:
+        repository = DjangoProgramRepository()
+        program = _program()
+        settings = ArrangementSettings(
+            grouping=(GroupingAxis.NOMINATION, GroupingAxis.AGE_CATEGORY),
+            order_within_group=PerformanceOrder.DURATION_ASC,
+            break_rule=BreakRule.EVERY_DURATION,
+            break_after_seconds=5400,
+            break_block=ArrangementBlock.of("Антракт", seconds=900),
+            repeat_gap=3,
+            opens_with=ArrangementBlock.of("Открытие", seconds=600),
+        )
+        program.rebuild(
+            [ProgramItem.performance(item_id=uuid.uuid4(), submission_id=uuid.uuid4(), duration=ItemDuration(200))],
+            settings=settings,
+            now=NOW,
+        )
+        repository.save(program)
+
+        reloaded = repository.get(program.id)
+
+        assert reloaded is not None
+        assert reloaded.arrangement == settings
+
+    def test_a_hand_built_programme_carries_no_rules(self) -> None:
+        repository = DjangoProgramRepository()
+        program = _program()
+        _act(program)
+        repository.save(program)
+
+        reloaded = repository.get(program.id)
+
+        assert reloaded is not None
+        assert reloaded.arrangement is None
+
+    def test_rules_that_no_longer_make_sense_cost_a_refilled_dialog_not_the_programme(self) -> None:
+        # These settings prefill a form; they are not programme data. A grouping axis
+        # retired in a later release must never be what stops a programme from loading.
+        repository = DjangoProgramRepository()
+        program = _program()
+        _act(program)
+        repository.save(program)
+        ProgramModel.objects.filter(id=program.id).update(arrangement={"grouping": ["BY_THE_MOON"]})
+
+        reloaded = repository.get(program.id)
+
+        assert reloaded is not None
+        assert reloaded.arrangement is None
+        assert len(reloaded.items) == 1

@@ -16,6 +16,8 @@ from apps.programs.application.commands import (
     AddBlockCommand,
     AddColumnCommand,
     AddPerformanceCommand,
+    ArrangementPayload,
+    ArrangeProgramCommand,
     CreateProgramCommand,
     CreateShareCommand,
     EditItemCommand,
@@ -32,6 +34,7 @@ from apps.programs.domain.exceptions import (
     PerformanceAlreadyInProgramError,
     PerformanceNotAvailableError,
     ProgramNotFoundError,
+    ProgramNumbersFrozenError,
     ReorderMismatchError,
     SlugUnavailableError,
 )
@@ -784,3 +787,190 @@ class TestMediaArchive:
 
         assert [f.filename for f in env.service.music_archive(program_id=program_id).files] == ["01 — Иванова Анна — Катюша/track.mp3"]
         assert [f.filename for f in env.service.media_archive(program_id=program_id).files] == ["01 — Иванова Анна — Катюша/clip.mp4"]
+
+
+def _candidate(
+    title: str,
+    seconds: int,
+    *,
+    discipline: str = "Эстрадный вокал",
+    age_category: str = "10-12 лет",
+    age_order: int = 1,
+    performer: str = "Иванов Иван",
+) -> CatalogPerformance:
+    """One competing act, varied along the axes the generator reads."""
+    return CatalogPerformance(
+        submission_id=uuid.uuid4(),
+        title=title,
+        duration_seconds=seconds,
+        nomination_id=NOMINATION_ID,
+        nomination="Вокал",
+        discipline=discipline,
+        age_category=age_category,
+        age_order=age_order,
+        participant_group="Соло",
+        participation_format="Очно",
+        participants=(performer,),
+        teachers=("Петрова Мария",),
+        organization="Школа №1",
+        status="ACCEPTED",
+    )
+
+
+class TestArrangingAProgramme:
+    """Generating a whole running order from rules (VT-86)."""
+
+    def test_an_empty_programme_fills_itself_from_its_own_scope(self) -> None:
+        env = Env(_candidate("Катюша", 200), _candidate("Калинка", 180))
+        program_id = env.program()
+
+        program = env.service.arrange_program(ArrangeProgramCommand(program_id=program_id))
+
+        assert len(program.items) == 2
+        assert [item.number for item in program.items] == [1, 2]
+
+    def test_the_rules_decide_the_order(self) -> None:
+        env = Env(
+            _candidate("старший", 200, age_category="13-15 лет", age_order=2),
+            _candidate("младший", 180, age_category="7-9 лет", age_order=0),
+        )
+        program_id = env.program()
+
+        program = env.service.arrange_program(
+            ArrangeProgramCommand(
+                program_id=program_id,
+                settings=ArrangementPayload(grouping=(), order_within_group="AGE_ASC"),
+            )
+        )
+
+        assert [item.title for item in program.items] == ["младший", "старший"]
+
+    def test_generating_replaces_whatever_stood_there(self) -> None:
+        # The organizer asked for the day the rules describe; a programme half made by
+        # hand and half by rule is one neither of them can explain.
+        env = Env(_candidate("Катюша", 200))
+        program_id = env.program()
+        env.service.add_block(AddBlockCommand(program_id=program_id, title="Старый перерыв", duration_seconds=600))
+
+        program = env.service.arrange_program(ArrangeProgramCommand(program_id=program_id))
+
+        assert [item.title for item in program.items] == ["Катюша"]
+
+    def test_a_break_rule_puts_breaks_into_the_running_order(self) -> None:
+        env = Env(*(_candidate(name, 180) for name in ("А", "Б", "В")))
+        program_id = env.program()
+
+        program = env.service.arrange_program(
+            ArrangeProgramCommand(
+                program_id=program_id,
+                settings=ArrangementPayload(grouping=(), order_within_group="TITLE", break_rule="EVERY_COUNT", break_after_items=2),
+            )
+        )
+
+        assert [item.title for item in program.items] == ["А", "Б", "Перерыв", "В"]
+        assert [item.kind for item in program.items] == ["PERFORMANCE", "PERFORMANCE", "BREAK", "PERFORMANCE"]
+
+    def test_choosing_a_rule_is_itself_the_request_for_a_break(self) -> None:
+        # A rule that fires needs something to insert, so the title and the length are
+        # the optional part - one knob on the form, not three.
+        env = Env(*(_candidate(name, 180) for name in ("А", "Б")))
+        program_id = env.program()
+
+        program = env.service.arrange_program(
+            ArrangeProgramCommand(
+                program_id=program_id,
+                settings=ArrangementPayload(grouping=(), break_rule="EVERY_COUNT", break_after_items=1),
+            )
+        )
+
+        assert [item.title for item in program.items][1] == "Перерыв"
+        assert program.arrangement is not None
+        assert program.arrangement.break_duration_seconds == 600
+
+    def test_naming_a_service_block_is_how_it_is_switched_on(self) -> None:
+        env = Env(_candidate("Катюша", 200))
+        program_id = env.program()
+
+        program = env.service.arrange_program(
+            ArrangeProgramCommand(
+                program_id=program_id,
+                settings=ArrangementPayload(opening_title="Открытие фестиваля", award_duration_seconds=1800),
+            )
+        )
+
+        assert [item.title for item in program.items] == ["Открытие фестиваля", "Катюша", "Награждение"]
+        assert [item.duration_seconds for item in program.items] == [900, 200, 1800]
+
+    def test_the_rules_are_kept_so_the_next_rebuild_needs_no_form(self) -> None:
+        env = Env(*(_candidate(name, 180) for name in ("А", "Б", "В")))
+        program_id = env.program()
+        env.service.arrange_program(
+            ArrangeProgramCommand(
+                program_id=program_id,
+                settings=ArrangementPayload(grouping=(), order_within_group="TITLE", break_rule="EVERY_COUNT", break_after_items=2),
+            )
+        )
+
+        rebuilt = env.service.arrange_program(ArrangeProgramCommand(program_id=program_id))
+
+        assert [item.title for item in rebuilt.items] == ["А", "Б", "Перерыв", "В"]
+        assert rebuilt.arrangement is not None
+        assert rebuilt.arrangement.break_rule == "EVERY_COUNT"
+        assert rebuilt.arrangement.break_after_items == 2
+
+    def test_a_programme_that_was_never_generated_has_no_rules_to_show(self) -> None:
+        env = Env(_candidate("Катюша", 200))
+        program = env.service.get_program(env.program())
+        assert program.arrangement is None
+
+    def test_a_payload_that_is_present_is_read_as_complete(self) -> None:
+        # What the organizer sees on the form is what they get: an omitted field takes
+        # the default, not the value saved from a run they can no longer see.
+        env = Env(*(_candidate(name, 180) for name in ("А", "Б", "В")))
+        program_id = env.program()
+        env.service.arrange_program(
+            ArrangeProgramCommand(
+                program_id=program_id,
+                settings=ArrangementPayload(grouping=(), break_rule="EVERY_COUNT", break_after_items=2),
+            )
+        )
+
+        program = env.service.arrange_program(ArrangeProgramCommand(program_id=program_id, settings=ArrangementPayload(grouping=())))
+
+        assert all(item.kind == "PERFORMANCE" for item in program.items)
+        assert program.arrangement is not None
+        assert program.arrangement.break_rule == "NONE"
+
+    def test_a_published_programme_refuses_to_regenerate(self) -> None:
+        # Its numbers are out in the world: a participant has been told "вы номер 12".
+        env = Env(*(_candidate(name, 180) for name in ("А", "Б")))
+        program_id = env.program()
+        env.service.arrange_program(ArrangeProgramCommand(program_id=program_id))
+        env.service.create_share(CreateShareCommand(program_id=program_id, name="Для зала"))
+
+        with pytest.raises(ProgramNumbersFrozenError):
+            env.service.arrange_program(ArrangeProgramCommand(program_id=program_id))
+
+    def test_an_unknown_rule_is_a_rejected_request_rather_than_a_silent_default(self) -> None:
+        env = Env(_candidate("Катюша", 200))
+        program_id = env.program()
+
+        with pytest.raises(InvalidProgramDataError):
+            env.service.arrange_program(ArrangeProgramCommand(program_id=program_id, settings=ArrangementPayload(order_within_group="BY_AGE")))
+
+    def test_generating_never_reaches_outside_the_programme_s_nomination(self) -> None:
+        mine = _candidate("Катюша", 200)
+        theirs = CatalogPerformance(
+            submission_id=uuid.uuid4(),
+            title="Чужой номер",
+            duration_seconds=180,
+            nomination_id=uuid.uuid4(),
+            nomination="Хореография",
+            status="ACCEPTED",
+        )
+        env = Env(mine, theirs)
+        program_id = env.program()
+
+        program = env.service.arrange_program(ArrangeProgramCommand(program_id=program_id))
+
+        assert [item.title for item in program.items] == ["Катюша"]

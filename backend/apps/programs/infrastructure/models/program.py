@@ -63,6 +63,11 @@ class ProgramModel(BasePersistenceModel):
     # When the numbers stopped following the running order - the first publication. Null
     # while the programme is still being assembled.
     numbers_frozen_at = models.DateTimeField(null=True, blank=True, default=None)
+    # The rules the running order was last generated from, so "пересобрать" needs no
+    # form. One JSON column rather than a dozen scalar ones: nothing queries or joins on
+    # a generation setting, and the set of knobs is expected to grow. An empty object
+    # means "this programme was only ever built by hand".
+    arrangement = models.JSONField(default=dict, blank=True)
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "programs_program"

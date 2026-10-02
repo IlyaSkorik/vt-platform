@@ -158,6 +158,7 @@ class DjangoPerformanceCatalog:
         if not models:
             return []
         taxonomy = self._taxonomy(models)
+        age_orders = self._age_orders(models)
         organizations = self._organizations(models)
         performances: list[CatalogPerformance] = []
         for model in models:
@@ -182,6 +183,7 @@ class DjangoPerformanceCatalog:
                     nomination=taxonomy["nomination"].get(nomination_id or ""),
                     discipline=taxonomy["discipline"].get(_clean(performance.get("discipline_id")) or ""),
                     age_category=taxonomy["age_category"].get(_clean(performance.get("age_category_id")) or ""),
+                    age_order=age_orders.get(_clean(performance.get("age_category_id")) or ""),
                     participant_group=taxonomy["participant_group"].get(_clean(performance.get("participant_group_id")) or ""),
                     participation_format=taxonomy["format"].get(_clean(performance.get("participation_format_id")) or ""),
                     participants=participants,
@@ -229,6 +231,23 @@ class DjangoPerformanceCatalog:
             "participant_group": names(ParticipantGroupModel, wanted["participant_group"]),
             "format": names(ParticipationFormatModel, wanted["format"]),
         }
+
+    @staticmethod
+    def _age_orders(models: list[SubmissionModel]) -> dict[str, int]:
+        """Age-band id → its rank among the bands this batch uses, youngest first.
+
+        A rank rather than the raw ``sort_order``, because that column defaults to 0 for
+        every band a competition never bothered to order by hand - at which point the
+        ages themselves are the only honest ordering left. Ranking is what lets a
+        generated programme put "7-9 лет" before "10-12 лет" instead of sorting the
+        names as text.
+        """
+        wanted = {value for value in (_clean((model.performance or {}).get("age_category_id")) for model in models) if value}
+        if not wanted:
+            return {}
+        rows = AgeCategoryModel.objects.filter(id__in=list(wanted), deleted_at__isnull=True).values_list("id", "sort_order", "min_age", "max_age")
+        ranked = sorted(rows, key=lambda row: (int(row[1]), int(row[2]), int(row[3])))
+        return {str(row[0]): rank for rank, row in enumerate(ranked)}
 
     @staticmethod
     def _organizations(models: list[SubmissionModel]) -> dict[str, str]:
