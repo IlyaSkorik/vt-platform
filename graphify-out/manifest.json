@@ -11665,8 +11665,8 @@
     "semantic_hash": ""
   },
   "backend/apps/programs/domain/arrangement.py": {
-    "mtime": 1790923548.0317576,
-    "ast_hash": "0b69ace2a2d99389eb863181ac5f3d04",
+    "mtime": 1790931500.4335728,
+    "ast_hash": "d0803a694eccd9b80b843f617f884b62",
     "semantic_hash": ""
   },
   "backend/apps/programs/infrastructure/migrations/0006_generated_running_order.py": {
@@ -11675,13 +11675,28 @@
     "semantic_hash": ""
   },
   "backend/tests/domain/programs/test_arrangement.py": {
-    "mtime": 1790923889.697173,
-    "ast_hash": "50ab87235fb0799a0fe2a19401ad998c",
+    "mtime": 1790931514.8019702,
+    "ast_hash": "e371e3f89b45ad47b0b45e1239d62995",
     "semantic_hash": ""
   },
   "frontend/src/features/program-builder/ui/arrange-dialog.tsx": {
     "mtime": 1790924917.5030344,
     "ast_hash": "8329ff5cd2fe60713cd3fc255277e64d",
+    "semantic_hash": ""
+  },
+  "backend/apps/programs/management/__init__.py": {
+    "mtime": 1790930103.2413957,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "backend/apps/programs/management/commands/__init__.py": {
+    "mtime": 1790930103.2413957,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "backend/apps/programs/management/commands/seed_festival.py": {
+    "mtime": 1790931539.0936637,
+    "ast_hash": "bc4990982719abc535f1cf09f743dc26",
     "semantic_hash": ""
   }
 }
