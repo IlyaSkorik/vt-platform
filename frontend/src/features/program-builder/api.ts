@@ -17,6 +17,7 @@ import { type ApiError, apiClient, saveAuthenticatedDownload, toApiError } from 
 
 import type {
   AddBlockInput,
+  ArrangeProgramInput,
   ColumnKey,
   CreateProgramInput,
   CreateShareInput,
@@ -182,6 +183,23 @@ export function useAddPerformance(
 export function useFillProgram(programId: string): UseMutationResult<Program, ApiError, void> {
   return useProgramMutation<void>(() =>
     request<Envelope<Program>>(`staff/programs/${programId}/items/fill`, { method: "post" }),
+  );
+}
+
+/**
+ * Build the whole running order from rules, replacing whatever stood there.
+ *
+ * Sending `undefined` is the «Пересобрать» button: an empty body tells the backend to
+ * reuse the rules the programme already carries, so no form has to be shown.
+ */
+export function useArrangeProgram(
+  programId: string,
+): UseMutationResult<Program, ApiError, ArrangeProgramInput | undefined> {
+  return useProgramMutation<ArrangeProgramInput | undefined>((input) =>
+    request<Envelope<Program>>(`staff/programs/${programId}/items/arrange`, {
+      method: "post",
+      json: input ?? {},
+    }),
   );
 }
 

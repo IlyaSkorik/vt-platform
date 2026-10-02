@@ -2,7 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import { formatClock, formatDuration } from "@/shared/lib";
 
-import { itemCell, itemNumber, moveItem, moveItemNextTo, type ProgramItem } from "./model";
+import {
+  type ArrangementSettings,
+  arrangeInput,
+  DEFAULT_ARRANGEMENT,
+  itemCell,
+  itemNumber,
+  moveItem,
+  moveItemNextTo,
+  type ProgramItem,
+} from "./model";
 
 const FORMAT = { clock: formatClock, duration: formatDuration };
 
@@ -213,5 +222,49 @@ describe("itemNumber", () => {
       schedule: { ...anItem().schedule, position: 7 },
     });
     expect(itemNumber(unnumbered)).toBe(7);
+  });
+});
+
+describe("arrangeInput", () => {
+  function settings(overrides: Partial<ArrangementSettings> = {}): ArrangementSettings {
+    return { ...DEFAULT_ARRANGEMENT, ...overrides };
+  }
+
+  it("omits the break entirely when no rule fires", () => {
+    // A break the generator will never insert is not a setting, it is noise on the wire.
+    const input = arrangeInput(settings({ breakRule: "NONE" }));
+    expect(input.breakTitle).toBeUndefined();
+    expect(input.breakDurationSeconds).toBeUndefined();
+    expect(input.breakAfterItems).toBeUndefined();
+  });
+
+  it("sends only the interval the chosen rule reads", () => {
+    const byCount = arrangeInput(settings({ breakRule: "EVERY_COUNT", breakAfterItems: 12 }));
+    expect(byCount.breakAfterItems).toBe(12);
+    expect(byCount.breakAfterSeconds).toBeUndefined();
+
+    const byDuration = arrangeInput(
+      settings({ breakRule: "EVERY_DURATION", breakAfterSeconds: 5400 }),
+    );
+    expect(byDuration.breakAfterSeconds).toBe(5400);
+    expect(byDuration.breakAfterItems).toBeUndefined();
+  });
+
+  it("switches a service block on by naming it", () => {
+    const off = arrangeInput(settings({ openingTitle: null }));
+    expect(off.openingTitle).toBeUndefined();
+    expect(off.openingDurationSeconds).toBeUndefined();
+
+    const on = arrangeInput(settings({ openingTitle: "Открытие", openingDurationSeconds: 600 }));
+    expect(on).toMatchObject({ openingTitle: "Открытие", openingDurationSeconds: 600 });
+  });
+
+  it("keeps the grouping order, because the order is the shape of the day", () => {
+    const input = arrangeInput(settings({ grouping: ["AGE_CATEGORY", "NOMINATION"] }));
+    expect(input.grouping).toEqual(["AGE_CATEGORY", "NOMINATION"]);
+  });
+
+  it("always states the repeat gap, so turning it off is an instruction too", () => {
+    expect(arrangeInput(settings({ repeatGap: 0 })).repeatGap).toBe(0);
   });
 });

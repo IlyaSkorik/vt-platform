@@ -15,6 +15,7 @@ import {
   useAddBlock,
   useAddColumn,
   useAddPerformance,
+  useArrangeProgram,
   useCreateProgram,
   useCreateShare,
   useEditItem,
@@ -44,6 +45,7 @@ vi.mock("@/features/program-builder", async (importOriginal) => ({
   useCreateProgram: vi.fn(),
   useUpdateProgram: vi.fn(),
   useAddPerformance: vi.fn(),
+  useArrangeProgram: vi.fn(),
   useAddBlock: vi.fn(),
   useEditItem: vi.fn(),
   useFillProgram: vi.fn(),
@@ -104,6 +106,7 @@ const updateProgram = vi.fn();
 const createShare = vi.fn();
 const addPerformance = vi.fn();
 const fillProgram = vi.fn();
+const arrangeProgram = vi.fn();
 const removeItem = vi.fn();
 const removeShare = vi.fn();
 const editItem = vi.fn();
@@ -174,6 +177,8 @@ function aProgram(overrides: Partial<Program> = {}): Program {
     numbersFrozenAt: "2026-08-01T09:00:00Z",
     totalSeconds: 460,
     endsAt: "2026-08-01T10:07:40Z",
+    // Built by hand, like every programme that predates the generator.
+    arrangement: null,
     createdAt: "2026-08-01T09:00:00Z",
     updatedAt: "2026-08-01T09:00:00Z",
     version: 3,
@@ -237,6 +242,7 @@ function stub(
   vi.mocked(useAddBlock).mockReturnValue(mutation(addBlock));
   vi.mocked(useEditItem).mockReturnValue(mutation(editItem));
   vi.mocked(useFillProgram).mockReturnValue(mutation(fillProgram));
+  vi.mocked(useArrangeProgram).mockReturnValue(mutation(arrangeProgram));
   vi.mocked(useRemoveItem).mockReturnValue(mutation(removeItem));
   vi.mocked(useReorderItems).mockReturnValue(mutation(reorder));
   vi.mocked(useRenumberItems).mockReturnValue(mutation(renumber));
@@ -269,6 +275,7 @@ beforeEach(() => {
     createShare,
     addPerformance,
     fillProgram,
+    arrangeProgram,
     removeItem,
     removeShare,
     editItem,
@@ -1177,5 +1184,81 @@ describe("StaffProgramPage — collecting the video material", () => {
     await waitFor(() =>
       expect(toast.error).toHaveBeenCalledWith("Не удалось собрать архив медиафайлов"),
     );
+  });
+});
+
+describe("StaffProgramPage — автосоставление", () => {
+  /** A programme that has not been published yet: the only one that may be rebuilt. */
+  function draft(overrides: Partial<Program> = {}): Program {
+    return aProgram({ numbersFrozen: false, numbersFrozenAt: null, ...overrides });
+  }
+
+  it("отправляет правила, выбранные в форме", async () => {
+    stub(draft());
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: /Собрать программу/ }));
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Собрать программу" }));
+
+    expect(arrangeProgram).toHaveBeenCalledTimes(1);
+    expect(arrangeProgram.mock.calls[0]?.[0]).toMatchObject({
+      grouping: ["NOMINATION", "DISCIPLINE", "AGE_CATEGORY"],
+      orderWithinGroup: "AGE_ASC",
+      breakRule: "NONE",
+    });
+  });
+
+  it("порядок признаков группировки — это и есть форма дня, и его можно менять", async () => {
+    stub(draft());
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: /Собрать программу/ }));
+    const dialog = await screen.findByRole("dialog");
+    const rows = within(dialog).getAllByTestId("arrange-axis");
+    // Возрастная категория стоит третьей; поднимаем её на вторую строку.
+    await userEvent.click(within(rows[2] as HTMLElement).getByRole("button", { name: "Выше" }));
+    await userEvent.click(within(dialog).getByRole("button", { name: "Собрать программу" }));
+
+    expect(arrangeProgram.mock.calls[0]?.[0]).toMatchObject({
+      grouping: ["NOMINATION", "AGE_CATEGORY", "DISCIPLINE"],
+    });
+  });
+
+  it("«Пересобрать» повторяет сохранённые правила без формы", async () => {
+    // Пересобирают чаще, чем собирают впервые: заявки идут до последнего дня.
+    stub(
+      draft({
+        arrangement: {
+          grouping: ["NOMINATION"],
+          orderWithinGroup: "TITLE",
+          breakRule: "NONE",
+          breakAfterSeconds: 0,
+          breakAfterItems: 0,
+          breakTitle: null,
+          breakDurationSeconds: null,
+          repeatGap: 3,
+          openingTitle: null,
+          openingDurationSeconds: null,
+          awardTitle: null,
+          awardDurationSeconds: null,
+        },
+      }),
+    );
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: "Пересобрать" }));
+
+    expect(arrangeProgram).toHaveBeenCalledTimes(1);
+    expect(arrangeProgram.mock.calls[0]?.[0]).toBeUndefined();
+  });
+
+  it("опубликованную программу пересобрать нельзя", async () => {
+    // Номера уже названы участникам, а пересборка выдала бы слоты заново.
+    stub(aProgram({ numbersFrozen: true }));
+    await renderPage();
+
+    expect(screen.getByRole("button", { name: /Собрать программу/ })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Пересобрать" })).not.toBeInTheDocument();
   });
 });
