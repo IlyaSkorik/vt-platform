@@ -35,11 +35,13 @@ from .exceptions import (
     PerformanceAlreadyInProgramError,
     ProgramColumnNotFoundError,
     ProgramItemNotFoundError,
+    ProgramNumbersFrozenError,
     ProgramShareNotFoundError,
     ReorderMismatchError,
 )
 from .value_objects import (
     DEFAULT_PUBLIC_COLUMNS,
+    ArrangementSettings,
     CellValue,
     ColumnRef,
     ColumnTitle,
@@ -386,6 +388,10 @@ class Program:
     _numbers_frozen_at: datetime | None = None
     _deleted_at: datetime | None = None
     _version: int = 1
+    #: The rules the running order was last generated from, kept so "пересобрать" is one
+    #: button rather than a settings form refilled from memory. ``None`` for a programme
+    #: that was only ever built by hand.
+    _arrangement: ArrangementSettings | None = None
     #: The version this aggregate was loaded at - the optimistic-concurrency
     #: pre-image the repository writes against. Transient (never persisted).
     _initial_version: int = 1
@@ -442,6 +448,7 @@ class Program:
         numbers_frozen_at: datetime | None = None,
         deleted_at: datetime | None = None,
         version: int = 1,
+        arrangement: ArrangementSettings | None = None,
     ) -> Program:
         """Reconstruct the aggregate from persistence (no re-validation)."""
         return cls(
@@ -461,6 +468,7 @@ class Program:
             _numbers_frozen_at=numbers_frozen_at,
             _deleted_at=deleted_at,
             _version=version,
+            _arrangement=arrangement,
             _initial_version=version,
         )
 
@@ -491,6 +499,11 @@ class Program:
     @property
     def buffer(self) -> TimeBuffer:
         return self._buffer
+
+    @property
+    def arrangement(self) -> ArrangementSettings | None:
+        """The rules this running order was last generated from, if it ever was."""
+        return self._arrangement
 
     @property
     def items(self) -> tuple[ProgramItem, ...]:
@@ -807,6 +820,26 @@ class Program:
         self._items = [by_id[item_id] for item_id in wanted]
         if not self.numbers_frozen:
             self._renumber_following_order()
+        self._touch(now)
+
+    def rebuild(self, items: Sequence[ProgramItem], *, settings: ArrangementSettings, now: datetime) -> None:
+        """Replace the whole running order with a generated one, and remember its rules.
+
+        Regeneration is a replacement, not a merge: the organizer asked for the day the
+        rules describe, and an order half-made by hand and half by rule is one neither
+        of them can explain. Every slot is new, so everything a slot carried by hand goes
+        with it - a break moved by eye, a resized act, a filled-in "Микрофон" cell. The
+        columns themselves stay; their values do not. That is the trade the "пересобрать"
+        button makes, and the dialog says so before it is taken.
+
+        Refused outright once the numbers are frozen: they have been published, and no
+        set of rules is worth telling a participant their number changed.
+        """
+        if self.numbers_frozen:
+            raise ProgramNumbersFrozenError("Программа уже опубликована — номера закреплены, пересобрать её нельзя.")
+        self._items = list(items)
+        self._renumber_following_order()
+        self._arrangement = settings
         self._touch(now)
 
     def freeze_numbers(self, *, now: datetime) -> None:

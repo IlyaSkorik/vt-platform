@@ -22,17 +22,31 @@ from typing import Final
 from .exceptions import InvalidProgramDataError
 
 __all__ = [
+    "BREAK_AFTER_ITEMS_MAX",
     "BUFFER_MAX_SECONDS",
     "CELL_VALUE_MAX",
     "COLUMN_LABELS",
     "CUSTOM_COLUMN_PREFIX",
+    "DEFAULT_AWARD_SECONDS",
+    "DEFAULT_AWARD_TITLE",
+    "DEFAULT_BREAK_SECONDS",
+    "DEFAULT_BREAK_TITLE",
+    "DEFAULT_GROUPING",
+    "DEFAULT_OPENING_SECONDS",
+    "DEFAULT_OPENING_TITLE",
     "DEFAULT_PUBLIC_COLUMNS",
     "DURATION_MAX_SECONDS",
+    "REPEAT_GAP_MAX",
+    "ArrangementBlock",
+    "ArrangementSettings",
+    "BreakRule",
     "CellValue",
     "ColumnRef",
     "ColumnTitle",
+    "GroupingAxis",
     "ItemDuration",
     "ItemTitle",
+    "PerformanceOrder",
     "ProgramColumn",
     "ProgramItemKind",
     "ProgramItemProgress",
@@ -460,3 +474,153 @@ class PublicSlug:
 
     def __str__(self) -> str:
         return self.value
+
+
+class GroupingAxis(StrEnum):
+    """An axis a generated running order may be grouped along.
+
+    These are the facets a festival day is actually blocked out by: the audience sees
+    all of «Эстрадный вокал» together, and within it all of «7-9 лет» together. The
+    organizer picks the order of the axes, and that order *is* the shape of the day -
+    grouping by age then nomination builds a different festival from the reverse.
+
+    Every axis is a facet the Applications context already carries on an entry, so
+    grouping needs no new data from anybody: see
+    :class:`~apps.programs.application.interfaces.CatalogPerformance`.
+    """
+
+    NOMINATION = "NOMINATION"
+    DISCIPLINE = "DISCIPLINE"
+    AGE_CATEGORY = "AGE_CATEGORY"
+    PARTICIPANT_GROUP = "PARTICIPANT_GROUP"
+    PARTICIPATION_FORMAT = "PARTICIPATION_FORMAT"
+    ORGANIZATION = "ORGANIZATION"
+
+
+class PerformanceOrder(StrEnum):
+    """How acts are ordered *inside* one group.
+
+    Grouping decides which acts stand together; this decides who opens the group. The
+    choice is a stage decision, not a data one - "младшие вперёд" warms a hall up,
+    "короткие вперёд" keeps the first half moving, and alphabetical is what a jury
+    chairman asks for when nobody wants to be seen choosing.
+    """
+
+    AGE_ASC = "AGE_ASC"
+    AGE_DESC = "AGE_DESC"
+    TITLE = "TITLE"
+    PARTICIPANT = "PARTICIPANT"
+    ORGANIZATION = "ORGANIZATION"
+    DURATION_ASC = "DURATION_ASC"
+    DURATION_DESC = "DURATION_DESC"
+
+
+class BreakRule(StrEnum):
+    """When the generator puts a break into the running order.
+
+    One rule, not a set of them, because breaks that fire on two triggers at once are
+    the thing nobody can predict from the settings screen. An отделение is simply what
+    lies between two breaks, so "перерыв каждые 90 минут" and "отделение не длиннее
+    90 минут" are the same instruction said twice - and only said once here.
+    """
+
+    #: No breaks at all: a short nomination runs straight through.
+    NONE = "NONE"
+    #: A break once the acts since the last one would pass ``break_after_seconds``.
+    EVERY_DURATION = "EVERY_DURATION"
+    #: A break after every ``break_after_items`` acts.
+    EVERY_COUNT = "EVERY_COUNT"
+    #: A break wherever the *first* grouping axis changes value.
+    BETWEEN_GROUPS = "BETWEEN_GROUPS"
+
+
+#: What a generated program groups by when the organizer states nothing: the three
+#: axes every festival programme is read along.
+DEFAULT_GROUPING: Final[tuple[GroupingAxis, ...]] = (
+    GroupingAxis.NOMINATION,
+    GroupingAxis.DISCIPLINE,
+    GroupingAxis.AGE_CATEGORY,
+)
+
+#: The ceiling on that gap. Beyond this the constraint stops being "дайте
+#: переодеться" and starts rewriting the running order around one participant.
+REPEAT_GAP_MAX: Final = 20
+
+#: The most acts a single generated отделение may hold before a break is forced in.
+BREAK_AFTER_ITEMS_MAX: Final = 500
+
+#: What a generated service block is called and how long it lasts when the organizer
+#: turned it on but did not bother to name it. Festival vocabulary, so the common case
+#: is one checkbox rather than a title and a duration typed out every time.
+DEFAULT_BREAK_TITLE: Final = "Перерыв"
+DEFAULT_BREAK_SECONDS: Final = 10 * 60
+DEFAULT_OPENING_TITLE: Final = "Открытие"
+DEFAULT_OPENING_SECONDS: Final = 15 * 60
+DEFAULT_AWARD_TITLE: Final = "Награждение"
+DEFAULT_AWARD_SECONDS: Final = 30 * 60
+
+
+@dataclass(frozen=True, slots=True)
+class ArrangementBlock:
+    """A service block the generator inserts on its own (a break, an opening, an award).
+
+    Title and length only: which *kind* of block it becomes is decided by where the
+    generator puts it, not by the setting.
+    """
+
+    title: ItemTitle
+    duration: ItemDuration
+
+    @classmethod
+    def of(cls, title: str, *, seconds: int) -> ArrangementBlock:
+        """Build a block from the raw title and length a settings form sends."""
+        return cls(title=ItemTitle(title), duration=ItemDuration(seconds))
+
+
+@dataclass(frozen=True, slots=True)
+class ArrangementSettings:
+    """The rules one generated programme was built from.
+
+    Kept on the aggregate rather than passed and forgotten, because a running order is
+    regenerated far more often than it is first built: entries keep arriving until the
+    day before, and "пересобрать по тем же правилам" has to be one button rather than
+    a settings form refilled from memory.
+
+    The defaults are a working festival programme on their own - grouped the way a
+    programme is read, youngest first, no breaks and no service blocks - so a client
+    may send nothing at all and still get something usable.
+    """
+
+    grouping: tuple[GroupingAxis, ...] = DEFAULT_GROUPING
+    order_within_group: PerformanceOrder = PerformanceOrder.AGE_ASC
+    break_rule: BreakRule = BreakRule.NONE
+    #: The length of acts after which ``EVERY_DURATION`` fires. Ignored by other rules.
+    break_after_seconds: int = 0
+    #: The number of acts after which ``EVERY_COUNT`` fires. Ignored by other rules.
+    break_after_items: int = 0
+    #: The break itself. Required by every rule but ``NONE``.
+    break_block: ArrangementBlock | None = None
+    #: How many slots must separate two acts of the same participant; 0 turns it off.
+    #: Deliberately about *participants* only - a studio brings twenty acts and a
+    #: teacher a dozen, so spacing those apart would be spacing out the whole day.
+    repeat_gap: int = 0
+    #: An opening block at the very top of the day, if the festival has one.
+    opens_with: ArrangementBlock | None = None
+    #: An award ceremony at the very bottom, if the festival hands out diplomas on stage.
+    closes_with: ArrangementBlock | None = None
+
+    def __post_init__(self) -> None:
+        if len(set(self.grouping)) != len(self.grouping):
+            raise InvalidProgramDataError("Каждый признак группировки можно выбрать только один раз.")
+        if not isinstance(self.repeat_gap, int) or isinstance(self.repeat_gap, bool) or self.repeat_gap < 0:
+            raise InvalidProgramDataError("Интервал между номерами одного участника не может быть отрицательным.")
+        if self.repeat_gap > REPEAT_GAP_MAX:
+            raise InvalidProgramDataError(f"Интервал между номерами одного участника — не больше {REPEAT_GAP_MAX}.")
+        if self.break_rule is not BreakRule.NONE and self.break_block is None:
+            raise InvalidProgramDataError("Укажите название и длительность перерыва.")
+        if self.break_rule is BreakRule.EVERY_DURATION and self.break_after_seconds <= 0:
+            raise InvalidProgramDataError("Укажите, через сколько минут ставить перерыв.")
+        if self.break_rule is BreakRule.EVERY_DURATION and self.break_after_seconds > DURATION_MAX_SECONDS:
+            raise InvalidProgramDataError(f"Отделение — не длиннее {DURATION_MAX_SECONDS // 3600} часов.")
+        if self.break_rule is BreakRule.EVERY_COUNT and not 0 < self.break_after_items <= BREAK_AFTER_ITEMS_MAX:
+            raise InvalidProgramDataError(f"Укажите, через сколько номеров ставить перерыв (до {BREAK_AFTER_ITEMS_MAX}).")
