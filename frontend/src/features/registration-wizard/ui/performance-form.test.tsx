@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
@@ -178,13 +179,20 @@ function renderForm({
   mixedAge?: boolean;
   commentEnabled?: boolean;
 } = {}): void {
+  // The attached participants read their organization straight from the registry, so
+  // the tree needs a query client even though this suite stubs every wizard hook.
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   render(
-    <MemoryRouter>
-      <PerformanceForm
-        submissionId="01900000-0000-7000-8000-00000000000a"
-        registration={aRegistration({ mixedAge, commentEnabled })}
-      />
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <PerformanceForm
+          submissionId="01900000-0000-7000-8000-00000000000a"
+          registration={aRegistration({ mixedAge, commentEnabled })}
+        />
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 

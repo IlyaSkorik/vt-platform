@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Archive, ArrowLeft, Medal, Plus, Search, Trash2, UserPen } from "lucide-react";
+import { Archive, ArrowLeft, Building2, Medal, Plus, Search, Trash2, UserPen } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
@@ -20,8 +20,9 @@ import { recordOwnConsent } from "@/shared/api/generated/identity/identity";
 import { ROUTES } from "@/shared/config";
 import { ConsentCheckbox, participantConsent } from "@/shared/consents";
 import { useAutosave, useMediaQuery } from "@/shared/hooks";
-import { formatPersonName } from "@/shared/lib";
+import { cn, formatPersonName } from "@/shared/lib";
 import {
+  Alert,
   Avatar,
   Badge,
   Button,
@@ -535,6 +536,10 @@ export function ParticipantsProfilePage(): React.JSX.Element {
   // by itself, instead of carrying a tick from a text that is no longer on screen.
   const [acceptedConsentCode, setAcceptedConsentCode] = useState<string | null>(null);
   const [consentMissing, setConsentMissing] = useState(false);
+  // The last catch for the organization nobody ticked. Set on the first press of
+  // «Создать участника», cleared by the fact rather than by hand: pick one and the
+  // warning has nothing left to warn about.
+  const [organizationWarningShown, setOrganizationWarningShown] = useState(false);
   // Creating a participant reads as a form with tabs, and the tab that finishes it is
   // not the one it opens on: people filled in the name, found no button under it and
   // stopped there. So creation is walked through — «Далее» carries them to the step
@@ -726,6 +731,10 @@ export function ParticipantsProfilePage(): React.JSX.Element {
   // comparison on a render that was happening anyway.
   const activeConsent = participantConsent(values);
   const consentGiven = acceptedConsentCode === activeConsent.code;
+  // Only worth asking about when there was something to pick: an empty directory makes
+  // «вы не выбрали организацию» a reproach for a step that does not exist yet.
+  const organizationMissing =
+    (organizationsQuery.data ?? []).length > 0 && selectedOrganizations.length === 0;
 
   /** What the first step is answering: who this is. A collective is named, a person is named and dated. */
   const identityFields = (): Array<"collectiveName" | "firstName" | "lastName" | "birthDate"> =>
@@ -913,6 +922,15 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                       }
                     }}
                   />
+                  {/* Asked once, and only ever asked: the organization is optional, so
+                      this stops the press rather than the save. The second press goes
+                      through — and says in its own label what it is about to do. */}
+                  {organizationWarningShown && organizationMissing ? (
+                    <Alert variant="warning">
+                      Организация не выбрана — в дипломе не будет её названия. Отметьте её в списке
+                      выше или создайте участника без организации.
+                    </Alert>
+                  ) : null}
                   <div className="flex justify-between gap-2">
                     <Button variant="outline" onClick={() => setCreateStep("general")}>
                       Назад
@@ -927,14 +945,26 @@ export function ParticipantsProfilePage(): React.JSX.Element {
                           setCreateStep("general");
                           return;
                         }
+                        // Both are raised in one press: fixing the consent only to be
+                        // stopped again by the organization is two round-trips through a
+                        // form the person is already looking at.
+                        const needsOrganizationConfirmation =
+                          organizationMissing && !organizationWarningShown;
                         if (!consentGiven) {
                           setConsentMissing(true);
+                        }
+                        if (needsOrganizationConfirmation) {
+                          setOrganizationWarningShown(true);
+                        }
+                        if (!consentGiven || needsOrganizationConfirmation) {
                           return;
                         }
                         createMutation.mutate(form.getValues());
                       }}
                     >
-                      Создать участника
+                      {organizationWarningShown && organizationMissing
+                        ? "Создать без организации"
+                        : "Создать участника"}
                     </Button>
                   </div>
                 </CardFooter>
@@ -1183,7 +1213,7 @@ function OrganizationPicker({
     return (
       <EmptyState
         title="В справочнике пока нет организаций"
-        description="Организацию указывать необязательно. Если участник кого-то представляет, добавьте её один раз — дальше она будет подставляться сама."
+        description="Организацию указывать необязательно. Если участник кого-то представляет, добавьте её один раз — дальше она останется в справочнике, и её нужно будет только отметить."
         action={
           <Button onClick={onAdd}>
             <Plus aria-hidden="true" /> Добавить организацию
@@ -1193,8 +1223,38 @@ function OrganizationPicker({
     );
   }
 
+  const selectedNames = selectedOrganizations
+    .map((item) => ({
+      item,
+      organization: organizations.find((candidate) => candidate.id === item.organizationId),
+    }))
+    .filter((entry) => entry.organization != null)
+    .map((entry) => `${entry.organization?.name}${entry.item.isPrimary ? " (основная)" : ""}`);
+
   return (
     <div className="space-y-3">
+      {/* Nothing-selected used to look exactly like something-selected: the same grid of
+          cards, the difference a 16px tick somewhere inside one of them. People read the
+          directory as «организация уже указана» and saved without one. This line is the
+          single place the answer is stated outright. */}
+      <div
+        className={cn(
+          "flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border px-3 py-2 text-sm",
+          selectedNames.length === 0
+            ? "border-input border-dashed text-muted-foreground"
+            : "border-primary/40 bg-primary/5",
+        )}
+      >
+        <Building2 className="size-4 shrink-0" aria-hidden="true" />
+        {selectedNames.length === 0 ? (
+          <span>Организация не выбрана — отметьте её в списке ниже</span>
+        ) : (
+          <>
+            <span className="text-muted-foreground">Выбрано:</span>
+            <span className="font-medium">{selectedNames.join(", ")}</span>
+          </>
+        )}
+      </div>
       <Input
         value={search}
         onChange={(event) => setSearch(event.target.value)}
@@ -1219,58 +1279,84 @@ function OrganizationPicker({
           );
           const typeLabel =
             organizationTypeOptions.find((item) => item.value === organization.type)?.label ?? "—";
+          const toggle = (): void => {
+            if (selected != null) {
+              onChange(
+                selectedOrganizations.filter((item) => item.organizationId !== organization.id),
+              );
+              return;
+            }
+            onChange([
+              ...selectedOrganizations,
+              { organizationId: organization.id, isPrimary: selectedOrganizations.length === 0 },
+            ]);
+          };
           return (
-            <Card key={organization.id}>
+            // The whole card is the control, not the tick inside it. People clicked the
+            // organization's name — the biggest, most obvious thing in the card — got no
+            // response, and read that as «уже выбрана». The checkbox stays as the state
+            // indicator it always was, but it no longer carries the click on its own.
+            <Card
+              key={organization.id}
+              role="checkbox"
+              aria-checked={selected != null}
+              aria-label={organization.name}
+              tabIndex={0}
+              onClick={toggle}
+              onKeyDown={(event) => {
+                if (event.key === " " || event.key === "Enter") {
+                  event.preventDefault();
+                  toggle();
+                }
+              }}
+              className={cn(
+                "cursor-pointer outline-none transition-colors",
+                "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                selected != null
+                  ? "border-primary bg-primary/5"
+                  : "hover:border-input hover:bg-muted/40",
+              )}
+            >
               <CardContent className="space-y-2 p-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    className="pointer-events-none mt-0.5"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    checked={selected != null}
+                  />
+                  <div className="min-w-0 flex-1">
                     <p className="font-medium">{organization.name}</p>
                     <p className="text-muted-foreground text-xs">
                       {typeLabel}
                       {organization.city ? ` · ${organization.city}` : ""}
                     </p>
                   </div>
-                  {selected?.isPrimary ? <Badge variant="primary">Основная</Badge> : null}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    label="Выбрать"
-                    checked={selected != null}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        onChange([
-                          ...selectedOrganizations,
-                          {
-                            organizationId: organization.id,
-                            isPrimary: selectedOrganizations.length === 0,
-                          },
-                        ]);
-                        return;
-                      }
-                      onChange(
-                        selectedOrganizations.filter(
-                          (item) => item.organizationId !== organization.id,
-                        ),
-                      );
-                    }}
-                  />
-                  {selected != null ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        onChange(
-                          selectedOrganizations.map((item) => ({
-                            ...item,
-                            isPrimary: item.organizationId === organization.id,
-                          })),
-                        )
-                      }
-                    >
-                      Сделать основной
-                    </Button>
+                  {selected?.isPrimary ? (
+                    <Badge className="shrink-0" variant="primary">
+                      Основная
+                    </Badge>
                   ) : null}
                 </div>
+                {selected != null && !selected.isPrimary ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    // Inside a card that is itself the toggle: without this, making an
+                    // organization primary would untick it in the same click.
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onChange(
+                        selectedOrganizations.map((item) => ({
+                          ...item,
+                          isPrimary: item.organizationId === organization.id,
+                        })),
+                      );
+                    }}
+                  >
+                    Сделать основной
+                  </Button>
+                ) : null}
               </CardContent>
             </Card>
           );
@@ -1418,8 +1504,8 @@ function OrganizationDirectoryDialog({
         <DialogHeader>
           <DialogTitle>Личный справочник организаций</DialogTitle>
           <DialogDescription>
-            Ваш собственный список: добавленная один раз организация подставляется всем участникам.
-            Здесь её можно изменить или убрать в архив.
+            Ваш собственный список: добавленная один раз организация остаётся здесь — следующему
+            участнику её достаточно отметить. Здесь её можно изменить или убрать в архив.
           </DialogDescription>
         </DialogHeader>
 
@@ -1468,7 +1554,7 @@ function OrganizationDirectoryDialog({
                   description={
                     search.trim().length > 0
                       ? "Измените поисковый запрос."
-                      : "Добавьте первую образовательную организацию — дальше она будет подставляться сама."
+                      : "Добавьте первую образовательную организацию — дальше она останется в этом списке."
                   }
                   {...(search.trim().length === 0 && !sideBySide
                     ? { action: <Button onClick={startCreating}>Добавить организацию</Button> }
