@@ -4530,8 +4530,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/registration-wizard/ui/performance-form.tsx": {
-    "mtime": 1790326816.0987797,
-    "ast_hash": "79300971cc8611e45600295249c47963",
+    "mtime": 1791014671.5698175,
+    "ast_hash": "a96fe6272add4e28377c733c511ec066",
     "semantic_hash": ""
   },
   "frontend/src/features/registration-wizard/ui/teacher-picker.tsx": {
@@ -4615,8 +4615,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/participants/index.tsx": {
-    "mtime": 1790683979.759892,
-    "ast_hash": "d008e8e031d49eecee9c5412994de421",
+    "mtime": 1791014730.555845,
+    "ast_hash": "1015ff1a2ded4911ffa5510298caebf9",
     "semantic_hash": ""
   },
   "frontend/src/pages/placeholder/index.tsx": {
@@ -7990,8 +7990,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/registration-wizard/ui/performance-form.test.tsx": {
-    "mtime": 1788978969.6633408,
-    "ast_hash": "ce6d1218a191066bc89ce71168ca95c1",
+    "mtime": 1791014800.0972733,
+    "ast_hash": "3ae4f2b7ac747872a4bec28731094bac",
     "semantic_hash": ""
   },
   "backend/apps/programs/__init__.py": {
@@ -11505,8 +11505,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/participants/index.test.tsx": {
-    "mtime": 1790684045.478619,
-    "ast_hash": "4d765b9598eba05cd93d9491dbc40f0f",
+    "mtime": 1791014901.2592928,
+    "ast_hash": "d0bd871cbb896d43e31f9be7e6d599f5",
     "semantic_hash": ""
   },
   "bot/pyproject.toml": {
