@@ -22,6 +22,17 @@ export const badgeVariants = cva(
         info: "border-transparent bg-info-surface text-info",
         outline: "border-border bg-background text-foreground",
         neutral: "border-transparent bg-muted text-muted-foreground",
+        /**
+         * The brand chip: a transparent capsule outlined in `светлый акцент`, cut
+         * to the brand's 15px corner rather than fully rounded.
+         *
+         * Not a status, which is why it is here beside `outline` rather than in
+         * that family — it labels what a thing *is* (a nomination, a genre, a
+         * format), so it carries no semantic colour to be read as good or bad.
+         * The two-pixel line is what makes it legible as a chip at all once the
+         * fill is gone; at one pixel against a pale page it reads as a text box.
+         */
+        brand: "rounded-brand border-2 border-brand-line-soft bg-transparent text-foreground",
       },
       size: {
         sm: "h-5 px-2 text-xs [&_svg]:size-3",
