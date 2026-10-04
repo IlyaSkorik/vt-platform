@@ -53,18 +53,35 @@ export function HomeFestivalCard({ festival, to }: HomeFestivalCardProps): React
     // cursor is inside again — and the card shivers for as long as you hold the
     // pointer there. A still box the size of the slot breaks the cycle, because
     // nothing the lift does can change what the pointer is over.
-    <div className="group/tile h-full">
+    // 250px wide and centred in its slide on the phone, as the frame draws it —
+    // a card the full width of a 375px screen is a poster, not a tile, and the
+    // one next to it would start showing past the edge.
+    <div className="group/tile mx-auto h-full w-full max-w-[250px] md:max-w-none">
       <Link
         to={to}
-        className="flex h-full flex-col gap-3 rounded-brand border-2 border-brand-line bg-card p-3.5 outline-none transition-[box-shadow,background-color,transform] duration-[var(--duration-slow)] ease-decelerate focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 group-hover/tile:shadow-glow-strong group-hover/tile:-translate-y-0.5 dark:bg-transparent dark:group-hover/tile:bg-brand-line-soft/5"
+        className="flex h-full flex-col gap-2 rounded-brand md:gap-3 border-2 border-brand-line bg-card p-[11px] outline-none md:p-3.5 transition-[box-shadow,background-color,transform] duration-[var(--duration-slow)] ease-decelerate focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 group-hover/tile:shadow-glow-strong group-hover/tile:-translate-y-0.5 dark:bg-transparent dark:group-hover/tile:bg-brand-line-soft/5"
       >
-        {/* The poster does not zoom under the pointer. It is cropped to the card's
-          aspect already, so scaling pushed the subject out of frame on exactly
-          the tiles where the subject was the point; the card's own lift and halo
-          are enough to say the tile is live. */}
-        <div className="aspect-[299/180] overflow-hidden rounded-brand bg-muted dark:bg-on-scrim/9">
+        {/* A shade wider on the phone — 224×125 against the desktop's 299×180 —
+          because the frame crops it that way rather than scaling one ratio down.
+          Either way the poster does not zoom under the pointer: it is cropped to
+          the card already, so scaling pushed the subject out of frame on exactly
+          the tiles where the subject was the point, and the card's own lift and
+          halo are enough to say the tile is live. */}
+        <div className="aspect-[224/125] overflow-hidden rounded-brand bg-muted md:aspect-[299/180] dark:bg-on-scrim/9">
           {cover ? (
-            <PosterImage src={cover} alt={`Афиша фестиваля ${festival.title}`} loading="lazy" />
+            <PosterImage
+              src={cover}
+              alt={`Афиша фестиваля ${festival.title}`}
+              loading="lazy"
+              // `cover`, against `PosterImage`'s own `contain`. That default is
+              // right in the catalogue, where a poster is a document and cutting
+              // its edges can cut the text printed on it. Here the tile is an
+              // advertisement: the frame draws a filled rectangle, and `contain`
+              // left bars down the sides of every cover whose ratio was not the
+              // box's — which is most of them, since the box is a different shape
+              // in the two layouts.
+              imageClassName="object-cover"
+            />
           ) : (
             <div className="flex size-full items-center justify-center px-4 text-center font-heading text-muted-foreground text-xs">
               Афиша скоро появится
@@ -72,7 +89,7 @@ export function HomeFestivalCard({ festival, to }: HomeFestivalCardProps): React
           )}
         </div>
 
-        <h3 className="line-clamp-2 font-heading font-bold text-base text-foreground leading-snug">
+        <h3 className="line-clamp-2 font-heading font-bold text-foreground text-sm leading-snug md:text-base">
           {festival.title}
         </h3>
 
@@ -85,11 +102,11 @@ export function HomeFestivalCard({ festival, to }: HomeFestivalCardProps): React
           are always the same ink and one token moves both: «полупрозрачный
           текст» by day — `#211929` at 40% — and «свет полупрозрачный» at night,
           which is white at 70% over a dark tile rather than a dimmed black. */}
-        <dl className="space-y-1.5 font-heading text-base text-foreground/40 leading-snug dark:text-on-scrim-muted">
+        <dl className="space-y-1 font-heading text-foreground/40 text-sm leading-snug md:space-y-1.5 md:text-base dark:text-on-scrim-muted">
           {place ? (
             <div className="flex items-center gap-2">
               <dt className="shrink-0">
-                <MapPinIcon className="h-5.5 w-4.5" aria-hidden="true" />
+                <MapPinIcon className="h-[19px] w-4 md:h-5.5 md:w-4.5" aria-hidden="true" />
                 <span className="sr-only">Место проведения</span>
               </dt>
               <dd className="truncate">{place}</dd>
@@ -98,7 +115,7 @@ export function HomeFestivalCard({ festival, to }: HomeFestivalCardProps): React
           {period ? (
             <div className="flex items-center gap-2">
               <dt className="shrink-0">
-                <CalendarIcon className="h-5.5 w-4.5" aria-hidden="true" />
+                <CalendarIcon className="h-[19px] w-4 md:h-5.5 md:w-4.5" aria-hidden="true" />
                 <span className="sr-only">Даты проведения</span>
               </dt>
               <dd className="truncate">{period}</dd>
@@ -116,7 +133,8 @@ export function HomeFestivalCard({ festival, to }: HomeFestivalCardProps): React
           <ul className="flex flex-wrap gap-2 pt-1">
             {festival.categories.map((category) => (
               <li key={category}>
-                {/* 26px tall, 12/16. Shape and weight are the `brand` variant's:
+                {/* 21px tall at 10/14 on the phone, 26px at 12/16 on the
+                    desktop. Shape and weight are the `brand` variant's:
                     a 2px outline on the brand's 15px corner, transparent, label
                     in the page's own ink. Only the outline colour is overridden,
                     and only at night — «светлый акцент» `#B196D0` by day,
@@ -126,7 +144,7 @@ export function HomeFestivalCard({ festival, to }: HomeFestivalCardProps): React
                 <Badge
                   variant="brand"
                   size="md"
-                  className="h-6.5 px-2 font-heading font-normal text-xs leading-4 dark:border-brand-control"
+                  className="h-[21px] px-2 font-heading font-normal text-[10px] leading-[14px] md:h-6.5 md:text-xs md:leading-4 dark:border-brand-control"
                 >
                   {category}
                 </Badge>

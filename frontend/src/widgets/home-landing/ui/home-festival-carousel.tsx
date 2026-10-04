@@ -139,6 +139,7 @@ export function HomeFestivalCarousel({
         <CarouselArrow
           direction="prev"
           disabled={atStart}
+          className="hidden md:flex"
           onClick={() => {
             goTo(current - 1);
           }}
@@ -168,10 +169,10 @@ export function HomeFestivalCarousel({
           // beside it and its neighbour's edge falls on the clip boundary — the
           // halo gets its room and the card beyond stays hidden. At 52px
           // between cards there is room for the full 32px the halo wants, so the
-          // real cap here is the page gutter — 16px, 32px from `md` — past which
+          // real cap here is the page gutter — 32px in both layouts — past which
           // the glow would reach outside the container and give the page a
           // horizontal scrollbar of its own.
-          className="-mx-4 -my-10 flex min-w-0 flex-1 snap-x snap-mandatory gap-13 overflow-x-auto scroll-px-4 px-4 py-10 [scrollbar-width:none] md:-mx-8 md:scroll-px-8 md:px-8 [&::-webkit-scrollbar]:hidden"
+          className="-my-10 flex min-w-0 flex-1 snap-x snap-mandatory gap-13 overflow-x-auto py-10 [scrollbar-width:none] md:-mx-8 md:scroll-px-8 md:px-8 [&::-webkit-scrollbar]:hidden"
         >
           {festivals.map((festival) => (
             <li
@@ -190,6 +191,7 @@ export function HomeFestivalCarousel({
         <CarouselArrow
           direction="next"
           disabled={atEnd}
+          className="hidden md:flex"
           onClick={() => {
             goTo(current + 1);
           }}
@@ -197,25 +199,51 @@ export function HomeFestivalCarousel({
       </div>
 
       {pageCount > 1 ? (
-        <ul className="mt-20 flex items-center justify-center gap-2.5" aria-hidden="true">
-          {Array.from({ length: pageCount }, (_, index) => (
-            <li
-              // The dots are positional markers with no identity of their own —
-              // index is the only key they can have, and the list is never
-              // reordered, only resized.
-              // biome-ignore lint/suspicious/noArrayIndexKey: positional markers
-              key={index}
-              // `bg-brand` and not `bg-primary`: «Акцентище» is the lit dot in
-              // both frames, and `--primary` drifts lighter at night. The rail
-              // behind it is the one that changes — `светлый акцент` by day,
-              // «тёмный база ночная» after dark.
-              className={cn(
-                "h-[5px] w-10 transition-colors duration-[var(--duration-fast)] md:w-[50px]",
-                index === current ? "bg-brand" : "bg-brand-track",
-              )}
-            />
-          ))}
-        </ul>
+        // On the phone the paddles live here, either side of the dots, and the
+        // row is the carousel's whole control strip. `justify-between` pushes
+        // them to the page gutter — 32px from each edge, against the frame's 34
+        // — and because the two are the same width that also centres the dots
+        // exactly, without a second centring rule to keep in step with them.
+        //
+        // The dots shrink with the paddles: 20px wide, 4px apart, which is the
+        // frame's 20.57 and 4.12 on the nearest scale steps.
+        <div className="mt-6 flex items-center justify-between gap-6 md:mt-20 md:justify-center md:gap-0">
+          <CarouselArrow
+            direction="prev"
+            disabled={atStart}
+            className="flex md:hidden"
+            onClick={() => {
+              goTo(current - 1);
+            }}
+          />
+          <ul className="flex items-center justify-center gap-1 md:gap-2.5" aria-hidden="true">
+            {Array.from({ length: pageCount }, (_, index) => (
+              <li
+                // The dots are positional markers with no identity of their own —
+                // index is the only key they can have, and the list is never
+                // reordered, only resized.
+                // biome-ignore lint/suspicious/noArrayIndexKey: positional markers
+                key={index}
+                // `bg-brand` and not `bg-primary`: «Акцентище» is the lit dot in
+                // both frames, and `--primary` drifts lighter at night. The rail
+                // behind it is the one that changes — `светлый акцент` by day,
+                // «тёмный база ночная» after dark.
+                className={cn(
+                  "h-[5px] w-5 transition-colors duration-[var(--duration-fast)] md:w-[50px]",
+                  index === current ? "bg-brand" : "bg-brand-track",
+                )}
+              />
+            ))}
+          </ul>
+          <CarouselArrow
+            direction="next"
+            disabled={atEnd}
+            className="flex md:hidden"
+            onClick={() => {
+              goTo(current + 1);
+            }}
+          />
+        </div>
       ) : null}
     </section>
   );
@@ -225,16 +253,24 @@ interface CarouselArrowProps {
   direction: "prev" | "next";
   disabled: boolean;
   onClick: () => void;
+  /** Which row this instance belongs to — beside the track, or under it. */
+  className?: string;
 }
 
 /**
- * One of the two paddles.
+ * One of the two paddles. 70×70 beside the track on the desktop, 54×54 under it
+ * on the phone, where the frame moves the pair down to flank the dots.
  *
- * Hidden below `md` rather than merely shrunk: at one card per screen the track
- * is a swipe, and a pair of 54px paddles would eat a third of the card's width
- * to do what the thumb already does. The dots still report where you are.
+ * Rendered twice and shown once, rather than moved by CSS: the two positions sit
+ * in different parents, and faking that with `order` or absolute positioning
+ * costs more than a second `<button>` that is `display: none` half the time.
  */
-function CarouselArrow({ direction, disabled, onClick }: CarouselArrowProps): React.JSX.Element {
+function CarouselArrow({
+  direction,
+  disabled,
+  onClick,
+  className,
+}: CarouselArrowProps): React.JSX.Element {
   const Icon = direction === "prev" ? ChevronLeftIcon : ChevronRightIcon;
   return (
     <button
@@ -260,9 +296,12 @@ function CarouselArrow({ direction, disabled, onClick }: CarouselArrowProps): Re
       // `relative z-10` because the track's negative margin reaches back to
       // this button's edge: without it the scroll container can win the hit test
       // along the inner border and swallow the click.
-      className="relative z-10 hidden size-[70px] shrink-0 cursor-pointer select-none items-center justify-center self-center rounded-brand bg-brand-control text-brand-mark outline-none transition-[opacity,background-color] duration-[var(--duration-fast)] hover:bg-brand-line focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-brand-control md:flex"
+      className={cn(
+        "relative z-10 size-[54px] shrink-0 cursor-pointer md:size-[70px] select-none items-center justify-center self-center rounded-brand bg-brand-control text-brand-mark outline-none transition-[opacity,background-color] duration-[var(--duration-fast)] hover:bg-brand-line focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-brand-control",
+        className,
+      )}
     >
-      <Icon className="h-10.5 w-7" aria-hidden="true" />
+      <Icon className="h-8 w-5.5 md:h-10.5 md:w-7" aria-hidden="true" />
     </button>
   );
 }

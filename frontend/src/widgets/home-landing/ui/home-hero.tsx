@@ -29,19 +29,22 @@ export function HomeHero({ authPath }: HomeHeroProps): React.JSX.Element {
           dimming the day plate to stand in for it only ever produced a grey
           version of the wrong image.
 
-          Both are anchored top-right rather than centred. The files are 16:9 and
-          the band almost never is, so `cover` always has something to cut — and
-          centred it cut the two edges that matter: the comet's point at the top
-          and its tail at the right, the one thing in the frame that has to
-          survive. Pinned to that corner the crop falls on the bottom-left, which
-          is wash and fade and loses nothing. */}
+          Four plates, not two: the phone gets its own pair, redrawn upright. A
+          16:9 landscape plate in a portrait band is cropped to a strip of sky —
+          the comet survives, the stage and the performers under it do not, and
+          they are what the composition builds to.
+
+          The landscape pair is anchored top-right, the portrait pair top. Neither
+          is ever the band's exact ratio, so `cover` always has something to cut,
+          and centred it cut the edges that matter. Pinned to those corners the
+          crop falls on the bottom, which is wash and fade and loses nothing. */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-[url('/home-hero-bg.png')] bg-top-right bg-cover bg-no-repeat dark:hidden"
+        className="absolute inset-0 bg-[url('/home-hero-bg-mobile.png')] bg-top bg-cover bg-no-repeat md:bg-[url('/home-hero-bg.png')] md:bg-top-right dark:hidden"
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 hidden bg-[url('/home-hero-bg-dark.png')] bg-top-right bg-cover bg-no-repeat dark:block"
+        className="absolute inset-0 hidden bg-[url('/home-hero-bg-mobile-dark.png')] bg-top bg-cover bg-no-repeat md:bg-[url('/home-hero-bg-dark.png')] md:bg-top-right dark:block"
       />
 
       {/* The pale wash the copy is set on — the design's own gesture, a sweep of
@@ -67,40 +70,47 @@ export function HomeHero({ authPath }: HomeHeroProps): React.JSX.Element {
       {/* A screenful, less the header: the bar is sticky but still takes its
           60px in the flow, so `100svh` on its own would push the first screen
           that much past the fold. `svh` rather than `vh` because on a phone the
-          address bar would otherwise crop the step cards off the bottom —
-          though the rule only applies from `md` up, where the band has room to
-          be a composition rather than a stack. */}
-      <div className="relative mx-auto flex w-full max-w-336 flex-col gap-14 px-4 pt-12 pb-12 md:min-h-[calc(100svh-3.75rem)] md:gap-0 md:px-8 md:pt-20 md:pb-[65px]">
-        <div className="max-w-3xl space-y-6 text-foreground dark:text-on-scrim">
-          <div className="space-y-5">
-            <h1 className="text-balance font-heading font-bold text-4xl leading-tight tracking-tight sm:text-5xl md:text-display md:leading-[1.43]">
+          address bar would otherwise crop the band's bottom edge.
+
+          Same on the phone, against that layout's 38px bar. The rhythm down the
+          band is the frame's: 100px of air before the title, 25 to the sentence
+          under it, 60 to the buttons. */}
+      <div className="relative mx-auto flex min-h-[calc(100svh-38px)] w-full max-w-336 flex-col gap-14 px-7 pt-25 pb-12 md:min-h-[calc(100svh-3.75rem)] md:gap-0 md:px-8 md:pt-20 md:pb-[65px]">
+        <div className="max-w-3xl space-y-15 text-foreground md:space-y-6 dark:text-on-scrim">
+          <div className="space-y-[25px] md:space-y-5">
+            <h1 className="text-balance font-heading font-bold text-[1.75rem] leading-snug tracking-tight sm:text-5xl sm:leading-tight md:text-display md:leading-[1.43]">
               Взлёт талантов
             </h1>
             {/* An em dash opens it in the design, continuing the title as one
                 sentence rather than starting a second one. Kept, because that is
                 what makes the title read as a name and this as its definition. */}
-            <p className="text-pretty font-heading text-xl leading-snug sm:text-2xl md:text-[2rem]">
+            <p className="max-w-[303px] text-pretty font-heading text-sm leading-snug sm:max-w-none sm:text-2xl md:text-[2rem]">
               — цифровая платформа для подбора творческих конкурсов и онлайн-регистрации.
             </p>
-            <p className="max-w-xl text-pretty font-heading text-foreground/70 text-sm leading-snug dark:text-on-scrim-muted">
+            {/* Dropped on the phone, as the frame drops it: the artwork's
+                performers have to fit under the buttons, a third paragraph
+                pushes them off the band, and the sentence above already says
+                what the platform is. */}
+            <p className="hidden max-w-xl text-pretty font-heading text-foreground/70 text-sm leading-snug md:block dark:text-on-scrim-muted">
               Современный ИТ-сервис для артистов и руководителей, который упрощает путь от выбора
               фестиваля до подтверждения участия.
             </p>
           </div>
 
-          {/* The frame measures the pair and the measurements are kept: 208×43
-              and 201×41. 208 is `w-52` on the spacing scale; 43, 201 and 41 are
-              not on it at any step, so those three are written out. They look
-              like auto-layout leftovers rather than decisions — say the word and
-              they round to 208×44 and 200×44, which costs nothing visually and
-              puts all four back on the scale.
+          {/* The frame measures the pair in both layouts and both are kept:
+              186×30 and 155×31 on a 375px phone, 208×43 and 201×41 on the
+              desktop. Only 208 lands on the spacing scale (`w-52`); the rest are
+              written out.
 
-              The corner is the landing's own 15px, as the export reports. It
-              looked wrong for a while only because `cn` was not dropping the
-              `rounded-md` the Button variant brings — see the note in
-              `shared/lib/cn.ts`. Until that was fixed every radius tried on this
-              pair rendered as the same 8px. */}
-          <div className="flex flex-wrap items-center gap-4">
+              The corner is the one thing that is *not* the landing's 15px: the
+              phone draws these two at 10, and at 30px tall 15 would have been
+              half the height and read as a capsule. The only control on the page
+              that does this, which is why it is a class rather than a token.
+
+              Any radius here looked wrong for a while, whatever it was set to,
+              because `cn` was not dropping the `rounded-md` the Button variant
+              brings — see the note in `shared/lib/cn.ts`. */}
+          <div className="flex flex-wrap items-center gap-3 md:gap-[18px]">
             {/* Hover is «тёмный акцент», not the variant's own fade of the
                 primary: the frame swaps the fill for `--brand-line` and leaves
                 the label white. Every primary button on the landing does the
@@ -108,7 +118,7 @@ export function HomeHero({ authPath }: HomeHeroProps): React.JSX.Element {
             <Button
               asChild
               size="lg"
-              className="h-[43px] w-52 rounded-brand px-0 font-heading font-bold text-lg leading-snug hover:bg-brand-line dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-line"
+              className="h-[30px] w-[186px] rounded-[10px] px-0 font-heading font-bold text-sm leading-snug hover:bg-brand-line md:h-[43px] md:w-52 md:rounded-brand md:text-lg dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-line"
             >
               <a href="#upcoming-festivals">Найти фестиваль</a>
             </Button>
@@ -117,8 +127,17 @@ export function HomeHero({ authPath }: HomeHeroProps): React.JSX.Element {
                 the light theme and what flips it in the dark one: a 1px border
                 at full strength, the label at 51%.
 
-                No fill at rest — the `outline` variant's opaque page colour is
-                dropped, because in the frame this button is a hairline over the
+                The phone keeps one thing constant across its two themes: the
+                edge is «тёмный акцент» in both, where the desktop swaps it for
+                the page's own ink. What changes with the theme there is the fill
+                — a solid plate of `свет` by day (`#F9F9F9`, which is what
+                `--background` resolves to), the same `свет` at 9% at night. The
+                copy sits on the artwork itself in that layout rather than on a
+                pale wash, so an unfilled outline disappeared into the sky.
+
+                On the desktop there is no fill at rest — the `outline` variant's
+                opaque page colour is dropped, because in the frame this button
+                is a hairline over the
                 illustration and what shows through it is the artwork. Hover
                 tints it 6% of the same ink and changes nothing else: the label
                 keeps its 51% rather than darkening, which is what makes the
@@ -132,14 +151,17 @@ export function HomeHero({ authPath }: HomeHeroProps): React.JSX.Element {
               asChild
               size="lg"
               variant="outline"
-              className="h-[41px] w-[201px] rounded-brand border-foreground bg-transparent px-0 font-heading font-bold text-lg leading-snug text-foreground/51 hover:bg-foreground/6 hover:text-foreground/51 dark:border-on-scrim dark:bg-on-scrim/16 dark:text-on-scrim dark:hover:bg-on-scrim/25 dark:hover:text-on-scrim"
+              className="h-[31px] w-[155px] rounded-[10px] border-brand-line bg-background px-0 font-heading font-bold text-sm leading-snug text-foreground/51 hover:bg-foreground/6 hover:text-foreground/51 md:h-[41px] md:w-[201px] md:rounded-brand md:border-foreground md:bg-transparent md:text-lg dark:bg-on-scrim/9 dark:text-on-scrim dark:hover:bg-on-scrim/25 dark:hover:text-on-scrim md:dark:border-on-scrim md:dark:bg-on-scrim/16"
             >
               <Link to={authPath}>Личный кабинет</Link>
             </Button>
           </div>
         </div>
 
-        <HomeSteps className="md:mt-auto md:pt-16" />
+        {/* Not on the phone. Stacked one above another the four cards become a
+            list as long as the page they introduce, and they cover the artwork
+            they were drawn to float on. */}
+        <HomeSteps className="hidden md:mt-auto md:grid md:pt-16" />
       </div>
     </section>
   );

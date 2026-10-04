@@ -48,13 +48,21 @@ export function HomePage(): React.JSX.Element {
       {/* The public layout does not pad its outlet the way the staff and cabinet
           shells do — the hero above is deliberately full-bleed — so the page
           carries its own gutters from here down. */}
-      {/* The bottom gutter is the gap the frame measures between the organisers'
-          panel and the footer — 105px — rather than a symmetrical page padding.
+      {/* 32px of side gutter on the phone as well, not the usual 16: the frame
+          insets the organisers' panel 33px from each edge of a 375px screen, and
+          at 16 it read noticeably wider than drawn. The top gutter is the 30px
+          between the band's bottom edge and «Ближайшие фестивали»; `gap-14` is
+          the 56px the frame leaves between «Все фестивали» and the organisers'
+          panel, against 64 on the desktop.
+
+          The bottom gutter is the gap the frame measures between the organisers'
+          panel and the footer — 52px on the phone, 105 on the desktop — rather
+          than a symmetrical page padding.
           It is the page's own spacing because the footer belongs to the layout
           and knows nothing about which page it is closing. */}
       <PageContainer
         size="wide"
-        className="max-w-336 gap-16 px-4 pt-14 pb-[105px] md:px-8 md:pt-16"
+        className="max-w-336 gap-14 px-8 pt-8 pb-[52px] md:gap-16 md:pt-16 md:pb-[105px]"
       >
         <HomeUpcomingFestivals
           festivals={upcoming}

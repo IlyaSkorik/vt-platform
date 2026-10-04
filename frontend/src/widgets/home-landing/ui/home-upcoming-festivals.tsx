@@ -33,7 +33,12 @@ export function HomeUpcomingFestivals({
 }: HomeUpcomingFestivalsProps): React.JSX.Element {
   return (
     <section id="upcoming-festivals" className="scroll-mt-24">
-      {/* Indented to the first card, not to the page gutter. The carousel puts
+      {/* Centred on the phone: there is one card and no paddle beside it to
+          line up with, so a left-flush heading over a centred card reads as a
+          mistake.
+
+          From `md` it is indented to the first card rather than to the page
+          gutter. The carousel puts
           a 70px paddle and a 1.5rem gap to the left of its track, so the cards
           start that far in and a heading flush with the container reads as
           hanging off the row it titles. Below `md` the paddles are not rendered
@@ -41,7 +46,7 @@ export function HomeUpcomingFestivals({
 
           The one coupling worth naming: if `CarouselArrow` changes size, or the
           row's `md:gap-6` moves, this number has to follow. */}
-      <h2 className="font-heading font-bold text-2xl text-foreground leading-snug tracking-tight md:ml-[calc(70px+1.5rem)] md:text-[1.75rem]">
+      <h2 className="text-center font-heading font-bold text-2xl text-foreground leading-snug tracking-tight md:ml-[calc(70px+1.5rem)] md:text-left md:text-[1.75rem]">
         Ближайшие фестивали
       </h2>
 
@@ -70,11 +75,13 @@ export function HomeUpcomingFestivals({
           <div className="mt-8 animate-rise-in">
             <HomeFestivalCarousel festivals={festivals} hrefFor={hrefFor} />
           </div>
-          {/* 60px below the dots, which already sit 80px below the cards —
-              both measured off the frame. */}
-          <div className="mt-15 flex justify-center">
-            {/* 225×43 on the landing's 15px corner, label in Noto Serif Bold
-                24/33 — `leading-snug` lands on 33px exactly at this size. The
+          {/* Both gaps are the frame's, and both halve on the phone: 30px below
+              the control strip against the desktop's 60, because there the strip
+              is paddles-and-dots at the full width of the screen rather than a
+              row of dots floating under a three-card band. */}
+          <div className="mt-7.5 flex justify-center md:mt-15">
+            {/* 172×35 on the phone and 225×43 on the desktop, on the landing's
+                15px corner; label in Noto Serif Bold 16/22 and 24/33 — `leading-snug` lands on 33px exactly at this size. The
                 type is a step up from the 18px the hero's buttons carry, which
                 is what makes this the page's one «and now the whole catalogue»
                 control rather than a third button of the same weight; the plate
@@ -83,7 +90,7 @@ export function HomeUpcomingFestivals({
             <Button
               asChild
               size="lg"
-              className="h-[43px] w-[225px] rounded-brand px-0 font-heading font-bold text-2xl leading-snug hover:bg-brand-line dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-line"
+              className="h-[35px] w-[172px] rounded-brand px-0 font-heading font-bold text-base leading-snug hover:bg-brand-line md:h-[43px] md:w-[225px] md:text-2xl dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-line"
             >
               <Link to={allFestivalsPath}>Все фестивали</Link>
             </Button>
