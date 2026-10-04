@@ -51,11 +51,15 @@ export function SiteFooter({
     : "font-medium text-foreground";
   const linkTone = "hover:text-foreground hover:underline";
   const ruleTone = brand ? "border-brand-line" : "border-border/70";
-  // `mt-auto` rather than a measured gap: the band is 250px tall and the columns
-  // do not fill it, so the copyright drops to the floor of whatever is left and
-  // the slack sits above it instead of pooling under it. The rule keeps its
-  // hairline — only the colour is the header rule's.
-  const tailOffset = brand ? "mt-auto" : "mt-6";
+  // `mt-auto` from `md`, where the band is 250px tall and the columns do not
+  // fill it: the copyright drops to the floor of whatever is left and the slack
+  // sits above it instead of pooling under it.
+  //
+  // On the phone the band has no height of its own, so `auto` resolves to zero
+  // and the rule came to rest directly on «УНП: …». There it takes a measured
+  // gap instead. The rule keeps its hairline either way — only the colour is the
+  // header rule's.
+  const tailOffset = brand ? "mt-8 md:mt-auto" : "mt-6";
 
   return (
     <footer className={cn("px-4 pt-8 pb-4 md:px-8", plate, className)}>

@@ -39,18 +39,25 @@ export function PublicLayout(): React.JSX.Element {
 
   return (
     <div className="flex min-h-svh flex-col bg-background">
-      <header className="sticky top-0 z-[var(--z-sticky)] bg-brand-surface font-heading text-brand-mark">
-        <div className="mx-auto flex h-15 w-full max-w-336 items-center justify-between gap-3 px-4 md:px-8">
+      <header className="fixed inset-x-0 top-0 z-[var(--z-sticky)] bg-brand-surface font-heading text-brand-mark md:sticky">
+        <div className="mx-auto flex h-[38px] w-full max-w-336 items-center justify-between gap-3 px-4 md:h-15 md:px-8">
           <div className="flex min-w-0 items-center gap-6 md:gap-10">
             <Link
               to={ROUTES.home}
               aria-label={`${APP_NAME} — на главную`}
               className="shrink-0 rounded-sm outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-ring"
             >
-              {/* Two pixels shy of the band top and bottom: `h-14` against the
-                  bar's `h-15`. Flush looked like the mark had been cropped by
+              {/* Two pixels shy of the band top and bottom, at either height —
+                  `h-[34px]` against the phone's 38px bar, `h-14` against the
+                  desktop's 60. Flush looked like the mark had been cropped by
                   the header rather than placed in it. */}
-              <img src="/logo-star.svg" alt="" width={48} height={55} className="h-14 w-auto" />
+              <img
+                src="/logo-star.svg"
+                alt=""
+                width={48}
+                height={55}
+                className="h-[34px] w-auto md:h-14"
+              />
             </Link>
 
             {/* Noto Serif Bold 18/25 in `#FFFFFF`, from the frame: the face
@@ -92,7 +99,7 @@ export function PublicLayout(): React.JSX.Element {
           </div>
 
           <div className="flex shrink-0 items-center gap-1 md:gap-2">
-            <ThemeToggle className="size-11 text-brand-mark hover:bg-brand-mark/30 hover:text-brand-mark [&_svg]:size-[26px]" />
+            <ThemeToggle className="size-8 text-brand-mark hover:bg-brand-mark/30 hover:text-brand-mark md:size-11 [&_svg]:size-5 md:[&_svg]:size-[26px]" />
             {/* One icon, both states. The landing's own hero carries the signed-out
                 call to action in full words; repeating it as a pair of buttons here
                 is what the design dropped, and the icon still reaches the same
@@ -106,7 +113,7 @@ export function PublicLayout(): React.JSX.Element {
               // Sized here and not on the icon: the `size` variant carries
               // `[&_svg]:size-4`, a descendant selector that outranks a plain
               // class on the `svg` itself — set it there and nothing moves.
-              className="size-11 text-brand-mark hover:bg-brand-mark/30 hover:text-brand-mark [&_svg]:size-[26px]"
+              className="size-8 text-brand-mark hover:bg-brand-mark/30 hover:text-brand-mark md:size-11 [&_svg]:size-5 md:[&_svg]:size-[26px]"
             >
               <Link to={isAuthenticated ? ROUTES.cabinetProfile : ROUTES.login}>
                 <AccountCircleIcon aria-hidden="true" />
@@ -116,7 +123,22 @@ export function PublicLayout(): React.JSX.Element {
         </div>
       </header>
 
-      <main className="flex-1">
+      {/* `fixed` on the phone rather than `sticky`, and the 38px it no longer
+          takes in the flow is given back here. Both keep the bar on screen the
+          whole way down; `fixed` is the one that does it without depending on
+          every ancestor staying free of `overflow`, `transform` and `filter`,
+          any one of which silently turns a sticky element back into a static
+          one. From `md` the bar is `sticky` again and takes its own 60px.
+
+          `overflow-x-clip` because the landing is full-bleed inside a guttered
+          page: the hero spans the viewport and the carousel's track bleeds out
+          of its container by the page gutter so a hovered card's halo is not
+          sliced by the edge. Both are flush by construction, but a sub-pixel
+          either way becomes a sideways scrollbar on a phone, where the container
+          *is* the viewport. `clip` and not `hidden` on purpose — `hidden` makes
+          a scroll container, which would break `position: sticky` for anything
+          inside it. */}
+      <main className="flex-1 overflow-x-clip pt-[38px] md:pt-0">
         <Outlet />
       </main>
 
