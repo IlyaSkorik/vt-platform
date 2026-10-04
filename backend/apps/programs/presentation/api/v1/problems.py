@@ -43,6 +43,7 @@ _PROBLEM_MAP: Final[dict[str, tuple[int, str, str]]] = {
     "item_not_in_program": (422, "unprocessable-entity", "Those items are not part of this program"),
     "performance_already_in_program": (409, "conflict", "This act already has a slot in the program"),
     "performance_not_available": (422, "unprocessable-entity", "This act cannot be scheduled"),
+    "program_numbers_frozen": (409, "conflict", "A published program cannot be regenerated"),
     "reorder_mismatch": (422, "unprocessable-entity", "A reorder must list every item exactly once"),
     "slug_unavailable": (503, "service-unavailable", "Could not mint a public link"),
 }
@@ -65,6 +66,7 @@ _RU_DETAIL: Final[dict[str, str]] = {
     "item_not_in_program": "Эти выступления не входят в программу — обновите страницу.",
     "performance_already_in_program": "Это выступление уже стоит в программе.",
     "performance_not_available": "Это выступление нельзя поставить в программу.",
+    "program_numbers_frozen": "Программа уже опубликована — номера закреплены, пересобрать её нельзя.",
     "reorder_mismatch": "Порядок задан неверно: список должен содержать все строки ровно по одному разу.",
     "slug_unavailable": "Не удалось создать публичную ссылку. Попробуйте ещё раз.",
 }

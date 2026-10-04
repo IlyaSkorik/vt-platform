@@ -12,6 +12,7 @@ import {
   Music,
   Plus,
   Trash2,
+  Wand2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -36,6 +37,7 @@ import {
   useAddBlock,
   useAddColumn,
   useAddPerformance,
+  useArrangeProgram,
   useCreateProgram,
   useCreateShare,
   useEditItem,
@@ -52,6 +54,7 @@ import {
   useReorderItems,
   useUpdateProgram,
 } from "@/features/program-builder";
+import { ArrangeProgramDialog } from "@/features/program-builder/ui/arrange-dialog";
 import { formatClock, formatDuration, formatSpan } from "@/shared/lib";
 import {
   Alert,
@@ -419,6 +422,7 @@ function RunningOrder({ program }: { program: Program }): React.JSX.Element {
           ) : null}
         </div>
         <div className="flex flex-wrap items-end gap-2">
+          <ArrangeControls program={program} />
           {outOfSequence ? <RenumberButton programId={program.id} /> : null}
           <AddColumnControls programId={program.id} />
           <AddBreakControls programId={program.id} />
@@ -428,7 +432,7 @@ function RunningOrder({ program }: { program: Program }): React.JSX.Element {
       {items.length === 0 ? (
         <EmptyState
           title="Программа пуста"
-          description="Добавьте выступления из списка ниже или вставьте служебный блок."
+          description="Соберите её автоматически по правилам, добавьте выступления из списка ниже или вставьте служебный блок."
         />
       ) : (
         // The programme is a table, and the table is wide: it scrolls inside its own
@@ -772,6 +776,61 @@ function CustomCell({
         }
       }}
     />
+  );
+}
+
+/**
+ * «Собрать программу» и «Пересобрать» — автосоставление (VT-86).
+ *
+ * Две кнопки, потому что это два разных действия: первое открывает правила, второе
+ * повторяет те, по которым программа уже стоит. Пересобирают чаще, чем собирают впервые,
+ * — заявки идут до последнего дня, — и ради этого правила и живут на программе.
+ *
+ * После публикации обе выключены: пересборка выдаёт слоты заново, а номера уже названы
+ * участникам. Сервер откажет и сам, но кнопка, которая заведомо упрётся в ошибку, —
+ * это ошибка, показанная вместо объяснения.
+ */
+function ArrangeControls({ program }: { program: Program }): React.JSX.Element {
+  const [open, setOpen] = useState(false);
+  const arrange = useArrangeProgram(program.id);
+
+  const run = (input?: Parameters<typeof arrange.mutate>[0]) =>
+    arrange.mutate(input, {
+      onSuccess: (next) => {
+        setOpen(false);
+        toast.success(`Программа собрана: ${next.items.length} строк`);
+      },
+      onError: () => toast.error("Не удалось собрать программу"),
+    });
+
+  return (
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={program.numbersFrozen}
+        onClick={() => setOpen(true)}
+      >
+        <Wand2 className="size-4" /> Собрать программу
+      </Button>
+      {program.arrangement && !program.numbersFrozen ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          loading={arrange.isPending}
+          onClick={() => run(undefined)}
+        >
+          Пересобрать
+        </Button>
+      ) : null}
+      <ArrangeProgramDialog
+        open={open}
+        onOpenChange={setOpen}
+        saved={program.arrangement}
+        pending={arrange.isPending}
+        onSubmit={(input) => run(input)}
+      />
+    </>
   );
 }
 

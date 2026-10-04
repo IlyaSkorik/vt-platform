@@ -664,3 +664,93 @@ class TestPublicEditions:
             assert created.status_code == 201
             slugs.add(created.data["data"]["share"]["slug"])
         assert len(slugs) == 5
+
+
+class TestArrangeEndpoint:
+    """Generating the whole running order from rules (VT-86)."""
+
+    def test_rules_in_the_body_build_the_programme(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        for title in ("Калинка", "Катюша"):
+            _act(competition_id=competition_id, nomination_id=nomination_id, title=title, seconds=180)
+        program = _create_program(staff_client, scope)
+
+        response = staff_client.post(
+            f"{_PROGRAMS}/{program['id']}/items/arrange",
+            {"grouping": [], "orderWithinGroup": "TITLE", "breakRule": "EVERY_COUNT", "breakAfterItems": 1},
+            format="json",
+        )
+
+        assert response.status_code == 200, response.data
+        items = response.data["data"]["items"]
+        assert [item["title"] for item in items] == ["Калинка", "Перерыв", "Катюша"]
+        assert [item["kind"] for item in items] == ["PERFORMANCE", "BREAK", "PERFORMANCE"]
+
+    def test_the_rules_come_back_on_the_programme(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=180)
+        program = _create_program(staff_client, scope)
+
+        staff_client.post(
+            f"{_PROGRAMS}/{program['id']}/items/arrange",
+            {"grouping": ["NOMINATION"], "repeatGap": 3, "awardTitle": "Награждение"},
+            format="json",
+        )
+        reloaded = staff_client.get(f"{_PROGRAMS}/{program['id']}")
+
+        arrangement = reloaded.data["data"]["arrangement"]
+        assert arrangement["grouping"] == ["NOMINATION"]
+        assert arrangement["repeatGap"] == 3
+        assert arrangement["awardTitle"] == "Награждение"
+
+    def test_an_empty_body_rebuilds_on_the_saved_rules(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        # The "пересобрать" button: no form is shown, so the programme's own rules are
+        # the request.
+        competition_id, nomination_id = scope
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=180)
+        program = _create_program(staff_client, scope)
+        staff_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange", {"openingTitle": "Открытие"}, format="json")
+
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Калинка", seconds=180)
+        response = staff_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange", {}, format="json")
+
+        assert response.status_code == 200, response.data
+        assert [item["title"] for item in response.data["data"]["items"]] == ["Открытие", "Калинка", "Катюша"]
+
+    def test_a_programme_never_generated_has_no_rules_on_the_wire(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        program = _create_program(staff_client, scope)
+        assert program["arrangement"] is None
+
+    def test_an_unknown_rule_is_a_validation_problem(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        program = _create_program(staff_client, scope)
+
+        response = staff_client.post(
+            f"{_PROGRAMS}/{program['id']}/items/arrange",
+            {"orderWithinGroup": "BY_THE_MOON"},
+            format="json",
+        )
+
+        assert response.status_code == 400
+
+    def test_a_published_programme_is_refused_with_a_conflict(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=180)
+        program = _create_program(staff_client, scope)
+        staff_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange", {}, format="json")
+        staff_client.post(f"{_PROGRAMS}/{program['id']}/shares", {"name": "Для зала"}, format="json")
+
+        response = staff_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange", {}, format="json")
+
+        assert response.status_code == 409
+        assert response.data["type"].endswith("/conflict")
+        assert "опубликована" in response.data["detail"]
+
+    def test_an_outsider_cannot_generate_a_programme(
+        self,
+        staff_client: APIClient,
+        outsider_client: APIClient,
+        scope: tuple[str, str],
+    ) -> None:
+        program = _create_program(staff_client, scope)
+        response = outsider_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange", {}, format="json")
+        assert response.status_code == 403

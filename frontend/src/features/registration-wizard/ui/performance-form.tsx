@@ -5,6 +5,7 @@ import {
   fetchParticipant,
   type Participant,
   toAddParticipantRequest,
+  useParticipants,
 } from "@/entities/participant";
 import { type DirectoryTeacher, fetchTeacher, toCreditTeacherRequest } from "@/entities/teacher";
 import type {
@@ -448,6 +449,16 @@ function ParticipantsSection({
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const handledPick = useRef<string | null>(null);
+  // Which organization each attached participant represents. The entry's own snapshot
+  // does not carry it, so it is read from the registry the participant came from —
+  // the same cache the picker already filled, and the live value rather than a copy
+  // that went stale the moment the registry was edited.
+  const { data: registryParticipants } = useParticipants();
+  const organizationByRegistryId = new Map(
+    (registryParticipants ?? [])
+      .filter((entry) => entry.primaryOrganization != null)
+      .map((entry) => [entry.id, entry.primaryOrganization?.name ?? ""]),
+  );
 
   // Attached without a headcount: a collective states it in its own field below,
   // where the applicant is looking at the entry rather than scrolling a registry.
@@ -489,7 +500,7 @@ function ParticipantsSection({
           screen it belongs on its own line instead of half off the card. */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="min-w-0 text-sm font-medium">
-          Участники
+          Участники и организация
           {bandLabel ? (
             <span className="ml-2 text-xs font-normal text-muted-foreground">
               (состав: {bandLabel})
@@ -513,42 +524,49 @@ function ParticipantsSection({
           description="Выберите участника из вашего реестра — его данные подставятся автоматически."
         />
       ) : (
-        submission.participants.map((participant) => (
-          <div key={participant.id} className="flex flex-col gap-2">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-sm">
-                {participant.displayName}
-                {participant.birthDate ? ` · ${participant.birthDate}` : ""}
-                {participant.memberCount > 1 ? ` · ${participant.memberCount} чел.` : ""}
-              </span>
-              <Button
-                variant="outline"
-                size="xs"
-                loading={remove.isPending}
-                onClick={() =>
-                  remove.mutate(participant.id, {
-                    onError: () => toast.error("Не удалось удалить участника"),
-                  })
-                }
-              >
-                Удалить
-              </Button>
+        submission.participants.map((participant) => {
+          const organization =
+            participant.registryParticipantId != null
+              ? organizationByRegistryId.get(participant.registryParticipantId)
+              : undefined;
+          return (
+            <div key={participant.id} className="flex flex-col gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm">
+                  {participant.displayName}
+                  {organization != null ? `, ${organization}` : ""}
+                  {participant.birthDate ? ` · ${participant.birthDate}` : ""}
+                  {participant.memberCount > 1 ? ` · ${participant.memberCount} чел.` : ""}
+                </span>
+                <Button
+                  variant="outline"
+                  size="xs"
+                  loading={remove.isPending}
+                  onClick={() =>
+                    remove.mutate(participant.id, {
+                      onError: () => toast.error("Не удалось удалить участника"),
+                    })
+                  }
+                >
+                  Удалить
+                </Button>
+              </div>
+              {/* A collective states its headcount here, once it is chosen — and only a
+                  collective can have a roster: a solo participant is already named on
+                  their own diploma. */}
+              {isCollectiveEntry(participant) ? (
+                <>
+                  <CollectiveHeadcount
+                    submissionId={submissionId}
+                    participant={participant}
+                    bandLabel={bandLabel}
+                  />
+                  <CollectiveMembers submissionId={submissionId} participant={participant} />
+                </>
+              ) : null}
             </div>
-            {/* A collective states its headcount here, once it is chosen — and only a
-                collective can have a roster: a solo participant is already named on
-                their own diploma. */}
-            {isCollectiveEntry(participant) ? (
-              <>
-                <CollectiveHeadcount
-                  submissionId={submissionId}
-                  participant={participant}
-                  bandLabel={bandLabel}
-                />
-                <CollectiveMembers submissionId={submissionId} participant={participant} />
-              </>
-            ) : null}
-          </div>
-        ))
+          );
+        })
       )}
 
       <ParticipantPicker

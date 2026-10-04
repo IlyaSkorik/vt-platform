@@ -95,9 +95,17 @@ class DjangoProgramRepository:
         return ProgramMapper.to_entity(model, items=items, shares=shares, columns=columns)
 
     def _sync_items(self, program: Program) -> None:
-        kept: set[uuid.UUID] = set()
+        kept = {item.id for item in program.items}
+        # Retire the departed rows *before* writing the kept ones. A regenerated running
+        # order gives every slot a new identity, so an act's old row and its new one both
+        # exist for the length of this method - and "one act, one slot" is a database
+        # constraint, not just an aggregate rule. Soft-deleting first is what keeps the
+        # overlap from ever being two live rows for the same submission.
+        ProgramItemModel.objects.filter(program_id=program.id, deleted_at__isnull=True).exclude(id__in=kept).update(
+            deleted_at=program.updated_at,
+            updated_at=program.updated_at,
+        )
         for position, item in enumerate(program.items, start=1):
-            kept.add(item.id)
             ProgramItemModel.objects.update_or_create(
                 id=item.id,
                 defaults={
@@ -107,10 +115,6 @@ class DjangoProgramRepository:
                     "deleted_at": None,
                 },
             )
-        ProgramItemModel.objects.filter(program_id=program.id, deleted_at__isnull=True).exclude(id__in=kept).update(
-            deleted_at=program.updated_at,
-            updated_at=program.updated_at,
-        )
 
     def _sync_columns(self, program: Program) -> None:
         kept: set[uuid.UUID] = set()

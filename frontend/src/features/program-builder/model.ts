@@ -111,6 +111,161 @@ export interface ProgramItem {
   progress: ProgramItemProgress;
 }
 
+/**
+ * An axis a generated running order can be grouped along.
+ *
+ * These are the facets a festival day is actually blocked out by — the audience sees all
+ * of «Эстрадный вокал» together, and within it all of «7-9 лет» together. The *order* of
+ * the chosen axes is the shape of the day: nomination-then-age builds a different
+ * festival from age-then-nomination.
+ */
+export type GroupingAxis =
+  | "NOMINATION"
+  | "DISCIPLINE"
+  | "AGE_CATEGORY"
+  | "PARTICIPANT_GROUP"
+  | "PARTICIPATION_FORMAT"
+  | "ORGANIZATION";
+
+/** How acts are ordered inside one group. */
+export type PerformanceOrder =
+  | "AGE_ASC"
+  | "AGE_DESC"
+  | "TITLE"
+  | "PARTICIPANT"
+  | "ORGANIZATION"
+  | "DURATION_ASC"
+  | "DURATION_DESC";
+
+/**
+ * When the generator puts a break in.
+ *
+ * One rule, not a set of them: an отделение is simply what lies between two breaks, so
+ * "перерыв каждые 90 минут" and "отделение не длиннее 90 минут" are one instruction.
+ */
+export type BreakRule = "NONE" | "EVERY_DURATION" | "EVERY_COUNT" | "BETWEEN_GROUPS";
+
+/** What each grouping axis is called on the settings form. */
+export const GROUPING_AXIS_LABELS: Record<GroupingAxis, string> = {
+  NOMINATION: "Номинация",
+  DISCIPLINE: "Дисциплина",
+  AGE_CATEGORY: "Возрастная категория",
+  PARTICIPANT_GROUP: "Состав",
+  PARTICIPATION_FORMAT: "Форма участия",
+  ORGANIZATION: "Организация",
+};
+
+export const PERFORMANCE_ORDER_LABELS: Record<PerformanceOrder, string> = {
+  AGE_ASC: "Младшие вперёд",
+  AGE_DESC: "Старшие вперёд",
+  TITLE: "По названию номера",
+  PARTICIPANT: "По фамилии участника",
+  ORGANIZATION: "По организации",
+  DURATION_ASC: "Короткие вперёд",
+  DURATION_DESC: "Длинные вперёд",
+};
+
+export const BREAK_RULE_LABELS: Record<BreakRule, string> = {
+  NONE: "Без перерывов",
+  EVERY_DURATION: "Через каждые N минут",
+  EVERY_COUNT: "Через каждые N номеров",
+  BETWEEN_GROUPS: "На стыке групп",
+};
+
+/** The axes the generator groups by when the organizer states nothing. */
+export const DEFAULT_GROUPING: GroupingAxis[] = ["NOMINATION", "DISCIPLINE", "AGE_CATEGORY"];
+
+/** The order the axes are offered in — the order a programme is usually read along. */
+export const GROUPING_AXES: GroupingAxis[] = [
+  "NOMINATION",
+  "DISCIPLINE",
+  "AGE_CATEGORY",
+  "PARTICIPANT_GROUP",
+  "PARTICIPATION_FORMAT",
+  "ORGANIZATION",
+];
+
+/**
+ * The rules a programme was generated from, as the backend stores and returns them.
+ *
+ * The same shape goes out on `POST .../items/arrange` and comes back on the programme,
+ * so the dialog reopens on exactly what produced the running order on screen.
+ */
+export interface ArrangementSettings {
+  grouping: GroupingAxis[];
+  orderWithinGroup: PerformanceOrder;
+  breakRule: BreakRule;
+  breakAfterSeconds: number;
+  breakAfterItems: number;
+  breakTitle: string | null;
+  breakDurationSeconds: number | null;
+  /** How many slots must separate two acts of the same participant. 0 turns it off. */
+  repeatGap: number;
+  openingTitle: string | null;
+  openingDurationSeconds: number | null;
+  awardTitle: string | null;
+  awardDurationSeconds: number | null;
+}
+
+/**
+ * The body of a generation request. Every field is optional, and an **empty body means
+ * "the rules this programme was last built from"** — which is what makes «Пересобрать» a
+ * button without a form. A body that is present is read as complete.
+ */
+export type ArrangeProgramInput = Partial<ArrangementSettings>;
+
+/** What a fresh generator dialog opens on. */
+export const DEFAULT_ARRANGEMENT: ArrangementSettings = {
+  grouping: DEFAULT_GROUPING,
+  orderWithinGroup: "AGE_ASC",
+  breakRule: "NONE",
+  breakAfterSeconds: 5400,
+  breakAfterItems: 20,
+  breakTitle: "Перерыв",
+  breakDurationSeconds: 600,
+  repeatGap: 0,
+  openingTitle: null,
+  openingDurationSeconds: null,
+  awardTitle: null,
+  awardDurationSeconds: null,
+};
+
+/**
+ * Turn the dialog's state into a request body.
+ *
+ * The two places the form and the contract differ: a rule of `NONE` carries no break,
+ * and a service block is switched on by *naming* it — so a block the organizer left off
+ * sends neither its title nor its duration rather than sending nulls the API would read
+ * as "a block called null".
+ */
+export function arrangeInput(settings: ArrangementSettings): ArrangeProgramInput {
+  const input: ArrangeProgramInput = {
+    grouping: settings.grouping,
+    orderWithinGroup: settings.orderWithinGroup,
+    breakRule: settings.breakRule,
+    repeatGap: settings.repeatGap,
+  };
+  if (settings.breakRule !== "NONE") {
+    input.breakTitle = settings.breakTitle ?? "Перерыв";
+    input.breakDurationSeconds = settings.breakDurationSeconds ?? 600;
+    if (settings.breakRule === "EVERY_DURATION") {
+      input.breakAfterSeconds = settings.breakAfterSeconds;
+    }
+    if (settings.breakRule === "EVERY_COUNT") {
+      input.breakAfterItems = settings.breakAfterItems;
+    }
+  }
+  if (settings.openingTitle) {
+    input.openingTitle = settings.openingTitle;
+    input.openingDurationSeconds = settings.openingDurationSeconds ?? 900;
+  }
+  if (settings.awardTitle) {
+    input.awardTitle = settings.awardTitle;
+    input.awardDurationSeconds = settings.awardDurationSeconds ?? 1800;
+  }
+  return input;
+}
+
 /** A named public edition: the columns it shows, and the path its link points at. */
 export interface ProgramShare {
   id: string;
@@ -149,6 +304,8 @@ export interface Program {
   numbersFrozenAt: string | null;
   totalSeconds: number;
   endsAt: string | null;
+  /** The rules this programme was generated from — `null` if it was only built by hand. */
+  arrangement: ArrangementSettings | null;
   createdAt: string;
   updatedAt: string;
   version: number;

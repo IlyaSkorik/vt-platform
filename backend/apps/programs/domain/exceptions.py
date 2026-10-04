@@ -17,6 +17,7 @@ __all__ = [
     "ProgramError",
     "ProgramItemNotFoundError",
     "ProgramNotFoundError",
+    "ProgramNumbersFrozenError",
     "ProgramShareNotFoundError",
     "ReorderMismatchError",
     "RunningOrderNotControllableError",
@@ -55,6 +56,18 @@ class ExportUnavailableError(ProgramError):
     """
 
     code = "export_unavailable"
+
+
+class ProgramNumbersFrozenError(ProgramError):
+    """Raised when a published programme is asked to rebuild itself from scratch.
+
+    Regenerating replaces every slot, and with it every number. Once the programme has
+    been published those numbers are out in the world - a participant has been told
+    "вы номер 12" - so the generator refuses rather than quietly renumbering people.
+    The way forward is the organizer's: rearrange by hand, or start a new programme.
+    """
+
+    code = "program_numbers_frozen"
 
 
 class ProgramColumnNotFoundError(ProgramError):
