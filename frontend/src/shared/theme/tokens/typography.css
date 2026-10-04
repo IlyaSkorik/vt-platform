@@ -6,15 +6,19 @@
  * and (b) emit CSS custom properties on `:root` for non-utility use.
  *
  * Font families are tuned for ru-RU (Cyrillic) legibility.
+ *
+ * Two families, with a job each. `--font-sans` is the product voice — Inter, in
+ * every table, form and workspace screen. `--font-heading` is the brand voice —
+ * Noto Serif, which is what the Figma library sets *everything* on the public
+ * landing in, headings and body alike. Public marketing surfaces opt into it on
+ * their root element; the application chrome never does.
  */
 @theme {
   /* Families */
   --font-sans:
     "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
     "Noto Sans", sans-serif;
-  --font-heading:
-    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-    "Noto Sans", sans-serif;
+  --font-heading: "Noto Serif", "PT Serif", Georgia, "Times New Roman", ui-serif, serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, monospace;
 
   /* Weights */
@@ -41,6 +45,17 @@
   --text-3xl--line-height: 2.25rem;
   --text-4xl: 2.25rem;
   --text-4xl--line-height: 2.5rem;
+  --text-5xl: 3rem;
+  --text-5xl--line-height: 1.15;
+
+  /* «Загаловки большие» — the Figma display style: Noto Serif Bold 70/100.
+   *
+   * The line-height is stored as the *ratio* (100 ÷ 70) rather than as 100px, so
+   * the one token also holds at the smaller sizes the same heading steps down to
+   * on a phone. A frozen 100px would have left a 30px mobile title sitting in a
+   * 100px box. */
+  --text-display: 4.375rem;
+  --text-display--line-height: 1.43;
 }
 
 /**

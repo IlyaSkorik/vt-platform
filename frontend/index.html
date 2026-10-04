@@ -5,13 +5,30 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0b0f14" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f9f9f9" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#110b12" media="(prefers-color-scheme: dark)" />
     <meta
       name="description"
       content="Взлёт талантов — цифровая экосистема для организации детских творческих фестивалей."
     />
     <title>Взлёт талантов</title>
+
+    <!--
+      Brand typefaces. Noto Serif is the Figma library's display face — the whole
+      public landing is set in it — and Inter is the product face the application
+      chrome uses. Both are loaded here rather than from a CSS @import so the
+      requests start during HTML parse instead of after the stylesheet resolves.
+
+      `preconnect` to both hosts because the CSS and the font files are served
+      from different origins, and the second connection would otherwise not open
+      until the first response had been parsed.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Noto+Serif:wght@400;700&amp;display=swap"
+    />
     <script>
       // Apply the persisted colour theme before first paint to avoid a
       // flash of the wrong theme (FOUC). Kept in sync with ThemeProvider.
