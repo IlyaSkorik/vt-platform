@@ -76,7 +76,7 @@
    * put a different violet on screen from the one the design names. */
   --brand-line: var(--mauve-500);
   --brand-line-soft: var(--mauve-300);
-  --brand-surface: oklch(0.3 0.07 310);
+  --brand-surface: var(--night-800);
   --brand-control: var(--night-400);
   --brand-track: var(--night-800);
   --brand-band: rgb(67 40 96 / 0.5);
