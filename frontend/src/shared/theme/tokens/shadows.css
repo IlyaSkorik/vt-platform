@@ -32,6 +32,23 @@
     0 1px 0 0 color-mix(in oklab, var(--primary) 22%, transparent),
     0 10px 30px -18px color-mix(in oklab, var(--primary) 70%, transparent);
 
+  /* «светяшка светлая» — the Figma effect style, transcribed.
+   *
+   * A spread glow with no offset: not elevation, which is directional, but a halo
+   * that sits evenly around a panel, as if the surface itself were lit. The design
+   * puts it on the landing's hero cards, where a drop shadow over an illustration
+   * would read as a cut-out pasted on top.
+   *
+   * Geometry is literal (blur 26.8, spread 5, 53% alpha); the colour is mixed from
+   * `--brand-line-soft` rather than frozen at #B196D0 so the dark theme gets a glow
+   * bright enough to show against a near-black page. */
+  --shadow-glow-soft: 0 0 26.8px 5px color-mix(in srgb, var(--brand-line-soft) 53%, transparent);
+
+  /* The same halo, louder: the festival tile lights up under the pointer and has
+   * to read as lit against a page the hero cards never sit on. Geometry is the
+   * frame's (blur 25, spread 4, 66%). */
+  --shadow-glow-strong: 0 0 25px 4px color-mix(in srgb, var(--brand-line-soft) 66%, transparent);
+
   /* Compatibility aliases (shared/ui shadcn components). */
   --shadow-elevation-1: var(--shadow-xs);
   --shadow-elevation-2: var(--shadow-md);

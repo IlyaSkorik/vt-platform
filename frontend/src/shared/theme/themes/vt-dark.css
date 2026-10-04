@@ -1,48 +1,93 @@
 /**
- * Theme: Vision Glass
+ * Theme: Vision Glass (dark).
  *
- * Glassmorphism + Apple Vision Pro inspired.
+ * Glassmorphism + Apple Vision Pro inspired, carried over to the violet brand.
+ *
+ * The Figma library only publishes the light values, so this theme is derived
+ * rather than transcribed: the same hue family (~310–315°, the hue of
+ * `Акцентище`) taken to the lightness a dark surface needs. The *names* are
+ * identical to `vt-light.css` — that is the contract components bind to — only
+ * the values move.
  */
 
 .dark,
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  /* Backgrounds */
-  --background-primary: oklch(0.095 0.006 240);
-  --background-secondary: oklch(0.125 0.008 240);
-  --background-tertiary: oklch(0.155 0.01 240);
+  /* Backgrounds
+   *
+   * The page is the frame's own `#110B12`, written as a hex because that is how
+   * the design gives it and a rounded `oklch()` would drift off the value. It
+   * sits between Tailwind's `neutral-950` and `neutral-900` — dark, but not the
+   * near-pure black this ramp used to open on (`oklch(0.095 …)`, well below
+   * `neutral-950`).
+   *
+   * Everything below it moved up with it. That is not decoration: the old
+   * surfaces were lighter than the old page by design, and against `#110B12`
+   * they would have been *darker* than it — a card sunk into the page instead of
+   * laid on it, in every dark screen of the product. The steps between the rungs
+   * are the ones the ramp already had. */
+  --background-primary: #110b12;
+  --background-secondary: oklch(0.195 0.012 316);
+  --background-tertiary: oklch(0.225 0.016 316);
 
   /* Surfaces */
-  --surface-primary: oklch(0.135 0.012 245);
-  --surface-secondary: oklch(0.17 0.015 245);
-  --surface-elevated: oklch(0.205 0.018 245);
-  --surface-overlay: oklch(0.205 0.012 240);
+  --surface-primary: oklch(0.205 0.016 316);
+  --surface-secondary: oklch(0.235 0.02 316);
+  --surface-elevated: oklch(0.265 0.024 316);
+  --surface-overlay: oklch(0.265 0.018 316);
 
   /* Near-black and heavier than the light theme's: the page beneath is already
      dark, so the scrim has to go *below* it to read as a recessed backdrop
-     rather than a haze. Tinting it with the theme's blue keeps it from looking
-     like a dead grey hole. */
-  --scrim: oklch(0.03 0.008 240 / 0.72);
+     rather than a haze. Tinting it with the theme's violet keeps it from
+     looking like a dead grey hole. */
+  --scrim: oklch(0.03 0.012 310 / 0.72);
 
   /* Text */
-  --text-primary: oklch(0.985 0.002 240);
-  --text-secondary: oklch(0.85 0.006 240);
-  --text-muted: oklch(0.7 0.008 240);
-  --text-inverse: oklch(10.79% 0.01025 174.842);
-  --text-on-brand: oklch(10.79% 0.01025 174.842);
+  --text-primary: oklch(0.985 0.003 310);
+  --text-secondary: oklch(0.85 0.008 310);
+  --text-muted: oklch(0.7 0.012 310);
+  --text-inverse: oklch(0.15 0.02 310);
+  /* Dark on brand, not light: this theme's primary is a bright violet, and
+     white on it sits around 2.4:1. */
+  --text-on-brand: oklch(0.15 0.02 310);
 
   /* Borders & focus */
-  --border-subtle: oklch(0.22 0.008 240);
-  --border-default: oklch(0.3 0.01 240);
-  --border-strong: oklch(0.4 0.012 240);
-  --border-focus: oklch(0.79 0.16 220);
+  --border-subtle: oklch(0.22 0.012 310);
+  --border-default: oklch(0.3 0.016 310);
+  --border-strong: oklch(0.4 0.02 310);
+  --border-focus: oklch(0.72 0.19 315);
 
   /* Interactive */
-  --interactive-primary: oklch(65.084% 0.122 225.028);
-  --interactive-primary-hover: oklch(0.75 0.18 225);
-  --interactive-secondary: oklch(0.78 0.14 190);
-  --interactive-accent: oklch(0.76 0.14 195);
+  --interactive-primary: oklch(0.72 0.19 315);
+  --interactive-primary-hover: oklch(0.79 0.165 315);
+  --interactive-secondary: oklch(0.82 0.14 85);
+  --interactive-accent: oklch(0.75 0.11 310);
+
+  /* Brand chrome — see the note in vt-light.css for what these are for.
+     Lifted well above the surfaces here: the light theme's `тёмный акцент`
+     is a *darkening* against a pale page, and the same move against a
+     near-black one would be invisible. */
+  /* The two accents do **not** shift with the theme, unlike everything above
+   * them. The frame paints «тёмный акцент» `#7D529B` and «светлый акцент»
+   * `#B196D0` at full strength on the night plate too — every outline on the
+   * landing, the glow around a lit card, the rule under the footer. These used
+   * to be lightened for the dark theme (`oklch(0.6 …)` / `oklch(0.72 …)`), which
+   * put a different violet on screen from the one the design names. */
+  --brand-line: var(--mauve-500);
+  --brand-line-soft: var(--mauve-300);
+  --brand-surface: oklch(0.3 0.07 310);
+  --brand-control: var(--night-400);
+  --brand-track: var(--night-800);
+  --brand-band: rgb(67 40 96 / 0.5);
+
+  /* The organisers' panel is a flat plate at night, not the light theme's veil
+   * of `светлый акцент` over the page: over a near-black background that veil
+   * has nothing to tint. Redefined as a gradient so the one utility keeps
+   * working and the block does not need a `dark:` class of its own. */
+  --gradient-brand-panel: linear-gradient(var(--night-900), var(--night-900));
+  --brand-tint: oklch(0.22 0.04 310);
+  --brand-glass: rgb(247 245 245 / 0.05);
 
   /* Status */
   --success: oklch(0.74 0.17 150);
@@ -66,14 +111,14 @@
   --shadow-color-strong: oklch(0 0 0 / 0.55);
 
   /* The brand glow laid over a photograph — see the note in vt-light.css for why this
-   * one is theme-variant. Here the interactive blue is already brighter than everything
+   * one is theme-variant. Here the interactive violet is already brighter than everything
    * around it, so it needs no adjustment. */
   --glow-on-media: var(--interactive-primary);
 
   /* Charts */
-  --chart-1: oklch(0.74 0.17 220);
-  --chart-2: oklch(0.78 0.14 190);
-  --chart-3: oklch(0.7 0.16 255);
-  --chart-4: oklch(0.74 0.17 150);
-  --chart-5: oklch(0.82 0.17 85);
+  --chart-1: oklch(0.72 0.19 315);
+  --chart-2: oklch(0.75 0.11 310);
+  --chart-3: oklch(0.82 0.14 85);
+  --chart-4: oklch(0.78 0.16 55);
+  --chart-5: oklch(0.74 0.17 150);
 }

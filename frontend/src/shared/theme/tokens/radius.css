@@ -12,4 +12,11 @@
   --radius-xl: 1rem; /* 16px */
   --radius-2xl: 1.5rem; /* 24px */
   --radius-full: 9999px;
+
+  /* The landing's corner, and the only radius the Figma file uses: every panel,
+   * card, chip, button and control on it is rounded to exactly 15px. It sits
+   * between `lg` and `xl` rather than on either, so it gets a name of its own
+   * instead of being rounded to the nearest step — at 15px against 16px the
+   * difference is invisible on a button and obvious on a 403px card. */
+  --radius-brand: 0.9375rem; /* 15px */
 }

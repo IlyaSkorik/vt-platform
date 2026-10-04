@@ -17,16 +17,16 @@
  */
 :root {
   /* --- Brand identity (constant across themes) ---------------------------- */
-  --brand-primary: var(--blue-800);
-  --brand-primary-strong: var(--blue-900);
+  --brand-primary: var(--violet-500);
+  --brand-primary-strong: var(--violet-600);
   --brand-secondary: var(--gold-500);
-  --brand-accent: var(--rocket-500);
+  --brand-accent: var(--mauve-500);
 
   /* The comet knocked out of the logo plate. Always the light one, in both themes.
    *
    * `--primary-foreground` is the token this looks like it should be — it is literally
    * "what goes on top of primary" — but it is theme-variant, and in the dark theme it is
-   * near-black, because that theme's primary is a bright cyan that wants dark text on it.
+   * near-black, because that theme's primary is a bright violet that wants dark text on it.
    * Correct for a button label, wrong for this: a comet that turns dark stops reading as
    * a comet. The plate still follows the theme; only the mark cut out of it is fixed. */
   --brand-mark: var(--neutral-0);
@@ -37,9 +37,12 @@
    * read against the photo — not against the page it is nowhere near. Letting
    * these flip is what made the light theme wash its hero out to white and then
    * print dark text on the glare. */
-  --scrim-media: oklch(0.13 0.012 250);
-  --text-on-scrim: oklch(0.985 0.002 240);
-  --text-on-scrim-muted: oklch(0.84 0.006 240);
+  --scrim-media: oklch(0.13 0.018 310);
+  --text-on-scrim: oklch(0.985 0.003 310);
+  /* «свет полупрозрачный» in the frame: white let down to 70%, not a grey of
+   * its own. Over artwork that matters — a flat grey sits on the image, a
+   * translucent white lets it through and stays part of the same light. */
+  --text-on-scrim-muted: rgb(255 255 255 / 0.7);
 
   /* --- shadcn/ui-compatible aliases --------------------------------------
    * Derived from the semantic layer so the in-repo component library keeps

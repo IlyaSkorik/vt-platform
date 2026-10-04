@@ -107,10 +107,14 @@ function Page({ children }: { children: React.ReactNode }): React.JSX.Element {
 // --- Data (token name lists; values are read live from CSS) ----------------
 
 const PRIMITIVES = [
-  "--blue-900",
-  "--blue-800",
-  "--blue-700",
-  "--blue-600",
+  "--violet-700",
+  "--violet-500",
+  "--violet-400",
+  "--violet-300",
+  "--mauve-500",
+  "--mauve-300",
+  "--mauve-200",
+  "--mauve-100",
   "--gold-100",
   "--gold-300",
   "--gold-500",
@@ -119,10 +123,6 @@ const PRIMITIVES = [
   "--flame-300",
   "--flame-500",
   "--flame-700",
-  "--rocket-400",
-  "--rocket-500",
-  "--rocket-600",
-  "--rocket-700",
 ];
 
 const SEMANTIC_SURFACES = [
@@ -142,7 +142,8 @@ const GRADIENTS = [
   "--gradient-brand",
   "--gradient-gold",
   "--gradient-flame",
-  "--gradient-rocket",
+  "--gradient-mauve",
+  "--gradient-brand-panel",
 ];
 
 const SPACING = [

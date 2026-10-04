@@ -11,10 +11,10 @@
 :root {
   --gradient-background: linear-gradient(
     135deg,
-    var(--blue-900) 0%,
-    var(--blue-800) 35%,
-    var(--blue-700) 70%,
-    var(--blue-600) 100%
+    var(--violet-900) 0%,
+    var(--violet-700) 35%,
+    var(--violet-500) 70%,
+    var(--violet-400) 100%
   );
   --gradient-gold: linear-gradient(
     180deg,
@@ -30,12 +30,23 @@
     var(--flame-500) 70%,
     var(--flame-700) 100%
   );
-  --gradient-rocket: linear-gradient(
+  --gradient-mauve: linear-gradient(
     90deg,
-    var(--rocket-700) 0%,
-    var(--rocket-500) 40%,
-    var(--rocket-400) 100%
+    var(--mauve-700) 0%,
+    var(--mauve-500) 40%,
+    var(--mauve-300) 100%
   );
+
+  /* The panel wash the landing's «Для организаторов» card is filled with: the
+   * page colour, veiled top-to-bottom by `светлый акцент` at a fifth strength.
+   * Transcribed from the Figma fill rather than approximated, because it is the
+   * one place the design tints a *surface* instead of a line. */
+  --gradient-brand-panel: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--neutral-0) 20%, transparent) 0%,
+    color-mix(in srgb, var(--mauve-300) 20%, transparent) 100%
+  );
+
   /* The platform's primary brand gradient. */
   --gradient-brand: var(--gradient-background);
 }
@@ -52,6 +63,9 @@
 @utility bg-gradient-flame {
   background-image: var(--gradient-flame);
 }
-@utility bg-gradient-rocket {
-  background-image: var(--gradient-rocket);
+@utility bg-gradient-mauve {
+  background-image: var(--gradient-mauve);
+}
+@utility bg-gradient-brand-panel {
+  background-image: var(--gradient-brand-panel);
 }

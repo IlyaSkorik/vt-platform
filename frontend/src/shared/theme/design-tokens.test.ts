@@ -21,20 +21,20 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 const FIXTURE = `
   :root {
     /* Tier 1 — primitives */
-    --blue-800: #0e327c;
+    --violet-500: #9400d3;
     --neutral-0: #ffffff;
-    --neutral-950: #0b0e1a;
+    --neutral-950: #14101a;
     /* Tier 2 — theme-variant (light default). Raw values so jsdom can read
        them (it does not resolve nested var() chains). */
-    --background-primary: #ffffff;
-    --text-primary: #0b0e1a;
+    --background-primary: #f9f9f9;
+    --text-primary: #211929;
     /* Tier 2 — semantic aliases (theme-invariant references) */
     --background: var(--background-primary);
     --foreground: var(--text-primary);
-    --brand-primary: #0e327c;
+    --brand-primary: #9400d3;
   }
   .dark {
-    --background-primary: #0b0e1a;
+    --background-primary: #110b12;
     --text-primary: #ffffff;
   }
 `;
@@ -58,7 +58,7 @@ function cssVar(name: string): string {
 
 describe("design tokens — loading", () => {
   it("resolves primitive tokens to raw values", () => {
-    expect(cssVar("--blue-800")).toBe("#0e327c");
+    expect(cssVar("--violet-500")).toBe("#9400d3");
     expect(cssVar("--neutral-0")).toBe("#ffffff");
   });
 });
@@ -72,18 +72,18 @@ describe("design tokens — CSS variable availability", () => {
 
   it("keeps brand tokens theme-invariant by reference", () => {
     // brand-primary points at a primitive directly, so it never changes.
-    expect(cssVar("--brand-primary")).toBe("#0e327c");
+    expect(cssVar("--brand-primary")).toBe("#9400d3");
   });
 });
 
 describe("design tokens — theme switching", () => {
   it("flips theme-variant token values when .dark is applied", () => {
-    expect(cssVar("--background-primary")).toBe("#ffffff");
-    expect(cssVar("--text-primary")).toBe("#0b0e1a");
+    expect(cssVar("--background-primary")).toBe("#f9f9f9");
+    expect(cssVar("--text-primary")).toBe("#211929");
 
     document.documentElement.classList.add("dark");
 
-    expect(cssVar("--background-primary")).toBe("#0b0e1a");
+    expect(cssVar("--background-primary")).toBe("#110b12");
     expect(cssVar("--text-primary")).toBe("#ffffff");
   });
 

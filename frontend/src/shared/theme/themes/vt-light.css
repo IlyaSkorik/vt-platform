@@ -9,14 +9,22 @@
  *
  * Applied at `:root` because light is the default (no class required). The dark
  * theme overrides these under `.dark`.
+ *
+ * This is the theme the Figma landing is drawn in, so it is the one that
+ * reproduces the published variables literally: the page is `свет`, the copy is
+ * `Темный текст`, the action colour is `Акцентище`, and the two structural
+ * violets are `тёмный акцент` / `светлый акцент`.
  */
 :root {
   color-scheme: light;
 
-  /* Backgrounds — the page beneath everything. */
-  --background-primary: var(--neutral-0);
-  --background-secondary: var(--neutral-50);
-  --background-tertiary: var(--neutral-100);
+  /* Backgrounds — the page beneath everything.
+     `свет` (#F9F9F9) rather than pure white: the design puts cards and the
+     hero's light panel at white, and they only read as *layers* if the page
+     behind them is a step down. */
+  --background-primary: var(--neutral-50);
+  --background-secondary: var(--neutral-100);
+  --background-tertiary: var(--mauve-100);
 
   /* Surfaces — cards, sheets, popovers layered on the background. */
   --surface-primary: var(--neutral-0);
@@ -27,7 +35,7 @@
   /* The scrim behind a modal. Carries its own alpha rather than relying on an
      opacity modifier, because the colour that dims a light page is not the same
      colour that dims a dark one — see the dark theme's darker, heavier value. */
-  --scrim: oklch(0.19 0.03 275 / 0.4);
+  --scrim: oklch(0.17 0.04 310 / 0.4);
 
   /* Text */
   --text-primary: var(--neutral-900);
@@ -40,13 +48,29 @@
   --border-subtle: var(--neutral-100);
   --border-default: var(--neutral-200);
   --border-strong: var(--neutral-300);
-  --border-focus: var(--blue-700);
+  --border-focus: var(--violet-500);
 
   /* Interactive — brand colours in their light-theme usage. */
-  --interactive-primary: var(--blue-800);
-  --interactive-primary-hover: var(--blue-900);
+  --interactive-primary: var(--violet-500);
+  --interactive-primary-hover: var(--violet-600);
   --interactive-secondary: var(--gold-500);
-  --interactive-accent: var(--rocket-500);
+  --interactive-accent: var(--mauve-500);
+
+  /* --- Brand chrome -------------------------------------------------------
+   * The landing's structural violets, which are *not* the action colour and
+   * *not* the neutral border. The design uses them as a pair: a 2px `тёмный
+   * акцент` outline around anything that is a panel, and a 1–2px `светлый
+   * акцент` outline around anything that is a chip, a dot or a control resting
+   * on the artwork. Separated from `--border-default` on purpose — the neutral
+   * border is still what a table row or an input wears; these say "brand". */
+  --brand-line: var(--mauve-500);
+  --brand-line-soft: var(--mauve-300);
+  --brand-surface: var(--mauve-300);
+  --brand-control: var(--mauve-300);
+  --brand-track: var(--mauve-300);
+  --brand-band: rgb(177 150 208 / 0.53);
+  --brand-tint: var(--mauve-100);
+  --brand-glass: rgb(247 245 245 / 0.23);
 
   /* Status */
   --success: var(--green-500);
@@ -63,23 +87,24 @@
   --info-foreground: var(--neutral-0);
 
   /* Elevation colour consumed by the shadow scale. */
-  --shadow-color: color-mix(in oklab, var(--blue-900) 12%, transparent);
-  --shadow-color-strong: color-mix(in oklab, var(--blue-900) 18%, transparent);
+  --shadow-color: color-mix(in oklab, var(--violet-900) 12%, transparent);
+  --shadow-color-strong: color-mix(in oklab, var(--violet-900) 18%, transparent);
 
   /* The brand glow laid over a photograph — the hero's bottom edge.
    *
    * Theme-VARIANT, unlike the `--scrim-media` family next to it in semantic.css: those
    * are invariant because copy over a photo must read against the photo, which does not
    * change. This does change, because a glow only glows if it is lighter than what is
-   * under it, and the bottom of that band is over the page — white here, near-black in
-   * the dark theme. `--interactive-primary` is the deep brand blue, which reads as a
-   * shadow on white rather than as light; this is the same hue taken bright enough to
-   * register. */
-  --glow-on-media: var(--sky-500);
+   * under it, and the bottom of that band is over the page — near-white here, near-black
+   * in the dark theme. `--interactive-primary` is the saturated action violet, which
+   * reads as a stain on a pale page rather than as light; `светлый акцент` is the same
+   * hue taken pale enough to register as glow, and is the colour the design itself
+   * glows the hero cards with. */
+  --glow-on-media: var(--mauve-300);
 
   /* Data-visualisation series. */
-  --chart-1: var(--blue-800);
-  --chart-2: var(--rocket-500);
+  --chart-1: var(--violet-500);
+  --chart-2: var(--mauve-500);
   --chart-3: var(--gold-500);
   --chart-4: var(--flame-500);
   --chart-5: var(--green-500);

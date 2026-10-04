@@ -6,22 +6,60 @@
  *
  * RULES
  *   • Primitives are NEVER referenced by React components.
- *   • Primitives are NEVER exposed as Tailwind utilities (so `bg-blue-900`
+ *   • Primitives are NEVER exposed as Tailwind utilities (so `bg-violet-500`
  *     cannot exist) — they are only consumed by the semantic layer.
  *   • Rebranding the platform means editing THIS file plus the theme files;
  *     no component changes.
  *
- * Palette source: VT brand guidelines («Взлёт талантов»).
+ * Palette source: the «Взлёт талантов» Figma library. Five of these values are
+ * published Figma variables and are reproduced here **exactly**; every other
+ * step is interpolated from them so the ramps stay usable for hover, focus and
+ * disabled states that the mockups do not draw:
+ *
+ *   Акцентище .............. #9400D3  →  --violet-500
+ *   тёмный акцент .......... #7D529B  →  --mauve-500
+ *   светлый акцент ......... #B196D0  →  --mauve-300
+ *   Темный текст ........... #211929  →  --neutral-900
+ *   свет ................... #F9F9F9  →  --neutral-50
+ *
  * Naming: higher number = darker, mirroring the Tailwind 50–950 convention.
+ * The two violet families are deliberately separate rather than one ramp —
+ * `violet` is the saturated *action* colour (buttons, active states) and
+ * `mauve` is the desaturated *structural* one (borders, chrome, chips). They
+ * sit at similar lightness, so a single ramp could not hold both.
  */
 :root {
-  /* --- Primary Blue -------------------------------------------------------- */
-  --blue-900: #061c56;
-  --blue-800: #0e327c;
-  --blue-700: #2a1e73;
-  --blue-600: #5a1f86;
+  /* --- Accent Violet (the action colour, «Акцентище») ---------------------- */
+  --violet-300: #c77cec;
+  --violet-400: #ab2ddd;
+  --violet-500: #9400d3;
+  --violet-600: #7a00ae;
+  --violet-700: #5f0088;
+  --violet-900: #33004a;
 
-  /* --- Gold ---------------------------------------------------------------- */
+  /* --- Mauve (structural violet: borders, chrome, chips) ------------------- */
+  --mauve-50: #faf7fd;
+  --mauve-100: #f3eef8;
+  --mauve-200: #e3d9ee;
+  --mauve-300: #b196d0;
+  --mauve-400: #9a76b8;
+  --mauve-500: #7d529b;
+
+  /* --- Night chrome -------------------------------------------------------
+   * A ramp of its own, not steps of the mauve one: in the dark theme chrome has
+   * to sit *above* a near-black page rather than below a white one, so it is
+   * greyer and far darker than anything the mauve ramp carries. The names are
+   * the Figma variables' — «светлый база ночная», «тёмный база ночная». */
+  --night-400: #88779b; /* светлый база ночная — paddles, chip outlines */
+  --night-700: #432860; /* the footer band, laid down at half strength */
+  --night-800: #362245; /* тёмный база ночная — the pagination rail */
+  --night-900: #201622; /* the organisers' panel */
+  --mauve-600: #654180;
+  --mauve-700: #4b2f61;
+
+  /* --- Gold ----------------------------------------------------------------
+   * Kept, and still the secondary: the hero artwork's comet and stars are gold,
+   * so the UI has to have a gold to answer them with. */
   --gold-100: #f6e4a7;
   --gold-300: #f2c766;
   --gold-500: #e7a93b;
@@ -33,28 +71,28 @@
   --flame-500: #ffb34f;
   --flame-700: #f07b38;
 
-  /* --- Rocket Trail -------------------------------------------------------- */
-  --rocket-400: #8e5eff;
-  --rocket-500: #6b49e6;
-  --rocket-600: #4a3fd8;
-  --rocket-700: #273acf;
-
-  /* --- Neutrals (navy-tinted grey ramp, tuned to the brand blues) ---------- */
+  /* --- Neutrals (violet-tinted grey ramp, tuned to the brand violets) ------
+   * Tinted towards the brand rather than neutral grey: a pure grey beside
+   * #9400D3 reads green. The two ends are Figma variables — `свет` and
+   * `Темный текст` — and the ramp is built between them. */
   --neutral-0: #ffffff;
-  --neutral-50: #f6f7fb;
-  --neutral-100: #eceef6;
-  --neutral-200: #d7dbe9;
-  --neutral-300: #b4bad0;
-  --neutral-400: #8b93b2;
-  --neutral-500: #656d90;
-  --neutral-600: #4a5170;
-  --neutral-700: #343a54;
-  --neutral-800: #20263c;
-  --neutral-900: #141829;
-  --neutral-950: #0b0e1a;
+  --neutral-50: #f9f9f9;
+  --neutral-100: #f1edf5;
+  --neutral-200: #e0d8e8;
+  --neutral-300: #c5bacf;
+  --neutral-400: #9b8fa6;
+  --neutral-500: #6f6479;
+  --neutral-600: #574d61;
+  --neutral-700: #3f3749;
+  --neutral-800: #2c2535;
+  --neutral-900: #211929;
+  --neutral-950: #14101a;
   --black: #000000;
 
-  /* --- Functional hues (status) ------------------------------------------- */
+  /* --- Functional hues (status) -------------------------------------------
+   * Deliberately NOT violet-tinted. Status colour has to be read as a fact
+   * about the thing it marks, not as brand decoration — a success green that
+   * drifts towards the brand stops being unambiguously green. */
   --green-100: #d6f5e4;
   --green-400: #34c07d;
   --green-500: #1f9d63;
