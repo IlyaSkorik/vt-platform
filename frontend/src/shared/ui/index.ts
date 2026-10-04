@@ -81,6 +81,15 @@ export type { EmptyStateProps } from "./empty-state";
 export { EmptyState } from "./empty-state";
 export type { IconButtonProps } from "./icon-button";
 export { IconButton } from "./icon-button";
+export {
+  AccountCircleIcon,
+  CalendarIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  MapPinIcon,
+  MoonIcon,
+  SunIcon,
+} from "./icons";
 export type { InputProps } from "./input";
 export { Input } from "./input";
 export type { LoadingStateProps, LoadingStateSize } from "./loading-state";
