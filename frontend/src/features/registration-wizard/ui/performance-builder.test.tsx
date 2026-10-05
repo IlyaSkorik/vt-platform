@@ -32,8 +32,17 @@ vi.mock("../api/duplicate", () => ({
 // The card owns its own data access and its own form; this suite is about which
 // controls the builder offers, so it is reduced to the two buttons that matter.
 vi.mock("./performance-card", () => ({
-  PerformanceCard: ({ onDuplicate }: { onDuplicate: (() => void) | null }) => (
-    <div>{onDuplicate ? <button type="button">Дублировать</button> : null}</div>
+  PerformanceCard: ({
+    onDuplicate,
+    onRemove,
+  }: {
+    onDuplicate: (() => void) | null;
+    onRemove: (() => void) | null;
+  }) => (
+    <div>
+      {onDuplicate ? <button type="button">Дублировать</button> : null}
+      {onRemove ? <button type="button">Удалить</button> : null}
+    </div>
   ),
 }));
 
@@ -51,12 +60,13 @@ function application(count: number): ApplicationResource {
   } as ApplicationResource;
 }
 
-function renderBuilder(count: number, allowMultiple: boolean): void {
+function renderBuilder(count: number, allowMultiple: boolean, composable = true): void {
   render(
     <PerformanceBuilder
       applicationId={APPLICATION_ID}
       application={application(count)}
       registration={registration(allowMultiple)}
+      composable={composable}
     />,
   );
 }
@@ -95,5 +105,15 @@ describe("PerformanceBuilder", () => {
     renderBuilder(3, true);
 
     expect(screen.getByRole("button", { name: ADD })).toBeInTheDocument();
+  });
+
+  it("drops every composition control on a paid order", () => {
+    // Сумма оплаченного заказа заморожена, поэтому всё, что её двигает, не просто
+    // откажет на сервере — его здесь нет. Сами выступления остаются открытыми.
+    renderBuilder(2, true, false);
+
+    expect(screen.queryByRole("button", { name: ADD })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Дублировать/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Удалить/ })).not.toBeInTheDocument();
   });
 });

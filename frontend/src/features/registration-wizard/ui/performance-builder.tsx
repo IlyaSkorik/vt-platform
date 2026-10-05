@@ -19,20 +19,27 @@ import { PerformanceCard } from "./performance-card";
  * Applications context enforces on the endpoint, so the button that is gone is
  * exactly the request that would have been refused. It comes back when the order is
  * empty: removing the one performance has to leave a way to enter another.
+ *
+ * ``composable`` is the same idea one level up: a paid order has a frozen total, so
+ * adding, duplicating and removing performances are gone, while the performances
+ * themselves stay open — the surname on a diploma is still worth fixing.
  */
 export function PerformanceBuilder({
   applicationId,
   application,
   registration,
+  composable = true,
 }: {
   applicationId: string;
   application: ApplicationResource;
   registration: Registration;
+  composable?: boolean;
 }): React.JSX.Element {
   const addSubmission = useAddSubmission(applicationId);
   const removeSubmission = useRemoveSubmission(applicationId);
   const duplicate = useDuplicatePerformance(applicationId);
-  const canAdd = registration.allowMultiplePerformances || application.submissions.length === 0;
+  const canAdd =
+    composable && (registration.allowMultiplePerformances || application.submissions.length === 0);
 
   return (
     <div className="flex flex-col gap-4">
@@ -47,9 +54,9 @@ export function PerformanceBuilder({
             registration={registration}
             removing={removeSubmission.isPending}
             duplicating={duplicate.isPending}
-            onRemove={() => removeSubmission.mutate(ref.submissionId)}
+            onRemove={composable ? () => removeSubmission.mutate(ref.submissionId) : null}
             onDuplicate={
-              registration.allowMultiplePerformances
+              composable && registration.allowMultiplePerformances
                 ? () => duplicate.mutate(ref.submissionId)
                 : null
             }
@@ -68,11 +75,11 @@ export function PerformanceBuilder({
             Добавить выступление
           </Button>
         </div>
-      ) : (
+      ) : composable ? (
         <p className="text-sm text-muted-foreground">
           Фестиваль принимает одно выступление в заявке.
         </p>
-      )}
+      ) : null}
     </div>
   );
 }

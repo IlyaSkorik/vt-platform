@@ -30,7 +30,14 @@ import {
   PageTitle,
 } from "@/shared/ui";
 
-const EDITABLE = new Set(["DRAFT", "SUBMITTED"]);
+/**
+ * Статусы заказа, в которых его ещё правят.
+ *
+ * Оплата заказ не запечатывает: пока идёт приём заявок, участник правит состав и
+ * номер — фамилию с заявки печатают на дипломе, и оплатить пораньше не должно
+ * означать потерять право на исправление. Закрыты только завершённый и отменённый.
+ */
+const EDITABLE = new Set(["DRAFT", "SUBMITTED", "WAITING_PAYMENT", "PAID"]);
 
 export function ApplicationDetailPage(): React.JSX.Element {
   const { applicationId } = useParams<{ applicationId: string }>();

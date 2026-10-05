@@ -46,7 +46,10 @@ export function PerformanceCard({
   submissionId: string;
   index: number;
   registration: Registration;
-  onRemove: () => void;
+  /** ``null`` once the order is paid: its composition is frozen together with its
+   * total, so removing a performance would be refused. The number itself stays
+   * editable — the card still opens. */
+  onRemove: (() => void) | null;
   /** ``null`` when the festival takes one performance per application: duplicating
    * would add a second, so the control is absent rather than present and refused. */
   onDuplicate: (() => void) | null;
@@ -127,16 +130,18 @@ export function PerformanceCard({
               <Copy className="size-4" />
             </Button>
           ) : null}
-          <Button
-            variant="ghost"
-            size="xs"
-            iconOnly
-            aria-label="Удалить"
-            loading={removing}
-            onClick={onRemove}
-          >
-            <Trash2 className="size-4" />
-          </Button>
+          {onRemove ? (
+            <Button
+              variant="ghost"
+              size="xs"
+              iconOnly
+              aria-label="Удалить"
+              loading={removing}
+              onClick={onRemove}
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          ) : null}
         </div>
       </div>
       {open ? (
