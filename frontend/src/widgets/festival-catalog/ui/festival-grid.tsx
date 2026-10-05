@@ -2,7 +2,10 @@ import type { Festival } from "@/features/festival-catalog";
 import { FestivalCard } from "./festival-card";
 import { FestivalCardSkeleton } from "./festival-card-skeleton";
 
-const GRID_CLASS = "grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3";
+// Two columns from `md`, as the frame has it, and never three: the card carries
+// a 406px poster and two full-width actions, and at a third of a page neither
+// survives. The 18px column gap and 20px row gap are the frame's own.
+const GRID_CLASS = "grid grid-cols-1 gap-x-[18px] gap-y-5 md:grid-cols-2";
 
 interface FestivalGridProps {
   festivals: Festival[];
@@ -10,7 +13,7 @@ interface FestivalGridProps {
   detailBasePath: string;
 }
 
-/** Responsive card grid: 1 column on mobile, 2 on tablet, 3 on desktop. */
+/** The catalogue grid: one column on a phone, two from `md`. */
 export function FestivalGrid({
   festivals,
   now,

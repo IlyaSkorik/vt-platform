@@ -39,13 +39,20 @@ describe("FestivalCard", () => {
     renderCard(
       makeFestival({
         title: "Весенний вокал",
-        organizer: { id: "o", name: "Дом талантов", logo: null },
         city: "Минск",
+        modes: ["IN_PERSON"],
+        categories: ["Вокал"],
       }),
     );
     expect(screen.getByText("Весенний вокал")).toBeInTheDocument();
-    expect(screen.getByText("Дом талантов")).toBeInTheDocument();
-    expect(screen.getByText("Минск")).toBeInTheDocument();
+    // Place and format are printed as one line, the way the frame has it.
+    expect(screen.getByText("Минск, Очно")).toBeInTheDocument();
+    expect(screen.getByText("Вокал")).toBeInTheDocument();
+  });
+
+  it("drops the comma when the festival has no city", () => {
+    renderCard(makeFestival({ city: null, modes: ["ONLINE"] }));
+    expect(screen.getByText("Онлайн")).toBeInTheDocument();
   });
 
   it("shows an enabled Apply link when registration is open", () => {
@@ -87,13 +94,21 @@ describe("FestivalCard", () => {
     expect(button).toBeDisabled();
   });
 
-  it("shows a 'from' price when multiple prices exist", () => {
-    renderCard(makeFestival({ pricing: { amountFrom: "30", currency: "BYN", multiple: true } }));
-    expect(screen.getByText("от 30 BYN")).toBeInTheDocument();
-  });
-
-  it("flags competitions closing soon", () => {
-    renderCard(makeFestival({ status: "REGISTRATION_OPEN", registrationEnd: "2026-07-18" }));
-    expect(screen.getByText("Скоро закрытие")).toBeInTheDocument();
+  // The tile deliberately carries four facts and two actions and nothing else —
+  // see the note on the component. These assert the *absence* of what it used to
+  // show, so that putting any of it back is a decision and not a drift: all of it
+  // is on the festival's own page, one click away.
+  it("carries no price, status badge or closing-soon flag", () => {
+    renderCard(
+      makeFestival({
+        status: "REGISTRATION_OPEN",
+        registrationEnd: "2026-07-18",
+        pricing: { amountFrom: "30", currency: "BYN", multiple: true },
+        organizer: { id: "o", name: "Дом талантов", logo: null },
+      }),
+    );
+    expect(screen.queryByText("от 30 BYN")).not.toBeInTheDocument();
+    expect(screen.queryByText("Скоро закрытие")).not.toBeInTheDocument();
+    expect(screen.queryByText("Дом талантов")).not.toBeInTheDocument();
   });
 });
