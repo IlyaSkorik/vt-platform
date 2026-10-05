@@ -10,7 +10,7 @@ import {
   JsonLd,
   useSeo,
 } from "@/shared/seo";
-import { PageContainer, PageContent, PageDescription, PageHeader, PageTitle } from "@/shared/ui";
+import { PageContainer, PageContent } from "@/shared/ui";
 import { FestivalCatalog } from "@/widgets/festival-catalog";
 import { FestivalLanding } from "@/widgets/festival-landing";
 
@@ -27,7 +27,17 @@ export function PublicFestivalCatalogPage(): React.JSX.Element {
   const festivals = usePublicFestivals().data ?? [];
 
   return (
-    <PageContainer size="wide" className="px-4 md:px-8">
+    // 27px of air under the header before the filters panel and the title
+    // beside it, as the frame measures it. `PageContainer` has no vertical
+    // padding of its own, so without this the catalogue began flush against the
+    // bar.
+    // `max-w-336`, matching the public header's own container. `size="wide"`
+    // alone is `max-w-7xl` — 64px narrower — and the page then sat visibly inset
+    // from the bar above it, which reads as a misalignment rather than as a
+    // margin. 27px of air under the bar before the filters panel and 32 under
+    // the pagination before the footer, as the frame measures them;
+    // `PageContainer` carries no vertical padding of its own.
+    <PageContainer size="wide" className="max-w-336 px-4 pt-[27px] pb-8 md:px-8">
       <JsonLd
         id="festival-list"
         data={festivalListSchema(festivals, { basePath: ROUTES.competitions })}
@@ -39,14 +49,12 @@ export function PublicFestivalCatalogPage(): React.JSX.Element {
           { name: "Фестивали", path: ROUTES.competitions },
         ])}
       />
-      <PageHeader>
-        <PageTitle>Фестивали</PageTitle>
-        <PageDescription>
-          Каталог творческих фестивалей: изучайте условия и подавайте заявку после входа.
-        </PageDescription>
-      </PageHeader>
+      {/* No `PageHeader` here. The frame sets the title inside the results
+          column, level with the top of the filters panel — across the page it
+          would read as a heading for the filters as much as for the grid. The
+          widget renders it, so it stays in the column it titles. */}
       <PageContent>
-        <FestivalCatalog detailBasePath={ROUTES.competitions} />
+        <FestivalCatalog detailBasePath={ROUTES.competitions} title="Активные фестивали" />
       </PageContent>
     </PageContainer>
   );
@@ -96,7 +104,8 @@ export function PublicFestivalLandingPage(): React.JSX.Element {
   );
 
   return (
-    <PageContainer size="wide" className="px-4 md:px-8">
+    // Same container as the catalogue and the header — see the note there.
+    <PageContainer size="wide" className="max-w-336 px-4 pt-[27px] pb-8 md:px-8">
       {festival ? (
         <>
           <JsonLd id="festival-event" data={festivalEventSchema(festival, { path })} />

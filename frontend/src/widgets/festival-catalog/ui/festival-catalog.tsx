@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   applyCatalog,
   type CatalogFilters,
@@ -9,118 +9,160 @@ import {
   EMPTY_CATALOG_FILTERS,
   usePublicFestivals,
 } from "@/features/festival-catalog";
+import { FestivalCatalogPagination } from "./festival-catalog-pagination";
 import { CatalogError, CatalogNoFestivals, CatalogNoResults } from "./festival-catalog-states";
 import { FestivalCatalogToolbar } from "./festival-catalog-toolbar";
-import { FestivalFeaturedPanel } from "./festival-featured-panel";
-import { FestivalFiltersPanel } from "./festival-filters-panel";
+import { FestivalFiltersSidebar } from "./festival-filters-sidebar";
 import { FestivalGrid, FestivalGridSkeleton } from "./festival-grid";
 
-function countActiveFilters(filters: CatalogFilters): number {
-  return (
-    filters.registration.length +
-    filters.modes.length +
-    filters.categories.length +
-    filters.cities.length +
-    (filters.competitionFrom ? 1 : 0) +
-    (filters.competitionTo ? 1 : 0)
-  );
-}
+/**
+ * Cards per page.
+ *
+ * Six, which is three rows of the frame's two columns. The number is a layout
+ * decision rather than a data one — the whole catalogue is already in memory,
+ * and paging exists so a reader meets the list in screenfuls instead of
+ * scrolling past forty cards to reach the filters they wanted to change.
+ */
+const PAGE_SIZE = 6;
 
 /**
  * The Festival Catalog — the entry point to the Participant Portal.
  *
- * One cached read backs the screen; search, filtering and sorting all run
- * client-side over the cached list, so interactions are instant and never hit
- * the network. Handles loading (skeletons), error (retry), empty and
- * no-results states explicitly.
+ * One cached read backs the screen; search, filtering, sorting and paging all
+ * run client-side over that list, so interactions are instant and never hit the
+ * network. Handles loading (skeletons), error (retry), empty and no-results
+ * states explicitly.
+ *
+ * **Filters stand to the left rather than opening over the grid.** They are the
+ * reason this page is not the landing's carousel: a visitor arrives knowing a
+ * genre or a city, and a panel they have to open first hides that the catalogue
+ * can be narrowed at all.
  */
 interface FestivalCatalogProps {
   detailBasePath?: string;
+  /**
+   * The page's own heading, rendered at the top of the results column.
+   *
+   * It lives here rather than above the widget because the frame sets it level
+   * with the top of the filters panel and flush with the grid, not across the
+   * page — a title over both columns reads as a heading for the filters too. The
+   * cabinet omits it and keeps its own page header.
+   */
+  title?: string;
 }
 
 export function FestivalCatalog({
   detailBasePath = "/cabinet/competitions",
+  title,
 }: FestivalCatalogProps): React.JSX.Element {
   const query = usePublicFestivals();
   const festivals = query.data ?? [];
 
   const [now] = useState(() => new Date());
   const [state, setState] = useState<CatalogState>(DEFAULT_CATALOG_STATE);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [page, setPage] = useState(1);
 
   const options = useMemo(() => deriveFilterOptions(festivals), [festivals]);
   const visible = useMemo(() => applyCatalog(festivals, state, now), [festivals, state, now]);
 
-  const activeFilterCount = countActiveFilters(state.filters);
+  const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  // Narrowing the list can strand the reader on a page that no longer exists —
+  // page 7 of a catalogue that is now four pages long renders nothing at all.
+  // Clamping on render would fight the click that caused it, so the correction
+  // happens after, and only when it is needed.
+  useEffect(() => {
+    setPage((current) => Math.min(current, pageCount));
+  }, [pageCount]);
+  const current = Math.min(page, pageCount);
+  const pageItems = visible.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
+
+  // Paging without this leaves the reader looking at the bottom of a page they
+  // have not seen the top of: the grid is three rows tall and the strip they
+  // clicked is below all of it. `smooth` rather than an instant jump so the move
+  // reads as the same page scrolling, not as a navigation; the global
+  // reduced-motion reset turns it back into a jump for anyone who asked.
+  const goToPage = (next: number) => {
+    setPage(next);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const resetAll = () =>
-    setState((current) => ({ ...current, query: "", filters: EMPTY_CATALOG_FILTERS }));
+    setState((currentState) => ({ ...currentState, query: "", filters: EMPTY_CATALOG_FILTERS }));
 
   if (query.isError) {
     return <CatalogError onRetry={() => query.refetch()} retrying={query.isRefetching} />;
   }
 
   const isLoading = query.isPending;
-  const isEmpty = !isLoading && festivals.length === 0;
 
-  if (isEmpty) {
+  if (!isLoading && festivals.length === 0) {
     return <CatalogNoFestivals />;
   }
 
-  const setQuery = (value: string) => setState((current) => ({ ...current, query: value }));
-  const setSort = (sort: CatalogSort) => setState((current) => ({ ...current, sort }));
-  const setFilters = (filters: CatalogFilters) => setState((current) => ({ ...current, filters }));
+  // Every change to what is shown sends the reader back to the first page. The
+  // alternative — keeping the page number across a new search — lands them in
+  // the middle of a result set they have not seen the start of.
+  const setQuery = (value: string) => {
+    setState((currentState) => ({ ...currentState, query: value }));
+    setPage(1);
+  };
+  const setSort = (sort: CatalogSort) => setState((currentState) => ({ ...currentState, sort }));
+  const setFilters = (filters: CatalogFilters) => {
+    setState((currentState) => ({ ...currentState, filters }));
+    setPage(1);
+  };
 
   return (
-    <div className="space-y-5">
-      <FestivalCatalogToolbar
-        query={state.query}
-        onQueryChange={setQuery}
-        sort={state.sort}
-        onSortChange={setSort}
-        filtersOpen={filtersOpen}
-        onToggleFilters={() => setFiltersOpen((open) => !open)}
-        activeFilterCount={activeFilterCount}
+    <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:gap-[13px]">
+      <FestivalFiltersSidebar
+        filters={state.filters}
+        options={options}
+        onChange={setFilters}
+        className="xl:w-[413px] xl:shrink-0"
       />
 
-      {filtersOpen ? (
-        <FestivalFiltersPanel
-          filters={state.filters}
-          options={options}
-          onChange={setFilters}
-          onReset={resetAll}
-        />
-      ) : null}
+      <section aria-label="Каталог фестивалей" className="min-w-0 flex-1 space-y-4">
+        {title ? (
+          <h1 className="font-heading font-bold text-[1.75rem] text-foreground leading-snug tracking-tight">
+            {title}
+          </h1>
+        ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <section aria-label="Каталог фестивалей" className="min-w-0 space-y-4">
-          {!isLoading ? (
-            <p className="text-sm text-muted-foreground" aria-live="polite">
+        <FestivalCatalogToolbar
+          query={state.query}
+          onQueryChange={setQuery}
+          sort={state.sort}
+          onSortChange={setSort}
+        />
+
+        {isLoading ? (
+          <FestivalGridSkeleton />
+        ) : visible.length === 0 ? (
+          <CatalogNoResults onReset={resetAll} reason={state.query.trim() ? "search" : "filters"} />
+        ) : (
+          // 23px from the last card to the pagination, as the frame measures it.
+          // A wrapper rather than a margin on the strip itself: the section's own
+          // `space-y` sets `margin-top` through a selector that outranks a plain
+          // `mt-*` on a child, so the two would have fought and the selector would
+          // have won.
+          <div className="space-y-[23px]">
+            <FestivalGrid festivals={pageItems} now={now} detailBasePath={detailBasePath} />
+            {/* Announced rather than drawn: the frame has no result count, but a
+                reader who narrows the list with a screen reader otherwise gets no
+                confirmation that anything happened. */}
+            <p className="sr-only" aria-live="polite">
               {visible.length === festivals.length
                 ? `Фестивалей: ${festivals.length}`
                 : `Найдено: ${visible.length} из ${festivals.length}`}
             </p>
-          ) : null}
-
-          {isLoading ? (
-            <FestivalGridSkeleton />
-          ) : visible.length === 0 ? (
-            <CatalogNoResults
-              onReset={resetAll}
-              reason={state.query.trim() ? "search" : "filters"}
+            <FestivalCatalogPagination
+              page={current}
+              pageCount={pageCount}
+              onPageChange={goToPage}
             />
-          ) : (
-            <FestivalGrid festivals={visible} now={now} detailBasePath={detailBasePath} />
-          )}
-        </section>
-
-        {!isLoading ? (
-          <aside className="hidden xl:block">
-            <div className="sticky top-4">
-              <FestivalFeaturedPanel festivals={festivals} />
-            </div>
-          </aside>
-        ) : null}
-      </div>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
