@@ -63,7 +63,15 @@ interface FestivalCatalogPaginationProps {
   onPageChange: (page: number) => void;
 }
 
-/** The numbered strip under the grid, with a paddle at each end. */
+/**
+ * The numbered strip under the grid, with a paddle at each end.
+ *
+ * On a phone the two paddles are pushed to the edges and the numbers sit between
+ * them — 29px in from the screen, which is the page's own 14px gutter plus 15
+ * here. Thumbs reach the sides of a phone and not its middle, so the two controls
+ * that are pressed repeatedly go where the thumb already is. On a desktop the
+ * whole strip is centred instead, because there it is read before it is clicked.
+ */
 export function FestivalCatalogPagination({
   page,
   pageCount,
@@ -74,7 +82,10 @@ export function FestivalCatalogPagination({
   }
 
   return (
-    <nav aria-label="Страницы каталога" className="flex items-center justify-center gap-5">
+    <nav
+      aria-label="Страницы каталога"
+      className="flex items-center justify-between gap-2 px-[15px] xl:justify-center xl:gap-5 xl:px-0"
+    >
       <Paddle direction="prev" disabled={page <= 1} onClick={() => onPageChange(page - 1)} />
 
       <ul className="flex items-center gap-1">
