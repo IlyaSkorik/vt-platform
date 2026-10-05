@@ -118,10 +118,22 @@ def test_a_phonogram_may_still_be_uploaded_after_the_entry_is_accepted(auth_clie
     assert response.data["data"]["attachments"][0]["type"] == "MUSIC"
 
 
-def test_paperwork_stays_frozen_once_the_entry_is_accepted(auth_client: APIClient) -> None:
-    """Only the backing track outlives the freeze — a document is a claim about the entry."""
+def test_paperwork_follows_the_entry_into_the_programme(auth_client: APIClient) -> None:
+    """Пока номер не состоялся, справку к нему можно донести: приём заявок открыт,
+    а статус номера — не тот рубеж, на котором документы перестают принимать."""
     submission_id = _submission_in_application(auth_client)
     _force_status(submission_id, "ACCEPTED")
+    response = auth_client.post(
+        f"/api/v1/submissions/{submission_id}/attachments",
+        {"file": SimpleUploadedFile("spravka.pdf", b"%PDF-1.4", content_type="application/pdf"), "attachmentType": "DOCUMENT"},
+        format="multipart",
+    )
+    assert response.status_code == 201, response.data
+
+
+def test_paperwork_stops_once_the_performance_took_place(auth_client: APIClient) -> None:
+    submission_id = _submission_in_application(auth_client)
+    _force_status(submission_id, "COMPLETED")
     response = auth_client.post(
         f"/api/v1/submissions/{submission_id}/attachments",
         {"file": SimpleUploadedFile("spravka.pdf", b"%PDF-1.4", content_type="application/pdf"), "attachmentType": "DOCUMENT"},

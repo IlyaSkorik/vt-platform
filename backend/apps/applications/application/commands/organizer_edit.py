@@ -147,7 +147,7 @@ class EditSubmissionContentByOrganizerHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_reviewer(self._organization, parse_reviewer_id(command.reviewer_id))
-        if not submission.is_correctable_by_organizer():
+        if not submission.is_editable():
             raise SubmissionStateConflictError(
                 "Заявка завершена или отменена — изменить её нельзя.",
                 domain_code="SubmissionNotEditableError",
@@ -215,7 +215,7 @@ class EditSubmissionContentByOrganizerHandler:
         else:
             changes.append(SubmissionContentChange(field="title", before=None, after=performance.title.value))
         with translate_domain_errors():
-            return submission.set_performance(performance=performance, now=now, by_organizer=True)
+            return submission.set_performance(performance=performance, now=now)
 
     # ------------------------------------------------------------------
     # Participants
@@ -255,10 +255,10 @@ class EditSubmissionContentByOrganizerHandler:
         for participant in dropped:
             changes.append(SubmissionContentChange(field="participant_removed", before=participant.display_name, after=None))
             with translate_domain_errors():
-                events += submission.remove_participant(participant_id=participant.id, now=now, by_organizer=True)
+                events += submission.remove_participant(participant_id=participant.id, now=now)
         for existing, _ in replaced:
             with translate_domain_errors():
-                events += submission.remove_participant(participant_id=existing.id, now=now, by_organizer=True)
+                events += submission.remove_participant(participant_id=existing.id, now=now)
 
         for existing, entry in replaced:
             # The headcount and roster of a replaced performer travel with the
@@ -331,7 +331,6 @@ class EditSubmissionContentByOrganizerHandler:
                     participant_id=existing.id,
                     member_count=entry.member_count,
                     now=now,
-                    by_organizer=True,
                 )
         roster = _roster(entry.members)
         if roster != existing.members:
@@ -340,7 +339,6 @@ class EditSubmissionContentByOrganizerHandler:
                     participant_id=existing.id,
                     members=roster,
                     now=now,
-                    by_organizer=True,
                 )
         return events
 
@@ -402,7 +400,6 @@ class EditSubmissionContentByOrganizerHandler:
                 member_count=entry.member_count,
                 members=_roster(entry.members),
                 now=now,
-                by_organizer=True,
             )
         return events
 
@@ -440,11 +437,11 @@ class EditSubmissionContentByOrganizerHandler:
                 continue
             changes.append(SubmissionContentChange(field="teacher_removed", before=teacher.name.full_name, after=None))
             with translate_domain_errors():
-                events += submission.remove_teacher(teacher_id=teacher.id, now=now, by_organizer=True)
+                events += submission.remove_teacher(teacher_id=teacher.id, now=now)
 
         for existing, _ in replaced:
             with translate_domain_errors():
-                events += submission.remove_teacher(teacher_id=existing.id, now=now, by_organizer=True)
+                events += submission.remove_teacher(teacher_id=existing.id, now=now)
         for existing, entry in replaced:
             events += self._add_teacher(submission, entry, now=now, directory_teacher_id=existing.directory_teacher_id)
         for entry in added:
@@ -500,5 +497,4 @@ class EditSubmissionContentByOrganizerHandler:
                 role=TeacherRole(entry.role),
                 directory_teacher_id=directory_teacher_id,  # type: ignore[arg-type]
                 now=now,
-                by_organizer=True,
             )

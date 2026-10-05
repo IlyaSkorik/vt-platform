@@ -217,63 +217,27 @@ _LEGAL_TRANSITIONS: Final[dict[SubmissionStatus, frozenset[SubmissionStatus]]] =
 #: would rewrite history — and its diploma may already be in the register.
 _ORGANIZER_ONLY_CANCELLABLE_STATUSES: Final = frozenset({SubmissionStatus.ACCEPTED, SubmissionStatus.SCHEDULED})
 
-#: Statuses in which the submission's content (performance, participants, teachers,
-#: attachments, price snapshot) may still be edited by the applicant themselves.
+#: The whole live path of an entry: everything that is neither performed nor called
+#: off. This is the window in which the submission's content (performance,
+#: participants, teachers, attachments) may be changed — by the applicant and by the
+#: organizer alike.
 #:
-#: The window is the whole paperwork half of the lifecycle, up to but not including
-#: ``ACCEPTED``. What actually closes it is the competition's registration deadline —
-#: every applicant-facing use case checks it before touching the aggregate — not the
-#: organizer's verdict. Approval is a verdict on the entry, not a lock on it: the
-#: applicant is told «заявка одобрена», registration is still open for another month,
-#: and a misspelt surname that will be printed on a diploma must stay fixable without
-#: asking the organizer to send the entry back. The order's total follows the edit for
-#: as long as the order is editable, so the price cannot drift away from the content.
+#: The aggregate deliberately does **not** freeze content on the organizer's verdict.
+#: What ends the applicant's right to edit is the competition's registration deadline,
+#: checked by every applicant-facing use case before it reaches the aggregate; the
+#: organizer's own correction path skips that check on purpose, because correcting an
+#: entry after the deadline is exactly when it happens. Both rules live in the use
+#: cases, where the calendar is known — restating them here as a status freeze is what
+#: produced «выступление уже рассмотрено организатором» на заявке, приём по которой
+#: шёл ещё месяц.
 #:
-#: ``ACCEPTED`` is where it stops: the fee is settled and the entry is committed to the
-#: running order, so from there on only the organizer may correct it — see
-#: :data:`_LIVE_STATUSES` and :meth:`Submission._ensure_editable`.
-_EDITABLE_STATUSES: Final = frozenset(
-    {
-        SubmissionStatus.DRAFT,
-        SubmissionStatus.SUBMITTED,
-        SubmissionStatus.UNDER_REVIEW,
-        SubmissionStatus.REQUIRES_CORRECTION,
-        SubmissionStatus.APPROVED,
-        SubmissionStatus.WAITING_PAYMENT,
-        SubmissionStatus.PAID,
-    }
-)
-
-#: Statuses in which the organizer may record a review iteration.
-_REVIEWABLE_STATUSES: Final = frozenset({SubmissionStatus.SUBMITTED, SubmissionStatus.UNDER_REVIEW})
-
-#: Attachment kinds that outlive the content freeze.
+#: It is also the only answer that survives contact with a diploma: the ФИО on the
+#: entry is printed on it, and a typo spotted while the festival is still taking
+#: entries must be fixable by the person who made it — approval, the invoice and even
+#: a slot in the running order do not make a misspelt surname correct.
 #:
-#: A backing track is not a claim about the entry — it is the material the act is
-#: performed to, and it is wanted right up to the day. The competition already has a
-#: deadline of its own for it (``MUSIC_UPLOAD``), deliberately later than the
-#: application deadline, and a running order is built only from entries that are
-#: ``ACCEPTED`` or beyond. Freezing the track together with the content therefore made
-#: that deadline unreachable: by the time an entry could take a slot in the programme,
-#: nobody — not the applicant, not the organizer — could put a phonogram on it, and the
-#: sound desk's archive came out empty. Everything else (participants, teachers, the
-#: performance itself, benefit paperwork) stays frozen: those are the entry's content,
-#: and the organizer accepted *that*.
-_LATE_ATTACHMENT_TYPES: Final = frozenset({AttachmentType.MUSIC})
-
-#: How each kind of file is named to the applicant. The enum's own values are wire
-#: codes; a person is told «фонограмма», not ``MUSIC``.
-_ATTACHMENT_LABELS_RU: Final[dict[AttachmentType, str]] = {
-    AttachmentType.MUSIC: "фонограмма",
-    AttachmentType.VIDEO: "видео",
-    AttachmentType.IMAGE: "фотография",
-    AttachmentType.DOCUMENT: "документ",
-    AttachmentType.BENEFIT: "документ на льготу",
-}
-
-#: Statuses in which a late attachment kind may still be added or removed: the entry is
-#: live. ``COMPLETED`` and ``CANCELLED`` are out — the performance took place, or there
-#: will not be one, and in both cases there is nothing left to cue.
+#: ``COMPLETED`` and ``CANCELLED`` are out: the performance took place, or there will
+#: not be one, and neither is a fact a correction can change.
 _LIVE_STATUSES: Final = frozenset(
     {
         SubmissionStatus.DRAFT,
@@ -287,6 +251,37 @@ _LIVE_STATUSES: Final = frozenset(
         SubmissionStatus.SCHEDULED,
     }
 )
+
+#: Statuses in which the organizer may record a review iteration.
+_REVIEWABLE_STATUSES: Final = frozenset({SubmissionStatus.SUBMITTED, SubmissionStatus.UNDER_REVIEW})
+
+#: Statuses in which the per-submission price snapshot may still be computed or
+#: recomputed: everything up to the invoice.
+#:
+#: Unlike the content, the price does have a point of no return, and it is the money
+#: rather than the programme: once the order is sent for payment its total is frozen,
+#: so a snapshot that kept moving underneath it would bill a person for one thing and
+#: quote them another. Before that the snapshot must follow every edit — a collective
+#: that grows from twelve to fourteen people costs what fourteen people cost.
+_PRICE_RECALCULABLE_STATUSES: Final = frozenset(
+    {
+        SubmissionStatus.DRAFT,
+        SubmissionStatus.SUBMITTED,
+        SubmissionStatus.UNDER_REVIEW,
+        SubmissionStatus.REQUIRES_CORRECTION,
+        SubmissionStatus.APPROVED,
+    }
+)
+
+#: How each kind of file is named to the applicant. The enum's own values are wire
+#: codes; a person is told «фонограмма», not ``MUSIC``.
+_ATTACHMENT_LABELS_RU: Final[dict[AttachmentType, str]] = {
+    AttachmentType.MUSIC: "фонограмма",
+    AttachmentType.VIDEO: "видео",
+    AttachmentType.IMAGE: "фотография",
+    AttachmentType.DOCUMENT: "документ",
+    AttachmentType.BENEFIT: "документ на льготу",
+}
 
 #: Longest ФИО a collective may list for one of its members. Generous: it is printed
 #: on a diploma, so a long double-barrelled name must fit rather than be truncated.
@@ -919,15 +914,12 @@ class Submission:
         return self._status is SubmissionStatus.DRAFT
 
     def is_editable(self) -> bool:
-        """Whether the applicant may currently change the content — anything before ``ACCEPTED``."""
-        return self._status in _EDITABLE_STATUSES
+        """Whether the content may currently be changed at all — the whole live lifecycle.
 
-    def is_correctable_by_organizer(self) -> bool:
-        """Whether the organizer may still correct the content — the whole live lifecycle.
-
-        Wider than :meth:`is_editable` for the reason spelled out in
-        :meth:`_ensure_editable`: the organizer owns what the entry says, and most
-        mistakes are noticed after the applicant's own window has closed.
+        Says nothing about *who* may change it or *until when*: the applicant's
+        deadline is the competition's registration window and the organizer has none,
+        and both of those live in the use cases, where the calendar is known. See
+        :data:`_LIVE_STATUSES`.
         """
         return self._status in _LIVE_STATUSES
 
@@ -935,13 +927,12 @@ class Submission:
     # Performance
     # ------------------------------------------------------------------
 
-    def set_performance(self, *, performance: Performance, now: datetime, by_organizer: bool = False) -> list[DomainEvent]:
+    def set_performance(self, *, performance: Performance, now: datetime) -> list[DomainEvent]:
         """Set or replace the submission's single performance (editable states only).
 
-        ``by_organizer`` widens the window to the whole live lifecycle — see
-        :meth:`_ensure_editable`.
+        Allowed for as long as the entry is live — see :meth:`_ensure_editable`.
         """
-        self._ensure_editable(by_organizer=by_organizer)
+        self._ensure_editable()
         self._performance = performance
         self._touch(now)
         return [PerformanceDefined(aggregate_id=self._id.value)]
@@ -962,7 +953,6 @@ class Submission:
         member_count: int = 1,
         members: Sequence[str] = (),
         now: datetime,
-        by_organizer: bool = False,
     ) -> list[DomainEvent]:
         """Add a participant (a Participant Registry snapshot: solo or collective).
 
@@ -974,10 +964,9 @@ class Submission:
         (the same registry participant, or - for manual entries - the same display name
         and birth date, already on this submission).
 
-        ``by_organizer`` widens the window to the whole live lifecycle — see
-        :meth:`_ensure_editable`.
+        Allowed for as long as the entry is live — see :meth:`_ensure_editable`.
         """
-        self._ensure_editable(by_organizer=by_organizer)
+        self._ensure_editable()
         if birth_date is not None and birth_date.value > now.date():
             raise InvalidBirthDateError(f"Birth date {birth_date} must not be in the future.")
         candidate = Participant.create(
@@ -996,9 +985,7 @@ class Submission:
         self._touch(now)
         return [ParticipantAdded(aggregate_id=self._id.value, participant_id=participant_id)]
 
-    def set_participant_members(
-        self, *, participant_id: ParticipantId, members: Sequence[str], now: datetime, by_organizer: bool = False
-    ) -> list[DomainEvent]:
+    def set_participant_members(self, *, participant_id: ParticipantId, members: Sequence[str], now: datetime) -> list[DomainEvent]:
         """Name the people in a collective - the applicant's request for individual documents.
 
         Optional by design: an applicant who wants only the collective's own diploma
@@ -1006,11 +993,11 @@ class Submission:
         it in. Sending an empty list withdraws the request, which is why this replaces
         the whole roster rather than appending to it.
 
-        Editable states only, like every other content change: past ``ACCEPTED`` the
-        entry is what the organizer accepted, and the names on it are part of that —
-        which is also why ``by_organizer`` lifts the freeze: it is their own record.
+        Changeable for as long as the entry is live: these names are printed on the
+        diplomas, so a typo spotted while the festival is still taking entries is
+        fixed by the person who made it — see :meth:`_ensure_editable`.
         """
-        self._ensure_editable(by_organizer=by_organizer)
+        self._ensure_editable()
         participant = self._participants.get(participant_id)
         if participant is None:
             raise ParticipantNotFoundError(f"No participant {participant_id} in this submission.")
@@ -1018,9 +1005,7 @@ class Submission:
         self._touch(now)
         return [ParticipantMembersChanged(aggregate_id=self._id.value, participant_id=participant_id)]
 
-    def set_participant_member_count(
-        self, *, participant_id: ParticipantId, member_count: int, now: datetime, by_organizer: bool = False
-    ) -> list[DomainEvent]:
+    def set_participant_member_count(self, *, participant_id: ParticipantId, member_count: int, now: datetime) -> list[DomainEvent]:
         """Correct how many people a collective entry stands for.
 
         The headcount arrives with the entry, but it is the one thing about a
@@ -1029,7 +1014,7 @@ class Submission:
         afterwards. Fixing it must not cost them the roster they already typed, so
         this changes the entry rather than replacing it.
         """
-        self._ensure_editable(by_organizer=by_organizer)
+        self._ensure_editable()
         participant = self._participants.get(participant_id)
         if participant is None:
             raise ParticipantNotFoundError(f"No participant {participant_id} in this submission.")
@@ -1037,7 +1022,7 @@ class Submission:
         self._touch(now)
         return [ParticipantMemberCountChanged(aggregate_id=self._id.value, participant_id=participant_id)]
 
-    def remove_participant(self, *, participant_id: ParticipantId, now: datetime, by_organizer: bool = False) -> list[DomainEvent]:
+    def remove_participant(self, *, participant_id: ParticipantId, now: datetime) -> list[DomainEvent]:
         """Remove a participant.
 
         A DRAFT (or REQUIRES_CORRECTION) submission may be left temporarily without
@@ -1045,7 +1030,7 @@ class Submission:
         participant" invariant is enforced when the submission is submitted, not while
         it is being edited.
         """
-        self._ensure_editable(by_organizer=by_organizer)
+        self._ensure_editable()
         if participant_id not in self._participants:
             raise ParticipantNotFoundError(f"No participant {participant_id} in this submission.")
         del self._participants[participant_id]
@@ -1064,7 +1049,6 @@ class Submission:
         role: TeacherRole,
         directory_teacher_id: DirectoryTeacherId | None = None,
         now: datetime,
-        by_organizer: bool = False,
     ) -> list[DomainEvent]:
         """Credit a teacher in a configurable role.
 
@@ -1072,15 +1056,15 @@ class Submission:
         Directory; ``name``/``role`` are the immutable snapshot preserved on the
         submission so later directory edits never rewrite it.
         """
-        self._ensure_editable(by_organizer=by_organizer)
+        self._ensure_editable()
         teacher = Teacher.create(teacher_id=teacher_id, name=name, role=role, directory_teacher_id=directory_teacher_id)
         self._teachers[teacher_id] = teacher
         self._touch(now)
         return [TeacherAdded(aggregate_id=self._id.value, teacher_id=teacher_id, role=role)]
 
-    def remove_teacher(self, *, teacher_id: TeacherId, now: datetime, by_organizer: bool = False) -> list[DomainEvent]:
+    def remove_teacher(self, *, teacher_id: TeacherId, now: datetime) -> list[DomainEvent]:
         """Remove a teacher."""
-        self._ensure_editable(by_organizer=by_organizer)
+        self._ensure_editable()
         if teacher_id not in self._teachers:
             raise TeacherNotFoundError(f"No teacher {teacher_id} in this submission.")
         del self._teachers[teacher_id]
@@ -1108,7 +1092,7 @@ class Submission:
         number), and photographs come in handfuls. The only thing refused is the same file
         twice.
         """
-        self._ensure_attachable(attachment_type)
+        self._ensure_editable()
         if any(a.file == file for a in self._attachments.values()):
             raise DuplicateAttachmentError(f"An attachment referencing {file.value!r} is already in this submission.")
         attachment = Attachment.create(
@@ -1137,8 +1121,7 @@ class Submission:
         Removable exactly as long as its kind was attachable: a track that can still be
         added can still be replaced, which is what "заменить фонограмму" is.
         """
-        attachment = self._attachments.get(attachment_id)
-        self._ensure_attachable(attachment.type if attachment is not None else None)
+        self._ensure_editable()
         if attachment_id not in self._attachments:
             raise AttachmentNotFoundError(f"No attachment {attachment_id} in this submission.")
         del self._attachments[attachment_id]
@@ -1152,11 +1135,12 @@ class Submission:
     def set_price_snapshot(self, *, price_snapshot: PriceSnapshot, now: datetime) -> list[DomainEvent]:
         """Freeze the immutable price snapshot onto the submission.
 
-        Settable (and re-computable) only while the submission is editable; once it
-        leaves the editable states the snapshot is permanent and further changes are
-        refused so that later Competition pricing updates can never alter it.
+        Settable (and re-computable) until the order is sent for payment — see
+        :data:`_PRICE_RECALCULABLE_STATUSES`. Past that the snapshot is permanent, so
+        neither a later Competition price change nor a correction to the entry can
+        re-bill a person for what they were already quoted.
         """
-        if self._status not in _EDITABLE_STATUSES:
+        if self._status not in _PRICE_RECALCULABLE_STATUSES:
             raise PriceSnapshotLockedError(f"The price snapshot is frozen and cannot be changed while the submission is {self._status.value}.")
         self._price_snapshot = price_snapshot
         self._touch(now)
@@ -1328,47 +1312,25 @@ class Submission:
             kinds = ", ".join(sorted(_ATTACHMENT_LABELS_RU[kind] for kind in missing))
             raise RequiredAttachmentMissingError(f"Перед подачей нужно приложить: {kinds}.")
 
-    def _ensure_editable(self, *, by_organizer: bool = False) -> None:
-        """Whether the content may be changed right now, by this kind of caller.
+    def _ensure_editable(self) -> None:
+        """Whether the content may be changed right now.
 
-        The applicant's reach is :data:`_EDITABLE_STATUSES`: everything up to
-        ``ACCEPTED``. Their real deadline is the competition's registration window,
-        checked by every use case before it reaches the aggregate — approval is a
-        verdict on the entry, not a lock on it, and an applicant told «заявка одобрена»
-        a month before the deadline must still be able to fix a surname themselves.
-        Past ``ACCEPTED`` the fee is settled and the entry sits in the running order,
-        so changing it is the organizer's call.
+        One window, :data:`_LIVE_STATUSES`, for the applicant and the organizer alike.
+        The aggregate asks only "is there still an entry to change" — whether *this*
+        caller may change it *today* is a calendar question, and the calendar is not
+        here: the applicant's use cases check the competition's registration deadline
+        before they reach this method, and the organizer's correction path skips that
+        check on purpose. Freezing content on the organizer's verdict as well told an
+        applicant «выступление уже рассмотрено организатором» while the festival was
+        still taking entries, which is the one moment a misspelt surname is cheapest
+        to fix.
 
-        The organizer's reach is the whole live lifecycle, for the same reason read
-        from the other end: by the time a mistake is noticed the entry may already be
-        in the programme, and "вернуть участнику на исправление" would cost a round
-        trip for a misspelt surname that will be printed on a diploma. ``COMPLETED``
-        and ``CANCELLED`` stay closed to everyone: the performance happened, or there
-        will not be one, and neither is a fact a correction can change.
+        ``COMPLETED`` and ``CANCELLED`` are closed to everyone: the performance
+        happened, or there will not be one, and neither is a fact a correction can
+        change.
         """
-        if by_organizer:
-            if self._status not in _LIVE_STATUSES:
-                raise SubmissionNotEditableError("Заявка завершена или отменена — изменить её нельзя.")
-            return
-        if self._status not in _EDITABLE_STATUSES:
-            if self._status in _LIVE_STATUSES:
-                raise SubmissionNotEditableError("Выступление уже принято в программу фестиваля — изменить его может только организатор.")
-            raise SubmissionNotEditableError("Заявка завершена или отменена — изменить её нельзя.")
-
-    def _ensure_attachable(self, attachment_type: AttachmentType | None) -> None:
-        """Whether a file of this kind may be attached or detached right now.
-
-        Most kinds are content and follow the content freeze. The kinds in
-        :data:`_LATE_ATTACHMENT_TYPES` follow the entry instead: they may come and go
-        for as long as the entry is live, because they are needed *after* it has been
-        accepted. ``None`` (an attachment id that matches nothing) takes the strict
-        path — the caller is about to be told it does not exist anyway.
-        """
-        if attachment_type is None or attachment_type not in _LATE_ATTACHMENT_TYPES:
-            self._ensure_editable()
-            return
         if self._status not in _LIVE_STATUSES:
-            raise SubmissionNotEditableError(f"Файл «{_ATTACHMENT_LABELS_RU[attachment_type]}» можно приложить, только пока заявка в работе.")
+            raise SubmissionNotEditableError("Заявка завершена или отменена — изменить её нельзя.")
 
     def _transition_to(self, target: SubmissionStatus, *, now: datetime) -> None:
         """Move to ``target`` if the transition is legal from the current status."""

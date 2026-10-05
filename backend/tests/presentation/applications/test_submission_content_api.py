@@ -217,11 +217,27 @@ def test_an_approved_entry_is_still_the_applicants_to_correct(auth_client: APICl
     assert saved.data["data"]["participants"][0]["members"] == ["Иванова Мария Петровна"]
 
 
-def test_an_entry_in_the_programme_is_refused(auth_client: APIClient) -> None:
-    """Взнос оплачен, номер стоит в программе — правит уже только организатор."""
+def test_an_entry_in_the_programme_is_still_the_applicants_to_correct(auth_client: APIClient) -> None:
+    """Номер уже в расписании, но фестиваль не прошёл и приём заявок открыт —
+    состав правит сам заявитель."""
     submission_id, nomination_id = _submission(auth_client)
     participant_id = _collective(auth_client, submission_id, nomination_id)
-    _set_status(submission_id, "ACCEPTED")
+    _set_status(submission_id, "SCHEDULED")
+
+    saved = auth_client.put(
+        f"/api/v1/submissions/{submission_id}/participants/{participant_id}/members",
+        {"members": ["Иванова Мария Петровна"]},
+        format="json",
+    )
+
+    assert saved.status_code == 200, saved.data
+
+
+def test_a_performed_entry_is_refused(auth_client: APIClient) -> None:
+    """Выступление состоялось — менять его состав уже нечему."""
+    submission_id, nomination_id = _submission(auth_client)
+    participant_id = _collective(auth_client, submission_id, nomination_id)
+    _set_status(submission_id, "COMPLETED")
 
     refused = auth_client.put(
         f"/api/v1/submissions/{submission_id}/participants/{participant_id}/members",
@@ -230,7 +246,7 @@ def test_an_entry_in_the_programme_is_refused(auth_client: APIClient) -> None:
     )
 
     assert refused.status_code == 409, refused.data
-    assert "программу" in refused.data["detail"]
+    assert "завершена или отменена" in refused.data["detail"]
 
 
 def test_collective_members_are_optional_and_start_empty(auth_client: APIClient) -> None:
