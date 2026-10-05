@@ -26,13 +26,13 @@ import {
 } from "@/shared/ui";
 
 /**
- * Submission statuses in which the platform still takes a backing track.
+ * Submission statuses in which the platform still takes a backing track — the whole
+ * live path of an entry, matching ``_LIVE_STATUSES`` in the Applications domain.
  *
- * Wider than the content freeze on purpose, and matching ``_LIVE_STATUSES`` in the
- * Applications domain: a track is not a claim about the entry, it is the material the
- * act is performed to, and it is wanted right up to the day. A running order is built
- * only from entries that are ACCEPTED or beyond, so a track that stopped being
- * attachable at acceptance could never reach the sound desk's archive at all.
+ * A running order is built only from entries that are ACCEPTED or beyond, and a track
+ * is wanted right up to the day, so anything narrower would leave the sound desk's
+ * archive empty. Its own deadline (``MUSIC_UPLOAD``) is checked by the upload use
+ * case, which is where every file deadline lives.
  */
 const LIVE_STATUSES = new Set([
   "DRAFT",

@@ -22,11 +22,12 @@ import {
 
 /**
  * Submission statuses whose content the domain still accepts edits to —
- * mirrors `_EDITABLE_STATUSES` in the Applications domain.
+ * mirrors `_LIVE_STATUSES` in the Applications domain.
  *
- * Gated on the holder submission, not the order: the freeze lands when the entry
- * enters the running order (ACCEPTED), not when the organizer approves it, and
- * the backend would reject an upload past that.
+ * Gated on the holder submission, not the order: the entry stays editable for its
+ * whole live path, because what ends the applicant's window is the competition's
+ * deadline, not the organizer's verdict. Only a performance that took place, or an
+ * entry that was called off, is closed.
  */
 const EDITABLE_STATUSES = new Set([
   "DRAFT",
@@ -36,6 +37,8 @@ const EDITABLE_STATUSES = new Set([
   "APPROVED",
   "WAITING_PAYMENT",
   "PAID",
+  "ACCEPTED",
+  "SCHEDULED",
 ]);
 const BENEFIT_ACCEPT = ".pdf,image/*";
 
