@@ -10,12 +10,12 @@ import { Checkbox, DatePicker, FiltersIcon } from "@/shared/ui";
 
 /**
  * The two date fields, which the frame draws smaller and plainer than the form
- * controls `DatePicker` is built for: 150×28 on a 5px corner, a 30%-strength
- * hairline, and a 12px placeholder. Written once and shared rather than repeated
+ * controls `DatePicker` is built for: 120×28 on a phone and 150×28 on a desktop,
+ * both on a 5px corner, a 30%-strength hairline, and a 12px placeholder. Written once and shared rather than repeated
  * on both, so the pair cannot drift apart.
  */
 const DATE_FIELD =
-  "w-[150px] gap-0 [&_label]:font-heading [&_label]:text-base [&_label]:leading-snug [&_label]:text-foreground [&_input]:h-7 [&_input]:rounded-[5px] [&_input]:border-foreground/30 [&_input]:bg-background [&_input]:font-heading [&_input]:text-xs [&_input]:leading-4 [&_input]:placeholder:text-foreground/40 dark:[&_input]:placeholder:text-on-scrim-muted";
+  "w-[120px] gap-0 xl:w-[150px] [&_label]:font-heading [&_label]:text-base [&_label]:leading-snug [&_label]:text-foreground [&_input]:h-7 [&_input]:rounded-[5px] [&_input]:border-foreground/30 [&_input]:bg-background [&_input]:font-heading [&_input]:text-xs [&_input]:leading-4 [&_input]:placeholder:text-foreground/40 dark:[&_input]:placeholder:text-on-scrim-muted";
 
 interface FilterGroupProps {
   label: string;
@@ -50,7 +50,7 @@ function FilterOption({ checked, onToggle, children }: FilterOptionProps): React
         label={children}
         // The box is the frame's: 20px, `свет` on a 42%-strength hairline, 3px
         // corner — the one place on the public side that is not the brand's 15.
-        className="size-5 shrink-0 rounded-[3px] border-foreground/42 bg-background"
+        className="size-[25px] shrink-0 rounded-[3px] border-foreground/42 bg-background xl:size-5"
         containerClassName="gap-0 [&>div]:gap-3.5 [&_label]:font-heading [&_label]:text-base [&_label]:leading-snug [&_label]:text-foreground"
       />
     </li>
@@ -89,7 +89,12 @@ export function FestivalFiltersSidebar({
   onChange,
   className,
 }: FestivalFiltersSidebarProps): React.JSX.Element {
-  const [open, setOpen] = useState(true);
+  // Open where it is a standing column, closed where it is a tray. On a phone the
+  // panel is 606px of filters above the first card; on the desktop it is the
+  // column the grid sits beside, and hiding it would leave an empty gutter.
+  const [open, setOpen] = useState(
+    () => typeof window === "undefined" || window.matchMedia("(min-width: 80rem)").matches,
+  );
   const bodyId = useId();
 
   return (
@@ -100,14 +105,15 @@ export function FestivalFiltersSidebar({
     <aside
       aria-label="Фильтры каталога"
       className={cn(
-        // `--brand-pane`: a warm grey at just under a fifth by day, «тёмный база
-        // ночная» at 60% by night. Over the page it reads as a panel without
-        // being a surface.
+        // The plate — `--brand-pane`, a warm grey at just under a fifth by day,
+        // «тёмный база ночная» at 60% by night — belongs to the whole column on a
+        // desktop and to the opened body alone on a phone, where the trigger
+        // above it is a band of its own.
         // `sticky` from `xl`, where the panel has a column of its own: the grid
         // beside it is pages long, and filters that scroll away are filters the
         // reader has to come back up for. `top` clears the sticky header (60px)
         // and leaves the page's own 27px of air above it.
-        "rounded-brand bg-brand-pane px-7 py-5 xl:sticky xl:top-[87px]",
+        "xl:sticky xl:top-[87px] xl:rounded-brand xl:bg-brand-pane xl:px-7 xl:py-5",
         className,
       )}
     >
@@ -116,18 +122,25 @@ export function FestivalFiltersSidebar({
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-controls={bodyId}
-        className="-ml-2 flex w-full cursor-pointer items-center gap-1.5 rounded-sm text-foreground/40 outline-none transition-colors hover:text-foreground/60 focus-visible:ring-2 focus-visible:ring-ring dark:text-on-scrim dark:hover:text-on-scrim-muted"
+        className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-brand bg-brand-surface font-bold text-brand-mark outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring dark:bg-brand-line/70 xl:dark:bg-brand-surface xl:-ml-2 xl:h-auto xl:justify-start xl:gap-1.5 xl:rounded-sm xl:bg-transparent xl:font-normal xl:text-foreground/40 xl:hover:text-foreground/60 dark:xl:text-on-scrim dark:xl:hover:text-on-scrim-muted"
       >
-        <FiltersIcon className="h-[30px] w-[42px] shrink-0" />
+        {/* The icon trails the label on a phone, where the band is a button and
+            reads left to right; it leads on a desktop, where the row is a title
+            for the column under it. `order` rather than two renders of the glyph. */}
+        <FiltersIcon className="order-2 h-[30px] w-[42px] shrink-0 xl:order-none" />
         {/* Regular weight, not bold: the frame sets the panel's own name lighter
             than the group titles under it, so it reads as a label for the column
             rather than as the first of its headings. It is let down to 40% by day
             and run at full `свет` by night, where the plate behind it is dark
             enough that a 40% label would have disappeared into it. */}
-        <span className="font-heading text-[1.75rem] leading-snug">Фильтры</span>
+        <span className="font-heading text-base leading-snug xl:text-[1.75rem]">Фильтры</span>
       </button>
 
-      <div id={bodyId} hidden={!open} className="mt-8 space-y-5">
+      <div
+        id={bodyId}
+        hidden={!open}
+        className="mt-4 space-y-5 rounded-brand bg-brand-pane px-7 py-5 xl:mt-8 xl:rounded-none xl:bg-transparent xl:p-0"
+      >
         {options.categories.length > 0 ? (
           <FilterGroup label="Категория">
             {options.categories.map((option) => (

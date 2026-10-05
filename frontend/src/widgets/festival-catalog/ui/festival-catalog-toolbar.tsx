@@ -66,11 +66,11 @@ function SortMenu({ sort, onSortChange }: SortMenuProps): React.JSX.Element {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={menuId}
-        className="flex h-6 w-[211px] cursor-pointer items-center justify-between gap-2 rounded-brand bg-background px-[15px] font-heading text-foreground text-xs outline-none transition-colors hover:bg-background/80 focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex h-[41px] w-full cursor-pointer items-center justify-between gap-2 rounded-brand border-4 border-brand-surface bg-background px-4 font-heading text-base text-foreground outline-none transition-colors hover:bg-background/80 focus-visible:ring-2 focus-visible:ring-ring xl:h-6 xl:w-[211px] xl:border-0 xl:px-[15px] xl:text-xs dark:border-brand-line/70 xl:dark:border-transparent"
       >
         <span className="truncate">{current.label}</span>
         <ChevronUp
-          className={cn("size-3.5 shrink-0 transition-transform", !open && "rotate-180")}
+          className={cn("size-5 shrink-0 transition-transform xl:size-3.5", !open && "rotate-180")}
           aria-hidden="true"
         />
       </button>
@@ -85,7 +85,7 @@ function SortMenu({ sort, onSortChange }: SortMenuProps): React.JSX.Element {
           // `z-10` and not a portal: it only ever has to clear the grid directly
           // beneath, and a portal would cost the outside-click handling above its
           // one simple containment check.
-          className="absolute top-[calc(100%+3px)] right-0 z-10 w-[211px] space-y-1.5 rounded-brand border border-brand-line bg-background p-[9px] shadow-elevation-2"
+          className="absolute top-[calc(100%+3px)] right-0 left-0 z-10 space-y-1.5 rounded-brand border border-brand-line bg-background p-[9px] shadow-elevation-2 xl:left-auto xl:w-[211px]"
         >
           {SORT_OPTIONS.map((option) => {
             const active = option.value === sort;
@@ -99,7 +99,7 @@ function SortMenu({ sort, onSortChange }: SortMenuProps): React.JSX.Element {
                   }}
                   aria-current={active}
                   className={cn(
-                    "flex h-[30px] w-full cursor-pointer items-center justify-between gap-2 rounded-[5px] px-2 text-left font-heading text-foreground text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+                    "flex h-[30px] w-full cursor-pointer items-center justify-between gap-2 rounded-[5px] px-2 text-left font-heading text-foreground text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring xl:text-xs",
                     active
                       ? "bg-brand-line-soft/50 dark:bg-brand-control/60"
                       : "hover:bg-brand-line-soft/25 dark:hover:bg-brand-control/30",
@@ -128,6 +128,11 @@ interface FestivalCatalogToolbarProps {
  * The band over the grid: search on the left, sort on the right, both sitting on
  * a solid strip of «светлый акцент».
  *
+ * On a phone the sort control leaves the band and stands on its own, ringed in
+ * four pixels of the same violet the band is painted with — «светлый акцент» by
+ * day, «тёмный акцент» at 70% by night. It is 41px there against the bands' 48,
+ * which is what keeps the three rows from reading as one striped block.
+ *
  * The strip is the control, not a container for controls — which is why the
  * search field is a bare input on `свет` rather than `shared/ui`'s `Input`. That
  * component carries a border, a focus ring and a label slot, all of which fight
@@ -150,20 +155,32 @@ export function FestivalCatalogToolbar({
   onSortChange,
 }: FestivalCatalogToolbarProps): React.JSX.Element {
   return (
-    <div className="flex h-12 items-center gap-4 rounded-brand bg-brand-surface px-6">
-      <label className="flex min-w-0 flex-1 items-center gap-3">
-        <span className="sr-only">Поиск фестивалей</span>
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="Найти фестиваль"
-          className="h-[30px] w-full max-w-[336px] min-w-0 rounded-brand bg-background px-4 font-heading text-foreground text-lg leading-snug outline-none transition-shadow placeholder:text-foreground/37 dark:placeholder:text-on-scrim/65 focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-search-cancel-button]:hidden"
-        />
-        <SearchIcon className="h-[26px] w-[25px] shrink-0 text-brand-mark" />
-      </label>
+    // Stacked on a phone, one row on a desktop. The band holds only the search
+    // there — at 375px a 211px sort control beside a 291px field does not fit,
+    // and the frame drops it onto a line of its own rather than shrinking both
+    // into illegibility.
+    <div className="space-y-4 xl:space-y-0">
+      <div className="flex h-12 items-center gap-2 rounded-brand bg-brand-surface px-2 xl:gap-4 xl:px-6 dark:bg-brand-line/70 xl:dark:bg-brand-surface">
+        <label className="flex min-w-0 flex-1 items-center gap-2 xl:gap-3">
+          <span className="sr-only">Поиск фестивалей</span>
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            placeholder="Найти фестиваль"
+            className="h-[30px] w-full min-w-0 rounded-brand bg-background px-4 font-heading text-base text-foreground leading-snug outline-none transition-shadow placeholder:text-foreground/37 dark:placeholder:text-on-scrim/65 focus-visible:ring-2 focus-visible:ring-ring xl:max-w-[336px] xl:text-lg [&::-webkit-search-cancel-button]:hidden"
+          />
+          <SearchIcon className="size-7 shrink-0 text-brand-mark xl:h-[26px] xl:w-[25px]" />
+        </label>
 
-      <SortMenu sort={sort} onSortChange={onSortChange} />
+        <div className="hidden xl:block">
+          <SortMenu sort={sort} onSortChange={onSortChange} />
+        </div>
+      </div>
+
+      <div className="xl:hidden">
+        <SortMenu sort={sort} onSortChange={onSortChange} />
+      </div>
     </div>
   );
 }
