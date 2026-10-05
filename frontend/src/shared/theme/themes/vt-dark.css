@@ -88,6 +88,7 @@
   --gradient-brand-panel: linear-gradient(var(--night-900), var(--night-900));
   --brand-tint: oklch(0.22 0.04 310);
   --brand-glass: rgb(247 245 245 / 0.05);
+  --brand-pane: rgb(54 34 69 / 0.6);
 
   /* Status */
   --success: oklch(0.74 0.17 150);

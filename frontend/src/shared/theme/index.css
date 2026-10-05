@@ -105,6 +105,10 @@
    * where the same 23% would be a grey slab over a night sky. A token rather
    * than a `dark:` class because the difference is the theme's, not the card's. */
   --color-brand-glass: var(--brand-glass);
+  /* The catalogue's filters column. A warm grey at a fifth by day, «тёмный база
+   * ночная» at 60% by night — one gesture, two values, neither a tint of the
+   * other, which is why it is a token and not a `dark:` class. */
+  --color-brand-pane: var(--brand-pane);
 
   /* Status utilities. */
   --color-success: var(--success);

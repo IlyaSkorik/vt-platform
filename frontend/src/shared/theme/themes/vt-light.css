@@ -71,6 +71,7 @@
   --brand-band: rgb(177 150 208 / 0.53);
   --brand-tint: var(--mauve-100);
   --brand-glass: rgb(247 245 245 / 0.23);
+  --brand-pane: rgb(217 217 215 / 0.18);
 
   /* Status */
   --success: var(--green-500);
