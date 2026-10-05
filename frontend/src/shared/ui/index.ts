@@ -83,11 +83,14 @@ export type { IconButtonProps } from "./icon-button";
 export { IconButton } from "./icon-button";
 export {
   AccountCircleIcon,
+  ArrowRightIcon,
   CalendarIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  FiltersIcon,
   MapPinIcon,
   MoonIcon,
+  SearchIcon,
   SunIcon,
 } from "./icons";
 export type { InputProps } from "./input";

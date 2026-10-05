@@ -176,3 +176,66 @@ export function SunIcon(props: IconProps): React.JSX.Element {
     </svg>
   );
 }
+
+/**
+ * The catalogue band's magnifier, 25×26 — heavier and rounder than Lucide's
+ * `Search` at any stroke width, and drawn as a filled path rather than stroked.
+ */
+export function SearchIcon(props: IconProps): React.JSX.Element {
+  return (
+    <svg
+      viewBox="0 0 25 26"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      {...props}
+    >
+      <path
+        d="M23.3333 26L14.3288 16.6353C13.6344 17.2451 12.828 17.7226 11.9097 18.0678C10.9914 18.4128 10.0154 18.5853 8.9816 18.5853C6.47373 18.5853 4.34988 17.6805 2.61007 15.8708C0.870023 14.0614 0 11.8688 0 9.29283C0 6.71691 0.870023 4.52412 2.61007 2.71447C4.34988 0.904823 6.46597 0 8.95833 0C11.4352 0 13.5397 0.904823 15.2719 2.71447C17.0043 4.52412 17.8705 6.71691 17.8705 9.29283C17.8705 10.336 17.7084 11.335 17.3844 12.2901C17.0603 13.2448 16.5896 14.1235 15.9722 14.9262L25 24.2667L23.3333 26ZM8.95833 16.1778C10.787 16.1778 12.3438 15.5057 13.6285 14.1617C14.9132 12.8176 15.5556 11.1947 15.5556 9.29283C15.5556 7.39098 14.9132 5.76791 13.6285 4.42361C12.3438 3.07956 10.787 2.40753 8.95833 2.40753C7.11412 2.40753 5.54583 3.07956 4.25347 4.42361C2.96111 5.76791 2.31493 7.39098 2.31493 9.29283C2.31493 11.1947 2.96111 12.8176 4.25347 14.1617C5.54583 15.5057 7.11412 16.1778 8.95833 16.1778Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+/**
+ * The catalogue's filters mark — three sliders, drawn lying down. Already
+ * rotated in the export, so unlike the frame's own layer it needs no transform
+ * of its own; the clip path that came with that rotation is dropped with it.
+ */
+export function FiltersIcon(props: IconProps): React.JSX.Element {
+  return (
+    <svg
+      viewBox="0 0 42 30"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      {...props}
+    >
+      <path
+        d="M34.2455 23.3388H21.8602V25.8407H19.0063V18.7859H21.8602V21.2878H34.2455V23.3388ZM16.1523 23.3388H6.84912V21.2878H16.1523V23.3388ZM14.9824 18.2937H12.1285V15.7914H6.84912V13.7408H12.1285V11.2386H14.9824L14.9824 18.2937ZM34.2455 15.7914L17.8363 15.7914V13.7408L34.2455 13.7408V15.7914ZM34.2455 8.24442H28.9087V10.7464L26.0552 10.7464L26.0552 3.69153H28.9087L28.9087 6.19346H34.2455V8.24442ZM23.2013 8.24442H6.84912V6.19346H23.2013V8.24442Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+/** The arrow on the catalogue's «Подать заявку», 28×28 — blunter and shorter in
+ * the shaft than Lucide's, which at this size read as a hairline beside an 18px
+ * bold label. */
+export function ArrowRightIcon(props: IconProps): React.JSX.Element {
+  return (
+    <svg
+      viewBox="0 0 28 28"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      {...props}
+    >
+      <path
+        d="M16.3334 20.9612L14.9529 19.5805L19.6 14.9333H4.66669V12.9888H19.6L14.9334 8.32212L16.3138 6.94167L23.3334 13.9612L16.3334 20.9612Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
