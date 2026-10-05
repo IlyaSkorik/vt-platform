@@ -347,11 +347,27 @@ class TestContentEditing:
         )
         assert len(fx.submission.participants) == 2
 
-    def test_editing_blocked_once_review_begins(self) -> None:
-        """The freeze lands when the organizer starts reviewing, not when the entry arrives."""
+    def test_editing_still_allowed_once_the_organizer_approves(self) -> None:
+        """Одобрение не замораживает номер: приём заявок ещё идёт, а фамилию с заявки
+        напечатают на дипломе — заявитель правит её сам, без возврата на исправление."""
         fx = _solo_ready()
         fx.submission.submit(policy=fx.solo_policy, now=NOW)
         fx.submission.begin_review(now=NOW)
+        fx.submission.approve(now=NOW)
+        fx.submission.add_participant(
+            participant_id=ParticipantId.generate(), name=_person("New"), birth_date=BirthDate(date(2013, 1, 1)), gender=Gender.MALE, now=NOW
+        )
+        assert len(fx.submission.participants) == 2
+
+    def test_editing_blocked_once_the_entry_is_in_the_programme(self) -> None:
+        """Взнос оплачен, номер стоит в программе — дальше правит только организатор."""
+        fx = _solo_ready()
+        fx.submission.submit(policy=fx.solo_policy, now=NOW)
+        fx.submission.begin_review(now=NOW)
+        fx.submission.approve(now=NOW)
+        fx.submission.await_payment(now=NOW)
+        fx.submission.mark_paid(now=NOW)
+        fx.submission.accept(now=NOW)
         with pytest.raises(SubmissionNotEditableError):
             fx.submission.add_participant(
                 participant_id=ParticipantId.generate(), name=_person("New"), birth_date=BirthDate(date(2013, 1, 1)), gender=Gender.MALE, now=NOW
@@ -380,12 +396,17 @@ class TestPriceSnapshot:
         assert fx.submission.price_snapshot is not None
         assert fx.submission.price_snapshot.amount == Money.of("1800").amount
 
-    def test_frozen_once_review_begins(self) -> None:
-        """Past the content freeze the snapshot is permanent, so later Competition
-        pricing changes can never reprice an entry the organizer is already judging."""
+    def test_frozen_once_the_entry_is_in_the_programme(self) -> None:
+        """Снимок цены живёт ровно столько же, сколько право заявителя править номер:
+        пока номер меняется, цена обязана за ним успевать, а в программе — уже нет,
+        там взнос оплачен и позднее изменение прайса не вправе его переписать."""
         fx = _solo_ready()
         fx.submission.submit(policy=fx.solo_policy, now=NOW)
         fx.submission.begin_review(now=NOW)
+        fx.submission.approve(now=NOW)
+        fx.submission.await_payment(now=NOW)
+        fx.submission.mark_paid(now=NOW)
+        fx.submission.accept(now=NOW)
         with pytest.raises(PriceSnapshotLockedError):
             fx.submission.set_price_snapshot(price_snapshot=PriceSnapshot(price=Money.of("1"), calculated_at=NOW), now=NOW)
 

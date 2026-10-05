@@ -218,8 +218,31 @@ _LEGAL_TRANSITIONS: Final[dict[SubmissionStatus, frozenset[SubmissionStatus]]] =
 _ORGANIZER_ONLY_CANCELLABLE_STATUSES: Final = frozenset({SubmissionStatus.ACCEPTED, SubmissionStatus.SCHEDULED})
 
 #: Statuses in which the submission's content (performance, participants, teachers,
-#: attachments, price snapshot) may still be edited. Beyond these it is frozen.
-_EDITABLE_STATUSES: Final = frozenset({SubmissionStatus.DRAFT, SubmissionStatus.SUBMITTED, SubmissionStatus.REQUIRES_CORRECTION})
+#: attachments, price snapshot) may still be edited by the applicant themselves.
+#:
+#: The window is the whole paperwork half of the lifecycle, up to but not including
+#: ``ACCEPTED``. What actually closes it is the competition's registration deadline —
+#: every applicant-facing use case checks it before touching the aggregate — not the
+#: organizer's verdict. Approval is a verdict on the entry, not a lock on it: the
+#: applicant is told «заявка одобрена», registration is still open for another month,
+#: and a misspelt surname that will be printed on a diploma must stay fixable without
+#: asking the organizer to send the entry back. The order's total follows the edit for
+#: as long as the order is editable, so the price cannot drift away from the content.
+#:
+#: ``ACCEPTED`` is where it stops: the fee is settled and the entry is committed to the
+#: running order, so from there on only the organizer may correct it — see
+#: :data:`_LIVE_STATUSES` and :meth:`Submission._ensure_editable`.
+_EDITABLE_STATUSES: Final = frozenset(
+    {
+        SubmissionStatus.DRAFT,
+        SubmissionStatus.SUBMITTED,
+        SubmissionStatus.UNDER_REVIEW,
+        SubmissionStatus.REQUIRES_CORRECTION,
+        SubmissionStatus.APPROVED,
+        SubmissionStatus.WAITING_PAYMENT,
+        SubmissionStatus.PAID,
+    }
+)
 
 #: Statuses in which the organizer may record a review iteration.
 _REVIEWABLE_STATUSES: Final = frozenset({SubmissionStatus.SUBMITTED, SubmissionStatus.UNDER_REVIEW})
@@ -896,7 +919,7 @@ class Submission:
         return self._status is SubmissionStatus.DRAFT
 
     def is_editable(self) -> bool:
-        """Whether content may currently be changed (DRAFT, SUBMITTED or REQUIRES_CORRECTION)."""
+        """Whether the applicant may currently change the content — anything before ``ACCEPTED``."""
         return self._status in _EDITABLE_STATUSES
 
     def is_correctable_by_organizer(self) -> bool:
@@ -1308,25 +1331,29 @@ class Submission:
     def _ensure_editable(self, *, by_organizer: bool = False) -> None:
         """Whether the content may be changed right now, by this kind of caller.
 
-        The applicant's reach is :data:`_EDITABLE_STATUSES` — past that the entry is
-        what the organizer reviewed, and letting the applicant rewrite it afterwards
-        would make the review meaningless.
+        The applicant's reach is :data:`_EDITABLE_STATUSES`: everything up to
+        ``ACCEPTED``. Their real deadline is the competition's registration window,
+        checked by every use case before it reaches the aggregate — approval is a
+        verdict on the entry, not a lock on it, and an applicant told «заявка одобрена»
+        a month before the deadline must still be able to fix a surname themselves.
+        Past ``ACCEPTED`` the fee is settled and the entry sits in the running order,
+        so changing it is the organizer's call.
 
-        The organizer's reach is the whole live lifecycle. They are the one who
-        decides what the entry says, and by the time a mistake is noticed the entry is
-        usually already past the freeze: approval takes it straight into the running
-        order, so "вернуть участнику на исправление" is the only remaining repair and
-        it costs a round trip for a misspelt surname that will be printed on a diploma.
-        Correcting it in place is the same decision, made directly. ``COMPLETED`` and
-        ``CANCELLED`` stay closed to everyone: the performance happened, or there will
-        not be one, and neither is a fact a correction can change.
+        The organizer's reach is the whole live lifecycle, for the same reason read
+        from the other end: by the time a mistake is noticed the entry may already be
+        in the programme, and "вернуть участнику на исправление" would cost a round
+        trip for a misspelt surname that will be printed on a diploma. ``COMPLETED``
+        and ``CANCELLED`` stay closed to everyone: the performance happened, or there
+        will not be one, and neither is a fact a correction can change.
         """
         if by_organizer:
             if self._status not in _LIVE_STATUSES:
                 raise SubmissionNotEditableError("Заявка завершена или отменена — изменить её нельзя.")
             return
         if self._status not in _EDITABLE_STATUSES:
-            raise SubmissionNotEditableError("Выступление уже рассмотрено организатором — изменить его нельзя.")
+            if self._status in _LIVE_STATUSES:
+                raise SubmissionNotEditableError("Выступление уже принято в программу фестиваля — изменить его может только организатор.")
+            raise SubmissionNotEditableError("Заявка завершена или отменена — изменить её нельзя.")
 
     def _ensure_attachable(self, attachment_type: AttachmentType | None) -> None:
         """Whether a file of this kind may be attached or detached right now.

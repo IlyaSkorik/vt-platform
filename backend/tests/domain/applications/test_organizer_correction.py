@@ -100,25 +100,44 @@ def _walked_to(status: SubmissionStatus) -> Submission:
     return submission
 
 
+#: Статусы, в которых заявитель уже не правит номер сам: взнос оплачен, номер стоит
+#: в программе. До них правка остаётся за заявителем — её закрывает срок приёма
+#: заявок, а не решение организатора.
 _PAST_THE_APPLICANTS_FREEZE = [
+    SubmissionStatus.ACCEPTED,
+    SubmissionStatus.SCHEDULED,
+]
+
+#: Весь живой путь номера, на котором организатор вправе поправить содержимое.
+_THE_ORGANIZERS_WINDOW = [
     SubmissionStatus.APPROVED,
     SubmissionStatus.WAITING_PAYMENT,
     SubmissionStatus.PAID,
-    SubmissionStatus.ACCEPTED,
-    SubmissionStatus.SCHEDULED,
+    *_PAST_THE_APPLICANTS_FREEZE,
 ]
 
 
 class TestTheOrganizersWindow:
     @pytest.mark.parametrize("status", _PAST_THE_APPLICANTS_FREEZE)
-    def test_the_applicant_cannot_touch_a_reviewed_entry(self, status: SubmissionStatus) -> None:
+    def test_the_applicant_cannot_touch_an_entry_in_the_programme(self, status: SubmissionStatus) -> None:
         submission = _walked_to(status)
         assert submission.status is status
 
         with pytest.raises(SubmissionNotEditableError):
             submission.set_performance(performance=_performance("Другое название"), now=NOW)
 
-    @pytest.mark.parametrize("status", _PAST_THE_APPLICANTS_FREEZE)
+    @pytest.mark.parametrize("status", [SubmissionStatus.APPROVED, SubmissionStatus.WAITING_PAYMENT, SubmissionStatus.PAID])
+    def test_the_applicant_still_edits_an_approved_entry(self, status: SubmissionStatus) -> None:
+        """Одобрение — это вердикт по номеру, а не замок на нём: пока идёт приём
+        заявок, заявитель сам исправляет фамилию, которую напечатают на дипломе."""
+        submission = _walked_to(status)
+
+        submission.set_performance(performance=_performance("Другое название"), now=NOW)
+
+        assert submission.performance is not None
+        assert submission.performance.title.value == "Другое название"
+
+    @pytest.mark.parametrize("status", _THE_ORGANIZERS_WINDOW)
     def test_the_organizer_can(self, status: SubmissionStatus) -> None:
         """Здесь и живёт вся польза: одобрение уводит номер в программу, и опечатку
         в фамилии замечают уже после него."""
@@ -179,7 +198,7 @@ class TestWhereItStops:
 
     @pytest.mark.parametrize(
         "status",
-        [*_PAST_THE_APPLICANTS_FREEZE, SubmissionStatus.SUBMITTED, SubmissionStatus.DRAFT],
+        [*_THE_ORGANIZERS_WINDOW, SubmissionStatus.SUBMITTED, SubmissionStatus.DRAFT],
     )
     def test_the_predicate_agrees_with_what_the_methods_do(self, status: SubmissionStatus) -> None:
         # Карточка организатора показывает кнопку по этому предикату; если он
