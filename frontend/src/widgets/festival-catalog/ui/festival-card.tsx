@@ -62,16 +62,22 @@ export function FestivalCard({
     : `${ROUTES.login}?next=${encodeURIComponent(cabinetApplyPath)}`;
 
   return (
-    // The outline is «тёмный акцент» by day and «тёмный база ночная» by night: on a
-    // near-black page the day's violet is the loudest thing on screen, and six of
-    // these at once turned the grid into a cage.
-    <article className="flex h-full flex-col gap-3 rounded-brand border-2 border-brand-line p-2.5 dark:border-brand-track">
+    // 295px and centred while there is one column, which is narrower than the
+    // page's own gutter allows: the frame insets the cards to 41/39 on a 375px
+    // screen while the search and filter bands run to 14. The card is the one
+    // thing on the page with a margin of its own, and at the full width it read
+    // as a panel rather than as a tile.
+    //
+    // The outline is «тёмный акцент» by day and «тёмный база ночная» by night: on
+    // a near-black page the day's violet is the loudest thing on screen, and six
+    // of these at once turned the grid into a cage.
+    <article className="mx-auto flex h-full w-full max-w-[295px] flex-col gap-3 rounded-brand border-2 border-brand-line p-3.5 md:max-w-none xl:p-2.5 dark:border-brand-track">
       <Link
         to={detailPath}
         aria-label={`Подробнее: ${festival.title}`}
         className="block overflow-hidden rounded-brand bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <div className="aspect-[406/200]">
+        <div className="aspect-[263/146] xl:aspect-[406/200]">
           {cover ? (
             // `cover`, against `PosterImage`'s own `contain`: the frame draws a
             // filled rectangle, and fitting left bars down the sides of every
@@ -90,7 +96,7 @@ export function FestivalCard({
         </div>
       </Link>
 
-      <h3 className="line-clamp-2 font-heading font-bold text-foreground text-lg leading-snug">
+      <h3 className="line-clamp-2 font-heading font-bold text-foreground text-sm leading-snug xl:text-lg">
         <Link
           to={detailPath}
           className="rounded-sm outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
@@ -102,11 +108,11 @@ export function FestivalCard({
       {/* A description list, because each row is a labelled fact rather than a
           sentence. The icon is the label, so it carries the text the `dt` would
           have — otherwise a screen reader reads out two bare values. */}
-      <dl className="space-y-1 font-heading text-foreground/40 text-lg leading-snug dark:text-on-scrim-muted">
+      <dl className="space-y-1 font-heading text-foreground/40 text-sm leading-snug xl:text-lg dark:text-on-scrim-muted">
         {place ? (
           <div className="flex items-center gap-1.5">
             <dt className="shrink-0">
-              <MapPinIcon className="size-5" aria-hidden="true" />
+              <MapPinIcon className="size-[19px] xl:size-5" aria-hidden="true" />
               <span className="sr-only">Место проведения</span>
             </dt>
             <dd className="truncate">{place}</dd>
@@ -115,7 +121,7 @@ export function FestivalCard({
         {period ? (
           <div className="flex items-center gap-1.5">
             <dt className="shrink-0">
-              <CalendarIcon className="size-5" aria-hidden="true" />
+              <CalendarIcon className="size-[19px] xl:size-5" aria-hidden="true" />
               <span className="sr-only">Даты проведения</span>
             </dt>
             <dd className="truncate">{period}</dd>
@@ -127,13 +133,16 @@ export function FestivalCard({
         <ul className="flex flex-wrap gap-2">
           {festival.categories.map((category) => (
             <li key={category}>
-              {/* A hairline here against the landing's two pixels: the catalogue
-                  shows six of these at once and the heavier line turned the lower
-                  half of every card into a grid of boxes. */}
+              {/* A hairline against the landing's two pixels: the catalogue shows
+                  six of these at once and the heavier line turned the lower half
+                  of every card into a grid of boxes. The exception is the phone in
+                  the light theme, where the frame thickens it back to two —
+                  «светлый акцент» on `свет` is pale enough that one pixel at 10px
+                  type stopped reading as an outline at all. */}
               <Badge
                 variant="brand"
                 size="md"
-                className="h-6.5 border px-2 font-heading font-normal text-xs leading-4 dark:border-brand-control"
+                className="h-[21px] border-2 px-2 font-heading font-normal text-[10px] leading-[14px] xl:h-6.5 xl:border xl:text-xs xl:leading-4 dark:border dark:border-brand-control"
               >
                 {category}
               </Badge>
@@ -147,12 +156,12 @@ export function FestivalCard({
           footer to the tile rather than as two more rows of it, and leaves 25px
           under the last one — the card's own 10 plus 15 here. `mt-auto` keeps
           them on the floor however tall the card's text turns out to be. */}
-      <div className="mt-auto space-y-[7px] px-[26px] pt-8 pb-[15px]">
+      <div className="mt-auto space-y-[7.5px] px-2 pt-5 pb-1 xl:space-y-[7px] xl:px-[26px] xl:pt-8 xl:pb-[15px]">
         {status.apply.visible ? (
           status.apply.enabled ? (
             <Button
               asChild
-              className="relative h-[39px] w-full justify-center rounded-brand font-heading font-bold text-lg leading-snug hover:bg-brand-line [&_svg]:size-7 dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-line"
+              className="relative h-[37px] w-full justify-center rounded-brand font-heading font-bold text-base leading-snug hover:bg-brand-line xl:h-[39px] xl:text-lg [&_svg]:size-[25px] xl:[&_svg]:size-7 dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-line"
             >
               {/* The label is centred in the button and the arrow hangs off the
                   right of it, which is why the arrow is taken out of the flow
@@ -168,13 +177,13 @@ export function FestivalCard({
                   there left the glyph silently at 20px. */}
               <Link to={applyPath}>
                 {status.apply.label}
-                <ArrowRightIcon className="-translate-y-1/2 absolute top-1/2 right-10" />
+                <ArrowRightIcon className="-translate-y-1/2 absolute top-1/2 right-4 xl:right-10" />
               </Link>
             </Button>
           ) : (
             <Button
               disabled
-              className="h-[39px] w-full rounded-brand font-heading font-bold text-lg leading-snug"
+              className="h-[37px] w-full rounded-brand font-heading font-bold text-base leading-snug xl:h-[39px] xl:text-lg"
             >
               {status.apply.label}
             </Button>
@@ -183,7 +192,7 @@ export function FestivalCard({
         <Button
           asChild
           variant="outline"
-          className="h-[39px] w-full rounded-brand border-brand-line bg-transparent font-heading text-foreground text-lg leading-snug hover:bg-brand-line-soft/20 hover:text-foreground dark:border-brand-control dark:hover:bg-brand-control/20"
+          className="h-[37px] w-full rounded-brand border-brand-line bg-transparent font-heading font-bold text-base text-foreground leading-snug hover:bg-brand-line-soft/20 hover:text-foreground xl:h-[39px] xl:font-normal xl:text-lg dark:border-brand-control dark:hover:bg-brand-control/20"
         >
           <Link to={detailPath}>Подробнее</Link>
         </Button>

@@ -4,8 +4,10 @@ import { FestivalCardSkeleton } from "./festival-card-skeleton";
 
 // Two columns from `md`, as the frame has it, and never three: the card carries
 // a 406px poster and two full-width actions, and at a third of a page neither
-// survives. The 18px column gap and 20px row gap are the frame's own.
-const GRID_CLASS = "grid grid-cols-1 gap-x-[18px] gap-y-5 md:grid-cols-2";
+// survives. The gaps are the frame's: 18px between columns, 20px between rows on
+// a desktop and 30 on a phone, where one column of cards needs more air to stop
+// reading as a single long block.
+const GRID_CLASS = "grid grid-cols-1 gap-x-[18px] gap-y-[30px] md:grid-cols-2 xl:gap-y-5";
 
 interface FestivalGridProps {
   festivals: Festival[];
