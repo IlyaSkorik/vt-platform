@@ -113,17 +113,31 @@ export function FestivalCatalog({
   };
 
   return (
-    <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:gap-[13px]">
-      <FestivalFiltersSidebar
-        filters={state.filters}
-        options={options}
-        onChange={setFilters}
-        className="xl:w-[413px] xl:shrink-0"
-      />
-
-      <section aria-label="Каталог фестивалей" className="min-w-0 flex-1 space-y-4">
+    // A grid rather than a row, because the two layouts put these three blocks in
+    // different orders. On a phone the frame stacks them: search and sort, then
+    // the filters, then the results — filters sit *between* the controls and what
+    // they filter, which is where a tray belongs. From `xl` the filters become a
+    // standing column beside both, so they are placed into column one across both
+    // rows while the header and the results keep column two.
+    //
+    // Explicit placement and not a reordered flex row: DOM order stays the
+    // phone's, which is the order a screen reader should hear either way.
+    //
+    // The rows are not evenly spaced on a phone: 16px runs down the controls —
+    // search to sort, sort to filters — and 30 falls between the filters and the
+    // first card. The grid carries the 16 and the results block adds the
+    // remaining 14, because a grid has one gap and these two are different
+    // distances: inside a group of controls, and between that group and what it
+    // acts on.
+    <div className="grid gap-4 xl:grid-cols-[413px_minmax(0,1fr)] xl:gap-x-[13px]">
+      <div className="min-w-0 space-y-4 xl:col-start-2 xl:row-start-1">
         {title ? (
-          <h1 className="font-heading font-bold text-[1.75rem] text-foreground leading-snug tracking-tight">
+          // `sr-only` and not `hidden` on the phone, where the frame drops the
+          // title: the page still needs a heading — it is the only thing naming
+          // what this screen is to a screen reader, and to search. Visually the
+          // band under it says the same in three words, which is why the frame
+          // can spend the space on a card instead.
+          <h1 className="sr-only font-heading font-bold text-foreground leading-snug tracking-tight xl:not-sr-only xl:text-[1.75rem]">
             {title}
           </h1>
         ) : null}
@@ -134,7 +148,19 @@ export function FestivalCatalog({
           sort={state.sort}
           onSortChange={setSort}
         />
+      </div>
 
+      <FestivalFiltersSidebar
+        filters={state.filters}
+        options={options}
+        onChange={setFilters}
+        className="xl:col-start-1 xl:row-start-1 xl:row-end-3"
+      />
+
+      <section
+        aria-label="Каталог фестивалей"
+        className="mt-[14px] min-w-0 space-y-4 xl:col-start-2 xl:row-start-2 xl:mt-0"
+      >
         {isLoading ? (
           <FestivalGridSkeleton />
         ) : visible.length === 0 ? (

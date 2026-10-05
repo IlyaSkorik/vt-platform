@@ -34,10 +34,18 @@ export function PublicFestivalCatalogPage(): React.JSX.Element {
     // `max-w-336`, matching the public header's own container. `size="wide"`
     // alone is `max-w-7xl` — 64px narrower — and the page then sat visibly inset
     // from the bar above it, which reads as a misalignment rather than as a
-    // margin. 27px of air under the bar before the filters panel and 32 under
-    // the pagination before the footer, as the frame measures them;
-    // `PageContainer` carries no vertical padding of its own.
-    <PageContainer size="wide" className="max-w-336 px-4 pt-[27px] pb-8 md:px-8">
+    // margin. 36px of air under the bar before the search band on a phone and 27
+    // before the filters panel on a desktop, and 32 under
+    // the pagination before the footer — 55 on a phone, where the strip is the
+    // last thing on a long scroll and needs the room to stop reading as part of
+    // the footer — as the frame measures them;
+    // `PageContainer` carries no vertical padding of its own. 14px of side gutter
+    // on a phone, which is where the frame starts the search and filter bands —
+    // the cards sit further in again and carry that inset themselves.
+    <PageContainer
+      size="wide"
+      className="max-w-336 px-3.5 pt-9 pb-[55px] md:px-8 md:pt-[27px] md:pb-8"
+    >
       <JsonLd
         id="festival-list"
         data={festivalListSchema(festivals, { basePath: ROUTES.competitions })}
@@ -105,7 +113,10 @@ export function PublicFestivalLandingPage(): React.JSX.Element {
 
   return (
     // Same container as the catalogue and the header — see the note there.
-    <PageContainer size="wide" className="max-w-336 px-4 pt-[27px] pb-8 md:px-8">
+    <PageContainer
+      size="wide"
+      className="max-w-336 px-3.5 pt-9 pb-[55px] md:px-8 md:pt-[27px] md:pb-8"
+    >
       {festival ? (
         <>
           <JsonLd id="festival-event" data={festivalEventSchema(festival, { path })} />
