@@ -130,14 +130,19 @@ export function FestivalCatalog({
     // distances: inside a group of controls, and between that group and what it
     // acts on.
     <div className="grid gap-4 xl:grid-cols-[413px_minmax(0,1fr)] xl:gap-x-[13px]">
-      <div className="min-w-0 space-y-4 xl:col-start-2 xl:row-start-1">
+      <div className="min-w-0 xl:col-start-2 xl:row-start-1">
         {title ? (
           // `sr-only` and not `hidden` on the phone, where the frame drops the
           // title: the page still needs a heading — it is the only thing naming
           // what this screen is to a screen reader, and to search. Visually the
           // band under it says the same in three words, which is why the frame
           // can spend the space on a card instead.
-          <h1 className="sr-only font-heading font-bold text-foreground leading-snug tracking-tight xl:not-sr-only xl:text-[1.75rem]">
+          //
+          // Its own `mb` and not a `space-y` on the block above: `sr-only` takes
+          // the heading out of the flow on a phone, but `space-y` would still have
+          // put a margin on the band under it — sixteen pixels of air measured
+          // from nothing.
+          <h1 className="sr-only font-heading font-bold text-foreground leading-snug tracking-tight xl:not-sr-only xl:mb-[15px] xl:text-[1.75rem]">
             {title}
           </h1>
         ) : null}
@@ -150,11 +155,16 @@ export function FestivalCatalog({
         />
       </div>
 
+      {/* `self-start`, or the aside stretches to the full height of the two rows
+          it spans — grid items do by default — and the plate runs to the bottom
+          of the page while the filters sit in the top fifth of it. That also made
+          the collapse look broken: the body hid, the plate did not, and the click
+          read as doing nothing. */}
       <FestivalFiltersSidebar
         filters={state.filters}
         options={options}
         onChange={setFilters}
-        className="xl:col-start-1 xl:row-start-1 xl:row-end-3"
+        className="xl:col-start-1 xl:row-start-1 xl:row-end-3 xl:self-start"
       />
 
       <section
