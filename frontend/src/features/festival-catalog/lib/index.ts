@@ -43,5 +43,5 @@ export {
   type FilterOption,
   type ParticipationMode,
   type PublicStatus,
-  type RegistrationFilter,
+  STATUS_ORDER,
 } from "./types";

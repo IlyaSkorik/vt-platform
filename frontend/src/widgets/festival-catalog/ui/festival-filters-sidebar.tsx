@@ -3,8 +3,13 @@ import type {
   CatalogFilterOptions,
   CatalogFilters,
   ParticipationMode,
+  PublicStatus,
 } from "@/features/festival-catalog";
-import { PARTICIPATION_MODES, participationModeLabel } from "@/features/festival-catalog";
+import {
+  catalogStatusConfig,
+  PARTICIPATION_MODES,
+  participationModeLabel,
+} from "@/features/festival-catalog";
 import { cn } from "@/shared/lib";
 import { Checkbox, DatePicker, FiltersIcon } from "@/shared/ui";
 
@@ -48,9 +53,27 @@ function FilterOption({ checked, onToggle, children }: FilterOptionProps): React
         checked={checked}
         onCheckedChange={onToggle}
         label={children}
-        // The box is the frame's: 20px, `свет` on a 42%-strength hairline, 3px
-        // corner — the one place on the public side that is not the brand's 15.
-        className="size-[25px] shrink-0 rounded-[3px] border-foreground/42 bg-background xl:size-5"
+        // The box is the frame's: 20px, the page colour on a 42%-strength
+        // hairline, 3px corner — the one place on the public side that is not the
+        // brand's 15. Ticked it fills with «Акцентище» through `--brand` rather
+        // than `--primary`, which drifts lighter at night; the frame paints the
+        // same violet in both themes.
+        //
+        // The hairline is `--foreground` at 42% by day and gone entirely at
+        // night. The frame repeats `rgba(33, 24, 41, 0.42)` unchanged in the dark
+        // export, where it would be near-black on near-black; rather than invent a
+        // light edge the box simply loses it there, which is what the night plate
+        // behind it already does for every other control on the panel.
+        //
+        // The tick is `свет` by day and the page's own near-black by night —
+        // the colour the box had before it was ticked, so the mark reads as cut
+        // out of the fill rather than drawn on top of it.
+        //
+        // Coloured through `[&_svg]` and not on the box: the indicator takes
+        // `text-current`, so a colour set on the root reaches it only by
+        // inheritance, and `--primary-foreground` from the variant got there
+        // first. A descendant selector outranks both and lands on the glyph.
+        className="size-[25px] shrink-0 rounded-[3px] border-foreground/42 bg-background data-[state=checked]:border-brand data-[state=checked]:bg-brand xl:size-5 dark:border-transparent [&_svg]:text-brand-mark dark:[&_svg]:text-background"
         containerClassName="gap-0 [&>div]:gap-3.5 [&_label]:font-heading [&_label]:text-base [&_label]:leading-snug [&_label]:text-foreground"
       />
     </li>
@@ -109,11 +132,11 @@ export function FestivalFiltersSidebar({
         // «тёмный база ночная» at 60% by night — belongs to the whole column on a
         // desktop and to the opened body alone on a phone, where the trigger
         // above it is a band of its own.
-        // `sticky` from `xl`, where the panel has a column of its own: the grid
-        // beside it is pages long, and filters that scroll away are filters the
-        // reader has to come back up for. `top` clears the sticky header (60px)
-        // and leaves the page's own 27px of air above it.
-        "xl:sticky xl:top-[87px] xl:rounded-brand xl:bg-brand-pane xl:px-7 xl:py-5",
+        // Deliberately not pinned. The column is tall enough that following the
+        // reader down would park it over most of the viewport, and the grid is
+        // paged — six cards, not an endless scroll — so the filters are never
+        // more than a screen behind.
+        "xl:rounded-brand xl:bg-brand-pane xl:px-7 xl:py-5",
         className,
       )}
     >
@@ -156,6 +179,29 @@ export function FestivalFiltersSidebar({
           !open && "hidden xl:block",
         )}
       >
+        {/* Status leads, because it is the axis that decides whether anything
+            below it is worth narrowing: a genre filter over a list of finished
+            festivals answers the wrong question. Only the statuses the catalogue
+            actually holds are offered. */}
+        {options.statuses.length > 0 ? (
+          <FilterGroup label="Статус">
+            {options.statuses.map((option) => (
+              <FilterOption
+                key={option.value}
+                checked={filters.statuses.includes(option.value as PublicStatus)}
+                onToggle={() =>
+                  onChange({
+                    ...filters,
+                    statuses: toggle(filters.statuses, option.value as PublicStatus),
+                  })
+                }
+              >
+                {catalogStatusConfig(option.value).label}
+              </FilterOption>
+            ))}
+          </FilterGroup>
+        ) : null}
+
         {options.categories.length > 0 ? (
           <FilterGroup label="Категория">
             {options.categories.map((option) => (

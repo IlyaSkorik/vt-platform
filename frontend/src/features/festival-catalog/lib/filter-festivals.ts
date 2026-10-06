@@ -1,5 +1,13 @@
-import { isClosingSoon, parseApiDate, registrationCutoff } from "./format";
-import type { CatalogFilters, CatalogSort, CatalogState, Festival, FilterOption } from "./types";
+import { parseApiDate, registrationCutoff } from "./format";
+import type {
+  CatalogFilters,
+  CatalogSort,
+  CatalogState,
+  Festival,
+  FilterOption,
+  PublicStatus,
+} from "./types";
+import { STATUS_ORDER } from "./types";
 
 function normalize(value: string): string {
   return value.trim().toLowerCase();
@@ -31,16 +39,11 @@ export function searchFestivals(festivals: Festival[], query: string): Festival[
   });
 }
 
-function matchesRegistration(festival: Festival, filters: CatalogFilters, now: Date): boolean {
-  if (filters.registration.length === 0) {
+function matchesStatuses(festival: Festival, filters: CatalogFilters): boolean {
+  if (filters.statuses.length === 0) {
     return true;
   }
-  return filters.registration.some((filter) => {
-    if (filter === "OPEN") {
-      return festival.status === "REGISTRATION_OPEN";
-    }
-    return isClosingSoon(festival, now);
-  });
+  return filters.statuses.includes(festival.status as PublicStatus);
 }
 
 function matchesModes(festival: Festival, filters: CatalogFilters): boolean {
@@ -88,14 +91,10 @@ function matchesDateWindow(festival: Festival, filters: CatalogFilters): boolean
 }
 
 /** Apply every filter axis (all axes ANDed; options within an axis ORed). */
-export function filterFestivals(
-  festivals: Festival[],
-  filters: CatalogFilters,
-  now: Date,
-): Festival[] {
+export function filterFestivals(festivals: Festival[], filters: CatalogFilters): Festival[] {
   return festivals.filter(
     (festival) =>
-      matchesRegistration(festival, filters, now) &&
+      matchesStatuses(festival, filters) &&
       matchesModes(festival, filters) &&
       matchesCategories(festival, filters) &&
       matchesCities(festival, filters) &&
@@ -121,11 +120,25 @@ function ascNullsLast(a: number | null, b: number | null): number {
   return a - b;
 }
 
+/** Where a festival sits in `STATUS_ORDER`; anything unknown goes to the end. */
+function statusRank(festival: Festival): number {
+  const index = STATUS_ORDER.indexOf(festival.status as PublicStatus);
+  return index === -1 ? STATUS_ORDER.length : index;
+}
+
 export function sortFestivals(festivals: Festival[], sort: CatalogSort): Festival[] {
   const sorted = [...festivals];
   switch (sort) {
+    // The default, and the only sort that groups by status first: a catalogue
+    // whose first screen is finished festivals is useless however new they are,
+    // so recency orders *within* what you can still do something about. The other
+    // sorts mean exactly what they say — an alphabetical list broken into status
+    // groups is not alphabetical.
     case "NEWEST":
-      sorted.sort((a, b) => ascNullsLast(time(b.createdAt), time(a.createdAt)));
+      sorted.sort(
+        (a, b) =>
+          statusRank(a) - statusRank(b) || ascNullsLast(time(b.createdAt), time(a.createdAt)),
+      );
       break;
     case "CLOSING_SOON":
       sorted.sort((a, b) => ascNullsLast(time(registrationCutoff(a)), time(registrationCutoff(b))));
@@ -140,10 +153,17 @@ export function sortFestivals(festivals: Festival[], sort: CatalogSort): Festiva
   return sorted;
 }
 
-/** Run the full pipeline: search → filter → sort. */
-export function applyCatalog(festivals: Festival[], state: CatalogState, now: Date): Festival[] {
+/**
+ * Run the full pipeline: search → filter → sort.
+ *
+ * `now` is still taken, and still unused by the filters: every axis is a property
+ * of the festival itself since the registration window stopped being one of them.
+ * Kept because the caller holds a frozen clock for the whole render and a time
+ * axis is the obvious next one to add.
+ */
+export function applyCatalog(festivals: Festival[], state: CatalogState, _now: Date): Festival[] {
   const searched = searchFestivals(festivals, state.query);
-  const filtered = filterFestivals(searched, state.filters, now);
+  const filtered = filterFestivals(searched, state.filters);
   return sortFestivals(filtered, state.sort);
 }
 
@@ -163,12 +183,22 @@ function countBy(festivals: Festival[], values: (festival: Festival) => string[]
 
 /** Filter option lists derived from the loaded data (future-ready, data-driven). */
 export interface CatalogFilterOptions {
+  statuses: FilterOption[];
   cities: FilterOption[];
   categories: FilterOption[];
 }
 
 export function deriveFilterOptions(festivals: Festival[]): CatalogFilterOptions {
+  // Statuses are offered in `STATUS_ORDER` and only when the catalogue actually
+  // holds one — a checkbox for «Фестиваль завершён» on a list with none is a
+  // promise of results that do not exist. Cities and categories are counted the
+  // same way, alphabetically; a status list sorted by name would read as noise.
+  const present = new Set(festivals.map((festival) => festival.status));
   return {
+    statuses: STATUS_ORDER.filter((status) => present.has(status)).map((status) => ({
+      value: status,
+      count: festivals.filter((festival) => festival.status === status).length,
+    })),
     cities: countBy(festivals, (festival) => (festival.city ? [festival.city] : [])),
     categories: countBy(festivals, (festival) => festival.categories),
   };
@@ -177,7 +207,7 @@ export function deriveFilterOptions(festivals: Festival[]): CatalogFilterOptions
 /** True when any filter axis constrains the result (drives the "reset" affordance). */
 export function hasActiveFilters(filters: CatalogFilters): boolean {
   return (
-    filters.registration.length > 0 ||
+    filters.statuses.length > 0 ||
     filters.modes.length > 0 ||
     filters.categories.length > 0 ||
     filters.cities.length > 0 ||

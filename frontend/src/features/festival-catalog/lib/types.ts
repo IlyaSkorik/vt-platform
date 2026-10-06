@@ -27,7 +27,19 @@ export type PublicStatus =
 export type ParticipationMode = "IN_PERSON" | "ONLINE" | "HYBRID";
 
 /** Registration-oriented quick filters. */
-export type RegistrationFilter = "OPEN" | "CLOSING_SOON";
+/**
+ * The order statuses are listed and ranked in — what a visitor can still act on
+ * first, what is merely happening next, and what is over last. Used both for the
+ * filter list and as the default sort's primary key, so the two cannot disagree
+ * about which festival is more interesting.
+ */
+export const STATUS_ORDER = [
+  "REGISTRATION_OPEN",
+  "COMING_SOON",
+  "REGISTRATION_CLOSED",
+  "RUNNING",
+  "COMPLETED",
+] as const satisfies readonly PublicStatus[];
 
 /** Sort orders offered by the catalog toolbar. */
 export type CatalogSort = "NEWEST" | "CLOSING_SOON" | "COMPETITION_DATE" | "ALPHABETICAL";
@@ -40,7 +52,7 @@ export type CatalogSort = "NEWEST" | "CLOSING_SOON" | "COMPETITION_DATE" | "ALPH
  * existing ones. Empty arrays / nulls mean "no constraint on this axis".
  */
 export interface CatalogFilters {
-  registration: RegistrationFilter[];
+  statuses: PublicStatus[];
   modes: ParticipationMode[];
   categories: string[];
   cities: string[];
@@ -63,7 +75,7 @@ export interface FilterOption {
 }
 
 export const EMPTY_CATALOG_FILTERS: CatalogFilters = {
-  registration: [],
+  statuses: [],
   modes: [],
   categories: [],
   cities: [],

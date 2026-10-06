@@ -44,33 +44,25 @@ describe("searchFestivals", () => {
 });
 
 describe("filterFestivals", () => {
-  it("filters by registration state and closing-soon window", () => {
-    const open = makeFestival({
-      id: "open",
-      status: "REGISTRATION_OPEN",
-      registrationEnd: "2026-09-01",
-    });
-    const closingSoon = makeFestival({
-      id: "soon",
-      status: "REGISTRATION_OPEN",
-      registrationEnd: "2026-07-18",
-    });
-    const closed = makeFestival({ id: "closed", status: "REGISTRATION_CLOSED" });
-    const festivals = [open, closingSoon, closed];
+  it("filters by status (OR within the axis)", () => {
+    const open = makeFestival({ id: "open", status: "REGISTRATION_OPEN" });
+    const running = makeFestival({ id: "running", status: "RUNNING" });
+    const done = makeFestival({ id: "done", status: "COMPLETED" });
+    const festivals = [open, running, done];
 
     expect(
-      filterFestivals(festivals, { ...EMPTY_CATALOG_FILTERS, registration: ["OPEN"] }, NOW).map(
-        (f) => f.id,
-      ),
-    ).toEqual(["open", "soon"]);
+      filterFestivals(festivals, {
+        ...EMPTY_CATALOG_FILTERS,
+        statuses: ["REGISTRATION_OPEN"],
+      }).map((f) => f.id),
+    ).toEqual(["open"]);
 
     expect(
-      filterFestivals(
-        festivals,
-        { ...EMPTY_CATALOG_FILTERS, registration: ["CLOSING_SOON"] },
-        NOW,
-      ).map((f) => f.id),
-    ).toEqual(["soon"]);
+      filterFestivals(festivals, {
+        ...EMPTY_CATALOG_FILTERS,
+        statuses: ["RUNNING", "COMPLETED"],
+      }).map((f) => f.id),
+    ).toEqual(["running", "done"]);
   });
 
   it("filters by mode (OR within the axis)", () => {
@@ -78,11 +70,10 @@ describe("filterFestivals", () => {
     const online = makeFestival({ id: "on", modes: ["ONLINE"] });
     const both = makeFestival({ id: "both", modes: ["IN_PERSON", "ONLINE"] });
 
-    const result = filterFestivals(
-      [inPerson, online, both],
-      { ...EMPTY_CATALOG_FILTERS, modes: ["ONLINE"] },
-      NOW,
-    );
+    const result = filterFestivals([inPerson, online, both], {
+      ...EMPTY_CATALOG_FILTERS,
+      modes: ["ONLINE"],
+    });
     expect(result.map((f) => f.id)).toEqual(["on", "both"]);
   });
 
@@ -90,14 +81,10 @@ describe("filterFestivals", () => {
     const a = makeFestival({ id: "a", city: "Минск", categories: ["Вокал"] });
     const b = makeFestival({ id: "b", city: "Брест", categories: ["Танцы"] });
     expect(
-      filterFestivals([a, b], { ...EMPTY_CATALOG_FILTERS, cities: ["Брест"] }, NOW).map(
-        (f) => f.id,
-      ),
+      filterFestivals([a, b], { ...EMPTY_CATALOG_FILTERS, cities: ["Брест"] }).map((f) => f.id),
     ).toEqual(["b"]);
     expect(
-      filterFestivals([a, b], { ...EMPTY_CATALOG_FILTERS, categories: ["Вокал"] }, NOW).map(
-        (f) => f.id,
-      ),
+      filterFestivals([a, b], { ...EMPTY_CATALOG_FILTERS, categories: ["Вокал"] }).map((f) => f.id),
     ).toEqual(["a"]);
   });
 
@@ -112,11 +99,11 @@ describe("filterFestivals", () => {
       competitionStart: "2026-10-01",
       competitionEnd: "2026-10-02",
     });
-    const result = filterFestivals(
-      [august, october],
-      { ...EMPTY_CATALOG_FILTERS, competitionFrom: "2026-09-01", competitionTo: null },
-      NOW,
-    );
+    const result = filterFestivals([august, october], {
+      ...EMPTY_CATALOG_FILTERS,
+      competitionFrom: "2026-09-01",
+      competitionTo: null,
+    });
     expect(result.map((f) => f.id)).toEqual(["oct"]);
   });
 });
