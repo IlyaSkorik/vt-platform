@@ -82,16 +82,20 @@ describe("FestivalCard", () => {
     );
   });
 
-  it("hides Apply for completed festivals but keeps details", () => {
-    renderCard(makeFestival({ status: "COMPLETED" }));
+  // The action slot is never empty: a festival that cannot be applied to says why
+  // in the button's place, so the card keeps its height and the reader gets the
+  // reason instead of a gap where something used to be.
+  it.each([
+    ["COMPLETED", "Фестиваль завершён"],
+    ["RUNNING", "Фестиваль идёт"],
+    ["REGISTRATION_CLOSED", "Регистрация закрыта"],
+    ["COMING_SOON", "Регистрация скоро"],
+  ])("states the reason instead of an Apply link for %s", (status, reason) => {
+    renderCard(makeFestival({ status }));
     expect(screen.queryByRole("link", { name: /подать заявку/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: reason })).toBeDisabled();
+    // And the one thing that still leads somewhere stays where it was.
     expect(screen.getByRole("link", { name: "Подробнее" })).toBeInTheDocument();
-  });
-
-  it("renders a disabled action for coming-soon", () => {
-    renderCard(makeFestival({ status: "COMING_SOON" }));
-    const button = screen.getByRole("button", { name: /регистрация скоро/i });
-    expect(button).toBeDisabled();
   });
 
   // The tile deliberately carries four facts and two actions and nothing else —

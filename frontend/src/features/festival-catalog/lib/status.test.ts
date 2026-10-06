@@ -3,31 +3,37 @@ import { catalogStatusConfig, isPublicStatus } from "./status";
 
 describe("catalogStatusConfig", () => {
   it("enables Apply only when registration is open", () => {
-    expect(catalogStatusConfig("REGISTRATION_OPEN").apply).toMatchObject({
-      visible: true,
+    expect(catalogStatusConfig("REGISTRATION_OPEN").apply).toEqual({
       enabled: true,
+      label: "Подать заявку",
     });
   });
 
-  it("shows a disabled Apply for coming-soon and closed", () => {
-    expect(catalogStatusConfig("COMING_SOON").apply).toMatchObject({
-      visible: true,
+  it("states why rather than going quiet when there is nothing to apply to", () => {
+    // The slot is never empty: every status puts a sentence where the action
+    // would be, so the card keeps its shape and the reader learns the reason.
+    expect(catalogStatusConfig("COMING_SOON").apply).toEqual({
       enabled: false,
+      label: "Регистрация скоро",
     });
-    expect(catalogStatusConfig("REGISTRATION_CLOSED").apply).toMatchObject({
-      visible: true,
+    expect(catalogStatusConfig("REGISTRATION_CLOSED").apply).toEqual({
       enabled: false,
+      label: "Регистрация закрыта",
     });
-  });
-
-  it("hides Apply for running and completed festivals", () => {
-    expect(catalogStatusConfig("RUNNING").apply.visible).toBe(false);
-    expect(catalogStatusConfig("COMPLETED").apply.visible).toBe(false);
+    expect(catalogStatusConfig("RUNNING").apply).toEqual({
+      enabled: false,
+      label: "Фестиваль идёт",
+    });
+    expect(catalogStatusConfig("COMPLETED").apply).toEqual({
+      enabled: false,
+      label: "Фестиваль завершён",
+    });
   });
 
   it("falls back gracefully for an unknown status", () => {
     const config = catalogStatusConfig("SOMETHING_NEW");
-    expect(config.apply.visible).toBe(false);
+    expect(config.apply.enabled).toBe(false);
+    expect(config.apply.label).toBeTruthy();
     expect(config.label).toBeTruthy();
   });
 });

@@ -8,7 +8,7 @@ import {
   resolveMediaUrl,
 } from "@/features/festival-catalog";
 import { ROUTES } from "@/shared/config";
-import { festivalPath } from "@/shared/lib";
+import { cn, festivalPath } from "@/shared/lib";
 import { ArrowRightIcon, Badge, Button, CalendarIcon, MapPinIcon, PosterImage } from "@/shared/ui";
 
 interface FestivalCardProps {
@@ -129,8 +129,12 @@ export function FestivalCard({
         ) : null}
       </dl>
 
+      {/* `my-auto`, so the slack a short card leaves is split above and below the
+          nominations rather than all falling under them. The actions stay on the
+          floor without `mt-auto` of their own: once this row takes the free space
+          symmetrically, there is none left to push them down with. */}
       {festival.categories.length > 0 ? (
-        <ul className="flex flex-wrap gap-2">
+        <ul className="my-auto flex flex-wrap gap-2">
           {festival.categories.map((category) => (
             <li key={category}>
               {/* A hairline against the landing's two pixels: the catalogue shows
@@ -154,45 +158,69 @@ export function FestivalCard({
       {/* The actions sit further in than everything above them — the frame insets
           them about 26px past the card's own padding, so the pair reads as a
           footer to the tile rather than as two more rows of it, and leaves 25px
-          under the last one — the card's own 10 plus 15 here. `mt-auto` keeps
-          them on the floor however tall the card's text turns out to be. */}
-      <div className="mt-auto space-y-[7.5px] px-2 pt-5 pb-1 xl:space-y-[7px] xl:px-[26px] xl:pt-8 xl:pb-[15px]">
-        {status.apply.visible ? (
-          status.apply.enabled ? (
-            <Button
-              asChild
-              className="relative h-[37px] w-full justify-center rounded-brand font-heading font-bold text-base leading-snug hover:bg-brand-line xl:h-[39px] xl:text-lg [&_svg]:size-[25px] xl:[&_svg]:size-7 dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-line"
-            >
-              {/* The label is centred in the button and the arrow hangs off the
-                  right of it, which is why the arrow is taken out of the flow
-                  rather than laid out beside the text: in a row the two would be
-                  centred as a pair, and the label would sit left of the middle by
-                  half the arrow. 40px in from the edge: the frame puts it 53 from
-                  the right of a 353px button, and this one stretches to the card,
-                  so the distance is kept closer to the label it trails.
+          under the last one: the card's own 10 plus 15 here. */}
+      <div
+        className={cn(
+          "flex flex-col gap-[7.5px] px-2 pb-1 xl:gap-[7px] xl:px-[26px] xl:pb-[15px]",
+          // No top padding and no `mt-auto` while the nominations are there:
+          // those two are what the equal gaps above and below them are measured
+          // against, and the chips' `my-auto` is the only claim on the card's
+          // spare height, so it splits it in two and this block lands on the
+          // floor anyway. With no nominations to centre there is no claim at all,
+          // and it needs `mt-auto` back or it floats up under the dates.
+          festival.categories.length === 0 && "mt-auto",
+        )}
+      >
+        {status.apply.enabled ? (
+          <Button
+            asChild
+            className="relative h-[37px] w-full justify-center rounded-brand font-heading font-bold text-base leading-snug hover:bg-brand-line xl:h-[39px] xl:text-lg [&_svg]:size-[25px] xl:[&_svg]:size-7 dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-line"
+          >
+            {/* The label is centred in the button and the arrow hangs off the
+                right of it, which is why the arrow is taken out of the flow
+                rather than laid out beside the text: in a row the two would be
+                centred as a pair, and the label would sit left of the middle by
+                half the arrow.
 
-                  It is also sized from the button and not on the icon — the
-                  `size` variant carries `[&_svg]:size-5`, a descendant selector
-                  that outranks a plain class on the `svg` itself, so setting it
-                  there left the glyph silently at 20px. */}
-              <Link to={applyPath}>
-                {status.apply.label}
-                <ArrowRightIcon className="-translate-y-1/2 absolute top-1/2 right-4 xl:right-10" />
-              </Link>
-            </Button>
-          ) : (
-            <Button
-              disabled
-              className="h-[37px] w-full rounded-brand font-heading font-bold text-base leading-snug xl:h-[39px] xl:text-lg"
-            >
+                It is also sized from the button and not on the icon — the `size`
+                variant carries `[&_svg]:size-5`, a descendant selector that
+                outranks a plain class on the `svg` itself, so setting it there
+                left the glyph silently at 20px. */}
+            <Link to={applyPath}>
               {status.apply.label}
-            </Button>
-          )
-        ) : null}
+              <ArrowRightIcon className="-translate-y-1/2 absolute top-1/2 right-4 xl:right-10" />
+            </Link>
+          </Button>
+        ) : (
+          /* Not an action but a statement in an action's place — «Регистрация
+             закрыта», «Фестиваль идёт». Outlined in «светлый акцент» at half
+             strength by day and `свет` at 30% by night — the day's violet is a
+             colour the night page uses for things that *do* something — and set
+             in the regular weight, so it reads as the quietest thing on the card; `disabled:opacity-100` because the variant's own
+             fade on top of a 50% line left it barely visible, and this is meant
+             to be read, not merely seen to be unavailable. */
+          <Button
+            disabled
+            variant="outline"
+            className="h-[37px] w-full rounded-brand border-brand-line-soft/50 bg-transparent font-heading text-base text-foreground leading-snug disabled:opacity-100 xl:h-[39px] xl:text-lg dark:border-on-scrim/30"
+          >
+            {status.apply.label}
+          </Button>
+        )}
+
+        {/* «Подробнее» keeps its place in both cases and changes only its line:
+            the quiet «тёмный акцент» while there is a real action above it, and
+            «Акцентище» in bold once there is not — it is then the only thing on
+            the card that still leads anywhere. */}
         <Button
           asChild
           variant="outline"
-          className="h-[37px] w-full rounded-brand border-brand-line bg-transparent font-heading font-bold text-base text-foreground leading-snug hover:bg-brand-line-soft/20 hover:text-foreground xl:h-[39px] xl:font-normal xl:text-lg dark:border-brand-control dark:hover:bg-brand-control/20"
+          className={cn(
+            "h-[37px] w-full rounded-brand bg-transparent font-heading text-base text-foreground leading-snug hover:text-foreground xl:h-[39px] xl:text-lg",
+            status.apply.enabled
+              ? "border-brand-line font-bold hover:bg-brand-line-soft/20 xl:font-normal dark:border-brand-control dark:hover:bg-brand-control/20"
+              : "border-brand font-bold hover:bg-brand/10",
+          )}
         >
           <Link to={detailPath}>Подробнее</Link>
         </Button>
