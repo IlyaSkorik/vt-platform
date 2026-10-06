@@ -97,7 +97,13 @@ export function HomeHero({ authPath }: HomeHeroProps): React.JSX.Element {
             </p>
           </div>
 
-          {/* The frame measures the pair in both layouts and both are kept:
+          {/* Stacked on a phone by the column, not by wrapping. The two are 186
+              and 155 wide with 12 between them — 353 in all, which fits beside
+              itself on a 414px screen and not on a 375px one, so `flex-wrap`
+              alone made the layout depend on which phone it was. The frame puts
+              «Личный кабинет» under «Найти фестиваль» on every one of them.
+
+              The frame measures the pair in both layouts and both are kept:
               186×30 and 155×31 on a 375px phone, 208×43 and 201×41 on the
               desktop. Only 208 lands on the spacing scale (`w-52`); the rest are
               written out.
@@ -110,7 +116,7 @@ export function HomeHero({ authPath }: HomeHeroProps): React.JSX.Element {
               Any radius here looked wrong for a while, whatever it was set to,
               because `cn` was not dropping the `rounded-md` the Button variant
               brings — see the note in `shared/lib/cn.ts`. */}
-          <div className="flex flex-wrap items-center gap-3 md:gap-[18px]">
+          <div className="flex flex-col items-start gap-3 md:flex-row md:flex-wrap md:items-center md:gap-[18px]">
             {/* Hover is «тёмный акцент», not the variant's own fade of the
                 primary: the frame swaps the fill for `--brand-line` and leaves
                 the label white. Every primary button on the landing does the
