@@ -138,7 +138,20 @@ interface FestivalCatalogToolbarProps {
  * component carries a border, a focus ring and a label slot, all of which fight
  * a field whose whole job is to be a hole in a coloured band.
  *
- * The placeholder is Noto Serif 18/25, and the frame prints it the same
+ * The placeholder is Noto Serif 12/16 on a desktop and 16/22 on a phone — the
+ * field is 30px tall in both, and the desktop's longer band gives the label room
+ * to be small without crowding. The typed text takes the same size as the
+ * placeholder; a field whose hint and content are set differently reads as two
+ * controls.
+ *
+ * The band's own insets are stated rather than left to `items-center`: 10px top
+ * and bottom, 23 from the left edge to the field, 26 from the field across to the
+ * sort control. The field is the 28px those leave inside a 48px band, written
+ * out rather than taken as `h-full`: it sits inside a `label` with no height of
+ * its own, so the percentage had nothing to resolve against and collapsed to the
+ * height of the text — a 16px strip where a field should be.
+ *
+ * The frame prints the placeholder the same
  * `#A9A9A8` in both themes — a mid grey that happens to sit over `свет` and over
  * the night page alike. It is reached from either side rather than frozen as a
  * hex: the page's own ink at 37% by day, `свет` at 65% by night. Both land on
@@ -160,7 +173,7 @@ export function FestivalCatalogToolbar({
     // and the frame drops it onto a line of its own rather than shrinking both
     // into illegibility.
     <div className="space-y-4 xl:space-y-0">
-      <div className="flex h-12 items-center gap-2 rounded-brand bg-brand-surface px-2 xl:gap-4 xl:px-6 dark:bg-brand-line/70 xl:dark:bg-brand-surface">
+      <div className="flex h-12 items-center gap-2 rounded-brand bg-brand-surface px-2 py-2.5 xl:gap-[26px] xl:pr-6 xl:pl-[23px] dark:bg-brand-line/70 xl:dark:bg-brand-surface">
         <label className="flex min-w-0 flex-1 items-center gap-2 xl:gap-3">
           <span className="sr-only">Поиск фестивалей</span>
           <input
@@ -168,7 +181,7 @@ export function FestivalCatalogToolbar({
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
             placeholder="Найти фестиваль"
-            className="h-[30px] w-full min-w-0 rounded-brand bg-background px-4 font-heading text-base text-foreground leading-snug outline-none transition-shadow placeholder:text-foreground/37 dark:placeholder:text-on-scrim/65 focus-visible:ring-2 focus-visible:ring-ring xl:max-w-[336px] xl:text-lg [&::-webkit-search-cancel-button]:hidden"
+            className="h-7 w-full min-w-0 rounded-brand bg-background px-4 font-heading text-base text-foreground leading-snug outline-none transition-shadow placeholder:text-foreground/37 dark:placeholder:text-on-scrim/65 focus-visible:ring-2 focus-visible:ring-ring xl:max-w-[336px] xl:text-xs xl:leading-4 [&::-webkit-search-cancel-button]:hidden"
           />
           <SearchIcon className="size-7 shrink-0 text-brand-mark xl:h-[26px] xl:w-[25px]" />
         </label>

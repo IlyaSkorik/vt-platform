@@ -123,13 +123,20 @@ export function FestivalCatalog({
     // Explicit placement and not a reordered flex row: DOM order stays the
     // phone's, which is the order a screen reader should hear either way.
     //
+    // `grid-rows-[auto_1fr]` is what keeps the cards at the top. The filters span
+    // both rows, and a spanning item taller than them hands its surplus to every
+    // row it crosses — so a filtered-down page with two cards left inflated the
+    // header's row and pushed the grid halfway down the screen. Pinned to `auto`,
+    // the header row is only as tall as the header, and all the surplus lands in
+    // the row that is supposed to grow.
+    //
     // The rows are not evenly spaced on a phone: 16px runs down the controls —
     // search to sort, sort to filters — and 30 falls between the filters and the
     // first card. The grid carries the 16 and the results block adds the
     // remaining 14, because a grid has one gap and these two are different
     // distances: inside a group of controls, and between that group and what it
     // acts on.
-    <div className="grid gap-4 xl:grid-cols-[413px_minmax(0,1fr)] xl:gap-x-[13px]">
+    <div className="grid gap-4 xl:grid-cols-[413px_minmax(0,1fr)] xl:grid-rows-[auto_1fr] xl:gap-x-[13px]">
       <div className="min-w-0 xl:col-start-2 xl:row-start-1">
         {title ? (
           // `sr-only` and not `hidden` on the phone, where the frame drops the
