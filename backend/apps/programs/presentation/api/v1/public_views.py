@@ -167,10 +167,29 @@ class _HostView(APIView):
     organizer decides which link may drive the day, and hands that one to the host. A
     read-only link refuses here indistinguishably from a slug that does not exist, so the
     links handed to an audience cannot be probed for control.
+
+    The gate runs before the body is parsed - see :meth:`_authorize`.
     """
 
     authentication_classes = ()
     permission_classes = (AllowAny,)
+
+    def _authorize(self, request: Request, slug: str, correlation_id: str) -> Response | None:
+        """Settle whether this link may drive the day, before the body is looked at.
+
+        Order matters here and is the whole point: a link without control must be
+        refused identically whatever it sends, so that a 400 about the payload can
+        never be mistaken — by an attacker or by an auditor — for the absence of a
+        gate. Returns the refusal to send, or ``None`` to carry on.
+        """
+        try:
+            build_program_service().ensure_host_control(slug)
+        except ProgramError:
+            # Covers both halves of the answer — the slug nobody minted and the link
+            # minted without control — because telling them apart is exactly what this
+            # edge must not let a caller do.
+            return self._refused(request, correlation_id)
+        return None
 
     def _refused(self, request: Request, correlation_id: str) -> Response:
         return problem_response(
@@ -198,6 +217,9 @@ class PublicProgramRowProgressView(_HostView):
     )
     def put(self, request: Request, slug: str, item_id: str) -> Response:
         correlation_id = request_id(request)
+        refusal = self._authorize(request, slug, correlation_id)
+        if refusal is not None:
+            return refusal
         serializer = SetProgressRequestSerializer(data=request.data)
         if not serializer.is_valid():
             return problem_response(
@@ -238,6 +260,9 @@ class PublicProgramOrderView(_HostView):
     )
     def put(self, request: Request, slug: str) -> Response:
         correlation_id = request_id(request)
+        refusal = self._authorize(request, slug, correlation_id)
+        if refusal is not None:
+            return refusal
         serializer = ReorderItemsRequestSerializer(data=request.data)
         if not serializer.is_valid():
             return problem_response(
