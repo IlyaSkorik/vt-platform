@@ -678,6 +678,21 @@ class ProgramService:
     # The day itself (driven from the host's link)
     # ------------------------------------------------------------------
 
+    def ensure_host_control(self, slug: str) -> None:
+        """Refuse a link that was not granted control, before anything else is read.
+
+        Exists so the edge can answer the authorization question *first*. Both host
+        writes used to validate the request body before reaching the service, which
+        meant a link with no control over the day got a 400 about its payload rather
+        than the refusal it had earned — and a reader of that 400 could reasonably
+        conclude, as one did, that there was no gate at all. The refusal is now the
+        same 404 whatever the body looks like.
+
+        The cost is a second resolution of the slug on the write paths, which is a
+        row by unique index on an operation a host performs a few times an hour.
+        """
+        self._host_program(slug)
+
     def set_item_progress(self, command: SetItemProgressCommand) -> PublicProgramView:
         """Mark how far one slot has got, from the host's own link.
 

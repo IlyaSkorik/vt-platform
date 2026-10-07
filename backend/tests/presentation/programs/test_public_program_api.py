@@ -223,6 +223,26 @@ class TestTheHostsEdition:
         response = APIClient().put(f"{_PUBLIC}/Nobody234/rows/{uuid.uuid4()}/progress", {"progress": "ON_STAGE"}, format="json")
         assert response.status_code == 404
 
+    def test_a_link_without_control_is_refused_before_its_body_is_read(
+        self, staff_client: APIClient, scope: tuple[str, str]
+    ) -> None:
+        # Whatever it sends, a link that may not drive the day gets the same 404. The
+        # order matters: validating first answered a malformed body with a 400 about the
+        # payload, which reads as "your JSON was wrong, try again" and was once reported
+        # as the absence of an access check altogether.
+        _host_slug, program_id, rows = self._host_link(staff_client, scope)
+        screen_slug = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Экран"}, format="json").data["data"]["share"]["slug"]
+
+        for body in ({"progress": "DANCING"}, {}, {"progress": None}):
+            refused = APIClient().put(f"{_PUBLIC}/{screen_slug}/rows/{rows[0]['id']}/progress", body, format="json")
+            assert refused.status_code == 404, body
+
+        for body in ({"itemIds": "not-a-list"}, {}):
+            assert APIClient().put(f"{_PUBLIC}/{screen_slug}/order", body, format="json").status_code == 404, body
+
+        # And an unknown slug answers the same, so neither can be told from the other.
+        assert APIClient().put(f"{_PUBLIC}/Nobody234/order", {}, format="json").status_code == 404
+
     def test_an_unknown_progress_state_is_rejected(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, _program_id, rows = self._host_link(staff_client, scope)
         response = APIClient().put(
