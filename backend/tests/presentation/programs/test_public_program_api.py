@@ -223,9 +223,7 @@ class TestTheHostsEdition:
         response = APIClient().put(f"{_PUBLIC}/Nobody234/rows/{uuid.uuid4()}/progress", {"progress": "ON_STAGE"}, format="json")
         assert response.status_code == 404
 
-    def test_a_link_without_control_is_refused_before_its_body_is_read(
-        self, staff_client: APIClient, scope: tuple[str, str]
-    ) -> None:
+    def test_a_link_without_control_is_refused_before_its_body_is_read(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         # Whatever it sends, a link that may not drive the day gets the same 404. The
         # order matters: validating first answered a malformed body with a 400 about the
         # payload, which reads as "your JSON was wrong, try again" and was once reported
