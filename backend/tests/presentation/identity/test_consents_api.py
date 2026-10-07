@@ -161,7 +161,39 @@ class TestConsentJournal:
         assert anonymous.get(CONSENTS_URL).status_code == 401
         assert anonymous.post(CONSENTS_URL, {"consentType": "marketing", "version": "1.0"}, format="json").status_code == 401
 
-    def test_malformed_request_is_a_problem_document(self, client: APIClient) -> None:
-        response = client.post(CONSENTS_URL, {"version": "1.0"}, format="json")
-        assert response.status_code == 400
+    @pytest.mark.parametrize(
+        "body",
+        [
+            {},
+            {"version": "1.0"},
+            {"consentType": "marketing"},
+            {"consentType": "", "version": ""},
+            {"consentType": None, "version": None},
+            {"consentType": ["marketing"], "version": {"n": 1}},
+            {"consentType": "marketing", "version": "1.0", "subjectParticipantId": "not-a-uuid"},
+            [],
+            "nonsense",
+        ],
+        ids=["empty", "no-type", "no-version", "blank", "nulls", "wrong-shapes", "bad-subject", "array", "scalar"],
+    )
+    def test_malformed_request_is_a_problem_document(self, client: APIClient, body: Any) -> None:
+        # Everything the body can be short of or wrong about is decided by the
+        # serializer before any of it reaches the journal, so a half-filled form is a
+        # refusal the client can read rather than an exception off the end of the view.
+        response = client.post(CONSENTS_URL, body, format="json")
+        assert response.status_code == 400, response.status_code
         assert response["Content-Type"].startswith("application/problem+json")
+
+    @pytest.mark.parametrize(
+        ("payload", "content_type"),
+        [
+            (b"{", "application/json"),
+            (b"", "application/json"),
+            (b'{"consentType":', "application/json"),
+        ],
+        ids=["unclosed", "empty-bytes", "truncated"],
+    )
+    def test_a_body_that_is_not_json_is_refused_rather_than_thrown(self, client: APIClient, payload: bytes, content_type: str) -> None:
+        # Bytes that never parse are answered before the view runs at all; the edge owns
+        # the refusal, so a truncated upload cannot surface as a server error.
+        assert client.post(CONSENTS_URL, payload, content_type=content_type).status_code == 400
