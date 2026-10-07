@@ -85,10 +85,12 @@ __all__ = [
     "SubmissionCreated",
     "SubmissionDetachedFromApplication",
     "SubmissionPaid",
+    "SubmissionPromotedFromWaitlist",
     "SubmissionReturnedForCorrection",
     "SubmissionReviewStarted",
     "SubmissionScheduled",
     "SubmissionSubmitted",
+    "SubmissionWaitlisted",
     "TeacherAdded",
     "TeacherRemoved",
 ]
@@ -269,6 +271,16 @@ class SubmissionSubmitted(DomainEvent):
     """The submission was submitted to the competition (left DRAFT/correction)."""
 
     previous_status: SubmissionStatus
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class SubmissionWaitlisted(DomainEvent):
+    """The submission was queued on its nomination's waitlist instead of submitted."""
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class SubmissionPromotedFromWaitlist(DomainEvent):
+    """The organizer moved a waitlisted submission into the competition."""
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

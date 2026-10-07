@@ -778,6 +778,7 @@ class SubmissionStatus(StrEnum):
     """The submission's lifecycle state.
 
     ``DRAFT``               - the applicant is assembling the submission; content is mutable.
+    ``WAITLISTED``          - entered after its nomination closed; queued, unpaid, outside the programme.
     ``SUBMITTED``           - submitted to the competition; awaiting organizer intake.
     ``UNDER_REVIEW``        - the organizer is reviewing it.
     ``REQUIRES_CORRECTION`` - returned to the applicant to fix; content is mutable again.
@@ -792,11 +793,18 @@ class SubmissionStatus(StrEnum):
     From ``ACCEPTED`` on, the applicant can no longer withdraw; the organizer may
     still cancel, case by case, until the performance has taken place.
 
+    ``WAITLISTED`` sits beside ``SUBMITTED`` rather than before it: it is where an
+    entry lands *instead of* being submitted, when the nomination it names has closed
+    but keeps a waitlist. It is not a review state and carries no fee — the organizer
+    either moves the entry into the competition (``-> SUBMITTED``, and from there the
+    ordinary path) or calls it off (``-> CANCELLED``).
+
     Legal transitions are enforced by the :class:`~apps.applications.domain.entities.
     Submission` aggregate; this enum only names the states.
     """
 
     DRAFT = "DRAFT"
+    WAITLISTED = "WAITLISTED"
     SUBMITTED = "SUBMITTED"
     UNDER_REVIEW = "UNDER_REVIEW"
     REQUIRES_CORRECTION = "REQUIRES_CORRECTION"
@@ -1668,8 +1676,21 @@ class SubmissionRef:
         return self.status is SubmissionStatus.APPROVED
 
     @property
+    def is_waitlisted(self) -> bool:
+        """Whether the referenced submission is queued on its nomination's waitlist."""
+        return self.status is SubmissionStatus.WAITLISTED
+
+    @property
     def price_line(self) -> Money:
-        """The submission's contribution to the order total (zero until it is priced)."""
+        """The submission's contribution to the order total (zero until it is priced).
+
+        A waitlisted entry contributes nothing whatever its snapshot says. The price
+        is still computed and kept fresh underneath — the applicant may keep editing
+        the act while they wait, and the figure has to be right the moment the
+        organizer promotes it — but nobody is billed for a place they do not have.
+        """
+        if self.status is SubmissionStatus.WAITLISTED:
+            return Money.of("0.00")
         return self.price.price if self.price is not None else Money.of("0.00")
 
     def __str__(self) -> str:

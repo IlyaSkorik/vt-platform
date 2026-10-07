@@ -98,10 +98,12 @@ from .events import (
     SubmissionCreated,
     SubmissionDetachedFromApplication,
     SubmissionPaid,
+    SubmissionPromotedFromWaitlist,
     SubmissionReturnedForCorrection,
     SubmissionReviewStarted,
     SubmissionScheduled,
     SubmissionSubmitted,
+    SubmissionWaitlisted,
     TeacherAdded,
     TeacherRemoved,
 )
@@ -191,7 +193,8 @@ _CREATION_TOKEN: Final = object()
 #: the running order (``ACCEPTED``, ``SCHEDULED``) but only by organizer decision —
 #: see :data:`_ORGANIZER_ONLY_CANCELLABLE_STATUSES`.
 _LEGAL_TRANSITIONS: Final[dict[SubmissionStatus, frozenset[SubmissionStatus]]] = {
-    SubmissionStatus.DRAFT: frozenset({SubmissionStatus.SUBMITTED, SubmissionStatus.CANCELLED}),
+    SubmissionStatus.DRAFT: frozenset({SubmissionStatus.SUBMITTED, SubmissionStatus.WAITLISTED, SubmissionStatus.CANCELLED}),
+    SubmissionStatus.WAITLISTED: frozenset({SubmissionStatus.SUBMITTED, SubmissionStatus.CANCELLED}),
     SubmissionStatus.SUBMITTED: frozenset({SubmissionStatus.UNDER_REVIEW, SubmissionStatus.CANCELLED}),
     SubmissionStatus.UNDER_REVIEW: frozenset({SubmissionStatus.APPROVED, SubmissionStatus.REQUIRES_CORRECTION, SubmissionStatus.CANCELLED}),
     SubmissionStatus.REQUIRES_CORRECTION: frozenset({SubmissionStatus.SUBMITTED, SubmissionStatus.CANCELLED}),
@@ -236,11 +239,16 @@ _ORGANIZER_ONLY_CANCELLABLE_STATUSES: Final = frozenset({SubmissionStatus.ACCEPT
 #: entries must be fixable by the person who made it — approval, the invoice and even
 #: a slot in the running order do not make a misspelt surname correct.
 #:
+#: ``WAITLISTED`` is in, and deliberately: an entry can sit on the list for weeks,
+#: and the act it describes goes on being rehearsed. Freezing it would mean promoting
+#: a stale entry into the programme.
+#:
 #: ``COMPLETED`` and ``CANCELLED`` are out: the performance took place, or there will
 #: not be one, and neither is a fact a correction can change.
 _LIVE_STATUSES: Final = frozenset(
     {
         SubmissionStatus.DRAFT,
+        SubmissionStatus.WAITLISTED,
         SubmissionStatus.SUBMITTED,
         SubmissionStatus.UNDER_REVIEW,
         SubmissionStatus.REQUIRES_CORRECTION,
@@ -266,6 +274,7 @@ _REVIEWABLE_STATUSES: Final = frozenset({SubmissionStatus.SUBMITTED, SubmissionS
 _PRICE_RECALCULABLE_STATUSES: Final = frozenset(
     {
         SubmissionStatus.DRAFT,
+        SubmissionStatus.WAITLISTED,
         SubmissionStatus.SUBMITTED,
         SubmissionStatus.UNDER_REVIEW,
         SubmissionStatus.REQUIRES_CORRECTION,
@@ -1191,6 +1200,36 @@ class Submission:
         previous = self._status
         self._transition_to(SubmissionStatus.SUBMITTED, now=now)
         return [SubmissionSubmitted(aggregate_id=self._id.value, previous_status=previous)]
+
+    def waitlist(self, *, policy: SubmissionParticipationPolicy, now: datetime) -> list[DomainEvent]:
+        """Queue the submission on its nomination's waitlist (DRAFT -> WAITLISTED).
+
+        Held to exactly the same invariants as :meth:`submit`, on purpose: a place in
+        the queue that could never be honoured is worse than a refusal, because the
+        applicant finds out weeks later. The one thing the waitlist does not ask for
+        is money — the fee falls due only if the organizer promotes the entry.
+        """
+        self._assert_submittable(policy)
+        self._transition_to(SubmissionStatus.WAITLISTED, now=now)
+        return [SubmissionWaitlisted(aggregate_id=self._id.value)]
+
+    def promote_from_waitlist(self, *, policy: SubmissionParticipationPolicy, now: datetime) -> list[DomainEvent]:
+        """Move a waitlisted entry into the competition (WAITLISTED -> SUBMITTED).
+
+        The organizer's decision, taken when a place frees up. The entry rejoins the
+        ordinary path at its start — review, approval, invoice, payment — rather than
+        being waved through: it has not been looked at yet, and by now the act may
+        have been edited several times over. The policy is re-checked for the same
+        reason the clock has moved on; a combination the festival has since dropped
+        must not slip in through the queue.
+        """
+        self._assert_submittable(policy)
+        previous = self._status
+        self._transition_to(SubmissionStatus.SUBMITTED, now=now)
+        return [
+            SubmissionPromotedFromWaitlist(aggregate_id=self._id.value),
+            SubmissionSubmitted(aggregate_id=self._id.value, previous_status=previous),
+        ]
 
     def begin_review(self, *, now: datetime) -> list[DomainEvent]:
         """Begin reviewing the submission (SUBMITTED -> UNDER_REVIEW)."""
