@@ -44,6 +44,7 @@ from apps.applications.application.exceptions import (
     DeadlinePassedError,
     EducationalOrganizationNotFoundError,
     FileTooLargeError,
+    MixedWaitlistOrderError,
     MultiplePerformancesNotAllowedError,
     PaymentReceiptRequiredError,
     PermissionDeniedError,
@@ -98,6 +99,7 @@ from .fakes import (
     FakeIdentityReadModel,
     FakeParticipantGuardianRegistry,
     FakeSubmissionRepository,
+    RecordingApplicantNotifier,
     RecordingEventPublisher,
     SequenceUuidGenerator,
     uuid7_str,
@@ -125,6 +127,7 @@ class Env:
         self.uuids = SequenceUuidGenerator()
         self.events = RecordingEventPublisher()
         self.storage = FakeFileStorage()
+        self.notifier = RecordingApplicantNotifier()
 
     def create(self) -> CreateApplicationHandler:
         return CreateApplicationHandler(
@@ -173,6 +176,8 @@ class Env:
             services=self.services,
             clock=self.clock,
             events=self.events,
+            identity=self.identity,
+            notifier=self.notifier,
         )
 
     def request_payment(self) -> RequestApplicationPaymentHandler:
@@ -210,19 +215,23 @@ class Env:
 
     # -- test helpers driving the separate Submission workflow --------------
 
-    def build_submittable(self, submission_id_str: str, *, from_registry: bool = False) -> None:
+    def build_submittable(self, submission_id_str: str, *, from_registry: bool = False, nomination_id: NominationId | None = None) -> NominationId:
         """Give the submission a performance, a participant, and a frozen price.
 
         ``from_registry`` links the participant back to a Participant Registry record,
         which is what the guardian requirement is checked against — a manually typed
         participant has no registry row and so can never carry a guardian link.
+
+        Returns the nomination the performance names, so a test that cares which door
+        the entry comes through can tell the catalog about it.
         """
         submission = self.submissions.get(SubmissionId.from_string(submission_id_str))
         assert submission is not None
+        nomination = nomination_id or NominationId.from_uuid(SubmissionId.generate().value)
         performance = Performance(
             title=PerformanceTitle("Swan Lake"),
             duration=Duration.of(minutes=3),
-            nomination_id=NominationId.from_uuid(SubmissionId.generate().value),
+            nomination_id=nomination,
             discipline_id=DisciplineId.from_uuid(SubmissionId.generate().value),
             age_category_id=AgeCategoryId.from_uuid(SubmissionId.generate().value),
             participant_group_id=ParticipantGroupId.from_uuid(SubmissionId.generate().value),
@@ -239,6 +248,7 @@ class Env:
         )
         submission.set_price_snapshot(price_snapshot=PriceSnapshot(price=Money.of("300.00"), calculated_at=NOW), now=NOW)
         self.submissions.save(submission)
+        return nomination
 
     def approve(self, submission_id_str: str) -> None:
         """Drive a SUBMITTED submission through review to APPROVED."""
@@ -521,6 +531,101 @@ class TestSubmitAndPay:
         accepted = env.submissions.get(SubmissionId.from_string(submission_id))
         assert accepted is not None
         assert accepted.status is SubmissionStatus.ACCEPTED
+
+
+class TestWaitlistOrders:
+    @staticmethod
+    def _closed_genre_env(*, services: FakeCompetitionServiceCatalog | None = None) -> tuple[Env, str, str, str]:
+        """An order whose single performance names a genre that closed but keeps a list."""
+        nomination = NominationId.from_uuid(SubmissionId.generate().value)
+        env = Env(catalog=FakeCompetitionCatalog(waitlisting_nominations=frozenset({nomination.json()})), services=services)
+        app_id, applicant = _create_app(env)
+        submission_id = _add_submission(env, app_id, applicant)
+        env.build_submittable(submission_id, nomination_id=nomination)
+        return env, app_id, applicant, submission_id
+
+    def test_a_closed_genre_queues_the_entry_instead_of_refusing_it(self) -> None:
+        env, app_id, applicant, _ = self._closed_genre_env()
+        result = env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
+        assert result.application.status == "SUBMITTED"
+        assert result.application.submissions[0].status == "WAITLISTED"
+
+    def test_a_queued_order_asks_for_no_money(self) -> None:
+        env, app_id, applicant, _ = self._closed_genre_env()
+        result = env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
+        assert result.application.total_price is not None
+        assert result.application.total_price.total_amount == "0.00"
+
+    def test_a_queued_order_is_not_held_to_the_upfront_receipt(self) -> None:
+        # The receipt proves a payment that is not owed yet.
+        env, app_id, applicant, _ = self._closed_genre_env(
+            services=FakeCompetitionServiceCatalog(receipt_requirement=ReceiptRequirement(required=True, due_at_submit=True))
+        )
+        result = env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
+        assert result.application.submissions[0].status == "WAITLISTED"
+
+    def test_a_queued_order_is_not_held_to_mandatory_paid_services(self) -> None:
+        env, app_id, applicant, _ = self._closed_genre_env(services=FakeCompetitionServiceCatalog(required_services=frozenset({"tshirt"})))
+        result = env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
+        assert result.application.submissions[0].status == "WAITLISTED"
+
+    def test_a_queued_order_still_needs_its_consents(self) -> None:
+        # Joining the queue hands the platform the person's data, which is what the
+        # consent is the grounds for — the fee has nothing to do with it.
+        env, app_id, applicant, _ = self._closed_genre_env(services=FakeCompetitionServiceCatalog(required_consents=frozenset({"personal_data"})))
+        with pytest.raises(ApplicationInvariantViolationError):
+            env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
+
+    def test_an_order_cannot_mix_the_two_doors(self) -> None:
+        waitlisted = NominationId.from_uuid(SubmissionId.generate().value)
+        env = Env(catalog=FakeCompetitionCatalog(waitlisting_nominations=frozenset({waitlisted.json()})))
+        app_id, applicant = _create_app(env)
+        env.build_submittable(_add_submission(env, app_id, applicant))  # an open genre
+        env.build_submittable(_add_submission(env, app_id, applicant), nomination_id=waitlisted)
+        with pytest.raises(MixedWaitlistOrderError):
+            env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
+
+    def test_the_applicant_is_told_they_are_in_a_queue(self) -> None:
+        # Silence after filling in a whole application reads as "it failed"; the
+        # ordinary submitted notice would read as "now pay".
+        env, app_id, applicant, _ = self._closed_genre_env()
+        env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
+        assert env.notifier.waitlisted == ["applicant@example.com"]
+        assert env.notifier.submitted == []
+        assert env.notifier.awaiting_payment == []
+
+    def test_an_ordinary_order_is_not_told_about_any_queue(self) -> None:
+        env = Env()
+        app_id, applicant = _create_app(env)
+        env.build_submittable(_add_submission(env, app_id, applicant))
+        env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
+        assert env.notifier.waitlisted == []
+
+    def test_an_entry_queued_before_the_order_was_placed_still_counts(self) -> None:
+        # The performance can be submitted on its own, ahead of the order. By the time
+        # the order is placed it is no longer a draft, so the receipt rule has to read
+        # the status it already has rather than the door it was about to go through.
+        env, app_id, applicant, submission_id = self._closed_genre_env(
+            services=FakeCompetitionServiceCatalog(receipt_requirement=ReceiptRequirement(required=True, due_at_submit=True))
+        )
+        submission = env.submissions.get(SubmissionId.from_string(submission_id))
+        assert submission is not None
+        policy = env.catalog.policy
+        assert policy is not None
+        submission.waitlist(policy=policy, now=NOW)
+        env.submissions.save(submission)
+
+        result = env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
+
+        assert result.application.status == "SUBMITTED"
+        assert result.application.submissions[0].status == "WAITLISTED"
+        assert env.notifier.waitlisted == ["applicant@example.com"]
+
+    def test_a_queued_order_can_never_reach_payment(self) -> None:
+        env, app_id, applicant, _ = self._closed_genre_env()
+        env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
+        with pytest.raises(ApplicationInvariantViolationError):
+            env.request_payment().handle(RequestApplicationPaymentCommand(requested_by=applicant, application_id=app_id))
 
 
 class TestCancel:

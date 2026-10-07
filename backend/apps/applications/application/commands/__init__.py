@@ -30,6 +30,7 @@ from .performance import SetPerformanceHandler, UpdatePerformanceHandler
 from .pricing import CalculatePriceHandler
 from .review import (
     ApproveSubmissionHandler,
+    PromoteWaitlistedSubmissionHandler,
     ReturnSubmissionForCorrectionHandler,
     StartReviewHandler,
     SubmitSubmissionHandler,
@@ -50,6 +51,7 @@ __all__ = [
     "DeleteDraftSubmissionHandler",
     "MarkPaidHandler",
     "MarkWaitingPaymentHandler",
+    "PromoteWaitlistedSubmissionHandler",
     "RemoveAttachmentHandler",
     "RemoveParticipantHandler",
     "RemoveTeacherHandler",

@@ -63,6 +63,7 @@ __all__ = [
     "EducationalOrganizationNotFoundError",
     "FileTooLargeError",
     "InvalidInputError",
+    "MixedWaitlistOrderError",
     "ParentGuardianRequiredError",
     "PaymentReceiptRequiredError",
     "PermissionDeniedError",
@@ -254,6 +255,18 @@ class MultiplePerformancesNotAllowedError(ApplicationError):
     """
 
     code: ClassVar[str] = "multiple_performances_not_allowed"
+
+
+class MixedWaitlistOrderError(ApplicationError):
+    """The order mixes entries bound for the competition with entries bound for a waitlist.
+
+    The two cannot share an order because they cannot share a total: one is billed on
+    submission, the other owes nothing until the organizer promotes it. Splitting them
+    is what keeps the money question answerable — an order is either payable or it is
+    not.
+    """
+
+    code: ClassVar[str] = "mixed_waitlist_order"
 
 
 class ParentGuardianRequiredError(ApplicationError):

@@ -17,11 +17,13 @@ from apps.applications.application.commands import (
     ApproveSubmissionHandler,
     AttachFileHandler,
     CalculatePriceHandler,
+    CancelSubmissionByReviewerHandler,
     CancelSubmissionHandler,
     CreateSubmissionHandler,
     DeleteDraftSubmissionHandler,
     MarkPaidHandler,
     MarkWaitingPaymentHandler,
+    PromoteWaitlistedSubmissionHandler,
     RemoveParticipantHandler,
     ReturnSubmissionForCorrectionHandler,
     SetPerformanceHandler,
@@ -36,11 +38,13 @@ from apps.applications.application.dto.commands import (
     ApproveSubmissionCommand,
     AttachFileCommand,
     CalculatePriceCommand,
+    CancelSubmissionByReviewerCommand,
     CancelSubmissionCommand,
     CreateSubmissionCommand,
     DeleteDraftSubmissionCommand,
     MarkPaidCommand,
     MarkWaitingPaymentCommand,
+    PromoteWaitlistedSubmissionCommand,
     RemoveParticipantCommand,
     ReturnSubmissionForCorrectionCommand,
     SetPerformanceCommand,
@@ -57,6 +61,7 @@ from apps.applications.application.dto.queries import (
 from apps.applications.application.exceptions import (
     ApplicantNotFoundError,
     CompetitionClosedError,
+    CompetitionCombinationNotFoundError,
     CompetitionNotFoundError,
     DuplicateChildError,
     PermissionDeniedError,
@@ -159,6 +164,18 @@ class Env:
     def approve(self) -> ApproveSubmissionHandler:
         return ApproveSubmissionHandler(submissions=self.submissions, organization=self.organization, clock=self.clock, events=self.events)
 
+    def promote(self) -> PromoteWaitlistedSubmissionHandler:
+        return PromoteWaitlistedSubmissionHandler(
+            submissions=self.submissions,
+            catalog=self.catalog,
+            organization=self.organization,
+            clock=self.clock,
+            events=self.events,
+        )
+
+    def cancel_by_reviewer(self) -> CancelSubmissionByReviewerHandler:
+        return CancelSubmissionByReviewerHandler(submissions=self.submissions, organization=self.organization, clock=self.clock, events=self.events)
+
     def mark_waiting_payment(self) -> MarkWaitingPaymentHandler:
         return MarkWaitingPaymentHandler(submissions=self.submissions, organization=self.organization, clock=self.clock, events=self.events)
 
@@ -195,14 +212,14 @@ def _create(env: Env, *, competition_id: str, applicant_id: str) -> str:
     return result.submission.id
 
 
-def _set_performance(env: Env, *, submission_id: str, owner: str, age_composition: str = "") -> None:
+def _set_performance(env: Env, *, submission_id: str, owner: str, age_composition: str = "", nomination_id: str | None = None) -> None:
     env.set_performance().handle(
         SetPerformanceCommand(
             submission_id=submission_id,
             requested_by=owner,
             title="Winter Sonata",
             duration_seconds=180,
-            nomination_id=uuid7_str(),
+            nomination_id=nomination_id or uuid7_str(),
             discipline_id=uuid7_str(),
             age_category_id=uuid7_str(),
             participant_group_id=uuid7_str(),
@@ -226,10 +243,10 @@ def _add_participant(env: Env, *, submission_id: str, owner: str, first: str = "
     return result.submission.participants[-1].id
 
 
-def _reach_draft_ready(env: Env, *, competition_id: str, owner: str) -> str:
+def _reach_draft_ready(env: Env, *, competition_id: str, owner: str, nomination_id: str | None = None) -> str:
     """Create a fully priced, submittable draft and return its id."""
     submission_id = _create(env, competition_id=competition_id, applicant_id=owner)
-    _set_performance(env, submission_id=submission_id, owner=owner)
+    _set_performance(env, submission_id=submission_id, owner=owner, nomination_id=nomination_id)
     _add_participant(env, submission_id=submission_id, owner=owner)
     env.calculate_price().handle(CalculatePriceCommand(submission_id=submission_id, requested_by=owner))
     return submission_id
@@ -524,6 +541,77 @@ class TestLifecycle:
         owner, competition_id = uuid7_str(), uuid7_str()
         submission_id = _reach_draft_ready(env, competition_id=competition_id, owner=owner)
         result = env.cancel().handle(CancelSubmissionCommand(submission_id=submission_id, requested_by=owner))
+        assert result.submission.status == SubmissionStatus.CANCELLED.value
+
+
+class TestWaitlist:
+    @staticmethod
+    def _queued(env: Env, *, nomination: str, owner: str, competition_id: str) -> str:
+        submission_id = _reach_draft_ready(env, competition_id=competition_id, owner=owner, nomination_id=nomination)
+        env.submit().handle(SubmitSubmissionCommand(submission_id=submission_id, requested_by=owner))
+        return submission_id
+
+    def test_a_closed_genre_with_a_list_queues_instead_of_refusing(self) -> None:
+        nomination = uuid7_str()
+        env = Env(catalog=FakeCompetitionCatalog(open_for_submissions=False, waitlisting_nominations=frozenset({nomination})))
+        owner, competition_id = uuid7_str(), uuid7_str()
+        submission_id = self._queued(env, nomination=nomination, owner=owner, competition_id=competition_id)
+        view = env.get_submission().handle(GetSubmissionQuery(submission_id=submission_id, requested_by=owner))
+        assert view.status == SubmissionStatus.WAITLISTED.value
+
+    def test_a_closed_genre_without_a_list_still_refuses(self) -> None:
+        # The festival is otherwise open, so getting this far is fine; it is this one
+        # genre that has shut without leaving a queue behind.
+        shut = uuid7_str()
+        env = Env(catalog=FakeCompetitionCatalog(closed_nominations=frozenset({shut})))
+        owner = uuid7_str()
+        submission_id = _create(env, competition_id=uuid7_str(), applicant_id=owner)
+        with pytest.raises(CompetitionClosedError):
+            _set_performance(env, submission_id=submission_id, owner=owner, nomination_id=shut)
+
+    def test_promotion_does_not_require_the_genre_to_reopen(self) -> None:
+        # The organizer promoting is the person who closed it; demanding it be open
+        # again would make the queue impossible to empty.
+        nomination = uuid7_str()
+        env = Env(catalog=FakeCompetitionCatalog(open_for_submissions=False, waitlisting_nominations=frozenset({nomination})))
+        owner, competition_id, reviewer = uuid7_str(), uuid7_str(), uuid7_str()
+        submission_id = self._queued(env, nomination=nomination, owner=owner, competition_id=competition_id)
+
+        result = env.promote().handle(PromoteWaitlistedSubmissionCommand(submission_id=submission_id, reviewer_id=reviewer))
+
+        assert result.submission.status == SubmissionStatus.SUBMITTED.value
+        env.start_review().handle(StartReviewCommand(submission_id=submission_id, reviewer_id=reviewer))
+        approved = env.approve().handle(ApproveSubmissionCommand(submission_id=submission_id, reviewer_id=reviewer))
+        assert approved.submission.status == SubmissionStatus.APPROVED.value
+
+    def test_promotion_is_an_organizer_act(self) -> None:
+        nomination = uuid7_str()
+        env = Env(
+            catalog=FakeCompetitionCatalog(open_for_submissions=False, waitlisting_nominations=frozenset({nomination})),
+            organization=FakeOrganizationReadModel(reviewer=False),
+        )
+        owner, competition_id = uuid7_str(), uuid7_str()
+        submission_id = self._queued(env, nomination=nomination, owner=owner, competition_id=competition_id)
+        with pytest.raises(PermissionDeniedError):
+            env.promote().handle(PromoteWaitlistedSubmissionCommand(submission_id=submission_id, reviewer_id=uuid7_str()))
+
+    def test_promotion_refuses_a_combination_the_festival_has_since_dropped(self) -> None:
+        nomination = uuid7_str()
+        env = Env(catalog=FakeCompetitionCatalog(open_for_submissions=False, waitlisting_nominations=frozenset({nomination})))
+        owner, competition_id = uuid7_str(), uuid7_str()
+        submission_id = self._queued(env, nomination=nomination, owner=owner, competition_id=competition_id)
+        env.catalog.policy = None
+        with pytest.raises(CompetitionCombinationNotFoundError):
+            env.promote().handle(PromoteWaitlistedSubmissionCommand(submission_id=submission_id, reviewer_id=uuid7_str()))
+
+    def test_the_organizer_can_call_a_queued_entry_off(self) -> None:
+        nomination = uuid7_str()
+        env = Env(catalog=FakeCompetitionCatalog(open_for_submissions=False, waitlisting_nominations=frozenset({nomination})))
+        owner, competition_id, reviewer = uuid7_str(), uuid7_str(), uuid7_str()
+        submission_id = self._queued(env, nomination=nomination, owner=owner, competition_id=competition_id)
+
+        result = env.cancel_by_reviewer().handle(CancelSubmissionByReviewerCommand(submission_id=submission_id, reviewer_id=reviewer))
+
         assert result.submission.status == SubmissionStatus.CANCELLED.value
 
 

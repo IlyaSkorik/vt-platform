@@ -33,6 +33,10 @@ class NotificationKind(models.TextChoices):
     """
 
     APPLICATION_SUBMITTED = "APPLICATION_SUBMITTED", "Application submitted"
+    #: Separate from APPLICATION_SUBMITTED because nothing is being asked of the
+    #: reader and nothing is owed: the entry is in a queue, and the next move is the
+    #: organizer's. Reading it as "submitted" would have them waiting for an invoice.
+    APPLICATION_WAITLISTED = "APPLICATION_WAITLISTED", "Application waitlisted"
     PAYMENT_EXPECTED = "PAYMENT_EXPECTED", "Payment expected"
     APPLICATION_CANCELLED = "APPLICATION_CANCELLED", "Application cancelled"
     APPLICATION_APPROVED = "APPLICATION_APPROVED", "Application approved"

@@ -11,6 +11,7 @@ from __future__ import annotations
 from apps.applications.application.dto import SubmissionOperationResultDto
 from apps.applications.application.dto.commands import (
     ApproveSubmissionCommand,
+    PromoteWaitlistedSubmissionCommand,
     ReturnSubmissionForCorrectionCommand,
     StartReviewCommand,
     SubmitSubmissionCommand,
@@ -46,6 +47,7 @@ from ._support import (
 
 __all__ = [
     "ApproveSubmissionHandler",
+    "PromoteWaitlistedSubmissionHandler",
     "ReturnSubmissionForCorrectionHandler",
     "StartReviewHandler",
     "SubmitSubmissionHandler",
@@ -85,12 +87,16 @@ class SubmitSubmissionHandler:
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
 
-        if not self._catalog.accepts_submissions(
-            competition_id=submission.competition_id,
-            nomination_id=submission.performance.nomination_id if submission.performance is not None else None,
-            now=now,
-        ):
-            raise CompetitionClosedError("Приём заявок на этот фестиваль закрыт.")
+        nomination_id = submission.performance.nomination_id if submission.performance is not None else None
+        to_waitlist = False
+        if not self._catalog.accepts_submissions(competition_id=submission.competition_id, nomination_id=nomination_id, now=now):
+            to_waitlist = nomination_id is not None and self._catalog.accepts_waitlist(
+                competition_id=submission.competition_id,
+                nomination_id=nomination_id,
+                now=now,
+            )
+            if not to_waitlist:
+                raise CompetitionClosedError("Приём заявок на этот фестиваль закрыт.")
 
         performance = submission.performance
         if performance is None:
@@ -109,7 +115,61 @@ class SubmitSubmissionHandler:
             policy = resolved
 
         with translate_domain_errors():
-            domain_events = submission.submit(policy=policy, now=now)
+            domain_events = submission.waitlist(policy=policy, now=now) if to_waitlist else submission.submit(policy=policy, now=now)
+        self._submissions.save(submission)
+        self._events.publish(domain_events)
+        return SubmissionOperationResultDto.of(submission, tuple(domain_events))
+
+
+class PromoteWaitlistedSubmissionHandler:
+    """Use case: move a waitlisted submission into the competition (organizer).
+
+    The one deliberate asymmetry with :class:`SubmitSubmissionHandler`: no check that
+    the nomination is open. The whole point of the queue is that it is not, and the
+    organizer promoting from it is the person who closed it. What *is* re-checked is
+    the combination — an entry can sit on the list for weeks, and a nomination the
+    festival has since dropped must not slip in through the back.
+    """
+
+    def __init__(
+        self,
+        *,
+        submissions: SubmissionRepository,
+        catalog: CompetitionCatalog,
+        organization: OrganizationReadModel,
+        clock: Clock,
+        events: EventPublisher,
+    ) -> None:
+        self._submissions = submissions
+        self._catalog = catalog
+        self._organization = organization
+        self._clock = clock
+        self._events = events
+
+    def handle(self, command: PromoteWaitlistedSubmissionCommand) -> SubmissionOperationResultDto:
+        now = self._clock.utcnow()
+        reviewer_id = parse_reviewer_id(command.reviewer_id)
+        ensure_reviewer(self._organization, reviewer_id)
+        submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
+
+        performance = submission.performance
+        if performance is None:
+            policy = _UNRESOLVED_POLICY
+        else:
+            resolved = self._catalog.participation_policy(
+                competition_id=submission.competition_id,
+                nomination_id=performance.nomination_id,
+                discipline_id=performance.discipline_id,
+                age_category_id=performance.age_category_id,
+                participant_group_id=performance.participant_group_id,
+                participation_format_id=performance.participation_format_id,
+            )
+            if resolved is None:
+                raise CompetitionCombinationNotFoundError("Такое сочетание жанра, номинации, возраста и формы участия фестиваль не принимает.")
+            policy = resolved
+
+        with translate_domain_errors():
+            domain_events = submission.promote_from_waitlist(policy=policy, now=now)
         self._submissions.save(submission)
         self._events.publish(domain_events)
         return SubmissionOperationResultDto.of(submission, tuple(domain_events))

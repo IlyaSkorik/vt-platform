@@ -8,7 +8,6 @@ from apps.applications.application.dto.commands import (
     UpdatePerformanceCommand,
 )
 from apps.applications.application.exceptions import (
-    CompetitionClosedError,
     SubmissionStateConflictError,
     translate_domain_errors,
 )
@@ -29,7 +28,14 @@ from apps.applications.domain.value_objects import (
     PerformanceTitle,
 )
 
-from ._support import ensure_owner, load_submission, parse_submission_id, parse_user_id, try_resubmit_after_correction_edit
+from ._support import (
+    ensure_nomination_reachable,
+    ensure_owner,
+    load_submission,
+    parse_submission_id,
+    parse_user_id,
+    try_resubmit_after_correction_edit,
+)
 
 __all__ = ["SetPerformanceHandler", "UpdatePerformanceHandler"]
 
@@ -92,8 +98,12 @@ class SetPerformanceHandler:
             comment=command.comment,
             age_composition=command.age_composition,
         )
-        if not self._catalog.accepts_submissions(competition_id=submission.competition_id, nomination_id=performance.nomination_id, now=now):
-            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
+        ensure_nomination_reachable(
+            catalog=self._catalog,
+            competition_id=submission.competition_id,
+            nomination_id=performance.nomination_id,
+            now=now,
+        )
 
         with translate_domain_errors():
             domain_events = submission.set_performance(performance=performance, now=now)
@@ -145,8 +155,12 @@ class UpdatePerformanceHandler:
             comment=command.comment,
             age_composition=command.age_composition,
         )
-        if not self._catalog.accepts_submissions(competition_id=submission.competition_id, nomination_id=performance.nomination_id, now=now):
-            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
+        ensure_nomination_reachable(
+            catalog=self._catalog,
+            competition_id=submission.competition_id,
+            nomination_id=performance.nomination_id,
+            now=now,
+        )
 
         with translate_domain_errors():
             domain_events = submission.set_performance(performance=performance, now=now)

@@ -9,7 +9,6 @@ from apps.applications.application.dto.commands import (
 )
 from apps.applications.application.exceptions import (
     ApplicantNotFoundError,
-    CompetitionClosedError,
     CompetitionNotFoundError,
     SubmissionStateConflictError,
     translate_domain_errors,
@@ -25,7 +24,7 @@ from apps.applications.application.interfaces import (
 from apps.applications.domain.entities import Submission
 from apps.applications.domain.value_objects import CompetitionId, SubmissionId, UserId
 
-from ._support import ensure_owner, load_submission, parse_submission_id, parse_user_id
+from ._support import ensure_nomination_reachable, ensure_owner, load_submission, parse_submission_id, parse_user_id
 
 __all__ = ["CreateSubmissionHandler", "DeleteDraftSubmissionHandler"]
 
@@ -65,8 +64,12 @@ class CreateSubmissionHandler:
             raise ApplicantNotFoundError("Профиль заявителя не найден. Войдите в систему заново.")
         if not self._catalog.exists(competition_id):
             raise CompetitionNotFoundError("Фестиваль не найден.")
-        if not self._catalog.accepts_submissions(competition_id=competition_id, now=now):
-            raise CompetitionClosedError("Приём заявок на этот фестиваль закрыт.")
+        ensure_nomination_reachable(
+            catalog=self._catalog,
+            competition_id=competition_id,
+            now=now,
+            message="Приём заявок на этот фестиваль закрыт.",
+        )
 
         submission_id = SubmissionId.from_uuid(self._uuids.new())
         submission, domain_events = Submission.draft(

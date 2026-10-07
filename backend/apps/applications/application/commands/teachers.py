@@ -9,7 +9,6 @@ from apps.applications.application.dto.commands import (
     UpdateTeacherCommand,
 )
 from apps.applications.application.exceptions import (
-    CompetitionClosedError,
     SubmissionChildNotFoundError,
     translate_domain_errors,
 )
@@ -23,7 +22,14 @@ from apps.applications.application.interfaces import (
 from apps.applications.domain.events import DomainEvent
 from apps.applications.domain.value_objects import DirectoryTeacherId, PersonName, TeacherId, TeacherRole
 
-from ._support import ensure_owner, load_submission, parse_submission_id, parse_user_id, try_resubmit_after_correction_edit
+from ._support import (
+    ensure_nomination_reachable,
+    ensure_owner,
+    load_submission,
+    parse_submission_id,
+    parse_user_id,
+    try_resubmit_after_correction_edit,
+)
 
 __all__ = ["AddTeacherHandler", "RemoveTeacherHandler", "UpdateTeacherHandler"]
 
@@ -62,12 +68,12 @@ class AddTeacherHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
-        if not self._catalog.accepts_submissions(
+        ensure_nomination_reachable(
+            catalog=self._catalog,
             competition_id=submission.competition_id,
             nomination_id=submission.performance.nomination_id if submission.performance is not None else None,
             now=now,
-        ):
-            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
+        )
 
         name = _parse_person(first_name=command.first_name, last_name=command.last_name, middle_name=command.middle_name)
         directory_teacher_id = _parse_directory_teacher_id(command.directory_teacher_id)
@@ -107,12 +113,12 @@ class UpdateTeacherHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
-        if not self._catalog.accepts_submissions(
+        ensure_nomination_reachable(
+            catalog=self._catalog,
             competition_id=submission.competition_id,
             nomination_id=submission.performance.nomination_id if submission.performance is not None else None,
             now=now,
-        ):
-            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
+        )
         with translate_domain_errors():
             target_id = TeacherId.from_string(command.teacher_id)
         target = next((t for t in submission.teachers if t.id == target_id), None)
@@ -159,12 +165,12 @@ class RemoveTeacherHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
-        if not self._catalog.accepts_submissions(
+        ensure_nomination_reachable(
+            catalog=self._catalog,
             competition_id=submission.competition_id,
             nomination_id=submission.performance.nomination_id if submission.performance is not None else None,
             now=now,
-        ):
-            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
+        )
         with translate_domain_errors():
             teacher_id = TeacherId.from_string(command.teacher_id)
             domain_events = submission.remove_teacher(teacher_id=teacher_id, now=now)

@@ -176,6 +176,23 @@ class CompetitionCatalog(Protocol):
         """
         ...
 
+    def accepts_waitlist(
+        self,
+        *,
+        competition_id: CompetitionId,
+        nomination_id: NominationId | None = None,
+        now: datetime,
+    ) -> bool:
+        """Whether waitlist entries are taken at ``now``.
+
+        Scoped exactly like :meth:`accepts_submissions`: with a ``nomination_id`` the
+        answer is that nomination's, without one it is "does *any* nomination keep a
+        list?". Per nomination the two are always complements — a list exists only
+        behind a closed door — but across the festival they are not: one genre can be
+        open while another is closed with a queue, and both answers are then ``True``.
+        """
+        ...
+
     def accepts_payment(self, *, competition_id: CompetitionId, now: datetime) -> bool:
         """Whether the competition's payment window is still open at ``now``."""
         ...
@@ -316,6 +333,15 @@ class ApplicantNotifier(Protocol):
 
     def notify_application_submitted(self, *, user_id: str, email: str, applicant_name: str, application_id: str) -> None:
         """The order was submitted with a payment receipt already attached."""
+        ...
+
+    def notify_application_waitlisted(self, *, user_id: str, email: str, applicant_name: str, application_id: str) -> None:
+        """Tell the applicant their order joined a queue rather than the programme.
+
+        Deliberately not the "submitted" notice: that one talks about the fee, and a
+        waitlisted order owes none. What this has to convey is that there is nothing
+        to pay and nothing to do — the next move is the organizer's.
+        """
         ...
 
     def notify_application_awaiting_payment(self, *, user_id: str, email: str, applicant_name: str, application_id: str, deadline: datetime) -> None:

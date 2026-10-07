@@ -14,6 +14,7 @@ from datetime import datetime
 
 from apps.applications.application.exceptions import (
     ApplicationError,
+    CompetitionClosedError,
     PermissionDeniedError,
     SubmissionNotFoundError,
     translate_domain_errors,
@@ -26,6 +27,8 @@ from apps.applications.application.interfaces import (
 from apps.applications.domain.entities import Submission
 from apps.applications.domain.events import DomainEvent
 from apps.applications.domain.value_objects import (
+    CompetitionId,
+    NominationId,
     ReviewerId,
     SubmissionId,
     SubmissionStatus,
@@ -33,6 +36,7 @@ from apps.applications.domain.value_objects import (
 )
 
 __all__ = [
+    "ensure_nomination_reachable",
     "ensure_owner",
     "ensure_reviewer",
     "load_submission",
@@ -73,6 +77,35 @@ def ensure_owner(submission: Submission, actor: UserId) -> None:
     """Assert ``actor`` owns ``submission`` (the applicant), else deny."""
     if submission.applicant_id != actor:
         raise PermissionDeniedError("Это выступление принадлежит другому заявителю.")
+
+
+def ensure_nomination_reachable(
+    *,
+    catalog: CompetitionCatalog,
+    competition_id: CompetitionId,
+    nomination_id: NominationId | None = None,
+    now: datetime,
+    message: str = "Регистрация закрыта: редактирование заявки недоступно.",
+) -> None:
+    """Assert the applicant may still get in at ``now``, else refuse.
+
+    Two doors lead into a nomination and this helper opens either: registration while
+    it is on, and the waitlist once it is off. A nomination with neither is the only
+    case left to refuse, and the message says "закрыто" because from the applicant's
+    side that is what happened — which door they would have used is the platform's
+    business, not theirs.
+
+    Without a ``nomination_id`` the question is the festival-wide one every step
+    before the genre is picked has to ask: is there anywhere to get in at all? A
+    festival whose genres have all closed but one, which keeps a list, must still let
+    an applicant start — otherwise the waitlist is unreachable by the very people it
+    exists for.
+    """
+    if catalog.accepts_submissions(competition_id=competition_id, nomination_id=nomination_id, now=now):
+        return
+    if catalog.accepts_waitlist(competition_id=competition_id, nomination_id=nomination_id, now=now):
+        return
+    raise CompetitionClosedError(message)
 
 
 def ensure_reviewer(organization: OrganizationReadModel, reviewer_id: ReviewerId) -> None:
