@@ -49,9 +49,12 @@ const savePerformance = vi.fn();
 function aRegistration({
   mixedAge = false,
   commentEnabled = true,
+  waitlisted = false,
 }: {
   mixedAge?: boolean;
   commentEnabled?: boolean;
+  /** The genre has closed but keeps a queue — the second door into it. */
+  waitlisted?: boolean;
 } = {}): Registration {
   return {
     competition: {
@@ -62,7 +65,8 @@ function aRegistration({
       venueName: null,
       venueAddress: null,
     },
-    registrationOpen: true,
+    registrationOpen: !waitlisted,
+    waitlistOpen: waitlisted,
     allowMultiplePerformances: true,
     collectPayerDetails: false,
     participantCommentEnabled: commentEnabled,
@@ -79,8 +83,10 @@ function aRegistration({
         name: "Хореография",
         description: null,
         sortOrder: 1,
-        registrationOpen: true,
-        registrationStopped: false,
+        registrationOpen: !waitlisted,
+        registrationStopped: waitlisted,
+        waitlistEnabled: waitlisted,
+        waitlistOpen: waitlisted,
         registrationOpensAt: null,
         registrationClosesAt: null,
       },
@@ -175,9 +181,11 @@ function stubHooks(submission: SubmissionResource): void {
 function renderForm({
   mixedAge = false,
   commentEnabled = true,
+  waitlisted = false,
 }: {
   mixedAge?: boolean;
   commentEnabled?: boolean;
+  waitlisted?: boolean;
 } = {}): void {
   // The attached participants read their organization straight from the registry, so
   // the tree needs a query client even though this suite stubs every wizard hook.
@@ -189,7 +197,7 @@ function renderForm({
       <MemoryRouter>
         <PerformanceForm
           submissionId="01900000-0000-7000-8000-00000000000a"
-          registration={aRegistration({ mixedAge, commentEnabled })}
+          registration={aRegistration({ mixedAge, commentEnabled, waitlisted })}
         />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -289,6 +297,31 @@ describe("PerformanceForm — the applicant's note for the organizers", () => {
     renderForm();
 
     expect(screen.getByText("Изменения сохраняются автоматически")).toBeInTheDocument();
+  });
+});
+
+describe("PerformanceForm — a genre that closed but keeps a queue", () => {
+  it("still offers the genre, marked for what it is", () => {
+    stubHooks(aSubmission(""));
+    renderForm({ waitlisted: true });
+
+    expect(screen.queryByText("Приём заявок закрыт")).not.toBeInTheDocument();
+    expect(screen.getByText("Хореография — лист ожидания")).toBeInTheDocument();
+  });
+
+  it("says up front that this buys a place in a queue, not in the programme", () => {
+    stubHooks(aSubmission(""));
+    renderForm({ waitlisted: true });
+
+    expect(screen.getByText("Заявка пойдёт в лист ожидания")).toBeInTheDocument();
+    expect(screen.getByText(/оплата не потребуется/)).toBeInTheDocument();
+  });
+
+  it("says none of that while the genre is open", () => {
+    stubHooks(aSubmission(""));
+    renderForm();
+
+    expect(screen.queryByText("Заявка пойдёт в лист ожидания")).not.toBeInTheDocument();
   });
 });
 
