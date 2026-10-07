@@ -40,13 +40,13 @@ const CONFIG: Record<PublicStatus, CatalogStatusConfig> = {
     badgeVariant: "warning",
     apply: { enabled: false, label: "Регистрация закрыта" },
   },
-  // The action says what the *festival* is doing, not what the badge above it
-  // already said: «Фестиваль идёт» rather than a bare «Идёт», which in the place
-  // of a button reads as a half-sentence.
+  // A running festival says the same thing a closed one does. The action answers
+  // «можно ли подать заявку», and the answer is identical; that the festival has
+  // started as well is the badge's business, not this button's.
   RUNNING: {
     label: "Идёт",
     badgeVariant: "primary",
-    apply: { enabled: false, label: "Фестиваль идёт" },
+    apply: { enabled: false, label: "Регистрация закрыта" },
   },
   COMPLETED: {
     label: "Завершён",

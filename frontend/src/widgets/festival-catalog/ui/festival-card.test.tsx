@@ -87,7 +87,7 @@ describe("FestivalCard", () => {
   // reason instead of a gap where something used to be.
   it.each([
     ["COMPLETED", "Фестиваль завершён"],
-    ["RUNNING", "Фестиваль идёт"],
+    ["RUNNING", "Регистрация закрыта"],
     ["REGISTRATION_CLOSED", "Регистрация закрыта"],
     ["COMING_SOON", "Регистрация скоро"],
   ])("states the reason instead of an Apply link for %s", (status, reason) => {

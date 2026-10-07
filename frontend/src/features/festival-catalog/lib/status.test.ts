@@ -20,9 +20,11 @@ describe("catalogStatusConfig", () => {
       enabled: false,
       label: "Регистрация закрыта",
     });
+    // A running festival reads as closed registration: the action answers whether
+    // an application can be sent, and for both the answer is the same sentence.
     expect(catalogStatusConfig("RUNNING").apply).toEqual({
       enabled: false,
-      label: "Фестиваль идёт",
+      label: "Регистрация закрыта",
     });
     expect(catalogStatusConfig("COMPLETED").apply).toEqual({
       enabled: false,
