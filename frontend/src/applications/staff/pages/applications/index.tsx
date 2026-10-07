@@ -210,6 +210,7 @@ const FILTER_ALL = "__all__";
 function statusLabel(status: string): string {
   const map: Record<string, string> = {
     DRAFT: "Черновик",
+    WAITLISTED: "Лист ожидания",
     SUBMITTED: "Подана",
     UNDER_REVIEW: "На проверке",
     REQUIRES_CORRECTION: "Требует исправлений",
@@ -367,13 +368,16 @@ function statusPriority(status: string): number {
     UNDER_REVIEW: 0,
     SUBMITTED: 1,
     REQUIRES_CORRECTION: 2,
-    APPROVED: 3,
-    WAITING_PAYMENT: 4,
-    PAID: 5,
-    ACCEPTED: 6,
-    SCHEDULED: 7,
-    COMPLETED: 8,
-    CANCELLED: 9,
+    // Below the entries awaiting a verdict and above everything already settled:
+    // the queue is waiting on the organizer too, but not on the same clock.
+    WAITLISTED: 3,
+    APPROVED: 4,
+    WAITING_PAYMENT: 5,
+    PAID: 6,
+    ACCEPTED: 7,
+    SCHEDULED: 8,
+    COMPLETED: 9,
+    CANCELLED: 10,
   };
   return map[status] ?? 100;
 }

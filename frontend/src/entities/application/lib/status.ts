@@ -30,6 +30,7 @@ const APPLICATION_STATUS: Record<string, StatusPresentation> = {
 
 const SUBMISSION_STATUS: Record<string, StatusPresentation> = {
   DRAFT: { label: "Черновик", variant: "neutral" },
+  WAITLISTED: { label: "Лист ожидания", variant: "secondary" },
   SUBMITTED: { label: "Подана", variant: "info" },
   UNDER_REVIEW: { label: "На проверке", variant: "info" },
   REQUIRES_CORRECTION: { label: "Требует правок", variant: "warning" },

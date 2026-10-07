@@ -1870,6 +1870,127 @@ paths:
               schema:
                 $ref: '#/components/schemas/CompetitionProblemDetail'
           description: Business rule violation.
+  /api/v1/competitions/{id}/categories/{category_id}/waitlist:
+    post:
+      operationId: enableNominationWaitlist
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
+      parameters:
+      - in: path
+        name: category_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+    delete:
+      operationId: disableNominationWaitlist
+      description: |-
+        Organizer Competition API — staff-only, and scoped to the caller's organization.
+
+        Every route that names a competition passes through :meth:`initial`, which
+        refuses one belonging to another organization before the action runs. That is
+        deliberately one gate rather than a check per action: this viewset carries the
+        whole competition configuration surface (nominations, pricing, documents,
+        publication), and a rule repeated forty times is a rule with a hole in it.
+      parameters:
+      - in: path
+        name: category_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
   /api/v1/competitions/{id}/complete:
     post:
       operationId: completeCompetition
@@ -10208,6 +10329,60 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProgramProblemDetail'
           description: Unprocessable.
+  /api/v1/staff/programs/{program_id}/items/arrange:
+    post:
+      operationId: programsArrangeItems
+      description: '``POST`` to build the whole running order from rules.'
+      parameters:
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArrangeProgramRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ArrangeProgramRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ArrangeProgramRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
   /api/v1/staff/programs/{program_id}/items/fill:
     post:
       operationId: programsFillItems
@@ -13252,6 +13427,117 @@ components:
       - status
       - title
       - type
+    ArrangeProgramRequest:
+      type: object
+      description: |-
+        Validate the rules a programme is to be generated from.
+
+        Every field is optional, and an **entirely empty body means "the rules this
+        programme was last built from"** - which is what makes "пересобрать" a button
+        without a form. A body that is present is read as complete: a field left out takes
+        the default, not the saved value, so the dialog on screen is what gets generated.
+
+        Shape only, as ever. Which combinations hold together - a break rule with nothing to
+        insert, an interval of zero - is the domain's judgement, and
+        :class:`~apps.programs.domain.value_objects.ArrangementSettings` makes it.
+      properties:
+        grouping:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupingEnum'
+        orderWithinGroup:
+          $ref: '#/components/schemas/OrderWithinGroupEnum'
+        breakRule:
+          $ref: '#/components/schemas/BreakRuleEnum'
+        breakAfterSeconds:
+          type: integer
+          maximum: 86400
+          minimum: 0
+        breakAfterItems:
+          type: integer
+          maximum: 500
+          minimum: 0
+        breakTitle:
+          type: string
+          maxLength: 200
+        breakDurationSeconds:
+          type: integer
+          maximum: 86400
+          minimum: 1
+        repeatGap:
+          type: integer
+          maximum: 20
+          minimum: 0
+        openingTitle:
+          type: string
+          maxLength: 200
+        openingDurationSeconds:
+          type: integer
+          maximum: 86400
+          minimum: 1
+        awardTitle:
+          type: string
+          maxLength: 200
+        awardDurationSeconds:
+          type: integer
+          maximum: 86400
+          minimum: 1
+    ArrangementResource:
+      type: object
+      description: The generation rules a programme carries, as the settings dialog
+        reads them back.
+      properties:
+        grouping:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupingEnum'
+        orderWithinGroup:
+          $ref: '#/components/schemas/OrderWithinGroupEnum'
+        breakRule:
+          $ref: '#/components/schemas/BreakRuleEnum'
+        breakAfterSeconds:
+          type: integer
+        breakAfterItems:
+          type: integer
+        breakTitle:
+          type:
+          - string
+          - 'null'
+        breakDurationSeconds:
+          type:
+          - integer
+          - 'null'
+        repeatGap:
+          type: integer
+        openingTitle:
+          type:
+          - string
+          - 'null'
+        openingDurationSeconds:
+          type:
+          - integer
+          - 'null'
+        awardTitle:
+          type:
+          - string
+          - 'null'
+        awardDurationSeconds:
+          type:
+          - integer
+          - 'null'
+      required:
+      - awardDurationSeconds
+      - awardTitle
+      - breakAfterItems
+      - breakAfterSeconds
+      - breakDurationSeconds
+      - breakRule
+      - breakTitle
+      - grouping
+      - openingDurationSeconds
+      - openingTitle
+      - orderWithinGroup
+      - repeatGap
     AssignJuryRequest:
       type: object
       properties:
@@ -13552,6 +13838,18 @@ components:
       description: |-
         * `IMMEDIATE` - IMMEDIATE
         * `AFTER_CLOSE` - AFTER_CLOSE
+    BreakRuleEnum:
+      enum:
+      - NONE
+      - EVERY_DURATION
+      - EVERY_COUNT
+      - BETWEEN_GROUPS
+      type: string
+      description: |-
+        * `NONE` - NONE
+        * `EVERY_DURATION` - EVERY_DURATION
+        * `EVERY_COUNT` - EVERY_COUNT
+        * `BETWEEN_GROUPS` - BETWEEN_GROUPS
     CalculationTypeEnum:
       enum:
       - PER_PARTICIPANT
@@ -14903,6 +15201,22 @@ components:
       - published
       - user
       - zipUrl
+    GroupingEnum:
+      enum:
+      - NOMINATION
+      - DISCIPLINE
+      - AGE_CATEGORY
+      - PARTICIPANT_GROUP
+      - PARTICIPATION_FORMAT
+      - ORGANIZATION
+      type: string
+      description: |-
+        * `NOMINATION` - NOMINATION
+        * `DISCIPLINE` - DISCIPLINE
+        * `AGE_CATEGORY` - AGE_CATEGORY
+        * `PARTICIPANT_GROUP` - PARTICIPANT_GROUP
+        * `PARTICIPATION_FORMAT` - PARTICIPATION_FORMAT
+        * `ORGANIZATION` - ORGANIZATION
     GuardianLinkResource:
       type: object
       description: A guardian relationship embedded in a participant resource.
@@ -15454,6 +15768,24 @@ components:
         * `RESULTS_PUBLISHED` - RESULTS_PUBLISHED
     NullEnum:
       type: 'null'
+    OrderWithinGroupEnum:
+      enum:
+      - AGE_ASC
+      - AGE_DESC
+      - TITLE
+      - PARTICIPANT
+      - ORGANIZATION
+      - DURATION_ASC
+      - DURATION_DESC
+      type: string
+      description: |-
+        * `AGE_ASC` - AGE_ASC
+        * `AGE_DESC` - AGE_DESC
+        * `TITLE` - TITLE
+        * `PARTICIPANT` - PARTICIPANT
+        * `ORGANIZATION` - ORGANIZATION
+        * `DURATION_ASC` - DURATION_ASC
+        * `DURATION_DESC` - DURATION_DESC
     OrganizationModules:
       type: object
       properties:
@@ -17162,6 +17494,10 @@ components:
           - string
           - 'null'
           format: date-time
+        arrangement:
+          oneOf:
+          - $ref: '#/components/schemas/ArrangementResource'
+          - type: 'null'
         createdAt:
           type: string
           format: date-time
@@ -17171,6 +17507,7 @@ components:
         version:
           type: integer
       required:
+      - arrangement
       - availableColumns
       - bufferSeconds
       - competitionId
@@ -18876,6 +19213,8 @@ components:
           $ref: '#/components/schemas/RegistrationCompetition'
         registrationOpen:
           type: boolean
+        waitlistOpen:
+          type: boolean
         allowMultiplePerformances:
           type: boolean
         collectPayerDetails:
@@ -18936,6 +19275,7 @@ components:
       - registrationOpen
       - requiredConsents
       - uploadRequirements
+      - waitlistOpen
     RegistrationAdmissionRule:
       type: object
       properties:
@@ -19140,6 +19480,10 @@ components:
           - string
           - 'null'
           format: date-time
+        waitlistEnabled:
+          type: boolean
+        waitlistOpen:
+          type: boolean
       required:
       - description
       - id
@@ -19149,6 +19493,8 @@ components:
       - registrationOpensAt
       - registrationStopped
       - sortOrder
+      - waitlistEnabled
+      - waitlistOpen
     RegistrationParticipantGroup:
       type: object
       properties:
@@ -21103,6 +21449,8 @@ components:
           format: date-time
         registrationStopped:
           type: boolean
+        waitlistEnabled:
+          type: boolean
       required:
       - description
       - id
@@ -21111,6 +21459,7 @@ components:
       - registrationOpensAt
       - registrationStopped
       - sortOrder
+      - waitlistEnabled
     _CategoryTotal:
       type: object
       properties:

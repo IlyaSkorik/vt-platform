@@ -388,6 +388,34 @@ async function resumeNominationRegistration(
   }
 }
 
+async function enableNominationWaitlist(
+  competitionId: string,
+  categoryId: string,
+): Promise<CompetitionDetail> {
+  try {
+    const response = await apiClient
+      .post(`competitions/${competitionId}/categories/${categoryId}/waitlist`)
+      .json<unknown>();
+    return unwrapCompetitionDetail(response);
+  } catch (error) {
+    throw await toApiError(error);
+  }
+}
+
+async function disableNominationWaitlist(
+  competitionId: string,
+  categoryId: string,
+): Promise<CompetitionDetail> {
+  try {
+    const response = await apiClient
+      .delete(`competitions/${competitionId}/categories/${categoryId}/waitlist`)
+      .json<unknown>();
+    return unwrapCompetitionDetail(response);
+  } catch (error) {
+    throw await toApiError(error);
+  }
+}
+
 async function createDiscipline(
   competitionId: string,
   payload: AddDiscipline,
@@ -1146,6 +1174,36 @@ export function useResumeNominationRegistrationMutation(): UseMutationResult<
   return useMutation<CompetitionDetail, ApiError, { competitionId: string; categoryId: string }>({
     mutationFn: ({ competitionId, categoryId }) =>
       resumeNominationRegistration(competitionId, categoryId),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useEnableNominationWaitlistMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; categoryId: string }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<CompetitionDetail, ApiError, { competitionId: string; categoryId: string }>({
+    mutationFn: ({ competitionId, categoryId }) =>
+      enableNominationWaitlist(competitionId, categoryId),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+export function useDisableNominationWaitlistMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; categoryId: string }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<CompetitionDetail, ApiError, { competitionId: string; categoryId: string }>({
+    mutationFn: ({ competitionId, categoryId }) =>
+      disableNominationWaitlist(competitionId, categoryId),
     onSuccess: (detail) => {
       setCompetitionCache(queryClient, detail);
     },
