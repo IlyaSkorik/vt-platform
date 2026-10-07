@@ -1,13 +1,15 @@
-"""Как далеко достаёт правка организатора — и где она останавливается.
+"""Как далеко достаёт правка содержимого заявки — и где она останавливается.
 
-Участнику содержимое заявки заморожено ровно там, где организатор её посмотрел:
-иначе рассмотрение не значит ничего. Организатору — нет, и это не поблажка, а
-единственный способ починить опечатку, которую замечают уже после одобрения: оно
-уводит заявку сразу в программу фестиваля, и «вернуть на исправление» оттуда уже
-нельзя. Правит тот, кто и так решает, что написано в бумагах фестиваля.
+Окно одно на всех. Домен спрашивает только «есть ли ещё что править»: номер жив,
+пока он не состоялся и не отменён. Кто и до какого числа вправе его трогать —
+вопрос календаря, а календарь живёт в сценариях: заявителю правку закрывает срок
+приёма заявок, организатор его сознательно не проверяет. Пока приём открыт,
+заявитель правит свой номер сам — хоть одобренный, хоть уже стоящий в расписании:
+фамилию с заявки печатают на дипломе, и починить опечатку должен тот, кто её
+сделал, а не переписка с организатором.
 
-Проверяется само правило (`by_organizer`), а не use case: домен — единственный, кто
-решает, можно ли сейчас менять номер, и остальные слои только передают ему вопрос.
+Проверяется само правило, а не use case: домен — единственный, кто решает, можно
+ли сейчас менять номер, и остальные слои только передают ему вопрос.
 """
 
 from __future__ import annotations
@@ -18,7 +20,7 @@ from datetime import UTC, date, datetime
 import pytest
 
 from apps.applications.domain.entities import Submission
-from apps.applications.domain.exceptions import SubmissionNotEditableError
+from apps.applications.domain.exceptions import PriceSnapshotLockedError, SubmissionNotEditableError
 from apps.applications.domain.value_objects import (
     AgeCategoryId,
     BirthDate,
@@ -100,7 +102,14 @@ def _walked_to(status: SubmissionStatus) -> Submission:
     return submission
 
 
-_PAST_THE_APPLICANTS_FREEZE = [
+#: Статусы, в которых заявитель уже не правит номер сам: взнос оплачен, номер стоит
+#: в программе. До них правка остаётся за заявителем — её закрывает срок приёма
+#: заявок, а не решение организатора.
+#: Весь живой путь номера — везде содержимое правится.
+_LIVE = [
+    SubmissionStatus.DRAFT,
+    SubmissionStatus.SUBMITTED,
+    SubmissionStatus.UNDER_REVIEW,
     SubmissionStatus.APPROVED,
     SubmissionStatus.WAITING_PAYMENT,
     SubmissionStatus.PAID,
@@ -109,45 +118,36 @@ _PAST_THE_APPLICANTS_FREEZE = [
 ]
 
 
-class TestTheOrganizersWindow:
-    @pytest.mark.parametrize("status", _PAST_THE_APPLICANTS_FREEZE)
-    def test_the_applicant_cannot_touch_a_reviewed_entry(self, status: SubmissionStatus) -> None:
+class TestTheWindow:
+    @pytest.mark.parametrize("status", _LIVE)
+    def test_the_entry_stays_editable_while_it_is_live(self, status: SubmissionStatus) -> None:
+        """Ни одобрение, ни счёт, ни место в программе не делают опечатку верной."""
         submission = _walked_to(status)
         assert submission.status is status
 
-        with pytest.raises(SubmissionNotEditableError):
-            submission.set_performance(performance=_performance("Другое название"), now=NOW)
-
-    @pytest.mark.parametrize("status", _PAST_THE_APPLICANTS_FREEZE)
-    def test_the_organizer_can(self, status: SubmissionStatus) -> None:
-        """Здесь и живёт вся польза: одобрение уводит номер в программу, и опечатку
-        в фамилии замечают уже после него."""
-        submission = _walked_to(status)
-
-        submission.set_performance(performance=_performance("Лебединое озеро (фрагмент)"), now=NOW, by_organizer=True)
+        submission.set_performance(performance=_performance("Лебединое озеро (фрагмент)"), now=NOW)
 
         assert submission.performance is not None
         assert submission.performance.title.value == "Лебединое озеро (фрагмент)"
 
-    def test_the_organizer_may_replace_a_performer_on_a_scheduled_entry(self) -> None:
+    def test_a_performer_can_be_replaced_on_a_scheduled_entry(self) -> None:
         # Фамилия с заявки печатается на дипломе — исправить её надо до фестиваля,
         # а не после.
         submission = _walked_to(SubmissionStatus.SCHEDULED)
         wrong = submission.participants[0]
 
-        submission.remove_participant(participant_id=wrong.id, now=NOW, by_organizer=True)
+        submission.remove_participant(participant_id=wrong.id, now=NOW)
         submission.add_participant(
             participant_id=ParticipantId.generate(),
             name=PersonName(first_name="Анна", last_name="Иванова", middle_name="Петровна"),
             birth_date=BirthDate(date(2012, 5, 1)),
             gender=Gender.FEMALE,
             now=NOW,
-            by_organizer=True,
         )
 
         assert [p.display_name for p in submission.participants] == ["Иванова Анна Петровна"]
 
-    def test_the_organizer_may_credit_a_teacher_after_the_freeze(self) -> None:
+    def test_a_teacher_can_be_credited_on_an_accepted_entry(self) -> None:
         submission = _walked_to(SubmissionStatus.ACCEPTED)
 
         submission.add_teacher(
@@ -155,39 +155,35 @@ class TestTheOrganizersWindow:
             name=PersonName(first_name="Ольга", last_name="Петрова"),
             role=TeacherRole("Педагог"),
             now=NOW,
-            by_organizer=True,
         )
 
         assert [t.name.full_name for t in submission.teachers] == ["Петрова Ольга"]
 
 
 class TestWhereItStops:
-    def test_a_performed_entry_is_closed_to_the_organizer_too(self) -> None:
+    def test_a_performed_entry_is_closed(self) -> None:
         """Выступление состоялось — правка переписывала бы то, что уже случилось,
         и то, что могло уйти в реестр дипломов."""
         submission = _walked_to(SubmissionStatus.COMPLETED)
 
         with pytest.raises(SubmissionNotEditableError):
-            submission.set_performance(performance=_performance("Задним числом"), now=NOW, by_organizer=True)
+            submission.set_performance(performance=_performance("Задним числом"), now=NOW)
 
-    def test_a_cancelled_entry_is_closed_to_the_organizer_too(self) -> None:
+    def test_a_cancelled_entry_is_closed(self) -> None:
         submission = _walked_to(SubmissionStatus.SUBMITTED)
         submission.cancel(now=NOW)
 
         with pytest.raises(SubmissionNotEditableError):
-            submission.remove_participant(participant_id=submission.participants[0].id, now=NOW, by_organizer=True)
+            submission.remove_participant(participant_id=submission.participants[0].id, now=NOW)
 
-    @pytest.mark.parametrize(
-        "status",
-        [*_PAST_THE_APPLICANTS_FREEZE, SubmissionStatus.SUBMITTED, SubmissionStatus.DRAFT],
-    )
+    @pytest.mark.parametrize("status", _LIVE)
     def test_the_predicate_agrees_with_what_the_methods_do(self, status: SubmissionStatus) -> None:
         # Карточка организатора показывает кнопку по этому предикату; если он
         # разойдётся с методами, кнопка будет обещать невозможное.
-        assert _walked_to(status).is_correctable_by_organizer() is True
+        assert _walked_to(status).is_editable() is True
 
     def test_the_predicate_closes_where_the_lifecycle_ends(self) -> None:
-        assert _walked_to(SubmissionStatus.COMPLETED).is_correctable_by_organizer() is False
+        assert _walked_to(SubmissionStatus.COMPLETED).is_editable() is False
 
 
 class TestThePriceIsNotTouched:
@@ -197,6 +193,13 @@ class TestThePriceIsNotTouched:
         submission = _walked_to(SubmissionStatus.PAID)
         before = submission.price_snapshot
 
-        submission.set_performance(performance=_performance("Новое название"), now=NOW, by_organizer=True)
+        submission.set_performance(performance=_performance("Новое название"), now=NOW)
 
         assert submission.price_snapshot == before
+
+    def test_the_snapshot_itself_is_sealed_once_the_order_is_invoiced(self) -> None:
+        """Содержимое живёт дольше цены: счёт выставлен — сумма перестала двигаться."""
+        submission = _walked_to(SubmissionStatus.WAITING_PAYMENT)
+
+        with pytest.raises(PriceSnapshotLockedError):
+            submission.set_price_snapshot(price_snapshot=PriceSnapshot(price=Money.of("1"), calculated_at=NOW), now=NOW)

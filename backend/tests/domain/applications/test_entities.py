@@ -319,9 +319,17 @@ class TestContentEditing:
                 attachment_id=AttachmentId.generate(), attachment_type=AttachmentType.MUSIC, file=FileReference("s3://late.mp3"), now=NOW
             )
 
-    def test_other_attachment_kinds_stay_frozen_with_the_content(self) -> None:
-        """Only the backing track outlives the freeze: paperwork is a claim about the entry."""
+    def test_paperwork_follows_the_entry_too(self) -> None:
+        """Документы живут столько же, сколько содержимое: пока номер не состоялся,
+        справку к нему можно донести — фонограмма здесь больше не исключение."""
         s = _accepted()
+        s.add_attachment(attachment_id=AttachmentId.generate(), attachment_type=AttachmentType.DOCUMENT, file=FileReference("s3://doc.pdf"), now=NOW)
+        assert len(s.attachments) == 1
+
+    def test_paperwork_is_refused_once_the_performance_took_place(self) -> None:
+        s = _accepted()
+        s.schedule(now=NOW)
+        s.complete(now=NOW)
         with pytest.raises(SubmissionNotEditableError):
             s.add_attachment(
                 attachment_id=AttachmentId.generate(), attachment_type=AttachmentType.DOCUMENT, file=FileReference("s3://doc.pdf"), now=NOW
@@ -347,11 +355,45 @@ class TestContentEditing:
         )
         assert len(fx.submission.participants) == 2
 
-    def test_editing_blocked_once_review_begins(self) -> None:
-        """The freeze lands when the organizer starts reviewing, not when the entry arrives."""
+    def test_editing_still_allowed_once_the_organizer_approves(self) -> None:
+        """Одобрение не замораживает номер: приём заявок ещё идёт, а фамилию с заявки
+        напечатают на дипломе — заявитель правит её сам, без возврата на исправление."""
         fx = _solo_ready()
         fx.submission.submit(policy=fx.solo_policy, now=NOW)
         fx.submission.begin_review(now=NOW)
+        fx.submission.approve(now=NOW)
+        fx.submission.add_participant(
+            participant_id=ParticipantId.generate(), name=_person("New"), birth_date=BirthDate(date(2013, 1, 1)), gender=Gender.MALE, now=NOW
+        )
+        assert len(fx.submission.participants) == 2
+
+    def test_editing_stays_open_for_an_entry_in_the_programme(self) -> None:
+        """Номер стоит в расписании, но фестиваль ещё не прошёл: пока приём заявок
+        открыт, состав правит сам заявитель — срок задаёт приём, а не статус."""
+        fx = _solo_ready()
+        fx.submission.submit(policy=fx.solo_policy, now=NOW)
+        fx.submission.begin_review(now=NOW)
+        fx.submission.approve(now=NOW)
+        fx.submission.await_payment(now=NOW)
+        fx.submission.mark_paid(now=NOW)
+        fx.submission.accept(now=NOW)
+        fx.submission.schedule(now=NOW)
+        fx.submission.add_participant(
+            participant_id=ParticipantId.generate(), name=_person("New"), birth_date=BirthDate(date(2013, 1, 1)), gender=Gender.MALE, now=NOW
+        )
+        assert len(fx.submission.participants) == 2
+
+    def test_editing_blocked_once_the_performance_took_place(self) -> None:
+        """Выступление состоялось — правка переписывала бы то, что уже случилось."""
+        fx = _solo_ready()
+        fx.submission.submit(policy=fx.solo_policy, now=NOW)
+        fx.submission.begin_review(now=NOW)
+        fx.submission.approve(now=NOW)
+        fx.submission.await_payment(now=NOW)
+        fx.submission.mark_paid(now=NOW)
+        fx.submission.accept(now=NOW)
+        fx.submission.schedule(now=NOW)
+        fx.submission.complete(now=NOW)
         with pytest.raises(SubmissionNotEditableError):
             fx.submission.add_participant(
                 participant_id=ParticipantId.generate(), name=_person("New"), birth_date=BirthDate(date(2013, 1, 1)), gender=Gender.MALE, now=NOW
@@ -380,12 +422,14 @@ class TestPriceSnapshot:
         assert fx.submission.price_snapshot is not None
         assert fx.submission.price_snapshot.amount == Money.of("1800").amount
 
-    def test_frozen_once_review_begins(self) -> None:
-        """Past the content freeze the snapshot is permanent, so later Competition
-        pricing changes can never reprice an entry the organizer is already judging."""
+    def test_frozen_once_the_order_is_invoiced(self) -> None:
+        """Содержимое живёт дольше цены: счёт выставлен — сумма перестала двигаться,
+        иначе участнику назвали бы одно, а списали другое."""
         fx = _solo_ready()
         fx.submission.submit(policy=fx.solo_policy, now=NOW)
         fx.submission.begin_review(now=NOW)
+        fx.submission.approve(now=NOW)
+        fx.submission.await_payment(now=NOW)
         with pytest.raises(PriceSnapshotLockedError):
             fx.submission.set_price_snapshot(price_snapshot=PriceSnapshot(price=Money.of("1"), calculated_at=NOW), now=NOW)
 

@@ -36,6 +36,23 @@ import {
   PageTitle,
 } from "@/shared/ui";
 
+/** Статусы заказа, в которых экран редактирования имеет смысл (черновик уходит в мастер). */
+const EDITABLE_ORDER_STATUSES = new Set(["SUBMITTED", "WAITING_PAYMENT", "PAID"]);
+
+/**
+ * Статусы заказа, в которых ещё меняется его состав: номера, услуги, согласия,
+ * плательщик.
+ *
+ * Уже, чем само редактирование, и граница здесь денежная, а не календарная: со
+ * счётом итог заказа замораживается, поэтому всё, что двигает сумму, дальше не
+ * двигается. Содержимое номеров — состав, педагоги, файлы — на сумму не влияет и
+ * правится до конца приёма заявок.
+ */
+const COMPOSABLE_ORDER_STATUSES = new Set(["SUBMITTED"]);
+
+/** Статусы заказа, в которых чек ещё принимают: пока оплата не зачтена. */
+const RECEIPT_ORDER_STATUSES = new Set(["SUBMITTED", "WAITING_PAYMENT"]);
+
 /**
  * Editing an application the organizer has already received.
  *
@@ -83,13 +100,17 @@ export function ApplicationEditPage(): React.JSX.Element {
   // Editing stays open while registration runs, and after it closes only for an order
   // the organizer sent back. Anything else is read-only, and the card is the place to
   // read it — the same rule the detail screen applies to its "Редактировать" button.
+  //
+  // Оплата сюда не входит: заказ, оплаченный в первый день, правится ровно столько же,
+  // сколько неоплаченный — до конца приёма заявок. Завершённый и отменённый закрыты.
   const editable =
     (registration.registrationOpen || application.hasCorrections) &&
-    application.status === "SUBMITTED";
+    EDITABLE_ORDER_STATUSES.has(application.status);
   if (!editable) {
     return <Navigate to={detailTo} replace />;
   }
 
+  const composable = COMPOSABLE_ORDER_STATUSES.has(application.status);
   const status = applicationStatusPresentation(application.status);
   const number = applicationId.slice(0, 8).toUpperCase();
   const totalPrice = applicationTotalLabel(application.totalPrice);
@@ -127,6 +148,13 @@ export function ApplicationEditPage(): React.JSX.Element {
               ? ""
               : " Регистрация закрыта — правки приняты по запросу организатора."}
           </p>
+          {composable ? null : (
+            <p className="mt-1 text-sm">
+              Заявка оплачена, поэтому сумма зафиксирована: состав выступлений, услуги и плательщика
+              изменить уже нельзя. Сами выступления — участники, педагоги и файлы — правятся как
+              обычно; если нужно добавить или убрать номер, напишите организатору.
+            </p>
+          )}
         </Alert>
 
         {application.hasCorrections ? (
@@ -151,33 +179,42 @@ export function ApplicationEditPage(): React.JSX.Element {
               applicationId={applicationId}
               application={application}
               registration={registration}
+              composable={composable}
             />
           </CardContent>
         </Card>
 
-        <ServicesCard
-          applicationId={applicationId}
-          application={application}
-          registration={registration}
-        />
+        {composable ? (
+          <ServicesCard
+            applicationId={applicationId}
+            application={application}
+            registration={registration}
+          />
+        ) : null}
 
-        <ConsentsCard
-          applicationId={applicationId}
-          application={application}
-          registration={registration}
-        />
+        {composable ? (
+          <ConsentsCard
+            applicationId={applicationId}
+            application={application}
+            registration={registration}
+          />
+        ) : null}
 
         <PhonogramsCard application={application} />
 
-        <PayerCard
-          applicationId={applicationId}
-          application={application}
-          registration={registration}
-        />
+        {composable ? (
+          <PayerCard
+            applicationId={applicationId}
+            application={application}
+            registration={registration}
+          />
+        ) : null}
 
         <BenefitDocumentsCard application={application} />
 
-        <ReceiptCard application={application} />
+        {RECEIPT_ORDER_STATUSES.has(application.status) ? (
+          <ReceiptCard application={application} />
+        ) : null}
 
         <Card>
           <CardHeader>

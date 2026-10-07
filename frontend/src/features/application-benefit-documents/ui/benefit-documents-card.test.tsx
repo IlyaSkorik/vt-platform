@@ -87,7 +87,7 @@ describe("BenefitDocumentsCard", () => {
 
   it("hides the controls once the submission is frozen, but keeps showing the files", () => {
     stubSubmission([anAttachment("BENEFIT", "Справка")]);
-    render(<BenefitDocumentsCard application={anApplication("APPROVED")} />);
+    render(<BenefitDocumentsCard application={anApplication("COMPLETED")} />);
     expect(screen.getByText("Справка")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Прикрепить документ/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Удалить/ })).not.toBeInTheDocument();
@@ -95,7 +95,7 @@ describe("BenefitDocumentsCard", () => {
 
   it("renders nothing for a frozen submission with no documents", () => {
     stubSubmission([]);
-    const { container } = render(<BenefitDocumentsCard application={anApplication("APPROVED")} />);
+    const { container } = render(<BenefitDocumentsCard application={anApplication("COMPLETED")} />);
     expect(container).toBeEmptyDOMElement();
   });
 });
