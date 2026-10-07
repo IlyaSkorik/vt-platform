@@ -90,6 +90,8 @@ from .events import (
     NominationRegistrationResumed,
     NominationRegistrationScheduled,
     NominationRegistrationStopped,
+    NominationWaitlistDisabled,
+    NominationWaitlistEnabled,
     ParticipationFormatDisabled,
     ParticipationFormatEnabled,
     PricingRuleAdded,
@@ -346,6 +348,12 @@ class Category:
     flag. Registration is decided per nomination — the competition has no single
     application deadline — so each nomination opens, closes on time, or is stopped
     early independently of the others.
+
+    Closing is not always the end of the queue. A nomination may keep a **waitlist**:
+    once registration is shut the applicant can still enter, unpaid and outside the
+    main programme, and the organizer later moves the entry into the competition or
+    calls it off. The waitlist is the nomination's own setting because closing is —
+    a festival can keep a list for Vocal and refuse one for Choreography.
     """
 
     _id: CategoryId
@@ -354,6 +362,7 @@ class Category:
     _sort_order: int = 0
     _registration: RegistrationWindow = field(default_factory=RegistrationWindow)
     _registration_stopped: bool = False
+    _waitlist_enabled: bool = False
 
     @classmethod
     def create(
@@ -365,6 +374,7 @@ class Category:
         sort_order: int = 0,
         registration: RegistrationWindow | None = None,
         registration_stopped: bool = False,
+        waitlist_enabled: bool = False,
     ) -> Category:
         return cls(
             _id=category_id,
@@ -373,6 +383,7 @@ class Category:
             _sort_order=_validate_sort_order(sort_order),
             _registration=registration if registration is not None else RegistrationWindow(),
             _registration_stopped=registration_stopped,
+            _waitlist_enabled=waitlist_enabled,
         )
 
     @classmethod
@@ -385,6 +396,7 @@ class Category:
         sort_order: int = 0,
         registration: RegistrationWindow | None = None,
         registration_stopped: bool = False,
+        waitlist_enabled: bool = False,
     ) -> Category:
         return cls(
             _id=category_id,
@@ -393,6 +405,7 @@ class Category:
             _sort_order=sort_order,
             _registration=registration if registration is not None else RegistrationWindow(),
             _registration_stopped=registration_stopped,
+            _waitlist_enabled=waitlist_enabled,
         )
 
     @property
@@ -419,6 +432,10 @@ class Category:
     def is_registration_stopped(self) -> bool:
         return self._registration_stopped
 
+    @property
+    def is_waitlist_enabled(self) -> bool:
+        return self._waitlist_enabled
+
     def schedule_registration(self, window: RegistrationWindow) -> None:
         """Set (or replace) this nomination's registration window."""
         self._registration = window
@@ -431,6 +448,14 @@ class Category:
         """Lift an early stop; the window's instants govern openness again."""
         self._registration_stopped = False
 
+    def enable_waitlist(self) -> None:
+        """Keep a waitlist for this nomination once its registration closes."""
+        self._waitlist_enabled = True
+
+    def disable_waitlist(self) -> None:
+        """Stop taking waitlist entries. Entries already on the list are untouched."""
+        self._waitlist_enabled = False
+
     def accepts_submissions(self, now: datetime) -> bool:
         """Whether this nomination accepts applications at ``now``.
 
@@ -438,6 +463,17 @@ class Category:
         ``now``; an unscheduled nomination is closed.
         """
         return not self._registration_stopped and self._registration.is_open(now)
+
+    def accepts_waitlist(self, now: datetime) -> bool:
+        """Whether this nomination takes waitlist entries at ``now``.
+
+        Deliberately the complement of :meth:`accepts_submissions`, not an
+        alternative to it: while registration is open there is nothing to wait for,
+        and offering both at once would let an applicant choose the unpaid door.
+        The waitlist exists only behind a closed one — whether it closed on its date
+        or was stopped early makes no difference.
+        """
+        return self._waitlist_enabled and not self.accepts_submissions(now)
 
     def rename(self, name: CategoryName) -> None:
         self._name = name
@@ -1912,9 +1948,25 @@ class Competition:
         category = self._categories.get(category_id)
         return category is not None and category.accepts_submissions(now)
 
+    def accepts_waitlist_for(self, category_id: CategoryId, now: datetime) -> bool:
+        """Whether the nomination ``category_id`` takes waitlist entries at ``now``.
+
+        A closed nomination that keeps a waitlist still belongs to a live festival:
+        the competition itself must be PUBLISHED or RUNNING, exactly as for an open
+        one. A finished festival has no queue to join.
+        """
+        if self._status not in _SUBMISSION_STATUSES:
+            return False
+        category = self._categories.get(category_id)
+        return category is not None and category.accepts_waitlist(now)
+
     def is_any_nomination_open(self, now: datetime) -> bool:
         """Whether at least one nomination currently accepts applications at ``now``."""
         return self._status in _SUBMISSION_STATUSES and any(c.accepts_submissions(now) for c in self._categories.values())
+
+    def is_any_nomination_waitlisting(self, now: datetime) -> bool:
+        """Whether at least one nomination currently takes waitlist entries at ``now``."""
+        return self._status in _SUBMISSION_STATUSES and any(c.accepts_waitlist(now) for c in self._categories.values())
 
     def is_payment_allowed(self, now: datetime) -> bool:
         return not self.is_completed() and self._deadlines.is_open(DeadlineKind.PAYMENT, now)
@@ -2941,6 +2993,27 @@ class Competition:
         category.resume_registration()
         self._touch(now)
         return [NominationRegistrationResumed(aggregate_id=self._id.value, category_id=category_id)]
+
+    def enable_nomination_waitlist(self, *, category_id: CategoryId, now: datetime) -> list[DomainEvent]:
+        """Keep a waitlist for a nomination once its registration closes."""
+        self._ensure_not_completed()
+        category = self._require_category(category_id)
+        category.enable_waitlist()
+        self._touch(now)
+        return [NominationWaitlistEnabled(aggregate_id=self._id.value, category_id=category_id)]
+
+    def disable_nomination_waitlist(self, *, category_id: CategoryId, now: datetime) -> list[DomainEvent]:
+        """Stop taking waitlist entries for a nomination.
+
+        Turning the list off closes the door to newcomers only; whoever is already on
+        it stays there, waiting for the organizer's verdict. Dropping those entries
+        here would decide their fate as a side effect of a settings toggle.
+        """
+        self._ensure_not_completed()
+        category = self._require_category(category_id)
+        category.disable_waitlist()
+        self._touch(now)
+        return [NominationWaitlistDisabled(aggregate_id=self._id.value, category_id=category_id)]
 
     def start(self, *, now: datetime) -> list[DomainEvent]:
         """Begin running the competition (``PUBLISHED → RUNNING``)."""

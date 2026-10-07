@@ -17,7 +17,7 @@ from apps.competitions.infrastructure.models.base import uuid7
 pytestmark = pytest.mark.django_db
 
 
-def _seed_competition(*, status: str = "PUBLISHED", open_nomination: bool = True) -> str:
+def _seed_competition(*, status: str = "PUBLISHED", open_nomination: bool = True, waitlisted_nomination: bool = False) -> str:
     from datetime import UTC, datetime
 
     from apps.competitions.infrastructure.models import CategoryModel, CompetitionModel
@@ -31,6 +31,15 @@ def _seed_competition(*, status: str = "PUBLISHED", open_nomination: bool = True
             name="Vocal",
             registration_opens_at=datetime(2000, 1, 1, tzinfo=UTC),
             registration_closes_at=datetime(2100, 1, 1, tzinfo=UTC),
+        )
+    if waitlisted_nomination:
+        # A genre whose window has already passed but which keeps a queue behind it.
+        CategoryModel.objects.create(
+            competition=competition,
+            name="Choreography",
+            registration_opens_at=datetime(2000, 1, 1, tzinfo=UTC),
+            registration_closes_at=datetime(2001, 1, 1, tzinfo=UTC),
+            waitlist_enabled=True,
         )
     return str(competition.id)
 
@@ -189,6 +198,43 @@ def test_mixed_age_category_is_projected_with_its_calculation_method() -> None:
     assert by_name["7–10 лет"]["mixedCalculationMethod"] is None
     assert by_name["Смешанная"]["type"] == "MIXED"
     assert by_name["Смешанная"]["mixedCalculationMethod"] == "AVERAGE"
+
+
+def test_a_closed_genre_with_a_queue_is_projected_as_such() -> None:
+    competition_id = _seed_competition(open_nomination=False, waitlisted_nomination=True)
+    response = APIClient().get(_url(competition_id))
+    assert response.status_code == 200, response.data
+    data = response.data["data"]
+    # Registration really is over — the wizard says so — but the door is not bolted.
+    assert data["registrationOpen"] is False
+    assert data["waitlistOpen"] is True
+    nomination = data["nominations"][0]
+    assert nomination["registrationOpen"] is False
+    assert nomination["waitlistEnabled"] is True
+    assert nomination["waitlistOpen"] is True
+
+
+def test_an_open_genre_offers_no_queue_even_with_the_setting_on() -> None:
+    # Both doors open at once would let an applicant pick the unpaid one.
+    competition_id = _seed_competition(open_nomination=True, waitlisted_nomination=False)
+    from apps.competitions.infrastructure.models import CategoryModel
+
+    CategoryModel.objects.filter(competition_id=uuid.UUID(competition_id)).update(waitlist_enabled=True)
+    response = APIClient().get(_url(competition_id))
+    data = response.data["data"]
+    assert data["waitlistOpen"] is False
+    nomination = data["nominations"][0]
+    assert nomination["registrationOpen"] is True
+    assert nomination["waitlistEnabled"] is True
+    assert nomination["waitlistOpen"] is False
+
+
+def test_a_closed_genre_without_a_queue_stays_shut() -> None:
+    competition_id = _seed_competition(open_nomination=False, waitlisted_nomination=False)
+    response = APIClient().get(_url(competition_id))
+    data = response.data["data"]
+    assert data["registrationOpen"] is False
+    assert data["waitlistOpen"] is False
 
 
 def test_unauthenticated_access_is_allowed() -> None:

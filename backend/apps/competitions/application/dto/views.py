@@ -224,6 +224,7 @@ class CategoryView:
     registration_opens_at: datetime | None
     registration_closes_at: datetime | None
     registration_stopped: bool
+    waitlist_enabled: bool
 
     @classmethod
     def of(cls, category: Category) -> CategoryView:
@@ -235,6 +236,7 @@ class CategoryView:
             registration_opens_at=category.registration.opens_at,
             registration_closes_at=category.registration.closes_at,
             registration_stopped=category.is_registration_stopped,
+            waitlist_enabled=category.is_waitlist_enabled,
         )
 
 

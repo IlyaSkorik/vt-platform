@@ -291,6 +291,8 @@ class RegistrationNominationSerializer(serializers.Serializer[object]):
     registrationStopped = serializers.BooleanField(source="registration_stopped")
     registrationOpensAt = serializers.DateTimeField(source="registration_opens_at", allow_null=True)
     registrationClosesAt = serializers.DateTimeField(source="registration_closes_at", allow_null=True)
+    waitlistEnabled = serializers.BooleanField(source="waitlist_enabled")
+    waitlistOpen = serializers.BooleanField(source="waitlist_open")
 
 
 class RegistrationDisciplineSerializer(serializers.Serializer[object]):
@@ -376,6 +378,7 @@ class RegistrationSerializer(serializers.Serializer[object]):
 
     competition = RegistrationCompetitionSerializer()
     registrationOpen = serializers.BooleanField(source="registration_open")
+    waitlistOpen = serializers.BooleanField(source="waitlist_open")
     allowMultiplePerformances = serializers.BooleanField(source="allow_multiple_performances")
     collectPayerDetails = serializers.BooleanField(source="collect_payer_details")
     participantCommentEnabled = serializers.BooleanField(source="participant_comment_enabled")
