@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { useStableViewportHeight } from "@/shared/hooks";
 import { Button } from "@/shared/ui";
 import { HomeSteps } from "./home-steps";
 
@@ -22,6 +23,10 @@ interface HomeHeroProps {
  * own, and a hairline on top of that fade read as a cut rather than a hand-off.
  */
 export function HomeHero({ authPath }: HomeHeroProps): React.JSX.Element {
+  // Measured once and held, rather than left to `svh`. See the note on the band
+  // itself for what the units do in an in-app browser.
+  const viewportHeight = useStableViewportHeight();
+
   return (
     <section className="relative isolate w-full overflow-hidden">
       {/* One artwork per theme. The two are not one picture graded twice: the
@@ -68,14 +73,28 @@ export function HomeHero({ authPath }: HomeHeroProps): React.JSX.Element {
       />
 
       {/* A screenful, less the header: the bar is sticky but still takes its
-          60px in the flow, so `100svh` on its own would push the first screen
-          that much past the fold. `svh` rather than `vh` because on a phone the
-          address bar would otherwise crop the band's bottom edge.
+          60px in the flow, so a bare screenful would push the first screen that
+          much past the fold. Same on the phone, against that layout's 38px bar.
+          The rhythm down the band is the frame's: 100px of air before the
+          title, 25 to the sentence under it, 60 to the buttons.
 
-          Same on the phone, against that layout's 38px bar. The rhythm down the
-          band is the frame's: 100px of air before the title, 25 to the sentence
-          under it, 60 to the buttons. */}
-      <div className="relative mx-auto flex min-h-[calc(100svh-38px)] w-full max-w-336 flex-col gap-14 px-7 pt-25 pb-12 md:min-h-[calc(100svh-3.75rem)] md:gap-0 md:px-8 md:pt-20 md:pb-[65px]">
+          The screenful is `--hero-vh` — a pixel height measured once on mount —
+          and only falls back to `100svh` before that first measurement lands.
+          Viewport units were the whole band's height until Telegram's in-app
+          browser on iOS: scrolling collapses its header by resizing the web
+          view, so the window really does get taller and `svh` recomputes along
+          with it. The band grew under the thumb, the artwork behind it
+          re-cropped, and everything below jumped. A number fixed at load cannot
+          do that; `useStableViewportHeight` still follows a rotation, which is
+          the one height change that means something. */}
+      <div
+        style={
+          viewportHeight === null
+            ? undefined
+            : ({ "--hero-vh": `${viewportHeight}px` } as React.CSSProperties)
+        }
+        className="relative mx-auto flex min-h-[calc(var(--hero-vh,100svh)-38px)] w-full max-w-336 flex-col gap-14 px-7 pt-25 pb-12 md:min-h-[calc(var(--hero-vh,100svh)-3.75rem)] md:gap-0 md:px-8 md:pt-20 md:pb-[65px]"
+      >
         <div className="max-w-3xl space-y-15 text-foreground md:space-y-6 dark:text-on-scrim">
           <div className="space-y-[25px] md:space-y-5">
             <h1 className="text-balance font-heading font-bold text-[1.75rem] leading-snug tracking-tight sm:text-5xl sm:leading-tight md:text-display md:leading-[1.43]">
