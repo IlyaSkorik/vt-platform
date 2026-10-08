@@ -24,6 +24,7 @@ from apps.applications.application.dto.commands import (
     CancelSubmissionByReviewerCommand,
     MarkPaidCommand,
     MarkWaitingPaymentCommand,
+    PromoteWaitlistedSubmissionCommand,
     ReturnSubmissionForCorrectionCommand,
     ScheduleSubmissionCommand,
     StartReviewCommand,
@@ -57,6 +58,7 @@ from apps.teachers.infrastructure.models import TeacherModel
 from config.archive import ArchiveMember, zip_response
 
 _QUEUE_BY_STATUS = {
+    "WAITLISTED": "WAITLIST",
     "SUBMITTED": "NEW",
     "UNDER_REVIEW": "NEW",
     "REQUIRES_CORRECTION": "NEW",
@@ -79,6 +81,7 @@ _QUEUE_BY_STATUS = {
 _CORRECTABLE_STATUSES = frozenset(
     {
         "DRAFT",
+        "WAITLISTED",
         "SUBMITTED",
         "UNDER_REVIEW",
         "REQUIRES_CORRECTION",
@@ -398,6 +401,7 @@ def _capabilities(status: str) -> list[dict[str, str]]:
     took place.
     """
     mapping: dict[str, list[tuple[str, str]]] = {
+        "WAITLISTED": [("promote_from_waitlist", "Перевести в конкурс"), ("cancel", "Отменить")],
         "SUBMITTED": [("approve", "Одобрить"), ("return_for_correction", "Вернуть на исправление"), ("cancel", "Отменить")],
         "UNDER_REVIEW": [("approve", "Одобрить"), ("return_for_correction", "Вернуть на исправление"), ("cancel", "Отменить")],
         "REQUIRES_CORRECTION": [],
@@ -791,6 +795,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
 
         payload = {
             "queues": [
+                {"key": "WAITLIST", "label": "Лист ожидания", "count": queue_counts.get("WAITLIST", 0)},
                 {"key": "NEW", "label": "На доработке", "count": queue_counts.get("NEW", 0)},
                 {"key": "WAITING_PAYMENT", "label": "Ожидают оплату", "count": queue_counts.get("WAITING_PAYMENT", 0)},
                 {"key": "READY", "label": "Готовы к фестивалю", "count": queue_counts.get("READY", 0)},
@@ -798,6 +803,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                 {"key": "ARCHIVE", "label": "Отменены", "count": queue_counts.get("ARCHIVE", 0)},
             ],
             "metrics": {
+                "waitlisted": queue_counts.get("WAITLIST", 0),
                 "needReview": queue_counts.get("NEW", 0),
                 "needCorrection": 0,
                 "needPayment": queue_counts.get("WAITING_PAYMENT", 0),
@@ -997,6 +1003,10 @@ class OrganizerProcessingActionView(_StaffView):
                         target_model.participant_messages = messages
                         target_model.updated_at = _now()
                         target_model.save(update_fields=["participant_messages", "updated_at"])
+            elif action == "promote_from_waitlist":
+                result = composition.build_promote_waitlisted_submission_handler().handle(
+                    PromoteWaitlistedSubmissionCommand(submission_id=submission_id, reviewer_id=user_id)
+                )
             elif action == "request_payment":
                 result = composition.build_mark_waiting_payment_handler().handle(
                     MarkWaitingPaymentCommand(submission_id=submission_id, reviewer_id=user_id)

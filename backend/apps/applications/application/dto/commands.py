@@ -30,6 +30,7 @@ __all__ = [
     "OrganizerParticipantInput",
     "OrganizerPerformanceInput",
     "OrganizerTeacherInput",
+    "PromoteWaitlistedSubmissionCommand",
     "RemoveAttachmentCommand",
     "RemoveParticipantCommand",
     "RemoveTeacherCommand",
@@ -323,6 +324,14 @@ class ReturnSubmissionForCorrectionCommand:
 @dataclass(frozen=True, slots=True)
 class ApproveSubmissionCommand:
     """Approve the submission under review (organizer)."""
+
+    submission_id: str
+    reviewer_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class PromoteWaitlistedSubmissionCommand:
+    """Move a waitlisted submission into the competition (organizer)."""
 
     submission_id: str
     reviewer_id: str

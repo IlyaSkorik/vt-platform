@@ -7,6 +7,8 @@ from apps.competitions.application.dto.commands import (
     AddCategoryCommand,
     AddDisciplineCommand,
     AddParticipantGroupCommand,
+    DisableNominationWaitlistCommand,
+    EnableNominationWaitlistCommand,
     RemoveAgeCategoryCommand,
     RemoveCategoryCommand,
     RemoveDisciplineCommand,
@@ -45,6 +47,8 @@ __all__ = (
     "AddCategoryHandler",
     "AddDisciplineHandler",
     "AddParticipantGroupHandler",
+    "DisableNominationWaitlistHandler",
+    "EnableNominationWaitlistHandler",
     "RemoveAgeCategoryHandler",
     "RemoveCategoryHandler",
     "RemoveDisciplineHandler",
@@ -162,6 +166,40 @@ class ResumeNominationRegistrationHandler(CompetitionCommandHandler):
         competition = self._require(command.competition_id)
 
         events = competition.resume_nomination_registration(
+            category_id=CategoryId.from_string(command.category_id),
+            now=self._clock.utcnow(),
+        )
+
+        return self._persist(competition, events)
+
+
+class EnableNominationWaitlistHandler(CompetitionCommandHandler):
+    """Keep a waitlist for a nomination once its registration closes."""
+
+    def handle(
+        self,
+        command: EnableNominationWaitlistCommand,
+    ) -> CompetitionDetailView:
+        competition = self._require(command.competition_id)
+
+        events = competition.enable_nomination_waitlist(
+            category_id=CategoryId.from_string(command.category_id),
+            now=self._clock.utcnow(),
+        )
+
+        return self._persist(competition, events)
+
+
+class DisableNominationWaitlistHandler(CompetitionCommandHandler):
+    """Stop taking waitlist entries for a nomination; those already queued remain."""
+
+    def handle(
+        self,
+        command: DisableNominationWaitlistCommand,
+    ) -> CompetitionDetailView:
+        competition = self._require(command.competition_id)
+
+        events = competition.disable_nomination_waitlist(
             category_id=CategoryId.from_string(command.category_id),
             now=self._clock.utcnow(),
         )

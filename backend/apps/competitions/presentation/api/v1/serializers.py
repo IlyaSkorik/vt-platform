@@ -778,6 +778,7 @@ class _CategorySerializer(serializers.Serializer[dict[str, object]]):
     registrationOpensAt = serializers.DateTimeField(source="registration_opens_at", allow_null=True)
     registrationClosesAt = serializers.DateTimeField(source="registration_closes_at", allow_null=True)
     registrationStopped = serializers.BooleanField(source="registration_stopped")
+    waitlistEnabled = serializers.BooleanField(source="waitlist_enabled")
 
 
 class _DisciplineSerializer(serializers.Serializer[dict[str, object]]):

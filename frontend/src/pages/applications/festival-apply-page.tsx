@@ -191,9 +191,11 @@ function WizardBody({
     return <Navigate to={generatePath(ROUTES.cabinetApplicationEdit, { applicationId })} replace />;
   }
 
-  // Заполнение доступно пока открыта регистрация, а также после её закрытия —
-  // если организатор запросил исправления/недостающие файлы.
-  const canEdit = registration.registrationOpen || application.hasCorrections;
+  // Заполнение доступно пока открыта регистрация, а также после её закрытия — если
+  // организатор запросил исправления/недостающие файлы либо ведёт лист ожидания.
+  // Без последнего лист ожидания был бы недостижим ровно для тех, ради кого он есть.
+  const canEdit =
+    registration.registrationOpen || registration.waitlistOpen || application.hasCorrections;
   if (!canEdit) {
     return <Navigate to={generatePath(ROUTES.cabinetApplication, { applicationId })} replace />;
   }
@@ -204,7 +206,11 @@ function WizardBody({
         <PageTitle>{registration.competition.title}</PageTitle>
         <PageDescription>
           Заполните заявку последовательно на одной странице.
-          {registration.registrationOpen ? "" : " Регистрация закрыта."}
+          {registration.registrationOpen
+            ? ""
+            : registration.waitlistOpen
+              ? " Приём заявок закрыт — доступен лист ожидания."
+              : " Регистрация закрыта."}
         </PageDescription>
       </PageHeader>
       <PageContent className="flex flex-col gap-6">

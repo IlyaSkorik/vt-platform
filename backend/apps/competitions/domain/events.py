@@ -82,6 +82,8 @@ __all__ = [
     "NominationRegistrationResumed",
     "NominationRegistrationScheduled",
     "NominationRegistrationStopped",
+    "NominationWaitlistDisabled",
+    "NominationWaitlistEnabled",
     "ParticipationFormatDisabled",
     "ParticipationFormatEnabled",
     "PricingRuleAdded",
@@ -199,6 +201,20 @@ class NominationRegistrationStopped(DomainEvent):
 @dataclass(frozen=True, slots=True, kw_only=True)
 class NominationRegistrationResumed(DomainEvent):
     """A previously stopped nomination's registration was resumed."""
+
+    category_id: CategoryId
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class NominationWaitlistEnabled(DomainEvent):
+    """A nomination now keeps a waitlist for applicants who missed its registration."""
+
+    category_id: CategoryId
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class NominationWaitlistDisabled(DomainEvent):
+    """A nomination stopped taking waitlist entries; those already on it remain."""
 
     category_id: CategoryId
 

@@ -15,6 +15,8 @@ export {
   useCompetitionsList,
   useCompleteCompetitionMutation,
   useCreateCompetitionMutation,
+  useDisableNominationWaitlistMutation,
+  useEnableNominationWaitlistMutation,
   useMakeRegulationCurrentMutation,
   useMarkConfiguredMutation,
   useMarkReadyMutation,

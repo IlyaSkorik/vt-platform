@@ -244,6 +244,7 @@ class CompetitionMapper:
                         closes_at=row.registration_closes_at,
                     ),
                     registration_stopped=row.registration_stopped,
+                    waitlist_enabled=row.waitlist_enabled,
                 )
                 for row in categories
             ],
@@ -426,6 +427,7 @@ class CompetitionMapper:
                     registration_opens_at=c.registration.opens_at,
                     registration_closes_at=c.registration.closes_at,
                     registration_stopped=c.is_registration_stopped,
+                    waitlist_enabled=c.is_waitlist_enabled,
                 )
                 for c in entity.categories
             ],

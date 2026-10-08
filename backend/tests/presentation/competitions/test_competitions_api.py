@@ -223,6 +223,28 @@ def test_rename_and_delete_category_are_both_reachable(staff_client: APIClient) 
     assert removed.data["data"]["categories"] == []
 
 
+def test_nomination_waitlist_is_switched_on_and_off_in_place(staff_client: APIClient) -> None:
+    """The organizer's whole control over the queue: one toggle on the genre.
+
+    POST and DELETE share the URL because they are the same setting read both ways —
+    the route previously shadowed its own detail methods here, which is why this is
+    asserted end to end rather than at the handler.
+    """
+    competition_id = _create_competition(staff_client).data["data"]["id"]
+    detail = f"/api/v1/competitions/{competition_id}"
+    created = staff_client.post(f"{detail}/categories", {"name": "Vocal"}, format="json")
+    category_id = created.data["data"]["categories"][0]["id"]
+    assert created.data["data"]["categories"][0]["waitlistEnabled"] is False
+
+    enabled = staff_client.post(f"{detail}/categories/{category_id}/waitlist", {}, format="json")
+    assert enabled.status_code == 200, enabled.data
+    assert enabled.data["data"]["categories"][0]["waitlistEnabled"] is True
+
+    disabled = staff_client.delete(f"{detail}/categories/{category_id}/waitlist")
+    assert disabled.status_code == 200, disabled.data
+    assert disabled.data["data"]["categories"][0]["waitlistEnabled"] is False
+
+
 def test_settings_round_trip_carries_the_media_requirements(staff_client: APIClient) -> None:
     """Save the organizer's media rules and read them back on the detail screen.
 

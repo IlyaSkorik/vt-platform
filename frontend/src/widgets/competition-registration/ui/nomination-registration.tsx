@@ -1,6 +1,8 @@
-import { CalendarClock, CircleCheck } from "lucide-react";
+import { CalendarClock, CircleCheck, ListOrdered } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
+  useDisableNominationWaitlistMutation,
+  useEnableNominationWaitlistMutation,
   useResumeNominationRegistrationMutation,
   useScheduleNominationRegistrationMutation,
   useStopNominationRegistrationMutation,
@@ -48,6 +50,18 @@ function formatInstant(iso: string | null): string {
   return date.toLocaleString("ru-RU", { dateStyle: "medium", timeStyle: "short" });
 }
 
+/** Whether the genre is shut right now — by its own dates or by an early stop. */
+function isClosedNow(category: _Category): boolean {
+  if (category.registrationStopped) return true;
+  const opensMs = category.registrationOpensAt ? Date.parse(category.registrationOpensAt) : null;
+  const closesMs = category.registrationClosesAt ? Date.parse(category.registrationClosesAt) : null;
+  if (opensMs === null && closesMs === null) return true; // unconfigured — closed
+  const now = Date.now();
+  if (opensMs !== null && now < opensMs) return true;
+  if (closesMs !== null && now > closesMs) return true;
+  return false;
+}
+
 function deriveState(category: _Category): RegistrationState {
   if (category.registrationStopped) {
     return { label: "Регистрация остановлена", variant: "warning" };
@@ -86,6 +100,8 @@ export function NominationRegistration({
   const schedule = useScheduleNominationRegistrationMutation();
   const stop = useStopNominationRegistrationMutation();
   const resume = useResumeNominationRegistrationMutation();
+  const enableWaitlist = useEnableNominationWaitlistMutation();
+  const disableWaitlist = useDisableNominationWaitlistMutation();
 
   const [opensAt, setOpensAt] = useState(() => isoToLocalInput(category.registrationOpensAt));
   const [closesAt, setClosesAt] = useState(() => isoToLocalInput(category.registrationClosesAt));
@@ -97,6 +113,7 @@ export function NominationRegistration({
   }, [category.registrationOpensAt, category.registrationClosesAt]);
 
   const state = deriveState(category);
+  const closedNow = isClosedNow(category);
   const invalidRange = opensAt !== "" && closesAt !== "" && new Date(closesAt) < new Date(opensAt);
 
   const handleSaveWindow = async (): Promise<void> => {
@@ -135,6 +152,20 @@ export function NominationRegistration({
     }
   };
 
+  const handleToggleWaitlist = async (): Promise<void> => {
+    const mutation = category.waitlistEnabled ? disableWaitlist : enableWaitlist;
+    try {
+      await mutation.mutateAsync({ competitionId, categoryId: category.id });
+      toast.success(
+        category.waitlistEnabled
+          ? "Лист ожидания закрыт для новых заявок"
+          : "Лист ожидания включён",
+      );
+    } catch (error) {
+      toast.error(apiErrorMessage(error, "Не удалось изменить лист ожидания"));
+    }
+  };
+
   return (
     <div className="space-y-3 rounded-md border border-border bg-muted/30 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -142,9 +173,16 @@ export function NominationRegistration({
           <CalendarClock className="size-4 text-muted-foreground" aria-hidden="true" />
           {category.name}
         </div>
-        <Badge variant={state.variant} size="sm">
-          {state.label}
-        </Badge>
+        <div className="flex items-center gap-2">
+          {category.waitlistEnabled ? (
+            <Badge variant={closedNow ? "info" : "secondary"} size="sm">
+              {closedNow ? "Лист ожидания открыт" : "Лист ожидания наготове"}
+            </Badge>
+          ) : null}
+          <Badge variant={state.variant} size="sm">
+            {state.label}
+          </Badge>
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -202,7 +240,23 @@ export function NominationRegistration({
             Остановить регистрацию
           </Button>
         )}
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => void handleToggleWaitlist()}
+          loading={enableWaitlist.isPending || disableWaitlist.isPending}
+          disabled={disabled}
+        >
+          <ListOrdered className="size-3.5" aria-hidden="true" />
+          {category.waitlistEnabled ? "Выключить лист ожидания" : "Включить лист ожидания"}
+        </Button>
       </div>
+      <p className="text-muted-foreground text-xs">
+        {category.waitlistEnabled
+          ? "Пока приём закрыт, участники могут встать в лист ожидания — без оплаты и вне основной программы. Перевести их в конкурс или отменить можно в обработке заявок."
+          : "Когда приём закрыт, жанр просто недоступен. Включите лист ожидания, чтобы опоздавшие всё же могли подать заявку."}
+      </p>
     </div>
   );
 }

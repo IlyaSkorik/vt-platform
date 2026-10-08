@@ -29,7 +29,9 @@ __all__ = [
     "CompleteCompetitionCommand",
     "CreateCompetitionCommand",
     "DisableAdditionalServiceCommand",
+    "DisableNominationWaitlistCommand",
     "EnableAdditionalServiceCommand",
+    "EnableNominationWaitlistCommand",
     "HideInformationBlockCommand",
     "MakeRegulationCurrentCommand",
     "MarkConfiguredCommand",
@@ -228,6 +230,18 @@ class StopNominationRegistrationCommand:
 
 @dataclass(frozen=True, slots=True)
 class ResumeNominationRegistrationCommand:
+    competition_id: str
+    category_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class EnableNominationWaitlistCommand:
+    competition_id: str
+    category_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class DisableNominationWaitlistCommand:
     competition_id: str
     category_id: str
 

@@ -156,13 +156,31 @@ function PerformanceFormInner({
     setSelection((current) => clearDownstream({ ...current, [axis]: value }, axis));
   };
 
-  // Only nominations whose registration window is currently open can be applied to;
-  // a closed/not-yet-open nomination would be rejected by the backend on submit.
+  // A genre can be entered through either of two doors: registration while it is on,
+  // and the waitlist once it is off. Anything with neither would be refused by the
+  // backend on submit, so it is not offered at all.
   const openNominations = registration.nominations.filter(
     (nomination) => nomination.registrationOpen,
   );
-  const nominationOptions = options(openNominations, admissibleValues(rules, {}, "nominationId"));
-  const noOpenNominations = openNominations.length === 0;
+  const waitlistNominations = registration.nominations.filter(
+    (nomination) => !nomination.registrationOpen && nomination.waitlistOpen,
+  );
+  const reachableNominations = [...openNominations, ...waitlistNominations];
+  const waitlistOnlyIds = new Set(waitlistNominations.map((nomination) => nomination.id));
+  const nominationOptions = options(
+    reachableNominations,
+    admissibleValues(rules, {}, "nominationId"),
+  ).map((option) =>
+    waitlistOnlyIds.has(option.value)
+      ? { ...option, label: `${option.label} — лист ожидания` }
+      : option,
+  );
+  const noOpenNominations = reachableNominations.length === 0;
+  // The applicant has to know *before* filling the form in that this entry buys a
+  // place in a queue rather than in the programme.
+  const goesToWaitlist = selection.nominationId
+    ? waitlistOnlyIds.has(selection.nominationId)
+    : false;
   const disciplineOptions = options(
     registration.disciplines,
     admissibleValues(rules, selection, "disciplineId"),
@@ -269,6 +287,13 @@ function PerformanceFormInner({
       {noOpenNominations ? (
         <Alert variant="warning" title="Приём заявок закрыт">
           Сейчас нет жанров, открытых для регистрации. Проверьте сроки приёма заявок по жанрам.
+        </Alert>
+      ) : null}
+      {goesToWaitlist ? (
+        <Alert variant="info" title="Заявка пойдёт в лист ожидания">
+          Приём в этот жанр закрыт, но организатор ведёт лист ожидания. Заявку можно подать — оплата
+          не потребуется, и в основную программу выступление пока не попадёт. Организатор сам
+          переведёт его в конкурс, если освободится место, либо отменит.
         </Alert>
       ) : null}
       <div className="grid gap-3 sm:grid-cols-2">

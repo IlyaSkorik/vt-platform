@@ -31,11 +31,15 @@ _NOW = datetime(2026, 1, 1, tzinfo=UTC)
 class RecordingNotifier:
     def __init__(self) -> None:
         self.submitted: list[str] = []
+        self.waitlisted: list[str] = []
         self.awaiting: list[str] = []
         self.cancelled: list[str] = []
 
     def notify_application_submitted(self, *, user_id: str, email: str, applicant_name: str, application_id: str) -> None:
         self.submitted.append(email)
+
+    def notify_application_waitlisted(self, *, user_id: str, email: str, applicant_name: str, application_id: str) -> None:
+        self.waitlisted.append(email)
 
     def notify_application_awaiting_payment(self, *, user_id: str, email: str, applicant_name: str, application_id: str, deadline: datetime) -> None:
         self.awaiting.append(email)

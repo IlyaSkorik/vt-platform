@@ -17,6 +17,7 @@ from datetime import datetime, timedelta
 from pathlib import PurePosixPath
 from typing import Final
 
+from apps.applications.application.commands._support import ensure_nomination_reachable
 from apps.applications.application.dto.order_commands import (
     AddSubmissionToApplicationCommand,
     CancelApplicationCommand,
@@ -41,12 +42,12 @@ from apps.applications.application.exceptions import (
     AdditionalServiceNotFoundError,
     ApplicantNotFoundError,
     ApplicationStateConflictError,
-    CompetitionClosedError,
     CompetitionCombinationNotFoundError,
     CompetitionNotFoundError,
     DeadlinePassedError,
     EducationalOrganizationNotFoundError,
     FileTooLargeError,
+    MixedWaitlistOrderError,
     MultiplePerformancesNotAllowedError,
     PaymentReceiptRequiredError,
     SubmissionInvariantViolationError,
@@ -198,8 +199,12 @@ class CreateApplicationHandler:
             raise ApplicantNotFoundError("Профиль заявителя не найден. Войдите в систему заново.")
         if not self._catalog.exists(competition_id):
             raise CompetitionNotFoundError("Фестиваль не найден.")
-        if not self._catalog.accepts_submissions(competition_id=competition_id, now=now):
-            raise CompetitionClosedError("Приём заявок на этот фестиваль закрыт.")
+        ensure_nomination_reachable(
+            catalog=self._catalog,
+            competition_id=competition_id,
+            now=now,
+            message="Приём заявок на этот фестиваль закрыт.",
+        )
 
         application, events = Application.create(
             application_id=ApplicationId.from_uuid(self._uuids.new()),
@@ -235,8 +240,7 @@ class AddSubmissionToApplicationHandler:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
-        if not self._catalog.accepts_submissions(competition_id=application.competition_id, now=now):
-            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
+        ensure_nomination_reachable(catalog=self._catalog, competition_id=application.competition_id, now=now)
         # Checked here rather than on the aggregate: how many performances a festival
         # wants is the Competition's rule, and the order has no way to know it. The
         # count is the order's *current* refs, so removing a performance frees the
@@ -281,8 +285,7 @@ class RemoveSubmissionFromApplicationHandler:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
-        if not self._catalog.accepts_submissions(competition_id=application.competition_id, now=now):
-            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
+        ensure_nomination_reachable(catalog=self._catalog, competition_id=application.competition_id, now=now)
         with translate_domain_errors():
             submission_id = SubmissionId.from_string(command.submission_id)
 
@@ -328,8 +331,7 @@ class SelectAdditionalServiceHandler:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
-        if not self._catalog.accepts_submissions(competition_id=application.competition_id, now=now):
-            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
+        ensure_nomination_reachable(catalog=self._catalog, competition_id=application.competition_id, now=now)
         with translate_application_domain_errors():
             service_id = ServiceId.from_string(command.service_id)
 
@@ -368,8 +370,7 @@ class RemoveAdditionalServiceHandler:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
-        if not self._catalog.accepts_submissions(competition_id=application.competition_id, now=now):
-            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
+        ensure_nomination_reachable(catalog=self._catalog, competition_id=application.competition_id, now=now)
         with translate_application_domain_errors():
             service_id = ServiceId.from_string(command.service_id)
             order_events = application.remove_service(service_id=service_id, now=now)
@@ -389,8 +390,7 @@ class RecordConsentsHandler:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
-        if not self._catalog.accepts_submissions(competition_id=application.competition_id, now=now):
-            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
+        ensure_nomination_reachable(catalog=self._catalog, competition_id=application.competition_id, now=now)
         with translate_application_domain_errors():
             consents = [Consent(code=item.code, version=item.version, accepted_at=now) for item in command.consents]
             order_events = application.record_consents(consents=consents, now=now)
@@ -418,8 +418,7 @@ class SelectEducationalOrganizationHandler:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
-        if not self._catalog.accepts_submissions(competition_id=application.competition_id, now=now):
-            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
+        ensure_nomination_reachable(catalog=self._catalog, competition_id=application.competition_id, now=now)
         with translate_application_domain_errors():
             organization_id = EducationalOrganizationId.from_string(command.educational_organization_id)
 
@@ -456,8 +455,7 @@ class SetApplicationPayerHandler:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
-        if not self._catalog.accepts_submissions(competition_id=application.competition_id, now=now):
-            raise CompetitionClosedError("Регистрация закрыта: редактирование заявки недоступно.")
+        ensure_nomination_reachable(catalog=self._catalog, competition_id=application.competition_id, now=now)
         # `PersonName` belongs to the value-object tree the Submission translator
         # covers, not the order's - so the two calls need their own context managers.
         with translate_domain_errors():
@@ -510,11 +508,28 @@ class SubmitApplicationHandler:
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
 
-        for ref in application.submission_refs:
-            submission = self._submissions.get(ref.submission_id)
-            if submission is None or submission.status is not SubmissionStatus.DRAFT:
+        # Which door each entry is heading for. A draft is decided now rather than when
+        # its genre was picked — a window can close while the applicant is still filling
+        # the wizard — and an entry already queued (submitted on its own, before the
+        # order was placed) counts for what it already is.
+        order_submissions = load_order_submissions(application, self._submissions)
+        destinations = {
+            submission.id: (
+                self._is_waitlist_entry(submission, now=now)
+                if submission.status is SubmissionStatus.DRAFT
+                else submission.status is SubmissionStatus.WAITLISTED
+            )
+            for submission in order_submissions
+        }
+        if len(set(destinations.values())) > 1:
+            raise MixedWaitlistOrderError(
+                "Выступление в закрытом жанре идёт в лист ожидания и подаётся отдельной заявкой — уберите его отсюда и оформите отдельно."
+            )
+        order_is_waitlist = any(destinations.values())
+        for submission in order_submissions:
+            if submission.status is not SubmissionStatus.DRAFT:
                 continue
-            self._submit_one(submission, now=now)
+            self._submit_one(submission, waitlist=destinations[submission.id], now=now)
 
         refresh_submission_refs(
             application,
@@ -522,22 +537,74 @@ class SubmitApplicationHandler:
             now=now,
             additional_performance_discount_percent=self._catalog.additional_performance_discount_percent(competition_id=application.competition_id),
         )
-        format_ids = order_participation_format_ids(load_order_submissions(application, self._submissions))
+        # A waitlist order owes nothing: the fee falls due only if the organizer
+        # promotes the entry. So everything that exists to collect money — the
+        # mandatory paid services, the payer the contract is made out to, the receipt
+        # some festivals demand upfront — is not asked of it. The consents are, because
+        # they are the grounds for holding the person's data at all, and the platform
+        # holds it the moment they join the queue.
         required_consents = self._services.required_consent_codes(competition_id=application.competition_id)
-        required_services = self._services.required_service_ids(competition_id=application.competition_id, participation_format_ids=format_ids)
-        receipt = self._services.receipt_requirement(competition_id=application.competition_id, participation_format_ids=format_ids)
-        if receipt.required and receipt.due_at_submit and not application.has_payment_receipt:
-            raise PaymentReceiptRequiredError("Фестиваль принимает заявку только с приложенной квитанцией об оплате.")
+        required_services: frozenset[str] = frozenset()
+        payer_required = False
+        if not order_is_waitlist:
+            format_ids = order_participation_format_ids(order_submissions)
+            required_services = self._services.required_service_ids(
+                competition_id=application.competition_id,
+                participation_format_ids=format_ids,
+            )
+            payer_required = self._catalog.collects_payer_details(competition_id=application.competition_id)
+            receipt = self._services.receipt_requirement(competition_id=application.competition_id, participation_format_ids=format_ids)
+            if receipt.required and receipt.due_at_submit and not application.has_payment_receipt:
+                raise PaymentReceiptRequiredError("Фестиваль принимает заявку только с приложенной квитанцией об оплате.")
         with translate_application_domain_errors():
             order_events = application.submit(
                 required_consent_codes=required_consents,
                 required_service_ids=required_services,
-                payer_required=self._catalog.collects_payer_details(competition_id=application.competition_id),
+                payer_required=payer_required,
                 now=now,
             )
         self._applications.save(application)
-        self._notify_submitted(application, now=now)
+        if order_is_waitlist:
+            self._notify_waitlisted(application)
+        else:
+            self._notify_submitted(application, now=now)
         return ApplicationOperationResultDto.of(application, tuple(order_events))
+
+    def _notify_waitlisted(self, application: Application) -> None:
+        """Tell the applicant they are in a queue, not in the programme.
+
+        Its own notice rather than the submitted one: that letter talks about the fee
+        and the deadline to pay it, and here there is neither. Saying nothing at all
+        was the other option and the worse one — a person who filled in a whole
+        application hears silence and assumes it failed.
+        """
+        if self._identity is None or self._notifier is None:
+            return
+        applicant = self._identity.get_applicant(user_id=application.applicant_id)
+        if applicant is None:
+            return
+        self._notifier.notify_application_waitlisted(
+            user_id=applicant.user_id,
+            email=applicant.email,
+            applicant_name=applicant.display_name,
+            application_id=application.id.json(),
+        )
+
+    def _is_waitlist_entry(self, submission: Submission, *, now: datetime) -> bool:
+        """Whether this entry is joining a queue rather than the competition itself.
+
+        Decided here, at submit, rather than when the nomination was picked: a window
+        can close while the applicant is still filling the wizard, and what counts is
+        the door that is open at the moment they knock.
+        """
+        performance = submission.performance
+        if performance is None:
+            return False
+        return self._catalog.accepts_waitlist(
+            competition_id=submission.competition_id,
+            nomination_id=performance.nomination_id,
+            now=now,
+        )
 
     def _notify_submitted(self, application: Application, *, now: datetime) -> None:
         """Tell the applicant the order is submitted.
@@ -568,7 +635,7 @@ class SubmitApplicationHandler:
             deadline=deadline,
         )
 
-    def _submit_one(self, submission: Submission, *, now: datetime) -> None:
+    def _submit_one(self, submission: Submission, *, waitlist: bool, now: datetime) -> None:
         performance = submission.performance
         if performance is None:
             raise SubmissionInvariantViolationError(
@@ -586,7 +653,7 @@ class SubmitApplicationHandler:
         if policy is None:
             raise CompetitionCombinationNotFoundError("Такое сочетание жанра, номинации, возраста и формы участия фестиваль не принимает.")
         with translate_domain_errors():
-            submission_events = submission.submit(policy=policy, now=now)
+            submission_events = submission.waitlist(policy=policy, now=now) if waitlist else submission.submit(policy=policy, now=now)
         self._submissions.save(submission)
         self._events.publish(submission_events)
 

@@ -111,12 +111,19 @@ class FakeCompetitionCatalog:
         additional_performance_discount_percent: int = 0,
         allows_multiple_performances: bool = True,
         collects_payer_details: bool = False,
+        waitlisting_nominations: frozenset[str] = frozenset(),
+        closed_nominations: frozenset[str] = frozenset(),
     ) -> None:
         self.discount_percent = additional_performance_discount_percent
         self.multiple_performances = allows_multiple_performances
         self.payer_details = collects_payer_details
         self.known = known
         self.open_for_submissions = open_for_submissions
+        #: Nominations whose registration has closed but which keep a waitlist, and
+        #: nominations that closed with no list at all. Both are shut to ordinary
+        #: submission; only the first has a second door.
+        self.waitlisting_nominations = waitlisting_nominations
+        self.closed_nominations = closed_nominations
         self.accepts_payment_flag = accepts_payment
         self.accepts_upload_flag = accepts_upload
         self.policy: SubmissionParticipationPolicy | None = (
@@ -134,7 +141,14 @@ class FakeCompetitionCatalog:
         return self.known
 
     def accepts_submissions(self, *, competition_id: CompetitionId, nomination_id: object = None, now: datetime) -> bool:
+        if nomination_id is not None and str(nomination_id) in (self.waitlisting_nominations | self.closed_nominations):
+            return False
         return self.open_for_submissions
+
+    def accepts_waitlist(self, *, competition_id: CompetitionId, nomination_id: object = None, now: datetime) -> bool:
+        if nomination_id is None:
+            return bool(self.waitlisting_nominations)
+        return str(nomination_id) in self.waitlisting_nominations
 
     def accepts_payment(self, *, competition_id: CompetitionId, now: datetime) -> bool:
         return self.accepts_payment_flag
@@ -210,6 +224,28 @@ class FakeIdentityReadModel:
         if not self._known:
             return None
         return ApplicantInfo(user_id=user_id.json(), display_name="Test Applicant", email="applicant@example.com")
+
+
+class RecordingApplicantNotifier:
+    """Records which notice each order triggered, by the e-mail it was sent to."""
+
+    def __init__(self) -> None:
+        self.submitted: list[str] = []
+        self.waitlisted: list[str] = []
+        self.awaiting_payment: list[str] = []
+        self.auto_cancelled: list[str] = []
+
+    def notify_application_submitted(self, *, user_id: str, email: str, applicant_name: str, application_id: str) -> None:
+        self.submitted.append(email)
+
+    def notify_application_waitlisted(self, *, user_id: str, email: str, applicant_name: str, application_id: str) -> None:
+        self.waitlisted.append(email)
+
+    def notify_application_awaiting_payment(self, *, user_id: str, email: str, applicant_name: str, application_id: str, deadline: datetime) -> None:
+        self.awaiting_payment.append(email)
+
+    def notify_application_auto_cancelled(self, *, user_id: str, email: str, applicant_name: str, application_id: str) -> None:
+        self.auto_cancelled.append(email)
 
 
 class FakeApplicationRepository:

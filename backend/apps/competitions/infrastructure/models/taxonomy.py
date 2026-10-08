@@ -39,6 +39,8 @@ class CategoryModel(BasePersistenceModel):
     registration_opens_at = models.DateTimeField(null=True, blank=True, default=None)
     registration_closes_at = models.DateTimeField(null=True, blank=True, default=None)
     registration_stopped = models.BooleanField(default=False)
+    # Keep a queue once the above has shut the door; see Category.accepts_waitlist.
+    waitlist_enabled = models.BooleanField(default=False)
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "competitions_category"

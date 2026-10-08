@@ -15,10 +15,14 @@ from apps.applications.domain.events import (
     PerformanceDefined,
     PriceSnapshotCreated,
     ReviewAdded,
+    SubmissionApproved,
     SubmissionCancelled,
     SubmissionCreated,
+    SubmissionPromotedFromWaitlist,
     SubmissionReturnedForCorrection,
+    SubmissionReviewStarted,
     SubmissionSubmitted,
+    SubmissionWaitlisted,
 )
 from apps.applications.domain.exceptions import (
     AgeCompositionRequiredError,
@@ -638,6 +642,78 @@ class TestLifecycle:
         assert s.status is SubmissionStatus.CANCELLED
         assert isinstance(events[0], SubmissionCancelled)
         assert events[0].previous_status is SubmissionStatus.SUBMITTED
+
+
+class TestWaitlist:
+    def test_waitlisted_entry_is_queued_not_submitted(self) -> None:
+        fx = _solo_ready()
+        s = fx.submission
+        events = s.waitlist(policy=fx.solo_policy, now=NOW)
+        assert s.status is SubmissionStatus.WAITLISTED
+        assert isinstance(events[0], SubmissionWaitlisted)
+
+    def test_waitlisting_holds_the_same_invariants_as_submitting(self) -> None:
+        # A place in the queue that could never be honoured is worse than a refusal.
+        s = _draft()
+        with pytest.raises(PerformanceRequiredError):
+            s.waitlist(policy=SubmissionParticipationPolicy(participant_count_range=ParticipantCountRange(1, 1)), now=NOW)
+
+    def test_waitlisted_entry_stays_editable(self) -> None:
+        # An entry can sit on the list for weeks while the act goes on being rehearsed.
+        fx = _solo_ready()
+        s = fx.submission
+        s.waitlist(policy=fx.solo_policy, now=NOW)
+        assert s.is_editable()
+        s.set_performance(performance=_performance(comment="Сменили фонограмму"), now=NOW)
+        assert s.performance is not None
+        assert s.performance.comment == "Сменили фонограмму"
+
+    def test_promotion_rejoins_the_ordinary_path_at_its_start(self) -> None:
+        fx = _solo_ready()
+        s = fx.submission
+        s.waitlist(policy=fx.solo_policy, now=NOW)
+        events = s.promote_from_waitlist(policy=fx.solo_policy, now=NOW)
+        assert isinstance(events[0], SubmissionPromotedFromWaitlist)
+        assert isinstance(events[1], SubmissionSubmitted)
+        assert events[1].previous_status is SubmissionStatus.WAITLISTED
+        # Asserted through the events rather than chained status reads, which mypy
+        # narrows across the intervening mutations.
+        assert [type(e) for e in s.begin_review(now=NOW)] == [SubmissionReviewStarted]
+        assert [type(e) for e in s.approve(now=NOW)] == [SubmissionApproved]
+
+    def test_promotion_refuses_a_combination_the_festival_has_since_dropped(self) -> None:
+        fx = _solo_ready()
+        s = fx.submission
+        s.waitlist(policy=fx.solo_policy, now=NOW)
+        dropped = SubmissionParticipationPolicy(participant_count_range=ParticipantCountRange(1, 1), is_admissible=False)
+        with pytest.raises(CombinationNotAdmissibleError):
+            s.promote_from_waitlist(policy=dropped, now=NOW)
+        assert s.status is SubmissionStatus.WAITLISTED
+
+    def test_waitlisted_entry_can_be_withdrawn(self) -> None:
+        fx = _solo_ready()
+        s = fx.submission
+        s.waitlist(policy=fx.solo_policy, now=NOW)
+        events = s.cancel(now=NOW)
+        assert s.status is SubmissionStatus.CANCELLED
+        assert isinstance(events[0], SubmissionCancelled)
+        assert events[0].previous_status is SubmissionStatus.WAITLISTED
+
+    def test_waitlist_is_not_a_review_state(self) -> None:
+        fx = _solo_ready()
+        s = fx.submission
+        s.waitlist(policy=fx.solo_policy, now=NOW)
+        with pytest.raises(IllegalStatusTransitionError):
+            s.approve(now=NOW)
+        with pytest.raises(IllegalStatusTransitionError):
+            s.begin_review(now=NOW)
+
+    def test_a_submitted_entry_cannot_fall_back_onto_the_list(self) -> None:
+        fx = _solo_ready()
+        s = fx.submission
+        s.submit(policy=fx.solo_policy, now=NOW)
+        with pytest.raises(IllegalStatusTransitionError):
+            s.waitlist(policy=fx.solo_policy, now=NOW)
 
 
 class TestConcurrencyAndIdentity:

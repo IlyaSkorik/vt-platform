@@ -43,7 +43,9 @@ from apps.competitions.application.dto.commands import (
     CompleteCompetitionCommand,
     CreateCompetitionCommand,
     DisableAdditionalServiceCommand,
+    DisableNominationWaitlistCommand,
     EnableAdditionalServiceCommand,
+    EnableNominationWaitlistCommand,
     HideInformationBlockCommand,
     MakeRegulationCurrentCommand,
     MarkConfiguredCommand,
@@ -108,7 +110,9 @@ from apps.competitions.application.handlers import (
     CompleteCompetitionHandler,
     CreateCompetitionHandler,
     DisableAdditionalServiceHandler,
+    DisableNominationWaitlistHandler,
     EnableAdditionalServiceHandler,
+    EnableNominationWaitlistHandler,
     HideInformationBlockHandler,
     MakeRegulationCurrentHandler,
     MarkCompetitionConfiguredHandler,
@@ -646,6 +650,22 @@ class CompetitionViewSet(viewsets.ViewSet):
         return self._run(
             ResumeNominationRegistrationHandler,
             ResumeNominationRegistrationCommand(competition_id=pk, category_id=category_id),
+            request,
+        )
+
+    @extend_schema(methods=["POST"], tags=[_TAG], operation_id="enableNominationWaitlist", request=None, responses=_detail_ok())
+    @extend_schema(methods=["DELETE"], tags=[_TAG], operation_id="disableNominationWaitlist", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["post", "delete"], url_path=r"categories/(?P<category_id>[^/.]+)/waitlist")
+    def nomination_waitlist(self, request: Request, pk: str, category_id: str) -> Response:
+        if request.method == "DELETE":
+            return self._run(
+                DisableNominationWaitlistHandler,
+                DisableNominationWaitlistCommand(competition_id=pk, category_id=category_id),
+                request,
+            )
+        return self._run(
+            EnableNominationWaitlistHandler,
+            EnableNominationWaitlistCommand(competition_id=pk, category_id=category_id),
             request,
         )
 

@@ -27,6 +27,8 @@ from apps.competitions.domain.events import (
     NominationRegistrationResumed,
     NominationRegistrationScheduled,
     NominationRegistrationStopped,
+    NominationWaitlistDisabled,
+    NominationWaitlistEnabled,
     ParticipationFormatDisabled,
     ParticipationFormatEnabled,
     PricingRuleAdded,
@@ -1094,6 +1096,74 @@ class TestNominationRegistration:
         c = _completed()
         with pytest.raises(CompetitionAlreadyCompletedError):
             c.schedule_nomination_registration(category_id=CategoryId.generate(), closes_at=datetime(2026, 8, 1, tzinfo=UTC), now=NOW)
+
+
+class TestNominationWaitlist:
+    def test_waitlist_off_by_default(self) -> None:
+        c, cat_id = _published()
+        c.schedule_nomination_registration(category_id=cat_id, closes_at=datetime(2026, 8, 31, tzinfo=UTC), now=NOW)
+        assert not c.accepts_waitlist_for(cat_id, datetime(2026, 9, 1, tzinfo=UTC))
+        assert not c.is_any_nomination_waitlisting(datetime(2026, 9, 1, tzinfo=UTC))
+
+    def test_waitlist_opens_only_behind_a_closed_door(self) -> None:
+        # While the nomination is open there is nothing to wait for: offering both
+        # doors at once would let an applicant pick the unpaid one.
+        c, cat_id = _published()
+        c.schedule_nomination_registration(category_id=cat_id, closes_at=datetime(2026, 8, 31, tzinfo=UTC), now=NOW)
+        enabled = c.enable_nomination_waitlist(category_id=cat_id, now=NOW)
+        assert isinstance(enabled[0], NominationWaitlistEnabled)
+        open_at = datetime(2026, 8, 15, tzinfo=UTC)
+        assert c.accepts_submissions_for(cat_id, open_at)
+        assert not c.accepts_waitlist_for(cat_id, open_at)
+        closed_at = datetime(2026, 9, 1, tzinfo=UTC)
+        assert not c.accepts_submissions_for(cat_id, closed_at)
+        assert c.accepts_waitlist_for(cat_id, closed_at)
+        assert c.is_any_nomination_waitlisting(closed_at)
+
+    def test_early_stop_opens_the_waitlist_too(self) -> None:
+        # Stopping early is closing by another route; the list does not care which.
+        c, cat_id = _published()
+        c.schedule_nomination_registration(category_id=cat_id, closes_at=datetime(2026, 12, 31, tzinfo=UTC), now=NOW)
+        c.enable_nomination_waitlist(category_id=cat_id, now=NOW)
+        at = datetime(2026, 8, 15, tzinfo=UTC)
+        assert not c.accepts_waitlist_for(cat_id, at)
+        c.stop_nomination_registration(category_id=cat_id, now=NOW)
+        assert c.accepts_waitlist_for(cat_id, at)
+
+    def test_disable_closes_the_list(self) -> None:
+        c, cat_id = _published()
+        c.enable_nomination_waitlist(category_id=cat_id, now=NOW)
+        at = datetime(2026, 9, 1, tzinfo=UTC)
+        assert c.accepts_waitlist_for(cat_id, at)
+        disabled = c.disable_nomination_waitlist(category_id=cat_id, now=NOW)
+        assert isinstance(disabled[0], NominationWaitlistDisabled)
+        assert not c.accepts_waitlist_for(cat_id, at)
+
+    def test_waitlist_gated_by_competition_status(self) -> None:
+        # A closed nomination of a finished festival has no queue to join.
+        fx = _configured()
+        c = fx.competition
+        c.enable_nomination_waitlist(category_id=fx.category_id, now=NOW)
+        at = datetime(2026, 9, 1, tzinfo=UTC)
+        assert not c.accepts_waitlist_for(fx.category_id, at)  # DRAFT
+        c.mark_configured(now=NOW)
+        c.mark_ready(now=NOW)
+        c.publish(now=NOW)
+        assert c.accepts_waitlist_for(fx.category_id, at)  # PUBLISHED
+        c.start(now=NOW)
+        assert c.accepts_waitlist_for(fx.category_id, at)  # RUNNING
+        c.complete(now=NOW)
+        assert not c.accepts_waitlist_for(fx.category_id, at)  # COMPLETED
+
+    def test_waitlist_control_refused_after_complete(self) -> None:
+        c = _completed()
+        with pytest.raises(CompetitionAlreadyCompletedError):
+            c.enable_nomination_waitlist(category_id=CategoryId.generate(), now=NOW)
+
+    def test_waitlist_unknown_nomination_rejected(self) -> None:
+        c = _draft()
+        with pytest.raises(CategoryNotFoundError):
+            c.enable_nomination_waitlist(category_id=CategoryId.generate(), now=NOW)
 
 
 class TestContacts:

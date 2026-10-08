@@ -40,6 +40,7 @@ Deliver = Callable[[EmailMessage], None]
 
 _SUBMITTED_SUBJECT: Final = "Заявка подана"
 _AWAITING_PAYMENT_SUBJECT: Final = "Заявка подана — ожидается оплата"
+_WAITLISTED_SUBJECT: Final = "Заявка принята в лист ожидания"
 _CANCELLED_SUBJECT: Final = "Заявка отменена"
 
 #: Deadlines are shown to applicants in Minsk local time, not the stored UTC.
@@ -92,6 +93,39 @@ class DjangoApplicantNotifier:
             to=email,
             # A receipt. During a registration rush these arrive by the hundred and nobody
             # is waiting on one, so they must not crowd out a password reset.
+            deliver=send_bulk,
+        )
+
+    def notify_application_waitlisted(self, *, user_id: str, email: str, applicant_name: str, application_id: str) -> None:
+        feed.publish(
+            recipient_id=user_id,
+            kind=NotificationKind.APPLICATION_WAITLISTED,
+            title=_WAITLISTED_SUBJECT,
+            body="Приём в выбранный жанр уже закрыт. Оплата не нужна — организатор сам сообщит решение.",
+            link=self._cabinet_link(application_id),
+        )
+        body = (
+            f"Здравствуйте, {applicant_name}!\n\n"
+            "Приём заявок в выбранный жанр уже закрыт, поэтому ваша заявка принята в лист ожидания.\n"
+            "Оплачивать участие сейчас не нужно. Если место освободится, организатор переведёт "
+            "заявку в конкурс и тогда сообщит об оплате; если нет — сообщит об отказе.\n\n"
+            "С уважением,\nКоманда «Взлёт талантов»"
+        )
+        self._send(
+            subject=_WAITLISTED_SUBJECT,
+            body=body,
+            html_body=render_transactional_email_html(
+                title=_WAITLISTED_SUBJECT,
+                intro=f"Здравствуйте, {applicant_name}! Приём в выбранный жанр закрыт — заявка встала в лист ожидания.",
+                details_label="Что дальше",
+                details="Оплата не требуется. Организатор переведёт заявку в конкурс, если освободится место, либо сообщит об отказе.",
+                button_label="Мои заявки",
+                button_url=self._applications_url,
+                status="info",
+                status_label="Лист ожидания",
+            ),
+            to=email,
+            # Nobody is waiting on this one either: it says there is nothing to do.
             deliver=send_bulk,
         )
 

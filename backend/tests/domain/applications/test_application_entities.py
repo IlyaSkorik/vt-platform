@@ -367,6 +367,40 @@ class TestPaymentReadinessAndLifecycle:
             application.cancel(now=NOW)
 
 
+class TestWaitlistedOrder:
+    def test_a_waitlisted_entry_is_not_billed(self) -> None:
+        # The snapshot underneath is real and kept fresh; the order still asks for
+        # nothing, because nobody pays for a place they do not have.
+        application = _new_application()
+        application.attach_submission(ref=_ref(status=SubmissionStatus.WAITLISTED, amount="300.00"), now=NOW)
+        application.submit(now=NOW)
+        total = application.total_price
+        assert total is not None
+        assert total.total == Money.of("0.00")
+
+    def test_a_waitlisted_order_can_never_be_sent_for_payment(self) -> None:
+        application = _new_application()
+        application.attach_submission(ref=_ref(status=SubmissionStatus.WAITLISTED), now=NOW)
+        application.submit(now=NOW)
+        assert not application.is_ready_for_payment()
+        with pytest.raises(NotAllSubmissionsApprovedError):
+            application.request_payment(now=NOW)
+
+    def test_promotion_prices_the_order_it_was_waiting_in(self) -> None:
+        # The order sits in SUBMITTED the whole time, so the refresh that follows the
+        # promotion is free to re-total it — no frozen price has to be broken open.
+        application = _new_application()
+        ref = _ref(status=SubmissionStatus.WAITLISTED, amount="300.00")
+        application.attach_submission(ref=ref, now=NOW)
+        application.submit(now=NOW)
+        application.refresh_submission_ref(ref=_ref(status=SubmissionStatus.SUBMITTED, amount="300.00", submission_id=ref.submission_id), now=NOW)
+        promoted_total = application.total_price
+        assert promoted_total is not None
+        assert promoted_total.total == Money.of("300.00")
+        application.refresh_submission_ref(ref=_ref(status=SubmissionStatus.APPROVED, amount="300.00", submission_id=ref.submission_id), now=NOW)
+        assert [type(e) for e in application.request_payment(now=NOW)] == [ApplicationAwaitingPayment]
+
+
 class TestPaymentReceipts:
     def test_each_upload_adds_a_receipt(self) -> None:
         # A fee settled by two transfers has two slips; the second must not erase

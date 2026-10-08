@@ -70,6 +70,11 @@ class RegistrationNominationView:
     registration_stopped: bool
     registration_opens_at: datetime | None
     registration_closes_at: datetime | None
+    #: Whether the organizer keeps a queue for this genre, and whether that queue is
+    #: open right now. The wizard needs both: the first explains the badge, the second
+    #: decides whether the genre is selectable at all once ``registration_open`` is off.
+    waitlist_enabled: bool = False
+    waitlist_open: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -162,6 +167,11 @@ class RegistrationUploadRequirementView:
 class RegistrationView:
     competition: RegistrationCompetitionView
     registration_open: bool
+    #: Whether at least one genre takes waitlist entries right now. Separate from
+    #: ``registration_open`` and not folded into it: the wizard has to stay reachable
+    #: when every genre has closed but one keeps a queue, while still saying plainly
+    #: that registration is over. One flag cannot do both.
+    waitlist_open: bool
     #: Whether one application may hold more than one performance. The wizard offers
     #: no way to add a second when this is false, and the Applications context
     #: refuses one anyway — this is the projection of that same rule, so the button
@@ -234,6 +244,8 @@ def project_registration(competition: Competition, *, now: datetime) -> Registra
             registration_stopped=category.is_registration_stopped,
             registration_opens_at=category.registration.opens_at,
             registration_closes_at=category.registration.closes_at,
+            waitlist_enabled=category.is_waitlist_enabled,
+            waitlist_open=competition.accepts_waitlist_for(category.id, now),
         )
         for category in competition.categories
     ]
@@ -331,6 +343,7 @@ def project_registration(competition: Competition, *, now: datetime) -> Registra
             venue_address=venue.address if venue is not None else None,
         ),
         registration_open=competition.is_application_allowed(now),
+        waitlist_open=competition.is_any_nomination_waitlisting(now),
         allow_multiple_performances=settings.allow_multiple_performances,
         collect_payer_details=settings.collect_payer_details,
         participant_comment_enabled=settings.participant_comment_enabled,

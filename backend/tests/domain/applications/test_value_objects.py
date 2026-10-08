@@ -278,6 +278,7 @@ class TestEnums:
     def test_status_members(self) -> None:
         assert {s.value for s in SubmissionStatus} == {
             "DRAFT",
+            "WAITLISTED",
             "SUBMITTED",
             "UNDER_REVIEW",
             "REQUIRES_CORRECTION",

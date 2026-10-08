@@ -27,6 +27,7 @@ from apps.applications.application.commands.performance import SetPerformanceHan
 from apps.applications.application.commands.pricing import CalculatePriceHandler
 from apps.applications.application.commands.review import (
     ApproveSubmissionHandler,
+    PromoteWaitlistedSubmissionHandler,
     ReturnSubmissionForCorrectionHandler,
     StartReviewHandler,
 )
@@ -56,6 +57,7 @@ __all__ = [
     "build_list_competition_submissions_handler",
     "build_mark_paid_handler",
     "build_mark_waiting_payment_handler",
+    "build_promote_waitlisted_submission_handler",
     "build_remove_attachment_handler",
     "build_remove_participant_handler",
     "build_remove_teacher_handler",
@@ -198,6 +200,16 @@ def build_return_for_correction_handler() -> ReturnSubmissionForCorrectionHandle
 def build_approve_submission_handler() -> ApproveSubmissionHandler:
     return ApproveSubmissionHandler(
         submissions=_submissions(),
+        organization=DjangoOrganizationReadModel(),
+        clock=SystemClock(),
+        events=NullEventPublisher(),
+    )
+
+
+def build_promote_waitlisted_submission_handler() -> PromoteWaitlistedSubmissionHandler:
+    return PromoteWaitlistedSubmissionHandler(
+        submissions=_submissions(),
+        catalog=DjangoCompetitionCatalog(),
         organization=DjangoOrganizationReadModel(),
         clock=SystemClock(),
         events=NullEventPublisher(),

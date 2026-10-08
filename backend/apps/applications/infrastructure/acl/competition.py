@@ -116,6 +116,20 @@ class DjangoCompetitionCatalog:
             return competition.is_any_nomination_open(now)
         return competition.accepts_submissions_for(CompCategoryId.from_uuid(nomination_id.value), now)
 
+    def accepts_waitlist(
+        self,
+        *,
+        competition_id: CompetitionId,
+        nomination_id: NominationId | None = None,
+        now: datetime,
+    ) -> bool:
+        competition = self._load(competition_id)
+        if competition is None:
+            return False
+        if nomination_id is None:
+            return competition.is_any_nomination_waitlisting(now)
+        return competition.accepts_waitlist_for(CompCategoryId.from_uuid(nomination_id.value), now)
+
     def accepts_payment(self, *, competition_id: CompetitionId, now: datetime) -> bool:
         competition = self._load(competition_id)
         return competition is not None and competition.is_payment_allowed(now)
