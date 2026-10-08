@@ -123,14 +123,15 @@ export function HomeFestivalCard({ festival, to }: HomeFestivalCardProps): React
           ) : null}
         </dl>
 
-        {/* Filled from the top of the block, not pushed to the bottom of the card.
-          Cards in a row are all the height of the tallest, so a tile whose
-          nominations fit on one line used to have `mt-auto` shove them to the
-          floor and open a hole between the dates and the chips. Left alone they
-          sit under the dates where they belong and the slack collects at the
-          bottom, where it reads as margin rather than as a gap. */}
+        {/* Centred in whatever height is left over, via `my-auto`. Cards in a
+          row are all the height of the tallest, so a tile with one line of
+          nominations against a neighbour's three carries real slack. `mt-auto`
+          alone would drop the chips to the floor and open a hole under the
+          dates; no margin at all would stack the whole slack below them. Split
+          evenly, the chips sit on the optical middle of the gap and the row of
+          cards reads as one band of nominations rather than a ragged edge. */}
         {festival.categories.length > 0 ? (
-          <ul className="flex flex-wrap gap-2 pt-1">
+          <ul className="my-auto flex flex-wrap gap-2 pt-1">
             {festival.categories.map((category) => (
               <li key={category}>
                 {/* 21px tall at 10/14 on the phone, 26px at 12/16 on the
