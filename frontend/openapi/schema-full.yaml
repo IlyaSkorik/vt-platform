@@ -15749,6 +15749,7 @@ components:
     NotificationKindEnum:
       enum:
       - APPLICATION_SUBMITTED
+      - APPLICATION_WAITLISTED
       - PAYMENT_EXPECTED
       - APPLICATION_CANCELLED
       - APPLICATION_APPROVED
@@ -15759,6 +15760,7 @@ components:
       type: string
       description: |-
         * `APPLICATION_SUBMITTED` - APPLICATION_SUBMITTED
+        * `APPLICATION_WAITLISTED` - APPLICATION_WAITLISTED
         * `PAYMENT_EXPECTED` - PAYMENT_EXPECTED
         * `APPLICATION_CANCELLED` - APPLICATION_CANCELLED
         * `APPLICATION_APPROVED` - APPLICATION_APPROVED
@@ -20916,6 +20918,9 @@ components:
           type: integer
           maximum: 100
           minimum: 0
+        autoCancelUnpaidApplications:
+          type: boolean
+          default: true
         requirePersonalDataConsent:
           type: boolean
         requireMediaConsent:
@@ -23471,6 +23476,8 @@ components:
             type: string
         additionalPerformanceDiscountPercent:
           type: integer
+        autoCancelUnpaidApplications:
+          type: boolean
         requirePersonalDataConsent:
           type: boolean
         requireMediaConsent:
@@ -23498,6 +23505,7 @@ components:
       - allowReplacingDocuments
       - allowReturningForCorrection
       - allowWithdrawingApplications
+      - autoCancelUnpaidApplications
       - automaticApprovalAfterPayment
       - collectPayerDetails
       - formatRequirements

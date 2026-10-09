@@ -30,6 +30,7 @@ from apps.applications.application.commands.review import (
     PromoteWaitlistedSubmissionHandler,
     ReturnSubmissionForCorrectionHandler,
     StartReviewHandler,
+    WithdrawCorrectionRequestHandler,
 )
 from apps.applications.application.commands.teachers import AddTeacherHandler, RemoveTeacherHandler
 from apps.applications.application.queries.get_submission import GetSubmissionHandler
@@ -68,6 +69,7 @@ __all__ = [
     "build_set_performance_handler",
     "build_start_review_handler",
     "build_upload_attachment_handler",
+    "build_withdraw_correction_request_handler",
 ]
 
 
@@ -193,6 +195,16 @@ def build_return_for_correction_handler() -> ReturnSubmissionForCorrectionHandle
         organization=DjangoOrganizationReadModel(),
         clock=SystemClock(),
         uuids=Uuid7Generator(),
+        events=NullEventPublisher(),
+    )
+
+
+def build_withdraw_correction_request_handler() -> WithdrawCorrectionRequestHandler:
+    return WithdrawCorrectionRequestHandler(
+        submissions=_submissions(),
+        catalog=DjangoCompetitionCatalog(),
+        organization=DjangoOrganizationReadModel(),
+        clock=SystemClock(),
         events=NullEventPublisher(),
     )
 

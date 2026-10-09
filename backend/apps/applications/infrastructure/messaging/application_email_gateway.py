@@ -129,30 +129,46 @@ class DjangoApplicantNotifier:
             deliver=send_bulk,
         )
 
-    def notify_application_awaiting_payment(self, *, user_id: str, email: str, applicant_name: str, application_id: str, deadline: datetime) -> None:
-        deadline_text = _format_deadline(deadline)
+    def notify_application_awaiting_payment(
+        self, *, user_id: str, email: str, applicant_name: str, application_id: str, deadline: datetime | None
+    ) -> None:
+        """Ask for payment, naming a date only where one is actually enforced.
+
+        ``deadline is None`` means the competition does not auto-cancel unpaid orders,
+        so every sentence about a term and about the order cancelling itself drops out
+        rather than being softened: the applicant still owes the fee, and nothing is
+        going to take the order away from them while they settle it.
+        """
+        if deadline is None:
+            feed_body = "Прикрепите квитанцию об оплате к заявке."
+            letter_line = "Ваша заявка подана. Пожалуйста, оплатите её и прикрепите квитанцию."
+            details_label = "Что дальше"
+            details = "Оплатите участие и прикрепите квитанцию об оплате к заявке."
+        else:
+            deadline_text = _format_deadline(deadline)
+            feed_body = f"Прикрепите квитанцию об оплате до {deadline_text}, иначе заявка автоматически отменится."
+            letter_line = (
+                f"Ваша заявка подана. Пожалуйста, оплатите её и прикрепите квитанцию до {deadline_text}.\n\n"
+                "Если квитанция не будет прикреплена в срок, заявка автоматически отменится."
+            )
+            details_label = "Оплатите до"
+            details = f"{deadline_text}. Прикрепите квитанцию об оплате до этого срока, иначе заявка автоматически отменится."
         feed.publish(
             recipient_id=user_id,
             kind=NotificationKind.PAYMENT_EXPECTED,
             title="Заявка подана — ожидается оплата",
-            body=f"Прикрепите квитанцию об оплате до {deadline_text}, иначе заявка автоматически отменится.",
+            body=feed_body,
             link=self._cabinet_link(application_id),
         )
-        body = (
-            f"Здравствуйте, {applicant_name}!\n\n"
-            "Ваша заявка подана. Пожалуйста, оплатите её и прикрепите квитанцию "
-            f"до {deadline_text}.\n\n"
-            "Если квитанция не будет прикреплена в срок, заявка автоматически отменится.\n\n"
-            "С уважением,\nКоманда «Взлёт талантов»"
-        )
+        body = f"Здравствуйте, {applicant_name}!\n\n{letter_line}\n\nС уважением,\nКоманда «Взлёт талантов»"
         self._send(
             subject=_AWAITING_PAYMENT_SUBJECT,
             body=body,
             html_body=render_transactional_email_html(
                 title=_AWAITING_PAYMENT_SUBJECT,
                 intro=f"Здравствуйте, {applicant_name}! Ваша заявка подана и ожидает оплаты.",
-                details_label="Оплатите до",
-                details=(f"{deadline_text}. Прикрепите квитанцию об оплате до этого срока, иначе заявка автоматически отменится."),
+                details_label=details_label,
+                details=details,
                 button_label="Прикрепить квитанцию",
                 button_url=self._applications_url,
                 status="warning",

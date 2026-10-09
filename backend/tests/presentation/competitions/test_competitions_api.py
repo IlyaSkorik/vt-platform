@@ -401,6 +401,46 @@ def test_a_settings_payload_without_the_new_flag_does_not_narrow_the_festival(st
     assert saved.data["data"]["settings"]["allowMultiplePerformances"] is True
 
 
+def _auto_cancels_unpaid_orders(competition_id: str) -> bool:
+    """The same question the unpaid sweep asks, through the same port."""
+    from apps.applications.domain.value_objects import CompetitionId as AppCompetitionId
+    from apps.applications.infrastructure.acl import DjangoCompetitionCatalog
+
+    return DjangoCompetitionCatalog().auto_cancels_unpaid_orders(
+        competition_id=AppCompetitionId.from_uuid(uuid.UUID(competition_id)),
+    )
+
+
+def test_turning_the_unpaid_sweep_off_reaches_the_applications_acl(staff_client: APIClient) -> None:
+    """«Отменять неоплаченные заявки», off, is what the sweep and the letter obey."""
+    competition_id = _create_competition(staff_client).data["data"]["id"]
+    detail = f"/api/v1/competitions/{competition_id}"
+
+    stored = staff_client.get(detail).data["data"]["settings"]
+    assert stored["autoCancelUnpaidApplications"] is True
+    assert _auto_cancels_unpaid_orders(competition_id) is True
+
+    saved = staff_client.put(f"{detail}/settings", {**stored, "autoCancelUnpaidApplications": False}, format="json")
+
+    assert saved.status_code == 200, saved.data.get("errors") or saved.data
+    assert saved.data["data"]["settings"]["autoCancelUnpaidApplications"] is False
+    assert staff_client.get(detail).data["data"]["settings"]["autoCancelUnpaidApplications"] is False
+    assert _auto_cancels_unpaid_orders(competition_id) is False
+
+
+def test_a_settings_payload_without_the_sweep_flag_keeps_sweeping(staff_client: APIClient) -> None:
+    """An editor that predates the field must not silently stop the sweep."""
+    competition_id = _create_competition(staff_client).data["data"]["id"]
+    detail = f"/api/v1/competitions/{competition_id}"
+    stored = staff_client.get(detail).data["data"]["settings"]
+
+    payload = {key: value for key, value in stored.items() if key != "autoCancelUnpaidApplications"}
+    saved = staff_client.put(f"{detail}/settings", payload, format="json")
+
+    assert saved.status_code == 200, saved.data.get("errors") or saved.data
+    assert saved.data["data"]["settings"]["autoCancelUnpaidApplications"] is True
+
+
 # ---------------------------------------------------------------------------
 # Branding
 # ---------------------------------------------------------------------------

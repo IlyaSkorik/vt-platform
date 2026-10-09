@@ -153,6 +153,10 @@ class UpdateCompetitionSettingsSerializer(serializers.Serializer[dict[str, objec
         min_value=0,
         max_value=100,
     )
+    # Defaulted to ``True`` for the same reason as `allowMultiplePerformances`, and in
+    # that direction because that is the behaviour every festival had before the switch
+    # existed: an older editor omitting the field must not turn the sweep off.
+    autoCancelUnpaidApplications = serializers.BooleanField(source="auto_cancel_unpaid_applications", required=False, default=True)
     requirePersonalDataConsent = serializers.BooleanField(source="require_personal_data_consent")
     requireMediaConsent = serializers.BooleanField(source="require_media_consent")
     requireRegulationsAcceptance = serializers.BooleanField(source="require_regulations_acceptance")
@@ -650,6 +654,7 @@ class _SettingsSerializer(serializers.Serializer[dict[str, object]]):
     paymentTiming = serializers.CharField(source="payment_timing")
     paymentMethods = serializers.ListField(child=serializers.CharField(), source="payment_methods")
     additionalPerformanceDiscountPercent = serializers.IntegerField(source="additional_performance_discount_percent")
+    autoCancelUnpaidApplications = serializers.BooleanField(source="auto_cancel_unpaid_applications")
     requirePersonalDataConsent = serializers.BooleanField(source="require_personal_data_consent")
     requireMediaConsent = serializers.BooleanField(source="require_media_consent")
     requireRegulationsAcceptance = serializers.BooleanField(source="require_regulations_acceptance")

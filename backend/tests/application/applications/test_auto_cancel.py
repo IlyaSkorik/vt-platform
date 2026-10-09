@@ -20,6 +20,7 @@ from apps.applications.infrastructure.models.base import uuid7
 from .fakes import (
     FakeApplicationRepository,
     FakeClock,
+    FakeCompetitionCatalog,
     FakeIdentityReadModel,
     FakeSubmissionRepository,
     RecordingEventPublisher,
@@ -41,7 +42,9 @@ class RecordingNotifier:
     def notify_application_waitlisted(self, *, user_id: str, email: str, applicant_name: str, application_id: str) -> None:
         self.waitlisted.append(email)
 
-    def notify_application_awaiting_payment(self, *, user_id: str, email: str, applicant_name: str, application_id: str, deadline: datetime) -> None:
+    def notify_application_awaiting_payment(
+        self, *, user_id: str, email: str, applicant_name: str, application_id: str, deadline: datetime | None
+    ) -> None:
         self.awaiting.append(email)
 
     def notify_application_auto_cancelled(self, *, user_id: str, email: str, applicant_name: str, application_id: str) -> None:
@@ -61,11 +64,16 @@ def _application(status: ApplicationStatus, *, with_receipt: bool) -> Applicatio
     )
 
 
-def _handler(applications: FakeApplicationRepository) -> tuple[AutoCancelUnpaidApplicationHandler, RecordingNotifier]:
+def _handler(
+    applications: FakeApplicationRepository,
+    *,
+    auto_cancels: bool = True,
+) -> tuple[AutoCancelUnpaidApplicationHandler, RecordingNotifier]:
     notifier = RecordingNotifier()
     handler = AutoCancelUnpaidApplicationHandler(
         applications=applications,
         submissions=FakeSubmissionRepository(),
+        catalog=FakeCompetitionCatalog(auto_cancels_unpaid_orders=auto_cancels),
         clock=FakeClock(),
         events=RecordingEventPublisher(),
         identity=FakeIdentityReadModel(),
@@ -122,4 +130,19 @@ def test_noop_when_application_missing() -> None:
 
     handler.handle(ApplicationId.generate().json())  # unknown id
 
+    assert notifier.cancelled == []
+
+
+def test_keeps_order_when_competition_does_not_auto_cancel() -> None:
+    """A festival settling its fee off-platform is never swept."""
+    applications = FakeApplicationRepository()
+    application = _application(ApplicationStatus.SUBMITTED, with_receipt=False)
+    applications.save(application)
+    handler, notifier = _handler(applications, auto_cancels=False)
+
+    handler.handle(application.id.json())
+
+    reloaded = applications.get(application.id)
+    assert reloaded is not None
+    assert reloaded.status is ApplicationStatus.SUBMITTED
     assert notifier.cancelled == []

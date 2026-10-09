@@ -111,12 +111,14 @@ class FakeCompetitionCatalog:
         additional_performance_discount_percent: int = 0,
         allows_multiple_performances: bool = True,
         collects_payer_details: bool = False,
+        auto_cancels_unpaid_orders: bool = True,
         waitlisting_nominations: frozenset[str] = frozenset(),
         closed_nominations: frozenset[str] = frozenset(),
     ) -> None:
         self.discount_percent = additional_performance_discount_percent
         self.multiple_performances = allows_multiple_performances
         self.payer_details = collects_payer_details
+        self.auto_cancel_unpaid = auto_cancels_unpaid_orders
         self.known = known
         self.open_for_submissions = open_for_submissions
         #: Nominations whose registration has closed but which keep a waitlist, and
@@ -161,6 +163,9 @@ class FakeCompetitionCatalog:
 
     def allows_multiple_performances(self, *, competition_id: CompetitionId) -> bool:
         return self.multiple_performances
+
+    def auto_cancels_unpaid_orders(self, *, competition_id: CompetitionId) -> bool:
+        return self.auto_cancel_unpaid
 
     def collects_payer_details(self, *, competition_id: CompetitionId) -> bool:
         return self.payer_details
@@ -233,6 +238,9 @@ class RecordingApplicantNotifier:
         self.submitted: list[str] = []
         self.waitlisted: list[str] = []
         self.awaiting_payment: list[str] = []
+        #: The deadline each awaiting-payment notice carried, ``None`` where the
+        #: competition does not auto-cancel and so names no date.
+        self.awaiting_payment_deadlines: list[datetime | None] = []
         self.auto_cancelled: list[str] = []
 
     def notify_application_submitted(self, *, user_id: str, email: str, applicant_name: str, application_id: str) -> None:
@@ -241,8 +249,11 @@ class RecordingApplicantNotifier:
     def notify_application_waitlisted(self, *, user_id: str, email: str, applicant_name: str, application_id: str) -> None:
         self.waitlisted.append(email)
 
-    def notify_application_awaiting_payment(self, *, user_id: str, email: str, applicant_name: str, application_id: str, deadline: datetime) -> None:
+    def notify_application_awaiting_payment(
+        self, *, user_id: str, email: str, applicant_name: str, application_id: str, deadline: datetime | None
+    ) -> None:
         self.awaiting_payment.append(email)
+        self.awaiting_payment_deadlines.append(deadline)
 
     def notify_application_auto_cancelled(self, *, user_id: str, email: str, applicant_name: str, application_id: str) -> None:
         self.auto_cancelled.append(email)

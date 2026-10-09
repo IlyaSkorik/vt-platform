@@ -7,6 +7,7 @@ and run it. Business logic lives in the application layer, never here.
 from __future__ import annotations
 
 from datetime import timedelta
+from uuid import UUID
 
 from celery import shared_task
 from django.conf import settings
@@ -23,26 +24,38 @@ def sweep_unpaid_applications() -> None:
     cancels each through the idempotent auto-cancel use case. Nothing is lost if the
     web app, worker, or beat restarts, because the source of truth is the DB.
     """
+    from apps.applications.domain.value_objects import CompetitionId
+    from apps.applications.infrastructure.acl import DjangoCompetitionCatalog
     from apps.applications.infrastructure.models import ApplicationModel
     from apps.applications.presentation.api.v1.orders.composition import build_auto_cancel_unpaid_handler
 
     cutoff = timezone.now() - timedelta(hours=settings.APPLICATION_PAYMENT_WINDOW_HOURS)
     # "No receipt" is now an empty list, not a null column: one receipt of several
     # is still proof that payment started, so any entry at all spares the order.
-    overdue_ids = list(
+    overdue = list(
         ApplicationModel.objects.filter(
             deleted_at__isnull=True,
             status__in=["SUBMITTED", "WAITING_PAYMENT"],
             payment_receipts=[],
             submitted_at__isnull=False,
             submitted_at__lte=cutoff,
-        ).values_list("id", flat=True)
+        ).values_list("id", "competition_id")
     )
-    if not overdue_ids:
+    if not overdue:
         return
+    # Asked once per festival rather than once per order: a competition that does not
+    # auto-cancel keeps its whole unpaid backlog overdue for the rest of the season,
+    # and rehydrating every one of those orders every fifteen minutes only to put it
+    # straight back is work nobody asked for. The use case checks again on its own —
+    # this is the sweep narrowing its set, not the rule.
+    catalog = DjangoCompetitionCatalog()
+    sweeps: dict[UUID, bool] = {}
     handler = build_auto_cancel_unpaid_handler()
-    for application_id in overdue_ids:
-        handler.handle(str(application_id))
+    for application_id, competition_id in overdue:
+        if competition_id not in sweeps:
+            sweeps[competition_id] = catalog.auto_cancels_unpaid_orders(competition_id=CompetitionId.from_uuid(competition_id))
+        if sweeps[competition_id]:
+            handler.handle(str(application_id))
 
 
 @shared_task(name="applications.notify_application_revisions")  # type: ignore[untyped-decorator]  # celery ships no stubs

@@ -30,6 +30,7 @@ from apps.applications.application.commands import (
     StartReviewHandler,
     SubmitSubmissionHandler,
     UpdateParticipantHandler,
+    WithdrawCorrectionRequestHandler,
 )
 from apps.applications.application.dto.commands import (
     AcceptSubmissionCommand,
@@ -51,6 +52,7 @@ from apps.applications.application.dto.commands import (
     StartReviewCommand,
     SubmitSubmissionCommand,
     UpdateParticipantCommand,
+    WithdrawCorrectionRequestCommand,
 )
 from apps.applications.application.dto.queries import (
     GetSubmissionHistoryQuery,
@@ -158,6 +160,15 @@ class Env:
             organization=self.organization,
             clock=self.clock,
             uuids=self.uuids,
+            events=self.events,
+        )
+
+    def withdraw_correction_request(self) -> WithdrawCorrectionRequestHandler:
+        return WithdrawCorrectionRequestHandler(
+            submissions=self.submissions,
+            catalog=self.catalog,
+            organization=self.organization,
+            clock=self.clock,
             events=self.events,
         )
 
@@ -518,6 +529,44 @@ class TestLifecycle:
         )
         assert result.submission.status == SubmissionStatus.REQUIRES_CORRECTION.value
         assert len(result.submission.reviews) == 1
+
+    def test_the_organizer_can_take_their_own_correction_request_back(self) -> None:
+        # Sent by mistake, or no longer pressed. Without this the entry is parked:
+        # the applicant has no move out of REQUIRES_CORRECTION except editing it.
+        env = Env()
+        owner, reviewer, competition_id = uuid7_str(), uuid7_str(), uuid7_str()
+        submission_id = _reach_draft_ready(env, competition_id=competition_id, owner=owner)
+        env.submit().handle(SubmitSubmissionCommand(submission_id=submission_id, requested_by=owner))
+        env.start_review().handle(StartReviewCommand(submission_id=submission_id, reviewer_id=reviewer))
+        env.return_for_correction().handle(
+            ReturnSubmissionForCorrectionCommand(submission_id=submission_id, reviewer_id=reviewer, comment="Please fix the title.")
+        )
+
+        result = env.withdraw_correction_request().handle(WithdrawCorrectionRequestCommand(submission_id=submission_id, reviewer_id=reviewer))
+
+        assert result.submission.status == SubmissionStatus.SUBMITTED.value
+        # The review stays: it happened, and the applicant was told about it.
+        assert len(result.submission.reviews) == 1
+
+    def test_taking_a_correction_request_back_is_the_organizers_alone(self) -> None:
+        env = Env(organization=FakeOrganizationReadModel(reviewer=False))
+        owner, competition_id = uuid7_str(), uuid7_str()
+        submission_id = _reach_draft_ready(env, competition_id=competition_id, owner=owner)
+        with pytest.raises(PermissionDeniedError):
+            env.withdraw_correction_request().handle(WithdrawCorrectionRequestCommand(submission_id=submission_id, reviewer_id=uuid7_str()))
+
+    def test_a_correction_request_cannot_be_taken_back_twice(self) -> None:
+        # The second click lands on a SUBMITTED entry, and the domain owns that answer.
+        env = Env()
+        owner, reviewer, competition_id = uuid7_str(), uuid7_str(), uuid7_str()
+        submission_id = _reach_draft_ready(env, competition_id=competition_id, owner=owner)
+        env.submit().handle(SubmitSubmissionCommand(submission_id=submission_id, requested_by=owner))
+        env.start_review().handle(StartReviewCommand(submission_id=submission_id, reviewer_id=reviewer))
+        env.return_for_correction().handle(ReturnSubmissionForCorrectionCommand(submission_id=submission_id, reviewer_id=reviewer, comment="Fix it."))
+        env.withdraw_correction_request().handle(WithdrawCorrectionRequestCommand(submission_id=submission_id, reviewer_id=reviewer))
+
+        with pytest.raises(SubmissionStateConflictError):
+            env.withdraw_correction_request().handle(WithdrawCorrectionRequestCommand(submission_id=submission_id, reviewer_id=reviewer))
 
     def test_unauthorized_reviewer_is_denied(self) -> None:
         env = Env(organization=FakeOrganizationReadModel(reviewer=False))

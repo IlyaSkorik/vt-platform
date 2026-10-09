@@ -108,6 +108,19 @@ describe("SettingsSection", () => {
     expect(lastSaved().requireTeacher).toBe(false);
   });
 
+  it("saves the unpaid auto-cancel switch the sweep and the payment letter both read", async () => {
+    // Two things hang off this one switch: the periodic sweep that cancels an unpaid
+    // order, and the deadline quoted in the "ожидается оплата" letter. A festival
+    // settling its fee by invoice turns both off together.
+    const user = userEvent.setup();
+    renderSection();
+
+    await user.click(screen.getByRole("switch", { name: /Отменять неоплаченные заявки/ }));
+
+    expect(mutateAsync).toHaveBeenCalledTimes(1);
+    expect(lastSaved().autoCancelUnpaidApplications).toBe(false);
+  });
+
   it("saves the multiple-performance rule the wizard's add button obeys", async () => {
     // The one switch on this screen that removes a control from the participant's
     // side, so it has to reach the server on the same click as the rest.

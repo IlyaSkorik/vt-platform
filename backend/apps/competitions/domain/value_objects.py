@@ -1893,6 +1893,13 @@ class CompetitionSettings:
     payment_timing: PaymentTiming = PaymentTiming.BEFORE_APPROVAL
     payment_methods: tuple[PaymentMethod, ...] = ()
     additional_performance_discount_percent: int = 0
+    #: Whether an order submitted without a payment receipt is cancelled on its own
+    #: once the platform's payment window runs out. On by default, which is what every
+    #: festival configured before this flag existed was getting. A festival that
+    #: settles payment off-platform — by invoice, by agreement, at the door — turns it
+    #: off, and then nothing cancels on a timer and the applicant is never told of a
+    #: deadline that does not exist.
+    auto_cancel_unpaid_applications: bool = True
 
     # Consents
     require_personal_data_consent: bool = True

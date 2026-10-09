@@ -95,6 +95,7 @@ from .events import (
     SubmissionAwaitingPayment,
     SubmissionCancelled,
     SubmissionCompleted,
+    SubmissionCorrectionRequestWithdrawn,
     SubmissionCreated,
     SubmissionDetachedFromApplication,
     SubmissionPaid,
@@ -1254,6 +1255,30 @@ class Submission:
         return [
             ReviewAdded(aggregate_id=self._id.value, review_id=review_id, reviewer_id=reviewer_id),
             SubmissionReturnedForCorrection(aggregate_id=self._id.value, review_id=review_id),
+        ]
+
+    def withdraw_correction_request(self, *, policy: SubmissionParticipationPolicy, now: datetime) -> list[DomainEvent]:
+        """Take a returned entry back into the queue (REQUIRES_CORRECTION -> SUBMITTED).
+
+        The organizer's own undo. Returning an entry for correction hands the move to
+        the applicant and there it stays: they have no "submit again" of their own
+        (placing an order only submits its drafts), so a request sent by mistake, or
+        one the festival has since decided not to press, left the entry parked for good.
+
+        Held to the same invariants as a submission, and for the same reason
+        :meth:`promote_from_waitlist` re-checks its combination: content stays editable
+        while an entry is returned, so what goes back into the queue is not necessarily
+        what came out of it, and the queue is for entries that can actually be judged.
+
+        The reviews already recorded are left alone. They happened, and the applicant
+        was told — erasing them would make the card lie about its own history.
+        """
+        self._assert_submittable(policy)
+        previous = self._status
+        self._transition_to(SubmissionStatus.SUBMITTED, now=now)
+        return [
+            SubmissionCorrectionRequestWithdrawn(aggregate_id=self._id.value),
+            SubmissionSubmitted(aggregate_id=self._id.value, previous_status=previous),
         ]
 
     def approve(self, *, now: datetime) -> list[DomainEvent]:

@@ -610,8 +610,11 @@ class SubmitApplicationHandler:
         """Tell the applicant the order is submitted.
 
         With a receipt already attached it is a plain confirmation; otherwise it asks
-        for payment by the deadline. The actual auto-cancellation is handled by the
-        periodic sweep (Celery Beat), not scheduled here — see ``tasks.py``.
+        for payment. The deadline is named only where the competition actually auto-
+        cancels on it: a festival settling the fee off-platform has no date to quote,
+        and quoting one anyway would be a threat the platform never carries out. The
+        cancellation itself is the periodic sweep's job (Celery Beat), not scheduled
+        here — see ``tasks.py``.
         """
         if self._identity is None or self._notifier is None:
             return
@@ -626,7 +629,8 @@ class SubmitApplicationHandler:
                 application_id=application.id.json(),
             )
             return
-        deadline = now + self._payment_window
+        auto_cancels = self._catalog.auto_cancels_unpaid_orders(competition_id=application.competition_id)
+        deadline = now + self._payment_window if auto_cancels else None
         self._notifier.notify_application_awaiting_payment(
             user_id=applicant.user_id,
             email=applicant.email,
@@ -822,6 +826,11 @@ class AutoCancelUnpaidApplicationHandler:
     no ownership check. It is a safe no-op if the order has since had a receipt
     attached, been paid, or already left a cancellable state — the timer firing late
     or twice never cancels a settled order.
+
+    The competition has the final say: one that settles its fee off the platform turns
+    the sweep off, and then this does nothing at all to its orders. The check lives
+    here rather than in the sweep's query because this is the only entry point, and a
+    guard the caller could forget is not a guard.
     """
 
     def __init__(
@@ -829,6 +838,7 @@ class AutoCancelUnpaidApplicationHandler:
         *,
         applications: ApplicationRepository,
         submissions: SubmissionRepository,
+        catalog: CompetitionCatalog,
         clock: Clock,
         events: EventPublisher,
         identity: IdentityReadModel | None = None,
@@ -836,6 +846,7 @@ class AutoCancelUnpaidApplicationHandler:
     ) -> None:
         self._applications = applications
         self._submissions = submissions
+        self._catalog = catalog
         self._clock = clock
         self._events = events
         self._identity = identity
@@ -851,6 +862,9 @@ class AutoCancelUnpaidApplicationHandler:
             return
         # Already paid / completed / cancelled → nothing to do.
         if application.status not in _AUTO_CANCELLABLE_STATUSES:
+            return
+        # The festival does not auto-cancel (or can no longer be read) → leave it be.
+        if not self._catalog.auto_cancels_unpaid_orders(competition_id=application.competition_id):
             return
 
         with translate_application_domain_errors():
