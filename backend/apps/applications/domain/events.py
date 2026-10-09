@@ -82,6 +82,7 @@ __all__ = [
     "SubmissionAwaitingPayment",
     "SubmissionCancelled",
     "SubmissionCompleted",
+    "SubmissionCorrectionRequestWithdrawn",
     "SubmissionCreated",
     "SubmissionDetachedFromApplication",
     "SubmissionPaid",
@@ -293,6 +294,17 @@ class SubmissionReturnedForCorrection(DomainEvent):
     """The submission was returned to the applicant for correction."""
 
     review_id: ReviewId
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class SubmissionCorrectionRequestWithdrawn(DomainEvent):
+    """The organizer took back their own correction request, unasked.
+
+    Not the applicant's resubmission: that one says the entry was fixed. This says
+    the request should never have gone out, or no longer stands — a wrong button, a
+    rule the festival has since relaxed, a deadline that made the correction moot.
+    The reviews already recorded stay where they are; what changes is whose move it is.
+    """
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

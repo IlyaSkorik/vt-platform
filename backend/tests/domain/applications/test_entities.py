@@ -561,6 +561,45 @@ class TestLifecycle:
         assert isinstance(events[0], SubmissionSubmitted)
         assert events[0].previous_status is SubmissionStatus.REQUIRES_CORRECTION
 
+    def test_the_organizer_takes_their_own_correction_request_back(self) -> None:
+        # The applicant has no move out of REQUIRES_CORRECTION of their own, so without
+        # this a request sent by mistake parks the entry for good.
+        fx = _solo_ready()
+        s = fx.submission
+        s.submit(policy=fx.solo_policy, now=NOW)
+        s.begin_review(now=NOW)
+        s.return_for_correction(review_id=ReviewId.generate(), reviewer_id=ReviewerId.from_uuid(_new_id()), comment=ReviewComment("fix"), now=NOW)
+
+        events = s.withdraw_correction_request(policy=fx.solo_policy, now=NOW)
+
+        assert s.status is SubmissionStatus.SUBMITTED
+        assert [type(e).__name__ for e in events] == ["SubmissionCorrectionRequestWithdrawn", "SubmissionSubmitted"]
+        submitted = events[1]
+        assert isinstance(submitted, SubmissionSubmitted)
+        assert submitted.previous_status is SubmissionStatus.REQUIRES_CORRECTION
+        # The review is left where it is: it happened, and the card must not lie.
+        assert len(s.reviews) == 1
+
+    def test_a_correction_request_can_only_be_taken_back_while_it_stands(self) -> None:
+        fx = _solo_ready()
+        s = fx.submission
+        s.submit(policy=fx.solo_policy, now=NOW)
+        with pytest.raises(IllegalStatusTransitionError):
+            s.withdraw_correction_request(policy=fx.solo_policy, now=NOW)
+
+    def test_taking_a_correction_request_back_still_checks_the_entry(self) -> None:
+        # Content stays editable while an entry is returned, so what goes back into the
+        # queue is not necessarily what came out of it.
+        fx = _solo_ready()
+        s = fx.submission
+        s.submit(policy=fx.solo_policy, now=NOW)
+        s.begin_review(now=NOW)
+        s.return_for_correction(review_id=ReviewId.generate(), reviewer_id=ReviewerId.from_uuid(_new_id()), comment=ReviewComment("fix"), now=NOW)
+        s.remove_participant(participant_id=s.participants[0].id, now=NOW)
+
+        with pytest.raises(ParticipantRequiredError):
+            s.withdraw_correction_request(policy=fx.solo_policy, now=NOW)
+
     def test_multiple_review_iterations(self) -> None:
         fx = _solo_ready()
         s = fx.submission

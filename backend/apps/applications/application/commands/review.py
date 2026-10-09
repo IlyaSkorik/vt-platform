@@ -15,6 +15,7 @@ from apps.applications.application.dto.commands import (
     ReturnSubmissionForCorrectionCommand,
     StartReviewCommand,
     SubmitSubmissionCommand,
+    WithdrawCorrectionRequestCommand,
 )
 from apps.applications.application.exceptions import (
     CompetitionClosedError,
@@ -51,6 +52,7 @@ __all__ = [
     "ReturnSubmissionForCorrectionHandler",
     "StartReviewHandler",
     "SubmitSubmissionHandler",
+    "WithdrawCorrectionRequestHandler",
 ]
 
 #: A placeholder policy used only when a submission has no performance yet. The
@@ -239,6 +241,63 @@ class ReturnSubmissionForCorrectionHandler:
                 comment=comment,
                 now=now,
             )
+        self._submissions.save(submission)
+        self._events.publish(domain_events)
+        return SubmissionOperationResultDto.of(submission, tuple(domain_events))
+
+
+class WithdrawCorrectionRequestHandler:
+    """Use case: take a returned submission back into the review queue (organizer).
+
+    The undo for :class:`ReturnSubmissionForCorrectionHandler`. Only the organizer can
+    perform it, because only the organizer asked for the correction — and because the
+    applicant has no move of their own out of ``REQUIRES_CORRECTION`` beyond editing
+    the entry, a request sent in error otherwise parks it for the rest of the season.
+
+    The combination is re-resolved for the same reason :class:`PromoteWaitlistedSubmissionHandler`
+    does it: a returned entry stays editable, so what goes back into the queue is not
+    necessarily what came out of it.
+    """
+
+    def __init__(
+        self,
+        *,
+        submissions: SubmissionRepository,
+        catalog: CompetitionCatalog,
+        organization: OrganizationReadModel,
+        clock: Clock,
+        events: EventPublisher,
+    ) -> None:
+        self._submissions = submissions
+        self._catalog = catalog
+        self._organization = organization
+        self._clock = clock
+        self._events = events
+
+    def handle(self, command: WithdrawCorrectionRequestCommand) -> SubmissionOperationResultDto:
+        now = self._clock.utcnow()
+        reviewer_id = parse_reviewer_id(command.reviewer_id)
+        ensure_reviewer(self._organization, reviewer_id)
+        submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
+
+        performance = submission.performance
+        if performance is None:
+            policy = _UNRESOLVED_POLICY
+        else:
+            resolved = self._catalog.participation_policy(
+                competition_id=submission.competition_id,
+                nomination_id=performance.nomination_id,
+                discipline_id=performance.discipline_id,
+                age_category_id=performance.age_category_id,
+                participant_group_id=performance.participant_group_id,
+                participation_format_id=performance.participation_format_id,
+            )
+            if resolved is None:
+                raise CompetitionCombinationNotFoundError("Такое сочетание жанра, номинации, возраста и формы участия фестиваль не принимает.")
+            policy = resolved
+
+        with translate_domain_errors():
+            domain_events = submission.withdraw_correction_request(policy=policy, now=now)
         self._submissions.save(submission)
         self._events.publish(domain_events)
         return SubmissionOperationResultDto.of(submission, tuple(domain_events))

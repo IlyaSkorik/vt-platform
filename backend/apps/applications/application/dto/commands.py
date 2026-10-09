@@ -45,6 +45,7 @@ __all__ = [
     "UpdatePerformanceCommand",
     "UpdateTeacherCommand",
     "UploadAttachmentCommand",
+    "WithdrawCorrectionRequestCommand",
 ]
 
 
@@ -332,6 +333,14 @@ class ApproveSubmissionCommand:
 @dataclass(frozen=True, slots=True)
 class PromoteWaitlistedSubmissionCommand:
     """Move a waitlisted submission into the competition (organizer)."""
+
+    submission_id: str
+    reviewer_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class WithdrawCorrectionRequestCommand:
+    """Take a returned submission back into the review queue (organizer)."""
 
     submission_id: str
     reviewer_id: str

@@ -34,6 +34,7 @@ from .review import (
     ReturnSubmissionForCorrectionHandler,
     StartReviewHandler,
     SubmitSubmissionHandler,
+    WithdrawCorrectionRequestHandler,
 )
 from .teachers import AddTeacherHandler, RemoveTeacherHandler, UpdateTeacherHandler
 
@@ -65,4 +66,5 @@ __all__ = [
     "UpdateParticipantHandler",
     "UpdatePerformanceHandler",
     "UpdateTeacherHandler",
+    "WithdrawCorrectionRequestHandler",
 ]
