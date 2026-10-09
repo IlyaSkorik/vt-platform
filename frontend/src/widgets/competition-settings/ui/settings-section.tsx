@@ -669,6 +669,16 @@ export function SettingsSection({
           </div>
         </SectionCard>
 
+        <SectionCard title="Оплата" description="Что происходит с заявкой, пока она не оплачена.">
+          <SwitchRow
+            label="Отменять неоплаченные заявки"
+            description="Заявка без квитанции отменяется сама через 48 часов после подачи, и участник получает письмо с этим сроком. Выключите, если оплату вы принимаете по счёту или на месте: заявка будет ждать сколько угодно, а про срок в письме не напишем."
+            checked={settings.autoCancelUnpaidApplications ?? true}
+            disabled={isReadOnly}
+            onChange={(v) => update({ autoCancelUnpaidApplications: v })}
+          />
+        </SectionCard>
+
         <SectionCard
           title="Судейство"
           description="Как фестиваль подводит итоги. От этого зависит, появится ли раздел «Судейство» с критериями, жюри и табло."

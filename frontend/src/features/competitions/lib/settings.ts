@@ -137,6 +137,7 @@ export function defaultCompetitionSettings(): _Settings {
     paymentTiming: "BEFORE_APPROVAL",
     paymentMethods: [],
     additionalPerformanceDiscountPercent: 0,
+    autoCancelUnpaidApplications: true,
     requirePersonalDataConsent: true,
     requireMediaConsent: false,
     requireRegulationsAcceptance: true,
@@ -214,6 +215,10 @@ export function settingsToUpdatePayload(settings: _Settings): UpdateCompetitionS
       0,
       Math.min(100, Math.round(settings.additionalPerformanceDiscountPercent ?? 0)),
     ),
+    // `?? true` rather than a bare read: a competition stored before the switch
+    // existed echoes back without the key, and treating that silence as "off" would
+    // turn the sweep off for every festival that has simply not been re-saved.
+    autoCancelUnpaidApplications: settings.autoCancelUnpaidApplications ?? true,
     requirePersonalDataConsent: settings.requirePersonalDataConsent,
     requireMediaConsent: settings.requireMediaConsent,
     requireRegulationsAcceptance: settings.requireRegulationsAcceptance,

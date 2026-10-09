@@ -32,6 +32,7 @@ function baseCompetition(overrides: Partial<CompetitionDetail> = {}): Competitio
       paymentTiming: "BEFORE_APPROVAL" as const,
       paymentMethods: ["BANK_TRANSFER" as const],
       additionalPerformanceDiscountPercent: 0,
+      autoCancelUnpaidApplications: true,
       requirePersonalDataConsent: true,
       requireMediaConsent: false,
       requireRegulationsAcceptance: true,
