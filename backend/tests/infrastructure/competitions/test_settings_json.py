@@ -16,7 +16,7 @@ from apps.competitions.infrastructure.mappers.settings_json import settings_from
 def test_the_flag_survives_a_round_trip() -> None:
     stored = settings_to_json(CompetitionSettings.default().with_changes(allow_multiple_performances=False))
 
-    assert stored["schema_version"] == 6
+    assert stored["schema_version"] == 7
     assert settings_from_json(stored).allow_multiple_performances is False
 
 
@@ -92,3 +92,26 @@ def test_an_unreadable_judging_mode_falls_back_to_protocols() -> None:
     stored["judging_mode"] = "SOMETHING_ELSE"
 
     assert settings_from_json(stored).judging_mode is JudgingMode.PROTOCOLS
+
+
+def test_a_blob_written_before_the_sweep_switch_existed_keeps_auto_cancelling() -> None:
+    """Schema 6 has no opinion here, and every festival configured before the switch
+    existed was having its unpaid orders swept all the same."""
+    stored = settings_to_json(CompetitionSettings.default())
+    del stored["auto_cancel_unpaid_applications"]
+    stored["schema_version"] = 6
+
+    assert settings_from_json(stored).auto_cancel_unpaid_applications is True
+
+
+def test_a_pre_settings_module_bag_keeps_auto_cancelling() -> None:
+    legacy = {"allow_multiple_applications": True, "require_teacher": False}
+
+    assert settings_from_json(legacy).auto_cancel_unpaid_applications is True
+
+
+def test_turning_the_sweep_off_survives_a_round_trip() -> None:
+    stored = settings_to_json(CompetitionSettings.default().with_changes(auto_cancel_unpaid_applications=False))
+
+    assert stored["auto_cancel_unpaid_applications"] is False
+    assert settings_from_json(stored).auto_cancel_unpaid_applications is False

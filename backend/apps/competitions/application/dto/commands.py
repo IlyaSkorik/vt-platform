@@ -149,6 +149,10 @@ class UpdateSettingsCommand:
     #: a settings screen that has not been rebuilt must not flip a festival into
     #: online judging, nor out of it, by staying silent.
     judging_mode: str = "PROTOCOLS"
+    #: Defaulted for the same reason, and to ``True`` because that is what every
+    #: festival had before the switch existed: an older screen staying silent must
+    #: not quietly stop the unpaid sweep it has been relying on.
+    auto_cancel_unpaid_applications: bool = True
     format_requirements: list[dict[str, object]] = field(default_factory=list)
 
 

@@ -153,6 +153,7 @@ class SettingsView:
     payment_timing: str
     payment_methods: tuple[str, ...]
     additional_performance_discount_percent: int
+    auto_cancel_unpaid_applications: bool
     require_personal_data_consent: bool
     require_media_consent: bool
     require_regulations_acceptance: bool
@@ -180,6 +181,7 @@ class SettingsView:
             payment_timing=settings.payment_timing.value,
             payment_methods=tuple(method.value for method in settings.payment_methods),
             additional_performance_discount_percent=settings.additional_performance_discount_percent,
+            auto_cancel_unpaid_applications=settings.auto_cancel_unpaid_applications,
             require_personal_data_consent=settings.require_personal_data_consent,
             require_media_consent=settings.require_media_consent,
             require_regulations_acceptance=settings.require_regulations_acceptance,

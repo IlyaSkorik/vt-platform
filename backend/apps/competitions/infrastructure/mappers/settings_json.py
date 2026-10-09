@@ -30,7 +30,7 @@ __all__ = ["settings_from_json", "settings_to_json"]
 def settings_to_json(settings: CompetitionSettings) -> dict[str, object]:
     """Serialize settings for the competitions.settings JSON column."""
     return {
-        "schema_version": 6,
+        "schema_version": 7,
         "allow_multiple_applications": settings.allow_multiple_applications,
         "allow_multiple_performances": settings.allow_multiple_performances,
         "allow_application_editing": settings.allow_application_editing,
@@ -46,6 +46,7 @@ def settings_to_json(settings: CompetitionSettings) -> dict[str, object]:
         "payment_timing": settings.payment_timing.value,
         "payment_methods": [method.value for method in settings.payment_methods],
         "additional_performance_discount_percent": settings.additional_performance_discount_percent,
+        "auto_cancel_unpaid_applications": settings.auto_cancel_unpaid_applications,
         "require_personal_data_consent": settings.require_personal_data_consent,
         "require_media_consent": settings.require_media_consent,
         "require_regulations_acceptance": settings.require_regulations_acceptance,
@@ -60,17 +61,17 @@ def settings_to_json(settings: CompetitionSettings) -> dict[str, object]:
 def settings_from_json(data: object) -> CompetitionSettings:
     """Rebuild settings from JSON, migrating legacy flat boolean bags.
 
-    Schemas 2 through 6 share a shape and one reader serves them all: 3 only *drops*
-    keys (notification channels and previous-application copying), 4, 5 and 6 only
+    Schemas 2 through 7 share a shape and one reader serves them all: 3 only *drops*
+    keys (notification channels and previous-application copying), 4 through 7 only
     *add* one each (``allow_multiple_performances``, then ``collect_payer_details``,
-    then ``judging_mode``), and every key is read through a default, so a row written
-    under an older version loads without a migration. Rows still holding an older
-    shape are rewritten as 6 on the next save.
+    then ``judging_mode``, then ``auto_cancel_unpaid_applications``), and every key is
+    read through a default, so a row written under an older version loads without a
+    migration. Rows still holding an older shape are rewritten as 7 on the next save.
     """
     default = CompetitionSettings.default()
     if not isinstance(data, dict):
         return default
-    if data.get("schema_version") in {2, 3, 4, 5, 6} or "payment_timing" in data or "format_requirements" in data:
+    if data.get("schema_version") in {2, 3, 4, 5, 6, 7} or "payment_timing" in data or "format_requirements" in data:
         return _from_modern(data, default)
     return _from_legacy(data, default)
 
@@ -97,6 +98,10 @@ def _from_legacy(data: dict[str, object], default: CompetitionSettings) -> Compe
         payment_required=False,
         payment_timing=PaymentTiming.BEFORE_APPROVAL,
         payment_methods=(),
+        # A festival configured before the sweep existed was being swept all the same,
+        # so keeping it on is the only reading that does not quietly change what the
+        # organizer has been living with.
+        auto_cancel_unpaid_applications=True,
         require_personal_data_consent=bool(data.get("require_parent_consent", default.require_personal_data_consent)),
         require_media_consent=False,
         require_regulations_acceptance=True,
@@ -158,6 +163,7 @@ def _from_modern(data: dict[str, object], default: CompetitionSettings) -> Compe
         payment_timing=timing,
         payment_methods=tuple(methods),
         additional_performance_discount_percent=discount_percent,
+        auto_cancel_unpaid_applications=bool(data.get("auto_cancel_unpaid_applications", default.auto_cancel_unpaid_applications)),
         require_personal_data_consent=bool(data.get("require_personal_data_consent", default.require_personal_data_consent)),
         require_media_consent=bool(data.get("require_media_consent", default.require_media_consent)),
         require_regulations_acceptance=bool(data.get("require_regulations_acceptance", default.require_regulations_acceptance)),
