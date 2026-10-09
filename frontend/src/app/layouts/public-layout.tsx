@@ -39,7 +39,7 @@ export function PublicLayout(): React.JSX.Element {
 
   return (
     <div className="flex min-h-svh flex-col bg-background">
-      <header className="fixed inset-x-0 top-0 z-[var(--z-sticky)] bg-brand-surface font-heading text-brand-mark md:sticky">
+      <header className="fixed inset-x-0 top-0 z-[var(--z-sticky)] bg-brand-surface/95 font-heading text-brand-mark md:sticky">
         <div className="mx-auto flex h-[38px] w-full max-w-336 items-center justify-between gap-3 px-4 md:h-15 md:px-8">
           <div className="flex min-w-0 items-center gap-6 md:gap-10">
             <Link
