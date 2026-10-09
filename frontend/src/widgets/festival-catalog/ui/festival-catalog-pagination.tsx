@@ -50,7 +50,7 @@ function Paddle({ direction, disabled, onClick }: PaddleProps): React.JSX.Elemen
       // than disappearing — `cursor-not-allowed` and no hover colour, and
       // deliberately no `pointer-events-none`, which would make the cursor blind
       // to a button that still plainly looks like one.
-      className="flex size-[54px] shrink-0 cursor-pointer items-center justify-center rounded-brand bg-brand-control text-brand-mark outline-none transition-[opacity,background-color] duration-[var(--duration-fast)] hover:bg-brand-line focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-brand-control"
+      className="flex size-[54px] shrink-0 cursor-pointer items-center justify-center rounded-brand bg-brand-control text-brand-mark outline-none transition-[opacity,background-color] duration-[var(--duration-fast)] hover:bg-brand-press focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-brand-control"
     >
       <Icon className="h-8 w-5.5" aria-hidden="true" />
     </button>

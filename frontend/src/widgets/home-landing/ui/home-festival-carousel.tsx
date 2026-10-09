@@ -297,7 +297,7 @@ function CarouselArrow({
       // this button's edge: without it the scroll container can win the hit test
       // along the inner border and swallow the click.
       className={cn(
-        "relative z-10 size-[54px] shrink-0 cursor-pointer md:size-[70px] select-none items-center justify-center self-center rounded-brand bg-brand-control text-brand-mark outline-none transition-[opacity,background-color] duration-[var(--duration-fast)] hover:bg-brand-line focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-brand-control",
+        "relative z-10 size-[54px] shrink-0 cursor-pointer md:size-[70px] select-none items-center justify-center self-center rounded-brand bg-brand-control text-brand-mark outline-none transition-[opacity,background-color] duration-[var(--duration-fast)] hover:bg-brand-press focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-brand-control",
         className,
       )}
     >

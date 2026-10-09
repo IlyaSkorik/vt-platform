@@ -99,6 +99,10 @@
   --color-brand-control: var(--brand-control);
   --color-brand-track: var(--brand-track);
   --color-brand-band: var(--brand-band);
+  /* The pressed/hovered fill of a brand control. `тёмный акцент` by day and
+   * «тёмный база ночная» by night — two ramps, not two steps of one, which is
+   * why `hover:bg-brand-press` is one class instead of a pair of `dark:` ones. */
+  --color-brand-press: var(--brand-press);
   --color-brand-tint: var(--brand-tint);
   /* The wash the hero's step cards are filled with — `свет` let down almost to
    * nothing, so the artwork reads through them. Far weaker in the dark theme,

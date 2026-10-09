@@ -136,14 +136,16 @@ export function HomeHero({ authPath }: HomeHeroProps): React.JSX.Element {
               because `cn` was not dropping the `rounded-md` the Button variant
               brings — see the note in `shared/lib/cn.ts`. */}
           <div className="flex flex-col items-start gap-3 md:flex-row md:flex-wrap md:items-center md:gap-[18px]">
-            {/* Hover is «тёмный акцент», not the variant's own fade of the
-                primary: the frame swaps the fill for `--brand-line` and leaves
-                the label white. Every primary button on the landing does the
-                same. */}
+            {/* Hover swaps the fill rather than fading the primary the way the
+                variant does, and leaves the label white. Which fill is the
+                theme's business, not the button's: «тёмный акцент» by day,
+                «тёмный база ночная» by night — hence one `--brand-press` and not
+                a hard-coded violet. Every primary button on the landing and in
+                the catalogue does the same. */}
             <Button
               asChild
               size="lg"
-              className="h-[30px] w-[186px] rounded-[10px] px-0 font-heading font-bold text-sm leading-snug hover:bg-brand-line md:h-[43px] md:w-52 md:rounded-brand md:text-lg dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-line"
+              className="h-[30px] w-[186px] rounded-[10px] px-0 font-heading font-bold text-sm leading-snug hover:bg-brand-press md:h-[43px] md:w-52 md:rounded-brand md:text-lg dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-press"
             >
               <a href="#upcoming-festivals">Найти фестиваль</a>
             </Button>

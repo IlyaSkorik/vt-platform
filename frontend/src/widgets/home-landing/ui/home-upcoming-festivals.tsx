@@ -61,7 +61,7 @@ export function HomeUpcomingFestivals({
             <Button
               asChild
               size="lg"
-              className="rounded-brand px-7 font-heading font-bold hover:bg-brand-line dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-line"
+              className="rounded-brand px-7 font-heading font-bold hover:bg-brand-press dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-press"
             >
               <Link to={allFestivalsPath}>Все фестивали</Link>
             </Button>
@@ -90,7 +90,7 @@ export function HomeUpcomingFestivals({
             <Button
               asChild
               size="lg"
-              className="h-[35px] w-[172px] rounded-brand px-0 font-heading font-bold text-base leading-snug hover:bg-brand-line md:h-[43px] md:w-[225px] md:text-2xl dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-line"
+              className="h-[35px] w-[172px] rounded-brand px-0 font-heading font-bold text-base leading-snug hover:bg-brand-press md:h-[43px] md:w-[225px] md:text-2xl dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-press"
             >
               <Link to={allFestivalsPath}>Все фестивали</Link>
             </Button>

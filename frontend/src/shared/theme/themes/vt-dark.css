@@ -80,6 +80,11 @@
   --brand-control: var(--night-400);
   --brand-track: var(--night-800);
   --brand-band: rgb(67 40 96 / 0.5);
+  /* «тёмный база ночная», not a deeper violet: at night a brand control is
+   * already a lit plate, and the press has to read as it settling *into* the
+   * page rather than as more of the same colour. The frame paints #362245 under
+   * the pointer for every primary button and every paddle on the landing. */
+  --brand-press: var(--night-800);
 
   /* The organisers' panel is a flat plate at night, not the light theme's veil
    * of `светлый акцент` over the page: over a near-black background that veil

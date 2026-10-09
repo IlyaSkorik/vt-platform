@@ -51,7 +51,7 @@ export function HomeOrganizersCta({ contactHref }: HomeOrganizersCtaProps): Reac
         <Button
           asChild
           size="lg"
-          className="mx-auto mt-7 h-[37px] w-[197px] rounded-brand px-0 font-heading font-bold text-sm leading-snug hover:bg-brand-line md:mx-0 md:mt-6 md:h-11.5 md:w-65 md:text-lg dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-line"
+          className="mx-auto mt-7 h-[37px] w-[197px] rounded-brand px-0 font-heading font-bold text-sm leading-snug hover:bg-brand-press md:mx-0 md:mt-6 md:h-11.5 md:w-65 md:text-lg dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-press"
         >
           <Link to={contactHref}>Свяжитесь с нами</Link>
         </Button>

@@ -174,7 +174,7 @@ export function FestivalCard({
         {status.apply.enabled ? (
           <Button
             asChild
-            className="relative h-[37px] w-full justify-center rounded-brand font-heading font-bold text-base leading-snug hover:bg-brand-line xl:h-[39px] xl:text-lg [&_svg]:size-[25px] xl:[&_svg]:size-7 dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-line"
+            className="relative h-[37px] w-full justify-center rounded-brand font-heading font-bold text-base leading-snug hover:bg-brand-press xl:h-[39px] xl:text-lg [&_svg]:size-[25px] xl:[&_svg]:size-7 dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-press"
           >
             {/* The label is centred in the button and the arrow hangs off the
                 right of it, which is why the arrow is taken out of the flow
