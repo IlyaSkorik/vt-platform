@@ -8,7 +8,7 @@ separate workflow with its own endpoints) and then invokes the order use case.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 
@@ -418,6 +418,24 @@ class TestComposition:
 
 
 class TestSubmitAndPay:
+    def test_the_awaiting_payment_notice_names_a_deadline_when_the_festival_auto_cancels(self) -> None:
+        env = Env()
+        app_id, applicant = _create_app(env)
+        env.build_submittable(_add_submission(env, app_id, applicant))
+        env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
+        assert env.notifier.awaiting_payment == ["applicant@example.com"]
+        assert env.notifier.awaiting_payment_deadlines == [NOW + timedelta(hours=48)]
+
+    def test_the_awaiting_payment_notice_names_no_deadline_when_the_festival_does_not(self) -> None:
+        # A festival settling its fee off-platform cancels nothing on a timer, so the
+        # letter must not quote a date — a term nobody enforces is worse than none.
+        env = Env(catalog=FakeCompetitionCatalog(auto_cancels_unpaid_orders=False))
+        app_id, applicant = _create_app(env)
+        env.build_submittable(_add_submission(env, app_id, applicant))
+        env.submit().handle(SubmitApplicationCommand(requested_by=applicant, application_id=app_id))
+        assert env.notifier.awaiting_payment == ["applicant@example.com"]
+        assert env.notifier.awaiting_payment_deadlines == [None]
+
     def test_submit_requires_submissions(self) -> None:
         env = Env()
         app_id, applicant = _create_app(env)

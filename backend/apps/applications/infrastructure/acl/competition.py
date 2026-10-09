@@ -146,6 +146,14 @@ class DjangoCompetitionCatalog:
             return True
         return bool(competition.settings.allow_multiple_performances)
 
+    def auto_cancels_unpaid_orders(self, *, competition_id: CompetitionId) -> bool:
+        competition = self._load(competition_id)
+        if competition is None:
+            # Not the settings default: cancelling is irreversible, and a competition
+            # that no longer loads is the last one to do it on.
+            return False
+        return bool(competition.settings.auto_cancel_unpaid_applications)
+
     def collects_payer_details(self, *, competition_id: CompetitionId) -> bool:
         competition = self._load(competition_id)
         if competition is None:

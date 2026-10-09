@@ -211,6 +211,17 @@ class CompetitionCatalog(Protocol):
         """
         ...
 
+    def auto_cancels_unpaid_orders(self, *, competition_id: CompetitionId) -> bool:
+        """Whether this competition lets the platform cancel an unpaid order on a timer.
+
+        A festival that settles the fee off the platform — by invoice, by agreement,
+        at the door — turns it off, and then no sweep touches its orders and the
+        applicant is told of no deadline. Unknown competitions answer ``False``:
+        cancelling is irreversible, and a festival the platform can no longer read is
+        the last thing to do it to.
+        """
+        ...
+
     def collects_payer_details(self, *, competition_id: CompetitionId) -> bool:
         """Whether this competition draws up documents per order and so needs a payer.
 
@@ -344,8 +355,16 @@ class ApplicantNotifier(Protocol):
         """
         ...
 
-    def notify_application_awaiting_payment(self, *, user_id: str, email: str, applicant_name: str, application_id: str, deadline: datetime) -> None:
-        """The order was submitted without a receipt; payment is expected by ``deadline``."""
+    def notify_application_awaiting_payment(
+        self, *, user_id: str, email: str, applicant_name: str, application_id: str, deadline: datetime | None
+    ) -> None:
+        """The order was submitted without a receipt; payment is expected.
+
+        ``deadline`` is ``None`` where the competition does not auto-cancel unpaid
+        orders. The notice still goes out — the fee is still owed — but it must not
+        name a date nothing enforces, because a deadline the applicant believes in and
+        the platform does not is worse than none.
+        """
         ...
 
     def notify_application_auto_cancelled(self, *, user_id: str, email: str, applicant_name: str, application_id: str) -> None:

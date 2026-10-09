@@ -16,13 +16,28 @@ if TYPE_CHECKING:
 pytestmark = pytest.mark.django_db
 
 
-def _application(*, status: str, submitted_delta_hours: float | None, receipts: list[dict[str, Any]] | None = None) -> ApplicationModel:
+def _application(
+    *,
+    status: str,
+    submitted_delta_hours: float | None,
+    receipts: list[dict[str, Any]] | None = None,
+    auto_cancel: bool = True,
+) -> ApplicationModel:
+    """An order of a real festival — the sweep asks the competition before cancelling."""
     from apps.applications.infrastructure.models import ApplicationModel
-    from apps.applications.infrastructure.models.base import uuid7
+    from apps.competitions.infrastructure.models import CompetitionModel
+    from apps.competitions.infrastructure.models.base import uuid7
 
+    competition = CompetitionModel.objects.create(
+        organizer_id=uuid7(),
+        status="PUBLISHED",
+        title="Sweep test",
+        season="2025/2026",
+        settings={"schema_version": 7, "payment_timing": "BEFORE_APPROVAL", "auto_cancel_unpaid_applications": auto_cancel},
+    )
     submitted_at = timezone.now() - timedelta(hours=submitted_delta_hours) if submitted_delta_hours is not None else None
     return ApplicationModel.objects.create(
-        competition_id=uuid7(),
+        competition_id=competition.id,
         applicant_id=uuid7(),
         status=status,
         submitted_at=submitted_at,
@@ -83,6 +98,19 @@ def test_sweep_keeps_application_within_window(settings: SettingsWrapper) -> Non
 
     settings.APPLICATION_PAYMENT_WINDOW_HOURS = 48
     app = _application(status="SUBMITTED", submitted_delta_hours=1)
+
+    sweep_unpaid_applications()
+
+    app.refresh_from_db()
+    assert app.status == "SUBMITTED"
+
+
+def test_sweep_keeps_application_whose_festival_turned_auto_cancel_off(settings: SettingsWrapper) -> None:
+    """A festival settling its fee off-platform is swept over, not swept up."""
+    from apps.applications.tasks import sweep_unpaid_applications
+
+    settings.APPLICATION_PAYMENT_WINDOW_HOURS = 48
+    app = _application(status="SUBMITTED", submitted_delta_hours=49, auto_cancel=False)
 
     sweep_unpaid_applications()
 

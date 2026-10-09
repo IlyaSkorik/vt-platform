@@ -165,6 +165,7 @@ def build_auto_cancel_unpaid_handler() -> AutoCancelUnpaidApplicationHandler:
     return AutoCancelUnpaidApplicationHandler(
         applications=_applications(),
         submissions=_submissions(),
+        catalog=DjangoCompetitionCatalog(),
         clock=SystemClock(),
         events=NullEventPublisher(),
         identity=DjangoIdentityReadModel(),
