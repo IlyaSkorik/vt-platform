@@ -28,6 +28,7 @@ from apps.applications.application.dto.commands import (
     ReturnSubmissionForCorrectionCommand,
     ScheduleSubmissionCommand,
     StartReviewCommand,
+    WithdrawCorrectionRequestCommand,
 )
 from apps.applications.application.dto.queries import GetSubmissionQuery
 from apps.applications.application.exceptions import ApplicationError
@@ -404,7 +405,11 @@ def _capabilities(status: str) -> list[dict[str, str]]:
         "WAITLISTED": [("promote_from_waitlist", "Перевести в конкурс"), ("cancel", "Отменить")],
         "SUBMITTED": [("approve", "Одобрить"), ("return_for_correction", "Вернуть на исправление"), ("cancel", "Отменить")],
         "UNDER_REVIEW": [("approve", "Одобрить"), ("return_for_correction", "Вернуть на исправление"), ("cancel", "Отменить")],
-        "REQUIRES_CORRECTION": [],
+        # Not empty any more: a correction request is the one move that hands the
+        # turn to the applicant and never gets it back — they have no "submit again"
+        # of their own — so a request sent by mistake used to park the entry for the
+        # rest of the season with nothing on offer here.
+        "REQUIRES_CORRECTION": [("withdraw_correction_request", "Вернуть в рассмотрение")],
         "APPROVED": [("confirm_participation", "Подтвердить участие"), ("cancel", "Отменить")],
         "WAITING_PAYMENT": [("confirm_participation", "Подтвердить участие"), ("cancel", "Отменить")],
         "PAID": [("confirm_participation", "Подтвердить участие"), ("cancel", "Отменить")],
@@ -996,6 +1001,93 @@ class OrganizerProcessingActionView(_StaffView):
                         messages.append(
                             {
                                 "text": f"Email участнику: заявка #{application_number} возвращена на исправление ({recipient.email})",
+                                "created_by": user_id,
+                                "created_at": _now().isoformat(),
+                            }
+                        )
+                        target_model.participant_messages = messages
+                        target_model.updated_at = _now()
+                        target_model.save(update_fields=["participant_messages", "updated_at"])
+            elif action == "withdraw_correction_request":
+                # The mirror image of `return_for_correction` above, down to acting on
+                # the whole order: the return went out as one click over every entry, and
+                # taking it back one entry at a time would be a different operation.
+                application_id, _, competition_id = _application_meta_for_submission(submission_id)
+                target_submission_ids = _submission_ids_for_application(application_id) or [submission_id]
+                processed_ids = []
+                result = None
+                for target_id in target_submission_ids:
+                    model = SubmissionModel.objects.get(id=target_id, deleted_at__isnull=True)
+                    if model.status != "REQUIRES_CORRECTION":
+                        continue
+                    withdrawn = composition.build_withdraw_correction_request_handler().handle(
+                        WithdrawCorrectionRequestCommand(submission_id=target_id, reviewer_id=user_id)
+                    )
+                    if result is None:
+                        result = withdrawn
+                    processed_ids.append(target_id)
+                if not processed_ids or result is None:
+                    return Response({"detail": "Нет выступлений, которые можно вернуть в рассмотрение."}, status=409)
+                # Told, and not optionally: the applicant was asked in writing to fix
+                # something and may well be doing it right now. Silence here leaves them
+                # working on a request that no longer exists.
+                primary_model = SubmissionModel.objects.get(id=processed_ids[0], deleted_at__isnull=True)
+                recipient = UserModel.objects.filter(id=primary_model.applicant_id, deleted_at__isnull=True).first()
+                if recipient is not None and recipient.email:
+                    competition_title = (
+                        CompetitionModel.objects.filter(id=competition_id).values_list("title", flat=True).first() if competition_id else None
+                    )
+                    application_number = (application_id or submission_id)[:8].upper()
+                    subject = f"Заявка #{application_number} снова на рассмотрении"
+                    cabinet_url, detail_url = _application_urls(application_id)
+                    # The comment is optional here, unlike on the way out: "мы передумали"
+                    # needs no justification, and demanding one would just produce "ок".
+                    returned_line = f"Возвращено в рассмотрение выступлений: {len(processed_ids)}."
+                    explanation = f"Комментарий организатора:\n{comment}\n\n" if comment else ""
+                    body_text = (
+                        f"Здравствуйте, {recipient.first_name}!\n\n"
+                        f"Организатор отозвал запрос на исправление по заявке #{application_number}"
+                        f"{f' ({competition_title})' if competition_title else ''}.\n"
+                        f"{returned_line} Исправлять ничего не нужно — заявка снова ждёт решения организатора.\n\n"
+                        f"{explanation}"
+                        f"Откройте заявку в личном кабинете: {detail_url}\n"
+                        f"Список заявок: {cabinet_url}\n\n"
+                        "С уважением,\nОргкомитет фестиваля"
+                    )
+                    queue_review_email(
+                        subject=subject,
+                        body=body_text,
+                        to=recipient.email,
+                        html_body=render_transactional_email_html(
+                            title=subject,
+                            intro=(
+                                f"Организатор отозвал запрос на исправление по заявке #{application_number}"
+                                f"{f' ({competition_title})' if competition_title else ''}. {returned_line}"
+                            ),
+                            details_label="Что дальше",
+                            details=(comment or "Исправлять ничего не нужно — заявка снова ждёт решения организатора."),
+                            button_label="Открыть заявку в ЛК",
+                            button_url=detail_url,
+                            status="info",
+                            status_label="На рассмотрении",
+                        ),
+                    )
+                    notification_feed.publish(
+                        recipient_id=recipient.id,
+                        # Nothing is being asked of the reader and nothing is owed — the
+                        # entry is simply back in the organizer's hands, which is what
+                        # APPLICATION_SUBMITTED means in this feed.
+                        kind=NotificationKind.APPLICATION_SUBMITTED,
+                        title=f"Заявка №{application_number} снова на рассмотрении",
+                        body=comment or "Организатор отозвал запрос на исправление. Исправлять ничего не нужно.",
+                        link=_cabinet_path(application_id),
+                    )
+                    for target_id in processed_ids:
+                        target_model = SubmissionModel.objects.get(id=target_id, deleted_at__isnull=True)
+                        messages = list(target_model.participant_messages or [])
+                        messages.append(
+                            {
+                                "text": f"Email участнику: запрос на исправление по заявке #{application_number} отозван ({recipient.email})",
                                 "created_by": user_id,
                                 "created_at": _now().isoformat(),
                             }

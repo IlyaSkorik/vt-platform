@@ -42,13 +42,19 @@ def test_a_performed_entry_offers_nothing() -> None:
     assert _keys(SubmissionStatus.COMPLETED.value) == []
 
 
-@pytest.mark.parametrize(
-    "status",
-    [SubmissionStatus.CANCELLED.value, SubmissionStatus.REQUIRES_CORRECTION.value],
-)
-def test_statuses_awaiting_someone_else_offer_nothing(status: str) -> None:
-    # Cancelled is terminal; a correction is the applicant's turn.
-    assert _keys(status) == []
+def test_a_cancelled_entry_offers_nothing() -> None:
+    # Terminal: nothing to offer and nowhere to go.
+    assert _keys(SubmissionStatus.CANCELLED.value) == []
+
+
+def test_a_returned_entry_can_be_taken_back_into_the_queue() -> None:
+    """The organizer's undo for their own correction request.
+
+    This status used to offer nothing, which read as "it is the applicant's turn" —
+    true, except the applicant has no move out of it but editing the entry. A request
+    sent by mistake therefore parked the entry with nobody able to move it.
+    """
+    assert _keys(SubmissionStatus.REQUIRES_CORRECTION.value) == ["withdraw_correction_request"]
 
 
 def test_an_unknown_status_offers_nothing_rather_than_raising() -> None:
