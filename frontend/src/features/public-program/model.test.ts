@@ -9,6 +9,11 @@ function aRow(number: string, id: string | null = `item-${number}`): PublicProgr
   return { kind: "PERFORMANCE", cells: [number, "10:00", "Катюша"], progress: "PENDING", id };
 }
 
+/** A break: a row with a place in the order and no number of its own. */
+function aBreak(id = "item-b"): PublicProgramRow {
+  return { kind: "BREAK", cells: ["", "10:04", "Перерыв"], progress: "PENDING", id };
+}
+
 /** A published programme, whose numbers stayed with their participants: 4, 9, 7. */
 function published(): PublicProgramRow[] {
   return [aRow("4"), aRow("9"), aRow("7")];
@@ -28,8 +33,15 @@ describe("rowNumber", () => {
     expect(rowNumber(aRow("7"), 2, ["TIME", "TITLE"])).toBe(3);
   });
 
-  it("counts rows for a slot whose cell holds no number at all", () => {
-    expect(rowNumber(aRow("—"), 1, COLUMNS)).toBe(2);
+  it("says a slot has no number when its published «№» is blank", () => {
+    // A break. Answering "строка 2" here would let «после №2» land next to the lunch
+    // break instead of next to the act actually numbered 2.
+    expect(rowNumber(aBreak(), 1, COLUMNS)).toBeNull();
+  });
+
+  it("will not match a break when the host names a number", () => {
+    const rows = [aRow("1"), aBreak(), aRow("2")];
+    expect(moveRowNextTo(rows, COLUMNS, 0, 2, "after")).toEqual(["item-b", "item-2", "item-1"]);
   });
 });
 

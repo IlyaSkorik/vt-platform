@@ -336,7 +336,8 @@ class TestPublicContent:
         data = APIClient().get(f"{_PUBLIC}/{slug}").data["data"]
         assert [row["kind"] for row in data["rows"]] == ["PERFORMANCE", "PERFORMANCE", "BREAK"]
         # A break has no participant, so that cell is blank rather than a placeholder.
-        assert data["rows"][-1]["cells"] == ["3", "10:08", "", "Перерыв"]
+        # No «№»: a break is a gap in the running order, not an act with a number.
+        assert data["rows"][-1]["cells"] == ["", "10:08", "", "Перерыв"]
 
     def test_a_whole_programme_edition_keeps_following_the_programme(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, program_id, _items = _published_program(staff_client, scope, name="Экран у сцены")

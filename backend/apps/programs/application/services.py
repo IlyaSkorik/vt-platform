@@ -644,10 +644,15 @@ class ProgramService:
 
         files: list[ArchiveFileView] = []
         missing: list[str] = []
-        for position, item in enumerate(program.items, start=1):
+        ordinal = 0
+        for item in program.items:
             if item.submission_id is None:
                 continue
-            number = item.number or position
+            # The slot's own number, or - on a programme that has somehow never been
+            # numbered - its place among the acts. Never its row index: that counts the
+            # breaks too, and the desk cues from the numbers on the running order.
+            ordinal += 1
+            number = item.number or ordinal
             performance = performances.get(item.submission_id)
             label = _act_label(number, performance)
             act_files = resolved.get(item.submission_id, ())
@@ -931,7 +936,11 @@ class ProgramService:
         match column:
             case ProgramColumn.POSITION:
                 # The participant's permanent number, not the row's index: a programme
-                # that was rearranged legitimately reads 2, 3, 5, 4.
+                # that was rearranged legitimately reads 2, 3, 5, 4. A break carries no
+                # number at all and gets a blank - it is a gap in the running order, not
+                # an act anybody was told to be ready for.
+                if not item.kind.takes_number:
+                    return ""
                 return str(item.number or position)
             case ProgramColumn.TIME:
                 return _clock(starts_at)

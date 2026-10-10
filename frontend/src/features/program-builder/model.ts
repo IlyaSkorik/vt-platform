@@ -418,9 +418,12 @@ export function itemCell(
     return item.customValues[column] ?? "";
   }
   switch (column) {
-    case "POSITION":
-      // The participant's permanent number, not the row's index.
-      return String(item.number || item.schedule.position);
+    case "POSITION": {
+      // The participant's permanent number, not the row's index — and nothing at all for
+      // a break: it is a gap in the running order rather than an act with a number.
+      const number = itemNumber(item);
+      return number === null ? "" : String(number);
+    }
     case "TIME":
       return format.clock(item.schedule.startsAt);
     case "PARTICIPANT":
@@ -477,13 +480,20 @@ export function moveItem<T>(items: readonly T[], from: number, to: number): T[] 
 }
 
 /**
- * The number a person reads in the «№» column.
+ * The number a person reads in the «№» column, or `null` for a slot that has none.
  *
  * The printed one once numbers are frozen, the row's own while the programme is still
  * being assembled — the same fallback {@link itemCell} renders, because a control that
  * asks "after which number?" has to mean the number the organizer is looking at.
+ *
+ * Service blocks — перерыв, награждение, открытие — are deliberately unnumbered, on both
+ * sides: numbering a break pushes every act after it one place along, and «номер 12»
+ * then means a fifteen-minute gap to whoever is holding the printed programme.
  */
-export function itemNumber(item: ProgramItem): number {
+export function itemNumber(item: ProgramItem): number | null {
+  if (item.kind !== "PERFORMANCE") {
+    return null;
+  }
   return item.number || item.schedule.position;
 }
 

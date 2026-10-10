@@ -217,13 +217,15 @@ class TestNumbersWhileTheProgrammeIsBeingAssembled:
         assert [item.number for item in program.items] == [1, 2, 3]
         assert [item.id for item in program.items] == [third.id, first.id, second.id]
 
-    def test_a_block_inserted_in_the_middle_pushes_the_rest_along(self) -> None:
+    def test_a_block_inserted_in_the_middle_numbers_nothing(self) -> None:
+        # A break takes a place in the running order and no number: the act after lunch
+        # is still номер 2, which is what its participant was told to be ready for.
         program = _program()
         first, second = _add_act(program), _add_act(program)
         pause = _add_break(program, position=2)
 
         assert [item.id for item in program.items] == [first.id, pause.id, second.id]
-        assert [item.number for item in program.items] == [1, 2, 3]
+        assert [item.number for item in program.items] == [1, 0, 2]
 
     def test_removing_a_slot_closes_the_gap(self) -> None:
         program = _program()
@@ -263,14 +265,16 @@ class TestNumbersAfterTheFirstPublication:
 
         assert _add_act(program).number == 3
 
-    def test_a_block_inserted_after_publication_pushes_nobody_number(self) -> None:
+    def test_a_block_inserted_after_publication_neither_takes_nor_spends_a_number(self) -> None:
         program = _program()
         first, second = _add_act(program), _add_act(program)
         _publish(program)
         pause = _add_break(program, position=2)
 
         assert [item.id for item in program.items] == [first.id, pause.id, second.id]
-        assert [item.number for item in program.items] == [1, 3, 2]
+        assert [item.number for item in program.items] == [1, 0, 2]
+        # And the number it would once have burned is still the next act's.
+        assert _add_act(program).number == 3
 
     def test_a_removed_number_is_retired_rather_than_reused(self) -> None:
         # Handing номер 2 to somebody else after telling it to a participant is exactly

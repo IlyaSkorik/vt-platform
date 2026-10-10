@@ -13,21 +13,29 @@ import type { PublicProgramRow } from "./api";
 export type Placement = "before" | "after";
 
 /**
- * The number the host reads in the «№» column.
+ * The number the host reads in the «№» column, or `null` for a row that has none.
  *
  * Falls back to the row's own place when the organizer did not publish that column: the
  * host is then counting rows down the page, and counting rows is what the fallback does.
  * The printed number is not the row's index on a published programme — numbers stay with
  * their participants through a rearrangement, which is the whole reason to read it here.
+ *
+ * When the column *is* published, a blank cell means the row genuinely has no number —
+ * перерыв, награждение — and that is answered as `null` rather than patched up with the
+ * row's index: an index that happens to equal a real act's number would make "после №5"
+ * land next to the lunch break instead.
  */
 export function rowNumber(
   row: PublicProgramRow,
   index: number,
   columns: readonly string[],
-): number {
+): number | null {
   const at = columns.indexOf("POSITION");
-  const printed = Number.parseInt(at === -1 ? "" : (row.cells[at] ?? ""), 10);
-  return Number.isFinite(printed) && printed > 0 ? printed : index + 1;
+  if (at === -1) {
+    return index + 1;
+  }
+  const printed = Number.parseInt(row.cells[at] ?? "", 10);
+  return Number.isFinite(printed) && printed > 0 ? printed : null;
 }
 
 /**

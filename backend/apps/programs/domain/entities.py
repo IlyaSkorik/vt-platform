@@ -82,6 +82,10 @@ class ProgramItem:
     After the first public link exists they are **frozen**: rearranging the order then
     rearranges the rows and not the numbers, so a program legitimately reads 2, 3, 5, 4.
     See :meth:`Program.freeze_numbers`.
+
+    A standalone block carries ``0``, meaning "no number": a break is a gap in the running
+    order rather than an act, and numbering it would push every act after it one place
+    along. See :attr:`ProgramItemKind.takes_number`.
     """
 
     _id: uuid.UUID
@@ -852,8 +856,7 @@ class Program:
         """
         if self.numbers_frozen:
             return
-        self._renumber_following_order()
-        self._numbers_issued = len(self._items)
+        self._numbers_issued = self._renumber_following_order()
         self._numbers_frozen_at = now
 
     def renumber_sequentially(self, *, now: datetime) -> None:
@@ -864,8 +867,7 @@ class Program:
         number already told to a participant, and so must never happen as a side effect of
         a reorder.
         """
-        self._renumber_following_order()
-        self._numbers_issued = len(self._items)
+        self._numbers_issued = self._renumber_following_order()
         self._touch(now)
 
     # ------------------------------------------------------------------
@@ -959,15 +961,31 @@ class Program:
 
     def _number_new_item(self, item: ProgramItem) -> None:
         """Number a freshly inserted slot according to which phase the program is in."""
+        if not item.kind.takes_number:
+            # A break takes no number, and must not spend one either: inserting it into a
+            # published programme would otherwise retire a number nobody ever performed as.
+            item.assign_number(0)
+            return
         if self.numbers_frozen:
             item.assign_number(self._next_number())
         else:
             self._renumber_following_order()
 
-    def _renumber_following_order(self) -> None:
-        """Make the numbers 1..N in running order (only legal while unfrozen)."""
-        for index, item in enumerate(self._items, start=1):
-            item.assign_number(index)
+    def _renumber_following_order(self) -> int:
+        """Make the numbers 1..N in running order, and answer how many were issued.
+
+        Only the slots that take a number are counted - a break sits in the order and
+        carries 0, so an act after a lunch break is номер 12 rather than номер 13. See
+        :attr:`ProgramItemKind.takes_number`.
+        """
+        issued = 0
+        for item in self._items:
+            if item.kind.takes_number:
+                issued += 1
+                item.assign_number(issued)
+            else:
+                item.assign_number(0)
+        return issued
 
     def _next_number(self) -> int:
         """Issue the next number: one past the highest this program has given out.

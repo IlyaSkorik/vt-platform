@@ -637,8 +637,9 @@ class TestPublicRead:
         public = env.service.public_program(share.slug)
         assert public is not None
         assert [row.kind for row in public.rows] == ["PERFORMANCE", "BREAK"]
-        # A break has no participant, so that cell is blank rather than a placeholder.
-        assert public.rows[1].cells == ("2", "10:03", "", "Перерыв")
+        # A break has no participant and no number, so both cells are blank rather than
+        # placeholders - and the next act keeps the number it was promised.
+        assert public.rows[1].cells == ("", "10:03", "", "Перерыв")
 
     def test_an_edition_shows_exactly_the_columns_it_was_published_with(self) -> None:
         # The sound engineer's cut: when, what, how long, and the applicant's notes.

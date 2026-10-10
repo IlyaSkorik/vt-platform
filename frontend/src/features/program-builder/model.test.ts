@@ -90,6 +90,8 @@ describe("itemCell", () => {
     expect(itemCell(pause, "PARTICIPANT", FORMAT)).toBe("");
     expect(itemCell(pause, "AGE_CATEGORY", FORMAT)).toBe("");
     expect(itemCell(pause, "TEACHERS", FORMAT)).toBe("");
+    // And no number at all: numbering a break pushes every act after it one place along.
+    expect(itemCell(pause, "POSITION", FORMAT)).toBe("");
     // A block still has a title and a length — that is what makes it schedulable.
     expect(itemCell(pause, "TITLE", FORMAT)).toBe("Перерыв");
     expect(itemCell(pause, "DURATION", FORMAT)).toBe("3:20");
@@ -222,6 +224,11 @@ describe("itemNumber", () => {
       schedule: { ...anItem().schedule, position: 7 },
     });
     expect(itemNumber(unnumbered)).toBe(7);
+  });
+
+  it("answers that a service block has no number", () => {
+    expect(itemNumber(anItem({ kind: "BREAK", number: 0 }))).toBeNull();
+    expect(itemNumber(anItem({ kind: "AWARD", number: 4 }))).toBeNull();
   });
 });
 

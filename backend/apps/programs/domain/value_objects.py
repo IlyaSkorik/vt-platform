@@ -326,6 +326,17 @@ class ProgramItemKind(StrEnum):
         return self is ProgramItemKind.PERFORMANCE
 
     @property
+    def takes_number(self) -> bool:
+        """Whether this kind of slot is numbered at all.
+
+        Only performances. A number is what a participant is told and what the sound desk
+        cues from, and a break has neither - numbering it pushes every act after it one
+        place along and makes "номер 12" mean a fifteen-minute gap. The running order still
+        contains the block, it simply has no «№».
+        """
+        return self is ProgramItemKind.PERFORMANCE
+
+    @property
     def takes_buffer(self) -> bool:
         """Whether the program's buffer pads this kind of slot.
 
