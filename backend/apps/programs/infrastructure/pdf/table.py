@@ -29,6 +29,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from apps.programs.application.dto import ProgramTableView
+from apps.programs.application.rendering import clock
 
 __all__ = ["ReportLabTableRenderer"]
 
@@ -140,7 +141,7 @@ class ReportLabTableRenderer:
         minutes = remainder // 60
         parts.append(f"Продолжительность: {hours} ч {minutes:02d} мин" if hours else f"Продолжительность: {minutes} мин")
         if table.starts_at is not None:
-            parts.append(f"Начало: {table.starts_at.strftime('%H:%M')}")
+            parts.append(f"Начало: {clock(table.starts_at)}")
         return " · ".join(parts)
 
     def _column_widths(self, table: ProgramTableView, available: float) -> list[float]:

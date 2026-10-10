@@ -60,6 +60,7 @@ from apps.programs.application.interfaces import (
     SlugFactory,
     TableRenderer,
 )
+from apps.programs.application.rendering import clock as _clock
 from apps.programs.domain.arrangement import ArrangedItem, ArrangementCandidate, arrange
 from apps.programs.domain.entities import Program, ProgramItem, ProgramShare
 from apps.programs.domain.exceptions import (
@@ -118,11 +119,6 @@ def _uuid(value: str, *, what: str) -> uuid.UUID:
         return uuid.UUID(str(value))
     except (ValueError, TypeError, AttributeError) as exc:
         raise InvalidProgramDataError(f"{what} must be a UUID, got {value!r}.") from exc
-
-
-def _clock(moment: datetime | None) -> str:
-    """A cell's time of day, or blank when the programme is not timed yet."""
-    return "" if moment is None else moment.strftime("%H:%M")
 
 
 def _duration(seconds: int) -> str:

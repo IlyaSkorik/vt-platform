@@ -8,7 +8,7 @@ read one back through its link.
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -27,6 +27,7 @@ from apps.programs.application.commands import (
     UpdateShareCommand,
 )
 from apps.programs.application.interfaces import CatalogPerformance
+from apps.programs.application.rendering import DISPLAY_TZ
 from apps.programs.application.services import ProgramService
 from apps.programs.domain.exceptions import (
     ExportUnavailableError,
@@ -43,7 +44,9 @@ from .fakes import FixedClock, InMemoryProgramRepository, ScriptedSlugFactory, S
 
 COMPETITION_ID = uuid.uuid4()
 NOMINATION_ID = uuid.uuid4()
-TEN_AM = datetime(2026, 8, 1, 10, 0, tzinfo=UTC)
+#: Ten in the morning **in the hall**, not in UTC: the cells a link and a PDF carry are
+#: rendered in the festival's zone, so a fixture pinned to UTC would assert 13:00.
+TEN_AM = datetime(2026, 8, 1, 10, 0, tzinfo=DISPLAY_TZ)
 
 
 def _act(title: str, seconds: int, *, comment: str | None = None, performer: str = "Иванов Иван") -> CatalogPerformance:
@@ -203,7 +206,7 @@ class TestBreaksAndBlocks:
         program = env.service.add_block(AddBlockCommand(program_id=program_id, title="Перерыв", duration_seconds=900, position=2))
         assert [item.kind for item in program.items] == ["PERFORMANCE", "BREAK", "PERFORMANCE"]
         assert program.items[1].title == "Перерыв"
-        assert program.items[2].schedule.starts_at == datetime(2026, 8, 1, 10, 18, tzinfo=UTC)
+        assert program.items[2].schedule.starts_at == TEN_AM + timedelta(minutes=18)
 
     def test_a_break_can_be_removed_again(self) -> None:
         env = Env()
@@ -242,9 +245,9 @@ class TestScheduleAndBuffer:
         env = Env(_act("A", 200), _act("B", 200), _act("C", 200))
         program = env.service.fill_from_scope(env.program(buffer_seconds=40))
         assert [item.schedule.starts_at for item in program.items] == [
-            datetime(2026, 8, 1, 10, 0, tzinfo=UTC),
-            datetime(2026, 8, 1, 10, 4, tzinfo=UTC),
-            datetime(2026, 8, 1, 10, 8, tzinfo=UTC),
+            TEN_AM,
+            TEN_AM + timedelta(minutes=4),
+            TEN_AM + timedelta(minutes=8),
         ]
 
     def test_changing_the_buffer_shifts_the_timetable_but_not_the_acts(self) -> None:
@@ -255,13 +258,13 @@ class TestScheduleAndBuffer:
         assert program.buffer_seconds == 60
         assert program.items[0].duration_seconds == 180
         assert program.items[0].schedule.slot_seconds == 240
-        assert program.items[1].schedule.starts_at == datetime(2026, 8, 1, 10, 4, tzinfo=UTC)
+        assert program.items[1].schedule.starts_at == TEN_AM + timedelta(minutes=4)
 
     def test_the_end_of_the_program_is_reported(self) -> None:
         env = Env(_act("A", 600))
         program = env.service.fill_from_scope(env.program(buffer_seconds=60))
         assert program.total_seconds == 660
-        assert program.ends_at == datetime(2026, 8, 1, 10, 11, tzinfo=UTC)
+        assert program.ends_at == TEN_AM + timedelta(minutes=11)
 
     def test_a_program_without_a_start_time_has_offsets_but_no_clock(self) -> None:
         env = Env(_act("A", 200), _act("B", 200))
@@ -368,6 +371,21 @@ class TestExport:
         table = env.service.program_table(program_id=program_id, columns=("COMMENT", "TITLE", "TIME"))
         assert [column.key for column in table.columns] == ["COMMENT", "TITLE", "TIME"]
         assert table.rows == (("Выход с точки 3", "Катюша", "10:00"),)
+
+    def test_a_table_is_timed_in_the_festivals_zone_not_in_utc(self) -> None:
+        """The regression behind "в ссылке время не то, что в программе".
+
+        The instant is stored in UTC and the organizer typed a wall clock, so formatting
+        the stored value directly printed the act three hours early on every link and
+        every PDF while the constructor, rendering in the browser, read it correctly.
+        """
+        env = Env(_act("Катюша", 200))
+        # Exactly the same moment as TEN_AM, said in UTC.
+        program_id = env.program(starts_at=datetime(2026, 8, 1, 7, 0, tzinfo=UTC))
+        env.service.fill_from_scope(program_id)
+
+        table = env.service.program_table(program_id=program_id, columns=("TIME",))
+        assert table.rows == (("10:00",),)
 
     def test_a_column_named_twice_is_printed_once(self) -> None:
         # A table cannot carry the same column in two places, and refusing the export over
@@ -592,7 +610,7 @@ class TestPublicRead:
             ("2", "10:04", "Петров Пётр", "Калинка"),
         ]
         # The organizer's own table says the same time for the same slot.
-        assert program.items[0].schedule.starts_at == datetime(2026, 8, 1, 10, 0, tzinfo=UTC)
+        assert program.items[0].schedule.starts_at == TEN_AM
 
     def test_a_partial_edition_keeps_the_real_numbers_and_the_real_times(self) -> None:
         # A cut of the programme is still the programme: the participant published here
@@ -741,7 +759,7 @@ class TestPublicRead:
         env.catalog.performances.clear()
         program = env.service.get_program(program_id)
         assert program.items[0].missing_performance is True
-        assert program.items[0].schedule.starts_at == datetime(2026, 8, 1, 10, 0, tzinfo=UTC)
+        assert program.items[0].schedule.starts_at == TEN_AM
 
 
 class TestMediaArchive:
