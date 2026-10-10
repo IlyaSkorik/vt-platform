@@ -1,9 +1,14 @@
 """Handing a workbook to the browser.
 
-Mirrors :func:`config.archive.zip_response`: the file is streamed from the spool
-the writer produced rather than read into memory to be handed over, and the
-download name survives Cyrillic intact — a filename header that is not encoded
-reaches the browser as mojibake, and the organizer saves «Ð½Ð¾Ð¼Ð¸Ð½Ð°Ð½Ñ‚Ñ‹.xlsx».
+Named like :func:`config.archive.zip_response` and solving the smaller half of the
+same problem: the file is streamed from what the writer produced rather than read
+into memory to be handed over, and the download name survives Cyrillic intact — a
+filename header that is not encoded reaches the browser as mojibake, and the
+organizer saves «Ð½Ð¾Ð¼Ð¸Ð½Ð°Ð½Ñ‚Ñ‹.xlsx».
+
+A workbook is finished before this is called, so there is nothing here of the
+archive's problem: that one is written *as* it is sent, because the minutes it
+spends reading a bucket are minutes a proxy would otherwise spend in silence.
 """
 
 from __future__ import annotations
