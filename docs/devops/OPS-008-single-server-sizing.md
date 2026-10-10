@@ -227,6 +227,31 @@ server {
         # sending the whole table again (~5 Mbit/s with a hall of phones on it).
     }
 
+    # A programme's archives are the one download that can legitimately run for an hour:
+    # several hundred uploaded files, read out of the bucket and sent as one ZIP. The
+    # backend streams it, so bytes flow continuously and `proxy_read_timeout` is not what
+    # ends it — but `proxy_send_timeout` applies to this nginx writing to a client on a
+    # hotel wifi, and 60 s of that is an archive that dies two thirds of the way down.
+    #
+    # Two nginxes, if the stack runs in the shape docker-compose.prod.yml describes: this
+    # one and the container's own (frontend/deploy/nginx/proxy-archive.conf.inc, which
+    # carries the matching limits). Raising one and not the other changes nothing — the
+    # stricter of the two is what the organizer gets.
+    location ~ ^/api/v1/staff/programs/[^/]+/(music|media)\.zip$ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_read_timeout 1800s;
+        proxy_send_timeout 1800s;
+        # Nothing worth buffering: holding a second copy of a multi-gigabyte archive on
+        # this disk before passing it on helps nobody, and it is already streaming.
+        proxy_buffering off;
+    }
+
     # Only needed while S3_BUCKET is unset. With a bucket configured, files are served from
     # it and nothing reaches this location.
     location /media/ {
