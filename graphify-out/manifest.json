@@ -8360,8 +8360,8 @@
     "semantic_hash": ""
   },
   "docs/devops/OPS-008-single-server-sizing.md": {
-    "mtime": 1785860600.8946748,
-    "ast_hash": "e9f0967bba11723d4755dfa20cbfe4d8",
+    "mtime": 1791664733.239253,
+    "ast_hash": "e34fa5497ca7500950c210e4cb9f39fb",
     "semantic_hash": ""
   },
   "backend/apps/applications/presentation/api/v1/mail.py": {
@@ -8790,8 +8790,8 @@
     "semantic_hash": ""
   },
   "backend/config/archive.py": {
-    "mtime": 1785860600.8508363,
-    "ast_hash": "57ebf8ec71bcc53f24a96a87284058e5",
+    "mtime": 1791664708.7024848,
+    "ast_hash": "239a8426a3fc9e5c9c74eb70dbbc2229",
     "semantic_hash": ""
   },
   "backend/tests/presentation/applications/test_documents_archive_api.py": {
@@ -9715,8 +9715,8 @@
     "semantic_hash": ""
   },
   ".github/workflows/ci.yml": {
-    "mtime": 1790886767.3298297,
-    "ast_hash": "ec5a7b9d35c31a1d55b98e72bae8c4b4",
+    "mtime": 1791662404.4343605,
+    "ast_hash": "c035ad4c636b60eee607231c98487155",
     "semantic_hash": ""
   },
   "docker-compose.prod.yml": {
@@ -10555,8 +10555,8 @@
     "semantic_hash": ""
   },
   "backend/shared/spreadsheet/http.py": {
-    "mtime": 1789220372.282575,
-    "ast_hash": "cafa338e0fcf1efc6719023f2e850b13",
+    "mtime": 1791664744.3110626,
+    "ast_hash": "f1315aad3d109eddbd39f3966ac1eb37",
     "semantic_hash": ""
   },
   "backend/shared/spreadsheet/reader.py": {
@@ -11742,6 +11742,11 @@
   "frontend/src/shared/lib/festival-time.ts": {
     "mtime": 1791659057.3783066,
     "ast_hash": "3c5bf32ee4613f8d0eec7e2337809fed",
+    "semantic_hash": ""
+  },
+  "backend/tests/infrastructure/test_zip_response_streaming.py": {
+    "mtime": 1791664776.714911,
+    "ast_hash": "4121fe4ed81a4b03d568eb8a61856e7e",
     "semantic_hash": ""
   }
 }
