@@ -30,6 +30,11 @@ concurrency:
 env:
   # Match the runtime images rather than "latest": a version skew between CI and the image is
   # exactly the kind of failure that only ever appears in production.
+  #
+  # This has to be handed to `setup-uv` explicitly. Left out, uv provisions the newest
+  # interpreter that satisfies `requires-python = ">=3.13"` — which became 3.15 the day it
+  # was released, and `psycopg-binary` publishes no cp315 wheel, so every Python job failed
+  # at `uv sync` on a commit that touched nothing of the sort.
   PYTHON_VERSION: "3.13"
   NODE_VERSION: "22"
 
@@ -45,6 +50,7 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: backend/uv.lock
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
         working-directory: backend
@@ -114,6 +120,7 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: bot/uv.lock
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
         working-directory: bot
@@ -244,6 +251,7 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: backend/uv.lock
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: pip-audit (Python dependencies)
         working-directory: backend
