@@ -216,7 +216,7 @@ def _individual(submission: SubmissionModel, *, recipient: str, number: str) -> 
 
 def _archive(response: Any) -> zipfile.ZipFile:
     """The streamed ZIP, read into memory — the same helper the applications suite uses."""
-    return zipfile.ZipFile(io.BytesIO(b"".join(response.streaming_content)))
+    return zipfile.ZipFile(io.BytesIO(b"".join(response)))
 
 
 class TestIndividualDiplomaArchive:

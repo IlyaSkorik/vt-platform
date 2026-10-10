@@ -131,7 +131,7 @@ def _order(
 
 
 def _archive(response: Any) -> zipfile.ZipFile:
-    return zipfile.ZipFile(io.BytesIO(b"".join(response.streaming_content)))
+    return zipfile.ZipFile(io.BytesIO(b"".join(response)))
 
 
 class TestDocumentsArchive:

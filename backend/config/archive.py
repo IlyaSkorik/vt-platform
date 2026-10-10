@@ -25,16 +25,28 @@ against a download that fails outright.
 writes each entry's size in a trailing data descriptor instead of going back to
 patch the header — the same mechanism every streaming ZIP uses, and ordinary
 unzip tools read the result.
+
+**The body must be an async iterator, and that is not a style choice.** This
+platform serves ASGI, and :meth:`StreamingHttpResponse.__aiter__` — which is what
+``ASGIHandler`` consumes — handles a *sync* iterator by running
+``await sync_to_async(list)(...)`` over it. The whole archive is collected into a
+list in memory before one body byte goes out: every property this module is built
+for, undone silently, by a response that still looks like it streams. A sync
+generator here cost an ``ERR_INCOMPLETE_CHUNKED_ENCODING`` once already — headers
+sent, then the worker gone under the weight of a video archive held in the heap.
+:func:`_astream` is the whole of the remedy, and ``response.is_async`` is the thing
+to assert about it.
 """
 
 from __future__ import annotations
 
 import zipfile
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import AsyncIterator, Generator, Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import PurePosixPath
 from urllib.parse import quote
 
+from asgiref.sync import sync_to_async
 from django.core.files.storage import default_storage
 from django.http import StreamingHttpResponse
 
@@ -129,7 +141,7 @@ def _members(
     members: Sequence[ArchiveMember],
     notes: Iterable[str],
     notes_name: str,
-) -> Iterator[bytes]:
+) -> Generator[bytes]:
     """The bytes of the archive, in the order they can be sent.
 
     A member whose file is missing from storage is skipped rather than fatal: one
@@ -171,6 +183,40 @@ def _members(
         yield payload
 
 
+def _next_chunk(chunks: Iterator[bytes]) -> bytes | None:
+    """The next chunk, or ``None`` once the archive is complete.
+
+    ``None`` as the end marker rather than a sentinel object: :func:`_members` never
+    yields an empty chunk - it checks before every yield - so there is nothing to
+    confuse it with.
+    """
+    return next(chunks, None)
+
+
+async def _astream(chunks: Generator[bytes]) -> AsyncIterator[bytes]:
+    """The archive, pulled one chunk at a time off the thread that builds it.
+
+    Reading storage and deflating are blocking work, so each step is handed to a
+    worker thread - but *one step at a time*, which is what keeps the response
+    incremental. Collecting the generator first would be simpler and would be the
+    very thing this module exists to avoid.
+
+    ``thread_sensitive=False`` on purpose. The sensitive variant funnels every call
+    through one process-wide thread, and this one occupies its thread for as long as
+    the download lasts - which for a festival's video archive is minutes. Every other
+    piece of sync work in the process would queue behind it.
+    """
+    advance = sync_to_async(_next_chunk, thread_sensitive=False)
+    try:
+        while (chunk := await advance(chunks)) is not None:
+            yield chunk
+    finally:
+        # The client went away mid-download, most likely. Closing here runs the
+        # generator's own ``with`` blocks rather than leaving an open storage handle
+        # for the collector to find later.
+        chunks.close()
+
+
 def zip_response(
     members: Sequence[ArchiveMember],
     *,
@@ -180,7 +226,7 @@ def zip_response(
 ) -> StreamingHttpResponse:
     """Assemble ``members`` into a ZIP and stream it as a download."""
     response = StreamingHttpResponse(
-        _members(members, notes, notes_name),
+        _astream(_members(members, notes, notes_name)),
         content_type="application/zip",
     )
     # ``filename*`` carries the real, Cyrillic name; the ASCII ``filename`` is the

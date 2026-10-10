@@ -686,9 +686,9 @@ class ProgramMusicArchiveView(_StaffView):
             **_PROBLEM_RESPONSES,
         },
     )
-    # `HttpResponseBase`, not `HttpResponse`: a ZIP download is a `FileResponse`, which
-    # descends from `StreamingHttpResponse` and so is not an `HttpResponse` at all. The
-    # base class is the only type that covers a streamed body and a DRF `Response` both.
+    # `HttpResponseBase`, not `HttpResponse`: a ZIP download is a `StreamingHttpResponse`,
+    # which is not an `HttpResponse` at all. The base class is the only type that covers a
+    # streamed body and a DRF `Response` both.
     def get(self, request: Request, program_id: str) -> HttpResponseBase | Response:
         try:
             archive = build_program_service().music_archive(program_id=program_id)

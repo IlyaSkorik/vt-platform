@@ -118,10 +118,9 @@ class MyIndividualDiplomasArchiveView(APIView):
         ],
         responses={(status.HTTP_200_OK, "application/zip"): OpenApiTypes.BINARY},
     )
-    # ``HttpResponseBase``, not ``HttpResponse``: a ZIP download is a ``FileResponse``,
-    # which descends from ``StreamingHttpResponse`` and is not an ``HttpResponse`` at
-    # all. The base class is the only type covering a streamed body and a DRF
-    # ``Response`` both.
+    # ``HttpResponseBase``, not ``HttpResponse``: a ZIP download is a
+    # ``StreamingHttpResponse``, which is not an ``HttpResponse`` at all. The base class
+    # is the only type covering a streamed body and a DRF ``Response`` both.
     def get(self, request: Request) -> HttpResponseBase | Response:
         raw = (request.query_params.get("submissionId") or "").strip()
         try:

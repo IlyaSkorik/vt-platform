@@ -49,7 +49,7 @@ def _filled_program(client: APIClient, competition_scope: tuple[str, str], **ove
 
 
 def _archive(response: Any) -> zipfile.ZipFile:
-    return zipfile.ZipFile(io.BytesIO(b"".join(response.streaming_content)))
+    return zipfile.ZipFile(io.BytesIO(b"".join(response)))
 
 
 class TestMusicArchive:
