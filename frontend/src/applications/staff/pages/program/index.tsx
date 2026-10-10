@@ -7,9 +7,12 @@ import {
   Columns3,
   Copy,
   FileDown,
+  GripVertical,
   Link2,
   ListOrdered,
   Music,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plus,
   Trash2,
   Wand2,
@@ -25,14 +28,20 @@ import {
   downloadProgramMedia,
   downloadProgramMusic,
   downloadProgramPdf,
+  GROUPING_AXES,
+  GROUPING_AXIS_LABELS,
+  type GroupingAxis,
+  groupRuns,
   ITEM_KIND_LABELS,
   itemCell,
   itemNumber,
+  moveBlock,
   moveItem,
   moveItemNextTo,
   PROGRESS_LABELS,
   type Program,
   type ProgramColumn,
+  type ProgramGroup,
   type ProgramItem,
   useAddBlock,
   useAddColumn,
@@ -55,7 +64,13 @@ import {
   useUpdateProgram,
 } from "@/features/program-builder";
 import { ArrangeProgramDialog } from "@/features/program-builder/ui/arrange-dialog";
-import { formatClock, formatDuration, formatSpan } from "@/shared/lib";
+import {
+  festivalInputToIso,
+  formatClock,
+  formatDuration,
+  formatSpan,
+  isoToFestivalInput,
+} from "@/shared/lib";
 import {
   Alert,
   Badge,
@@ -73,6 +88,9 @@ import {
   PageDescription,
   PageHeader,
   PageTitle,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Select,
   toast,
 } from "@/shared/ui";
@@ -93,6 +111,8 @@ export function StaffProgramPage(): React.JSX.Element {
   const competitions = useCompetitionsList();
   const [competitionId, setCompetitionId] = useState<string>("");
   const [programId, setProgramId] = useState<string | null>(null);
+  //: Whether the festival/programme column is shown. Closed, the table has the page.
+  const [asideOpen, setAsideOpen] = useState(true);
 
   // Default to the first competition once the list arrives, so the page is never
   // an empty shell for an organizer who has exactly one festival.
@@ -122,7 +142,11 @@ export function StaffProgramPage(): React.JSX.Element {
   );
 
   return (
-    <PageContainer>
+    // `full`, not the usual `max-w-5xl`: the programme is a thirteen-column table and the
+    // default container left it permanently sideways-scrolling on a screen that had room
+    // for it. Every descendant down to the scroll container still carries `min-w-0`, so a
+    // table wider than even this scrolls inside itself rather than moving the page.
+    <PageContainer size="full">
       <PageHeader>
         <PageTitle>Программа фестиваля</PageTitle>
         <PageDescription>
@@ -154,29 +178,60 @@ export function StaffProgramPage(): React.JSX.Element {
             or flex track sizes to its content, and the wide programme table would push the
             whole page sideways instead of scrolling inside itself. */}
         {competitionId ? (
-          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
-            <div className="flex min-w-0 flex-col gap-4">
-              <ProgramList
-                programs={programs.data ?? []}
-                isLoading={programs.isLoading}
-                selectedId={programId}
-                onSelect={setProgramId}
-              />
-              <CreateProgramCard
-                competitionId={competitionId}
-                nominations={nominations}
-                onCreated={setProgramId}
-              />
-            </div>
+          <div
+            className={
+              asideOpen
+                ? "grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[320px_minmax(0,1fr)]"
+                : "grid grid-cols-[minmax(0,1fr)] gap-4"
+            }
+          >
+            {asideOpen ? (
+              <div className="flex min-w-0 flex-col gap-4">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-medium text-sm">Программы</p>
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    aria-label="Свернуть список программ"
+                    onClick={() => setAsideOpen(false)}
+                  >
+                    <PanelLeftClose className="size-4" />
+                  </Button>
+                </div>
+                <ProgramList
+                  programs={programs.data ?? []}
+                  isLoading={programs.isLoading}
+                  selectedId={programId}
+                  onSelect={setProgramId}
+                />
+                <CreateProgramCard
+                  competitionId={competitionId}
+                  nominations={nominations}
+                  onCreated={setProgramId}
+                />
+              </div>
+            ) : null}
 
-            {programId ? (
-              <ProgramWorkspace programId={programId} />
-            ) : (
-              <EmptyState
-                title="Программа не выбрана"
-                description="Выберите программу слева или создайте новую — например, отдельный на каждый жанр."
-              />
-            )}
+            <div className="flex min-w-0 flex-col gap-3">
+              {/* Collapsing the list is the cheap way to give the table the whole page —
+                  on a forty-row programme with ten columns the 320px of festival admin
+                  beside it is the difference between reading the day and scrolling it. */}
+              {asideOpen ? null : (
+                <div>
+                  <Button variant="outline" size="sm" onClick={() => setAsideOpen(true)}>
+                    <PanelLeftOpen className="size-4" /> Программы
+                  </Button>
+                </div>
+              )}
+              {programId ? (
+                <ProgramWorkspace programId={programId} />
+              ) : (
+                <EmptyState
+                  title="Программа не выбрана"
+                  description="Выберите программу слева или создайте новую — например, отдельный на каждый жанр."
+                />
+              )}
+            </div>
           </div>
         ) : null}
       </PageContent>
@@ -214,7 +269,6 @@ function ProgramList({
   }
   return (
     <div className="flex flex-col gap-2">
-      <p className="font-medium text-sm">Программы</p>
       {programs.map((program) => (
         <button
           key={program.id}
@@ -258,9 +312,10 @@ function CreateProgramCard({
         competitionId,
         name: name.trim(),
         nominationId: nominationId || null,
-        // A local "2026-08-01T10:00" is what the organizer typed in their own zone;
-        // the Date round-trip is what turns it into the instant the backend stores.
-        startsAt: startsAt ? new Date(startsAt).toISOString() : null,
+        // "2026-08-01T10:00" is the time on the wall in the hall, not on this laptop:
+        // it is read in the festival's zone, which is the zone every copy of the
+        // programme is rendered back in.
+        startsAt: festivalInputToIso(startsAt),
       },
       {
         onSuccess: (program) => {
@@ -349,7 +404,7 @@ function ProgramSettings({ program }: { program: Program }): React.JSX.Element {
         />
         <DateTimePicker
           label="Начало программы"
-          value={toLocalInput(program.startsAt)}
+          value={isoToFestivalInput(program.startsAt)}
           onChange={update.setStart}
         />
       </div>
@@ -365,16 +420,36 @@ function useUpdateProgramSettings(programId: string) {
       update.mutate({ bufferSeconds }, { onError: () => toast.error("Не удалось изменить буфер") }),
     setStart: (localValue: string) =>
       update.mutate(
-        { startsAt: localValue ? new Date(localValue).toISOString() : null },
+        { startsAt: festivalInputToIso(localValue) },
         { onError: () => toast.error("Не удалось изменить время начала") },
       ),
   };
 }
 
+/**
+ * The running order: the table the whole constructor exists to arrange.
+ *
+ * Three ways to move something, because they answer three different questions. The arrows
+ * are a correction ("этот номер на строку выше"). {@link MoveToNumber} is a jump ("этот
+ * номер — сразу после №12"), which the arrows cannot make across forty rows. And dragging
+ * is the one the day is actually planned with: a whole genre picked up by its header and
+ * dropped above another one, which is forty moves done as one.
+ *
+ * The reorder endpoint takes the complete new order rather than a move instruction, so
+ * every one of them ends in the same place — the order the organizer is looking at.
+ */
 function RunningOrder({ program }: { program: Program }): React.JSX.Element {
   const reorder = useReorderItems(program.id);
   const remove = useRemoveItem(program.id);
   const items = program.items;
+
+  /** Which axis the rows are grouped under on screen, or {@link UNGROUPED}. */
+  const [groupBy, setGroupBy] = useState<GroupingAxis | typeof UNGROUPED>(UNGROUPED);
+  /** Columns the organizer has hidden from *this screen* — exports choose their own. */
+  const [hidden, setHidden] = useState<readonly ColumnKey[]>([]);
+  /** The run being dragged, and where it would land — both indexes into `items`. */
+  const [drag, setDrag] = useState<{ start: number; count: number } | null>(null);
+  const [dropAt, setDropAt] = useState<number | null>(null);
 
   const send = (next: ProgramItem[]) => {
     reorder.mutate(
@@ -401,10 +476,101 @@ function RunningOrder({ program }: { program: Program }): React.JSX.Element {
   };
 
   const busy = reorder.isPending || remove.isPending;
+  const columns = program.availableColumns.filter((column) => !hidden.includes(column.key));
+  const groups = groupBy === UNGROUPED ? null : groupRuns(items, groupBy);
+
+  /** Finish a drag: the run goes where the indicator was, and the state is cleared. */
+  const drop = () => {
+    if (drag !== null && dropAt !== null) {
+      send(moveBlock(items, drag.start, drag.count, dropAt));
+    }
+    setDrag(null);
+    setDropAt(null);
+  };
+
+  /**
+   * Where a pointer over a row means the run should land.
+   *
+   * The top half of a row means "before it", the bottom half "after it" — which is how
+   * every list with a drop line behaves, and the only way to express "в самый конец"
+   * without a separate target under the last row.
+   */
+  const hoverRow = (event: React.DragEvent, index: number) => {
+    if (drag === null) {
+      return;
+    }
+    event.preventDefault();
+    const box = event.currentTarget.getBoundingClientRect();
+    setDropAt(event.clientY > box.top + box.height / 2 ? index + 1 : index);
+  };
+
+  /** Move a whole group past its neighbour — the keyboard's way to do what a drag does. */
+  const moveGroup = (position: number, by: -1 | 1) => {
+    if (groups === null) {
+      return;
+    }
+    const group = groups[position];
+    const neighbour = groups[position + by];
+    if (group === undefined || neighbour === undefined) {
+      return;
+    }
+    send(
+      moveBlock(
+        items,
+        group.start,
+        group.items.length,
+        by === -1 ? neighbour.start : neighbour.start + neighbour.items.length,
+      ),
+    );
+  };
+
   // Once published, numbers stay with their participants, so a rearranged programme reads
   // 2, 3, 5, 4. Saying so out loud beats letting an organizer wonder whether it is a bug.
+  // Counted over the numbered slots only — the breaks between them carry no number and
+  // would otherwise make every programme with a lunch in it look rearranged.
   const outOfSequence =
-    program.numbersFrozen && items.some((item, index) => item.number !== index + 1);
+    program.numbersFrozen &&
+    items
+      .filter((item) => itemNumber(item) !== null)
+      .some((item, index) => itemNumber(item) !== index + 1);
+
+  const rowProps = (index: number) => ({
+    dragging: drag !== null && index >= drag.start && index < drag.start + drag.count,
+    dropBefore: dropAt === index,
+    dropAfter: dropAt === index + 1 && index === items.length - 1,
+    onDragStart: () => setDrag({ start: index, count: 1 }),
+    onDragEnd: () => {
+      setDrag(null);
+      setDropAt(null);
+    },
+    onDragOver: (event: React.DragEvent) => hoverRow(event, index),
+    onDrop: (event: React.DragEvent) => {
+      event.preventDefault();
+      drop();
+    },
+  });
+
+  const row = (item: ProgramItem, index: number) => (
+    <ProgramItemRow
+      key={item.id}
+      item={item}
+      columns={columns}
+      index={index}
+      total={items.length}
+      busy={busy}
+      onUp={() => move(index, index - 1)}
+      onDown={() => move(index, index + 1)}
+      onMoveTo={(to) => move(index, to)}
+      onMoveNextTo={(number, placement) => moveNextTo(index, number, placement)}
+      onRemove={() =>
+        remove.mutate(item.id, {
+          onError: () => toast.error("Не удалось удалить пункт"),
+        })
+      }
+      programId={program.id}
+      {...rowProps(index)}
+    />
+  );
 
   return (
     <div className="flex min-w-0 flex-col gap-3">
@@ -435,63 +601,298 @@ function RunningOrder({ program }: { program: Program }): React.JSX.Element {
           description="Соберите её автоматически по правилам, добавьте выступления из списка ниже или вставьте служебный блок."
         />
       ) : (
-        // The programme is a table, and the table is wide: it scrolls inside its own
-        // container so the page never scrolls sideways. `relative` is part of that - it
-        // makes this the containing block for absolutely positioned descendants, `sr-only`
-        // labels above all, so a 1px span at the right edge of a wide table is clipped here
-        // instead of setting the whole document's scroll width. See the public page.
-        <div className="scrollbar-custom relative w-full max-w-full overflow-x-auto rounded-md border border-border">
-          {/* `w-max min-w-full`: the table may exceed the container (that is what makes it
-              scroll) but never leaves it narrower than the space available. */}
-          <table className="w-max min-w-full border-collapse text-left">
-            <caption className="sr-only">Программа: {program.name}</caption>
-            <thead>
-              <tr className="border-border border-b bg-muted/50">
-                {program.availableColumns.map((column) => (
-                  <th
-                    key={column.key}
-                    scope="col"
-                    className="whitespace-nowrap px-2 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
-                  >
-                    {column.custom ? (
-                      <CustomColumnHeader programId={program.id} column={column} />
-                    ) : (
-                      column.label
-                    )}
+        <>
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <GroupByControl
+              columns={program.availableColumns}
+              value={groupBy}
+              onChange={setGroupBy}
+            />
+            <VisibleColumnsControl
+              columns={program.availableColumns}
+              hidden={hidden}
+              onChange={setHidden}
+            />
+          </div>
+
+          {/* The programme is a table, and the table is wide: it scrolls inside its own
+              container so the page never scrolls sideways. `relative` is part of that - it
+              makes this the containing block for absolutely positioned descendants, `sr-only`
+              labels above all, so a 1px span at the right edge of a wide table is clipped here
+              instead of setting the whole document's scroll width. See the public page. */}
+          <div className="scrollbar-custom relative w-full max-w-full overflow-x-auto rounded-md border border-border">
+            {/* `w-max min-w-full`: the table may exceed the container (that is what makes it
+                scroll) but never leaves it narrower than the space available. */}
+            <table className="w-max min-w-full border-collapse text-left">
+              <caption className="sr-only">Программа: {program.name}</caption>
+              <thead>
+                <tr className="border-border border-b bg-muted/50">
+                  <th scope="col" className="w-8 px-1 py-2">
+                    <span className="sr-only">Перетащить</span>
                   </th>
-                ))}
-                <th scope="col" className="px-2 py-2 text-right">
-                  <span className="sr-only">Действия</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item, index) => (
-                <ProgramItemRow
-                  key={item.id}
-                  item={item}
-                  columns={program.availableColumns}
-                  index={index}
-                  total={items.length}
-                  busy={busy}
-                  onUp={() => move(index, index - 1)}
-                  onDown={() => move(index, index + 1)}
-                  onMoveTo={(to) => move(index, to)}
-                  onMoveNextTo={(number, placement) => moveNextTo(index, number, placement)}
-                  onRemove={() =>
-                    remove.mutate(item.id, {
-                      onError: () => toast.error("Не удалось удалить пункт"),
-                    })
-                  }
-                  programId={program.id}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  {columns.map((column) => (
+                    <th
+                      key={column.key}
+                      scope="col"
+                      className="whitespace-nowrap px-2 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
+                    >
+                      {column.custom ? (
+                        <CustomColumnHeader programId={program.id} column={column} />
+                      ) : (
+                        column.label
+                      )}
+                    </th>
+                  ))}
+                  <th scope="col" className="px-2 py-2 text-right">
+                    <span className="sr-only">Действия</span>
+                  </th>
+                </tr>
+              </thead>
+              {groups === null ? (
+                <tbody>{items.map((item, index) => row(item, index))}</tbody>
+              ) : (
+                groups.map((group: ProgramGroup, position: number) => (
+                  // One `tbody` per group: it is the grouping, as far as a screen reader
+                  // and the browser's own table model are concerned.
+                  <tbody key={group.key}>
+                    {group.standalone ? null : (
+                      <GroupHeaderRow
+                        group={group}
+                        span={columns.length + 2}
+                        busy={busy}
+                        atStart={position === 0}
+                        atEnd={position === groups.length - 1}
+                        dragging={
+                          drag !== null &&
+                          drag.start === group.start &&
+                          drag.count === group.items.length
+                        }
+                        onDragStart={() =>
+                          setDrag({ start: group.start, count: group.items.length })
+                        }
+                        onDragEnd={() => {
+                          setDrag(null);
+                          setDropAt(null);
+                        }}
+                        onDragOver={(event) => hoverRow(event, group.start)}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          drop();
+                        }}
+                        dropBefore={dropAt === group.start}
+                        onUp={() => moveGroup(position, -1)}
+                        onDown={() => moveGroup(position, 1)}
+                      />
+                    )}
+                    {group.items.map((item: ProgramItem, offset: number) =>
+                      row(item, group.start + offset),
+                    )}
+                  </tbody>
+                ))
+              )}
+            </table>
+          </div>
+        </>
       )}
     </div>
   );
+}
+
+/**
+ * «Группировать» — a reading of the running order, not a rearrangement of it.
+ *
+ * The labels come from the programme's own columns rather than a second list of words:
+ * the platform renamed what it calls these things once already (NOMINATION is «Жанр» on
+ * screen), and a dropdown with its own copy of the vocabulary is how the two drift apart.
+ *
+ * «Без группировки» is an option rather than a placeholder because a placeholder cannot be
+ * chosen: there would be no way back to the plain running order once an axis was picked.
+ */
+function GroupByControl({
+  columns,
+  value,
+  onChange,
+}: {
+  columns: ProgramColumn[];
+  value: GroupingAxis | typeof UNGROUPED;
+  onChange: (next: GroupingAxis | typeof UNGROUPED) => void;
+}): React.JSX.Element {
+  const labels = new Map(columns.map((column) => [column.key, column.label]));
+  const options = [
+    { value: UNGROUPED, label: "Без группировки" },
+    ...GROUPING_AXES.filter((axis) => labels.has(axis)).map((axis) => ({
+      value: axis,
+      label: labels.get(axis) ?? GROUPING_AXIS_LABELS[axis],
+    })),
+  ];
+  return (
+    <div className="w-56">
+      <Select
+        label="Группировать"
+        options={options}
+        value={value}
+        onValueChange={(next: string) => onChange(next as GroupingAxis | typeof UNGROUPED)}
+      />
+    </div>
+  );
+}
+
+/** The "no grouping" choice. A real value, because a Radix option cannot carry an empty one. */
+const UNGROUPED = "NONE";
+
+/**
+ * Which columns this screen shows.
+ *
+ * A programme can carry thirteen columns plus whatever the organizer added, and all of
+ * them at once is a table nobody can read without scrolling sideways past the thing they
+ * were looking at. Hiding one here changes *this screen only* — what a link publishes and
+ * what a PDF prints are separate decisions, made in their own panels.
+ */
+function VisibleColumnsControl({
+  columns,
+  hidden,
+  onChange,
+}: {
+  columns: ProgramColumn[];
+  hidden: readonly ColumnKey[];
+  onChange: (next: readonly ColumnKey[]) => void;
+}): React.JSX.Element {
+  const shown = columns.length - hidden.length;
+  const toggle = (key: ColumnKey, visible: boolean) =>
+    onChange(visible ? hidden.filter((item) => item !== key) : [...hidden, key]);
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Columns3 className="size-4" /> Колонки на экране: {shown}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="flex w-64 flex-col gap-2">
+        {/* `min-w-0`: a `fieldset` has a built-in `min-width: min-content` that ignores
+            its container, so a long column name would widen the popover. */}
+        <fieldset className="flex max-h-80 min-w-0 flex-col gap-2 overflow-y-auto">
+          <legend className="sr-only">Колонки на экране</legend>
+          {columns.map((column) => (
+            <Checkbox
+              key={column.key}
+              label={column.label}
+              checked={!hidden.includes(column.key)}
+              onCheckedChange={(checked: boolean) => toggle(column.key, checked)}
+            />
+          ))}
+        </fieldset>
+        <Divider />
+        <Button variant="ghost" size="sm" onClick={() => onChange([])}>
+          Показать все
+        </Button>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/**
+ * The header of one group, and the handle the whole group is dragged by.
+ *
+ * This row is the feature: picking up «Эстрадный вокал» and dropping it above «Народный»
+ * is one gesture for what the arrows would take forty of. The buttons beside it do the
+ * same move from the keyboard, because a drag is not reachable without a pointer.
+ */
+function GroupHeaderRow({
+  group,
+  span,
+  busy,
+  atStart,
+  atEnd,
+  dragging,
+  dropBefore,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
+  onUp,
+  onDown,
+}: {
+  group: ProgramGroup;
+  span: number;
+  busy: boolean;
+  atStart: boolean;
+  atEnd: boolean;
+  dragging: boolean;
+  dropBefore: boolean;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+  onDragOver: (event: React.DragEvent) => void;
+  onDrop: (event: React.DragEvent) => void;
+  onUp: () => void;
+  onDown: () => void;
+}): React.JSX.Element {
+  return (
+    <tr
+      data-testid="program-group"
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      className={[
+        "border-border border-b bg-muted/70",
+        dragging ? "opacity-50" : "",
+        dropBefore ? "border-primary border-t-2" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <td
+        draggable={!busy}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        aria-label={`Перетащить группу: ${group.label}`}
+        className="cursor-grab px-1 py-1.5 align-middle active:cursor-grabbing"
+      >
+        <GripVertical className="size-4 text-muted-foreground" />
+      </td>
+      <td colSpan={span - 2} className="px-2 py-1.5">
+        <span className="flex flex-wrap items-baseline gap-2">
+          <span className="font-semibold text-sm">{group.label}</span>
+          <span className="text-muted-foreground text-xs">
+            {group.items.length} {plural(group.items.length, "номер", "номера", "номеров")}
+          </span>
+        </span>
+      </td>
+      <td className="px-2 py-1.5">
+        <div className="flex items-center justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="xs"
+            aria-label={`Группу выше: ${group.label}`}
+            disabled={atStart || busy}
+            onClick={onUp}
+          >
+            <ArrowUp className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="xs"
+            aria-label={`Группу ниже: ${group.label}`}
+            disabled={atEnd || busy}
+            onClick={onDown}
+          >
+            <ArrowDown className="size-4" />
+          </Button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+/** `2 → "номера"`. Russian needs three forms, and a count beside a noun needs the right one. */
+function plural(count: number, one: string, few: string, many: string): string {
+  const mod100 = count % 100;
+  if (mod100 >= 11 && mod100 <= 14) {
+    return many;
+  }
+  const mod10 = count % 10;
+  if (mod10 === 1) {
+    return one;
+  }
+  return mod10 >= 2 && mod10 <= 4 ? few : many;
 }
 
 function ProgramItemRow({
@@ -506,6 +907,13 @@ function ProgramItemRow({
   onMoveNextTo,
   onRemove,
   programId,
+  dragging,
+  dropBefore,
+  dropAfter,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
 }: {
   item: ProgramItem;
   columns: ProgramColumn[];
@@ -518,6 +926,15 @@ function ProgramItemRow({
   onMoveNextTo: (number: number, placement: MovePlacement) => boolean;
   onRemove: () => void;
   programId: string;
+  /** This row is part of the run currently being dragged. */
+  dragging: boolean;
+  /** The drop indicator sits above / below this row. */
+  dropBefore: boolean;
+  dropAfter: boolean;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+  onDragOver: (event: React.DragEvent) => void;
+  onDrop: (event: React.DragEvent) => void;
 }): React.JSX.Element {
   const isPerformance = item.kind === "PERFORMANCE";
   const format = { clock: formatClock, duration: formatDuration };
@@ -527,16 +944,30 @@ function ProgramItemRow({
     <tr
       data-testid="program-item"
       data-progress={item.progress}
-      className={
-        onStage
-          ? "border-border border-b bg-primary/10 last:border-0"
-          : behindUs
-            ? "border-border border-b text-muted-foreground last:border-0"
-            : isPerformance
-              ? "border-border border-b last:border-0"
-              : "border-border border-b bg-muted/40 last:border-0"
-      }
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      className={[
+        "border-border border-b last:border-0",
+        onStage ? "bg-primary/10" : behindUs ? "text-muted-foreground" : "",
+        isPerformance ? "" : "bg-muted/40",
+        dragging ? "opacity-50" : "",
+        dropBefore ? "border-primary border-t-2" : "",
+        dropAfter ? "border-primary border-b-2 last:border-b-2" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
     >
+      {/* The handle is its own cell rather than `draggable` on the row: a draggable row
+          swallows text selection and makes the hand-filled cells inside it unusable. */}
+      <td
+        draggable={!busy}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        aria-label={`Перетащить: ${item.title}`}
+        className="cursor-grab px-1 py-2 align-middle active:cursor-grabbing"
+      >
+        <GripVertical className="size-4 text-muted-foreground" />
+      </td>
       {columns.map((column) => (
         <td
           key={column.key}
@@ -949,27 +1380,45 @@ function ExportPanel({ program }: { program: Program }): React.JSX.Element {
     }
   };
 
-  const downloadMusic = async () => {
-    setMusicBusy(true);
+  /**
+   * One archive download, with the wait said out loud.
+   *
+   * The server assembles the whole ZIP before the first byte leaves it — a festival's
+   * backing tracks are hundreds of files and gigabytes — so there is a minutes-long
+   * stretch where a spinner is the only sign anything is happening. An organizer who
+   * reads that as "сломалось" clicks again, and the second click rebuilds the archive
+   * from scratch alongside the first.
+   */
+  const collect = async (
+    fetchArchive: () => Promise<void>,
+    setPending: (pending: boolean) => void,
+    failure: string,
+  ) => {
+    setPending(true);
+    const waiting = toast.loading("Собираем архив — на большой программе это несколько минут");
     try {
-      await downloadProgramMusic(program.id, program.name);
+      await fetchArchive();
+      toast.success("Архив готов", { id: waiting });
     } catch {
-      toast.error("Не удалось собрать архив фонограмм");
+      toast.error(failure, { id: waiting });
     } finally {
-      setMusicBusy(false);
+      setPending(false);
     }
   };
 
-  const downloadMedia = async () => {
-    setMediaBusy(true);
-    try {
-      await downloadProgramMedia(program.id, program.name);
-    } catch {
-      toast.error("Не удалось собрать архив медиафайлов");
-    } finally {
-      setMediaBusy(false);
-    }
-  };
+  const downloadMusic = () =>
+    collect(
+      () => downloadProgramMusic(program.id, program.name),
+      setMusicBusy,
+      "Не удалось собрать архив фонограмм",
+    );
+
+  const downloadMedia = () =>
+    collect(
+      () => downloadProgramMedia(program.id, program.name),
+      setMediaBusy,
+      "Не удалось собрать архив медиафайлов",
+    );
 
   return (
     <div className="flex min-w-0 flex-col gap-3">
@@ -1332,17 +1781,4 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
       ) : null}
     </div>
   );
-}
-
-/** ISO instant → the value a ``datetime-local`` input expects, in the local zone. */
-function toLocalInput(iso: string | null): string {
-  if (!iso) {
-    return "";
-  }
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
