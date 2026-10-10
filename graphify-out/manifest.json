@@ -7765,8 +7765,8 @@
     "semantic_hash": ""
   },
   "backend/apps/diplomas/presentation/api/v1/me_views.py": {
-    "mtime": 1788982156.418363,
-    "ast_hash": "ee090295090fd776a18f4bc7156b8383",
+    "mtime": 1791668152.1594486,
+    "ast_hash": "8a568e76f1abd823d1dc5f342049302b",
     "semantic_hash": ""
   },
   "backend/apps/diplomas/presentation/me_urls.py": {
@@ -7785,8 +7785,8 @@
     "semantic_hash": ""
   },
   "backend/tests/presentation/diplomas/test_participant_documents_api.py": {
-    "mtime": 1788894688.5232623,
-    "ast_hash": "385826a78df2a77a0141912fbc9eb839",
+    "mtime": 1791667819.272475,
+    "ast_hash": "31b5a732f081f143bc3012e225d68911",
     "semantic_hash": ""
   },
   "frontend/e2e/diploma-verification.screenshots.spec.ts": {
@@ -8170,8 +8170,8 @@
     "semantic_hash": ""
   },
   "backend/apps/programs/presentation/api/v1/views.py": {
-    "mtime": 1791129907.1525552,
-    "ast_hash": "6034f53317a7ffd73520f5657effd616",
+    "mtime": 1791668152.1564274,
+    "ast_hash": "562fbf104b58c4159045a94c5db1af2c",
     "semantic_hash": ""
   },
   "backend/apps/programs/presentation/public_urls.py": {
@@ -8790,18 +8790,18 @@
     "semantic_hash": ""
   },
   "backend/config/archive.py": {
-    "mtime": 1791664708.7024848,
-    "ast_hash": "239a8426a3fc9e5c9c74eb70dbbc2229",
+    "mtime": 1791667876.1197903,
+    "ast_hash": "2795059177c1bb7110f31d08b8f994c4",
     "semantic_hash": ""
   },
   "backend/tests/presentation/applications/test_documents_archive_api.py": {
-    "mtime": 1785860600.8793433,
-    "ast_hash": "f58fde8b1ee681fa2d31aa97979270dd",
+    "mtime": 1791667819.2737768,
+    "ast_hash": "b9d2bd27436480277a2462a420bd3259",
     "semantic_hash": ""
   },
   "backend/tests/presentation/programs/test_music_archive_api.py": {
-    "mtime": 1786046485.4526474,
-    "ast_hash": "1913526644e0893a8c07e68aefa90549",
+    "mtime": 1791667819.2730165,
+    "ast_hash": "9bcadd9fb15f8105d33f48c313951b8c",
     "semantic_hash": ""
   },
   "backend/apps/applications/infrastructure/migrations/0005_application_payment_receipts.py": {
@@ -9035,8 +9035,8 @@
     "semantic_hash": ""
   },
   "backend/tests/presentation/platform/test_organization_isolation_api.py": {
-    "mtime": 1787590904.5896885,
-    "ast_hash": "439ed5316d577e2f51a0d7443733afd6",
+    "mtime": 1791667819.2747324,
+    "ast_hash": "83a0c68f51f0e965630bca76558383a3",
     "semantic_hash": ""
   },
   "backend/tests/presentation/platform/test_platform_console_api.py": {
@@ -11745,8 +11745,8 @@
     "semantic_hash": ""
   },
   "backend/tests/infrastructure/test_zip_response_streaming.py": {
-    "mtime": 1791664776.714911,
-    "ast_hash": "4121fe4ed81a4b03d568eb8a61856e7e",
+    "mtime": 1791668011.310142,
+    "ast_hash": "92538edddd7d319c66718f58274eedf4",
     "semantic_hash": ""
   }
 }
