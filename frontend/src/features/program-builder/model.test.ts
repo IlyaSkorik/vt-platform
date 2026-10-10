@@ -6,8 +6,10 @@ import {
   type ArrangementSettings,
   arrangeInput,
   DEFAULT_ARRANGEMENT,
+  groupRuns,
   itemCell,
   itemNumber,
+  moveBlock,
   moveItem,
   moveItemNextTo,
   type ProgramItem,
@@ -273,5 +275,109 @@ describe("arrangeInput", () => {
 
   it("always states the repeat gap, so turning it off is an instruction too", () => {
     expect(arrangeInput(settings({ repeatGap: 0 })).repeatGap).toBe(0);
+  });
+});
+
+/**
+ * The move the day is actually planned with: a whole genre picked up at once.
+ *
+ * `to` is an insertion index into the list *as it is now*, which is what a drop between
+ * two rows means — and the run has to be lifted out before it can be put back, so every
+ * index past it shifts down by the run's own length. Getting that off by one sends a
+ * running order nobody asked for, and the endpoint takes the whole order, so nothing
+ * downstream can catch it.
+ */
+describe("moveBlock", () => {
+  const day = () => ["a", "b", "c", "d", "e"];
+
+  it("lifts a run from the middle to the very front", () => {
+    expect(moveBlock(day(), 2, 2, 0)).toEqual(["c", "d", "a", "b", "e"]);
+  });
+
+  it("lifts a run from the front to the very end", () => {
+    expect(moveBlock(day(), 0, 2, 5)).toEqual(["c", "d", "e", "a", "b"]);
+  });
+
+  it("counts from the list the run has already left, moving downwards", () => {
+    // Dropped in front of "e", which is index 4 now and index 2 once a,b are gone.
+    expect(moveBlock(day(), 0, 2, 4)).toEqual(["c", "d", "a", "b", "e"]);
+  });
+
+  it("is a no-op when a run is dropped on itself or on either of its own edges", () => {
+    expect(moveBlock(day(), 1, 2, 1)).toEqual(day());
+    expect(moveBlock(day(), 1, 2, 2)).toEqual(day());
+    expect(moveBlock(day(), 1, 2, 3)).toEqual(day());
+  });
+
+  it("ignores a run or a destination that is not in the list", () => {
+    expect(moveBlock(day(), 4, 3, 0)).toEqual(day());
+    expect(moveBlock(day(), 0, 2, 9)).toEqual(day());
+    expect(moveBlock(day(), -1, 2, 0)).toEqual(day());
+  });
+
+  it("does not mutate the list it was given", () => {
+    const original = day();
+    moveBlock(original, 0, 2, 5);
+    expect(original).toEqual(["a", "b", "c", "d", "e"]);
+  });
+});
+
+/**
+ * Grouping is a *reading* of the running order, never a rearrangement of it — which is
+ * what makes a group safe to drag: it is a contiguous slice of the day, so moving it
+ * leaves everything outside it exactly where the organizer put it.
+ */
+describe("groupRuns", () => {
+  const shape = (items: ProgramItem[]) =>
+    groupRuns(items, "DISCIPLINE").map((group) => [group.label, group.start, group.items.length]);
+
+  it("joins consecutive slots that share the value", () => {
+    expect(
+      shape([
+        anItem({ id: "a", discipline: "Эстрадный вокал" }),
+        anItem({ id: "b", discipline: "Эстрадный вокал" }),
+        anItem({ id: "c", discipline: "Народный вокал" }),
+      ]),
+    ).toEqual([
+      ["Эстрадный вокал", 0, 2],
+      ["Народный вокал", 2, 1],
+    ]);
+  });
+
+  it("keeps one value that appears twice as two groups", () => {
+    // The order on screen is the order of the day; pretending the two halves are one
+    // group would make dragging it reorder rows the organizer never touched.
+    expect(
+      shape([
+        anItem({ id: "a", discipline: "Эстрадный вокал" }),
+        anItem({ id: "b", discipline: "Народный вокал" }),
+        anItem({ id: "c", discipline: "Эстрадный вокал" }),
+      ]),
+    ).toEqual([
+      ["Эстрадный вокал", 0, 1],
+      ["Народный вокал", 1, 1],
+      ["Эстрадный вокал", 2, 1],
+    ]);
+  });
+
+  it("leaves a break standing alone, named by its own title", () => {
+    // Otherwise dragging вокал somewhere would take lunch along with it.
+    const groups = groupRuns(
+      [
+        anItem({ id: "a", discipline: "Эстрадный вокал" }),
+        anItem({ id: "pause", kind: "BREAK", title: "Обед", discipline: null }),
+        anItem({ id: "b", discipline: "Эстрадный вокал" }),
+      ],
+      "DISCIPLINE",
+    );
+    expect(groups.map((group) => [group.label, group.standalone])).toEqual([
+      ["Эстрадный вокал", false],
+      ["Обед", true],
+      ["Эстрадный вокал", false],
+    ]);
+  });
+
+  it("says plainly when a slot has nothing in that column", () => {
+    expect(shape([anItem({ id: "a", discipline: null })])).toEqual([["—", 0, 1]]);
   });
 });

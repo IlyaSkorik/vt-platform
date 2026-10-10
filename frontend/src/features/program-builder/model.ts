@@ -480,6 +480,92 @@ export function moveItem<T>(items: readonly T[], from: number, to: number): T[] 
 }
 
 /**
+ * Move a contiguous run of items to `to`, returning the new complete order.
+ *
+ * `to` is an **insertion index into the list as it is now**: the run lands in front of
+ * whatever currently sits there, and `items.length` means the very end. Counted that way
+ * because that is what a drop between two rows means — and the run has to be lifted out
+ * before it can be put back, which shifts every index past it down by its own length.
+ *
+ * This is {@link moveItem} generalised to a block, and the block is the point: "возьми
+ * весь эстрадный вокал и подними наверх" is one gesture, not forty.
+ */
+export function moveBlock<T>(items: readonly T[], start: number, count: number, to: number): T[] {
+  const next = [...items];
+  if (start < 0 || count <= 0 || start + count > next.length || to < 0 || to > next.length) {
+    return next;
+  }
+  // Dropped back inside itself — including on either of its own edges, which is a move
+  // to where it already is.
+  if (to >= start && to <= start + count) {
+    return next;
+  }
+  const moved = next.splice(start, count);
+  next.splice(to > start ? to - count : to, 0, ...moved);
+  return next;
+}
+
+/** One run of consecutive slots that share a value — what a group move acts on. */
+export interface ProgramGroup {
+  /** Stable React key: the id of the run's first slot. */
+  key: string;
+  /** The header: the shared value, or a block's own title. */
+  label: string;
+  /** Where the run starts in the programme's order. */
+  start: number;
+  items: ProgramItem[];
+  /** A service block is a divider between groups, never part of one. */
+  standalone: boolean;
+}
+
+/**
+ * The running order cut into consecutive runs of one value.
+ *
+ * **Consecutive, not sorted.** The order on screen is the order of the day, and grouping
+ * is a reading of it rather than a rearrangement of it: if эстрадный вокал appears in two
+ * places because the organizer put it there, this says so with two groups instead of
+ * pretending there is one. That is also what makes a group safe to drag — a group is a
+ * slice of the order, so moving it is one {@link moveBlock} and the rest of the day is
+ * untouched.
+ *
+ * A break (or an award, or an opening) always stands alone: it is what separates one part
+ * of the day from the next, and swallowing it into the group above would mean dragging
+ * вокал somewhere and taking lunch along with it.
+ *
+ * The axis is a {@link GroupingAxis} — the same vocabulary the generator groups by, so
+ * "собрать по жанрам" and "показать по жанрам" cannot drift apart.
+ */
+export function groupRuns(items: readonly ProgramItem[], axis: GroupingAxis): ProgramGroup[] {
+  const groups: ProgramGroup[] = [];
+  items.forEach((item, index) => {
+    const standalone = item.kind !== "PERFORMANCE";
+    const label = standalone ? item.title : groupLabel(item, axis);
+    const open = groups.at(-1);
+    if (open !== undefined && !open.standalone && !standalone && open.label === label) {
+      open.items.push(item);
+      return;
+    }
+    groups.push({ key: item.id, label, start: index, items: [item], standalone });
+  });
+  return groups;
+}
+
+/**
+ * The value one slot is grouped under.
+ *
+ * Deliberately the same text {@link itemCell} puts in that column: the header of a group
+ * and the cells under it have to read identically, or the grouping looks wrong even when
+ * it is right. A slot with nothing in that column gets «—», so an act missing its age
+ * category is visibly missing it rather than silently joining the group above.
+ */
+function groupLabel(item: ProgramItem, axis: GroupingAxis): string {
+  return itemCell(item, axis, UNUSED_FORMAT) || "—";
+}
+
+/** {@link itemCell} wants a formatter; none of the grouping axes is a time or a length. */
+const UNUSED_FORMAT = { clock: () => "", duration: () => "" };
+
+/**
  * The number a person reads in the «№» column, or `null` for a slot that has none.
  *
  * The printed one once numbers are frozen, the row's own while the programme is still
