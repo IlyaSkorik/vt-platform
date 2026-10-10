@@ -5,7 +5,7 @@
  * transport internals (Ky instance, hooks, mutator) remain private.
  */
 export { apiClient, toApiError } from "./client";
-export { DEFAULT_LOCALE, HEADER, uploadTimeoutMs } from "./config";
+export { DEFAULT_LOCALE, DOWNLOAD_TIMEOUT_MS, HEADER, uploadTimeoutMs } from "./config";
 export { filenameFromDisposition, saveAuthenticatedDownload } from "./download";
 export {
   ApiError,
