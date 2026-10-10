@@ -145,13 +145,25 @@ export type PerformanceOrder =
  */
 export type BreakRule = "NONE" | "EVERY_DURATION" | "EVERY_COUNT" | "BETWEEN_GROUPS";
 
-/** What each grouping axis is called on the settings form. */
+/**
+ * What each grouping axis is called on the settings form.
+ *
+ * **Display vocabulary.** The code's `NOMINATION` is shown to people as «Жанр», and
+ * `DISCIPLINE` as «Номинация» — the identifiers keep the older names because they run
+ * through the API contract and every stored snapshot, while the words the platform
+ * speaks to organizers changed. These labels lagged behind that change, so the generator
+ * offered to group «по номинации» and grouped by genre: the dialog and the table beside
+ * it named the same axis two different things.
+ *
+ * Word for word the backend's `COLUMN_LABELS` (`apps/programs/domain/value_objects.py`),
+ * which is what the programme's own column headers come from.
+ */
 export const GROUPING_AXIS_LABELS: Record<GroupingAxis, string> = {
-  NOMINATION: "Номинация",
-  DISCIPLINE: "Дисциплина",
+  NOMINATION: "Жанр",
+  DISCIPLINE: "Номинация",
   AGE_CATEGORY: "Возрастная категория",
-  PARTICIPANT_GROUP: "Состав",
-  PARTICIPATION_FORMAT: "Форма участия",
+  PARTICIPANT_GROUP: "Состав участников",
+  PARTICIPATION_FORMAT: "Формат участия",
   ORGANIZATION: "Организация",
 };
 

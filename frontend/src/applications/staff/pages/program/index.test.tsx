@@ -1401,6 +1401,21 @@ describe("StaffProgramPage — автосоставление", () => {
     });
   });
 
+  it("называет признаки теми же словами, что и колонки программы", async () => {
+    // Платформа переименовала NOMINATION в «Жанр», а DISCIPLINE в «Номинацию»; подписи
+    // диалога отстали, и он предлагал собрать «по номинации», а собирал по жанрам.
+    stub(draft());
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: /Собрать программу/ }));
+    const dialog = await screen.findByRole("dialog");
+
+    const column = (key: string) => ALL_COLUMNS.find((item) => item.key === key)?.label ?? "";
+    for (const key of ["NOMINATION", "DISCIPLINE", "AGE_CATEGORY", "PARTICIPANT_GROUP"]) {
+      expect(within(dialog).getByRole("checkbox", { name: column(key) })).toBeInTheDocument();
+    }
+  });
+
   it("порядок признаков группировки — это и есть форма дня, и его можно менять", async () => {
     stub(draft());
     await renderPage();
