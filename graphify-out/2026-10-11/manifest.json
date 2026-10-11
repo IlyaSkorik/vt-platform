@@ -6505,7 +6505,7 @@
     "semantic_hash": "d4ecc328966ff21da30ecd22f0b2a981"
   },
   "frontend/openapi/schema-full.yaml": {
-    "mtime": 1791734016.4417987,
+    "mtime": 1791735226.6201599,
     "ast_hash": "6d858e35a0e0abb12157fa33a3c8a6e9",
     "semantic_hash": ""
   },
@@ -8055,8 +8055,8 @@
     "semantic_hash": ""
   },
   "backend/apps/programs/domain/value_objects.py": {
-    "mtime": 1791721111.3608575,
-    "ast_hash": "e39d5f90ce382bc9aa589d3885cbac6e",
+    "mtime": 1791735048.2318444,
+    "ast_hash": "2daae7a0bcf28331c6c9b3806aeddeb1",
     "semantic_hash": ""
   },
   "backend/apps/programs/infrastructure/__init__.py": {
@@ -8245,8 +8245,8 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/program/index.tsx": {
-    "mtime": 1791734074.195839,
-    "ast_hash": "0e2b3a836363b1bcbd30ae805832d60e",
+    "mtime": 1791735048.194108,
+    "ast_hash": "2b070ba15fca7c30b5df3ab647b6675f",
     "semantic_hash": ""
   },
   "frontend/src/features/program-builder/api.ts": {
@@ -8330,8 +8330,8 @@
     "semantic_hash": ""
   },
   "frontend/e2e/program-horizontal-scroll.spec.ts": {
-    "mtime": 1791733831.1911721,
-    "ast_hash": "6b3413d80de215de057a41bd970ffe63",
+    "mtime": 1791735076.8601809,
+    "ast_hash": "bd9bc458b8ca088804e869f212faedfd",
     "semantic_hash": ""
   },
   "frontend/src/features/public-program/api.test.ts": {
@@ -10135,8 +10135,8 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/move-to-number/ui/move-to-number.tsx": {
-    "mtime": 1791660928.8087559,
-    "ast_hash": "6baff51355df82d073566b0e1fee6e51",
+    "mtime": 1791734835.23228,
+    "ast_hash": "41713a01aaf5ecaf1b396facd7300d76",
     "semantic_hash": ""
   },
   "backend/apps/platform/presentation/api/v1/purge.py": {

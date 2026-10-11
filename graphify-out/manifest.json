@@ -6505,7 +6505,7 @@
     "semantic_hash": "d4ecc328966ff21da30ecd22f0b2a981"
   },
   "frontend/openapi/schema-full.yaml": {
-    "mtime": 1791735226.6201599,
+    "mtime": 1791742505.9053648,
     "ast_hash": "6d858e35a0e0abb12157fa33a3c8a6e9",
     "semantic_hash": ""
   },
@@ -8020,8 +8020,8 @@
     "semantic_hash": ""
   },
   "backend/apps/programs/application/services.py": {
-    "mtime": 1791733948.5249724,
-    "ast_hash": "643d869579c11b8bd26b3eabe69f52e9",
+    "mtime": 1791741843.4578671,
+    "ast_hash": "a06fa1941bb46be231fa04e3bd126ade",
     "semantic_hash": ""
   },
   "backend/apps/programs/apps.py": {
@@ -8040,13 +8040,13 @@
     "semantic_hash": ""
   },
   "backend/apps/programs/domain/entities.py": {
-    "mtime": 1791660928.8055844,
-    "ast_hash": "093fe62251d2b48d7f253a8c9de81f1c",
+    "mtime": 1791741743.802298,
+    "ast_hash": "d8b50642a64ed3a622c4dcb84c0de983",
     "semantic_hash": ""
   },
   "backend/apps/programs/domain/exceptions.py": {
-    "mtime": 1791129907.1503718,
-    "ast_hash": "f6d24421d533709c44191a50fc8ec752",
+    "mtime": 1791741691.025921,
+    "ast_hash": "f6d859b1835834de296d08a4a5f0f776",
     "semantic_hash": ""
   },
   "backend/apps/programs/domain/schedule.py": {
@@ -8120,8 +8120,8 @@
     "semantic_hash": ""
   },
   "backend/apps/programs/infrastructure/repositories/django_program_repository.py": {
-    "mtime": 1791129907.151326,
-    "ast_hash": "a9732b1fd2142f323d31924ac5087c6e",
+    "mtime": 1791741843.5058672,
+    "ast_hash": "b865a8ed7443ab50478708fb2c3d4410",
     "semantic_hash": ""
   },
   "backend/apps/programs/infrastructure/system.py": {
@@ -8145,8 +8145,8 @@
     "semantic_hash": ""
   },
   "backend/apps/programs/presentation/api/v1/problems.py": {
-    "mtime": 1791129907.1519973,
-    "ast_hash": "fba8734965fb0b95df91cddfc8b96551",
+    "mtime": 1791741797.8555343,
+    "ast_hash": "28353e4d93c7d4f2e60e5e9bbaf2c174",
     "semantic_hash": ""
   },
   "backend/apps/programs/presentation/api/v1/public_serializers.py": {
@@ -8230,8 +8230,8 @@
     "semantic_hash": ""
   },
   "backend/tests/presentation/programs/test_programs_api.py": {
-    "mtime": 1791733948.531352,
-    "ast_hash": "a590ea1e3c63911dfdaac1d6c69938d8",
+    "mtime": 1791741935.7378576,
+    "ast_hash": "a3523b8abc4e01f750243b730738e6a7",
     "semantic_hash": ""
   },
   "backend/tests/presentation/programs/test_public_program_api.py": {
@@ -8240,13 +8240,13 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/program/index.test.tsx": {
-    "mtime": 1791734095.0031364,
-    "ast_hash": "00119cb92369199baa210d7209c57160",
+    "mtime": 1791742136.3862162,
+    "ast_hash": "5dd4926b76502b791709e2e9724f7246",
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/program/index.tsx": {
-    "mtime": 1791735048.194108,
-    "ast_hash": "2b070ba15fca7c30b5df3ab647b6675f",
+    "mtime": 1791742096.5653718,
+    "ast_hash": "66753e6f4fa2b6af97b42dd56d3cc3db",
     "semantic_hash": ""
   },
   "frontend/src/features/program-builder/api.ts": {
