@@ -91,7 +91,10 @@ export function TimePicker({
             inputMode="numeric"
             autoComplete="off"
             placeholder="--:--"
-            maxLength={5}
+            // No `maxLength`: it refuses a keystroke whenever the field is full,
+            // *including* one that would replace the whole of it, so a time already
+            // set could not be typed over at all. `maskTime` is the only authority on
+            // what this field may contain, and it keeps four digits whatever arrives.
             className={cn("tabular-nums", className)}
             value={draft}
             disabled={disabled}
@@ -99,15 +102,31 @@ export function TimePicker({
             {...(description != null ? { description } : {})}
             {...(error != null ? { error } : {})}
             {...(required != null ? { required } : {})}
-            // A time already in the field is at the field's maximum length, so
-            // anything typed into it is dropped and the value simply will not
-            // change — the field looks editable and is not. Selecting what is
-            // there means the first digit replaces it, which is how every
-            // masked field behaves and what somebody correcting 10:00 to 14:30
-            // is already doing.
-            onFocus={(event) => event.currentTarget.select()}
             onChange={(event) => commit(maskTime(event.target.value))}
             onKeyDown={(event) => {
+              // A complete time fills the field to its maximum length, so the
+              // browser drops the next character and the value simply will not
+              // change: the field looks editable and is not, and an hour
+              // already set cannot be corrected at all without clearing it
+              // first. A digit typed into a full field therefore starts it
+              // over — selecting what is there so the keystroke replaces it,
+              // which is what somebody turning 10:00 into 14:30 means.
+              //
+              // Done on the keystroke rather than on focus: the click that
+              // gives focus places the caret afterwards and would collapse any
+              // selection made here, so selecting on focus works for Tab and
+              // does nothing for a mouse.
+              const field = event.currentTarget;
+              if (
+                /^\d$/.test(event.key) &&
+                !event.ctrlKey &&
+                !event.metaKey &&
+                field.selectionStart === field.selectionEnd &&
+                digitsOf(field.value).length >= 4
+              ) {
+                field.select();
+                return;
+              }
               if (event.key !== "ArrowUp" && event.key !== "ArrowDown") {
                 return;
               }

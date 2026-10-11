@@ -167,20 +167,10 @@ export function DateTimePicker({
   error,
   required,
   disabled,
-  requireTime = false,
   containerClassName,
   ...rest
 }: DateTimePickerProps): React.JSX.Element {
   const { date, time } = splitDateTime(value);
-  // With `requireTime` a day carries no invented hour, so the value keeps the day and
-  // an empty time (`2026-05-20T`) until one is given. Whoever reads it sees something
-  // that is not an instant, which is the truth.
-  const join = (nextDate: string, nextTime: string) =>
-    requireTime
-      ? nextDate === ""
-        ? ""
-        : `${nextDate}T${nextTime}`
-      : joinDateTime(nextDate, nextTime);
 
   return (
     <div className={cn("flex flex-col gap-1.5", containerClassName)}>
@@ -189,7 +179,7 @@ export function DateTimePicker({
           {...rest}
           containerClassName="flex-1 min-w-0"
           value={date}
-          onChange={(next) => onChange(join(next, time))}
+          onChange={(next) => onChange(joinDateTime(next, time))}
           {...(label != null ? { label } : {})}
           {...(required != null ? { required } : {})}
           {...(disabled != null ? { disabled } : {})}
@@ -204,14 +194,14 @@ export function DateTimePicker({
           disabled={disabled === true || date === ""}
           onChange={(next) => {
             // Rubbing the time out to retype it is not "this day starts at
-            // midnight". Where a day alone is an answer there is nothing to
-            // report yet, so the value keeps its last real time and the day's
-            // own ✕ clears the lot; where it is not, an empty hour is a state
-            // the value can hold, and says the instant is not settled.
-            if (next === "" && !requireTime) {
+            // midnight", and reporting it as one is how a start time saved
+            // itself as 00:00 on the way to the hour being typed. The value
+            // keeps its last real time until there is a new one — the field
+            // shows empty meanwhile — and the day's own ✕ clears the lot.
+            if (next === "") {
               return;
             }
-            onChange(join(date, next));
+            onChange(joinDateTime(date, next));
           }}
         />
       </div>

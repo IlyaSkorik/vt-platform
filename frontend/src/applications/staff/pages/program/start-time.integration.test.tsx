@@ -12,7 +12,7 @@
  * version on every write, and answers every read with what it currently holds.
  */
 import { QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -170,22 +170,63 @@ async function pickTheSeventh() {
 }
 
 describe("the programme's start time, through the real data layer", () => {
-  it("leaves the hour empty and ready to be typed into once a day is picked", async () => {
+  it("saves a picked day at once, so reloading to check finds it there", async () => {
     await openTheProgramme();
 
     await pickTheSeventh();
 
-    // The day sticks on screen…
+    // Immediately, with no pause to sit through: the organizer who picks a day and
+    // reloads a second later to see whether it took must find that it did.
+    await waitFor(() => expect(server.writes).toHaveLength(1));
+    expect(server.state.program.startsAt).toBe("2026-10-06T21:00:00.000Z");
     expect(screen.getByRole("button", { name: /Начало программы/ })).toHaveTextContent(/2026/);
-    // …and the hour is blank rather than a midnight nobody chose. A filled field is at
-    // its maximum length, which is what made the hour impossible to type at all.
-    const hour = screen.getByLabelText("Время начала");
-    expect(hour).toHaveValue("");
-    expect(hour).toBeEnabled();
-    // A day without an hour is not an instant, so nothing has been claimed yet.
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    expect(server.writes).toHaveLength(0);
-    expect(server.state.program.startsAt).toBeNull();
+  });
+
+  it("lets the hour be typed straight over the midnight it was filled with", async () => {
+    await openTheProgramme();
+    await pickTheSeventh();
+    await waitFor(() => expect(screen.getByLabelText("Время начала")).toHaveValue("00:00"));
+
+    // Clicking in selects what is there, so the first digit replaces it. Without that
+    // the field is at its maximum length and silently swallows everything typed.
+    await userEvent.type(screen.getByLabelText("Время начала"), "1430");
+
+    await waitFor(() => expect(screen.getByLabelText("Время начала")).toHaveValue("14:30"));
+    await waitFor(() => expect(server.state.program.startsAt).toBe("2026-10-07T11:30:00.000Z"), {
+      timeout: 3000,
+    });
+  });
+
+  it("is still there when the page is loaded again from scratch", async () => {
+    // The whole complaint in one test: pick a day, reload, is it there. "Reload" means
+    // what it means — a new QueryClient, nothing carried over, everything re-fetched.
+    await openTheProgramme();
+    await pickTheSeventh();
+    await waitFor(() => expect(server.writes).toHaveLength(1));
+    cleanup();
+
+    await openTheProgramme();
+
+    expect(screen.getByRole("button", { name: /Начало программы/ })).toHaveTextContent(
+      /07 октября 2026/,
+    );
+  });
+
+  it("is still there after a reload when the hour was set too", async () => {
+    await openTheProgramme();
+    await pickTheSeventh();
+    await userEvent.type(screen.getByLabelText("Время начала"), "1430");
+    await waitFor(() => expect(server.state.program.startsAt).toBe("2026-10-07T11:30:00.000Z"), {
+      timeout: 3000,
+    });
+    cleanup();
+
+    await openTheProgramme();
+
+    expect(screen.getByRole("button", { name: /Начало программы/ })).toHaveTextContent(
+      /07 октября 2026/,
+    );
+    expect(screen.getByLabelText("Время начала")).toHaveValue("14:30");
   });
 
   it("moves a programme to another day in one click", async () => {

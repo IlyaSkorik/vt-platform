@@ -1209,26 +1209,18 @@ describe("StaffProgramPage — the start time", () => {
     expect(updateProgram).toHaveBeenCalledTimes(1);
   });
 
-  it("does not claim a midnight nobody chose when only a day is picked", async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    try {
-      stub(aProgram({ startsAt: null }));
-      await renderPage();
+  it("saves a day picked on an untimed programme at once, at midnight", async () => {
+    stub(aProgram({ startsAt: null }));
+    await renderPage();
 
-      await userEvent.click(screen.getByRole("button", { name: /Начало программы/ }));
-      await userEvent.click(within(await screen.findByRole("grid")).getByText("7"));
-      await act(async () => {
-        vi.advanceTimersByTime(2000);
-      });
+    await userEvent.click(screen.getByRole("button", { name: /Начало программы/ }));
+    await userEvent.click(within(await screen.findByRole("grid")).getByText("7"));
 
-      // A day on its own is not an instant: a festival does not start «7 октября». The
-      // hour is left blank and waiting rather than filled in as 00:00 — which also kept
-      // the field at its maximum length, so the hour could not be typed at all.
-      expect(updateProgram).not.toHaveBeenCalled();
-      expect(screen.getByLabelText("Время начала")).toHaveValue("");
-    } finally {
-      vi.useRealTimers();
-    }
+    // Midnight is not the answer, but it is saved immediately and visibly provisional,
+    // and it is one keystroke from right. Holding the day back until an hour arrives
+    // reads as «выбрал — пропало» to anybody who reloads to check that it took.
+    expect(updateProgram).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText("Время начала")).toHaveValue("00:00");
   });
 
   it("waits for the hour rather than saving a day at midnight", async () => {

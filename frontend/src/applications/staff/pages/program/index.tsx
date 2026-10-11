@@ -453,9 +453,14 @@ function bufferLabel(seconds: number): string {
  *
  * So: a local draft, and the two halves committed the way each is answered. The day is
  * pointed at, so it saves on the click; the hour is typed, so it waits for the typing to
- * stop. Nothing half-finished is ever sent — a day with no hour yet is not an instant and
- * waits — and an emptied date *is* an answer («у этой программы пока нет времени»),
- * which clears the start and is the only way back to an untimed running order.
+ * stop. An emptied date *is* an answer («у этой программы пока нет времени») and clears
+ * the start, which is the only way back to an untimed running order.
+ *
+ * **A day on its own saves, at midnight.** Leaving it unsaved until an hour arrives is
+ * more truthful — a festival does not start «7 октября» — and it is the wrong trade
+ * here: the organizer who picks a day and reloads to check finds nothing, which is the
+ * very thing this field keeps being reported for. Midnight is visible, obviously
+ * provisional and one keystroke from right.
  *
  * And the draft is never overwritten by the programme while an edit is in progress. The
  * reply to the day lands mid-way through typing the hour, and adopting it there is what
@@ -526,15 +531,16 @@ function ProgramStart({ program }: { program: Program }): React.JSX.Element {
         },
       );
     };
-    // A day is *pointed at*, not typed: moving a programme to another date is a whole
-    // answer given in one click, so it goes at once rather than after a pause nobody is
-    // taking. Only when the hour is the one already in force, though — a day and an
-    // hour arriving together means the hour is being typed, and that waits for the
-    // typing to stop. Measured against what was last **sent** rather than against the
-    // programme, which lags a round trip behind and would make every keystroke look
-    // like a new day.
-    const [sentDate = "", sentTime = ""] = (sent.current ?? saved).split("T");
-    if (date !== sentDate && time === sentTime) {
+    // A day is *pointed at*, not typed: the click that chose it is the whole of the
+    // answer, so it goes at once. Never after a pause — an organizer who picks a date
+    // and reloads to check that it took must find that it did, and «выбрал — пропало»
+    // is precisely what a second of silent waiting looks like from the other side.
+    //
+    // Measured against what was last **sent** rather than against the programme, which
+    // lags a round trip behind: compared against the programme, every keystroke of the
+    // hour would still look like a change of day while the first reply was in flight.
+    const sentDate = (sent.current ?? saved).split("T")[0];
+    if (date !== sentDate) {
       send();
       return;
     }
@@ -548,8 +554,6 @@ function ProgramStart({ program }: { program: Program }): React.JSX.Element {
     <DateTimePicker
       label="Начало программы"
       timeLabel="Время начала"
-      // A festival does not start «7 октября»; it starts at a time on that day.
-      requireTime
       value={draft}
       onChange={edit}
     />
