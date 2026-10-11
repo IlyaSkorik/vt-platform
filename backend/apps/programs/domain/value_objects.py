@@ -130,7 +130,10 @@ COLUMN_LABELS: Final[dict[ProgramColumn, str]] = {
     ProgramColumn.NOMINATION: "Жанр",
     ProgramColumn.DISCIPLINE: "Номинация",
     ProgramColumn.PARTICIPANT_GROUP: "Состав участников",
-    ProgramColumn.PARTICIPANT_COUNT: "Участников",
+    # «Человек», not «Участников»: it stands next to «Состав участников» in the same
+    # table, and two headers one word apart are two headers nobody can tell apart at a
+    # glance. It is also four characters shorter, which a column this narrow notices.
+    ProgramColumn.PARTICIPANT_COUNT: "Человек",
     ProgramColumn.AGE_CATEGORY: "Возрастная категория",
     ProgramColumn.PARTICIPATION_FORMAT: "Формат участия",
     ProgramColumn.TEACHERS: "Педагог",

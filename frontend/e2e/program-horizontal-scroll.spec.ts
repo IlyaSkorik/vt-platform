@@ -22,7 +22,7 @@ const COLUMN_LABELS: [string, string][] = [
   ["NOMINATION", "Номинация"],
   ["DISCIPLINE", "Дисциплина"],
   ["PARTICIPANT_GROUP", "Состав участников"],
-  ["PARTICIPANT_COUNT", "Участников"],
+  ["PARTICIPANT_COUNT", "Человек"],
   ["AGE_CATEGORY", "Возрастная категория"],
   ["PARTICIPATION_FORMAT", "Формат участия"],
   ["TEACHERS", "Педагоги"],

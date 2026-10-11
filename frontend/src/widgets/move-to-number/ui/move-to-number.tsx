@@ -77,6 +77,7 @@ export function MoveToNumber({
         <Button
           variant="ghost"
           size="xs"
+          iconOnly
           aria-label={`Перенести: ${label}`}
           disabled={disabled || (atStart && atEnd)}
         >

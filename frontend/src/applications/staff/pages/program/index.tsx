@@ -840,10 +840,13 @@ const HANDLE_WIDTH = "2rem";
 /**
  * The row's buttons: up, down, «после №», delete, and a block's own minutes field.
  *
- * Capped as a *share* as well as in rem, because on a phone a fixed 8.5rem is a third of
- * the screen handed to four icons — there the buttons give way to the programme.
+ * Sized for the four icon buttons on one line — 4 × 1.75rem, three gaps and the cell's
+ * own padding — and barely more: everything left over is width the programme wants.
+ * Capped as a *share* as well, because on a phone a fixed 8.75rem is a third of the
+ * screen handed to four icons; there they wrap onto a second line inside the cell and
+ * give way to the running order, which is what `flex-wrap` on the row is for.
  */
-const ACTIONS_WIDTH = "min(8rem, 26%)";
+const ACTIONS_WIDTH = "min(8.75rem, 26%)";
 
 /**
  * The widths of the data columns, in the order they are shown.
@@ -1201,12 +1204,17 @@ function ProgramItemRow({
         </td>
       ))}
 
-      <td className="px-2 py-2">
-        <div className="flex items-center justify-end gap-1">
+      {/* `px-1`, not `px-2`: the padding is width this cell does not have to spare, and
+          the buttons already carry their own. `flex-wrap` is the backstop — a block row
+          also holds its minutes field, and a second line inside the cell beats a row of
+          buttons sitting on top of the comment beside it. */}
+      <td className="px-1 py-2 align-top">
+        <div className="flex flex-wrap items-center justify-end gap-1">
           {isPerformance ? null : <EditBlockDuration programId={programId} item={item} />}
           <Button
             variant="ghost"
             size="xs"
+            iconOnly
             aria-label={`Вверх: ${item.title}`}
             disabled={index === 0 || busy}
             onClick={onUp}
@@ -1216,6 +1224,7 @@ function ProgramItemRow({
           <Button
             variant="ghost"
             size="xs"
+            iconOnly
             aria-label={`Вниз: ${item.title}`}
             disabled={index === total - 1 || busy}
             onClick={onDown}
@@ -1235,6 +1244,7 @@ function ProgramItemRow({
           <Button
             variant="ghost"
             size="xs"
+            iconOnly
             aria-label={`Удалить: ${item.title}`}
             disabled={busy}
             onClick={onRemove}
@@ -1276,7 +1286,10 @@ function BlockTitle({
   return (
     <Input
       aria-label={`Название: ${item.title}`}
-      className="h-7 w-full min-w-24 text-sm"
+      // `min-w-0`, emphatically: a minimum wider than the column leaves the field
+      // sitting on top of the next one, which is what a fixed-width table cannot
+      // absorb. It is as wide as its column and no wider.
+      className="h-7 w-full min-w-0 text-sm"
       value={title}
       onChange={(event) => setTitle(event.target.value)}
       onBlur={() => {
@@ -1311,7 +1324,7 @@ function EditBlockDuration({
         aria-label={`Минуты: ${item.title}`}
         type="number"
         min={1}
-        className="h-8 w-16"
+        className="h-7 w-14"
         value={minutes}
         onChange={(event) => setMinutes(event.target.value)}
         onBlur={() => {
@@ -1433,7 +1446,7 @@ function CustomCell({
   return (
     <Input
       aria-label={`Значение: ${item.title}`}
-      className="h-7 w-32 text-xs"
+      className="h-7 w-full min-w-0 text-xs"
       value={value}
       onChange={(event) => setValue(event.target.value)}
       onBlur={() => {
