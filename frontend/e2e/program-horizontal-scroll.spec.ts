@@ -273,7 +273,9 @@ test.describe("the programme table never scrolls the page", () => {
     await expect(page.getByRole("table")).toBeVisible();
 
     const result = await measure(page);
-    expect(result.tableOverflowsItsBox).toBe(true);
+    // Fifteen columns of long, realistic text — and no sideways scroll anywhere. That
+    // is the point: the organizer drags a row to a number they can still see.
+    expect(result.tableOverflowsItsBox).toBe(false);
     expect(result.scrolledTo).toBe(0);
     expect(result.documentScrollWidth).toBeLessThanOrEqual(result.viewportWidth);
   });

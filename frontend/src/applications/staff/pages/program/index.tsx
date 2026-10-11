@@ -41,6 +41,7 @@ import {
   PROGRESS_LABELS,
   type Program,
   type ProgramColumn,
+  type ProgramColumnKey,
   type ProgramGroup,
   type ProgramItem,
   useAddBlock,
@@ -685,26 +686,35 @@ function RunningOrder({ program }: { program: Program }): React.JSX.Element {
             />
           </div>
 
-          {/* The programme is a table, and the table is wide: it scrolls inside its own
-              container so the page never scrolls sideways. `relative` is part of that - it
-              makes this the containing block for absolutely positioned descendants, `sr-only`
-              labels above all, so a 1px span at the right edge of a wide table is clipped here
-              instead of setting the whole document's scroll width. See the public page. */}
+          {/* The programme is a table, and it fits — however many columns are on. `relative`
+              is load-bearing for a different reason: it makes this the containing block for
+              absolutely positioned descendants, `sr-only` labels above all, so a 1px span at
+              the right edge cannot set the whole document's scroll width. `overflow-x-auto`
+              stays as the net under a table too narrow even for this. See the public page. */}
           <div className="scrollbar-custom relative w-full max-w-full overflow-x-auto rounded-md border border-border">
-            {/* `w-max min-w-full`: the table may exceed the container (that is what makes it
-                scroll) but never leaves it narrower than the space available. */}
-            <table className="w-max min-w-full border-collapse text-left">
+            {/* `table-fixed w-full`: the columns are laid out from the widths below rather
+                than from their contents, which is the whole of "it always fits". */}
+            <table className="w-full table-fixed border-collapse text-left">
               <caption className="sr-only">Программа: {program.name}</caption>
+              <colgroup>
+                <col style={{ width: HANDLE_WIDTH }} />
+                {columnWidths(columns).map((width, index) => (
+                  // The key is the column's own, not the index: `columns` is reordered and
+                  // filtered by the visibility control above.
+                  <col key={columns[index]?.key ?? index} style={{ width }} />
+                ))}
+                <col style={{ width: ACTIONS_WIDTH }} />
+              </colgroup>
               <thead>
                 <tr className="border-border border-b bg-muted/50">
-                  <th scope="col" className="w-8 px-1 py-2">
+                  <th scope="col" className="px-1 py-2">
                     <span className="sr-only">Перетащить</span>
                   </th>
                   {columns.map((column) => (
                     <th
                       key={column.key}
                       scope="col"
-                      className="whitespace-nowrap px-2 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
+                      className="break-words px-2 py-2 align-bottom font-medium text-muted-foreground text-xs uppercase tracking-wide"
                     >
                       {column.custom ? (
                         <CustomColumnHeader programId={program.id} column={column} />
@@ -766,6 +776,96 @@ function RunningOrder({ program }: { program: Program }): React.JSX.Element {
       )}
     </div>
   );
+}
+
+/**
+ * How wide each column of the running order is.
+ *
+ * **The table fits the screen, always.** Thirteen built-in columns plus whatever the
+ * organizer added is far more than any laptop has room for, and the old answer — let the
+ * table be as wide as its contents and scroll it sideways — meant the organizer dragged a
+ * row while the «№» it was going to was off-screen. Turning columns off helped and was
+ * the wrong thing to have to do: the columns are on because they are being read.
+ *
+ * So the widths are stated rather than measured ({@link ProgramColumn} layout is `fixed`),
+ * and they are stated in two kinds:
+ *
+ * * **{@link FIXED_COLUMN_WIDTHS}** — columns whose content has one known size. «10:04» is
+ *   five characters whether the table shows four columns or twenty, and giving it a share
+ *   of the width would make it grow for no reason and then shrink below legibility.
+ * * **{@link FLEXIBLE_COLUMN_WEIGHTS}** — columns of prose, which share whatever is left
+ *   in proportion to how much they typically need. A name needs more room than an age
+ *   band; a note needs more than either.
+ *
+ * Everything the columns cannot use is reserved first: the drag handle and the row's
+ * buttons. Those are controls, not data — they have a size and keeping it is the point.
+ */
+const FIXED_COLUMN_WIDTHS: Partial<Record<ProgramColumnKey, string>> = {
+  POSITION: "2.5rem",
+  TIME: "3.5rem",
+  DURATION: "4.75rem",
+  PARTICIPANT_COUNT: "3.5rem",
+};
+
+const FLEXIBLE_COLUMN_WEIGHTS: Partial<Record<ProgramColumnKey, number>> = {
+  PARTICIPANT: 1.6,
+  TITLE: 2,
+  NOMINATION: 1.2,
+  DISCIPLINE: 1.2,
+  PARTICIPANT_GROUP: 1,
+  AGE_CATEGORY: 1,
+  PARTICIPATION_FORMAT: 1,
+  TEACHERS: 1.4,
+  ORGANIZATION: 1.4,
+  CONTACTS: 1.1,
+  COMMENT: 1.6,
+};
+
+/** What a column the organizer added gets: a plain share, same as an age band. */
+const DEFAULT_COLUMN_WEIGHT = 1;
+
+/** The drag handle: one icon, and never anything else. */
+const HANDLE_WIDTH = "2rem";
+
+/**
+ * The row's buttons: up, down, «после №», delete, and a block's own minutes field.
+ *
+ * Capped as a *share* as well as in rem, because on a phone a fixed 8.5rem is a third of
+ * the screen handed to four icons — there the buttons give way to the programme.
+ */
+const ACTIONS_WIDTH = "min(8rem, 26%)";
+
+/**
+ * The widths of the data columns, in the order they are shown.
+ *
+ * Returned as CSS rather than numbers so the arithmetic happens in the browser, at the
+ * width the table actually has: no measuring, no resize observer, and a column that is
+ * right the moment the sidebar is collapsed rather than one frame later.
+ */
+function columnWidths(columns: ProgramColumn[]): string[] {
+  const fixed = columns.map((column) =>
+    column.custom ? undefined : FIXED_COLUMN_WIDTHS[column.key as ProgramColumnKey],
+  );
+  const weights = columns.map((column, index) =>
+    fixed[index] !== undefined
+      ? 0
+      : ((column.custom ? undefined : FLEXIBLE_COLUMN_WEIGHTS[column.key as ProgramColumnKey]) ??
+        DEFAULT_COLUMN_WEIGHT),
+  );
+  const total = weights.reduce((sum, weight) => sum + weight, 0);
+  const reserved = [HANDLE_WIDTH, ACTIONS_WIDTH, ...fixed.filter((width) => width !== undefined)];
+  const free = `calc(100% - ${reserved.join(" - ")})`;
+  return columns.map((_, index) => {
+    const own = fixed[index];
+    if (own !== undefined) {
+      return own;
+    }
+    // Six places, not four: eleven columns rounded to four would sum to 100.02% of the
+    // free space, and a fixed-layout table whose widths overshoot is one the container
+    // can scroll after all. `total` cannot be 0 here — this branch only runs for a
+    // column that carries a weight.
+    return `calc(${free} * ${((weights[index] ?? 0) / total).toFixed(6)})`;
+  });
 }
 
 /**
@@ -1041,10 +1141,13 @@ function ProgramItemRow({
       {columns.map((column) => (
         <td
           key={column.key}
+          // `break-words` and `align-top` are what make a fixed-width table readable: a
+          // name longer than its column wraps inside it instead of pushing the column
+          // wider, and every cell of a row that wrapped starts at the same line.
           className={
             column.key === "TIME" || column.key === "POSITION"
-              ? "whitespace-nowrap px-2 py-2 font-semibold text-sm tabular-nums"
-              : "px-2 py-2 text-sm"
+              ? "whitespace-nowrap px-2 py-2 align-top font-semibold text-sm tabular-nums"
+              : "break-words px-2 py-2 align-top text-sm"
           }
         >
           {column.custom ? (
