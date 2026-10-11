@@ -536,7 +536,18 @@ class Program:
 
     @property
     def initial_version(self) -> int:
+        """The version this copy was read at — the repository's optimistic pre-image."""
         return self._initial_version
+
+    def mark_persisted(self) -> None:
+        """Mark this in-memory instance as clean at its current version.
+
+        Called by the repository after a successful write, so the next save of the same
+        instance uses the just-persisted version as its pre-image. One use case may bump
+        the version several times before a single save, and the same instance may be
+        saved more than once; neither is a conflict.
+        """
+        self._initial_version = self._version
 
     @property
     def numbers_issued(self) -> int:

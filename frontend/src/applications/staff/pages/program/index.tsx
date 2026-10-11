@@ -451,10 +451,11 @@ function bufferLabel(seconds: number): string {
  * That is the «дата ставится неправильно» organizers reported — and clearing the time to
  * retype it reported midnight on the way past, which is the «потом она пропадает».
  *
- * So: a local draft, saved once the typing stops, and never saved half-finished. A date
- * with no time yet is not an instant and waits; an emptied date *is* an answer («у этой
- * программы пока нет времени») and clears the start, which is the only way back to an
- * untimed running order.
+ * So: a local draft, and the two halves committed the way each is answered. The day is
+ * pointed at, so it saves on the click; the hour is typed, so it waits for the typing to
+ * stop. Nothing half-finished is ever sent — a day with no hour yet is not an instant and
+ * waits — and an emptied date *is* an answer («у этой программы пока нет времени»),
+ * which clears the start and is the only way back to an untimed running order.
  */
 function ProgramStart({ program }: { program: Program }): React.JSX.Element {
   const update = useUpdateProgram(program.id);
@@ -478,12 +479,20 @@ function ProgramStart({ program }: { program: Program }): React.JSX.Element {
     if (date !== "" && time.length < 5) {
       return;
     }
-    const timer = setTimeout(() => {
+    const send = () =>
       update.mutate(
         { startsAt: festivalInputToIso(draft) },
         { onError: () => toast.error("Не удалось изменить время начала") },
       );
-    }, START_SAVE_DELAY_MS);
+    // A day is *pointed at*, not typed: the click that chose it is the whole of the
+    // answer, so it is saved on the spot. Waiting would only mean an organizer who
+    // picks a date and reloads a moment later finds nothing saved — and the delay buys
+    // nothing, because there is no second keystroke coming.
+    if (date !== saved.split("T")[0]) {
+      send();
+      return;
+    }
+    const timer = setTimeout(send, START_SAVE_DELAY_MS);
     return () => clearTimeout(timer);
   }, [draft, saved]);
 
@@ -500,10 +509,11 @@ function ProgramStart({ program }: { program: Program }): React.JSX.Element {
 }
 
 /**
- * How long the start time waits after the last keystroke before it is saved.
+ * How long the *typed* half of the start time waits after the last keystroke.
  *
  * Long enough to cover the pause between the hour and the minutes, short enough that
- * nobody navigates away from a change they thought they had made.
+ * nobody navigates away from a change they thought they had made. The day does not use
+ * it at all — see above.
  */
 const START_SAVE_DELAY_MS = 900;
 

@@ -71,6 +71,7 @@ from apps.programs.domain.exceptions import (
     ExportUnavailableError,
     InvalidProgramDataError,
     PerformanceNotAvailableError,
+    ProgramConcurrencyError,
     ProgramNotFoundError,
     ProgramShareNotFoundError,
     RunningOrderNotControllableError,
@@ -111,6 +112,11 @@ __all__ = ["PUBLIC_PROGRAM_PATH", "ProgramService"]
 #: The client-side route a public slug resolves to. Rendered into API responses so
 #: the organizer can copy a link without the frontend re-deriving the URL shape.
 PUBLIC_PROGRAM_PATH = "/program/{slug}"
+
+#: How many times a partial settings edit is replayed on a program that moved underneath.
+#: Two, not more: one retry covers the single overlapping write that actually happens,
+#: and a loop that keeps trying would hide a program being written to continuously.
+_UPDATE_ATTEMPTS: Final = 2
 
 #: How many times to re-roll a slug before giving up. A collision needs two of ~57
 #: random bits to coincide, so a single retry is already generous; the loop exists so
@@ -344,19 +350,34 @@ class ProgramService:
         return self._detail(self._load(program_id))
 
     def update_program(self, command: UpdateProgramCommand) -> ProgramDetailView:
-        """Rename, re-buffer or re-time a program."""
-        now = self._clock.utcnow()
-        program = self._load(command.program_id)
-        if command.name is not None:
-            program.rename(ProgramName(command.name), now=now)
-        if command.buffer_seconds is not None:
-            program.set_buffer(TimeBuffer(int(command.buffer_seconds)), now=now)
-        if command.clear_starts_at:
-            program.set_start(None, now=now)
-        elif command.starts_at is not None:
-            program.set_start(command.starts_at, now=now)
-        self._programs.save(program)
-        return self._detail(program)
+        """Rename, re-buffer or re-time a program.
+
+        Retried once if the program moved underneath, because this command is a
+        *partial* edit and replaying it is exactly right: "set the start to 10:00" means
+        the same thing on a fresher copy, and nothing of the other write is lost. The
+        settings are also the one thing an organizer changes while the rest of the
+        programme is being worked on — the buffer set a moment before a row is dragged —
+        so a conflict here is both the likeliest and the least interesting to report.
+        """
+        for attempt in range(_UPDATE_ATTEMPTS):
+            now = self._clock.utcnow()
+            program = self._load(command.program_id)
+            if command.name is not None:
+                program.rename(ProgramName(command.name), now=now)
+            if command.buffer_seconds is not None:
+                program.set_buffer(TimeBuffer(int(command.buffer_seconds)), now=now)
+            if command.clear_starts_at:
+                program.set_start(None, now=now)
+            elif command.starts_at is not None:
+                program.set_start(command.starts_at, now=now)
+            try:
+                self._programs.save(program)
+            except ProgramConcurrencyError:
+                if attempt + 1 < _UPDATE_ATTEMPTS:
+                    continue
+                raise
+            return self._detail(program)
+        raise AssertionError("unreachable")  # pragma: no cover - the loop always returns or raises
 
     def delete_program(self, program_id: str) -> None:
         """Soft-delete a program; every public link into it stops resolving."""

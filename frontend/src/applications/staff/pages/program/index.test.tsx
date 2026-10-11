@@ -1197,6 +1197,18 @@ describe("StaffProgramPage — the start time", () => {
     }
   });
 
+  it("saves a day the moment it is picked, without waiting", async () => {
+    stub(aProgram({ startsAt: null }));
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: /Начало программы/ }));
+    await userEvent.click(within(await screen.findByRole("grid")).getByText("7"));
+
+    // No timers advanced: a day is pointed at, and the click is the whole answer. An
+    // organizer who picks a date and reloads a second later must not lose it.
+    expect(updateProgram).toHaveBeenCalledTimes(1);
+  });
+
   it("waits for the hour rather than saving a day at midnight", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     try {

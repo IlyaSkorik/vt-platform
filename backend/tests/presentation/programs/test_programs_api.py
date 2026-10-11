@@ -10,6 +10,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from django.core import mail
@@ -23,6 +24,11 @@ from apps.identity.infrastructure.models.user import UserModel
 from apps.identity.presentation.api.v1.auth import composition as identity_composition
 from apps.organization.application.dto.commands import ProvisionOwnerCommand
 from apps.organization.composition import build_provision_owner_handler
+from apps.programs.application.commands import UpdateProgramCommand
+from apps.programs.composition import build_program_service
+from apps.programs.domain.entities import Program
+from apps.programs.domain.exceptions import ProgramConcurrencyError
+from apps.programs.infrastructure.repositories import DjangoProgramRepository
 from apps.teachers.infrastructure.models import TeacherModel
 
 pytestmark = pytest.mark.django_db
@@ -391,6 +397,72 @@ class TestBufferAndOrder:
     def test_an_over_long_buffer_is_rejected(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id = _create_program(staff_client, scope)["id"]
         assert staff_client.patch(f"{_PROGRAMS}/{program_id}", {"bufferSeconds": 7200}, format="json").status_code == 400
+
+
+class TestOneWriteDoesNotUndoAnother:
+    """A program is read, changed and written back whole, by every endpoint there is.
+
+    Which makes two overlapping writes a silent data loss: the later one restores every
+    field to what *it* read, so the start time an organizer set a second earlier simply
+    comes back empty after a reload. The version each copy was read at is what makes
+    that refusable instead of invisible.
+    """
+
+    def test_a_start_set_on_an_untimed_programme_survives_a_reload(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        created = _create_program(staff_client, scope, startsAt=None)
+        assert created["startsAt"] is None
+
+        patched = staff_client.patch(f"{_PROGRAMS}/{created['id']}", {"startsAt": "2026-10-06T21:00:00.000Z"}, format="json")
+        assert patched.status_code == 200, patched.data
+
+        reloaded = staff_client.get(f"{_PROGRAMS}/{created['id']}")
+        assert reloaded.data["data"]["startsAt"] == datetime(2026, 10, 6, 21, 0, tzinfo=UTC)
+
+    def test_a_write_that_read_the_programme_too_early_is_refused(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        program_id = _create_program(staff_client, scope, startsAt=None)["id"]
+        staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill")
+
+        repository = DjangoProgramRepository()
+        # One request has read the programme and not yet written it back.
+        stale = repository.get(uuid.UUID(program_id))
+        assert stale is not None and stale.starts_at is None
+
+        # Another sets the start and commits in the meantime.
+        build_program_service().update_program(UpdateProgramCommand(program_id=program_id, starts_at=TEN_AM))
+
+        # The first now finishes its own work. It must not put the start back to None.
+        stale.reorder([item.id for item in stale.items], now=TEN_AM)
+        with pytest.raises(ProgramConcurrencyError):
+            repository.save(stale)
+        reloaded = repository.get(uuid.UUID(program_id))
+        assert reloaded is not None and reloaded.starts_at == TEN_AM
+
+    def test_a_settings_edit_replays_itself_rather_than_failing(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        """The settings are the one thing edited *while* the rest is being worked on.
+
+        A partial edit means the same thing on a fresher copy — «поставь начало в 10:00»
+        does not depend on what else moved — so it is replayed instead of reported.
+        """
+        program_id = _create_program(staff_client, scope, startsAt=None)["id"]
+        collided = {"yet": False}
+        read = DjangoProgramRepository.get
+
+        def read_then_let_somebody_else_in(self: DjangoProgramRepository, pid: uuid.UUID) -> Program | None:
+            program = read(self, pid)
+            # Exactly once, between this read and its write, another write lands.
+            if not collided["yet"]:
+                collided["yet"] = True
+                build_program_service().update_program(UpdateProgramCommand(program_id=str(pid), name="Переименована"))
+            return program
+
+        with patch.object(DjangoProgramRepository, "get", read_then_let_somebody_else_in):
+            updated = build_program_service().update_program(UpdateProgramCommand(program_id=program_id, starts_at=TEN_AM))
+
+        assert updated.starts_at == TEN_AM
+        # And the write it collided with is still there: the retry re-read rather than overwrote.
+        assert updated.name == "Переименована"
 
 
 class TestTheProgrammeTable:
