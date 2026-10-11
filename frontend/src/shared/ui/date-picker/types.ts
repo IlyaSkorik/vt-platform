@@ -35,4 +35,17 @@ export interface DateTimePickerProps extends Omit<DatePickerProps, "value" | "on
   onChange: (value: string) => void;
   /** Label for the time half. Defaults to «Время». */
   timeLabel?: React.ReactNode;
+  /**
+   * Whether a day on its own is an answer.
+   *
+   * Off by default, which is what a window wants: «приём заявок с 7 октября» is a
+   * complete thing to say, and the hour fills itself in as midnight.
+   *
+   * On, the two halves are one value and neither alone means anything — a festival does
+   * not start «7 октября», it starts at a time on that day. Picking a day then leaves
+   * the hour **empty and ready to be typed into** rather than pre-filled with a midnight
+   * nobody chose: a filled field is at its maximum length, so the next thing typed into
+   * it is silently dropped and the hour cannot be set at all.
+   */
+  requireTime?: boolean;
 }

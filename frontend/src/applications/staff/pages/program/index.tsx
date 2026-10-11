@@ -18,7 +18,7 @@ import {
   Trash2,
   Wand2,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useCompetitionDetail, useCompetitionsList } from "@/features/competitions";
 import {
@@ -456,21 +456,51 @@ function bufferLabel(seconds: number): string {
  * stop. Nothing half-finished is ever sent — a day with no hour yet is not an instant and
  * waits — and an emptied date *is* an answer («у этой программы пока нет времени»),
  * which clears the start and is the only way back to an untimed running order.
+ *
+ * And the draft is never overwritten by the programme while an edit is in progress. The
+ * reply to the day lands mid-way through typing the hour, and adopting it there is what
+ * made the field snap back to midnight and the organizer start over.
  */
 function ProgramStart({ program }: { program: Program }): React.JSX.Element {
   const update = useUpdateProgram(program.id);
   const saved = isoToFestivalInput(program.startsAt);
   const [draft, setDraft] = useState(saved);
 
-  // Follow the programme when it changes underneath — a reply landing, another tab, a
-  // different programme opened into the same form — but never over an unsaved edit.
-  useEffect(() => setDraft(saved), [saved]);
+  /**
+   * Whether the field holds something the programme has not agreed to yet.
+   *
+   * This is the whole of the fix for «поставил — пропало». Picking a day sends it at
+   * once, and the reply comes back while the hour is still being typed — so following
+   * the programme unconditionally put the field back to midnight *under the organizer's
+   * hands*, swallowing the digits they were in the middle of. Then the next attempt
+   * worked, because by then there was no reply in flight, and the one after that failed
+   * again. The programme is followed only when there is nothing in progress to lose.
+   */
+  const unsaved = useRef(false);
+  /** `draft` readable from inside a callback that was created before it changed. */
+  const current = useRef(draft);
+  current.current = draft;
+  /** The last value dispatched — what "has the day changed?" is asked against. */
+  const sent = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!unsaved.current) {
+      setDraft(saved);
+      current.current = saved;
+    }
+  }, [saved]);
+
+  const edit = (next: string) => {
+    unsaved.current = true;
+    setDraft(next);
+  };
 
   // `update` is deliberately not a dependency: it is a fresh object on every render, so
   // depending on it would restart the timer forever and nothing would ever be saved.
   // biome-ignore lint/correctness/useExhaustiveDependencies: see above.
   useEffect(() => {
     if (draft === saved) {
+      unsaved.current = false;
       return;
     }
     const [date = "", time = ""] = draft.split("T");
@@ -479,16 +509,32 @@ function ProgramStart({ program }: { program: Program }): React.JSX.Element {
     if (date !== "" && time.length < 5) {
       return;
     }
-    const send = () =>
+    const send = () => {
+      const dispatched = draft;
+      sent.current = dispatched;
       update.mutate(
-        { startsAt: festivalInputToIso(draft) },
-        { onError: () => toast.error("Не удалось изменить время начала") },
+        { startsAt: festivalInputToIso(dispatched) },
+        {
+          // Settled only if the field still says what was sent. Anything typed since is
+          // a later answer, still owed a write of its own.
+          onSuccess: () => {
+            if (current.current === dispatched) {
+              unsaved.current = false;
+            }
+          },
+          onError: () => toast.error("Не удалось изменить время начала"),
+        },
       );
-    // A day is *pointed at*, not typed: the click that chose it is the whole of the
-    // answer, so it is saved on the spot. Waiting would only mean an organizer who
-    // picks a date and reloads a moment later finds nothing saved — and the delay buys
-    // nothing, because there is no second keystroke coming.
-    if (date !== saved.split("T")[0]) {
+    };
+    // A day is *pointed at*, not typed: moving a programme to another date is a whole
+    // answer given in one click, so it goes at once rather than after a pause nobody is
+    // taking. Only when the hour is the one already in force, though — a day and an
+    // hour arriving together means the hour is being typed, and that waits for the
+    // typing to stop. Measured against what was last **sent** rather than against the
+    // programme, which lags a round trip behind and would make every keystroke look
+    // like a new day.
+    const [sentDate = "", sentTime = ""] = (sent.current ?? saved).split("T");
+    if (date !== sentDate && time === sentTime) {
       send();
       return;
     }
@@ -502,8 +548,10 @@ function ProgramStart({ program }: { program: Program }): React.JSX.Element {
     <DateTimePicker
       label="Начало программы"
       timeLabel="Время начала"
+      // A festival does not start «7 октября»; it starts at a time on that day.
+      requireTime
       value={draft}
-      onChange={setDraft}
+      onChange={edit}
     />
   );
 }

@@ -99,6 +99,13 @@ export function TimePicker({
             {...(description != null ? { description } : {})}
             {...(error != null ? { error } : {})}
             {...(required != null ? { required } : {})}
+            // A time already in the field is at the field's maximum length, so
+            // anything typed into it is dropped and the value simply will not
+            // change — the field looks editable and is not. Selecting what is
+            // there means the first digit replaces it, which is how every
+            // masked field behaves and what somebody correcting 10:00 to 14:30
+            // is already doing.
+            onFocus={(event) => event.currentTarget.select()}
             onChange={(event) => commit(maskTime(event.target.value))}
             onKeyDown={(event) => {
               if (event.key !== "ArrowUp" && event.key !== "ArrowDown") {
