@@ -22,13 +22,30 @@ from apps.programs.application.dto import ProgramTableView
 from apps.programs.domain.entities import Program
 
 __all__ = [
+    "CatalogApplicant",
     "CatalogPerformance",
     "Clock",
     "PerformanceCatalog",
+    "ProgramNotifier",
     "ProgramRepository",
     "SlugFactory",
     "TableRenderer",
 ]
+
+
+@dataclass(frozen=True, slots=True)
+class CatalogApplicant:
+    """Whoever entered an act, as far as telling them something requires.
+
+    Not folded into :class:`CatalogPerformance`: every screen that renders a running
+    order would then carry an email address it never shows, and a programme handed to a
+    host or projected beside a stage is the last place a contact list belongs. Only the
+    announcement asks for these.
+    """
+
+    user_id: uuid.UUID
+    email: str
+    name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -148,12 +165,45 @@ class PerformanceCatalog(Protocol):
         """
         ...
 
+    def applicants_for(self, submission_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, CatalogApplicant]:
+        """Who entered each act, for the one use case that writes to them.
+
+        Acts whose applicant has no usable address are simply absent, so the caller
+        counts who was written to rather than who it meant to write to.
+        """
+        ...
+
     def competition_title(self, competition_id: uuid.UUID) -> str | None:
         """The competition's title, for the heading of a public program."""
         ...
 
     def nomination_title(self, nomination_id: uuid.UUID) -> str | None:
         """The nomination's name, for the heading of a public program."""
+        ...
+
+
+class ProgramNotifier(Protocol):
+    """Tells one applicant that the programme they are in has been published.
+
+    A port rather than a direct call into the mailer for the usual reason — the use case
+    stays testable without a mail backend — and a *per-applicant* one because that is the
+    unit of the message: a studio with thirty acts is told once, with thirty lines.
+    """
+
+    def notify_program_published(
+        self,
+        *,
+        user_id: uuid.UUID,
+        email: str,
+        applicant_name: str | None,
+        competition_title: str | None,
+        program_name: str,
+        starts_at: datetime | None,
+        slots: Sequence[tuple[str, str, str]],
+        program_url: str,
+        note: str | None,
+    ) -> None:
+        """Write to one applicant. ``slots`` is (number, time, act title) per act."""
         ...
 
 

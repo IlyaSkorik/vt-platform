@@ -19,7 +19,7 @@ from datetime import datetime
 from typing import Final
 from zoneinfo import ZoneInfo
 
-__all__ = ["DISPLAY_TZ", "clock"]
+__all__ = ["DISPLAY_TZ", "clock", "day"]
 
 #: The zone every programme is shown in - the same one the platform's letters use.
 #: The festivals this platform runs are held in it, and a programme is read by people
@@ -38,3 +38,35 @@ def clock(moment: datetime | None) -> str:
         return ""
     local = moment.astimezone(DISPLAY_TZ) if moment.tzinfo is not None else moment
     return local.strftime("%H:%M")
+
+
+#: Russian month names in the genitive, which is the case a date is read in
+#: («1 августа»). ``strftime("%B")`` gives the nominative and depends on the server's
+#: locale being installed, neither of which is true here.
+_MONTHS: Final = (
+    "января",
+    "февраля",
+    "марта",
+    "апреля",
+    "мая",
+    "июня",
+    "июля",
+    "августа",
+    "сентября",
+    "октября",
+    "ноября",
+    "декабря",
+)
+
+
+def day(moment: datetime | None) -> str:
+    """A whole moment as ``1 августа в 10:00``, or blank when there is none.
+
+    What a letter says, as opposed to what a table cell says: a cell sits in a column
+    headed «Время» on a page that already names the day, and a letter arrives on its own
+    with no such context.
+    """
+    if moment is None:
+        return ""
+    local = moment.astimezone(DISPLAY_TZ) if moment.tzinfo is not None else moment
+    return f"{local.day} {_MONTHS[local.month - 1]} в {local.strftime('%H:%M')}"

@@ -162,6 +162,22 @@ class CreateShareRequestSerializer(serializers.Serializer[dict[str, object]]):
     controlsRunningOrder = serializers.BooleanField(required=False, default=False)
 
 
+class AnnounceProgramRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """Validate an announcement body. Everything about *who* is decided by the edition."""
+
+    #: A line of the organizer's own above the running order, optional and short: this
+    #: is a covering note, not a second letter.
+    note = serializers.CharField(required=False, allow_blank=True, max_length=500)
+
+
+class AnnouncementResourceSerializer(serializers.Serializer[dict[str, object]]):
+    """What came of an announcement: who was written to, and who could not be."""
+
+    notified = serializers.IntegerField()
+    acts = serializers.IntegerField()
+    skipped = serializers.IntegerField()
+
+
 class UpdateShareRequestSerializer(serializers.Serializer[dict[str, object]]):
     """Validate a rename/re-column body for a published edition (its slug is permanent)."""
 

@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 __all__ = [
+    "AnnouncementView",
     "ArrangementView",
     "ColumnView",
     "ProgramDetailView",
@@ -97,6 +98,24 @@ class ProgramItemView:
     custom_values: tuple[tuple[str, str], ...] = ()
     #: How far this slot has got on the day (``PENDING`` until the host says otherwise).
     progress: str = "PENDING"
+
+
+@dataclass(frozen=True, slots=True)
+class AnnouncementView:
+    """What came of announcing one published edition.
+
+    Three numbers rather than one, because they answer three different questions and an
+    organizer who sent 40 letters for 47 acts needs to know which gap they are looking
+    at. ``skipped`` is acts whose applicant has no address to write to - the one failure
+    mode that is nobody's mistake and cannot be retried into working.
+    """
+
+    #: Applicants written to. One letter each, however many acts they entered.
+    notified: int
+    #: Acts the edition covers and that are still entered in this competition.
+    acts: int
+    #: Acts whose applicant could not be written to.
+    skipped: int
 
 
 @dataclass(frozen=True, slots=True)

@@ -32,7 +32,7 @@ from apps.competitions.infrastructure.models.taxonomy import (
 )
 from apps.identity.infrastructure.models.user import UserModel
 from apps.participants.infrastructure.models import ParticipantOrganizationMembershipModel
-from apps.programs.application.interfaces import CatalogPerformance
+from apps.programs.application.interfaces import CatalogApplicant, CatalogPerformance
 from apps.teachers.infrastructure.models import TeacherModel
 
 __all__ = ["COMPETING_SUBMISSION_STATUSES", "DjangoPerformanceCatalog"]
@@ -160,6 +160,34 @@ class DjangoPerformanceCatalog:
             if files:
                 references[submission_id] = files
         return references
+
+    @staticmethod
+    def applicants_for(submission_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, CatalogApplicant]:
+        """Who entered each act: their account id, their address and their name.
+
+        Two queries whatever the size of the programme — the submissions, then the users
+        behind them. An account with no address on it is left out rather than returned
+        with a blank: there is nobody to write to, and saying so by absence keeps the
+        caller from counting a letter it never sent.
+        """
+        if not submission_ids:
+            return {}
+        rows = list(SubmissionModel.objects.filter(id__in=list(submission_ids), deleted_at__isnull=True).values_list("id", "applicant_id"))
+        if not rows:
+            return {}
+        users = UserModel.objects.filter(id__in={applicant_id for _, applicant_id in rows}, deleted_at__isnull=True).values_list(
+            "id", "email", "first_name", "last_name"
+        )
+        by_user = {
+            str(user_id): CatalogApplicant(
+                user_id=user_id,
+                email=address,
+                name=" ".join(part for part in (_clean(first_name), _clean(last_name)) if part) or None,
+            )
+            for user_id, email, first_name, last_name in users
+            if (address := _clean(email))
+        }
+        return {submission_id: applicant for submission_id, applicant_id in rows if (applicant := by_user.get(str(applicant_id))) is not None}
 
     def competition_title(self, competition_id: uuid.UUID) -> str | None:
         title = CompetitionModel.objects.filter(id=competition_id, deleted_at__isnull=True).values_list("title", flat=True).first()

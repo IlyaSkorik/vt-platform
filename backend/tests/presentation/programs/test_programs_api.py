@@ -12,6 +12,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
+from django.core import mail
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -96,6 +97,19 @@ def _act(
         teachers=[{"first_name": "Мария", "last_name": "Иванова", "middle_name": None, "role": "COACH"}],
     )
     return str(submission.id)
+
+
+def _applicant(email: str, first_name: str, last_name: str) -> UserModel:
+    """An account an announcement can actually be delivered to."""
+    return UserModel.objects.create(
+        email=email,
+        first_name=first_name,
+        last_name=last_name,
+        locale="ru",
+        timezone="Europe/Minsk",
+        password_algorithm="argon2",
+        password_hash="x",
+    )
 
 
 def _create_program(client: APIClient, scope: tuple[str, str], **overrides: Any) -> dict[str, Any]:
@@ -745,6 +759,134 @@ class TestPublicEditions:
         revoked = staff_client.delete(f"{_PROGRAMS}/{program_id}/shares/{share_id}")
         assert revoked.status_code == 200
         assert revoked.data["data"]["shares"] == []
+
+    def test_an_edition_announces_itself_to_everyone_it_covers(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        """The gap this closes: the link exists and nobody knows it does."""
+        competition_id, nomination_id = scope
+        first = _applicant("petrova@example.com", "Анна", "Петрова")
+        second = _applicant("sidorov@example.com", "Пётр", "Сидоров")
+        katyusha = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        kalinka = _act(competition_id=competition_id, nomination_id=nomination_id, title="Калинка", seconds=200)
+        SubmissionModel.objects.filter(id=katyusha).update(applicant_id=first.id)
+        SubmissionModel.objects.filter(id=kalinka).update(applicant_id=second.id)
+        program_id = _create_program(staff_client, scope)["id"]
+        staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill")
+        created = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Для участников"}, format="json")
+        share = created.data["data"]["share"]
+        mail.outbox.clear()
+
+        announced = staff_client.post(
+            f"{_PROGRAMS}/{program_id}/shares/{share['id']}/announce",
+            {"note": "Сбор за час до начала."},
+            format="json",
+        )
+
+        assert announced.status_code == 200, announced.data
+        assert announced.data["data"] == {"notified": 2, "acts": 2, "skipped": 0}
+        assert sorted(address for message in mail.outbox for address in message.to) == [
+            "petrova@example.com",
+            "sidorov@example.com",
+        ]
+        letter = next(message for message in mail.outbox if message.to == ["petrova@example.com"])
+        assert letter.subject == "Программа опубликована"
+        # The number, the time and the act — what the reader is actually being told —
+        # and the link for everything else.
+        assert "Катюша" in letter.body
+        # Ten UTC read on the wall in the festival's own zone, the same minute the
+        # constructor, the link and the PDF all show.
+        assert "13:00" in letter.body
+        assert "Сбор за час до начала." in letter.body
+        assert share["path"] in letter.body
+        # Their own act only: a letter listing the whole festival is a letter nobody reads.
+        assert "Калинка" not in letter.body
+
+    def test_a_studio_with_several_acts_is_written_to_once(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        studio = _applicant("studio@example.com", "Ольга", "Руководитель")
+        for title in ("Катюша", "Калинка", "Барыня"):
+            submission_id = _act(competition_id=competition_id, nomination_id=nomination_id, title=title, seconds=200)
+            SubmissionModel.objects.filter(id=submission_id).update(applicant_id=studio.id)
+        program_id = _create_program(staff_client, scope)["id"]
+        staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill")
+        share = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Для участников"}, format="json").data["data"]["share"]
+        mail.outbox.clear()
+
+        announced = staff_client.post(f"{_PROGRAMS}/{program_id}/shares/{share['id']}/announce", {}, format="json")
+
+        assert announced.data["data"] == {"notified": 1, "acts": 3, "skipped": 0}
+        assert len(mail.outbox) == 1
+        for title in ("Катюша", "Калинка", "Барыня"):
+            assert title in mail.outbox[0].body
+
+    def test_an_edition_cut_to_part_of_the_day_announces_only_that_part(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        first = _applicant("first@example.com", "Анна", "Петрова")
+        second = _applicant("second@example.com", "Пётр", "Сидоров")
+        katyusha = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        kalinka = _act(competition_id=competition_id, nomination_id=nomination_id, title="Калинка", seconds=200)
+        SubmissionModel.objects.filter(id=katyusha).update(applicant_id=first.id)
+        SubmissionModel.objects.filter(id=kalinka).update(applicant_id=second.id)
+        program_id = _create_program(staff_client, scope)["id"]
+        items = staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill").data["data"]["items"]
+        only_kalinka = next(item for item in items if item["title"] == "Калинка")
+        share = staff_client.post(
+            f"{_PROGRAMS}/{program_id}/shares",
+            {"name": "Второе отделение", "itemIds": [only_kalinka["id"]]},
+            format="json",
+        ).data["data"]["share"]
+        mail.outbox.clear()
+
+        announced = staff_client.post(f"{_PROGRAMS}/{program_id}/shares/{share['id']}/announce", {}, format="json")
+
+        assert announced.data["data"] == {"notified": 1, "acts": 1, "skipped": 0}
+        assert [message.to for message in mail.outbox] == [["second@example.com"]]
+
+    def test_an_act_nobody_can_be_written_to_about_is_counted_not_hidden(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        reachable = _applicant("reachable@example.com", "Анна", "Петрова")
+        katyusha = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        # The second act's applicant has no account on the platform at all.
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Калинка", seconds=200)
+        SubmissionModel.objects.filter(id=katyusha).update(applicant_id=reachable.id)
+        program_id = _create_program(staff_client, scope)["id"]
+        staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill")
+        share = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Для участников"}, format="json").data["data"]["share"]
+        mail.outbox.clear()
+
+        announced = staff_client.post(f"{_PROGRAMS}/{program_id}/shares/{share['id']}/announce", {}, format="json")
+
+        # One letter sent and one act named as unreachable, rather than a failed request:
+        # forty letters delivered beats none plus an error about the forty-first.
+        assert announced.data["data"] == {"notified": 1, "acts": 1, "skipped": 1}
+        assert [message.to for message in mail.outbox] == [["reachable@example.com"]]
+
+    def test_breaks_are_not_announced_to_anybody(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        applicant = _applicant("solo@example.com", "Анна", "Петрова")
+        katyusha = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        SubmissionModel.objects.filter(id=katyusha).update(applicant_id=applicant.id)
+        program_id = _create_program(staff_client, scope)["id"]
+        staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill")
+        staff_client.post(f"{_PROGRAMS}/{program_id}/items", {"title": "Перерыв", "durationSeconds": 600}, format="json")
+        share = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Для участников"}, format="json").data["data"]["share"]
+        mail.outbox.clear()
+
+        announced = staff_client.post(f"{_PROGRAMS}/{program_id}/shares/{share['id']}/announce", {}, format="json")
+
+        assert announced.data["data"] == {"notified": 1, "acts": 1, "skipped": 0}
+        assert "Перерыв" not in mail.outbox[0].body
+
+    def test_announcing_a_link_from_another_programme_is_refused(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        program_id = _create_program(staff_client, scope)["id"]
+        other_id = _create_program(staff_client, scope, name="Другая")["id"]
+        share = staff_client.post(f"{_PROGRAMS}/{other_id}/shares", {"name": "Чужая"}, format="json").data["data"]["share"]
+
+        refused = staff_client.post(f"{_PROGRAMS}/{program_id}/shares/{share['id']}/announce", {}, format="json")
+
+        assert refused.status_code == 404
+
+    def test_an_outsider_cannot_announce(self, outsider_client: APIClient, scope: tuple[str, str]) -> None:
+        assert outsider_client.post(f"{_PROGRAMS}/{uuid.uuid4()}/shares/{uuid.uuid4()}/announce", {}, format="json").status_code == 403
 
     def test_an_edition_cannot_select_a_foreign_item(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id = _create_program(staff_client, scope)["id"]

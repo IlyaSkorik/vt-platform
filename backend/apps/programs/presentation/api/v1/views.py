@@ -32,6 +32,7 @@ from apps.programs.application.commands import (
     AddBlockCommand,
     AddColumnCommand,
     AddPerformanceCommand,
+    AnnounceProgramCommand,
     ArrangementPayload,
     ArrangeProgramCommand,
     CreateProgramCommand,
@@ -50,6 +51,8 @@ from apps.programs.presentation.api.v1 import problems
 from apps.programs.presentation.api.v1.serializers import (
     AddBlockRequestSerializer,
     AddPerformanceRequestSerializer,
+    AnnouncementResourceSerializer,
+    AnnounceProgramRequestSerializer,
     ArrangeProgramRequestSerializer,
     ColumnRequestSerializer,
     CreateProgramRequestSerializer,
@@ -778,6 +781,34 @@ class ProgramShareCollectionView(_StaffView):
         except ProgramError as exc:
             return self._problem(exc, request)
         return problems.envelope(request, {"share": _share_json(share), "program": _program_json(program)}, status=201)
+
+
+class ProgramShareAnnounceView(_StaffView):
+    """``POST`` — tell everyone in this published edition that it is up.
+
+    On the edition rather than on the programme because the edition is the choice: a
+    programme may carry a link for the hall screen, one for the sound desk and one for
+    participants, and only the organizer knows which of them is the one to send. It also
+    settles who hears about it — an edition cut to one отделение announces that отделение.
+    """
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="programsAnnounceShare",
+        request=AnnounceProgramRequestSerializer,
+        responses={200: AnnouncementResourceSerializer, **_PROBLEM_RESPONSES},
+    )
+    def post(self, request: Request, program_id: str, share_id: str) -> Response:
+        serializer = AnnounceProgramRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return problems.validation_problem(serializer.errors, instance=request.get_full_path(), request=request)
+        note = serializer.validated_data.get("note")
+        command = AnnounceProgramCommand(program_id=program_id, share_id=share_id, note=str(note) if note else None)
+        try:
+            result = build_program_service().announce_program(command)
+        except ProgramError as exc:
+            return self._problem(exc, request)
+        return problems.envelope(request, {"notified": result.notified, "acts": result.acts, "skipped": result.skipped})
 
 
 class ProgramShareDetailView(_StaffView):

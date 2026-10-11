@@ -26,6 +26,7 @@ from .views import (
     ProgramMediaArchiveView,
     ProgramMusicArchiveView,
     ProgramProgressView,
+    ProgramShareAnnounceView,
     ProgramShareCollectionView,
     ProgramShareDetailView,
 )
@@ -50,5 +51,7 @@ urlpatterns = [
     path("staff/programs/<str:program_id>/music.zip", ProgramMusicArchiveView.as_view(), name="music-archive"),
     path("staff/programs/<str:program_id>/media.zip", ProgramMediaArchiveView.as_view(), name="media-archive"),
     path("staff/programs/<str:program_id>/shares", ProgramShareCollectionView.as_view(), name="shares"),
+    # Before the detail route: a path segment would otherwise be read as a share id.
+    path("staff/programs/<str:program_id>/shares/<str:share_id>/announce", ProgramShareAnnounceView.as_view(), name="share-announce"),
     path("staff/programs/<str:program_id>/shares/<str:share_id>", ProgramShareDetailView.as_view(), name="share-detail"),
 ]

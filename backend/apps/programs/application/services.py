@@ -25,6 +25,7 @@ from apps.programs.application.commands import (
     AddBlockCommand,
     AddColumnCommand,
     AddPerformanceCommand,
+    AnnounceProgramCommand,
     ArrangementPayload,
     ArrangeProgramCommand,
     CreateProgramCommand,
@@ -39,6 +40,7 @@ from apps.programs.application.commands import (
     UpdateShareCommand,
 )
 from apps.programs.application.dto import (
+    AnnouncementView,
     ArchiveFileView,
     ArrangementView,
     ColumnView,
@@ -53,9 +55,11 @@ from apps.programs.application.dto import (
     SchedulePosition,
 )
 from apps.programs.application.interfaces import (
+    CatalogApplicant,
     CatalogPerformance,
     Clock,
     PerformanceCatalog,
+    ProgramNotifier,
     ProgramRepository,
     SlugFactory,
     TableRenderer,
@@ -296,14 +300,17 @@ class ProgramService:
         clock: Clock,
         slugs: SlugFactory,
         tables: TableRenderer | None = None,
+        notifier: ProgramNotifier | None = None,
     ) -> None:
         self._programs = programs
         self._catalog = catalog
         self._clock = clock
         self._slugs = slugs
         # Optional: every use case except the export works without a renderer, and a test
-        # that never exports should not have to supply one.
+        # that never exports should not have to supply one. Same for the notifier and the
+        # announcement.
         self._tables = tables
+        self._notifier = notifier
 
     # ------------------------------------------------------------------
     # Programs
@@ -729,6 +736,74 @@ class ProgramService:
         program.reset_progress(now=now)
         self._programs.save(program)
         return self._detail(program)
+
+    def announce_program(self, command: AnnounceProgramCommand) -> AnnouncementView:
+        """Write to everyone in a published edition: the programme is up, here it is.
+
+        The gap this closes is the ordinary one between a festival and the people in it:
+        the running order exists, the link exists, and nobody knows. Until now the
+        organizer pasted it into however many chats they could reach, and whoever was in
+        none of them found out on the day.
+
+        **One letter per applicant, listing every act of theirs the edition shows.** A
+        studio that entered thirty numbers is told once, with thirty lines — which is
+        both what a person wants to open and the difference between one message and
+        thirty against a provider that counts its allowance per minute.
+
+        Each line carries the number and the time, because those are what the letter is
+        *for*: «№14, 11:47» is the whole of what a participant needs, and the link is
+        there for everything else. Service blocks carry neither and are left out — a
+        letter is addressed to people, and nobody is announced for the interval.
+
+        A failed address does not stop the others: an applicant who cannot be written to
+        is counted and the sending continues, because forty letters delivered is a
+        better outcome than none plus an error about the forty-first.
+        """
+        if self._notifier is None:  # pragma: no cover - the composition root always supplies one
+            raise InvalidProgramDataError("Рассылка недоступна: не настроена отправка писем.")
+        program = self._load(command.program_id)
+        share = program.share(_uuid(command.share_id, what="shareId"))
+        items = [item for item in program.items_for(share) if item.kind.takes_number]
+        schedule = {entry.item.id: entry for entry in build_schedule(items=program.items, buffer=program.buffer, starts_at=program.starts_at)}
+        performances = self._resolve_performances(items)
+        applicants = self._catalog.applicants_for([item.submission_id for item in items if item.submission_id is not None])
+
+        # Grouped before anything is sent: the unit of this message is the applicant,
+        # and the order inside each letter is the order of the day.
+        lines_by_applicant: dict[uuid.UUID, tuple[CatalogApplicant, list[tuple[str, str, str]]]] = {}
+        skipped = 0
+        for item in items:
+            applicant = applicants.get(item.submission_id) if item.submission_id is not None else None
+            if applicant is None:
+                skipped += 1
+                continue
+            entry = schedule.get(item.id)
+            _, lines = lines_by_applicant.setdefault(applicant.user_id, (applicant, []))
+            lines.append(
+                (
+                    str(item.number or (entry.position if entry is not None else 0)),
+                    _clock(entry.starts_at) if entry is not None else "",
+                    self._item_title(item, performances.get(item.submission_id) if item.submission_id is not None else None),
+                )
+            )
+
+        competition_title = self._catalog.competition_title(program.competition_id)
+        program_url = PUBLIC_PROGRAM_PATH.format(slug=share.slug)
+        notified = 0
+        for applicant, lines in lines_by_applicant.values():
+            self._notifier.notify_program_published(
+                user_id=applicant.user_id,
+                email=applicant.email,
+                applicant_name=applicant.name,
+                competition_title=competition_title,
+                program_name=str(program.name),
+                starts_at=program.starts_at,
+                slots=tuple(lines),
+                program_url=program_url,
+                note=(command.note or "").strip() or None,
+            )
+            notified += 1
+        return AnnouncementView(notified=notified, acts=len(items) - skipped, skipped=skipped)
 
     def remove_share(self, *, program_id: str, share_id: str) -> ProgramDetailView:
         """Revoke a public edition; its link stops resolving at once."""

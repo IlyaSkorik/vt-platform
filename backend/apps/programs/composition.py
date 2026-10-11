@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from apps.programs.application.services import ProgramService
 from apps.programs.infrastructure.acl import DjangoPerformanceCatalog
+from apps.programs.infrastructure.messaging import DjangoProgramNotifier
 from apps.programs.infrastructure.pdf import ReportLabTableRenderer
 from apps.programs.infrastructure.repositories import DjangoProgramRepository
 from apps.programs.infrastructure.system import RandomSlugFactory, SystemClock
@@ -25,4 +26,5 @@ def build_program_service() -> ProgramService:
         clock=SystemClock(),
         slugs=RandomSlugFactory(),
         tables=ReportLabTableRenderer(),
+        notifier=DjangoProgramNotifier(),
     )

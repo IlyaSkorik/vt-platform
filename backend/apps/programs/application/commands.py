@@ -15,6 +15,7 @@ __all__ = [
     "AddBlockCommand",
     "AddColumnCommand",
     "AddPerformanceCommand",
+    "AnnounceProgramCommand",
     "ArrangeProgramCommand",
     "ArrangementPayload",
     "CreateProgramCommand",
@@ -158,6 +159,23 @@ class CreateShareCommand:
     item_ids: tuple[str, ...] = ()
     #: Make this the host's edition: its holder may drive the running order on the day.
     controls_running_order: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class AnnounceProgramCommand:
+    """Tell everyone in a published edition that it is up, and where to read it.
+
+    Named by the **edition**, not by the programme: a programme can have several links
+    cut to different columns - one for the hall screen, one for the sound desk - and the
+    one participants should be sent is a choice only the organizer can make. It also
+    decides who is written to: an edition published over a slice of the running order is
+    announced to that slice.
+    """
+
+    program_id: str
+    share_id: str
+    #: A line of the organizer's own above the running order ("сбор за час до начала").
+    note: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
