@@ -136,4 +136,30 @@ describe("DateTimePicker", () => {
     // a value that cannot be saved.
     expect(screen.getByLabelText("Время")).toBeDisabled();
   });
+
+  it("does not read an erased time as midnight", async () => {
+    const user = userEvent.setup();
+    render(<ControlledDateTime initial="2026-05-20T18:30" />);
+
+    // Rubbing the field out is the first half of retyping it. Reporting 00:00 here is
+    // what made a saved-as-you-type start time jump to midnight mid-correction.
+    await user.clear(screen.getByLabelText("Время"));
+    expect(screen.getByTestId("value")).toHaveTextContent("2026-05-20T18:30");
+
+    await user.type(screen.getByLabelText("Время"), "0945");
+    expect(screen.getByTestId("value")).toHaveTextContent("2026-05-20T09:45");
+  });
+
+  it("puts the stored time back if the field is left empty", async () => {
+    const user = userEvent.setup();
+    render(<ControlledDateTime initial="2026-05-20T18:30" />);
+
+    await user.clear(screen.getByLabelText("Время"));
+    await user.tab();
+
+    // Nothing was reported, so nothing changed — and a field left blank over a value
+    // that is still 18:30 would read as cleared.
+    expect(screen.getByLabelText("Время")).toHaveValue("18:30");
+    expect(screen.getByTestId("value")).toHaveTextContent("2026-05-20T18:30");
+  });
 });

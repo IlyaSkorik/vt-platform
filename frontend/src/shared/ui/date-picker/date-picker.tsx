@@ -192,7 +192,18 @@ export function DateTimePicker({
           // A time with no day names no instant, so the field stays inert until
           // there is one — rather than accepting input that cannot be saved.
           disabled={disabled === true || date === ""}
-          onChange={(next) => onChange(joinDateTime(date, next))}
+          onChange={(next) => {
+            // Rubbing the time out to retype it is not "this day starts at
+            // midnight", and reporting it as one is how a start time saved
+            // itself as 00:00 on the way to the hour being typed. The field
+            // shows empty while the digits are going in; the value keeps the
+            // last real time until there is a new one, and the day's own ✕ is
+            // how the whole thing is cleared.
+            if (next === "") {
+              return;
+            }
+            onChange(joinDateTime(date, next));
+          }}
         />
       </div>
       {description != null && error == null && (

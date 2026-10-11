@@ -113,9 +113,10 @@ export function TimePicker({
             }}
             onBlur={() => {
               // Whatever is left half-typed resolves now: into a time if it can
-              // be one, and out of the field if it cannot — leaving `11:` on
-              // screen would look saved.
-              setDraft(normaliseTime(draft));
+              // be one, and back to the stored one if it cannot — leaving `11:`
+              // on screen would look saved, and leaving the field blank when the
+              // consumer still holds 10:00 would look cleared.
+              setDraft(normaliseTime(draft) || normaliseTime(value));
             }}
             suffix={
               <PopoverTrigger
