@@ -79,7 +79,12 @@ class ProgramItemView:
     submission_id: str | None = None
     lead_participant: str | None = None
     participants: tuple[str, ...] = ()
+    #: How many people stand on stage - a collective's own headcount, not the length of
+    #: :attr:`participants`. ``0`` for a block, which puts nobody on stage.
+    participant_count: int = 0
     teachers: tuple[str, ...] = ()
+    #: Who to ring about this act: its teachers' phones, or the applicant's if none.
+    contacts: tuple[str, ...] = ()
     nomination: str | None = None
     discipline: str | None = None
     age_category: str | None = None

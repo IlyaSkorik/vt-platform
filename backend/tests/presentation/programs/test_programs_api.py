@@ -18,9 +18,11 @@ from rest_framework_simplejwt.tokens import AccessToken
 from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.competitions.infrastructure.models.competition import CompetitionModel
 from apps.competitions.infrastructure.models.taxonomy import CategoryModel
+from apps.identity.infrastructure.models.user import UserModel
 from apps.identity.presentation.api.v1.auth import composition as identity_composition
 from apps.organization.application.dto.commands import ProvisionOwnerCommand
 from apps.organization.composition import build_provision_owner_handler
+from apps.teachers.infrastructure.models import TeacherModel
 
 pytestmark = pytest.mark.django_db
 
@@ -390,10 +392,12 @@ class TestTheProgrammeTable:
             "NOMINATION",
             "DISCIPLINE",
             "PARTICIPANT_GROUP",
+            "PARTICIPANT_COUNT",
             "AGE_CATEGORY",
             "PARTICIPATION_FORMAT",
             "TEACHERS",
             "ORGANIZATION",
+            "CONTACTS",
             "COMMENT",
         ]
         assert {column["key"]: column["label"] for column in program["availableColumns"]}["TEACHERS"] == "Педагог"
@@ -419,6 +423,101 @@ class TestTheProgrammeTable:
         # Every taxonomy column the table offers is resolved, not just the ids.
         for key in ("nomination", "discipline", "ageCategory", "participantGroup", "participationFormat"):
             assert key in item
+
+
+class TestHowManyPeopleStandOnStage:
+    """The headcount column, which is not the number of performer rows.
+
+    A collective is one row in the entry and the headcount its applicant typed; a solo
+    is one row and one person. The organizer needs the second number - it is how many
+    chairs, microphones and diplomas the act costs - and ``len(participants)`` answers
+    the wrong question for exactly the entries where it matters.
+    """
+
+    def test_a_collective_reports_the_headcount_it_stated(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        submission_id = _act(competition_id=competition_id, nomination_id=nomination_id, title="Калинка", seconds=200)
+        submission = SubmissionModel.objects.get(id=submission_id)
+        submission.participants = [{"id": str(uuid.uuid4()), "display_name": "Ансамбль «Росинка»", "member_count": 14}]
+        submission.save(update_fields=["participants"])
+
+        program_id = _create_program(staff_client, scope)["id"]
+        item = staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill").data["data"]["items"][0]
+        assert item["participantCount"] == 14
+        assert len(item["participants"]) == 1
+
+    def test_several_performers_without_a_headcount_are_counted_one_each(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        submission_id = _act(competition_id=competition_id, nomination_id=nomination_id, title="Дуэт", seconds=200)
+        submission = SubmissionModel.objects.get(id=submission_id)
+        # No ``member_count`` at all: entries filled in before the field existed.
+        submission.participants = [
+            {"id": str(uuid.uuid4()), "display_name": "Иванов Иван"},
+            {"id": str(uuid.uuid4()), "display_name": "Петрова Анна"},
+        ]
+        submission.save(update_fields=["participants"])
+
+        program_id = _create_program(staff_client, scope)["id"]
+        item = staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill").data["data"]["items"][0]
+        assert item["participantCount"] == 2
+
+    def test_a_break_puts_nobody_on_stage(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        program_id = _create_program(staff_client, scope)["id"]
+        added = staff_client.post(f"{_PROGRAMS}/{program_id}/items", {"title": "Перерыв", "durationSeconds": 600}, format="json")
+        assert added.status_code == 201, added.data
+        assert added.data["data"]["items"][0]["participantCount"] == 0
+
+
+class TestWhoToRingAboutAnAct:
+    """The contacts column: the teacher's phone, and the applicant's when there is none."""
+
+    def test_the_teacher_of_record_is_the_number_to_call(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        teacher = TeacherModel.objects.create(
+            owner_id=uuid.uuid4(),
+            first_name="Мария",
+            last_name="Иванова",
+            role="COACH",
+            phone="+375291112233",
+            status="ACTIVE",
+        )
+        submission_id = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        submission = SubmissionModel.objects.get(id=submission_id)
+        submission.teachers = [
+            {"first_name": "Мария", "last_name": "Иванова", "middle_name": None, "role": "COACH", "directory_teacher_id": str(teacher.id)}
+        ]
+        submission.save(update_fields=["teachers"])
+
+        program_id = _create_program(staff_client, scope)["id"]
+        item = staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill").data["data"]["items"][0]
+        assert item["contacts"] == ["+375291112233"]
+
+    def test_an_act_with_no_reachable_teacher_falls_back_to_the_applicant(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        applicant = UserModel.objects.create(
+            email="mother@example.com",
+            phone="+375337778899",
+            first_name="Анна",
+            last_name="Петрова",
+            locale="ru",
+            timezone="Europe/Minsk",
+            password_algorithm="argon2",
+            password_hash="x",
+        )
+        submission_id = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        # The seeded teacher is hand-typed: a name on the entry and nowhere to ring.
+        SubmissionModel.objects.filter(id=submission_id).update(applicant_id=applicant.id)
+
+        program_id = _create_program(staff_client, scope)["id"]
+        item = staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill").data["data"]["items"][0]
+        assert item["contacts"] == ["+375337778899"]
+
+    def test_an_act_nobody_left_a_number_for_says_so_with_a_blank(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        program_id = _create_program(staff_client, scope)["id"]
+        item = staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill").data["data"]["items"][0]
+        assert item["contacts"] == []
 
 
 class TestCustomColumns:

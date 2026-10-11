@@ -230,7 +230,11 @@ class ProgramItemResourceSerializer(serializers.Serializer[dict[str, object]]):
     submissionId = serializers.UUIDField(allow_null=True)
     leadParticipant = serializers.CharField(allow_null=True)
     participants = serializers.ListField(child=serializers.CharField())
+    #: The headcount on stage, not the number of performer rows.
+    participantCount = serializers.IntegerField()
     teachers = serializers.ListField(child=serializers.CharField())
+    #: Phones to ring about this act: its teachers', or the applicant's if none.
+    contacts = serializers.ListField(child=serializers.CharField())
     nomination = serializers.CharField(allow_null=True)
     discipline = serializers.CharField(allow_null=True)
     ageCategory = serializers.CharField(allow_null=True)

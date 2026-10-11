@@ -956,6 +956,12 @@ class ProgramService:
                 return (performance.discipline or "") if performance is not None else ""
             case ProgramColumn.PARTICIPANT_GROUP:
                 return (performance.participant_group or "") if performance is not None else ""
+            case ProgramColumn.PARTICIPANT_COUNT:
+                # A collective is one row in the entry and twenty people on stage, so this
+                # is the headcount the applicant stated - never the number of rows.
+                if performance is None or performance.participant_count <= 0:
+                    return ""
+                return str(performance.participant_count)
             case ProgramColumn.AGE_CATEGORY:
                 return (performance.age_category or "") if performance is not None else ""
             case ProgramColumn.PARTICIPATION_FORMAT:
@@ -964,6 +970,8 @@ class ProgramService:
                 return ", ".join(performance.teachers) if performance is not None else ""
             case ProgramColumn.ORGANIZATION:
                 return (performance.organization or "") if performance is not None else ""
+            case ProgramColumn.CONTACTS:
+                return ", ".join(performance.contacts) if performance is not None else ""
             case ProgramColumn.COMMENT:
                 return (performance.comment or "") if performance is not None else ""
         return ""
@@ -1037,7 +1045,9 @@ class ProgramService:
             submission_id=str(item.submission_id) if item.submission_id is not None else None,
             lead_participant=performance.lead_participant if performance is not None else None,
             participants=performance.participants if performance is not None else (),
+            participant_count=performance.participant_count if performance is not None else 0,
             teachers=performance.teachers if performance is not None else (),
+            contacts=performance.contacts if performance is not None else (),
             nomination=performance.nomination if performance is not None else None,
             discipline=performance.discipline if performance is not None else None,
             age_category=performance.age_category if performance is not None else None,

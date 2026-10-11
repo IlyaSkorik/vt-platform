@@ -56,7 +56,16 @@ class CatalogPerformance:
     participant_group: str | None = None
     participation_format: str | None = None
     participants: tuple[str, ...] = ()
+    #: How many people actually stand on stage. A collective states its own headcount on
+    #: the entry form; a solo (or an entry that never stated one) counts the performers
+    #: it listed. Carried as a number rather than ``len(participants)`` because those are
+    #: two different facts: a collective is one participant row and twenty people.
+    participant_count: int = 0
     teachers: tuple[str, ...] = ()
+    #: Who to ring about this act, best contact first: the phones of its teachers as the
+    #: directory holds them, and the applicant's own if no teacher has one. Plural
+    #: because an act prepared by two teachers legitimately has two numbers.
+    contacts: tuple[str, ...] = ()
     organization: str | None = None
     comment: str | None = None
     status: str = ""

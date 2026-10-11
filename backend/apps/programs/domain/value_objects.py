@@ -104,10 +104,12 @@ class ProgramColumn(StrEnum):
     NOMINATION = "NOMINATION"
     DISCIPLINE = "DISCIPLINE"
     PARTICIPANT_GROUP = "PARTICIPANT_GROUP"
+    PARTICIPANT_COUNT = "PARTICIPANT_COUNT"
     AGE_CATEGORY = "AGE_CATEGORY"
     PARTICIPATION_FORMAT = "PARTICIPATION_FORMAT"
     TEACHERS = "TEACHERS"
     ORGANIZATION = "ORGANIZATION"
+    CONTACTS = "CONTACTS"
     COMMENT = "COMMENT"
 
 
@@ -128,10 +130,12 @@ COLUMN_LABELS: Final[dict[ProgramColumn, str]] = {
     ProgramColumn.NOMINATION: "Жанр",
     ProgramColumn.DISCIPLINE: "Номинация",
     ProgramColumn.PARTICIPANT_GROUP: "Состав участников",
+    ProgramColumn.PARTICIPANT_COUNT: "Участников",
     ProgramColumn.AGE_CATEGORY: "Возрастная категория",
     ProgramColumn.PARTICIPATION_FORMAT: "Формат участия",
     ProgramColumn.TEACHERS: "Педагог",
     ProgramColumn.ORGANIZATION: "Организация",
+    ProgramColumn.CONTACTS: "Контакты",
     ProgramColumn.COMMENT: "Комментарий",
 }
 
