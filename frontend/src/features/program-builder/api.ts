@@ -17,11 +17,13 @@ import { type ApiError, apiClient, saveAuthenticatedDownload, toApiError } from 
 
 import type {
   AddBlockInput,
+  AnnounceShareInput,
   ArrangeProgramInput,
   ColumnKey,
   CreateProgramInput,
   CreateShareInput,
   Program,
+  ProgramAnnouncement,
   ProgramCandidate,
   ProgramShare,
   ProgramSummary,
@@ -436,6 +438,27 @@ export function useUpdateShare(
       queryClient.setQueryData(programKeys.detail(programId), response.data.program);
       return response.data.share;
     },
+  });
+}
+
+/**
+ * Write to everyone this edition covers: the programme is up, here it is.
+ *
+ * Not a {@link useProgramMutation}: it changes nothing about the programme, so there is
+ * no new state to write into the cache and nothing to serialize it against. What comes
+ * back is a count of what was sent, which the caller reports and forgets.
+ */
+export function useAnnounceShare(
+  programId: string,
+): UseMutationResult<ProgramAnnouncement, ApiError, AnnounceShareInput> {
+  return useMutation<ProgramAnnouncement, ApiError, AnnounceShareInput>({
+    mutationFn: async ({ shareId, note }) =>
+      (
+        await request<Envelope<ProgramAnnouncement>>(
+          `staff/programs/${programId}/shares/${shareId}/announce`,
+          { method: "post", json: note ? { note } : {} },
+        )
+      ).data,
   });
 }
 

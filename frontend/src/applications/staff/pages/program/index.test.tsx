@@ -15,6 +15,7 @@ import {
   useAddBlock,
   useAddColumn,
   useAddPerformance,
+  useAnnounceShare,
   useArrangeProgram,
   useCreateProgram,
   useCreateShare,
@@ -54,6 +55,7 @@ vi.mock("@/features/program-builder", async (importOriginal) => ({
   useReorderItems: vi.fn(),
   useRenumberItems: vi.fn(),
   useCreateShare: vi.fn(),
+  useAnnounceShare: vi.fn(),
   useRemoveShare: vi.fn(),
   useAddColumn: vi.fn(),
   useRenameColumn: vi.fn(),
@@ -115,6 +117,7 @@ const fillProgram = vi.fn();
 const arrangeProgram = vi.fn();
 const removeItem = vi.fn();
 const removeShare = vi.fn();
+const announceShare = vi.fn();
 const editItem = vi.fn();
 const createProgram = vi.fn();
 const addColumn = vi.fn();
@@ -256,6 +259,7 @@ function stub(
   vi.mocked(useRenumberItems).mockReturnValue(mutation(renumber));
   vi.mocked(useCreateShare).mockReturnValue(mutation(createShare));
   vi.mocked(useRemoveShare).mockReturnValue(mutation(removeShare));
+  vi.mocked(useAnnounceShare).mockReturnValue(mutation(announceShare));
   vi.mocked(useAddColumn).mockReturnValue(mutation(addColumn));
   vi.mocked(useRenameColumn).mockReturnValue(mutation(renameColumn));
   vi.mocked(useRemoveColumn).mockReturnValue(mutation(removeColumn));
@@ -1399,6 +1403,45 @@ describe("StaffProgramPage — public links", () => {
       screen.getByRole("button", { name: "Отозвать: Программа звукорежиссёра" }),
     );
     expect(removeShare).toHaveBeenCalledWith("share-1", expect.anything());
+  });
+
+  it("announces one chosen link to the people it covers, not the whole programme", async () => {
+    stub(
+      aProgram({
+        shares: [
+          {
+            id: "share-1",
+            name: "Для участников",
+            slug: "AbX82Kmn",
+            path: "/program/AbX82Kmn",
+            columns: [{ key: "TIME", label: "Время", custom: false }],
+            itemCount: 2,
+            coversWholeProgram: true,
+            controlsRunningOrder: false,
+            createdAt: "2026-08-01T09:00:00Z",
+          },
+        ],
+      }),
+    );
+    await renderPage();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Разослать участникам: Для участников" }),
+    );
+    await userEvent.type(
+      await screen.findByLabelText("Что добавить от себя"),
+      "Сбор за час до начала.",
+    );
+    // Two buttons say «Разослать» by now — the row's and the dialog's. The dialog is
+    // the one that sends, and saying so here is the point of the confirmation step.
+    const dialog = screen.getByRole("dialog");
+    await userEvent.click(within(dialog).getByRole("button", { name: /Разослать/ }));
+
+    expect(announceShare).toHaveBeenCalledTimes(1);
+    expect(announceShare.mock.calls[0]?.[0]).toEqual({
+      shareId: "share-1",
+      note: "Сбор за час до начала.",
+    });
   });
 
   it("warns before publishing when an act behind a slot was withdrawn", async () => {

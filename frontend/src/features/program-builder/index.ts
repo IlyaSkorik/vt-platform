@@ -12,6 +12,7 @@ export {
   useAddBlock,
   useAddColumn,
   useAddPerformance,
+  useAnnounceShare,
   useArrangeProgram,
   useCreateProgram,
   useCreateShare,
@@ -34,6 +35,7 @@ export {
 } from "./api";
 export {
   type AddBlockInput,
+  type AnnounceShareInput,
   type ArrangementSettings,
   type ArrangeProgramInput,
   arrangeInput,
@@ -62,6 +64,7 @@ export {
   type Placement,
   PROGRESS_LABELS,
   type Program,
+  type ProgramAnnouncement,
   type ProgramCandidate,
   type ProgramColumn,
   type ProgramColumnKey,

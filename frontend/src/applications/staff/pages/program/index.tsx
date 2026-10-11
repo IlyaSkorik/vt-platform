@@ -14,6 +14,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
+  Send,
   Trash2,
   Wand2,
 } from "lucide-react";
@@ -44,9 +45,11 @@ import {
   type ProgramColumnKey,
   type ProgramGroup,
   type ProgramItem,
+  type ProgramShare,
   useAddBlock,
   useAddColumn,
   useAddPerformance,
+  useAnnounceShare,
   useArrangeProgram,
   useCreateProgram,
   useCreateShare,
@@ -80,6 +83,12 @@ import {
   CardContent,
   Checkbox,
   DateTimePicker,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Divider,
   EmptyState,
   Input,
@@ -93,6 +102,7 @@ import {
   PopoverContent,
   PopoverTrigger,
   Select,
+  Textarea,
   toast,
 } from "@/shared/ui";
 import { type MovePlacement, MoveToNumber } from "@/widgets/move-to-number";
@@ -1983,6 +1993,7 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
                   Открыть
                 </a>
               </Button>
+              <AnnounceShare programId={program.id} share={share} />
               <Button
                 variant="ghost"
                 size="xs"
@@ -2008,5 +2019,102 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
         </Alert>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * «Разослать участникам» — the letter that closes the gap between publishing a
+ * programme and anyone knowing it exists.
+ *
+ * It hangs off **one link** rather than off the programme, because the link is the
+ * decision: a programme may carry one edition for the hall screen, one for the sound
+ * desk and one for participants, and only the organizer knows which of them is the one
+ * to send. The edition also settles who hears — one cut to the second отделение writes
+ * to the second отделение.
+ *
+ * Behind a dialog, and the dialog says how many letters it is about to send before it
+ * sends them: this is the one action in the constructor that reaches people outside it,
+ * and it cannot be taken back.
+ */
+function AnnounceShare({
+  programId,
+  share,
+}: {
+  programId: string;
+  share: ProgramShare;
+}): React.JSX.Element {
+  const announce = useAnnounceShare(programId);
+  const [open, setOpen] = useState(false);
+  const [note, setNote] = useState("");
+
+  const send = () => {
+    announce.mutate(
+      { shareId: share.id, ...(note.trim() ? { note: note.trim() } : {}) },
+      {
+        onSuccess: (result) => {
+          setOpen(false);
+          setNote("");
+          // The skipped acts are named out loud rather than quietly left out of the
+          // count: they are the ones the organizer now has to reach some other way.
+          toast.success(
+            `Разослано писем: ${result.notified}` +
+              (result.skipped > 0 ? ` · без адреса: ${result.skipped}` : ""),
+          );
+        },
+        onError: () => toast.error("Не удалось разослать программу"),
+      },
+    );
+  };
+
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="xs"
+        aria-label={`Разослать участникам: ${share.name}`}
+        onClick={() => setOpen(true)}
+      >
+        <Send className="size-4" /> Разослать
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Разослать программу участникам</DialogTitle>
+            <DialogDescription>
+              Каждому, кто подал заявку на выступление из этой ссылки, уйдёт письмо с его номером,
+              временем и ссылкой на программу. Одно письмо на заявителя, даже если у него несколько
+              номеров.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <p className="text-sm">
+              Ссылка: <span className="font-medium">{share.name}</span> ·{" "}
+              {share.coversWholeProgram ? "вся программа" : `пунктов в ней: ${share.itemCount}`}
+            </p>
+            <Textarea
+              label="Что добавить от себя"
+              placeholder="Сбор за час до начала, вход со двора."
+              description="Необязательно. Эта строка встанет в письме над ссылкой."
+              maxLength={500}
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+            />
+            <Alert variant="warning">
+              Письма уйдут сразу и их нельзя отозвать. Проверьте порядок и время перед отправкой.
+            </Alert>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setOpen(false)}>
+              Отмена
+            </Button>
+            <Button onClick={send} loading={announce.isPending}>
+              <Send className="size-4" /> Разослать
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

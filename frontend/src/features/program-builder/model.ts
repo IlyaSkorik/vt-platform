@@ -387,6 +387,25 @@ export interface AddBlockInput {
   position?: number;
 }
 
+/**
+ * What came of announcing one published edition to the people in it.
+ *
+ * Three numbers, because an organizer who sent 40 letters for 47 acts needs to know
+ * which gap they are looking at. `skipped` is acts whose applicant has no address on
+ * the platform — nobody's mistake, and nothing a second attempt would fix.
+ */
+export interface ProgramAnnouncement {
+  notified: number;
+  acts: number;
+  skipped: number;
+}
+
+export interface AnnounceShareInput {
+  shareId: string;
+  /** A line of the organizer's own above the running order. Optional. */
+  note?: string;
+}
+
 export interface CreateShareInput {
   name: string;
   /** The columns this link publishes. Empty falls back to the backend's defaults. */
