@@ -17557,7 +17557,13 @@ components:
           type: array
           items:
             type: string
+        participantCount:
+          type: integer
         teachers:
+          type: array
+          items:
+            type: string
+        contacts:
           type: array
           items:
             type: string
@@ -17600,6 +17606,7 @@ components:
       required:
       - ageCategory
       - comment
+      - contacts
       - customValues
       - discipline
       - durationSeconds
@@ -17610,6 +17617,7 @@ components:
       - nomination
       - number
       - organization
+      - participantCount
       - participantGroup
       - participants
       - participationFormat

@@ -22,10 +22,12 @@ const COLUMN_LABELS: [string, string][] = [
   ["NOMINATION", "Номинация"],
   ["DISCIPLINE", "Дисциплина"],
   ["PARTICIPANT_GROUP", "Состав участников"],
+  ["PARTICIPANT_COUNT", "Участников"],
   ["AGE_CATEGORY", "Возрастная категория"],
   ["PARTICIPATION_FORMAT", "Формат участия"],
   ["TEACHERS", "Педагоги"],
   ["ORGANIZATION", "Организация"],
+  ["CONTACTS", "Контакты"],
   ["COMMENT", "Комментарий"],
 ];
 
@@ -48,7 +50,9 @@ const performance = (index: number) => ({
   submissionId: `sub-${index}`,
   leadParticipant: `Александрова Анастасия ${index}`,
   participants: [`Александрова Анастасия ${index}`],
+  participantCount: 1,
   teachers: ["Преподаватель Иванова Мария Сергеевна"],
+  contacts: ["+375291112233"],
   nomination: "Инструментальное исполнительство",
   discipline: "фортепиано",
   ageCategory: "10-12 лет",
@@ -64,9 +68,8 @@ const performance = (index: number) => ({
 const items = [1, 2, 3, 4, 5, 6].map(performance);
 
 /**
- * Ask the browser the only two questions that matter: does the table overflow its own
- * container (otherwise the test proves nothing), and can the document be scrolled
- * sideways (which is the bug).
+ * Ask the browser the only two questions that matter: how the table sits in its own
+ * container, and whether the document can be scrolled sideways (which is the bug).
  */
 async function measure(page: Page) {
   return page.evaluate(() => {
@@ -118,10 +121,12 @@ test.describe("the programme table never scrolls the page", () => {
                 item.nomination,
                 item.discipline,
                 item.participantGroup,
+                String(item.participantCount),
                 item.ageCategory,
                 item.participationFormat,
                 item.teachers.join(", "),
                 item.organization,
+                item.contacts.join(", "),
                 item.comment,
               ],
             })),

@@ -28,10 +28,12 @@ export type ProgramColumnKey =
   | "NOMINATION"
   | "DISCIPLINE"
   | "PARTICIPANT_GROUP"
+  | "PARTICIPANT_COUNT"
   | "AGE_CATEGORY"
   | "PARTICIPATION_FORMAT"
   | "TEACHERS"
   | "ORGANIZATION"
+  | "CONTACTS"
   | "COMMENT";
 
 /**
@@ -94,7 +96,16 @@ export interface ProgramItem {
   submissionId: string | null;
   leadParticipant: string | null;
   participants: string[];
+  /**
+   * How many people stand on stage — the headcount, not `participants.length`.
+   *
+   * A collective is one entry row and the number its applicant typed on the form; a solo
+   * is one row and one person. `0` for a block, which puts nobody on stage.
+   */
+  participantCount: number;
   teachers: string[];
+  /** Phones to ring about this act: its teachers', or the applicant's if none has one. */
+  contacts: string[];
   nomination: string | null;
   discipline: string | null;
   ageCategory: string | null;
@@ -456,6 +467,10 @@ export function itemCell(
       return item.discipline ?? "";
     case "PARTICIPANT_GROUP":
       return item.participantGroup ?? "";
+    case "PARTICIPANT_COUNT":
+      // Blank rather than "0" for a slot that puts nobody on stage: a break with a
+      // headcount of zero reads like an act nobody turned up to.
+      return item.participantCount > 0 ? String(item.participantCount) : "";
     case "AGE_CATEGORY":
       return item.ageCategory ?? "";
     case "PARTICIPATION_FORMAT":
@@ -464,6 +479,8 @@ export function itemCell(
       return item.teachers.join(", ");
     case "ORGANIZATION":
       return item.organization ?? "";
+    case "CONTACTS":
+      return item.contacts.join(", ");
     case "COMMENT":
       return item.comment ?? "";
     default:
