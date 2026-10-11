@@ -147,6 +147,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.clearAllMocks();
+  vi.useRealTimers();
 });
 
 async function openTheProgramme() {
@@ -227,6 +228,46 @@ describe("the programme's start time, through the real data layer", () => {
       /07 октября 2026/,
     );
     expect(screen.getByLabelText("Время начала")).toHaveValue("14:30");
+  });
+
+  it("takes a day in the future, which is the only kind a programme is ever built for", async () => {
+    // Pinned so "future" means what it says. A programme is planned weeks ahead; the
+    // earlier tests here all happened to click a day in the past and proved nothing
+    // about the one case that matters.
+    vi.setSystemTime(new Date("2026-10-11T09:00:00Z"));
+    await openTheProgramme();
+
+    await userEvent.click(screen.getByRole("button", { name: /Начало программы/ }));
+    const grid = await screen.findByRole("grid");
+    const theTwentyFourth = within(grid).getByText("24");
+    expect(theTwentyFourth.closest("button")).toBeEnabled();
+    await userEvent.click(theTwentyFourth);
+
+    await waitFor(() => expect(server.writes).toHaveLength(1));
+    expect(server.state.program.startsAt).toBe("2026-10-23T21:00:00.000Z");
+    expect(screen.getByRole("button", { name: /Начало программы/ })).toHaveTextContent(
+      /24 октября 2026/,
+    );
+  });
+
+  it("moves a programme from a day gone by to one still ahead", async () => {
+    vi.setSystemTime(new Date("2026-10-11T09:00:00Z"));
+    // The state an organizer is actually in: a date already set, and the real one is
+    // two weeks out.
+    server.state.program.startsAt = "2026-10-04T07:00:00.000Z";
+    await openTheProgramme();
+
+    await userEvent.click(screen.getByRole("button", { name: /Начало программы/ }));
+    await userEvent.click(within(await screen.findByRole("grid")).getByText("24"));
+
+    await waitFor(() => expect(server.writes).toHaveLength(1));
+    expect(server.state.program.startsAt).toBe("2026-10-24T07:00:00.000Z");
+    cleanup();
+
+    await openTheProgramme();
+    expect(screen.getByRole("button", { name: /Начало программы/ })).toHaveTextContent(
+      /24 октября 2026/,
+    );
   });
 
   it("moves a programme to another day in one click", async () => {

@@ -30,8 +30,13 @@ function zonedParts(date: Date, timeZone: string): Record<string, number> {
   const parts: Record<string, number> = {};
   for (const part of formatter.formatToParts(date)) {
     if (part.type !== "literal") {
-      // `hour` comes back as 24 at midnight under `hour12: false` in some engines.
-      parts[part.type] = part.value === "24" ? 0 : Number(part.value);
+      // `hour` comes back as 24 at midnight under `hour12: false` in some engines, and
+      // reading it as 0 is the whole of that correction. **Only the hour** — applying it
+      // to every part turned the 24th of the month into the 0th, so a programme held on
+      // the 24th came back as `2026-10-00`, which is not a date: the field could not
+      // parse it and showed nothing. It set, it vanished, it set again, it vanished
+      // again — and only ever on a day, or a minute, that happened to be 24.
+      parts[part.type] = part.type === "hour" && part.value === "24" ? 0 : Number(part.value);
     }
   }
   return parts;
