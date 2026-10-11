@@ -1105,7 +1105,9 @@ describe("StaffProgramPage — breaks", () => {
     );
     await renderPage();
 
-    expect(screen.getByText("Перерыв")).toBeInTheDocument();
+    // A block's name lives in a field, not in static text: it is the organizer's own
+    // words and is rewritten here.
+    expect(screen.getByLabelText("Название: Перерыв")).toHaveValue("Перерыв");
     const minutes = screen.getByLabelText("Минуты: Перерыв");
     await userEvent.clear(minutes);
     await userEvent.type(minutes, "20");

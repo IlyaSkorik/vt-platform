@@ -1154,7 +1154,13 @@ function ProgramItemRow({
             <CustomCell programId={programId} item={item} columnKey={column.key} />
           ) : column.key === "TITLE" ? (
             <span className="flex flex-wrap items-baseline gap-1.5">
-              <span>{itemCell(item, column.key, format)}</span>
+              {/* A block's title is the organizer's own words and is edited where it is
+                  read; an act's comes from its entry and is not theirs to retype here. */}
+              {isPerformance ? (
+                <span>{itemCell(item, column.key, format)}</span>
+              ) : (
+                <BlockTitle programId={programId} item={item} />
+              )}
               {/* The badge names the kind; a break literally titled "Перерыв" needs no
                   second label saying so. */}
               {isPerformance || item.title === ITEM_KIND_LABELS[item.kind] ? null : (
@@ -1228,6 +1234,55 @@ function ProgramItemRow({
         </div>
       </td>
     </tr>
+  );
+}
+
+/**
+ * A block's own name, editable in place.
+ *
+ * «Перерыв» is what the generator calls one, and it is almost never what the day calls
+ * it: «Обед», «Перерыв 15 минут», «Технический перерыв — смена рояля», «Антракт». The
+ * name goes out on every public link and onto the printed programme, so it is the
+ * organizer's to write — and this is the cell everyone already looks at to read it.
+ *
+ * Saved on blur, like every other hand-filled cell in this table, and a title rubbed out
+ * entirely is refused rather than saved: a nameless block is a gap in the running order
+ * nobody can account for. The old name comes back, which says so without a message.
+ */
+function BlockTitle({
+  programId,
+  item,
+}: {
+  programId: string;
+  item: ProgramItem;
+}): React.JSX.Element {
+  const edit = useEditItem(programId);
+  const [title, setTitle] = useState(item.title);
+
+  // Follow the slot when it changes underneath — a rebuild, another tab — but never
+  // over what is being typed here.
+  useEffect(() => setTitle(item.title), [item.title]);
+
+  return (
+    <Input
+      aria-label={`Название: ${item.title}`}
+      className="h-7 w-full min-w-24 text-sm"
+      value={title}
+      onChange={(event) => setTitle(event.target.value)}
+      onBlur={() => {
+        const next = title.trim();
+        if (next === "") {
+          setTitle(item.title);
+          return;
+        }
+        if (next !== item.title) {
+          edit.mutate(
+            { itemId: item.id, title: next },
+            { onError: () => toast.error("Не удалось переименовать блок") },
+          );
+        }
+      }}
+    />
   );
 }
 
